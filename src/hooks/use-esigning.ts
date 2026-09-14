@@ -450,14 +450,11 @@ export function useEsigningEnvelopes(params: Partial<EsigningListQueryInput> = {
     queryFn: () => fetchEsigningEnvelopes(params, tenantId),
     enabled: Boolean(tenantId),
     staleTime: 30_000,
-    refetchInterval: (query) => {
-      const data = query.state.data as EsigningListResult | undefined;
-      const hasLiveEnvelope = (data?.envelopes ?? []).some((envelope) =>
-        ['DRAFT', 'SENT', 'IN_PROGRESS', 'COMPLETED'].includes(envelope.status)
-      );
-      return hasLiveEnvelope ? 15_000 : false;
-    },
+    // Keep every admin list current, including empty and terminal-only lists.
+    refetchInterval: 15_000,
     refetchIntervalInBackground: true,
+    refetchOnWindowFocus: 'always',
+    refetchOnMount: 'always',
     initialData,
     initialDataUpdatedAt: restoredFromSession ? 0 : undefined,
   });
@@ -483,6 +480,8 @@ export function useEsigningEnvelope(id: string | null) {
       return ['DRAFT', 'SENT', 'IN_PROGRESS', 'COMPLETED'].includes(data.status) ? 10_000 : false;
     },
     refetchIntervalInBackground: true,
+    refetchOnWindowFocus: 'always',
+    refetchOnMount: 'always',
   });
 }
 

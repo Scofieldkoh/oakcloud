@@ -14,6 +14,7 @@ import type { BoundingBox } from '@/components/processing/document-page-viewer';
 import type {
   EsigningFieldDefinitionDto,
   EsigningFieldValueDto,
+  EsigningSignedSignatureDto,
   EsigningSigningSessionDto,
   EsigningSigningSessionStatusDto,
 } from '@/types/esigning';
@@ -46,7 +47,11 @@ interface DraftValue {
   value?: string | null;
   signatureDataUrl?: string | null;
   signaturePreviewUrl?: string | null;
+  locallyEdited?: boolean;
 }
+
+const PNG_DATA_URL_PATTERN = /^data:image\/png;base64,[A-Za-z0-9+/=]+$/;
+const EMPTY_SIGNED_SIGNATURES: EsigningSignedSignatureDto[] = [];
 
 interface SigningErrorState {
   kind: SigningErrorKind;
@@ -66,6 +71,7 @@ function buildDraftState(fieldValues: EsigningFieldValueDto[]): Record<string, D
         value: fieldValue.value,
         signatureDataUrl: null,
         signaturePreviewUrl: fieldValue.signaturePreviewUrl ?? null,
+        locallyEdited: false,
       },
     ])
   );
@@ -76,33 +82,66 @@ function mergeDraftState(
   serverFieldValues: EsigningFieldValueDto[]
 ): Record<string, DraftValue> {
   const serverDraftValues = buildDraftState(serverFieldValues);
+  const fieldDefinitionIds = new Set([
+    ...Object.keys(currentDraftValues),
+    ...Object.keys(serverDraftValues),
+  ]);
 
   return Object.fromEntries(
-    Object.entries(serverDraftValues).map(([fieldDefinitionId, serverDraftValue]) => {
+    Array.from(fieldDefinitionIds).map((fieldDefinitionId) => {
       const currentDraftValue = currentDraftValues[fieldDefinitionId];
+      const serverDraftValue = serverDraftValues[fieldDefinitionId];
+      if (!serverDraftValue) {
+        return [
+          fieldDefinitionId,
+          currentDraftValue ?? {
+            fieldDefinitionId,
+            value: null,
+            signatureDataUrl: null,
+            signaturePreviewUrl: null,
+            locallyEdited: false,
+          },
+        ];
+      }
+
+      const preserveLocalDraft = currentDraftValue?.locallyEdited === true;
       return [
         fieldDefinitionId,
         {
           fieldDefinitionId,
-          value: currentDraftValue?.value ?? serverDraftValue.value,
-          signatureDataUrl: currentDraftValue?.signatureDataUrl ?? null,
+          value: preserveLocalDraft ? currentDraftValue?.value : serverDraftValue.value,
+          signatureDataUrl: preserveLocalDraft ? currentDraftValue?.signatureDataUrl : null,
           signaturePreviewUrl:
-            currentDraftValue?.signaturePreviewUrl ??
-            serverDraftValue.signaturePreviewUrl ??
-            currentDraftValue?.signatureDataUrl ??
-            null,
+            preserveLocalDraft
+              ? currentDraftValue?.signaturePreviewUrl
+              : serverDraftValue.signaturePreviewUrl ?? null,
+          locallyEdited: preserveLocalDraft,
         } satisfies DraftValue,
       ];
     })
   );
 }
 
-function serializeValues(values: Record<string, DraftValue>): DraftValue[] {
-  return Object.values(values).filter((entry) => entry.value !== undefined || entry.signatureDataUrl);
+function serializeValues(values: Record<string, DraftValue>): Array<{
+  fieldDefinitionId: string;
+  value?: string | null;
+  signatureDataUrl?: string | null;
+}> {
+  return Object.values(values)
+    .filter((entry) => entry.value !== undefined || entry.signatureDataUrl)
+    .map(({ fieldDefinitionId, value, signatureDataUrl }) => ({
+      fieldDefinitionId,
+      value,
+      signatureDataUrl,
+    }));
 }
 
 function isDraftValueComplete(draftValue: DraftValue | undefined): boolean {
   return Boolean(draftValue?.value || draftValue?.signatureDataUrl || draftValue?.signaturePreviewUrl);
+}
+
+function isPngDataUrl(value: string | null | undefined): value is string {
+  return Boolean(value && PNG_DATA_URL_PATTERN.test(value));
 }
 
 function buildSignerHighlights(
@@ -189,6 +228,7 @@ function buildAutoSignDraftValues(
       signatureDataUrl: field.type === 'SIGNATURE' ? signatureSpecimen : existing?.signatureDataUrl ?? null,
       signaturePreviewUrl:
         field.type === 'SIGNATURE' ? signatureSpecimen : existing?.signaturePreviewUrl ?? null,
+      locallyEdited: true,
     };
   }
 
@@ -379,6 +419,17 @@ export function EsigningSignPage() {
     [fields]
   );
 
+  const signatureFields = useMemo(
+    () => fields.filter((field) => field.type === 'SIGNATURE' || field.type === 'INITIALS'),
+    [fields]
+  );
+  const signedSignatures = session?.signedSignatures ?? EMPTY_SIGNED_SIGNATURES;
+
+  const signedSignatureCount = useMemo(
+    () => signatureFields.filter((field) => isDraftValueComplete(draftValues[field.id])).length,
+    [draftValues, signatureFields]
+  );
+
   const completedCount = useMemo(
     () =>
       requiredFields.filter((f) => {
@@ -397,6 +448,17 @@ export function EsigningSignPage() {
 
   const activeField = requiredFields[activeFieldIndex] ?? null;
   const postItLabel = activeField ? getPostItLabel(activeField.type) : 'Fill';
+  const activeSignatureDraft = activeSignatureFieldId
+    ? draftValues[activeSignatureFieldId]
+    : undefined;
+  const isChangingSignature = Boolean(
+    activeSignatureFieldId && isDraftValueComplete(activeSignatureDraft)
+  );
+  const activeSignatureDataUrl = isPngDataUrl(activeSignatureDraft?.signatureDataUrl)
+    ? activeSignatureDraft.signatureDataUrl
+    : isPngDataUrl(activeSignatureDraft?.signaturePreviewUrl)
+      ? activeSignatureDraft.signaturePreviewUrl
+      : null;
   const activeInputField = useMemo(
     () => fields.find((field) => field.id === activeInputFieldId) ?? null,
     [activeInputFieldId, fields]
@@ -441,6 +503,7 @@ export function EsigningSignPage() {
           value: autoDateValue,
           signatureDataUrl: existing?.signatureDataUrl ?? null,
           signaturePreviewUrl: existing?.signaturePreviewUrl ?? null,
+          locallyEdited: true,
         };
         hasChanges = true;
       }
@@ -529,7 +592,6 @@ export function EsigningSignPage() {
   const loadSession = useCallback(
     async (options?: { recordView?: boolean; preserveDrafts?: boolean }) => {
       const { recordView = false, preserveDrafts = false } = options ?? {};
-      const currentDraftValues = latestDraftValuesRef.current;
 
       const loadResponse = await fetch('/api/public-bootstrap/esigning/session');
       const loadResult = await loadResponse.json().catch(() => ({}));
@@ -551,11 +613,11 @@ export function EsigningSignPage() {
           nextSession.savedSignatureSpecimenDataUrl ?? savedSignatureSpecimenRef.current,
       };
       setSession(nextSessionWithSpecimen);
-      setDraftValues(
-        preserveDrafts
-          ? mergeDraftState(currentDraftValues, nextSessionWithSpecimen.fieldValues)
-          : buildDraftState(nextSessionWithSpecimen.fieldValues)
-      );
+      if (preserveDrafts) {
+        setDraftValues((current) => mergeDraftState(current, nextSessionWithSpecimen.fieldValues));
+      } else {
+        setDraftValues(buildDraftState(nextSessionWithSpecimen.fieldValues));
+      }
       setSelectedDocumentId((current) => current || nextSessionWithSpecimen.documents[0]?.id || '');
 
       if (recordView) {
@@ -570,11 +632,11 @@ export function EsigningSignPage() {
               savedSignatureSpecimenRef.current,
           };
           setSession(viewedSessionWithSpecimen);
-          setDraftValues(
-            preserveDrafts
-              ? mergeDraftState(currentDraftValues, viewedSessionWithSpecimen.fieldValues)
-              : buildDraftState(viewedSessionWithSpecimen.fieldValues)
-          );
+          if (preserveDrafts) {
+            setDraftValues((current) => mergeDraftState(current, viewedSessionWithSpecimen.fieldValues));
+          } else {
+            setDraftValues(buildDraftState(viewedSessionWithSpecimen.fieldValues));
+          }
           return viewedSessionWithSpecimen;
         }
       }
@@ -775,6 +837,7 @@ export function EsigningSignPage() {
         ...current[fieldDefinitionId],
         ...patch,
         fieldDefinitionId,
+        locallyEdited: true,
       },
     }));
   }
@@ -790,6 +853,17 @@ export function EsigningSignPage() {
   function goToNextField() {
     if (activeFieldIndex < requiredFields.length - 1) {
       goToFieldIndex(activeFieldIndex + 1);
+    }
+  }
+
+  function goToNextUnfilledField(fromFieldId: string) {
+    const startIndex = requiredFields.findIndex((field) => field.id === fromFieldId);
+    for (let offset = 1; offset <= requiredFields.length; offset += 1) {
+      const index = (startIndex + offset) % requiredFields.length;
+      if (!isDraftValueComplete(draftValues[requiredFields[index].id])) {
+        goToFieldIndex(index);
+        return;
+      }
     }
   }
 
@@ -869,12 +943,25 @@ export function EsigningSignPage() {
     if (idx !== -1) setActiveFieldIndex(idx);
 
     if (field.type === 'SIGNATURE' || field.type === 'INITIALS') {
+      const existingDraft = draftValues[field.id];
+      const fieldIsFilled = isDraftValueComplete(existingDraft);
+
+      setActiveSignatureFieldId(field.id);
+      setSignatureModalMode(field.type);
+
+      // Clicking a completed signature reopens the editor so the signer can
+      // change it before final submission. Completed sessions never render
+      // this signing surface, keeping finalized values immutable.
+      if (fieldIsFilled) {
+        setIsSavedSignaturePromptOpen(false);
+        setIsSignatureModalOpen(true);
+        return;
+      }
+
       const cached = field.type === 'SIGNATURE' ? adoptedSignature : adoptedInitials;
       if (cached) {
         setDraft(field.id, { signatureDataUrl: cached, signaturePreviewUrl: cached, value: 'signed' });
       } else {
-        setActiveSignatureFieldId(field.id);
-        setSignatureModalMode(field.type);
         if (field.type === 'SIGNATURE' && session?.savedSignatureSpecimenDataUrl) {
           setIsSavedSignaturePromptOpen(true);
         } else {
@@ -930,6 +1017,21 @@ export function EsigningSignPage() {
       value: 'signed',
     });
     setIsSavedSignaturePromptOpen(false);
+  }
+
+  function clearSignature(fieldId: string) {
+    const field = fields.find((candidate) => candidate.id === fieldId);
+    if (!field || (field.type !== 'SIGNATURE' && field.type !== 'INITIALS')) {
+      return;
+    }
+
+    setDraft(fieldId, {
+      value: null,
+      signatureDataUrl: null,
+      signaturePreviewUrl: null,
+    });
+    setIsSavedSignaturePromptOpen(false);
+    setIsSignatureModalOpen(false);
   }
 
   function handleChooseAnotherSignature() {
@@ -1418,6 +1520,7 @@ export function EsigningSignPage() {
         )}
 
         {/* PDF viewer */}
+        <div className="relative mr-14" data-testid="signing-preview-frame">
         {selectedDocument ? (
           <DocumentPageViewer
             key={`${selectedDocument.id}:${viewerRetryKey}`}
@@ -1427,10 +1530,120 @@ export function EsigningSignPage() {
             highlights={currentHighlights}
             focusedHighlightLabel={shouldFocusActiveField ? activeField?.id : undefined}
             showHighlights
+            showHighlightsToggle={false}
             viewMode="continuous"
             allowPagePanel={!isPortraitMobile}
             className="h-[calc(100dvh-10rem)] min-h-96 rounded-2xl border border-border-primary bg-background-primary"
             onRetry={() => setViewerRetryKey((current) => current + 1)}
+            pageOverlayInteractive={false}
+            showPageSideNavigation={false}
+            renderPageOverlay={({ pageNumber, width, height }) => (
+              <>
+                {signedSignatures
+                  .filter(
+                    (signature) =>
+                      signature.documentId === selectedDocument.id && signature.pageNumber === pageNumber
+                  )
+                  .map((signature) => {
+                    const widthPercent = Math.max(0, Math.min(1, signature.widthPercent));
+                    const heightPercent = Math.max(0, Math.min(1, signature.heightPercent));
+                    const leftPercent = Math.max(
+                      0,
+                      Math.min(1 - widthPercent, signature.xPercent)
+                    );
+                    const topPercent = Math.max(
+                      0,
+                      Math.min(1 - heightPercent, signature.yPercent)
+                    );
+
+                    return (
+                      <div
+                        key={`signed-signature-${signature.fieldDefinitionId}`}
+                        data-testid={`signed-signature-${signature.fieldDefinitionId}`}
+                        aria-label={`Signature from ${signature.signerName}`}
+                        style={{
+                          position: 'absolute',
+                          left: `${leftPercent * 100}%`,
+                          top: `${topPercent * 100}%`,
+                          width: `${widthPercent * 100}%`,
+                          height: `${heightPercent * 100}%`,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          padding: 3,
+                          overflow: 'hidden',
+                          border: '1px solid rgba(41, 77, 68, 0.22)',
+                          borderRadius: 4,
+                          background: 'rgba(255, 255, 255, 0.86)',
+                          pointerEvents: 'none',
+                        }}
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={signature.signaturePreviewUrl}
+                          alt={`Signature from ${signature.signerName}`}
+                          title={`Signed by ${signature.signerName}`}
+                          style={{
+                            maxWidth: '100%',
+                            maxHeight: '100%',
+                            objectFit: 'contain',
+                          }}
+                        />
+                      </div>
+                    );
+                  })}
+                {signatureFields
+                  .filter((field) => field.documentId === selectedDocument.id && field.pageNumber === pageNumber)
+                  .map((field) => {
+                    const bannerWidth = Math.max(
+                      210,
+                      Math.min(320, width * Math.max(field.widthPercent, 0.22))
+                    );
+                    const left = Math.min(
+                      Math.max(0, width - bannerWidth),
+                      field.xPercent * width
+                    );
+                    const top = Math.min(
+                      Math.max(0, height - 44),
+                      (field.yPercent + field.heightPercent) * height + 6
+                    );
+
+                    return (
+                      <button
+                        key={`signature-progress-${field.id}`}
+                        data-testid={`signature-progress-banner-${field.id}`}
+                        type="button"
+                        disabled={canFinish}
+                        onClick={() => goToNextUnfilledField(field.id)}
+                        className="text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-oak-primary"
+                        style={{
+                          position: 'absolute',
+                          left,
+                          top,
+                          width: bannerWidth,
+                          minHeight: 38,
+                          display: 'flex',
+                          alignItems: 'center',
+                          padding: '6px 10px',
+                          border: '1px solid rgba(41, 77, 68, 0.22)',
+                          borderRadius: 10,
+                          background: 'rgba(247, 251, 249, 0.96)',
+                          color: '#294d44',
+                          boxShadow: '0 4px 12px rgba(15, 23, 42, 0.12)',
+                          fontSize: 11,
+                          fontWeight: 600,
+                          lineHeight: 1.25,
+                          pointerEvents: 'auto',
+                          cursor: canFinish ? 'default' : 'pointer',
+                        }}
+                      >
+                        {signedSignatureCount} out of {signatureFields.length} signed.{' '}
+                        {canFinish ? 'All required fields are complete.' : 'Continue to next field'}
+                      </button>
+                    );
+                  })}
+              </>
+            )}
             renderHighlightContent={(highlight, _pixelRect, _idx) => {
               const field = fields.find((f) => f.id === highlight.label);
               if (!field) return null;
@@ -1458,8 +1671,6 @@ export function EsigningSignPage() {
             }}
           />
         ) : null}
-      </div>
-
       {/* Post-it tab */}
       {requiredFields.length > 0 && (
         <EsigningPostItTab
@@ -1471,13 +1682,26 @@ export function EsigningSignPage() {
             if (canFinish) {
               void completeSigning();
             } else {
-              goToFieldIndex(activeFieldIndex);
+              const field = requiredFields[activeFieldIndex];
+              if (!field) return;
+              if (field.documentId !== selectedDocumentId || field.pageNumber !== viewerPage) {
+                goToFieldIndex(activeFieldIndex);
+              } else if (field.type === 'SIGNATURE' || field.type === 'INITIALS') {
+                setActiveSignatureFieldId(field.id);
+                setSignatureModalMode(field.type);
+                setIsSignatureModalOpen(true);
+              } else {
+                handleFieldClick(field);
+              }
             }
           }}
           onNext={goToNextField}
           onPrev={() => goToFieldIndex(activeFieldIndex - 1)}
         />
       )}
+
+        </div>
+      </div>
 
       {/* Signature modal */}
       <EsigningSignatureModal
@@ -1486,7 +1710,21 @@ export function EsigningSignPage() {
         onAdopt={handleAdoptSignature}
         mode={signatureModalMode}
         recipientName={session.recipient.name}
-        existingSignature={signatureModalMode === 'SIGNATURE' ? adoptedSignature : adoptedInitials}
+        existingSignature={
+          activeSignatureDataUrl ??
+          (signatureModalMode === 'SIGNATURE' ? adoptedSignature : adoptedInitials)
+        }
+        titleOverride={
+          isChangingSignature
+            ? `Change Your ${signatureModalMode === 'SIGNATURE' ? 'Signature' : 'Initials'}`
+            : undefined
+        }
+        confirmLabel={isChangingSignature ? 'Save Change' : undefined}
+        onClear={
+          isChangingSignature && activeSignatureFieldId
+            ? () => clearSignature(activeSignatureFieldId)
+            : undefined
+        }
         isSubmitting={false}
       />
 

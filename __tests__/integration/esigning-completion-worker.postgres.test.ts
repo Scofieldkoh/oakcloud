@@ -32,6 +32,10 @@ vi.mock('@/services/esigning-pdf.service', async (importOriginal) => {
   return {
     ...actual,
     generateEsigningEnvelopeArtifactsNow: vi.fn(async () => 'generated'),
+    // The worker tests use sentinel storage bytes rather than real PDFs. Keep
+    // attachment assembly out of this concurrency fixture; PDF merge coverage
+    // lives in the certificate PDF service tests.
+    buildEmailAttachments: vi.fn(async () => []),
   };
 });
 

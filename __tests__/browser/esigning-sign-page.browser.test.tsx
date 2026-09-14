@@ -19,15 +19,12 @@ vi.mock('@/hooks/use-media-query', () => ({
 }));
 
 vi.mock('@/components/esigning/signing/esigning-signature-modal', () => ({
-  EsigningSignatureModal: () => null,
+  EsigningSignatureModal: ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) =>
+    isOpen ? <button onClick={onClose}>Close signature editor</button> : null,
 }));
 
 vi.mock('@/components/esigning/signing/esigning-decline-modal', () => ({
   EsigningDeclineModal: () => null,
-}));
-
-vi.mock('@/components/esigning/signing/esigning-post-it-tab', () => ({
-  EsigningPostItTab: () => null,
 }));
 
 vi.mock('@/components/esigning/signing/esigning-field-input-modal', () => ({
@@ -46,6 +43,7 @@ vi.mock('@/components/processing/document-page-viewer', () => ({
     highlights,
     initialPage = 1,
     renderHighlightContent,
+    renderPageOverlay,
     viewMode = 'single',
   }: {
     className?: string;
@@ -56,6 +54,7 @@ vi.mock('@/components/processing/document-page-viewer', () => ({
       pixelRect: { x: number; y: number; width: number; height: number },
       index: number
     ) => ReactNode;
+    renderPageOverlay?: (context: { pageNumber: number; width: number; height: number }) => ReactNode;
     viewMode?: 'single' | 'continuous';
   }) => {
     const pageNumbers = viewMode === 'continuous' ? [1, 2] : [initialPage];
@@ -64,6 +63,7 @@ vi.mock('@/components/processing/document-page-viewer', () => ({
       <div
         data-document-scroll-container="true"
         data-view-mode={viewMode}
+        data-viewer-page={initialPage}
         className={className}
         style={{ overflow: 'auto' }}
       >
@@ -75,6 +75,7 @@ vi.mock('@/components/processing/document-page-viewer', () => ({
               className="relative shrink-0 bg-white"
               style={{ width: 600, height: 800 }}
             >
+              {renderPageOverlay?.({ pageNumber, width: 600, height: 800 })}
               {highlights
                 .filter((highlight) => highlight.pageNumber === pageNumber)
                 .map((highlight, index) => (
@@ -251,6 +252,22 @@ describe('E-signing client document browser flow', () => {
       await waitUntil(() => Boolean(host.querySelector('[data-testid="signing-document"]')));
 
       expect(host.querySelector('[data-testid="signing-document"]')).not.toBeNull();
+
+      const postIt = host.querySelector<HTMLElement>('[data-testid="signing-post-it"]');
+      expect(postIt?.style.right).toBe('-56px');
+      expect(postIt?.style.left).toBe('');
+      expect(postIt?.style.position).toBe('absolute');
+      expect(postIt?.offsetParent).toBe(host.querySelector('[data-testid="signing-preview-frame"]'));
+      const arrows = postIt?.querySelectorAll('button');
+      expect(arrows?.[0].getBoundingClientRect().width).toBe(arrows?.[2].getBoundingClientRect().width);
+      await page.getByRole('button', { name: 'Sign', exact: true }).click();
+      await page.getByRole('button', { name: 'Close signature editor' }).click();
+      expect(
+        host.querySelector('[data-testid="signature-progress-banner-signature-field"]')?.textContent
+      ).toContain('0 out of 1 signed. Continue to next field');
+
+      await page.getByRole('button', { name: /0 out of 1 signed/ }).click();
+      await waitUntil(() => host.querySelector('[data-viewer-page]')?.getAttribute('data-viewer-page') === '2');
 
       const scrollContainer = host.querySelector<HTMLElement>(
         '[data-document-scroll-container="true"]'

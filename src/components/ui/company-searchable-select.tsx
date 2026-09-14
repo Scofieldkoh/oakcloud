@@ -18,6 +18,7 @@ interface CompanySearchableSelectProps {
   disabled?: boolean;
   loading?: boolean;
   className?: string;
+  containerClassName?: string;
   size?: 'sm' | 'md' | 'lg';
   clearable?: boolean;
 }
@@ -35,6 +36,7 @@ export function CompanySearchableSelect({
   disabled = false,
   loading = false,
   className,
+  containerClassName,
   size = 'sm',
   clearable = true,
 }: CompanySearchableSelectProps) {
@@ -58,6 +60,7 @@ export function CompanySearchableSelect({
       disabled={disabled}
       loading={loading}
       className={className}
+      containerClassName={containerClassName}
       size={size}
       clearable={clearable}
     />

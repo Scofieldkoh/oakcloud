@@ -1,4 +1,5 @@
 'use client';
+import { esigningDisplayName } from '@/lib/esigning-branding';
 
 import { useEffect, useRef, useState, type DragEvent } from 'react';
 import { useParams } from 'next/navigation';
@@ -378,7 +379,7 @@ export function EsigningVerifyPage() {
                 </div>
                 <h1 className="text-2xl font-bold text-text-primary sm:text-3xl">{data.title}</h1>
                 <p className="text-sm text-text-secondary">
-                  {data.tenantName}
+                  {esigningDisplayName(data.tenantName)}
                   {data.companyName ? <span className="text-text-muted"> · {data.companyName}</span> : null}
                 </p>
                 <div className="flex flex-wrap items-center gap-2 pt-1">

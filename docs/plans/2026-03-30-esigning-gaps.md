@@ -59,6 +59,8 @@ Spec section 4.1: "Auto-file to company folder if enabled." The `companyId` fiel
 
 Spec section 8.3: "Attachments: signed PDFs with certificates (if total < 20 MB; otherwise download link only)." Current completion emails send links only -- no attachment logic exists.
 
+Current status (2026-09-11): completion delivery now appends the tenant-scoped certificate PDF to each signed PDF attachment when the combined payload is under the 20 MB limit; larger payloads retain the signed-document and certificate download links.
+
 ---
 
 ## 6. Missing: Duplicate Envelope
@@ -201,6 +203,8 @@ The spec requires a bounding-box intersection check with a dismissable warning w
 ## 18. Completion Email Missing Document Links/Attachments
 
 The completion email only sends a certificate verification link. It does not include signed document download links or attachments, leaving the post-sign delivery short of a "completed package" experience per spec section 8.3.
+
+Current status (2026-09-11): completion emails include per-document signed and certificate links and attach each signed document with its certificate appended when the attachment size limit allows.
 
 - [esigning-notification.service.ts:56](src/services/esigning-notification.service.ts#L56)
 

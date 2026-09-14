@@ -124,12 +124,16 @@ export function EsigningStepReview({
         )}
 
         {/* Envelope summary card */}
-        <section className="rounded-2xl border border-border-primary bg-background-secondary p-4 shadow-sm sm:rounded-3xl sm:p-6">
-          <h1 className="text-xl font-semibold text-text-primary sm:text-2xl">{envelope.title}</h1>
-          <div className="mt-3 flex flex-wrap items-center gap-3">
-            <span className="inline-flex items-center rounded-full border border-border-primary px-3 py-1 text-xs text-text-secondary">
+        <section className="rounded-xl border border-border-primary bg-background-secondary p-4">
+          <p className="text-xs font-medium text-text-muted">Envelope name</p>
+          <h1 className="mt-1 break-words text-lg font-semibold text-text-primary">{envelope.title}</h1>
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-border-primary pt-3">
+            <span className="text-xs text-text-secondary">Signing method</span>
+            <span className="inline-flex items-center rounded-full bg-oak-primary/10 px-2.5 py-1 text-xs font-medium text-oak-primary">
               {ESIGNING_SIGNING_ORDER_LABELS[envelope.signingOrder]}
             </span>
+          </div>
+          <div className="mt-3 flex flex-wrap items-center gap-3">
             {envelope.companyName && (
               <span className="text-sm text-text-secondary">{envelope.companyName}</span>
             )}
@@ -235,7 +239,7 @@ export function EsigningStepReview({
           <h2 className="mb-3 text-base font-semibold text-text-primary">Documents</h2>
           <div className="space-y-2">
             {envelope.documents.map((doc) => {
-              const hasFields = fields.some((f) => f.documentId === doc.id);
+              const fieldCount = fields.filter((f) => f.documentId === doc.id).length;
               return (
                 <div
                   key={doc.id}
@@ -243,15 +247,15 @@ export function EsigningStepReview({
                 >
                   <span className="min-w-0 truncate text-sm font-medium text-text-primary">{doc.fileName}</span>
                   <div className="flex shrink-0 items-center gap-2">
-                    <span className="text-xs text-text-muted">{doc.pageCount} pages</span>
+                    <span className="text-xs text-text-muted">{doc.pageCount} page{doc.pageCount === 1 ? '' : 's'}</span>
                     <span
                       className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium border ${
-                        hasFields
+                        fieldCount > 0
                           ? 'border-oak-primary/20 bg-oak-primary/10 text-oak-primary'
                           : 'border-border-primary bg-background-tertiary text-text-muted'
                       }`}
                     >
-                      {hasFields ? 'Requires action' : 'Review Only'}
+                      {fieldCount} field{fieldCount === 1 ? '' : 's'}
                     </span>
                   </div>
                 </div>

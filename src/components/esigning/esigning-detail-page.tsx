@@ -563,7 +563,7 @@ export function EsigningDetailPage({ envelopeId }: Props) {
     autoSignUrl.searchParams.set('autoSign', '1');
     setIsAutoSignPromptOpen(false);
     setPendingAutoSign(null);
-    window.location.assign(autoSignUrl.toString());
+    window.open(autoSignUrl.toString(), '_blank', 'noopener,noreferrer');
   }
 
   function openEnvelopeDownload(variant: 'documents' | 'documents_with_certificates' | 'certificates') {

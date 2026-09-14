@@ -15,6 +15,7 @@ import {
 } from '@/lib/esigning-session';
 import type { SaveEsigningFieldValuesInput } from '@/lib/validations/esigning';
 import type {
+  EsigningSignedSignatureDto,
   EsigningSigningSessionDto,
   EsigningSigningSessionStatusDto,
 } from '@/types/esigning';
@@ -300,6 +301,89 @@ function getViewSessionIdFromMetadata(metadata: unknown): string | null {
   return typeof sessionId === 'string' && sessionId.trim() ? sessionId : null;
 }
 
+/**
+ * Return only the finalized signature assets that an active signer needs to
+ * render marks from earlier completed signing steps. The session recipient is
+ * deliberately excluded because their own values are already returned through
+ * `fieldValues` below.
+ */
+async function loadSignaturePreview(storagePath: string): Promise<string> {
+  // Signature assets are private PNGs. Serve their bytes through the authorized
+  // session instead of relying on public storage URLs (unsupported locally and
+  // potentially unreachable or expired in the signer's browser).
+  const content = await storage.download(storagePath);
+  return `data:image/png;base64,${content.toString('base64')}`;
+}
+
+async function buildSignedSignatureFields(
+  context: SigningContext
+): Promise<EsigningSignedSignatureDto[]> {
+  const signedValues = await prisma.esigningDocumentFieldValue.findMany({
+    where: {
+      tenantId: context.envelope.tenantId,
+      finalizedAt: { not: null },
+      signatureStoragePath: { not: null },
+      fieldDefinition: {
+        tenantId: context.envelope.tenantId,
+        envelopeId: context.envelope.id,
+        type: { in: ['SIGNATURE', 'INITIALS'] },
+        document: {
+          tenantId: context.envelope.tenantId,
+          envelopeId: context.envelope.id,
+        },
+      },
+      recipient: {
+        tenantId: context.envelope.tenantId,
+        envelopeId: context.envelope.id,
+        id: { not: context.recipient.id },
+        type: 'SIGNER',
+        status: 'SIGNED',
+        signedAt: { not: null },
+      },
+    },
+    select: {
+      fieldDefinitionId: true,
+      recipientId: true,
+      signatureStoragePath: true,
+      fieldDefinition: {
+        select: {
+          recipientId: true,
+          documentId: true,
+          pageNumber: true,
+          xPercent: true,
+          yPercent: true,
+          widthPercent: true,
+          heightPercent: true,
+        },
+      },
+      recipient: {
+        select: {
+          name: true,
+        },
+      },
+    },
+    orderBy: [{ updatedAt: 'asc' }, { id: 'asc' }],
+  });
+
+  return Promise.all(
+    signedValues
+      // Keep the value and its placement tied to the same signer even if a
+      // malformed legacy row ever links them to different recipients.
+      .filter((value) => value.fieldDefinition.recipientId === value.recipientId)
+      .map(async (value) => ({
+        fieldDefinitionId: value.fieldDefinitionId,
+        signaturePreviewUrl: await loadSignaturePreview(value.signatureStoragePath!),
+        signerName: value.recipient.name,
+        documentId: value.fieldDefinition.documentId,
+        pageNumber: value.fieldDefinition.pageNumber,
+        xPercent: value.fieldDefinition.xPercent,
+        yPercent: value.fieldDefinition.yPercent,
+        widthPercent: value.fieldDefinition.widthPercent,
+        heightPercent: value.fieldDefinition.heightPercent,
+      }))
+  );
+}
+
 async function buildSigningSessionDto(context: SigningContext): Promise<EsigningSigningSessionDto> {
   const senderName = [context.envelope.createdBy.firstName, context.envelope.createdBy.lastName]
     .filter(Boolean)
@@ -339,6 +423,7 @@ async function buildSigningSessionDto(context: SigningContext): Promise<Esigning
     context.envelope,
     completionDeliveries
   );
+  const signedSignatures = await buildSignedSignatureFields(context);
 
   return {
     envelope: {
@@ -422,13 +507,14 @@ async function buildSigningSessionDto(context: SigningContext): Promise<Esigning
         signaturePreviewUrl:
           value.signatureStoragePath &&
           ['SIGNATURE', 'INITIALS'].includes(fieldTypeById.get(value.fieldDefinitionId) ?? '')
-            ? await storage.getSignedUrl(value.signatureStoragePath, 3600)
+            ? await loadSignaturePreview(value.signatureStoragePath)
             : null,
         filledAt: toIsoString(value.filledAt),
         finalizedAt: toIsoString(value.finalizedAt),
         revision: value.revision,
       }))
     ),
+    signedSignatures,
     downloadToken,
   };
 }

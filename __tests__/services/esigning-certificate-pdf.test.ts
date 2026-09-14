@@ -12,7 +12,7 @@ vi.mock('@/services/esigning-email-delivery.service', () => ({
   withEsigningDeliveryTarget: vi.fn(),
 }));
 
-const { buildCertificatePdf, mergePdfBuffers } = await import('@/services/esigning-pdf.service');
+const { buildCertificatePdf, buildEmailAttachments, mergePdfBuffers } = await import('@/services/esigning-pdf.service');
 
 function at(iso: string) {
   return new Date(iso);
@@ -169,5 +169,33 @@ describe('mergePdfBuffers', () => {
     expect(mergedPdf.getPageCount()).toBe(3);
     expect(mergedPdf.getPage(0).getSize()).toMatchObject({ width: 400, height: 500 });
     expect(mergedPdf.getPage(1).getSize()).toMatchObject({ width: 600, height: 700 });
+  });
+});
+
+describe('buildEmailAttachments', () => {
+  it('attaches each signed PDF with its certificate appended', async () => {
+    const signedDocument = await PDFDocument.create();
+    signedDocument.addPage([400, 500]);
+    const certificate = await PDFDocument.create();
+    certificate.addPage([600, 700]);
+    certificate.addPage([600, 700]);
+
+    const attachments = await buildEmailAttachments({
+      documents: [{
+        fileName: 'agreement.pdf',
+        signedBuffer: Buffer.from(await signedDocument.save()),
+        certificateBuffer: Buffer.from(await certificate.save()),
+      }],
+    });
+
+    expect(attachments).toHaveLength(1);
+    expect(attachments[0]).toMatchObject({
+      filename: 'agreement-signed.pdf',
+      contentType: 'application/pdf',
+    });
+    const attachedPdf = await PDFDocument.load(new Uint8Array(attachments[0].content));
+    expect(attachedPdf.getPageCount()).toBe(3);
+    expect(attachedPdf.getPage(0).getSize()).toMatchObject({ width: 400, height: 500 });
+    expect(attachedPdf.getPage(1).getSize()).toMatchObject({ width: 600, height: 700 });
   });
 });

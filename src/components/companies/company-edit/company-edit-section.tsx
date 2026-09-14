@@ -107,15 +107,14 @@ export function CompanyEditSection({ companyId, section, title, initialData, onS
   const [baseline, setBaseline] = useState<unknown>(initialData?.data);
   const [error, setError] = useState<string | null>(null);
   const [latest, setLatest] = useState<CompanyProfileSectionDto | null>(null);
+  const dirty = JSON.stringify(draft) !== JSON.stringify(baseline);
 
   useEffect(() => {
-    if (!query.data) return;
+    if (!query.data || dirty) return;
     setDraft(query.data.data);
     setBaseline(query.data.data);
     setVersion(query.data.version);
-  }, [query.data]);
-
-  const dirty = JSON.stringify(draft) !== JSON.stringify(baseline);
+  }, [dirty, query.data]);
   const save = async () => {
     if (!dirty) return;
     setError(null);

@@ -3,6 +3,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { CompanyEditWorkspace } from '@/components/companies/company-edit/company-edit-workspace';
 import type { CompanyProfileSectionDto } from '@/services/company/profile-sections';
+import { companyProfileSectionKey } from '@/hooks/use-company-profile-sections';
 
 const sections = {
   identity: { uen: '202400001A', name: 'Example Pte. Ltd.', entityType: 'PRIVATE_LIMITED', status: 'LIVE', statusDate: null, incorporationDate: null },
@@ -22,7 +23,7 @@ const initialSections = Object.fromEntries(Object.entries(sections).map(([sectio
 
 function view(onSave = vi.fn().mockImplementation(async (section, data) => ({ section, version: 'b'.repeat(64), data }))) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
-  return { onSave, ...render(<QueryClientProvider client={client}><CompanyEditWorkspace companyId="company-1" initialSections={initialSections} onSave={onSave} /></QueryClientProvider>) };
+  return { client, onSave, ...render(<QueryClientProvider client={client}><CompanyEditWorkspace companyId="company-1" initialSections={initialSections} onSave={onSave} /></QueryClientProvider>) };
 }
 
 describe('CompanyEditWorkspace', () => {
@@ -51,5 +52,22 @@ describe('CompanyEditWorkspace', () => {
     expect(await screen.findByRole('button', { name: 'Reload latest section' })).toBeInTheDocument();
     expect(input).toHaveValue('My unsaved street');
     expect(onSave).toHaveBeenCalledOnce();
+  });
+
+  it('keeps a dirty section draft when refreshed query data arrives', async () => {
+    const { client } = view();
+    const input = screen.getByLabelText('Registered street name');
+    fireEvent.change(input, { target: { value: 'My unsaved street' } });
+
+    client.setQueryData(companyProfileSectionKey('company-1', 'addresses'), {
+      section: 'addresses',
+      version: 'c'.repeat(64),
+      data: {
+        ...sections.addresses,
+        registered: { ...sections.addresses.registered, streetName: 'Server refresh' },
+      },
+    });
+
+    await waitFor(() => expect(input).toHaveValue('My unsaved street'));
   });
 });

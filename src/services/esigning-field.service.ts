@@ -267,9 +267,17 @@ export async function saveRecipientFieldValues(input: {
         throw new Error('Signature data can only be used with signature or initials fields');
       }
 
+      const isSignatureField = field.type === 'SIGNATURE' || field.type === 'INITIALS';
+      const explicitlyClearsSignature =
+        isSignatureField &&
+        valueInput.signatureDataUrl === null &&
+        (valueInput.value === undefined || valueInput.value === null);
+
       const normalizedValue =
         field.type === 'CHECKBOX'
           ? normalizeCheckboxValue(valueInput.value ?? existing?.value)
+          : explicitlyClearsSignature
+            ? null
           : valueInput.value === undefined
             ? existing?.value ?? null
             : valueInput.value?.trim() ?? null;
@@ -282,8 +290,11 @@ export async function saveRecipientFieldValues(input: {
           where: { id: existing.id },
           data: {
             value: normalizedValue,
-            signatureStoragePath: signatureAsset?.storagePath ?? existing.signatureStoragePath ?? null,
-            filledAt: timestamp ?? existing.finalizedAt ?? undefined,
+            signatureStoragePath:
+              isSignatureField && explicitlyClearsSignature
+                ? null
+                : signatureAsset?.storagePath ?? existing.signatureStoragePath ?? null,
+            filledAt: timestamp,
             finalizedAt: input.finalize ? new Date() : existing.finalizedAt ?? null,
             revision: existing.revision + 1,
           },

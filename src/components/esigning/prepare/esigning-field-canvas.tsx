@@ -1185,6 +1185,8 @@ export function EsigningFieldCanvas({
       <div className="relative flex-1 overflow-hidden" ref={containerRef}>
         {selectedDocument ? (
           <DocumentPageViewer
+            showPageSideNavigation={false}
+            showHighlightsToggle={false}
             pdfUrl={selectedDocument.pdfUrl}
             initialPage={viewerPage}
             zoomLevel={zoomLevel}

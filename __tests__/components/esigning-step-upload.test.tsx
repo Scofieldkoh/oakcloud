@@ -244,6 +244,33 @@ describe('EsigningStepUpload', () => {
     expect(screen.queryByDisplayValue('2026-07-04T08:30')).not.toBeInTheDocument();
   });
 
+  it('marks editable setup controls with light green styling and includes disabled overrides', async () => {
+    render(
+      <EsigningStepUpload
+        envelope={makeEnvelope()}
+        currentUser={null}
+        onUpdateSettings={vi.fn()}
+        isUpdating={false}
+        onUploadDocuments={vi.fn()}
+        isUploading={false}
+        onDeleteDocument={vi.fn()}
+        onAddRecipient={vi.fn()}
+        onReorderRecipients={vi.fn()}
+        isReorderingRecipients={false}
+        onEditRecipient={vi.fn()}
+        onRemoveRecipient={vi.fn()}
+        companies={[]}
+        companiesLoading={false}
+        onNext={vi.fn()}
+        onBack={vi.fn()}
+      />
+    );
+
+    const envelopeName = await screen.findByLabelText('Envelope name');
+    expect(envelopeName).toHaveClass('bg-emerald-50', 'dark:bg-emerald-950/30');
+    expect(envelopeName).toHaveClass('disabled:bg-background-primary', 'dark:disabled:bg-background-secondary');
+  });
+
   it('submits the selected expiration date as an ISO datetime', async () => {
     const onUpdateSettings = vi.fn().mockResolvedValue(undefined);
 

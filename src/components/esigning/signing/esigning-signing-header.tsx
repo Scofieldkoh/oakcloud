@@ -23,8 +23,6 @@ interface EsigningSigningHeaderProps {
 
 export function EsigningSigningHeader({
   envelopeTitle,
-  senderName,
-  tenantName,
   completedCount,
   requiredCount,
   canFinish,
@@ -60,17 +58,17 @@ export function EsigningSigningHeader({
         {/* Left: badge + title */}
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <div className="hidden shrink-0 items-center gap-1.5 rounded-full border border-border-primary bg-background-tertiary px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-[0.15em] text-text-muted sm:inline-flex">
-              <FileSignature className="h-3 w-3" />
-              Secure E-Sign
+            <div className="flex shrink-0 items-center gap-1.5 rounded-full border border-border-primary bg-background-tertiary px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-[0.15em] text-text-muted">
+              <span className="font-semibold tracking-[0.12em] text-oak-primary">Oaktree</span>
+              <span className="hidden items-center gap-1.5 sm:inline-flex">
+                <FileSignature className="h-3 w-3" />
+                Secure E-Sign
+              </span>
             </div>
             <h1 className="truncate text-sm font-semibold text-text-primary sm:text-base">
               {envelopeTitle}
             </h1>
           </div>
-          <p className="mt-0.5 truncate text-xs text-text-muted">
-            Sent by {senderName} &middot; {tenantName}
-          </p>
         </div>
 
         {/* Center: progress */}
@@ -161,7 +159,7 @@ export function EsigningSigningHeader({
             isLoading={isFinishing}
             size="sm"
           >
-            {canFinish ? 'Finish' : 'Continue'}
+            {canFinish ? 'Finish' : 'Next Field'}
           </Button>
         </div>
       </div>

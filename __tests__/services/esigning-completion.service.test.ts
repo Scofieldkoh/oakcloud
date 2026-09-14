@@ -676,4 +676,30 @@ describe('e-signing completion copy delivery targets', () => {
       ['COPY', 'ops@example.com'],
     ]);
   });
+
+  it('includes emailed manual-link signers in completion delivery targets', () => {
+    const targets = buildEsigningCompletionDeliveryTargets({
+      tenantId: 'tenant-1',
+      envelopeId: 'envelope-1',
+      completedAt: new Date('2026-09-09T00:00:00.000Z'),
+      title: 'NDA',
+      createdById: 'user-1',
+      senderEmail: 'owner@example.com',
+      copyEmails: [],
+      recipients: [{
+        id: 'recipient-1',
+        email: 'manual-link-signer@example.com',
+        type: 'SIGNER',
+        accessMode: 'MANUAL_LINK',
+      }],
+    });
+
+    expect(targets).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        audience: 'RECIPIENT',
+        recipientId: 'recipient-1',
+        toEmail: 'manual-link-signer@example.com',
+      }),
+    ]));
+  });
 });

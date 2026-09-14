@@ -385,6 +385,10 @@ E-signing task stages use a durable preparation record rather than creating an e
 
 New e-signing recipients, including the current user added through “Add myself,” default to `MANUAL_LINK`. A user may save a private signature specimen in their user preferences. Public signing bootstrap data includes that specimen only when a valid authenticated account email exactly matches the active recipient email; clicking a signature field then requires explicit confirmation before applying it.
 
+Completion delivery is independent of the request access mode: any signer or CC recipient with a stored email address receives a completion copy, including `MANUAL_LINK` signers. The completion worker reads the tenant-scoped signed artifact and its certificate, appends the certificate to each attached PDF, and falls back to the signed-document and certificate links when the combined attachments exceed the 20 MB email limit. Delivery rows remain idempotent and retryable per recipient.
+
+Public signing sessions keep the editable field definitions scoped to the active signer. They separately expose `signedSignatures`, a read-only projection of finalized signature and initials placements from other signed signer recipients in the same tenant and envelope, with short-lived storage preview URLs for rendering earlier marks.
+
 When E-signing is launched from a task, the stage modal can explicitly select any preceding finalized task-generated documents. The selected documents are attached to the new draft envelope as separate envelope documents; automatic preparation continues to use the nearest preceding finalized document.
 
 Unfinalizing the generated document queues removal of only its managed envelope document; document-bound fields cascade away while recipients, manual documents, and envelope settings remain. Refinalizing queues a fresh PDF attachment to the same draft. Unfinalization is rejected after the related envelope leaves `DRAFT` unless it has been voided.

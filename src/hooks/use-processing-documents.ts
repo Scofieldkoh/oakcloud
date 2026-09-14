@@ -505,7 +505,7 @@ export function useProcessingDocuments(
     // Processing status changes frequently while extraction jobs are running.
     staleTime: 15 * 1000,
     gcTime: 10 * 60 * 1000, // 10 minutes - keep in cache
-    refetchOnMount: true,
+    refetchOnMount: 'always',
     placeholderData: (previousData) => previousData, // Keep previous data visible while fetching
     initialData,
     initialDataUpdatedAt: restoredFromSession ? 0 : undefined,
@@ -533,9 +533,9 @@ export function useProcessingDocument(id: string) {
     queryKey: ['processing-document', id],
     queryFn: () => fetchProcessingDocument(id),
     enabled: !!id,
-    staleTime: 2 * 60 * 1000, // 2 minutes - data stays fresh, no refetch needed
+    staleTime: 2 * 60 * 1000, // Serve cached data immediately, then refresh on mount/focus.
     gcTime: 10 * 60 * 1000, // 10 minutes
-    refetchOnMount: false, // Use cached data if fresh (respects staleTime)
+    refetchOnMount: 'always',
   });
 }
 
@@ -620,8 +620,8 @@ export function useRevisionHistory(documentId: string, enabled: boolean = true) 
     queryKey: ['revision-history', documentId],
     queryFn: () => fetchRevisionHistory(documentId),
     enabled: !!documentId && enabled,
-    staleTime: 2 * 60 * 1000, // 2 minutes - data stays fresh, no refetch needed
-    refetchOnMount: false, // Use cached data if fresh (respects staleTime)
+    staleTime: 2 * 60 * 1000, // Serve cached data immediately, then refresh on mount/focus.
+    refetchOnMount: 'always',
   });
 }
 
@@ -769,7 +769,7 @@ export function useDocumentPages(documentId: string) {
     enabled: !!documentId,
     staleTime: 5 * 60 * 1000, // 5 minutes - pages rarely change
     gcTime: 10 * 60 * 1000, // 10 minutes
-    refetchOnMount: false, // Use cached data if fresh (respects staleTime)
+    refetchOnMount: 'always',
   });
 }
 
@@ -855,9 +855,9 @@ export function useRevisionWithLineItems(documentId: string, revisionId: string 
     queryKey: ['revision-line-items', documentId, revisionId, revalidate],
     queryFn: () => fetchRevisionWithLineItems(documentId, revisionId!, revalidate),
     enabled: !!documentId && !!revisionId,
-    staleTime: 2 * 60 * 1000, // 2 minutes - data stays fresh, no refetch needed
+    staleTime: 2 * 60 * 1000, // Serve cached data immediately, then refresh on mount/focus.
     gcTime: 10 * 60 * 1000, // 10 minutes
-    refetchOnMount: false, // Use cached data if fresh (respects staleTime)
+    refetchOnMount: 'always',
   });
 }
 
@@ -1084,7 +1084,7 @@ export function useDocumentNavigation(
     // For navigation within detail page, use longer staleTime for performance
     staleTime: options?.start ? 30_000 : 2 * 60 * 1000,
     gcTime: 5 * 60 * 1000, // 5 minutes
-    refetchOnMount: false, // Use cached data if fresh (respects staleTime)
+    refetchOnMount: 'always',
   });
 }
 

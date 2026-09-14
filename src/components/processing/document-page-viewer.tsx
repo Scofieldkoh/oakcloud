@@ -100,6 +100,7 @@ interface DocumentPageViewerProps {
   onRotationChange?: (rotation: number, pageNumber: number) => void;
   showHighlights?: boolean;
   onShowHighlightsChange?: (show: boolean) => void;
+  showHighlightsToggle?: boolean;
   className?: string;
   /** Document revision status for append/reorder confirmation */
   documentStatus?: 'DRAFT' | 'APPROVED' | 'SUPERSEDED';
@@ -117,8 +118,12 @@ interface DocumentPageViewerProps {
   viewMode?: DocumentPageViewMode;
   /** Whether the embedding surface permits the page-thumbnail panel and its toggle. */
   allowPagePanel?: boolean;
+  /** Show full-height previous/next page controls beside the canvas. */
+  showPageSideNavigation?: boolean;
   /** Optional page-relative content rendered over each PDF canvas. */
   renderPageOverlay?: (context: DocumentPageOverlayContext) => React.ReactNode;
+  /** Disable pointer capture for decorative overlays above interactive highlights. */
+  pageOverlayInteractive?: boolean;
   /**
    * Keyboard shortcut ownership policy:
    * - 'global' (default): page/zoom keys apply anywhere outside editable controls.
@@ -132,9 +137,9 @@ interface DocumentPageViewerProps {
 // Constants
 // =============================================================================
 
-const ZOOM_LEVELS = [0.1, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 2, 3];
-const DEFAULT_ZOOM_INDEX = 6; // 150%
-const MOBILE_DEFAULT_ZOOM_INDEX = 4; // 100%
+const ZOOM_LEVELS = Array.from({ length: 30 }, (_, index) => (index + 1) / 10);
+const DEFAULT_ZOOM_INDEX = 16; // 170%
+const MOBILE_DEFAULT_ZOOM_INDEX = 9; // 100%
 const MIN_ZOOM_LEVEL = ZOOM_LEVELS[0];
 const MAX_ZOOM_LEVEL = ZOOM_LEVELS[ZOOM_LEVELS.length - 1];
 const MOBILE_ZOOM_STEP = 0.01;
@@ -457,6 +462,7 @@ export function DocumentPageViewer({
   onRotationChange,
   showHighlights: showHighlightsProp,
   onShowHighlightsChange,
+  showHighlightsToggle = true,
   className,
   documentStatus,
   onPagesChanged,
@@ -466,7 +472,9 @@ export function DocumentPageViewer({
   onRetry,
   viewMode = 'single',
   allowPagePanel = true,
+  showPageSideNavigation = true,
   renderPageOverlay,
+  pageOverlayInteractive = true,
   keyboardShortcutScope = 'global',
 }: DocumentPageViewerProps) {
   // Stable references
@@ -1509,6 +1517,7 @@ export function DocumentPageViewer({
           <div className="w-px h-4 bg-border-primary mx-1" />
 
           {/* Bounding box toggle */}
+          {showHighlightsToggle && (
           <button
             onClick={handleToggleHighlights}
             className={cn(
@@ -1524,6 +1533,7 @@ export function DocumentPageViewer({
             )}
             <span className="text-xs hidden sm:inline">Boxes</span>
           </button>
+          )}
 
           <div className="w-px h-4 bg-border-primary mx-1" />
 
@@ -1577,7 +1587,7 @@ export function DocumentPageViewer({
         {/* Main viewer area with navigation bars */}
         <div className="flex-1 flex min-h-0 overflow-hidden relative">
           {/* Left navigation bar - sticky full height */}
-          {currentPage > 1 && (
+          {showPageSideNavigation && currentPage > 1 && (
             <button
               onClick={handlePrevPage}
               disabled={isLoading}
@@ -1669,7 +1679,7 @@ export function DocumentPageViewer({
                         ) : null}
 
                         {dimensions && renderPageOverlay ? (
-                          <div className="absolute inset-0 z-20">
+                          <div className="absolute inset-0 z-20" style={{ pointerEvents: pageOverlayInteractive ? 'auto' : 'none' }}>
                             {renderPageOverlay({ pageNumber, ...dimensions })}
                           </div>
                         ) : null}
@@ -1707,7 +1717,7 @@ export function DocumentPageViewer({
                   ) : null}
 
                   {!isPdfLoading && renderPageOverlay ? (
-                    <div className="absolute inset-0 z-20">
+                    <div className="absolute inset-0 z-20" style={{ pointerEvents: pageOverlayInteractive ? 'auto' : 'none' }}>
                       {renderPageOverlay({ pageNumber: currentPage, ...canvasDimensions })}
                     </div>
                   ) : null}
@@ -1717,7 +1727,7 @@ export function DocumentPageViewer({
           </div>
 
           {/* Right navigation bar - sticky full height */}
-          {currentPage < pageCount && (
+          {showPageSideNavigation && currentPage < pageCount && (
             <button
               onClick={handleNextPage}
               disabled={isLoading}
