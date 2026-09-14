@@ -7,6 +7,7 @@ import {
   UnprocessableEntityError,
   ValidationError,
 } from '@/lib/errors';
+import { assertA4WriterCanPreserve } from '@/lib/document-editor/a4-editor-format';
 import {
   createReviewedFingerprint,
 } from '@/lib/document-generation-fingerprint';
@@ -197,16 +198,10 @@ async function collectPreflightFailures(
     }
     const evaluated = await buildBatchItemRenderInput(batch, item, params, actor);
     const diagnostics = diagnosticsFromEvaluation(item, evaluated);
-    if (diagnostics.errors.length > 0) {
-      failures.push({ item, diagnostics });
-    }
+    if (diagnostics.errors.length > 0) failures.push({ item, diagnostics });
   }
   return failures;
 }
-
-// ============================================================================
-// Preflight
-// ============================================================================
 
 export async function preflightDocumentGenerationBatch(
   id: string,
@@ -234,10 +229,6 @@ export async function preflightDocumentGenerationBatch(
   );
   return mapBatchToDto(refreshed, catalogue);
 }
-
-// ============================================================================
-// Bounded concurrent execution
-// ============================================================================
 
 export async function mapWithConcurrency<T, R>(
   values: T[],
@@ -271,10 +262,6 @@ async function claimBatchRevision(
   });
   if (claimed.count !== 1) throw await revisionConflict(id, params.tenantId);
 }
-
-// ============================================================================
-// Generate all
-// ============================================================================
 
 export async function generateDocumentGenerationBatch(
   id: string,
@@ -357,15 +344,15 @@ export async function generateDocumentGenerationBatch(
     async (item) => {
       try {
         const configuration = parseBatchItemConfiguration(item.configuration);
-        const evaluated = await buildBatchItemRenderInput(
-          batch,
-          item,
-          params,
-          actor,
+        const evaluated = await buildBatchItemRenderInput(batch, item, params, actor);
+        assertA4WriterCanPreserve(
+          item.editedContent ?? evaluated.content,
+          item.editedContentJson ?? item.template.contentJson,
         );
         const document = await materializeDocumentFromTemplate(
           {
             templateId: item.templateId,
+            expectedRevision: item.generatedDocument.revision,
             companyId: batch.primaryCompanyId ?? undefined,
             contactIds: configuration.contactIds,
             selectedDirectorId: configuration.selectedDirectorId ?? undefined,
@@ -377,8 +364,7 @@ export async function generateDocumentGenerationBatch(
             useLetterhead: configuration.useLetterhead,
             editedContent: item.editedContent ?? undefined,
             editedContentJson: item.editedContentJson ?? undefined,
-            serviceAgreementId:
-              item.generatedDocument?.serviceAgreement?.id ?? undefined,
+            serviceAgreementId: item.generatedDocument?.serviceAgreement?.id ?? undefined,
           },
           params,
           {
@@ -387,7 +373,7 @@ export async function generateDocumentGenerationBatch(
           },
           taskContext,
         );
-        await finalizeDocument(document.id, params);
+        await finalizeDocument(document.id, params, document.revision);
         await prisma.documentGenerationBatchItem.update({
           where: { id: item.id },
           data: {
@@ -439,11 +425,7 @@ export async function generateDocumentGenerationBatch(
           changeSource: 'MANUAL',
           metadata: { code: failure.code },
         });
-        return {
-          ok: false as const,
-          itemId: item.id,
-          failure,
-        };
+        return { ok: false as const, itemId: item.id, failure };
       }
     },
   );
@@ -509,10 +491,6 @@ export async function generateDocumentGenerationBatch(
   };
 }
 
-// ============================================================================
-// Targeted retry
-// ============================================================================
-
 export async function retryDocumentGenerationBatchItem(
   batchId: string,
   itemId: string,
@@ -569,9 +547,14 @@ export async function retryDocumentGenerationBatchItem(
 
   const taskContext = taskLaunchContextFromBatch(batch.taskContext);
   try {
+    assertA4WriterCanPreserve(
+      item.editedContent ?? evaluated.content,
+      item.editedContentJson ?? item.template.contentJson,
+    );
     const document = await materializeDocumentFromTemplate(
       {
         templateId: item.templateId,
+        expectedRevision: item.generatedDocument.revision,
         companyId: batch.primaryCompanyId ?? undefined,
         contactIds: configuration.contactIds,
         selectedDirectorId: configuration.selectedDirectorId ?? undefined,
@@ -583,8 +566,7 @@ export async function retryDocumentGenerationBatchItem(
         useLetterhead: configuration.useLetterhead,
         editedContent: item.editedContent ?? undefined,
         editedContentJson: item.editedContentJson ?? undefined,
-        serviceAgreementId:
-          item.generatedDocument?.serviceAgreement?.id ?? undefined,
+        serviceAgreementId: item.generatedDocument?.serviceAgreement?.id ?? undefined,
       },
       params,
       {
@@ -593,7 +575,7 @@ export async function retryDocumentGenerationBatchItem(
       },
       taskContext,
     );
-    await finalizeDocument(document.id, params);
+    await finalizeDocument(document.id, params, document.revision);
     await prisma.documentGenerationBatchItem.update({
       where: { id: item.id },
       data: {
@@ -634,7 +616,7 @@ export async function retryDocumentGenerationBatchItem(
     where: { batchId },
     select: { status: true },
   });
-  const status = computeBatchStatus(finalItems.map((item) => item.status));
+  const status = computeBatchStatus(finalItems.map((entry) => entry.status));
   await prisma.documentGenerationBatch.update({
     where: { id: batchId },
     data: { status },

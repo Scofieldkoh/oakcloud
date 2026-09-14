@@ -1,12 +1,20 @@
-import {
-  ensureFlowId,
-  hydrateFlowHtml,
-  splitHardSections,
-  type PageFragment,
-} from './model';
+import { ensureFlowId, type PageFragment } from './model';
+import { partitionA4SemanticBreaks } from './semantic-break-projection';
+import type {
+  A4BreakProjectionFragment,
+  A4ProjectionPositionMap,
+  A4ProjectionSourceRevision,
+} from './semantic-page-breaks';
+import type { CanonicalEditorDocument } from './structural-position';
 
 export interface HtmlMeasurer {
   measure: (html: string) => number;
+}
+
+export interface A4FlowPaginationResult {
+  pages: readonly PageFragment[];
+  sourceFragments: readonly A4BreakProjectionFragment[];
+  positionMap: A4ProjectionPositionMap;
 }
 
 const SPLITTABLE_TEXT_TAGS = new Set([
@@ -84,11 +92,6 @@ function splitBoundaryBlock(root: HTMLElement, node: Node): HTMLElement | null {
   return null;
 }
 
-/**
- * Moves a character-based split point back to the nearest whitespace so text
- * blocks split across pages never cut a word in half. The whitespace stays in
- * the fitting fragment; the continuation begins with the next word.
- */
 function wordBoundarySplitOffset(textNodes: Text[], preferred: number): number {
   let fullText = '';
   for (const node of textNodes) {
@@ -201,11 +204,6 @@ function splitTextElement(
   return { fit, overflow };
 }
 
-/**
- * Splits a list at an item boundary so every page starts with a complete
- * item. The continuation list records how many items were already rendered
- * (`--flow-list-start`) so CSS counters continue instead of restarting.
- */
 function splitListBetweenItems(
   element: HTMLElement,
   prefixHtml: string,
@@ -352,11 +350,6 @@ function splitNextListItem(
   return { fit, overflow };
 }
 
-/**
- * For a mid-item split (oversized single item), marks the continuation half
- * so it renders without a new number, and records the counter position so
- * following items keep their original numbers.
- */
 function markListContinuation(
   source: HTMLElement,
   fit: HTMLElement,
@@ -365,11 +358,6 @@ function markListContinuation(
   markListContinuationLevel(source, fit, overflow);
 }
 
-/**
- * Marks the continuation halves of a mid-item list split at every nesting
- * level so no marker is repeated on the next page, and records how many
- * items of each list level were already rendered so counters keep counting.
- */
 function markListContinuationLevel(
   sourceList: HTMLElement,
   fitList: HTMLElement,
@@ -437,12 +425,6 @@ function firstListChild(item: HTMLElement): HTMLElement | null {
   return (child as HTMLElement | undefined) ?? null;
 }
 
-/**
- * The counter value already consumed by list items rendered on earlier
- * pages. `--flow-list-start` is set by a previous split; otherwise the
- * list's own `start` attribute is the base (start=N means N-1 items are
- * already consumed before the first item increments).
- */
 function runningListStart(element: HTMLElement): number {
   const inherited = Number.parseFloat(
     element.style.getPropertyValue('--flow-list-start'),
@@ -544,9 +526,6 @@ function paginateSection(
     const elementHtml = htmlFor(element);
     const nextElement = remaining[0];
 
-    // Blocks marked keep-together (e.g. signature blocks) never split. They
-    // fit onto the current page, move whole to the next page, or stand alone
-    // as oversized when they exceed an entire page by themselves.
     if (isKeepTogether(element)) {
       if (measurer.measure(currentHtml + elementHtml) <= maxHeight) {
         currentHtml += elementHtml;
@@ -611,14 +590,47 @@ function paginateSection(
   return pages;
 }
 
+/**
+ * Revision-qualified S1 pagination entry. Explicit manual breaks are first
+ * partitioned by the tree-aware semantic reader; soft pagination then measures
+ * each projected fragment without mutating the unsplit canonical document.
+ */
+export function paginateA4FlowHtml(
+  input: string | CanonicalEditorDocument,
+  source: A4ProjectionSourceRevision,
+  measurer: HtmlMeasurer,
+  maxHeight: number,
+): A4FlowPaginationResult {
+  const projection = partitionA4SemanticBreaks(input, source);
+  const pages = projection.fragments.flatMap((fragment) =>
+    paginateSection(
+      fragment.content,
+      measurer,
+      maxHeight,
+      fragment.hardBreakBefore,
+    ),
+  );
+  return {
+    pages,
+    sourceFragments: projection.fragments,
+    positionMap: projection.positionMap,
+  };
+}
+
+/**
+ * Existing text/page callers remain compatible. The synthetic source identity
+ * is intentionally not suitable for native-input reconciliation; new CORE/W
+ * consumers use paginateA4FlowHtml with the real session/revision.
+ */
 export function paginateFlowHtml(
   input: string,
   measurer: HtmlMeasurer,
   maxHeight: number,
 ): PageFragment[] {
-  const hydrated = hydrateFlowHtml(input);
-  const sections = splitHardSections(hydrated);
-  return sections.flatMap((section, index) =>
-    paginateSection(section, measurer, maxHeight, index > 0),
-  );
+  return [...paginateA4FlowHtml(
+    input,
+    { sessionKey: 'legacy-paginate-flow-html', documentRevision: 0 },
+    measurer,
+    maxHeight,
+  ).pages];
 }

@@ -5,6 +5,7 @@
  * search, and template duplication. Fully integrated with multi-tenancy support.
  */
 
+import { randomUUID } from 'node:crypto';
 import { prisma } from '@/lib/prisma';
 import { createAuditLog, computeChanges } from '@/lib/audit';
 import type {
@@ -25,33 +26,28 @@ import {
 } from '@/lib/template-analysis';
 import { assertValidTemplateComposition } from '@/lib/service-agreement-template';
 import { parseSharePointRelativeFolderPath } from '@/lib/sharepoint/relative-folder-path';
-
-// ============================================================================
-// Types
-// ============================================================================
+import {
+  assertRevisionPrecondition,
+  classifyRevisionMiss,
+} from '@/lib/document-editor/revision-concurrency';
+import {
+  assertA4WriterCanPreserve,
+  readA4StoredDocument,
+} from '@/lib/document-editor/a4-editor-format';
+import {
+  normalizeStoredFieldDefinitionInput,
+  preserveStoredFieldDefinitions,
+} from '@/lib/document-editor/template-field-workflow';
 
 export interface DocumentTemplateWithRelations extends DocumentTemplate {
-  createdBy?: {
-    id: string;
-    firstName: string;
-    lastName: string;
-  };
-  _count?: {
-    generatedDocuments: number;
-  };
+  createdBy?: { id: string; firstName: string; lastName: string };
+  _count?: { generatedDocuments: number };
 }
 
-// Re-export shared type for backwards compatibility
 export type { TenantAwareParams } from '@/lib/types';
 
-// Fields tracked for audit logging
 const TRACKED_FIELDS: (keyof DocumentTemplate)[] = [
-  'name',
-  'description',
-  'category',
-  'compositionType',
-  'content',
-  'isActive',
+  'name', 'description', 'category', 'compositionType', 'content', 'isActive',
   'sharePointRelativeFolderPath',
 ];
 
@@ -61,28 +57,61 @@ function normalizeSharePointRelativeFolderPath(value: string | null | undefined)
   return parseSharePointRelativeFolderPath(value).normalized;
 }
 
-// ============================================================================
-// Create Template
-// ============================================================================
+function preserveTemplatePlaceholders(value: unknown, templateId: string): Prisma.InputJsonValue {
+  if (!Array.isArray(value)) return (value ?? []) as Prisma.InputJsonValue;
+  return preserveStoredFieldDefinitions(
+    normalizeStoredFieldDefinitionInput(value),
+    { kind: 'template', id: templateId },
+  ) as Prisma.InputJsonValue;
+}
+
+function assertReadableTemplate<T extends { content: string; contentJson?: unknown }>(template: T): T {
+  readA4StoredDocument(template.content, template.contentJson);
+  return template;
+}
+
+async function classifyTemplateRevisionMiss(
+  tx: Prisma.TransactionClient,
+  id: string,
+  tenantId: string,
+  expectedRevision: number | undefined,
+  options: { expectDeleted?: boolean } = {},
+): Promise<never> {
+  const state = await tx.documentTemplate.findFirst({
+    where: { id, tenantId },
+    select: { version: true, deletedAt: true },
+  });
+
+  if (options.expectDeleted) {
+    classifyRevisionMiss(
+      state ? { revision: state.version, deleted: false, locked: state.deletedAt === null } : null,
+      { resource: 'document-template', expectedRevision },
+    );
+  }
+
+  classifyRevisionMiss(
+    state ? { revision: state.version, deleted: state.deletedAt !== null, locked: false } : null,
+    { resource: 'document-template', expectedRevision },
+  );
+}
 
 export async function createDocumentTemplate(
   data: CreateDocumentTemplateInput,
-  params: TenantAwareParams
+  params: TenantAwareParams,
 ): Promise<DocumentTemplate> {
   const { tenantId, userId } = params;
   assertValidTemplateComposition(data.compositionType, data.content);
+  assertA4WriterCanPreserve(data.content, data.contentJson);
 
-  // Check for duplicate name within tenant
   const existingName = await prisma.documentTemplate.findFirst({
     where: { tenantId, name: data.name, deletedAt: null },
   });
+  if (existingName) throw new Error('A template with this name already exists');
 
-  if (existingName) {
-    throw new Error('A template with this name already exists');
-  }
-
+  const id = randomUUID();
   const template = await prisma.documentTemplate.create({
     data: {
+      id,
       tenantId,
       name: data.name,
       description: data.description,
@@ -90,7 +119,7 @@ export async function createDocumentTemplate(
       compositionType: data.compositionType,
       content: data.content,
       contentJson: data.contentJson ?? undefined,
-      placeholders: data.placeholders,
+      placeholders: preserveTemplatePlaceholders(data.placeholders, id),
       sharePointRelativeFolderPath: normalizeSharePointRelativeFolderPath(data.sharePointRelativeFolderPath),
       isActive: data.isActive,
       createdById: userId,
@@ -108,81 +137,76 @@ export async function createDocumentTemplate(
     changeSource: 'MANUAL',
     metadata: { category: template.category, name: template.name },
   });
-
   return template;
 }
-
-// ============================================================================
-// Update Template
-// ============================================================================
 
 export async function updateDocumentTemplate(
   data: UpdateDocumentTemplateInput,
   params: TenantAwareParams,
-  reason?: string
+  reason?: string,
 ): Promise<DocumentTemplate> {
   const { tenantId, userId } = params;
+  assertRevisionPrecondition(data.expectedRevision, 'document-template');
 
   const existing = await prisma.documentTemplate.findFirst({
     where: { id: data.id, tenantId, deletedAt: null },
   });
+  if (!existing) throw new Error('Template not found');
 
-  if (!existing) {
-    throw new Error('Template not found');
+  const effectiveContent = data.content ?? existing.content;
+  const effectiveContentJson = data.contentJson === undefined ? existing.contentJson : data.contentJson;
+  assertValidTemplateComposition(data.compositionType ?? existing.compositionType, effectiveContent);
+  if (data.content !== undefined || data.contentJson !== undefined) {
+    assertA4WriterCanPreserve(effectiveContent, effectiveContentJson);
   }
 
-  assertValidTemplateComposition(
-    data.compositionType ?? existing.compositionType,
-    data.content ?? existing.content,
-  );
-
-  // Check for duplicate name if being changed
   if (data.name && data.name !== existing.name) {
     const existingName = await prisma.documentTemplate.findFirst({
-      where: {
-        tenantId,
-        name: data.name,
-        deletedAt: null,
-        NOT: { id: data.id },
-      },
+      where: { tenantId, name: data.name, deletedAt: null, NOT: { id: data.id } },
     });
-
-    if (existingName) {
-      throw new Error('A template with this name already exists');
-    }
+    if (existingName) throw new Error('A template with this name already exists');
   }
 
-  const updateData: Prisma.DocumentTemplateUpdateInput = {
-    version: { increment: 1 }, // Increment version on each update
+  const updateData: Prisma.DocumentTemplateUpdateManyMutationInput = {
+    version: { increment: 1 },
   };
-
   if (data.name !== undefined) updateData.name = data.name;
   if (data.description !== undefined) updateData.description = data.description;
   if (data.category !== undefined) updateData.category = data.category;
   if (data.compositionType !== undefined) updateData.compositionType = data.compositionType;
   if (data.content !== undefined) updateData.content = data.content;
   if (data.contentJson !== undefined) {
-    updateData.contentJson = data.contentJson === null
-      ? Prisma.JsonNull
-      : data.contentJson;
+    updateData.contentJson = data.contentJson === null ? Prisma.JsonNull : data.contentJson;
   }
-  if (data.placeholders !== undefined) updateData.placeholders = data.placeholders;
+  if (data.placeholders !== undefined) {
+    updateData.placeholders = preserveTemplatePlaceholders(data.placeholders, data.id);
+  }
   if (data.isActive !== undefined) updateData.isActive = data.isActive;
   if (data.sharePointRelativeFolderPath !== undefined) {
     updateData.sharePointRelativeFolderPath = normalizeSharePointRelativeFolderPath(data.sharePointRelativeFolderPath);
   }
 
-  const template = await prisma.documentTemplate.update({
-    where: { id: data.id },
-    data: updateData,
+  const template = await prisma.$transaction(async (tx) => {
+    const result = await tx.documentTemplate.updateMany({
+      where: {
+        id: data.id,
+        tenantId,
+        deletedAt: null,
+        ...(data.expectedRevision !== undefined ? { version: data.expectedRevision } : {}),
+      },
+      data: updateData,
+    });
+    if (result.count !== 1) {
+      return classifyTemplateRevisionMiss(tx, data.id, tenantId, data.expectedRevision);
+    }
+    return tx.documentTemplate.findFirstOrThrow({ where: { id: data.id, tenantId } });
   });
 
   const changes = computeChanges(
     existing as Record<string, unknown>,
     data,
-    TRACKED_FIELDS as string[]
+    TRACKED_FIELDS as string[],
   );
-
   if (changes) {
     const changedFields = Object.keys(changes).join(', ');
     await createAuditLog({
@@ -198,44 +222,38 @@ export async function updateDocumentTemplate(
       reason,
     });
   }
-
   return template;
 }
-
-// ============================================================================
-// Delete Template (Soft Delete)
-// ============================================================================
 
 export async function deleteDocumentTemplate(
   id: string,
   params: TenantAwareParams,
-  reason: string
+  reason: string,
+  expectedRevision?: number,
 ): Promise<DocumentTemplate> {
   const { tenantId, userId } = params;
-
+  assertRevisionPrecondition(expectedRevision, 'document-template');
   const existing = await prisma.documentTemplate.findFirst({
     where: { id, tenantId },
-    include: {
-      _count: {
-        select: { generatedDocuments: true },
-      },
-    },
+    include: { _count: { select: { generatedDocuments: true } } },
   });
+  if (!existing) throw new Error('Template not found');
+  if (existing.deletedAt) throw new Error('Template is already deleted');
 
-  if (!existing) {
-    throw new Error('Template not found');
-  }
-
-  if (existing.deletedAt) {
-    throw new Error('Template is already deleted');
-  }
-
-  const template = await prisma.documentTemplate.update({
-    where: { id },
-    data: {
-      deletedAt: new Date(),
-      isActive: false,
-    },
+  const template = await prisma.$transaction(async (tx) => {
+    const result = await tx.documentTemplate.updateMany({
+      where: {
+        id,
+        tenantId,
+        deletedAt: null,
+        ...(expectedRevision !== undefined ? { version: expectedRevision } : {}),
+      },
+      data: { deletedAt: new Date(), isActive: false, version: { increment: 1 } },
+    });
+    if (result.count !== 1) {
+      return classifyTemplateRevisionMiss(tx, id, tenantId, expectedRevision);
+    }
+    return tx.documentTemplate.findFirstOrThrow({ where: { id, tenantId } });
   });
 
   await createAuditLog({
@@ -254,52 +272,39 @@ export async function deleteDocumentTemplate(
       documentCount: existing._count.generatedDocuments,
     },
   });
-
   return template;
 }
 
-// ============================================================================
-// Restore Template
-// ============================================================================
-
 export async function restoreDocumentTemplate(
   id: string,
-  params: TenantAwareParams
+  params: TenantAwareParams,
+  expectedRevision?: number,
 ): Promise<DocumentTemplate> {
   const { tenantId, userId } = params;
+  assertRevisionPrecondition(expectedRevision, 'document-template');
+  const existing = await prisma.documentTemplate.findFirst({ where: { id, tenantId } });
+  if (!existing) throw new Error('Template not found');
+  if (!existing.deletedAt) throw new Error('Template is not deleted');
 
-  const existing = await prisma.documentTemplate.findFirst({
-    where: { id, tenantId },
-  });
-
-  if (!existing) {
-    throw new Error('Template not found');
-  }
-
-  if (!existing.deletedAt) {
-    throw new Error('Template is not deleted');
-  }
-
-  // Check for name conflict with active templates
   const conflicting = await prisma.documentTemplate.findFirst({
-    where: {
-      tenantId,
-      name: existing.name,
-      deletedAt: null,
-      NOT: { id },
-    },
+    where: { tenantId, name: existing.name, deletedAt: null, NOT: { id } },
   });
+  if (conflicting) throw new Error('Cannot restore: a template with this name already exists');
 
-  if (conflicting) {
-    throw new Error('Cannot restore: a template with this name already exists');
-  }
-
-  const template = await prisma.documentTemplate.update({
-    where: { id },
-    data: {
-      deletedAt: null,
-      isActive: true,
-    },
+  const template = await prisma.$transaction(async (tx) => {
+    const result = await tx.documentTemplate.updateMany({
+      where: {
+        id,
+        tenantId,
+        deletedAt: { not: null },
+        ...(expectedRevision !== undefined ? { version: expectedRevision } : {}),
+      },
+      data: { deletedAt: null, isActive: true, version: { increment: 1 } },
+    });
+    if (result.count !== 1) {
+      return classifyTemplateRevisionMiss(tx, id, tenantId, expectedRevision, { expectDeleted: true });
+    }
+    return tx.documentTemplate.findFirstOrThrow({ where: { id, tenantId } });
   });
 
   await createAuditLog({
@@ -313,34 +318,22 @@ export async function restoreDocumentTemplate(
     changeSource: 'MANUAL',
     metadata: { name: template.name, category: template.category },
   });
-
   return template;
 }
 
-// ============================================================================
-// Duplicate Template
-// ============================================================================
-
 export async function duplicateDocumentTemplate(
   data: DuplicateDocumentTemplateInput,
-  params: TenantAwareParams
+  params: TenantAwareParams,
 ): Promise<DocumentTemplate> {
   const { tenantId, userId } = params;
-
   const existing = await prisma.documentTemplate.findFirst({
     where: { id: data.id, tenantId, deletedAt: null },
   });
-
-  if (!existing) {
-    throw new Error('Template not found');
-  }
-
+  if (!existing) throw new Error('Template not found');
   assertValidTemplateComposition(existing.compositionType, existing.content);
+  assertA4WriterCanPreserve(existing.content, existing.contentJson);
 
-  // Generate new name
   let newName = data.name || `Copy of ${existing.name}`;
-
-  // Ensure name is unique
   let counter = 1;
   while (true) {
     const existingName = await prisma.documentTemplate.findFirst({
@@ -352,8 +345,10 @@ export async function duplicateDocumentTemplate(
     if (counter > 100) throw new Error('Unable to generate unique name');
   }
 
+  const id = randomUUID();
   const template = await prisma.documentTemplate.create({
     data: {
+      id,
       tenantId,
       name: newName,
       description: existing.description,
@@ -361,11 +356,11 @@ export async function duplicateDocumentTemplate(
       compositionType: existing.compositionType,
       content: existing.content,
       contentJson: existing.contentJson ?? undefined,
-      placeholders: existing.placeholders ?? [],
+      placeholders: preserveTemplatePlaceholders(existing.placeholders, id),
       sharePointRelativeFolderPath: existing.sharePointRelativeFolderPath,
       isActive: true,
       createdById: userId,
-      version: 1, // Reset version for duplicated template
+      version: 1,
     },
   });
 
@@ -384,57 +379,31 @@ export async function duplicateDocumentTemplate(
       newName: template.name,
     },
   });
-
   return template;
 }
 
-// ============================================================================
-// Get Template by ID
-// ============================================================================
-
-export interface GetTemplateOptions {
-  includeDeleted?: boolean;
-}
+export interface GetTemplateOptions { includeDeleted?: boolean }
 
 export async function getDocumentTemplateById(
   id: string,
   tenantId: string,
-  options: GetTemplateOptions = {}
+  options: GetTemplateOptions = {},
 ): Promise<DocumentTemplateWithRelations | null> {
-  const { includeDeleted = false } = options;
-
   const where: Prisma.DocumentTemplateWhereInput = { id, tenantId };
-
-  if (!includeDeleted) {
-    where.deletedAt = null;
-  }
-
-  return prisma.documentTemplate.findFirst({
+  if (!options.includeDeleted) where.deletedAt = null;
+  const template = await prisma.documentTemplate.findFirst({
     where,
     include: {
-      createdBy: {
-        select: {
-          id: true,
-          firstName: true,
-          lastName: true,
-        },
-      },
-      _count: {
-        select: {
-          generatedDocuments: true,
-        },
-      },
+      createdBy: { select: { id: true, firstName: true, lastName: true } },
+      _count: { select: { generatedDocuments: true } },
     },
   });
+  return template ? assertReadableTemplate(template) : null;
 }
-
-// ============================================================================
-// Search Templates
-// ============================================================================
 
 export async function searchDocumentTemplates(
   params: SearchDocumentTemplatesInput,
-  tenantId: string
+  tenantId: string,
 ): Promise<{
   templates: DocumentTemplateWithRelations[];
   total: number;
@@ -442,12 +411,7 @@ export async function searchDocumentTemplates(
   limit: number;
   totalPages: number;
 }> {
-  const where: Prisma.DocumentTemplateWhereInput = {
-    tenantId,
-    deletedAt: null,
-  };
-
-  // Text search
+  const where: Prisma.DocumentTemplateWhereInput = { tenantId, deletedAt: null };
   if (params.query) {
     const searchTerm = params.query.trim();
     where.OR = [
@@ -455,39 +419,18 @@ export async function searchDocumentTemplates(
       { description: { contains: searchTerm, mode: 'insensitive' } },
     ];
   }
+  if (params.category) where.category = params.category;
+  if (params.isActive !== undefined) where.isActive = params.isActive;
 
-  // Filters
-  if (params.category) {
-    where.category = params.category;
-  }
-
-  if (params.isActive !== undefined) {
-    where.isActive = params.isActive;
-  }
-
-  // Sorting
   const orderBy: Prisma.DocumentTemplateOrderByWithRelationInput = {};
   orderBy[params.sortBy] = params.sortOrder;
-
-  // Pagination
   const skip = (params.page - 1) * params.limit;
-
   const [templates, total] = await Promise.all([
     prisma.documentTemplate.findMany({
       where,
       include: {
-        createdBy: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-          },
-        },
-        _count: {
-          select: {
-            generatedDocuments: true,
-          },
-        },
+        createdBy: { select: { id: true, firstName: true, lastName: true } },
+        _count: { select: { generatedDocuments: true } },
       },
       orderBy,
       skip,
@@ -495,19 +438,9 @@ export async function searchDocumentTemplates(
     }),
     prisma.documentTemplate.count({ where }),
   ]);
-
-  return {
-    templates,
-    total,
-    page: params.page,
-    limit: params.limit,
-    totalPages: Math.ceil(total / params.limit),
-  };
+  templates.forEach(assertReadableTemplate);
+  return { templates, total, page: params.page, limit: params.limit, totalPages: Math.ceil(total / params.limit) };
 }
-
-// ============================================================================
-// Get Template Statistics
-// ============================================================================
 
 export async function getTemplateStats(tenantId: string): Promise<{
   total: number;
@@ -544,12 +477,8 @@ export async function getTemplateStats(tenantId: string): Promise<{
   };
 }> {
   const [total, active, byCategory, recentlyCreated, mostUsed, templatesForHealth, partials] = await Promise.all([
-    prisma.documentTemplate.count({
-      where: { tenantId, deletedAt: null },
-    }),
-    prisma.documentTemplate.count({
-      where: { tenantId, deletedAt: null, isActive: true },
-    }),
+    prisma.documentTemplate.count({ where: { tenantId, deletedAt: null } }),
+    prisma.documentTemplate.count({ where: { tenantId, deletedAt: null, isActive: true } }),
     prisma.documentTemplate.groupBy({
       by: ['category'],
       where: { tenantId, deletedAt: null },
@@ -559,46 +488,23 @@ export async function getTemplateStats(tenantId: string): Promise<{
       where: {
         tenantId,
         deletedAt: null,
-        createdAt: {
-          gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // Last 30 days
-        },
+        createdAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) },
       },
     }),
     prisma.documentTemplate.findMany({
       where: { tenantId, deletedAt: null },
-      include: {
-        _count: {
-          select: { generatedDocuments: true },
-        },
-      },
-      orderBy: {
-        generatedDocuments: {
-          _count: 'desc',
-        },
-      },
+      include: { _count: { select: { generatedDocuments: true } } },
+      orderBy: { generatedDocuments: { _count: 'desc' } },
       take: 5,
     }),
     prisma.documentTemplate.findMany({
       where: { tenantId, deletedAt: null },
-      select: {
-        id: true,
-        name: true,
-        content: true,
-        placeholders: true,
-        isActive: true,
-      },
+      select: { id: true, name: true, content: true, placeholders: true, isActive: true },
       orderBy: { name: 'asc' },
     }),
     prisma.templatePartial.findMany({
       where: { tenantId },
-      select: {
-        name: true,
-        displayName: true,
-        content: true,
-        placeholders: true,
-        updatedAt: true,
-        deletedAt: true,
-      },
+      select: { name: true, displayName: true, content: true, placeholders: true, updatedAt: true, deletedAt: true },
     }),
   ]);
 
@@ -613,13 +519,8 @@ export async function getTemplateStats(tenantId: string): Promise<{
     });
     const inactivePartials = extractPartialReferences(template.content)
       .filter((partialName) => allPartialsByName.get(partialName)?.deletedAt);
-    const stalePartialMetadata = findStalePartialMetadata(
-      template.placeholders,
-      template.content,
-      activePartials
-    );
-    const missingPartials = diagnostics.missingPartials
-      .filter((partialName) => !activePartialNames.has(partialName));
+    const stalePartialMetadata = findStalePartialMetadata(template.placeholders, template.content, activePartials);
+    const missingPartials = diagnostics.missingPartials.filter((partialName) => !activePartialNames.has(partialName));
     const requiredCustomFields = normalizeStoredPlaceholders(template.placeholders)
       .filter((placeholder) => (
         placeholder.required
@@ -663,73 +564,19 @@ export async function getTemplateStats(tenantId: string): Promise<{
   return {
     total,
     active,
-    byCategory: Object.fromEntries(
-      byCategory.map((c) => [c.category, c._count])
-    ),
+    byCategory: Object.fromEntries(byCategory.map((c) => [c.category, c._count])),
     recentlyCreated,
-    mostUsed: mostUsed.map((t) => ({
-      id: t.id,
-      name: t.name,
-      usageCount: t._count.generatedDocuments,
-    })),
+    mostUsed: mostUsed.map((t) => ({ id: t.id, name: t.name, usageCount: t._count.generatedDocuments })),
     health: {
-      activeTemplatesCanGenerateCleanly: templateHealth.filter(
-        (template) => template.isActive && template.canGenerateCleanly
-      ).length,
-      activeTemplatesWithMissingPartials: templateHealth.filter(
-        (template) => template.isActive && template.missingPartials.length > 0
-      ).length,
-      missingPartialReferences: templateHealth.flatMap((template) => (
-        template.missingPartials.map((partialName) => ({
-          templateId: template.id,
-          templateName: template.name,
-          partialName,
-        }))
-      )),
-      inactivePartialReferences: templateHealth.flatMap((template) => (
-        template.inactivePartials.map((partialName) => ({
-          templateId: template.id,
-          templateName: template.name,
-          partialName,
-        }))
-      )),
-      circularPartialReferences: templateHealth.flatMap((template) => (
-        template.circularPartials.map((cycle) => ({
-          templateId: template.id,
-          templateName: template.name,
-          cycle,
-        }))
-      )),
-      unknownPlaceholders: templateHealth.flatMap((template) => (
-        template.unknownPlaceholders.map((key) => ({
-          templateId: template.id,
-          templateName: template.name,
-          key,
-        }))
-      )),
-      syntaxErrors: templateHealth.flatMap((template) => (
-        template.syntaxErrors.map((message) => ({
-          templateId: template.id,
-          templateName: template.name,
-          message,
-        }))
-      )),
-      stalePartialMetadata: templateHealth.flatMap((template) => (
-        template.stalePartialMetadata.map((item) => ({
-          templateId: template.id,
-          templateName: template.name,
-          partialName: item.partialName,
-          key: item.key,
-        }))
-      )),
-      requiredCustomFields: templateHealth.flatMap((template) => (
-        template.requiredCustomFields.map((field) => ({
-          templateId: template.id,
-          templateName: template.name,
-          key: field.key,
-          label: field.label,
-        }))
-      )),
+      activeTemplatesCanGenerateCleanly: templateHealth.filter((template) => template.isActive && template.canGenerateCleanly).length,
+      activeTemplatesWithMissingPartials: templateHealth.filter((template) => template.isActive && template.missingPartials.length > 0).length,
+      missingPartialReferences: templateHealth.flatMap((template) => template.missingPartials.map((partialName) => ({ templateId: template.id, templateName: template.name, partialName }))),
+      inactivePartialReferences: templateHealth.flatMap((template) => template.inactivePartials.map((partialName) => ({ templateId: template.id, templateName: template.name, partialName }))),
+      circularPartialReferences: templateHealth.flatMap((template) => template.circularPartials.map((cycle) => ({ templateId: template.id, templateName: template.name, cycle }))),
+      unknownPlaceholders: templateHealth.flatMap((template) => template.unknownPlaceholders.map((key) => ({ templateId: template.id, templateName: template.name, key }))),
+      syntaxErrors: templateHealth.flatMap((template) => template.syntaxErrors.map((message) => ({ templateId: template.id, templateName: template.name, message }))),
+      stalePartialMetadata: templateHealth.flatMap((template) => template.stalePartialMetadata.map((item) => ({ templateId: template.id, templateName: template.name, partialName: item.partialName, key: item.key }))),
+      requiredCustomFields: templateHealth.flatMap((template) => template.requiredCustomFields.map((field) => ({ templateId: template.id, templateName: template.name, key: field.key, label: field.label }))),
       templates: templateHealth,
     },
   };
@@ -738,7 +585,7 @@ export async function getTemplateStats(tenantId: string): Promise<{
 function findStalePartialMetadata(
   templatePlaceholders: unknown,
   templateContent: string,
-  activePartials: Array<{ name: string; placeholders: unknown }>
+  activePartials: Array<{ name: string; placeholders: unknown }>,
 ): Array<{ partialName: string; key: string }> {
   const referencedPartials = new Set(extractPartialReferences(templateContent));
   const partialCustomKeys = new Map<string, Set<string>>();
@@ -753,19 +600,14 @@ function findStalePartialMetadata(
             || placeholder.key?.startsWith('custom.')
           ))
           .map((placeholder) => normalizePlaceholderKey(placeholder.key))
-          .filter(Boolean)
-      )
+          .filter(Boolean),
+      ),
     );
   }
 
   return normalizeStoredPlaceholders(templatePlaceholders)
-    .filter((placeholder): placeholder is StoredPlaceholderLike & { sourcePartial: string } => (
-      Boolean(placeholder.sourcePartial)
-    ))
-    .map((placeholder) => ({
-      partialName: placeholder.sourcePartial,
-      key: normalizePlaceholderKey(placeholder.key),
-    }))
+    .filter((placeholder): placeholder is StoredPlaceholderLike & { sourcePartial: string } => Boolean(placeholder.sourcePartial))
+    .map((placeholder) => ({ partialName: placeholder.sourcePartial, key: normalizePlaceholderKey(placeholder.key) }))
     .filter((item) => {
       if (!referencedPartials.has(item.partialName)) return true;
       const currentKeys = partialCustomKeys.get(item.partialName);
@@ -773,86 +615,44 @@ function findStalePartialMetadata(
     });
 }
 
-// ============================================================================
-// Get Templates by Category
-// ============================================================================
-
 export async function getTemplatesByCategory(
   tenantId: string,
   category: DocumentTemplateCategory,
-  activeOnly = true
+  activeOnly = true,
 ): Promise<DocumentTemplate[]> {
-  return prisma.documentTemplate.findMany({
-    where: {
-      tenantId,
-      category,
-      deletedAt: null,
-      ...(activeOnly ? { isActive: true } : {}),
-    },
+  const templates = await prisma.documentTemplate.findMany({
+    where: { tenantId, category, deletedAt: null, ...(activeOnly ? { isActive: true } : {}) },
     orderBy: { name: 'asc' },
   });
+  templates.forEach(assertReadableTemplate);
+  return templates;
 }
 
-// ============================================================================
-// Extract Placeholders from Content
-// ============================================================================
-
-/**
- * Extracts placeholder keys from template content.
- * Supports Handlebars-style syntax: {{placeholder}}, {{#each items}}, {{#if condition}}
- */
+/** Legacy helper retained for callers; F1 owns the editor/runtime parser grammar. */
 export function extractPlaceholdersFromContent(content: string): string[] {
   const placeholders = new Set<string>();
-
-  // Match simple placeholders: {{company.name}}, {{date}}
   const simpleRegex = /\{\{([a-zA-Z_][a-zA-Z0-9_.\[\]]*)\}\}/g;
   let match;
   while ((match = simpleRegex.exec(content)) !== null) {
-    // Skip block helpers (if, each, unless)
     if (!['if', 'each', 'unless', 'with', '/if', '/each', '/unless', '/with'].includes(match[1])) {
       placeholders.add(match[1]);
     }
   }
-
-  // Match block helpers: {{#each directors}}
   const blockRegex = /\{\{#(each|with)\s+([a-zA-Z_][a-zA-Z0-9_.]*)\}\}/g;
-  while ((match = blockRegex.exec(content)) !== null) {
-    placeholders.add(match[2]);
-  }
-
+  while ((match = blockRegex.exec(content)) !== null) placeholders.add(match[2]);
   return Array.from(placeholders);
 }
 
-// ============================================================================
-// Validate Template Content
-// ============================================================================
-
-/**
- * Validates template content for syntax errors.
- * Returns an array of validation errors, empty if valid.
- */
 export function validateTemplateContent(content: string): string[] {
   const errors: string[] = [];
-
-  // Check for unclosed placeholders
   const openCount = (content.match(/\{\{/g) || []).length;
   const closeCount = (content.match(/\}\}/g) || []).length;
-  if (openCount !== closeCount) {
-    errors.push('Mismatched placeholder brackets: ensure all {{ have matching }}');
-  }
-
-  // Check for unclosed block helpers
+  if (openCount !== closeCount) errors.push('Mismatched placeholder brackets: ensure all {{ have matching }}');
   const eachOpens = (content.match(/\{\{#each\s/g) || []).length;
   const eachCloses = (content.match(/\{\{\/each\}\}/g) || []).length;
-  if (eachOpens !== eachCloses) {
-    errors.push(`Unclosed #each blocks: ${eachOpens} opens, ${eachCloses} closes`);
-  }
-
+  if (eachOpens !== eachCloses) errors.push(`Unclosed #each blocks: ${eachOpens} opens, ${eachCloses} closes`);
   const ifOpens = (content.match(/\{\{#if\s/g) || []).length;
   const ifCloses = (content.match(/\{\{\/if\}\}/g) || []).length;
-  if (ifOpens !== ifCloses) {
-    errors.push(`Unclosed #if blocks: ${ifOpens} opens, ${ifCloses} closes`);
-  }
-
+  if (ifOpens !== ifCloses) errors.push(`Unclosed #if blocks: ${ifOpens} opens, ${ifCloses} closes`);
   return errors;
 }

@@ -29,6 +29,12 @@ describePostgres('document generation batch postgres integration', () => {
   afterEach(async () => {
     for (const tenantId of tenantIds.splice(0)) {
       await prisma.auditLog.deleteMany({ where: { tenantId } });
+      await prisma.documentGenerationBatch.updateMany({
+        where: { tenantId },
+        data: { activeItemId: null },
+      });
+      await prisma.documentGenerationBatchItem.deleteMany({ where: { tenantId } });
+      await prisma.documentGenerationBatch.deleteMany({ where: { tenantId } });
       await prisma.generatedDocument.deleteMany({ where: { tenantId } });
       await prisma.documentTemplate.deleteMany({ where: { tenantId } });
       await prisma.user.deleteMany({ where: { tenantId } });
@@ -309,15 +315,24 @@ describePostgres('document generation batch postgres integration', () => {
       { items: [{ templateId: templates[0].id }] },
       actor,
     );
+    const afterFirst = await prisma.generatedDocument.findUniqueOrThrow({
+      where: { id: legacy.id },
+      select: { revision: true },
+    });
     const second = await adoptLegacyGenerationSession(
       legacy.id,
       { items: [{ templateId: templates[0].id }] },
       actor,
     );
+    const afterSecond = await prisma.generatedDocument.findUniqueOrThrow({
+      where: { id: legacy.id },
+      select: { revision: true },
+    });
 
     expect(first.items[0].generatedDocumentId).toBe(legacy.id);
     expect(second.id).toBe(first.id);
     expect(second.items[0].generatedDocumentId).toBe(legacy.id);
+    expect(afterSecond.revision).toBe(afterFirst.revision);
     const count = await prisma.documentGenerationBatch.count({
       where: { tenantId: actor.tenantId },
     });
