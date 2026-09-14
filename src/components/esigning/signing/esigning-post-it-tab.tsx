@@ -34,15 +34,17 @@ export function EsigningPostItTab({
 
   return (
     <div
+      data-testid="signing-post-it"
       style={{
-        position: 'fixed',
-        left: 0,
+        position: 'absolute',
+        right: -56,
+        width: 56,
         top: '50%',
         transform: 'translateY(-50%)',
         zIndex: 40,
         display: 'flex',
         flexDirection: 'column',
-        alignItems: 'flex-start',
+        alignItems: 'stretch',
       }}
     >
       {/* Prev button */}
@@ -61,8 +63,8 @@ export function EsigningPostItTab({
             justifyContent: 'center',
             borderBottom: '1px solid rgba(255,255,255,0.2)',
             cursor: 'pointer',
-            minWidth: 52,
-            minHeight: 36,
+            minWidth: 56,
+            minHeight: 44,
           }}
         >
           <ChevronUp className="h-3.5 w-3.5" />
@@ -132,7 +134,7 @@ export function EsigningPostItTab({
             borderTop: '1px solid rgba(255,255,255,0.2)',
             cursor: 'pointer',
             minWidth: 56,
-            minHeight: 36,
+            minHeight: 44,
           }}
         >
           <ChevronDown className="h-3.5 w-3.5" />

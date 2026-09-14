@@ -68,7 +68,8 @@ vi.mock('@/hooks/use-esigning', () => {
     ...overrides,
   });
   return {
-    useEsigningEnvelope: () => ({ data: hookMocks.envelope, isLoading: false }),
+    useEsigningEnvelope: () => ({ data: hookMocks.envelope, isLoading: false, refetch: vi.fn() }),
+    attachGeneratedDocumentsRequest: vi.fn().mockImplementation(async () => hookMocks.envelope),
     useUpdateEsigningEnvelope: () => mutation(),
     useUploadEsigningDocument: () => mutation(),
     useSaveEsigningFields: () => mutation(),

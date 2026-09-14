@@ -1,6 +1,5 @@
 import type { EmailAttachment } from '@/lib/email';
 import { getAppBaseUrl, sendEmail } from '@/lib/email';
-import { buildEsigningVerificationUrl } from '@/lib/esigning-session';
 import { createLogger } from '@/lib/logger';
 import type {
   EsigningEmailDeliveryKind,
@@ -50,13 +49,13 @@ function formatDateTime(date: Date | null | undefined): string | null {
 
 function ctaButton(label: string, url: string, color: string = BRAND): string {
   return `
-    <table role="presentation" cellpadding="0" cellspacing="0" style="margin:28px 0 8px;">
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:28px 0 8px;border-collapse:collapse;">
       <tr>
-        <td style="border-radius:8px;background:${color};">
-          <a href="${url}"
+        <td style="border-radius:8px;background:${color};mso-padding-alt:13px 28px;">
+          <a href="${escapeHtml(url)}"
              style="display:inline-block;padding:13px 28px;font-family:Arial,Helvetica,sans-serif;
                     font-size:14px;font-weight:bold;color:#ffffff;text-decoration:none;
-                    border-radius:8px;letter-spacing:0.01em;">
+                    border-radius:8px;letter-spacing:0.01em;mso-text-raise:1px;">
             ${label}
           </a>
         </td>
@@ -68,21 +67,21 @@ function fallbackLink(url: string): string {
   return `
     <p style="font-size:12px;color:${TEXT_MUT};margin:16px 0 0;line-height:1.5;">
       If the button does not work, copy and paste this link into your browser:<br>
-      <a href="${url}" style="color:${BRAND};word-break:break-all;">${escapeHtml(url)}</a>
+      <a href="${escapeHtml(url)}" style="color:${BRAND};word-break:break-all;">${escapeHtml(url)}</a>
     </p>`;
 }
 
 function tag(text: string, color: string, bg: string): string {
   return `<span style="display:inline-block;padding:3px 10px;border-radius:20px;
-    font-size:11px;font-weight:bold;letter-spacing:0.05em;color:${color};background:${bg};"
+    font-family:Arial,Helvetica,sans-serif;font-size:11px;font-weight:bold;letter-spacing:0.05em;color:${color};background:${bg};"
   >${text}</span>`;
 }
 
 function signature(): string {
   const name = appName();
   return `
-    <table role="presentation" cellpadding="0" cellspacing="0" width="100%"
-           style="margin-top:32px;border-top:1px solid ${BORDER};">
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"
+           style="width:100%;margin-top:32px;border-top:1px solid ${BORDER};border-collapse:collapse;">
       <tr>
         <td style="padding-top:20px;">
           <p style="font-family:Arial,Helvetica,sans-serif;font-size:13px;
@@ -107,7 +106,7 @@ function signature(): string {
  * @param body   - Inner HTML content
  * @param footer - Optional extra footer text
  */
-function shell(body: string, footer?: string): string {
+function shell(body: string, footer?: string, completion = false): string {
   const year = new Date().getFullYear();
   const name = appName();
   return `
@@ -117,22 +116,40 @@ function shell(body: string, footer?: string): string {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="x-apple-disable-message-reformatting">
+  <!--[if mso]>
+  <noscript>
+    <xml>
+      <o:OfficeDocumentSettings>
+        <o:PixelsPerInch>96</o:PixelsPerInch>
+      </o:OfficeDocumentSettings>
+    </xml>
+  </noscript>
+  <style>
+    table { border-collapse: collapse; }
+    td { font-family: Arial, Helvetica, sans-serif; }
+  </style>
+  <![endif]-->
   <title>${escapeHtml(name)}</title>
 </head>
 <body style="margin:0;padding:0;background:${BG};-webkit-text-size-adjust:100%;">
-  <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background:${BG};padding:32px 16px;">
+  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="width:100%;background:${BG};border-collapse:collapse;">
     <tr>
-      <td align="center">
-        <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="max-width:580px;">
+      <td align="center" style="padding:32px 16px;">
+        <!--[if mso]>
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="580" style="width:580px;border-collapse:collapse;font-family:Arial,Helvetica,sans-serif;"><tr><td>
+        <![endif]-->
+        <!--[if !mso]><!-->
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="width:100%;max-width:580px;border-collapse:collapse;font-family:Arial,Helvetica,sans-serif;">
+        <!--<![endif]-->
 
           <!-- Brand accent bar -->
           <tr>
-            <td style="background:${BRAND};height:4px;border-radius:6px 6px 0 0;"></td>
+            <td style="background:${BRAND};height:4px;line-height:4px;font-size:1px;border-radius:6px 6px 0 0;">&nbsp;</td>
           </tr>
 
           <!-- Card body -->
           <tr>
-            <td style="background:#ffffff;padding:36px 40px 28px;border-left:1px solid ${BORDER};border-right:1px solid ${BORDER};">
+            <td style="background:#ffffff;padding:36px 40px 28px;border-left:1px solid ${BORDER};border-right:1px solid ${BORDER};font-family:Arial,Helvetica,sans-serif;">
               ${body}
             </td>
           </tr>
@@ -140,21 +157,53 @@ function shell(body: string, footer?: string): string {
           <!-- Footer -->
           <tr>
             <td style="background:#f9fafb;border:1px solid ${BORDER};border-top:none;border-radius:0 0 6px 6px;
-                       padding:16px 40px 20px;">
+                       padding:16px 40px 20px;font-family:Arial,Helvetica,sans-serif;">
               ${footer ?? ''}
               <p style="font-family:Arial,Helvetica,sans-serif;font-size:11px;color:${TEXT_MUT};
                         margin:${footer ? '12px' : '0'} 0 0;line-height:1.6;">
-                &copy; ${year} ${escapeHtml(name)} &nbsp;&middot;&nbsp; E-Signing
+                &copy; ${year} ${escapeHtml(name)} &nbsp;&middot;&nbsp; E-Signing${completion ? ' &nbsp;&middot;&nbsp; Oaktree Accounting &amp; Corporate Solutions' : ''}
               </p>
             </td>
           </tr>
 
+        <!--[if !mso]><!-->
         </table>
+        <!--<![endif]-->
+        <!--[if mso]>
+        </td></tr></table>
+        <![endif]-->
       </td>
     </tr>
   </table>
-</body>
+  </body>
 </html>`.trim();
+}
+
+function completionPlainText(input: {
+  recipientName: string;
+  envelopeTitle: string;
+  documentLinks: Array<{
+    label: string;
+    signedUrl: string;
+    certificateUrl?: string | null;
+  }>;
+  hasAttachments: boolean;
+}): string {
+  const clean = (value: string) => value.replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ').trim();
+  const lines = [
+    'All signatures collected',
+    `Hello ${clean(input.recipientName)},`,
+    `The signing workflow for "${clean(input.envelopeTitle)}" is now complete.`,
+    input.hasAttachments
+      ? 'Your signed copy is attached to this email.'
+      : 'Signed documents are listed below.',
+    '',
+    ...input.documentLinks.map((document) => clean(document.label)),
+    '',
+    `© ${new Date().getFullYear()} ${appName()} · E-Signing · Oaktree Accounting & Corporate Solutions`,
+  ];
+
+  return lines.join('\n');
 }
 
 async function safeSendEmail(
@@ -286,32 +335,18 @@ export async function sendEsigningCompletionEmail(input: {
   attachments?: EmailAttachment[];
   actorType?: 'recipient' | 'sender';
 }): Promise<EsigningEmailDeliveryResult> {
-  const verificationUrl = buildEsigningVerificationUrl(input.certificateId);
   const hasAttachments = Boolean(input.attachments?.length);
 
   const docRows = input.documentLinks.map((dl) => `
     <tr>
       <td style="padding:10px 0;border-bottom:1px solid ${BORDER};">
-        <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="width:100%;border-collapse:collapse;">
           <tr>
-            <td style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:${TEXT};
+            <td valign="middle" style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:${TEXT};
                        font-weight:bold;padding-right:12px;">
               &#128196; ${escapeHtml(dl.label)}
             </td>
-            <td align="right" style="white-space:nowrap;">
-              <a href="${dl.signedUrl}"
-                 style="font-family:Arial,Helvetica,sans-serif;font-size:12px;color:${BRAND};
-                        text-decoration:none;font-weight:bold;margin-right:${dl.certificateUrl ? '12px' : '0'};">
-                Download
-              </a>
-              ${dl.certificateUrl
-                ? `<a href="${dl.certificateUrl}"
-                     style="font-family:Arial,Helvetica,sans-serif;font-size:12px;
-                            color:${TEXT_SEC};text-decoration:none;">
-                     Certificate
-                   </a>`
-                : ''}
-            </td>
+
           </tr>
         </table>
       </td>
@@ -330,51 +365,32 @@ export async function sendEsigningCompletionEmail(input: {
     </p>
     <p style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:${TEXT_SEC};margin:0 0 20px;line-height:1.6;">
       The signing workflow for <strong style="color:${TEXT};">${escapeHtml(input.envelopeTitle)}</strong> is now complete.
-      ${hasAttachments ? 'Your signed copy is attached to this email.' : 'You can download the signed documents using the links below.'}
+      ${hasAttachments ? 'Your signed copy is attached to this email.' : 'Signed documents are listed below.'}
     </p>
 
     <p style="font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:bold;
               color:${TEXT};margin:0 0 4px;">
-      ${hasAttachments ? 'Signed documents (attached):' : 'Download signed documents:'}
+      ${hasAttachments ? 'Signed documents (attached):' : 'Signed documents:'}
     </p>
-    <table role="presentation" cellpadding="0" cellspacing="0" width="100%"
-           style="margin-bottom:24px;">
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"
+           style="width:100%;margin-bottom:24px;border-collapse:collapse;">
       ${docRows}
     </table>
 
-    ${ctaButton('View Verification Record', verificationUrl)}
-
-    <table role="presentation" cellpadding="0" cellspacing="0" width="100%"
-           style="background:${BG};border-radius:8px;margin-top:20px;">
-      <tr>
-        <td style="padding:12px 16px;">
-          <p style="font-family:Arial,Helvetica,sans-serif;font-size:11px;font-weight:bold;
-                    letter-spacing:0.08em;color:${TEXT_MUT};margin:0 0 3px;text-transform:uppercase;">
-            Document Certificate ID
-          </p>
-          <p style="font-family:'Courier New',Courier,monospace;font-size:12px;
-                    color:${TEXT_SEC};margin:0;word-break:break-all;">
-            ${escapeHtml(input.certificateId)}
-          </p>
-        </td>
-      </tr>
-    </table>
-
     ${signature()}`;
-
-  const footerContent = `
-    <p style="font-family:Arial,Helvetica,sans-serif;font-size:12px;color:${TEXT_SEC};
-              margin:0 0 4px;line-height:1.5;">
-      The verification record for this envelope is permanently accessible at:<br>
-      <a href="${verificationUrl}" style="color:${BRAND};word-break:break-all;">${escapeHtml(verificationUrl)}</a>
-    </p>`;
 
   return safeSendEmail('completion', {
     to: input.to,
     bcc: input.bcc,
     subject: subject(`Completed: "${input.envelopeTitle}"`),
     attachments: input.attachments,
-    html: shell(body, footerContent),
+    text: completionPlainText({
+      recipientName: input.recipientName,
+      envelopeTitle: input.envelopeTitle,
+      documentLinks: input.documentLinks,
+      hasAttachments,
+    }),
+    html: shell(body, undefined, true),
   });
 }
 

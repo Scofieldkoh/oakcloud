@@ -786,27 +786,45 @@ export async function buildCertificatePdf(input: {
   return Buffer.from(await certificatePdf.save());
 }
 
-export function buildEmailAttachments(input: {
+export async function buildEmailAttachments(input: {
   documents: Array<{
     fileName: string;
     originalFileName?: string | null;
     signedBuffer: Buffer;
+    certificateBuffer?: Buffer;
   }>;
-}): Array<{
+}): Promise<Array<{
   filename: string;
   content: Buffer;
   contentType: string;
-}> {
-  const totalBytes = input.documents.reduce((sum, document) => sum + document.signedBuffer.byteLength, 0);
+}>> {
+  const sourceBytes = input.documents.reduce(
+    (sum, document) =>
+      sum + document.signedBuffer.byteLength + (document.certificateBuffer?.byteLength ?? 0),
+    0,
+  );
+
+  // Avoid loading and merging a package that is already over the provider
+  // attachment limit. The links in the completion email remain available.
+  if (sourceBytes > MAX_EMAIL_ATTACHMENT_BYTES) {
+    return [];
+  }
+
+  const attachments = await Promise.all(
+    input.documents.map(async (document) => ({
+      filename: getEsigningDocumentVariantFileName(document, 'signed'),
+      content: document.certificateBuffer
+        ? await mergePdfBuffers([document.signedBuffer, document.certificateBuffer])
+        : document.signedBuffer,
+      contentType: 'application/pdf',
+    })),
+  );
+  const totalBytes = attachments.reduce((sum, attachment) => sum + attachment.content.byteLength, 0);
   if (totalBytes > MAX_EMAIL_ATTACHMENT_BYTES) {
     return [];
   }
 
-  return input.documents.map((document) => ({
-    filename: getEsigningDocumentVariantFileName(document, 'signed'),
-    content: document.signedBuffer,
-    contentType: 'application/pdf',
-  }));
+  return attachments;
 }
 
 function sanitizePdfBaseName(value: string): string {
@@ -843,7 +861,10 @@ export async function mergePdfBuffers(buffers: Uint8Array[]): Promise<Buffer> {
   const mergedPdf = await PDFDocument.create();
 
   for (const buffer of buffers) {
-    const sourcePdf = await PDFDocument.load(buffer);
+    // pdf-lib's Node 24 path can misread a Buffer's inherited properties as
+    // load options. Normalize storage and attachment buffers to a plain view
+    // before parsing so worker downloads and browser fixtures behave alike.
+    const sourcePdf = await PDFDocument.load(new Uint8Array(buffer));
     const copiedPages = await mergedPdf.copyPages(sourcePdf, sourcePdf.getPageIndices());
     copiedPages.forEach((page) => mergedPdf.addPage(page));
   }

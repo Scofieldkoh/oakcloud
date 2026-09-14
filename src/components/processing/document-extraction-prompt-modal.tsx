@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Plus, Save, Trash2, X } from 'lucide-react';
 import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
@@ -48,11 +48,17 @@ export function DocumentExtractionPromptModal({
   const [promptTemplate, setPromptTemplate] = useState('');
   const [quickContexts, setQuickContexts] = useState<DocumentExtractionQuickContext[]>([]);
   const [isSaving, setIsSaving] = useState(false);
+  const initializedForOpenRef = useRef(false);
 
   useEffect(() => {
-    if (!settings || !isOpen) return;
+    if (!isOpen) {
+      initializedForOpenRef.current = false;
+      return;
+    }
+    if (!settings || initializedForOpenRef.current) return;
     setPromptTemplate(settings.promptTemplate);
     setQuickContexts(settings.quickContexts);
+    initializedForOpenRef.current = true;
   }, [settings, isOpen]);
 
   const updateQuickContext = (

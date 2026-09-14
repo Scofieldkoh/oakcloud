@@ -545,7 +545,7 @@ export async function listEsigningEnvelopes(
       createdById: envelope.createdById,
       createdByName: formatUserName(envelope.createdBy.firstName, envelope.createdBy.lastName, envelope.createdBy.email),
       canDelete:
-        ['DRAFT', 'COMPLETED'].includes(envelope.status) &&
+        ['DRAFT', 'COMPLETED', 'DECLINED', 'VOIDED'].includes(envelope.status) &&
         canDeleteEnvelope(scope, session, envelope.createdById),
       canVoid:
         ['SENT', 'IN_PROGRESS'].includes(envelope.status) &&
@@ -1064,8 +1064,8 @@ export async function deleteDraftEsigningEnvelope(
   if (!envelope) {
     throw new Error('Envelope not found');
   }
-  if (!['DRAFT', 'COMPLETED'].includes(envelope.status)) {
-    throw new Error('Only draft or completed envelopes can be deleted');
+  if (!['DRAFT', 'COMPLETED', 'DECLINED', 'VOIDED'].includes(envelope.status)) {
+    throw new Error('Only draft, completed, declined or voided envelopes can be deleted');
   }
   if (!canDeleteEnvelope(scope, session, envelope.createdById)) {
     throw new Error('Forbidden');

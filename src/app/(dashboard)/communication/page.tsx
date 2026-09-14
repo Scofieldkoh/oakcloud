@@ -19,12 +19,18 @@ import {
 
 const EMPTY_COMMUNICATIONS: CommunicationItem[] = [];
 
+type MailboxSettingsSnapshot = {
+  mailboxUserIds: string[];
+  ingestAllEmails: boolean;
+};
+
 export default function CommunicationPage() {
   const { data: session, isLoading: sessionLoading } = useSession();
   const { success, error: showError } = useToast();
   const [lookbackDays, setLookbackDays] = useState(30);
   const [mailboxesInput, setMailboxesInput] = useState('');
   const [ingestAllEmails, setIngestAllEmails] = useState(false);
+  const [isMailboxSettingsDirty, setIsMailboxSettingsDirty] = useState(false);
   const [selectedCommunicationIds, setSelectedCommunicationIds] = useState<string[]>([]);
   const [selectedCommunication, setSelectedCommunication] = useState<CommunicationItem | null>(null);
   const [deletingCommunication, setDeletingCommunication] = useState<CommunicationItem | null>(null);
@@ -41,6 +47,7 @@ export default function CommunicationPage() {
   const deleteCommunicationMutation = useDeleteCommunication();
   const bulkDeleteMutation = useBulkDeleteCommunications();
   const selectAllRef = useRef<HTMLInputElement>(null);
+  const pendingMailboxSettingsRef = useRef<MailboxSettingsSnapshot | null>(null);
 
   const isAdmin = !!session && (session.isSuperAdmin || session.isWorkspaceAdmin);
   const connector = communicationsQuery.data?.connector;
@@ -50,11 +57,20 @@ export default function CommunicationPage() {
     selectedCommunicationIds.length > 0 && selectedCommunicationIds.length < communications.length;
 
   useEffect(() => {
-    if (connector?.mailboxUserIds) {
-      setMailboxesInput(connector.mailboxUserIds.join(', '));
+    if (!connector || isMailboxSettingsDirty) return;
+
+    const pending = pendingMailboxSettingsRef.current;
+    if (pending) {
+      const matches = pending.ingestAllEmails === connector.ingestAllEmails
+        && pending.mailboxUserIds.length === connector.mailboxUserIds.length
+        && pending.mailboxUserIds.every((mailbox, index) => mailbox === connector.mailboxUserIds[index]);
+      if (!matches) return;
+      pendingMailboxSettingsRef.current = null;
     }
-    setIngestAllEmails(connector?.ingestAllEmails ?? false);
-  }, [connector?.mailboxUserIds, connector?.ingestAllEmails]);
+
+    setMailboxesInput(connector.mailboxUserIds.join(', '));
+    setIngestAllEmails(connector.ingestAllEmails);
+  }, [connector, isMailboxSettingsDirty]);
 
   useEffect(() => {
     const currentIds = new Set(communications.map((item) => item.id));
@@ -101,7 +117,14 @@ export default function CommunicationPage() {
     }
 
     try {
-      await updateMailboxesMutation.mutateAsync({ mailboxUserIds, ingestAllEmails });
+      const result = await updateMailboxesMutation.mutateAsync({ mailboxUserIds, ingestAllEmails });
+      pendingMailboxSettingsRef.current = {
+        mailboxUserIds: result.connector.mailboxUserIds,
+        ingestAllEmails: result.connector.ingestAllEmails,
+      };
+      setMailboxesInput(result.connector.mailboxUserIds.join(', '));
+      setIngestAllEmails(result.connector.ingestAllEmails);
+      setIsMailboxSettingsDirty(false);
       success('Communication settings saved');
     } catch (error) {
       showError(error instanceof Error ? error.message : 'Failed to save communication settings');
@@ -282,7 +305,10 @@ export default function CommunicationPage() {
                 </label>
                 <textarea
                   value={mailboxesInput}
-                  onChange={(e) => setMailboxesInput(e.target.value)}
+                  onChange={(e) => {
+                    setMailboxesInput(e.target.value);
+                    setIsMailboxSettingsDirty(true);
+                  }}
                   className="input w-full min-h-24 p-3"
                   placeholder="mailbox1@tenant.com, mailbox2@tenant.com"
                 />
@@ -291,7 +317,10 @@ export default function CommunicationPage() {
                 <input
                   type="checkbox"
                   checked={ingestAllEmails}
-                  onChange={(e) => setIngestAllEmails(e.target.checked)}
+                  onChange={(e) => {
+                    setIngestAllEmails(e.target.checked);
+                    setIsMailboxSettingsDirty(true);
+                  }}
                   className="mt-0.5 h-4 w-4 rounded border-border-primary accent-oak-primary cursor-pointer"
                 />
                 <span>
@@ -328,7 +357,10 @@ export default function CommunicationPage() {
               </label>
               <textarea
                 value={mailboxesInput}
-                onChange={(e) => setMailboxesInput(e.target.value)}
+                onChange={(e) => {
+                  setMailboxesInput(e.target.value);
+                  setIsMailboxSettingsDirty(true);
+                }}
                 className="input w-full min-h-24 p-3"
                 placeholder="mailbox1@tenant.com, mailbox2@tenant.com"
               />
@@ -337,7 +369,10 @@ export default function CommunicationPage() {
               <input
                 type="checkbox"
                 checked={ingestAllEmails}
-                onChange={(e) => setIngestAllEmails(e.target.checked)}
+                onChange={(e) => {
+                  setIngestAllEmails(e.target.checked);
+                  setIsMailboxSettingsDirty(true);
+                }}
                 className="mt-0.5 h-4 w-4 rounded border-border-primary accent-oak-primary cursor-pointer"
               />
               <span>

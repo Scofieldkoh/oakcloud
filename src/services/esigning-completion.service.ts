@@ -232,7 +232,9 @@ export function buildEsigningCompletionDeliveryTargets(
   });
 
   [...input.recipients]
-    .filter((recipient) => recipient.accessMode !== 'MANUAL_LINK')
+    // A manual link controls how the signing request is delivered. Once the
+    // envelope is complete, an email address on the recipient is still a
+    // valid completion-copy destination.
     .sort((left, right) => Number(left.type === 'CC') - Number(right.type === 'CC'))
     .forEach((recipient) => {
       addTarget({
@@ -925,14 +927,28 @@ export async function processEsigningCompletionDelivery(
     }
 
     const signedBuffers = await Promise.all(
-      delivery.envelope.documents.map(async (document) => ({
-        id: document.id,
-        fileName: document.fileName,
-        originalFileName: document.originalFileName,
-        signedBuffer: await storage.download(document.signedStoragePath as string),
-      }))
+      delivery.envelope.documents.map(async (document) => {
+        const [signedBuffer, certificateBuffer] = await Promise.all([
+          storage.download(document.signedStoragePath as string),
+          storage.download(
+            StorageKeys.esigningCertificateDocument(
+              delivery.envelope.tenantId,
+              delivery.envelope.id,
+              document.id,
+            ),
+          ),
+        ]);
+
+        return {
+          id: document.id,
+          fileName: document.fileName,
+          originalFileName: document.originalFileName,
+          signedBuffer,
+          certificateBuffer,
+        };
+      })
     );
-    const attachments = buildEmailAttachments({ documents: signedBuffers });
+    const attachments = await buildEmailAttachments({ documents: signedBuffers });
     const isRecipientDelivery = delivery.audience === 'RECIPIENT';
     const actorType = isRecipientDelivery ? 'recipient' : 'sender';
     const recipientId =

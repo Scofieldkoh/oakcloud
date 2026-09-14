@@ -64,4 +64,34 @@ describe('e-signing email subject', () => {
       bcc: 'ops@example.com',
     }));
   });
+
+  it('provides Outlook-safe table fallbacks and a plain-text completion alternative', async () => {
+    await sendEsigningCompletionEmail({
+      to: 'signer@example.com',
+      recipientName: 'Signer',
+      envelopeTitle: 'NDA',
+      certificateId: 'certificate-1',
+      documentLinks: [{
+        label: 'nda.pdf',
+        signedUrl: 'https://app.example.com/signed?token=abc&documentId=doc-1',
+        certificateUrl: 'https://app.example.com/certificate?token=abc&documentId=doc-1',
+      }],
+    });
+
+    const message = sendEmail.mock.calls[0][0] as { html: string; text: string };
+    expect(message.html).toContain('<!--[if mso]>');
+    expect(message.html).toContain('border-collapse:collapse');
+    expect(message.html).toContain('nda.pdf');
+    expect(message.html).toContain('Oaktree Accounting &amp; Corporate Solutions');
+    expect(message.html).not.toContain('View Verification Record');
+    expect(message.html).not.toContain('Document Certificate ID');
+    expect(message.html).not.toContain('https://app.example.com/signed');
+    expect(message.html).not.toContain('https://app.example.com/certificate');
+    expect(message.html).not.toContain('/verify/');
+    expect(message.text).toContain('NDA');
+    expect(message.text).toContain('Oaktree Accounting & Corporate Solutions');
+    expect(message.text).not.toContain('certificate-1');
+    expect(message.text).not.toContain('https://');
+    expect(message.text).not.toContain('<table');
+  });
 });

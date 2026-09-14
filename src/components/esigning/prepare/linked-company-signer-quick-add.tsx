@@ -32,6 +32,12 @@ interface RecipientDraft {
 }
 
 const EMPTY_DRAFT: RecipientDraft = { name: '', email: '', type: 'SIGNER', accessMode: 'MANUAL_LINK', accessCode: '' };
+const EDITABLE_CONTROL_CLASS_NAME = [
+  'bg-emerald-50',
+  'dark:bg-emerald-950/30',
+  'disabled:bg-background-primary',
+  'dark:disabled:bg-background-secondary',
+].join(' ');
 
 function isValidEmail(value: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
@@ -124,15 +130,15 @@ export function LinkedCompanySignerQuickAdd({ companyId, companyName, recipients
       {isEditorOpen ? <div className="mt-3 overflow-hidden rounded-xl border border-border-primary bg-background-primary">
         <div className="border-b border-border-primary px-4 py-3"><p className="text-sm font-semibold text-text-primary">Configure recipient</p><p className="text-xs text-text-muted">Review the contact details, role, and delivery method before adding.</p></div>
         <div className="space-y-3 p-4">
-          <ContactSearchSelect key={`linked-company-contact-${selectedContactId || 'empty'}`} label="Search Contact" value={selectedContactId} selectedContact={selectedContact} onChange={selectContact} placeholder="Search contacts..." controlClassName="!h-10 !min-h-0" />
-          <FormInput label="Full name" inputSize="lg" value={draft.name} onChange={(event) => setDraft((current) => ({ ...current, name: event.target.value }))} />
+          <ContactSearchSelect key={`linked-company-contact-${selectedContactId || 'empty'}`} label="Search Contact" value={selectedContactId} selectedContact={selectedContact} onChange={selectContact} placeholder="Search contacts..." controlClassName={cn('!h-10 !min-h-0', EDITABLE_CONTROL_CLASS_NAME)} />
+          <FormInput label="Full name" inputSize="lg" value={draft.name} onChange={(event) => setDraft((current) => ({ ...current, name: event.target.value }))} className={EDITABLE_CONTROL_CLASS_NAME} />
           <div className="grid gap-3 sm:grid-cols-3">
-            <FormInput label="Email address" inputSize="lg" type="email" placeholder="Optional for manual link" value={draft.email} onChange={(event) => setDraft((current) => ({ ...current, email: event.target.value }))} required={draft.type === 'CC' || draft.accessMode !== 'MANUAL_LINK'} hint={draft.type === 'SIGNER' && draft.accessMode === 'MANUAL_LINK' ? 'Optional when using Manual Link.' : undefined} />
-            <label className="flex flex-col gap-1 text-xs font-medium text-text-secondary">Role<select value={draft.type} onChange={(event) => handleRoleChange(event.target.value as EsigningRecipientType)} className="h-10 rounded-lg border border-border-primary bg-background-secondary px-3 text-sm text-text-primary">{Object.entries(ESIGNING_RECIPIENT_TYPE_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
-            <label className="flex flex-col gap-1 text-xs font-medium text-text-secondary">Access method<select value={draft.accessMode} onChange={(event) => setDraft((current) => ({ ...current, accessMode: event.target.value as EsigningRecipientAccessMode }))} disabled={draft.type === 'CC'} className="h-10 rounded-lg border border-border-primary bg-background-secondary px-3 text-sm text-text-primary disabled:opacity-60">{Object.entries(ESIGNING_ACCESS_MODE_LABELS).filter(([value]) => draft.type !== 'CC' || value !== 'MANUAL_LINK').map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+            <FormInput label="Email address" inputSize="lg" type="email" placeholder="Optional for manual link" value={draft.email} onChange={(event) => setDraft((current) => ({ ...current, email: event.target.value }))} required={draft.type === 'CC' || draft.accessMode !== 'MANUAL_LINK'} hint={draft.type === 'SIGNER' && draft.accessMode === 'MANUAL_LINK' ? 'Optional when using Manual Link.' : undefined} className={EDITABLE_CONTROL_CLASS_NAME} />
+            <label className="flex flex-col gap-2 text-xs font-medium text-text-secondary">Role<select value={draft.type} onChange={(event) => handleRoleChange(event.target.value as EsigningRecipientType)} className={cn('h-10 rounded-lg border border-border-primary bg-background-secondary px-3 text-sm text-text-primary', EDITABLE_CONTROL_CLASS_NAME)}>{Object.entries(ESIGNING_RECIPIENT_TYPE_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+            <label className="flex flex-col gap-2 text-xs font-medium text-text-secondary">Access method<select value={draft.accessMode} onChange={(event) => setDraft((current) => ({ ...current, accessMode: event.target.value as EsigningRecipientAccessMode }))} disabled={draft.type === 'CC'} className={cn('h-10 rounded-lg border border-border-primary bg-background-secondary px-3 text-sm text-text-primary disabled:opacity-60', EDITABLE_CONTROL_CLASS_NAME)}>{Object.entries(ESIGNING_ACCESS_MODE_LABELS).filter(([value]) => draft.type !== 'CC' || value !== 'MANUAL_LINK').map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
           </div>
           {draft.type === 'CC' ? <p className="text-xs text-text-muted">Copy recipients require email delivery, so Manual Link is not available.</p> : null}
-          {draft.accessMode === 'EMAIL_WITH_CODE' ? <FormInput label="Access code" inputSize="lg" value={draft.accessCode} onChange={(event) => setDraft((current) => ({ ...current, accessCode: event.target.value }))} placeholder={`Min ${ESIGNING_LIMITS.MIN_ACCESS_CODE_LENGTH} characters`} /> : null}
+          {draft.accessMode === 'EMAIL_WITH_CODE' ? <FormInput label="Access code" inputSize="lg" value={draft.accessCode} onChange={(event) => setDraft((current) => ({ ...current, accessCode: event.target.value }))} placeholder={`Min ${ESIGNING_LIMITS.MIN_ACCESS_CODE_LENGTH} characters`} className={EDITABLE_CONTROL_CLASS_NAME} /> : null}
           <div className="flex justify-end gap-2 border-t border-border-primary pt-3"><Button type="button" variant="secondary" size="sm" onClick={closeEditor} disabled={isSubmitting}>Cancel</Button><Button type="button" size="sm" leftIcon={<Check className="h-4 w-4" />} onClick={() => void handleConfirm()} isLoading={isSubmitting} disabled={isSubmitting}>Add recipient</Button></div>
         </div>
       </div> : null}

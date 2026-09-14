@@ -480,6 +480,13 @@ const DEFAULT_RECIPIENT_FORM = {
   accessCode: '',
 };
 
+const EDITABLE_CONTROL_CLASS_NAME = [
+  'bg-emerald-50',
+  'dark:bg-emerald-950/30',
+  'disabled:bg-background-primary',
+  'dark:disabled:bg-background-secondary',
+].join(' ');
+
 export function EsigningStepUpload({
   envelope,
   currentUser,
@@ -1344,6 +1351,7 @@ async function applyMixedGroupChange(
             disabled={!envelope.canEdit}
             placeholder="Optional company link"
             size="lg"
+            containerClassName={envelope.canEdit ? EDITABLE_CONTROL_CLASS_NAME : undefined}
           />
         </div>
 
@@ -1721,7 +1729,7 @@ async function applyMixedGroupChange(
                 value={selectedContactId}
                 onChange={handleContactSelect}
                 placeholder="Search contacts for signer..."
-                controlClassName="!h-10 !min-h-0"
+                controlClassName={cn('!h-10 !min-h-0', EDITABLE_CONTROL_CLASS_NAME)}
               />
             )}
 
@@ -1733,6 +1741,7 @@ async function applyMixedGroupChange(
                   placeholder="e.g. Jane Smith"
                   value={newRecipient.name}
                   onChange={(e) => setNewRecipient((prev) => ({ ...prev, name: e.target.value }))}
+                  className={EDITABLE_CONTROL_CLASS_NAME}
                 />
               </div>
             </div>
@@ -1747,8 +1756,9 @@ async function applyMixedGroupChange(
                 onChange={(e) => setNewRecipient((prev) => ({ ...prev, email: e.target.value }))}
                 required={newRecipientRequiresEmail}
                 hint={newRecipientRequiresEmail ? undefined : 'Optional for manual-link recipients.'}
+                className={EDITABLE_CONTROL_CLASS_NAME}
               />
-              <label className="flex flex-col gap-1 text-xs font-medium text-text-secondary">
+              <label className="flex flex-col gap-2 text-xs font-medium text-text-secondary">
                 Role
                 <select
                   value={newRecipient.type}
@@ -1761,19 +1771,25 @@ async function applyMixedGroupChange(
                       setSelectedContactDefaultEmailDetailId(null);
                     }
                   }}
-                  className="h-10 rounded-lg border border-border-primary bg-background-secondary px-3 text-sm text-text-primary"
+                  className={cn(
+                    'h-10 rounded-lg border border-border-primary bg-background-secondary px-3 text-sm text-text-primary',
+                    EDITABLE_CONTROL_CLASS_NAME,
+                  )}
                 >
                   {Object.entries(ESIGNING_RECIPIENT_TYPE_LABELS).map(([value, label]) => (
                     <option key={value} value={value}>{label}</option>
                   ))}
                 </select>
               </label>
-              <label className="flex flex-col gap-1 text-xs font-medium text-text-secondary">
+              <label className="flex flex-col gap-2 text-xs font-medium text-text-secondary">
                 Access method
                 <select
                   value={newRecipient.accessMode}
                   onChange={(e) => setNewRecipient((prev) => ({ ...prev, accessMode: e.target.value as EsigningRecipientAccessMode }))}
-                  className="h-10 rounded-lg border border-border-primary bg-background-secondary px-3 text-sm text-text-primary"
+                  className={cn(
+                    'h-10 rounded-lg border border-border-primary bg-background-secondary px-3 text-sm text-text-primary',
+                    EDITABLE_CONTROL_CLASS_NAME,
+                  )}
                 >
                   {Object.entries(ESIGNING_ACCESS_MODE_LABELS).map(([value, label]) => (
                     <option key={value} value={value}>{label}</option>
@@ -1789,6 +1805,7 @@ async function applyMixedGroupChange(
                 placeholder={`Min ${ESIGNING_LIMITS.MIN_ACCESS_CODE_LENGTH} characters`}
                 value={newRecipient.accessCode}
                 onChange={(e) => setNewRecipient((prev) => ({ ...prev, accessCode: e.target.value }))}
+                className={EDITABLE_CONTROL_CLASS_NAME}
               />
             )}
 
@@ -1876,6 +1893,7 @@ async function applyMixedGroupChange(
             }}
             disabled={!envelope.canEdit || !hasEmailRecipients}
             error={settingsErrors.emailSubject}
+            className={EDITABLE_CONTROL_CLASS_NAME}
           />
 
           <label className="flex flex-col gap-2 text-xs font-medium text-text-secondary">
@@ -1890,7 +1908,10 @@ async function applyMixedGroupChange(
               disabled={!envelope.canEdit || !hasEmailRecipients}
               rows={4}
               aria-invalid={settingsErrors.message ? 'true' : 'false'}
-              className="rounded-xl border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary outline-none resize-none focus:border-oak-primary focus:ring-2 focus:ring-oak-primary/30 disabled:cursor-not-allowed disabled:opacity-60"
+              className={cn(
+                'rounded-xl border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary outline-none resize-none focus:border-oak-primary focus:ring-2 focus:ring-oak-primary/30 disabled:cursor-not-allowed disabled:opacity-60',
+                EDITABLE_CONTROL_CLASS_NAME,
+              )}
             />
             {settingsErrors.message ? (
               <span className="text-xs text-red-400">{settingsErrors.message}</span>
@@ -1913,6 +1934,7 @@ async function applyMixedGroupChange(
             }}
             disabled={!envelope.canEdit}
             error={settingsErrors.title}
+            className={EDITABLE_CONTROL_CLASS_NAME}
           />
 
           <SingleDateInput
@@ -1924,6 +1946,7 @@ async function applyMixedGroupChange(
             }}
             disabled={!envelope.canEdit}
             placeholder="dd mmm yyyy"
+            controlClassName={envelope.canEdit ? EDITABLE_CONTROL_CLASS_NAME : undefined}
           />
 
           <div className="space-y-2">
@@ -1942,7 +1965,10 @@ async function applyMixedGroupChange(
               placeholder="ops@example.com, legal@example.com"
               aria-label="Completion BCC"
               rows={3}
-              className="w-full resize-y rounded-xl border border-border-primary bg-background-secondary px-3 py-2.5 text-sm text-text-primary outline-none transition focus:border-oak-primary focus:ring-2 focus:ring-oak-primary/20 disabled:cursor-not-allowed disabled:opacity-60"
+              className={cn(
+                'w-full resize-y rounded-xl border border-border-primary bg-background-secondary px-3 py-2.5 text-sm text-text-primary outline-none transition focus:border-oak-primary focus:ring-2 focus:ring-oak-primary/20 disabled:cursor-not-allowed disabled:opacity-60',
+                EDITABLE_CONTROL_CLASS_NAME,
+              )}
             />
             <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
               <span className="block text-xs leading-5 text-text-muted">
@@ -1984,6 +2010,7 @@ async function applyMixedGroupChange(
                 disabled={!envelope.canEdit}
                 hint="Days between reminder emails."
                 error={settingsErrors.reminderFrequencyDays}
+                className={EDITABLE_CONTROL_CLASS_NAME}
               />
               <FormInput
                 label="Start reminders after"
@@ -2000,6 +2027,7 @@ async function applyMixedGroupChange(
                 disabled={!envelope.canEdit}
                 hint="Days after send before reminders begin."
                 error={settingsErrors.reminderStartDays}
+                className={EDITABLE_CONTROL_CLASS_NAME}
               />
               <FormInput
                 label="Warn before expiry"
@@ -2016,6 +2044,7 @@ async function applyMixedGroupChange(
                 disabled={!envelope.canEdit}
                 hint="Days before expiry to notify the sender."
                 error={settingsErrors.expiryWarningDays}
+                className={EDITABLE_CONTROL_CLASS_NAME}
               />
           </div>
         </div>

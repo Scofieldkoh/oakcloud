@@ -21,6 +21,7 @@ interface EsigningSignatureModalProps {
   applyToAllLabel?: string;
   applyToAllDefault?: boolean;
   showDownloadSvg?: boolean;
+  onClear?: () => void;
 }
 
 type ActiveTab = 'draw' | 'type' | 'upload';
@@ -178,6 +179,7 @@ export function EsigningSignatureModal({
   applyToAllLabel,
   applyToAllDefault = true,
   showDownloadSvg = true,
+  onClear,
 }: EsigningSignatureModalProps) {
   const [activeTab, setActiveTab] = useState<ActiveTab>('draw');
   const [drawDataUrl, setDrawDataUrl] = useState<string>(existingSignature ?? '');
@@ -429,6 +431,11 @@ export function EsigningSignatureModal({
       </ModalBody>
 
       <ModalFooter>
+        {onClear ? (
+          <Button variant="ghost" onClick={onClear} disabled={isSubmitting}>
+            Undo signature
+          </Button>
+        ) : null}
         {showDownloadSvg && currentVectorDataUrl ? (
           <Button variant="secondary" onClick={handleDownloadSvg} disabled={isSubmitting}>
             Download SVG

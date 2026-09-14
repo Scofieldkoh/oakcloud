@@ -73,7 +73,8 @@ describe('e-signing envelope deletion', () => {
     mocks.createAuditLog.mockResolvedValue(undefined);
   });
 
-  it('permanently deletes completed envelopes and their storage', async () => {
+  it.each(['DRAFT', 'COMPLETED', 'DECLINED', 'VOIDED'])('permanently deletes %s envelopes and their storage', async (status) => {
+    mocks.findFirst.mockResolvedValue({ id: 'envelope-1', status, createdById: 'user-1', title: 'Signed NDA', companyId: null });
     await deleteDraftEsigningEnvelope(session, 'tenant-1', 'envelope-1');
 
     expect(mocks.delete).toHaveBeenCalledWith({ where: { id: 'envelope-1' } });
@@ -86,7 +87,20 @@ describe('e-signing envelope deletion', () => {
     expect(mocks.createAuditLog).toHaveBeenCalledWith(expect.objectContaining({
       action: 'DELETE',
       entityId: 'envelope-1',
-      summary: 'Deleted completed e-signing envelope "Signed NDA"',
+      summary: `Deleted ${status.toLowerCase()} e-signing envelope "Signed NDA"`,
     }));
   });
+  it.each(['SENT', 'IN_PROGRESS'])('rejects deletion of %s envelopes', async (status) => {
+    mocks.findFirst.mockResolvedValue({ id: 'envelope-1', status, createdById: 'user-1' });
+    await expect(deleteDraftEsigningEnvelope(session, 'tenant-1', 'envelope-1')).rejects.toThrow('Only draft, completed, declined or voided');
+    expect(mocks.delete).not.toHaveBeenCalled();
+  });
+
+  it.each(['DECLINED', 'VOIDED'])('preserves delete permissions for %s envelopes', async (status) => {
+    mocks.findFirst.mockResolvedValue({ id: 'envelope-1', status, createdById: 'user-2' });
+    mocks.resolveEsigningActorScope.mockResolvedValue({ canDeleteAny: false, canDeleteOwn: false });
+    await expect(deleteDraftEsigningEnvelope(session, 'tenant-1', 'envelope-1')).rejects.toThrow('Forbidden');
+    expect(mocks.delete).not.toHaveBeenCalled();
+  });
+
 });

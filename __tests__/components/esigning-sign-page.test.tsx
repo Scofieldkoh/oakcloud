@@ -33,6 +33,7 @@ vi.mock('@/components/processing/document-page-viewer', () => ({
     renderHighlightContent,
     highlights,
     initialPage,
+    renderPageOverlay,
     viewMode,
     allowPagePanel,
     focusedHighlightLabel,
@@ -44,6 +45,7 @@ vi.mock('@/components/processing/document-page-viewer', () => ({
     ) => React.ReactNode;
     highlights: Array<{ label: string; pageNumber: number }>;
     initialPage?: number;
+    renderPageOverlay?: (context: { pageNumber: number; width: number; height: number }) => React.ReactNode;
     viewMode?: 'single' | 'continuous';
     allowPagePanel?: boolean;
     pdfUrl?: string;
@@ -62,8 +64,9 @@ vi.mock('@/components/processing/document-page-viewer', () => ({
         data-initial-page={initialPage ?? 1}
         data-focused-highlight={focusedHighlightLabel}
       >
+        {renderPageOverlay?.({ pageNumber: 1, width: 600, height: 800 })}
         {visibleHighlights.map((highlight, index) => (
-        <div key={highlight.label}>{renderHighlightContent(highlight, null, index)}</div>
+          <div key={highlight.label}>{renderHighlightContent(highlight, null, index)}</div>
         ))}
       </div>
     );
@@ -101,17 +104,33 @@ vi.mock('@/components/esigning/signing/esigning-signature-modal', () => ({
   EsigningSignatureModal: ({
     isOpen,
     onAdopt,
+    onClear,
+    titleOverride,
+    confirmLabel,
+    existingSignature,
   }: {
     isOpen: boolean;
     onAdopt: (result: { dataUrl: string; applyToAll: boolean }) => void;
+    onClear?: () => void;
+    titleOverride?: string;
+    confirmLabel?: string;
+    existingSignature?: string | null;
   }) =>
     isOpen ? (
-      <button
-        type="button"
-        onClick={() => onAdopt({ dataUrl: 'data:image/png;base64,c2ln', applyToAll: false })}
-      >
-        Save signature
-      </button>
+      <div data-testid="signature-modal" data-existing-signature={existingSignature ?? ''}>
+        {titleOverride ? <h2>{titleOverride}</h2> : null}
+        {onClear ? (
+          <button type="button" onClick={onClear}>
+            Undo signature
+          </button>
+        ) : null}
+        <button
+          type="button"
+          onClick={() => onAdopt({ dataUrl: 'data:image/png;base64,c2ln', applyToAll: false })}
+        >
+          {confirmLabel ?? 'Save signature'}
+        </button>
+      </div>
     ) : null,
 }));
 
@@ -579,6 +598,90 @@ describe('EsigningSignPage autosave and field values', () => {
     window.history.replaceState({}, '', '/');
   });
 
+  it('persists an explicit signature undo after an in-flight save', async () => {
+    const signatureField = makeField({ type: 'SIGNATURE' });
+    const session = makeSigningSession(signatureField);
+    const staleSignedSession = makeSigningSession(signatureField, {
+      fieldValues: [
+        {
+          id: 'field-value-1',
+          fieldDefinitionId: signatureField.id,
+          recipientId: 'recipient-1',
+          value: 'signed',
+          signatureStoragePath: 'esigning/old-signature.png',
+          signaturePreviewUrl: 'https://cdn.example.test/old-signature.png',
+          filledAt: '2026-08-11T08:02:00.000Z',
+          finalizedAt: null,
+          revision: 1,
+        },
+      ],
+    });
+    stubSigningFetch(session);
+
+    let resolveFirstSave!: (response: Response) => void;
+    const firstSave = new Promise<Response>((resolve) => {
+      resolveFirstSave = resolve;
+    });
+    let fieldsCallCount = 0;
+    fieldsHandler = () => {
+      fieldsCallCount += 1;
+      return fieldsCallCount === 1 ? firstSave : jsonResponse(session);
+    };
+
+    render(<EsigningSignPage />);
+    await screen.findByTestId('signing-document');
+
+    await userEvent.click(screen.getByRole('button', { name: 'Sign Here' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Save signature' }));
+    await waitFor(() => expect(fieldSaveRequests).toHaveLength(1));
+
+    await userEvent.click(screen.getByRole('button', { name: 'Sign Here' }));
+    expect(screen.getByRole('heading', { name: 'Change Your Signature' })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Undo signature' }));
+
+    resolveFirstSave(jsonResponse(staleSignedSession));
+
+    await waitFor(() => expect(fieldSaveRequests).toHaveLength(2));
+    const undoBody = JSON.parse(String(fieldSaveRequests[1].body)) as {
+      values: Array<{ fieldDefinitionId: string; value: string | null; signatureDataUrl: string | null }>;
+    };
+    expect(undoBody.values).toEqual([
+      expect.objectContaining({
+        fieldDefinitionId: signatureField.id,
+        value: null,
+        signatureDataUrl: null,
+      }),
+    ]);
+  });
+
+  it('does not treat a remote signature preview URL as editable signature data', async () => {
+    const signatureField = makeField({ type: 'SIGNATURE' });
+    const session = makeSigningSession(signatureField, {
+      fieldValues: [
+        {
+          id: 'field-value-1',
+          fieldDefinitionId: signatureField.id,
+          recipientId: 'recipient-1',
+          value: 'signed',
+          signatureStoragePath: 'esigning/old-signature.png',
+          signaturePreviewUrl: 'https://cdn.example.test/old-signature.png',
+          filledAt: '2026-08-11T08:02:00.000Z',
+          finalizedAt: null,
+          revision: 1,
+        },
+      ],
+    });
+    stubSigningFetch(session);
+
+    render(<EsigningSignPage />);
+    await screen.findByTestId('signing-document');
+
+    await userEvent.click(screen.getByRole('button', { name: 'Sign Here' }));
+
+    expect(screen.getByRole('heading', { name: 'Change Your Signature' })).toBeInTheDocument();
+    expect(screen.getByTestId('signature-modal')).toHaveAttribute('data-existing-signature', '');
+  });
+
   it('hides the page panel while signing on a portrait mobile viewport', async () => {
     mocks.isMobile = true;
     Object.defineProperty(window, 'innerWidth', { configurable: true, value: 390 });
@@ -719,6 +822,41 @@ describe('EsigningSignPage document navigation', () => {
 
     expect(screen.getByRole('button', { name: 'Sign Here' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Date' })).toBeInTheDocument();
+  });
+
+  it('renders signatures completed by earlier signers as read-only preview marks', async () => {
+    const signatureField = makeField({ type: 'SIGNATURE' });
+    const session = makeSigningSession(signatureField, {
+      signedSignatures: [
+        {
+          fieldDefinitionId: 'previous-signer-signature',
+          signaturePreviewUrl: 'https://cdn.example.test/prior-signature.png',
+          signerName: 'Earlier signer',
+          documentId: 'document-1',
+          pageNumber: 1,
+          xPercent: 0.2,
+          yPercent: 0.3,
+          widthPercent: 0.24,
+          heightPercent: 0.08,
+        },
+      ],
+    });
+
+    stubSigningFetch(session);
+    render(<EsigningSignPage />);
+
+    await screen.findByTestId('signing-document');
+
+    expect(screen.getByTestId('signed-signature-previous-signer-signature')).toHaveAttribute(
+      'aria-label',
+      'Signature from Earlier signer'
+    );
+    expect(screen.getByAltText('Signature from Earlier signer')).toHaveAttribute(
+      'src',
+      'https://cdn.example.test/prior-signature.png'
+    );
+    expect(screen.queryByRole('button', { name: 'Signature from Earlier signer' })).not.toBeInTheDocument();
+    expect(screen.getByTestId('signing-post-it')).toHaveAttribute('data-total-count', '1');
   });
 
   it('does not focus the first signing field until the signer navigates', async () => {

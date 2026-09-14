@@ -222,9 +222,9 @@ export function useCompanies(params: CompanySearchParams = {}) {
   return useQuery({
     queryKey: ['companies', params],
     queryFn: () => fetchCompanies(params),
-    staleTime: 2 * 60 * 1000, // 2 minutes - data stays fresh, no refetch needed
+    staleTime: 2 * 60 * 1000, // Serve cached data immediately, then refresh on mount/focus.
     gcTime: 10 * 60 * 1000, // 10 minutes - keep in cache
-    refetchOnMount: true, // Refetch if stale (e.g. after a mutation invalidated the list)
+    refetchOnMount: 'always',
     placeholderData: (previousData) => previousData, // Keep previous data visible while fetching
   });
 }
@@ -259,9 +259,8 @@ export function useCompaniesPageBootstrap(
     },
     staleTime: 2 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
-    // Refetch stale data on mount (e.g. after a mutation invalidated the list),
-    // while still serving cached data instantly when it is fresh.
-    refetchOnMount: true,
+    // Refresh on every mount while still serving cached data instantly.
+    refetchOnMount: 'always',
     initialData,
     initialDataUpdatedAt: restoredFromSession ? 0 : undefined,
     placeholderData: (previousData) => previousData,

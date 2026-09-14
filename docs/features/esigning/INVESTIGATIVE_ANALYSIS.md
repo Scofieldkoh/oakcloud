@@ -462,3 +462,42 @@ The original investigation history above is preserved; this section is a dated f
 - Initial file upload is operable with Tab and Enter/Space.
 - Arrow keys retain default page behavior unless a focused, visible field selection is being nudged.
 - Completed CC recipients display an explicit delivery outcome.
+
+## Refresh and draft preservation follow-up (2026-09-11)
+
+Dashboard queries now refetch when a screen mounts and when the browser window regains focus,
+while retaining cached data for responsive rendering. E-Signing admin lists also poll every 15
+seconds, including empty and terminal-only lists, so newly created or progressing envelopes appear
+without requiring a manual reload. Preparation and other admin forms keep local edits while a
+refreshed query result arrives, then resynchronize after a save or when the form is clean.
+
+This policy applies to React Query-backed screens. Pages that obtain data through manual fetches
+still need their own refresh lifecycle when they should update on focus or return navigation.
+
+### Client preview and review follow-up (2026-09-12)
+
+The public signing page makes its decorative page overlay click-through so progress banners and
+earlier signatures do not intercept signature-field clicks or start document panning. Authoring
+overlays remain interactive. Public header, consent, and verification screens display the legacy
+Oakcloud workspace name as Oaktree without changing stored names or signing evidence. Review & Send
+labels the envelope name and signing method, and document badges show assigned field counts.
+
+Signature progress banners are keyboard-accessible buttons that move to the next unfilled required
+field, wrapping across documents. Once required fields are complete they become inactive; finishing
+still requires the Finish action. E-signing previews omit the full-height page navigation bars while
+retaining the toolbar and page thumbnails.
+
+The Sign/Finish tab is positioned on the preview frame's right edge, rather than the browser edge.
+Desktop document zoom advances in ten-percentage-point steps; mobile zoom retains one-percent steps.
+
+Desktop zoom starts at 170%. The post-it protrudes from the frame with matching arrow widths; its
+main action navigates to the active field's page, or opens that field when already on its page.
+The Boxes toggle is hidden in e-signing previews while signing fields remain visible.
+
+Saved signature previews are loaded from private storage by the authorized signing session and
+returned as inline PNGs. Draft resumption and prior-signer previews therefore work with local
+storage as well as S3, without depending on a public storage route or an expiring image URL.
+
+- Completion email presentation: list document names without download/certificate links, omit verification CTA, certificate ID and verification footer, and append Oaktree Accounting & Corporate Solutions to the copyright line. Attachments remain supplied by the completion workflow. Plain text mirrors the simplified content.
+
+- Declined and voided envelopes now expose the existing Delete action and are accepted by the deletion service, subject to existing ownership/delete permissions. Sent and in-progress envelopes remain protected.

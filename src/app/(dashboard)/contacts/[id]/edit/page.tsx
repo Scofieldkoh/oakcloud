@@ -59,25 +59,25 @@ export default function EditContactPage({
 
   // Populate form when contact data loads
   useEffect(() => {
-    if (contact) {
-      reset({
-        id: contact.id,
-        contactType: contact.contactType,
-        firstName: contact.firstName || undefined,
-        lastName: contact.lastName || undefined,
-        alias: contact.alias || undefined,
-        identificationType: contact.identificationType || undefined,
-        identificationNumber: contact.identificationNumber || undefined,
-        nationality: contact.nationality || undefined,
-        dateOfBirth: contact.dateOfBirth
-          ? new Date(contact.dateOfBirth).toISOString()
-          : undefined,
-        corporateName: contact.corporateName || undefined,
-        corporateUen: contact.corporateUen || undefined,
-        fullAddress: contact.fullAddress || undefined,
-      });
-    }
-  }, [contact, reset]);
+    if (!contact || isDirty) return;
+
+    reset({
+      id: contact.id,
+      contactType: contact.contactType,
+      firstName: contact.firstName || undefined,
+      lastName: contact.lastName || undefined,
+      alias: contact.alias || undefined,
+      identificationType: contact.identificationType || undefined,
+      identificationNumber: contact.identificationNumber || undefined,
+      nationality: contact.nationality || undefined,
+      dateOfBirth: contact.dateOfBirth
+        ? new Date(contact.dateOfBirth).toISOString()
+        : undefined,
+      corporateName: contact.corporateName || undefined,
+      corporateUen: contact.corporateUen || undefined,
+      fullAddress: contact.fullAddress || undefined,
+    });
+  }, [contact, isDirty, reset]);
 
   // Warn about unsaved changes when leaving the page
   useUnsavedChangesWarning(isDirty, !isSubmitting);

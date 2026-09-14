@@ -236,6 +236,10 @@ export function EsigningCompletionScreen({
             View Certificate
           </Link>
         </div>
+
+        <p className="mt-6 text-center text-xs font-medium uppercase tracking-[0.16em] text-text-muted">
+          Oaktree secure signing
+        </p>
       </div>
     </div>
   );

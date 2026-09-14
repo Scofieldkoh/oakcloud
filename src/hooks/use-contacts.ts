@@ -263,11 +263,10 @@ export function useContacts(
   const query = useQuery({
     queryKey,
     queryFn: () => fetchContacts(params),
-    staleTime: 2 * 60 * 1000, // 2 minutes - data stays fresh, no refetch needed
+    staleTime: 2 * 60 * 1000, // Serve cached data immediately, then refresh on mount/focus.
     gcTime: 10 * 60 * 1000, // 10 minutes - keep in cache
-    // Refetch stale data on mount (e.g. after a mutation invalidated the list),
-    // while still serving cached data instantly when it is fresh.
-    refetchOnMount: true,
+    // Refresh on every mount while still serving cached data instantly.
+    refetchOnMount: 'always',
     initialData,
     initialDataUpdatedAt: restoredFromSession ? 0 : undefined,
     placeholderData: (previousData) => previousData, // Keep previous data visible while fetching
@@ -283,9 +282,9 @@ export function useContact(id: string, full = true) {
     queryKey: ['contact', id, full],
     queryFn: () => fetchContact(id, full),
     enabled: !!id,
-    staleTime: 2 * 60 * 1000, // 2 minutes - data stays fresh, no refetch needed
+    staleTime: 2 * 60 * 1000, // Serve cached data immediately, then refresh on mount/focus.
     gcTime: 10 * 60 * 1000, // 10 minutes - keep in cache
-    refetchOnMount: false, // Use cached data if fresh (respects staleTime)
+    refetchOnMount: 'always',
   });
 }
 

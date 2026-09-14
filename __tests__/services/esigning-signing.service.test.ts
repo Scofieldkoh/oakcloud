@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   finalizeEsigningEnvelopeCompletion,
   getEsigningSigningSessionStatus,
+  loadEsigningSigningSession,
   saveEsigningSigningFieldValues,
 } from '@/services/esigning-signing.service';
 import { getEsigningPostCompletionSummary } from '@/services/esigning-completion.service';
@@ -17,6 +18,7 @@ const prismaMocks = vi.hoisted(() => ({
   countRecipients: vi.fn(),
   findFirstEnvelope: vi.fn(),
   fieldValueFindMany: vi.fn(),
+  emailDeliveryFindMany: vi.fn(),
   transaction: vi.fn(),
   envelopeUpdateMany: vi.fn(),
   deliveryUpdateMany: vi.fn(),
@@ -24,6 +26,12 @@ const prismaMocks = vi.hoisted(() => ({
 
 const sessionMocks = vi.hoisted(() => ({
   getEsigningSessionClaims: vi.fn(),
+  createEsigningDownloadToken: vi.fn(),
+}));
+
+const storageMocks = vi.hoisted(() => ({
+  getSignedUrl: vi.fn(),
+  download: vi.fn(),
 }));
 
 const rbacMocks = vi.hoisted(() => ({
@@ -36,6 +44,7 @@ const fieldServiceMocks = vi.hoisted(() => ({
 
 vi.mock('@/services/service-agreement', () => serviceAgreementMock);
 vi.mock('@/lib/esigning-session', () => sessionMocks);
+vi.mock('@/lib/storage', () => ({ storage: storageMocks }));
 vi.mock('@/lib/audit', () => ({ createAuditLog: vi.fn() }));
 vi.mock('@/lib/rbac', () => ({ hasPermission: rbacMocks.hasPermission }));
 vi.mock('@/services/esigning-field.service', async (importOriginal) => {
@@ -59,6 +68,7 @@ vi.mock('@/lib/prisma', () => ({
       updateMany: prismaMocks.envelopeUpdateMany,
     },
     esigningEmailDelivery: {
+      findMany: prismaMocks.emailDeliveryFindMany,
       updateMany: prismaMocks.deliveryUpdateMany,
     },
     $transaction: prismaMocks.transaction,
@@ -108,6 +118,231 @@ function makeTx(envelope = makeEnvelope()) {
   };
 }
 
+function makeSigningSessionEnvelope(overrides: Record<string, unknown> = {}) {
+  const currentRecipient = {
+    id: 'recipient-current',
+    name: 'Current Signer',
+    email: 'current@example.com',
+    type: 'SIGNER',
+    status: 'VIEWED',
+    sessionVersion: 1,
+    accessMode: 'EMAIL_LINK',
+    consentedAt: new Date('2026-09-11T08:00:00.000Z'),
+    viewedAt: new Date('2026-09-11T08:01:00.000Z'),
+    signedAt: null,
+    signingOrder: 2,
+    colorTag: '#06b6d4',
+  };
+
+  return {
+    id: 'envelope-1',
+    tenantId: 'tenant-1',
+    tenant: { id: 'tenant-1', name: 'Acme Pte Ltd' },
+    company: null,
+    title: 'Service Agreement',
+    message: 'Please review and sign.',
+    status: 'IN_PROGRESS',
+    pdfGenerationStatus: null,
+    certificateId: 'certificate-1',
+    createdById: 'sender-1',
+    createdBy: { firstName: 'Sender', lastName: 'User', email: 'sender@example.com' },
+    completedAt: null,
+    expiresAt: null,
+    autoFilingStatus: 'NOT_REQUIRED',
+    consentVersion: '1.0',
+    documents: [
+      {
+        id: 'document-1',
+        fileName: 'agreement.pdf',
+        originalFileName: null,
+        pageCount: 2,
+        fileSize: 1024,
+        originalHash: 'original-hash',
+        signedHash: null,
+        storagePath: 'tenant-1/envelope-1/document-1/original.pdf',
+        signedStoragePath: null,
+        sortOrder: 0,
+      },
+    ],
+    recipients: [
+      currentRecipient,
+      {
+        id: 'recipient-prior',
+        name: 'Prior Signer',
+        email: 'prior@example.com',
+        type: 'SIGNER',
+        status: 'SIGNED',
+        sessionVersion: 1,
+        accessMode: 'EMAIL_LINK',
+        consentedAt: new Date('2026-09-11T07:00:00.000Z'),
+        viewedAt: new Date('2026-09-11T07:01:00.000Z'),
+        signedAt: new Date('2026-09-11T07:02:00.000Z'),
+        signingOrder: 1,
+        colorTag: '#22c55e',
+      },
+      {
+        id: 'recipient-pending',
+        name: 'Pending Signer',
+        email: 'pending@example.com',
+        type: 'SIGNER',
+        status: 'NOTIFIED',
+        sessionVersion: 1,
+        accessMode: 'EMAIL_LINK',
+        consentedAt: null,
+        viewedAt: null,
+        signedAt: null,
+        signingOrder: 3,
+        colorTag: '#f59e0b',
+      },
+    ],
+    fieldDefinitions: [
+      {
+        id: 'field-current',
+        documentId: 'document-1',
+        recipientId: 'recipient-current',
+        type: 'SIGNATURE',
+        pageNumber: 1,
+        xPercent: 10,
+        yPercent: 20,
+        widthPercent: 25,
+        heightPercent: 8,
+        required: true,
+        label: null,
+        placeholder: null,
+        sortOrder: 0,
+      },
+    ],
+    ...overrides,
+  };
+}
+
+describe('e-signing prior signer preview projection', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    sessionMocks.getEsigningSessionClaims.mockResolvedValue({
+      recipientId: 'recipient-current',
+      envelopeId: 'envelope-1',
+      sessionVersion: 1,
+      sessionId: null,
+    });
+    sessionMocks.createEsigningDownloadToken.mockResolvedValue('download-token');
+    prismaMocks.emailDeliveryFindMany.mockResolvedValue([]);
+    storageMocks.download.mockResolvedValue(Buffer.from('saved-signature'));
+    storageMocks.getSignedUrl.mockImplementation(
+      async (path: string) => `https://storage.example/${path}`
+    );
+  });
+
+  it('returns only finalized prior-signer signature assets in the session DTO', async () => {
+    prismaMocks.findFirstEnvelope.mockResolvedValue(makeSigningSessionEnvelope());
+    prismaMocks.fieldValueFindMany
+      // Current signer draft values are returned separately from the prior
+      // signer projection and must not be reused for this query.
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([
+        {
+          fieldDefinitionId: 'field-prior',
+          recipientId: 'recipient-prior',
+          signatureStoragePath: 'tenant-1/envelope-1/recipient-prior/signature.png',
+          fieldDefinition: {
+            recipientId: 'recipient-prior',
+            documentId: 'document-1',
+            pageNumber: 2,
+            xPercent: 30,
+            yPercent: 40,
+            widthPercent: 20,
+            heightPercent: 7,
+          },
+          recipient: { name: 'Prior Signer' },
+        },
+      ]);
+
+    const result = await loadEsigningSigningSession();
+    const signedSignatures = result.signedSignatures ?? [];
+
+    expect(signedSignatures).toEqual([
+      {
+        fieldDefinitionId: 'field-prior',
+        signaturePreviewUrl:
+          `data:image/png;base64,${Buffer.from('saved-signature').toString('base64')}`,
+        signerName: 'Prior Signer',
+        documentId: 'document-1',
+        pageNumber: 2,
+        xPercent: 30,
+        yPercent: 40,
+        widthPercent: 20,
+        heightPercent: 7,
+      },
+    ]);
+    expect(Object.keys(signedSignatures[0] ?? {}).sort()).toEqual([
+      'documentId',
+      'fieldDefinitionId',
+      'heightPercent',
+      'pageNumber',
+      'signaturePreviewUrl',
+      'signerName',
+      'widthPercent',
+      'xPercent',
+      'yPercent',
+    ]);
+    expect(storageMocks.download).toHaveBeenCalledWith(
+      'tenant-1/envelope-1/recipient-prior/signature.png'
+    );
+  });
+
+  it('restores a saved draft signature without a public storage URL', async () => {
+    prismaMocks.findFirstEnvelope.mockResolvedValue(makeSigningSessionEnvelope());
+    const bytes = Buffer.from('saved-draft-signature');
+    storageMocks.download.mockResolvedValue(bytes);
+    prismaMocks.fieldValueFindMany.mockResolvedValueOnce([{
+      id: 'value-current', fieldDefinitionId: 'field-current', recipientId: 'recipient-current',
+      value: 'signed', signatureStoragePath: 'tenant-1/envelope-1/recipient-current/signature.png',
+      filledAt: new Date(), finalizedAt: null, revision: 1,
+    }]).mockResolvedValueOnce([]);
+
+    const session = await loadEsigningSigningSession();
+
+    expect(session.fieldValues[0].signaturePreviewUrl).toBe(`data:image/png;base64,${bytes.toString('base64')}`);
+    expect(storageMocks.download).toHaveBeenCalledWith('tenant-1/envelope-1/recipient-current/signature.png');
+    expect(storageMocks.getSignedUrl).not.toHaveBeenCalled();
+  });
+
+  it('scopes the read to signed signer values in the current tenant and envelope', async () => {
+    prismaMocks.findFirstEnvelope.mockResolvedValue(makeSigningSessionEnvelope());
+    prismaMocks.fieldValueFindMany.mockResolvedValueOnce([]).mockResolvedValueOnce([]);
+
+    await loadEsigningSigningSession();
+
+    const priorSignatureQuery = prismaMocks.fieldValueFindMany.mock.calls[1]?.[0];
+    expect(priorSignatureQuery).toEqual(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          tenantId: 'tenant-1',
+          finalizedAt: { not: null },
+          signatureStoragePath: { not: null },
+          fieldDefinition: expect.objectContaining({
+            tenantId: 'tenant-1',
+            envelopeId: 'envelope-1',
+            type: { in: ['SIGNATURE', 'INITIALS'] },
+            document: {
+              tenantId: 'tenant-1',
+              envelopeId: 'envelope-1',
+            },
+          }),
+          recipient: {
+            tenantId: 'tenant-1',
+            envelopeId: 'envelope-1',
+            id: { not: 'recipient-current' },
+            type: 'SIGNER',
+            status: 'SIGNED',
+            signedAt: { not: null },
+          },
+        }),
+      })
+    );
+  });
+});
+
 describe('e-signing completion queueing', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -149,8 +384,8 @@ describe('e-signing completion queueing', () => {
     });
 
     const queuedData = tx.esigningEmailDelivery.createMany.mock.calls[0][0].data as unknown[];
-    expect(queuedData).toHaveLength(3);
-    expect(queuedData).not.toEqual(
+    expect(queuedData).toHaveLength(4);
+    expect(queuedData).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ targetKey: 'recipient:recipient-3' }),
       ])

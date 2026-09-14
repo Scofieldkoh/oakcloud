@@ -163,6 +163,26 @@ export interface EsigningFieldValueDto {
   revision: number;
 }
 
+/**
+ * A finalized signature or initials field from a signer who completed an
+ * earlier signing step in the same envelope.
+ *
+ * Public signing sessions intentionally expose only the placement metadata
+ * and an inline PNG preview needed to render the completed mark. Raw
+ * recipient and field-value records stay private to the signing service.
+ */
+export interface EsigningSignedSignatureDto {
+  fieldDefinitionId: string;
+  signaturePreviewUrl: string;
+  signerName: string;
+  documentId: string;
+  pageNumber: number;
+  xPercent: number;
+  yPercent: number;
+  widthPercent: number;
+  heightPercent: number;
+}
+
 export interface EsigningEnvelopeEventDto {
   id: string;
   recipientId: string | null;
@@ -265,6 +285,7 @@ export interface EsigningSigningSessionDto {
   }>;
   fields: EsigningFieldDefinitionDto[];
   fieldValues: EsigningFieldValueDto[];
+  signedSignatures?: EsigningSignedSignatureDto[];
   downloadToken: string | null;
   currentRecipientDeliveryStatus: EsigningCopyDeliveryStatusDto;
 }

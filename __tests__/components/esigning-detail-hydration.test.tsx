@@ -360,5 +360,14 @@ describe('E-signing detail hydration', () => {
       'src',
       'data:image/png;base64,c2ln'
     );
+
+    const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
+    await userEvent.click(screen.getByRole('button', { name: 'Auto-sign' }));
+
+    expect(openSpy).toHaveBeenCalledWith(
+      'https://app.example.com/esigning/sign/token-1?autoSign=1',
+      '_blank',
+      'noopener,noreferrer',
+    );
   });
 });

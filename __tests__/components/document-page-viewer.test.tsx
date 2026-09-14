@@ -174,6 +174,18 @@ describe('DocumentPageViewer keyboard shortcut scope', () => {
     expect(screen.queryByTitle(/page thumbnails/i)).not.toBeInTheDocument();
   });
 
+  it('changes desktop zoom by ten percentage points per control step', async () => {
+    render(<DocumentPageViewer pdfUrl="/desktop-zoom.pdf" />);
+    await waitFor(() => expect(screen.getByText('/ 2')).toBeInTheDocument());
+    expect(screen.getByText('170%')).toBeInTheDocument();
+    fireEvent.click(screen.getByTitle('Zoom in (+)'));
+    expect(screen.getByText('180%')).toBeInTheDocument();
+    fireEvent.click(screen.getByTitle('Zoom out (-)'));
+    expect(screen.getByText('170%')).toBeInTheDocument();
+    fireEvent.click(screen.getByTitle('Zoom out (-)'));
+    expect(screen.getByText('160%')).toBeInTheDocument();
+  });
+
   it('increments mobile zoom by one percent per control step', async () => {
     mediaMocks.isMobile = true;
 

@@ -12,7 +12,7 @@ describe('EsigningSigningHeader session information', () => {
       <EsigningSigningHeader
         envelopeTitle="NDA"
         senderName="Sender"
-        tenantName="OakTree"
+        tenantName="Oakcloud"
         completedCount={0}
         requiredCount={1}
         canFinish={false}
@@ -27,6 +27,8 @@ describe('EsigningSigningHeader session information', () => {
       />
     );
 
+    expect(screen.queryByText(/Sent by/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Oakcloud/)).not.toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /Other Options/i }));
     await user.click(screen.getByRole('button', { name: /Session Information/i }));
 

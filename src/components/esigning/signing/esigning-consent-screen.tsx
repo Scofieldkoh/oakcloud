@@ -1,4 +1,5 @@
 'use client';
+import { esigningDisplayName } from '@/lib/esigning-branding';
 
 import { useState } from 'react';
 import { FileSignature, FileText } from 'lucide-react';
@@ -32,6 +33,7 @@ export function EsigningConsentScreen({
           {/* Badge */}
           <div className="flex justify-center">
             <div className="inline-flex items-center gap-2 rounded-full border border-border-primary bg-background-tertiary px-3 py-1 text-xs font-medium uppercase tracking-[0.18em] text-text-muted">
+              <span className="font-semibold tracking-[0.12em] text-oak-primary">Oaktree</span>
               <FileSignature className="h-3.5 w-3.5" />
               Secure E-Sign
             </div>
@@ -43,7 +45,7 @@ export function EsigningConsentScreen({
           </h1>
           <p className="mt-2 text-center text-sm text-text-secondary">
             <span className="font-medium text-text-primary">{senderName}</span> from{' '}
-            <span className="font-medium text-text-primary">{tenantName}</span> has sent you the
+            <span className="font-medium text-text-primary">{esigningDisplayName(tenantName)}</span> has sent you the
             following documents for electronic signature:
           </p>
 
