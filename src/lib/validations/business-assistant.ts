@@ -22,6 +22,7 @@ export const businessAssistantTurnRequestSchema = z.object({
   message: z.string().trim().min(1).max(12_000),
   resources: z.array(businessAssistantResourceRefSchema).max(50).default([]),
   context: businessAssistantContextSchema.optional(),
+  capabilityInput: z.unknown().optional(),
 }).strict();
 
 const clientActionBase = {
