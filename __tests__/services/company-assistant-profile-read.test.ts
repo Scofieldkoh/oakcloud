@@ -145,7 +145,7 @@ describe('company assistant read helper', () => {
   });
 
   it('returns ambiguity rather than guessing on a non-unique name', async () => {
-    mocks.companies.set('company-2', company({ id: 'company-2', name: 'Acme Holdings Pte. Ltd.', displayAlias: 'Acme Holdings', uen: '202612346B' }));
+    mocks.companies.set('company-2', company({ id: 'company-2', name: 'Acme Holdings Pte. Ltd.', displayAlias: 'Acme', uen: '202612346B' }));
     mocks.authorization.mockResolvedValue({ allowed: true });
     const result = await resolveAuthorizedCompanyFromAssistantMessage(actor, 'Who are the directors of Acme?');
     expect(result.kind).toBe('AMBIGUOUS');
