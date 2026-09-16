@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { runSerializableTransaction } from '@/lib/prisma-transaction';
 import { businessAssistantConversationActionSchema, businessAssistantTurnRequestSchema } from '@/lib/validations/business-assistant';
 import { businessAssistantCapabilityRegistry } from '@/generated/business-assistant-capability-registry';
-import { sha256, type CapabilityDescriptor, type JsonValue } from './contracts';
+import { BUSINESS_ASSISTANT_LIMITS, canonicalJson, canonicalizeJson, sha256, type CapabilityDescriptor, type JsonValue } from './contracts';
 import { assertAssistantAdministrativeAccess, assertAssistantReadAccess, assertAssistantWorkspaceOperational, filterCapabilityDescriptors, normalizeResourceRefs } from './policy.service';
 
 function jsonInput(value: unknown): Prisma.InputJsonValue {
@@ -53,11 +53,36 @@ export async function acceptTurn(actor: AssistantActor, rawInput: unknown): Prom
     throw new ConversationServiceError('FORBIDDEN', 'Business Assistant is disabled for this workspace.');
   }
   await assertAssistantWorkspaceOperational(actor.userId, actor.tenantId);
-  const bodyHash = sha256({ ...input, workspaceId: actor.tenantId, resources });
+
   const capabilityId = input.context?.capabilityId;
   const capabilityVersion = input.context?.capabilityVersion;
   const requestedCapability = capabilityId ? businessAssistantCapabilityRegistry.get(capabilityId, capabilityVersion) : undefined;
   if (capabilityId && !requestedCapability) throw new ConversationServiceError('CAPABILITY_VERSION_UNAVAILABLE', 'The requested assistant capability is unavailable.');
+
+  const hasCapabilityInput = Object.prototype.hasOwnProperty.call(input, 'capabilityInput');
+  if (hasCapabilityInput && !capabilityId) {
+    throw new ConversationServiceError('VALIDATION_FAILED', 'Capability input requires an explicitly selected registered capability.');
+  }
+  let normalizedCapabilityInput: JsonValue | undefined;
+  if (hasCapabilityInput) {
+    const capabilityInput = requestedCapability!.inputSchema.safeParse(input.capabilityInput);
+    if (!capabilityInput.success) {
+      throw new ConversationServiceError('VALIDATION_FAILED', 'The selected capability input is invalid.', capabilityInput.error.flatten());
+    }
+    try {
+      normalizedCapabilityInput = canonicalizeJson(capabilityInput.data);
+    } catch {
+      throw new ConversationServiceError('VALIDATION_FAILED', 'The selected capability input must be JSON-safe.');
+    }
+    if (Buffer.byteLength(canonicalJson(normalizedCapabilityInput), 'utf8') > BUSINESS_ASSISTANT_LIMITS.maxProposalArtifactBytes) {
+      throw new ConversationServiceError('VALIDATION_FAILED', 'The selected capability input exceeds the Business Assistant artifact limit.');
+    }
+  }
+
+  const normalizedInput = hasCapabilityInput
+    ? { ...input, capabilityInput: normalizedCapabilityInput }
+    : input;
+  const bodyHash = sha256({ ...normalizedInput, workspaceId: actor.tenantId, resources });
   const capability = requestedCapability
     ?? (isLikelyWorkspaceLookup(input.message)
       ? businessAssistantCapabilityRegistry.get('workspace.resource_lookup', '1.0')
@@ -112,7 +137,7 @@ export async function acceptTurn(actor: AssistantActor, rawInput: unknown): Prom
             capabilityVersion: capability.version,
             contractVersion: capability.contractVersion,
             schemaVersion: capability.version,
-            input: jsonInput({ message: input.message, context: input.context ?? null }),
+            input: jsonInput(hasCapabilityInput ? normalizedCapabilityInput : { message: input.message, context: input.context ?? null }),
             resources: jsonInput(resources),
             status: 'PREPARING',
           },
