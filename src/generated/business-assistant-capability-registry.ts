@@ -4,12 +4,14 @@
  */
 import { assistantCapabilities as capabilities0 } from '@/services/bizfile/assistant-capabilities';
 import { assistantCapabilities as capabilities1 } from '@/services/business-assistant/assistant-capabilities';
+import { assistantCapabilities as capabilities2 } from '@/services/company/assistant-capabilities';
 import { BusinessAssistantCapabilityRegistry } from '@/services/business-assistant/contracts';
 import { applyBusinessAssistantIntegrationReviewGates } from '@/services/business-assistant/integration-review-gates';
 
 const discoveredBusinessAssistantCapabilities = [
   ...capabilities0,
   ...capabilities1,
+  ...capabilities2,
 ] as const;
 export const businessAssistantCapabilities = applyBusinessAssistantIntegrationReviewGates(discoveredBusinessAssistantCapabilities);
 export const businessAssistantCapabilityRegistry = new BusinessAssistantCapabilityRegistry(businessAssistantCapabilities);
