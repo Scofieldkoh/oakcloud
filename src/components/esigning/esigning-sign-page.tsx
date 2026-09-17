@@ -1520,7 +1520,7 @@ export function EsigningSignPage() {
         )}
 
         {/* PDF viewer */}
-        <div className="relative mr-14" data-testid="signing-preview-frame">
+        <div className={isMobile ? 'relative' : 'relative mr-14'} data-testid="signing-preview-frame">
         {selectedDocument ? (
           <DocumentPageViewer
             key={`${selectedDocument.id}:${viewerRetryKey}`}
@@ -1672,7 +1672,7 @@ export function EsigningSignPage() {
           />
         ) : null}
       {/* Post-it tab */}
-      {requiredFields.length > 0 && (
+      {!isMobile && requiredFields.length > 0 && (
         <EsigningPostItTab
           label={canFinish ? 'Finish' : postItLabel}
           isComplete={canFinish}
