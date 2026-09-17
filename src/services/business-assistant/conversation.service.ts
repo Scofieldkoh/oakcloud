@@ -83,12 +83,10 @@ export async function acceptTurn(actor: AssistantActor, rawInput: unknown): Prom
     ? { ...input, capabilityInput: normalizedCapabilityInput }
     : input;
   const bodyHash = sha256({ ...normalizedInput, workspaceId: actor.tenantId, resources });
-  const capability = requestedCapability
-    ?? (isLikelyWorkspaceLookup(input.message)
-      ? businessAssistantCapabilityRegistry.get('workspace.resource_lookup', '1.0')
-      : process.env.BUSINESS_ASSISTANT_PROVIDER_ENABLED === 'true'
-        ? businessAssistantCapabilityRegistry.get('assistant.answer', '1.0')
-        : undefined);
+  // Explicit capability selection is authoritative and remains synchronous.
+  // Ordinary messages are accepted without a run; the durable worker performs
+  // bounded routing after the HTTP acceptance transaction has committed.
+  const capability = requestedCapability;
 
   return runSerializableTransaction(prisma, async (tx) => {
     const existing = await tx.businessAssistantMessage.findFirst({
@@ -166,14 +164,6 @@ export async function acceptTurn(actor: AssistantActor, rawInput: unknown): Prom
     });
     return { conversationId, messageId: message.id, runId, duplicate: false };
   });
-}
-
-function isLikelyWorkspaceLookup(message: string): boolean {
-  const lower = message.toLocaleLowerCase();
-  if (/\b(help|capabilit(?:y|ies)|what can you do|start|hello|hi)\b/.test(lower)) return false;
-  const requestsLookup = /\b(find|show|list|search|look\s*up|lookup|which|how many|details|tell me|status)\b/.test(lower);
-  const namesWorkspaceData = /\b(company|companies|business|businesses|uen|entity|entities|document|documents|file|files|pdf|bizfile|workspace|record|records)\b/.test(lower);
-  return requestsLookup && namesWorkspaceData;
 }
 
 export interface ConversationListResult {
