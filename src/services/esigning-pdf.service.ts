@@ -22,7 +22,7 @@ import {
 
 const PROCESSING_LEASE_MS = 15 * 60 * 1000;
 const MAX_EMAIL_ATTACHMENT_BYTES = 20 * 1024 * 1024;
-const ESIGNING_ARTIFACT_VERSION = 8;
+const ESIGNING_ARTIFACT_VERSION = 9;
 
 function toPdfBounds(input: {
   pageWidth: number;

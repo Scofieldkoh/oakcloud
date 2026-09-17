@@ -1,5 +1,6 @@
 import { PDFDocument, type PDFPage, StandardFonts, rgb, type PDFFont } from 'pdf-lib';
 import { buildEsigningVerificationUrl } from '@/lib/esigning-session';
+import { ESIGNING_RECIPIENT_COLORS } from '@/lib/validations/esigning';
 import { generateCertificateQrMatrix } from '@/lib/qr-matrix';
 import { buildEsigningEventLabel, summarizeEsigningUserAgent } from '@/services/esigning-evidence';
 
@@ -35,6 +36,7 @@ type Recipient = {
   email?: string | null;
   type?: string | null;
   status: string;
+  colorTag?: string | null;
   viewedAt?: Date | null;
   consentedAt?: Date | null;
   signedAt?: Date | null;
@@ -48,7 +50,15 @@ type AuditEvent = {
   action: string;
   recipientId?: string | null;
   createdAt: Date;
+  ipAddress?: string | null;
+  userAgent?: string | null;
   metadata?: unknown;
+};
+
+type EnvelopeDocument = {
+  fileName: string;
+  originalFileName?: string | null;
+  generatedDocumentId?: string | null;
 };
 
 export type CertificatePdfRenderInput = {
@@ -61,14 +71,15 @@ export type CertificatePdfRenderInput = {
     tenant?: { name: string } | null;
     recipients: Recipient[];
     events: AuditEvent[];
+    documents: EnvelopeDocument[];
   };
   document?: unknown;
 };
 
 type RichSpan = { text: string; font: PDFFont; color: ReturnType<typeof rgb> };
 type RichToken = RichSpan & { width: number };
-
-type ViewEvidence = { ip: string | null; device: string | null };
+type SectionKind = 'recipient' | 'history' | 'document' | 'verification';
+type RecipientActivityAction = 'VIEWED' | 'CONSENTED' | 'SIGNED';
 
 function safe(value: string | null | undefined): string {
   if (!value) return '';
@@ -215,20 +226,50 @@ function summarizeEvidence(ip: string | null | undefined, userAgent: string | nu
   return { ip: ip || '-', device: summarizeEsigningUserAgent(userAgent) || '-' };
 }
 
-function drawBotanicalMotif(page: PDFPage): void {
-  const right = PW + mm(2);
-  const bottom = PH - HEADER_H - mm(1);
-  page.drawLine({ start: { x: right - mm(2), y: bottom }, end: { x: right - mm(8), y: PH - mm(3) }, color: C.white, thickness: 0.8, opacity: 0.1 });
-  page.drawLine({ start: { x: right - mm(7), y: bottom + mm(4) }, end: { x: right - mm(25), y: bottom + mm(27) }, color: C.white, thickness: 0.7, opacity: 0.09 });
-  [
-    [right - mm(15), bottom + mm(12), mm(7), mm(3.3)],
-    [right - mm(24), bottom + mm(22), mm(6.5), mm(3)],
-    [right - mm(10), bottom + mm(25), mm(5), mm(2.7)],
-    [right - mm(6), bottom + mm(8), mm(4.5), mm(2.4)],
-  ].forEach(([x, y, xScale, yScale]) => page.drawEllipse({ x, y, xScale, yScale, color: C.white, opacity: 0.08 }));
+function pdfColorFromHex(value: string | null | undefined, fallback: ReturnType<typeof rgb>): ReturnType<typeof rgb> {
+  if (!value || !/^#[0-9a-fA-F]{6}$/.test(value)) return fallback;
+  return rgb(
+    parseInt(value.slice(1, 3), 16) / 255,
+    parseInt(value.slice(3, 5), 16) / 255,
+    parseInt(value.slice(5, 7), 16) / 255,
+  );
 }
 
-function drawSectionIcon(page: PDFPage, kind: 'recipient' | 'history' | 'verification', x: number, top: number): void {
+export function getLatestCertificateRecipientActivity(
+  events: AuditEvent[],
+  recipientId: string,
+  action: RecipientActivityAction,
+): AuditEvent | null {
+  let latest: AuditEvent | null = null;
+  for (const event of events) {
+    if (event.recipientId !== recipientId || event.action !== action) continue;
+    if (!latest || event.createdAt.getTime() > latest.createdAt.getTime()) {
+      latest = event;
+    }
+  }
+  return latest;
+}
+
+function eventEvidence(event: AuditEvent | null): { ip: string | null; device: string | null } {
+  if (!event) return { ip: null, device: null };
+  const ip = event.ipAddress ?? metadataString(event.metadata, 'ipAddress');
+  const userAgent = event.userAgent ?? metadataString(event.metadata, 'userAgent');
+  const device = metadataString(event.metadata, 'device') ?? summarizeEsigningUserAgent(userAgent) ?? null;
+  return { ip, device };
+}
+
+export function getCertificateDocumentTypeLabel(document: EnvelopeDocument): string {
+  const sourceName = (document.originalFileName?.trim() || document.fileName).toLowerCase();
+  if (sourceName.endsWith('.doc') || sourceName.endsWith('.docx')) return 'Word';
+  if (sourceName.endsWith('.pdf')) return 'PDF';
+
+  const storedName = document.fileName.toLowerCase();
+  if (storedName.endsWith('.pdf')) return 'PDF';
+  if (storedName.endsWith('.doc') || storedName.endsWith('.docx')) return 'Word';
+  return 'Document';
+}
+
+function drawSectionIcon(page: PDFPage, kind: SectionKind, x: number, top: number): void {
   const s = mm(6.25);
   const left = x;
   const bottom = rectY(top, s);
@@ -252,6 +293,23 @@ function drawSectionIcon(page: PDFPage, kind: 'recipient' | 'history' | 'verific
     page.drawLine({ start: { x: left + s * 0.04, y: cy + s * 0.12 }, end: { x: left + s * 0.2, y: cy + s * 0.1 }, color: C.navy, thickness: stroke });
     return;
   }
+  if (kind === 'document') {
+    const x1 = left + s * 0.2;
+    const x2 = left + s * 0.8;
+    const y1 = bottom + s * 0.12;
+    const y2 = bottom + s * 0.88;
+    const fold = s * 0.22;
+    page.drawLine({ start: { x: x1, y: y1 }, end: { x: x1, y: y2 }, color: C.navy, thickness: stroke });
+    page.drawLine({ start: { x: x1, y: y2 }, end: { x: x2 - fold, y: y2 }, color: C.navy, thickness: stroke });
+    page.drawLine({ start: { x: x2 - fold, y: y2 }, end: { x: x2, y: y2 - fold }, color: C.navy, thickness: stroke });
+    page.drawLine({ start: { x: x2, y: y2 - fold }, end: { x: x2, y: y1 }, color: C.navy, thickness: stroke });
+    page.drawLine({ start: { x: x2, y: y1 }, end: { x: x1, y: y1 }, color: C.navy, thickness: stroke });
+    page.drawLine({ start: { x: x2 - fold, y: y2 }, end: { x: x2 - fold, y: y2 - fold }, color: C.navy, thickness: stroke });
+    page.drawLine({ start: { x: x2 - fold, y: y2 - fold }, end: { x: x2, y: y2 - fold }, color: C.navy, thickness: stroke });
+    page.drawLine({ start: { x: x1 + s * 0.12, y: bottom + s * 0.48 }, end: { x: x2 - s * 0.12, y: bottom + s * 0.48 }, color: C.navy, thickness: stroke });
+    page.drawLine({ start: { x: x1 + s * 0.12, y: bottom + s * 0.32 }, end: { x: x2 - s * 0.12, y: bottom + s * 0.32 }, color: C.navy, thickness: stroke });
+    return;
+  }
   const points = [
     [cx, bottom + s * 0.92], [left + s * 0.2, bottom + s * 0.78], [left + s * 0.2, bottom + s * 0.45],
     [cx, bottom + s * 0.08], [left + s * 0.8, bottom + s * 0.45], [left + s * 0.8, bottom + s * 0.78], [cx, bottom + s * 0.92],
@@ -261,7 +319,7 @@ function drawSectionIcon(page: PDFPage, kind: 'recipient' | 'history' | 'verific
   page.drawLine({ start: { x: left + s * 0.47, y: bottom + s * 0.38 }, end: { x: left + s * 0.7, y: bottom + s * 0.64 }, color: C.navy, thickness: stroke });
 }
 
-function drawSectionHeading(page: PDFPage, kind: 'recipient' | 'history' | 'verification', title: string, top: number, semibold: PDFFont): number {
+function drawSectionHeading(page: PDFPage, kind: SectionKind, title: string, top: number, semibold: PDFFont): number {
   const h = mm(6.25);
   drawSectionIcon(page, kind, STRUCT_RAIL, top);
   page.drawText(title.toUpperCase(), { x: STRUCT_RAIL + h + mm(3), y: centeredY(top, h, semibold, 10.75), size: 10.75, font: semibold, color: C.navy });
@@ -286,20 +344,6 @@ function drawQr(page: PDFPage, url: string, x: number, top: number, size: number
   }));
 }
 
-function getViewEvidence(events: AuditEvent[]): Map<string, ViewEvidence> {
-  const result = new Map<string, ViewEvidence>();
-  [...events]
-    .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())
-    .forEach((event) => {
-      if (event.action !== 'VIEWED' || !event.recipientId || result.has(event.recipientId)) return;
-      const ip = metadataString(event.metadata, 'ipAddress');
-      const userAgent = metadataString(event.metadata, 'userAgent');
-      const device = metadataString(event.metadata, 'device') ?? summarizeEsigningUserAgent(userAgent);
-      result.set(event.recipientId, { ip, device });
-    });
-  return result;
-}
-
 function auditDetails(event: AuditEvent, recipient: Recipient | undefined, recipientCount: number): string {
   const metadata = metadataRecord(event.metadata);
   if (event.action === 'CREATED') return 'Envelope created';
@@ -309,9 +353,8 @@ function auditDetails(event: AuditEvent, recipient: Recipient | undefined, recip
     return `Invitation email sent to ${count} recipient${count === 1 ? '' : 's'}`;
   }
   if (event.action === 'VIEWED') {
-    const ip = metadataString(event.metadata, 'ipAddress');
-    const device = metadataString(event.metadata, 'device') ?? summarizeEsigningUserAgent(metadataString(event.metadata, 'userAgent'));
-    const parts = [ip ? `IP ${ip}` : null, device].filter(Boolean);
+    const evidence = eventEvidence(event);
+    const parts = [evidence.ip ? `IP ${evidence.ip}` : null, evidence.device].filter(Boolean);
     return parts.length ? parts.join('  •  ') : '-';
   }
   if (event.action === 'CONSENTED' && recipient) {
@@ -347,8 +390,8 @@ export async function renderEsigningCertificatePdf(input: CertificatePdfRenderIn
   const visibleVerificationUrl = verificationUrl.replace(/^https?:\/\//i, '');
   const recipients = envelope.recipients;
   const recipientById = new Map(recipients.map((recipient) => [recipient.id, recipient]));
-  const viewEvidence = getViewEvidence(envelope.events);
   const events = [...envelope.events].sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+  const documents = envelope.documents ?? [];
   const signers = recipients.filter((recipient) => recipient.type !== 'CC');
   const signerTotal = signers.length || recipients.length;
   const signedCount = signers.filter((recipient) => recipient.signedAt).length;
@@ -358,7 +401,6 @@ export async function renderEsigningCertificatePdf(input: CertificatePdfRenderIn
     pages.push(page);
     if (firstPage) {
       page.drawRectangle({ x: 0, y: PH - HEADER_H, width: PW, height: HEADER_H, color: C.green });
-      drawBotanicalMotif(page);
       drawTextTop(page, 'CERTIFICATE OF COMPLETION', TEXT_RAIL, mm(10.8), 22.5, semibold, C.white);
       const idW = mm(44);
       const idH = mm(7);
@@ -419,23 +461,53 @@ export async function renderEsigningCertificatePdf(input: CertificatePdfRenderIn
     const innerX = STRUCT_RAIL + mm(3.2);
     const innerRight = PW - STRUCT_RAIL - mm(3.5);
     const seqW = mm(10);
-    const identityUsable = innerRight - innerX - seqW;
-    const nameW = identityUsable * 0.39;
-    const separatorX = innerX + nameW + mm(3);
-    const emailX = separatorX + mm(3);
-    const emailW = innerRight - seqW - emailX;
-    const nameLines = wrapText(recipient.name, semibold, 9.25, nameW);
-    const emailLines = wrapText(recipient.email || 'Manual link only', regular, 8.25, emailW);
-    const identityLines = Math.max(1, nameLines.length, emailLines.length);
-    const identityH = Math.max(mm(10.5), identityLines * 10 + mm(4.5));
+    const identityUsable = innerRight - innerX - seqW - mm(2);
+    const fallbackColor = ESIGNING_RECIPIENT_COLORS[recipientIndex % ESIGNING_RECIPIENT_COLORS.length];
+    const recipientColor = pdfColorFromHex(recipient.colorTag ?? fallbackColor, C.green);
+    const identitySpans: RichSpan[] = [
+      { text: recipient.name, font: semibold, color: recipientColor },
+      ...(recipient.email
+        ? [{ text: ` (${recipient.email})`, font: regular, color: C.secondary } satisfies RichSpan]
+        : []),
+    ];
+    const identityLines = wrapRich(identitySpans, 9.25, identityUsable);
+    const identityH = Math.max(mm(10.5), identityLines.length * 10 + mm(4.5));
     const headingH = mm(8.25);
-    const viewed = viewEvidence.get(recipient.id) ?? { ip: null, device: null };
-    const consent = summarizeEvidence(recipient.consentIp, recipient.consentUserAgent);
-    const signed = summarizeEvidence(recipient.signedIp, recipient.signedUserAgent);
+
+    const viewedEvent = getLatestCertificateRecipientActivity(events, recipient.id, 'VIEWED');
+    const consentedEvent = getLatestCertificateRecipientActivity(events, recipient.id, 'CONSENTED');
+    const signedEvent = getLatestCertificateRecipientActivity(events, recipient.id, 'SIGNED');
+    const viewedEvidence = eventEvidence(viewedEvent);
+    const consentedEvidence = eventEvidence(consentedEvent);
+    const signedEvidence = eventEvidence(signedEvent);
+    const consentFallback = summarizeEvidence(recipient.consentIp, recipient.consentUserAgent);
+    const signedFallback = summarizeEvidence(recipient.signedIp, recipient.signedUserAgent);
+    const viewedAt = viewedEvent?.createdAt ?? recipient.viewedAt ?? null;
+    const consentedAt = consentedEvent?.createdAt ?? recipient.consentedAt ?? null;
+    const signedAt = signedEvent?.createdAt ?? recipient.signedAt ?? null;
+
     const rows = [
-      { event: 'Viewed', date: recipient.viewedAt ? formatDate(recipient.viewedAt) : '-', ip: recipient.viewedAt ? viewed.ip || '-' : '-', device: recipient.viewedAt ? viewed.device || '-' : '-', active: Boolean(recipient.viewedAt) },
-      { event: 'Consented', date: recipient.consentedAt ? formatDate(recipient.consentedAt) : '-', ip: recipient.consentedAt ? consent.ip : '-', device: recipient.consentedAt ? consent.device : '-', active: Boolean(recipient.consentedAt) },
-      { event: 'Signed', date: recipient.signedAt ? formatDate(recipient.signedAt) : '-', ip: recipient.signedAt ? signed.ip : '-', device: recipient.signedAt ? signed.device : '-', active: Boolean(recipient.signedAt) },
+      {
+        event: 'Viewed',
+        date: viewedAt ? formatDate(viewedAt) : '-',
+        ip: viewedAt ? viewedEvidence.ip || '-' : '-',
+        device: viewedAt ? viewedEvidence.device || '-' : '-',
+        active: Boolean(viewedAt),
+      },
+      {
+        event: 'Consented',
+        date: consentedAt ? formatDate(consentedAt) : '-',
+        ip: consentedAt ? consentedEvidence.ip || consentFallback.ip : '-',
+        device: consentedAt ? consentedEvidence.device || consentFallback.device : '-',
+        active: Boolean(consentedAt),
+      },
+      {
+        event: 'Signed',
+        date: signedAt ? formatDate(signedAt) : '-',
+        ip: signedAt ? signedEvidence.ip || signedFallback.ip : '-',
+        device: signedAt ? signedEvidence.device || signedFallback.device : '-',
+        active: Boolean(signedAt),
+      },
     ];
     const col = [STRUCT_WIDTH * 0.27, STRUCT_WIDTH * 0.25, STRUCT_WIDTH * 0.23, STRUCT_WIDTH * 0.25];
     const cellInset = mm(3);
@@ -454,10 +526,7 @@ export async function renderEsigningCertificatePdf(input: CertificatePdfRenderIn
     page.drawRectangle({ x: STRUCT_RAIL, y: rectY(cursorTop, identityH), width: STRUCT_WIDTH, height: identityH, color: C.recipientBg });
     page.drawLine({ start: { x: STRUCT_RAIL, y: yFromTop(cursorTop) }, end: { x: PW - STRUCT_RAIL, y: yFromTop(cursorTop) }, color: C.rule, thickness: 0.35 });
     page.drawLine({ start: { x: STRUCT_RAIL, y: yFromTop(cursorTop + identityH) }, end: { x: PW - STRUCT_RAIL, y: yFromTop(cursorTop + identityH) }, color: C.rule, thickness: 0.35 });
-    drawWrapped(page, nameLines, innerX, cursorTop + (identityH - nameLines.length * 10) / 2, 9.25, 10, semibold, C.green);
-    drawWrapped(page, emailLines, emailX, cursorTop + (identityH - emailLines.length * 9.2) / 2, 8.25, 9.2, regular, C.secondary);
-    const separatorH = mm(4);
-    page.drawLine({ start: { x: separatorX, y: rectY(cursorTop + (identityH - separatorH) / 2, separatorH) }, end: { x: separatorX, y: yFromTop(cursorTop + (identityH - separatorH) / 2) }, color: C.muted, thickness: 0.5 });
+    drawRich(page, identityLines, innerX, cursorTop + (identityH - identityLines.length * 10) / 2, 9.25, 10);
     const sequence = `#${recipientIndex + 1}`;
     page.drawText(sequence, { x: innerRight - widthOf(sequence, regular, 8.25), y: centeredY(cursorTop, identityH, regular, 8.25), size: 8.25, font: regular, color: C.secondary });
     cursorTop += identityH;
@@ -522,7 +591,7 @@ export async function renderEsigningCertificatePdf(input: CertificatePdfRenderIn
     const nameIndex = recipientName ? label.lastIndexOf(recipientName) : -1;
     const spans: RichSpan[] = recipientName && nameIndex >= 0 ? [
       { text: label.slice(0, nameIndex), font: regular, color: C.navy },
-      { text: recipientName, font: medium, color: C.green },
+      { text: recipientName, font: medium, color: pdfColorFromHex(recipient?.colorTag, C.green) },
       { text: label.slice(nameIndex + recipientName.length), font: regular, color: C.navy },
     ] : [{ text: label, font: regular, color: C.navy }];
     const eventLines = wrapRich(spans, 8.15, auditCol[1] - mm(5));
@@ -547,6 +616,41 @@ export async function renderEsigningCertificatePdf(input: CertificatePdfRenderIn
     drawWrapped(page, detailLines, detailsX, cursorTop + (rowH - detailLines.length * 9.4) / 2, 8, 9.4, regular, C.secondary);
     const timestamp = formatDate(event.createdAt);
     page.drawText(timestamp, { x: dateRight - widthOf(timestamp, regular, 8), y: centeredY(cursorTop, rowH, regular, 8), size: 8, font: regular, color: C.secondary });
+    page.drawLine({ start: { x: STRUCT_RAIL, y: yFromTop(cursorTop + rowH) }, end: { x: PW - STRUCT_RAIL, y: yFromTop(cursorTop + rowH) }, color: C.rule, thickness: 0.35 });
+    cursorTop += rowH;
+  });
+
+  cursorTop += mm(12);
+  ensureSpace(mm(19));
+  cursorTop += drawSectionHeading(page, 'document', 'Document List', cursorTop, semibold) + mm(3.5);
+
+  const documentCol = [STRUCT_WIDTH * 0.76, STRUCT_WIDTH * 0.24];
+  const documentInset = mm(3);
+  const documentHeaderH = mm(8.5);
+  const drawDocumentHeader = (): void => {
+    drawTextTop(page, 'FILE NAME', STRUCT_RAIL + documentInset, cursorTop + mm(2.2), 6.75, medium, C.secondary);
+    drawTextTop(page, 'DOCUMENT TYPE', STRUCT_RAIL + documentCol[0] + documentInset, cursorTop + mm(2.2), 6.75, medium, C.secondary);
+    page.drawLine({ start: { x: STRUCT_RAIL, y: yFromTop(cursorTop + documentHeaderH) }, end: { x: PW - STRUCT_RAIL, y: yFromTop(cursorTop + documentHeaderH) }, color: C.rule, thickness: 0.5 });
+    cursorTop += documentHeaderH;
+  };
+  drawDocumentHeader();
+
+  documents.forEach((document, index) => {
+    const fileName = document.originalFileName?.trim() || document.fileName;
+    const typeLabel = getCertificateDocumentTypeLabel(document);
+    const fileLines = wrapText(fileName, regular, 8.25, documentCol[0] - documentInset * 2);
+    const typeLines = wrapText(typeLabel, regular, 8.1, documentCol[1] - documentInset * 2);
+    const lineCount = Math.max(1, fileLines.length, typeLines.length);
+    const rowH = Math.max(mm(9.25), lineCount * 9.4 + mm(4));
+
+    if (cursorTop + rowH > CONTENT_BOTTOM) {
+      startPage(false);
+      cursorTop += drawSectionHeading(page, 'document', 'Document List', cursorTop, semibold) + mm(3.5);
+      drawDocumentHeader();
+    }
+    if (index % 2 === 1) page.drawRectangle({ x: STRUCT_RAIL, y: rectY(cursorTop, rowH), width: STRUCT_WIDTH, height: rowH, color: C.rowAlt });
+    drawWrapped(page, fileLines, STRUCT_RAIL + documentInset, cursorTop + (rowH - fileLines.length * 9.4) / 2, 8.25, 9.4, regular, C.navy);
+    drawWrapped(page, typeLines, STRUCT_RAIL + documentCol[0] + documentInset, cursorTop + (rowH - typeLines.length * 9.4) / 2, 8.1, 9.4, regular, C.secondary);
     page.drawLine({ start: { x: STRUCT_RAIL, y: yFromTop(cursorTop + rowH) }, end: { x: PW - STRUCT_RAIL, y: yFromTop(cursorTop + rowH) }, color: C.rule, thickness: 0.35 });
     cursorTop += rowH;
   });
