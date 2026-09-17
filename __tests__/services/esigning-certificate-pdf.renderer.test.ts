@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  getCertificateDocumentTypeLabel,
+  formatCertificatePageNumber,
   getLatestCertificateRecipientActivity,
 } from '@/services/esigning-certificate-pdf.renderer';
 
@@ -22,9 +22,8 @@ describe('e-signing certificate renderer helpers', () => {
     expect(latest?.metadata).toEqual({ ipAddress: '2.2.2.2' });
   });
 
-  it('reports the original source document type for the document list', () => {
-    expect(getCertificateDocumentTypeLabel({ fileName: 'agreement.pdf', originalFileName: 'agreement.docx' })).toBe('Word');
-    expect(getCertificateDocumentTypeLabel({ fileName: 'schedule.pdf', originalFileName: 'schedule.pdf' })).toBe('PDF');
-    expect(getCertificateDocumentTypeLabel({ fileName: 'supporting-file.bin' })).toBe('Document');
+  it('formats the footer page number using current page over total pages', () => {
+    expect(formatCertificatePageNumber(0, 1)).toBe('1 / 1');
+    expect(formatCertificatePageNumber(1, 3)).toBe('2 / 3');
   });
 });

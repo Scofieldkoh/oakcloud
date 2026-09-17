@@ -250,23 +250,16 @@ export function getLatestCertificateRecipientActivity(
   return latest;
 }
 
+export function formatCertificatePageNumber(pageIndex: number, totalPages: number): string {
+  return `${pageIndex + 1} / ${totalPages}`;
+}
+
 function eventEvidence(event: AuditEvent | null): { ip: string | null; device: string | null } {
   if (!event) return { ip: null, device: null };
   const ip = event.ipAddress ?? metadataString(event.metadata, 'ipAddress');
   const userAgent = event.userAgent ?? metadataString(event.metadata, 'userAgent');
   const device = metadataString(event.metadata, 'device') ?? summarizeEsigningUserAgent(userAgent) ?? null;
   return { ip, device };
-}
-
-export function getCertificateDocumentTypeLabel(document: EnvelopeDocument): string {
-  const sourceName = (document.originalFileName?.trim() || document.fileName).toLowerCase();
-  if (sourceName.endsWith('.doc') || sourceName.endsWith('.docx')) return 'Word';
-  if (sourceName.endsWith('.pdf')) return 'PDF';
-
-  const storedName = document.fileName.toLowerCase();
-  if (storedName.endsWith('.pdf')) return 'PDF';
-  if (storedName.endsWith('.doc') || storedName.endsWith('.docx')) return 'Word';
-  return 'Document';
 }
 
 function drawSectionIcon(page: PDFPage, kind: SectionKind, x: number, top: number): void {
@@ -390,6 +383,12 @@ export async function renderEsigningCertificatePdf(input: CertificatePdfRenderIn
   const visibleVerificationUrl = verificationUrl.replace(/^https?:\/\//i, '');
   const recipients = envelope.recipients;
   const recipientById = new Map(recipients.map((recipient) => [recipient.id, recipient]));
+  const recipientColorById = new Map(
+    recipients.map((recipient, index) => {
+      const fallbackColor = ESIGNING_RECIPIENT_COLORS[index % ESIGNING_RECIPIENT_COLORS.length];
+      return [recipient.id, pdfColorFromHex(recipient.colorTag ?? fallbackColor, C.green)] as const;
+    }),
+  );
   const events = [...envelope.events].sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
   const documents = envelope.documents ?? [];
   const signers = recipients.filter((recipient) => recipient.type !== 'CC');
@@ -462,8 +461,7 @@ export async function renderEsigningCertificatePdf(input: CertificatePdfRenderIn
     const innerRight = PW - STRUCT_RAIL - mm(3.5);
     const seqW = mm(10);
     const identityUsable = innerRight - innerX - seqW - mm(2);
-    const fallbackColor = ESIGNING_RECIPIENT_COLORS[recipientIndex % ESIGNING_RECIPIENT_COLORS.length];
-    const recipientColor = pdfColorFromHex(recipient.colorTag ?? fallbackColor, C.green);
+    const recipientColor = recipientColorById.get(recipient.id) ?? C.green;
     const identitySpans: RichSpan[] = [
       { text: recipient.name, font: semibold, color: recipientColor },
       ...(recipient.email
@@ -591,7 +589,7 @@ export async function renderEsigningCertificatePdf(input: CertificatePdfRenderIn
     const nameIndex = recipientName ? label.lastIndexOf(recipientName) : -1;
     const spans: RichSpan[] = recipientName && nameIndex >= 0 ? [
       { text: label.slice(0, nameIndex), font: regular, color: C.navy },
-      { text: recipientName, font: medium, color: pdfColorFromHex(recipient?.colorTag, C.green) },
+      { text: recipientName, font: medium, color: recipient ? recipientColorById.get(recipient.id) ?? C.green : C.green },
       { text: label.slice(nameIndex + recipientName.length), font: regular, color: C.navy },
     ] : [{ text: label, font: regular, color: C.navy }];
     const eventLines = wrapRich(spans, 8.15, auditCol[1] - mm(5));
@@ -624,12 +622,10 @@ export async function renderEsigningCertificatePdf(input: CertificatePdfRenderIn
   ensureSpace(mm(19));
   cursorTop += drawSectionHeading(page, 'document', 'Document List', cursorTop, semibold) + mm(3.5);
 
-  const documentCol = [STRUCT_WIDTH * 0.76, STRUCT_WIDTH * 0.24];
   const documentInset = mm(3);
   const documentHeaderH = mm(8.5);
   const drawDocumentHeader = (): void => {
     drawTextTop(page, 'FILE NAME', STRUCT_RAIL + documentInset, cursorTop + mm(2.2), 6.75, medium, C.secondary);
-    drawTextTop(page, 'DOCUMENT TYPE', STRUCT_RAIL + documentCol[0] + documentInset, cursorTop + mm(2.2), 6.75, medium, C.secondary);
     page.drawLine({ start: { x: STRUCT_RAIL, y: yFromTop(cursorTop + documentHeaderH) }, end: { x: PW - STRUCT_RAIL, y: yFromTop(cursorTop + documentHeaderH) }, color: C.rule, thickness: 0.5 });
     cursorTop += documentHeaderH;
   };
@@ -637,11 +633,8 @@ export async function renderEsigningCertificatePdf(input: CertificatePdfRenderIn
 
   documents.forEach((document, index) => {
     const fileName = document.originalFileName?.trim() || document.fileName;
-    const typeLabel = getCertificateDocumentTypeLabel(document);
-    const fileLines = wrapText(fileName, regular, 8.25, documentCol[0] - documentInset * 2);
-    const typeLines = wrapText(typeLabel, regular, 8.1, documentCol[1] - documentInset * 2);
-    const lineCount = Math.max(1, fileLines.length, typeLines.length);
-    const rowH = Math.max(mm(9.25), lineCount * 9.4 + mm(4));
+    const fileLines = wrapText(fileName, regular, 8.25, STRUCT_WIDTH - documentInset * 2);
+    const rowH = Math.max(mm(9.25), Math.max(1, fileLines.length) * 9.4 + mm(4));
 
     if (cursorTop + rowH > CONTENT_BOTTOM) {
       startPage(false);
@@ -650,7 +643,6 @@ export async function renderEsigningCertificatePdf(input: CertificatePdfRenderIn
     }
     if (index % 2 === 1) page.drawRectangle({ x: STRUCT_RAIL, y: rectY(cursorTop, rowH), width: STRUCT_WIDTH, height: rowH, color: C.rowAlt });
     drawWrapped(page, fileLines, STRUCT_RAIL + documentInset, cursorTop + (rowH - fileLines.length * 9.4) / 2, 8.25, 9.4, regular, C.navy);
-    drawWrapped(page, typeLines, STRUCT_RAIL + documentCol[0] + documentInset, cursorTop + (rowH - typeLines.length * 9.4) / 2, 8.1, 9.4, regular, C.secondary);
     page.drawLine({ start: { x: STRUCT_RAIL, y: yFromTop(cursorTop + rowH) }, end: { x: PW - STRUCT_RAIL, y: yFromTop(cursorTop + rowH) }, color: C.rule, thickness: 0.35 });
     cursorTop += rowH;
   });
@@ -672,6 +664,19 @@ export async function renderEsigningCertificatePdf(input: CertificatePdfRenderIn
   const qrLabel = 'SCAN TO VERIFY';
   const qrLabelSize = 5.75;
   drawTextTop(page, qrLabel, qrX + (qrSize - widthOf(qrLabel, medium, qrLabelSize)) / 2, verificationTop + qrSize + mm(1.6), qrLabelSize, medium, C.secondary);
+
+  const totalPages = pages.length;
+  pages.forEach((certificatePage, pageIndex) => {
+    const pageNumber = formatCertificatePageNumber(pageIndex, totalPages);
+    const pageNumberSize = 6.25;
+    certificatePage.drawText(pageNumber, {
+      x: (PW - widthOf(pageNumber, regular, pageNumberSize)) / 2,
+      y: mm(4),
+      size: pageNumberSize,
+      font: regular,
+      color: C.muted,
+    });
+  });
 
   pdf.setTitle(safe(`Certificate of Completion - ${envelope.title}`));
   pdf.setSubject(safe(`Signing audit record for certificate ${certificateId}`));
