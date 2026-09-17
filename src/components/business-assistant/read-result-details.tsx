@@ -30,6 +30,10 @@ function normalizedKey(value: string): string {
   return value.replace(/[^a-z0-9]/gi, '').toLowerCase();
 }
 
+function humanizeIdentifier(value: string): string {
+  return humanize(value.replace(/[.:/]+/g, '_'));
+}
+
 function hasMeaningfulValue(value: unknown): boolean {
   if (value == null || value === false || value === '') return false;
   if (Array.isArray(value)) return value.length > 0;
@@ -80,7 +84,7 @@ export function AssistantReadResultDetails({ run }: { run: BusinessAssistantRunD
   const generatedId = useId();
   const regionId = `assistant-read-details-${generatedId}`;
   const buttonId = `assistant-read-details-button-${generatedId}`;
-  const capabilityLabel = humanize(run.capabilityId.split('.').pop() ?? run.capabilityId);
+  const capabilityLabel = humanizeIdentifier(run.capabilityId.split('.').pop() ?? run.capabilityId);
   const resultLabel = run.items.length === 1 ? '1 read result' : `${run.items.length} read results`;
 
   return <section aria-label={`${capabilityLabel} read details`} className="rounded-lg border border-border-primary bg-background-secondary/30">
@@ -108,14 +112,14 @@ export function AssistantReadResultDetails({ run }: { run: BusinessAssistantRunD
         <h4 className="mb-2 font-medium text-text-primary">Records used</h4>
         <ul className="space-y-1">
           {run.resources.map((resource, index) => <li key={`${resource.resourceType}:${resource.resourceId}:${resource.role}:${index}`} className="break-all text-text-secondary">
-            {humanize(resource.role)} · {humanize(resource.resourceType)} · {resource.resourceId}
+            {humanizeIdentifier(resource.role)} · {humanizeIdentifier(resource.resourceType)} · {resource.resourceId}
           </li>)}
         </ul>
       </section>}
 
       <div className="space-y-3">
         {run.items.map((item, index) => <section key={item.id} aria-label={`Read result ${index + 1}`} className={run.items.length > 1 ? 'rounded-lg border border-border-primary p-3' : undefined}>
-          {run.items.length > 1 && <h4 className="mb-2 break-words font-medium text-text-primary">{humanize(item.itemKey)}</h4>}
+          {run.items.length > 1 && <h4 className="mb-2 break-words font-medium text-text-primary">{humanizeIdentifier(item.itemKey)}</h4>}
           <ArtifactView value={item.output} />
         </section>)}
       </div>
