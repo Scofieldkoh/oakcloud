@@ -1,6 +1,7 @@
 export interface FlowPoint {
   flowId: string;
   offset: number;
+  boundary?: { flowId: string; side: 'before' | 'after' };
 }
 
 export interface FlowSelectionBookmark {
@@ -12,6 +13,36 @@ export interface FlowSelectionBookmark {
 interface DomPoint {
   node: Node;
   offset: number;
+}
+
+/** Preserve zero-text line positions without changing legacy text offsets. */
+export function lineBreakBoundaryForDomPoint(node: Node, offset: number): FlowPoint['boundary'] {
+  let previous: Node | null = null;
+  let next: Node | null = null;
+  if (node.nodeType === Node.ELEMENT_NODE) {
+    previous = node.childNodes[offset - 1] ?? null;
+    next = node.childNodes[offset] ?? null;
+  } else if (node.nodeType === Node.TEXT_NODE) {
+    if (offset === 0) previous = node.previousSibling;
+    if (offset === (node.textContent?.length ?? 0)) next = node.nextSibling;
+  }
+  for (const [candidate, side] of [[previous, 'after'], [next, 'before']] as const) {
+    if (!(candidate instanceof HTMLElement) || candidate.tagName !== 'BR' || !candidate.dataset.flowId) continue;
+    // A sole BR is the editable placeholder, not an additional line.
+    if (candidate.parentNode?.childNodes.length === 1 && !candidate.parentElement?.dataset.flowContinuation) continue;
+    return { flowId: candidate.dataset.flowId, side };
+  }
+  return undefined;
+}
+
+export function resolveFlowBoundary(root: HTMLElement, point: FlowPoint): DomPoint | null {
+  if (!point.boundary) return null;
+  const boundary = Array.from(root.querySelectorAll<HTMLElement>('br[data-flow-id]'))
+    .find((element) => element.dataset.flowId === point.boundary!.flowId);
+  const parent = boundary?.parentNode;
+  if (!boundary || !parent) return null;
+  const index = Array.prototype.indexOf.call(parent.childNodes, boundary) as number;
+  return { node: parent, offset: index + (point.boundary.side === 'after' ? 1 : 0) };
 }
 
 function flowElementForBoundary(
@@ -77,7 +108,8 @@ function capturePoint(
     logicalOffset += fragment.textContent?.length ?? 0;
   }
 
-  return { flowId, offset: logicalOffset };
+  const boundary = lineBreakBoundaryForDomPoint(node, offset);
+  return { flowId, offset: logicalOffset, ...(boundary ? { boundary } : {}) };
 }
 
 export function captureFlowSelection(
@@ -116,6 +148,7 @@ function textPoint(element: HTMLElement, requestedOffset: number): DomPoint {
 }
 
 function restorePoint(root: HTMLElement, point: FlowPoint): DomPoint | null {
+  if (point.boundary) return resolveFlowBoundary(root, point);
   const fragments = Array.from(
     root.querySelectorAll<HTMLElement>('[data-flow-id]'),
   ).filter((fragment) => fragment.dataset.flowId === point.flowId);

@@ -4,6 +4,16 @@ Status: **not started**. Owner: S. Read [README](README.md), [contracts](contrac
 
 ## Context and objective
 
+### 14 September 2026 — empty-line regression follow-up
+
+Direct user-reported follow-up to A4E-009/010/011: Backspace after `{{/each}}` and Delete before `{{company.name}}` skipped empty paragraphs and deleted field braces. Repeated Enter in a blank document also collapsed the document back to one paragraph, invalidating the caret. Trailing `<br>` lines were absent from pagination split candidates, allowing signature text to split or move instead of its empty continuation.
+
+The fix preserves existing empty blocks and runtime identities during canonical normalization; consumes adjacent paragraph/line boundaries before deleting text; retains an optional runtime line-break identity in `FlowPoint` across capture, semantic commands, insertion and restoration; and includes line breaks in measured pagination split positions. The PDF pagination bundle is regenerated from the same engine. Saved HTML syntax and public persistence contracts are unchanged; runtime IDs remain stripped on serialization.
+
+Regression coverage: `__tests__/browser/a4-empty-lines.browser.test.tsx` covers both deletion directions, inline blank lines, undo, signature placement and 65 consecutive Enter presses followed immediately by typing. Model/selection unit tests cover blank-block identity preservation and restoration after a line moves to another physical page. Interactive Chromium validation uses synthetic content in the actual editor with controlled parent state; parent HTML equals the canonical snapshot after editing.
+
+Validation on this follow-up: seven new native browser regressions pass. The affected model/selection/command/session/editor suites pass (284 tests). The broader browser run passes 73 of 74 tests; the existing mouse-drag replacement test expects `AlXta` but obtains `AlXa`, reproduced identically using the original committed modules. The export-layout suite passes six of seven tests; its existing initial static HTML page-count assertion also fails identically with the original modules and generated bundle. These two baseline failures are not suppressed or counted as fixed. TypeScript passes with an 8 GiB Node heap; lint has zero errors and 12 existing warnings. The full `npm run build` passes under Node 24. This follow-up does not certify Firefox/WebKit, real customer document save/reopen or production deployment.
+
 The current pagination model correctly avoids persisting automatic page breaks, but text-only positions and physical-page break insertion lose semantic identity. A manual break inside Item14 produces two items with the same flow ID; Backspace on the new page resolves to the preceding text. List conversion also reverses prepended paragraphs, indentation changes margins instead of list level, and imported numbering is not normalized across CSS/output.
 
 Make each command operate on a logical document and return a valid structural selection. Make automatic and manual page projection preserve list/paragraph identity. Supply stable APIs to CORE; do not patch the editor component to bypass the agreed interface.
@@ -96,6 +106,30 @@ Entry: C2 + S2 + W1; coordinate output parity with W3. This is after correctness
 **Acceptance:** content and numbering survive slow reflow; final editor/PDF breaks agree under cold fonts and configured margins; oversized content remains present; any incremental path produces equivalent content order and break intent to full pagination. Publish traces, test environment and actual improvement before claiming a performance win.
 
 ## Boundary with other agents and delivery
+
+### 15 September correction: typing into signature continuation pages
+
+The blank-overflow-only exception described below was insufficient: typing on the last continuation made that overflow substantive and reactivated the oversized-group warning. Superseding that exception, keep-together now moves a group whole only when it can fit on a full page. Larger editable groups use normal pagination, with continuation fragments free to flow; blocks that cannot be split still use the oversized fallback. The canonical grouping attribute remains intact. The focused Chromium regression now types on the final page and checks unchanged page count, retained text/caret, printable-height bounds, and absence of the warning. It passed along with three focused keep-together unit cases. The PDF pagination bundle was regenerated.
+
+### 15 September follow-up: transient caret jump during Enter
+
+Page content replacement runs in child layout effects, but pending selection restoration previously ran in a passive effect. That allowed a paint with the browser's temporary page-start caret before the logical caret was restored. Restoration now runs in the parent layout effect, after child HTML replacement and before paint, and skips redundant focus calls when the editor is already focused. One focused Chromium regression passed: repeated Enter on a later soft page retains the expected paragraphs and mutation observers see no page-root or outside-page selection fallback. No broad suite was run.
+
+### 15 September follow-up: Backspace leaves an orphan list number
+
+Collapsed backward deletion now handles the beginning of a list item before ordinary character deletion. It joins a subsequent item into its preceding sibling, removes the consumed LI, and restores the caret at the join. At the first item it removes the list level while preserving content and remaining items. This covers direct LI text as well as paragraph-wrapped list content and makes empty numbered items removable. Three focused Chromium cases passed: empty-item deletion followed by typing for both markup forms, and first-item removal followed by undo. No broad test suite was run.
+
+### 15 September follow-up: oversized signature with trailing blank lines
+
+Keep-together signature wrappers previously forced all trailing blank lines onto one oversized, internally scrolling page. The paginator now permits a split when the overflow contains only blank space (and no image, table, rule, or noneditable content). The signature text remains together; blank continuation fragments can paginate normally. Canonical content is unchanged. Genuinely oversized substantive groups retain the existing warning. The export pagination bundle was regenerated. Focused validation passed: one Chromium case with a signature and 100 trailing blank paragraphs checks multiple pages, printable-height bounds, no oversized warning, and paragraph preservation; three existing keep-together unit cases also passed.
+
+### 15 September follow-up: list text below its marker
+
+Inline insertion into an empty block could resolve the caret after its sole editable-placeholder `<br>`, leaving that break before newly typed text. In an empty list item this placed the text one line below the marker. `insertReplacementNodes` now consumes a sole direct placeholder break when inserting text into an editable block. Multiple breaks remain intact as intentional blank lines; list spacing and marker CSS are unchanged. Three focused document-action regression cases passed under Node 24 (numbered list, bulleted list, and preservation of intentional blank lines). No broader suite or browser verification was run for this follow-up, keeping validation limited as requested. This prevents newly introduced placeholder breaks; it does not rewrite existing document line breaks.
+
+### 15 September follow-up: later-page flicker during controlled typing
+
+The value synchronization effect reparsed the canonical document into hard-break-only pages on every parent `onChange` echo, temporarily removing soft pages before asynchronous measurement restored them. This could consume the pending selection against the temporary first-page view. Synchronization now replaces rendered pages only when activating a session or accepting a different external document. Controlled echoes retain the measured projection; the edit transaction still schedules reflow, and layout changes retain their separate reflow effect. One focused Node 24 Chromium regression passed: a controlled editor spanning soft pages retains the later page DOM and caret through successive native keystrokes, with no page removal observed and all typed text preserved. No broad suite was run for this follow-up.
 
 CORE applies all command/key/toolbar/editor wiring. F owns shared policy and token parsing; S only needs atomic-node descriptors/source positions. W applies persistence/output readers and regenerates bundle. Request contract changes through I; do not add an independent resolver, sanitizer list or page-break parser in another layer.
 

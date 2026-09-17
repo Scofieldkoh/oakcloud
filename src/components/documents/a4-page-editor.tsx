@@ -1314,7 +1314,9 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
         stripFlowMetadata(hydrateFlowHtml(ensureEditableCanonicalHtml(value))),
       );
       let session = sessionsRef.current.get(resolvedSessionKey) ?? null;
+      let replaceRenderedPages = session !== canonicalSessionRef.current;
       if (!session) {
+        replaceRenderedPages = true;
         const initialHtml = hydrateFlowHtml(ensureEditableCanonicalHtml(value));
         session = createCanonicalEditorSession({
           sessionKey: resolvedSessionKey,
@@ -1350,6 +1352,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
         const currentContent = current.ok ? current.snapshot.content : null;
         const controlledEcho = canonicalValue === lastValueRef.current;
         if (!controlledEcho && currentContent !== canonicalValue) {
+          replaceRenderedPages = true;
           suppressNextOnChangeRef.current = true;
           session.replaceExternalState({
             internalHtml: hydrateFlowHtml(ensureEditableCanonicalHtml(value)),
@@ -1364,6 +1367,10 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
       }
       canonicalSessionRef.current = session;
       lastValueRef.current = canonicalValue;
+      // Parent onChange echoes must not replace measured soft pages with the
+      // unpaginated document. Doing so unmounts later pages on every keystroke
+      // and consumes the pending caret before the measured pages return.
+      if (!replaceRenderedPages) return;
       const nextPages = parsePages(session.getState().internalHtml, pagesRef.current);
       pagesRef.current = nextPages;
       setPages(nextPages);
@@ -1399,7 +1406,10 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
       };
     }, [scheduleReflow]);
 
-    useEffect(() => {
+    // Page children replace their HTML in layout effects. Restore selection
+    // in the same pre-paint phase, before the browser can display the DOM
+    // replacement's temporary caret at the start of the page.
+    useLayoutEffect(() => {
       const bookmark = pendingFlowSelectionRef.current;
       const root = documentSurfaceRef.current;
       if (!bookmark || !root) return;
@@ -1412,7 +1422,9 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
       const targetEditor = targetFlowElement?.closest(
         '[contenteditable="true"]',
       ) as HTMLDivElement | null;
-      targetEditor?.focus({ preventScroll: true });
+      if (targetEditor && document.activeElement !== targetEditor) {
+        targetEditor.focus({ preventScroll: true });
+      }
       const pageElement = targetFlowElement?.closest<HTMLElement>(
         '[data-page-id]',
       ) ?? null;

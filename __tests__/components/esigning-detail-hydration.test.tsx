@@ -317,6 +317,37 @@ describe('E-signing detail hydration', () => {
     expect(container.textContent).toContain('Delete envelope');
   });
 
+  it.each(['SENT', 'IN_PROGRESS'] as const)('submits only name and email when adding an email after %s', async (status) => {
+    hookMocks.envelope = makeEnvelope({
+      status,
+      canEdit: false,
+      recipients: [{
+        ...makeEnvelope().recipients[0],
+        email: null,
+        accessMode: 'MANUAL_LINK',
+        status: 'NOTIFIED',
+      }],
+    });
+    hookMocks.mutateAsync.mockClear();
+    hookMocks.mutateAsync.mockResolvedValueOnce({ manualLinks: [] });
+    renderedRoot = createRoot(container);
+    renderedRoot.render(
+      <QueryClientProvider client={new QueryClient()}>
+        <EsigningDetailPage envelopeId="envelope-1" />
+      </QueryClientProvider>
+    );
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Edit', exact: true }));
+    await userEvent.type(screen.getByLabelText('Email (optional)'), 'signer@example.com');
+    await userEvent.click(screen.getByRole('button', { name: 'Save correction' }));
+
+    expect(hookMocks.mutateAsync).toHaveBeenCalledExactlyOnceWith({
+      name: 'Signer',
+      email: 'signer@example.com',
+    });
+    await waitFor(() => expect(screen.queryByRole('heading', { name: 'Correct recipient' })).not.toBeInTheDocument());
+  });
+
   it('prompts the sender to auto-sign after sending when a saved specimen is available', async () => {
     const sentEnvelope = makeEnvelope({
       status: 'SENT',

@@ -564,6 +564,28 @@ describe('A4 canonical document actions', () => {
     });
   });
 
+  it.each(['<ol><li><p><br></p></li></ol>', '<ul><li><p><br></p></li></ul>'])(
+    'replaces the empty list placeholder when typing in %s',
+    (markup) => {
+      const html = hydrateFlowHtml(markup);
+      const body = new DOMParser().parseFromString(html, 'text/html').body;
+      const flowId = body.querySelector<HTMLElement>('p')!.dataset.flowId!;
+      const result = replaceLogicalSelection(html, collapsed(flowId, 0), 'First item');
+      const resultBody = new DOMParser().parseFromString(result.html, 'text/html').body;
+      expect(resultBody.querySelector('li p')!.innerHTML).toBe('First item');
+    },
+  );
+
+  it('preserves intentional blank lines when inserting list text', () => {
+    const html = hydrateFlowHtml('<ol><li><p><br><br></p></li></ol>');
+    const body = new DOMParser().parseFromString(html, 'text/html').body;
+    const flowId = body.querySelector<HTMLElement>('p')!.dataset.flowId!;
+    const result = replaceLogicalSelection(html, collapsed(flowId, 0), 'First item');
+    const resultBody = new DOMParser().parseFromString(result.html, 'text/html').body;
+    expect(resultBody.querySelectorAll('li p br')).toHaveLength(2);
+    expect(resultBody.querySelector('li p')!.textContent).toBe('First item');
+  });
+
   it('inserts block clipboard nodes at block boundaries without nesting', () => {
     const html = hydrateFlowHtml('<p>AlphaBeta</p>');
     const flowId = new DOMParser()

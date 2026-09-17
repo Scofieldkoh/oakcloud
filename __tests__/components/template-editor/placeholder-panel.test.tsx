@@ -173,7 +173,10 @@ describe('PlaceholderPanel F3 field discovery UX', () => {
   it('requires explicit confirmation before deleting a custom field', () => {
     const onCustomPlaceholdersChange = vi.fn();
     render(<PlaceholderPanel {...defaultProps} customPlaceholders={[existingField]} onCustomPlaceholdersChange={onCustomPlaceholdersChange} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Delete Reference number' }));
+    const deleteButton = screen.getByRole('button', { name: 'Delete Reference number' });
+    expect(deleteButton).toHaveTextContent('Delete');
+    expect(deleteButton.querySelector('svg')).toBeInTheDocument();
+    fireEvent.click(deleteButton);
     expect(onCustomPlaceholdersChange).not.toHaveBeenCalled();
     expect(screen.getByText(/Usage locations are not available/)).toBeVisible();
     fireEvent.click(screen.getByRole('button', { name: 'Delete field only' }));

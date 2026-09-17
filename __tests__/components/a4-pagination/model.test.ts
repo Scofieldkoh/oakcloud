@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   HARD_PAGE_BREAK_HTML,
+  ensureEditableCanonicalHtml,
   hardSectionCountFromPages,
   hydrateFlowHtml,
   normalizeEditedFlowIds,
@@ -11,6 +12,11 @@ import {
 } from '@/components/documents/a4-pagination/model';
 
 describe('A4 pagination canonical model', () => {
+  it('preserves blank paragraphs and their identities instead of resetting the document', () => {
+    const html = '<p data-flow-id="a"><br></p><p data-flow-id="b"><br></p>';
+    expect(ensureEditableCanonicalHtml(html)).toBe(html);
+    expect(ensureEditableCanonicalHtml('')).toBe('<p><br></p>');
+  });
   it('counts hard sections from derived pages without touching the DOM', () => {
     expect(hardSectionCountFromPages([])).toBe(0);
     expect(hardSectionCountFromPages([{ hardBreakBefore: false }])).toBe(1);

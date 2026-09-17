@@ -150,8 +150,14 @@ export function EnvelopeStatusBadge({ status }: { status: EsigningEnvelopeStatus
   return <Pill className={ENVELOPE_STATUS_STYLES[status]}>{status.replace('_', ' ')}</Pill>;
 }
 
-export function RecipientStatusBadge({ status }: { status: EsigningRecipientStatus }) {
-  return <Pill className={RECIPIENT_STATUS_STYLES[status]}>{status.replace('_', ' ')}</Pill>;
+export function RecipientStatusBadge({ status, accessMode }: {
+  status: EsigningRecipientStatus;
+  accessMode: EsigningRecipientAccessMode;
+}) {
+  const label = status === 'NOTIFIED' && accessMode === 'MANUAL_LINK'
+    ? 'LINK READY'
+    : status.replace('_', ' ');
+  return <Pill className={RECIPIENT_STATUS_STYLES[status]}>{label}</Pill>;
 }
 
 export function CopyDeliveryStatusBadge({

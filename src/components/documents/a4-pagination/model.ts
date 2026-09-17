@@ -5,6 +5,7 @@ import {
   splitHardPageSections,
 } from '@/lib/document-page-breaks';
 import type { FlowPoint, FlowSelectionBookmark } from './selection';
+import { resolveFlowBoundary } from './selection';
 
 export { HARD_PAGE_BREAK_HTML } from '@/lib/document-page-breaks';
 const FLOW_ATTRIBUTE_NAMES = [
@@ -15,6 +16,7 @@ const FLOW_ATTRIBUTE_NAMES = [
 ] as const;
 
 const RUNTIME_SEMANTIC_IDENTITY_SELECTOR = [
+  'br',
   'p',
   'div',
   'blockquote',
@@ -102,7 +104,7 @@ export function ensureEditableCanonicalHtml(input: string): string {
   const hasContent = Boolean(
     root.textContent?.length ||
       root.querySelector(
-        'audio,canvas,embed,hr,iframe,img,input,object,svg,table,textarea,video,.page-break,[data-a4-break="page"]',
+        'p,div,blockquote,h1,h2,h3,h4,h5,h6,br,audio,canvas,embed,hr,iframe,img,input,object,svg,table,textarea,video,.page-break,[data-a4-break="page"]',
       ),
   );
   return hasContent ? root.innerHTML : EMPTY_EDITABLE_PARAGRAPH_HTML;
@@ -123,7 +125,10 @@ export function hydrateFlowContainer(container: HTMLElement): void {
       ensureFlowId(element);
       element
         .querySelectorAll<HTMLElement>(RUNTIME_SEMANTIC_IDENTITY_SELECTOR)
-        .forEach((semanticNode) => ensureFlowId(semanticNode));
+        .forEach((semanticNode) => {
+          if (semanticNode.tagName === 'BR' && semanticNode.parentNode?.childNodes.length === 1) return;
+          ensureFlowId(semanticNode);
+        });
       return;
     }
 
@@ -501,6 +506,7 @@ export function domPointForFlowPoint(
   root: HTMLElement,
   point: FlowPoint,
 ): DomPoint | null {
+  if (point.boundary) return resolveFlowBoundary(root, point);
   const fragments = Array.from(
     root.querySelectorAll<HTMLElement>('[data-flow-id]'),
   ).filter((candidate) => candidate.dataset.flowId === point.flowId);

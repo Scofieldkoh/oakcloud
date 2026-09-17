@@ -72,7 +72,7 @@ export function EsigningRecipientCard({
                 {recipient.type === 'CC' ? (
                   <CopyDeliveryStatusBadge status={recipient.copyDeliveryStatus} />
                 ) : (
-                  <RecipientStatusBadge status={recipient.status} />
+                  <RecipientStatusBadge status={recipient.status} accessMode={recipient.accessMode} />
                 )}
                 <span
                   className={cn(
