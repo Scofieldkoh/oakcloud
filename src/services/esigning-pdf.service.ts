@@ -25,7 +25,7 @@ import { recordEsigningEnvelopeEmailDeliveryResults, withEsigningDeliveryTarget 
 
 const PROCESSING_LEASE_MS = 15 * 60 * 1000;
 const MAX_EMAIL_ATTACHMENT_BYTES = 20 * 1024 * 1024;
-const ESIGNING_ARTIFACT_VERSION = 5;
+const ESIGNING_ARTIFACT_VERSION = 6;
 
 function toPdfBounds(input: {
   pageWidth: number;
@@ -199,6 +199,15 @@ export async function buildCertificatePdf(input: {
     return font.widthOfTextAtSize(text, size);
   }
 
+  function centeredTextY(
+    boxY: number,
+    boxHeight: number,
+    font: typeof bodyFont,
+    size: number,
+  ): number {
+    return boxY + (boxHeight - font.heightAtSize(size)) / 2 + 1;
+  }
+
   function truncate(text: string, font: typeof bodyFont, size: number, maxWidth: number): string {
     const value = safe(text);
     if (widthOf(value, font, size) <= maxWidth) return value;
@@ -260,42 +269,53 @@ export async function buildCertificatePdf(input: {
     p: PDFPage,
     text: string,
     x: number,
-    y: number,
+    centerY: number,
     color: ReturnType<typeof rgb>,
     textColor: ReturnType<typeof rgb>,
   ): number {
     const value = safe(text);
     const size = 7;
+    const height = 14;
+    const boxY = centerY - height / 2;
     const w = widthOf(value, headingFont, size) + 14;
-    p.drawRectangle({ x, y: y - 3.5, width: w, height: 14, color });
-    p.drawText(value, { x: x + 7, y, size, font: headingFont, color: textColor });
+    p.drawRectangle({ x, y: boxY, width: w, height, color });
+    p.drawText(value, {
+      x: x + 7,
+      y: centeredTextY(boxY, height, headingFont, size),
+      size,
+      font: headingFont,
+      color: textColor,
+    });
     return w;
   }
 
   // ── Date formatter ──────────────────────────────────────────────────────────
+  const SGT_TIME_ZONE = 'Asia/Singapore';
+
   function formatPdfDate(date: Date): string {
-    return new Intl.DateTimeFormat('en-US', {
+    const formatted = new Intl.DateTimeFormat('en-US', {
       month: 'short',
       day: 'numeric',
       year: 'numeric',
       hour: 'numeric',
       minute: '2-digit',
-      timeZone: 'UTC',
-      timeZoneName: 'short',
+      timeZone: SGT_TIME_ZONE,
     }).format(date);
+    return `${formatted} SGT`;
   }
 
   // Compact variant for narrow summary cells.
   function formatPdfDateCompact(date: Date): string {
-    return new Intl.DateTimeFormat('en-GB', {
+    const formatted = new Intl.DateTimeFormat('en-GB', {
       day: '2-digit',
       month: 'short',
       year: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
       hour12: false,
-      timeZone: 'UTC',
+      timeZone: SGT_TIME_ZONE,
     }).format(date);
+    return `${formatted} SGT`;
   }
 
   // ── Evidence sub-line builder ───────────────────────────────────────────────
@@ -315,36 +335,15 @@ export async function buildCertificatePdf(input: {
 
   const certificateId = input.envelope.certificateId;
   const verificationUrl = buildEsigningVerificationUrl(certificateId);
-  const senderName = [input.envelope.createdBy?.firstName, input.envelope.createdBy?.lastName]
-    .filter(Boolean)
-    .join(' ')
-    .trim();
 
-  // Certificate ID block geometry (top-right of the header band) — needed up
-  // front so the title can be laid out against the remaining width.
+  // Certificate ID block geometry (top-right of the header band).
   const ID_SIZE = 9.5;
+  const ID_BOX_H = 20;
   const idValueW = widthOf(certificateId, monoFont, ID_SIZE);
   const idBlockW = Math.max(idValueW + 16, widthOf('CERTIFICATE ID', headingFont, 6.5));
   const idBlockX = PW - MR - idBlockW;
-
-  // Title: one line when it fits, otherwise up to two slightly smaller lines.
-  const titleMaxW = idBlockX - ML - 16;
-  let titleSize = 16;
-  let titleLines = wrap(input.envelope.title, headingFont, titleSize, titleMaxW);
-  if (titleLines.length > 1) {
-    titleSize = 13.5;
-    titleLines = wrap(input.envelope.title, headingFont, titleSize, titleMaxW);
-  }
-  if (titleLines.length > 2) {
-    titleLines = [
-      titleLines[0],
-      truncate(titleLines.slice(1).join(' '), headingFont, titleSize, titleMaxW),
-    ];
-  }
-  if (titleLines.length === 0) titleLines = ['Untitled envelope'];
-  const titleLeading = titleSize + 3;
-  const titleBlockH = (titleLines.length - 1) * titleLeading;
-  const HEADER_H = 118 + titleBlockH;
+  const idBlockY = PH - 63;
+  const HEADER_H = 112;
 
   const pages: PDFPage[] = [];
   let page: PDFPage = null!;
@@ -359,52 +358,55 @@ export async function buildCertificatePdf(input: {
       // Full-width brand header band
       page.drawRectangle({ x: 0, y: PH - HEADER_H, width: PW, height: HEADER_H, color: cBrand });
 
+      // Fixed certificate title replaces the envelope title in the primary header.
       page.drawText('CERTIFICATE OF COMPLETION', {
-        x: ML, y: PH - 40, size: 8, font: headingFont, color: cBrandSoft,
+        x: ML,
+        y: centeredTextY(idBlockY, ID_BOX_H, headingFont, 16),
+        size: 16,
+        font: headingFont,
+        color: cWhite,
       });
 
       // Certificate ID block (top-right, monospaced for transcription)
-      drawRight(page, 'CERTIFICATE ID', PW - MR, PH - 40, 6.5, headingFont, cBrandSoft);
+      drawRight(page, 'CERTIFICATE ID', PW - MR, idBlockY + ID_BOX_H + 5, 6.5, headingFont, cBrandSoft);
       page.drawRectangle({
-        x: idBlockX, y: PH - 62, width: idBlockW, height: 19,
+        x: idBlockX, y: idBlockY, width: idBlockW, height: ID_BOX_H,
         borderColor: cBrandSoft, borderWidth: 0.6,
       });
       page.drawText(certificateId, {
-        x: idBlockX + (idBlockW - idValueW) / 2, y: PH - 56.5,
-        size: ID_SIZE, font: monoFont, color: cWhite,
+        x: idBlockX + (idBlockW - idValueW) / 2,
+        y: centeredTextY(idBlockY, ID_BOX_H, monoFont, ID_SIZE),
+        size: ID_SIZE,
+        font: monoFont,
+        color: cWhite,
       });
 
-      // Envelope title (one or two lines)
-      titleLines.forEach((line, index) => {
-        page.drawText(line, {
-          x: ML, y: PH - 64 - index * titleLeading,
-          size: titleSize, font: headingFont, color: cWhite,
-        });
-      });
-
-      // Company · sender
-      const originParts = [input.envelope.company?.name, senderName ? `Sent by ${senderName}` : null]
-        .filter(Boolean)
-        .join('  \u00B7  ');
-      if (originParts) {
-        page.drawText(truncate(originParts, bodyFont, 8.5, CW), {
-          x: ML, y: PH - 82 - titleBlockH, size: 8.5, font: bodyFont, color: cBrandSoft,
+      // Company context only. Sender attribution is intentionally omitted.
+      if (input.envelope.company?.name) {
+        page.drawText(truncate(input.envelope.company.name, bodyFont, 8.5, CW), {
+          x: ML, y: PH - 79, size: 8.5, font: bodyFont, color: cBrandSoft,
         });
       }
 
       // Status pill + completion timestamp
-      const pillY = PH - 104 - titleBlockH;
-      const pillW = drawPill(page, status.replace(/_/g, ' '), ML, pillY, statusColor, cWhite);
+      const statusCenterY = PH - 99;
+      const pillW = drawPill(page, status.replace(/_/g, ' '), ML, statusCenterY, statusColor, cWhite);
       if (input.envelope.completedAt) {
+        const completedSize = 8;
+        const completedBoxY = statusCenterY - 7;
         page.drawText(`Completed ${formatPdfDate(input.envelope.completedAt)}`, {
-          x: ML + pillW + 10, y: pillY, size: 8, font: bodyFont, color: cBrandSoft,
+          x: ML + pillW + 10,
+          y: centeredTextY(completedBoxY, 14, bodyFont, completedSize),
+          size: completedSize,
+          font: bodyFont,
+          color: cBrandSoft,
         });
       }
 
       cursorY = PH - HEADER_H - 30;
     } else {
       page.drawRectangle({ x: 0, y: PH - 3, width: PW, height: 3, color: cBrand });
-      page.drawText(truncate(`Certificate of Completion  \u00B7  ${input.envelope.title}`, bodyFont, 7.5, CW - 150), {
+      page.drawText('Certificate of Completion', {
         x: ML, y: PH - 24, size: 7.5, font: bodyFont, color: cTextMuted,
       });
       drawRight(page, certificateId, PW - MR, PH - 24, 7.5, monoFont, cTextMuted);
@@ -424,9 +426,15 @@ export async function buildCertificatePdf(input: {
 
   function sectionTitle(title: string) {
     ensureSpace(40);
-    page.drawRectangle({ x: ML, y: cursorY - 1, width: 2.5, height: 9.5, color: cBrand });
+    const barY = cursorY - 1;
+    const barH = 9.5;
+    page.drawRectangle({ x: ML, y: barY, width: 2.5, height: barH, color: cBrand });
     page.drawText(safe(title).toUpperCase(), {
-      x: ML + 9, y: cursorY, size: 9, font: headingFont, color: cBrand,
+      x: ML + 9,
+      y: centeredTextY(barY, barH, headingFont, 9),
+      size: 9,
+      font: headingFont,
+      color: cBrand,
     });
     cursorY -= 8;
     page.drawLine({
@@ -436,7 +444,7 @@ export async function buildCertificatePdf(input: {
     cursorY -= 17;
   }
 
-  // ── Build content ───────────────────────────────────────────────────────────
+  // ── Build content ────────────────────────────────────────────────────────────
   startPage();
 
   const recipientById = new Map(input.envelope.recipients.map((r) => [r.id, r]));
@@ -456,7 +464,7 @@ export async function buildCertificatePdf(input: {
     const cells: Array<[string, string, ReturnType<typeof rgb>]> = [
       ['STATUS', status.replace(/_/g, ' '), statusColor],
       [
-        'COMPLETED (UTC)',
+        'COMPLETED (SGT)',
         input.envelope.completedAt ? formatPdfDateCompact(input.envelope.completedAt) : 'Pending',
         input.envelope.completedAt ? cText : cTextMuted,
       ],
@@ -492,7 +500,7 @@ export async function buildCertificatePdf(input: {
     type EvidenceRow = {
       label: string;
       value: string;
-      subLine?: string | null;
+      evidence?: string | null;
       filled: boolean;
       dotColor: ReturnType<typeof rgb>;
       valueColor: ReturnType<typeof rgb>;
@@ -509,7 +517,7 @@ export async function buildCertificatePdf(input: {
       {
         label: 'Consented',
         value: rec.consentedAt ? formatPdfDate(rec.consentedAt) : 'Not recorded',
-        subLine: rec.consentedAt
+        evidence: rec.consentedAt
           ? buildEvidenceSubLine(rec.consentIp, rec.consentUserAgent)
           : null,
         filled: Boolean(rec.consentedAt),
@@ -521,7 +529,7 @@ export async function buildCertificatePdf(input: {
         value: rec.signedAt
           ? formatPdfDate(rec.signedAt)
           : (rec.status === 'DECLINED' ? 'Declined' : 'Awaiting signature'),
-        subLine: rec.signedAt
+        evidence: rec.signedAt
           ? buildEvidenceSubLine(rec.signedIp, rec.signedUserAgent)
           : null,
         filled: Boolean(rec.signedAt),
@@ -530,12 +538,15 @@ export async function buildCertificatePdf(input: {
       },
     ];
 
-    const rowsH = evidenceRows.reduce((sum, row) => sum + (row.subLine ? 24 : 14), 0);
-    const cardH = 24 + rowsH + 8;
+    const rowH = 16;
+    const headerH = 22;
+    const bottomPadding = 8;
+    const cardH = headerH + evidenceRows.length * rowH + bottomPadding;
     ensureSpace(cardH + 12);
 
     const cardTop = cursorY + 11;
     const cardBottom = cardTop - cardH;
+    const headerY = cardTop - headerH;
 
     // Card shell + recipient accent bar
     page.drawRectangle({
@@ -543,39 +554,81 @@ export async function buildCertificatePdf(input: {
       color: cWhite, borderColor: cBorder, borderWidth: 0.6,
     });
     page.drawRectangle({ x: ML, y: cardBottom, width: 3, height: cardH, color: rMain });
-    page.drawRectangle({ x: ML + 3, y: cardTop - 22, width: CW - 3, height: 22, color: rBg });
+    page.drawRectangle({ x: ML + 3, y: headerY, width: CW - 3, height: headerH, color: rBg });
 
-    // Header: name + email (left), signing order (right)
+    // Header: name + email (left), signing order (right), vertically centered.
     const nameText = truncate(rec.name, headingFont, 9.5, CW * 0.45);
-    page.drawText(nameText, { x: ML + 13, y: cursorY, size: 9.5, font: headingFont, color: rMain });
+    const nameY = centeredTextY(headerY, headerH, headingFont, 9.5);
+    page.drawText(nameText, { x: ML + 13, y: nameY, size: 9.5, font: headingFont, color: rMain });
     const emailX = ML + 13 + widthOf(nameText, headingFont, 9.5) + 8;
     page.drawText(truncate(rec.email || 'Manual link only', bodyFont, 8.5, PW - MR - emailX - 70), {
-      x: emailX, y: cursorY, size: 8.5, font: bodyFont, color: cTextSec,
+      x: emailX,
+      y: centeredTextY(headerY, headerH, bodyFont, 8.5),
+      size: 8.5,
+      font: bodyFont,
+      color: cTextSec,
     });
-    drawRight(page, `#${ri + 1}`, PW - MR - 10, cursorY, 8, headingFont, cTextMuted);
+    drawRight(
+      page,
+      `#${ri + 1}`,
+      PW - MR - 10,
+      centeredTextY(headerY, headerH, headingFont, 8),
+      8,
+      headingFont,
+      cTextMuted,
+    );
 
-    cursorY -= 24;
+    const valueX = ML + 26 + 62;
+    const evidenceRight = PW - MR - 12;
+    let rowTop = headerY;
 
     for (const row of evidenceRows) {
+      const rowY = rowTop - rowH;
+      const rowCenterY = rowY + rowH / 2;
+
       if (row.filled) {
-        page.drawCircle({ x: ML + 17, y: cursorY + 3, size: 2.8, color: row.dotColor });
+        page.drawCircle({ x: ML + 17, y: rowCenterY, size: 2.8, color: row.dotColor });
       } else {
-        page.drawCircle({ x: ML + 17, y: cursorY + 3, size: 2.8, borderColor: row.dotColor, borderWidth: 0.8 });
+        page.drawCircle({ x: ML + 17, y: rowCenterY, size: 2.8, borderColor: row.dotColor, borderWidth: 0.8 });
       }
 
-      page.drawText(row.label, { x: ML + 26, y: cursorY, size: 8.5, font: headingFont, color: cText });
-      page.drawText(safe(row.value), {
-        x: ML + 26 + 62, y: cursorY, size: 8.5, font: bodyFont, color: row.valueColor,
+      page.drawText(row.label, {
+        x: ML + 26,
+        y: centeredTextY(rowY, rowH, headingFont, 8.5),
+        size: 8.5,
+        font: headingFont,
+        color: cText,
       });
-      cursorY -= 13;
 
-      if (row.subLine) {
-        page.drawText(truncate(row.subLine, bodyFont, 7.5, CW - 100), {
-          x: ML + 26 + 62, y: cursorY, size: 7.5, font: bodyFont, color: cTextMuted,
-        });
-        cursorY -= 11;
+      const evidenceText = row.evidence
+        ? truncate(row.evidence, bodyFont, 7.5, 210)
+        : '';
+      const evidenceWidth = evidenceText ? widthOf(evidenceText, bodyFont, 7.5) : 0;
+      const valueMaxWidth = evidenceText
+        ? Math.max(70, evidenceRight - evidenceWidth - 12 - valueX)
+        : evidenceRight - valueX;
+
+      page.drawText(truncate(row.value, bodyFont, 8.5, valueMaxWidth), {
+        x: valueX,
+        y: centeredTextY(rowY, rowH, bodyFont, 8.5),
+        size: 8.5,
+        font: bodyFont,
+        color: row.valueColor,
+      });
+
+      if (evidenceText) {
+        drawRight(
+          page,
+          evidenceText,
+          evidenceRight,
+          centeredTextY(rowY, rowH, bodyFont, 7.5),
+          7.5,
+          bodyFont,
+          cTextMuted,
+        );
       }
-      cursorY -= 1;
+
+      rowTop = rowY;
     }
 
     cursorY = cardBottom - 20;
@@ -737,7 +790,7 @@ export async function buildCertificatePdf(input: {
   {
     const notice =
       'This certificate is generated automatically as the tamper-evident audit record of the signing '
-      + 'process. All timestamps are recorded in Coordinated Universal Time (UTC). The SHA-256 digests '
+      + 'process. All timestamps are displayed in Singapore Standard Time (SGT, UTC+8). The SHA-256 digests '
       + 'above can be recomputed from the corresponding files to confirm that neither the original nor '
       + 'the signed document has been altered.';
     const lines = wrap(notice, bodyFont, 7.5, CW - 24);
@@ -745,11 +798,19 @@ export async function buildCertificatePdf(input: {
     ensureSpace(cardH + 6);
 
     const cardTop = cursorY + 11;
+    const headerH = 22;
+    const headerY = cardTop - headerH;
     page.drawRectangle({ x: ML, y: cardTop - cardH, width: CW, height: cardH, color: cSurface });
     page.drawRectangle({ x: ML, y: cardTop - cardH, width: 3, height: cardH, color: cBrand });
 
-    page.drawText('VERIFICATION', { x: ML + 12, y: cursorY, size: 7, font: headingFont, color: cBrand });
-    cursorY -= 13;
+    page.drawText('VERIFICATION', {
+      x: ML + 12,
+      y: centeredTextY(headerY, headerH, headingFont, 7),
+      size: 7,
+      font: headingFont,
+      color: cBrand,
+    });
+    cursorY = headerY - 4;
     lines.forEach((line, index) => {
       page.drawText(line, { x: ML + 12, y: cursorY - index * 10, size: 7.5, font: bodyFont, color: cTextSec });
     });
