@@ -7,6 +7,7 @@ import { ArtifactView, humanize } from '@/components/ui/structured-data-view';
 import { useAssistantAction, useAssistantRun } from '@/hooks/use-business-assistant';
 import type { BusinessAssistantAction, BusinessAssistantRunDto } from '@/lib/validations/business-assistant';
 import { BizFileCorrectionPanel } from './correction-panel';
+import { AssistantReadResultDetails, isCompactReadRun } from './read-result-details';
 
 const presentationSchema = z.object({ sections: z.array(z.object({ id: z.string(), title: z.string(), kind: z.string(), value: z.unknown() })) });
 const proposalEvidenceSchema = z.object({ presentation: presentationSchema.nullable().optional(), preparedArtifact: z.unknown().optional() });
@@ -19,6 +20,7 @@ export function AssistantRunCard({ workspaceId, runId }: { workspaceId: string; 
     <p>{query.error.message}</p><Button variant="secondary" onClick={() => query.refetch()}>Reload operation</Button>
   </div>;
   if (!query.data) return <p role="status" className="p-4 text-sm text-text-secondary">Loading operation…</p>;
+  if (isCompactReadRun(query.data)) return <AssistantReadResultDetails run={query.data} />;
   return <RunDetails key={`${query.data.id}:${query.data.proposal?.revision ?? 0}`} workspaceId={workspaceId} run={query.data} />;
 }
 
