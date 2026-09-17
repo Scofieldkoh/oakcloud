@@ -3,11 +3,13 @@ import { randomUUID } from 'node:crypto';
 import { prisma } from '@/lib/prisma';
 import { runSerializableTransaction } from '@/lib/prisma-transaction';
 import { businessAssistantCapabilityRegistry } from '@/generated/business-assistant-capability-registry';
-import { aggregateRun, BUSINESS_ASSISTANT_LIMITS, canonicalizeJson, isBlockedPreparation, sha256, type BusinessAssistantCapability, type CanonicalActorContext, type JsonValue, type PreparedCapabilityArtifact, type PreparedCapabilityItem, type WorkerInvocationContext } from './contracts';
+import { aggregateRun, BUSINESS_ASSISTANT_LIMITS, canonicalizeJson, isBlockedPreparation, resourceRefSchema, sha256, type BusinessAssistantCapability, type CanonicalActorContext, type JsonValue, type PreparedCapabilityArtifact, type PreparedCapabilityItem, type ReadExecutionResult, type ResourceRef, type WorkerInvocationContext } from './contracts';
 import { persistProposal } from './proposal.service';
 import { recordClaimedReview } from './review.repository';
-import { assertAssistantActor, assertAssistantMutationAccess, filterCapabilityDescriptors } from './policy.service';
+import { assertAssistantActor, assertAssistantMutationAccess, hasCapabilityPermissions } from './policy.service';
 import { claimInboundMessage, claimRunnableItem, finishStageAttempt, releaseItemClaim, renewInboundMessageClaim, renewItemClaim, settleInboundMessage, startStageAttempt, updateClaimedItem, type AssistantClaim, type ClaimedItem, type StageAttempt } from './claim.repository';
+import { resolveConversationResourceContext } from './conversation-context';
+import { routeBusinessAssistantMessage, type RoutingDecision } from './routing.service';
 
 function jsonInput(value: unknown): Prisma.InputJsonValue {
   return value as Prisma.InputJsonValue;
@@ -27,6 +29,13 @@ export interface WorkerResult {
   messagesProcessed: number;
   itemsProcessed: number;
   errors: number;
+}
+
+interface PersistedRoute {
+  kind: 'CAPABILITY' | 'ANSWER' | 'CLARIFICATION';
+  capabilityId?: string;
+  capabilityVersion?: string;
+  content?: string;
 }
 
 export async function runBusinessAssistantWorker(options: WorkerOptions = {}): Promise<WorkerResult> {
@@ -88,30 +97,78 @@ export async function runBusinessAssistantWorker(options: WorkerOptions = {}): P
 }
 
 async function processInboundMessage(claim: AssistantClaim & { id: string; tenantId: string; ownerId: string; conversationId: string }): Promise<void> {
-  const message = await prisma.businessAssistantMessage.findFirst({ where: { id: claim.id, tenantId: claim.tenantId, ownerId: claim.ownerId, conversation: { status: { not: 'DELETED' } } }, select: { id: true, conversationId: true, payload: true, resources: true } });
+  const message = await prisma.businessAssistantMessage.findFirst({
+    where: { id: claim.id, tenantId: claim.tenantId, ownerId: claim.ownerId, conversation: { status: { not: 'DELETED' } } },
+    select: { id: true, conversationId: true, content: true, payload: true, resources: true },
+  });
   if (!message) return;
   if (!(await renewInboundMessageClaim(claim))) throw new Error('Inbound message claim was fenced');
-  const conversation = await prisma.businessAssistantConversation.findFirst({ where: { id: message.conversationId, tenantId: claim.tenantId, ownerId: claim.ownerId }, select: { status: true } });
+  const conversation = await prisma.businessAssistantConversation.findFirst({
+    where: { id: message.conversationId, tenantId: claim.tenantId, ownerId: claim.ownerId },
+    select: { status: true },
+  });
   if (!conversation || conversation.status === 'DELETED') {
     await settleInboundMessage(claim, 'FAILED');
     return;
   }
-  const payload = (message.payload ?? {}) as Record<string, unknown>;
-  const runId = typeof payload.runId === 'string' ? payload.runId : null;
-  if (!runId) {
-    const decision = await assertAssistantActor(claim.ownerId, claim.tenantId);
-    const available = filterCapabilityDescriptors(decision, businessAssistantCapabilityRegistry.list());
-    const names = available.slice(0, 8).map((capability) => capability.title).join(', ');
-    const content = available.length > 0
-      ? `I can help with ${names}. Choose a capability above or tell me which workspace information you want to find.`
-      : 'Tell me what you want to accomplish so I can route it to an available workspace capability.';
-    await appendAssistantMessage({ tenantId: claim.tenantId, conversationId: claim.conversationId, ownerId: claim.ownerId, type: 'CLARIFICATION', content, payload: { capabilities: available as unknown as JsonValue } });
+  if (conversation.status !== 'ACTIVE') {
     if (!(await settleInboundMessage(claim, 'PROCESSED'))) throw new Error('Inbound message claim was fenced while settling');
     return;
   }
-  const run = await prisma.businessAssistantRun.findFirst({ where: { id: runId, tenantId: claim.tenantId, ownerId: claim.ownerId }, select: { id: true, capabilityId: true, capabilityVersion: true, input: true, resources: true, status: true, items: { select: { id: true } } } });
+
+  let payload = recordValue(message.payload);
+  let runId = typeof payload.runId === 'string' ? payload.runId : null;
+  if (!runId) {
+    const persistedRoute = parsePersistedRoute(payload.routing);
+    if (persistedRoute?.kind === 'CLARIFICATION') {
+      if (!(await settleInboundMessage(claim, 'PROCESSED'))) throw new Error('Inbound message claim was fenced while settling');
+      return;
+    }
+
+    const resources = await resolveConversationResourceContext({
+      tenantId: claim.tenantId,
+      userId: claim.ownerId,
+      conversationId: claim.conversationId,
+      messageId: claim.id,
+    });
+
+    let route: RoutingDecision;
+    if (persistedRoute && (persistedRoute.kind === 'CAPABILITY' || persistedRoute.kind === 'ANSWER')) {
+      route = persistedRoute.kind === 'ANSWER'
+        ? { kind: 'ANSWER' }
+        : { kind: 'CAPABILITY', capabilityId: persistedRoute.capabilityId!, capabilityVersion: persistedRoute.capabilityVersion! };
+    } else {
+      route = await routeBusinessAssistantMessage({
+        tenantId: claim.tenantId,
+        userId: claim.ownerId,
+        message: message.content ?? '',
+        resources,
+      });
+    }
+
+    if (route.kind === 'CLARIFICATION') {
+      await persistRoutingClarification(claim, message, payload, route, resources);
+      if (!(await settleInboundMessage(claim, 'PROCESSED'))) throw new Error('Inbound message claim was fenced while settling');
+      return;
+    }
+
+    runId = await persistRoutedRun(claim, message, payload, route, resources);
+    payload = { ...payload, runId };
+  }
+
+  const run = await prisma.businessAssistantRun.findFirst({
+    where: { id: runId, tenantId: claim.tenantId, ownerId: claim.ownerId },
+    select: { id: true, capabilityId: true, capabilityVersion: true, input: true, resources: true, status: true, items: { select: { id: true } } },
+  });
   if (!run) {
-    await appendAssistantMessage({ tenantId: claim.tenantId, conversationId: claim.conversationId, ownerId: claim.ownerId, type: 'ERROR', content: 'The requested assistant capability could not be started.' });
+    await appendAssistantMessage({
+      tenantId: claim.tenantId,
+      conversationId: claim.conversationId,
+      ownerId: claim.ownerId,
+      type: 'ERROR',
+      content: 'The requested assistant capability could not be started.',
+      idempotencyKey: `run-missing:${claim.id}`,
+    });
     if (!(await settleInboundMessage(claim, 'PROCESSED'))) throw new Error('Inbound message claim was fenced while settling');
     return;
   }
@@ -121,7 +178,12 @@ async function processInboundMessage(claim: AssistantClaim & { id: string; tenan
     if (!(await settleInboundMessage(claim, 'PROCESSED'))) throw new Error('Inbound message claim was fenced while settling');
     return;
   }
-  await assertAssistantActor(claim.ownerId, claim.tenantId);
+  const decision = await assertAssistantActor(claim.ownerId, claim.tenantId);
+  if (!hasCapabilityPermissions(decision, capability)) {
+    await markRunError(run.id, claim.tenantId, 'FORBIDDEN', 'The requested assistant capability is no longer authorized.');
+    if (!(await settleInboundMessage(claim, 'PROCESSED'))) throw new Error('Inbound message claim was fenced while settling');
+    return;
+  }
   if (run.items.length === 0) {
     const actor: CanonicalActorContext = { tenantId: claim.tenantId, userId: claim.ownerId, requestId: claim.id, source: 'BUSINESS_ASSISTANT' };
     const sourceInput = { ...(run.input as Record<string, unknown>), resources: run.resources };
@@ -135,12 +197,184 @@ async function processInboundMessage(claim: AssistantClaim & { id: string; tenan
       const existing = await tx.businessAssistantRunItem.count({ where: { tenantId: claim.tenantId, runId: run.id } });
       if (existing > 0) return;
       await tx.businessAssistantRunItem.createMany({
-        data: parts.map((part, ordinal) => ({ tenantId: claim.tenantId, runId: run.id, itemKey: part.itemKey, ordinal, input: jsonInput(part.input), resources: jsonInput(part.resources ?? run.resources), lifecycleState: 'PENDING', executionOutcome: 'NOT_STARTED', reviewOutcome: capability.reviewPolicy === 'REQUIRED' ? 'NOT_STARTED' : 'NOT_REQUIRED', requiredEffectStatus: capability.effects?.some((effect) => effect.required) ? 'PENDING' : 'NOT_REQUIRED', activeStage: 'PREPARATION', availableAt: new Date() })),
+        data: parts.map((part, ordinal) => ({
+          tenantId: claim.tenantId,
+          runId: run.id,
+          itemKey: part.itemKey,
+          ordinal,
+          input: jsonInput(part.input),
+          resources: jsonInput(part.resources ?? run.resources),
+          lifecycleState: 'PENDING',
+          executionOutcome: 'NOT_STARTED',
+          reviewOutcome: capability.reviewPolicy === 'REQUIRED' ? 'NOT_STARTED' : 'NOT_REQUIRED',
+          requiredEffectStatus: capability.effects?.some((effect) => effect.required) ? 'PENDING' : 'NOT_REQUIRED',
+          activeStage: 'PREPARATION',
+          availableAt: new Date(),
+        })),
       });
       await tx.businessAssistantRun.update({ where: { id: run.id }, data: { status: 'PREPARING', startedAt: new Date() } });
     });
   }
   if (!(await settleInboundMessage(claim, 'PROCESSED'))) throw new Error('Inbound message claim was fenced while settling');
+}
+
+async function persistRoutedRun(
+  claim: AssistantClaim & { id: string; tenantId: string; ownerId: string; conversationId: string },
+  message: { id: string; conversationId: string; content: string | null },
+  payload: Record<string, unknown>,
+  route: Exclude<RoutingDecision, { kind: 'CLARIFICATION' }>,
+  resources: readonly ResourceRef[],
+): Promise<string> {
+  const capabilityId = route.kind === 'ANSWER' ? 'assistant.answer' : route.capabilityId;
+  const capabilityVersion = route.kind === 'ANSWER' ? '1.0' : route.capabilityVersion;
+  const capability = businessAssistantCapabilityRegistry.get(capabilityId, capabilityVersion);
+  if (!capability || capability.executionKind !== 'READ_ONLY') throw new Error('Routed capability is unavailable or not read-only');
+  const decision = await assertAssistantActor(claim.ownerId, claim.tenantId);
+  if (!hasCapabilityPermissions(decision, capability)) throw new Error('Routed capability is no longer authorized');
+  const persistedRoute: PersistedRoute = route.kind === 'ANSWER'
+    ? { kind: 'ANSWER', capabilityId: capability.id, capabilityVersion: capability.version }
+    : { kind: 'CAPABILITY', capabilityId: capability.id, capabilityVersion: capability.version };
+
+  return runSerializableTransaction(prisma, async (tx) => {
+    const current = await tx.businessAssistantMessage.findFirst({
+      where: {
+        id: claim.id,
+        tenantId: claim.tenantId,
+        ownerId: claim.ownerId,
+        conversationId: claim.conversationId,
+        status: 'PROCESSING',
+        claimToken: claim.token,
+        claimGeneration: claim.generation,
+        leaseExpiresAt: { gt: new Date() },
+      },
+      select: { payload: true },
+    });
+    if (!current) throw new Error('Inbound message claim was fenced while routing');
+    const currentPayload = recordValue(current.payload);
+    if (typeof currentPayload.runId === 'string') return currentPayload.runId;
+
+    const run = await tx.businessAssistantRun.create({
+      data: {
+        tenantId: claim.tenantId,
+        conversationId: message.conversationId,
+        conversationTenantId: claim.tenantId,
+        ownerId: claim.ownerId,
+        capabilityId: capability.id,
+        capabilityVersion: capability.version,
+        contractVersion: capability.contractVersion,
+        schemaVersion: capability.version,
+        input: jsonInput({ message: message.content ?? '' }),
+        resources: jsonInput(resources),
+        status: 'PREPARING',
+      },
+      select: { id: true },
+    });
+    const updated = await tx.businessAssistantMessage.updateMany({
+      where: {
+        id: claim.id,
+        tenantId: claim.tenantId,
+        ownerId: claim.ownerId,
+        status: 'PROCESSING',
+        claimToken: claim.token,
+        claimGeneration: claim.generation,
+        leaseExpiresAt: { gt: new Date() },
+      },
+      data: { payload: jsonInput({ ...payload, runId: run.id, routing: persistedRoute }) },
+    });
+    if (updated.count !== 1) throw new Error('Inbound message claim was fenced while persisting route');
+    return run.id;
+  });
+}
+
+async function persistRoutingClarification(
+  claim: AssistantClaim & { id: string; tenantId: string; ownerId: string; conversationId: string },
+  message: { id: string; conversationId: string },
+  payload: Record<string, unknown>,
+  route: Extract<RoutingDecision, { kind: 'CLARIFICATION' }>,
+  resources: readonly ResourceRef[],
+): Promise<void> {
+  await runSerializableTransaction(prisma, async (tx) => {
+    const current = await tx.businessAssistantMessage.findFirst({
+      where: {
+        id: claim.id,
+        tenantId: claim.tenantId,
+        ownerId: claim.ownerId,
+        conversationId: claim.conversationId,
+        status: 'PROCESSING',
+        claimToken: claim.token,
+        claimGeneration: claim.generation,
+        leaseExpiresAt: { gt: new Date() },
+      },
+      select: { payload: true },
+    });
+    if (!current) throw new Error('Inbound message claim was fenced while routing');
+    const currentPayload = recordValue(current.payload);
+    const persisted = parsePersistedRoute(currentPayload.routing);
+    if (persisted?.kind === 'CLARIFICATION') return;
+
+    const updated = await tx.businessAssistantMessage.updateMany({
+      where: {
+        id: claim.id,
+        tenantId: claim.tenantId,
+        ownerId: claim.ownerId,
+        status: 'PROCESSING',
+        claimToken: claim.token,
+        claimGeneration: claim.generation,
+        leaseExpiresAt: { gt: new Date() },
+      },
+      data: { payload: jsonInput({ ...payload, routing: route }) },
+    });
+    if (updated.count !== 1) throw new Error('Inbound message claim was fenced while persisting clarification');
+
+    const operationKind = 'ROUTING_RESULT';
+    const clientRequestId = message.id;
+    const existing = await tx.businessAssistantMessage.findFirst({
+      where: { tenantId: claim.tenantId, ownerId: claim.ownerId, operationKind, clientRequestId },
+      select: { id: true },
+    });
+    if (existing) return;
+    const last = await tx.businessAssistantMessage.findFirst({
+      where: { tenantId: claim.tenantId, conversationId: message.conversationId },
+      orderBy: { sequence: 'desc' },
+      select: { sequence: true },
+    });
+    await tx.businessAssistantMessage.create({
+      data: {
+        tenantId: claim.tenantId,
+        conversationId: message.conversationId,
+        ownerId: claim.ownerId,
+        sequence: (last?.sequence ?? 0) + 1,
+        role: 'ASSISTANT',
+        type: 'CLARIFICATION',
+        status: 'PROCESSED',
+        content: route.content,
+        payload: jsonInput({ sourceMessageId: message.id, routing: route }),
+        resources: jsonInput(resources),
+        operationKind,
+        clientRequestId,
+        bodyHash: sha256({ sourceMessageId: message.id, route, resources }),
+        availableAt: new Date(),
+      },
+    });
+  });
+}
+
+function parsePersistedRoute(value: unknown): PersistedRoute | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  const record = value as Record<string, unknown>;
+  if (record.kind === 'CLARIFICATION' && typeof record.content === 'string' && record.content.trim()) {
+    return { kind: 'CLARIFICATION', content: record.content };
+  }
+  if ((record.kind === 'CAPABILITY' || record.kind === 'ANSWER')
+      && typeof record.capabilityId === 'string'
+      && typeof record.capabilityVersion === 'string') {
+    return {
+      kind: record.kind,
+      capabilityId: record.capabilityId,
+      capabilityVersion: record.capabilityVersion,
+    };
+  }
+  return null;
 }
 
 async function processClaimedItem(claim: ClaimedItem): Promise<void> {
@@ -242,19 +476,29 @@ async function executeReadItem(capability: Extract<BusinessAssistantCapability, 
   }
   const result = await runStage(claim, 'EXECUTION', prepared as unknown as JsonValue, async () => capability.execute(prepared, { actor: context, resources: asResourceRefs(item.resources), invocation: context }));
   if (!capability.outputSchema.safeParse(result.output).success) throw new Error('Capability read output failed its registered schema.');
-  if (!(await recordReadResult(claim, context, result.output))) throw new Error('Read result claim was fenced');
+  if (!(await recordReadResult(claim, context, item.resources, result))) throw new Error('Read result claim was fenced');
 }
 
 /**
- * Persist the read outcome and its user-visible message under the same fence.
- * A deterministic RESULT request key makes a retry after a process crash
- * idempotent while keeping the assistant answer in the durable conversation.
+ * Persist the read outcome, declared generic resources, and user-visible
+ * message under the same fence. A deterministic RESULT request key makes a
+ * retry after a process crash idempotent while keeping the answer durable.
  */
-async function recordReadResult(claim: ClaimedItem, context: WorkerInvocationContext, output: JsonValue): Promise<boolean> {
+async function recordReadResult(claim: ClaimedItem, context: WorkerInvocationContext, existingResources: Prisma.JsonValue, result: ReadExecutionResult): Promise<boolean> {
+  const resultResources = normalizeReturnedResources(result.resources);
+  const durableResources = mergeResourceRefs(asResourceRefs(existingResources), resultResources);
   return runSerializableTransaction(prisma, async (tx) => {
     const updated = await tx.businessAssistantRunItem.updateMany({
       where: { id: claim.id, tenantId: claim.tenantId, claimToken: claim.token, claimGeneration: claim.generation, leaseExpiresAt: { gt: new Date() } },
-      data: { lifecycleState: 'SUCCEEDED', executionOutcome: 'SUCCEEDED_READ', reviewOutcome: 'NOT_REQUIRED', output: jsonInput(output), activeStage: null, availableAt: new Date() },
+      data: {
+        lifecycleState: 'SUCCEEDED',
+        executionOutcome: 'SUCCEEDED_READ',
+        reviewOutcome: 'NOT_REQUIRED',
+        output: jsonInput(result.output),
+        resources: jsonInput(durableResources),
+        activeStage: null,
+        availableAt: new Date(),
+      },
     });
     if (updated.count !== 1) return false;
     if (!context.conversationId) return true;
@@ -271,13 +515,14 @@ async function recordReadResult(claim: ClaimedItem, context: WorkerInvocationCon
         ownerId: context.userId,
         sequence: (last?.sequence ?? 0) + 1,
         role: 'ASSISTANT',
-        type: readResultMessageType(output),
+        type: readResultMessageType(result.output),
         status: 'PROCESSED',
-        content: readResultContent(output),
-        payload: jsonInput({ data: output, runId: context.runId ?? null, itemId: claim.id }),
+        content: readResultContent(result.output),
+        payload: jsonInput({ data: result.output, runId: context.runId ?? null, itemId: claim.id }),
+        resources: jsonInput(resultResources),
         operationKind: 'RESULT',
         clientRequestId,
-        bodyHash: sha256({ runId: context.runId ?? null, itemId: claim.id, output }),
+        bodyHash: sha256({ runId: context.runId ?? null, itemId: claim.id, output: result.output, resources: resultResources }),
         availableAt: new Date(),
       },
     });
@@ -347,8 +592,6 @@ async function resumeWriteItem(capability: Extract<BusinessAssistantCapability, 
       return;
     }
     if (reconciliation.status === 'NO_COMMIT') {
-      // Re-execution is allowed only after reconciliation proves NO_COMMIT and
-      // a still-valid approval matches the original frozen artifact.
       const frozen = await loadFrozenApproval(context, item.id);
       if (!frozen) {
         await updateClaimedItem(claim, { lifecycleState: 'EXPIRED', executionOutcome: 'FAILED_NO_COMMIT', activeStage: null, dispositionReason: 'APPROVAL_EXPIRED', receiptRef: reconciliation.receipt ? jsonInput(reconciliation.receipt) : undefined });
@@ -387,9 +630,7 @@ async function resumeWriteItem(capability: Extract<BusinessAssistantCapability, 
   const frozen = await loadFrozenApproval(context, item.id, false);
   if (!frozen) throw new Error('Frozen prepared artifact is unavailable for committed recovery.');
   if (!capability.outputSchema.safeParse(output).success) throw new Error('Committed recovery output is unavailable or invalid.');
-  if (!(await updateClaimedItem(claim, { lifecycleState: 'EXECUTING', executionOutcome: 'COMMITTED',
-    output: output == null ? undefined : jsonInput(output), receiptRef: jsonInput(receipt), requiredEffectStatus,
-    activeStage: requiredEffectStatus === 'PENDING' ? 'EFFECTS' : 'READ_BACK' }))) throw new Error('Committed recovery claim was fenced');
+  if (!(await updateClaimedItem(claim, { lifecycleState: 'EXECUTING', executionOutcome: 'COMMITTED', output: output == null ? undefined : jsonInput(output), receiptRef: jsonInput(receipt), requiredEffectStatus, activeStage: requiredEffectStatus === 'PENDING' ? 'EFFECTS' : 'READ_BACK' }))) throw new Error('Committed recovery claim was fenced');
   await continueCommittedWrite(capability, { ...item, output, receiptRef: receipt, executionOutcome: 'COMMITTED', requiredEffectStatus }, frozen.prepared, context, claim);
 }
 
@@ -413,12 +654,24 @@ async function continueCommittedWrite(capability: Extract<BusinessAssistantCapab
     if (!(await updateClaimedItem(claim, { requiredEffectStatus: 'COMPLETE', output: output === null ? undefined : jsonInput(output), activeStage: 'READ_BACK' }))) throw new Error('Effect completion claim was fenced');
   }
   const readBack = await runStage(claim, 'READ_BACK', output ?? item.receiptRef, async () => capability.readBack(output ?? item.receiptRef, { actor: context, resources: asResourceRefs(item.resources), invocation: context }));
+  const readBackResources = normalizeReturnedResources(readBack.resources);
+  const durableResources = mergeResourceRefs(asResourceRefs(item.resources), readBackResources);
   if (capability.reviewPolicy !== 'REQUIRED') {
-    if (!(await updateClaimedItem(claim, { lifecycleState: 'SUCCEEDED', executionOutcome: 'COMMITTED', requiredEffectStatus: effectStatus as never, reviewOutcome: 'NOT_REQUIRED', output: output === null ? undefined : jsonInput(output), activeStage: null, availableAt: new Date() }))) throw new Error('Write completion claim was fenced');
+    if (!(await updateClaimedItem(claim, {
+      lifecycleState: 'SUCCEEDED',
+      executionOutcome: 'COMMITTED',
+      requiredEffectStatus: effectStatus as never,
+      reviewOutcome: 'NOT_REQUIRED',
+      output: output === null ? undefined : jsonInput(output),
+      resources: jsonInput(durableResources),
+      activeStage: null,
+      availableAt: new Date(),
+    }))) throw new Error('Write completion claim was fenced');
     return;
   }
   if (!capability.review) throw new Error('Required review handler is unavailable.');
-  const reviewed = await runStage(claim, 'REVIEW', readBack.snapshot, async () => capability.review!(prepared, output ?? item.receiptRef, readBack.snapshot, { actor: context, resources: asResourceRefs(item.resources), invocation: context }));
+  if (!(await updateClaimedItem(claim, { resources: jsonInput(durableResources), activeStage: 'REVIEW' }))) throw new Error('Read-back resource persistence claim was fenced');
+  const reviewed = await runStage(claim, 'REVIEW', readBack.snapshot, async () => capability.review!(prepared, output ?? item.receiptRef, readBack.snapshot, { actor: context, resources: durableResources, invocation: context }));
   if (!(await recordClaimedReview({ claim, reviewed, snapshot: readBack.snapshot, observedAt: readBack.observedAt,
     effectStatus, output, schemaVersion: capability.version, promptVersion: capability.contractVersion }))) {
     throw new Error('Review completion claim was fenced');
@@ -448,9 +701,37 @@ async function loadFrozenApproval(context: WorkerInvocationContext, itemId: stri
   return { prepared: selectedArtifact, proposalId: proposal.id, revision: proposal.revision };
 }
 
-function asResourceRefs(value: Prisma.JsonValue): { resourceType: string; resourceId: string; role: 'source' | 'target' | 'context' }[] {
+function asResourceRefs(value: Prisma.JsonValue): ResourceRef[] {
   if (!Array.isArray(value)) return [];
-  return value.filter((item): item is { resourceType: string; resourceId: string; role: 'source' | 'target' | 'context' } => Boolean(item && typeof item === 'object' && !Array.isArray(item) && typeof (item as Record<string, unknown>).resourceType === 'string' && typeof (item as Record<string, unknown>).resourceId === 'string' && ['source', 'target', 'context'].includes(String((item as Record<string, unknown>).role))));
+  return value.flatMap((candidate) => {
+    const parsed = resourceRefSchema.safeParse(candidate);
+    return parsed.success ? [parsed.data] : [];
+  });
+}
+
+function normalizeReturnedResources(value: readonly ResourceRef[] | undefined): ResourceRef[] {
+  if (!value) return [];
+  return value.flatMap((candidate) => {
+    const parsed = resourceRefSchema.safeParse(candidate);
+    return parsed.success ? [parsed.data] : [];
+  }).slice(0, BUSINESS_ASSISTANT_LIMITS.maxResourceRefs);
+}
+
+function mergeResourceRefs(existing: readonly ResourceRef[], returned: readonly ResourceRef[]): ResourceRef[] {
+  const seen = new Set<string>();
+  const merged: ResourceRef[] = [];
+  for (const candidate of [...returned, ...existing]) {
+    const key = `${candidate.resourceType.toLowerCase()}\u0000${candidate.resourceId}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    merged.push(candidate);
+    if (merged.length >= BUSINESS_ASSISTANT_LIMITS.maxResourceRefs) break;
+  }
+  return merged;
+}
+
+function recordValue(value: unknown): Record<string, unknown> {
+  return value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {};
 }
 
 function toJson(value: unknown): JsonValue {
@@ -468,15 +749,37 @@ async function updateRunAggregate(runId: string, tenantId: string): Promise<void
 async function markRunError(runId: string, tenantId: string, code: string, message: string): Promise<void> {
   await prisma.businessAssistantRun.updateMany({ where: { id: runId, tenantId }, data: { status: 'FAILED', completedAt: new Date() } });
   const run = await prisma.businessAssistantRun.findFirst({ where: { id: runId, tenantId }, select: { conversationId: true, ownerId: true } });
-  if (run?.conversationId) await appendAssistantMessage({ tenantId, conversationId: run.conversationId, ownerId: run.ownerId, type: 'ERROR', content: message, payload: { code } });
+  if (run?.conversationId) await appendAssistantMessage({ tenantId, conversationId: run.conversationId, ownerId: run.ownerId, type: 'ERROR', content: message, payload: { code }, idempotencyKey: `run-error:${runId}:${code}` });
 }
 
-async function appendAssistantMessage(input: { tenantId: string; conversationId: string; ownerId: string; type: 'ANSWER' | 'CLARIFICATION' | 'PROPOSAL' | 'RESULT' | 'ERROR'; content: string; runId?: string; payload?: JsonValue }): Promise<void> {
+async function appendAssistantMessage(input: { tenantId: string; conversationId: string; ownerId: string; type: 'ANSWER' | 'CLARIFICATION' | 'PROPOSAL' | 'RESULT' | 'ERROR'; content: string; runId?: string; payload?: JsonValue; resources?: readonly ResourceRef[]; idempotencyKey?: string }): Promise<void> {
   await runSerializableTransaction(prisma, async (tx) => {
     const conversation = await tx.businessAssistantConversation.findFirst({ where: { tenantId: input.tenantId, id: input.conversationId, ownerId: input.ownerId, status: { not: 'DELETED' } }, select: { id: true } });
     if (!conversation) return;
+    const operationKind = input.idempotencyKey ? 'ASSISTANT_EVENT' : 'TURN';
+    if (input.idempotencyKey) {
+      const existing = await tx.businessAssistantMessage.findFirst({ where: { tenantId: input.tenantId, ownerId: input.ownerId, operationKind, clientRequestId: input.idempotencyKey }, select: { id: true } });
+      if (existing) return;
+    }
     const last = await tx.businessAssistantMessage.findFirst({ where: { tenantId: input.tenantId, conversationId: input.conversationId }, orderBy: { sequence: 'desc' }, select: { sequence: true } });
-    await tx.businessAssistantMessage.create({ data: { tenantId: input.tenantId, conversationId: input.conversationId, ownerId: input.ownerId, sequence: (last?.sequence ?? 0) + 1, role: 'ASSISTANT', type: input.type, status: 'PROCESSED', content: input.content, payload: jsonInput({ data: input.payload ?? null, runId: input.runId ?? null }), availableAt: new Date() } });
+    await tx.businessAssistantMessage.create({
+      data: {
+        tenantId: input.tenantId,
+        conversationId: input.conversationId,
+        ownerId: input.ownerId,
+        sequence: (last?.sequence ?? 0) + 1,
+        role: 'ASSISTANT',
+        type: input.type,
+        status: 'PROCESSED',
+        content: input.content,
+        payload: jsonInput({ data: input.payload ?? null, runId: input.runId ?? null }),
+        resources: jsonInput(input.resources ?? []),
+        operationKind,
+        clientRequestId: input.idempotencyKey ?? undefined,
+        bodyHash: input.idempotencyKey ? sha256({ type: input.type, content: input.content, runId: input.runId ?? null, payload: input.payload ?? null, resources: input.resources ?? [] }) : undefined,
+        availableAt: new Date(),
+      },
+    });
   });
 }
 
