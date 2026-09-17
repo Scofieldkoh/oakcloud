@@ -218,6 +218,45 @@ suite('Business Assistant durable PostgreSQL execution', () => {
       else process.env.BUSINESS_ASSISTANT_ENABLED = previousEnabled;
     }
   });
+
+  it('routes one accepted lookup turn once and reuses the persisted run after message replay', async () => {
+    const previousEnabled = process.env.BUSINESS_ASSISTANT_ENABLED;
+    const previousProviderEnabled = process.env.BUSINESS_ASSISTANT_PROVIDER_ENABLED;
+    process.env.BUSINESS_ASSISTANT_ENABLED = 'true';
+    process.env.BUSINESS_ASSISTANT_PROVIDER_ENABLED = 'false';
+    try {
+      const accepted = await acceptTurn(
+        { tenantId: tenantId!, userId: userId!, requestId: randomUUID() },
+        { clientRequestId: randomUUID(), workspaceId: tenantId!, message: 'Find companies' },
+      );
+      expect(accepted.runId).toBeNull();
+
+      await expect(runBusinessAssistantWorker({ once: true })).resolves.toEqual({ messagesProcessed: 1, itemsProcessed: 1, errors: 0 });
+      const source = await prisma.businessAssistantMessage.findUniqueOrThrow({
+        where: { id: accepted.messageId },
+        select: { payload: true, status: true },
+      });
+      expect(source.status).toBe('PROCESSED');
+      expect(source.payload).toMatchObject({ routing: { kind: 'CAPABILITY', capabilityId: 'workspace.resource_lookup', capabilityVersion: '1.0' } });
+      const payload = source.payload as Record<string, unknown>;
+      expect(typeof payload.runId).toBe('string');
+      expect(await prisma.businessAssistantRun.count({ where: { tenantId: tenantId!, conversationId: accepted.conversationId } })).toBe(1);
+      expect(await prisma.businessAssistantMessage.count({ where: { tenantId: tenantId!, conversationId: accepted.conversationId, role: 'ASSISTANT', operationKind: 'RESULT' } })).toBe(1);
+
+      await prisma.businessAssistantMessage.update({
+        where: { id: accepted.messageId },
+        data: { status: 'ACCEPTED', availableAt: new Date(Date.now() - 1_000), claimToken: null, leaseExpiresAt: null },
+      });
+      await expect(runBusinessAssistantWorker({ once: true })).resolves.toEqual({ messagesProcessed: 1, itemsProcessed: 0, errors: 0 });
+      expect(await prisma.businessAssistantRun.count({ where: { tenantId: tenantId!, conversationId: accepted.conversationId } })).toBe(1);
+      expect(await prisma.businessAssistantMessage.count({ where: { tenantId: tenantId!, conversationId: accepted.conversationId, role: 'ASSISTANT', operationKind: 'RESULT' } })).toBe(1);
+    } finally {
+      if (previousEnabled === undefined) delete process.env.BUSINESS_ASSISTANT_ENABLED;
+      else process.env.BUSINESS_ASSISTANT_ENABLED = previousEnabled;
+      if (previousProviderEnabled === undefined) delete process.env.BUSINESS_ASSISTANT_PROVIDER_ENABLED;
+      else process.env.BUSINESS_ASSISTANT_PROVIDER_ENABLED = previousProviderEnabled;
+    }
+  });
 });
 
 async function createRun(status: 'PREPARING' | 'RUNNING') {
