@@ -72,7 +72,9 @@ describe('Business Assistant workspace', () => {
     await page.viewport(1440, 900); await mount();
     await expect.element(screen.getByRole('heading', { name: 'Business Assistant' })).toBeVisible();
     await expect.element(screen.getByRole('button', { name: /Find workspace information/ })).toBeVisible();
-    await click(screen.getByRole('button', { name: 'Attach record' }));
+    await click(screen.getByRole('button', { name: 'Attach' }));
+    await expect.element(screen.getByRole('menuitem', { name: 'Upload BizFile' })).toBeVisible();
+    await click(screen.getByRole('menuitem', { name: 'Choose workspace record' }));
     await expect.element(screen.getByRole('button', { name: /Example Company/ })).toBeVisible();
     await click(screen.getByRole('button', { name: /Example Company/ }));
     await click(screen.getByRole('button', { name: 'Close' }));
@@ -81,6 +83,17 @@ describe('Business Assistant workspace', () => {
     await expect.element(screen.getByText('<img src=x onerror=alert(1)> [Open](javascript:alert(1))')).toBeVisible();
     expect(requests[0].body.resources).toEqual([{ resourceType: 'company', resourceId: 'company-1', role: 'context' }]);
     expect(host.querySelector('img')).toBeNull(); expect(host.querySelector('a[href^="javascript:"]')).toBeNull();
+    expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(window.innerWidth);
+    await page.screenshot();
+  });
+
+  it('opens the direct BizFile upload experience inside Olaf', async () => {
+    await page.viewport(1440, 900); await mount();
+    await click(screen.getByRole('button', { name: 'Attach' }));
+    await click(screen.getByRole('menuitem', { name: 'Upload BizFile' }));
+    await expect.element(screen.getByRole('heading', { name: 'Upload BizFile to Olaf' })).toBeVisible();
+    await expect.element(screen.getByRole('button', { name: 'Choose BizFile' })).toBeVisible();
+    await expect.element(screen.getByText('PDF, PNG, JPG, or WebP. Maximum file size 10 MB.')).toBeVisible();
     expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(window.innerWidth);
     await page.screenshot();
   });
