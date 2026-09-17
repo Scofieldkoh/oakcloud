@@ -472,9 +472,9 @@ export function EsigningVerifyPage() {
             </section>
 
             {/* ── Recipients ───────────────────────────────────────────────── */}
-            <section className="rounded-2xl border border-border-primary bg-background-secondary p-4 shadow-sm sm:rounded-3xl sm:p-6">
+            <section className="rounded-2xl border border-border-primary bg-background-secondary p-3 shadow-sm sm:rounded-3xl sm:p-6">
               <SectionHeader icon={Send} title="Signatories & Recipients" />
-              <div className="mt-5 grid gap-3">
+              <div className="mt-4 grid gap-3 sm:mt-5">
                 {data.recipients.map((recipient) => {
                   const colors = recipientColorMap.get(recipient.id) ?? RECIPIENT_COLOR_SETS[0];
                   const initials = getInitials(recipient.name);
@@ -489,17 +489,17 @@ export function EsigningVerifyPage() {
                       )}
                     >
                       {/* Recipient header row */}
-                      <div className="flex items-start gap-3 p-4 pb-3">
+                      <div className="flex flex-wrap items-start gap-3 p-3 sm:flex-nowrap sm:p-4 sm:pb-3">
                         {/* Avatar */}
                         <div className={cn('flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full text-xs font-bold', colors.avatar)}>
                           {initials}
                         </div>
-                        <div className="min-w-0 flex-1">
-                          <div className={cn('text-sm font-semibold', colors.name)}>{recipient.name}</div>
-                          <div className="text-xs text-text-secondary">{recipient.emailMasked}</div>
+                        <div className="min-w-0 flex-1 basis-[calc(100%-3rem)] sm:basis-auto">
+                          <div className={cn('text-sm font-semibold leading-snug', colors.name)}>{recipient.name}</div>
+                          <div className="mt-0.5 break-words text-xs leading-snug text-text-secondary">{recipient.emailMasked}</div>
                         </div>
                         {/* Badges */}
-                        <div className="flex flex-wrap justify-end gap-1.5">
+                        <div className="flex w-full flex-wrap gap-1.5 pl-12 sm:w-auto sm:justify-end sm:pl-0">
                           <span className={cn('inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium', colors.tag)}>
                             {ESIGNING_RECIPIENT_TYPE_LABELS[recipient.type]}
                           </span>
@@ -510,28 +510,32 @@ export function EsigningVerifyPage() {
                       </div>
 
                       {/* Evidence rows */}
-                      <div className="border-t border-border-primary bg-background-primary/50 px-4 py-3 space-y-2">
+                      <div className="space-y-2.5 border-t border-border-primary bg-background-primary/50 px-3 py-3 sm:space-y-2 sm:px-4">
                         {/* Viewed */}
                         <div className="flex items-start gap-2.5 text-xs">
                           <Eye className={cn('mt-0.5 h-3.5 w-3.5 flex-shrink-0', recipient.viewedAt ? colors.evidenceIcon : 'text-text-muted')} />
-                          <div>
-                            <span className="font-medium text-text-primary">Viewed</span>
-                            <span className="ml-1.5 text-text-secondary">
-                              {recipient.viewedAt ? formatEsigningDateTime(recipient.viewedAt) : 'Not recorded'}
-                            </span>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5">
+                              <span className="font-medium text-text-primary">Viewed</span>
+                              <span className="text-text-secondary">
+                                {recipient.viewedAt ? formatEsigningDateTime(recipient.viewedAt) : 'Not recorded'}
+                              </span>
+                            </div>
                           </div>
                         </div>
 
                         {/* Consented */}
                         <div className="flex items-start gap-2.5 text-xs">
                           <ShieldCheck className={cn('mt-0.5 h-3.5 w-3.5 flex-shrink-0', recipient.consentedAt ? colors.evidenceIcon : 'text-text-muted')} />
-                          <div className="min-w-0">
-                            <span className="font-medium text-text-primary">Consented</span>
-                            <span className="ml-1.5 text-text-secondary">
-                              {recipient.consentedAt ? formatEsigningDateTime(recipient.consentedAt) : 'Not recorded'}
-                            </span>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5">
+                              <span className="font-medium text-text-primary">Consented</span>
+                              <span className="text-text-secondary">
+                                {recipient.consentedAt ? formatEsigningDateTime(recipient.consentedAt) : 'Not recorded'}
+                              </span>
+                            </div>
                             {recipient.consentedAt && (recipient.consentIp || recipient.consentDevice) ? (
-                              <div className="mt-0.5 text-text-muted">
+                              <div className="mt-0.5 break-words leading-snug text-text-muted">
                                 {[recipient.consentIp, recipient.consentDevice].filter(Boolean).join(' · ')}
                               </div>
                             ) : null}
@@ -541,17 +545,19 @@ export function EsigningVerifyPage() {
                         {/* Signed */}
                         <div className="flex items-start gap-2.5 text-xs">
                           <PenLine className={cn('mt-0.5 h-3.5 w-3.5 flex-shrink-0', recipient.signedAt ? colors.evidenceIcon : recipient.status === 'DECLINED' ? 'text-rose-500' : 'text-text-muted')} />
-                          <div className="min-w-0">
-                            <span className="font-medium text-text-primary">Signed</span>
-                            <span className={cn('ml-1.5', recipient.signedAt ? colors.name : recipient.status === 'DECLINED' ? 'text-rose-600' : 'text-text-secondary')}>
-                              {recipient.signedAt
-                                ? formatEsigningDateTime(recipient.signedAt)
-                                : recipient.status === 'DECLINED'
-                                  ? 'Declined to sign'
-                                  : 'Awaiting signature'}
-                            </span>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5">
+                              <span className="font-medium text-text-primary">Signed</span>
+                              <span className={cn(recipient.signedAt ? colors.name : recipient.status === 'DECLINED' ? 'text-rose-600' : 'text-text-secondary')}>
+                                {recipient.signedAt
+                                  ? formatEsigningDateTime(recipient.signedAt)
+                                  : recipient.status === 'DECLINED'
+                                    ? 'Declined to sign'
+                                    : 'Awaiting signature'}
+                              </span>
+                            </div>
                             {recipient.signedAt && (recipient.signedIp || recipient.signedDevice) ? (
-                              <div className="mt-0.5 text-text-muted">
+                              <div className="mt-0.5 break-words leading-snug text-text-muted">
                                 {[recipient.signedIp, recipient.signedDevice].filter(Boolean).join(' · ')}
                               </div>
                             ) : null}
