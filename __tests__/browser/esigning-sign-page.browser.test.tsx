@@ -15,7 +15,7 @@ vi.mock('@/components/ui/toast', () => ({
 }));
 
 vi.mock('@/hooks/use-media-query', () => ({
-  useIsMobile: () => false,
+  useIsMobile: () => window.innerWidth < 768,
 }));
 
 vi.mock('@/components/esigning/signing/esigning-signature-modal', () => ({
@@ -253,14 +253,21 @@ describe('E-signing client document browser flow', () => {
 
       expect(host.querySelector('[data-testid="signing-document"]')).not.toBeNull();
 
+      const previewFrame = host.querySelector<HTMLElement>('[data-testid="signing-preview-frame"]');
       const postIt = host.querySelector<HTMLElement>('[data-testid="signing-post-it"]');
-      expect(postIt?.style.right).toBe('-56px');
-      expect(postIt?.style.left).toBe('');
-      expect(postIt?.style.position).toBe('absolute');
-      expect(postIt?.offsetParent).toBe(host.querySelector('[data-testid="signing-preview-frame"]'));
-      const arrows = postIt?.querySelectorAll('button');
-      expect(arrows?.[0].getBoundingClientRect().width).toBe(arrows?.[2].getBoundingClientRect().width);
-      await page.getByRole('button', { name: 'Sign', exact: true }).click();
+      if (width < 768) {
+        expect(postIt).toBeNull();
+        expect(previewFrame?.classList.contains('mr-14')).toBe(false);
+        await page.getByRole('button', { name: 'Sign Here' }).click();
+      } else {
+        expect(postIt?.style.right).toBe('-56px');
+        expect(postIt?.style.left).toBe('');
+        expect(postIt?.style.position).toBe('absolute');
+        expect(postIt?.offsetParent).toBe(previewFrame);
+        const arrows = postIt?.querySelectorAll('button');
+        expect(arrows?.[0].getBoundingClientRect().width).toBe(arrows?.[2].getBoundingClientRect().width);
+        await page.getByRole('button', { name: 'Sign', exact: true }).click();
+      }
       await page.getByRole('button', { name: 'Close signature editor' }).click();
       expect(
         host.querySelector('[data-testid="signature-progress-banner-signature-field"]')?.textContent
