@@ -1,8 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import Link from 'next/link';
-import { Plus, Send, Sparkles, Paperclip, X, MessageSquare, SlidersHorizontal } from 'lucide-react';
+import { Plus, Send, Sparkles, X, MessageSquare, SlidersHorizontal } from 'lucide-react';
 import { useDebounce } from 'use-debounce';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -11,6 +10,8 @@ import { useAssistantConversations, useAssistantConversation, useAssistantConver
 import type { BusinessAssistantMessageDto } from '@/lib/validations/business-assistant';
 import { AssistantRunCard } from './run-card';
 import { AssistantPreferencesPanel } from './preferences-panel';
+import { BusinessAssistantAttachmentMenu } from './attachment-menu';
+import { BizFileUploadDialog } from './bizfile-upload-dialog';
 
 export function BusinessAssistantWorkspace({ workspaceId, firstName }: { workspaceId: string; firstName: string }) {
   const [conversationId, setConversationId] = useState<string | null>(null);
@@ -20,6 +21,7 @@ export function BusinessAssistantWorkspace({ workspaceId, firstName }: { workspa
   const [capability, setCapability] = useState('');
   const [attached, setAttached] = useState<AssistantResourceOption[]>([]);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [bizFileOpen, setBizFileOpen] = useState(false);
   const [resourceQuery, setResourceQuery] = useState('');
   const [debouncedQuery] = useDebounce(resourceQuery, 250);
   const requestRef = useRef<{ fingerprint: string; id: string } | null>(null);
@@ -33,7 +35,7 @@ export function BusinessAssistantWorkspace({ workspaceId, firstName }: { workspa
   const resources = useAssistantResources(workspaceId, debouncedQuery, pickerOpen);
   const enabled = conversations.data?.enabled ?? false;
   const sending = turn.isPending;
-  const newConversation = () => { setConversationId(null); setPanel('conversation'); setHistoryOpen(false); setAttached([]); setMessage(''); setCapability(''); requestRef.current = null; turn.reset(); };
+  const newConversation = () => { setConversationId(null); setPanel('conversation'); setHistoryOpen(false); setAttached([]); setMessage(''); setCapability(''); setPickerOpen(false); setBizFileOpen(false); requestRef.current = null; turn.reset(); };
   async function send() {
     if (!message.trim() || sending || !enabled || (conversation.data && conversation.data.status !== 'ACTIVE')) return;
     const body = { workspaceId, conversationId, message: message.trim(), resources: attached.map(({ resourceType, resourceId, role }) => ({ resourceType, resourceId, role })),
@@ -76,7 +78,7 @@ export function BusinessAssistantWorkspace({ workspaceId, firstName }: { workspa
         <nav className="max-h-64 space-y-1 overflow-y-auto lg:max-h-[calc(100dvh-200px)]">{conversations.data?.conversations.map((item) =>
           <button key={item.id} type="button" aria-current={conversationId === item.id ? 'page' : undefined}
             className={cn('w-full truncate rounded-lg px-3 py-2 text-left text-sm hover:bg-background-tertiary', conversationId === item.id && 'bg-oak-primary/10 text-oak-light')}
-            onClick={() => { setConversationId(item.id); setPanel('conversation'); setHistoryOpen(false); setAttached([]); turn.reset(); }}>
+            onClick={() => { setConversationId(item.id); setPanel('conversation'); setHistoryOpen(false); setAttached([]); setPickerOpen(false); turn.reset(); }}>
             {item.title || 'Untitled conversation'}
           </button>)}</nav>
       </aside>
@@ -107,7 +109,7 @@ export function BusinessAssistantWorkspace({ workspaceId, firstName }: { workspa
                 <span className="block text-sm font-medium">{item.title}</span><span className="mt-2 block text-xs leading-5 text-text-secondary">{item.description}</span>
                 <span className="mt-3 block text-xs text-oak-light">{item.executionKind === 'READ_ONLY' ? 'Read workspace information' : 'Review changes before approval'}</span>
               </button>)}</div>
-              <p className="text-xs text-text-secondary">Working from a company profile? <Link href="/companies/upload" className="text-oak-light underline underline-offset-2">Upload and review a BizFile</Link>.</p>
+              <p className="text-xs text-text-secondary">Working from a company profile? <button type="button" disabled={!enabled} onClick={() => setBizFileOpen(true)} className="text-oak-light underline underline-offset-2 disabled:opacity-50">Upload and review a BizFile here</button>.</p>
             </section>}
             {conversationId && conversation.isLoading && <p role="status" className="text-sm text-text-secondary">Loading conversation…</p>}
             {conversation.data?.messages.map((item) => <Message key={item.id} workspaceId={workspaceId} message={item} />)}
@@ -140,11 +142,31 @@ export function BusinessAssistantWorkspace({ workspaceId, firstName }: { workspa
               className="w-full resize-y rounded-xl border border-border-primary bg-background-secondary p-3 text-sm leading-6 outline-none focus:ring-2 focus:ring-oak-primary/30 disabled:opacity-60"
               onKeyDown={(event) => { if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) { event.preventDefault(); void send(); } }} />
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <Button variant="ghost" leftIcon={<Paperclip />} disabled={!enabled || sending} aria-expanded={pickerOpen} onClick={() => setPickerOpen(!pickerOpen)}>Attach record</Button>
+              <BusinessAssistantAttachmentMenu
+                disabled={!enabled || sending || conversationReadOnly}
+                onUploadBizFile={() => { setPickerOpen(false); setBizFileOpen(true); }}
+                onChooseRecord={() => setPickerOpen(true)}
+              />
               <div className="flex items-center gap-3"><span className="hidden text-xs text-text-muted sm:inline">Ctrl / ⌘ + Enter to send</span>
                 <Button type="submit" leftIcon={<Send />} isLoading={sending} disabled={!enabled || !message.trim() || conversationReadOnly}>Send</Button></div>
             </div>
           </form>
+          <BizFileUploadDialog
+            isOpen={bizFileOpen}
+            workspaceId={workspaceId}
+            conversationId={conversationId}
+            message={message}
+            onClose={() => setBizFileOpen(false)}
+            onAccepted={(acceptedConversationId) => {
+              setConversationId(acceptedConversationId);
+              setMessage('');
+              setAttached([]);
+              setCapability('');
+              setPickerOpen(false);
+              requestRef.current = null;
+              textareaRef.current?.focus();
+            }}
+          />
         </div>}
       </div>
     </div>
