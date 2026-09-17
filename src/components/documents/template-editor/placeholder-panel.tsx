@@ -599,8 +599,8 @@ export function PlaceholderPanel({
                   } : undefined}
                   extraActions={(
                     <>
-                      <Button size="xs" variant="ghost" iconOnly aria-label={`Edit ${field.label}`} onClick={() => startEdit(field)}><Pencil className="h-3.5 w-3.5" /></Button>
-                      <Button size="xs" variant="ghost" iconOnly aria-label={`Delete ${field.label}`} onClick={() => setDeleteCandidate(field)}><Trash2 className="h-3.5 w-3.5" /></Button>
+                      <Button size="xs" variant="ghost" leftIcon={<Pencil />} aria-label={`Edit ${field.label}`} onClick={() => startEdit(field)}>Edit</Button>
+                      <Button size="xs" variant="ghost" leftIcon={<Trash2 />} aria-label={`Delete ${field.label}`} onClick={() => setDeleteCandidate(field)}>Delete</Button>
                     </>
                   )}
                 />

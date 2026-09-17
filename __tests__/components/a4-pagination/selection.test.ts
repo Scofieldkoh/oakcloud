@@ -14,6 +14,20 @@ function setCaret(node: Node, offset: number): void {
 }
 
 describe('A4 pagination selection bookmarks', () => {
+  it('restores a particular blank line after it moves to a continuation page', () => {
+    const root = document.createElement('div');
+    root.innerHTML = '<p data-flow-id="p">Field<br data-flow-id="a"><br data-flow-id="b"><br data-flow-id="c"></p>';
+    document.body.appendChild(root);
+    setCaret(root.firstChild!, 3);
+    const bookmark = captureFlowSelection(root)!;
+    expect(bookmark.anchor.boundary).toEqual({ flowId: 'b', side: 'after' });
+    root.innerHTML = '<div><p data-flow-id="p">Field<br data-flow-id="a"></p></div><div><p data-flow-id="p" data-flow-continuation="end"><br data-flow-id="b"><br data-flow-id="c"></p></div>';
+    expect(restoreFlowSelection(root, bookmark)).toBe(true);
+    expect(window.getSelection()?.anchorNode).toBe(root.querySelectorAll('p')[1]);
+    expect(window.getSelection()?.anchorOffset).toBe(1);
+    root.remove();
+  });
+
   it('captures a logical offset across continuation fragments', () => {
     const root = document.createElement('div');
     root.innerHTML = [

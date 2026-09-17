@@ -497,6 +497,21 @@ export function insertReplacementNodes(
     const range = document.createRange();
     range.setStart(point.node, point.offset);
     range.collapse(true);
+    // A sole BR keeps an empty block editable; it is not a user line break.
+    // Consume it when inserting content, including when the caret resolves
+    // after it, so the first list item's text stays level with its marker.
+    const container = range.startContainer;
+    if (
+      container instanceof HTMLElement &&
+      container.matches('p, div, li, blockquote, h1, h2, h3, h4, h5, h6') &&
+      container.childNodes.length === 1 &&
+      container.firstChild instanceof HTMLBRElement &&
+      fragment.textContent
+    ) {
+      container.firstChild.remove();
+      range.setStart(container, 0);
+      range.collapse(true);
+    }
     range.insertNode(fragment);
     return;
   }

@@ -915,6 +915,10 @@ New sidebar item: **E-Signing** → `/esigning`
 
 **Correct action** (per recipient): modal to edit name and/or email only. **Cannot** change documents, field placements, or signing order after send. Invalidates old access token hash, generates new token, resends.
 
+Correction requests submit only name and email, including when adding an email to a manual-link recipient. Draft-only fields (recipient type, signing order, access mode, and access code) are omitted so the existing routing and access settings remain unchanged.
+
+Manual-link recipients display **LINK READY** for the internal `NOTIFIED` state: their signing link is active, but no notification email was sent. Other recipient statuses retain their usual labels.
+
 **Completed detail** additionally shows: download options, auto-filed location link, certificate ID, document hashes.
 
 **Failed processing** shows: warning banner with [Retry] button and error details.

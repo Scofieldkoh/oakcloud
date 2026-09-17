@@ -56,24 +56,30 @@ function hasRenderableContent(html: string): boolean {
   );
 }
 
-function collectTextNodes(root: Node): Text[] {
-  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-  const nodes: Text[] = [];
+function collectTextNodes(root: Node): Node[] {
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT);
+  const nodes: Node[] = [];
   let node: Node | null;
   while ((node = walker.nextNode())) {
-    if (node.textContent?.length) nodes.push(node as Text);
+    if (node.nodeName === 'BR' || (node.nodeType === Node.TEXT_NODE && node.textContent?.length)) nodes.push(node);
   }
   return nodes;
 }
 
 function textPosition(
-  nodes: Text[],
+  nodes: Node[],
   requestedOffset: number,
-): { node: Text; offset: number } | null {
+): { node: Node; offset: number } | null {
   let offset = requestedOffset;
   for (const node of nodes) {
-    const length = node.textContent?.length ?? 0;
-    if (offset <= length) return { node, offset };
+    const length = node.nodeName === 'BR' ? 1 : node.textContent?.length ?? 0;
+    if (offset <= length) {
+      if (node.nodeName === 'BR' && node.parentNode) {
+        const index = Array.prototype.indexOf.call(node.parentNode.childNodes, node) as number;
+        return { node: node.parentNode, offset: index + offset };
+      }
+      return { node, offset };
+    }
     offset -= length;
   }
 
@@ -92,10 +98,10 @@ function splitBoundaryBlock(root: HTMLElement, node: Node): HTMLElement | null {
   return null;
 }
 
-function wordBoundarySplitOffset(textNodes: Text[], preferred: number): number {
+function wordBoundarySplitOffset(textNodes: Node[], preferred: number): number {
   let fullText = '';
   for (const node of textNodes) {
-    fullText += node.textContent ?? '';
+    fullText += node.nodeName === 'BR' ? '\n' : node.textContent ?? '';
   }
 
   const limit = Math.min(preferred, fullText.length);
@@ -145,7 +151,7 @@ function splitTextElement(
   host.appendChild(element.cloneNode(true));
   const textNodes = collectTextNodes(host);
   const totalLength = textNodes.reduce(
-    (sum, node) => sum + (node.textContent?.length ?? 0),
+    (sum, node) => sum + (node.nodeName === 'BR' ? 1 : node.textContent?.length ?? 0),
     0,
   );
   if (totalLength < 2) return null;
@@ -526,7 +532,10 @@ function paginateSection(
     const elementHtml = htmlFor(element);
     const nextElement = remaining[0];
 
-    if (isKeepTogether(element)) {
+    // Keep-together is a preference for groups that fit on a full page.
+    // Once editable content exceeds a page, use normal splitting: otherwise
+    // typing into a formerly blank continuation collapses it into overflow.
+    if (isKeepTogether(element) && measurer.measure(elementHtml) <= maxHeight) {
       if (measurer.measure(currentHtml + elementHtml) <= maxHeight) {
         currentHtml += elementHtml;
         continue;
@@ -568,6 +577,9 @@ function paginateSection(
       maxHeight,
     );
     if (split) {
+      if (isKeepTogether(element)) {
+        split.overflow.removeAttribute(KEEP_TOGETHER_ATTRIBUTE);
+      }
       currentHtml += htmlFor(split.fit);
       commitPage();
       remaining.unshift(split.overflow);

@@ -328,6 +328,40 @@ function deleteAdjacentGrapheme(
   return null;
 }
 
+// A paragraph boundary is an edit target in its own right. Never skip over
+// empty blocks to find a character in a different paragraph or table cell.
+function deleteParagraphBoundary(
+  block: HTMLElement,
+  point: A4DomPoint,
+  direction: A4DeleteDirection,
+): A4DomPoint | null {
+  const side = document.createRange();
+  side.selectNodeContents(block);
+  if (direction === 'backward') side.setEnd(point.node, point.offset);
+  else side.setStart(point.node, point.offset);
+  const contents = side.cloneContents();
+  const emptyBlock = !block.textContent &&
+    block.querySelectorAll('br').length <= 1 &&
+    !block.querySelector('img,hr,table,input,[data-a4-break],[contenteditable="false"]');
+  if (contents.textContent || (!emptyBlock && contents.querySelector('br,img,hr,table,[data-a4-break]'))) {
+    return null;
+  }
+  const sibling = direction === 'backward' ? block.previousElementSibling : block.nextElementSibling;
+  if (!(sibling instanceof HTMLElement) || !sibling.matches('p,h1,h2,h3,h4,h5,h6,blockquote') ||
+      sibling.querySelector('p,div,table,ol,ul')) return null;
+  const left = direction === 'backward' ? sibling : block;
+  const right = direction === 'backward' ? block : sibling;
+  const isPlaceholder = (element: HTMLElement) =>
+    !element.textContent && element.children.length === 1 && element.firstElementChild?.tagName === 'BR';
+  if (isPlaceholder(left)) left.replaceChildren();
+  if (isPlaceholder(right)) right.replaceChildren();
+  const offset = left.childNodes.length;
+  left.append(...Array.from(right.childNodes));
+  right.remove();
+  if (!left.hasChildNodes()) left.appendChild(document.createElement('br'));
+  return { node: left, offset };
+}
+
 export function getInsertManualBreakCapability(
   canonical: CanonicalEditorDocument,
   selection: A4Selection,
@@ -424,6 +458,56 @@ export function removeA4ManualPageBreak(
     : rejected('invalid-position', 'The manual page-break boundary is invalid.');
 }
 
+function backspaceListBoundary(point: A4DomPoint): A4DomPoint | null {
+  const item = elementForPoint(point)?.closest<HTMLElement>('li');
+  const list = item?.parentElement;
+  if (!item || !list?.matches('ol,ul')) return null;
+  const before = document.createRange();
+  before.selectNodeContents(item);
+  before.setEnd(point.node, point.offset);
+  const prefix = before.cloneContents();
+  const emptyItem = !item.textContent && item.querySelectorAll('br').length <= 1;
+  if (prefix.textContent || prefix.querySelector('img,hr,table,ol,ul,[contenteditable="false"],[data-a4-break]') ||
+      (!emptyItem && prefix.querySelector('br'))) return null;
+
+  const previous = item.previousElementSibling;
+  if (previous instanceof HTMLElement && previous.tagName === 'LI') {
+    const left = previous.lastElementChild?.matches('p,h1,h2,h3,h4,h5,h6')
+      ? previous.lastElementChild as HTMLElement : previous;
+    const right = item.firstElementChild?.matches('p,h1,h2,h3,h4,h5,h6')
+      ? item.firstElementChild as HTMLElement : item;
+    for (const block of [left, right]) {
+      if (block.childNodes.length === 1 && block.firstChild?.nodeName === 'BR') block.replaceChildren();
+    }
+    const offset = left.childNodes.length;
+    left.append(...Array.from(right.childNodes));
+    if (right !== item) {
+      right.remove();
+      previous.append(...Array.from(item.childNodes));
+    }
+    item.remove();
+    if (!left.hasChildNodes()) left.appendChild(document.createElement('br'));
+    return { node: left, offset };
+  }
+
+  // At the first item, remove the list level rather than leaving an empty LI.
+  const paragraph = document.createElement('p');
+  const firstBlock = item.firstElementChild;
+  if (firstBlock?.matches('p,h1,h2,h3,h4,h5,h6')) {
+    paragraph.append(...Array.from(firstBlock.childNodes));
+    firstBlock.remove();
+  } else {
+    while (item.firstChild && !(item.firstChild instanceof HTMLElement && item.firstChild.matches('ol,ul'))) {
+      paragraph.appendChild(item.firstChild);
+    }
+  }
+  if (!paragraph.hasChildNodes()) paragraph.appendChild(document.createElement('br'));
+  list.before(paragraph, ...Array.from(item.childNodes));
+  item.remove();
+  if (!list.children.length) list.remove();
+  return { node: paragraph, offset: 0 };
+}
+
 export function deleteA4Selection(
   canonical: CanonicalEditorDocument,
   selection: A4Selection,
@@ -455,7 +539,18 @@ export function deleteA4Selection(
       : rejected('invalid-position', 'The manual page-break boundary is invalid.');
   }
 
-  const next = deleteAdjacentGrapheme(resolved.root, point, direction);
+  const listBoundary = direction === 'backward' ? backspaceListBoundary(point) : null;
+  if (listBoundary) return finishApplied(canonical, resolved.root, listBoundary);
+  const block = paragraphBlockForPoint(resolved.root, point);
+  const adjacent = pointAtBoundarySibling(resolved.root, point, direction);
+  if (adjacent instanceof HTMLElement && adjacent.tagName === 'BR' &&
+      adjacent.parentNode?.childNodes.length !== 1) {
+    const next = caretAfterRemovingNode(resolved.root, adjacent);
+    if (next) return finishApplied(canonical, resolved.root, next);
+  }
+  const boundary = block ? deleteParagraphBoundary(block, point, direction) : null;
+  if (boundary) return finishApplied(canonical, resolved.root, boundary);
+  const next = deleteAdjacentGrapheme(block ?? resolved.root, point, direction);
   return next
     ? finishApplied(canonical, resolved.root, next)
     : { status: 'unchanged', reason: 'There is no logical content to delete.' };

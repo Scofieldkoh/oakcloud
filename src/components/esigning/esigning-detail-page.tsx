@@ -415,13 +415,15 @@ export function EsigningDetailPage({ envelopeId }: Props) {
         const payload: UpdateEsigningRecipientInput = {
           name: recipientForm.name.trim(),
           email: recipientForm.email.trim() || null,
-          type: recipientForm.type,
-          signingOrder:
-            recipientForm.type === 'CC' || signingOrderValue === 'PARALLEL'
-              ? null
-              : parseOptionalInt(recipientForm.signingOrder),
-          accessMode: recipientForm.accessMode,
-          accessCode: recipientForm.accessCode.trim() || undefined,
+          ...(envelope?.status === 'DRAFT' ? {
+            type: recipientForm.type,
+            signingOrder:
+              recipientForm.type === 'CC' || signingOrderValue === 'PARALLEL'
+                ? null
+                : parseOptionalInt(recipientForm.signingOrder),
+            accessMode: recipientForm.accessMode,
+            accessCode: recipientForm.accessCode.trim() || undefined,
+          } : {}),
         };
         const result = await updateRecipient.mutateAsync(payload);
         if (result.manualLinks.length > 0) {

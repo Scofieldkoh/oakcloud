@@ -4,6 +4,8 @@ Status: **not started**. Owner: F. Read [README](README.md), [contracts](contrac
 
 ## Context and objective
 
+15 September 2026 follow-up: custom-field Edit/Delete actions now show text labels and use the shared Button's `leftIcon` prop. Their previous `iconOnly` buttons passed icons as children, which the shared component suppresses, leaving empty controls. The existing confirmation and field/reference-removal callbacks are retained.
+
 Fields are currently raw editable `{{...}}` text. Client validation and the resolver use different regex grammars: `<p>{{custom.<b>note</b>}}</p>` and spaced `{{ custom.note }}` were accepted without useful errors yet remained unresolved. Plain string values are interpolated as HTML. Field rename/delete updates separate state, adapters change unknown types, and partial key collisions rename input fields without reliably rebinding the partial's references.
 
 Deliver one field meaning across discovery, editing, storage, preview and generation. Preserve legacy templates, advanced blocks and service definitions. Plain fields become atomic labeled decorations in the editor, while canonical storage stays compatible with expressions and explicitly versioned definition metadata.

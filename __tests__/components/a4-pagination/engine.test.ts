@@ -316,17 +316,17 @@ describe('A4 deterministic pagination engine', () => {
     expect(pages[1].content).not.toContain('data-flow-continuation');
   });
 
-  it('marks a keep-together block larger than a page as oversized without splitting', () => {
+  it('splits editable keep-together content when the group exceeds a full page', () => {
     const canonical = hydrateFlowHtml(
       '<div data-flow-keep-together="true"><p>123456789012345</p></div>',
     );
     const pages = paginateFlowHtml(canonical, characterMeasurer, 10);
 
-    expect(pages).toHaveLength(1);
-    expect(pages[0].oversized).toBe(true);
+    expect(pages).toHaveLength(2);
+    expect(pages.some((page) => page.oversized)).toBe(false);
     expect(pages[0].content).toContain('data-flow-keep-together');
-    expect(pages[0].content).not.toContain('data-flow-continuation');
-    expect(visibleText(pages[0].content)).toBe('123456789012345');
+    expect(pages[0].content).toContain('data-flow-continuation');
+    expect(pages.map((page) => visibleText(page.content)).join('')).toBe('123456789012345');
   });
 
   it('preserves the keep-together marker through reassembly', () => {

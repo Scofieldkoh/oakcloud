@@ -6,6 +6,7 @@ import {
   normalizeEditedFlowIds,
 } from './model';
 import type { FlowPoint, FlowSelectionBookmark } from './selection';
+import { lineBreakBoundaryForDomPoint, resolveFlowBoundary } from './selection';
 
 export type A4PositionAffinity = 'before' | 'after';
 
@@ -902,15 +903,23 @@ export function mapA4PositionThroughChangeMap(
 }
 
 /**
- * Compatibility adapter for existing text-offset FlowPoint callers. It cannot
- * invent zero-text boundary affinity; callers that need that distinction must
- * use A4Position directly.
+ * Compatibility adapter for existing text-offset FlowPoint callers. New
+ * bookmarks retain a line-break identity so equal text offsets on distinct
+ * empty lines do not collapse to the same structural position.
  */
 export function a4PositionFromFlowPoint(
   canonical: CanonicalEditorDocument,
   point: FlowPoint,
   affinity: A4PositionAffinity = 'after',
 ): A4PositionValidationResult {
+  if (point.boundary) {
+    const root = rootForInternalHtml(canonical.internalHtml);
+    const domPoint = resolveFlowBoundary(root, point);
+    const position = domPoint ? captureA4Position(root, domPoint.node, domPoint.offset, affinity) : null;
+    return position
+      ? validateA4Position(root, position)
+      : { status: 'rejected', code: 'missing-node', message: 'The line-break boundary no longer exists.' };
+  }
   const position: A4Position = {
     kind: 'text',
     nodeId: point.flowId,
@@ -931,7 +940,8 @@ export function flowPointFromA4Position(
   const point = resolveA4Position(root, position);
   if (!element || !point) return null;
   const offset = textOffsetWithin(element, point.node, point.offset);
-  return offset === null ? null : { flowId: position.nodeId, offset };
+  const boundary = lineBreakBoundaryForDomPoint(point.node, point.offset);
+  return offset === null ? null : { flowId: position.nodeId, offset, ...(boundary ? { boundary } : {}) };
 }
 
 export function a4SelectionFromFlowBookmark(
