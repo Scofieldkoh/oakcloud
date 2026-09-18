@@ -308,6 +308,7 @@ describe('EsigningStepUpload', () => {
       onUpdateSettings?: (settings: UpdateEsigningEnvelopeInput) => Promise<void>;
       onReorderRecipients?: (payload: ReorderEsigningRecipientsPayload) => Promise<void>;
       onAttachGeneratedDocuments?: (documentIds: string[]) => Promise<void>;
+      onUploadDocuments?: (files: FileList) => Promise<void>;
       onAddRecipient?: (data: EsigningRecipientInput) => Promise<void>;
       currentUser?: { firstName: string; lastName: string; email: string } | null;
       onNext?: () => void;
@@ -319,6 +320,7 @@ describe('EsigningStepUpload', () => {
     const onReorderRecipients =
       propOverrides.onReorderRecipients ?? vi.fn().mockResolvedValue(undefined);
     const onNext = propOverrides.onNext ?? vi.fn();
+    const onUploadDocuments = propOverrides.onUploadDocuments ?? vi.fn().mockResolvedValue(undefined);
 
     const { container } = render(
       <EsigningStepUpload
@@ -326,7 +328,7 @@ describe('EsigningStepUpload', () => {
         currentUser={propOverrides.currentUser ?? null}
         onUpdateSettings={onUpdateSettings}
         isUpdating={false}
-        onUploadDocuments={vi.fn()}
+        onUploadDocuments={onUploadDocuments}
         isUploading={propOverrides.isUploading ?? false}
         onAttachGeneratedDocuments={propOverrides.onAttachGeneratedDocuments}
         onDeleteDocument={vi.fn()}
@@ -342,7 +344,7 @@ describe('EsigningStepUpload', () => {
       />
     );
 
-    return { onUpdateSettings, onReorderRecipients, onNext, container };
+    return { onUpdateSettings, onReorderRecipients, onUploadDocuments, onNext, container };
   }
 
   function nextButton() {
@@ -366,15 +368,17 @@ describe('EsigningStepUpload', () => {
     });
   });
 
-  it('keeps document actions visible outside the thumbnail card bounds', async () => {
-    const user = userEvent.setup();
+  it('uses a compact document table with reorder controls inside the document column', () => {
     renderUpload();
 
-    await user.click(screen.getByRole('button', { name: 'More document actions' }));
-
-    expect(screen.getByRole('button', { name: 'View document' })).toBeVisible();
-    expect(screen.getByText('nda.pdf').closest('.group')).toHaveClass('overflow-visible');
-    expect(screen.getByRole('heading', { name: 'Documents (1)' }).closest('section')).toHaveClass('overflow-visible');
+    expect(screen.getByRole('columnheader', { name: 'Document' })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Visibility' })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Actions' })).toBeInTheDocument();
+    expect(screen.queryByRole('columnheader', { name: 'Order' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('columnheader', { name: 'Details' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Move nda.pdf earlier' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Move nda.pdf later' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Preview nda.pdf' })).toBeInTheDocument();
   });
 
   it('keeps envelope name and email subject independent with standardized control heights', async () => {
@@ -538,13 +542,12 @@ describe('EsigningStepUpload', () => {
       .toEqual(['Cancel', 'Update contact', 'Add recipient']);
   });
 
-  it('is a keyboard-operable upload control with a 44px mobile target', async () => {
+  it('keeps an accessible browse control when the document list is empty', async () => {
     const user = userEvent.setup();
-    const { container } = renderUpload();
+    const { container } = renderUpload({ documents: [], documentCount: 0 });
 
-    const uploadButton = screen.getByRole('button', { name: /Drop PDF documents here/i });
+    const uploadButton = screen.getByRole('button', { name: /Drop PDF documents here, or click to browse/i });
     expect(uploadButton).toHaveAccessibleName();
-    expect(uploadButton.className).toContain('min-h-[44px]');
 
     const fileInput = container.querySelector('input[type="file"]');
     expect(fileInput).not.toBeNull();
@@ -557,11 +560,28 @@ describe('EsigningStepUpload', () => {
     expect(clickSpy).toHaveBeenCalledTimes(2);
   });
 
-  it('disables the upload control while uploading', () => {
-    renderUpload({}, { isUploading: true });
+  it('disables the empty-state upload control while uploading', () => {
+    renderUpload({ documents: [], documentCount: 0 }, { isUploading: true });
 
     const uploadButton = screen.getByRole('button', { name: /Uploading/i });
     expect(uploadButton).toBeDisabled();
+  });
+
+  it('accepts document drops anywhere on the documents card', () => {
+    const onUploadDocuments = vi.fn().mockResolvedValue(undefined);
+    renderUpload({}, { onUploadDocuments });
+
+    const dropZone = screen.getByTestId('esigning-documents-drop-zone');
+    const file = new File(['pdf'], 'second.pdf', { type: 'application/pdf' });
+    const dataTransfer = { files: [file], dropEffect: 'none' };
+
+    fireEvent.dragOver(dropZone, { dataTransfer });
+    expect(screen.getByText('Release to upload documents')).toBeInTheDocument();
+
+    fireEvent.drop(dropZone, { dataTransfer });
+
+    expect(onUploadDocuments).toHaveBeenCalledTimes(1);
+    expect(Array.from(onUploadDocuments.mock.calls[0][0])).toEqual([file]);
   });
 
   it('filters, sorts, and multi-selects finalized generated documents', async () => {

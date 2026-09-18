@@ -18,7 +18,6 @@ import { ESIGNING_LIMITS } from '@/lib/validations/esigning';
 import {
   ESIGNING_RECIPIENT_TYPE_LABELS,
   ESIGNING_ACCESS_MODE_LABELS,
-  formatEsigningFileSize,
 } from '@/components/esigning/esigning-shared';
 import {
   getEsigningUploadAccept,
@@ -284,14 +283,12 @@ function DocumentTable({
 
   return (
     <div className="overflow-x-auto rounded-xl border border-border-primary">
-      <table className="w-full min-w-[760px] text-sm">
+      <table className="w-full min-w-[520px] text-sm">
         <thead className="bg-background-tertiary">
           <tr className="border-b border-border-primary">
-            <th className="w-24 px-3 py-2 text-left text-xs font-medium text-text-secondary">Order</th>
             <th className="px-3 py-2 text-left text-xs font-medium text-text-secondary">Document</th>
-            <th className="w-32 px-3 py-2 text-left text-xs font-medium text-text-secondary">Details</th>
             <th className="w-32 px-3 py-2 text-left text-xs font-medium text-text-secondary">Visibility</th>
-            <th className="w-36 px-3 py-2 text-right text-xs font-medium text-text-secondary">Actions</th>
+            <th className="w-32 px-3 py-2 text-right text-xs font-medium text-text-secondary">Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -302,18 +299,17 @@ function DocumentTable({
                 key={doc.id}
                 className="border-b border-border-primary last:border-b-0 odd:bg-background-secondary even:bg-background-primary"
               >
-                <td className="px-3 py-2">
-                  <div className="flex items-center gap-1">
-                    <span className="mr-1 w-5 text-center text-xs font-medium text-text-muted">{index + 1}</span>
+                <td className="px-3 py-1.5">
+                  <div className="flex min-w-0 items-center gap-1">
                     <button
                       type="button"
                       aria-label={`Move ${doc.fileName} earlier`}
                       title="Move earlier"
                       disabled={!canEdit || isUpdating || index === 0}
                       onClick={() => void moveDocument(doc.id, index, -1)}
-                      className="flex h-8 w-8 items-center justify-center rounded-lg text-text-muted hover:bg-background-tertiary hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-30"
+                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-text-muted hover:bg-background-tertiary hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-30"
                     >
-                      <ChevronUp className="h-4 w-4" />
+                      <ChevronUp className="h-3.5 w-3.5" />
                     </button>
                     <button
                       type="button"
@@ -321,24 +317,17 @@ function DocumentTable({
                       title="Move later"
                       disabled={!canEdit || isUpdating || index === documents.length - 1}
                       onClick={() => void moveDocument(doc.id, index, 1)}
-                      className="flex h-8 w-8 items-center justify-center rounded-lg text-text-muted hover:bg-background-tertiary hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-30"
+                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-text-muted hover:bg-background-tertiary hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-30"
                     >
-                      <ChevronDown className="h-4 w-4" />
+                      <ChevronDown className="h-3.5 w-3.5" />
                     </button>
-                  </div>
-                </td>
-                <td className="px-3 py-2">
-                  <div className="flex min-w-0 items-center gap-2">
-                    <FileText className="h-4 w-4 shrink-0 text-text-muted" />
-                    <span className="max-w-[360px] truncate font-medium text-text-primary" title={doc.fileName}>
+                    <FileText className="ml-1 h-4 w-4 shrink-0 text-text-muted" />
+                    <span className="min-w-0 truncate font-medium text-text-primary" title={doc.fileName}>
                       {doc.fileName}
                     </span>
                   </div>
                 </td>
-                <td className="px-3 py-2 text-xs text-text-muted">
-                  {doc.pageCount} {doc.pageCount === 1 ? 'page' : 'pages'} · {formatEsigningFileSize(doc.fileSize)}
-                </td>
-                <td className="px-3 py-2">
+                <td className="px-3 py-1.5">
                   <button
                     type="button"
                     disabled={!canEdit || isUpdating}
@@ -358,7 +347,7 @@ function DocumentTable({
                     {visibility === 'SIGNER_ONLY' ? 'Signer only' : 'Everyone'}
                   </button>
                 </td>
-                <td className="px-3 py-2">
+                <td className="px-3 py-1.5">
                   <div className="flex items-center justify-end gap-1">
                     <button
                       type="button"
@@ -805,16 +794,29 @@ export function EsigningStepUpload({
     }
   }
 
-  function handleDragOver(e: React.DragEvent<HTMLButtonElement>) {
+  function handleDragOver(e: React.DragEvent<HTMLElement>) {
+    if (!envelope.canEdit || isUploading) {
+      return;
+    }
+
     e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
     setIsDragging(true);
   }
 
-  function handleDragLeave() {
+  function handleDragLeave(e: React.DragEvent<HTMLElement>) {
+    const nextTarget = e.relatedTarget;
+    if (nextTarget instanceof Node && e.currentTarget.contains(nextTarget)) {
+      return;
+    }
     setIsDragging(false);
   }
 
-  function handleDrop(e: React.DragEvent<HTMLButtonElement>) {
+  function handleDrop(e: React.DragEvent<HTMLElement>) {
+    if (!envelope.canEdit || isUploading) {
+      return;
+    }
+
     e.preventDefault();
     setIsDragging(false);
     if (e.dataTransfer.files.length > 0) {
@@ -1212,6 +1214,13 @@ async function applyMixedGroupChange(
     <div className="mx-auto grid w-full max-w-[1550px] grid-cols-1 items-start gap-4 p-4 sm:gap-6 sm:p-6 lg:grid-cols-2">
 
       {/* ——— Section 1: Documents ——— */}
+      <div
+        data-testid="esigning-documents-drop-zone"
+        className="relative"
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      >
       <CompanyAccentSection
         title={`Documents${envelope.documents.length > 0 ? ` (${envelope.documents.length})` : ''}`}
         className="overflow-visible"
@@ -1239,42 +1248,36 @@ async function applyMixedGroupChange(
       >
         <div className="space-y-4 p-4 sm:p-5">
 
-        {/* Drop zone */}
-        <button
-          type="button"
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
-          onClick={() => !isUploading && fileInputRef.current?.click()}
-          disabled={isUploading}
-          aria-describedby="esigning-upload-help"
-          className={cn(
-            'flex min-h-[44px] w-full flex-col items-center justify-center rounded-2xl border-2 border-dashed p-6 text-center transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-oak-primary/30 focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-70',
-            isUploading
-              ? 'cursor-wait border-oak-primary bg-oak-primary/5'
-              : isDragging
-                ? 'cursor-copy border-oak-primary bg-oak-primary/5'
+        {envelope.documents.length === 0 ? (
+          <button
+            type="button"
+            onClick={() => !isUploading && fileInputRef.current?.click()}
+            disabled={isUploading}
+            aria-describedby="esigning-upload-help"
+            className={cn(
+              'flex min-h-[88px] w-full flex-col items-center justify-center rounded-xl border border-dashed px-4 py-3 text-center transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-oak-primary/30 focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-70',
+              isUploading
+                ? 'cursor-wait border-oak-primary bg-oak-primary/5'
                 : 'cursor-pointer border-border-primary bg-background-primary hover:border-oak-primary/50 hover:bg-background-tertiary',
-          )}
-        >
-          {isUploading ? (
-            <Loader2 className="h-6 w-6 animate-spin text-oak-primary mb-1.5" />
-          ) : (
-            <Upload className="h-6 w-6 text-text-muted mb-1.5" />
-          )}
-          <p className="text-sm font-medium text-text-primary">
-            {isUploading
-              ? 'Uploading...'
-              : isDragging
-                ? 'Release to upload'
+            )}
+          >
+            {isUploading ? (
+              <Loader2 className="mb-1 h-5 w-5 animate-spin text-oak-primary" />
+            ) : (
+              <Upload className="mb-1 h-5 w-5 text-text-muted" />
+            )}
+            <p className="text-sm font-medium text-text-primary">
+              {isUploading
+                ? 'Uploading...'
                 : wordUploadEnabled
-                  ? 'Drop PDF or Word documents here'
-                  : 'Drop PDF documents here'}
-          </p>
-          <span id="esigning-upload-help" className="text-xs text-text-muted mt-0.5">
-            {wordUploadEnabled ? 'PDF, DOCX, or DOC' : 'PDF only'} - max {ESIGNING_LIMITS.MAX_FILE_SIZE_BYTES / (1024 * 1024)} MB each
-          </span>
-        </button>
+                  ? 'Drop PDF or Word documents here, or click to browse'
+                  : 'Drop PDF documents here, or click to browse'}
+            </p>
+            <span id="esigning-upload-help" className="mt-0.5 text-xs text-text-muted">
+              {wordUploadEnabled ? 'PDF, DOCX, or DOC' : 'PDF only'} - max {ESIGNING_LIMITS.MAX_FILE_SIZE_BYTES / (1024 * 1024)} MB each
+            </span>
+          </button>
+        ) : null}
         <input
           ref={fileInputRef}
           type="file"
@@ -1297,6 +1300,15 @@ async function applyMixedGroupChange(
         )}
         </div>
       </CompanyAccentSection>
+      {isDragging && envelope.canEdit && !isUploading ? (
+        <div className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center rounded-xl border-2 border-dashed border-oak-primary bg-oak-primary/10 backdrop-blur-[1px]">
+          <div className="rounded-xl bg-background-secondary px-4 py-3 text-center shadow-sm">
+            <Upload className="mx-auto mb-1 h-5 w-5 text-oak-primary" />
+            <p className="text-sm font-medium text-text-primary">Release to upload documents</p>
+          </div>
+        </div>
+      ) : null}
+      </div>
 
       <GeneratedDocumentPicker
         isOpen={isGeneratedDocumentPickerOpen}
