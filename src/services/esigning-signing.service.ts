@@ -26,6 +26,7 @@ import {
   getEsigningDocumentPdfFileName,
   getEsigningDocumentVariantFileName,
 } from '@/lib/esigning-document-filename';
+import { getEsigningDocumentVisibility } from '@/lib/esigning-document-visibility';
 import { createLogger } from '@/lib/logger';
 import { sendEsigningDeclinedEmailToSender } from '@/services/esigning-notification.service';
 import { activateNextQueuedEsigningRecipients } from '@/services/esigning-envelope.service';
@@ -149,6 +150,21 @@ export async function finalizeEsigningEnvelopeCompletion(
 }
 
 type SigningContext = Awaited<ReturnType<typeof getSigningContext>>;
+
+function getVisibleSigningDocumentIds(context: SigningContext): Set<string> {
+  const assignedDocumentIds = new Set(
+    context.envelope.fieldDefinitions.map((field) => field.documentId)
+  );
+
+  return new Set(
+    context.envelope.documents
+      .filter((document) =>
+        getEsigningDocumentVisibility(context.envelope.metadata, document.id) === 'EVERYONE'
+        || assignedDocumentIds.has(document.id)
+      )
+      .map((document) => document.id)
+  );
+}
 
 function toIsoString(value: Date | null | undefined): string | null {
   return value ? value.toISOString() : null;
@@ -423,7 +439,9 @@ async function buildSigningSessionDto(context: SigningContext): Promise<Esigning
     context.envelope,
     completionDeliveries
   );
-  const signedSignatures = await buildSignedSignatureFields(context);
+  const visibleDocumentIds = getVisibleSigningDocumentIds(context);
+  const signedSignatures = (await buildSignedSignatureFields(context))
+    .filter((signature) => visibleDocumentIds.has(signature.documentId));
 
   return {
     envelope: {
@@ -453,7 +471,9 @@ async function buildSigningSessionDto(context: SigningContext): Promise<Esigning
       signedAt: toIsoString(context.recipient.signedAt),
       colorTag: context.recipient.colorTag,
     },
-    documents: context.envelope.documents.map((document) => ({
+    documents: context.envelope.documents
+      .filter((document) => visibleDocumentIds.has(document.id))
+      .map((document) => ({
       id: document.id,
       fileName: getEsigningDocumentOriginalFileName(document),
       originalFileName: getEsigningDocumentOriginalFileName(document),
@@ -467,6 +487,7 @@ async function buildSigningSessionDto(context: SigningContext): Promise<Esigning
         context.envelope.status === 'COMPLETED' && downloadToken
           ? `/api/esigning/sign/session/download?documentId=${encodeURIComponent(document.id)}&token=${encodeURIComponent(downloadToken)}&variant=signed`
           : null,
+      visibility: getEsigningDocumentVisibility(context.envelope.metadata, document.id),
     })),
     recipients: context.envelope.recipients.map((recipient) => ({
       id: recipient.id,
@@ -1188,8 +1209,9 @@ export async function downloadEsigningSessionDocument(input: {
     sessionVersion: claims.sessionVersion,
   });
 
+  const visibleDocumentIds = getVisibleSigningDocumentIds(context);
   const document = context.envelope.documents.find((entry) => entry.id === input.documentId);
-  if (!document) {
+  if (!document || !visibleDocumentIds.has(document.id)) {
     throw new Error('Document not found');
   }
 

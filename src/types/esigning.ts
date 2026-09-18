@@ -100,6 +100,7 @@ export interface EsigningEnvelopeDocumentDto {
   originalFileName?: string;
   pageCount: number;
   sortOrder: number;
+  visibility?: 'SIGNER_ONLY' | 'EVERYONE';
   fileSize: number;
   originalHash: string;
   signedHash: string | null;

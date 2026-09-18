@@ -41,6 +41,7 @@ import {
   useRetryEsigningEnvelopeProcessing,
   useSaveEsigningFields,
   useSendEsigningEnvelope,
+  useUpdateEsigningDocument,
   useUpdateEsigningEnvelope,
   useUpdateEsigningRecipient,
   useUploadEsigningDocument,
@@ -196,6 +197,7 @@ export function EsigningDetailPage({ envelopeId }: Props) {
   // Mutations
   const updateEnvelope = useUpdateEsigningEnvelope(envelopeId);
   const uploadDocument = useUploadEsigningDocument(envelopeId);
+  const updateDocument = useUpdateEsigningDocument(envelopeId);
   const [isAttachingGeneratedDocuments, setIsAttachingGeneratedDocuments] = useState(false);
   const attachGeneratedDocuments = {
     isPending: isAttachingGeneratedDocuments,
@@ -951,6 +953,13 @@ export function EsigningDetailPage({ envelopeId }: Props) {
                 isUpdating={updateEnvelope.isPending}
                 onUploadDocuments={async (files) => { await uploadFiles(files); }}
                 isUploading={uploadDocument.isPending}
+                onReorderDocument={async (documentId, sortOrder) => {
+                  await updateDocument.mutateAsync({ documentId, sortOrder });
+                }}
+                onToggleDocumentVisibility={async (documentId, visibility) => {
+                  await updateDocument.mutateAsync({ documentId, visibility });
+                }}
+                isUpdatingDocument={updateDocument.isPending}
                 onAttachGeneratedDocuments={async (documentIds) => {
                   await attachGeneratedDocuments.mutateAsync(documentIds);
                 }}

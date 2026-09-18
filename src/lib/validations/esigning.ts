@@ -240,8 +240,14 @@ export const updateEsigningRecipientSchema = z.object({
 });
 
 export const reorderEsigningDocumentSchema = z.object({
-  sortOrder: z.number().int().min(0).max(9999),
-});
+  sortOrder: z.number().int().min(0).max(9999).optional(),
+  visibility: z.enum(['SIGNER_ONLY', 'EVERYONE']).optional(),
+}).refine(
+  (value) => value.sortOrder !== undefined || value.visibility !== undefined,
+  {
+    message: 'Provide sortOrder or visibility',
+  }
+);
 
 export const reorderEsigningRecipientsSchema = z.object({
   recipientIds: z.array(uuidString).min(1).max(ESIGNING_LIMITS.MAX_RECIPIENTS).optional(),

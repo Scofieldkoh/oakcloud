@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { arrayMove } from '@dnd-kit/sortable';
 import { useQueryClient } from '@tanstack/react-query';
-import { Upload, FileText, UserPlus, MoreVertical, Pencil, X, Check, ChevronDown, ChevronUp, Trash2, Plus, Loader2 } from 'lucide-react';
+import { Upload, FileText, UserPlus, Pencil, X, Check, ChevronDown, ChevronUp, Trash2, Plus, Loader2, Eye, Download } from 'lucide-react';
 import type { EsigningRecipientAccessMode, EsigningRecipientType } from '@/generated/prisma';
 import type { EsigningEnvelopeDetailDto, EsigningEnvelopeDocumentDto, EsigningEnvelopeRecipientDto } from '@/types/esigning';
 import type { UpdateEsigningEnvelopeInput } from '@/lib/validations/esigning';
@@ -14,7 +14,6 @@ import {
   updateEsigningEnvelopeSchema,
   type EsigningCompletionBccPreference,
 } from '@/lib/validations/esigning';
-import type { PDFPageProxy } from 'pdfjs-dist';
 import { ESIGNING_LIMITS } from '@/lib/validations/esigning';
 import {
   ESIGNING_RECIPIENT_TYPE_LABELS,
@@ -52,13 +51,6 @@ const SIGNING_ORDER_PILL_LABELS: Record<EsigningSigningOrder, string> = {
   MIXED: 'Mixed',
 };
 
-type PdfThumbnailLib = typeof import('pdfjs-dist');
-type PdfThumbnailLoadingTask = ReturnType<PdfThumbnailLib['getDocument']>;
-type PdfThumbnailRenderTask = ReturnType<PDFPageProxy['render']>;
-
-let pdfjsThumbnailLib: PdfThumbnailLib | null = null;
-let pdfjsThumbnailWorkerInitialized = false;
-
 interface EsigningStepUploadProps {
   envelope: EsigningEnvelopeDetailDto;
   currentUser?: { firstName: string; lastName: string; email: string } | null;
@@ -66,6 +58,12 @@ interface EsigningStepUploadProps {
   isUpdating: boolean;
   onUploadDocuments: (files: FileList) => Promise<void>;
   isUploading: boolean;
+  onReorderDocument?: (documentId: string, sortOrder: number) => Promise<void>;
+  onToggleDocumentVisibility?: (
+    documentId: string,
+    visibility: 'SIGNER_ONLY' | 'EVERYONE'
+  ) => Promise<void>;
+  isUpdatingDocument?: boolean;
   onAttachGeneratedDocuments?: (documentIds: string[]) => Promise<void>;
   isAttachingGeneratedDocuments?: boolean;
   onDeleteDocument: (documentId: string) => void;
@@ -242,157 +240,163 @@ function buildReorderRecipientsPayload(
   };
 }
 
-async function getPdfThumbnailJs() {
-  if (pdfjsThumbnailLib && pdfjsThumbnailWorkerInitialized) {
-    return pdfjsThumbnailLib;
-  }
-
-  const pdfjs = await import('pdfjs-dist');
-
-  if (!pdfjsThumbnailWorkerInitialized) {
-    pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
-    pdfjsThumbnailWorkerInitialized = true;
-  }
-
-  pdfjsThumbnailLib = pdfjs;
-  return pdfjs;
-}
-
-// ——— PDF thumbnail canvas ———
-
-function PdfThumbnailCanvas({ url }: { url: string }) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [isLoaded, setIsLoaded] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-    let loadingTask: PdfThumbnailLoadingTask | null = null;
-    let renderTask: PdfThumbnailRenderTask | null = null;
-
-    async function render() {
-      const canvas = canvasRef.current;
-      if (!canvas) return;
-
-      setIsLoaded(false);
-
-      try {
-        const response = await fetch(url, { credentials: 'same-origin' });
-        if (!response.ok) {
-          throw new Error(`Failed to fetch PDF thumbnail source (${response.status})`);
-        }
-
-        const pdfBytes = new Uint8Array(await response.arrayBuffer());
-        if (cancelled) return;
-
-        const pdfjs = await getPdfThumbnailJs();
-        loadingTask = pdfjs.getDocument({ data: pdfBytes });
-        const pdf = await loadingTask.promise;
-        if (cancelled) return;
-        const page = await pdf.getPage(1);
-        const viewport = page.getViewport({ scale: 0.5 });
-        canvas.width = viewport.width;
-        canvas.height = viewport.height;
-        const ctx = canvas.getContext('2d');
-        if (!ctx || cancelled) return;
-
-        renderTask = page.render({ canvasContext: ctx, viewport } as Parameters<typeof page.render>[0]);
-        await renderTask.promise;
-        if (!cancelled) setIsLoaded(true);
-      } catch (error) {
-        if (!cancelled) {
-          console.error('Failed to render e-signing thumbnail', error);
-        }
-      }
-    }
-
-    void render();
-
-    return () => {
-      cancelled = true;
-      renderTask?.cancel();
-      if (loadingTask) {
-        void loadingTask.destroy();
-      }
-    };
-  }, [url]);
-
-  return (
-    <div className="flex h-full w-full items-center justify-center bg-background-tertiary">
-      {!isLoaded && <FileText className="h-8 w-8 text-text-muted" />}
-      <canvas ref={canvasRef} className={cn('max-h-full max-w-full object-contain', !isLoaded && 'hidden')} />
-    </div>
-  );
-}
-
-// ——— Document card ———
-
-function DocumentCard({ doc, canEdit, onDelete }: {
-  doc: EsigningEnvelopeDocumentDto;
+function DocumentTable({
+  documents,
+  canEdit,
+  isUpdating,
+  onReorder,
+  onToggleVisibility,
+  onDelete,
+}: {
+  documents: EsigningEnvelopeDocumentDto[];
   canEdit: boolean;
-  onDelete: () => void;
+  isUpdating: boolean;
+  onReorder: (documentId: string, sortOrder: number) => Promise<void>;
+  onToggleVisibility: (
+    documentId: string,
+    visibility: 'SIGNER_ONLY' | 'EVERYONE'
+  ) => Promise<void>;
+  onDelete: (documentId: string) => void;
 }) {
-  const [menuOpen, setMenuOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
+  const toast = useToast();
 
-  useEffect(() => {
-    function onClickOutside(e: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setMenuOpen(false);
-      }
+  async function moveDocument(documentId: string, index: number, direction: -1 | 1) {
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= documents.length) return;
+
+    try {
+      await onReorder(documentId, targetIndex);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to reorder document');
     }
-    if (menuOpen) document.addEventListener('mousedown', onClickOutside);
-    return () => document.removeEventListener('mousedown', onClickOutside);
-  }, [menuOpen]);
+  }
+
+  async function toggleVisibility(document: EsigningEnvelopeDocumentDto) {
+    const currentVisibility = document.visibility ?? 'SIGNER_ONLY';
+    const nextVisibility = currentVisibility === 'SIGNER_ONLY' ? 'EVERYONE' : 'SIGNER_ONLY';
+
+    try {
+      await onToggleVisibility(document.id, nextVisibility);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to update document visibility');
+    }
+  }
 
   return (
-    <div className="group rounded-xl border border-border-primary bg-background-secondary overflow-visible">
-      <div className="aspect-[3/4] overflow-hidden rounded-t-xl">
-        <PdfThumbnailCanvas url={doc.pdfUrl} />
-      </div>
-      <div className="flex items-center justify-between gap-1 px-2 py-2 border-t border-border-primary">
-        <div className="min-w-0 flex-1">
-          <div className="truncate text-xs font-medium text-text-primary">{doc.fileName}</div>
-          <div className="text-[10px] text-text-muted">{doc.pageCount} pages · {formatEsigningFileSize(doc.fileSize)}</div>
-        </div>
-        <div ref={menuRef} className="relative flex-shrink-0">
-          <button
-            type="button"
-            onClick={() => setMenuOpen((v) => !v)}
-            aria-label="More document actions"
-            className="rounded p-1 text-text-muted hover:bg-background-tertiary hover:text-text-primary"
-          >
-            <MoreVertical className="h-3.5 w-3.5" />
-          </button>
-          {menuOpen && (
-            <div className="absolute right-0 bottom-full z-20 mb-1 w-44 rounded-xl border border-border-primary bg-background-secondary py-1 shadow-lg">
-              <a
-                href={doc.pdfUrl}
-                download={doc.fileName}
-                onClick={() => setMenuOpen(false)}
-                className="flex items-center gap-2 px-3 py-2 text-sm text-text-primary hover:bg-background-tertiary"
+    <div className="overflow-x-auto rounded-xl border border-border-primary">
+      <table className="w-full min-w-[760px] text-sm">
+        <thead className="bg-background-tertiary">
+          <tr className="border-b border-border-primary">
+            <th className="w-24 px-3 py-2 text-left text-xs font-medium text-text-secondary">Order</th>
+            <th className="px-3 py-2 text-left text-xs font-medium text-text-secondary">Document</th>
+            <th className="w-32 px-3 py-2 text-left text-xs font-medium text-text-secondary">Details</th>
+            <th className="w-32 px-3 py-2 text-left text-xs font-medium text-text-secondary">Visibility</th>
+            <th className="w-36 px-3 py-2 text-right text-xs font-medium text-text-secondary">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {documents.map((doc, index) => {
+            const visibility = doc.visibility ?? 'SIGNER_ONLY';
+            return (
+              <tr
+                key={doc.id}
+                className="border-b border-border-primary last:border-b-0 odd:bg-background-secondary even:bg-background-primary"
               >
-                Download
-              </a>
-              <button
-                type="button"
-                onClick={() => { window.open(doc.pdfUrl, '_blank'); setMenuOpen(false); }}
-                className="flex w-full items-center gap-2 px-3 py-2 text-sm text-text-primary hover:bg-background-tertiary"
-              >
-                View document
-              </button>
-              {canEdit && (
-                <button
-                  type="button"
-                  onClick={() => { onDelete(); setMenuOpen(false); }}
-                  className="flex w-full items-center gap-2 px-3 py-2 text-sm text-rose-500 hover:bg-background-tertiary"
-                >
-                  Delete
-                </button>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
+                <td className="px-3 py-2">
+                  <div className="flex items-center gap-1">
+                    <span className="mr-1 w-5 text-center text-xs font-medium text-text-muted">{index + 1}</span>
+                    <button
+                      type="button"
+                      aria-label={`Move ${doc.fileName} earlier`}
+                      title="Move earlier"
+                      disabled={!canEdit || isUpdating || index === 0}
+                      onClick={() => void moveDocument(doc.id, index, -1)}
+                      className="flex h-8 w-8 items-center justify-center rounded-lg text-text-muted hover:bg-background-tertiary hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-30"
+                    >
+                      <ChevronUp className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
+                      aria-label={`Move ${doc.fileName} later`}
+                      title="Move later"
+                      disabled={!canEdit || isUpdating || index === documents.length - 1}
+                      onClick={() => void moveDocument(doc.id, index, 1)}
+                      className="flex h-8 w-8 items-center justify-center rounded-lg text-text-muted hover:bg-background-tertiary hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-30"
+                    >
+                      <ChevronDown className="h-4 w-4" />
+                    </button>
+                  </div>
+                </td>
+                <td className="px-3 py-2">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <FileText className="h-4 w-4 shrink-0 text-text-muted" />
+                    <span className="max-w-[360px] truncate font-medium text-text-primary" title={doc.fileName}>
+                      {doc.fileName}
+                    </span>
+                  </div>
+                </td>
+                <td className="px-3 py-2 text-xs text-text-muted">
+                  {doc.pageCount} {doc.pageCount === 1 ? 'page' : 'pages'} · {formatEsigningFileSize(doc.fileSize)}
+                </td>
+                <td className="px-3 py-2">
+                  <button
+                    type="button"
+                    disabled={!canEdit || isUpdating}
+                    onClick={() => void toggleVisibility(doc)}
+                    title={
+                      visibility === 'SIGNER_ONLY'
+                        ? 'Only signers assigned fields on this document can see it. Click to show it to everyone.'
+                        : 'Every signer can see this document. Click to restrict it to assigned signers.'
+                    }
+                    className={cn(
+                      'inline-flex min-w-[92px] items-center justify-center rounded-full border px-2.5 py-1 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60',
+                      visibility === 'SIGNER_ONLY'
+                        ? 'border-oak-primary/30 bg-oak-primary/10 text-oak-primary hover:bg-oak-primary/15'
+                        : 'border-border-primary bg-background-secondary text-text-secondary hover:bg-background-tertiary'
+                    )}
+                  >
+                    {visibility === 'SIGNER_ONLY' ? 'Signer only' : 'Everyone'}
+                  </button>
+                </td>
+                <td className="px-3 py-2">
+                  <div className="flex items-center justify-end gap-1">
+                    <button
+                      type="button"
+                      aria-label={`Preview ${doc.fileName}`}
+                      title="Preview"
+                      onClick={() => window.open(doc.pdfUrl, '_blank', 'noreferrer')}
+                      className="flex h-8 w-8 items-center justify-center rounded-lg text-text-muted hover:bg-background-tertiary hover:text-text-primary"
+                    >
+                      <Eye className="h-4 w-4" />
+                    </button>
+                    <a
+                      href={doc.pdfUrl}
+                      download={doc.fileName}
+                      aria-label={`Download ${doc.fileName}`}
+                      title="Download"
+                      className="flex h-8 w-8 items-center justify-center rounded-lg text-text-muted hover:bg-background-tertiary hover:text-text-primary"
+                    >
+                      <Download className="h-4 w-4" />
+                    </a>
+                    {canEdit ? (
+                      <button
+                        type="button"
+                        aria-label={`Delete ${doc.fileName}`}
+                        title="Delete"
+                        disabled={isUpdating}
+                        onClick={() => onDelete(doc.id)}
+                        className="flex h-8 w-8 items-center justify-center rounded-lg text-text-muted hover:bg-rose-50 hover:text-rose-600 disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-rose-950/30"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    ) : null}
+                  </div>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
     </div>
   );
 }
@@ -494,6 +498,9 @@ export function EsigningStepUpload({
   isUpdating,
   onUploadDocuments,
   isUploading,
+  onReorderDocument = async () => undefined,
+  onToggleDocumentVisibility = async () => undefined,
+  isUpdatingDocument = false,
   onAttachGeneratedDocuments = async () => undefined,
   isAttachingGeneratedDocuments = false,
   onDeleteDocument,
@@ -1277,18 +1284,16 @@ async function applyMixedGroupChange(
           onChange={handleFileChange}
         />
 
-        {/* Document thumbnail grid */}
+        {/* Document table */}
         {envelope.documents.length > 0 && (
-          <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-4">
-            {envelope.documents.map((doc) => (
-              <DocumentCard
-                key={doc.id}
-                doc={doc}
-                canEdit={envelope.canEdit}
-                onDelete={() => onDeleteDocument(doc.id)}
-              />
-            ))}
-          </div>
+          <DocumentTable
+            documents={envelope.documents}
+            canEdit={envelope.canEdit}
+            isUpdating={isUpdatingDocument}
+            onReorder={onReorderDocument}
+            onToggleVisibility={onToggleDocumentVisibility}
+            onDelete={onDeleteDocument}
+          />
         )}
         </div>
       </CompanyAccentSection>

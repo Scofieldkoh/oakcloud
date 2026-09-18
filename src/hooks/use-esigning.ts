@@ -262,6 +262,30 @@ export async function uploadEsigningDocumentRequest(
   return response.json();
 }
 
+export interface UpdateEsigningDocumentPayload {
+  sortOrder?: number;
+  visibility?: 'SIGNER_ONLY' | 'EVERYONE';
+}
+
+async function updateDocumentRequest(
+  envelopeId: string,
+  documentId: string,
+  payload: UpdateEsigningDocumentPayload,
+  tenantId?: string | null
+): Promise<EsigningEnvelopeDetailDto> {
+  const response = await fetch(`/api/esigning/envelopes/${envelopeId}/documents/${documentId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ tenantId, ...payload }),
+  });
+
+  if (!response.ok) {
+    await readJsonError(response, 'Failed to update document');
+  }
+
+  return response.json();
+}
+
 async function deleteDocumentRequest(
   envelopeId: string,
   documentId: string,
@@ -599,6 +623,20 @@ export function useUploadEsigningDocument(envelopeId: string) {
 
   return useMutation({
     mutationFn: (file: File) => uploadEsigningDocumentRequest(envelopeId, file, tenantId),
+    onSuccess: async (result) => {
+      queryClient.setQueryData(['esigning', 'detail', tenantId, envelopeId], result);
+      await invalidateEnvelopeQueries(queryClient, tenantId);
+    },
+  });
+}
+
+export function useUpdateEsigningDocument(envelopeId: string) {
+  const tenantId = useEsigningTenant();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ documentId, ...payload }: UpdateEsigningDocumentPayload & { documentId: string }) =>
+      updateDocumentRequest(envelopeId, documentId, payload, tenantId),
     onSuccess: async (result) => {
       queryClient.setQueryData(['esigning', 'detail', tenantId, envelopeId], result);
       await invalidateEnvelopeQueries(queryClient, tenantId);

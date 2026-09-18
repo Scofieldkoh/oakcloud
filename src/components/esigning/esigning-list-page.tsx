@@ -361,16 +361,20 @@ export function EsigningListPage() {
   const totalResults = envelopesQuery.data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(totalResults / limit));
 
-  const handleStart = useCallback(async (file?: File) => {
+  const handleStart = useCallback(async (files?: File[]) => {
     if (isStarting) {
       return;
     }
 
-    if (file && !isAllowedEsigningUploadFile(file, { wordUploadEnabled })) {
+    const uploadFiles = files ?? [];
+    const invalidFile = uploadFiles.find(
+      (file) => !isAllowedEsigningUploadFile(file, { wordUploadEnabled })
+    );
+    if (invalidFile) {
       toast.error(
         wordUploadEnabled
-          ? 'Upload a PDF, DOCX, or DOC document.'
-          : 'Word upload requires a valid SharePoint or OneDrive connector. Upload a PDF instead.'
+          ? 'Upload PDF, DOCX, or DOC documents.'
+          : 'Word upload requires a valid SharePoint or OneDrive connector. Upload PDF documents instead.'
       );
       return;
     }
@@ -378,7 +382,7 @@ export function EsigningListPage() {
     let createdEnvelope: { id: string } | null = null;
     try {
       setIsStarting(true);
-      const title = file ? getEnvelopeTitleFromFile(file) : 'New Envelope';
+      const title = uploadFiles[0] ? getEnvelopeTitleFromFile(uploadFiles[0]) : 'New Envelope';
       const expiresAt = Number.isInteger(expiresInDays) && expiresInDays > 0
         ? new Date(Date.now() + expiresInDays * 86_400_000).toISOString()
         : undefined;
@@ -397,9 +401,11 @@ export function EsigningListPage() {
         taskContext
       );
 
-      if (file) {
+      if (uploadFiles.length > 0) {
         try {
-          await uploadEsigningDocumentRequest(createdEnvelope.id, file, activeTenantId);
+          for (const file of uploadFiles) {
+            await uploadEsigningDocumentRequest(createdEnvelope.id, file, activeTenantId);
+          }
         } catch (uploadError) {
           let compensationFailed = false;
           try {
@@ -629,15 +635,9 @@ export function EsigningListPage() {
             onDrop={(event) => {
               event.preventDefault();
               setIsDraggingOnHero(false);
-              const file = event.dataTransfer.files[0];
-              if (file && isAllowedEsigningUploadFile(file, { wordUploadEnabled })) {
-                void handleStart(file);
-              } else if (file) {
-                toast.error(
-                  wordUploadEnabled
-                    ? 'Upload a PDF, DOCX, or DOC document.'
-                    : 'Word upload requires a valid SharePoint or OneDrive connector. Upload a PDF instead.'
-                );
+              const files = Array.from(event.dataTransfer.files);
+              if (files.length > 0) {
+                void handleStart(files);
               }
             }}
             className={cn(
