@@ -7,6 +7,7 @@ import { reorderEsigningDocumentSchema } from '@/lib/validations/esigning';
 import {
   deleteEsigningEnvelopeDocument,
   reorderEsigningEnvelopeDocument,
+  updateEsigningEnvelopeDocumentVisibility,
 } from '@/services/esigning-envelope.service';
 
 interface RouteParams {
@@ -23,7 +24,21 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     const tenantId = resolveWorkspaceId(session, body.tenantId);
     const parsed = reorderEsigningDocumentSchema.parse(body);
 
-    const result = await reorderEsigningEnvelopeDocument(session, tenantId, id, docId, parsed.sortOrder);
+    let result = null;
+
+    if (parsed.sortOrder !== undefined) {
+      result = await reorderEsigningEnvelopeDocument(session, tenantId, id, docId, parsed.sortOrder);
+    }
+    if (parsed.visibility !== undefined) {
+      result = await updateEsigningEnvelopeDocumentVisibility(
+        session,
+        tenantId,
+        id,
+        docId,
+        parsed.visibility
+      );
+    }
+
     return NextResponse.json(result);
   } catch (error) {
     if (error instanceof z.ZodError) {

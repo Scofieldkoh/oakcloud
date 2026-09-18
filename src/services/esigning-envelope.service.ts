@@ -9,6 +9,12 @@ import { hashBlake3, hashPassword } from '@/lib/encryption';
 import { createAuditLog } from '@/lib/audit';
 import { storage, StorageKeys } from '@/lib/storage';
 import {
+  getEsigningDocumentVisibility,
+  removeEsigningDocumentVisibility,
+  setEsigningDocumentVisibility,
+  type EsigningDocumentVisibility,
+} from '@/lib/esigning-document-visibility';
+import {
   detectOfficeDocumentType,
   getPdfFileNameForUpload,
 } from '@/lib/office-conversion';
@@ -918,6 +924,13 @@ export async function duplicateEsigningEnvelope(
   const documentIdMap = new Map(
     duplicatedDocuments.map((document) => [document.sourceId, document.id])
   );
+  const duplicatedVisibility = Object.fromEntries(
+    duplicatedDocuments
+      .filter((document) =>
+        getEsigningDocumentVisibility(sourceEnvelope.metadata, document.sourceId) === 'EVERYONE'
+      )
+      .map((document) => [document.id, 'EVERYONE'])
+  );
 
   try {
     await prisma.$transaction(async (tx) => {
@@ -937,6 +950,9 @@ export async function duplicateEsigningEnvelope(
           completionCopyEmails: sourceEnvelope.completionCopyEmails,
           companyId: sourceEnvelope.companyId,
           certificateId,
+          metadata: Object.keys(duplicatedVisibility).length > 0
+            ? { documentVisibility: duplicatedVisibility }
+            : undefined,
         },
       });
 
@@ -2042,6 +2058,12 @@ export async function deleteEsigningEnvelopeDocument(
     await tx.esigningEnvelopeDocument.delete({
       where: { id: documentId },
     });
+    await tx.esigningEnvelope.update({
+      where: { id: envelopeId },
+      data: {
+        metadata: removeEsigningDocumentVisibility(envelope.metadata, documentId),
+      },
+    });
 
     const remaining = envelope.documents.filter((entry) => entry.id !== documentId);
     for (const [index, entry] of remaining.entries()) {
@@ -2130,6 +2152,67 @@ export async function reorderEsigningEnvelopeDocument(
       })
     )
   );
+
+  return getEsigningEnvelopeDetail(session, tenantId, envelopeId);
+}
+
+export async function updateEsigningEnvelopeDocumentVisibility(
+  session: SessionUser,
+  tenantId: string,
+  envelopeId: string,
+  documentId: string,
+  visibility: EsigningDocumentVisibility
+): Promise<EsigningEnvelopeDetailDto> {
+  const scope = await resolveEsigningActorScope(session, tenantId);
+  const envelope = await prisma.esigningEnvelope.findFirst({
+    where: { id: envelopeId, tenantId },
+    select: {
+      id: true,
+      title: true,
+      status: true,
+      companyId: true,
+      createdById: true,
+      metadata: true,
+      documents: {
+        select: { id: true },
+      },
+    },
+  });
+
+  if (!envelope) {
+    throw new Error('Envelope not found');
+  }
+  if (envelope.status !== 'DRAFT') {
+    throw new Error('Document visibility can only be changed while the envelope is a draft');
+  }
+  if (!canMutateEnvelope(scope, session, envelope.createdById)) {
+    throw new Error('Forbidden');
+  }
+  if (!envelope.documents.some((document) => document.id === documentId)) {
+    throw new Error('Document not found');
+  }
+
+  await prisma.esigningEnvelope.update({
+    where: { id: envelopeId },
+    data: {
+      metadata: setEsigningDocumentVisibility(envelope.metadata, documentId, visibility),
+    },
+  });
+
+  await createAuditLog({
+    tenantId,
+    userId: session.id,
+    companyId: envelope.companyId ?? undefined,
+    action: 'UPDATE',
+    entityType: 'EsigningEnvelope',
+    entityId: envelopeId,
+    entityName: envelope.title,
+    summary: `Changed document visibility in e-signing envelope "${envelope.title}"`,
+    metadata: {
+      documentId,
+      visibility,
+    },
+  });
 
   return getEsigningEnvelopeDetail(session, tenantId, envelopeId);
 }

@@ -12,6 +12,7 @@ import type {
 } from '@/types/esigning';
 import type { EsigningListQueryInput } from '@/lib/validations/esigning';
 import { getEsigningDocumentOriginalFileName } from '@/lib/esigning-document-filename';
+import { getEsigningDocumentVisibility } from '@/lib/esigning-document-visibility';
 import { getEsigningEmailDeliveryHealth } from '@/services/esigning-email-delivery.service';
 import {
   getEsigningPostCompletionSummary,
@@ -315,6 +316,7 @@ export function serializeEnvelopeDetail(input: {
       originalFileName: getEsigningDocumentOriginalFileName(document),
       pageCount: document.pageCount,
       sortOrder: document.sortOrder,
+      visibility: getEsigningDocumentVisibility(envelope.metadata, document.id),
       fileSize: document.fileSize,
       originalHash: document.originalHash,
       signedHash: document.signedHash,
