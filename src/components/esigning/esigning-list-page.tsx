@@ -1591,7 +1591,11 @@ export function EsigningListPage() {
               </div>
             ) : viewMode === 'table' ? (
               <>
-                <div className="hidden overflow-x-auto md:block">
+                <div
+                  className="table-container hidden w-full min-w-0 max-w-full overflow-hidden md:block"
+                  style={{ contain: 'inline-size paint' }}
+                >
+                  <div className="max-w-full overflow-x-auto">
                   <table className="w-full min-w-max border-collapse">
                     <colgroup>
                       {ESIGNING_TABLE_COLUMNS.map((columnId) => (
@@ -1602,13 +1606,12 @@ export function EsigningListPage() {
                           }}
                         />
                       ))}
-                      <col style={{ width: '56px' }} />
+                      <col />
                     </colgroup>
                     <thead>
                       <tr className="h-10 border-b border-border-primary bg-background-primary/60 text-left text-[11px] font-semibold uppercase tracking-wide text-text-muted">
                         <th
                           className="relative px-4"
-                          style={{ width: `${columnWidths.status ?? DEFAULT_ESIGNING_COLUMN_WIDTHS.status}px` }}
                           aria-sort={sortBy === 'status' ? (sortOrder === 'asc' ? 'ascending' : 'descending') : 'none'}
                         >
                           <button
@@ -1630,7 +1633,6 @@ export function EsigningListPage() {
 
                         <th
                           className="relative px-4"
-                          style={{ width: `${columnWidths.envelope ?? DEFAULT_ESIGNING_COLUMN_WIDTHS.envelope}px` }}
                           aria-sort={sortBy === 'title' ? (sortOrder === 'asc' ? 'ascending' : 'descending') : 'none'}
                         >
                           <button
@@ -1652,7 +1654,6 @@ export function EsigningListPage() {
 
                         <th
                           className="relative px-4"
-                          style={{ width: `${columnWidths.company ?? DEFAULT_ESIGNING_COLUMN_WIDTHS.company}px` }}
                           aria-sort={sortBy === 'companyName' ? (sortOrder === 'asc' ? 'ascending' : 'descending') : 'none'}
                         >
                           <button
@@ -1674,7 +1675,6 @@ export function EsigningListPage() {
 
                         <th
                           className="relative px-4"
-                          style={{ width: `${columnWidths.details ?? DEFAULT_ESIGNING_COLUMN_WIDTHS.details}px` }}
                           aria-sort={sortBy === 'details' ? (sortOrder === 'asc' ? 'ascending' : 'descending') : 'none'}
                         >
                           <button
@@ -1696,7 +1696,6 @@ export function EsigningListPage() {
 
                         <th
                           className="relative px-4"
-                          style={{ width: `${columnWidths.updated ?? DEFAULT_ESIGNING_COLUMN_WIDTHS.updated}px` }}
                           aria-sort={sortBy === 'updatedAt' ? (sortOrder === 'asc' ? 'ascending' : 'descending') : 'none'}
                         >
                           <button
@@ -1715,7 +1714,7 @@ export function EsigningListPage() {
                             aria-hidden="true"
                           />
                         </th>
-                        <th className="w-[56px] px-2 text-center"><span className="sr-only">Actions</span></th>
+                        <th className="px-2 text-right"><span className="sr-only">Actions</span></th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border-primary">
@@ -1788,7 +1787,7 @@ export function EsigningListPage() {
                               {formatEsigningDateTime(envelope.updatedAt)}
                             </td>
                             <td
-                              className="px-2 py-2.5 text-center align-middle"
+                              className="px-2 py-2.5 text-right align-middle"
                               onClick={(event) => event.stopPropagation()}
                               onKeyDown={(event) => event.stopPropagation()}
                             >
@@ -1807,6 +1806,7 @@ export function EsigningListPage() {
                       })}
                     </tbody>
                   </table>
+                  </div>
                 </div>
 
                 <div className="divide-y divide-border-primary md:hidden">
