@@ -157,8 +157,8 @@ export function EsigningEnvelopeDetailView({
     envelope.canRetryCompletionProcessing;
 
   return (
-    <div className="min-h-screen bg-background-primary">
-      <div className="flex w-full flex-col gap-5 p-4 sm:p-6">
+    <div className="min-h-screen min-w-0 overflow-x-hidden bg-background-primary">
+      <div className="flex w-full min-w-0 max-w-[1600px] flex-col gap-3 p-3 sm:gap-5 sm:p-6">
         <div>
           <Link
             href={returnHref}
@@ -171,17 +171,17 @@ export function EsigningEnvelopeDetailView({
 
         <section
           data-testid="envelope-detail-header"
-          className="rounded-2xl border border-border-primary bg-background-secondary p-5 shadow-sm sm:p-6"
+          className="min-w-0 rounded-2xl border border-border-primary bg-background-secondary p-4 shadow-sm sm:p-6"
         >
           <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
             <div className="min-w-0 flex-1">
-              <div className="flex min-w-0 items-start gap-3">
+              <div className="flex min-w-0 items-start gap-2.5 sm:gap-3">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-oak-primary/10 text-oak-primary">
                   <FileSignature className="h-5 w-5" />
                 </div>
                 <div className="min-w-0">
                   <h1
-                    className="truncate text-xl font-semibold text-text-primary sm:text-2xl"
+                    className="break-words text-lg font-semibold leading-6 text-text-primary sm:text-2xl sm:leading-8"
                     title={envelope.title}
                   >
                     {envelope.title}
@@ -205,7 +205,7 @@ export function EsigningEnvelopeDetailView({
                   <div className="mt-3 space-y-1 text-xs text-text-secondary sm:text-sm">
                     <p>
                       Certificate{' '}
-                      <span className="font-medium text-text-primary">
+                      <span className="break-all font-medium text-text-primary">
                         {envelope.certificateId}
                       </span>
                     </p>
@@ -230,7 +230,7 @@ export function EsigningEnvelopeDetailView({
               ) : null}
             </div>
 
-            <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+            <div className="flex w-full min-w-0 flex-wrap items-center justify-start gap-2 [&>button]:max-w-full sm:w-auto sm:justify-end">
               {envelope.canSend && canUpdateEsigning ? (
                 <Button
                   size="sm"
@@ -318,11 +318,11 @@ export function EsigningEnvelopeDetailView({
           </div>
         </section>
 
-        <div className="grid gap-5 lg:grid-cols-[minmax(0,1.65fr)_minmax(320px,1fr)] lg:items-start">
-          <div className="space-y-5">
+        <div className="grid min-w-0 gap-3 sm:gap-5 lg:grid-cols-[minmax(0,1.65fr)_minmax(320px,1fr)] lg:items-start">
+          <div className="min-w-0 space-y-3 sm:space-y-5">
             <section
               data-testid="envelope-detail-recipients"
-              className="rounded-2xl border border-border-primary bg-background-secondary p-5 shadow-sm sm:p-6"
+              className="min-w-0 rounded-2xl border border-border-primary bg-background-secondary p-4 shadow-sm sm:p-6"
             >
               <div className="flex items-center justify-between gap-3">
                 <h2 className="text-lg font-semibold text-text-primary">Recipients</h2>
@@ -345,7 +345,7 @@ export function EsigningEnvelopeDetailView({
                         aria-hidden="true"
                       />
                       <div className="min-w-0">
-                        <div className="font-medium text-text-primary">
+                        <div className="break-words font-medium text-text-primary">
                           {recipient.name}
                         </div>
                         <div className="mt-1 break-all text-sm text-text-secondary">
@@ -361,7 +361,7 @@ export function EsigningEnvelopeDetailView({
                         </div>
                       </div>
                     </div>
-                    <div className="flex flex-wrap items-center gap-1.5 pl-5 sm:justify-end sm:pl-0">
+                    <div className="flex w-full min-w-0 flex-wrap items-center gap-1.5 sm:w-auto sm:justify-end">
                       {recipient.type === 'CC' ? (
                         <CopyDeliveryStatusBadge
                           status={recipient.copyDeliveryStatus}
@@ -428,7 +428,7 @@ export function EsigningEnvelopeDetailView({
 
             <section
               data-testid="envelope-detail-documents"
-              className="rounded-2xl border border-border-primary bg-background-secondary p-5 shadow-sm sm:p-6"
+              className="min-w-0 rounded-2xl border border-border-primary bg-background-secondary p-4 shadow-sm sm:p-6"
             >
               <div className="flex items-center justify-between gap-3">
                 <h2 className="text-lg font-semibold text-text-primary">Documents</h2>
@@ -442,7 +442,7 @@ export function EsigningEnvelopeDetailView({
                   <div
                     key={doc.id}
                     data-testid="envelope-detail-document-row"
-                    className="flex items-center justify-between gap-4 py-3 first:pt-1 last:pb-0"
+                    className="flex min-w-0 flex-col items-stretch gap-2 py-3 first:pt-1 last:pb-0 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
                   >
                     <div className="min-w-0">
                       <div
@@ -458,9 +458,9 @@ export function EsigningEnvelopeDetailView({
                       </div>
                     </div>
 
-                    <Dropdown className="shrink-0">
+                    <Dropdown className="w-full shrink-0 sm:w-auto">
                       <DropdownTrigger
-                        className="whitespace-nowrap"
+                        className="w-full justify-center whitespace-nowrap sm:w-auto"
                         aria-label={`Download options for ${doc.fileName}`}
                       >
                         <Download className="h-4 w-4" aria-hidden="true" />
@@ -494,18 +494,18 @@ export function EsigningEnvelopeDetailView({
             </section>
           </div>
 
-          <aside className="lg:sticky lg:top-6">
+          <aside className="min-w-0 lg:sticky lg:top-6">
             <section
               data-testid="envelope-detail-activity"
-              className="rounded-2xl border border-border-primary bg-background-secondary p-5 shadow-sm sm:p-6"
+              className="min-w-0 rounded-2xl border border-border-primary bg-background-secondary p-4 shadow-sm sm:p-6"
             >
-              <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <h2 className="text-lg font-semibold text-text-primary">Activity</h2>
-                <div className="flex flex-wrap items-center justify-end gap-2">
+                <div className="flex w-full min-w-0 flex-wrap items-center justify-start gap-2 sm:w-auto sm:justify-end">
                   {activityRecipients.length > 0 ? (
                     <Dropdown>
                       <DropdownTrigger
-                        className="max-w-[190px] whitespace-nowrap text-xs"
+                        className="w-full max-w-full whitespace-nowrap text-xs sm:w-auto sm:max-w-[190px]"
                         aria-label="Filter activity by recipient"
                       >
                         <span className="truncate">
@@ -576,7 +576,7 @@ export function EsigningEnvelopeDetailView({
                         >
                           <div
                             className={cn(
-                              'text-sm text-text-primary',
+                              'break-words text-sm text-text-primary',
                               isCompletion ? 'font-semibold' : 'font-normal'
                             )}
                           >
