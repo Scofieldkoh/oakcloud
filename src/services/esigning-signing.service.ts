@@ -26,7 +26,10 @@ import {
   getEsigningDocumentPdfFileName,
   getEsigningDocumentVariantFileName,
 } from '@/lib/esigning-document-filename';
-import { getEsigningDocumentVisibility } from '@/lib/esigning-document-visibility';
+import {
+  getEsigningDocumentVisibility,
+  isEsigningDocumentVisibleToRecipient,
+} from '@/lib/esigning-document-visibility';
 import { createLogger } from '@/lib/logger';
 import { sendEsigningDeclinedEmailToSender } from '@/services/esigning-notification.service';
 import { activateNextQueuedEsigningRecipients } from '@/services/esigning-envelope.service';
@@ -152,15 +155,15 @@ export async function finalizeEsigningEnvelopeCompletion(
 type SigningContext = Awaited<ReturnType<typeof getSigningContext>>;
 
 function getVisibleSigningDocumentIds(context: SigningContext): Set<string> {
-  const assignedDocumentIds = new Set(
-    context.envelope.fieldDefinitions.map((field) => field.documentId)
-  );
-
   return new Set(
     context.envelope.documents
       .filter((document) =>
-        getEsigningDocumentVisibility(context.envelope.metadata, document.id) === 'EVERYONE'
-        || assignedDocumentIds.has(document.id)
+        isEsigningDocumentVisibleToRecipient({
+          metadata: context.envelope.metadata,
+          documentId: document.id,
+          recipientId: context.recipient.id,
+          fieldDefinitions: context.envelope.fieldDefinitions,
+        })
       )
       .map((document) => document.id)
   );

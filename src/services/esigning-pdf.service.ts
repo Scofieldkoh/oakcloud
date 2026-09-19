@@ -7,6 +7,7 @@ import {
   getEsigningDocumentOriginalFileName,
   getEsigningDocumentVariantFileName,
 } from '@/lib/esigning-document-filename';
+import { isEsigningDocumentVisibleToRecipient } from '@/lib/esigning-document-visibility';
 import { Prisma } from '@/generated/prisma';
 import {
   buildEsigningDeliveryDownloadUrl,
@@ -684,6 +685,12 @@ export async function downloadEsigningDeliveryDocument(input: {
           id: true,
         },
       },
+      fieldDefinitions: {
+        select: {
+          documentId: true,
+          recipientId: true,
+        },
+      },
     },
   });
 
@@ -706,6 +713,19 @@ export async function downloadEsigningDeliveryDocument(input: {
 
   const document = envelope.documents.find((entry) => entry.id === input.documentId);
   if (!document) {
+    throw new Error('Document not found');
+  }
+
+  if (
+    claims.actorType === 'recipient' &&
+    claims.recipientId &&
+    !isEsigningDocumentVisibleToRecipient({
+      metadata: envelope.metadata,
+      documentId: document.id,
+      recipientId: claims.recipientId,
+      fieldDefinitions: envelope.fieldDefinitions,
+    })
+  ) {
     throw new Error('Document not found');
   }
 

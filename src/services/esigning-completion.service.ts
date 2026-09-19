@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma';
 import { storage, StorageKeys } from '@/lib/storage';
 import { ensureFilingJobsForCompletedEnvelope } from '@/services/esigning-sharepoint-filing/enqueue';
 import { getEsigningDocumentOriginalFileName } from '@/lib/esigning-document-filename';
+import { isEsigningDocumentVisibleToRecipient } from '@/lib/esigning-document-visibility';
 import { createAuditLog } from '@/lib/audit';
 import { createLogger } from '@/lib/logger';
 import type {
@@ -888,6 +889,7 @@ export async function processEsigningCompletionDelivery(
             title: true,
             certificateId: true,
             createdById: true,
+            metadata: true,
             createdBy: {
               select: {
                 firstName: true,
@@ -911,6 +913,12 @@ export async function processEsigningCompletionDelivery(
                 signedStoragePath: true,
               },
             },
+            fieldDefinitions: {
+              select: {
+                documentId: true,
+                recipientId: true,
+              },
+            },
           },
         },
       },
@@ -922,12 +930,34 @@ export async function processEsigningCompletionDelivery(
     if (delivery.envelope.documents.length === 0) {
       throw new Error('Completed envelope has no signed documents to deliver');
     }
-    if (delivery.envelope.documents.some((document) => !document.signedStoragePath)) {
+
+    const isRecipientDelivery = delivery.audience === 'RECIPIENT';
+    const recipientId = isRecipientDelivery ? delivery.recipientId ?? undefined : undefined;
+    if (isRecipientDelivery && !recipientId) {
+      throw new Error('Completion recipient is missing its recipient identity');
+    }
+
+    const deliveryDocuments =
+      isRecipientDelivery
+        ? delivery.envelope.documents.filter((document) =>
+            isEsigningDocumentVisibleToRecipient({
+              metadata: delivery.envelope.metadata,
+              documentId: document.id,
+              recipientId: recipientId as string,
+              fieldDefinitions: delivery.envelope.fieldDefinitions,
+            })
+          )
+        : delivery.envelope.documents;
+
+    if (deliveryDocuments.length === 0) {
+      throw new Error('No documents are visible to this completion recipient');
+    }
+    if (deliveryDocuments.some((document) => !document.signedStoragePath)) {
       throw new Error('Signed artifacts are not ready for delivery');
     }
 
     const signedBuffers = await Promise.all(
-      delivery.envelope.documents.map(async (document) => {
+      deliveryDocuments.map(async (document) => {
         const [signedBuffer, certificateBuffer] = await Promise.all([
           storage.download(document.signedStoragePath as string),
           storage.download(
@@ -949,15 +979,12 @@ export async function processEsigningCompletionDelivery(
       })
     );
     const attachments = await buildEmailAttachments({ documents: signedBuffers });
-    const isRecipientDelivery = delivery.audience === 'RECIPIENT';
     const actorType = isRecipientDelivery ? 'recipient' : 'sender';
-    const recipientId =
-      isRecipientDelivery ? delivery.recipientId ?? undefined : undefined;
     const documentLinks = await buildDeliveryDocumentLinks({
       envelopeId: delivery.envelope.id,
       actorType,
       recipientId,
-      documents: delivery.envelope.documents.map((document) => ({
+      documents: deliveryDocuments.map((document) => ({
         id: document.id,
         fileName: document.fileName,
         originalFileName: document.originalFileName,
