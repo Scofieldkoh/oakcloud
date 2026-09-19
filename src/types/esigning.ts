@@ -58,7 +58,12 @@ export interface EsigningEnvelopeListItem {
   resendableRecipientCount: number;
   recipientCount: number;
   signerCount: number;
+  completedSignerCount: number;
   documentCount: number;
+  documents: Array<{
+    id: string;
+    fileName: string;
+  }>;
   recipients: Array<{
     id: string;
     name: string;

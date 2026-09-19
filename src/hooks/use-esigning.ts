@@ -68,6 +68,16 @@ async function fetchEsigningEnvelopes(
   if (params.status) searchParams.set('status', params.status);
   if (params.statuses?.length) searchParams.set('statuses', params.statuses.join(','));
   if (params.companyId) searchParams.set('companyId', params.companyId);
+  if (params.documentName) searchParams.set('documentName', params.documentName);
+  if (params.recipientQuery) searchParams.set('recipientQuery', params.recipientQuery);
+  if (params.recipientStatus) searchParams.set('recipientStatus', params.recipientStatus);
+  if (params.signingOrder) searchParams.set('signingOrder', params.signingOrder);
+  if (params.createdFrom) searchParams.set('createdFrom', params.createdFrom);
+  if (params.createdTo) searchParams.set('createdTo', params.createdTo);
+  if (params.sentFrom) searchParams.set('sentFrom', params.sentFrom);
+  if (params.sentTo) searchParams.set('sentTo', params.sentTo);
+  if (params.completedFrom) searchParams.set('completedFrom', params.completedFrom);
+  if (params.completedTo) searchParams.set('completedTo', params.completedTo);
   if (params.createdBy) searchParams.set('createdBy', params.createdBy);
   if (params.page) searchParams.set('page', String(params.page));
   if (params.limit) searchParams.set('limit', String(params.limit));

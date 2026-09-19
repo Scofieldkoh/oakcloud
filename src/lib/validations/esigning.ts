@@ -276,6 +276,10 @@ export const reorderEsigningRecipientsSchema = z.object({
   }
 );
 
+const esigningListDateSchema = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, 'Expected date in YYYY-MM-DD format');
+
 export const esigningListQuerySchema = paginationSchema.extend({
   query: z.string().trim().max(200).optional(),
   status: esigningEnvelopeStatusSchema.optional(),
@@ -295,6 +299,16 @@ export const esigningListQuerySchema = paginationSchema.extend({
     z.array(esigningEnvelopeStatusSchema).min(1).optional()
   ),
   companyId: uuidString.optional(),
+  documentName: z.string().trim().max(255).optional(),
+  recipientQuery: z.string().trim().max(320).optional(),
+  recipientStatus: esigningRecipientStatusSchema.optional(),
+  signingOrder: esigningSigningOrderSchema.optional(),
+  createdFrom: esigningListDateSchema.optional(),
+  createdTo: esigningListDateSchema.optional(),
+  sentFrom: esigningListDateSchema.optional(),
+  sentTo: esigningListDateSchema.optional(),
+  completedFrom: esigningListDateSchema.optional(),
+  completedTo: esigningListDateSchema.optional(),
   createdBy: z.enum(['me', 'all']).optional().default('all'),
   sortBy: z.enum(['createdAt', 'updatedAt', 'completedAt', 'title']).optional().default('updatedAt'),
   sortOrder: sortOrderSchema,
