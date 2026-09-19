@@ -473,6 +473,81 @@ describe('EsigningListPage resizable columns', () => {
   });
 });
 
+describe('EsigningListPage sorting and card layout', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    navigationMocks.searchParams = new URLSearchParams();
+    mocks.lastListParams = null;
+    mocks.columnWidthPreference = {};
+    mocks.listData = {
+      envelopes: [envelope({
+        title: 'FY26 Financial Statements',
+        companyName: 'Xplorers.Life Pte Ltd',
+        recipients: [{
+          id: 'recipient-1',
+          name: 'Jonnansical Boo Chiew Chiun',
+          email: 'signer@example.com',
+          type: 'SIGNER',
+          status: 'SIGNED',
+          signingOrder: null,
+          copyDeliveryStatus: 'SENT',
+        }],
+      })],
+      companyOptions: [],
+      total: 1,
+      statusCounts: {
+        DRAFT: 0,
+        SENT: 0,
+        IN_PROGRESS: 0,
+        COMPLETED: 1,
+        VOIDED: 0,
+        DECLINED: 0,
+        EXPIRED: 0,
+      },
+    };
+  });
+
+  it('sorts every data column through the server query', async () => {
+    render(<EsigningListPage />);
+
+    const cases: Array<[string, string, 'asc' | 'desc']> = [
+      ['Status', 'status', 'asc'],
+      ['Envelope name', 'title', 'asc'],
+      ['Company', 'companyName', 'asc'],
+      ['Details', 'details', 'asc'],
+      ['Last updated', 'updatedAt', 'desc'],
+    ];
+
+    for (const [label, expectedSortBy, expectedSortOrder] of cases) {
+      await userEvent.click(screen.getByRole('button', { name: label }));
+      await waitFor(() => {
+        expect(mocks.lastListParams?.sortBy).toBe(expectedSortBy);
+        expect(mocks.lastListParams?.sortOrder).toBe(expectedSortOrder);
+      });
+    }
+  });
+
+  it('uses a compact status-border card with signer status text removed and a bottom-aligned footer', async () => {
+    render(<EsigningListPage />);
+    await userEvent.click(screen.getByRole('button', { name: 'Card view' }));
+
+    const title = screen.getByText('FY26 Financial Statements');
+    const card = title.closest('article');
+    expect(card).not.toBeNull();
+
+    const statusHeader = title.closest('.border-t-4');
+    expect(statusHeader).toHaveClass('border-t-emerald-400');
+    expect(title.nextElementSibling).toHaveClass('mt-0.5');
+
+    expect(screen.getByText('Jonnansical Boo Chiew Chiun')).toBeInTheDocument();
+    expect(screen.queryByText('Signed')).not.toBeInTheDocument();
+    expect(screen.queryByText('COMPLETED')).not.toBeInTheDocument();
+
+    const footerText = screen.getByText(/1 docs · 1 signers · Parallel/);
+    expect(footerText.parentElement).toHaveClass('mt-auto');
+  });
+});
+
 describe('EsigningListPage company filter query', () => {
   beforeEach(() => {
     vi.clearAllMocks();

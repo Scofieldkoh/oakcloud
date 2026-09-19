@@ -310,7 +310,10 @@ export const esigningListQuerySchema = paginationSchema.extend({
   completedFrom: esigningListDateSchema.optional(),
   completedTo: esigningListDateSchema.optional(),
   createdBy: z.enum(['me', 'all']).optional().default('all'),
-  sortBy: z.enum(['createdAt', 'updatedAt', 'completedAt', 'title']).optional().default('updatedAt'),
+  sortBy: z
+    .enum(['createdAt', 'updatedAt', 'completedAt', 'title', 'status', 'companyName', 'details'])
+    .optional()
+    .default('updatedAt'),
   sortOrder: sortOrderSchema,
 });
 
