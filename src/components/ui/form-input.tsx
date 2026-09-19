@@ -11,6 +11,7 @@ export interface FormInputProps extends Omit<InputHTMLAttributes<HTMLInputElemen
   inputSize?: 'xs' | 'sm' | 'md' | 'lg';
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
+  containerClassName?: string;
 }
 
 const sizeConfig = {
@@ -21,7 +22,7 @@ const sizeConfig = {
 };
 
 export const FormInput = forwardRef<HTMLInputElement, FormInputProps>(
-  ({ label, error, hint, inputSize = 'sm', leftIcon, rightIcon, id, type, className, ...props }, ref) => {
+  ({ label, error, hint, inputSize = 'sm', leftIcon, rightIcon, containerClassName, id, type, className, ...props }, ref) => {
     const [showPassword, setShowPassword] = useState(false);
     const isPassword = type === 'password';
     const inputType = isPassword && showPassword ? 'text' : type;
@@ -29,7 +30,7 @@ export const FormInput = forwardRef<HTMLInputElement, FormInputProps>(
     const config = sizeConfig[inputSize];
 
     return (
-      <div className="flex flex-col gap-2">
+      <div className={cn('flex flex-col gap-2', containerClassName)}>
         {label && (
           <label htmlFor={inputId} className="block text-xs font-medium text-text-secondary">
             {label}

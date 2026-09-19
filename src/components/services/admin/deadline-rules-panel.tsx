@@ -398,7 +398,7 @@ export function DeadlineRulesPanel({
                   </div>
                 </>
               ) : (
-                <div className="mx-auto w-full max-w-[1040px] px-4 sm:px-5">
+                <div className="w-full max-w-[1040px] px-4 sm:px-5">
                   <section className="grid grid-cols-1 gap-x-8 gap-y-5 py-5 sm:grid-cols-2" aria-label="Rule summary">
                     <div><p className="text-xs font-medium text-text-muted">Recurrence</p><p className="mt-1 text-sm text-text-primary">{describeRuleRecurrence(selectedVersion?.recurrence)}</p></div>
                     <div><p className="text-xs font-medium text-text-muted">Applies to</p><p className="mt-1 text-sm text-text-primary">{applicabilitySummary(selectedVersion?.applicability)}</p></div>
