@@ -1,11 +1,12 @@
 'use client';
 
-import { useMemo, useState, type FormEvent } from 'react';
+import { useMemo, useState, type ComponentProps, type FormEvent } from 'react';
 import { ChevronDown, ChevronRight, Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { FormInput } from '@/components/ui/form-input';
 import type { DeadlineRuleDraftInput } from '@/lib/validations/deadline-rule';
 import type { DeadlineRuleDto, DeadlineRuleVersionDto } from '@/services/deadline-rule';
+import { cn } from '@/lib/utils';
 
 type FormNode = Record<string, unknown>;
 type DateExpression = DeadlineRuleDraftInput['milestones'][number]['expression'];
@@ -46,6 +47,26 @@ const MILESTONE_TYPES = [
   { value: 'CLIENT', label: 'Client' },
   { value: 'INTERNAL', label: 'Internal' },
 ] as const;
+
+
+const RULE_CONTROL_CLASS = 'input input-sm min-h-11 px-3 py-0 text-sm leading-5 sm:min-h-9';
+const RULE_LABEL_CONTROL_CLASS = `${RULE_CONTROL_CLASS} mt-1.5 w-full`;
+
+function RuleFormInput({
+  className,
+  containerClassName,
+  inputSize: _inputSize,
+  ...props
+}: ComponentProps<typeof FormInput>) {
+  return (
+    <FormInput
+      {...props}
+      inputSize="sm"
+      containerClassName={cn('gap-1.5', containerClassName)}
+      className={cn('min-h-11 px-3 text-sm leading-5 sm:min-h-9', className)}
+    />
+  );
+}
 
 function directSource(field = 'accountsDueDate'): FormNode {
   return { kind: 'COMPANY_FIELD', field };
@@ -308,7 +329,7 @@ function ApplicabilityNodeEditor({
           <select
             id={`app-group-${path.join('-') || 'root'}`}
             aria-label="Group"
-            className="input input-sm min-h-[44px] w-auto"
+            className={cn(RULE_CONTROL_CLASS, "w-auto")}
             value={String(node.kind)}
             disabled={disabled}
             onChange={(event) => onChange(path, { ...node, kind: event.target.value })}
@@ -317,7 +338,7 @@ function ApplicabilityNodeEditor({
             <option value="ANY">Any condition is true</option>
           </select>
           {onRemove ? (
-            <Button type="button" size="xs" variant="ghost" className="min-h-[44px]" onClick={onRemove} disabled={disabled}>
+            <Button type="button" size="xs" variant="ghost" onClick={onRemove} disabled={disabled}>
               Remove group
             </Button>
           ) : null}
@@ -348,7 +369,7 @@ function ApplicabilityNodeEditor({
             type="button"
             size="xs"
             variant="secondary"
-            className="min-h-[44px]"
+
             disabled={disabled}
             onClick={() => onChange(path, { ...node, conditions: [...conditions, initialPredicate()] })}
           >
@@ -358,7 +379,7 @@ function ApplicabilityNodeEditor({
             type="button"
             size="xs"
             variant="ghost"
-            className="min-h-[44px]"
+
             disabled={disabled}
             onClick={() => onChange(path, { ...node, conditions: [...conditions, initialGroup('ALL')] })}
           >
@@ -381,7 +402,7 @@ function ApplicabilityNodeEditor({
         <label className="text-xs font-medium text-text-secondary">
           Company field
           <select
-            className="input input-sm mt-1 min-h-[44px] w-full"
+            className={RULE_LABEL_CONTROL_CLASS}
             value={field}
             disabled={disabled}
             onChange={(event) => onChange(path, defaultPredicateForField(event.target.value))}
@@ -392,7 +413,7 @@ function ApplicabilityNodeEditor({
         <label className="text-xs font-medium text-text-secondary">
           Operator
           <select
-            className="input input-sm mt-1 min-h-[44px] w-full"
+            className={RULE_LABEL_CONTROL_CLASS}
             value={String(node.kind ?? operators[0][0])}
             disabled={disabled}
             onChange={(event) => onChange(path, predicateForOperator(field, event.target.value, node))}
@@ -404,7 +425,7 @@ function ApplicabilityNodeEditor({
           <label className="text-xs font-medium text-text-secondary">
             Value
             <input
-              className="input input-sm mt-1 min-h-[44px] w-full"
+              className={RULE_LABEL_CONTROL_CLASS}
               type={definition.kind === 'number' ? 'number' : definition.kind === 'date' ? 'date' : 'text'}
               value={Array.isArray(node.values) ? node.values.join(', ') : String(value ?? '')}
               disabled={disabled}
@@ -425,7 +446,7 @@ function ApplicabilityNodeEditor({
           </label>
         ) : <span />}
         <div className="flex items-end justify-end">
-          <Button type="button" size="xs" variant="ghost" className="min-h-[44px]" onClick={onRemove} disabled={disabled}>
+          <Button type="button" size="xs" variant="ghost" onClick={onRemove} disabled={disabled}>
             Remove
           </Button>
         </div>
@@ -452,7 +473,7 @@ function SourceEditor({
         Starting date
         <select
           id={`${prefix}-source`}
-          className="input input-sm mt-1 min-h-[44px] w-full"
+          className={RULE_LABEL_CONTROL_CLASS}
           value={sourceKind}
           disabled={disabled}
           onChange={(event) => {
@@ -467,7 +488,7 @@ function SourceEditor({
         <label className="text-xs font-medium text-text-secondary">
           Company date
           <select
-            className="input input-sm mt-1 min-h-[44px] w-full"
+            className={RULE_LABEL_CONTROL_CLASS}
             value={typeof source.field === 'string' ? source.field : 'accountsDueDate'}
             disabled={disabled}
             onChange={(event) => onChange({ kind: 'COMPANY_FIELD', field: event.target.value })}
@@ -478,12 +499,12 @@ function SourceEditor({
           </select>
         </label>
       ) : ['PARAMETER', 'MILESTONE', 'SCHEDULE_ENTRY'].includes(sourceKind) ? (
-        <FormInput
+        <RuleFormInput
           label="Source key"
           value={typeof source.key === 'string' ? source.key : ''}
           disabled={disabled}
           onChange={(event) => onChange({ ...source, key: event.target.value })}
-          className="min-h-[44px]"
+
         />
       ) : null}
     </div>
@@ -524,7 +545,7 @@ function ExpressionEditor({
         Calculation
         <select
           id={`${prefix}-operation`}
-          className="input input-sm mt-1 min-h-[44px] w-full"
+          className={RULE_LABEL_CONTROL_CLASS}
           value={kind}
           disabled={disabled}
           onChange={(event) => onChange(nextExpression(event.target.value))}
@@ -536,13 +557,13 @@ function ExpressionEditor({
       {['ADD_CALENDAR_DAYS', 'ADD_BUSINESS_DAYS', 'ADD_MONTHS'].includes(kind) ? (
         <div className="space-y-3">
           <SourceEditor source={source} onChange={(next) => onChange({ ...expression, source: next })} disabled={disabled} prefix={prefix} />
-          <FormInput
+          <RuleFormInput
             label={kind === 'ADD_MONTHS' ? 'Months to add' : kind === 'ADD_BUSINESS_DAYS' ? 'Business days to add' : 'Calendar days to add'}
             type="number"
             value={String(amount)}
             disabled={disabled}
             onChange={(event) => onChange({ ...expression, amount: Number(event.target.value) })}
-            className="min-h-[44px]"
+
           />
         </div>
       ) : null}
@@ -550,10 +571,10 @@ function ExpressionEditor({
         <div className="space-y-3">
           <SourceEditor source={source} onChange={(next) => onChange({ ...expression, source: next })} disabled={disabled} prefix={prefix} />
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <FormInput label="Offset" type="number" value={String(amount)} disabled={disabled} onChange={(event) => onChange({ ...expression, offset: Number(event.target.value) })} className="min-h-[44px]" />
+            <RuleFormInput label="Offset" type="number" value={String(amount)} disabled={disabled} onChange={(event) => onChange({ ...expression, offset: Number(event.target.value) })} />
             <label className="text-xs font-medium text-text-secondary">
               Offset unit
-              <select className="input input-sm mt-1 min-h-[44px] w-full" value={expression.unit === 'BUSINESS_DAY' ? 'BUSINESS_DAY' : 'CALENDAR_DAY'} disabled={disabled} onChange={(event) => onChange({ ...expression, unit: event.target.value })}>
+              <select className={RULE_LABEL_CONTROL_CLASS} value={expression.unit === 'BUSINESS_DAY' ? 'BUSINESS_DAY' : 'CALENDAR_DAY'} disabled={disabled} onChange={(event) => onChange({ ...expression, unit: event.target.value })}>
                 <option value="CALENDAR_DAY">Calendar days</option>
                 <option value="BUSINESS_DAY">Business days</option>
               </select>
@@ -564,7 +585,7 @@ function ExpressionEditor({
       {kind === 'ADJUST_BUSINESS_DAY' ? (
         <label className="text-xs font-medium text-text-secondary">
           Adjustment
-          <select className="input input-sm mt-1 min-h-[44px] w-full" value={expression.adjustment === 'NEXT' ? 'NEXT' : 'PREVIOUS'} disabled={disabled} onChange={(event) => onChange({ ...expression, adjustment: event.target.value })}>
+          <select className={RULE_LABEL_CONTROL_CLASS} value={expression.adjustment === 'NEXT' ? 'NEXT' : 'PREVIOUS'} disabled={disabled} onChange={(event) => onChange({ ...expression, adjustment: event.target.value })}>
             <option value="PREVIOUS">Previous business day</option>
             <option value="NEXT">Next business day</option>
           </select>
@@ -645,30 +666,33 @@ export function DeadlineRuleForm({
 
   return (
     <form onSubmit={handleSubmit} aria-label={title}>
-      <div className="mx-auto w-full max-w-[1040px] px-4 sm:px-5">
+      <div className="w-full max-w-[1040px] px-4 sm:px-5">
         {validationError ? (
           <div role="alert" className="mt-4 rounded-lg border border-status-error/40 bg-status-error/10 p-3 text-sm text-status-error">
             {validationError}
           </div>
         ) : null}
 
-        <section className="space-y-4 py-5" aria-labelledby="rule-details-heading">
+        <section className="space-y-3 py-4" aria-labelledby="rule-details-heading">
           <div>
             <h3 id="rule-details-heading" className="text-base font-semibold text-text-primary">Rule details</h3>
             <p className="mt-1 text-xs text-text-muted">Name the rule and define how often its cycle repeats.</p>
           </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <FormInput label="Rule name" value={draft.name} disabled={disabled} required onChange={(event) => updateDraft((current) => ({ ...current, name: event.target.value }))} />
-            <FormInput label="Rule code" value={draft.code} disabled={disabled || Boolean(initialValue)} required onChange={(event) => updateDraft((current) => ({ ...current, code: event.target.value }))} hint={initialValue ? 'Technical identifier cannot be changed after creation.' : 'Use a stable technical identifier, for example SG_ECI.'} />
+            <RuleFormInput label="Rule name" value={draft.name} disabled={disabled} required onChange={(event) => updateDraft((current) => ({ ...current, name: event.target.value }))} />
+            <RuleFormInput label="Rule code" value={draft.code} disabled={disabled || Boolean(initialValue)} required onChange={(event) => updateDraft((current) => ({ ...current, code: event.target.value }))} />
           </div>
-          <label className="block text-xs font-medium text-text-secondary">
-            Description
-            <textarea className="input mt-1.5 min-h-[72px] w-full" rows={2} value={draft.description ?? ''} disabled={disabled} onChange={(event) => updateDraft((current) => ({ ...current, description: event.target.value || null }))} />
-          </label>
+          <p className="text-[11px] text-text-muted">{initialValue ? 'Rule code is fixed after creation.' : 'Use a stable technical code, for example SG_ECI.'}</p>
+          <RuleFormInput
+            label="Description"
+            value={draft.description ?? ''}
+            disabled={disabled}
+            onChange={(event) => updateDraft((current) => ({ ...current, description: event.target.value || null }))}
+          />
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <label className="text-xs font-medium text-text-secondary">
               Recurrence
-              <select className="input mt-1.5 min-h-[44px] w-full" value={recurrenceKind} disabled={disabled} onChange={(event) => updateDraft((current) => ({ ...current, recurrence: event.target.value === 'ONE_TIME' ? { schemaVersion: 1, kind: 'ONE_TIME' } : event.target.value === 'CUSTOM' ? { schemaVersion: 1, kind: 'CUSTOM', interval: 1, unit: 'MONTH' } : { schemaVersion: 1, kind: event.target.value as 'MONTHLY' | 'QUARTERLY' | 'SEMI_ANNUALLY' | 'ANNUALLY', interval: 1 } }))}>
+              <select className={RULE_LABEL_CONTROL_CLASS} value={recurrenceKind} disabled={disabled} onChange={(event) => updateDraft((current) => ({ ...current, recurrence: event.target.value === 'ONE_TIME' ? { schemaVersion: 1, kind: 'ONE_TIME' } : event.target.value === 'CUSTOM' ? { schemaVersion: 1, kind: 'CUSTOM', interval: 1, unit: 'MONTH' } : { schemaVersion: 1, kind: event.target.value as 'MONTHLY' | 'QUARTERLY' | 'SEMI_ANNUALLY' | 'ANNUALLY', interval: 1 } }))}>
                 <option value="MONTHLY">Monthly</option>
                 <option value="QUARTERLY">Quarterly</option>
                 <option value="SEMI_ANNUALLY">Semi-annually</option>
@@ -678,14 +702,14 @@ export function DeadlineRuleForm({
               </select>
             </label>
             {recurrenceKind !== 'ONE_TIME' ? (
-              <FormInput label="Repeat every" type="number" min={1} max={120} value={String('interval' in draft.recurrence ? draft.recurrence.interval ?? 1 : 1)} disabled={disabled} onChange={(event) => updateDraft((current) => ({ ...current, recurrence: { ...current.recurrence, interval: Number(event.target.value) } as DeadlineRuleDraftInput['recurrence'] }))} hint={describeRuleRecurrence(draft.recurrence)} />
+              <RuleFormInput label="Repeat every" type="number" min={1} max={120} value={String('interval' in draft.recurrence ? draft.recurrence.interval ?? 1 : 1)} disabled={disabled} onChange={(event) => updateDraft((current) => ({ ...current, recurrence: { ...current.recurrence, interval: Number(event.target.value) } as DeadlineRuleDraftInput['recurrence'] }))} />
             ) : (
               <div className="self-end rounded-md bg-background-tertiary px-3 py-2 text-xs text-text-muted">One-time rules create one cycle when activated.</div>
             )}
           </div>
         </section>
 
-        <section className="space-y-4 border-t border-border-secondary py-5" aria-labelledby="applicability-heading">
+        <section className="space-y-3 border-t border-border-secondary py-4" aria-labelledby="applicability-heading">
           <div>
             <h3 id="applicability-heading" className="text-base font-semibold text-text-primary">Who this applies to</h3>
             <p className="mt-1 text-xs text-text-muted">Limit the rule using company attributes. Leave this empty to apply it to all eligible companies.</p>
@@ -693,13 +717,13 @@ export function DeadlineRuleForm({
           <ApplicabilityNodeEditor node={rootApplicability} path={[]} onChange={updateApplicability} disabled={disabled} />
         </section>
 
-        <section className="space-y-4 border-t border-border-secondary py-5" aria-labelledby="parameters-heading">
+        <section className="space-y-3 border-t border-border-secondary py-4" aria-labelledby="parameters-heading">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <h3 id="parameters-heading" className="text-base font-semibold text-text-primary">Rule variables</h3>
               <p className="mt-1 text-xs text-text-muted">Reusable values referenced by deadline calculations or service assignments.</p>
             </div>
-            <Button type="button" size="xs" variant="secondary" className="min-h-[44px]" leftIcon={<Plus className="h-3.5 w-3.5" />} disabled={disabled} onClick={() => updateDraft((current) => ({ ...current, parameters: [...current.parameters, { key: `parameter${current.parameters.length + 1}`, label: 'New variable', description: null, type: 'STRING', required: false }] }))}>
+            <Button type="button" size="xs" variant="secondary" leftIcon={<Plus className="h-3.5 w-3.5" />} disabled={disabled} onClick={() => updateDraft((current) => ({ ...current, parameters: [...current.parameters, { key: `parameter${current.parameters.length + 1}`, label: 'New variable', description: null, type: 'STRING', required: false }] }))}>
               Add variable
             </Button>
           </div>
@@ -710,11 +734,11 @@ export function DeadlineRuleForm({
             <div className="overflow-hidden rounded-md border border-border-primary">
               {parameters.map((parameter, index) => (
                 <div key={`${parameter.key}-${index}`} className="grid grid-cols-1 gap-3 border-b border-border-secondary bg-background-primary p-3 last:border-b-0 sm:grid-cols-[1fr_1fr_150px_auto]">
-                  <FormInput label="Display name" value={parameter.label} disabled={disabled} onChange={(event) => updateDraft((current) => ({ ...current, parameters: current.parameters.map((item, itemIndex) => itemIndex === index ? { ...item, label: event.target.value } : item) }))} />
-                  <FormInput label="Variable key" value={parameter.key} disabled={disabled} onChange={(event) => updateDraft((current) => ({ ...current, parameters: current.parameters.map((item, itemIndex) => itemIndex === index ? { ...item, key: event.target.value } : item) }))} />
+                  <RuleFormInput label="Display name" value={parameter.label} disabled={disabled} onChange={(event) => updateDraft((current) => ({ ...current, parameters: current.parameters.map((item, itemIndex) => itemIndex === index ? { ...item, label: event.target.value } : item) }))} />
+                  <RuleFormInput label="Variable key" value={parameter.key} disabled={disabled} onChange={(event) => updateDraft((current) => ({ ...current, parameters: current.parameters.map((item, itemIndex) => itemIndex === index ? { ...item, key: event.target.value } : item) }))} />
                   <label className="text-xs font-medium text-text-secondary">
                     Type
-                    <select className="input mt-1.5 min-h-[44px] w-full" value={parameter.type} disabled={disabled} onChange={(event) => updateDraft((current) => ({ ...current, parameters: current.parameters.map((item, itemIndex) => itemIndex === index ? { ...item, type: event.target.value as typeof item.type, ...(event.target.value === 'ENUM' ? { options: item.options ?? ['Option 1'] } : { options: undefined }) } : item) }))}>
+                    <select className={RULE_LABEL_CONTROL_CLASS} value={parameter.type} disabled={disabled} onChange={(event) => updateDraft((current) => ({ ...current, parameters: current.parameters.map((item, itemIndex) => itemIndex === index ? { ...item, type: event.target.value as typeof item.type, ...(event.target.value === 'ENUM' ? { options: item.options ?? ['Option 1'] } : { options: undefined }) } : item) }))}>
                       <option value="STRING">String</option>
                       <option value="INTEGER">Integer</option>
                       <option value="DECIMAL">Decimal</option>
@@ -728,12 +752,12 @@ export function DeadlineRuleForm({
                       <input type="checkbox" checked={parameter.required} disabled={disabled} onChange={(event) => updateDraft((current) => ({ ...current, parameters: current.parameters.map((item, itemIndex) => itemIndex === index ? { ...item, required: event.target.checked } : item) }))} />
                       Required
                     </label>
-                    <Button type="button" size="xs" variant="ghost" className="min-h-[44px]" aria-label={`Remove variable ${parameter.label}`} onClick={() => updateDraft((current) => ({ ...current, parameters: current.parameters.filter((_, itemIndex) => itemIndex !== index) }))} disabled={disabled}>
+                    <Button type="button" size="xs" variant="ghost" aria-label={`Remove variable ${parameter.label}`} onClick={() => updateDraft((current) => ({ ...current, parameters: current.parameters.filter((_, itemIndex) => itemIndex !== index) }))} disabled={disabled}>
                       <Trash2 className="h-4 w-4 text-status-error" />
                     </Button>
                   </div>
                   {parameter.type === 'ENUM' ? (
-                    <FormInput label="Allowed options (comma separated)" value={(parameter.options ?? []).join(', ')} disabled={disabled} onChange={(event) => updateDraft((current) => ({ ...current, parameters: current.parameters.map((item, itemIndex) => itemIndex === index ? { ...item, options: event.target.value.split(',').map((option) => option.trim()).filter(Boolean) } : item) }))} className="sm:col-span-3" />
+                    <RuleFormInput label="Allowed options (comma separated)" value={(parameter.options ?? []).join(', ')} disabled={disabled} onChange={(event) => updateDraft((current) => ({ ...current, parameters: current.parameters.map((item, itemIndex) => itemIndex === index ? { ...item, options: event.target.value.split(',').map((option) => option.trim()).filter(Boolean) } : item) }))} containerClassName="sm:col-span-3" />
                   ) : null}
                 </div>
               ))}
@@ -741,13 +765,13 @@ export function DeadlineRuleForm({
           )}
         </section>
 
-        <section className="space-y-4 border-t border-border-secondary py-5" aria-labelledby="milestones-heading">
+        <section className="space-y-3 border-t border-border-secondary py-4" aria-labelledby="milestones-heading">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <h3 id="milestones-heading" className="text-base font-semibold text-text-primary">Deadline calculation</h3>
               <p className="mt-1 text-xs text-text-muted">Define each deadline in business language, then use advanced options only when necessary.</p>
             </div>
-            <Button type="button" size="xs" variant="secondary" className="min-h-[44px]" leftIcon={<Plus className="h-3.5 w-3.5" />} disabled={disabled} onClick={addMilestone}>
+            <Button type="button" size="xs" variant="secondary" leftIcon={<Plus className="h-3.5 w-3.5" />} disabled={disabled} onClick={addMilestone}>
               Add deadline
             </Button>
           </div>
@@ -777,12 +801,12 @@ export function DeadlineRuleForm({
                   </button>
 
                   {expanded ? (
-                    <div className="space-y-4 border-t border-border-secondary bg-background-secondary px-3 py-4 sm:px-4">
+                    <div className="space-y-3 border-t border-border-secondary bg-background-secondary px-3 py-3 sm:px-4">
                       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                        <FormInput label="Deadline name" value={milestone.name} disabled={disabled} onChange={(event) => updateDraft((current) => ({ ...current, milestones: current.milestones.map((item, itemIndex) => itemIndex === index ? { ...item, name: event.target.value } : item) }))} />
+                        <RuleFormInput label="Deadline name" value={milestone.name} disabled={disabled} onChange={(event) => updateDraft((current) => ({ ...current, milestones: current.milestones.map((item, itemIndex) => itemIndex === index ? { ...item, name: event.target.value } : item) }))} />
                         <label className="text-xs font-medium text-text-secondary">
                           Deadline type
-                          <select className="input mt-1.5 min-h-[44px] w-full" value={milestone.type} disabled={disabled} onChange={(event) => updateDraft((current) => ({ ...current, milestones: current.milestones.map((item, itemIndex) => itemIndex === index ? { ...item, type: event.target.value as typeof item.type } : item) }))}>
+                          <select className={RULE_LABEL_CONTROL_CLASS} value={milestone.type} disabled={disabled} onChange={(event) => updateDraft((current) => ({ ...current, milestones: current.milestones.map((item, itemIndex) => itemIndex === index ? { ...item, type: event.target.value as typeof item.type } : item) }))}>
                             {MILESTONE_TYPES.map((type) => <option key={type.value} value={type.value}>{type.label}</option>)}
                           </select>
                         </label>
@@ -792,7 +816,7 @@ export function DeadlineRuleForm({
 
                       <label className="block text-xs font-medium text-text-secondary">
                         If the due date is not a business day
-                        <select className="input mt-1.5 min-h-[44px] w-full" value={milestone.businessDayAdjustment} disabled={disabled} onChange={(event) => updateDraft((current) => ({ ...current, milestones: current.milestones.map((item, itemIndex) => itemIndex === index ? { ...item, businessDayAdjustment: event.target.value as typeof item.businessDayAdjustment } : item) }))}>
+                        <select className={RULE_LABEL_CONTROL_CLASS} value={milestone.businessDayAdjustment} disabled={disabled} onChange={(event) => updateDraft((current) => ({ ...current, milestones: current.milestones.map((item, itemIndex) => itemIndex === index ? { ...item, businessDayAdjustment: event.target.value as typeof item.businessDayAdjustment } : item) }))}>
                           <option value="NONE">Keep the calculated date</option>
                           <option value="PREVIOUS">Move to previous business day</option>
                           <option value="NEXT">Move to next business day</option>
@@ -802,10 +826,10 @@ export function DeadlineRuleForm({
                       <details className="rounded-md border border-border-secondary bg-background-primary">
                         <summary className="cursor-pointer px-3 py-2.5 text-xs font-medium text-text-secondary">Advanced options</summary>
                         <div className="grid grid-cols-1 gap-3 border-t border-border-secondary p-3 sm:grid-cols-2">
-                          <FormInput label="Technical key" value={milestone.key} disabled={disabled} onChange={(event) => updateDraft((current) => ({ ...current, milestones: current.milestones.map((item, itemIndex) => itemIndex === index ? { ...item, key: event.target.value } : item) }))} />
+                          <RuleFormInput label="Technical key" value={milestone.key} disabled={disabled} onChange={(event) => updateDraft((current) => ({ ...current, milestones: current.milestones.map((item, itemIndex) => itemIndex === index ? { ...item, key: event.target.value } : item) }))} />
                           <label className="text-xs font-medium text-text-secondary">
                             Generation
-                            <select className="input mt-1.5 min-h-[44px] w-full" value={milestone.generationMode} disabled={disabled} onChange={(event) => updateDraft((current) => ({ ...current, milestones: current.milestones.map((item, itemIndex) => itemIndex === index ? { ...item, generationMode: event.target.value as typeof item.generationMode, expression: event.target.value === 'ONCE_PER_SCHEDULE_ENTRY' ? asDateExpression({ kind: 'SOURCE', source: { kind: 'CURRENT_SCHEDULE_ENTRY' } }) : item.expression } : item) }))}>
+                            <select className={RULE_LABEL_CONTROL_CLASS} value={milestone.generationMode} disabled={disabled} onChange={(event) => updateDraft((current) => ({ ...current, milestones: current.milestones.map((item, itemIndex) => itemIndex === index ? { ...item, generationMode: event.target.value as typeof item.generationMode, expression: event.target.value === 'ONCE_PER_SCHEDULE_ENTRY' ? asDateExpression({ kind: 'SOURCE', source: { kind: 'CURRENT_SCHEDULE_ENTRY' } }) : item.expression } : item) }))}>
                               <option value="ONCE_PER_CYCLE">Once per cycle</option>
                               <option value="ONCE_PER_SCHEDULE_ENTRY">Once per schedule entry</option>
                             </select>
@@ -833,9 +857,9 @@ export function DeadlineRuleForm({
       </div>
 
       <div className="sticky bottom-0 z-10 border-t border-border-primary bg-background-secondary/95 px-4 py-3 backdrop-blur sm:px-5">
-        <div className="mx-auto flex w-full max-w-[1040px] flex-wrap items-center justify-end gap-3">
-          <Button type="button" variant="secondary" className="min-h-[44px]" onClick={onCancel} disabled={isSubmitting}>Cancel</Button>
-          <Button type="submit" className="min-h-[44px]" isLoading={isSubmitting} disabled={disabled}>{initialValue ? 'Save draft' : 'Create rule'}</Button>
+        <div className="flex w-full max-w-[1040px] flex-wrap items-center justify-end gap-3">
+          <Button type="button" variant="secondary" onClick={onCancel} disabled={isSubmitting}>Cancel</Button>
+          <Button type="submit" isLoading={isSubmitting} disabled={disabled}>{initialValue ? 'Save draft' : 'Create rule'}</Button>
         </div>
       </div>
     </form>
