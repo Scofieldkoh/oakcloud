@@ -265,6 +265,7 @@ export async function uploadEsigningDocumentRequest(
 export interface UpdateEsigningDocumentPayload {
   sortOrder?: number;
   visibility?: 'SIGNER_ONLY' | 'EVERYONE';
+  fileName?: string;
 }
 
 async function updateDocumentRequest(

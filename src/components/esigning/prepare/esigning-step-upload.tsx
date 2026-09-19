@@ -25,6 +25,7 @@ import {
   useEsigningWordUploadAvailability,
 } from '@/components/esigning/esigning-upload-files';
 import { Button } from '@/components/ui/button';
+import { Dropdown, DropdownItem, DropdownMenu, DropdownTrigger } from '@/components/ui/dropdown';
 import { Alert } from '@/components/ui/alert';
 import { FormInput } from '@/components/ui/form-input';
 import { SingleDateInput } from '@/components/ui/single-date-input';
@@ -62,6 +63,7 @@ interface EsigningStepUploadProps {
     documentId: string,
     visibility: 'SIGNER_ONLY' | 'EVERYONE'
   ) => Promise<void>;
+  onRenameDocument?: (documentId: string, fileName: string) => Promise<void>;
   isUpdatingDocument?: boolean;
   onAttachGeneratedDocuments?: (documentIds: string[]) => Promise<void>;
   isAttachingGeneratedDocuments?: boolean;
@@ -245,6 +247,7 @@ function DocumentTable({
   isUpdating,
   onReorder,
   onToggleVisibility,
+  onRename,
   onDelete,
 }: {
   documents: EsigningEnvelopeDocumentDto[];
@@ -255,24 +258,10 @@ function DocumentTable({
     documentId: string,
     visibility: 'SIGNER_ONLY' | 'EVERYONE'
   ) => Promise<void>;
+  onRename: (documentId: string, fileName: string) => Promise<void>;
   onDelete: (documentId: string) => void;
 }) {
   const toast = useToast();
-  const actionMenuRef = useRef<HTMLDivElement>(null);
-  const [openActionsDocumentId, setOpenActionsDocumentId] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!openActionsDocumentId) return;
-
-    function handlePointerDown(event: MouseEvent) {
-      if (actionMenuRef.current && !actionMenuRef.current.contains(event.target as Node)) {
-        setOpenActionsDocumentId(null);
-      }
-    }
-
-    document.addEventListener('mousedown', handlePointerDown);
-    return () => document.removeEventListener('mousedown', handlePointerDown);
-  }, [openActionsDocumentId]);
 
   async function moveDocument(documentId: string, index: number, direction: -1 | 1) {
     const targetIndex = index + direction;
@@ -293,6 +282,20 @@ function DocumentTable({
       await onToggleVisibility(document.id, nextVisibility);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Failed to update document visibility');
+    }
+  }
+
+  async function renameDocument(document: EsigningEnvelopeDocumentDto) {
+    const nextFileName = window.prompt('Rename document', document.fileName)?.trim();
+    if (!nextFileName || nextFileName === document.fileName) {
+      return;
+    }
+
+    try {
+      await onRename(document.id, nextFileName);
+      toast.success('Document renamed');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to rename document');
     }
   }
 
@@ -340,9 +343,14 @@ function DocumentTable({
                       <ChevronDown className="h-3.5 w-3.5" />
                     </button>
                     <FileText className="ml-1 h-4 w-4 shrink-0 text-text-muted" />
-                    <span className="min-w-0 truncate font-medium text-text-primary" title={doc.fileName}>
+                    <button
+                      type="button"
+                      onClick={() => window.open(doc.pdfUrl, '_blank', 'noreferrer')}
+                      className="min-w-0 truncate text-left font-medium text-text-primary hover:text-oak-primary hover:underline"
+                      title={`Preview ${doc.fileName}`}
+                    >
                       {doc.fileName}
-                    </span>
+                    </button>
                   </div>
                 </td>
                 <td className="px-3 py-1.5">
@@ -366,60 +374,52 @@ function DocumentTable({
                   </button>
                 </td>
                 <td className="px-3 py-1.5">
-                  <div
-                    ref={openActionsDocumentId === doc.id ? actionMenuRef : undefined}
-                    className="relative flex justify-end"
-                  >
-                    <button
-                      type="button"
+                  <Dropdown className="flex justify-end">
+                    <DropdownTrigger
+                      asChild
                       aria-label={`More actions for ${doc.fileName}`}
-                      aria-expanded={openActionsDocumentId === doc.id}
-                      onClick={() =>
-                        setOpenActionsDocumentId((current) => current === doc.id ? null : doc.id)
-                      }
-                      className="flex h-8 w-8 items-center justify-center rounded-lg text-text-muted hover:bg-background-tertiary hover:text-text-primary"
                     >
-                      <MoreHorizontal className="h-4 w-4" />
-                    </button>
-                    {openActionsDocumentId === doc.id ? (
-                      <div className="absolute right-0 top-full z-30 mt-1 w-40 overflow-hidden rounded-lg border border-border-primary bg-background-elevated py-1 shadow-lg">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            window.open(doc.pdfUrl, '_blank', 'noreferrer');
-                            setOpenActionsDocumentId(null);
-                          }}
-                          className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-text-primary hover:bg-background-tertiary"
+                      <span className="flex h-8 w-8 items-center justify-center rounded-lg text-text-muted hover:bg-background-tertiary hover:text-text-primary">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </span>
+                    </DropdownTrigger>
+                    <DropdownMenu align="right">
+                      <DropdownItem
+                        icon={<Eye className="h-4 w-4" />}
+                        onClick={() => window.open(doc.pdfUrl, '_blank', 'noreferrer')}
+                      >
+                        Preview
+                      </DropdownItem>
+                      <DropdownItem
+                        icon={<Download className="h-4 w-4" />}
+                        onClick={() => {
+                          const separator = doc.pdfUrl.includes('?') ? '&' : '?';
+                          window.open(`${doc.pdfUrl}${separator}download=true`, '_blank', 'noreferrer');
+                        }}
+                      >
+                        Download
+                      </DropdownItem>
+                      {canEdit ? (
+                        <DropdownItem
+                          icon={<Pencil className="h-4 w-4" />}
+                          disabled={isUpdating}
+                          onClick={() => void renameDocument(doc)}
                         >
-                          <Eye className="h-4 w-4 text-text-muted" />
-                          Preview
-                        </button>
-                        <a
-                          href={doc.pdfUrl}
-                          download={doc.fileName}
-                          onClick={() => setOpenActionsDocumentId(null)}
-                          className="flex items-center gap-2 px-3 py-2 text-xs text-text-primary hover:bg-background-tertiary"
+                          Rename
+                        </DropdownItem>
+                      ) : null}
+                      {canEdit ? (
+                        <DropdownItem
+                          icon={<Trash2 className="h-4 w-4" />}
+                          disabled={isUpdating}
+                          destructive
+                          onClick={() => onDelete(doc.id)}
                         >
-                          <Download className="h-4 w-4 text-text-muted" />
-                          Download
-                        </a>
-                        {canEdit ? (
-                          <button
-                            type="button"
-                            disabled={isUpdating}
-                            onClick={() => {
-                              setOpenActionsDocumentId(null);
-                              onDelete(doc.id);
-                            }}
-                            className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-rose-600 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-rose-950/30"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                            Delete
-                          </button>
-                        ) : null}
-                      </div>
-                    ) : null}
-                  </div>
+                          Delete
+                        </DropdownItem>
+                      ) : null}
+                    </DropdownMenu>
+                  </Dropdown>
                 </td>
               </tr>
             );
@@ -529,6 +529,7 @@ export function EsigningStepUpload({
   isUploading,
   onReorderDocument = async () => undefined,
   onToggleDocumentVisibility = async () => undefined,
+  onRenameDocument = async () => undefined,
   isUpdatingDocument = false,
   onAttachGeneratedDocuments = async () => undefined,
   isAttachingGeneratedDocuments = false,
@@ -1333,6 +1334,7 @@ async function applyMixedGroupChange(
             isUpdating={isUpdatingDocument}
             onReorder={onReorderDocument}
             onToggleVisibility={onToggleDocumentVisibility}
+            onRename={onRenameDocument}
             onDelete={onDeleteDocument}
           />
         )}

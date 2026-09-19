@@ -959,6 +959,9 @@ export function EsigningDetailPage({ envelopeId }: Props) {
                 onToggleDocumentVisibility={async (documentId, visibility) => {
                   await updateDocument.mutateAsync({ documentId, visibility });
                 }}
+                onRenameDocument={async (documentId, fileName) => {
+                  await updateDocument.mutateAsync({ documentId, fileName });
+                }}
                 isUpdatingDocument={updateDocument.isPending}
                 onAttachGeneratedDocuments={async (documentIds) => {
                   await attachGeneratedDocuments.mutateAsync(documentIds);

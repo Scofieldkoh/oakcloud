@@ -2156,6 +2156,76 @@ export async function reorderEsigningEnvelopeDocument(
   return getEsigningEnvelopeDetail(session, tenantId, envelopeId);
 }
 
+export async function renameEsigningEnvelopeDocument(
+  session: SessionUser,
+  tenantId: string,
+  envelopeId: string,
+  documentId: string,
+  fileName: string
+): Promise<EsigningEnvelopeDetailDto> {
+  const scope = await resolveEsigningActorScope(session, tenantId);
+  const envelope = await prisma.esigningEnvelope.findFirst({
+    where: { id: envelopeId, tenantId },
+    select: {
+      id: true,
+      title: true,
+      status: true,
+      companyId: true,
+      createdById: true,
+      documents: {
+        select: {
+          id: true,
+          originalFileName: true,
+          fileName: true,
+        },
+      },
+    },
+  });
+
+  if (!envelope) {
+    throw new Error('Envelope not found');
+  }
+  if (envelope.status !== 'DRAFT') {
+    throw new Error('Documents can only be renamed while the envelope is a draft');
+  }
+  if (!canMutateEnvelope(scope, session, envelope.createdById)) {
+    throw new Error('Forbidden');
+  }
+
+  const document = envelope.documents.find((entry) => entry.id === documentId);
+  if (!document) {
+    throw new Error('Document not found');
+  }
+
+  const previousFileName = document.originalFileName ?? document.fileName;
+  if (previousFileName === fileName) {
+    return getEsigningEnvelopeDetail(session, tenantId, envelopeId);
+  }
+
+  await prisma.esigningEnvelopeDocument.update({
+    where: { id: documentId },
+    data: { originalFileName: fileName },
+  });
+
+  await createAuditLog({
+    tenantId,
+    userId: session.id,
+    companyId: envelope.companyId ?? undefined,
+    action: 'UPDATE',
+    entityType: 'EsigningEnvelope',
+    entityId: envelopeId,
+    entityName: envelope.title,
+    summary: `Renamed document in e-signing envelope "${envelope.title}"`,
+    metadata: {
+      documentId,
+      previousFileName,
+      fileName,
+    },
+  });
+
+  return getEsigningEnvelopeDetail(session, tenantId, envelopeId);
+}
+
 export async function updateEsigningEnvelopeDocumentVisibility(
   session: SessionUser,
   tenantId: string,
