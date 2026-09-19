@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useState } from 'react';
 import { Check, ContactRound, LoaderCircle, UserPlus } from 'lucide-react';
 import { useDebounce } from 'use-debounce';
 import { Button } from '@/components/ui/button';
@@ -103,6 +103,7 @@ interface CompanyPersonContactLinkerProps {
 
 export function CompanyPersonContactLinker({ kind, label, value, onChange }: CompanyPersonContactLinkerProps) {
   const existingContactId = text(value.contactId) || null;
+  const listboxId = useId();
   const [query, setQuery] = useState('');
   const [debouncedQuery] = useDebounce(query, 250);
   const [open, setOpen] = useState(false);
@@ -208,6 +209,7 @@ export function CompanyPersonContactLinker({ kind, label, value, onChange }: Com
           placeholder="Search Contacts by name, ID, email or phone…"
           aria-label={`Search Contacts for ${label}`}
           aria-expanded={open}
+          aria-controls={listboxId}
           aria-autocomplete="list"
           role="combobox"
           onFocus={() => setOpen(true)}
@@ -215,7 +217,7 @@ export function CompanyPersonContactLinker({ kind, label, value, onChange }: Com
           onKeyDown={(event) => { if (event.key === 'Escape') setOpen(false); }}
         />
         {open ? (
-          <div className="absolute z-30 mt-1 max-h-52 w-full overflow-y-auto rounded-lg border border-border-primary bg-background-elevated p-1 shadow-elevation-2" role="listbox">
+          <div id={listboxId} className="absolute z-30 mt-1 max-h-52 w-full overflow-y-auto rounded-lg border border-border-primary bg-background-elevated p-1 shadow-elevation-2" role="listbox">
             {contacts.isFetching ? (
               <div className="flex items-center justify-center gap-2 px-3 py-4 text-xs text-text-muted" role="status"><LoaderCircle className="h-3.5 w-3.5 animate-spin" aria-hidden="true" /> Searching Contacts…</div>
             ) : contacts.error ? (

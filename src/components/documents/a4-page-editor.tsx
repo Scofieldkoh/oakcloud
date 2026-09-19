@@ -46,7 +46,6 @@ import type {
 import {
   ensureEditableCanonicalHtml,
   hardSectionCountFromPages,
-  hydrateFlowContainer,
   hydrateFlowHtml,
   normalizeEditedFlowIds,
   reassemblePageFragments,
@@ -60,8 +59,6 @@ import {
 } from './a4-pagination/engine';
 import {
   captureFlowSelection,
-  documentTextOffsetForFlowPoint,
-  flowPointAtDocumentTextOffset,
   restoreFlowSelection,
   type FlowSelectionBookmark,
 } from './a4-pagination/selection';
@@ -1561,7 +1558,6 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
         insertHtmlAtCursor,
         parsePages,
         scheduleReflow,
-        serializePages,
       ],
     );
 
@@ -2273,7 +2269,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
       [commitSemanticCommand, effectivePreviewMode],
     );
 
-    const handleReplaceAcrossPages = useCallback(
+    const _handleReplaceAcrossPages = useCallback(
       (
         html: string,
         transaction?: {
@@ -2433,11 +2429,11 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
         }
         commitDocumentSurface();
       },
-      [commitDocumentSurface, parsePages, repairPendingNonCancelableMutation],
+      [commitDocumentSurface, repairPendingNonCancelableMutation],
     );
 
     const handleDocumentCompositionStart = useCallback(
-      (event: ReactCompositionEvent<HTMLDivElement>) => {
+      (_event: ReactCompositionEvent<HTMLDivElement>) => {
         const session = canonicalSessionRef.current;
         const surface = documentSurfaceRef.current;
         if (!session || !surface) return;
@@ -2979,7 +2975,7 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
 
         if (bookmark.collapsed) {
           if (toggleField) {
-            const uniform = readUniformFormatState(
+            const _uniform = readUniformFormatState(
               surface,
               bookmark,
               effectiveLayout,
@@ -3093,6 +3089,8 @@ export const A4PageEditor = forwardRef<A4PageEditorRef, A4PageEditorProps>(
       canonicalPagesHtml,
       clearPendingTypingFormat,
       commitUserTransaction,
+      effectiveLayout.fontFamily,
+      effectiveLayout.fontSize,
       effectivePreviewMode,
       restoreSelection,
       setPendingTypingFormat,
