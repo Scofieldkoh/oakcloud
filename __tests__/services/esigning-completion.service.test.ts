@@ -139,8 +139,10 @@ function makeDelivery(overrides: Record<string, unknown> = {}) {
       title: 'NDA',
       certificateId: 'certificate-1',
       createdById: 'user-1',
+      metadata: {},
       createdBy: { firstName: 'Sender', lastName: null, email: 'sender@example.com' },
       recipients: [{ id: 'recipient-1', name: 'Signer', email: 'signer@example.com' }],
+      fieldDefinitions: [{ documentId: 'document-1', recipientId: 'recipient-1' }],
       documents: [
         {
           id: 'document-1',
@@ -250,6 +252,115 @@ describe('e-signing completion worker', () => {
       artifactsSkipped: 0,
       processed: 2,
     });
+  });
+
+  it('filters recipient completion attachments and links using document visibility', async () => {
+    const delivery = makeDelivery();
+    mocks.findFirstDelivery.mockImplementation(async ({ select }: { select?: Record<string, unknown> }) => {
+      if (select?.attemptCount) {
+        return { attemptCount: 0, toEmail: 'signer@example.com', subject: 'Completed: NDA' };
+      }
+      return makeDelivery({
+        envelope: {
+          ...delivery.envelope,
+          metadata: {
+            documentVisibility: {
+              'document-3': 'EVERYONE',
+            },
+          },
+          fieldDefinitions: [
+            { documentId: 'document-1', recipientId: 'recipient-1' },
+            { documentId: 'document-2', recipientId: 'recipient-2' },
+          ],
+          documents: [
+            {
+              id: 'document-1',
+              fileName: 'assigned.pdf',
+              signedStoragePath: 'signed/tenant-1/envelope-1/document-1.pdf',
+            },
+            {
+              id: 'document-2',
+              fileName: 'other-signer.pdf',
+              signedStoragePath: 'signed/tenant-1/envelope-1/document-2.pdf',
+            },
+            {
+              id: 'document-3',
+              fileName: 'everyone.pdf',
+              signedStoragePath: 'signed/tenant-1/envelope-1/document-3.pdf',
+            },
+          ],
+        },
+      });
+    });
+
+    await processEsigningCompletionDelivery({
+      id: 'delivery-1',
+      tenantId: 'tenant-1',
+      envelopeId: 'envelope-1',
+      claimToken: 'claim-1',
+    });
+
+    expect(mocks.buildAttachments).toHaveBeenCalledWith({
+      documents: [
+        expect.objectContaining({ id: 'document-1', fileName: 'assigned.pdf' }),
+        expect.objectContaining({ id: 'document-3', fileName: 'everyone.pdf' }),
+      ],
+    });
+    expect(mocks.buildLinks).toHaveBeenCalledWith(expect.objectContaining({
+      actorType: 'recipient',
+      recipientId: 'recipient-1',
+      documents: [
+        expect.objectContaining({ id: 'document-1', fileName: 'assigned.pdf' }),
+        expect.objectContaining({ id: 'document-3', fileName: 'everyone.pdf' }),
+      ],
+    }));
+  });
+
+  it('keeps all completion documents for sender deliveries', async () => {
+    const delivery = makeDelivery();
+    mocks.findFirstDelivery.mockImplementation(async ({ select }: { select?: Record<string, unknown> }) => {
+      if (select?.attemptCount) {
+        return { attemptCount: 0, toEmail: 'sender@example.com', subject: 'Completed: NDA' };
+      }
+      return makeDelivery({
+        recipientId: null,
+        audience: 'SENDER',
+        targetKey: 'sender:user-1',
+        toEmail: 'sender@example.com',
+        envelope: {
+          ...delivery.envelope,
+          fieldDefinitions: [{ documentId: 'document-1', recipientId: 'recipient-1' }],
+          documents: [
+            {
+              id: 'document-1',
+              fileName: 'assigned.pdf',
+              signedStoragePath: 'signed/tenant-1/envelope-1/document-1.pdf',
+            },
+            {
+              id: 'document-2',
+              fileName: 'private-to-other-signer.pdf',
+              signedStoragePath: 'signed/tenant-1/envelope-1/document-2.pdf',
+            },
+          ],
+        },
+      });
+    });
+
+    await processEsigningCompletionDelivery({
+      id: 'delivery-1',
+      tenantId: 'tenant-1',
+      envelopeId: 'envelope-1',
+      claimToken: 'claim-1',
+    });
+
+    expect(mocks.buildLinks).toHaveBeenCalledWith(expect.objectContaining({
+      actorType: 'sender',
+      recipientId: undefined,
+      documents: [
+        expect.objectContaining({ id: 'document-1' }),
+        expect.objectContaining({ id: 'document-2' }),
+      ],
+    }));
   });
 
   it('sends configured completion copies as BCC recipients', async () => {

@@ -27,6 +27,26 @@ export function getEsigningDocumentVisibility(
     : 'SIGNER_ONLY';
 }
 
+export function isEsigningDocumentVisibleToRecipient(input: {
+  metadata: Prisma.JsonValue | null | undefined;
+  documentId: string;
+  recipientId: string;
+  fieldDefinitions: ReadonlyArray<{
+    documentId: string;
+    recipientId: string;
+  }>;
+}): boolean {
+  if (getEsigningDocumentVisibility(input.metadata, input.documentId) === 'EVERYONE') {
+    return true;
+  }
+
+  return input.fieldDefinitions.some(
+    (field) =>
+      field.documentId === input.documentId &&
+      field.recipientId === input.recipientId
+  );
+}
+
 export function setEsigningDocumentVisibility(
   metadata: Prisma.JsonValue | null | undefined,
   documentId: string,
