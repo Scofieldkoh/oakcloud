@@ -558,9 +558,27 @@ export async function createEnvelopeEvent(input: {
 
 export function getEnvelopeOrderBy(
   query: EsigningListQueryInput
-): Prisma.EsigningEnvelopeOrderByWithRelationInput {
+): Prisma.EsigningEnvelopeOrderByWithRelationInput | Prisma.EsigningEnvelopeOrderByWithRelationInput[] {
+  const sortBy = query.sortBy ?? 'updatedAt';
+  const sortOrder = query.sortOrder ?? 'desc';
+
+  if (sortBy === 'companyName') {
+    return [
+      { company: { name: sortOrder } },
+      { updatedAt: 'desc' },
+    ];
+  }
+
+  if (sortBy === 'details') {
+    return [
+      { documents: { _count: sortOrder } },
+      { recipients: { _count: sortOrder } },
+      { updatedAt: 'desc' },
+    ];
+  }
+
   return {
-    [query.sortBy ?? 'updatedAt']: query.sortOrder ?? 'desc',
+    [sortBy]: sortOrder,
   };
 }
 

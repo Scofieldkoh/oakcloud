@@ -5,6 +5,9 @@ import { useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   AlertTriangle,
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
   CheckCircle2,
   Circle,
   Clock,
@@ -119,6 +122,22 @@ const TAB_STATUSES: Record<TabKey, StatusFilter[]> = {
 type ViewMode = 'table' | 'card';
 type RecipientStatusFilter = 'QUEUED' | 'NOTIFIED' | 'VIEWED' | 'SIGNED' | 'DECLINED';
 type SigningOrderFilter = 'PARALLEL' | 'SEQUENTIAL' | 'MIXED';
+type EnvelopeSortBy =
+  | 'status'
+  | 'title'
+  | 'companyName'
+  | 'details'
+  | 'updatedAt';
+
+const CARD_STATUS_BORDER_CLASS: Record<StatusFilter, string> = {
+  DRAFT: 'border-t-slate-400',
+  SENT: 'border-t-blue-400',
+  IN_PROGRESS: 'border-t-amber-400',
+  COMPLETED: 'border-t-emerald-400',
+  VOIDED: 'border-t-slate-400',
+  DECLINED: 'border-t-rose-400',
+  EXPIRED: 'border-t-orange-400',
+};
 
 const ESIGNING_COLUMN_WIDTH_PREF_KEY = 'esigning:list:columns:v1';
 const ESIGNING_TABLE_COLUMNS = [
@@ -443,6 +462,8 @@ export function EsigningListPage() {
   const [isStarting, setIsStarting] = useState(false);
   const [isDraggingOnHero, setIsDraggingOnHero] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('table');
+  const [sortBy, setSortBy] = useState<EnvelopeSortBy>('updatedAt');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [companyId, setCompanyId] = useState<string>('');
   const [appliedFilters, setAppliedFilters] = useState<EnvelopeAdvancedFilters>(EMPTY_ADVANCED_FILTERS);
   const [draftFilters, setDraftFilters] = useState<EnvelopeAdvancedFilters>(EMPTY_ADVANCED_FILTERS);
@@ -554,6 +575,8 @@ export function EsigningListPage() {
     completedFrom: appliedFilters.completedFrom || undefined,
     completedTo: appliedFilters.completedTo || undefined,
     createdBy: appliedFilters.createdBy,
+    sortBy,
+    sortOrder,
     page,
     limit,
   });
@@ -657,6 +680,29 @@ export function EsigningListPage() {
   }, [appliedFilters, companyId]);
 
   const hasAppliedFilters = advancedFilterCount > 0;
+
+  const handleSort = (nextSortBy: EnvelopeSortBy) => {
+    setSortOrder((currentOrder) =>
+      sortBy === nextSortBy
+        ? currentOrder === 'asc'
+          ? 'desc'
+          : 'asc'
+        : nextSortBy === 'updatedAt'
+          ? 'desc'
+          : 'asc'
+    );
+    setSortBy(nextSortBy);
+    setPage(1);
+  };
+
+  const renderSortIcon = (column: EnvelopeSortBy) => {
+    if (sortBy !== column) {
+      return <ArrowUpDown className="h-3.5 w-3.5 text-text-muted" aria-hidden="true" />;
+    }
+    return sortOrder === 'asc'
+      ? <ArrowUp className="h-3.5 w-3.5" aria-hidden="true" />
+      : <ArrowDown className="h-3.5 w-3.5" aria-hidden="true" />;
+  };
 
   const handleTabChange = (tab: TabKey) => {
     setActiveTab(tab);
@@ -1095,7 +1141,7 @@ export function EsigningListPage() {
           </div>
 
           <div className="flex flex-col gap-2 p-3 sm:p-4 lg:flex-row lg:items-center">
-            <div className="min-w-0 flex-1">
+            <div className="min-w-0 lg:flex-[1_1_360px]">
               <FormInput
                 inputSize="md"
                 className="h-10 text-sm"
@@ -1118,7 +1164,7 @@ export function EsigningListPage() {
                 placeholder="Company"
                 clearable
                 size="lg"
-                className="col-span-2 w-full sm:col-span-1 sm:w-[220px]"
+                className="col-span-2 w-full sm:col-span-1 sm:w-[440px] sm:max-w-full"
                 containerClassName="h-10"
               />
 
@@ -1560,12 +1606,19 @@ export function EsigningListPage() {
                     </colgroup>
                     <thead>
                       <tr className="h-10 border-b border-border-primary bg-background-primary/60 text-left text-[11px] font-semibold uppercase tracking-wide text-text-muted">
-
                         <th
                           className="relative px-4"
                           style={{ width: `${columnWidths.status ?? DEFAULT_ESIGNING_COLUMN_WIDTHS.status}px` }}
+                          aria-sort={sortBy === 'status' ? (sortOrder === 'asc' ? 'ascending' : 'descending') : 'none'}
                         >
-                          Status
+                          <button
+                            type="button"
+                            onClick={() => handleSort('status')}
+                            className="inline-flex items-center gap-1 transition-colors hover:text-text-primary"
+                          >
+                            <span>Status</span>
+                            {renderSortIcon('status')}
+                          </button>
                           <div
                             data-testid="esigning-resize-status"
                             onPointerDown={(event) => startColumnResize(event, 'status')}
@@ -1578,8 +1631,16 @@ export function EsigningListPage() {
                         <th
                           className="relative px-4"
                           style={{ width: `${columnWidths.envelope ?? DEFAULT_ESIGNING_COLUMN_WIDTHS.envelope}px` }}
+                          aria-sort={sortBy === 'title' ? (sortOrder === 'asc' ? 'ascending' : 'descending') : 'none'}
                         >
-                          Envelope name
+                          <button
+                            type="button"
+                            onClick={() => handleSort('title')}
+                            className="inline-flex items-center gap-1 transition-colors hover:text-text-primary"
+                          >
+                            <span>Envelope name</span>
+                            {renderSortIcon('title')}
+                          </button>
                           <div
                             data-testid="esigning-resize-envelope"
                             onPointerDown={(event) => startColumnResize(event, 'envelope')}
@@ -1592,8 +1653,16 @@ export function EsigningListPage() {
                         <th
                           className="relative px-4"
                           style={{ width: `${columnWidths.company ?? DEFAULT_ESIGNING_COLUMN_WIDTHS.company}px` }}
+                          aria-sort={sortBy === 'companyName' ? (sortOrder === 'asc' ? 'ascending' : 'descending') : 'none'}
                         >
-                          Company
+                          <button
+                            type="button"
+                            onClick={() => handleSort('companyName')}
+                            className="inline-flex items-center gap-1 transition-colors hover:text-text-primary"
+                          >
+                            <span>Company</span>
+                            {renderSortIcon('companyName')}
+                          </button>
                           <div
                             data-testid="esigning-resize-company"
                             onPointerDown={(event) => startColumnResize(event, 'company')}
@@ -1606,8 +1675,16 @@ export function EsigningListPage() {
                         <th
                           className="relative px-4"
                           style={{ width: `${columnWidths.details ?? DEFAULT_ESIGNING_COLUMN_WIDTHS.details}px` }}
+                          aria-sort={sortBy === 'details' ? (sortOrder === 'asc' ? 'ascending' : 'descending') : 'none'}
                         >
-                          Details
+                          <button
+                            type="button"
+                            onClick={() => handleSort('details')}
+                            className="inline-flex items-center gap-1 transition-colors hover:text-text-primary"
+                          >
+                            <span>Details</span>
+                            {renderSortIcon('details')}
+                          </button>
                           <div
                             data-testid="esigning-resize-details"
                             onPointerDown={(event) => startColumnResize(event, 'details')}
@@ -1620,8 +1697,16 @@ export function EsigningListPage() {
                         <th
                           className="relative px-4"
                           style={{ width: `${columnWidths.updated ?? DEFAULT_ESIGNING_COLUMN_WIDTHS.updated}px` }}
+                          aria-sort={sortBy === 'updatedAt' ? (sortOrder === 'asc' ? 'ascending' : 'descending') : 'none'}
                         >
-                          Last updated
+                          <button
+                            type="button"
+                            onClick={() => handleSort('updatedAt')}
+                            className="inline-flex items-center gap-1 transition-colors hover:text-text-primary"
+                          >
+                            <span>Last updated</span>
+                            {renderSortIcon('updatedAt')}
+                          </button>
                           <div
                             data-testid="esigning-resize-updated"
                             onPointerDown={(event) => startColumnResize(event, 'updated')}
@@ -1791,7 +1876,7 @@ export function EsigningListPage() {
                 </div>
               </>
             ) : (
-              <div className="grid grid-cols-1 gap-3 p-3 sm:p-4 lg:grid-cols-2">
+              <div className="grid grid-cols-1 items-stretch gap-3 p-3 sm:p-4 lg:grid-cols-2">
                 {envelopes.map((envelope) => {
                   const signers = envelope.recipients.filter((recipient) => recipient.type === 'SIGNER');
                   const active = envelope.status === 'SENT' || envelope.status === 'IN_PROGRESS';
@@ -1812,122 +1897,139 @@ export function EsigningListPage() {
                           window.location.assign(`/esigning/${envelope.id}`);
                         }
                       }}
-                      className="cursor-pointer rounded-xl border border-border-primary bg-background-secondary p-4 transition-colors hover:border-oak-primary/40 hover:bg-background-primary/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-oak-primary/30"
+                      className="flex h-full cursor-pointer flex-col overflow-hidden rounded-xl border border-border-primary bg-background-secondary transition-colors hover:border-oak-primary/40 hover:bg-background-primary/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-oak-primary/30"
                     >
-                      <div className="flex items-start gap-3">
-                        <div className="min-w-0 flex-1">
-                          <div className="flex flex-wrap items-center gap-1.5">
-                            <EnvelopeStatusBadge status={envelope.status} />
-                            <EmailDeliveryWarningBadge envelope={envelope} />
+                      <div className={cn(
+                        'border-t-4 px-4 pb-2.5 pt-3',
+                        CARD_STATUS_BORDER_CLASS[envelope.status]
+                      )}>
+                        <div className="flex items-start gap-3">
+                          <div className="min-w-0 flex-1">
+                            <span className="sr-only">
+                              {ENVELOPE_STATUS_LABELS[envelope.status as StatusFilter]}
+                            </span>
+                            <h2 className="line-clamp-2 text-[15px] font-semibold leading-5 text-text-primary">
+                              {envelope.title}
+                            </h2>
+                            <p className="mt-0.5 truncate text-xs text-text-secondary" title={envelope.companyName ?? 'No company'}>
+                              {envelope.companyName ?? 'No company'}
+                            </p>
+                            {matchContext ? (
+                              <p className="mt-0.5 truncate text-[11px] text-text-muted" title={matchContext}>
+                                {matchContext}
+                              </p>
+                            ) : null}
+                            {envelope.emailDelivery.status === 'failed' ? (
+                              <div className="mt-1.5">
+                                <EmailDeliveryWarningBadge envelope={envelope} />
+                              </div>
+                            ) : null}
                           </div>
-                          <h2 className="mt-2 line-clamp-2 min-h-[40px] text-[15px] font-semibold leading-5 text-text-primary">
-                            {envelope.title}
-                          </h2>
-                          <p className="mt-1 truncate text-xs text-text-secondary" title={envelope.companyName ?? 'No company'}>
-                            {envelope.companyName ?? 'No company'}
-                          </p>
-                          {matchContext ? (
-                            <p className="mt-1 truncate text-[11px] text-text-muted" title={matchContext}>{matchContext}</p>
-                          ) : null}
-                        </div>
-                        <div
-                          className="-mr-1 shrink-0"
-                          onClick={(event) => event.stopPropagation()}
-                          onKeyDown={(event) => event.stopPropagation()}
-                        >
-                          <EnvelopeActionsDropdown
-                            envelope={envelope}
-                            onDuplicate={(target) => void handleDuplicateEnvelope(target)}
-                            onResend={(target) => void handleResendEnvelope(target)}
-                            onDelete={setDeleteTarget}
-                            onVoid={setVoidTarget}
-                            onRetryPdf={(envelopeId) => void handleRetryPdf(envelopeId)}
-                            onDownload={handleDownload}
-                          />
+                          <div
+                            className="-mr-1 -mt-1 shrink-0"
+                            onClick={(event) => event.stopPropagation()}
+                            onKeyDown={(event) => event.stopPropagation()}
+                          >
+                            <EnvelopeActionsDropdown
+                              envelope={envelope}
+                              onDuplicate={(target) => void handleDuplicateEnvelope(target)}
+                              onResend={(target) => void handleResendEnvelope(target)}
+                              onDelete={setDeleteTarget}
+                              onVoid={setVoidTarget}
+                              onRetryPdf={(envelopeId) => void handleRetryPdf(envelopeId)}
+                              onDownload={handleDownload}
+                            />
+                          </div>
                         </div>
                       </div>
 
-                      {active ? (
-                        <div className="mt-3 flex items-center gap-3">
-                          <div className="text-xs font-medium text-text-secondary">
-                            {envelope.completedSignerCount} / {envelope.signerCount} signed
+                      <div className="flex flex-1 flex-col px-4 pb-3">
+                        {active ? (
+                          <div className="flex items-center gap-3 border-t border-border-primary pt-2.5">
+                            <div className="text-xs font-medium text-text-secondary">
+                              {envelope.completedSignerCount} / {envelope.signerCount} signed
+                            </div>
+                            <div className="h-1 flex-1 overflow-hidden rounded-full bg-background-tertiary">
+                              <div className="h-full rounded-full bg-oak-primary" style={{ width: `${progress}%` }} />
+                            </div>
                           </div>
-                          <div className="h-1 flex-1 overflow-hidden rounded-full bg-background-tertiary">
-                            <div className="h-full rounded-full bg-oak-primary" style={{ width: `${progress}%` }} />
-                          </div>
-                        </div>
-                      ) : null}
+                        ) : null}
 
-                      <div className="mt-3 grid gap-3 border-t border-border-primary pt-3 sm:grid-cols-2">
-                        <div className="min-w-0">
-                          <div className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-text-muted">
-                            Signers ({signers.length})
-                          </div>
-                          <div className="space-y-1.5">
-                            {signers.length === 0 ? (
-                              <div className="text-xs text-text-muted">No signers assigned</div>
-                            ) : signers.slice(0, 3).map((recipient) => {
-                              const StatusIcon = recipient.status === 'SIGNED'
-                                ? CheckCircle2
-                                : recipient.status === 'DECLINED'
-                                  ? XCircle
-                                  : recipient.status === 'VIEWED' || recipient.status === 'NOTIFIED'
-                                    ? Clock
-                                    : Circle;
-                              const statusClass = recipient.status === 'SIGNED'
-                                ? 'text-green-600'
-                                : recipient.status === 'DECLINED'
-                                  ? 'text-rose-600'
-                                  : recipient.status === 'VIEWED'
-                                    ? 'text-blue-600'
-                                    : recipient.status === 'NOTIFIED'
-                                      ? 'text-amber-600'
-                                      : 'text-text-muted';
-                              return (
-                                <div key={recipient.id} className="flex min-w-0 items-start gap-2">
-                                  <StatusIcon className={cn('mt-0.5 h-3.5 w-3.5 shrink-0', statusClass)} />
-                                  <div className="min-w-0">
-                                    <div className="truncate text-xs font-medium text-text-primary" title={recipient.name}>
+                        <div className={cn(
+                          'grid gap-3 pt-2.5 sm:grid-cols-2',
+                          active ? '' : 'border-t border-border-primary'
+                        )}>
+                          <div className="min-w-0">
+                            <div className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-text-muted">
+                              Signers ({signers.length})
+                            </div>
+                            <div className="space-y-1.5">
+                              {signers.length === 0 ? (
+                                <div className="text-xs text-text-muted">No signers assigned</div>
+                              ) : signers.slice(0, 3).map((recipient) => {
+                                const StatusIcon = recipient.status === 'SIGNED'
+                                  ? CheckCircle2
+                                  : recipient.status === 'DECLINED'
+                                    ? XCircle
+                                    : recipient.status === 'VIEWED' || recipient.status === 'NOTIFIED'
+                                      ? Clock
+                                      : Circle;
+                                const statusClass = recipient.status === 'SIGNED'
+                                  ? 'text-green-600'
+                                  : recipient.status === 'DECLINED'
+                                    ? 'text-rose-600'
+                                    : recipient.status === 'VIEWED'
+                                      ? 'text-blue-600'
+                                      : recipient.status === 'NOTIFIED'
+                                        ? 'text-amber-600'
+                                        : 'text-text-muted';
+                                const recipientStatusLabel =
+                                  RECIPIENT_STATUS_LABELS[recipient.status as RecipientStatusFilter]
+                                  ?? recipient.status;
+                                return (
+                                  <div key={recipient.id} className="flex min-w-0 items-center gap-2">
+                                    <StatusIcon
+                                      className={cn('h-3.5 w-3.5 shrink-0', statusClass)}
+                                      aria-label={recipientStatusLabel}
+                                    />
+                                    <div className="min-w-0 truncate text-xs font-medium text-text-primary" title={recipient.name}>
                                       {recipient.name}
                                     </div>
-                                    <div className="text-[11px] text-text-muted">
-                                      {RECIPIENT_STATUS_LABELS[recipient.status as RecipientStatusFilter] ?? recipient.status}
-                                    </div>
                                   </div>
+                                );
+                              })}
+                              {signers.length > 3 ? (
+                                <div className="text-[11px] font-medium text-text-muted">+{signers.length - 3} more</div>
+                              ) : null}
+                            </div>
+                          </div>
+
+                          <div className="min-w-0 border-t border-border-primary pt-3 sm:border-l sm:border-t-0 sm:pl-3 sm:pt-0">
+                            <div className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-text-muted">
+                              Documents ({envelope.documents.length})
+                            </div>
+                            <div className="space-y-1.5">
+                              {envelope.documents.length === 0 ? (
+                                <div className="text-xs text-text-muted">No documents added</div>
+                              ) : envelope.documents.slice(0, 3).map((document) => (
+                                <div key={document.id} className="flex min-w-0 items-center gap-2">
+                                  <FileText className="h-3.5 w-3.5 shrink-0 text-text-muted" />
+                                  <span className="truncate text-xs text-text-secondary" title={document.fileName}>
+                                    {document.fileName}
+                                  </span>
                                 </div>
-                              );
-                            })}
-                            {signers.length > 3 ? (
-                              <div className="text-[11px] font-medium text-text-muted">+{signers.length - 3} more</div>
-                            ) : null}
+                              ))}
+                              {envelope.documents.length > 3 ? (
+                                <div className="text-[11px] font-medium text-text-muted">+{envelope.documents.length - 3} more</div>
+                              ) : null}
+                            </div>
                           </div>
                         </div>
 
-                        <div className="min-w-0 border-t border-border-primary pt-3 sm:border-l sm:border-t-0 sm:pl-3 sm:pt-0">
-                          <div className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-text-muted">
-                            Documents ({envelope.documents.length})
-                          </div>
-                          <div className="space-y-1.5">
-                            {envelope.documents.length === 0 ? (
-                              <div className="text-xs text-text-muted">No documents added</div>
-                            ) : envelope.documents.slice(0, 3).map((document) => (
-                              <div key={document.id} className="flex min-w-0 items-center gap-2">
-                                <FileText className="h-3.5 w-3.5 shrink-0 text-text-muted" />
-                                <span className="truncate text-xs text-text-secondary" title={document.fileName}>
-                                  {document.fileName}
-                                </span>
-                              </div>
-                            ))}
-                            {envelope.documents.length > 3 ? (
-                              <div className="text-[11px] font-medium text-text-muted">+{envelope.documents.length - 3} more</div>
-                            ) : null}
-                          </div>
+                        <div className="mt-auto flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-t border-border-primary pt-2.5 text-[11px] text-text-muted">
+                          <span>{envelope.documentCount} docs · {envelope.signerCount} signers · {ESIGNING_SIGNING_ORDER_LABELS[envelope.signingOrder]}</span>
+                          <span>Updated {formatEsigningDateTime(envelope.updatedAt)}</span>
                         </div>
-                      </div>
-
-                      <div className="mt-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-t border-border-primary pt-2.5 text-[11px] text-text-muted">
-                        <span>{envelope.documentCount} docs · {envelope.signerCount} signers · {ESIGNING_SIGNING_ORDER_LABELS[envelope.signingOrder]}</span>
-                        <span>Updated {formatEsigningDateTime(envelope.updatedAt)}</span>
                       </div>
                     </article>
                   );

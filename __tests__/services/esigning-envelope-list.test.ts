@@ -335,6 +335,45 @@ describe('e-signing envelope list company filtering', () => {
     });
   });
 
+  it('sorts company by company name on the server', async () => {
+    await listEsigningEnvelopes(session, 'tenant-1', {
+      page: 1,
+      limit: 20,
+      createdBy: 'all',
+      sortBy: 'companyName',
+      sortOrder: 'asc',
+    });
+
+    expect(mocks.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        orderBy: [
+          { company: { name: 'asc' } },
+          { updatedAt: 'desc' },
+        ],
+      })
+    );
+  });
+
+  it('sorts details by document count then recipient count on the server', async () => {
+    await listEsigningEnvelopes(session, 'tenant-1', {
+      page: 1,
+      limit: 20,
+      createdBy: 'all',
+      sortBy: 'details',
+      sortOrder: 'desc',
+    });
+
+    expect(mocks.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        orderBy: [
+          { documents: { _count: 'desc' } },
+          { recipients: { _count: 'desc' } },
+          { updatedAt: 'desc' },
+        ],
+      })
+    );
+  });
+
   it('serializes the real ledger snapshot for delivery health and completion status', async () => {
     mocks.findMany.mockResolvedValue([
       {
