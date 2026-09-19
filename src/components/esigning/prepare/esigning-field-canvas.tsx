@@ -1160,7 +1160,7 @@ export function EsigningFieldCanvas({
   return (
     <div className="flex h-full flex-col">
       {documents.length > 1 ? (
-        <div className="flex flex-shrink-0 items-end overflow-x-auto border-b border-border-primary bg-background-secondary pl-2">
+        <div className="flex flex-shrink-0 items-end overflow-x-auto overflow-y-hidden border-b border-border-primary bg-background-secondary pl-2">
           {documents.map((document) => {
             const isActive = document.id === selectedDocumentId;
             return (
@@ -1189,6 +1189,7 @@ export function EsigningFieldCanvas({
             showHighlightsToggle={false}
             pdfUrl={selectedDocument.pdfUrl}
             initialPage={viewerPage}
+            fitFirstPageWidthOnInitialLoad
             zoomLevel={zoomLevel}
             onZoomLevelChange={onZoomLevelChange}
             highlights={canEdit ? [] : highlights}
