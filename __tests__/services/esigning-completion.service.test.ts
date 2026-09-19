@@ -30,6 +30,7 @@ const mocks = vi.hoisted(() => ({
   sendCompletion: vi.fn(),
   createAuditLog: vi.fn(),
   generateArtifactsNow: vi.fn(),
+  ensureArtifacts: vi.fn(),
   buildLinks: vi.fn(),
   buildAttachments: vi.fn(),
 }));
@@ -74,6 +75,8 @@ vi.mock('@/lib/storage', () => ({
       `original/${tenantId}/${companyId}/${id}${ext}`,
     esigningSignedDocument: (tenantId: string, envelopeId: string, id: string) =>
       `signed/${tenantId}/${envelopeId}/${id}.pdf`,
+    esigningEnvelopeCertificate: (tenantId: string, envelopeId: string) =>
+      `certificate/${tenantId}/${envelopeId}.pdf`,
     esigningCertificateDocument: (tenantId: string, envelopeId: string, id: string) =>
       `certificate/${tenantId}/${envelopeId}/${id}.pdf`,
   },
@@ -97,6 +100,7 @@ vi.mock('@/services/esigning-pdf.service', async (importOriginal) => {
   return {
     ...actual,
     generateEsigningEnvelopeArtifactsNow: mocks.generateArtifactsNow,
+    ensureEsigningEnvelopeArtifacts: mocks.ensureArtifacts,
     buildDeliveryDocumentLinks: mocks.buildLinks,
     buildEmailAttachments: mocks.buildAttachments,
   };
@@ -201,6 +205,7 @@ describe('e-signing completion worker', () => {
     });
     mocks.createAuditLog.mockResolvedValue(undefined);
     mocks.generateArtifactsNow.mockResolvedValue('generated');
+    mocks.ensureArtifacts.mockResolvedValue(undefined);
     mocks.buildLinks.mockResolvedValue([{
       label: 'nda.pdf',
       signedUrl: '/signed',
@@ -397,7 +402,7 @@ describe('e-signing completion worker', () => {
       pdfGenerationStatus: 'PENDING',
       // Must match ESIGNING_ARTIFACT_VERSION so the repair path treats the
       // artifacts as current instead of regenerating them.
-      metadata: { artifactVersion: 5 },
+      metadata: { artifactVersion: 11 },
       documents: [
         {
           id: 'document-1',

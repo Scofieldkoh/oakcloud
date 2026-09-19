@@ -6,11 +6,8 @@ import {
   createErrorResponse,
   resolveWorkspaceId,
 } from '@/lib/api-helpers';
-import { storage } from '@/lib/storage';
 import { getEsigningEnvelopeDetail } from '@/services/esigning-envelope.service';
-import { prisma } from '@/lib/prisma';
-import { ensureEsigningEnvelopeArtifacts } from '@/services/esigning-pdf.service';
-import { getEsigningDocumentVariantFileName } from '@/lib/esigning-document-filename';
+import { downloadEsigningDocumentPackage } from '@/services/esigning-pdf.service';
 
 interface RouteParams {
   params: Promise<{ id: string; docId: string }>;
@@ -31,36 +28,19 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       throw new Error('Document not found');
     }
 
-    await ensureEsigningEnvelopeArtifacts({
+    const includeCertificate = searchParams.get('includeCertificate') === 'true';
+    const result = await downloadEsigningDocumentPackage({
+      tenantId,
       envelopeId: id,
-      requireCertificates: false,
+      documentId: docId,
+      variant: includeCertificate ? 'signed_with_certificate' : 'signed',
     });
-
-    const stored = await prisma.esigningEnvelopeDocument.findFirst({
-      where: {
-        id: docId,
-        envelopeId: id,
-        tenantId,
-      },
-      select: {
-        fileName: true,
-        originalFileName: true,
-        signedStoragePath: true,
-      },
-    });
-
-    if (!stored?.signedStoragePath) {
-      throw new Error('Signed PDF not found');
-    }
-
-    const buffer = await storage.download(stored.signedStoragePath);
     const disposition = searchParams.get('download') === 'true' ? 'attachment' : 'inline';
-    const fileName = getEsigningDocumentVariantFileName(stored, 'signed');
 
-    return new Response(new Uint8Array(buffer), {
+    return new Response(new Uint8Array(result.buffer), {
       headers: {
         'Content-Type': 'application/pdf',
-        'Content-Disposition': buildContentDispositionHeader(disposition, fileName),
+        'Content-Disposition': buildContentDispositionHeader(disposition, result.fileName),
       },
     });
   } catch (error) {

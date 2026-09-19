@@ -5,6 +5,7 @@ import { storage, StorageKeys } from '@/lib/storage';
 import { markFilingJobsForTerminalSourceFailure } from '@/services/esigning-sharepoint-filing/enqueue';
 import {
   getEsigningDocumentOriginalFileName,
+  getEsigningDocumentPdfFileName,
   getEsigningDocumentVariantFileName,
 } from '@/lib/esigning-document-filename';
 import { isEsigningDocumentVisibleToRecipient } from '@/lib/esigning-document-visibility';
@@ -23,7 +24,7 @@ import {
 
 const PROCESSING_LEASE_MS = 15 * 60 * 1000;
 const MAX_EMAIL_ATTACHMENT_BYTES = 20 * 1024 * 1024;
-const ESIGNING_ARTIFACT_VERSION = 10;
+const ESIGNING_ARTIFACT_VERSION = 11;
 
 function toPdfBounds(input: {
   pageWidth: number;
@@ -43,11 +44,10 @@ function toPdfBounds(input: {
 
 export async function buildCertificatePdf(input: {
   envelope: Awaited<ReturnType<typeof loadEnvelopeForPdf>>;
-  document: Awaited<ReturnType<typeof loadEnvelopeForPdf>>['documents'][number];
+  document?: Awaited<ReturnType<typeof loadEnvelopeForPdf>>['documents'][number];
 }) {
   return renderEsigningCertificatePdf({
     envelope: input.envelope,
-    document: input.document,
   });
 }
 
@@ -131,6 +131,43 @@ export async function mergePdfBuffers(buffers: Uint8Array[]): Promise<Buffer> {
 
   return Buffer.from(await mergedPdf.save());
 }
+
+export async function composeEsigningEnvelopePackage(input: {
+  variant: 'documents' | 'documents_with_certificates' | 'certificates';
+  signedBuffers: Buffer[];
+  certificateBuffer?: Buffer;
+}): Promise<Buffer> {
+  if (input.variant === 'certificates') {
+    if (!input.certificateBuffer) {
+      throw new Error('Completion certificate is not available');
+    }
+    return mergePdfBuffers([input.certificateBuffer]);
+  }
+
+  if (input.signedBuffers.length === 0) {
+    throw new Error('No generated PDFs are available for download');
+  }
+
+  const buffers: Buffer[] = [...input.signedBuffers];
+  if (input.variant === 'documents_with_certificates') {
+    if (!input.certificateBuffer) {
+      throw new Error('Completion certificate is not available');
+    }
+    buffers.push(input.certificateBuffer);
+  }
+
+  return mergePdfBuffers(buffers);
+}
+export async function composeEsigningDocumentPackage(input: {
+  signedBuffer: Buffer;
+  certificateBuffer?: Buffer;
+}): Promise<Buffer> {
+  if (!input.certificateBuffer) {
+    return input.signedBuffer;
+  }
+  return mergePdfBuffers([input.signedBuffer, input.certificateBuffer]);
+}
+
 
 export async function buildDeliveryDocumentLinks(input: {
   envelopeId: string;
@@ -239,6 +276,19 @@ async function generateEnvelopeArtifacts(envelopeId: string): Promise<void> {
   const fieldValuesByDefinitionId = new Map(
     envelope.fieldValues.map((value) => [value.fieldDefinitionId, value]),
   );
+  const certificateBuffer = await buildCertificatePdf({ envelope });
+  const certificateStoragePath = StorageKeys.esigningEnvelopeCertificate(
+    envelope.tenantId,
+    envelope.id,
+  );
+
+  await storage.upload(certificateStoragePath, certificateBuffer, {
+    contentType: 'application/pdf',
+    metadata: {
+      envelopeId: envelope.id,
+      certificateId: envelope.certificateId,
+    },
+  });
 
   for (const document of envelope.documents) {
     const originalBuffer = await storage.download(document.storagePath);
@@ -319,7 +369,6 @@ async function generateEnvelopeArtifacts(envelopeId: string): Promise<void> {
       }
     }
 
-    const certificateBuffer = await buildCertificatePdf({ envelope, document });
     const signedBuffer = Buffer.from(await originalPdf.save());
     const signedHash = hashBlake3(signedBuffer);
     const signedStoragePath = StorageKeys.esigningSignedDocument(
@@ -327,12 +376,6 @@ async function generateEnvelopeArtifacts(envelopeId: string): Promise<void> {
       envelope.id,
       document.id,
     );
-    const certificateStoragePath = StorageKeys.esigningCertificateDocument(
-      envelope.tenantId,
-      envelope.id,
-      document.id,
-    );
-
     await storage.upload(signedStoragePath, signedBuffer, {
       contentType: 'application/pdf',
       metadata: {
@@ -341,15 +384,6 @@ async function generateEnvelopeArtifacts(envelopeId: string): Promise<void> {
         certificateId: envelope.certificateId,
       },
     });
-    await storage.upload(certificateStoragePath, certificateBuffer, {
-      contentType: 'application/pdf',
-      metadata: {
-        envelopeId: envelope.id,
-        documentId: document.id,
-        certificateId: envelope.certificateId,
-      },
-    });
-
     await prisma.esigningEnvelopeDocument.update({
       where: { id: document.id },
       data: {
@@ -407,18 +441,14 @@ export async function ensureEsigningEnvelopeArtifacts(input: {
         needsGeneration = true;
         break;
       }
+    }
 
-      if (input.requireCertificates) {
-        const certificateStoragePath = StorageKeys.esigningCertificateDocument(
-          envelope.tenantId,
-          envelope.id,
-          document.id,
-        );
-        if (!(await storage.exists(certificateStoragePath))) {
-          needsGeneration = true;
-          break;
-        }
-      }
+    if (
+      !needsGeneration &&
+      input.requireCertificates &&
+      !(await storage.exists(StorageKeys.esigningEnvelopeCertificate(envelope.tenantId, envelope.id)))
+    ) {
+      needsGeneration = true;
     }
   }
 
@@ -614,50 +644,95 @@ export async function downloadEsigningEnvelopePackage(input: {
   if (envelope.status !== 'COMPLETED') {
     throw new Error('Completed package is not available yet');
   }
-  const buffers: Buffer[] = [];
-
-  for (const document of envelope.documents) {
-    if (variant === 'certificates') {
-      const certificateStoragePath = StorageKeys.esigningCertificateDocument(
-        envelope.tenantId,
-        envelope.id,
-        document.id,
-      );
-      buffers.push(await storage.download(certificateStoragePath));
-      continue;
-    }
-
-    if (!document.signedStoragePath) {
-      throw new Error('One or more generated PDFs are not available yet');
-    }
-
-    buffers.push(await storage.download(document.signedStoragePath));
-
-    if (variant === 'documents_with_certificates') {
-      const certificateStoragePath = StorageKeys.esigningCertificateDocument(
-        envelope.tenantId,
-        envelope.id,
-        document.id,
-      );
-      buffers.push(await storage.download(certificateStoragePath));
+  const signedBuffers: Buffer[] = [];
+  if (variant !== 'certificates') {
+    for (const document of envelope.documents) {
+      if (!document.signedStoragePath) {
+        throw new Error('One or more generated PDFs are not available yet');
+      }
+      signedBuffers.push(await storage.download(document.signedStoragePath));
     }
   }
 
-  if (buffers.length === 0) {
-    throw new Error('No generated PDFs are available for download');
-  }
+  const certificateBuffer =
+    variant === 'documents'
+      ? undefined
+      : await storage.download(
+          StorageKeys.esigningEnvelopeCertificate(envelope.tenantId, envelope.id),
+        );
 
   const fileNameBase = sanitizePdfBaseName(envelope.title);
   const fileName =
     variant === 'certificates'
-      ? `${fileNameBase}-certificates.pdf`
+      ? `${fileNameBase}-certificate.pdf`
       : variant === 'documents'
         ? `${fileNameBase}-documents.pdf`
-        : `${fileNameBase}-documents-and-certificates.pdf`;
+        : `${fileNameBase}-documents-and-certificate.pdf`;
 
   return {
-    buffer: await mergePdfBuffers(buffers),
+    buffer: await composeEsigningEnvelopePackage({
+      variant,
+      signedBuffers,
+      certificateBuffer,
+    }),
     fileName,
+  };
+}
+
+export async function downloadEsigningDocumentPackage(input: {
+  tenantId: string;
+  envelopeId: string;
+  documentId: string;
+  variant?: 'signed' | 'signed_with_certificate';
+}): Promise<{
+  buffer: Buffer;
+  fileName: string;
+}> {
+  const variant = input.variant ?? 'signed';
+  await ensureEsigningEnvelopeArtifacts({
+    envelopeId: input.envelopeId,
+    requireCertificates: variant === 'signed_with_certificate',
+  });
+
+  const envelope = await prisma.esigningEnvelope.findFirst({
+    where: {
+      id: input.envelopeId,
+      tenantId: input.tenantId,
+    },
+    include: {
+      documents: {
+        orderBy: { sortOrder: 'asc' },
+      },
+    },
+  });
+
+  if (!envelope || envelope.status !== 'COMPLETED') {
+    throw new Error('Completed package is not available yet');
+  }
+
+  const document = envelope.documents.find((entry) => entry.id === input.documentId);
+  if (!document?.signedStoragePath) {
+    throw new Error('Signed PDF not found');
+  }
+
+  const signedBuffer = await storage.download(document.signedStoragePath);
+  const baseFileName = getEsigningDocumentPdfFileName(document).replace(/\.pdf$/iu, '');
+  if (variant === 'signed') {
+    return {
+      buffer: signedBuffer,
+      fileName: `${baseFileName}-signed.pdf`,
+    };
+  }
+
+  const certificateBuffer = await storage.download(
+    StorageKeys.esigningEnvelopeCertificate(envelope.tenantId, envelope.id),
+  );
+  return {
+    buffer: await composeEsigningDocumentPackage({
+      signedBuffer,
+      certificateBuffer,
+    }),
+    fileName: `${baseFileName}-signed-and-certificate.pdf`,
   };
 }
 
@@ -731,7 +806,7 @@ export async function downloadEsigningDeliveryDocument(input: {
 
   const storagePath =
     variant === 'certificate'
-      ? StorageKeys.esigningCertificateDocument(envelope.tenantId, envelope.id, document.id)
+      ? StorageKeys.esigningEnvelopeCertificate(envelope.tenantId, envelope.id)
       : document.signedStoragePath;
 
   if (!storagePath) {
@@ -739,10 +814,10 @@ export async function downloadEsigningDeliveryDocument(input: {
   }
 
   const buffer = await storage.download(storagePath);
-  const fileName = getEsigningDocumentVariantFileName(
-    document,
-    variant === 'certificate' ? 'certificate' : 'signed',
-  );
+  const fileName =
+    variant === 'certificate'
+      ? `${sanitizePdfBaseName(envelope.title)}-certificate.pdf`
+      : getEsigningDocumentVariantFileName(document, 'signed');
 
   return { buffer, fileName };
 }

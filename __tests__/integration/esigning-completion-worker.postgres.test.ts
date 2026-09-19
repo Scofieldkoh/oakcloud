@@ -22,6 +22,8 @@ vi.mock('@/lib/storage', () => ({
       `original/${tenantId}/${companyId}/${id}${ext}`,
     esigningSignedDocument: (tenantId: string, envelopeId: string, id: string) =>
       `signed/${tenantId}/${envelopeId}/${id}.pdf`,
+    esigningEnvelopeCertificate: (tenantId: string, envelopeId: string) =>
+      `certificate/${tenantId}/${envelopeId}.pdf`,
     esigningCertificateDocument: (tenantId: string, envelopeId: string, id: string) =>
       `certificate/${tenantId}/${envelopeId}/${id}.pdf`,
   },
@@ -32,6 +34,7 @@ vi.mock('@/services/esigning-pdf.service', async (importOriginal) => {
   return {
     ...actual,
     generateEsigningEnvelopeArtifactsNow: vi.fn(async () => 'generated'),
+    ensureEsigningEnvelopeArtifacts: vi.fn(async () => undefined),
     // The worker tests use sentinel storage bytes rather than real PDFs. Keep
     // attachment assembly out of this concurrency fixture; PDF merge coverage
     // lives in the certificate PDF service tests.
