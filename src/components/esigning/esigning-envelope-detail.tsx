@@ -9,6 +9,7 @@ import {
   Download,
   FileSignature,
   MoreHorizontal,
+  Send,
   Trash2,
 } from 'lucide-react';
 import type { EsigningEnvelopeEventAction } from '@/generated/prisma';
@@ -17,6 +18,7 @@ import type {
   EsigningEnvelopeEventDto,
 } from '@/types/esigning';
 import { Alert } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
 import {
   Dropdown,
   DropdownItem,
@@ -50,10 +52,21 @@ interface Props {
   envelope: EsigningEnvelopeDetailDto;
   returnHref: string;
   canCreateEsigning: boolean;
+  canUpdateEsigning: boolean;
   isDuplicating: boolean;
+  isSending: boolean;
+  recipientActionId: string | null;
+  isCopyingRecipientLink: boolean;
+  isResendingRecipient: boolean;
+  onSend: () => void;
+  onVoid: () => void;
   onDuplicate: () => void;
   onDelete: () => void;
   onRetryProcessing: () => void;
+  onEditRecipient: (recipientId: string) => void;
+  onRemoveRecipient: (recipientId: string) => void;
+  onCopyRecipientLink: (recipientId: string) => void;
+  onResendRecipient: (recipientId: string) => void;
   onEnvelopeDownload: (variant: EnvelopeDownloadVariant) => void;
   onDocumentDownload: (
     document: EsigningEnvelopeDetailDto['documents'][number],
@@ -85,14 +98,25 @@ function formatEventAction(event: EsigningEnvelopeEventDto): string {
   return labels[event.action] ?? event.action.replace(/_/g, ' ');
 }
 
-export function EsigningCompletedDetail({
+export function EsigningEnvelopeDetailView({
   envelope,
   returnHref,
   canCreateEsigning,
+  canUpdateEsigning,
   isDuplicating,
+  isSending,
+  recipientActionId,
+  isCopyingRecipientLink,
+  isResendingRecipient,
+  onSend,
+  onVoid,
   onDuplicate,
   onDelete,
   onRetryProcessing,
+  onEditRecipient,
+  onRemoveRecipient,
+  onCopyRecipientLink,
+  onResendRecipient,
   onEnvelopeDownload,
   onDocumentDownload,
 }: Props) {
@@ -146,7 +170,7 @@ export function EsigningCompletedDetail({
         </div>
 
         <section
-          data-testid="completed-envelope-header"
+          data-testid="envelope-detail-header"
           className="rounded-2xl border border-border-primary bg-background-secondary p-5 shadow-sm sm:p-6"
         >
           <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
@@ -206,7 +230,22 @@ export function EsigningCompletedDetail({
               ) : null}
             </div>
 
-            <div className="flex shrink-0 items-center gap-2">
+            <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+              {envelope.canSend && canUpdateEsigning ? (
+                <Button
+                  size="sm"
+                  leftIcon={<Send className="h-4 w-4" />}
+                  isLoading={isSending}
+                  onClick={onSend}
+                >
+                  Send envelope
+                </Button>
+              ) : null}
+              {envelope.canVoid && canUpdateEsigning ? (
+                <Button size="sm" variant="secondary" onClick={onVoid}>
+                  Void
+                </Button>
+              ) : null}
               {downloadsReady ? (
                 <Dropdown>
                   <DropdownTrigger
@@ -282,7 +321,7 @@ export function EsigningCompletedDetail({
         <div className="grid gap-5 lg:grid-cols-[minmax(0,1.65fr)_minmax(320px,1fr)] lg:items-start">
           <div className="space-y-5">
             <section
-              data-testid="completed-recipients-section"
+              data-testid="envelope-detail-recipients"
               className="rounded-2xl border border-border-primary bg-background-secondary p-5 shadow-sm sm:p-6"
             >
               <div className="flex items-center justify-between gap-3">
@@ -296,7 +335,7 @@ export function EsigningCompletedDetail({
                 {envelope.recipients.map((recipient) => (
                   <div
                     key={recipient.id}
-                    data-testid="completed-recipient-row"
+                    data-testid="envelope-detail-recipient-row"
                     className="flex flex-col gap-2 py-3 first:pt-1 last:pb-0 sm:flex-row sm:items-start sm:justify-between"
                   >
                     <div className="flex min-w-0 items-start gap-3">
@@ -343,6 +382,44 @@ export function EsigningCompletedDetail({
                       >
                         {ESIGNING_RECIPIENT_TYPE_LABELS[recipient.type]}
                       </span>
+                      {['SENT', 'IN_PROGRESS'].includes(envelope.status) &&
+                      canUpdateEsigning &&
+                      recipient.status !== 'SIGNED' &&
+                      recipient.status !== 'DECLINED' ? (
+                        <>
+                          <Button size="xs" variant="secondary" onClick={() => onEditRecipient(recipient.id)}>
+                            Edit
+                          </Button>
+                          {recipient.type === 'SIGNER' &&
+                          ['NOTIFIED', 'VIEWED'].includes(recipient.status) ? (
+                            <>
+                              <Button
+                                size="xs"
+                                variant="secondary"
+                                disabled={recipientActionId === recipient.id && isCopyingRecipientLink}
+                                onClick={() => onCopyRecipientLink(recipient.id)}
+                              >
+                                Copy link
+                              </Button>
+                              <Button
+                                size="xs"
+                                variant="secondary"
+                                disabled={recipientActionId === recipient.id && isResendingRecipient}
+                                onClick={() => onResendRecipient(recipient.id)}
+                              >
+                                Resend
+                              </Button>
+                            </>
+                          ) : null}
+                          <Button
+                            size="xs"
+                            variant="danger"
+                            onClick={() => onRemoveRecipient(recipient.id)}
+                          >
+                            Remove
+                          </Button>
+                        </>
+                      ) : null}
                     </div>
                   </div>
                 ))}
@@ -350,7 +427,7 @@ export function EsigningCompletedDetail({
             </section>
 
             <section
-              data-testid="completed-documents-section"
+              data-testid="envelope-detail-documents"
               className="rounded-2xl border border-border-primary bg-background-secondary p-5 shadow-sm sm:p-6"
             >
               <div className="flex items-center justify-between gap-3">
@@ -364,7 +441,7 @@ export function EsigningCompletedDetail({
                 {envelope.documents.map((doc) => (
                   <div
                     key={doc.id}
-                    data-testid="completed-document-row"
+                    data-testid="envelope-detail-document-row"
                     className="flex items-center justify-between gap-4 py-3 first:pt-1 last:pb-0"
                   >
                     <div className="min-w-0">
@@ -395,20 +472,20 @@ export function EsigningCompletedDetail({
                         >
                           Original
                         </DropdownItem>
-                        <DropdownItem
-                          disabled={!doc.signedPdfUrl || !downloadsReady}
-                          onClick={() => onDocumentDownload(doc, 'signed')}
-                        >
-                          Document only
-                        </DropdownItem>
-                        <DropdownItem
-                          disabled={!doc.signedPdfUrl || !downloadsReady}
-                          onClick={() =>
-                            onDocumentDownload(doc, 'signed_with_certificate')
-                          }
-                        >
-                          Document + Certificate
-                        </DropdownItem>
+                        {doc.signedPdfUrl ? (
+                          <DropdownItem onClick={() => onDocumentDownload(doc, 'signed')}>
+                            Document only
+                          </DropdownItem>
+                        ) : null}
+                        {envelope.status === 'COMPLETED' && doc.signedPdfUrl && downloadsReady ? (
+                          <DropdownItem
+                            onClick={() =>
+                              onDocumentDownload(doc, 'signed_with_certificate')
+                            }
+                          >
+                            Document + Certificate
+                          </DropdownItem>
+                        ) : null}
                       </DropdownMenu>
                     </Dropdown>
                   </div>
@@ -419,7 +496,7 @@ export function EsigningCompletedDetail({
 
           <aside className="lg:sticky lg:top-6">
             <section
-              data-testid="completed-activity-section"
+              data-testid="envelope-detail-activity"
               className="rounded-2xl border border-border-primary bg-background-secondary p-5 shadow-sm sm:p-6"
             >
               <div className="flex flex-wrap items-center justify-between gap-3">

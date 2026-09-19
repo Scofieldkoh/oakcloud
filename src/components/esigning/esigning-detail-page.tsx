@@ -4,18 +4,11 @@ import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
-  AlertTriangle,
   ArrowLeft,
-  ChevronDown,
-  ChevronUp,
   Copy,
-  Download,
-  FileSignature,
-  Send,
   Trash2,
 } from 'lucide-react';
 import type {
-  EsigningEnvelopeEventAction,
   EsigningRecipientAccessMode,
   EsigningRecipientType,
 } from '@/generated/prisma';
@@ -55,13 +48,8 @@ import type {
 } from '@/lib/validations/esigning';
 import { ESIGNING_LIMITS } from '@/lib/validations/esigning';
 import {
-  EnvelopeStatusBadge,
   ESIGNING_ACCESS_MODE_LABELS,
   ESIGNING_RECIPIENT_TYPE_LABELS,
-  ESIGNING_SIGNING_ORDER_LABELS,
-  formatEsigningDateTime,
-  formatEsigningFileSize,
-  PdfGenerationBadge,
 } from '@/components/esigning/esigning-shared';
 import type { EsigningEnvelopeDetailDto, EsigningManualLinkDto } from '@/types/esigning';
 import { cn } from '@/lib/utils';
@@ -69,8 +57,7 @@ import { EsigningStepIndicator } from './prepare/esigning-step-indicator';
 import { EsigningStepUpload } from './prepare/esigning-step-upload';
 import { EsigningStepFields } from './prepare/esigning-step-fields';
 import { EsigningStepReview } from './prepare/esigning-step-review';
-import { EsigningRecipientCard } from './prepare/esigning-recipient-card';
-import { EsigningCompletedDetail } from './esigning-completed-detail';
+import { EsigningEnvelopeDetailView } from './esigning-envelope-detail';
 import type { PlacedField } from './prepare/esigning-field-canvas';
 import {
   readTaskLaunchContext,
@@ -124,33 +111,6 @@ function parseOptionalInt(value: string): number | null {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
-function formatEventAction(
-  action: EsigningEnvelopeEventAction,
-  recipientName: string | null,
-  metadata: Record<string, unknown> | null
-): string {
-  const name = recipientName ?? 'Unknown';
-  if (action === 'REMINDER_SENT' && metadata?.kind === 'expiry_warning') {
-    return 'Expiry warning sent to sender';
-  }
-
-  const labels: Partial<Record<EsigningEnvelopeEventAction, string>> = {
-    CREATED: 'Envelope created',
-    SENT: 'Sent for signing',
-    VIEWED: `Viewed by ${name}`,
-    CONSENTED: `Consent given by ${name}`,
-    SIGNED: `Signed by ${name}`,
-    COMPLETED: 'Envelope completed',
-    DECLINED: `Declined by ${name}`,
-    VOIDED: 'Envelope voided',
-    CORRECTED: `Recipient corrected: ${name}`,
-    EXPIRED: 'Envelope expired',
-    REMINDER_SENT: `Reminder sent to ${name}`,
-    PDF_GENERATION_FAILED: 'Document processing failed',
-  };
-  return labels[action] ?? action.replace(/_/g, ' ');
-}
-
 type WizardStep = 1 | 2 | 3;
 
 type SendEnvelopeResult = {
@@ -192,7 +152,6 @@ export function EsigningDetailPage({ envelopeId }: Props) {
   const sessionQuery = useSession();
   const envelopeQuery = useEsigningEnvelope(envelopeId);
   const envelope = envelopeQuery.data;
-  const latestEmailFailure = envelope?.emailDelivery.failures[0] ?? null;
   const companiesQuery = useCompanies({ page: 1, limit: 100, sortBy: 'name', sortOrder: 'asc' });
 
   // Mutations
@@ -237,7 +196,6 @@ export function EsigningDetailPage({ envelopeId }: Props) {
   const [isLinksModalOpen, setIsLinksModalOpen] = useState(false);
   const [pendingAutoSign, setPendingAutoSign] = useState<PendingAutoSign | null>(null);
   const [isAutoSignPromptOpen, setIsAutoSignPromptOpen] = useState(false);
-  const [showAllActivity, setShowAllActivity] = useState(false);
 
   // Field drafts
   const [fieldDrafts, setFieldDrafts] = useState<PlacedField[]>([]);
@@ -296,11 +254,6 @@ export function EsigningDetailPage({ envelopeId }: Props) {
       const summary = signerFieldSummary.get(recipient.id);
       return Boolean(summary && summary.totalCount > 0 && summary.signatureCount > 0);
     });
-  const visibleEvents = useMemo(
-    () => (showAllActivity ? envelope?.events ?? [] : (envelope?.events ?? []).slice(0, 6)),
-    [envelope?.events, showAllActivity]
-  );
-
   // Initialize field drafts from envelope
   useEffect(() => {
     if (!envelope) return;
@@ -1077,375 +1030,97 @@ export function EsigningDetailPage({ envelopeId }: Props) {
     );
   }
 
-  // ——— Completed envelope detail ———
-  if (envelope.status === 'COMPLETED') {
-    return (
-      <>
-        <EsigningCompletedDetail
-          envelope={envelope}
-          returnHref={returnHref}
-          canCreateEsigning={can.createEsigning}
-          isDuplicating={duplicateEnvelope.isPending}
-          onDuplicate={() => void handleDuplicateEnvelope()}
-          onDelete={() => setIsDeleteEnvelopeOpen(true)}
-          onRetryProcessing={() => {
-            void (async () => {
-              try {
-                await retryProcessing.mutateAsync();
-                toast.success(
-                  envelope.pdfGenerationStatus === 'FAILED'
-                    ? 'Processing retried'
-                    : 'Processing resumed'
-                );
-              } catch (error) {
-                toast.error(
-                  error instanceof Error ? error.message : 'Failed to retry processing'
-                );
-              }
-            })();
-          }}
-          onEnvelopeDownload={openEnvelopeDownload}
-          onDocumentDownload={openDocumentDownload}
-        />
-        {recipientModal}
-        {linksModal}
-        {confirmDialogs}
-      </>
-    );
-  }
-
-  // ——— Non-draft: read-only detail view ———
+  // ——— Shared non-draft envelope detail ———
   return (
-    <div className="min-h-screen bg-background-primary">
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 p-4 sm:gap-6 sm:p-6">
-        {/* Back + status */}
-        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-          <Link
-            href={returnHref}
-            className="inline-flex items-center gap-2 rounded-full border border-border-primary bg-background-secondary px-3 py-1.5 text-sm text-text-secondary"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back
-          </Link>
-          <EnvelopeStatusBadge status={envelope.status} />
-          <span className="inline-flex items-center rounded-full border border-border-primary px-3 py-1 text-xs text-text-secondary">
-            {ESIGNING_SIGNING_ORDER_LABELS[envelope.signingOrder]}
-          </span>
-          {envelope.pdfGenerationStatus ? (
-            <PdfGenerationBadge status={envelope.pdfGenerationStatus} />
-          ) : null}
-          {envelope.emailDelivery.status === 'failed' ? (
-            <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-medium text-amber-800">
-              <AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" />
-              Email failed
-            </span>
-          ) : null}
-        </div>
-
-        {/* Header card */}
-        <section className="rounded-2xl border border-border-primary bg-background-secondary p-4 shadow-sm sm:rounded-3xl sm:p-6">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-            <div className="min-w-0">
-              <div className="flex items-center gap-3">
-                <div className="hidden shrink-0 rounded-2xl bg-oak-primary/10 p-3 text-oak-primary sm:flex">
-                  <FileSignature className="h-6 w-6" />
-                </div>
-                <div className="min-w-0">
-                  <h1 className="truncate text-xl font-semibold text-text-primary sm:text-2xl lg:text-3xl">{envelope.title}</h1>
-                  <p className="mt-1 text-sm text-text-secondary">
-                    Certificate {envelope.certificateId} · Updated{' '}
-                    {formatEsigningDateTime(envelope.updatedAt)}
-                  </p>
-                </div>
-              </div>
-              {envelope.pdfGenerationError && (
-                <Alert variant="warning" className="mt-4">
-                  {envelope.pdfGenerationError}
-                </Alert>
-              )}
-              {latestEmailFailure ? (
-                <Alert variant="warning" title="Some e-signing emails failed to send" className="mt-4">
-                  Last failure: {latestEmailFailure.to} - {latestEmailFailure.error}
-                </Alert>
-              ) : null}
-            </div>
-            <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:gap-3">
-              {envelope.canSend && can.updateEsigning && (
-                <Button
-                  className="w-full sm:w-auto"
-                  leftIcon={<Send className="h-4 w-4" />}
-                  onClick={async () => {
-                    try {
-                      const result = await sendEnvelope.mutateAsync(taskContext);
-                      await handleEnvelopeSent(result);
-                      toast.success('Envelope sent');
-                    } catch (error) {
-                      toast.error(
-                        error instanceof Error ? error.message : 'Failed to send envelope'
-                      );
-                    }
-                  }}
-                  isLoading={sendEnvelope.isPending}
-                >
-                  Send envelope
-                </Button>
-              )}
-              {envelope.canVoid && can.updateEsigning && (
-                <Button className="w-full sm:w-auto" variant="secondary" onClick={() => setIsVoidOpen(true)}>
-                  Void
-                </Button>
-              )}
-              {envelope.canDuplicate && can.createEsigning && (
-                <Button
-                  className="w-full sm:w-auto"
-                  variant="secondary"
-                  leftIcon={<Copy className="h-4 w-4" />}
-                  onClick={() => void handleDuplicateEnvelope()}
-                  isLoading={duplicateEnvelope.isPending}
-                >
-                  Duplicate
-                </Button>
-              )}
-              {envelope.canDelete ? (
-                <Button
-                  className="w-full sm:w-auto"
-                  variant="danger"
-                  leftIcon={<Trash2 className="h-4 w-4" />}
-                  onClick={() => setIsDeleteEnvelopeOpen(true)}
-                >
-                  Delete envelope
-                </Button>
-              ) : null}
-              {envelope.canRetryCompletionProcessing ? (
-                <Button
-                  className="w-full sm:w-auto"
-                  variant="secondary"
-                  onClick={async () => {
-                    try {
-                      await retryProcessing.mutateAsync();
-                      toast.success(
-                        envelope.pdfGenerationStatus === 'FAILED'
-                          ? 'Processing retried'
-                          : 'Processing resumed'
-                      );
-                    } catch (error) {
-                      toast.error(
-                        error instanceof Error ? error.message : 'Failed to retry processing'
-                      );
-                    }
-                  }}
-                  isLoading={retryProcessing.isPending}
-                >
-                  {envelope.pdfGenerationStatus === 'FAILED'
-                    ? 'Retry processing'
-                    : 'Resume processing'}
-                </Button>
-              ) : null}
-            </div>
-          </div>
-        </section>
-
-        {/* Two-column layout */}
-        <div className="grid gap-4 sm:gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(280px,0.8fr)]">
-          {/* Left: recipients + documents */}
-          <div className="space-y-4 sm:space-y-6">
-            {/* Recipients */}
-            <section className="rounded-2xl border border-border-primary bg-background-secondary p-4 shadow-sm sm:rounded-3xl sm:p-6">
-              <h2 className="text-lg font-semibold text-text-primary">Recipients</h2>
-              <p className="text-sm text-text-secondary">Signers and copy recipients.</p>
-              <div className="mt-5 space-y-3">
-                {envelope.recipients.map((recipient) => {
-                  const canCorrectRecipient =
-                    ['SENT', 'IN_PROGRESS'].includes(envelope.status) &&
-                    can.updateEsigning &&
-                    recipient.status !== 'SIGNED' &&
-                    recipient.status !== 'DECLINED';
-                  const canResendRecipient =
-                    ['SENT', 'IN_PROGRESS'].includes(envelope.status) &&
-                    can.updateEsigning &&
-                    recipient.type === 'SIGNER' &&
-                    ['NOTIFIED', 'VIEWED'].includes(recipient.status);
-                  const canCopyRecipientLink =
-                    ['SENT', 'IN_PROGRESS'].includes(envelope.status) &&
-                    can.updateEsigning &&
-                    recipient.type === 'SIGNER' &&
-                    ['NOTIFIED', 'VIEWED'].includes(recipient.status);
-
-                  return (
-                    <EsigningRecipientCard
-                      key={recipient.id}
-                      recipient={recipient}
-                      envelopeSigningOrder={envelope.signingOrder}
-                      canEdit={canCorrectRecipient}
-                      onEdit={() => openEditRecipient(recipient.id)}
-                      onRemove={() => {
-                        setRecipientActionId(recipient.id);
-                        setIsDeleteRecipientOpen(true);
-                      }}
-                      onCopyLink={
-                        canCopyRecipientLink
-                          ? () =>
-                              void (async () => {
-                                setRecipientActionId(recipient.id);
-                                try {
-                                  const link = await recipientManualLink.mutateAsync();
-                                  await navigator.clipboard.writeText(link.signingUrl);
-                                  toast.success('Signer link copied');
-                                } catch (error) {
-                                  toast.error(
-                                    error instanceof Error
-                                      ? error.message
-                                      : 'Failed to copy signer link'
-                                  );
-                                } finally {
-                                  setRecipientActionId(null);
-                                }
-                              })()
-                          : undefined
-                      }
-                      isCopyingLink={
-                        recipientActionId === recipient.id && recipientManualLink.isPending
-                      }
-                      onResend={
-                        canResendRecipient
-                          ? () =>
-                              void (async () => {
-                                setRecipientActionId(recipient.id);
-                                try {
-                                  const result = await resendRecipient.mutateAsync();
-                                  if (result.manualLinks.length > 0) {
-                                    setManualLinks(result.manualLinks);
-                                    setIsLinksModalOpen(true);
-                                  }
-                                  toast.success('Recipient resent');
-                                } catch (error) {
-                                  toast.error(
-                                    error instanceof Error
-                                      ? error.message
-                                      : 'Failed to resend recipient'
-                                  );
-                                } finally {
-                                  setRecipientActionId(null);
-                                }
-                              })()
-                          : undefined
-                      }
-                      warnings={[]}
-                    />
-                  );
-                })}
-              </div>
-            </section>
-
-            {/* Documents */}
-            <section className="rounded-2xl border border-border-primary bg-background-secondary p-4 shadow-sm sm:rounded-3xl sm:p-6">
-              <h2 className="text-lg font-semibold text-text-primary">Documents</h2>
-              <div className="mt-5 space-y-3">
-                {envelope.documents.map((doc) => (
-                  <div
-                    key={doc.id}
-                    className="rounded-2xl border border-border-primary bg-background-primary p-4"
-                  >
-                    <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                      <div className="min-w-0">
-                        <div className="break-words font-semibold text-text-primary">{doc.fileName}</div>
-                        <div className="text-sm text-text-secondary">
-                          {doc.pageCount} pages · {formatEsigningFileSize(doc.fileSize)}
-                        </div>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        <a
-                          href={doc.pdfUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-border-primary bg-background-secondary px-3 py-2 text-sm text-text-primary sm:min-h-0"
-                        >
-                          <Download className="h-4 w-4" />
-                          Original
-                        </a>
-                        {doc.signedPdfUrl && (
-                          <a
-                            href={doc.signedPdfUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-border-primary bg-background-secondary px-3 py-2 text-sm text-text-primary sm:min-h-0"
-                          >
-                            <Download className="h-4 w-4" />
-                            <span className="sm:hidden">Signed</span>
-                            <span className="hidden sm:inline">Document only</span>
-                          </a>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
-          </div>
-
-          {/* Right: activity timeline */}
-          <div>
-            <section className="rounded-2xl border border-border-primary bg-background-secondary p-4 shadow-sm sm:rounded-3xl sm:p-6">
-              <h2 className="text-lg font-semibold text-text-primary">Activity</h2>
-              {envelope.events.length > 6 ? (
-                <button
-                  type="button"
-                  onClick={() => setShowAllActivity((current) => !current)}
-                  className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-oak-primary"
-                >
-                  {showAllActivity ? (
-                    <>
-                      <ChevronUp className="h-3.5 w-3.5" />
-                      Collapse older events
-                    </>
-                  ) : (
-                    <>
-                      <ChevronDown className="h-3.5 w-3.5" />
-                      Show all activity
-                    </>
-                  )}
-                </button>
-              ) : null}
-              <div className="mt-4 relative">
-                {/* Vertical line */}
-                <div className="absolute left-2 top-2 bottom-2 w-px bg-border-primary" />
-                <div className="space-y-4">
-                  {visibleEvents.map((event, idx) => (
-                    <div key={event.id} className="flex gap-4">
-                      <div className="relative flex-shrink-0 w-5 flex justify-center">
-                        <div
-                          className={cn(
-                            'h-4 w-4 rounded-full border-2 mt-0.5',
-                            idx === 0
-                              ? 'border-oak-primary bg-oak-primary'
-                              : 'border-border-primary bg-background-secondary'
-                          )}
-                        />
-                      </div>
-                      <div className="flex-1 pb-1">
-                        <div className="text-sm text-text-primary">
-                          {formatEventAction(event.action, event.recipientName, event.metadata)}
-                        </div>
-                        <div className="text-xs text-text-secondary">
-                          {formatEsigningDateTime(event.createdAt)}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                  {envelope.events.length === 0 && (
-                    <p className="pl-5 text-sm text-text-muted">No activity yet.</p>
-                  )}
-                </div>
-              </div>
-            </section>
-          </div>
-        </div>
-      </div>
-
-      {/* Modals */}
+    <>
+      <EsigningEnvelopeDetailView
+        envelope={envelope}
+        returnHref={returnHref}
+        canCreateEsigning={can.createEsigning}
+        canUpdateEsigning={can.updateEsigning}
+        isDuplicating={duplicateEnvelope.isPending}
+        isSending={sendEnvelope.isPending}
+        recipientActionId={recipientActionId}
+        isCopyingRecipientLink={recipientManualLink.isPending}
+        isResendingRecipient={resendRecipient.isPending}
+        onSend={() => {
+          void (async () => {
+            try {
+              const result = await sendEnvelope.mutateAsync(taskContext);
+              await handleEnvelopeSent(result);
+              toast.success('Envelope sent');
+            } catch (error) {
+              toast.error(
+                error instanceof Error ? error.message : 'Failed to send envelope'
+              );
+            }
+          })();
+        }}
+        onVoid={() => setIsVoidOpen(true)}
+        onDuplicate={() => void handleDuplicateEnvelope()}
+        onDelete={() => setIsDeleteEnvelopeOpen(true)}
+        onRetryProcessing={() => {
+          void (async () => {
+            try {
+              await retryProcessing.mutateAsync();
+              toast.success(
+                envelope.pdfGenerationStatus === 'FAILED'
+                  ? 'Processing retried'
+                  : 'Processing resumed'
+              );
+            } catch (error) {
+              toast.error(
+                error instanceof Error ? error.message : 'Failed to retry processing'
+              );
+            }
+          })();
+        }}
+        onEditRecipient={(recipientId) => openEditRecipient(recipientId)}
+        onRemoveRecipient={(recipientId) => {
+          setRecipientActionId(recipientId);
+          setIsDeleteRecipientOpen(true);
+        }}
+        onCopyRecipientLink={(recipientId) => {
+          void (async () => {
+            setRecipientActionId(recipientId);
+            try {
+              const link = await recipientManualLink.mutateAsync();
+              await navigator.clipboard.writeText(link.signingUrl);
+              toast.success('Signer link copied');
+            } catch (error) {
+              toast.error(
+                error instanceof Error ? error.message : 'Failed to copy signer link'
+              );
+            } finally {
+              setRecipientActionId(null);
+            }
+          })();
+        }}
+        onResendRecipient={(recipientId) => {
+          void (async () => {
+            setRecipientActionId(recipientId);
+            try {
+              const result = await resendRecipient.mutateAsync();
+              if (result.manualLinks.length > 0) {
+                setManualLinks(result.manualLinks);
+                setIsLinksModalOpen(true);
+              }
+              toast.success('Recipient resent');
+            } catch (error) {
+              toast.error(
+                error instanceof Error ? error.message : 'Failed to resend recipient'
+              );
+            } finally {
+              setRecipientActionId(null);
+            }
+          })();
+        }}
+        onEnvelopeDownload={openEnvelopeDownload}
+        onDocumentDownload={openDocumentDownload}
+      />
       {recipientModal}
       {linksModal}
       {confirmDialogs}
-    </div>
+    </>
   );
 }
