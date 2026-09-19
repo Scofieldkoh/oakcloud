@@ -90,6 +90,8 @@ interface DocumentPageViewerProps {
   pdfUrl?: string;
   initialPage?: number;
   initialRotation?: number;
+  /** Fit the first page to the available viewer width before the initial render. */
+  fitFirstPageWidthOnInitialLoad?: boolean;
   zoomLevel?: number;
   onZoomLevelChange?: (zoomLevel: number) => void;
   highlights?: BoundingBox[];
@@ -144,6 +146,8 @@ const MIN_ZOOM_LEVEL = ZOOM_LEVELS[0];
 const MAX_ZOOM_LEVEL = ZOOM_LEVELS[ZOOM_LEVELS.length - 1];
 const MOBILE_ZOOM_STEP = 0.01;
 const MOBILE_ZOOM_RENDER_DELAY_MS = 120;
+const VIEWER_HORIZONTAL_PADDING_PX = 32;
+const CANVAS_HORIZONTAL_BORDER_PX = 2;
 const PINCH_ZOOM_STEP_PX = 40; // Pinch distance (px) required to move one percent
 export const DOCUMENT_PAGE_VIEWER_ZOOM_LEVELS = [...ZOOM_LEVELS] as const;
 
@@ -171,6 +175,32 @@ function getClosestZoomIndex(zoomLevel: number): number {
 
 function clampZoomLevel(zoomLevel: number): number {
   return Math.min(MAX_ZOOM_LEVEL, Math.max(MIN_ZOOM_LEVEL, Math.round(zoomLevel * 100) / 100));
+}
+
+function getFitWidthZoomLevel(input: {
+  containerWidth: number;
+  pageWidthAtScaleOne: number;
+  isMobile: boolean;
+}): number | null {
+  const availableWidth =
+    input.containerWidth - VIEWER_HORIZONTAL_PADDING_PX - CANVAS_HORIZONTAL_BORDER_PX;
+  if (availableWidth <= 0 || input.pageWidthAtScaleOne <= 0) {
+    return null;
+  }
+
+  const rawZoom = clampZoomLevel(availableWidth / input.pageWidthAtScaleOne);
+  if (input.isMobile) {
+    return rawZoom;
+  }
+
+  let fittingZoom = MIN_ZOOM_LEVEL;
+  for (const candidate of ZOOM_LEVELS) {
+    if (candidate > rawZoom) {
+      break;
+    }
+    fittingZoom = candidate;
+  }
+  return fittingZoom;
 }
 
 // =============================================================================
@@ -452,6 +482,7 @@ export function DocumentPageViewer({
   pdfUrl: pdfUrlProp,
   initialPage = 1,
   initialRotation = 0,
+  fitFirstPageWidthOnInitialLoad = false,
   zoomLevel,
   onZoomLevelChange,
   highlights,
@@ -558,6 +589,7 @@ export function DocumentPageViewer({
   } | null>(null);
   const [isPanning, setIsPanning] = useState(false);
   const lastFocusedHighlightKeyRef = useRef<string | null>(null);
+  const fittedPdfUrlRef = useRef<string | null>(null);
 
   // ==========================================================================
   // Handlers
@@ -899,6 +931,51 @@ export function DocumentPageViewer({
         pdfDocRef.current = pdf;
         setPageCount(pdf.numPages);
         onPageCountChange?.(pdf.numPages);
+
+        if (
+          fitFirstPageWidthOnInitialLoad &&
+          fittedPdfUrlRef.current !== pdfUrlToLoad &&
+          pdf.numPages > 0
+        ) {
+          await new Promise<void>((resolve) => {
+            window.requestAnimationFrame(() => {
+              window.requestAnimationFrame(() => resolve());
+            });
+          });
+
+          if (cancelled) {
+            return;
+          }
+
+          const scrollContainer = scrollContainerRef.current;
+          if (scrollContainer) {
+            const firstPage = await pdf.getPage(1);
+            const firstPageRotation =
+              data?.pages?.find((pageInfo) => pageInfo.pageNumber === 1)?.rotation ??
+              initialRotation;
+            const firstPageViewport = firstPage.getViewport({
+              scale: 1,
+              rotation: firstPageRotation,
+            });
+            const fitZoom = getFitWidthZoomLevel({
+              containerWidth: scrollContainer.clientWidth,
+              pageWidthAtScaleOne: firstPageViewport.width,
+              isMobile,
+            });
+
+            if (fitZoom !== null) {
+              if (!isZoomControlled) {
+                if (isMobile) {
+                  setZoomLevelInternal(fitZoom);
+                } else {
+                  setZoomIndexInternal(getClosestZoomIndex(fitZoom));
+                }
+              }
+              onZoomLevelChange?.(fitZoom);
+              fittedPdfUrlRef.current = pdfUrlToLoad;
+            }
+          }
+        }
 
         if (viewMode === 'continuous') {
           setContinuousCanvasDimensions({});

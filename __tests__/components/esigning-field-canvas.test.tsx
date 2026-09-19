@@ -13,12 +13,14 @@ vi.mock('@/components/processing/document-page-viewer', () => ({
   DocumentPageViewer: (props: {
     keyboardShortcutScope?: string;
     viewMode?: string;
+    fitFirstPageWidthOnInitialLoad?: boolean;
     renderPageOverlay?: (context: { pageNumber: number; width: number; height: number }) => ReactNode;
   }) => (
     <div
       data-document-scroll-container="true"
       data-keyboard-scope={props.keyboardShortcutScope ?? 'global'}
       data-view-mode={props.viewMode ?? 'single'}
+      data-fit-first-page-width={props.fitFirstPageWidthOnInitialLoad ? 'true' : 'false'}
       style={{ width: 800, height: 1000, overflow: 'auto' }}
     >
       {[1, 2].map((pageNumber) => (
@@ -298,14 +300,19 @@ describe('EsigningFieldCanvas keyboard ownership', () => {
     expect(fieldEntry[2]).toBeCloseTo(0.5, 6);
   });
 
-  it('configures the viewer with focused shortcut ownership', () => {
+  it('configures the viewer with focused shortcut ownership and initial first-page fit width', () => {
     render(<CanvasHarness initialFields={[makeField()]} />);
 
-    expect(
-      document
-        .querySelector('[data-document-scroll-container="true"]')
-        ?.getAttribute('data-keyboard-scope')
-    ).toBe('focused');
+    const viewer = document.querySelector('[data-document-scroll-container="true"]');
+    expect(viewer?.getAttribute('data-keyboard-scope')).toBe('focused');
+    expect(viewer?.getAttribute('data-fit-first-page-width')).toBe('true');
+  });
+
+  it('keeps the multi-document tab strip horizontally scrollable without vertical scrolling', () => {
+    render(<CanvasHarness initialFields={[makeField()]} />);
+
+    const secondDocumentTab = screen.getByRole('button', { name: 'second.pdf' });
+    expect(secondDocumentTab.parentElement).toHaveClass('overflow-x-auto', 'overflow-y-hidden');
   });
 
   it('renders fields from every page in the continuous document surface', () => {
