@@ -212,7 +212,18 @@ export const StorageKeys = {
   },
 
   /**
-   * Generate storage key for a certificate asset
+   * Generate storage key for the envelope-level completion certificate.
+   */
+  esigningEnvelopeCertificate(
+    tenantId: string,
+    envelopeId: string
+  ): string {
+    return `${tenantId}/esigning/${envelopeId}/certificate.pdf`;
+  },
+
+  /**
+   * Legacy per-document certificate key retained for backwards compatibility
+   * with historical stored artifacts. New certificate generation is envelope-level.
    */
   esigningCertificateDocument(
     tenantId: string,

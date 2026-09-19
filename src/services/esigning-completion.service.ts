@@ -18,6 +18,7 @@ import { sendEsigningCompletionEmail } from '@/services/esigning-notification.se
 import {
   buildDeliveryDocumentLinks,
   buildEmailAttachments,
+  ensureEsigningEnvelopeArtifacts,
   generateEsigningEnvelopeArtifactsNow,
 } from '@/services/esigning-pdf.service';
 
@@ -952,33 +953,36 @@ export async function processEsigningCompletionDelivery(
     if (deliveryDocuments.length === 0) {
       throw new Error('No documents are visible to this completion recipient');
     }
+    await ensureEsigningEnvelopeArtifacts({
+      envelopeId: delivery.envelope.id,
+      requireCertificates: true,
+    });
+
     if (deliveryDocuments.some((document) => !document.signedStoragePath)) {
       throw new Error('Signed artifacts are not ready for delivery');
     }
 
-    const signedBuffers = await Promise.all(
-      deliveryDocuments.map(async (document) => {
-        const [signedBuffer, certificateBuffer] = await Promise.all([
-          storage.download(document.signedStoragePath as string),
-          storage.download(
-            StorageKeys.esigningCertificateDocument(
-              delivery.envelope.tenantId,
-              delivery.envelope.id,
-              document.id,
-            ),
-          ),
-        ]);
-
-        return {
+    const [certificateBuffer, signedBuffers] = await Promise.all([
+      storage.download(
+        StorageKeys.esigningEnvelopeCertificate(
+          delivery.envelope.tenantId,
+          delivery.envelope.id,
+        ),
+      ),
+      Promise.all(
+        deliveryDocuments.map(async (document) => ({
           id: document.id,
           fileName: document.fileName,
           originalFileName: document.originalFileName,
-          signedBuffer,
-          certificateBuffer,
-        };
-      })
-    );
-    const attachments = await buildEmailAttachments({ documents: signedBuffers });
+          signedBuffer: await storage.download(document.signedStoragePath as string),
+        })),
+      ),
+    ]);
+    const documentsWithCertificate = signedBuffers.map((document) => ({
+      ...document,
+      certificateBuffer,
+    }));
+    const attachments = await buildEmailAttachments({ documents: documentsWithCertificate });
     const actorType = isRecipientDelivery ? 'recipient' : 'sender';
     const documentLinks = await buildDeliveryDocumentLinks({
       envelopeId: delivery.envelope.id,

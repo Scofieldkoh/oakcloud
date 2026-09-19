@@ -70,6 +70,7 @@ import { EsigningStepUpload } from './prepare/esigning-step-upload';
 import { EsigningStepFields } from './prepare/esigning-step-fields';
 import { EsigningStepReview } from './prepare/esigning-step-review';
 import { EsigningRecipientCard } from './prepare/esigning-recipient-card';
+import { EsigningCompletedDetail } from './esigning-completed-detail';
 import type { PlacedField } from './prepare/esigning-field-canvas';
 import {
   readTaskLaunchContext,
@@ -139,7 +140,7 @@ function formatEventAction(
     VIEWED: `Viewed by ${name}`,
     CONSENTED: `Consent given by ${name}`,
     SIGNED: `Signed by ${name}`,
-    COMPLETED: 'All parties signed — envelope completed',
+    COMPLETED: 'Envelope completed',
     DECLINED: `Declined by ${name}`,
     VOIDED: 'Envelope voided',
     CORRECTED: `Recipient corrected: ${name}`,
@@ -584,6 +585,24 @@ export function EsigningDetailPage({ envelopeId }: Props) {
       '_blank',
       'noreferrer'
     );
+  }
+
+  function openDocumentDownload(
+    document: EsigningEnvelopeDetailDto['documents'][number],
+    variant: 'original' | 'signed' | 'signed_with_certificate'
+  ) {
+    const sourceUrl = variant === 'original' ? document.pdfUrl : document.signedPdfUrl;
+    if (!sourceUrl) {
+      return;
+    }
+
+    const url = new URL(sourceUrl, window.location.origin);
+    url.searchParams.set('download', 'true');
+    if (variant === 'signed_with_certificate') {
+      url.searchParams.set('includeCertificate', 'true');
+    }
+
+    window.open(`${url.pathname}${url.search}`, '_blank', 'noreferrer');
   }
 
   // ——— Early returns ———
@@ -1058,6 +1077,43 @@ export function EsigningDetailPage({ envelopeId }: Props) {
     );
   }
 
+  // ——— Completed envelope detail ———
+  if (envelope.status === 'COMPLETED') {
+    return (
+      <>
+        <EsigningCompletedDetail
+          envelope={envelope}
+          returnHref={returnHref}
+          canCreateEsigning={can.createEsigning}
+          isDuplicating={duplicateEnvelope.isPending}
+          onDuplicate={() => void handleDuplicateEnvelope()}
+          onDelete={() => setIsDeleteEnvelopeOpen(true)}
+          onRetryProcessing={() => {
+            void (async () => {
+              try {
+                await retryProcessing.mutateAsync();
+                toast.success(
+                  envelope.pdfGenerationStatus === 'FAILED'
+                    ? 'Processing retried'
+                    : 'Processing resumed'
+                );
+              } catch (error) {
+                toast.error(
+                  error instanceof Error ? error.message : 'Failed to retry processing'
+                );
+              }
+            })();
+          }}
+          onEnvelopeDownload={openEnvelopeDownload}
+          onDocumentDownload={openDocumentDownload}
+        />
+        {recipientModal}
+        {linksModal}
+        {confirmDialogs}
+      </>
+    );
+  }
+
   // ——— Non-draft: read-only detail view ———
   return (
     <div className="min-h-screen bg-background-primary">
@@ -1075,8 +1131,7 @@ export function EsigningDetailPage({ envelopeId }: Props) {
           <span className="inline-flex items-center rounded-full border border-border-primary px-3 py-1 text-xs text-text-secondary">
             {ESIGNING_SIGNING_ORDER_LABELS[envelope.signingOrder]}
           </span>
-          {envelope.pdfGenerationStatus &&
-          !(envelope.status === 'COMPLETED' && envelope.pdfGenerationStatus === 'COMPLETED') ? (
+          {envelope.pdfGenerationStatus ? (
             <PdfGenerationBadge status={envelope.pdfGenerationStatus} />
           ) : null}
           {envelope.emailDelivery.status === 'failed' ? (
@@ -1160,37 +1215,6 @@ export function EsigningDetailPage({ envelopeId }: Props) {
                 >
                   Delete envelope
                 </Button>
-              ) : null}
-              {envelope.status === 'COMPLETED' && envelope.pdfGenerationStatus === 'COMPLETED' ? (
-                <>
-                  <Button
-                    className="w-full sm:w-auto"
-                    variant="secondary"
-                    leftIcon={<Download className="h-4 w-4" />}
-                    onClick={() => openEnvelopeDownload('documents')}
-                  >
-                    <span className="sm:hidden">Doc only</span>
-                    <span className="hidden sm:inline">Document only</span>
-                  </Button>
-                  <Button
-                    className="w-full sm:w-auto"
-                    variant="secondary"
-                    leftIcon={<Download className="h-4 w-4" />}
-                    onClick={() => openEnvelopeDownload('documents_with_certificates')}
-                  >
-                    <span className="sm:hidden">Doc + Cert</span>
-                    <span className="hidden sm:inline">Document + Certificate</span>
-                  </Button>
-                  <Button
-                    className="w-full sm:w-auto"
-                    variant="secondary"
-                    leftIcon={<Download className="h-4 w-4" />}
-                    onClick={() => openEnvelopeDownload('certificates')}
-                  >
-                    <span className="sm:hidden">Cert only</span>
-                    <span className="hidden sm:inline">Certificate only</span>
-                  </Button>
-                </>
               ) : null}
               {envelope.canRetryCompletionProcessing ? (
                 <Button

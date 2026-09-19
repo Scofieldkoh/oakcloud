@@ -63,6 +63,7 @@ vi.mock('@/hooks/use-esigning', () => {
   return {
     useEsigningEnvelope: () => ({ data: hookMocks.envelope, isLoading: false }),
     useUpdateEsigningEnvelope: () => mutation(),
+    useUpdateEsigningDocument: () => mutation(),
     useUploadEsigningDocument: () => mutation(),
     useSaveEsigningFields: () => mutation(),
     useSendEsigningEnvelope: () => mutation(),
@@ -314,7 +315,29 @@ describe('E-signing detail hydration', () => {
     await waitFor(() => {
       expect(recoverableErrors).toHaveLength(0);
     });
-    expect(container.textContent).toContain('Delete envelope');
+    expect(container.textContent).toContain('COMPLETED');
+    expect(container.textContent).toContain('Parallel signing');
+    expect(screen.getByTestId('completed-recipients-section')).toBeInTheDocument();
+    expect(screen.getByTestId('completed-documents-section')).toBeInTheDocument();
+    expect(screen.getByTestId('completed-activity-section')).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Envelope download options' }));
+    expect(screen.getByRole('menuitem', { name: 'Document only' })).toBeInTheDocument();
+    expect(screen.getByRole('menuitem', { name: 'Document + Certificate' })).toBeInTheDocument();
+    expect(screen.getByRole('menuitem', { name: 'Certificate only' })).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: 'More envelope actions' }));
+    expect(screen.getByRole('menuitem', { name: 'Delete envelope' })).toBeInTheDocument();
+
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Download options for nda.pdf' })
+    );
+    expect(screen.getByRole('menuitem', { name: 'Original' })).toBeInTheDocument();
+    expect(screen.getByRole('menuitem', { name: 'Document only' })).toBeInTheDocument();
+    expect(screen.getByRole('menuitem', { name: 'Document + Certificate' })).toBeInTheDocument();
+
+    expect(screen.getAllByTestId('completed-recipient-row')).toHaveLength(1);
+    expect(screen.getAllByTestId('completed-document-row')).toHaveLength(1);
   });
 
   it.each(['SENT', 'IN_PROGRESS'] as const)('submits only name and email when adding an email after %s', async (status) => {
@@ -337,7 +360,7 @@ describe('E-signing detail hydration', () => {
       </QueryClientProvider>
     );
 
-    await userEvent.click(await screen.findByRole('button', { name: 'Edit', exact: true }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Edit' }));
     await userEvent.type(screen.getByLabelText('Email (optional)'), 'signer@example.com');
     await userEvent.click(screen.getByRole('button', { name: 'Save correction' }));
 
