@@ -46,6 +46,8 @@ const mocks = vi.hoisted(() => ({
     lastError: null,
   })),
   completionBccEmails: [] as string[],
+  columnWidthPreference: {} as Record<string, number>,
+  saveUserPreference: vi.fn(),
 }));
 
 const navigationMocks = vi.hoisted(() => ({
@@ -80,8 +82,15 @@ vi.mock('@/hooks/use-permissions', () => ({
 }));
 
 vi.mock('@/hooks/use-user-preferences', () => ({
-  useUserPreference: () => ({
-    data: { value: { version: 1, emails: mocks.completionBccEmails } },
+  useUserPreference: (key: string) => ({
+    data: {
+      value: key === 'esigning:list:columns:v1'
+        ? mocks.columnWidthPreference
+        : { version: 1, emails: mocks.completionBccEmails },
+    },
+  }),
+  useUpsertUserPreference: () => ({
+    mutate: mocks.saveUserPreference,
   }),
 }));
 
@@ -406,6 +415,61 @@ describe('EsigningListPage initial upload compensation', () => {
     await waitFor(() => expect(mocks.createEnvelope).toHaveBeenCalledWith(
       expect.objectContaining({ completionCopyEmails: ['ops@example.com'] })
     ));
+  });
+});
+
+describe('EsigningListPage resizable columns', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    navigationMocks.searchParams = new URLSearchParams();
+    mocks.columnWidthPreference = {};
+    mocks.listData = {
+      envelopes: [envelope()],
+      companyOptions: [],
+      total: 1,
+      statusCounts: {
+        DRAFT: 0,
+        SENT: 0,
+        IN_PROGRESS: 0,
+        COMPLETED: 1,
+        VOIDED: 0,
+        DECLINED: 0,
+        EXPIRED: 0,
+      },
+    };
+  });
+
+  it('restores saved per-user table column widths', async () => {
+    mocks.columnWidthPreference = {
+      status: 210,
+      envelope: 480,
+      company: 260,
+    };
+
+    const { container } = render(<EsigningListPage />);
+
+    await waitFor(() => {
+      const cols = container.querySelectorAll('table colgroup col');
+      expect(cols[0]).toHaveStyle({ width: '210px' });
+      expect(cols[1]).toHaveStyle({ width: '480px' });
+      expect(cols[2]).toHaveStyle({ width: '260px' });
+    });
+  });
+
+  it('persists a resized column width after dragging its header edge', async () => {
+    render(<EsigningListPage />);
+
+    const handle = screen.getByTestId('esigning-resize-status');
+    fireEvent.pointerDown(handle, { clientX: 100, pointerId: 1 });
+    fireEvent.pointerMove(window, { clientX: 150, pointerId: 1 });
+    fireEvent.pointerUp(window, { pointerId: 1 });
+
+    await waitFor(() => {
+      expect(mocks.saveUserPreference).toHaveBeenCalledWith({
+        key: 'esigning:list:columns:v1',
+        value: expect.objectContaining({ status: 210 }),
+      });
+    });
   });
 });
 
