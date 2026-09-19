@@ -44,7 +44,7 @@ import {
 } from '@/components/esigning/esigning-upload-files';
 import { useSession } from '@/hooks/use-auth';
 import { usePermissions } from '@/hooks/use-permissions';
-import { useUserPreference } from '@/hooks/use-user-preferences';
+import { useUpsertUserPreference, useUserPreference } from '@/hooks/use-user-preferences';
 import {
   useCreateEsigningEnvelope,
   useDeleteEsigningEnvelope,
@@ -119,6 +119,32 @@ const TAB_STATUSES: Record<TabKey, StatusFilter[]> = {
 type ViewMode = 'table' | 'card';
 type RecipientStatusFilter = 'QUEUED' | 'NOTIFIED' | 'VIEWED' | 'SIGNED' | 'DECLINED';
 type SigningOrderFilter = 'PARALLEL' | 'SEQUENTIAL' | 'MIXED';
+
+const ESIGNING_COLUMN_WIDTH_PREF_KEY = 'esigning:list:columns:v1';
+const ESIGNING_TABLE_COLUMNS = [
+  'status',
+  'envelope',
+  'company',
+  'details',
+  'updated',
+] as const;
+type EsigningTableColumnId = (typeof ESIGNING_TABLE_COLUMNS)[number];
+
+const DEFAULT_ESIGNING_COLUMN_WIDTHS: Record<EsigningTableColumnId, number> = {
+  status: 160,
+  envelope: 360,
+  company: 220,
+  details: 170,
+  updated: 190,
+};
+
+const MIN_ESIGNING_COLUMN_WIDTHS: Record<EsigningTableColumnId, number> = {
+  status: 140,
+  envelope: 220,
+  company: 140,
+  details: 130,
+  updated: 150,
+};
 
 interface EnvelopeAdvancedFilters {
   status: StatusFilter | '';
@@ -408,6 +434,10 @@ export function EsigningListPage() {
   const completionBccPreference = useUserPreference<EsigningCompletionBccPreference>(
     ESIGNING_COMPLETION_BCC_PREFERENCE_KEY,
   );
+  const columnWidthPreference = useUserPreference<Partial<Record<EsigningTableColumnId, number>>>(
+    ESIGNING_COLUMN_WIDTH_PREF_KEY,
+  );
+  const saveColumnWidthPreference = useUpsertUserPreference<Record<string, number>>();
   const defaultCompletionBccEmails = useMemo(
     () => parseEsigningCompletionBccPreference(completionBccPreference.data?.value).emails,
     [completionBccPreference.data?.value],
@@ -436,6 +466,83 @@ export function EsigningListPage() {
   const openedPreparedEnvelopeRef = useRef<string | null>(null);
   const uploadInputRef = useRef<HTMLInputElement>(null);
   const filterPanelRef = useRef<HTMLDivElement>(null);
+  const isResizingColumnRef = useRef(false);
+  const [columnWidths, setColumnWidths] = useState<Partial<Record<EsigningTableColumnId, number>>>({});
+
+  useEffect(() => {
+    const value = columnWidthPreference.data?.value;
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return;
+
+    const sanitized = Object.fromEntries(
+      ESIGNING_TABLE_COLUMNS.flatMap((columnId) => {
+        const width = value[columnId];
+        return typeof width === 'number' && Number.isFinite(width)
+          ? [[columnId, Math.max(MIN_ESIGNING_COLUMN_WIDTHS[columnId], width)]]
+          : [];
+      })
+    ) as Partial<Record<EsigningTableColumnId, number>>;
+    setColumnWidths(sanitized);
+  }, [columnWidthPreference.data?.value]);
+
+  const startColumnResize = useCallback((
+    event: React.PointerEvent<HTMLElement>,
+    columnId: EsigningTableColumnId,
+  ) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const handle = event.currentTarget;
+    const header = handle.closest('th') as HTMLTableCellElement | null;
+    const startWidth =
+      columnWidths[columnId]
+      ?? header?.getBoundingClientRect().width
+      ?? DEFAULT_ESIGNING_COLUMN_WIDTHS[columnId];
+    const startX = event.clientX;
+    const pointerId = event.pointerId;
+    let latestWidth = startWidth;
+
+    isResizingColumnRef.current = true;
+    document.body.style.userSelect = 'none';
+    document.body.style.cursor = 'col-resize';
+
+    try {
+      handle.setPointerCapture(pointerId);
+    } catch {
+      // Pointer capture is best-effort; window listeners still handle resizing.
+    }
+
+    const onMove = (pointerEvent: globalThis.PointerEvent) => {
+      const nextWidth = Math.max(
+        MIN_ESIGNING_COLUMN_WIDTHS[columnId],
+        startWidth + (pointerEvent.clientX - startX),
+      );
+      latestWidth = nextWidth;
+      setColumnWidths((current) => ({ ...current, [columnId]: nextWidth }));
+    };
+
+    const onUp = () => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      try {
+        handle.releasePointerCapture(pointerId);
+      } catch {
+        // Ignore browsers that already released pointer capture.
+      }
+      document.body.style.userSelect = '';
+      document.body.style.cursor = '';
+      isResizingColumnRef.current = false;
+
+      const nextWidths = { ...columnWidths, [columnId]: latestWidth };
+      setColumnWidths(nextWidths);
+      saveColumnWidthPreference.mutate({
+        key: ESIGNING_COLUMN_WIDTH_PREF_KEY,
+        value: nextWidths,
+      });
+    };
+
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+  }, [columnWidths, saveColumnWidthPreference]);
 
   const activeStatuses = TAB_STATUSES[activeTab];
   const envelopesQuery = useEsigningEnvelopes({
@@ -1450,14 +1557,90 @@ export function EsigningListPage() {
             ) : viewMode === 'table' ? (
               <>
                 <div className="hidden overflow-x-auto md:block">
-                  <table className="w-full table-fixed border-collapse">
+                  <table className="w-full min-w-max border-collapse">
+                    <colgroup>
+                      {ESIGNING_TABLE_COLUMNS.map((columnId) => (
+                        <col
+                          key={columnId}
+                          style={{
+                            width: `${columnWidths[columnId] ?? DEFAULT_ESIGNING_COLUMN_WIDTHS[columnId]}px`,
+                          }}
+                        />
+                      ))}
+                      <col style={{ width: '56px' }} />
+                    </colgroup>
                     <thead>
                       <tr className="h-10 border-b border-border-primary bg-background-primary/60 text-left text-[11px] font-semibold uppercase tracking-wide text-text-muted">
-                        <th className="w-[160px] px-4">Status</th>
-                        <th className="px-4">Envelope name</th>
-                        <th className="w-[180px] px-4">Company</th>
-                        <th className="w-[150px] px-4">Details</th>
-                        <th className="w-[180px] px-4">Last updated</th>
+
+                        <th
+                          className="relative px-4"
+                          style={{ width: `${columnWidths.status ?? DEFAULT_ESIGNING_COLUMN_WIDTHS.status}px` }}
+                        >
+                          Status
+                          <div
+                            data-testid="esigning-resize-status"
+                            onPointerDown={(event) => startColumnResize(event, 'status')}
+                            className="absolute -right-2 top-0 z-10 h-full w-4 cursor-col-resize touch-none hover:bg-border-secondary/60"
+                            title="Drag to resize"
+                            aria-hidden="true"
+                          />
+                        </th>
+
+                        <th
+                          className="relative px-4"
+                          style={{ width: `${columnWidths.envelope ?? DEFAULT_ESIGNING_COLUMN_WIDTHS.envelope}px` }}
+                        >
+                          Envelope name
+                          <div
+                            data-testid="esigning-resize-envelope"
+                            onPointerDown={(event) => startColumnResize(event, 'envelope')}
+                            className="absolute -right-2 top-0 z-10 h-full w-4 cursor-col-resize touch-none hover:bg-border-secondary/60"
+                            title="Drag to resize"
+                            aria-hidden="true"
+                          />
+                        </th>
+
+                        <th
+                          className="relative px-4"
+                          style={{ width: `${columnWidths.company ?? DEFAULT_ESIGNING_COLUMN_WIDTHS.company}px` }}
+                        >
+                          Company
+                          <div
+                            data-testid="esigning-resize-company"
+                            onPointerDown={(event) => startColumnResize(event, 'company')}
+                            className="absolute -right-2 top-0 z-10 h-full w-4 cursor-col-resize touch-none hover:bg-border-secondary/60"
+                            title="Drag to resize"
+                            aria-hidden="true"
+                          />
+                        </th>
+
+                        <th
+                          className="relative px-4"
+                          style={{ width: `${columnWidths.details ?? DEFAULT_ESIGNING_COLUMN_WIDTHS.details}px` }}
+                        >
+                          Details
+                          <div
+                            data-testid="esigning-resize-details"
+                            onPointerDown={(event) => startColumnResize(event, 'details')}
+                            className="absolute -right-2 top-0 z-10 h-full w-4 cursor-col-resize touch-none hover:bg-border-secondary/60"
+                            title="Drag to resize"
+                            aria-hidden="true"
+                          />
+                        </th>
+
+                        <th
+                          className="relative px-4"
+                          style={{ width: `${columnWidths.updated ?? DEFAULT_ESIGNING_COLUMN_WIDTHS.updated}px` }}
+                        >
+                          Last updated
+                          <div
+                            data-testid="esigning-resize-updated"
+                            onPointerDown={(event) => startColumnResize(event, 'updated')}
+                            className="absolute -right-2 top-0 z-10 h-full w-4 cursor-col-resize touch-none hover:bg-border-secondary/60"
+                            title="Drag to resize"
+                            aria-hidden="true"
+                          />
+                        </th>
                         <th className="w-[56px] px-2 text-center"><span className="sr-only">Actions</span></th>
                       </tr>
                     </thead>
