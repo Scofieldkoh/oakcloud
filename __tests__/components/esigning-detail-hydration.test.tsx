@@ -317,9 +317,9 @@ describe('E-signing detail hydration', () => {
     });
     expect(container.textContent).toContain('COMPLETED');
     expect(container.textContent).toContain('Parallel signing');
-    expect(screen.getByTestId('completed-recipients-section')).toBeInTheDocument();
-    expect(screen.getByTestId('completed-documents-section')).toBeInTheDocument();
-    expect(screen.getByTestId('completed-activity-section')).toBeInTheDocument();
+    expect(screen.getByTestId('envelope-detail-recipients')).toBeInTheDocument();
+    expect(screen.getByTestId('envelope-detail-documents')).toBeInTheDocument();
+    expect(screen.getByTestId('envelope-detail-activity')).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole('button', { name: 'Envelope download options' }));
     expect(screen.getByRole('menuitem', { name: 'Document only' })).toBeInTheDocument();
@@ -336,8 +336,59 @@ describe('E-signing detail hydration', () => {
     expect(screen.getByRole('menuitem', { name: 'Document only' })).toBeInTheDocument();
     expect(screen.getByRole('menuitem', { name: 'Document + Certificate' })).toBeInTheDocument();
 
-    expect(screen.getAllByTestId('completed-recipient-row')).toHaveLength(1);
-    expect(screen.getAllByTestId('completed-document-row')).toHaveLength(1);
+    expect(screen.getAllByTestId('envelope-detail-recipient-row')).toHaveLength(1);
+    expect(screen.getAllByTestId('envelope-detail-document-row')).toHaveLength(1);
+  });
+
+  it('uses the same shared detail layout for an in-progress envelope', async () => {
+    const base = makeEnvelope();
+    hookMocks.envelope = makeEnvelope({
+      status: 'IN_PROGRESS',
+      canEdit: false,
+      canSend: false,
+      canVoid: true,
+      canDuplicate: true,
+      recipients: [
+        {
+          ...base.recipients[0],
+          status: 'NOTIFIED',
+          accessMode: 'MANUAL_LINK',
+        },
+      ],
+      events: [
+        {
+          id: 'event-sent',
+          recipientId: 'recipient-1',
+          recipientName: 'Signer',
+          action: 'SENT',
+          createdAt: '2026-08-02T00:00:00.000Z',
+          metadata: null,
+        },
+      ],
+    });
+
+    renderedRoot = createRoot(container);
+    renderedRoot.render(
+      <QueryClientProvider client={new QueryClient()}>
+        <EsigningDetailPage envelopeId="envelope-1" />
+      </QueryClientProvider>
+    );
+
+    expect(await screen.findByTestId('envelope-detail-header')).toBeInTheDocument();
+    expect(screen.getByTestId('envelope-detail-recipients')).toBeInTheDocument();
+    expect(screen.getByTestId('envelope-detail-documents')).toBeInTheDocument();
+    expect(screen.getByTestId('envelope-detail-activity')).toBeInTheDocument();
+    expect(screen.getByText('IN PROGRESS')).toBeInTheDocument();
+    expect(screen.getByText('Parallel signing')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Void' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Edit' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Copy link' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Resend' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Remove' })).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: 'More envelope actions' }));
+    expect(screen.getByRole('menuitem', { name: 'Duplicate' })).toBeInTheDocument();
+    expect(screen.getByRole('menuitem', { name: 'Delete envelope' })).toBeInTheDocument();
   });
 
   it('filters completed activity by recipient name', async () => {
