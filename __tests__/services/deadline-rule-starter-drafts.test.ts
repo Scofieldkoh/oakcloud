@@ -3,8 +3,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Prisma } from '@/generated/prisma';
 
 import {
+  LEGACY_FORM_C_STARTER_HASH,
   STARTER_DEFINITIONS,
   createServiceScheduleStarterData,
+  upgradeLegacyFormCStarterDraft,
 } from '@/services/deadline-rule/starter-drafts';
 import { hashDeadlineRuleDefinition } from '@/services/deadline-rule/canonical';
 
@@ -26,10 +28,21 @@ const tx = {
   deadlineRule: {
     findFirst: vi.fn(),
     create: vi.fn(),
+    update: vi.fn(),
   },
   deadlineRuleVersion: {
     findFirst: vi.fn(),
     create: vi.fn(),
+    update: vi.fn(),
+  },
+  deadlineRuleParameterDefinition: {
+    deleteMany: vi.fn(),
+  },
+  deadlineMilestoneTemplate: {
+    update: vi.fn(),
+  },
+  serviceVariantDeadlineRule: {
+    update: vi.fn(),
   },
 };
 
@@ -58,7 +71,7 @@ describe('deadline rule starter definitions', () => {
       '5064178cfb8a0675bd7a4520c5e91e5e64c0b5f0097b97794d63ebbd52e5380d',
       'babbb099210ec2afbfaf460482b2200f609ea894dd4fda1b08bc5b6e6116797f',
       '4124dcf4fcc2a1894d4517bc099d5d1c146587b3ad573eae1474cfb8ea134f2b',
-      '5f7f8c126d394bcf24e1cb3303e78f9e0508bf39a431b9e049a3ac884fcbe23c',
+      '75075fada015d102dadd965553bc82b67ba5362359c9994a0ac5e8217a7b06f4',
     ]);
 
     const [agm, annualReturn, eci, formC] = STARTER_DEFINITIONS;
@@ -84,10 +97,13 @@ describe('deadline rule starter definitions', () => {
       type: 'INTEGER',
       required: true,
     })]);
+    expect(formC.parameters).toEqual([]);
     expect(formC.milestones[0]?.expression).toEqual({
-      kind: 'ADD_MONTHS',
+      kind: 'FIXED_DATE_FROM_SOURCE_YEAR',
       source: { kind: 'COMPANY_FIELD', field: 'financialYearEnd' },
-      amount: { kind: 'INTEGER_PARAMETER', key: 'monthsAfterFye' },
+      yearOffset: 1,
+      month: 11,
+      day: 30,
     });
   });
 
@@ -114,7 +130,7 @@ describe('deadline rule starter definitions', () => {
     }
   });
 
-  it('keeps every runtime child row field-identical to the SQL starter seed shape', async () => {
+  it('keeps runtime starter rows canonical while retaining the legacy Form C seed fingerprint', async () => {
     await createServiceScheduleStarterData(tx as never, tenantId);
 
     const expectedParameter = {
@@ -181,9 +197,11 @@ describe('deadline rule starter definitions', () => {
         type: 'STATUTORY',
         generationMode: 'ONCE_PER_CYCLE',
         dateExpression: {
-          kind: 'ADD_MONTHS',
+          kind: 'FIXED_DATE_FROM_SOURCE_YEAR',
           source: { kind: 'COMPANY_FIELD', field: 'financialYearEnd' },
-          amount: { kind: 'INTEGER_PARAMETER', key: 'monthsAfterFye' },
+          yearOffset: 1,
+          month: 11,
+          day: 30,
         },
         businessDayAdjustment: 'NONE',
         displayOrder: 0,
@@ -202,6 +220,12 @@ describe('deadline rule starter definitions', () => {
       "'INTEGER', TRUE, NULL, NULL, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP",
     );
     expect(migration).toContain('WHERE r."code" IN (\'SG_ECI\', \'SG_FORM_C\')');
+    expect(migration).toContain(LEGACY_FORM_C_STARTER_HASH);
+    expect(migration).toContain(JSON.stringify({
+      kind: 'ADD_MONTHS',
+      source: { kind: 'COMPANY_FIELD', field: 'financialYearEnd' },
+      amount: { kind: 'INTEGER_PARAMETER', key: 'monthsAfterFye' },
+    }));
     expect(migration).toContain(
       '"type", "generation_mode", "date_expression", "business_day_adjustment",',
     );
@@ -239,13 +263,101 @@ describe('deadline rule starter definitions', () => {
       expect(actualParameters).toEqual(definition.parameters.length === 0 ? [] : [expectedParameter]);
       expect(actualMilestones).toEqual([expectedMilestones[index]]);
       const expectedMilestone = expectedMilestones[index];
-      expect(migration).toContain(hashDeadlineRuleDefinition(definition));
-      expect(migration).toContain(JSON.stringify(expectedMilestone.dateExpression));
+      if (definition.code !== 'SG_FORM_C') {
+        expect(migration).toContain(hashDeadlineRuleDefinition(definition));
+        expect(migration).toContain(JSON.stringify(expectedMilestone.dateExpression));
+      }
       for (const row of versionData.parameterDefinitions.create) {
         expect(row.defaultValue).toBe(Prisma.DbNull);
         expect(row.validation).toBe(Prisma.DbNull);
       }
     }
+  });
+
+  it('upgrades only the exact untouched legacy Form C starter draft', async () => {
+    tx.deadlineRule.findFirst.mockResolvedValue({
+      id: 'legacy-form-c-rule',
+      versions: [{
+        id: 'legacy-form-c-draft',
+        configHash: LEGACY_FORM_C_STARTER_HASH,
+        draftRevision: 1,
+        parameterDefinitions: [{
+          id: 'legacy-param',
+          key: 'monthsAfterFye',
+          type: 'INTEGER',
+          isRequired: true,
+        }],
+        milestoneTemplates: [{
+          id: 'legacy-milestone',
+          milestoneKey: 'form-c-due',
+          generationMode: 'ONCE_PER_CYCLE',
+          dateExpression: {
+            kind: 'ADD_MONTHS',
+            source: { kind: 'COMPANY_FIELD', field: 'financialYearEnd' },
+            amount: { kind: 'INTEGER_PARAMETER', key: 'monthsAfterFye' },
+          },
+          businessDayAdjustment: 'NONE',
+          isActive: true,
+        }],
+      }],
+      variantAssociations: [{
+        id: 'association-1',
+        parameterDefaults: { monthsAfterFye: 10, keepMe: 'yes' },
+      }],
+    });
+    tx.deadlineRuleParameterDefinition.deleteMany.mockResolvedValue({ count: 1 });
+    tx.deadlineMilestoneTemplate.update.mockResolvedValue({ id: 'legacy-milestone' });
+    tx.serviceVariantDeadlineRule.update.mockResolvedValue({ id: 'association-1' });
+    tx.deadlineRule.update.mockResolvedValue({ id: 'legacy-form-c-rule' });
+    tx.deadlineRuleVersion.update.mockResolvedValue({ id: 'legacy-form-c-draft' });
+
+    await expect(upgradeLegacyFormCStarterDraft(tx as never, tenantId)).resolves.toBe(true);
+
+    expect(tx.deadlineRuleParameterDefinition.deleteMany).toHaveBeenCalledWith({
+      where: { tenantId, ruleVersionId: 'legacy-form-c-draft', key: 'monthsAfterFye' },
+    });
+    expect(tx.deadlineMilestoneTemplate.update).toHaveBeenCalledWith({
+      where: { id: 'legacy-milestone' },
+      data: {
+        dateExpression: {
+          kind: 'FIXED_DATE_FROM_SOURCE_YEAR',
+          source: { kind: 'COMPANY_FIELD', field: 'financialYearEnd' },
+          yearOffset: 1,
+          month: 11,
+          day: 30,
+        },
+      },
+    });
+    expect(tx.serviceVariantDeadlineRule.update).toHaveBeenCalledWith({
+      where: { id: 'association-1' },
+      data: { parameterDefaults: { keepMe: 'yes' } },
+    });
+    expect(tx.deadlineRuleVersion.update).toHaveBeenCalledWith({
+      where: { id: 'legacy-form-c-draft' },
+      data: {
+        configHash: '75075fada015d102dadd965553bc82b67ba5362359c9994a0ac5e8217a7b06f4',
+        draftRevision: { increment: 1 },
+      },
+    });
+  });
+
+  it('leaves customized Form C drafts untouched', async () => {
+    tx.deadlineRule.findFirst.mockResolvedValue({
+      id: 'custom-form-c-rule',
+      versions: [{
+        id: 'custom-form-c-draft',
+        configHash: 'a'.repeat(64),
+        draftRevision: 2,
+        parameterDefinitions: [],
+        milestoneTemplates: [],
+      }],
+      variantAssociations: [],
+    });
+
+    await expect(upgradeLegacyFormCStarterDraft(tx as never, tenantId)).resolves.toBe(false);
+    expect(tx.deadlineRuleParameterDefinition.deleteMany).not.toHaveBeenCalled();
+    expect(tx.deadlineMilestoneTemplate.update).not.toHaveBeenCalled();
+    expect(tx.deadlineRuleVersion.update).not.toHaveBeenCalled();
   });
 
   it('is repeat-idempotent when the calendar and draft rows already exist', async () => {

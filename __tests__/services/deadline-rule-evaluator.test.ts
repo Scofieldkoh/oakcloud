@@ -237,6 +237,38 @@ describe('evaluateDeadlineRule', () => {
     expect(result.occurrences[0]?.calculatedDueDate).toBe('2026-12-31');
   });
 
+
+  it.each([
+    ['2026-12-31', '2026-08-01', '2027-07-31', '2027-11-30'],
+    ['2027-01-31', '2026-08-01', '2027-07-31', '2028-11-30'],
+    ['2027-02-28', '2026-08-01', '2027-07-31', '2028-11-30'],
+    ['2027-06-30', '2026-08-01', '2027-07-31', '2028-11-30'],
+    ['2027-09-30', '2027-08-01', '2028-07-31', '2028-11-30'],
+    ['2027-12-31', '2027-08-01', '2028-07-31', '2028-11-30'],
+  ] as const)(
+    'calculates Form C for FYE %s as 30 November in the following FYE year',
+    (financialYearEnd, start, end, expected) => {
+      const result = evaluateDeadlineRule(input({
+        recurrence: { schemaVersion: 1, kind: 'ANNUALLY' },
+        company: { financialYearEnd },
+        period: { key: 'annual', start, end },
+        milestones: [milestone('form-c-due', {
+          type: 'STATUTORY',
+          expression: {
+            kind: 'FIXED_DATE_FROM_SOURCE_YEAR',
+            source: { kind: 'COMPANY_FIELD', field: 'financialYearEnd' },
+            yearOffset: 1,
+            month: 11,
+            day: 30,
+          },
+          businessDayAdjustment: 'NONE',
+        })],
+      }));
+
+      expect(result.occurrences[0]?.calculatedDueDate).toBe(expected);
+    },
+  );
+
   it('keeps the exact stored company date for non-annual recurrence kinds', () => {
     const result = evaluateDeadlineRule(input({
       recurrence: { schemaVersion: 1, kind: 'MONTHLY', interval: 1 },

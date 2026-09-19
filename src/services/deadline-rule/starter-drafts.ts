@@ -102,16 +102,10 @@ export const STARTER_DEFINITIONS: CanonicalDeadlineRuleDefinition[] = [
     schemaVersion: 1,
     code: 'SG_FORM_C',
     name: 'Singapore Form C',
-    description: 'Starter statutory Form C rule requiring monthsAfterFye',
+    description: 'Starter statutory Form C rule due 30 November in the year following FYE',
     recurrence: annualRecurrence,
     applicability,
-    parameters: [{
-      key: 'monthsAfterFye',
-      label: 'Months after FYE',
-      description: null,
-      type: 'INTEGER',
-      required: true,
-    }],
+    parameters: [],
     milestones: [{
       key: 'form-c-due',
       name: 'Form C due date',
@@ -119,9 +113,11 @@ export const STARTER_DEFINITIONS: CanonicalDeadlineRuleDefinition[] = [
       type: 'STATUTORY',
       generationMode: 'ONCE_PER_CYCLE',
       expression: {
-        kind: 'ADD_MONTHS',
+        kind: 'FIXED_DATE_FROM_SOURCE_YEAR',
         source: { kind: 'COMPANY_FIELD', field: 'financialYearEnd' },
-        amount: { kind: 'INTEGER_PARAMETER', key: 'monthsAfterFye' },
+        yearOffset: 1,
+        month: 11,
+        day: 30,
       },
       businessDayAdjustment: 'NONE',
       displayOrder: 0,
@@ -129,6 +125,136 @@ export const STARTER_DEFINITIONS: CanonicalDeadlineRuleDefinition[] = [
     }],
   },
 ];
+
+const LEGACY_FORM_C_STARTER_DESCRIPTION = 'Starter statutory Form C rule requiring monthsAfterFye';
+export const LEGACY_FORM_C_STARTER_HASH = '5f7f8c126d394bcf24e1cb3303e78f9e0508bf39a431b9e049a3ac884fcbe23c';
+
+function isLegacyFormCExpression(value: unknown): boolean {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return false;
+  const expression = value as Record<string, unknown>;
+  if (expression.kind !== 'ADD_MONTHS') return false;
+  const source = expression.source;
+  const amount = expression.amount;
+  return typeof source === 'object'
+    && source !== null
+    && !Array.isArray(source)
+    && (source as Record<string, unknown>).kind === 'COMPANY_FIELD'
+    && (source as Record<string, unknown>).field === 'financialYearEnd'
+    && typeof amount === 'object'
+    && amount !== null
+    && !Array.isArray(amount)
+    && (amount as Record<string, unknown>).kind === 'INTEGER_PARAMETER'
+    && (amount as Record<string, unknown>).key === 'monthsAfterFye';
+}
+
+/**
+ * One-time compatibility repair for workspaces created before the Form C
+ * starter was modelled as a fixed 30 November deadline. The guard intentionally
+ * matches only the untouched legacy starter draft; published or customized
+ * rules are never rewritten.
+ */
+export async function upgradeLegacyFormCStarterDraft(
+  tx: Prisma.TransactionClient,
+  tenantId: string,
+): Promise<boolean> {
+  const rule = await tx.deadlineRule.findFirst({
+    where: {
+      tenantId,
+      code: 'SG_FORM_C',
+      name: 'Singapore Form C',
+      description: LEGACY_FORM_C_STARTER_DESCRIPTION,
+      isActive: true,
+      archivedAt: null,
+      currentVersionId: null,
+    },
+    select: {
+      id: true,
+      versions: {
+        where: { version: 0, state: 'DRAFT' },
+        take: 1,
+        select: {
+          id: true,
+          configHash: true,
+          draftRevision: true,
+          parameterDefinitions: {
+            select: { id: true, key: true, type: true, isRequired: true },
+          },
+          milestoneTemplates: {
+            select: {
+              id: true,
+              milestoneKey: true,
+              generationMode: true,
+              dateExpression: true,
+              businessDayAdjustment: true,
+              isActive: true,
+            },
+          },
+        },
+      },
+      variantAssociations: {
+        where: { archivedAt: null },
+        select: { id: true, parameterDefaults: true },
+      },
+    },
+  });
+
+  const draft = rule?.versions?.[0];
+  if (!rule || !draft || draft.configHash !== LEGACY_FORM_C_STARTER_HASH || draft.draftRevision !== 1) return false;
+  if (
+    draft.parameterDefinitions.length !== 1
+    || draft.parameterDefinitions[0]?.key !== 'monthsAfterFye'
+    || draft.parameterDefinitions[0]?.type !== 'INTEGER'
+    || draft.parameterDefinitions[0]?.isRequired !== true
+  ) return false;
+  if (
+    draft.milestoneTemplates.length !== 1
+    || draft.milestoneTemplates[0]?.milestoneKey !== 'form-c-due'
+    || draft.milestoneTemplates[0]?.generationMode !== 'ONCE_PER_CYCLE'
+    || draft.milestoneTemplates[0]?.businessDayAdjustment !== 'NONE'
+    || draft.milestoneTemplates[0]?.isActive !== true
+    || !isLegacyFormCExpression(draft.milestoneTemplates[0]?.dateExpression)
+  ) return false;
+
+  const definition = STARTER_DEFINITIONS.find((candidate) => candidate.code === 'SG_FORM_C');
+  if (!definition) throw new Error('SG_FORM_C starter definition is missing');
+  const milestone = definition.milestones[0];
+  if (!milestone) throw new Error('SG_FORM_C starter milestone is missing');
+
+  await tx.deadlineRuleParameterDefinition.deleteMany({
+    where: { tenantId, ruleVersionId: draft.id, key: 'monthsAfterFye' },
+  });
+  await tx.deadlineMilestoneTemplate.update({
+    where: { id: draft.milestoneTemplates[0].id },
+    data: { dateExpression: milestone.expression },
+  });
+
+  for (const association of rule.variantAssociations) {
+    const defaults = typeof association.parameterDefaults === 'object'
+      && association.parameterDefaults !== null
+      && !Array.isArray(association.parameterDefaults)
+      ? { ...(association.parameterDefaults as Record<string, unknown>) }
+      : {};
+    if (!Object.prototype.hasOwnProperty.call(defaults, 'monthsAfterFye')) continue;
+    delete defaults.monthsAfterFye;
+    await tx.serviceVariantDeadlineRule.update({
+      where: { id: association.id },
+      data: { parameterDefaults: defaults as Prisma.InputJsonValue },
+    });
+  }
+
+  await tx.deadlineRule.update({
+    where: { id: rule.id },
+    data: { description: definition.description },
+  });
+  await tx.deadlineRuleVersion.update({
+    where: { id: draft.id },
+    data: {
+      configHash: hashDeadlineRuleDefinition(definition),
+      draftRevision: { increment: 1 },
+    },
+  });
+  return true;
+}
 
 function createVersionData(
   tenantId: string,
@@ -240,6 +366,8 @@ export async function createServiceScheduleStarterData(
       },
     });
   }
+
+  await upgradeLegacyFormCStarterDraft(tx, tenantId);
 
   for (const definition of STARTER_DEFINITIONS) {
     await ensureStarterRule(tx, tenantId, definition);

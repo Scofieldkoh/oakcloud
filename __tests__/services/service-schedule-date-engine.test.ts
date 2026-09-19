@@ -11,6 +11,7 @@ import {
   compareDateOnly,
   currentDateInSingapore,
   dayOfMonth,
+  fixedDateFromSourceYear,
   formatDateOnly,
   isBusinessDay,
   parseDateOnly,
@@ -65,6 +66,18 @@ describe('date-only engine', () => {
     expect(compareDateOnly('2026-01-01', '2026-01-01')).toBe(0);
     expect(compareDateOnly('2026-01-01', '2026-01-02')).toBe(-1);
     expect(compareDateOnly('2026-01-02', '2026-01-01')).toBe(1);
+  });
+
+
+  it('builds exact fixed dates from a source year without preserving source month or day', () => {
+    expect(fixedDateFromSourceYear('2026-12-31', 1, 11, 30)).toBe('2027-11-30');
+    expect(fixedDateFromSourceYear('2027-01-31', 1, 11, 30)).toBe('2028-11-30');
+    expect(fixedDateFromSourceYear('2027-06-30', 1, 11, 30)).toBe('2028-11-30');
+  });
+
+  it('rejects impossible fixed calendar dates rather than silently clamping them', () => {
+    expect(() => fixedDateFromSourceYear('2027-01-31', 0, 2, 29)).toThrow(ValidationError);
+    expect(() => fixedDateFromSourceYear('2027-01-31', 0, 4, 31)).toThrow(ValidationError);
   });
 });
 

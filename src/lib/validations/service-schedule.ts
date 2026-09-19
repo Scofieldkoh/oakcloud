@@ -163,6 +163,13 @@ export const dateOperationSchema = z.discriminatedUnion('kind', [
     source: dateSourceSchema.optional(),
     amount: integerOperandSchema,
   }).strict(),
+  z.object({
+    kind: z.literal('FIXED_DATE_FROM_SOURCE_YEAR'),
+    source: dateSourceSchema,
+    yearOffset: z.number().int().min(-100).max(100),
+    month: z.number().int().min(1).max(12),
+    day: z.number().int().min(1).max(31),
+  }).strict(),
   z.object({ kind: z.literal('ADJUST_BUSINESS_DAY'), adjustment: businessDayAdjustmentSchema }).strict(),
 ]);
 

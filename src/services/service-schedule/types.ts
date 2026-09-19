@@ -60,6 +60,13 @@ export type DateOperation =
   | { kind: 'ADD_CALENDAR_DAYS'; source?: DateSource; amount: IntegerOperand }
   | { kind: 'ADD_BUSINESS_DAYS'; source?: DateSource; amount: IntegerOperand }
   | { kind: 'ADD_MONTHS'; source?: DateSource; amount: IntegerOperand }
+  | {
+      kind: 'FIXED_DATE_FROM_SOURCE_YEAR';
+      source: DateSource;
+      yearOffset: number;
+      month: number;
+      day: number;
+    }
   | { kind: 'ADJUST_BUSINESS_DAY'; adjustment: BusinessDayAdjustment };
 
 export type DirectSourceExpression = { kind: 'SOURCE'; source: DateSource };

@@ -14,6 +14,7 @@ import {
 } from '@/lib/validations/deadline-rule';
 import { canonicalDeadlineRuleDefinition, hashDeadlineRuleDefinition } from './canonical';
 import { validateVariantRuleAssociations } from './association-validation';
+import { upgradeLegacyFormCStarterDraft } from './starter-drafts';
 import type {
   DeadlineMilestoneDto,
   DeadlineRuleDto,
@@ -233,6 +234,7 @@ export async function listDeadlineRules(
   actor: TenantAwareParams,
 ): Promise<DeadlineRuleListDto> {
   const input = searchDeadlineRulesSchema.parse(rawInput);
+  await runSerializableTransaction(prisma, async (tx) => upgradeLegacyFormCStarterDraft(tx, actor.tenantId));
   const where: Prisma.DeadlineRuleWhereInput = {
     tenantId: actor.tenantId,
     ...(input.includeArchived ? {} : { archivedAt: null }),

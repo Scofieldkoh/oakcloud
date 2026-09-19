@@ -28,6 +28,7 @@ const EXPRESSION_KINDS = [
   { value: 'ADD_CALENDAR_DAYS', label: 'Add calendar days' },
   { value: 'ADD_BUSINESS_DAYS', label: 'Add business days' },
   { value: 'ADD_MONTHS', label: 'Add months' },
+  { value: 'FIXED_DATE_FROM_SOURCE_YEAR', label: 'Fixed date based on another date' },
   { value: 'RELATIVE_TO_SOURCE', label: 'Relative to source' },
   { value: 'ADJUST_BUSINESS_DAY', label: 'Adjust business day' },
 ] as const;
@@ -47,6 +48,19 @@ const MILESTONE_TYPES = [
   { value: 'CLIENT', label: 'Client' },
   { value: 'INTERNAL', label: 'Internal' },
 ] as const;
+
+
+const MONTH_NAMES = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December',
+] as const;
+
+function yearRelationshipLabel(offset: number): string {
+  if (offset === 0) return 'the same year as';
+  if (offset === 1) return 'the year after';
+  if (offset === -1) return 'the year before';
+  return offset > 1 ? `${offset} years after` : `${Math.abs(offset)} years before`;
+}
 
 
 const RULE_CONTROL_CLASS = 'input input-sm min-h-11 px-3 py-0 text-sm leading-5 sm:min-h-9';
@@ -175,6 +189,13 @@ export function describeDeadlineExpression(value: unknown): string {
   if (kind === 'ADD_MONTHS') return `${sourceLabel(source)} ${amount >= 0 ? '+' : '−'} ${Math.abs(amount)} month${Math.abs(amount) === 1 ? '' : 's'}`;
   if (kind === 'ADD_CALENDAR_DAYS') return `${sourceLabel(source)} ${amount >= 0 ? '+' : '−'} ${Math.abs(amount)} calendar day${Math.abs(amount) === 1 ? '' : 's'}`;
   if (kind === 'ADD_BUSINESS_DAYS') return `${sourceLabel(source)} ${amount >= 0 ? '+' : '−'} ${Math.abs(amount)} business day${Math.abs(amount) === 1 ? '' : 's'}`;
+  if (kind === 'FIXED_DATE_FROM_SOURCE_YEAR') {
+    const yearOffset = typeof expression.yearOffset === 'number' ? expression.yearOffset : 0;
+    const month = typeof expression.month === 'number' ? expression.month : 1;
+    const day = typeof expression.day === 'number' ? expression.day : 1;
+    const monthName = MONTH_NAMES[month - 1] ?? `month ${month}`;
+    return `${day} ${monthName} in ${yearRelationshipLabel(yearOffset)} ${sourceLabel(source)}`;
+  }
   if (kind === 'RELATIVE_TO_SOURCE') {
     const unit = expression.unit === 'BUSINESS_DAY' ? 'business day' : 'calendar day';
     return `${sourceLabel(source)} ${amount >= 0 ? '+' : '−'} ${Math.abs(amount)} ${unit}${Math.abs(amount) === 1 ? '' : 's'}`;
@@ -532,6 +553,7 @@ function ExpressionEditor({
     if (nextKind === 'SOURCE') return sourceExpression();
     if (nextKind === 'ADJUST_BUSINESS_DAY') return { kind: nextKind, adjustment: 'PREVIOUS' };
     if (nextKind === 'RELATIVE_TO_SOURCE') return { kind: nextKind, source: directSource(), offset: 0, unit: 'CALENDAR_DAY' };
+    if (nextKind === 'FIXED_DATE_FROM_SOURCE_YEAR') return { kind: nextKind, source: directSource('financialYearEnd'), yearOffset: 0, month: 1, day: 1 };
     return { kind: nextKind, source: directSource(), amount: 0 };
   };
 
@@ -565,6 +587,51 @@ function ExpressionEditor({
             onChange={(event) => onChange({ ...expression, amount: Number(event.target.value) })}
 
           />
+        </div>
+      ) : null}
+      {kind === 'FIXED_DATE_FROM_SOURCE_YEAR' ? (
+        <div className="space-y-3">
+          <SourceEditor source={source} onChange={(next) => onChange({ ...expression, source: next })} disabled={disabled} prefix={prefix} />
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <label className="text-xs font-medium text-text-secondary">
+              Year
+              <select
+                className={RULE_LABEL_CONTROL_CLASS}
+                value={String(typeof expression.yearOffset === 'number' ? expression.yearOffset : 0)}
+                disabled={disabled}
+                onChange={(event) => onChange({ ...expression, yearOffset: Number(event.target.value) })}
+              >
+                {[-2, -1, 0, 1, 2, 3, 4, 5]
+                  .concat(typeof expression.yearOffset === 'number' && ![-2, -1, 0, 1, 2, 3, 4, 5].includes(expression.yearOffset) ? [expression.yearOffset] : [])
+                  .sort((left, right) => left - right)
+                  .map((offset) => (
+                    <option key={offset} value={offset}>
+                      {offset === 0 ? 'Same year' : offset === 1 ? 'Following year' : offset === -1 ? 'Previous year' : offset > 1 ? `${offset} years later` : `${Math.abs(offset)} years earlier`}
+                    </option>
+                  ))}
+              </select>
+            </label>
+            <label className="text-xs font-medium text-text-secondary">
+              Month
+              <select
+                className={RULE_LABEL_CONTROL_CLASS}
+                value={String(typeof expression.month === 'number' ? expression.month : 1)}
+                disabled={disabled}
+                onChange={(event) => onChange({ ...expression, month: Number(event.target.value) })}
+              >
+                {MONTH_NAMES.map((monthName, index) => <option key={monthName} value={index + 1}>{monthName}</option>)}
+              </select>
+            </label>
+            <RuleFormInput
+              label="Day"
+              type="number"
+              min={1}
+              max={31}
+              value={String(typeof expression.day === 'number' ? expression.day : 1)}
+              disabled={disabled}
+              onChange={(event) => onChange({ ...expression, day: Number(event.target.value) })}
+            />
+          </div>
         </div>
       ) : null}
       {kind === 'RELATIVE_TO_SOURCE' ? (
