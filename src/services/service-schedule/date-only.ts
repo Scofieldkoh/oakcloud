@@ -112,6 +112,37 @@ export function dateOnlyWithYearClamped(value: DateOnly, year: number): DateOnly
   return formatDateOnly(createUtcDate(year, month - 1, targetDay));
 }
 
+
+/**
+ * Build an exact calendar date using the year from a source date plus an
+ * explicit offset. Unlike month arithmetic, this does not preserve the source
+ * month/day and does not clamp invalid configured dates.
+ */
+export function fixedDateFromSourceYear(
+  sourceDate: DateOnly,
+  yearOffset: number,
+  month: number,
+  day: number,
+): DateOnly {
+  assertInteger(yearOffset, 'yearOffset');
+  assertInteger(month, 'month');
+  assertInteger(day, 'day');
+  const { year: sourceYear } = parseComponents(sourceDate);
+  const targetYear = sourceYear + yearOffset;
+  if (targetYear < MIN_YEAR || targetYear > MAX_YEAR || month < 1 || month > 12 || day < 1 || day > 31) {
+    throw new ValidationError('Fixed calendar date is outside the supported range', { sourceDate, yearOffset, month, day });
+  }
+  const candidate = createUtcDate(targetYear, month - 1, day);
+  if (
+    candidate.getUTCFullYear() !== targetYear
+    || candidate.getUTCMonth() !== month - 1
+    || candidate.getUTCDate() !== day
+  ) {
+    throw new ValidationError('Fixed calendar date is not a real Gregorian date', { sourceDate, yearOffset, month, day });
+  }
+  return formatDateOnly(candidate);
+}
+
 /**
  * Align an annual company landmark (month/day) to the first anniversary on
  * or after the period start. The source year is a data artifact; annual

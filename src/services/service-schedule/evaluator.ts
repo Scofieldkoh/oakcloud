@@ -18,6 +18,7 @@ import {
   alignAnnualLandmarkToPeriod,
   compareDateOnly,
   dayOfMonth,
+  fixedDateFromSourceYear,
   parseDateOnly,
 } from './date-only';
 import { hashConfiguration } from './hash';
@@ -117,6 +118,7 @@ const DATE_OPERATIONS = new Set([
   'ADD_CALENDAR_DAYS',
   'ADD_BUSINESS_DAYS',
   'ADD_MONTHS',
+  'FIXED_DATE_FROM_SOURCE_YEAR',
   'ADJUST_BUSINESS_DAY',
 ]);
 const SCHEDULE_KEY_PATTERN = /^[a-z][a-z0-9-]{0,63}$/;
@@ -411,6 +413,13 @@ function assertExpression(expression: unknown, path: string, allowOperations = t
       if (expression.source !== undefined) assertDateSource(expression.source, `${path}.source`);
       assertIntegerOperand(expression.amount, `${path}.amount`);
       return expression as unknown as RuleDateExpression;
+    case 'FIXED_DATE_FROM_SOURCE_YEAR':
+      if (Object.keys(expression).some((key) => !['kind', 'source', 'yearOffset', 'month', 'day'].includes(key))) throw new ValidationError(`${path} contains unknown fields`, { path });
+      assertDateSource(expression.source, `${path}.source`);
+      safeInteger(expression.yearOffset, `${path}.yearOffset`, -100, 100);
+      safeInteger(expression.month, `${path}.month`, 1, 12);
+      safeInteger(expression.day, `${path}.day`, 1, 31);
+      return expression as unknown as RuleDateExpression;
     case 'ADJUST_BUSINESS_DAY':
       if (Object.keys(expression).some((key) => key !== 'kind' && key !== 'adjustment')) throw new ValidationError(`${path} contains unknown fields`, { path });
       assertAdjustment(expression.adjustment, `${path}.adjustment`);
@@ -462,6 +471,8 @@ function sourcesFromExpression(expression: RuleDateExpression): DateSource[] {
     case 'ADD_BUSINESS_DAYS':
     case 'ADD_MONTHS':
       return expression.source ? [expression.source] : [];
+    case 'FIXED_DATE_FROM_SOURCE_YEAR':
+      return [expression.source];
     case 'COALESCE':
       return expression.candidates.flatMap((candidate) => sourcesFromExpression(candidate));
     default:
@@ -794,6 +805,17 @@ function evaluateExpression(
       return {
         date: addMonthsClamped(base.date, amount),
         explanation: [...base.explanation, integerOperandExplanation(expression.amount, amount), `Applied ${amount} month${Math.abs(amount) === 1 ? '' : 's'}`],
+      };
+    }
+    case 'FIXED_DATE_FROM_SOURCE_YEAR': {
+      const base = resolveSource(assertDateSource(expression.source, 'expression.source'), context, input, scheduleDates, milestoneDates, tracker);
+      const date = fixedDateFromSourceYear(base.date, expression.yearOffset, expression.month, expression.day);
+      return {
+        date,
+        explanation: [
+          ...base.explanation,
+          `Fixed calendar date month ${expression.month} day ${expression.day} with year offset ${expression.yearOffset} = ${date}`,
+        ],
       };
     }
     case 'ADJUST_BUSINESS_DAY':
