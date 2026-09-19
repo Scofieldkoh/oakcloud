@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { arrayMove } from '@dnd-kit/sortable';
 import { useQueryClient } from '@tanstack/react-query';
-import { Upload, FileText, UserPlus, Pencil, X, Check, ChevronDown, ChevronUp, Trash2, Plus, Loader2, Eye, Download } from 'lucide-react';
+import { Upload, FileText, UserPlus, Pencil, X, Check, ChevronDown, ChevronUp, Trash2, Plus, Loader2, Eye, Download, MoreHorizontal } from 'lucide-react';
 import type { EsigningRecipientAccessMode, EsigningRecipientType } from '@/generated/prisma';
 import type { EsigningEnvelopeDetailDto, EsigningEnvelopeDocumentDto, EsigningEnvelopeRecipientDto } from '@/types/esigning';
 import type { UpdateEsigningEnvelopeInput } from '@/lib/validations/esigning';
@@ -258,6 +258,43 @@ function DocumentTable({
   onDelete: (documentId: string) => void;
 }) {
   const toast = useToast();
+  const tableContainerRef = useRef<HTMLDivElement>(null);
+  const actionMenuRef = useRef<HTMLDivElement>(null);
+  const [compactActions, setCompactActions] = useState(false);
+  const [openActionsDocumentId, setOpenActionsDocumentId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const container = tableContainerRef.current;
+    if (!container) return;
+
+    const updateMode = () => {
+      setCompactActions(container.clientWidth < 640);
+    };
+
+    updateMode();
+
+    if (typeof ResizeObserver === 'undefined') {
+      return;
+    }
+
+    const observer = new ResizeObserver(updateMode);
+    observer.observe(container);
+
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!openActionsDocumentId) return;
+
+    function handlePointerDown(event: MouseEvent) {
+      if (actionMenuRef.current && !actionMenuRef.current.contains(event.target as Node)) {
+        setOpenActionsDocumentId(null);
+      }
+    }
+
+    document.addEventListener('mousedown', handlePointerDown);
+    return () => document.removeEventListener('mousedown', handlePointerDown);
+  }, [openActionsDocumentId]);
 
   async function moveDocument(documentId: string, index: number, direction: -1 | 1) {
     const targetIndex = index + direction;
@@ -282,8 +319,12 @@ function DocumentTable({
   }
 
   return (
-    <div className="overflow-x-auto rounded-xl border border-border-primary">
-      <table className="w-full min-w-[520px] text-sm">
+    <div
+      ref={tableContainerRef}
+      data-testid="esigning-document-table-container"
+      className="overflow-x-auto rounded-xl border border-border-primary"
+    >
+      <table className={cn('w-full text-sm', compactActions ? 'min-w-[430px]' : 'min-w-[520px]')}>
         <thead className="bg-background-tertiary">
           <tr className="border-b border-border-primary">
             <th className="px-3 py-2 text-left text-xs font-medium text-text-secondary">Document</th>
@@ -348,38 +389,95 @@ function DocumentTable({
                   </button>
                 </td>
                 <td className="px-3 py-1.5">
-                  <div className="flex items-center justify-end gap-1">
-                    <button
-                      type="button"
-                      aria-label={`Preview ${doc.fileName}`}
-                      title="Preview"
-                      onClick={() => window.open(doc.pdfUrl, '_blank', 'noreferrer')}
-                      className="flex h-8 w-8 items-center justify-center rounded-lg text-text-muted hover:bg-background-tertiary hover:text-text-primary"
+                  {compactActions ? (
+                    <div
+                      ref={openActionsDocumentId === doc.id ? actionMenuRef : undefined}
+                      className="relative flex justify-end"
                     >
-                      <Eye className="h-4 w-4" />
-                    </button>
-                    <a
-                      href={doc.pdfUrl}
-                      download={doc.fileName}
-                      aria-label={`Download ${doc.fileName}`}
-                      title="Download"
-                      className="flex h-8 w-8 items-center justify-center rounded-lg text-text-muted hover:bg-background-tertiary hover:text-text-primary"
-                    >
-                      <Download className="h-4 w-4" />
-                    </a>
-                    {canEdit ? (
                       <button
                         type="button"
-                        aria-label={`Delete ${doc.fileName}`}
-                        title="Delete"
-                        disabled={isUpdating}
-                        onClick={() => onDelete(doc.id)}
-                        className="flex h-8 w-8 items-center justify-center rounded-lg text-text-muted hover:bg-rose-50 hover:text-rose-600 disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-rose-950/30"
+                        aria-label={`More actions for ${doc.fileName}`}
+                        aria-expanded={openActionsDocumentId === doc.id}
+                        onClick={() =>
+                          setOpenActionsDocumentId((current) => current === doc.id ? null : doc.id)
+                        }
+                        className="flex h-8 w-8 items-center justify-center rounded-lg text-text-muted hover:bg-background-tertiary hover:text-text-primary"
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <MoreHorizontal className="h-4 w-4" />
                       </button>
-                    ) : null}
-                  </div>
+                      {openActionsDocumentId === doc.id ? (
+                        <div className="absolute right-0 top-full z-30 mt-1 w-40 overflow-hidden rounded-lg border border-border-primary bg-background-elevated py-1 shadow-lg">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              window.open(doc.pdfUrl, '_blank', 'noreferrer');
+                              setOpenActionsDocumentId(null);
+                            }}
+                            className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-text-primary hover:bg-background-tertiary"
+                          >
+                            <Eye className="h-4 w-4 text-text-muted" />
+                            Preview
+                          </button>
+                          <a
+                            href={doc.pdfUrl}
+                            download={doc.fileName}
+                            onClick={() => setOpenActionsDocumentId(null)}
+                            className="flex items-center gap-2 px-3 py-2 text-xs text-text-primary hover:bg-background-tertiary"
+                          >
+                            <Download className="h-4 w-4 text-text-muted" />
+                            Download
+                          </a>
+                          {canEdit ? (
+                            <button
+                              type="button"
+                              disabled={isUpdating}
+                              onClick={() => {
+                                setOpenActionsDocumentId(null);
+                                onDelete(doc.id);
+                              }}
+                              className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-rose-600 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-rose-950/30"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                              Delete
+                            </button>
+                          ) : null}
+                        </div>
+                      ) : null}
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-end gap-1">
+                      <button
+                        type="button"
+                        aria-label={`Preview ${doc.fileName}`}
+                        title="Preview"
+                        onClick={() => window.open(doc.pdfUrl, '_blank', 'noreferrer')}
+                        className="flex h-8 w-8 items-center justify-center rounded-lg text-text-muted hover:bg-background-tertiary hover:text-text-primary"
+                      >
+                        <Eye className="h-4 w-4" />
+                      </button>
+                      <a
+                        href={doc.pdfUrl}
+                        download={doc.fileName}
+                        aria-label={`Download ${doc.fileName}`}
+                        title="Download"
+                        className="flex h-8 w-8 items-center justify-center rounded-lg text-text-muted hover:bg-background-tertiary hover:text-text-primary"
+                      >
+                        <Download className="h-4 w-4" />
+                      </a>
+                      {canEdit ? (
+                        <button
+                          type="button"
+                          aria-label={`Delete ${doc.fileName}`}
+                          title="Delete"
+                          disabled={isUpdating}
+                          onClick={() => onDelete(doc.id)}
+                          className="flex h-8 w-8 items-center justify-center rounded-lg text-text-muted hover:bg-rose-50 hover:text-rose-600 disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-rose-950/30"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      ) : null}
+                    </div>
+                  )}
                 </td>
               </tr>
             );
@@ -1248,36 +1346,34 @@ async function applyMixedGroupChange(
       >
         <div className="space-y-4 p-4 sm:p-5">
 
-        {envelope.documents.length === 0 ? (
-          <button
-            type="button"
-            onClick={() => !isUploading && fileInputRef.current?.click()}
-            disabled={isUploading}
-            aria-describedby="esigning-upload-help"
-            className={cn(
-              'flex min-h-[88px] w-full flex-col items-center justify-center rounded-xl border border-dashed px-4 py-3 text-center transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-oak-primary/30 focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-70',
-              isUploading
-                ? 'cursor-wait border-oak-primary bg-oak-primary/5'
-                : 'cursor-pointer border-border-primary bg-background-primary hover:border-oak-primary/50 hover:bg-background-tertiary',
-            )}
-          >
-            {isUploading ? (
-              <Loader2 className="mb-1 h-5 w-5 animate-spin text-oak-primary" />
-            ) : (
-              <Upload className="mb-1 h-5 w-5 text-text-muted" />
-            )}
-            <p className="text-sm font-medium text-text-primary">
-              {isUploading
-                ? 'Uploading...'
-                : wordUploadEnabled
-                  ? 'Drop PDF or Word documents here, or click to browse'
-                  : 'Drop PDF documents here, or click to browse'}
-            </p>
-            <span id="esigning-upload-help" className="mt-0.5 text-xs text-text-muted">
-              {wordUploadEnabled ? 'PDF, DOCX, or DOC' : 'PDF only'} - max {ESIGNING_LIMITS.MAX_FILE_SIZE_BYTES / (1024 * 1024)} MB each
-            </span>
-          </button>
-        ) : null}
+        <button
+          type="button"
+          onClick={() => !isUploading && fileInputRef.current?.click()}
+          disabled={isUploading}
+          aria-describedby="esigning-upload-help"
+          className={cn(
+            'flex min-h-[88px] w-full flex-col items-center justify-center rounded-xl border border-dashed px-4 py-3 text-center transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-oak-primary/30 focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-70',
+            isUploading
+              ? 'cursor-wait border-oak-primary bg-oak-primary/5'
+              : 'cursor-pointer border-border-primary bg-background-primary hover:border-oak-primary/50 hover:bg-background-tertiary',
+          )}
+        >
+          {isUploading ? (
+            <Loader2 className="mb-1 h-5 w-5 animate-spin text-oak-primary" />
+          ) : (
+            <Upload className="mb-1 h-5 w-5 text-text-muted" />
+          )}
+          <p className="text-sm font-medium text-text-primary">
+            {isUploading
+              ? 'Uploading...'
+              : wordUploadEnabled
+                ? 'Drop PDF or Word documents here'
+                : 'Drop PDF documents here'}
+          </p>
+          <span id="esigning-upload-help" className="mt-0.5 text-xs text-text-muted">
+            {wordUploadEnabled ? 'PDF, DOCX, or DOC' : 'PDF only'} - max {ESIGNING_LIMITS.MAX_FILE_SIZE_BYTES / (1024 * 1024)} MB each
+          </span>
+        </button>
         <input
           ref={fileInputRef}
           type="file"
