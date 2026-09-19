@@ -1710,7 +1710,7 @@ export function EsigningListPage() {
                             aria-hidden="true"
                           />
                         </th>
-                        <th className="px-2 text-right"><span className="sr-only">Actions</span></th>
+                        <th className="px-2 text-left"><span className="sr-only">Actions</span></th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border-primary">
@@ -1783,7 +1783,7 @@ export function EsigningListPage() {
                               {formatEsigningDateTime(envelope.updatedAt)}
                             </td>
                             <td
-                              className="px-2 py-2.5 text-right align-middle"
+                              className="px-2 py-2.5 text-left align-middle"
                               onClick={(event) => event.stopPropagation()}
                               onKeyDown={(event) => event.stopPropagation()}
                             >
