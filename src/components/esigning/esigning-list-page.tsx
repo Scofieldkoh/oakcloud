@@ -138,14 +138,6 @@ const DEFAULT_ESIGNING_COLUMN_WIDTHS: Record<EsigningTableColumnId, number> = {
   updated: 190,
 };
 
-const MIN_ESIGNING_COLUMN_WIDTHS: Record<EsigningTableColumnId, number> = {
-  status: 140,
-  envelope: 220,
-  company: 140,
-  details: 130,
-  updated: 150,
-};
-
 interface EnvelopeAdvancedFilters {
   status: StatusFilter | '';
   documentName: string;
@@ -477,7 +469,7 @@ export function EsigningListPage() {
       ESIGNING_TABLE_COLUMNS.flatMap((columnId) => {
         const width = value[columnId];
         return typeof width === 'number' && Number.isFinite(width)
-          ? [[columnId, Math.max(MIN_ESIGNING_COLUMN_WIDTHS[columnId], width)]]
+          ? [[columnId, Math.max(30, width)]]
           : [];
       })
     ) as Partial<Record<EsigningTableColumnId, number>>;
@@ -512,10 +504,7 @@ export function EsigningListPage() {
     }
 
     const onMove = (pointerEvent: globalThis.PointerEvent) => {
-      const nextWidth = Math.max(
-        MIN_ESIGNING_COLUMN_WIDTHS[columnId],
-        startWidth + (pointerEvent.clientX - startX),
-      );
+      const nextWidth = Math.max(30, startWidth + (pointerEvent.clientX - startX));
       latestWidth = nextWidth;
       setColumnWidths((current) => ({ ...current, [columnId]: nextWidth }));
     };
