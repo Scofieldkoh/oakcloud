@@ -346,6 +346,25 @@ function buildDuplicateEnvelopeTitle(title: string): string {
   return `${title.slice(0, 160 - suffix.length).trimEnd()}${suffix}`;
 }
 
+function buildEsigningListDateRange(
+  from?: string,
+  to?: string
+): Prisma.DateTimeFilter | undefined {
+  const range: Prisma.DateTimeFilter = {};
+
+  if (from) {
+    range.gte = new Date(`${from}T00:00:00.000Z`);
+  }
+
+  if (to) {
+    const exclusiveEnd = new Date(`${to}T00:00:00.000Z`);
+    exclusiveEnd.setUTCDate(exclusiveEnd.getUTCDate() + 1);
+    range.lt = exclusiveEnd;
+  }
+
+  return Object.keys(range).length > 0 ? range : undefined;
+}
+
 export async function listEsigningEnvelopes(
   session: SessionUser,
   tenantId: string,
@@ -370,6 +389,17 @@ export async function listEsigningEnvelopes(
   if (query.query) {
     scopeWhere.OR = [
       { title: { contains: query.query, mode: 'insensitive' } },
+      { company: { is: { name: { contains: query.query, mode: 'insensitive' } } } },
+      {
+        documents: {
+          some: {
+            OR: [
+              { fileName: { contains: query.query, mode: 'insensitive' } },
+              { originalFileName: { contains: query.query, mode: 'insensitive' } },
+            ],
+          },
+        },
+      },
       { recipients: { some: { name: { contains: query.query, mode: 'insensitive' } } } },
       { recipients: { some: { email: { contains: query.query, mode: 'insensitive' } } } },
     ];
@@ -378,29 +408,82 @@ export async function listEsigningEnvelopes(
     scopeWhere.createdById = session.id;
   }
 
+  const applyNonStatusFilters = (
+    where: Prisma.EsigningEnvelopeWhereInput,
+    includeCompany: boolean,
+  ) => {
+    if (includeCompany && query.companyId) {
+      where.companyId = query.companyId;
+    }
+
+    if (query.documentName) {
+      where.documents = {
+        some: {
+          OR: [
+            { fileName: { contains: query.documentName, mode: 'insensitive' } },
+            { originalFileName: { contains: query.documentName, mode: 'insensitive' } },
+          ],
+        },
+      };
+    }
+
+    if (query.recipientQuery || query.recipientStatus) {
+      const recipientWhere: Prisma.EsigningEnvelopeRecipientWhereInput = {};
+      if (query.recipientQuery) {
+        recipientWhere.OR = [
+          { name: { contains: query.recipientQuery, mode: 'insensitive' } },
+          { email: { contains: query.recipientQuery, mode: 'insensitive' } },
+        ];
+      }
+      if (query.recipientStatus) {
+        recipientWhere.status = query.recipientStatus;
+      }
+      where.recipients = { some: recipientWhere };
+    }
+
+    if (query.signingOrder) {
+      where.signingOrder = query.signingOrder;
+    }
+
+    const createdAt = buildEsigningListDateRange(query.createdFrom, query.createdTo);
+    if (createdAt) {
+      where.createdAt = createdAt;
+    }
+
+    const completedAt = buildEsigningListDateRange(query.completedFrom, query.completedTo);
+    if (completedAt) {
+      where.completedAt = completedAt;
+    }
+
+    const sentAt = buildEsigningListDateRange(query.sentFrom, query.sentTo);
+    if (sentAt) {
+      where.events = {
+        some: {
+          action: 'SENT',
+          createdAt: sentAt,
+        },
+      };
+    }
+  };
+
   const resultWhere: Prisma.EsigningEnvelopeWhereInput = { ...scopeWhere };
-  if (query.statuses?.length) {
-    resultWhere.status = { in: query.statuses };
-  } else if (query.status) {
+  applyNonStatusFilters(resultWhere, true);
+  if (query.status) {
     resultWhere.status = query.status;
-  }
-  if (query.companyId) {
-    resultWhere.companyId = query.companyId;
+  } else if (query.statuses?.length) {
+    resultWhere.status = { in: query.statuses };
   }
 
   const statusCountWhere: Prisma.EsigningEnvelopeWhereInput = { ...scopeWhere };
-  if (query.companyId) {
-    statusCountWhere.companyId = query.companyId;
-  }
+  applyNonStatusFilters(statusCountWhere, true);
 
-  const companyOptionWhere: Prisma.EsigningEnvelopeWhereInput = {
-    ...scopeWhere,
-    companyId: { not: null },
-  };
-  if (query.statuses?.length) {
-    companyOptionWhere.status = { in: query.statuses };
-  } else if (query.status) {
+  const companyOptionWhere: Prisma.EsigningEnvelopeWhereInput = { ...scopeWhere };
+  applyNonStatusFilters(companyOptionWhere, false);
+  companyOptionWhere.companyId = { not: null };
+  if (query.status) {
     companyOptionWhere.status = query.status;
+  } else if (query.statuses?.length) {
+    companyOptionWhere.status = { in: query.statuses };
   }
 
   const page = query.page ?? 1;
@@ -455,7 +538,11 @@ export async function listEsigningEnvelopes(
           },
         },
         documents: {
-          select: { id: true },
+          orderBy: { sortOrder: 'asc' },
+          select: {
+            id: true,
+            fileName: true,
+          },
         },
       },
     }),
@@ -499,9 +586,12 @@ export async function listEsigningEnvelopes(
     statusCounts[entry.status] = count;
   });
 
-  const companyIds = groupedCompanyCounts
-    .map((entry) => entry.companyId)
-    .filter((id): id is string => Boolean(id));
+  const companyIds = Array.from(new Set([
+    ...groupedCompanyCounts
+      .map((entry) => entry.companyId)
+      .filter((id): id is string => Boolean(id)),
+    ...(query.companyId ? [query.companyId] : []),
+  ]));
   const companyRows =
     companyIds.length > 0
       ? await prisma.company.findMany({
@@ -515,22 +605,22 @@ export async function listEsigningEnvelopes(
           },
         })
       : [];
-  const companyNameById = new Map(companyRows.map((company) => [company.id, company.name]));
-  const companyOptions = groupedCompanyCounts
-    .flatMap((entry) => {
-      if (!entry.companyId) {
-        return [];
-      }
-      const name = companyNameById.get(entry.companyId);
-      if (!name) {
-        return [];
-      }
+  const companyCountById = new Map(
+    groupedCompanyCounts.flatMap((entry) => {
+      if (!entry.companyId) return [];
       const count =
         typeof entry._count === 'object' && entry._count
           ? (entry._count._all ?? 0)
           : 0;
-      return [{ id: entry.companyId, name, count }];
+      return [[entry.companyId, count] as const];
     })
+  );
+  const companyOptions = companyRows
+    .map((company) => ({
+      id: company.id,
+      name: company.name,
+      count: companyCountById.get(company.id) ?? 0,
+    }))
     .sort((left, right) => left.name.localeCompare(right.name));
 
   return {
@@ -581,7 +671,14 @@ export async function listEsigningEnvelopes(
       ).length,
       recipientCount: envelope.recipients.length,
       signerCount: envelope.recipients.filter((recipient) => recipient.type === 'SIGNER').length,
+      completedSignerCount: envelope.recipients.filter(
+        (recipient) => recipient.type === 'SIGNER' && recipient.status === 'SIGNED'
+      ).length,
       documentCount: envelope.documents.length,
+      documents: envelope.documents.map((document) => ({
+        id: document.id,
+        fileName: document.fileName,
+      })),
       recipients: envelope.recipients.map((recipient) => {
         const copyDelivery = (envelope.emailDeliveries ?? []).find(
           (delivery) =>

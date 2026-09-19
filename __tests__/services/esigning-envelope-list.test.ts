@@ -168,6 +168,173 @@ describe('e-signing envelope list company filtering', () => {
     );
   });
 
+  it('searches envelope, company, document, recipient name, and recipient email on the server', async () => {
+    await listEsigningEnvelopes(session, 'tenant-1', {
+      query: 'Tax',
+      page: 1,
+      limit: 20,
+      createdBy: 'all',
+      sortBy: 'updatedAt',
+      sortOrder: 'desc',
+    });
+
+    expect(mocks.count).toHaveBeenCalledWith({
+      where: expect.objectContaining({
+        OR: expect.arrayContaining([
+          { title: { contains: 'Tax', mode: 'insensitive' } },
+          {
+            company: {
+              is: {
+                name: { contains: 'Tax', mode: 'insensitive' },
+              },
+            },
+          },
+          {
+            documents: {
+              some: {
+                OR: [
+                  { fileName: { contains: 'Tax', mode: 'insensitive' } },
+                  { originalFileName: { contains: 'Tax', mode: 'insensitive' } },
+                ],
+              },
+            },
+          },
+          { recipients: { some: { name: { contains: 'Tax', mode: 'insensitive' } } } },
+          { recipients: { some: { email: { contains: 'Tax', mode: 'insensitive' } } } },
+        ]),
+      }),
+    });
+  });
+
+  it('combines advanced envelope filters before pagination', async () => {
+    await listEsigningEnvelopes(session, 'tenant-1', {
+      documentName: 'Financial',
+      recipientQuery: 'john@example.com',
+      recipientStatus: 'VIEWED',
+      signingOrder: 'PARALLEL',
+      createdFrom: '2026-09-01',
+      createdTo: '2026-09-30',
+      sentFrom: '2026-09-02',
+      sentTo: '2026-09-29',
+      completedFrom: '2026-09-03',
+      completedTo: '2026-09-28',
+      page: 2,
+      limit: 20,
+      createdBy: 'all',
+      sortBy: 'updatedAt',
+      sortOrder: 'desc',
+    });
+
+    expect(mocks.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          documents: {
+            some: {
+              OR: [
+                { fileName: { contains: 'Financial', mode: 'insensitive' } },
+                { originalFileName: { contains: 'Financial', mode: 'insensitive' } },
+              ],
+            },
+          },
+          recipients: {
+            some: {
+              OR: [
+                { name: { contains: 'john@example.com', mode: 'insensitive' } },
+                { email: { contains: 'john@example.com', mode: 'insensitive' } },
+              ],
+              status: 'VIEWED',
+            },
+          },
+          signingOrder: 'PARALLEL',
+          createdAt: {
+            gte: new Date('2026-09-01T00:00:00.000Z'),
+            lt: new Date('2026-10-01T00:00:00.000Z'),
+          },
+          completedAt: {
+            gte: new Date('2026-09-03T00:00:00.000Z'),
+            lt: new Date('2026-09-29T00:00:00.000Z'),
+          },
+          events: {
+            some: {
+              action: 'SENT',
+              createdAt: {
+                gte: new Date('2026-09-02T00:00:00.000Z'),
+                lt: new Date('2026-09-30T00:00:00.000Z'),
+              },
+            },
+          },
+        }),
+        skip: 20,
+        take: 20,
+      })
+    );
+  });
+
+  it('returns document names and completed signer progress for both list views', async () => {
+    mocks.findMany.mockResolvedValue([
+      {
+        id: 'envelope-1',
+        tenantId: 'tenant-1',
+        title: 'Signing package',
+        status: 'IN_PROGRESS',
+        signingOrder: 'PARALLEL',
+        expiresAt: null,
+        companyId: null,
+        company: null,
+        certificateId: 'certificate-1',
+        completedAt: null,
+        createdAt: new Date('2026-09-01T00:00:00.000Z'),
+        updatedAt: new Date('2026-09-02T00:00:00.000Z'),
+        pdfGenerationStatus: null,
+        autoFilingStatus: 'NOT_REQUIRED',
+        createdById: 'user-1',
+        createdBy: { id: 'user-1', firstName: 'Sender', lastName: null, email: 'sender@example.com' },
+        documents: [
+          { id: 'document-1', fileName: 'FY2026 Financial Statements.pdf' },
+          { id: 'document-2', fileName: 'Tax Computation YA2027.pdf' },
+        ],
+        recipients: [
+          {
+            id: 'recipient-1',
+            name: 'John Tan',
+            email: 'john@example.com',
+            type: 'SIGNER',
+            status: 'SIGNED',
+            signingOrder: null,
+          },
+          {
+            id: 'recipient-2',
+            name: 'Mary Lim',
+            email: 'mary@example.com',
+            type: 'SIGNER',
+            status: 'VIEWED',
+            signingOrder: null,
+          },
+        ],
+        emailDeliveries: [],
+        metadata: null,
+      },
+    ]);
+
+    const result = await listEsigningEnvelopes(session, 'tenant-1', {
+      page: 1,
+      limit: 20,
+      createdBy: 'all',
+      sortBy: 'updatedAt',
+      sortOrder: 'desc',
+    });
+
+    expect(result.envelopes[0]).toMatchObject({
+      documentCount: 2,
+      signerCount: 2,
+      completedSignerCount: 1,
+      documents: [
+        { id: 'document-1', fileName: 'FY2026 Financial Statements.pdf' },
+        { id: 'document-2', fileName: 'Tax Computation YA2027.pdf' },
+      ],
+    });
+  });
+
   it('serializes the real ledger snapshot for delivery health and completion status', async () => {
     mocks.findMany.mockResolvedValue([
       {

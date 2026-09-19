@@ -11,20 +11,26 @@ import {
   Copy,
   Download,
   ExternalLink,
-  FilePenLine,
+  Bookmark,
+  ChevronDown,
+  FileText,
   FileSignature,
+  Grid2X2,
   LayoutList,
-  Minus,
   MoreHorizontal,
   Plus,
   RefreshCw,
   Search,
   Send,
+  SlidersHorizontal,
   Trash2,
+  X,
   XCircle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { FormInput } from '@/components/ui/form-input';
+import { SearchableSelect } from '@/components/ui/searchable-select';
+import { FilterChip } from '@/components/ui/filter-chip';
 import { Alert } from '@/components/ui/alert';
 import { Pagination } from '@/components/ui/pagination';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
@@ -109,6 +115,131 @@ const TAB_STATUSES: Record<TabKey, StatusFilter[]> = {
   completed: ['COMPLETED'],
   voided: ['VOIDED', 'EXPIRED'],
 };
+
+type ViewMode = 'table' | 'card';
+type RecipientStatusFilter = 'QUEUED' | 'NOTIFIED' | 'VIEWED' | 'SIGNED' | 'DECLINED';
+type SigningOrderFilter = 'PARALLEL' | 'SEQUENTIAL' | 'MIXED';
+
+interface EnvelopeAdvancedFilters {
+  status: StatusFilter | '';
+  documentName: string;
+  recipientQuery: string;
+  recipientStatus: RecipientStatusFilter | '';
+  signingOrder: SigningOrderFilter | '';
+  createdFrom: string;
+  createdTo: string;
+  sentFrom: string;
+  sentTo: string;
+  completedFrom: string;
+  completedTo: string;
+  createdBy: 'all' | 'me';
+}
+
+const EMPTY_ADVANCED_FILTERS: EnvelopeAdvancedFilters = {
+  status: '',
+  documentName: '',
+  recipientQuery: '',
+  recipientStatus: '',
+  signingOrder: '',
+  createdFrom: '',
+  createdTo: '',
+  sentFrom: '',
+  sentTo: '',
+  completedFrom: '',
+  completedTo: '',
+  createdBy: 'all',
+};
+
+const STATUS_TO_TAB: Record<StatusFilter, TabKey> = {
+  DRAFT: 'attention',
+  SENT: 'waiting',
+  IN_PROGRESS: 'waiting',
+  COMPLETED: 'completed',
+  VOIDED: 'voided',
+  DECLINED: 'attention',
+  EXPIRED: 'voided',
+};
+
+const ENVELOPE_STATUS_LABELS: Record<StatusFilter, string> = {
+  DRAFT: 'Draft',
+  SENT: 'Sent',
+  IN_PROGRESS: 'In progress',
+  COMPLETED: 'Completed',
+  VOIDED: 'Voided',
+  DECLINED: 'Declined',
+  EXPIRED: 'Expired',
+};
+
+const RECIPIENT_STATUS_LABELS: Record<RecipientStatusFilter, string> = {
+  QUEUED: 'Pending',
+  NOTIFIED: 'Sent',
+  VIEWED: 'Viewed',
+  SIGNED: 'Signed',
+  DECLINED: 'Declined',
+};
+
+const SIGNING_ORDER_FILTER_LABELS: Record<SigningOrderFilter, string> = {
+  PARALLEL: 'Parallel signing',
+  SEQUENTIAL: 'Sequential signing',
+  MIXED: 'Mixed signing',
+};
+
+function formatFilterDateRange(from: string, to: string): string {
+  if (from && to) return `${from} – ${to}`;
+  if (from) return `From ${from}`;
+  if (to) return `Until ${to}`;
+  return '';
+}
+
+function toDateInputValue(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function getEnvelopeSearchMatchContext(
+  envelope: EsigningEnvelopeListItem,
+  query: string
+): string | null {
+  const needle = query.trim().toLocaleLowerCase();
+  if (!needle) return null;
+
+  if (
+    envelope.title.toLocaleLowerCase().includes(needle)
+    || envelope.companyName?.toLocaleLowerCase().includes(needle)
+  ) {
+    return null;
+  }
+
+  const matchedDocument = envelope.documents.find((document) =>
+    document.fileName.toLocaleLowerCase().includes(needle)
+  );
+  if (matchedDocument) {
+    return `Matched document: ${matchedDocument.fileName}`;
+  }
+
+  const matchedRecipient = envelope.recipients.find((recipient) =>
+    recipient.name.toLocaleLowerCase().includes(needle)
+  );
+  if (matchedRecipient) {
+    return `Matched recipient: ${matchedRecipient.name}`;
+  }
+
+  const matchedEmail = envelope.recipients.find((recipient) =>
+    recipient.email?.toLocaleLowerCase().includes(needle)
+  );
+  if (matchedEmail?.email) {
+    return `Matched email: ${matchedEmail.email}`;
+  }
+
+  return null;
+}
+
+function isStatusDuplicatedByTab(status: StatusFilter, tab: TabKey): boolean {
+  const tabStatuses = TAB_STATUSES[tab];
+  return tabStatuses.length === 1 && tabStatuses[0] === status;
+}
 
 export function EmailDeliveryWarningBadge({ envelope }: { envelope: EsigningEnvelopeListItem }) {
   if (envelope.emailDelivery.status !== 'failed') {
@@ -283,13 +414,18 @@ export function EsigningListPage() {
   );
   const wordUploadEnabled = useEsigningWordUploadAvailability(activeTenantId);
   const [query, setQuery] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
   const [activeTab, setActiveTab] = useState<TabKey>('all');
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
   const [isStarting, setIsStarting] = useState(false);
   const [isDraggingOnHero, setIsDraggingOnHero] = useState(false);
-  const [compactView, setCompactView] = useState(true);
+  const [viewMode, setViewMode] = useState<ViewMode>('table');
   const [companyId, setCompanyId] = useState<string>('');
+  const [appliedFilters, setAppliedFilters] = useState<EnvelopeAdvancedFilters>(EMPTY_ADVANCED_FILTERS);
+  const [draftFilters, setDraftFilters] = useState<EnvelopeAdvancedFilters>(EMPTY_ADVANCED_FILTERS);
+  const [draftCompanyId, setDraftCompanyId] = useState('');
+  const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<EsigningEnvelopeListItem | null>(null);
   const [voidTarget, setVoidTarget] = useState<EsigningEnvelopeListItem | null>(null);
   const [retryTargetId, setRetryTargetId] = useState<string | null>(null);
@@ -298,12 +434,30 @@ export function EsigningListPage() {
   const ensuredTaskRef = useRef<string | null>(null);
   const selectedTaskDocumentsRef = useRef<string | null>(null);
   const openedPreparedEnvelopeRef = useRef<string | null>(null);
+  const uploadInputRef = useRef<HTMLInputElement>(null);
+  const filterPanelRef = useRef<HTMLDivElement>(null);
 
   const activeStatuses = TAB_STATUSES[activeTab];
   const envelopesQuery = useEsigningEnvelopes({
-    query: query || undefined,
-    statuses: activeStatuses.length > 0 ? activeStatuses : undefined,
+    query: debouncedQuery || undefined,
+    status: appliedFilters.status || undefined,
+    statuses: appliedFilters.status
+      ? undefined
+      : activeStatuses.length > 0
+        ? activeStatuses
+        : undefined,
     companyId: companyId || undefined,
+    documentName: appliedFilters.documentName || undefined,
+    recipientQuery: appliedFilters.recipientQuery || undefined,
+    recipientStatus: appliedFilters.recipientStatus || undefined,
+    signingOrder: appliedFilters.signingOrder || undefined,
+    createdFrom: appliedFilters.createdFrom || undefined,
+    createdTo: appliedFilters.createdTo || undefined,
+    sentFrom: appliedFilters.sentFrom || undefined,
+    sentTo: appliedFilters.sentTo || undefined,
+    completedFrom: appliedFilters.completedFrom || undefined,
+    completedTo: appliedFilters.completedTo || undefined,
+    createdBy: appliedFilters.createdBy,
     page,
     limit,
   });
@@ -341,11 +495,42 @@ export function EsigningListPage() {
   );
 
   useEffect(() => {
-    setPage(1);
-    setCompanyId('');
-  }, [activeTab, query]);
+    const timer = window.setTimeout(() => {
+      setDebouncedQuery(query.trim());
+    }, 300);
+    return () => window.clearTimeout(timer);
+  }, [query]);
 
-  const companyOptions = envelopesQuery.data?.companyOptions ?? [];
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedQuery]);
+
+  useEffect(() => {
+    if (!isFilterPanelOpen) return;
+
+    const handlePointerDown = (event: MouseEvent) => {
+      if (filterPanelRef.current && !filterPanelRef.current.contains(event.target as Node)) {
+        setIsFilterPanelOpen(false);
+      }
+    };
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsFilterPanelOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handlePointerDown);
+    document.addEventListener('keydown', handleEscape);
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [isFilterPanelOpen]);
+
+  const companyOptions = useMemo(
+    () => envelopesQuery.data?.companyOptions ?? [],
+    [envelopesQuery.data?.companyOptions]
+  );
 
   const tabCounts = useMemo<Record<TabKey, number>>(
     () => ({
@@ -360,6 +545,95 @@ export function EsigningListPage() {
 
   const totalResults = envelopesQuery.data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(totalResults / limit));
+  const selectedCompanyName = companyOptions.find((company) => company.id === companyId)?.name ?? '';
+  const companySelectOptions = useMemo(
+    () => companyOptions.map((company) => ({
+      value: company.id,
+      label: company.name,
+      description: `${company.count} envelope${company.count === 1 ? '' : 's'}`,
+    })),
+    [companyOptions]
+  );
+
+  const advancedFilterCount = useMemo(() => {
+    let count = companyId ? 1 : 0;
+    if (appliedFilters.status) count += 1;
+    if (appliedFilters.documentName) count += 1;
+    if (appliedFilters.recipientQuery) count += 1;
+    if (appliedFilters.recipientStatus) count += 1;
+    if (appliedFilters.signingOrder) count += 1;
+    if (appliedFilters.createdFrom || appliedFilters.createdTo) count += 1;
+    if (appliedFilters.sentFrom || appliedFilters.sentTo) count += 1;
+    if (appliedFilters.completedFrom || appliedFilters.completedTo) count += 1;
+    if (appliedFilters.createdBy === 'me') count += 1;
+    return count;
+  }, [appliedFilters, companyId]);
+
+  const hasAppliedFilters = advancedFilterCount > 0;
+
+  const handleTabChange = (tab: TabKey) => {
+    setActiveTab(tab);
+    setAppliedFilters((current) => ({ ...current, status: '' }));
+    setDraftFilters((current) => ({ ...current, status: '' }));
+    setPage(1);
+  };
+
+  const handleCompanyChange = (nextCompanyId: string) => {
+    setCompanyId(nextCompanyId);
+    setDraftCompanyId(nextCompanyId);
+    setPage(1);
+  };
+
+  const openFilterPanel = () => {
+    setDraftFilters({ ...appliedFilters });
+    setDraftCompanyId(companyId);
+    setIsFilterPanelOpen(true);
+  };
+
+  const applyFilterPanel = () => {
+    const nextFilters = { ...draftFilters };
+    if (nextFilters.status) {
+      const targetTab = STATUS_TO_TAB[nextFilters.status];
+      setActiveTab(targetTab);
+      if (isStatusDuplicatedByTab(nextFilters.status, targetTab)) {
+        nextFilters.status = '';
+      }
+    }
+    setAppliedFilters(nextFilters);
+    setCompanyId(draftCompanyId);
+    setPage(1);
+    setIsFilterPanelOpen(false);
+  };
+
+  const clearAllFilters = () => {
+    setCompanyId('');
+    setDraftCompanyId('');
+    setAppliedFilters({ ...EMPTY_ADVANCED_FILTERS });
+    setDraftFilters({ ...EMPTY_ADVANCED_FILTERS });
+    setPage(1);
+  };
+
+  const applySavedView = (
+    tab: TabKey,
+    nextFilters: Partial<EnvelopeAdvancedFilters> = {}
+  ) => {
+    const filters = { ...EMPTY_ADVANCED_FILTERS, ...nextFilters };
+    setActiveTab(tab);
+    setAppliedFilters(filters);
+    setDraftFilters(filters);
+    setCompanyId('');
+    setDraftCompanyId('');
+    setPage(1);
+  };
+
+  const applyCompletedThisMonthView = () => {
+    const today = new Date();
+    const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+    applySavedView('completed', {
+      completedFrom: toDateInputValue(monthStart),
+      completedTo: toDateInputValue(today),
+    });
+  };
 
   const handleStart = useCallback(async (files?: File[]) => {
     if (isStarting) {
@@ -556,36 +830,42 @@ export function EsigningListPage() {
 
   return (
     <div className="min-h-screen bg-background-primary">
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 p-4 sm:gap-6 sm:p-6">
-        <section className="rounded-2xl border border-oak-primary/20 bg-gradient-to-br from-oak-primary/[0.06] to-background-secondary p-4 shadow-sm sm:rounded-3xl sm:p-6">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-            <div className="space-y-2">
-              <div className="inline-flex items-center gap-2 rounded-full border border-border-primary bg-background-tertiary px-3 py-1 text-xs font-medium uppercase tracking-[0.18em] text-text-muted">
-                <FileSignature className="h-3.5 w-3.5" />
-                E-Signing
-              </div>
-              <div>
-                <h1 className="text-2xl font-semibold text-text-primary sm:text-3xl">Envelopes</h1>
-                <p className="mt-1 max-w-2xl text-sm text-text-secondary">
-                  Prepare signature packages, manage signer access, and track document completion from one queue.
-                </p>
-              </div>
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 py-5 sm:px-6 sm:py-6">
+        <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div className="min-w-0">
+            <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-oak-primary">
+              E-Signing
             </div>
+            <h1 className="mt-1 text-2xl font-semibold leading-tight text-text-primary">Envelopes</h1>
+            <p className="mt-1 text-sm text-text-secondary">
+              Prepare, send and track documents for signature.
+            </p>
           </div>
-        </section>
+          {can.createEsigning && !taskContext ? (
+            <Button
+              size="md"
+              className="self-start sm:self-auto"
+              leftIcon={<Plus className="h-4 w-4" />}
+              isLoading={isStarting}
+              onClick={() => void handleStart()}
+            >
+              New envelope
+            </Button>
+          ) : null}
+        </header>
 
         {taskContext ? (
-          <section className="rounded-2xl border border-border-primary bg-background-secondary p-6 text-center shadow-sm sm:rounded-3xl">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-oak-primary/10 text-oak-primary">
+          <section className="rounded-2xl border border-border-primary bg-background-secondary p-5 text-center">
+            <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-xl bg-oak-primary/10 text-oak-primary">
               <RefreshCw
                 className={cn(
-                  'h-6 w-6',
+                  'h-5 w-5',
                   (isStarting || !preparation || preparation.status === 'QUEUED' || preparation.status === 'PROCESSING')
                     && 'animate-spin',
                 )}
               />
             </div>
-            <h2 className="mt-4 text-lg font-semibold text-text-primary">
+            <h2 className="mt-3 text-base font-semibold text-text-primary">
               {selectedGeneratedDocumentIds.length > 0
                 ? 'Preparing selected documents'
                 : preparation?.status === 'WAITING'
@@ -598,7 +878,7 @@ export function EsigningListPage() {
                       ? 'Opening prepared envelope'
                       : 'Preparing E-signing'}
             </h2>
-            <p className="mx-auto mt-2 max-w-xl text-sm text-text-secondary">
+            <p className="mx-auto mt-1.5 max-w-xl text-sm text-text-secondary">
               {selectedGeneratedDocumentIds.length > 0
                 ? `${selectedGeneratedDocumentIds.length} ${selectedGeneratedDocumentIds.length === 1 ? 'document is' : 'documents are'} being added to a new signing workspace.`
                 : preparation?.status === 'WAITING' && preparation.blockingStage
@@ -611,7 +891,7 @@ export function EsigningListPage() {
             </p>
             {preparation?.status === 'FAILED_RETRYABLE' ? (
               <Button
-                className="mt-4"
+                className="mt-3"
                 variant="secondary"
                 isLoading={retryPreparation.isPending}
                 onClick={() => void retryPreparation.mutateAsync({
@@ -641,44 +921,73 @@ export function EsigningListPage() {
               }
             }}
             className={cn(
-              'flex flex-col items-center justify-center gap-4 rounded-2xl border-2 border-dashed p-6 text-center transition-colors sm:rounded-3xl sm:p-10',
+              'flex min-h-[80px] flex-col gap-3 rounded-2xl border border-dashed px-4 py-3 transition-colors sm:flex-row sm:items-center sm:justify-between',
               isDraggingOnHero
                 ? 'border-oak-primary bg-oak-primary/5'
-                : 'border-border-primary bg-background-secondary hover:border-oak-primary/40 hover:bg-background-secondary/80'
+                : 'border-border-secondary bg-background-secondary'
             )}
           >
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-oak-primary/10 text-oak-primary">
-              <FileSignature className="h-6 w-6" />
-            </div>
-            <div>
-              <p className="text-base font-semibold text-text-primary">Sign or get signatures</p>
-              <p className="mt-1 text-sm text-text-secondary">
-                {wordUploadEnabled
-                  ? 'Drop a PDF or Word document here to start, or click the button below.'
-                  : 'Drop a PDF document here to start, or click the button below.'}
-              </p>
+            <div className="flex min-w-0 items-center gap-3">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-oak-primary/10 text-oak-primary">
+                <FileSignature className="h-4 w-4" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-text-primary">
+                  {wordUploadEnabled
+                    ? 'Drop PDF or Word files here to create a new envelope'
+                    : 'Drop PDF files here to create a new envelope'}
+                </p>
+                <p className="mt-0.5 text-xs text-text-muted">
+                  Files are added to a new draft before you assign recipients.
+                </p>
+              </div>
             </div>
             <Button
-              leftIcon={<Plus className="h-4 w-4" />}
+              variant="secondary"
+              size="sm"
+              className="shrink-0 self-start sm:self-auto"
               isLoading={isStarting}
-              onClick={() => void handleStart()}
+              onClick={() => uploadInputRef.current?.click()}
             >
-              Start
+              Browse files
             </Button>
+            <input
+              ref={uploadInputRef}
+              type="file"
+              multiple
+              className="hidden"
+              aria-label="Upload documents to a new envelope"
+              accept={wordUploadEnabled
+                ? '.pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+                : '.pdf,application/pdf'}
+              onChange={(event) => {
+                const files = Array.from(event.currentTarget.files ?? []);
+                event.currentTarget.value = '';
+                if (files.length > 0) {
+                  void handleStart(files);
+                }
+              }}
+            />
           </section>
         ) : null}
 
-        <section className="overflow-hidden rounded-2xl border border-border-primary bg-background-secondary shadow-sm sm:rounded-3xl">
-          <div className="flex gap-0 overflow-x-auto border-b border-border-primary px-2 sm:px-4">
+        {envelopesQuery.error ? (
+          <Alert variant="error" title="Unable to load envelopes">
+            {envelopesQuery.error instanceof Error ? envelopesQuery.error.message : 'Unknown error'}
+          </Alert>
+        ) : null}
+
+        <section className="relative rounded-2xl border border-border-primary bg-background-secondary">
+          <div className="flex overflow-x-auto border-b border-border-primary px-2 sm:px-4">
             {(Object.keys(TAB_LABELS) as TabKey[]).map((tab) => (
               <button
                 key={tab}
                 type="button"
-                onClick={() => setActiveTab(tab)}
+                onClick={() => handleTabChange(tab)}
                 className={cn(
                   'relative flex shrink-0 items-center gap-1.5 whitespace-nowrap px-3 py-3 text-sm font-medium transition-colors sm:px-4',
                   activeTab === tab
-                    ? 'text-oak-primary after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-oak-primary'
+                    ? 'text-oak-primary after:absolute after:bottom-0 after:left-3 after:right-3 after:h-0.5 after:bg-oak-primary sm:after:left-4 sm:after:right-4'
                     : 'text-text-secondary hover:text-text-primary'
                 )}
               >
@@ -686,7 +995,7 @@ export function EsigningListPage() {
                 <span className="hidden sm:inline">{TAB_LABELS[tab]}</span>
                 <span
                   className={cn(
-                    'rounded-full px-1.5 py-0.5 text-xs font-semibold',
+                    'rounded-full px-1.5 py-0.5 text-[10px] font-semibold',
                     activeTab === tab
                       ? 'bg-oak-primary/10 text-oak-primary'
                       : 'bg-background-tertiary text-text-muted'
@@ -697,288 +1006,784 @@ export function EsigningListPage() {
               </button>
             ))}
           </div>
-          <div className="flex items-center gap-2 p-4">
-            <div className="flex-1">
+
+          <div className="flex flex-col gap-2 p-3 sm:p-4 lg:flex-row lg:items-center">
+            <div className="min-w-0 flex-1">
               <FormInput
-                placeholder="Search envelopes, senders, or recipients..."
+                inputSize="md"
+                className="h-10 text-sm"
+                aria-label="Search envelopes, documents, recipients or companies"
+                placeholder="Search envelopes, documents, recipients or companies..."
                 value={query}
-                onChange={(event) => setQuery(event.target.value)}
+                onChange={(event) => {
+                  setQuery(event.target.value);
+                  setPage(1);
+                }}
                 leftIcon={<Search className="h-4 w-4" />}
               />
             </div>
-            <button
-              type="button"
-              title={compactView ? 'Expanded view' : 'Compact view'}
-              onClick={() => setCompactView((v) => !v)}
-              className={cn(
-                'flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg border transition-colors',
-                compactView
-                  ? 'border-oak-primary bg-oak-primary/10 text-oak-primary'
-                  : 'border-border-primary bg-background-primary text-text-muted hover:bg-background-tertiary'
-              )}
-            >
-              <LayoutList className="h-4 w-4" />
-            </button>
-          </div>
-          {companyOptions.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 px-4 pb-3">
-              <button
-                type="button"
-                onClick={() => {
-                  setCompanyId('');
-                  setPage(1);
-                }}
-                className={cn(
-                  'rounded-full border px-2.5 py-1 text-xs font-medium transition-colors',
-                  !companyId
-                    ? 'border-oak-primary bg-oak-primary/10 text-oak-primary'
-                    : 'border-border-primary text-text-muted hover:bg-background-tertiary'
-                )}
-              >
-                All companies
-              </button>
-              {companyOptions.map((company) => (
+
+            <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap lg:flex-nowrap">
+              <SearchableSelect
+                options={companySelectOptions}
+                value={companyId}
+                onChange={handleCompanyChange}
+                placeholder="Company"
+                ariaLabel="Company"
+                clearable
+                showKeyboardHints={false}
+                size="lg"
+                variant="table-filter"
+                className="col-span-2 w-full sm:col-span-1 sm:w-[220px]"
+                popoverMinWidth={260}
+              />
+
+              <div ref={filterPanelRef} className="relative">
                 <button
-                  key={company.id}
                   type="button"
+                  aria-expanded={isFilterPanelOpen}
+                  aria-haspopup="dialog"
                   onClick={() => {
-                    setCompanyId(companyId === company.id ? '' : company.id);
-                    setPage(1);
+                    if (isFilterPanelOpen) {
+                      setIsFilterPanelOpen(false);
+                    } else {
+                      openFilterPanel();
+                    }
                   }}
                   className={cn(
-                    'rounded-full border px-2.5 py-1 text-xs font-medium transition-colors',
-                    companyId === company.id
-                      ? 'border-oak-primary bg-oak-primary/10 text-oak-primary'
-                      : 'border-border-primary text-text-muted hover:bg-background-tertiary'
+                    'flex h-10 w-full items-center justify-center gap-2 rounded-lg border px-3 text-sm font-medium transition-colors sm:w-auto',
+                    isFilterPanelOpen || advancedFilterCount > 0
+                      ? 'border-oak-primary/40 bg-oak-primary/5 text-oak-primary'
+                      : 'border-border-primary bg-background-primary text-text-secondary hover:bg-background-tertiary'
                   )}
                 >
-                  {company.name}
-                  <span className="ml-1 text-[10px] opacity-70">{company.count}</span>
-                </button>
-              ))}
-            </div>
-          )}
-        </section>
-
-        {envelopesQuery.error ? (
-          <Alert variant="error" title="Unable to load envelopes">
-            {envelopesQuery.error instanceof Error ? envelopesQuery.error.message : 'Unknown error'}
-          </Alert>
-        ) : null}
-
-        <section className="grid gap-2">
-          {envelopes.map((envelope) =>
-            compactView ? (
-              <article
-                key={envelope.id}
-                className="overflow-hidden rounded-xl border border-border-primary bg-background-secondary transition-colors hover:border-oak-primary/40"
-              >
-                <div className="flex items-center gap-3 px-3 py-2.5">
-                  <Link href={`/esigning/${envelope.id}`} className="flex min-w-0 flex-1 items-center gap-3">
-                    <EnvelopeStatusBadge status={envelope.status} />
-                    <EmailDeliveryWarningBadge envelope={envelope} />
-                    <span className="min-w-0 flex-1 truncate text-sm font-medium text-text-primary">
-                      {envelope.title}
-                    </span>
-                    <span className="hidden shrink-0 text-xs text-text-muted sm:block">
-                      {envelope.companyName ?? 'No company'}
-                    </span>
-                    <span className="hidden shrink-0 text-xs text-text-muted lg:block">
-                      {envelope.documentCount} docs · {envelope.signerCount} signers
-                    </span>
-                    <span className="hidden shrink-0 text-xs text-text-muted xl:block">
-                      {formatEsigningDateTime(envelope.updatedAt)}
-                    </span>
-                  </Link>
-                  <EnvelopeActionsDropdown
-                    envelope={envelope}
-                    onDuplicate={(target) => void handleDuplicateEnvelope(target)}
-                    onResend={(target) => void handleResendEnvelope(target)}
-                    onDelete={setDeleteTarget}
-                    onVoid={setVoidTarget}
-                    onRetryPdf={(envelopeId) => void handleRetryPdf(envelopeId)}
-                    onDownload={handleDownload}
-                  />
-                </div>
-              </article>
-            ) : (
-              <article
-                key={envelope.id}
-                className="overflow-hidden rounded-2xl border border-border-primary bg-background-secondary p-4 shadow-sm transition-colors hover:border-oak-primary/40 sm:rounded-3xl sm:p-5"
-              >
-                <div className="flex items-start justify-between gap-3 sm:gap-4">
-                  <Link href={`/esigning/${envelope.id}`} className="min-w-0 flex-1">
-                    <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                      <div className="space-y-3">
-                        <div className="flex flex-wrap items-center gap-1 sm:gap-2">
-                          <EnvelopeStatusBadge status={envelope.status} />
-                          <EmailDeliveryWarningBadge envelope={envelope} />
-                          <span className="inline-flex items-center rounded-full border border-border-primary px-2.5 py-1 text-xs text-text-secondary">
-                            {ESIGNING_SIGNING_ORDER_LABELS[envelope.signingOrder]}
-                          </span>
-                          <span className="inline-flex items-center rounded-full border border-border-primary px-2.5 py-1 text-xs text-text-secondary">
-                            {envelope.documentCount} docs
-                          </span>
-                          <span className="inline-flex items-center rounded-full border border-border-primary px-2.5 py-1 text-xs text-text-secondary">
-                            {envelope.signerCount} signers
-                          </span>
-                        </div>
-
-                        <div className="flex items-start gap-3">
-                          <div className="rounded-2xl bg-oak-primary/10 p-3 text-oak-primary">
-                            <FilePenLine className="h-5 w-5" />
-                          </div>
-                          <div className="min-w-0">
-                            <h2 className="truncate text-lg font-semibold text-text-primary">
-                              {envelope.title}
-                            </h2>
-                            <p className="mt-1 truncate text-sm text-text-secondary">
-                              {envelope.companyName ?? 'No linked company'} · Created by {envelope.createdByName}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="grid min-w-0 gap-1 text-xs text-text-secondary sm:text-sm lg:shrink-0 lg:text-right">
-                        <div>Updated {formatEsigningDateTime(envelope.updatedAt)}</div>
-                        <div>Created {formatEsigningDateTime(envelope.createdAt)}</div>
-                        <div className="truncate">Certificate {envelope.certificateId}</div>
-                      </div>
-                    </div>
-                  </Link>
-
-                  <EnvelopeActionsDropdown
-                    envelope={envelope}
-                    onDuplicate={(target) => void handleDuplicateEnvelope(target)}
-                    onResend={(target) => void handleResendEnvelope(target)}
-                    onDelete={setDeleteTarget}
-                    onVoid={setVoidTarget}
-                    onRetryPdf={(envelopeId) => void handleRetryPdf(envelopeId)}
-                    onDownload={handleDownload}
-                  />
-                </div>
-
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {envelope.recipients.slice(0, 4).map((recipient) => {
-                    const isCc = recipient.type === 'CC';
-                    const copyStatus = recipient.copyDeliveryStatus;
-                    const StatusIcon =
-                      recipient.status === 'SIGNED'
-                        ? CheckCircle2
-                        : recipient.status === 'DECLINED'
-                          ? XCircle
-                          : isCc && (copyStatus === 'SENT' || copyStatus === 'FAILED')
-                            ? copyStatus === 'SENT'
-                              ? CheckCircle2
-                              : XCircle
-                            : isCc && (copyStatus === 'PENDING' || copyStatus === 'RETRYING')
-                              ? Clock
-                              : recipient.status === 'VIEWED' || recipient.status === 'NOTIFIED'
-                                ? Clock
-                                : isCc
-                                  ? Minus
-                                  : Circle;
-
-                    const iconColor =
-                      recipient.status === 'SIGNED'
-                        ? 'text-green-500'
-                        : recipient.status === 'DECLINED'
-                          ? 'text-rose-500'
-                          : isCc && copyStatus === 'SENT'
-                            ? 'text-green-500'
-                            : isCc && copyStatus === 'FAILED'
-                              ? 'text-rose-500'
-                              : isCc && (copyStatus === 'PENDING' || copyStatus === 'RETRYING')
-                                ? 'text-amber-500'
-                                : recipient.status === 'VIEWED' || recipient.status === 'NOTIFIED'
-                                  ? 'text-blue-500'
-                                  : 'text-text-muted';
-
-                    const recipientStatusLabel = isCc
-                      ? {
-                          AWAITING_COMPLETION: 'Copy after completion',
-                          PENDING: 'Copy pending',
-                          RETRYING: 'Retrying copy',
-                          SENT: 'Copy sent',
-                          FAILED: 'Copy failed',
-                          NOT_TRACKED: 'Delivery not tracked',
-                        }[copyStatus]
-                      : recipient.status.replace('_', ' ');
-
-                    return (
-                      <span
-                        key={recipient.id}
-                        aria-label={`${recipient.name}: ${recipientStatusLabel}`}
-                        className="inline-flex items-center gap-1.5 rounded-full border border-border-primary bg-background-primary px-3 py-1 text-xs text-text-secondary"
-                      >
-                        <StatusIcon className={cn('h-3 w-3 flex-shrink-0', iconColor)} />
-                        {recipient.name}
-                      </span>
-                    );
-                  })}
-
-                  {envelope.recipientCount > 4 ? (
-                    <span className="inline-flex items-center rounded-full border border-border-primary bg-background-primary px-3 py-1 text-xs text-text-secondary">
-                      +{envelope.recipientCount - 4} more
+                  <SlidersHorizontal className="h-4 w-4" />
+                  Filters
+                  {advancedFilterCount > 0 ? (
+                    <span className="rounded-full bg-oak-primary/10 px-1.5 py-0.5 text-[10px] font-semibold">
+                      {advancedFilterCount}
                     </span>
                   ) : null}
-                </div>
+                </button>
 
-                <div className="mt-3 text-xs text-text-muted">
-                  {envelope.status === 'DRAFT'
-                    ? `Draft · ${envelope.documentCount} doc${envelope.documentCount === 1 ? '' : 's'} · ${envelope.signerCount} signer${envelope.signerCount === 1 ? '' : 's'}`
-                    : envelope.status === 'COMPLETED'
-                      ? `Completed ${envelope.completedAt ? formatEsigningDateTime(envelope.completedAt) : ''}`
-                      : envelope.status === 'DECLINED'
-                        ? 'Declined - action required'
-                        : envelope.status === 'VOIDED'
-                          ? 'Voided'
-                          : envelope.status === 'EXPIRED'
-                            ? 'Expired'
-                            : `Updated ${formatEsigningDateTime(envelope.updatedAt)}`}
-                </div>
-              </article>
-            )
-          )}
+                {isFilterPanelOpen ? (
+                  <div
+                    role="dialog"
+                    aria-label="Envelope filters"
+                    className="absolute left-0 top-[calc(100%+8px)] z-40 w-[min(420px,calc(100vw-2rem))] rounded-xl border border-border-primary bg-background-secondary shadow-elevation-2 sm:left-auto sm:right-0"
+                  >
+                    <div className="border-b border-border-primary px-5 py-4">
+                      <div className="text-sm font-semibold text-text-primary">Filter envelopes</div>
+                      <div className="mt-0.5 text-xs text-text-muted">
+                        Filters combine with the selected status tab and search.
+                      </div>
+                    </div>
+                    <div className="max-h-[60vh] space-y-4 overflow-y-auto p-5">
+                      <label className="block">
+                        <span className="mb-1.5 block text-xs font-medium text-text-secondary">Company</span>
+                        <select
+                          aria-label="Filter by company"
+                          value={draftCompanyId}
+                          onChange={(event) => setDraftCompanyId(event.target.value)}
+                          className="h-10 w-full rounded-lg border border-border-primary bg-background-primary px-3 text-sm text-text-primary focus:border-oak-primary focus:outline-none focus:ring-2 focus:ring-oak-primary/30"
+                        >
+                          <option value="">All companies</option>
+                          {companyOptions.map((company) => (
+                            <option key={company.id} value={company.id}>{company.name}</option>
+                          ))}
+                        </select>
+                      </label>
 
-          {envelopesQuery.isLoading ? (
-            <div className="rounded-2xl border border-dashed border-border-primary bg-background-secondary p-6 text-center text-sm text-text-secondary sm:rounded-3xl sm:p-10">
-              Loading e-signing envelopes...
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <label className="block">
+                          <span className="mb-1.5 block text-xs font-medium text-text-secondary">Status</span>
+                          <select
+                            aria-label="Filter by envelope status"
+                            value={draftFilters.status}
+                            onChange={(event) => setDraftFilters((current) => ({
+                              ...current,
+                              status: event.target.value as StatusFilter | '',
+                            }))}
+                            className="h-10 w-full rounded-lg border border-border-primary bg-background-primary px-3 text-sm text-text-primary focus:border-oak-primary focus:outline-none focus:ring-2 focus:ring-oak-primary/30"
+                          >
+                            <option value="">Use status tab</option>
+                            {(Object.keys(ENVELOPE_STATUS_LABELS) as StatusFilter[]).map((status) => (
+                              <option key={status} value={status}>{ENVELOPE_STATUS_LABELS[status]}</option>
+                            ))}
+                          </select>
+                        </label>
+                        <label className="block">
+                          <span className="mb-1.5 block text-xs font-medium text-text-secondary">Signing mode</span>
+                          <select
+                            aria-label="Filter by signing mode"
+                            value={draftFilters.signingOrder}
+                            onChange={(event) => setDraftFilters((current) => ({
+                              ...current,
+                              signingOrder: event.target.value as SigningOrderFilter | '',
+                            }))}
+                            className="h-10 w-full rounded-lg border border-border-primary bg-background-primary px-3 text-sm text-text-primary focus:border-oak-primary focus:outline-none focus:ring-2 focus:ring-oak-primary/30"
+                          >
+                            <option value="">Any mode</option>
+                            {(Object.keys(SIGNING_ORDER_FILTER_LABELS) as SigningOrderFilter[]).map((mode) => (
+                              <option key={mode} value={mode}>{SIGNING_ORDER_FILTER_LABELS[mode]}</option>
+                            ))}
+                          </select>
+                        </label>
+                      </div>
+
+                      <FormInput
+                        inputSize="md"
+                        label="Document name"
+                        placeholder="Filename contains..."
+                        value={draftFilters.documentName}
+                        onChange={(event) => setDraftFilters((current) => ({
+                          ...current,
+                          documentName: event.target.value,
+                        }))}
+                      />
+
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <FormInput
+                          inputSize="md"
+                          label="Recipient"
+                          placeholder="Name or email..."
+                          value={draftFilters.recipientQuery}
+                          onChange={(event) => setDraftFilters((current) => ({
+                            ...current,
+                            recipientQuery: event.target.value,
+                          }))}
+                        />
+                        <label className="block">
+                          <span className="mb-1.5 block text-xs font-medium text-text-secondary">Recipient status</span>
+                          <select
+                            aria-label="Filter by recipient signing status"
+                            value={draftFilters.recipientStatus}
+                            onChange={(event) => setDraftFilters((current) => ({
+                              ...current,
+                              recipientStatus: event.target.value as RecipientStatusFilter | '',
+                            }))}
+                            className="h-9 w-full rounded-lg border border-border-primary bg-background-primary px-3 text-sm text-text-primary focus:border-oak-primary focus:outline-none focus:ring-2 focus:ring-oak-primary/30"
+                          >
+                            <option value="">Any status</option>
+                            {(Object.keys(RECIPIENT_STATUS_LABELS) as RecipientStatusFilter[]).map((status) => (
+                              <option key={status} value={status}>{RECIPIENT_STATUS_LABELS[status]}</option>
+                            ))}
+                          </select>
+                        </label>
+                      </div>
+
+                      <label className="block">
+                        <span className="mb-1.5 block text-xs font-medium text-text-secondary">Created by</span>
+                        <select
+                          aria-label="Filter by envelope creator"
+                          value={draftFilters.createdBy}
+                          onChange={(event) => setDraftFilters((current) => ({
+                            ...current,
+                            createdBy: event.target.value as 'all' | 'me',
+                          }))}
+                          className="h-10 w-full rounded-lg border border-border-primary bg-background-primary px-3 text-sm text-text-primary focus:border-oak-primary focus:outline-none focus:ring-2 focus:ring-oak-primary/30"
+                        >
+                          <option value="all">All senders</option>
+                          <option value="me">Created by me</option>
+                        </select>
+                      </label>
+
+                      {([
+                        ['Created date', 'createdFrom', 'createdTo'],
+                        ['Sent date', 'sentFrom', 'sentTo'],
+                        ['Completed date', 'completedFrom', 'completedTo'],
+                      ] as const).map(([label, fromKey, toKey]) => (
+                        <fieldset key={label}>
+                          <legend className="mb-1.5 text-xs font-medium text-text-secondary">{label}</legend>
+                          <div className="grid grid-cols-2 gap-2">
+                            <input
+                              type="date"
+                              aria-label={`${label} from`}
+                              value={draftFilters[fromKey]}
+                              onChange={(event) => setDraftFilters((current) => ({
+                                ...current,
+                                [fromKey]: event.target.value,
+                              }))}
+                              className="h-10 min-w-0 rounded-lg border border-border-primary bg-background-primary px-2.5 text-sm text-text-primary focus:border-oak-primary focus:outline-none focus:ring-2 focus:ring-oak-primary/30"
+                            />
+                            <input
+                              type="date"
+                              aria-label={`${label} to`}
+                              value={draftFilters[toKey]}
+                              onChange={(event) => setDraftFilters((current) => ({
+                                ...current,
+                                [toKey]: event.target.value,
+                              }))}
+                              className="h-10 min-w-0 rounded-lg border border-border-primary bg-background-primary px-2.5 text-sm text-text-primary focus:border-oak-primary focus:outline-none focus:ring-2 focus:ring-oak-primary/30"
+                            />
+                          </div>
+                        </fieldset>
+                      ))}
+                    </div>
+                    <div className="flex items-center justify-between gap-3 border-t border-border-primary px-5 py-3">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setDraftFilters({ ...EMPTY_ADVANCED_FILTERS });
+                          setDraftCompanyId('');
+                        }}
+                      >
+                        Reset
+                      </Button>
+                      <Button size="sm" onClick={applyFilterPanel}>Apply</Button>
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+
+              <Dropdown>
+                <DropdownTrigger asChild>
+                  <button
+                    type="button"
+                    className="flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-border-primary bg-background-primary px-3 text-sm font-medium text-text-secondary transition-colors hover:bg-background-tertiary sm:w-auto"
+                    aria-label="Saved views"
+                  >
+                    <Bookmark className="h-4 w-4" />
+                    <span>Saved views</span>
+                    <ChevronDown className="h-3.5 w-3.5" />
+                  </button>
+                </DropdownTrigger>
+                <DropdownMenu>
+                  <DropdownItem onClick={() => applySavedView('waiting', { createdBy: 'me' })}>
+                    My active envelopes
+                  </DropdownItem>
+                  <DropdownItem onClick={() => applySavedView('waiting')}>
+                    Awaiting recipients
+                  </DropdownItem>
+                  <DropdownItem onClick={() => applySavedView('attention')}>
+                    Needs attention
+                  </DropdownItem>
+                  <DropdownItem onClick={applyCompletedThisMonthView}>
+                    Completed this month
+                  </DropdownItem>
+                </DropdownMenu>
+              </Dropdown>
+
+              <div className="col-span-2 flex h-10 items-center rounded-lg border border-border-primary bg-background-primary p-0.5 sm:col-span-1 sm:ml-auto">
+                <button
+                  type="button"
+                  aria-label="Table view"
+                  title="Table view"
+                  onClick={() => setViewMode('table')}
+                  className={cn(
+                    'flex h-8 w-9 items-center justify-center rounded-md transition-colors',
+                    viewMode === 'table'
+                      ? 'bg-oak-primary/10 text-oak-primary'
+                      : 'text-text-muted hover:bg-background-tertiary hover:text-text-primary'
+                  )}
+                >
+                  <LayoutList className="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  aria-label="Card view"
+                  title="Card view"
+                  onClick={() => setViewMode('card')}
+                  className={cn(
+                    'flex h-8 w-9 items-center justify-center rounded-md transition-colors',
+                    viewMode === 'card'
+                      ? 'bg-oak-primary/10 text-oak-primary'
+                      : 'text-text-muted hover:bg-background-tertiary hover:text-text-primary'
+                  )}
+                >
+                  <Grid2X2 className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {hasAppliedFilters ? (
+            <div className="flex flex-wrap items-center gap-2 px-3 pb-3 sm:px-4 sm:pb-4">
+              {companyId && selectedCompanyName ? (
+                <FilterChip label="Company" value={selectedCompanyName} onRemove={() => handleCompanyChange('')} />
+              ) : null}
+              {appliedFilters.status && !isStatusDuplicatedByTab(appliedFilters.status, activeTab) ? (
+                <FilterChip
+                  label="Status"
+                  value={ENVELOPE_STATUS_LABELS[appliedFilters.status]}
+                  onRemove={() => {
+                    setAppliedFilters((current) => ({ ...current, status: '' }));
+                    setPage(1);
+                  }}
+                />
+              ) : null}
+              {appliedFilters.documentName ? (
+                <FilterChip
+                  label="Document"
+                  value={appliedFilters.documentName}
+                  onRemove={() => {
+                    setAppliedFilters((current) => ({ ...current, documentName: '' }));
+                    setPage(1);
+                  }}
+                />
+              ) : null}
+              {appliedFilters.recipientQuery ? (
+                <FilterChip
+                  label="Recipient"
+                  value={appliedFilters.recipientQuery}
+                  onRemove={() => {
+                    setAppliedFilters((current) => ({ ...current, recipientQuery: '' }));
+                    setPage(1);
+                  }}
+                />
+              ) : null}
+              {appliedFilters.recipientStatus ? (
+                <FilterChip
+                  label="Recipient status"
+                  value={RECIPIENT_STATUS_LABELS[appliedFilters.recipientStatus]}
+                  onRemove={() => {
+                    setAppliedFilters((current) => ({ ...current, recipientStatus: '' }));
+                    setPage(1);
+                  }}
+                />
+              ) : null}
+              {appliedFilters.signingOrder ? (
+                <FilterChip
+                  label="Signing mode"
+                  value={SIGNING_ORDER_FILTER_LABELS[appliedFilters.signingOrder]}
+                  onRemove={() => {
+                    setAppliedFilters((current) => ({ ...current, signingOrder: '' }));
+                    setPage(1);
+                  }}
+                />
+              ) : null}
+              {appliedFilters.createdFrom || appliedFilters.createdTo ? (
+                <FilterChip
+                  label="Created"
+                  value={formatFilterDateRange(appliedFilters.createdFrom, appliedFilters.createdTo)}
+                  onRemove={() => {
+                    setAppliedFilters((current) => ({ ...current, createdFrom: '', createdTo: '' }));
+                    setPage(1);
+                  }}
+                />
+              ) : null}
+              {appliedFilters.sentFrom || appliedFilters.sentTo ? (
+                <FilterChip
+                  label="Sent"
+                  value={formatFilterDateRange(appliedFilters.sentFrom, appliedFilters.sentTo)}
+                  onRemove={() => {
+                    setAppliedFilters((current) => ({ ...current, sentFrom: '', sentTo: '' }));
+                    setPage(1);
+                  }}
+                />
+              ) : null}
+              {appliedFilters.completedFrom || appliedFilters.completedTo ? (
+                <FilterChip
+                  label="Completed"
+                  value={formatFilterDateRange(appliedFilters.completedFrom, appliedFilters.completedTo)}
+                  onRemove={() => {
+                    setAppliedFilters((current) => ({ ...current, completedFrom: '', completedTo: '' }));
+                    setPage(1);
+                  }}
+                />
+              ) : null}
+              {appliedFilters.createdBy === 'me' ? (
+                <FilterChip
+                  label="Created by"
+                  value="Me"
+                  onRemove={() => {
+                    setAppliedFilters((current) => ({ ...current, createdBy: 'all' }));
+                    setPage(1);
+                  }}
+                />
+              ) : null}
+              <button
+                type="button"
+                onClick={clearAllFilters}
+                className="px-1 text-xs font-medium text-text-muted transition-colors hover:text-oak-primary"
+              >
+                Clear all
+              </button>
             </div>
           ) : null}
 
-          {!envelopesQuery.isLoading && envelopes.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-border-primary bg-background-secondary p-6 text-center sm:rounded-3xl sm:p-10">
-              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-oak-primary/10 text-oak-primary">
-                <FileSignature className="h-6 w-6" />
+          <div className="border-t border-border-primary">
+            {envelopesQuery.isLoading ? (
+              <div className="px-4 py-12 text-center text-sm text-text-secondary">
+                Loading e-signing envelopes...
               </div>
-              <h2 className="mt-4 text-lg font-semibold text-text-primary">
-                {query || activeTab !== 'all' ? 'No matching envelopes' : 'No envelopes yet'}
-              </h2>
-              <p className="mt-2 text-sm text-text-secondary">
-                {query || activeTab !== 'all'
-                  ? 'Try a different search or tab to find the envelope you need.'
-                  : 'Start with a draft envelope, upload PDFs, assign signers, and send for signature.'}
-              </p>
+            ) : envelopes.length === 0 ? (
+              <div className="px-4 py-10 text-center">
+                <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-xl bg-oak-primary/10 text-oak-primary">
+                  <FileSignature className="h-4 w-4" />
+                </div>
+                <h2 className="mt-3 text-base font-semibold text-text-primary">
+                  {query.trim() || hasAppliedFilters || activeTab !== 'all'
+                    ? 'No matching envelopes'
+                    : 'No envelopes yet'}
+                </h2>
+                <p className="mx-auto mt-1.5 max-w-md text-sm text-text-secondary">
+                  {query.trim() || hasAppliedFilters || activeTab !== 'all'
+                    ? 'No envelopes match your current search and filters.'
+                    : 'Create a new envelope when you are ready to prepare documents for signature.'}
+                </p>
+                {query.trim() || hasAppliedFilters || activeTab !== 'all' ? (
+                  <div className="mt-4 flex flex-wrap justify-center gap-2">
+                    {hasAppliedFilters || activeTab !== 'all' ? (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => {
+                          clearAllFilters();
+                          handleTabChange('all');
+                        }}
+                      >
+                        Clear filters
+                      </Button>
+                    ) : null}
+                    {query.trim() ? (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        leftIcon={<X className="h-4 w-4" />}
+                        onClick={() => {
+                          setQuery('');
+                          setDebouncedQuery('');
+                          setPage(1);
+                        }}
+                      >
+                        Clear search
+                      </Button>
+                    ) : null}
+                  </div>
+                ) : can.createEsigning ? (
+                  <Button
+                    className="mt-4"
+                    size="sm"
+                    leftIcon={<Plus className="h-4 w-4" />}
+                    onClick={() => void handleStart()}
+                  >
+                    New envelope
+                  </Button>
+                ) : null}
+              </div>
+            ) : viewMode === 'table' ? (
+              <>
+                <div className="hidden overflow-x-auto md:block">
+                  <table className="w-full table-fixed border-collapse">
+                    <thead>
+                      <tr className="h-10 border-b border-border-primary bg-background-primary/60 text-left text-[11px] font-semibold uppercase tracking-wide text-text-muted">
+                        <th className="w-[132px] px-4">Status</th>
+                        <th className="px-4">Envelope name</th>
+                        <th className="w-[180px] px-4">Company</th>
+                        <th className="w-[150px] px-4">Details</th>
+                        <th className="w-[180px] px-4">Last updated</th>
+                        <th className="w-[56px] px-2 text-center"><span className="sr-only">Actions</span></th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border-primary">
+                      {envelopes.map((envelope) => {
+                        const matchContext = getEnvelopeSearchMatchContext(envelope, debouncedQuery);
+                        const active = envelope.status === 'SENT' || envelope.status === 'IN_PROGRESS';
+                        const progress = envelope.signerCount > 0
+                          ? Math.round((envelope.completedSignerCount / envelope.signerCount) * 100)
+                          : 0;
+                        return (
+                          <tr
+                            key={envelope.id}
+                            tabIndex={0}
+                            aria-label={`Open ${envelope.title}`}
+                            onClick={() => window.location.assign(`/esigning/${envelope.id}`)}
+                            onKeyDown={(event) => {
+                              if (event.key === 'Enter' || event.key === ' ') {
+                                event.preventDefault();
+                                window.location.assign(`/esigning/${envelope.id}`);
+                              }
+                            }}
+                            className="h-[58px] cursor-pointer bg-background-secondary text-sm transition-colors hover:bg-background-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-oak-primary/30"
+                          >
+                            <td className="px-4 py-2.5 align-middle">
+                              <div className="flex flex-wrap items-center gap-1.5">
+                                <EnvelopeStatusBadge status={envelope.status} />
+                                <EmailDeliveryWarningBadge envelope={envelope} />
+                              </div>
+                            </td>
+                            <td className="px-4 py-2.5 align-middle">
+                              <div className="min-w-0">
+                                <div className="truncate text-[13px] font-semibold text-text-primary" title={envelope.title}>
+                                  {envelope.title}
+                                </div>
+                                {matchContext ? (
+                                  <div className="mt-0.5 truncate text-[11px] text-text-muted" title={matchContext}>
+                                    {matchContext}
+                                  </div>
+                                ) : null}
+                              </div>
+                            </td>
+                            <td className="px-4 py-2.5 align-middle">
+                              <div className="truncate text-xs text-text-secondary" title={envelope.companyName ?? 'No company'}>
+                                {envelope.companyName ?? 'No company'}
+                              </div>
+                            </td>
+                            <td className="px-4 py-2.5 align-middle">
+                              {active ? (
+                                <div>
+                                  <div className="text-xs font-medium text-text-secondary">
+                                    {envelope.completedSignerCount} / {envelope.signerCount} signed
+                                  </div>
+                                  <div className="mt-1 h-1 w-20 overflow-hidden rounded-full bg-background-tertiary">
+                                    <div className="h-full rounded-full bg-oak-primary" style={{ width: `${progress}%` }} />
+                                  </div>
+                                </div>
+                              ) : (
+                                <span className="text-xs text-text-secondary">
+                                  {envelope.documentCount} docs · {envelope.signerCount} signers
+                                </span>
+                              )}
+                            </td>
+                            <td className="px-4 py-2.5 align-middle text-xs text-text-muted">
+                              {formatEsigningDateTime(envelope.updatedAt)}
+                            </td>
+                            <td
+                              className="px-2 py-2.5 text-center align-middle"
+                              onClick={(event) => event.stopPropagation()}
+                              onKeyDown={(event) => event.stopPropagation()}
+                            >
+                              <EnvelopeActionsDropdown
+                                envelope={envelope}
+                                onDuplicate={(target) => void handleDuplicateEnvelope(target)}
+                                onResend={(target) => void handleResendEnvelope(target)}
+                                onDelete={setDeleteTarget}
+                                onVoid={setVoidTarget}
+                                onRetryPdf={(envelopeId) => void handleRetryPdf(envelopeId)}
+                                onDownload={handleDownload}
+                              />
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="divide-y divide-border-primary md:hidden">
+                  {envelopes.map((envelope) => {
+                    const matchContext = getEnvelopeSearchMatchContext(envelope, debouncedQuery);
+                    const active = envelope.status === 'SENT' || envelope.status === 'IN_PROGRESS';
+                    return (
+                      <article
+                        key={envelope.id}
+                        tabIndex={0}
+                        role="link"
+                        aria-label={`Open ${envelope.title}`}
+                        onClick={() => window.location.assign(`/esigning/${envelope.id}`)}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault();
+                            window.location.assign(`/esigning/${envelope.id}`);
+                          }
+                        }}
+                        className="cursor-pointer px-4 py-3 transition-colors hover:bg-background-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-oak-primary/30"
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className="min-w-0 flex-1">
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              <EnvelopeStatusBadge status={envelope.status} />
+                              <EmailDeliveryWarningBadge envelope={envelope} />
+                            </div>
+                            <h2 className="mt-2 line-clamp-2 text-sm font-semibold text-text-primary">
+                              {envelope.title}
+                            </h2>
+                            {matchContext ? (
+                              <p className="mt-0.5 truncate text-[11px] text-text-muted">{matchContext}</p>
+                            ) : null}
+                            <p className="mt-1 truncate text-xs text-text-secondary">
+                              {envelope.companyName ?? 'No company'}
+                            </p>
+                            <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-text-muted">
+                              <span>{active ? `${envelope.completedSignerCount} / ${envelope.signerCount} signed` : `${envelope.documentCount} docs · ${envelope.signerCount} signers`}</span>
+                              <span>{formatEsigningDateTime(envelope.updatedAt)}</span>
+                            </div>
+                          </div>
+                          <div
+                            className="-mr-1 shrink-0"
+                            onClick={(event) => event.stopPropagation()}
+                            onKeyDown={(event) => event.stopPropagation()}
+                          >
+                            <EnvelopeActionsDropdown
+                              envelope={envelope}
+                              onDuplicate={(target) => void handleDuplicateEnvelope(target)}
+                              onResend={(target) => void handleResendEnvelope(target)}
+                              onDelete={setDeleteTarget}
+                              onVoid={setVoidTarget}
+                              onRetryPdf={(envelopeId) => void handleRetryPdf(envelopeId)}
+                              onDownload={handleDownload}
+                            />
+                          </div>
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+              </>
+            ) : (
+              <div className="grid grid-cols-1 gap-3 p-3 sm:p-4 lg:grid-cols-2">
+                {envelopes.map((envelope) => {
+                  const signers = envelope.recipients.filter((recipient) => recipient.type === 'SIGNER');
+                  const active = envelope.status === 'SENT' || envelope.status === 'IN_PROGRESS';
+                  const progress = envelope.signerCount > 0
+                    ? Math.round((envelope.completedSignerCount / envelope.signerCount) * 100)
+                    : 0;
+                  const matchContext = getEnvelopeSearchMatchContext(envelope, debouncedQuery);
+                  return (
+                    <article
+                      key={envelope.id}
+                      role="link"
+                      tabIndex={0}
+                      aria-label={`Open ${envelope.title}`}
+                      onClick={() => window.location.assign(`/esigning/${envelope.id}`)}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault();
+                          window.location.assign(`/esigning/${envelope.id}`);
+                        }
+                      }}
+                      className="cursor-pointer rounded-xl border border-border-primary bg-background-secondary p-4 transition-colors hover:border-oak-primary/40 hover:bg-background-primary/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-oak-primary/30"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            <EnvelopeStatusBadge status={envelope.status} />
+                            <EmailDeliveryWarningBadge envelope={envelope} />
+                          </div>
+                          <h2 className="mt-2 line-clamp-2 min-h-[40px] text-[15px] font-semibold leading-5 text-text-primary">
+                            {envelope.title}
+                          </h2>
+                          <p className="mt-1 truncate text-xs text-text-secondary" title={envelope.companyName ?? 'No company'}>
+                            {envelope.companyName ?? 'No company'}
+                          </p>
+                          {matchContext ? (
+                            <p className="mt-1 truncate text-[11px] text-text-muted" title={matchContext}>{matchContext}</p>
+                          ) : null}
+                        </div>
+                        <div
+                          className="-mr-1 shrink-0"
+                          onClick={(event) => event.stopPropagation()}
+                          onKeyDown={(event) => event.stopPropagation()}
+                        >
+                          <EnvelopeActionsDropdown
+                            envelope={envelope}
+                            onDuplicate={(target) => void handleDuplicateEnvelope(target)}
+                            onResend={(target) => void handleResendEnvelope(target)}
+                            onDelete={setDeleteTarget}
+                            onVoid={setVoidTarget}
+                            onRetryPdf={(envelopeId) => void handleRetryPdf(envelopeId)}
+                            onDownload={handleDownload}
+                          />
+                        </div>
+                      </div>
+
+                      {active ? (
+                        <div className="mt-3 flex items-center gap-3">
+                          <div className="text-xs font-medium text-text-secondary">
+                            {envelope.completedSignerCount} / {envelope.signerCount} signed
+                          </div>
+                          <div className="h-1 flex-1 overflow-hidden rounded-full bg-background-tertiary">
+                            <div className="h-full rounded-full bg-oak-primary" style={{ width: `${progress}%` }} />
+                          </div>
+                        </div>
+                      ) : null}
+
+                      <div className="mt-3 grid gap-3 border-t border-border-primary pt-3 sm:grid-cols-2">
+                        <div className="min-w-0">
+                          <div className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-text-muted">
+                            Signers ({signers.length})
+                          </div>
+                          <div className="space-y-1.5">
+                            {signers.length === 0 ? (
+                              <div className="text-xs text-text-muted">No signers assigned</div>
+                            ) : signers.slice(0, 3).map((recipient) => {
+                              const StatusIcon = recipient.status === 'SIGNED'
+                                ? CheckCircle2
+                                : recipient.status === 'DECLINED'
+                                  ? XCircle
+                                  : recipient.status === 'VIEWED' || recipient.status === 'NOTIFIED'
+                                    ? Clock
+                                    : Circle;
+                              const statusClass = recipient.status === 'SIGNED'
+                                ? 'text-green-600'
+                                : recipient.status === 'DECLINED'
+                                  ? 'text-rose-600'
+                                  : recipient.status === 'VIEWED'
+                                    ? 'text-blue-600'
+                                    : recipient.status === 'NOTIFIED'
+                                      ? 'text-amber-600'
+                                      : 'text-text-muted';
+                              return (
+                                <div key={recipient.id} className="flex min-w-0 items-start gap-2">
+                                  <StatusIcon className={cn('mt-0.5 h-3.5 w-3.5 shrink-0', statusClass)} />
+                                  <div className="min-w-0">
+                                    <div className="truncate text-xs font-medium text-text-primary" title={recipient.name}>
+                                      {recipient.name}
+                                    </div>
+                                    <div className="text-[11px] text-text-muted">
+                                      {RECIPIENT_STATUS_LABELS[recipient.status as RecipientStatusFilter] ?? recipient.status}
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                            {signers.length > 3 ? (
+                              <div className="text-[11px] font-medium text-text-muted">+{signers.length - 3} more</div>
+                            ) : null}
+                          </div>
+                        </div>
+
+                        <div className="min-w-0 border-t border-border-primary pt-3 sm:border-l sm:border-t-0 sm:pl-3 sm:pt-0">
+                          <div className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-text-muted">
+                            Documents ({envelope.documents.length})
+                          </div>
+                          <div className="space-y-1.5">
+                            {envelope.documents.length === 0 ? (
+                              <div className="text-xs text-text-muted">No documents added</div>
+                            ) : envelope.documents.slice(0, 3).map((document) => (
+                              <div key={document.id} className="flex min-w-0 items-center gap-2">
+                                <FileText className="h-3.5 w-3.5 shrink-0 text-text-muted" />
+                                <span className="truncate text-xs text-text-secondary" title={document.fileName}>
+                                  {document.fileName}
+                                </span>
+                              </div>
+                            ))}
+                            {envelope.documents.length > 3 ? (
+                              <div className="text-[11px] font-medium text-text-muted">+{envelope.documents.length - 3} more</div>
+                            ) : null}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="mt-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-t border-border-primary pt-2.5 text-[11px] text-text-muted">
+                        <span>{envelope.documentCount} docs · {envelope.signerCount} signers · {ESIGNING_SIGNING_ORDER_LABELS[envelope.signingOrder]}</span>
+                        <span>Updated {formatEsigningDateTime(envelope.updatedAt)}</span>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {!envelopesQuery.isLoading && totalResults > 0 ? (
+            <div className="border-t border-border-primary px-3 py-3 sm:px-4">
+              <Pagination
+                page={page}
+                totalPages={totalPages}
+                total={totalResults}
+                limit={limit}
+                onPageChange={setPage}
+                onLimitChange={(nextLimit) => {
+                  setLimit(nextLimit);
+                  setPage(1);
+                }}
+              />
             </div>
           ) : null}
         </section>
-
-        {!envelopesQuery.isLoading && totalResults > 0 ? (
-          <section className="rounded-2xl border border-border-primary bg-background-secondary p-3 shadow-sm sm:rounded-3xl sm:p-4">
-            <Pagination
-              page={page}
-              totalPages={totalPages}
-              total={totalResults}
-              limit={limit}
-              onPageChange={setPage}
-              onLimitChange={(nextLimit) => {
-                setLimit(nextLimit);
-                setPage(1);
-              }}
-            />
-          </section>
-        ) : null}
       </div>
 
       <ConfirmDialog

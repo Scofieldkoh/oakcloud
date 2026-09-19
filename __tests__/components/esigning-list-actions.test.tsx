@@ -89,6 +89,33 @@ vi.mock('@/components/ui/workspace-selector', () => ({
   useActiveWorkspaceId: () => 'workspace-1',
 }));
 
+vi.mock('@/components/ui/searchable-select', () => ({
+  SearchableSelect: ({
+    options,
+    value,
+    onChange,
+    ariaLabel,
+    placeholder,
+  }: {
+    options: Array<{ value: string; label: string }>;
+    value: string;
+    onChange: (value: string) => void;
+    ariaLabel?: string;
+    placeholder?: string;
+  }) => (
+    <select
+      aria-label={ariaLabel ?? placeholder}
+      value={value}
+      onChange={(event) => onChange(event.target.value)}
+    >
+      <option value="">{placeholder}</option>
+      {options.map((option) => (
+        <option key={option.value} value={option.value}>{option.label}</option>
+      ))}
+    </select>
+  ),
+}));
+
 vi.mock('@/components/ui/toast', () => ({
   useToast: () => ({
     error: vi.fn(),
@@ -176,7 +203,9 @@ function envelope(overrides: Partial<EsigningEnvelopeListItem> = {}): EsigningEn
     resendableRecipientCount: 0,
     recipientCount: 1,
     signerCount: 1,
+    completedSignerCount: 1,
     documentCount: 1,
+    documents: [{ id: 'document-1', fileName: 'NDA.pdf' }],
     recipients: [],
     ...overrides,
   };
@@ -322,9 +351,9 @@ describe('EsigningListPage initial upload compensation', () => {
   });
 
   function dropStartFile() {
-    const hero = screen.getByText('Sign or get signatures').closest('section');
-    expect(hero).not.toBeNull();
-    fireEvent.drop(hero!, {
+    const uploadArea = screen.getByText(/Drop PDF files here to create a new envelope/).closest('section');
+    expect(uploadArea).not.toBeNull();
+    fireEvent.drop(uploadArea!, {
       dataTransfer: {
         files: [new File(['pdf'], 'nda.pdf', { type: 'application/pdf' })],
       },
@@ -407,7 +436,10 @@ describe('EsigningListPage company filter query', () => {
     await waitFor(() => expect(mocks.lastListParams).not.toBeNull());
     expect(mocks.lastListParams?.companyId).toBeUndefined();
 
-    await userEvent.click(screen.getByRole('button', { name: /Acme Pte Ltd/ }));
+    await userEvent.selectOptions(
+      screen.getByRole('combobox', { name: 'Company' }),
+      'company-2'
+    );
 
     await waitFor(() => expect(mocks.lastListParams?.companyId).toBe('company-2'));
     expect(mocks.lastListParams?.page).toBe(1);
