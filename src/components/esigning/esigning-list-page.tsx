@@ -1529,7 +1529,13 @@ export function EsigningListPage() {
             </div>
           ) : null}
 
-          <div className="border-t border-border-primary">
+          <div
+            className={cn(
+              viewMode === 'table'
+                ? 'mt-2 overflow-hidden rounded-xl border border-border-primary bg-background-secondary'
+                : 'border-t border-border-primary'
+            )}
+          >
             {envelopesQuery.isLoading ? (
               <div className="px-4 py-12 text-center text-sm text-text-secondary">
                 Loading e-signing envelopes...
@@ -2031,23 +2037,23 @@ export function EsigningListPage() {
                 })}
               </div>
             )}
-          </div>
 
-          {!envelopesQuery.isLoading && totalResults > 0 ? (
-            <div className="border-t border-border-primary px-3 py-3 sm:px-4">
-              <Pagination
-                page={page}
-                totalPages={totalPages}
-                total={totalResults}
-                limit={limit}
-                onPageChange={setPage}
-                onLimitChange={(nextLimit) => {
-                  setLimit(nextLimit);
-                  setPage(1);
-                }}
-              />
-            </div>
-          ) : null}
+            {!envelopesQuery.isLoading && totalResults > 0 ? (
+              <div className="border-t border-border-primary px-3 py-3 sm:px-4">
+                <Pagination
+                  page={page}
+                  totalPages={totalPages}
+                  total={totalResults}
+                  limit={limit}
+                  onPageChange={setPage}
+                  onLimitChange={(nextLimit) => {
+                    setLimit(nextLimit);
+                    setPage(1);
+                  }}
+                />
+              </div>
+            ) : null}
+          </div>
         </section>
       </div>
 
