@@ -144,16 +144,16 @@ describe('DeadlineRulesPanel', () => {
 
     expect(screen.getByRole('heading', { name: 'Deadline rules' })).toBeVisible();
     expect(screen.getByRole('searchbox', { name: 'Search deadline rules' })).toBeVisible();
-    expect(screen.getByRole('button', { name: /Annual ReturnActive/ })).toBeVisible();
-    expect(screen.getByText('No immutable versions yet.')).toBeVisible();
-    expect(screen.getByText('Immutable version history')).toBeVisible();
+    expect(screen.getByRole('button', { name: /Annual ReturnDraft/ })).toBeVisible();
+    expect(screen.getByText('No published versions yet.')).toBeVisible();
+    expect(screen.getByText('Revision history')).toBeVisible();
   });
 
   it('requires a current impact preview before publishing', async () => {
     render(<DeadlineRulesPanel workspaceId="22222222-2222-4222-8222-222222222222" />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Edit Annual Return' }));
-    const publish = screen.getByRole('button', { name: 'Publish rule' });
+    const publish = screen.getByRole('button', { name: 'Publish changes' });
     expect(publish).toBeDisabled();
 
     const previewButton = screen.getByRole('button', { name: 'Preview impact' });
@@ -168,7 +168,7 @@ describe('DeadlineRulesPanel', () => {
     render(<DeadlineRulesPanel workspaceId="22222222-2222-4222-8222-222222222222" />);
     fireEvent.click(screen.getByRole('button', { name: 'Edit Annual Return' }));
     fireEvent.click(screen.getByRole('button', { name: 'Preview impact' }));
-    const publish = screen.getByRole('button', { name: 'Publish rule' });
+    const publish = screen.getByRole('button', { name: 'Publish changes' });
     await waitFor(() => expect(screen.getByText('Recalculated')).toBeVisible());
     expect(publish).toBeEnabled();
 
@@ -201,7 +201,7 @@ describe('DeadlineRulesPanel', () => {
     render(<DeadlineRulesPanel workspaceId="22222222-2222-4222-8222-222222222222" />);
     fireEvent.click(screen.getByRole('button', { name: 'Preview impact' }));
     const dialog = await screen.findByRole('dialog', { name: 'Publish impact preview' });
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Publish rule' }));
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Publish changes' }));
 
     await waitFor(() => expect(publishMutation.mutateAsync).toHaveBeenCalledWith(expect.objectContaining({
       id: rule.id,
@@ -230,7 +230,8 @@ describe('DeadlineRulesPanel', () => {
     hooks.useArchiveDeadlineRule.mockReturnValue(archiveMutation);
 
     render(<DeadlineRulesPanel workspaceId="22222222-2222-4222-8222-222222222222" />);
-    fireEvent.click(screen.getByRole('button', { name: 'Preview archive impact' }));
+    fireEvent.click(screen.getByRole('button', { name: 'More rule actions' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Archive rule' }));
     const impactDialog = await screen.findByRole('dialog', { name: 'Archive impact preview' });
     fireEvent.click(within(impactDialog).getByRole('button', { name: 'Continue to archive' }));
     const reasonDialog = await screen.findByRole('dialog', { name: 'Archive deadline rule' });
@@ -298,7 +299,7 @@ describe('DeadlineRulesPanel', () => {
       input: expect.objectContaining({ expectedDraftRevision: 9, draftConfigHash: 'e'.repeat(64) }),
     })));
     const dialog = await screen.findByRole('dialog', { name: 'Publish impact preview' });
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Publish rule' }));
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Publish changes' }));
     await waitFor(() => expect(publishMutation.mutateAsync).toHaveBeenCalledWith(expect.objectContaining({
       id: rule.id,
       input: expect.objectContaining({ expectedDraftRevision: 9, draftConfigHash: 'e'.repeat(64), previewFingerprint: 'f'.repeat(64) }),
@@ -344,7 +345,8 @@ describe('DeadlineRulesPanel', () => {
     hooks.useArchiveDeadlineRule.mockReturnValue(archiveMutation);
 
     render(<DeadlineRulesPanel workspaceId="22222222-2222-4222-8222-222222222222" />);
-    fireEvent.click(screen.getByRole('button', { name: 'Preview archive impact' }));
+    fireEvent.click(screen.getByRole('button', { name: 'More rule actions' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Archive rule' }));
     const impactDialog = await screen.findByRole('dialog', { name: 'Archive impact preview' });
     fireEvent.click(within(impactDialog).getByRole('button', { name: 'Continue to archive' }));
     const reasonDialog = await screen.findByRole('dialog', { name: 'Archive deadline rule' });
@@ -353,7 +355,8 @@ describe('DeadlineRulesPanel', () => {
 
     await waitFor(() => expect(archiveMutation.mutateAsync).toHaveBeenCalled());
     await waitFor(() => expect(screen.getByText('Inactive')).toBeVisible());
-    fireEvent.click(screen.getByRole('button', { name: 'Preview archive impact' }));
+    fireEvent.click(screen.getByRole('button', { name: 'More rule actions' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Archive rule' }));
     await waitFor(() => expect(previewMutation.mutateAsync).toHaveBeenCalledTimes(2));
     expect(previewMutation.mutateAsync.mock.calls[1]?.[0]).toEqual(expect.objectContaining({
       id: rule.id,
@@ -369,7 +372,7 @@ describe('DeadlineRulesPanel', () => {
     const fields = screen.getAllByLabelText('Company field');
     fireEvent.change(fields[0], { target: { value: 'status' } });
     fireEvent.change(screen.getAllByLabelText('Operator')[0], { target: { value: 'FIELD_PRESENT' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Add nested group' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add condition group' }));
     const groups = screen.getAllByLabelText('Group');
     fireEvent.change(groups[1], { target: { value: 'ANY' } });
     const addConditions = screen.getAllByRole('button', { name: 'Add condition' });
