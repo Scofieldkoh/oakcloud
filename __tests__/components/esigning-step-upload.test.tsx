@@ -368,7 +368,8 @@ describe('EsigningStepUpload', () => {
     });
   });
 
-  it('uses a compact document table with reorder controls inside the document column', () => {
+  it('uses a compact document table with a default overflow actions menu', async () => {
+    const user = userEvent.setup();
     renderUpload();
 
     expect(screen.getByRole('columnheader', { name: 'Document' })).toBeInTheDocument();
@@ -378,7 +379,13 @@ describe('EsigningStepUpload', () => {
     expect(screen.queryByRole('columnheader', { name: 'Details' })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Move nda.pdf earlier' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Move nda.pdf later' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Preview nda.pdf' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Preview nda.pdf' })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'More actions for nda.pdf' }));
+
+    expect(screen.getByRole('button', { name: 'Preview' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Download' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Delete' })).toBeInTheDocument();
   });
 
   it('keeps envelope name and email subject independent with standardized control heights', async () => {

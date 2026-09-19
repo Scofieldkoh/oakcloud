@@ -258,30 +258,8 @@ function DocumentTable({
   onDelete: (documentId: string) => void;
 }) {
   const toast = useToast();
-  const tableContainerRef = useRef<HTMLDivElement>(null);
   const actionMenuRef = useRef<HTMLDivElement>(null);
-  const [compactActions, setCompactActions] = useState(false);
   const [openActionsDocumentId, setOpenActionsDocumentId] = useState<string | null>(null);
-
-  useEffect(() => {
-    const container = tableContainerRef.current;
-    if (!container) return;
-
-    const updateMode = () => {
-      setCompactActions(container.clientWidth < 640);
-    };
-
-    updateMode();
-
-    if (typeof ResizeObserver === 'undefined') {
-      return;
-    }
-
-    const observer = new ResizeObserver(updateMode);
-    observer.observe(container);
-
-    return () => observer.disconnect();
-  }, []);
 
   useEffect(() => {
     if (!openActionsDocumentId) return;
@@ -320,11 +298,10 @@ function DocumentTable({
 
   return (
     <div
-      ref={tableContainerRef}
       data-testid="esigning-document-table-container"
       className="overflow-x-auto rounded-xl border border-border-primary"
     >
-      <table className={cn('w-full text-sm', compactActions ? 'min-w-[430px]' : 'min-w-[520px]')}>
+      <table className="w-full min-w-[430px] text-sm">
         <thead className="bg-background-tertiary">
           <tr className="border-b border-border-primary">
             <th className="px-3 py-2 text-left text-xs font-medium text-text-secondary">Document</th>
@@ -389,95 +366,60 @@ function DocumentTable({
                   </button>
                 </td>
                 <td className="px-3 py-1.5">
-                  {compactActions ? (
-                    <div
-                      ref={openActionsDocumentId === doc.id ? actionMenuRef : undefined}
-                      className="relative flex justify-end"
+                  <div
+                    ref={openActionsDocumentId === doc.id ? actionMenuRef : undefined}
+                    className="relative flex justify-end"
+                  >
+                    <button
+                      type="button"
+                      aria-label={`More actions for ${doc.fileName}`}
+                      aria-expanded={openActionsDocumentId === doc.id}
+                      onClick={() =>
+                        setOpenActionsDocumentId((current) => current === doc.id ? null : doc.id)
+                      }
+                      className="flex h-8 w-8 items-center justify-center rounded-lg text-text-muted hover:bg-background-tertiary hover:text-text-primary"
                     >
-                      <button
-                        type="button"
-                        aria-label={`More actions for ${doc.fileName}`}
-                        aria-expanded={openActionsDocumentId === doc.id}
-                        onClick={() =>
-                          setOpenActionsDocumentId((current) => current === doc.id ? null : doc.id)
-                        }
-                        className="flex h-8 w-8 items-center justify-center rounded-lg text-text-muted hover:bg-background-tertiary hover:text-text-primary"
-                      >
-                        <MoreHorizontal className="h-4 w-4" />
-                      </button>
-                      {openActionsDocumentId === doc.id ? (
-                        <div className="absolute right-0 top-full z-30 mt-1 w-40 overflow-hidden rounded-lg border border-border-primary bg-background-elevated py-1 shadow-lg">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              window.open(doc.pdfUrl, '_blank', 'noreferrer');
-                              setOpenActionsDocumentId(null);
-                            }}
-                            className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-text-primary hover:bg-background-tertiary"
-                          >
-                            <Eye className="h-4 w-4 text-text-muted" />
-                            Preview
-                          </button>
-                          <a
-                            href={doc.pdfUrl}
-                            download={doc.fileName}
-                            onClick={() => setOpenActionsDocumentId(null)}
-                            className="flex items-center gap-2 px-3 py-2 text-xs text-text-primary hover:bg-background-tertiary"
-                          >
-                            <Download className="h-4 w-4 text-text-muted" />
-                            Download
-                          </a>
-                          {canEdit ? (
-                            <button
-                              type="button"
-                              disabled={isUpdating}
-                              onClick={() => {
-                                setOpenActionsDocumentId(null);
-                                onDelete(doc.id);
-                              }}
-                              className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-rose-600 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-rose-950/30"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                              Delete
-                            </button>
-                          ) : null}
-                        </div>
-                      ) : null}
-                    </div>
-                  ) : (
-                    <div className="flex items-center justify-end gap-1">
-                      <button
-                        type="button"
-                        aria-label={`Preview ${doc.fileName}`}
-                        title="Preview"
-                        onClick={() => window.open(doc.pdfUrl, '_blank', 'noreferrer')}
-                        className="flex h-8 w-8 items-center justify-center rounded-lg text-text-muted hover:bg-background-tertiary hover:text-text-primary"
-                      >
-                        <Eye className="h-4 w-4" />
-                      </button>
-                      <a
-                        href={doc.pdfUrl}
-                        download={doc.fileName}
-                        aria-label={`Download ${doc.fileName}`}
-                        title="Download"
-                        className="flex h-8 w-8 items-center justify-center rounded-lg text-text-muted hover:bg-background-tertiary hover:text-text-primary"
-                      >
-                        <Download className="h-4 w-4" />
-                      </a>
-                      {canEdit ? (
+                      <MoreHorizontal className="h-4 w-4" />
+                    </button>
+                    {openActionsDocumentId === doc.id ? (
+                      <div className="absolute right-0 top-full z-30 mt-1 w-40 overflow-hidden rounded-lg border border-border-primary bg-background-elevated py-1 shadow-lg">
                         <button
                           type="button"
-                          aria-label={`Delete ${doc.fileName}`}
-                          title="Delete"
-                          disabled={isUpdating}
-                          onClick={() => onDelete(doc.id)}
-                          className="flex h-8 w-8 items-center justify-center rounded-lg text-text-muted hover:bg-rose-50 hover:text-rose-600 disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-rose-950/30"
+                          onClick={() => {
+                            window.open(doc.pdfUrl, '_blank', 'noreferrer');
+                            setOpenActionsDocumentId(null);
+                          }}
+                          className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-text-primary hover:bg-background-tertiary"
                         >
-                          <Trash2 className="h-4 w-4" />
+                          <Eye className="h-4 w-4 text-text-muted" />
+                          Preview
                         </button>
-                      ) : null}
-                    </div>
-                  )}
+                        <a
+                          href={doc.pdfUrl}
+                          download={doc.fileName}
+                          onClick={() => setOpenActionsDocumentId(null)}
+                          className="flex items-center gap-2 px-3 py-2 text-xs text-text-primary hover:bg-background-tertiary"
+                        >
+                          <Download className="h-4 w-4 text-text-muted" />
+                          Download
+                        </a>
+                        {canEdit ? (
+                          <button
+                            type="button"
+                            disabled={isUpdating}
+                            onClick={() => {
+                              setOpenActionsDocumentId(null);
+                              onDelete(doc.id);
+                            }}
+                            className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-rose-600 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-rose-950/30"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                            Delete
+                          </button>
+                        ) : null}
+                      </div>
+                    ) : null}
+                  </div>
                 </td>
               </tr>
             );
