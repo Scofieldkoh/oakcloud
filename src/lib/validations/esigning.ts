@@ -242,10 +242,21 @@ export const updateEsigningRecipientSchema = z.object({
 export const reorderEsigningDocumentSchema = z.object({
   sortOrder: z.number().int().min(0).max(9999).optional(),
   visibility: z.enum(['SIGNER_ONLY', 'EVERYONE']).optional(),
+  fileName: z.string()
+    .trim()
+    .min(1)
+    .max(255)
+    .refine((value) => !/[\\/\\\\\x00-\x1F]/.test(value), {
+      message: 'File name contains invalid characters',
+    })
+    .optional(),
 }).refine(
-  (value) => value.sortOrder !== undefined || value.visibility !== undefined,
+  (value) =>
+    value.sortOrder !== undefined ||
+    value.visibility !== undefined ||
+    value.fileName !== undefined,
   {
-    message: 'Provide sortOrder or visibility',
+    message: 'Provide sortOrder, visibility, or fileName',
   }
 );
 

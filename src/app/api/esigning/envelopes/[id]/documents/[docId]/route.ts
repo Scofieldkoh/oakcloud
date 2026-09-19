@@ -6,6 +6,7 @@ import { createErrorResponse, resolveWorkspaceId } from '@/lib/api-helpers';
 import { reorderEsigningDocumentSchema } from '@/lib/validations/esigning';
 import {
   deleteEsigningEnvelopeDocument,
+  renameEsigningEnvelopeDocument,
   reorderEsigningEnvelopeDocument,
   updateEsigningEnvelopeDocumentVisibility,
 } from '@/services/esigning-envelope.service';
@@ -36,6 +37,15 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         id,
         docId,
         parsed.visibility
+      );
+    }
+    if (parsed.fileName !== undefined) {
+      result = await renameEsigningEnvelopeDocument(
+        session,
+        tenantId,
+        id,
+        docId,
+        parsed.fileName
       );
     }
 

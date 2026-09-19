@@ -309,6 +309,7 @@ describe('EsigningStepUpload', () => {
       onReorderRecipients?: (payload: ReorderEsigningRecipientsPayload) => Promise<void>;
       onAttachGeneratedDocuments?: (documentIds: string[]) => Promise<void>;
       onUploadDocuments?: (files: FileList) => Promise<void>;
+      onRenameDocument?: (documentId: string, fileName: string) => Promise<void>;
       onAddRecipient?: (data: EsigningRecipientInput) => Promise<void>;
       currentUser?: { firstName: string; lastName: string; email: string } | null;
       onNext?: () => void;
@@ -331,6 +332,7 @@ describe('EsigningStepUpload', () => {
         onUploadDocuments={onUploadDocuments}
         isUploading={propOverrides.isUploading ?? false}
         onAttachGeneratedDocuments={propOverrides.onAttachGeneratedDocuments}
+        onRenameDocument={propOverrides.onRenameDocument}
         onDeleteDocument={vi.fn()}
         onAddRecipient={propOverrides.onAddRecipient ?? vi.fn()}
         onReorderRecipients={onReorderRecipients}
@@ -368,9 +370,12 @@ describe('EsigningStepUpload', () => {
     });
   });
 
-  it('uses a compact document table with a default overflow actions menu', async () => {
+  it('uses a portal overflow menu, previews from the file name, and supports rename', async () => {
     const user = userEvent.setup();
-    renderUpload();
+    const onRenameDocument = vi.fn().mockResolvedValue(undefined);
+    const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
+    const promptSpy = vi.spyOn(window, 'prompt').mockReturnValue('renamed-nda.pdf');
+    renderUpload({}, { onRenameDocument });
 
     expect(screen.getByRole('columnheader', { name: 'Document' })).toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: 'Visibility' })).toBeInTheDocument();
@@ -379,13 +384,24 @@ describe('EsigningStepUpload', () => {
     expect(screen.queryByRole('columnheader', { name: 'Details' })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Move nda.pdf earlier' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Move nda.pdf later' })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Preview nda.pdf' })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'nda.pdf' }));
+    expect(openSpy).toHaveBeenCalledWith(expect.stringContaining('/pdf?'), '_blank', 'noreferrer');
 
     await user.click(screen.getByRole('button', { name: 'More actions for nda.pdf' }));
+    const menu = screen.getByRole('menu');
+    expect(menu).toHaveAttribute('data-dropdown-menu');
+    expect(screen.getByRole('menuitem', { name: 'Preview' })).toBeInTheDocument();
+    expect(screen.getByRole('menuitem', { name: 'Download' })).toBeInTheDocument();
+    expect(screen.getByRole('menuitem', { name: 'Rename' })).toBeInTheDocument();
+    expect(screen.getByRole('menuitem', { name: 'Delete' })).toBeInTheDocument();
 
-    expect(screen.getByRole('button', { name: 'Preview' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Download' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Delete' })).toBeInTheDocument();
+    await user.click(screen.getByRole('menuitem', { name: 'Rename' }));
+    expect(promptSpy).toHaveBeenCalledWith('Rename document', 'nda.pdf');
+    expect(onRenameDocument).toHaveBeenCalledWith(expect.any(String), 'renamed-nda.pdf');
+
+    openSpy.mockRestore();
+    promptSpy.mockRestore();
   });
 
   it('keeps envelope name and email subject independent with standardized control heights', async () => {
