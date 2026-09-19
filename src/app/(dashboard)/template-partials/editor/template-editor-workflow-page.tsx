@@ -508,7 +508,7 @@ export function TemplateEditorWorkflowPage() {
     setIsDirty(false);
   }, [activeTenantId, existingPartialQuery.data, isPartialMode]);
 
-  const partials = partialsQuery.data?.partials ?? [];
+  const partials = useMemo(() => partialsQuery.data?.partials ?? [], [partialsQuery.data?.partials]);
 
   const extractPartialReferences = useCallback((content: string): string[] => {
     const matches = content.matchAll(/\{\{(?:>|&gt;|&#62;|&#x3[eE];)\s*([a-zA-Z][a-zA-Z0-9_-]*)\s*\}\}/g);
