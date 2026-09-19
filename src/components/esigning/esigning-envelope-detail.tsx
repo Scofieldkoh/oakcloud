@@ -158,7 +158,7 @@ export function EsigningEnvelopeDetailView({
 
   return (
     <div className="min-h-screen bg-background-primary">
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-5 p-4 sm:p-6">
+      <div className="flex w-full flex-col gap-5 p-4 sm:p-6">
         <div>
           <Link
             href={returnHref}

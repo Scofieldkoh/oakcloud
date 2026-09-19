@@ -29,7 +29,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { FormInput } from '@/components/ui/form-input';
-import { SearchableSelect } from '@/components/ui/searchable-select';
+import { CompanySearchableSelect } from '@/components/ui/company-searchable-select';
 import { FilterChip } from '@/components/ui/filter-chip';
 import { Alert } from '@/components/ui/alert';
 import { Pagination } from '@/components/ui/pagination';
@@ -546,15 +546,6 @@ export function EsigningListPage() {
   const totalResults = envelopesQuery.data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(totalResults / limit));
   const selectedCompanyName = companyOptions.find((company) => company.id === companyId)?.name ?? '';
-  const companySelectOptions = useMemo(
-    () => companyOptions.map((company) => ({
-      value: company.id,
-      label: company.name,
-      description: `${company.count} envelope${company.count === 1 ? '' : 's'}`,
-    })),
-    [companyOptions]
-  );
-
   const advancedFilterCount = useMemo(() => {
     let count = companyId ? 1 : 0;
     if (appliedFilters.status) count += 1;
@@ -830,7 +821,7 @@ export function EsigningListPage() {
 
   return (
     <div className="min-h-screen bg-background-primary">
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 py-5 sm:px-6 sm:py-6">
+      <div className="flex w-full flex-col gap-4 p-4 sm:p-6">
         <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div className="min-w-0">
             <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-oak-primary">
@@ -921,7 +912,7 @@ export function EsigningListPage() {
               }
             }}
             className={cn(
-              'flex min-h-[80px] flex-col gap-3 rounded-2xl border border-dashed px-4 py-3 transition-colors sm:flex-row sm:items-center sm:justify-between',
+              'flex min-h-[160px] flex-col justify-center gap-3 rounded-2xl border border-dashed px-5 py-6 transition-colors sm:flex-row sm:items-center sm:justify-between',
               isDraggingOnHero
                 ? 'border-oak-primary bg-oak-primary/5'
                 : 'border-border-secondary bg-background-secondary'
@@ -1024,18 +1015,15 @@ export function EsigningListPage() {
             </div>
 
             <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap lg:flex-nowrap">
-              <SearchableSelect
-                options={companySelectOptions}
+              <CompanySearchableSelect
+                companies={companyOptions}
                 value={companyId}
                 onChange={handleCompanyChange}
                 placeholder="Company"
-                ariaLabel="Company"
                 clearable
-                showKeyboardHints={false}
                 size="lg"
-                variant="table-filter"
                 className="col-span-2 w-full sm:col-span-1 sm:w-[220px]"
-                popoverMinWidth={260}
+                containerClassName="h-10"
               />
 
               <div ref={filterPanelRef} className="relative">
@@ -1079,20 +1067,16 @@ export function EsigningListPage() {
                       </div>
                     </div>
                     <div className="max-h-[60vh] space-y-4 overflow-y-auto p-5">
-                      <label className="block">
-                        <span className="mb-1.5 block text-xs font-medium text-text-secondary">Company</span>
-                        <select
-                          aria-label="Filter by company"
-                          value={draftCompanyId}
-                          onChange={(event) => setDraftCompanyId(event.target.value)}
-                          className="h-10 w-full rounded-lg border border-border-primary bg-background-primary px-3 text-sm text-text-primary focus:border-oak-primary focus:outline-none focus:ring-2 focus:ring-oak-primary/30"
-                        >
-                          <option value="">All companies</option>
-                          {companyOptions.map((company) => (
-                            <option key={company.id} value={company.id}>{company.name}</option>
-                          ))}
-                        </select>
-                      </label>
+                      <CompanySearchableSelect
+                        companies={companyOptions}
+                        value={draftCompanyId}
+                        onChange={setDraftCompanyId}
+                        placeholder="All companies"
+                        label="Company"
+                        clearable
+                        size="lg"
+                        containerClassName="h-10"
+                      />
 
                       <div className="grid gap-4 sm:grid-cols-2">
                         <label className="block">
@@ -1469,7 +1453,7 @@ export function EsigningListPage() {
                   <table className="w-full table-fixed border-collapse">
                     <thead>
                       <tr className="h-10 border-b border-border-primary bg-background-primary/60 text-left text-[11px] font-semibold uppercase tracking-wide text-text-muted">
-                        <th className="w-[132px] px-4">Status</th>
+                        <th className="w-[160px] px-4">Status</th>
                         <th className="px-4">Envelope name</th>
                         <th className="w-[180px] px-4">Company</th>
                         <th className="w-[150px] px-4">Details</th>
@@ -1478,8 +1462,9 @@ export function EsigningListPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border-primary">
-                      {envelopes.map((envelope) => {
+                      {envelopes.map((envelope, index) => {
                         const matchContext = getEnvelopeSearchMatchContext(envelope, debouncedQuery);
+                        const isAlternate = index % 2 === 1;
                         const active = envelope.status === 'SENT' || envelope.status === 'IN_PROGRESS';
                         const progress = envelope.signerCount > 0
                           ? Math.round((envelope.completedSignerCount / envelope.signerCount) * 100)
@@ -1496,7 +1481,12 @@ export function EsigningListPage() {
                                 window.location.assign(`/esigning/${envelope.id}`);
                               }
                             }}
-                            className="h-[58px] cursor-pointer bg-background-secondary text-sm transition-colors hover:bg-background-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-oak-primary/30"
+                            className={cn(
+                              'h-[58px] cursor-pointer text-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-oak-primary/30',
+                              isAlternate
+                                ? 'bg-oak-row-alt hover:bg-oak-row-alt-hover'
+                                : 'bg-background-secondary hover:bg-background-tertiary/50'
+                            )}
                           >
                             <td className="px-4 py-2.5 align-middle">
                               <div className="flex flex-wrap items-center gap-1.5">
@@ -1563,8 +1553,9 @@ export function EsigningListPage() {
                 </div>
 
                 <div className="divide-y divide-border-primary md:hidden">
-                  {envelopes.map((envelope) => {
+                  {envelopes.map((envelope, index) => {
                     const matchContext = getEnvelopeSearchMatchContext(envelope, debouncedQuery);
+                    const isAlternate = index % 2 === 1;
                     const active = envelope.status === 'SENT' || envelope.status === 'IN_PROGRESS';
                     return (
                       <article
@@ -1579,7 +1570,12 @@ export function EsigningListPage() {
                             window.location.assign(`/esigning/${envelope.id}`);
                           }
                         }}
-                        className="cursor-pointer px-4 py-3 transition-colors hover:bg-background-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-oak-primary/30"
+                        className={cn(
+                          'cursor-pointer px-4 py-3 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-oak-primary/30',
+                          isAlternate
+                            ? 'bg-oak-row-alt hover:bg-oak-row-alt-hover'
+                            : 'bg-background-secondary hover:bg-background-tertiary/50'
+                        )}
                       >
                         <div className="flex items-start gap-3">
                           <div className="min-w-0 flex-1">
