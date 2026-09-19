@@ -340,6 +340,85 @@ describe('E-signing detail hydration', () => {
     expect(screen.getAllByTestId('completed-document-row')).toHaveLength(1);
   });
 
+  it('filters completed activity by recipient name', async () => {
+    const base = makeEnvelope();
+    hookMocks.envelope = makeEnvelope({
+      status: 'COMPLETED',
+      completedAt: '2026-08-02T00:00:00.000Z',
+      pdfGenerationStatus: 'COMPLETED',
+      recipients: [
+        {
+          ...base.recipients[0],
+          id: 'recipient-1',
+          name: 'Signer One',
+          status: 'SIGNED',
+          signedAt: '2026-08-02T00:00:00.000Z',
+        },
+        {
+          ...base.recipients[0],
+          id: 'recipient-2',
+          name: 'Signer Two',
+          email: 'two@example.com',
+          status: 'SIGNED',
+          signedAt: '2026-08-02T00:01:00.000Z',
+        },
+      ],
+      recipientCount: 2,
+      signerCount: 2,
+      completedSignerCount: 2,
+      events: [
+        {
+          id: 'event-completed',
+          recipientId: null,
+          recipientName: null,
+          action: 'COMPLETED',
+          createdAt: '2026-08-02T00:02:00.000Z',
+          metadata: null,
+        },
+        {
+          id: 'event-one',
+          recipientId: 'recipient-1',
+          recipientName: 'Signer One',
+          action: 'SIGNED',
+          createdAt: '2026-08-02T00:00:00.000Z',
+          metadata: null,
+        },
+        {
+          id: 'event-two',
+          recipientId: 'recipient-2',
+          recipientName: 'Signer Two',
+          action: 'SIGNED',
+          createdAt: '2026-08-02T00:01:00.000Z',
+          metadata: null,
+        },
+      ],
+    });
+
+    renderedRoot = createRoot(container);
+    renderedRoot.render(
+      <QueryClientProvider client={new QueryClient()}>
+        <EsigningDetailPage envelopeId="envelope-1" />
+      </QueryClientProvider>
+    );
+
+    expect(await screen.findByText('Signed by Signer One')).toBeInTheDocument();
+    expect(screen.getByText('Signed by Signer Two')).toBeInTheDocument();
+    expect(screen.getByText('Envelope completed')).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Filter activity by recipient' }));
+    await userEvent.click(screen.getByRole('menuitem', { name: 'Signer One' }));
+
+    expect(screen.getByText('Signed by Signer One')).toBeInTheDocument();
+    expect(screen.queryByText('Signed by Signer Two')).not.toBeInTheDocument();
+    expect(screen.queryByText('Envelope completed')).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Filter activity by recipient' }));
+    await userEvent.click(screen.getByRole('menuitem', { name: 'All recipients' }));
+
+    expect(screen.getByText('Signed by Signer Two')).toBeInTheDocument();
+    expect(screen.getByText('Envelope completed')).toBeInTheDocument();
+  });
+
   it.each(['SENT', 'IN_PROGRESS'] as const)('submits only name and email when adding an email after %s', async (status) => {
     hookMocks.envelope = makeEnvelope({
       status,

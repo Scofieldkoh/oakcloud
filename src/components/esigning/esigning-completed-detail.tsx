@@ -97,10 +97,33 @@ export function EsigningCompletedDetail({
   onDocumentDownload,
 }: Props) {
   const [showAllActivity, setShowAllActivity] = useState(false);
-  const visibleEvents = useMemo(
-    () => (showAllActivity ? envelope.events : envelope.events.slice(0, 6)),
-    [envelope.events, showAllActivity]
+  const [activityRecipientId, setActivityRecipientId] = useState<string>('all');
+  const activityRecipients = useMemo(() => {
+    const recipientIdsWithActivity = new Set(
+      envelope.events
+        .map((event) => event.recipientId)
+        .filter((recipientId): recipientId is string => Boolean(recipientId))
+    );
+
+    return envelope.recipients.filter((recipient) =>
+      recipientIdsWithActivity.has(recipient.id)
+    );
+  }, [envelope.events, envelope.recipients]);
+  const filteredEvents = useMemo(
+    () =>
+      activityRecipientId === 'all'
+        ? envelope.events
+        : envelope.events.filter((event) => event.recipientId === activityRecipientId),
+    [activityRecipientId, envelope.events]
   );
+  const visibleEvents = useMemo(
+    () => (showAllActivity ? filteredEvents : filteredEvents.slice(0, 6)),
+    [filteredEvents, showAllActivity]
+  );
+  const selectedActivityRecipient =
+    activityRecipientId === 'all'
+      ? null
+      : envelope.recipients.find((recipient) => recipient.id === activityRecipientId) ?? null;
   const latestEmailFailure = envelope.emailDelivery.failures[0] ?? null;
   const signingModeLabel = `${ESIGNING_SIGNING_ORDER_LABELS[envelope.signingOrder]} signing`;
   const downloadsReady = envelope.pdfGenerationStatus === 'COMPLETED';
@@ -399,19 +422,56 @@ export function EsigningCompletedDetail({
               data-testid="completed-activity-section"
               className="rounded-2xl border border-border-primary bg-background-secondary p-5 shadow-sm sm:p-6"
             >
-              <div className="flex items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center justify-between gap-3">
                 <h2 className="text-lg font-semibold text-text-primary">Activity</h2>
-                {envelope.events.length > 6 ? (
-                  <button
-                    type="button"
-                    onClick={() => setShowAllActivity((current) => !current)}
-                    className="text-xs font-medium text-oak-primary hover:underline"
-                  >
-                    {showAllActivity
-                      ? 'Collapse activity ↑'
-                      : 'Show all activity →'}
-                  </button>
-                ) : null}
+                <div className="flex flex-wrap items-center justify-end gap-2">
+                  {activityRecipients.length > 0 ? (
+                    <Dropdown>
+                      <DropdownTrigger
+                        className="max-w-[190px] whitespace-nowrap text-xs"
+                        aria-label="Filter activity by recipient"
+                      >
+                        <span className="truncate">
+                          {selectedActivityRecipient?.name ?? 'All recipients'}
+                        </span>
+                      </DropdownTrigger>
+                      <DropdownMenu align="right">
+                        <DropdownItem
+                          onClick={() => {
+                            setActivityRecipientId('all');
+                            setShowAllActivity(false);
+                          }}
+                        >
+                          All recipients
+                        </DropdownItem>
+                        <DropdownSeparator />
+                        {activityRecipients.map((recipient) => (
+                          <DropdownItem
+                            key={recipient.id}
+                            onClick={() => {
+                              setActivityRecipientId(recipient.id);
+                              setShowAllActivity(false);
+                            }}
+                          >
+                            {recipient.name}
+                          </DropdownItem>
+                        ))}
+                      </DropdownMenu>
+                    </Dropdown>
+                  ) : null}
+
+                  {filteredEvents.length > 6 ? (
+                    <button
+                      type="button"
+                      onClick={() => setShowAllActivity((current) => !current)}
+                      className="text-xs font-medium text-oak-primary hover:underline"
+                    >
+                      {showAllActivity
+                        ? 'Collapse activity ↑'
+                        : 'Show all activity →'}
+                    </button>
+                  ) : null}
+                </div>
               </div>
 
               <div className="relative mt-4">
@@ -452,9 +512,11 @@ export function EsigningCompletedDetail({
                       </div>
                     );
                   })}
-                  {envelope.events.length === 0 ? (
+                  {filteredEvents.length === 0 ? (
                     <p className="pl-5 text-sm text-text-muted">
-                      No activity yet.
+                      {selectedActivityRecipient
+                        ? `No activity for ${selectedActivityRecipient.name}.`
+                        : 'No activity yet.'}
                     </p>
                   ) : null}
                 </div>
