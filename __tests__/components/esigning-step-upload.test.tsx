@@ -546,7 +546,7 @@ describe('EsigningStepUpload', () => {
     const user = userEvent.setup();
     const { container } = renderUpload({ documents: [], documentCount: 0 });
 
-    const uploadButton = screen.getByRole('button', { name: /Drop PDF documents here, or click to browse/i });
+    const uploadButton = screen.getByRole('button', { name: /Drop PDF documents here/i });
     expect(uploadButton).toHaveAccessibleName();
 
     const fileInput = container.querySelector('input[type="file"]');
@@ -582,6 +582,13 @@ describe('EsigningStepUpload', () => {
 
     expect(onUploadDocuments).toHaveBeenCalledTimes(1);
     expect(Array.from(onUploadDocuments.mock.calls[0][0])).toEqual([file]);
+  });
+
+  it('keeps the visible upload drop area when documents already exist', () => {
+    renderUpload();
+
+    expect(screen.getByRole('button', { name: /Drop PDF documents here/i })).toBeInTheDocument();
+    expect(screen.getByRole('table')).toBeInTheDocument();
   });
 
   it('filters, sorts, and multi-selects finalized generated documents', async () => {
