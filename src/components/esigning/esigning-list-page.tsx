@@ -1110,7 +1110,7 @@ export function EsigningListPage() {
           </Alert>
         ) : null}
 
-        <section className="relative rounded-2xl border border-border-primary bg-background-secondary">
+        <section className="relative">
           <div className="flex overflow-x-auto border-b border-border-primary px-2 sm:px-4">
             {(Object.keys(TAB_LABELS) as TabKey[]).map((tab) => (
               <button
@@ -1591,11 +1591,7 @@ export function EsigningListPage() {
               </div>
             ) : viewMode === 'table' ? (
               <>
-                <div
-                  className="table-container hidden w-full min-w-0 max-w-full overflow-hidden md:block"
-                  style={{ contain: 'inline-size paint' }}
-                >
-                  <div className="max-w-full overflow-x-auto">
+                <div className="hidden overflow-x-auto md:block">
                   <table className="w-full min-w-max border-collapse">
                     <colgroup>
                       {ESIGNING_TABLE_COLUMNS.map((columnId) => (
@@ -1806,7 +1802,6 @@ export function EsigningListPage() {
                       })}
                     </tbody>
                   </table>
-                  </div>
                 </div>
 
                 <div className="divide-y divide-border-primary md:hidden">
