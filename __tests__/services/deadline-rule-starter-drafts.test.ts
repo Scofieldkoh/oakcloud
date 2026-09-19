@@ -44,6 +44,9 @@ const tx = {
   serviceVariantDeadlineRule: {
     update: vi.fn(),
   },
+  clientServiceDeadlineRule: {
+    update: vi.fn(),
+  },
 };
 
 describe('deadline rule starter definitions', () => {
@@ -279,17 +282,28 @@ describe('deadline rule starter definitions', () => {
       id: 'legacy-form-c-rule',
       versions: [{
         id: 'legacy-form-c-draft',
+        schemaVersion: 1,
+        recurrence: { schemaVersion: 1, kind: 'ANNUALLY' },
+        applicability: { schemaVersion: 1, kind: 'ALL', conditions: [] },
         configHash: LEGACY_FORM_C_STARTER_HASH,
         draftRevision: 1,
         parameterDefinitions: [{
           id: 'legacy-param',
           key: 'monthsAfterFye',
+          label: 'Months after FYE',
           type: 'INTEGER',
           isRequired: true,
+          defaultValue: null,
+          validation: null,
+          helpText: null,
+          displayOrder: 0,
         }],
         milestoneTemplates: [{
           id: 'legacy-milestone',
           milestoneKey: 'form-c-due',
+          name: 'Form C due date',
+          description: null,
+          type: 'STATUTORY',
           generationMode: 'ONCE_PER_CYCLE',
           dateExpression: {
             kind: 'ADD_MONTHS',
@@ -297,6 +311,7 @@ describe('deadline rule starter definitions', () => {
             amount: { kind: 'INTEGER_PARAMETER', key: 'monthsAfterFye' },
           },
           businessDayAdjustment: 'NONE',
+          displayOrder: 0,
           isActive: true,
         }],
       }],
@@ -304,10 +319,16 @@ describe('deadline rule starter definitions', () => {
         id: 'association-1',
         parameterDefaults: { monthsAfterFye: 10, keepMe: 'yes' },
       }],
+      clientAssociations: [{
+        id: 'client-association-1',
+        parameterValues: { monthsAfterFye: 10, keepMe: 'yes' },
+        parameterProvenance: { monthsAfterFye: 'DEFAULT', keepMe: 'MANUAL' },
+      }],
     });
     tx.deadlineRuleParameterDefinition.deleteMany.mockResolvedValue({ count: 1 });
     tx.deadlineMilestoneTemplate.update.mockResolvedValue({ id: 'legacy-milestone' });
     tx.serviceVariantDeadlineRule.update.mockResolvedValue({ id: 'association-1' });
+    tx.clientServiceDeadlineRule.update.mockResolvedValue({ id: 'client-association-1' });
     tx.deadlineRule.update.mockResolvedValue({ id: 'legacy-form-c-rule' });
     tx.deadlineRuleVersion.update.mockResolvedValue({ id: 'legacy-form-c-draft' });
 
@@ -332,6 +353,13 @@ describe('deadline rule starter definitions', () => {
       where: { id: 'association-1' },
       data: { parameterDefaults: { keepMe: 'yes' } },
     });
+    expect(tx.clientServiceDeadlineRule.update).toHaveBeenCalledWith({
+      where: { id: 'client-association-1' },
+      data: {
+        parameterValues: { keepMe: 'yes' },
+        parameterProvenance: { keepMe: 'MANUAL' },
+      },
+    });
     expect(tx.deadlineRuleVersion.update).toHaveBeenCalledWith({
       where: { id: 'legacy-form-c-draft' },
       data: {
@@ -352,6 +380,7 @@ describe('deadline rule starter definitions', () => {
         milestoneTemplates: [],
       }],
       variantAssociations: [],
+      clientAssociations: [],
     });
 
     await expect(upgradeLegacyFormCStarterDraft(tx as never, tenantId)).resolves.toBe(false);
@@ -397,9 +426,13 @@ describe('deadline rule starter migration', () => {
       'prisma/migrations/20260817101000_deadline_rule_starter_drafts/migration.sql',
       'prisma/migrations/20260826171000_remove_duplicate_company_deadline_dates/migration.sql',
     ].map((path) => readFileSync(path, 'utf8')).join('\n');
-    for (const definition of STARTER_DEFINITIONS) {
+    for (const definition of STARTER_DEFINITIONS.filter((candidate) => candidate.code !== 'SG_FORM_C')) {
       expect(migration).toContain(hashDeadlineRuleDefinition(definition));
     }
+    expect(migration).toContain(LEGACY_FORM_C_STARTER_HASH);
+    expect(migration).not.toContain(hashDeadlineRuleDefinition(
+      STARTER_DEFINITIONS.find((candidate) => candidate.code === 'SG_FORM_C')!,
+    ));
     expect(migration).not.toContain('repeat(md5(');
     expect(migration).toMatch(/NOT EXISTS[\s\S]*SELECT 1\s+FROM\s+"deadline_rule_versions"/);
     expect(migration).toMatch(/r\."archived_at" IS NULL/);

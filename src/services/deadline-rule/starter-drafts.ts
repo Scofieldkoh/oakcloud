@@ -148,10 +148,9 @@ function isLegacyFormCExpression(value: unknown): boolean {
 }
 
 /**
- * One-time compatibility repair for workspaces created before the Form C
- * starter was modelled as a fixed 30 November deadline. The guard intentionally
- * matches only the untouched legacy starter draft; published or customized
- * rules are never rewritten.
+ * Compatibility repair for workspaces created before Form C was modelled as
+ * a fixed 30 November deadline. It only changes the exact untouched starter
+ * draft; published and customized rules are intentionally left alone.
  */
 export async function upgradeLegacyFormCStarterDraft(
   tx: Prisma.TransactionClient,
@@ -174,18 +173,35 @@ export async function upgradeLegacyFormCStarterDraft(
         take: 1,
         select: {
           id: true,
+          schemaVersion: true,
+          recurrence: true,
+          applicability: true,
           configHash: true,
           draftRevision: true,
           parameterDefinitions: {
-            select: { id: true, key: true, type: true, isRequired: true },
+            select: {
+              id: true,
+              key: true,
+              label: true,
+              type: true,
+              isRequired: true,
+              defaultValue: true,
+              validation: true,
+              helpText: true,
+              displayOrder: true,
+            },
           },
           milestoneTemplates: {
             select: {
               id: true,
               milestoneKey: true,
+              name: true,
+              description: true,
+              type: true,
               generationMode: true,
               dateExpression: true,
               businessDayAdjustment: true,
+              displayOrder: true,
               isActive: true,
             },
           },
@@ -195,22 +211,46 @@ export async function upgradeLegacyFormCStarterDraft(
         where: { archivedAt: null },
         select: { id: true, parameterDefaults: true },
       },
+      clientAssociations: {
+        select: { id: true, parameterValues: true, parameterProvenance: true },
+      },
     },
   });
 
   const draft = rule?.versions?.[0];
   if (!rule || !draft || draft.configHash !== LEGACY_FORM_C_STARTER_HASH || draft.draftRevision !== 1) return false;
+  const recurrence = draft.recurrence as Record<string, unknown>;
+  const applicability = draft.applicability as Record<string, unknown>;
+  if (
+    draft.schemaVersion !== 1
+    || recurrence.schemaVersion !== 1
+    || recurrence.kind !== 'ANNUALLY'
+    || Object.keys(recurrence).length !== 2
+    || applicability.schemaVersion !== 1
+    || applicability.kind !== 'ALL'
+    || !Array.isArray(applicability.conditions)
+    || applicability.conditions.length !== 0
+  ) return false;
   if (
     draft.parameterDefinitions.length !== 1
     || draft.parameterDefinitions[0]?.key !== 'monthsAfterFye'
+    || draft.parameterDefinitions[0]?.label !== 'Months after FYE'
     || draft.parameterDefinitions[0]?.type !== 'INTEGER'
     || draft.parameterDefinitions[0]?.isRequired !== true
+    || draft.parameterDefinitions[0]?.defaultValue !== null
+    || draft.parameterDefinitions[0]?.validation !== null
+    || draft.parameterDefinitions[0]?.helpText !== null
+    || draft.parameterDefinitions[0]?.displayOrder !== 0
   ) return false;
   if (
     draft.milestoneTemplates.length !== 1
     || draft.milestoneTemplates[0]?.milestoneKey !== 'form-c-due'
+    || draft.milestoneTemplates[0]?.name !== 'Form C due date'
+    || draft.milestoneTemplates[0]?.description !== null
+    || draft.milestoneTemplates[0]?.type !== 'STATUTORY'
     || draft.milestoneTemplates[0]?.generationMode !== 'ONCE_PER_CYCLE'
     || draft.milestoneTemplates[0]?.businessDayAdjustment !== 'NONE'
+    || draft.milestoneTemplates[0]?.displayOrder !== 0
     || draft.milestoneTemplates[0]?.isActive !== true
     || !isLegacyFormCExpression(draft.milestoneTemplates[0]?.dateExpression)
   ) return false;
@@ -239,6 +279,31 @@ export async function upgradeLegacyFormCStarterDraft(
     await tx.serviceVariantDeadlineRule.update({
       where: { id: association.id },
       data: { parameterDefaults: defaults as Prisma.InputJsonValue },
+    });
+  }
+
+  for (const association of rule.clientAssociations) {
+    const values = typeof association.parameterValues === 'object'
+      && association.parameterValues !== null
+      && !Array.isArray(association.parameterValues)
+      ? { ...(association.parameterValues as Record<string, unknown>) }
+      : {};
+    const provenance = typeof association.parameterProvenance === 'object'
+      && association.parameterProvenance !== null
+      && !Array.isArray(association.parameterProvenance)
+      ? { ...(association.parameterProvenance as Record<string, unknown>) }
+      : {};
+    const hadValue = Object.prototype.hasOwnProperty.call(values, 'monthsAfterFye');
+    const hadProvenance = Object.prototype.hasOwnProperty.call(provenance, 'monthsAfterFye');
+    if (!hadValue && !hadProvenance) continue;
+    delete values.monthsAfterFye;
+    delete provenance.monthsAfterFye;
+    await tx.clientServiceDeadlineRule.update({
+      where: { id: association.id },
+      data: {
+        parameterValues: values as Prisma.InputJsonValue,
+        parameterProvenance: provenance as Prisma.InputJsonValue,
+      },
     });
   }
 
