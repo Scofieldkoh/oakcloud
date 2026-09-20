@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect, useMemo, useRef, type MouseEvent } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useDropzone } from 'react-dropzone';
@@ -18,13 +18,6 @@ import {
   Copy,
   FileStack,
   ArrowUpRight,
-  ArrowUp,
-  ArrowDown,
-  ArrowUpDown,
-  Square,
-  CheckSquare,
-  MinusSquare,
-  X,
 } from 'lucide-react';
 import { MobileCollapsibleSection } from '@/components/ui/collapsible-section';
 import {
@@ -46,6 +39,7 @@ import { CompanySelect } from '@/components/ui/company-select';
 import { DatePicker } from '@/components/ui/date-picker';
 import { AmountFilter, type AmountFilterValue } from '@/components/ui/amount-filter';
 import { Pagination } from '@/components/ui/pagination';
+import { TableBody, TableEmptyState, TableFilterCell, TableFilterRow, TableHead, TableHeaderCell, TableHeaderRow, TableRoot, TableRow, TableSelectionButton, TableShell, TableTextFilter, TableViewport } from '@/components/ui/data-table';
 import { FilterChip } from '@/components/ui/filter-chip';
 import { useAvailableTags } from '@/hooks/use-document-tags';
 import { useActiveCompanyId } from '@/components/ui/company-selector';
@@ -477,7 +471,7 @@ export default function ProcessingDocumentsPage() {
     switch (columnId) {
       case 'open':
         return (
-          <td key={columnId} className="px-2 py-3">
+          <td key={columnId} className="px-2 py-2">
             <Link
               href={`/processing/${doc.id}`}
               target="_blank"
@@ -492,7 +486,7 @@ export default function ProcessingDocumentsPage() {
         );
       case 'document':
         return (
-          <td key={columnId} className="px-4 py-3 max-w-0">
+          <td key={columnId} className="px-3 py-2 max-w-0">
             <div className="flex items-center gap-3 min-w-0">
               <div className="p-1.5 rounded bg-background-tertiary flex-shrink-0">
                 {doc.isContainer ? (
@@ -520,7 +514,7 @@ export default function ProcessingDocumentsPage() {
         );
       case 'company':
         return (
-          <td key={columnId} className="px-4 py-3 max-w-0">
+          <td key={columnId} className="px-3 py-2 max-w-0">
             <span className="text-sm text-text-primary block truncate" title={doc.document.company?.name || undefined}>
               {doc.document.company?.name || '-'}
             </span>
@@ -528,7 +522,7 @@ export default function ProcessingDocumentsPage() {
         );
       case 'pipeline':
         return (
-          <td key={columnId} className="px-4 py-3 max-w-0">
+          <td key={columnId} className="px-3 py-2 max-w-0">
             <div className="min-w-0">
               <StatusBadge status={doc.pipelineStatus} config={pipelineStatusConfig[doc.pipelineStatus]} />
             </div>
@@ -536,7 +530,7 @@ export default function ProcessingDocumentsPage() {
         );
       case 'status':
         return (
-          <td key={columnId} className="px-4 py-3 max-w-0">
+          <td key={columnId} className="px-3 py-2 max-w-0">
             <div className="min-w-0">
               {doc.currentRevision ? (
                 <span
@@ -556,7 +550,7 @@ export default function ProcessingDocumentsPage() {
         );
       case 'duplicate':
         return (
-          <td key={columnId} className="px-4 py-3 max-w-0">
+          <td key={columnId} className="px-3 py-2 max-w-0">
             <div className="min-w-0">
               <StatusBadge status={doc.duplicateStatus} config={duplicateStatusConfig[doc.duplicateStatus]} />
             </div>
@@ -564,7 +558,7 @@ export default function ProcessingDocumentsPage() {
         );
       case 'tags':
         return (
-          <td key={columnId} className="px-4 py-3 max-w-0">
+          <td key={columnId} className="px-3 py-2 max-w-0">
             <DocumentTags
               documentId={doc.id}
               companyId={effectiveCompanyId || doc.document.companyId}
@@ -577,7 +571,7 @@ export default function ProcessingDocumentsPage() {
         );
       case 'category':
         return (
-          <td key={columnId} className="px-4 py-3 max-w-0">
+          <td key={columnId} className="px-3 py-2 max-w-0">
             <span
               className="text-sm text-text-primary block truncate"
               title={formatCategory(doc.currentRevision?.documentCategory)}
@@ -588,7 +582,7 @@ export default function ProcessingDocumentsPage() {
         );
       case 'subCategory':
         return (
-          <td key={columnId} className="px-4 py-3 max-w-0">
+          <td key={columnId} className="px-3 py-2 max-w-0">
             <span
               className="text-sm text-text-primary block truncate"
               title={formatCategory(doc.currentRevision?.documentSubCategory)}
@@ -599,7 +593,7 @@ export default function ProcessingDocumentsPage() {
         );
       case 'vendor':
         return (
-          <td key={columnId} className="px-4 py-3 max-w-0">
+          <td key={columnId} className="px-3 py-2 max-w-0">
             <span
               className="text-sm text-text-primary block truncate"
               title={doc.currentRevision?.vendorName || undefined}
@@ -610,7 +604,7 @@ export default function ProcessingDocumentsPage() {
         );
       case 'docNumber':
         return (
-          <td key={columnId} className="px-4 py-3 max-w-0">
+          <td key={columnId} className="px-3 py-2 max-w-0">
             <span className="text-sm text-text-primary block truncate" title={doc.currentRevision?.documentNumber || undefined}>
               {doc.currentRevision?.documentNumber || '-'}
             </span>
@@ -618,7 +612,7 @@ export default function ProcessingDocumentsPage() {
         );
       case 'docDate':
         return (
-          <td key={columnId} className="px-4 py-3 max-w-0">
+          <td key={columnId} className="px-3 py-2 max-w-0">
             <span className="text-sm text-text-primary block truncate" title={doc.currentRevision?.documentDate ? formatDate(doc.currentRevision.documentDate) : undefined}>
               {doc.currentRevision?.documentDate ? formatDate(doc.currentRevision.documentDate) : '-'}
             </span>
@@ -626,7 +620,7 @@ export default function ProcessingDocumentsPage() {
         );
       case 'currency':
         return (
-          <td key={columnId} className="px-4 py-3 max-w-0">
+          <td key={columnId} className="px-3 py-2 max-w-0">
             <span className="text-sm text-text-primary block truncate" title={doc.currentRevision?.currency || undefined}>
               {doc.currentRevision?.currency || '-'}
             </span>
@@ -634,7 +628,7 @@ export default function ProcessingDocumentsPage() {
         );
       case 'homeCurrency':
         return (
-          <td key={columnId} className="px-4 py-3 max-w-0">
+          <td key={columnId} className="px-3 py-2 max-w-0">
             <span className="text-sm text-text-primary block truncate" title={doc.currentRevision?.homeCurrency || undefined}>
               {doc.currentRevision?.homeCurrency || '-'}
             </span>
@@ -642,7 +636,7 @@ export default function ProcessingDocumentsPage() {
         );
       case 'subtotal':
         return (
-          <td key={columnId} className="px-4 py-3 text-right max-w-0">
+          <td key={columnId} className="px-3 py-2 text-right max-w-0">
             <span className="text-sm text-text-primary block truncate" title={doc.currentRevision ? formatCurrency(doc.currentRevision.subtotal, doc.currentRevision.currency) : undefined}>
               {doc.currentRevision ? formatCurrency(doc.currentRevision.subtotal, doc.currentRevision.currency) : '-'}
             </span>
@@ -650,7 +644,7 @@ export default function ProcessingDocumentsPage() {
         );
       case 'tax':
         return (
-          <td key={columnId} className="px-4 py-3 text-right max-w-0">
+          <td key={columnId} className="px-3 py-2 text-right max-w-0">
             <span className="text-sm text-text-primary block truncate" title={doc.currentRevision ? formatCurrency(doc.currentRevision.taxAmount, doc.currentRevision.currency) : undefined}>
               {doc.currentRevision ? formatCurrency(doc.currentRevision.taxAmount, doc.currentRevision.currency) : '-'}
             </span>
@@ -658,7 +652,7 @@ export default function ProcessingDocumentsPage() {
         );
       case 'total':
         return (
-          <td key={columnId} className="px-4 py-3 text-right max-w-0">
+          <td key={columnId} className="px-3 py-2 text-right max-w-0">
             <span className="text-sm text-text-primary block truncate" title={doc.currentRevision ? formatCurrency(doc.currentRevision.totalAmount, doc.currentRevision.currency) : undefined}>
               {doc.currentRevision
                 ? formatCurrency(doc.currentRevision.totalAmount, doc.currentRevision.currency)
@@ -668,7 +662,7 @@ export default function ProcessingDocumentsPage() {
         );
       case 'homeSubtotal':
         return (
-          <td key={columnId} className="px-4 py-3 text-right max-w-0">
+          <td key={columnId} className="px-3 py-2 text-right max-w-0">
             <span className="text-sm text-text-primary block truncate" title={doc.currentRevision?.homeCurrency ? formatCurrency(doc.currentRevision.homeSubtotal, doc.currentRevision.homeCurrency) : undefined}>
               {doc.currentRevision?.homeCurrency
                 ? formatCurrency(doc.currentRevision.homeSubtotal, doc.currentRevision.homeCurrency)
@@ -678,7 +672,7 @@ export default function ProcessingDocumentsPage() {
         );
       case 'homeTax':
         return (
-          <td key={columnId} className="px-4 py-3 text-right max-w-0">
+          <td key={columnId} className="px-3 py-2 text-right max-w-0">
             <span className="text-sm text-text-primary block truncate" title={doc.currentRevision?.homeCurrency ? formatCurrency(doc.currentRevision.homeTaxAmount, doc.currentRevision.homeCurrency) : undefined}>
               {doc.currentRevision?.homeCurrency
                 ? formatCurrency(doc.currentRevision.homeTaxAmount, doc.currentRevision.homeCurrency)
@@ -688,7 +682,7 @@ export default function ProcessingDocumentsPage() {
         );
       case 'homeTotal':
         return (
-          <td key={columnId} className="px-4 py-3 text-right max-w-0">
+          <td key={columnId} className="px-3 py-2 text-right max-w-0">
             <span className="text-sm text-text-primary block truncate" title={doc.currentRevision?.homeCurrency ? formatCurrency(doc.currentRevision.homeEquivalent, doc.currentRevision.homeCurrency) : undefined}>
               {doc.currentRevision?.homeCurrency
                 ? formatCurrency(doc.currentRevision.homeEquivalent, doc.currentRevision.homeCurrency)
@@ -698,7 +692,7 @@ export default function ProcessingDocumentsPage() {
         );
       case 'uploaded':
         return (
-          <td key={columnId} className="px-4 py-3 max-w-0">
+          <td key={columnId} className="px-3 py-2 max-w-0">
             <span className="text-sm text-text-primary block truncate" title={formatDate(doc.createdAt)}>{formatDate(doc.createdAt)}</span>
           </td>
         );
@@ -756,11 +750,15 @@ export default function ProcessingDocumentsPage() {
     window.addEventListener('pointerup', onUp);
   }, [columnWidths, saveColumnPref]);
 
-  const startResizeIfEdge = useCallback((e: React.PointerEvent, columnId: ColumnId) => {
-    const rect = (e.currentTarget as HTMLElement | null)?.getBoundingClientRect();
-    if (rect && rect.right - e.clientX > 14) return;
-    startResize(e, columnId);
-  }, [startResize]);
+  const resizeColumnByKeyboard = useCallback((event: React.KeyboardEvent<HTMLSpanElement>, columnId: ColumnId) => {
+    if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+    event.preventDefault();
+    const currentWidth = columnWidths[columnId] ?? 120;
+    const nextWidth = Math.max(30, currentWidth + (event.key === 'ArrowRight' ? 10 : -10));
+    const nextWidths = { ...columnWidths, [columnId]: nextWidth };
+    setColumnWidths(nextWidths);
+    saveColumnPref.mutate({ key: COLUMN_PREF_KEY, value: nextWidths });
+  }, [columnWidths, saveColumnPref]);
 
   const resetColumns = useCallback(() => {
     setColumnWidths({});
@@ -1003,22 +1001,6 @@ export default function ProcessingDocumentsPage() {
       .map((id) => selectedDocumentMap[id])
       .filter((document): document is ProcessingDocumentListItem => Boolean(document));
   }, [selectedDocumentMap, selectedIds]);
-
-  const handleRowNavigate = useCallback(
-    (e: MouseEvent, documentId: string) => {
-      // Only handle plain left-clicks; allow Ctrl/Cmd+click (new tab), right-click, etc.
-      if (e.defaultPrevented) return;
-      if (isResizingRef.current) return;
-      if (e.button !== 0) return;
-      if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-
-      const target = e.target as HTMLElement | null;
-      if (target?.closest('a,button,input,select,textarea,[role="button"]')) return;
-
-      router.push(`/processing/${documentId}`);
-    },
-    [router]
-  );
 
   const handleReviewNext = useCallback(async () => {
     try {
@@ -1934,7 +1916,7 @@ export default function ProcessingDocumentsPage() {
 
           {/* Mobile Pagination */}
           {data.totalPages > 1 && (
-            <div className="flex items-center justify-between px-2 py-3">
+            <div className="flex items-center justify-between px-2 py-2">
               <p className="text-xs text-text-secondary">
                 {(data.page - 1) * data.limit + 1}-{Math.min(data.page * data.limit, data.total)} of {data.total}
               </p>
@@ -2004,9 +1986,9 @@ export default function ProcessingDocumentsPage() {
 
       {/* Document Table - Desktop View */}
       {!error && data && (
-        <div className={cn('hidden lg:block table-container overflow-hidden relative', isFetching && 'opacity-60')}>
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-max">
+        <TableShell className="relative hidden lg:block" isFetching={isFetching}>
+          <TableViewport>
+            <TableRoot>
               <colgroup>
                 <col style={{ width: '40px' }} />
                 {visibleColumnIds.map((id) => (
@@ -2022,31 +2004,18 @@ export default function ProcessingDocumentsPage() {
                   />
                 ))}
               </colgroup>
-              <thead className="bg-background-tertiary border-b border-border-primary">
+              <TableHead>
                 {/* Inline filter row - moved above headers */}
-                <tr className="bg-background-secondary/50">
-                  <th className="px-4 py-2"></th>
+                <TableFilterRow>
+                  <TableFilterCell className="w-10" />
                   {visibleColumnIds.map((columnId) => (
-                    <th key={columnId} className="px-4 py-2 max-w-0">
+                    <TableFilterCell key={columnId}>
                       {columnId === 'open' ? null : columnId === 'document' ? (
-                        <div className="w-full flex items-center gap-2 h-9 rounded-lg border bg-background-secondary/30 border-border-primary hover:border-oak-primary/50 focus-within:ring-2 focus-within:ring-oak-primary/30 transition-colors">
-                          <input
-                            type="text"
-                            value={params.fileName || ''}
-                            onChange={(e) => handleFiltersChange({ fileName: e.target.value || undefined })}
-                            placeholder="All"
-                            className="flex-1 bg-transparent outline-none px-3 min-w-0 text-xs text-text-primary placeholder:text-text-secondary"
-                          />
-                          {params.fileName && (
-                            <button
-                              type="button"
-                              onClick={() => handleFiltersChange({ fileName: undefined })}
-                              className="p-0.5 hover:bg-background-tertiary rounded transition-colors mr-1"
-                            >
-                              <X className="w-3.5 h-3.5 text-text-muted" />
-                            </button>
-                          )}
-                        </div>
+                        <TableTextFilter
+                          ariaLabel="Filter documents by file name"
+                          value={params.fileName}
+                          onChange={(value) => handleFiltersChange({ fileName: value })}
+                        />
                       ) : columnId === 'company' ? (
                         <CompanySelect
                           value={params.companyId || ''}
@@ -2123,43 +2092,17 @@ export default function ProcessingDocumentsPage() {
                           showKeyboardHints={false}
                         />
                       ) : columnId === 'vendor' ? (
-                        <div className="w-full flex items-center gap-2 h-9 rounded-lg border bg-background-secondary/30 border-border-primary hover:border-oak-primary/50 focus-within:ring-2 focus-within:ring-oak-primary/30 transition-colors">
-                          <input
-                            type="text"
-                            value={params.vendorName || ''}
-                            onChange={(e) => handleFiltersChange({ vendorName: e.target.value || undefined })}
-                            placeholder="All"
-                            className="flex-1 bg-transparent outline-none px-3 min-w-0 text-xs text-text-primary placeholder:text-text-secondary"
-                          />
-                          {params.vendorName && (
-                            <button
-                              type="button"
-                              onClick={() => handleFiltersChange({ vendorName: undefined })}
-                              className="p-0.5 hover:bg-background-tertiary rounded transition-colors mr-1"
-                            >
-                              <X className="w-3.5 h-3.5 text-text-muted" />
-                            </button>
-                          )}
-                        </div>
+                        <TableTextFilter
+                          ariaLabel="Filter documents by vendor"
+                          value={params.vendorName}
+                          onChange={(value) => handleFiltersChange({ vendorName: value })}
+                        />
                       ) : columnId === 'docNumber' ? (
-                        <div className="w-full flex items-center gap-2 h-9 rounded-lg border bg-background-secondary/30 border-border-primary hover:border-oak-primary/50 focus-within:ring-2 focus-within:ring-oak-primary/30 transition-colors">
-                          <input
-                            type="text"
-                            value={params.documentNumber || ''}
-                            onChange={(e) => handleFiltersChange({ documentNumber: e.target.value || undefined })}
-                            placeholder="All"
-                            className="flex-1 bg-transparent outline-none px-3 min-w-0 text-xs text-text-primary placeholder:text-text-secondary"
-                          />
-                          {params.documentNumber && (
-                            <button
-                              type="button"
-                              onClick={() => handleFiltersChange({ documentNumber: undefined })}
-                              className="p-0.5 hover:bg-background-tertiary rounded transition-colors mr-1"
-                            >
-                              <X className="w-3.5 h-3.5 text-text-muted" />
-                            </button>
-                          )}
-                        </div>
+                        <TableTextFilter
+                          ariaLabel="Filter documents by document number"
+                          value={params.documentNumber}
+                          onChange={(value) => handleFiltersChange({ documentNumber: value })}
+                        />
                       ) : columnId === 'docDate' ? (
                         <DatePicker
                           value={
@@ -2371,129 +2314,81 @@ export default function ProcessingDocumentsPage() {
                           showChevron={false}
                         />
                       ) : null}
-                    </th>
+                    </TableFilterCell>
                   ))}
-                </tr>
+                </TableFilterRow>
 
                 {/* Column header row - below filters */}
-                <tr className="border-t border-border-primary">
-                  <th className="w-10 px-4 py-2.5">
-                    <button
-                      onClick={toggleSelectAll}
-                      className="p-0.5 hover:bg-background-secondary rounded transition-colors"
-                      title={selectionState === 'all' ? 'Deselect all' : 'Select all'}
-                    >
-                      {selectionState === 'all' ? (
-                        <CheckSquare className="w-4 h-4 text-oak-primary" />
-                      ) : selectionState === 'partial' ? (
-                        <MinusSquare className="w-4 h-4 text-oak-light" />
-                      ) : (
-                        <Square className="w-4 h-4 text-text-muted" />
-                      )}
-                    </button>
-                  </th>
-                  {visibleColumnIds.map((columnId) =>
-                    columnId === 'open' ? (
-                      <th
-                        key={columnId}
-                        className="text-center text-xs font-medium text-text-secondary px-4 py-2.5 whitespace-nowrap"
-                        title="Open in new tab"
-                      >
-                        <ArrowUpRight className="w-4 h-4 inline-block text-text-muted" />
-                      </th>
-                    ) : (
-                      <th
+                <TableHeaderRow>
+                  <TableHeaderCell className="w-10 text-center">
+                    <TableSelectionButton
+                      selected={selectionState === 'all'}
+                      indeterminate={selectionState === 'partial'}
+                      onClick={() => toggleSelectAll()}
+                      ariaLabel={selectionState === 'all' ? 'Deselect all documents' : 'Select all documents'}
+                    />
+                  </TableHeaderCell>
+                  {visibleColumnIds.map((columnId) => {
+                    if (columnId === 'open') {
+                      return (
+                        <TableHeaderCell key={columnId} align="center" className="w-[44px]" title="Open in new tab">
+                          <ArrowUpRight className="inline-block h-4 w-4 text-text-muted" />
+                        </TableHeaderCell>
+                      );
+                    }
+                    const sortField = COLUMN_SORT_FIELDS[columnId];
+                    const sorted = Boolean(sortField && params.sortBy === sortField);
+                    return (
+                      <TableHeaderCell
                         key={columnId}
                         style={columnWidths[columnId] ? { width: `${columnWidths[columnId]}px` } : undefined}
-                        className={cn(
-                          'relative text-xs font-medium text-text-secondary px-4 py-2.5 whitespace-nowrap',
-                          RIGHT_ALIGNED_COLUMNS.has(columnId) ? 'text-right pr-6' : 'text-left'
-                        )}
-                        onPointerDown={(e) => startResizeIfEdge(e, columnId)}
-                      >
-                        {COLUMN_SORT_FIELDS[columnId] ? (
-                          <button
-                            type="button"
-                            onPointerDown={(e) => e.stopPropagation()}
-                            onClick={() => handleSort(COLUMN_SORT_FIELDS[columnId]!)}
-                            className={cn(
-                              'inline-flex items-center gap-1 select-none hover:text-text-primary transition-colors',
-                              params.sortBy === COLUMN_SORT_FIELDS[columnId] && 'text-text-primary'
-                            )}
-                          >
-                            <span>{COLUMN_LABELS[columnId]}</span>
-                            <span className="flex-shrink-0">
-                              {params.sortBy === COLUMN_SORT_FIELDS[columnId] ? (
-                                params.sortOrder === 'asc' ? (
-                                  <ArrowUp className="w-3.5 h-3.5" />
-                                ) : (
-                                  <ArrowDown className="w-3.5 h-3.5" />
-                                )
-                              ) : (
-                                <ArrowUpDown className="w-3.5 h-3.5 text-text-muted" />
-                              )}
-                            </span>
-                          </button>
-                        ) : (
-                          <span>{COLUMN_LABELS[columnId]}</span>
-                        )}
-                        <div
-                          onPointerDown={(e) => startResize(e, columnId)}
-                          className="absolute top-0 -right-2 h-full w-4 cursor-col-resize hover:bg-border-secondary/60 z-10 touch-none"
-                          title="Drag to resize"
-                        />
-                      </th>
-                    )
-                  )}
-                </tr>
-              </thead>
-              <tbody>
+                        label={COLUMN_LABELS[columnId]}
+                        align={RIGHT_ALIGNED_COLUMNS.has(columnId) ? 'right' : 'left'}
+                        sorted={sorted}
+                        sortOrder={params.sortOrder}
+                        onSort={sortField ? () => handleSort(sortField) : undefined}
+                        sortAriaLabel={sortField ? `Sort by ${COLUMN_LABELS[columnId]}` : undefined}
+                        resizable
+                        onResizePointerDown={(event) => startResize(event, columnId)}
+                        onResizeKeyDown={(event) => resizeColumnByKeyboard(event, columnId)}
+                        resizeAriaLabel={`Resize ${COLUMN_LABELS[columnId]} column`}
+                      />
+                    );
+                  })}
+                </TableHeaderRow>
+              </TableHead>
+              <TableBody>
                 {data.documents.length === 0 ? (
-                  <tr>
-                    <td colSpan={visibleColumnIds.length + 1} className="px-4 py-12 text-center">
-                      <p className="text-sm text-text-secondary">No documents found</p>
-                    </td>
-                  </tr>
+                  <TableEmptyState colSpan={visibleColumnIds.length + 1} message="No documents found" />
                 ) : (
                   data.documents.map((doc, index) => {
                     const isSelected = selectedIds.includes(doc.id);
-                    const isAlternate = index % 2 === 1;
                     return (
-                      <tr
+                      <TableRow
                         key={doc.id}
-                        onClick={(e) => handleRowNavigate(e, doc.id)}
-                        className={cn(
-                          'border-b border-border-primary transition-colors cursor-pointer',
-                          isSelected
-                            ? 'bg-oak-row-selected hover:bg-oak-row-selected-hover'
-                            : isAlternate
-                              ? 'bg-oak-row-alt hover:bg-oak-row-alt-hover'
-                              : 'hover:bg-background-tertiary/50'
-                        )}
+                        index={index}
+                        selected={isSelected}
+                        interactive
+                        onActivate={() => router.push(`/processing/${doc.id}`)}
                       >
-                        <td className="px-4 py-3">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
+                        <td className="w-10 px-3 py-2">
+                          <TableSelectionButton
+                            selected={isSelected}
+                            onClick={(event) => {
+                              event.stopPropagation();
                               toggleSelect(doc.id);
                             }}
-                            className="p-0.5 hover:bg-background-secondary rounded transition-colors"
-                          >
-                            {isSelected ? (
-                              <CheckSquare className="w-4 h-4 text-oak-primary" />
-                            ) : (
-                              <Square className="w-4 h-4 text-text-muted" />
-                            )}
-                          </button>
+                            ariaLabel={isSelected ? `Deselect ${doc.document.fileName}` : `Select ${doc.document.fileName}`}
+                          />
                         </td>
                         {visibleColumnIds.map((columnId) => renderDesktopCell(doc, columnId))}
-                      </tr>
+                      </TableRow>
                     );
                   })
                 )}
-              </tbody>
-            </table>
-          </div>
+              </TableBody>
+            </TableRoot>
+          </TableViewport>
 
           {/* Pagination */}
           {data.totalPages > 0 && (
@@ -2510,7 +2405,7 @@ export default function ProcessingDocumentsPage() {
               />
             </div>
           )}
-        </div>
+        </TableShell>
       )}
 
       {/* Bulk Actions Toolbar */}

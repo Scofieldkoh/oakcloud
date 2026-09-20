@@ -2,9 +2,10 @@
 
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import Link from 'next/link';
-import { ArrowDown, ArrowUp, ArrowUpDown, MoreHorizontal, Pencil, ExternalLink, AlertTriangle, History } from 'lucide-react';
+import { MoreHorizontal, Pencil, ExternalLink, AlertTriangle, History } from 'lucide-react';
 import { MobileCard, CardDetailItem, CardDetailsGrid } from '@/components/ui/responsive-table';
 import { Checkbox } from '@/components/ui/checkbox';
+import { TableBody, TableEmptyState, TableFilterCell, TableFilterRow, TableHead, TableHeaderCell, TableHeaderRow, TableRoot, TableRow, TableShell, TableTextFilter, TableViewport } from '@/components/ui/data-table';
 import { Dropdown, DropdownItem, DropdownMenu, DropdownSeparator, DropdownTrigger } from '@/components/ui/dropdown';
 import { cn } from '@/lib/utils';
 import type { ServiceRosterItem } from '@/services/service-roster';
@@ -208,133 +209,64 @@ function ServiceActions({ item, canEdit, onEdit, onTrigger }: { item: ServiceRos
   );
 }
 
-function SortableHeader({
-  columnId,
-  onSort,
-  sortBy,
-  sortOrder,
-  onResize,
-  onResizeKeyboard,
-}: {
-  columnId: ServiceRosterColumnId;
-  onSort: (sortBy: ServiceRosterSortBy) => void;
-  sortBy: ServiceRosterSortBy;
-  sortOrder: 'asc' | 'desc';
-  onResize: (columnId: ServiceRosterColumnId, event: React.PointerEvent<HTMLSpanElement>) => void;
-  onResizeKeyboard: (columnId: ServiceRosterColumnId, delta: number) => void;
-}) {
-  const field = sortFields[columnId];
-  const active = field === sortBy;
-  const label = columnLabels[columnId];
-  return (
-    <th aria-label={label} className="relative px-4 py-2.5 text-left text-xs font-medium text-text-secondary" scope="col">
-      {field ? (
-        <button
-          type="button"
-          aria-label={active ? `Sort by ${label}, currently ${sortOrder === 'asc' ? 'ascending' : 'descending'}` : `Sort by ${label}`}
-          onClick={() => onSort(field)}
-          className="inline-flex min-h-11 items-center gap-1 text-left hover:text-text-primary sm:min-h-8"
-        >
-          <span>{label}</span>
-          {active ? (sortOrder === 'asc' ? <ArrowUp className="h-3.5 w-3.5" aria-hidden="true" /> : <ArrowDown className="h-3.5 w-3.5" aria-hidden="true" />) : <ArrowUpDown className="h-3.5 w-3.5 text-text-muted" aria-hidden="true" />}
-        </button>
-      ) : <span>{label}</span>}
-      {columnId !== 'actions' ? (
-        <span
-          role="separator"
-          aria-label={`Resize ${label} column`}
-          aria-orientation="vertical"
-          tabIndex={0}
-          onPointerDown={(event) => onResize(columnId, event)}
-          onKeyDown={(event) => {
-            if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
-            event.preventDefault();
-            onResizeKeyboard(columnId, event.key === 'ArrowRight' ? 10 : -10);
-          }}
-          className="absolute inset-y-0 -right-2 w-4 cursor-col-resize touch-none"
-        />
-      ) : null}
-    </th>
-  );
-}
-
 function InlineFilterRow({ columns, canSelect, filters, onChange }: { columns: ServiceRosterColumnId[]; canSelect: boolean; filters: ServiceRosterInlineFilters; onChange: (filters: Partial<ServiceRosterInlineFilters>) => void }) {
-  const filter = (label: string, value: string | undefined, key: keyof ServiceRosterInlineFilters) => (
-    <input
-      type="search"
-      aria-label={`Filter ${label}`}
-      value={value ?? ''}
-      onChange={(event) => onChange({ [key]: event.target.value || undefined })}
-      placeholder="All"
-      className="input input-sm w-full min-w-0 px-2 text-xs"
-    />
-  );
-
   return (
-    <tr className="border-b border-border-primary bg-background-secondary/60">
-      {canSelect ? <th className="w-12 px-2 py-2" scope="row" aria-hidden="true" /> : null}
+    <TableFilterRow>
+      {canSelect ? <TableFilterCell className="w-12 px-2" aria-hidden="true" /> : null}
       {columns.map((column) => (
-        <th key={column} className="px-4 py-2" scope="row">
-          {column === 'actions' ? null : filter(columnLabels[column], filters[column], column)}
-        </th>
+        <TableFilterCell key={column}>
+          {column === 'actions' ? null : (
+            <TableTextFilter
+              ariaLabel={`Filter ${columnLabels[column]}`}
+              value={filters[column]}
+              onChange={(value) => onChange({ [column]: value })}
+            />
+          )}
+        </TableFilterCell>
       ))}
-    </tr>
+    </TableFilterRow>
   );
 }
 
 function DesktopCell({ item, column, canEdit, onEdit, onTrigger }: { item: ServiceRosterItem; column: ServiceRosterColumnId; canEdit: boolean; onEdit: (item: ServiceRosterItem) => void; onTrigger?: (item: ServiceRosterItem) => void }) {
   switch (column) {
-    case 'company': return <td className="max-w-0 px-4 py-3 align-middle"><CompanyCell item={item} /></td>;
-    case 'family': return <td className="max-w-0 px-4 py-3 align-middle"><FamilyCell item={item} /></td>;
-    case 'service': return <td className="max-w-0 px-4 py-3 align-middle"><span className="block truncate text-sm text-text-primary" title={item.serviceName}>{item.serviceName}</span></td>;
-    case 'status': return <td className="px-4 py-3 align-middle"><span className={cn('badge', statusClass(item.status))}>{statusLabel(item.status)}</span></td>;
-    case 'cadence': return <td className="px-4 py-3 align-middle text-sm text-text-secondary">{formatCadence(item)}</td>;
-    case 'nextDeadline': return <td className="px-4 py-3 align-middle text-sm text-text-secondary">{formatDate(item.nextDeadline?.operativeDueDate ?? null)}</td>;
-    case 'startEnd': return <td className="px-4 py-3 align-middle text-sm text-text-secondary"><span className="whitespace-nowrap">{formatDate(item.startDate)}</span><span className="mx-1 text-text-muted">–</span><span className="whitespace-nowrap">{formatDate(item.endDate)}</span></td>;
-    case 'warnings': return <td className="px-4 py-3 align-middle"><WarningCell item={item} /></td>;
-    case 'billing': return <td className="px-4 py-3 align-middle"><BillingIndicator item={item} /></td>;
-    case 'actions': return <td className="px-4 py-3 align-middle"><ServiceActions item={item} canEdit={canEdit} onEdit={onEdit} onTrigger={onTrigger} /></td>;
+    case 'company': return <td className="max-w-0 px-3 py-2 align-middle"><CompanyCell item={item} /></td>;
+    case 'family': return <td className="max-w-0 px-3 py-2 align-middle"><FamilyCell item={item} /></td>;
+    case 'service': return <td className="max-w-0 px-3 py-2 align-middle"><span className="block truncate text-sm text-text-primary" title={item.serviceName}>{item.serviceName}</span></td>;
+    case 'status': return <td className="px-3 py-2 align-middle"><span className={cn('badge', statusClass(item.status))}>{statusLabel(item.status)}</span></td>;
+    case 'cadence': return <td className="px-3 py-2 align-middle text-sm text-text-secondary">{formatCadence(item)}</td>;
+    case 'nextDeadline': return <td className="px-3 py-2 align-middle text-sm text-text-secondary">{formatDate(item.nextDeadline?.operativeDueDate ?? null)}</td>;
+    case 'startEnd': return <td className="px-3 py-2 align-middle text-sm text-text-secondary"><span className="whitespace-nowrap">{formatDate(item.startDate)}</span><span className="mx-1 text-text-muted">–</span><span className="whitespace-nowrap">{formatDate(item.endDate)}</span></td>;
+    case 'warnings': return <td className="px-3 py-2 align-middle"><WarningCell item={item} /></td>;
+    case 'billing': return <td className="px-3 py-2 align-middle"><BillingIndicator item={item} /></td>;
+    case 'actions': return <td className="px-3 py-2 align-middle"><ServiceActions item={item} canEdit={canEdit} onEdit={onEdit} onTrigger={onTrigger} /></td>;
   }
 }
 
 function DesktopRow({ item, index, columns, canEdit, canSelect, isSelected, onToggleSelect, onEdit, onOpen, onTrigger }: { item: ServiceRosterItem; index: number; columns: ServiceRosterColumnId[]; canEdit: boolean; canSelect: boolean; isSelected: boolean; onToggleSelect: (item: ServiceRosterItem) => void; onEdit: (item: ServiceRosterItem) => void; onOpen: (item: ServiceRosterItem) => void; onTrigger?: (item: ServiceRosterItem) => void }) {
-  const handleClick = (event: React.MouseEvent<HTMLTableRowElement>) => {
-    const target = event.target as HTMLElement | null;
-    if (target?.closest('a,button,input,select,textarea,label,[role="button"],[role="separator"]')) return;
-    onOpen(item);
-  };
-  const handleKeyDown = (event: React.KeyboardEvent<HTMLTableRowElement>) => {
-    if (event.target !== event.currentTarget || (event.key !== 'Enter' && event.key !== ' ')) return;
-    event.preventDefault();
-    onOpen(item);
-  };
-
   return (
-    <tr
-      tabIndex={0}
-      onClick={handleClick}
-      onKeyDown={handleKeyDown}
-      className={cn(
-        'cursor-pointer border-b border-border-primary transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-oak-primary/30',
-        isSelected ? 'bg-oak-row-selected hover:bg-oak-row-selected-hover focus-visible:bg-oak-row-selected-hover' : 'hover:bg-background-tertiary/60',
-        index % 2 === 0 && !isSelected && 'bg-oak-row-alt',
-      )}
+    <TableRow
+      index={index}
+      selected={isSelected}
+      interactive
+      onActivate={() => onOpen(item)}
       aria-label={`View ${item.serviceName} for ${item.company.name}`}
+      className="focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-oak-primary/30"
     >
       {canSelect ? (
-        <td className="w-12 px-2 py-3 text-center align-middle">
+        <td className="w-12 px-2 text-center align-middle">
           <div className="flex justify-center">
             <Checkbox
-              size="sm"
               checked={isSelected}
               onChange={() => onToggleSelect(item)}
               aria-label={`Select ${item.serviceName} for ${item.company.name}`}
+              size="sm"
             />
           </div>
         </td>
       ) : null}
       {columns.map((column) => <DesktopCell key={column} item={item} column={column} canEdit={canEdit} onEdit={onEdit} onTrigger={onTrigger} />)}
-    </tr>
+    </TableRow>
   );
 }
 
@@ -467,46 +399,59 @@ export function ServiceRosterTable({
         ) : null}
         {items.length === 0 ? <div className="rounded-xl border border-border-primary bg-background-secondary p-6 text-center text-sm text-text-secondary">No services found</div> : items.map((item) => <MobileRosterCard key={item.id} item={item} canEdit={canEdit} canSelect={canSelect} isSelected={selectedIds.has(item.id)} onToggleSelect={onToggleSelect} onEdit={onEdit} onOpen={onOpen} onTrigger={onTrigger} />)}
       </div>
-      <div className={cn('table-container hidden overflow-hidden md:block', isFetching && 'opacity-60')}>
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-max border-collapse" aria-label="Services roster table">
+      <TableShell className="hidden md:block" isFetching={isFetching}>
+        <TableViewport>
+          <TableRoot aria-label="Services roster table">
           <colgroup>
             {canSelect ? <col style={{ width: `${SERVICE_SELECTION_COLUMN_WIDTH}px` }} /> : null}
             {visibleColumns.map((columnId) => <col key={columnId} style={columnId === 'actions' ? undefined : { width: `${columnWidths[columnId] ?? defaultWidths[columnId]}px` }} />)}
           </colgroup>
-          <thead>
+          <TableHead>
             <InlineFilterRow columns={visibleColumns} canSelect={canSelect} filters={inlineFilters} onChange={onInlineFilterChange} />
-            <tr className="border-b border-border-primary bg-background-tertiary/70">
+            <TableHeaderRow>
               {canSelect ? (
-                <th className="w-12 px-2 py-2.5 text-center" scope="col">
-                  <div className="flex justify-center">
-                    <Checkbox
-                      size="sm"
-                      checked={selectionState === 'all'}
-                      indeterminate={selectionState === 'partial'}
-                      onChange={onToggleSelectAll}
-                      aria-label="Select all services"
-                    />
-                  </div>
-                </th>
+                <TableHeaderCell className="w-12 px-2 text-center">
+                  <Checkbox
+                    checked={selectionState === 'all'}
+                    indeterminate={selectionState === 'partial'}
+                    onChange={onToggleSelectAll}
+                    aria-label="Select all services"
+                    size="sm"
+                  />
+                </TableHeaderCell>
               ) : null}
-              {visibleColumns.map((columnId) => (
-                <SortableHeader key={columnId} columnId={columnId} onSort={onSort} sortBy={sortBy} sortOrder={sortOrder} onResize={startResize} onResizeKeyboard={resizeColumnByKeyboard} />
-              ))}
-            </tr>
-          </thead>
-          <tbody>
+              {visibleColumns.map((columnId) => {
+                const field = sortFields[columnId];
+                const active = field === sortBy;
+                return (
+                  <TableHeaderCell
+                    key={columnId}
+                    label={columnLabels[columnId]}
+                    sorted={active}
+                    sortOrder={sortOrder}
+                    onSort={field ? () => onSort(field) : undefined}
+                    sortAriaLabel={field ? (active ? `Sort by ${columnLabels[columnId]}, currently ${sortOrder === 'asc' ? 'ascending' : 'descending'}` : `Sort by ${columnLabels[columnId]}`) : undefined}
+                    resizable={columnId !== 'actions'}
+                    onResizePointerDown={columnId !== 'actions' ? (event) => startResize(columnId, event) : undefined}
+                    onResizeKeyDown={columnId !== 'actions' ? (event) => {
+                      if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+                      event.preventDefault();
+                      resizeColumnByKeyboard(columnId, event.key === 'ArrowRight' ? 10 : -10);
+                    } : undefined}
+                    resizeAriaLabel={`Resize ${columnLabels[columnId]} column`}
+                  />
+                );
+              })}
+            </TableHeaderRow>
+          </TableHead>
+          <TableBody>
             {items.length === 0 ? (
-              <tr>
-                <td colSpan={visibleColumns.length + (canSelect ? 1 : 0)} className="px-4 py-12 text-center">
-                  <p className="text-sm text-text-secondary">No services found</p>
-                </td>
-              </tr>
+              <TableEmptyState colSpan={visibleColumns.length + (canSelect ? 1 : 0)} message="No services found" />
             ) : items.map((item, index) => <DesktopRow key={item.id} item={item} index={index} columns={visibleColumns} canEdit={canEdit} canSelect={canSelect} isSelected={selectedIds.has(item.id)} onToggleSelect={onToggleSelect} onEdit={onEdit} onOpen={onOpen} onTrigger={onTrigger} />)}
-          </tbody>
-          </table>
-        </div>
-      </div>
+          </TableBody>
+          </TableRoot>
+        </TableViewport>
+      </TableShell>
     </>
   );
 }

@@ -3,13 +3,12 @@
 import { memo, useState, useCallback, useRef, type MouseEvent } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { cn } from '@/lib/utils';
-import { Users, MoreHorizontal, ExternalLink, Pencil, Trash2, Building2, Square, CheckSquare, MinusSquare, ArrowUp, ArrowDown, ArrowUpDown, X, ArrowUpRight } from 'lucide-react';
+import { Users, MoreHorizontal, ExternalLink, Pencil, Trash2, Building2, ArrowUpRight, Square, CheckSquare, MinusSquare } from 'lucide-react';
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, DropdownSeparator } from '@/components/ui/dropdown';
 import { PrefetchLink } from '@/components/ui/prefetch-link';
 import { MobileCard, CardDetailsGrid, CardDetailItem } from '@/components/ui/responsive-table';
-import { SearchableSelect } from '@/components/ui/searchable-select';
 import { CountFilter, type CountFilterValue } from '@/components/ui/count-filter';
+import { TableBody, TableCell, TableEmptyState, TableFilterCell, TableFilterRow, TableHead, TableHeaderCell, TableHeaderRow, TableRoot, TableRow, TableSelectFilter, TableSelectionButton, TableShell, TableTextFilter, TableViewport } from '@/components/ui/data-table';
 import { buildDetailHref } from '@/lib/list-navigation';
 import type { Contact, ContactType, IdentificationType } from '@/generated/prisma';
 
@@ -304,63 +303,32 @@ export function ContactTable({
     return '-';
   };
 
-  // Sortable header component with resize handle (matches company-table)
+  // Shared sortable/resizable table header.
   const renderHeaderCell = (columnId: ColumnId) => {
     const label = COLUMN_LABELS[columnId];
     const sortField = COLUMN_SORT_FIELDS[columnId];
-    const isActive = sortBy === sortField;
+    const isActive = Boolean(sortField && sortBy === sortField);
     const width = columnWidths[columnId];
-    const isSortable = sortField && onSort;
+    const canSort = Boolean(sortField && onSort);
     const isResizable = !['open', 'actions'].includes(columnId);
-
     const sortLabel = isActive
       ? `Sort by ${label}, currently ${sortOrder === 'asc' ? 'ascending' : 'descending'}`
       : `Sort by ${label}`;
 
     return (
-      <th
+      <TableHeaderCell
         key={columnId}
         style={width ? { width: `${width}px` } : undefined}
-        className={cn(
-          'relative text-xs font-medium text-text-secondary py-2.5 whitespace-nowrap text-left',
-          columnId === 'actions' ? 'px-2' : 'px-4'
-        )}
-      >
-        {isSortable ? (
-          <button
-            type="button"
-            onClick={() => onSort(sortField)}
-            aria-label={sortLabel}
-            className={cn(
-              'inline-flex items-center gap-1 hover:text-text-primary transition-colors cursor-pointer select-none',
-              isActive ? 'text-text-primary' : ''
-            )}
-          >
-            <span>{label}</span>
-            <span className="flex-shrink-0" aria-hidden="true">
-              {isActive ? (
-                sortOrder === 'asc' ? (
-                  <ArrowUp className="w-3.5 h-3.5" />
-                ) : (
-                  <ArrowDown className="w-3.5 h-3.5" />
-                )
-              ) : (
-                <ArrowUpDown className="w-3.5 h-3.5 text-text-muted" />
-              )}
-            </span>
-          </button>
-        ) : (
-          <span>{label}</span>
-        )}
-        {/* Resize handle */}
-        {isResizable && (
-          <div
-            onPointerDown={(e) => startResize(e, columnId)}
-            className="absolute top-0 -right-2 h-full w-4 cursor-col-resize hover:bg-border-secondary/60 z-10 touch-none"
-            title="Drag to resize"
-          />
-        )}
-      </th>
+        label={label}
+        sorted={isActive}
+        sortOrder={sortOrder}
+        onSort={canSort ? () => onSort?.(sortField!) : undefined}
+        sortAriaLabel={sortLabel}
+        resizable={isResizable}
+        onResizePointerDown={isResizable ? (event) => startResize(event, columnId) : undefined}
+        resizeAriaLabel={`Resize ${label || columnId} column`}
+        className={columnId === 'actions' ? 'px-2' : undefined}
+      />
     );
   };
 
@@ -374,126 +342,58 @@ export function ContactTable({
 
       case 'name':
         return (
-          <div className="w-full flex items-center gap-2 h-9 rounded-lg border bg-background-secondary/30 border-border-primary hover:border-oak-primary/50 focus-within:ring-2 focus-within:ring-oak-primary/30 transition-colors">
-            <input
-              type="text"
-              value={inlineFilters.fullName || ''}
-              onChange={(e) => onInlineFilterChange({ fullName: e.target.value || undefined })}
-              placeholder="All"
-              className="flex-1 bg-transparent outline-none px-3 min-w-0 text-xs text-text-primary placeholder:text-text-secondary"
-            />
-            {inlineFilters.fullName && (
-              <button
-                type="button"
-                onClick={() => onInlineFilterChange({ fullName: undefined })}
-                className="p-0.5 hover:bg-background-tertiary rounded transition-colors mr-1"
-              >
-                <X className="w-3.5 h-3.5 text-text-muted" />
-              </button>
-            )}
-          </div>
+          <TableTextFilter
+            ariaLabel="Filter contacts by name"
+            value={inlineFilters.fullName}
+            onChange={(fullName) => onInlineFilterChange({ fullName })}
+          />
         );
 
       case 'type':
         return (
-          <SearchableSelect
-            variant="table-filter"
+          <TableSelectFilter
             options={CONTACT_TYPE_OPTIONS}
             value={inlineFilters.contactType || ''}
             onChange={(value) => onInlineFilterChange({ contactType: value as ContactType || undefined })}
             placeholder="All"
-            className="text-xs w-full min-w-0"
-            showChevron={false}
-            showKeyboardHints={false}
+            ariaLabel="Filter contacts by type"
           />
         );
 
       case 'idNumber':
         return (
-          <div className="w-full flex items-center gap-2 h-9 rounded-lg border bg-background-secondary/30 border-border-primary hover:border-oak-primary/50 focus-within:ring-2 focus-within:ring-oak-primary/30 transition-colors">
-            <input
-              type="text"
-              value={inlineFilters.identificationNumber || ''}
-              onChange={(e) => onInlineFilterChange({ identificationNumber: e.target.value || undefined })}
-              placeholder="All"
-              className="flex-1 bg-transparent outline-none px-3 min-w-0 text-xs text-text-primary placeholder:text-text-secondary"
-            />
-            {inlineFilters.identificationNumber && (
-              <button
-                type="button"
-                onClick={() => onInlineFilterChange({ identificationNumber: undefined })}
-                className="p-0.5 hover:bg-background-tertiary rounded transition-colors mr-1"
-              >
-                <X className="w-3.5 h-3.5 text-text-muted" />
-              </button>
-            )}
-          </div>
+          <TableTextFilter
+            ariaLabel="Filter contacts by ID number"
+            value={inlineFilters.identificationNumber}
+            onChange={(identificationNumber) => onInlineFilterChange({ identificationNumber })}
+          />
         );
 
       case 'nationality':
         return (
-          <div className="w-full flex items-center gap-2 h-9 rounded-lg border bg-background-secondary/30 border-border-primary hover:border-oak-primary/50 focus-within:ring-2 focus-within:ring-oak-primary/30 transition-colors">
-            <input
-              type="text"
-              value={inlineFilters.nationality || ''}
-              onChange={(e) => onInlineFilterChange({ nationality: e.target.value || undefined })}
-              placeholder="All"
-              className="flex-1 bg-transparent outline-none px-3 min-w-0 text-xs text-text-primary placeholder:text-text-secondary"
-            />
-            {inlineFilters.nationality && (
-              <button
-                type="button"
-                onClick={() => onInlineFilterChange({ nationality: undefined })}
-                className="p-0.5 hover:bg-background-tertiary rounded transition-colors mr-1"
-              >
-                <X className="w-3.5 h-3.5 text-text-muted" />
-              </button>
-            )}
-          </div>
+          <TableTextFilter
+            ariaLabel="Filter contacts by nationality"
+            value={inlineFilters.nationality}
+            onChange={(nationality) => onInlineFilterChange({ nationality })}
+          />
         );
 
       case 'email':
         return (
-          <div className="w-full flex items-center gap-2 h-9 rounded-lg border bg-background-secondary/30 border-border-primary hover:border-oak-primary/50 focus-within:ring-2 focus-within:ring-oak-primary/30 transition-colors">
-            <input
-              type="text"
-              value={inlineFilters.email || ''}
-              onChange={(e) => onInlineFilterChange({ email: e.target.value || undefined })}
-              placeholder="All"
-              className="flex-1 bg-transparent outline-none px-3 min-w-0 text-xs text-text-primary placeholder:text-text-secondary"
-            />
-            {inlineFilters.email && (
-              <button
-                type="button"
-                onClick={() => onInlineFilterChange({ email: undefined })}
-                className="p-0.5 hover:bg-background-tertiary rounded transition-colors mr-1"
-              >
-                <X className="w-3.5 h-3.5 text-text-muted" />
-              </button>
-            )}
-          </div>
+          <TableTextFilter
+            ariaLabel="Filter contacts by email"
+            value={inlineFilters.email}
+            onChange={(email) => onInlineFilterChange({ email })}
+          />
         );
 
       case 'phone':
         return (
-          <div className="w-full flex items-center gap-2 h-9 rounded-lg border bg-background-secondary/30 border-border-primary hover:border-oak-primary/50 focus-within:ring-2 focus-within:ring-oak-primary/30 transition-colors">
-            <input
-              type="text"
-              value={inlineFilters.phone || ''}
-              onChange={(e) => onInlineFilterChange({ phone: e.target.value || undefined })}
-              placeholder="All"
-              className="flex-1 bg-transparent outline-none px-3 min-w-0 text-xs text-text-primary placeholder:text-text-secondary"
-            />
-            {inlineFilters.phone && (
-              <button
-                type="button"
-                onClick={() => onInlineFilterChange({ phone: undefined })}
-                className="p-0.5 hover:bg-background-tertiary rounded transition-colors mr-1"
-              >
-                <X className="w-3.5 h-3.5 text-text-muted" />
-              </button>
-            )}
-          </div>
+          <TableTextFilter
+            ariaLabel="Filter contacts by phone"
+            value={inlineFilters.phone}
+            onChange={(phone) => onInlineFilterChange({ phone })}
+          />
         );
 
       case 'companies':
@@ -522,49 +422,36 @@ export function ContactTable({
   };
 
   if (isLoading) {
+    const skeletonColumns = ['Open', 'Name', 'Type', 'ID Number', 'Nationality', 'Email', 'Phone', 'Companies', 'Actions'];
     return (
-      <div className="table-container">
-        <table className="table">
-          <thead>
-            <tr>
-              {selectable && (
-                <th className="w-10">
-                  <div className="skeleton h-4 w-4" />
-                </th>
-              )}
-              <th></th>
-              <th>Name</th>
-              <th>Type</th>
-              <th>ID Number</th>
-              <th>Nationality</th>
-              <th>Email</th>
-              <th>Phone</th>
-              <th>Companies</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {[...Array(5)].map((_, i) => (
-              <tr key={i}>
-                {selectable && (
-                  <td>
-                    <div className="skeleton h-4 w-4" />
-                  </td>
-                )}
-                <td><div className="skeleton h-4 w-8" /></td>
-                <td><div className="skeleton h-4 w-40" /></td>
-                <td><div className="skeleton h-4 w-20" /></td>
-                <td><div className="skeleton h-4 w-24" /></td>
-                <td><div className="skeleton h-4 w-20" /></td>
-                <td><div className="skeleton h-4 w-32" /></td>
-                <td><div className="skeleton h-4 w-24" /></td>
-                <td><div className="skeleton h-4 w-12" /></td>
-                <td><div className="skeleton h-4 w-8" /></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <TableShell>
+        <TableViewport>
+          <TableRoot>
+            <TableHead>
+              <TableHeaderRow hasFilters={false}>
+                {selectable ? <TableHeaderCell className="w-10"><div className="skeleton h-4 w-4" /></TableHeaderCell> : null}
+                {skeletonColumns.map((label) => (
+                  <TableHeaderCell key={label} label={label === 'Open' || label === 'Actions' ? undefined : label}>
+                    {label === 'Open' || label === 'Actions' ? <span className="sr-only">{label}</span> : undefined}
+                  </TableHeaderCell>
+                ))}
+              </TableHeaderRow>
+            </TableHead>
+            <TableBody>
+              {Array.from({ length: 5 }).map((_, index) => (
+                <TableRow key={index} index={index}>
+                  {selectable ? <TableCell><div className="skeleton h-4 w-4" /></TableCell> : null}
+                  {skeletonColumns.map((label) => (
+                    <TableCell key={label}>
+                      <div className={`skeleton h-4 ${label === 'Name' ? 'w-40' : label === 'Open' || label === 'Actions' ? 'w-8' : 'w-20'}`} />
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))}
+            </TableBody>
+          </TableRoot>
+        </TableViewport>
+      </TableShell>
     );
   }
 
@@ -678,9 +565,9 @@ export function ContactTable({
       </div>
 
       {/* Desktop Table View */}
-      <div className={cn('hidden lg:block table-container overflow-hidden', isFetching && 'opacity-60')}>
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-max">
+      <TableShell className="hidden lg:block" isFetching={isFetching}>
+        <TableViewport>
+          <TableRoot>
             <colgroup>
               {selectable && <col style={{ width: '40px' }} />}
               {COLUMN_IDS.map((id) => (
@@ -696,102 +583,81 @@ export function ContactTable({
                 />
               ))}
             </colgroup>
-            <thead className="bg-background-tertiary border-b border-border-primary">
+            <TableHead>
               {/* Inline filter row (above header) */}
               {onInlineFilterChange && (
-                <tr className="bg-background-secondary/50">
-                  {selectable && <th className="w-10 px-4 py-2"></th>}
+                <TableFilterRow>
+                  {selectable && <TableFilterCell className="w-10" />}
                   {COLUMN_IDS.map((columnId) => (
-                    <th
+                    <TableFilterCell
                       key={columnId}
-                      className={cn(
-                        'py-2 max-w-0',
-                        columnId === 'open' ? 'w-[44px] px-2' : columnId === 'actions' ? 'px-2' : 'px-4'
-                      )}
+                      className={columnId === 'open' ? 'w-[44px] px-2' : columnId === 'actions' ? 'px-2' : undefined}
                     >
                       {renderFilterCell(columnId)}
-                    </th>
+                    </TableFilterCell>
                   ))}
-                </tr>
+                </TableFilterRow>
               )}
               {/* Column header row */}
-              <tr className={onInlineFilterChange ? 'border-t border-border-primary' : ''}>
+              <TableHeaderRow hasFilters={Boolean(onInlineFilterChange)}>
                 {selectable && (
-                  <th className="w-10 px-4 py-2.5">
-                    <button
-                      onClick={onToggleAll}
-                      className="p-0.5 hover:bg-background-secondary rounded transition-colors"
-                      aria-label={isAllSelected ? 'Deselect all contacts' : 'Select all contacts'}
-                      aria-pressed={isAllSelected}
-                    >
-                      {isAllSelected ? (
-                        <CheckSquare className="w-4 h-4 text-oak-primary" aria-hidden="true" />
-                      ) : isIndeterminate ? (
-                        <MinusSquare className="w-4 h-4 text-oak-light" aria-hidden="true" />
-                      ) : (
-                        <Square className="w-4 h-4 text-text-muted" aria-hidden="true" />
-                      )}
-                    </button>
-                  </th>
+                  <TableHeaderCell className="w-10 text-center">
+                    <TableSelectionButton
+                      selected={isAllSelected}
+                      indeterminate={isIndeterminate}
+                      onClick={() => onToggleAll?.()}
+                      ariaLabel={isAllSelected ? 'Deselect all contacts' : 'Select all contacts'}
+                    />
+                  </TableHeaderCell>
                 )}
                 {COLUMN_IDS.map((columnId) =>
                   columnId === 'open' ? (
-                    <th
-                      key={columnId}
-                      className="w-[44px] text-center text-xs font-medium text-text-secondary px-2 py-2.5 whitespace-nowrap"
-                      title="Open in new tab"
-                    >
-                      <ArrowUpRight className="w-4 h-4 inline-block text-text-muted" />
-                    </th>
+                    <TableHeaderCell
+                        key={columnId}
+                        align="center"
+                        className="w-[44px] px-2"
+                        title="Open in new tab"
+                      >
+                        <ArrowUpRight className="inline-block h-4 w-4 text-text-muted" />
+                      </TableHeaderCell>
                   ) : (
                     renderHeaderCell(columnId)
                   )
                 )}
-              </tr>
-            </thead>
-            <tbody>
+              </TableHeaderRow>
+            </TableHead>
+            <TableBody>
               {contacts.length === 0 ? (
-                <tr>
-                  <td colSpan={COLUMN_IDS.length + (selectable ? 1 : 0)} className="px-4 py-12 text-center">
-                    <p className="text-sm text-text-secondary">No contacts found</p>
-                  </td>
-                </tr>
+                <TableEmptyState
+                  colSpan={COLUMN_IDS.length + (selectable ? 1 : 0)}
+                  message="No contacts found"
+                />
               ) : (
                 contacts.map((contact, index) => {
                   const isSelected = selectedIds.has(contact.id);
-                  const isAlternate = index % 2 === 1;
                   const detailHref = buildDetailHref(`/contacts/${contact.id}`, returnTo);
                   return (
-                    <tr
+                    <TableRow
                       key={contact.id}
+                      index={index}
+                      selected={isSelected}
+                      interactive
                       onClick={(event) => handleRowClick(event, contact)}
-                      className={cn(
-                        'border-b border-border-primary transition-colors cursor-pointer',
-                        isSelected
-                          ? 'bg-oak-row-selected hover:bg-oak-row-selected-hover'
-                          : isAlternate
-                            ? 'bg-oak-row-alt hover:bg-oak-row-alt-hover'
-                            : 'hover:bg-background-tertiary/50'
-                      )}
                     >
                       {selectable && (
-                        <td className="px-4 py-3">
-                          <button
-                            onClick={() => onToggleOne?.(contact.id)}
-                            className="p-0.5 hover:bg-background-secondary rounded transition-colors"
-                            aria-label={isSelected ? `Deselect ${contact.fullName}` : `Select ${contact.fullName}`}
-                            aria-pressed={isSelected}
-                          >
-                            {isSelected ? (
-                              <CheckSquare className="w-4 h-4 text-oak-primary" aria-hidden="true" />
-                            ) : (
-                              <Square className="w-4 h-4 text-text-muted" aria-hidden="true" />
-                            )}
-                          </button>
+                        <td className="w-10 px-3 py-2">
+                          <TableSelectionButton
+                            selected={isSelected}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              onToggleOne?.(contact.id);
+                            }}
+                            ariaLabel={isSelected ? `Deselect ${contact.fullName}` : `Select ${contact.fullName}`}
+                          />
                         </td>
                       )}
                       {/* Open in new tab */}
-                      <td className="px-2 py-3">
+                      <td className="px-2 py-2">
                         <Link
                           href={detailHref}
                           target="_blank"
@@ -804,7 +670,7 @@ export function ContactTable({
                         </Link>
                       </td>
                     {/* Name */}
-                    <td className="px-4 py-3 max-w-0">
+                    <td className="px-3 py-2 max-w-0">
                       <PrefetchLink
                         href={detailHref}
                         prefetchType="contact"
@@ -815,13 +681,13 @@ export function ContactTable({
                       </PrefetchLink>
                     </td>
                     {/* Type */}
-                    <td className="px-4 py-3 max-w-0">
+                    <td className="px-3 py-2 max-w-0">
                       <span className={`badge ${contactTypeConfig[contact.contactType].color}`}>
                         {contactTypeConfig[contact.contactType].label}
                       </span>
                     </td>
                     {/* ID Number */}
-                    <td className="px-4 py-3 text-text-secondary max-w-0">
+                    <td className="px-3 py-2 text-text-secondary max-w-0">
                       {contact.identificationNumber ? (
                         <span className="block truncate">
                           {contact.identificationType && (
@@ -841,11 +707,11 @@ export function ContactTable({
                       )}
                     </td>
                     {/* Nationality */}
-                    <td className="px-4 py-3 text-text-secondary max-w-0">
+                    <td className="px-3 py-2 text-text-secondary max-w-0">
                       <span className="block truncate">{contact.nationality || '-'}</span>
                     </td>
                     {/* Email */}
-                    <td className="px-4 py-3 text-text-secondary max-w-0">
+                    <td className="px-3 py-2 text-text-secondary max-w-0">
                       {contact.defaultEmail ? (
                         <span className="truncate block" title={contact.defaultEmail}>
                           {contact.defaultEmail}
@@ -855,7 +721,7 @@ export function ContactTable({
                       )}
                     </td>
                     {/* Phone */}
-                    <td className="px-4 py-3 text-text-secondary max-w-0">
+                    <td className="px-3 py-2 text-text-secondary max-w-0">
                       {contact.defaultPhone ? (
                         <span className="block truncate">{contact.defaultPhone}</span>
                       ) : (
@@ -863,14 +729,14 @@ export function ContactTable({
                       )}
                     </td>
                     {/* Companies */}
-                    <td className="px-4 py-3 max-w-0">
+                    <td className="px-3 py-2 max-w-0">
                       <div className="flex items-center gap-1.5 text-text-secondary">
                         <Building2 className="w-3.5 h-3.5" aria-hidden="true" />
                         <span>{contact._count?.companyRelations || 0}</span>
                       </div>
                     </td>
                     {/* Actions */}
-                    <td className="px-2 py-3">
+                    <td className="px-2 py-2">
                       <ContactActionsDropdown
                         contactId={contact.id}
                         detailHref={detailHref}
@@ -880,14 +746,14 @@ export function ContactTable({
                         canDelete={checkCanDelete(contact.id)}
                       />
                     </td>
-                  </tr>
+                  </TableRow>
                   );
                 })
               )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+            </TableBody>
+          </TableRoot>
+        </TableViewport>
+      </TableShell>
     </>
   );
 }

@@ -5,9 +5,6 @@ import { useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   AlertTriangle,
-  ArrowDown,
-  ArrowUp,
-  ArrowUpDown,
   CheckCircle2,
   Circle,
   Clock,
@@ -36,6 +33,7 @@ import { CompanySearchableSelect } from '@/components/ui/company-searchable-sele
 import { FilterChip } from '@/components/ui/filter-chip';
 import { Alert } from '@/components/ui/alert';
 import { Pagination } from '@/components/ui/pagination';
+import { TableBody, TableHead, TableHeaderCell, TableHeaderRow, TableRoot, TableRow, TableViewport } from '@/components/ui/data-table';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
 import { Dropdown, DropdownItem, DropdownMenu, DropdownSeparator, DropdownTrigger } from '@/components/ui/dropdown';
@@ -155,6 +153,22 @@ const DEFAULT_ESIGNING_COLUMN_WIDTHS: Record<EsigningTableColumnId, number> = {
   company: 220,
   details: 170,
   updated: 190,
+};
+
+const ESIGNING_TABLE_COLUMN_LABELS: Record<EsigningTableColumnId, string> = {
+  status: 'Status',
+  envelope: 'Envelope name',
+  company: 'Company',
+  details: 'Details',
+  updated: 'Last updated',
+};
+
+const ESIGNING_TABLE_SORT_FIELDS: Record<EsigningTableColumnId, EnvelopeSortBy> = {
+  status: 'status',
+  envelope: 'title',
+  company: 'companyName',
+  details: 'details',
+  updated: 'updatedAt',
 };
 
 interface EnvelopeAdvancedFilters {
@@ -554,6 +568,23 @@ export function EsigningListPage() {
     window.addEventListener('pointerup', onUp);
   }, [columnWidths, saveColumnWidthPreference]);
 
+  const resizeColumnByKeyboard = useCallback((
+    event: React.KeyboardEvent<HTMLSpanElement>,
+    columnId: EsigningTableColumnId,
+  ) => {
+    if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+    event.preventDefault();
+
+    const currentWidth = columnWidths[columnId] ?? DEFAULT_ESIGNING_COLUMN_WIDTHS[columnId];
+    const nextWidth = Math.max(30, currentWidth + (event.key === 'ArrowRight' ? 10 : -10));
+    const nextWidths = { ...columnWidths, [columnId]: nextWidth };
+    setColumnWidths(nextWidths);
+    saveColumnWidthPreference.mutate({
+      key: ESIGNING_COLUMN_WIDTH_PREF_KEY,
+      value: nextWidths,
+    });
+  }, [columnWidths, saveColumnWidthPreference]);
+
   const activeStatuses = TAB_STATUSES[activeTab];
   const envelopesQuery = useEsigningEnvelopes({
     query: debouncedQuery || undefined,
@@ -693,15 +724,6 @@ export function EsigningListPage() {
     );
     setSortBy(nextSortBy);
     setPage(1);
-  };
-
-  const renderSortIcon = (column: EnvelopeSortBy) => {
-    if (sortBy !== column) {
-      return <ArrowUpDown className="h-3.5 w-3.5 text-text-muted" aria-hidden="true" />;
-    }
-    return sortOrder === 'asc'
-      ? <ArrowUp className="h-3.5 w-3.5" aria-hidden="true" />
-      : <ArrowDown className="h-3.5 w-3.5" aria-hidden="true" />;
   };
 
   const handleTabChange = (tab: TabKey) => {
@@ -1597,8 +1619,8 @@ export function EsigningListPage() {
               </div>
             ) : viewMode === 'table' ? (
               <>
-                <div className="hidden overflow-x-auto md:block">
-                  <table className="w-full min-w-max border-collapse">
+                <TableViewport className="hidden md:block">
+                  <TableRoot>
                     <colgroup>
                       {ESIGNING_TABLE_COLUMNS.map((columnId) => (
                         <col
@@ -1610,149 +1632,54 @@ export function EsigningListPage() {
                       ))}
                       <col />
                     </colgroup>
-                    <thead>
-                      <tr className="h-10 border-b border-border-primary bg-background-primary/60 text-left text-[11px] font-semibold uppercase tracking-wide text-text-muted">
-                        <th
-                          className="relative px-4"
-                          aria-sort={sortBy === 'status' ? (sortOrder === 'asc' ? 'ascending' : 'descending') : 'none'}
-                        >
-                          <button
-                            type="button"
-                            onClick={() => handleSort('status')}
-                            className="inline-flex items-center gap-1 transition-colors hover:text-text-primary"
-                          >
-                            <span>Status</span>
-                            {renderSortIcon('status')}
-                          </button>
-                          <div
-                            data-testid="esigning-resize-status"
-                            onPointerDown={(event) => startColumnResize(event, 'status')}
-                            className="absolute -right-2 top-0 z-10 h-full w-4 cursor-col-resize touch-none hover:bg-border-secondary/60"
-                            title="Drag to resize"
-                            aria-hidden="true"
-                          />
-                        </th>
-
-                        <th
-                          className="relative px-4"
-                          aria-sort={sortBy === 'title' ? (sortOrder === 'asc' ? 'ascending' : 'descending') : 'none'}
-                        >
-                          <button
-                            type="button"
-                            onClick={() => handleSort('title')}
-                            className="inline-flex items-center gap-1 transition-colors hover:text-text-primary"
-                          >
-                            <span>Envelope name</span>
-                            {renderSortIcon('title')}
-                          </button>
-                          <div
-                            data-testid="esigning-resize-envelope"
-                            onPointerDown={(event) => startColumnResize(event, 'envelope')}
-                            className="absolute -right-2 top-0 z-10 h-full w-4 cursor-col-resize touch-none hover:bg-border-secondary/60"
-                            title="Drag to resize"
-                            aria-hidden="true"
-                          />
-                        </th>
-
-                        <th
-                          className="relative px-4"
-                          aria-sort={sortBy === 'companyName' ? (sortOrder === 'asc' ? 'ascending' : 'descending') : 'none'}
-                        >
-                          <button
-                            type="button"
-                            onClick={() => handleSort('companyName')}
-                            className="inline-flex items-center gap-1 transition-colors hover:text-text-primary"
-                          >
-                            <span>Company</span>
-                            {renderSortIcon('companyName')}
-                          </button>
-                          <div
-                            data-testid="esigning-resize-company"
-                            onPointerDown={(event) => startColumnResize(event, 'company')}
-                            className="absolute -right-2 top-0 z-10 h-full w-4 cursor-col-resize touch-none hover:bg-border-secondary/60"
-                            title="Drag to resize"
-                            aria-hidden="true"
-                          />
-                        </th>
-
-                        <th
-                          className="relative px-4"
-                          aria-sort={sortBy === 'details' ? (sortOrder === 'asc' ? 'ascending' : 'descending') : 'none'}
-                        >
-                          <button
-                            type="button"
-                            onClick={() => handleSort('details')}
-                            className="inline-flex items-center gap-1 transition-colors hover:text-text-primary"
-                          >
-                            <span>Details</span>
-                            {renderSortIcon('details')}
-                          </button>
-                          <div
-                            data-testid="esigning-resize-details"
-                            onPointerDown={(event) => startColumnResize(event, 'details')}
-                            className="absolute -right-2 top-0 z-10 h-full w-4 cursor-col-resize touch-none hover:bg-border-secondary/60"
-                            title="Drag to resize"
-                            aria-hidden="true"
-                          />
-                        </th>
-
-                        <th
-                          className="relative px-4"
-                          aria-sort={sortBy === 'updatedAt' ? (sortOrder === 'asc' ? 'ascending' : 'descending') : 'none'}
-                        >
-                          <button
-                            type="button"
-                            onClick={() => handleSort('updatedAt')}
-                            className="inline-flex items-center gap-1 transition-colors hover:text-text-primary"
-                          >
-                            <span>Last updated</span>
-                            {renderSortIcon('updatedAt')}
-                          </button>
-                          <div
-                            data-testid="esigning-resize-updated"
-                            onPointerDown={(event) => startColumnResize(event, 'updated')}
-                            className="absolute -right-2 top-0 z-10 h-full w-4 cursor-col-resize touch-none hover:bg-border-secondary/60"
-                            title="Drag to resize"
-                            aria-hidden="true"
-                          />
-                        </th>
-                        <th className="px-2 text-left"><span className="sr-only">Actions</span></th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border-primary">
+                    <TableHead>
+                      <TableHeaderRow hasFilters={false}>
+                        {ESIGNING_TABLE_COLUMNS.map((columnId) => {
+                          const sortField = ESIGNING_TABLE_SORT_FIELDS[columnId];
+                          const active = sortBy === sortField;
+                          return (
+                            <TableHeaderCell
+                              key={columnId}
+                              label={ESIGNING_TABLE_COLUMN_LABELS[columnId]}
+                              sorted={active}
+                              sortOrder={sortOrder}
+                              onSort={() => handleSort(sortField)}
+                              resizable
+                              onResizePointerDown={(event) => startColumnResize(event, columnId)}
+                              onResizeKeyDown={(event) => resizeColumnByKeyboard(event, columnId)}
+                              resizeAriaLabel={`Resize ${ESIGNING_TABLE_COLUMN_LABELS[columnId]} column`}
+                              resizeTestId={`esigning-resize-${columnId}`}
+                            />
+                          );
+                        })}
+                        <TableHeaderCell className="w-12 px-2">
+                          <span className="sr-only">Actions</span>
+                        </TableHeaderCell>
+                      </TableHeaderRow>
+                    </TableHead>
+                    <TableBody>
                       {envelopes.map((envelope, index) => {
                         const matchContext = getEnvelopeSearchMatchContext(envelope, debouncedQuery);
-                        const isAlternate = index % 2 === 1;
                         const active = envelope.status === 'SENT' || envelope.status === 'IN_PROGRESS';
                         const progress = envelope.signerCount > 0
                           ? Math.round((envelope.completedSignerCount / envelope.signerCount) * 100)
                           : 0;
                         return (
-                          <tr
+                          <TableRow
                             key={envelope.id}
-                            tabIndex={0}
+                            index={index}
+                            interactive
+                            onActivate={() => window.location.assign(`/esigning/${envelope.id}`)}
                             aria-label={`Open ${envelope.title}`}
-                            onClick={() => window.location.assign(`/esigning/${envelope.id}`)}
-                            onKeyDown={(event) => {
-                              if (event.key === 'Enter' || event.key === ' ') {
-                                event.preventDefault();
-                                window.location.assign(`/esigning/${envelope.id}`);
-                              }
-                            }}
-                            className={cn(
-                              'h-[58px] cursor-pointer text-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-oak-primary/30',
-                              isAlternate
-                                ? 'bg-oak-row-alt hover:bg-oak-row-alt-hover'
-                                : 'bg-background-secondary hover:bg-background-tertiary/50'
-                            )}
+                            className="h-[58px] focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-oak-primary/30"
                           >
-                            <td className="px-4 py-2.5 align-middle">
+                            <td className="px-3 py-2 align-middle">
                               <div className="flex flex-wrap items-center gap-1.5">
                                 <EnvelopeStatusBadge status={envelope.status} />
                                 <EmailDeliveryWarningBadge envelope={envelope} />
                               </div>
                             </td>
-                            <td className="px-4 py-2.5 align-middle">
+                            <td className="px-3 py-2 align-middle">
                               <div className="min-w-0">
                                 <div className="truncate text-[13px] font-semibold text-text-primary" title={envelope.title}>
                                   {envelope.title}
@@ -1764,12 +1691,12 @@ export function EsigningListPage() {
                                 ) : null}
                               </div>
                             </td>
-                            <td className="px-4 py-2.5 align-middle">
+                            <td className="px-3 py-2 align-middle">
                               <div className="truncate text-xs text-text-secondary" title={envelope.companyName ?? 'No company'}>
                                 {envelope.companyName ?? 'No company'}
                               </div>
                             </td>
-                            <td className="px-4 py-2.5 align-middle">
+                            <td className="px-3 py-2 align-middle">
                               {active ? (
                                 <div>
                                   <div className="text-xs font-medium text-text-secondary">
@@ -1785,11 +1712,11 @@ export function EsigningListPage() {
                                 </span>
                               )}
                             </td>
-                            <td className="px-4 py-2.5 align-middle text-xs text-text-muted">
+                            <td className="px-3 py-2 align-middle text-xs text-text-muted">
                               {formatEsigningDateTime(envelope.updatedAt)}
                             </td>
                             <td
-                              className="px-2 py-2.5 text-left align-middle"
+                              className="px-2 py-2 text-left align-middle"
                               onClick={(event) => event.stopPropagation()}
                               onKeyDown={(event) => event.stopPropagation()}
                             >
@@ -1803,12 +1730,12 @@ export function EsigningListPage() {
                                 onDownload={handleDownload}
                               />
                             </td>
-                          </tr>
+                          </TableRow>
                         );
                       })}
-                    </tbody>
-                  </table>
-                </div>
+                    </TableBody>
+                  </TableRoot>
+                </TableViewport>
 
                 <div className="divide-y divide-border-primary md:hidden">
                   {envelopes.map((envelope, index) => {

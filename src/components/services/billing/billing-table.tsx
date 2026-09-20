@@ -1,10 +1,11 @@
 'use client';
 
-import { ArrowDown, ArrowUp, ArrowUpDown, CheckSquare, MinusSquare, MoreHorizontal, Square } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { CheckSquare, MinusSquare, MoreHorizontal, Square } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { CardDetailItem, CardDetailsGrid, MobileCard } from '@/components/ui/responsive-table';
-import { SearchableSelect, type SelectOption } from '@/components/ui/searchable-select';
+import type { SelectOption } from '@/components/ui/searchable-select';
+import { TableBody, TableEmptyState, TableFilterCell, TableFilterRow, TableHead, TableHeaderCell, TableHeaderRow, TableRoot, TableRow, TableSelectFilter, TableSelectionButton, TableShell, TableTextFilter, TableViewport } from '@/components/ui/data-table';
 import { SingleDateInput } from '@/components/ui/single-date-input';
 import { cn, formatCurrency } from '@/lib/utils';
 import type { BillingOccurrenceDto, BillingOccurrenceTiming } from '@/services/billing';
@@ -141,53 +142,29 @@ function SelectionIcon({ selected, indeterminate = false }: { selected: boolean;
   return <Square className="h-4 w-4 text-text-muted" aria-hidden="true" />;
 }
 
-function SortableHeader({ column, sortBy, sortOrder, onSort, onResize, onResizeKeyboard }: { column: BillingColumnId; sortBy: BillingTableProps['sortBy']; sortOrder: BillingTableProps['sortOrder']; onSort?: BillingTableProps['onSort']; onResize: (columnId: BillingColumnId, event: React.PointerEvent<HTMLSpanElement>) => void; onResizeKeyboard: (columnId: BillingColumnId, delta: number) => void }) {
-  const field = sortableColumns[column];
-  const active = field === sortBy;
-  return (
-    <th scope="col" aria-label={billingColumnLabels[column]} aria-sort={field ? (active ? (sortOrder === 'asc' ? 'ascending' : 'descending') : 'none') : undefined} className="relative px-4 py-2.5 text-left text-xs font-medium text-text-secondary whitespace-nowrap">
-      {field && onSort ? (
-        <button type="button" onClick={() => onSort(field)} aria-label={active ? `Sort by ${billingColumnLabels[column]}, currently ${sortOrder === 'asc' ? 'ascending' : 'descending'}` : `Sort by ${billingColumnLabels[column]}`} className="inline-flex min-h-11 items-center gap-1 text-left hover:text-text-primary sm:min-h-8">
-          <span>{billingColumnLabels[column]}</span>
-          {active ? (sortOrder === 'asc' ? <ArrowUp className="h-3.5 w-3.5" aria-hidden="true" /> : <ArrowDown className="h-3.5 w-3.5" aria-hidden="true" />) : <ArrowUpDown className="h-3.5 w-3.5 text-text-muted" aria-hidden="true" />}
-        </button>
-      ) : <span>{billingColumnLabels[column]}</span>}
-      {column !== 'actions' ? <span role="separator" aria-label={`Resize ${billingColumnLabels[column]} column`} aria-orientation="vertical" tabIndex={0} onPointerDown={(event) => onResize(column, event)} onKeyDown={(event) => { if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return; event.preventDefault(); onResizeKeyboard(column, event.key === 'ArrowRight' ? 10 : -10); }} className="absolute inset-y-0 -right-2 w-4 cursor-col-resize touch-none select-none" /> : null}
-    </th>
-  );
-}
-
 function DebouncedInlineFilter({ label, value, filterKey, onChange, type = 'search' }: { label: string; value: string | undefined; filterKey: keyof BillingInlineFilters; onChange?: BillingTableProps['onInlineFilterChange']; type?: 'search' | 'number' }) {
-  const [draft, setDraft] = useState(value ?? '');
-  const onChangeRef = useRef(onChange);
-  onChangeRef.current = onChange;
-
-  useEffect(() => setDraft(value ?? ''), [value]);
-
-  useEffect(() => {
-    if (draft === (value ?? '')) return undefined;
-    const timeout = window.setTimeout(() => onChangeRef.current?.({ [filterKey]: draft || undefined }), 300);
-    return () => window.clearTimeout(timeout);
-  }, [draft, filterKey, value]);
-
   return (
-    <label className="block min-w-0 flex-1">
-      <span className="sr-only">{label}</span>
-      <input
-        type={type}
-        aria-label={`Filter ${label}`}
-        value={draft}
-        onChange={(event) => setDraft(event.target.value)}
-        placeholder="All"
-        className="input input-sm min-h-8 w-full min-w-0 px-3 text-xs placeholder:text-text-muted"
-      />
-    </label>
+    <TableTextFilter
+      ariaLabel={`Filter ${label}`}
+      value={value}
+      onChange={(nextValue) => onChange?.({ [filterKey]: nextValue })}
+      debounceMs={300}
+      type={type}
+    />
   );
 }
 
 function SelectFilter({ label, options, value, onChange }: { label: string; options: SelectOption[]; value: string; onChange: (value: string) => void }) {
   const filterLabels: Record<string, string> = { timing: 'Timing', company: 'Company', family: 'Family', status: 'Status' };
-  return <SearchableSelect variant="table-filter" options={options} value={value} onChange={onChange} placeholder="All" ariaLabel={`Filter ${filterLabels[label] ?? label}`} className="w-full min-w-0 text-xs [&>label]:sr-only [&_input]:placeholder:text-text-muted" showChevron={false} showKeyboardHints={false} clearable />;
+  return (
+    <TableSelectFilter
+      options={options}
+      value={value}
+      onChange={onChange}
+      placeholder="All"
+      ariaLabel={`Filter ${filterLabels[label] ?? label}`}
+    />
+  );
 }
 
 function AmountRangeFilter({ filters, onChange }: { filters: BillingInlineFilters; onChange?: BillingTableProps['onInlineFilterChange'] }) {
@@ -223,24 +200,29 @@ function InlineFilterRow({ columns, filters, families, companyOptions, onChange,
     }
   };
 
-  return <tr data-filter-row className="h-14 bg-background-secondary/50">{selectable ? <th className="max-w-0 px-2 py-2"><span className="sr-only">Selection filter</span></th> : null}{columns.map((column) => <th key={column} className="max-w-0 px-2 py-2">{filter(column)}</th>)}</tr>;
+  return (
+    <TableFilterRow>
+      {selectable ? <TableFilterCell className="w-12 px-2"><span className="sr-only">Selection filter</span></TableFilterCell> : null}
+      {columns.map((column) => <TableFilterCell key={column} className="px-2">{filter(column)}</TableFilterCell>)}
+    </TableFilterRow>
+  );
 }
 
 function Cell({ item, column, canEdit, onEdit }: { item: BillingOccurrenceDto; column: BillingColumnId; canEdit: boolean; onEdit?: (occurrence: BillingOccurrenceDto) => void }) {
   const amount = formatCurrency(item.operativeAmount, item.operativeCurrency);
   switch (column) {
-    case 'expectedDate': return <td className="px-4 py-3 align-middle text-sm text-text-secondary">{displayDate(item.operativeExpectedDate)}</td>;
-    case 'timing': return <td className="px-4 py-3 align-middle"><span className={cn('badge', statusClass(item.status, item.timingState))}>{timingLabel(item)}</span></td>;
-    case 'company': return <td className="max-w-0 px-4 py-3 align-middle"><CompanyCell item={item} /></td>;
-    case 'family': return <td className="max-w-0 px-4 py-3 align-middle text-sm text-text-primary">{item.family.name || item.service.familyName || '—'}</td>;
-    case 'service': return <td className="max-w-0 px-4 py-3 align-middle text-sm text-text-primary"><span className="block truncate" title={item.service.name}>{item.service.name || '—'}</span></td>;
-    case 'feeLine': return <td className="max-w-0 px-4 py-3 align-middle text-sm text-text-primary"><span className="block truncate" title={item.feeLine.description}>{item.feeLine.description || 'Fee line'}</span></td>;
-    case 'period': return <td className="px-4 py-3 align-middle text-sm text-text-secondary">{item.billingPeriodKey}</td>;
-    case 'status': return <td className="px-4 py-3 align-middle"><span className={cn('badge', statusClass(item.status, item.timingState))}>{statusLabel(item.status)}</span></td>;
-    case 'amount': return <td className="px-4 py-3 align-middle text-sm text-text-primary">{amount}</td>;
-    case 'billedDate': return <td className="px-4 py-3 align-middle text-sm text-text-secondary">{displayDate(item.billedDate)}</td>;
-    case 'reference': return <td className="max-w-0 px-4 py-3 align-middle text-sm text-text-secondary"><span className="block truncate" title={item.externalReference ?? undefined}>{item.externalReference || '—'}</span></td>;
-    case 'actions': return <td className="px-4 py-3 align-middle"><Button type="button" variant="ghost" size="sm" iconOnly className="min-h-11 min-w-11 sm:min-h-8 sm:min-w-8" aria-label={`Edit tracking for ${item.company.name}`} onClick={(event) => { event.stopPropagation(); onEdit?.(item); }} disabled={!canEdit} leftIcon={<MoreHorizontal className="h-4 w-4" />} /></td>;
+    case 'expectedDate': return <td className="px-3 py-2 align-middle text-sm text-text-secondary">{displayDate(item.operativeExpectedDate)}</td>;
+    case 'timing': return <td className="px-3 py-2 align-middle"><span className={cn('badge', statusClass(item.status, item.timingState))}>{timingLabel(item)}</span></td>;
+    case 'company': return <td className="max-w-0 px-3 py-2 align-middle"><CompanyCell item={item} /></td>;
+    case 'family': return <td className="max-w-0 px-3 py-2 align-middle text-sm text-text-primary">{item.family.name || item.service.familyName || '—'}</td>;
+    case 'service': return <td className="max-w-0 px-3 py-2 align-middle text-sm text-text-primary"><span className="block truncate" title={item.service.name}>{item.service.name || '—'}</span></td>;
+    case 'feeLine': return <td className="max-w-0 px-3 py-2 align-middle text-sm text-text-primary"><span className="block truncate" title={item.feeLine.description}>{item.feeLine.description || 'Fee line'}</span></td>;
+    case 'period': return <td className="px-3 py-2 align-middle text-sm text-text-secondary">{item.billingPeriodKey}</td>;
+    case 'status': return <td className="px-3 py-2 align-middle"><span className={cn('badge', statusClass(item.status, item.timingState))}>{statusLabel(item.status)}</span></td>;
+    case 'amount': return <td className="px-3 py-2 align-middle text-sm text-text-primary">{amount}</td>;
+    case 'billedDate': return <td className="px-3 py-2 align-middle text-sm text-text-secondary">{displayDate(item.billedDate)}</td>;
+    case 'reference': return <td className="max-w-0 px-3 py-2 align-middle text-sm text-text-secondary"><span className="block truncate" title={item.externalReference ?? undefined}>{item.externalReference || '—'}</span></td>;
+    case 'actions': return <td className="px-3 py-2 align-middle"><Button type="button" variant="ghost" size="sm" iconOnly className="min-h-11 min-w-11 sm:min-h-8 sm:min-w-8" aria-label={`Edit tracking for ${item.company.name}`} onClick={(event) => { event.stopPropagation(); onEdit?.(item); }} disabled={!canEdit} leftIcon={<MoreHorizontal className="h-4 w-4" />} /></td>;
   }
 }
 
@@ -323,52 +305,89 @@ export function BillingTable({ items, families = [], isFetching = false, canEdit
     onColumnResizeEnd?.(columnId, next);
   }, [columnWidths, onColumnResizeEnd, onColumnWidthChange]);
 
-  const handleRowClick = (item: BillingOccurrenceDto, event: React.MouseEvent<HTMLTableRowElement>) => {
-    if (!canEdit || !onEdit) return;
-    const target = event.target as HTMLElement | null;
-    if (target?.closest('button,input,select,textarea,a,[role="combobox"],[role="separator"]')) return;
-    onEdit(item);
-  };
-  const handleRowKeyDown = (item: BillingOccurrenceDto, event: React.KeyboardEvent<HTMLTableRowElement>) => {
-    if ((event.key === 'Enter' || event.key === ' ') && canEdit && onEdit) { event.preventDefault(); onEdit(item); }
-  };
-
   return (
     <>
       <div role="region" className="space-y-3 md:hidden" aria-label="Billing occurrence cards">
         {selectable ? <button type="button" onClick={onToggleAll} aria-label="Select all billing occurrences" aria-pressed={isAllSelected} className="flex min-h-11 items-center gap-2 px-1 text-sm text-text-secondary"><SelectionIcon selected={isAllSelected} indeterminate={isIndeterminate} /><span>{isAllSelected ? 'Deselect all' : 'Select all'}</span></button> : null}
         {items.length === 0 ? <div className="rounded-xl border border-border-primary bg-background-secondary p-6 text-center text-sm text-text-secondary">No billing occurrences found</div> : items.map((item) => <MobileBillingCard key={item.id} item={item} canEdit={canEdit} selected={selectedIds.has(item.id)} onToggle={onToggleOne} onEdit={onEdit} />)}
       </div>
-      <div className={cn('table-container hidden w-full min-w-0 max-w-full overflow-hidden md:block', isFetching && 'opacity-60')} style={{ contain: 'inline-size paint' }}>
-        <div className="max-w-full overflow-x-auto">
-          <table className="w-full min-w-max border-collapse" aria-label="Billing occurrences table">
+      <TableShell className="hidden md:block" isFetching={isFetching} style={{ contain: 'inline-size paint' }}>
+        <TableViewport className="max-w-full">
+          <TableRoot aria-label="Billing occurrences table">
             <colgroup>{selectable ? <col style={{ width: '48px' }} /> : null}{visibleColumns.map((column) => <col key={column} style={column === 'actions' ? undefined : { width: `${columnWidths[column] ?? defaultBillingColumnWidths[column]}px` }} />)}</colgroup>
-            <thead className="bg-background-tertiary border-b border-border-primary">
+            <TableHead>
               <InlineFilterRow columns={visibleColumns} filters={inlineFilters} families={families} companyOptions={companyOptions} selectable={selectable} onChange={onInlineFilterChange} />
-              <tr className="h-[38px] border-t border-border-primary">
-                {selectable ? <th scope="col" className="relative px-2 py-2.5 text-center"><button type="button" onClick={onToggleAll} aria-label="Select all billing occurrences" aria-pressed={isAllSelected} className="rounded p-0.5 transition-colors hover:bg-background-secondary"><SelectionIcon selected={isAllSelected} indeterminate={isIndeterminate} /></button></th> : null}
-                {visibleColumns.map((column) => <SortableHeader key={column} column={column} sortBy={sortBy} sortOrder={sortOrder} onSort={onSort} onResize={startResize} onResizeKeyboard={resizeColumnByKeyboard} />)}
-              </tr>
-            </thead>
-            <tbody>
+              <TableHeaderRow>
+                {selectable ? (
+                  <TableHeaderCell className="w-12 px-2 text-center">
+                    <TableSelectionButton
+                      selected={isAllSelected}
+                      indeterminate={isIndeterminate}
+                      onClick={() => onToggleAll?.()}
+                      ariaLabel="Select all billing occurrences"
+                    />
+                  </TableHeaderCell>
+                ) : null}
+                {visibleColumns.map((column) => {
+                  const field = sortableColumns[column];
+                  const active = field === sortBy;
+                  return (
+                    <TableHeaderCell
+                      key={column}
+                      label={billingColumnLabels[column]}
+                      sorted={active}
+                      sortOrder={sortOrder}
+                      onSort={field && onSort ? () => onSort(field) : undefined}
+                      sortAriaLabel={field ? (active ? `Sort by ${billingColumnLabels[column]}, currently ${sortOrder === 'asc' ? 'ascending' : 'descending'}` : `Sort by ${billingColumnLabels[column]}`) : undefined}
+                      resizable={column !== 'actions'}
+                      onResizePointerDown={column !== 'actions' ? (event) => startResize(column, event) : undefined}
+                      onResizeKeyDown={column !== 'actions' ? (event) => {
+                        if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+                        event.preventDefault();
+                        resizeColumnByKeyboard(column, event.key === 'ArrowRight' ? 10 : -10);
+                      } : undefined}
+                      resizeAriaLabel={`Resize ${billingColumnLabels[column]} column`}
+                    />
+                  );
+                })}
+              </TableHeaderRow>
+            </TableHead>
+            <TableBody>
               {items.length === 0 ? (
-                <tr>
-                  <td colSpan={visibleColumns.length + (selectable ? 1 : 0)} className="px-4 py-12 text-center">
-                    <p className="text-sm text-text-secondary">No billing occurrences found</p>
-                  </td>
-                </tr>
+                <TableEmptyState colSpan={visibleColumns.length + (selectable ? 1 : 0)} message="No billing occurrences found" />
               ) : items.map((item, index) => {
                 const rowSelectable = selectable && item.status === 'OPEN';
                 const selected = selectedIds.has(item.id);
-                return <tr key={item.id} tabIndex={canEdit && onEdit ? 0 : undefined} onClick={(event) => handleRowClick(item, event)} onKeyDown={(event) => handleRowKeyDown(item, event)} className={cn('border-b border-border-primary transition-colors hover:bg-background-tertiary/60', selected ? 'bg-oak-row-selected hover:bg-oak-row-selected-hover' : index % 2 === 0 && 'bg-oak-row-alt', canEdit && onEdit && 'cursor-pointer')}>
-                  {selectable ? <td className="px-2 py-3 text-center align-middle"><button type="button" disabled={!rowSelectable} onClick={(event) => { event.stopPropagation(); if (rowSelectable) onToggleOne?.(item.id); }} aria-label={selected ? `Deselect billing occurrence for ${item.company.name}` : `Select billing occurrence for ${item.company.name}`} aria-pressed={selected} title={rowSelectable ? undefined : 'Only open billing occurrences can be marked as billed'} className="rounded p-0.5 transition-colors hover:bg-background-secondary disabled:cursor-not-allowed disabled:opacity-40"><SelectionIcon selected={selected} /></button></td> : null}
-                  {visibleColumns.map((column) => <Cell key={column} item={item} column={column} canEdit={canEdit} onEdit={onEdit} />)}
-                </tr>;
+                return (
+                  <TableRow
+                    key={item.id}
+                    index={index}
+                    selected={selected}
+                    interactive={canEdit && Boolean(onEdit)}
+                    onActivate={canEdit && onEdit ? () => onEdit(item) : undefined}
+                  >
+                    {selectable ? (
+                      <td className="w-12 px-2 text-center align-middle">
+                        <TableSelectionButton
+                          selected={selected}
+                          disabled={!rowSelectable}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            if (rowSelectable) onToggleOne?.(item.id);
+                          }}
+                          ariaLabel={selected ? `Deselect billing occurrence for ${item.company.name}` : `Select billing occurrence for ${item.company.name}`}
+                          title={rowSelectable ? undefined : 'Only open billing occurrences can be marked as billed'}
+                        />
+                      </td>
+                    ) : null}
+                    {visibleColumns.map((column) => <Cell key={column} item={item} column={column} canEdit={canEdit} onEdit={onEdit} />)}
+                  </TableRow>
+                );
               })}
-            </tbody>
-          </table>
-        </div>
-      </div>
+            </TableBody>
+          </TableRoot>
+        </TableViewport>
+      </TableShell>
     </>
   );
 }

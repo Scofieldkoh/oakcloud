@@ -6,14 +6,14 @@ import { useRouter } from 'next/navigation';
 import { formatDateShort, formatCurrency, cn } from '@/lib/utils';
 import { getEntityTypeLabel, ENTITY_TYPES, COMPANY_STATUSES } from '@/lib/constants';
 import { SUPPORTED_CURRENCIES } from '@/lib/validations/exchange-rate';
-import { Building2, MoreHorizontal, ExternalLink, Pencil, Trash2, Square, CheckSquare, MinusSquare, ArrowUp, ArrowDown, ArrowUpDown, X, ArrowUpRight, AlertTriangle } from 'lucide-react';
+import { Building2, MoreHorizontal, ExternalLink, Pencil, Trash2, ArrowUpRight, AlertTriangle, Square, CheckSquare, MinusSquare } from 'lucide-react';
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, DropdownSeparator } from '@/components/ui/dropdown';
 import { PrefetchLink } from '@/components/ui/prefetch-link';
 import { MobileCard, CardDetailsGrid, CardDetailItem } from '@/components/ui/responsive-table';
-import { SearchableSelect } from '@/components/ui/searchable-select';
 import { CompanySelect } from '@/components/ui/company-select';
 import { DatePicker, type DatePickerValue } from '@/components/ui/date-picker';
 import { AmountFilter, type AmountFilterValue } from '@/components/ui/amount-filter';
+import { TableBody, TableCell, TableEmptyState, TableFilterCell, TableFilterRow, TableHead, TableHeaderCell, TableHeaderRow, TableRoot, TableRow, TableSelectFilter, TableSelectionButton, TableShell, TableTextFilter, TableViewport } from '@/components/ui/data-table';
 import { buildDetailHref } from '@/lib/list-navigation';
 import type { Company, CompanyStatus, EntityType } from '@/generated/prisma';
 
@@ -182,7 +182,7 @@ interface CompanyTableProps {
   onColumnWidthChange?: (columnId: ColumnId, width: number) => void;
 }
 
-/** Sortable column header component with resize handle */
+/** Sortable column header backed by the shared table system. */
 function SortableHeader({
   label,
   field,
@@ -202,55 +202,25 @@ function SortableHeader({
   onResize?: (e: React.PointerEvent, columnId: ColumnId) => void;
   columnId: ColumnId;
 }) {
-  const isActive = field && sortBy === field;
-  const isSortable = field && onSort;
-
+  const isActive = Boolean(field && sortBy === field);
+  const canSort = Boolean(field && onSort);
   const sortLabel = isActive
     ? `Sort by ${label}, currently ${sortOrder === 'asc' ? 'ascending' : 'descending'}`
     : `Sort by ${label}`;
 
   return (
-    <th
+    <TableHeaderCell
       style={width ? { width: `${width}px` } : undefined}
-      className={cn(
-        'relative text-xs font-medium text-text-secondary py-2.5 whitespace-nowrap text-left',
-        columnId === 'actions' ? 'px-2' : 'px-4'
-      )}
-    >
-      {isSortable ? (
-        <button
-          type="button"
-          onClick={() => onSort(field)}
-          aria-label={sortLabel}
-          className={cn(
-            'inline-flex items-center gap-1 hover:text-text-primary transition-colors cursor-pointer select-none',
-            isActive ? 'text-text-primary' : ''
-          )}
-        >
-          <span>{label}</span>
-          <span className="flex-shrink-0" aria-hidden="true">
-            {isActive ? (
-              sortOrder === 'asc' ? (
-                <ArrowUp className="w-3.5 h-3.5" />
-              ) : (
-                <ArrowDown className="w-3.5 h-3.5" />
-              )
-            ) : (
-              <ArrowUpDown className="w-3.5 h-3.5 text-text-muted" />
-            )}
-          </span>
-        </button>
-      ) : (
-        <span>{label}</span>
-      )}
-      {onResize && (
-        <div
-          onPointerDown={(e) => onResize(e, columnId)}
-          className="absolute top-0 -right-2 h-full w-4 cursor-col-resize hover:bg-border-secondary/60 z-10 touch-none"
-          title="Drag to resize"
-        />
-      )}
-    </th>
+      label={label}
+      sorted={isActive}
+      sortOrder={sortOrder}
+      onSort={canSort ? () => onSort?.(field!) : undefined}
+      sortAriaLabel={sortLabel}
+      resizable={Boolean(onResize)}
+      onResizePointerDown={onResize ? (event) => onResize(event, columnId) : undefined}
+      resizeAriaLabel={`Resize ${label || columnId} column`}
+      className={columnId === 'actions' ? 'px-2' : undefined}
+    />
   );
 }
 
@@ -475,52 +445,25 @@ export function CompanyTable({
 
       case 'address':
         return (
-          <div className="w-full flex items-center gap-2 h-9 rounded-lg border bg-background-secondary/30 border-border-primary hover:border-oak-primary/50 focus-within:ring-2 focus-within:ring-oak-primary/30 transition-colors">
-            <input
-              type="text"
-              value={inlineFilters.address || ''}
-              onChange={(e) => onInlineFilterChange({ address: e.target.value || undefined })}
-              placeholder="All"
-              className="flex-1 bg-transparent outline-none px-3 min-w-0 text-xs text-text-primary placeholder:text-text-secondary"
-            />
-            {inlineFilters.address && (
-              <button
-                type="button"
-                onClick={() => onInlineFilterChange({ address: undefined })}
-                className="p-0.5 hover:bg-background-tertiary rounded transition-colors mr-1"
-              >
-                <X className="w-3.5 h-3.5 text-text-muted" />
-              </button>
-            )}
-          </div>
+          <TableTextFilter
+            ariaLabel="Filter companies by address"
+            value={inlineFilters.address}
+            onChange={(address) => onInlineFilterChange({ address })}
+          />
         );
 
       case 'uen':
         return (
-          <div className="w-full flex items-center gap-2 h-9 rounded-lg border bg-background-secondary/30 border-border-primary hover:border-oak-primary/50 focus-within:ring-2 focus-within:ring-oak-primary/30 transition-colors">
-            <input
-              type="text"
-              value={inlineFilters.uen || ''}
-              onChange={(e) => onInlineFilterChange({ uen: e.target.value || undefined })}
-              placeholder="All"
-              className="flex-1 bg-transparent outline-none px-3 min-w-0 text-xs text-text-primary placeholder:text-text-secondary"
-            />
-            {inlineFilters.uen && (
-              <button
-                type="button"
-                onClick={() => onInlineFilterChange({ uen: undefined })}
-                className="p-0.5 hover:bg-background-tertiary rounded transition-colors mr-1"
-              >
-                <X className="w-3.5 h-3.5 text-text-muted" />
-              </button>
-            )}
-          </div>
+          <TableTextFilter
+            ariaLabel="Filter companies by UEN"
+            value={inlineFilters.uen}
+            onChange={(uen) => onInlineFilterChange({ uen })}
+          />
         );
 
       case 'type':
         return (
-          <SearchableSelect
-            variant="table-filter"
+          <TableSelectFilter
             options={[
               { value: '', label: 'All' },
               ...ENTITY_TYPES.map(t => ({ value: t.value, label: t.shortLabel }))
@@ -528,16 +471,13 @@ export function CompanyTable({
             value={inlineFilters.entityType || ''}
             onChange={(value) => onInlineFilterChange({ entityType: value as EntityType || undefined })}
             placeholder="All"
-            className="text-xs w-full min-w-0"
-            showChevron={false}
-            showKeyboardHints={false}
+            ariaLabel="Filter companies by entity type"
           />
         );
 
       case 'status':
         return (
-          <SearchableSelect
-            variant="table-filter"
+          <TableSelectFilter
             options={[
               { value: '', label: 'All' },
               ...COMPANY_STATUSES.map(s => ({ value: s.value, label: s.label }))
@@ -545,9 +485,7 @@ export function CompanyTable({
             value={inlineFilters.status || ''}
             onChange={(value) => onInlineFilterChange({ status: value as CompanyStatus || undefined })}
             placeholder="All"
-            className="text-xs w-full min-w-0"
-            showChevron={false}
-            showKeyboardHints={false}
+            ariaLabel="Filter companies by status"
           />
         );
 
@@ -648,35 +586,29 @@ export function CompanyTable({
 
       case 'homeCurrency':
         return (
-          <SearchableSelect
-            variant="table-filter"
+          <TableSelectFilter
             options={[
               { value: '', label: 'All' },
-              ...SUPPORTED_CURRENCIES.map(c => ({ value: c, label: c }))
+              ...SUPPORTED_CURRENCIES.map(currency => ({ value: currency, label: currency }))
             ]}
             value={inlineFilters.homeCurrency || ''}
             onChange={(value) => onInlineFilterChange({ homeCurrency: value || undefined })}
             placeholder="All"
-            className="text-xs w-full min-w-0"
-            showChevron={false}
-            showKeyboardHints={false}
+            ariaLabel="Filter companies by home currency"
           />
         );
 
       case 'fye':
         return (
-          <SearchableSelect
-            variant="table-filter"
+          <TableSelectFilter
             options={[
               { value: '', label: 'All' },
-              ...MONTH_NAMES.map(m => ({ value: String(m.value), label: m.label.slice(0, 3) }))
+              ...MONTH_NAMES.map(month => ({ value: String(month.value), label: month.label.slice(0, 3) }))
             ]}
             value={inlineFilters.financialYearEndMonth ? String(inlineFilters.financialYearEndMonth) : ''}
             onChange={(value) => onInlineFilterChange({ financialYearEndMonth: value ? parseInt(value, 10) : undefined })}
             placeholder="All"
-            className="text-xs w-full min-w-0"
-            showChevron={false}
-            showKeyboardHints={false}
+            ariaLabel="Filter companies by financial year end month"
           />
         );
 
@@ -856,9 +788,9 @@ export function CompanyTable({
       </div>
 
       {/* Desktop Table View */}
-      <div className={cn('hidden lg:block table-container overflow-hidden', isFetching && 'opacity-60')}>
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-max">
+      <TableShell className="hidden lg:block" isFetching={isFetching}>
+        <TableViewport>
+          <TableRoot>
             <colgroup>
               {selectable && <col style={{ width: '40px' }} />}
               {COLUMN_IDS.map((id) => (
@@ -874,53 +806,43 @@ export function CompanyTable({
                 />
               ))}
             </colgroup>
-            <thead className="bg-background-tertiary border-b border-border-primary">
+            <TableHead>
               {/* Inline filter row */}
               {onInlineFilterChange && (
-                <tr className="bg-background-secondary/50">
-                  {selectable && <th className="px-4 py-2"></th>}
+                <TableFilterRow>
+                  {selectable && <TableFilterCell className="w-10" />}
                   {COLUMN_IDS.map((columnId) => (
-                    <th
+                    <TableFilterCell
                       key={columnId}
-                      className={cn(
-                        'py-2 max-w-0',
-                        columnId === 'open' || columnId === 'actions' ? 'px-2' : 'px-4'
-                      )}
+                      className={columnId === 'open' || columnId === 'actions' ? 'px-2' : undefined}
                     >
                       {renderFilterCell(columnId)}
-                    </th>
+                    </TableFilterCell>
                   ))}
-                </tr>
+                </TableFilterRow>
               )}
               {/* Column header row */}
-              <tr className={onInlineFilterChange ? 'border-t border-border-primary' : ''}>
+              <TableHeaderRow hasFilters={Boolean(onInlineFilterChange)}>
                 {selectable && (
-                  <th className="w-10 px-4 py-2.5">
-                    <button
-                      onClick={onToggleAll}
-                      className="p-0.5 hover:bg-background-secondary rounded transition-colors"
-                      aria-label={isAllSelected ? 'Deselect all companies' : 'Select all companies'}
-                      aria-pressed={isAllSelected}
-                    >
-                      {isAllSelected ? (
-                        <CheckSquare className="w-4 h-4 text-oak-primary" aria-hidden="true" />
-                      ) : isIndeterminate ? (
-                        <MinusSquare className="w-4 h-4 text-oak-light" aria-hidden="true" />
-                      ) : (
-                        <Square className="w-4 h-4 text-text-muted" aria-hidden="true" />
-                      )}
-                    </button>
-                  </th>
+                  <TableHeaderCell className="w-10 text-center">
+                    <TableSelectionButton
+                      selected={isAllSelected}
+                      indeterminate={isIndeterminate}
+                      onClick={() => onToggleAll?.()}
+                      ariaLabel={isAllSelected ? 'Deselect all companies' : 'Select all companies'}
+                    />
+                  </TableHeaderCell>
                 )}
                 {COLUMN_IDS.map((columnId) =>
                   columnId === 'open' ? (
-                    <th
-                      key={columnId}
-                      className="text-center text-xs font-medium text-text-secondary px-2 py-2.5 whitespace-nowrap"
-                      title="Open in new tab"
-                    >
-                      <ArrowUpRight className="w-4 h-4 inline-block text-text-muted" />
-                    </th>
+                    <TableHeaderCell
+                        key={columnId}
+                        align="center"
+                        className="w-[44px] px-2"
+                        title="Open in new tab"
+                      >
+                        <ArrowUpRight className="inline-block h-4 w-4 text-text-muted" />
+                      </TableHeaderCell>
                   ) : (
                     <SortableHeader
                       key={columnId}
@@ -935,51 +857,40 @@ export function CompanyTable({
                     />
                   )
                 )}
-              </tr>
-            </thead>
-            <tbody>
+              </TableHeaderRow>
+            </TableHead>
+            <TableBody>
               {companies.length === 0 ? (
-                <tr>
-                  <td colSpan={COLUMN_IDS.length + (selectable ? 1 : 0)} className="px-4 py-12 text-center">
-                    <p className="text-sm text-text-secondary">No companies found</p>
-                  </td>
-                </tr>
+                <TableEmptyState
+                  colSpan={COLUMN_IDS.length + (selectable ? 1 : 0)}
+                  message="No companies found"
+                />
               ) : (
                 companies.map((company, index) => {
                   const isSelected = selectedIds.has(company.id);
-                  const isAlternate = index % 2 === 1;
                   const detailHref = buildDetailHref(`/companies/${company.id}`, returnTo);
                   return (
-                    <tr
+                    <TableRow
                       key={company.id}
+                      index={index}
+                      selected={isSelected}
+                      interactive
                       onClick={(event) => handleRowClick(event, company)}
-                      className={cn(
-                        'border-b border-border-primary transition-colors cursor-pointer',
-                        isSelected
-                          ? 'bg-oak-row-selected hover:bg-oak-row-selected-hover'
-                          : isAlternate
-                            ? 'bg-oak-row-alt hover:bg-oak-row-alt-hover'
-                            : 'hover:bg-background-tertiary/50'
-                      )}
                     >
                       {selectable && (
-                        <td className="px-4 py-3">
-                          <button
-                            onClick={() => onToggleOne?.(company.id)}
-                            className="p-0.5 hover:bg-background-secondary rounded transition-colors"
-                            aria-label={isSelected ? `Deselect ${company.name}` : `Select ${company.name}`}
-                            aria-pressed={isSelected}
-                          >
-                            {isSelected ? (
-                              <CheckSquare className="w-4 h-4 text-oak-primary" aria-hidden="true" />
-                            ) : (
-                              <Square className="w-4 h-4 text-text-muted" aria-hidden="true" />
-                            )}
-                          </button>
-                        </td>
+                        <TableCell className="w-10">
+                          <TableSelectionButton
+                            selected={isSelected}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              onToggleOne?.(company.id);
+                            }}
+                            ariaLabel={isSelected ? `Deselect ${company.name}` : `Select ${company.name}`}
+                          />
+                        </TableCell>
                       )}
                       {/* Open in new tab */}
-                      <td className="px-2 py-3">
+                      <td className="px-2 py-2">
                         <Link
                           href={detailHref}
                           target="_blank"
@@ -992,7 +903,7 @@ export function CompanyTable({
                         </Link>
                       </td>
                       {/* Warnings */}
-                      <td className="px-1 py-3">
+                      <td className="px-1 py-2">
                         {(company.financialYearEndMonth == null || company.hasPoc === false) && (
                           <span
                             className="inline-flex items-center justify-center text-amber-500"
@@ -1005,7 +916,7 @@ export function CompanyTable({
                           </span>
                         )}
                       </td>
-                      <td className="px-4 py-3 max-w-0">
+                      <td className="px-3 py-2 max-w-0">
                         <PrefetchLink
                           href={detailHref}
                           prefetchType="company"
@@ -1015,56 +926,56 @@ export function CompanyTable({
                           {company.name}
                         </PrefetchLink>
                       </td>
-                      <td className="px-4 py-3 text-text-secondary max-w-0">
+                      <td className="px-3 py-2 text-text-secondary max-w-0">
                         <span className="block truncate">
                           {company.addresses?.[0]?.fullAddress || '-'}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-text-secondary max-w-0">
+                      <td className="px-3 py-2 text-text-secondary max-w-0">
                         <span className="block truncate">{company.uen}</span>
                       </td>
-                      <td className="px-4 py-3 text-text-secondary max-w-0">
+                      <td className="px-3 py-2 text-text-secondary max-w-0">
                         <span className="block truncate">{getEntityTypeLabel(company.entityType, true)}</span>
                       </td>
-                      <td className="px-4 py-3 max-w-0">
+                      <td className="px-3 py-2 max-w-0">
                         <span className={`badge ${statusConfig[company.status].color}`}>
                           {statusConfig[company.status].label}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-text-secondary max-w-0">
+                      <td className="px-3 py-2 text-text-secondary max-w-0">
                         <span className="block truncate">{company.homeCurrency || '-'}</span>
                       </td>
-                      <td className="px-4 py-3 text-text-secondary max-w-0">
+                      <td className="px-3 py-2 text-text-secondary max-w-0">
                         <span className="block truncate">
                           {company.financialYearEndMonth
                             ? `${company.financialYearEndDay || ''} ${MONTH_NAMES.find(m => m.value === company.financialYearEndMonth)?.label.slice(0, 3) || ''}`.trim() || '-'
                             : '-'}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-text-secondary max-w-0">
+                      <td className="px-3 py-2 text-text-secondary max-w-0">
                         <span className="block truncate">{formatDateShort(company.incorporationDate)}</span>
                       </td>
-                      <td className="px-4 py-3 text-text-secondary max-w-0">
+                      <td className="px-3 py-2 text-text-secondary max-w-0">
                         {company._count?.officers || 0}
                       </td>
-                      <td className="px-4 py-3 text-text-secondary max-w-0">
+                      <td className="px-3 py-2 text-text-secondary max-w-0">
                         {company._count?.shareholders || 0}
                       </td>
-                      <td className="px-4 py-3 text-text-secondary max-w-0 text-right">
+                      <td className="px-3 py-2 text-text-secondary max-w-0 text-right">
                         <span className="block truncate">
                           {company.paidUpCapitalAmount != null
                             ? formatCurrency(Number(company.paidUpCapitalAmount), company.paidUpCapitalCurrency || 'SGD')
                             : '-'}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-text-secondary max-w-0 text-right">
+                      <td className="px-3 py-2 text-text-secondary max-w-0 text-right">
                         <span className="block truncate">
                           {company.issuedCapitalAmount != null
                             ? formatCurrency(Number(company.issuedCapitalAmount), company.issuedCapitalCurrency || 'SGD')
                             : '-'}
                         </span>
                       </td>
-                      <td className="px-2 py-3">
+                      <td className="px-2 py-2">
                         <CompanyActionsDropdown
                           companyId={company.id}
                           detailHref={detailHref}
@@ -1074,14 +985,14 @@ export function CompanyTable({
                           canDelete={checkCanDelete(company.id)}
                         />
                       </td>
-                    </tr>
+                    </TableRow>
                   );
                 })
               )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+            </TableBody>
+          </TableRoot>
+        </TableViewport>
+      </TableShell>
     </>
   );
 }

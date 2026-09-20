@@ -1,145 +1,102 @@
 'use client';
 
-import { useState, useCallback, useRef, useMemo, type ReactNode } from 'react';
-import { ArrowUp, ArrowDown, ArrowUpDown, Square, CheckSquare, MinusSquare } from 'lucide-react';
+import { useState, useCallback, useMemo, type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import { Pagination } from '@/components/ui/pagination';
+import {
+  TableBody,
+  TableCell,
+  TableFilterCell,
+  TableFilterRow,
+  TableHead,
+  TableHeaderCell,
+  TableHeaderRow,
+  TableRoot,
+  TableRow,
+  TableSelectionButton,
+  TableShell,
+  TableViewport,
+} from '@/components/ui/data-table';
 
 // ============================================================================
 // Types
 // ============================================================================
 
 export interface DataGridColumn<T> {
-  /** Unique column identifier */
+  /** Unique column identifier. */
   id: string;
-  /** Column header label */
+  /** Column header label. */
   label: string;
-  /** Field name for sorting (if sortable) */
+  /** Field name for sorting, when sortable. */
   sortField?: string;
-  /** Whether column is right-aligned (for numbers) */
+  /** Whether column content is right-aligned. */
   rightAligned?: boolean;
-  /** Default width in pixels */
+  /** Default width in pixels. */
   defaultWidth?: number;
-  /** Minimum width in pixels */
+  /** Minimum width in pixels. */
   minWidth?: number;
-  /** Whether column is visible by default */
+  /** Whether column is visible by default. */
   defaultVisible?: boolean;
-  /** Render cell content */
+  /** Render cell content. */
   render: (row: T, index: number) => ReactNode;
-  /** Render header cell (optional, defaults to label) */
+  /** Render custom header content instead of the standard label/sort control. */
   renderHeader?: () => ReactNode;
-  /** Whether this column shows on mobile card view */
+  /** Render an inline filter for this column. When any column provides one, a filter row is shown. */
+  renderFilter?: () => ReactNode;
+  /** Whether this column shows on mobile card view. */
   showOnMobile?: boolean;
-  /** Fixed width (prevents resizing) */
+  /** Fixed width in pixels; fixed columns cannot be resized. */
   fixedWidth?: number;
 }
 
 export interface DataGridProps<T> {
-  /** Data to display */
+  /** Data to display. */
   data: T[];
-  /** Column definitions */
+  /** Column definitions. */
   columns: DataGridColumn<T>[];
-  /** Unique key extractor for rows */
+  /** Unique key extractor for rows. */
   getRowKey: (row: T) => string;
 
   // Sorting
-  /** Current sort field */
   sortBy?: string;
-  /** Current sort direction */
   sortOrder?: 'asc' | 'desc';
-  /** Sort change handler */
   onSort?: (field: string) => void;
 
   // Selection
-  /** Enable row selection */
   selectable?: boolean;
-  /** Selected row keys */
   selectedKeys?: Set<string>;
-  /** Selection change handler */
   onSelectionChange?: (selectedKeys: Set<string>) => void;
 
+  // Row interaction
+  /** Optional row activation. Shared table behavior handles mouse/keyboard activation and ignores nested controls. */
+  onRowActivate?: (row: T) => void;
+  /** Optional accessible label for interactive rows. */
+  getRowAriaLabel?: (row: T) => string;
+
   // Pagination
-  /** Current page (1-indexed) */
   page?: number;
-  /** Total pages */
   totalPages?: number;
-  /** Total items */
   total?: number;
-  /** Items per page */
   limit?: number;
-  /** Page change handler */
   onPageChange?: (page: number) => void;
-  /** Limit change handler */
   onLimitChange?: (limit: number) => void;
 
   // Column customization
-  /** Column widths (keyed by column id) */
   columnWidths?: Record<string, number>;
-  /** Column width change handler */
   onColumnWidthChange?: (columnId: string, width: number) => void;
-  /** Column visibility (keyed by column id) */
   columnVisibility?: Record<string, boolean>;
-  /** Column visibility change handler (for future use) */
   _onColumnVisibilityChange?: (columnId: string, visible: boolean) => void;
 
   // Appearance
-  /** Additional class name for table */
   className?: string;
-  /** Table variant */
   variant?: 'default' | 'compact';
-  /** Empty state message */
   emptyMessage?: string;
-  /** Loading state */
   isLoading?: boolean;
-  /** Loading skeleton rows */
   loadingRows?: number;
 
   // Mobile
-  /** Render mobile card for a row */
   renderMobileCard?: (row: T, index: number) => ReactNode;
-  /** Hide table on mobile (use cards only) */
   mobileCardsOnly?: boolean;
-}
-
-// ============================================================================
-// Sub-components
-// ============================================================================
-
-interface SortIconProps {
-  active: boolean;
-  direction?: 'asc' | 'desc';
-}
-
-function SortIcon({ active, direction }: SortIconProps) {
-  if (!active) {
-    return <ArrowUpDown className="w-3.5 h-3.5 text-text-muted" />;
-  }
-  return direction === 'asc'
-    ? <ArrowUp className="w-3.5 h-3.5" />
-    : <ArrowDown className="w-3.5 h-3.5" />;
-}
-
-interface SelectionCheckboxProps {
-  state: 'none' | 'some' | 'all';
-  onClick: () => void;
-  label: string;
-}
-
-function SelectionCheckbox({ state, onClick, label }: SelectionCheckboxProps) {
-  const Icon = state === 'all' ? CheckSquare : state === 'some' ? MinusSquare : Square;
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="p-1.5 hover:bg-background-tertiary rounded transition-colors"
-      aria-label={label}
-    >
-      <Icon className={cn(
-        'w-4 h-4',
-        state !== 'none' ? 'text-oak-primary' : 'text-text-muted'
-      )} />
-    </button>
-  );
 }
 
 // ============================================================================
@@ -147,43 +104,11 @@ function SelectionCheckbox({ state, onClick, label }: SelectionCheckboxProps) {
 // ============================================================================
 
 /**
- * DataGrid - Feature-rich data table component
+ * DataGrid is the higher-level, configuration-driven table API.
  *
- * Features:
- * - Sortable columns with direction indicators
- * - Resizable columns with drag handles
- * - Row selection with checkboxes
- * - Pagination integration
- * - Column visibility control
- * - Mobile responsive (card view)
- * - Loading states with skeletons
- *
- * @example
- * ```tsx
- * const columns: DataGridColumn<User>[] = [
- *   { id: 'name', label: 'Name', sortField: 'name', render: (row) => row.name },
- *   { id: 'email', label: 'Email', render: (row) => row.email },
- *   { id: 'balance', label: 'Balance', rightAligned: true, render: (row) => formatCurrency(row.balance) },
- * ];
- *
- * <DataGrid
- *   data={users}
- *   columns={columns}
- *   getRowKey={(user) => user.id}
- *   sortBy={sortBy}
- *   sortOrder={sortOrder}
- *   onSort={handleSort}
- *   selectable
- *   selectedKeys={selectedKeys}
- *   onSelectionChange={setSelectedKeys}
- *   page={page}
- *   totalPages={totalPages}
- *   total={total}
- *   limit={limit}
- *   onPageChange={setPage}
- *   onLimitChange={setLimit}
- * />
- * ```
+ * It composes the canonical primitives from data-table.tsx so sorting,
+ * resizing, selection, zebra rows, keyboard row activation, filters, spacing,
+ * and interaction states stay aligned with hand-composed tables.
  */
 export function DataGrid<T>({
   data,
@@ -195,6 +120,8 @@ export function DataGrid<T>({
   selectable = false,
   selectedKeys = new Set(),
   onSelectionChange,
+  onRowActivate,
+  getRowAriaLabel,
   page = 1,
   totalPages = 1,
   total = 0,
@@ -213,19 +140,19 @@ export function DataGrid<T>({
   renderMobileCard,
   mobileCardsOnly = false,
 }: DataGridProps<T>) {
-  const isResizingRef = useRef(false);
-  const tableRef = useRef<HTMLTableElement>(null);
-
-  // Visible columns
   const visibleColumns = useMemo(() => {
-    return columns.filter((col) => {
-      const visibility = columnVisibility[col.id];
+    return columns.filter((column) => {
+      const visibility = columnVisibility[column.id];
       if (visibility !== undefined) return visibility;
-      return col.defaultVisible !== false;
+      return column.defaultVisible !== false;
     });
   }, [columns, columnVisibility]);
 
-  // Selection state
+  const hasInlineFilters = useMemo(
+    () => visibleColumns.some((column) => Boolean(column.renderFilter)),
+    [visibleColumns],
+  );
+
   const selectionState = useMemo(() => {
     if (!selectable || data.length === 0) return 'none';
     const selectedCount = data.filter((row) => selectedKeys.has(getRowKey(row))).length;
@@ -234,122 +161,158 @@ export function DataGrid<T>({
     return 'some';
   }, [selectable, data, selectedKeys, getRowKey]);
 
-  // Handle select all
   const handleSelectAll = useCallback(() => {
     if (!onSelectionChange) return;
+    const nextSelection = new Set(selectedKeys);
+
     if (selectionState === 'all') {
-      // Deselect all on current page
-      const newSelection = new Set(selectedKeys);
-      data.forEach((row) => newSelection.delete(getRowKey(row)));
-      onSelectionChange(newSelection);
+      data.forEach((row) => nextSelection.delete(getRowKey(row)));
     } else {
-      // Select all on current page
-      const newSelection = new Set(selectedKeys);
-      data.forEach((row) => newSelection.add(getRowKey(row)));
-      onSelectionChange(newSelection);
+      data.forEach((row) => nextSelection.add(getRowKey(row)));
     }
+
+    onSelectionChange(nextSelection);
   }, [selectionState, selectedKeys, data, getRowKey, onSelectionChange]);
 
-  // Handle row selection
   const handleRowSelect = useCallback((rowKey: string) => {
     if (!onSelectionChange) return;
-    const newSelection = new Set(selectedKeys);
-    if (newSelection.has(rowKey)) {
-      newSelection.delete(rowKey);
+    const nextSelection = new Set(selectedKeys);
+    if (nextSelection.has(rowKey)) {
+      nextSelection.delete(rowKey);
     } else {
-      newSelection.add(rowKey);
+      nextSelection.add(rowKey);
     }
-    onSelectionChange(newSelection);
+    onSelectionChange(nextSelection);
   }, [selectedKeys, onSelectionChange]);
 
-  // Handle column resize
-  const handleColumnResize = useCallback((e: React.PointerEvent, columnId: string) => {
-    if (!onColumnWidthChange) return;
+  const getColumnWidth = useCallback((column: DataGridColumn<T>) => {
+    return column.fixedWidth ?? columnWidths[column.id] ?? column.defaultWidth;
+  }, [columnWidths]);
 
-    const column = columns.find((c) => c.id === columnId);
-    if (!column || column.fixedWidth) return;
+  const resizeColumn = useCallback((
+    column: DataGridColumn<T>,
+    nextWidth: number,
+  ) => {
+    if (!onColumnWidthChange || column.fixedWidth) return;
+    const minimumWidth = column.minWidth ?? 50;
+    onColumnWidthChange(column.id, Math.max(minimumWidth, Math.round(nextWidth)));
+  }, [onColumnWidthChange]);
 
-    const th = (e.target as HTMLElement).closest('th');
-    if (!th) return;
+  const handleColumnResize = useCallback((
+    event: React.PointerEvent<HTMLSpanElement>,
+    column: DataGridColumn<T>,
+  ) => {
+    if (!onColumnWidthChange || column.fixedWidth) return;
 
-    const startWidth = columnWidths[columnId] ?? th.getBoundingClientRect().width;
-    const startX = e.clientX;
-    const minWidth = column.minWidth ?? 50;
+    event.preventDefault();
+    event.stopPropagation();
 
-    isResizingRef.current = true;
+    const handle = event.currentTarget;
+    const header = handle.closest('th');
+    if (!header) return;
+
+    const startWidth = getColumnWidth(column) ?? header.getBoundingClientRect().width;
+    const startX = event.clientX;
+    const pointerId = event.pointerId;
+    let latestWidth = startWidth;
+
     document.body.style.userSelect = 'none';
     document.body.style.cursor = 'col-resize';
 
-    let latestWidth = startWidth;
+    try {
+      handle.setPointerCapture(pointerId);
+    } catch {
+      // Pointer capture is best-effort; window listeners still handle resizing.
+    }
 
     const onMove = (moveEvent: PointerEvent) => {
-      const delta = moveEvent.clientX - startX;
-      latestWidth = Math.max(minWidth, startWidth + delta);
-      th.style.width = `${latestWidth}px`;
+      const minimumWidth = column.minWidth ?? 50;
+      latestWidth = Math.max(minimumWidth, startWidth + (moveEvent.clientX - startX));
+      header.style.width = `${latestWidth}px`;
+    };
+
+    const cleanup = () => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      window.removeEventListener('pointercancel', cleanup);
+      try {
+        handle.releasePointerCapture(pointerId);
+      } catch {
+        // Ignore browsers that already released pointer capture.
+      }
+      document.body.style.userSelect = '';
+      document.body.style.cursor = '';
     };
 
     const onUp = () => {
-      document.body.style.userSelect = '';
-      document.body.style.cursor = '';
-      isResizingRef.current = false;
-      onColumnWidthChange(columnId, latestWidth);
-      window.removeEventListener('pointermove', onMove);
-      window.removeEventListener('pointerup', onUp);
+      cleanup();
+      resizeColumn(column, latestWidth);
     };
 
     window.addEventListener('pointermove', onMove);
     window.addEventListener('pointerup', onUp);
-  }, [columns, columnWidths, onColumnWidthChange]);
+    window.addEventListener('pointercancel', cleanup);
+  }, [getColumnWidth, onColumnWidthChange, resizeColumn]);
 
-  // Padding classes based on variant
-  const cellPadding = variant === 'compact' ? 'px-3 py-2' : 'px-4 py-3';
-  const headerPadding = variant === 'compact' ? 'px-3 py-2' : 'px-4 py-2.5';
+  const handleColumnResizeKeyboard = useCallback((
+    event: React.KeyboardEvent<HTMLSpanElement>,
+    column: DataGridColumn<T>,
+  ) => {
+    if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+    event.preventDefault();
+    const currentWidth = getColumnWidth(column) ?? column.minWidth ?? 120;
+    resizeColumn(column, currentWidth + (event.key === 'ArrowRight' ? 10 : -10));
+  }, [getColumnWidth, resizeColumn]);
 
-  // Loading skeleton
+  const tableVisibilityClass = mobileCardsOnly
+    ? 'hidden'
+    : renderMobileCard
+      ? 'hidden md:block'
+      : 'block';
+  const headerDensityClass = variant === 'compact' ? 'px-2 py-1.5' : undefined;
+  const cellDensityClass = variant === 'compact' ? 'px-2 py-1.5' : undefined;
+
   if (isLoading) {
     return (
-      <div className="space-y-4">
-        <div className="card overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className={cn('w-full', className)}>
-              <thead className="bg-background-secondary border-b border-border-primary">
-                <tr>
-                  {selectable && (
-                    <th className={cn('w-10', headerPadding)}>
-                      <div className="w-4 h-4 bg-background-tertiary rounded animate-pulse" />
-                    </th>
-                  )}
-                  {visibleColumns.map((col) => (
-                    <th key={col.id} className={headerPadding}>
-                      <div className="h-4 bg-background-tertiary rounded animate-pulse w-20" />
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {Array.from({ length: loadingRows }).map((_, i) => (
-                  <tr key={i} className="border-b border-border-primary last:border-0">
-                    {selectable && (
-                      <td className={cellPadding}>
-                        <div className="w-4 h-4 bg-background-tertiary rounded animate-pulse" />
-                      </td>
-                    )}
-                    {visibleColumns.map((col) => (
-                      <td key={col.id} className={cellPadding}>
-                        <div className="h-4 bg-background-tertiary rounded animate-pulse" />
-                      </td>
-                    ))}
-                  </tr>
+      <TableShell className={tableVisibilityClass}>
+        <TableViewport>
+          <TableRoot className={className}>
+            <TableHead>
+              <TableHeaderRow hasFilters={false}>
+                {selectable ? (
+                  <TableHeaderCell className={cn('w-10', headerDensityClass)}>
+                    <div className="h-4 w-4 animate-pulse rounded bg-background-tertiary" />
+                  </TableHeaderCell>
+                ) : null}
+                {visibleColumns.map((column) => (
+                  <TableHeaderCell key={column.id} className={headerDensityClass}>
+                    <div className="h-4 w-20 animate-pulse rounded bg-background-tertiary" />
+                  </TableHeaderCell>
                 ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
+              </TableHeaderRow>
+            </TableHead>
+            <TableBody>
+              {Array.from({ length: loadingRows }).map((_, index) => (
+                <TableRow key={index} index={index}>
+                  {selectable ? (
+                    <TableCell className={cellDensityClass}>
+                      <div className="h-4 w-4 animate-pulse rounded bg-background-tertiary" />
+                    </TableCell>
+                  ) : null}
+                  {visibleColumns.map((column) => (
+                    <TableCell key={column.id} className={cellDensityClass}>
+                      <div className="h-4 w-24 animate-pulse rounded bg-background-tertiary" />
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))}
+            </TableBody>
+          </TableRoot>
+        </TableViewport>
+      </TableShell>
     );
   }
 
-  // Empty state
   if (data.length === 0) {
     return (
       <div className="card p-8 text-center">
@@ -360,126 +323,119 @@ export function DataGrid<T>({
 
   return (
     <div className="space-y-4">
-      {/* Mobile Cards */}
-      {renderMobileCard && (
+      {renderMobileCard ? (
         <div className={cn('space-y-3', mobileCardsOnly ? 'block' : 'md:hidden')}>
           {data.map((row, index) => renderMobileCard(row, index))}
         </div>
-      )}
+      ) : null}
 
-      {/* Desktop Table */}
-      <div className={cn('card overflow-hidden', mobileCardsOnly ? 'hidden' : renderMobileCard ? 'hidden md:block' : 'block')}>
-        <div className="overflow-x-auto">
-          <table ref={tableRef} className={cn('w-full', className)}>
-            <thead className="bg-background-secondary border-b border-border-primary">
-              <tr>
-                {/* Selection header */}
-                {selectable && (
-                  <th className={cn('w-10', headerPadding)}>
-                    <SelectionCheckbox
-                      state={selectionState}
-                      onClick={handleSelectAll}
-                      label={selectionState === 'all' ? 'Deselect all' : 'Select all'}
+      <TableShell className={tableVisibilityClass}>
+        <TableViewport>
+          <TableRoot className={className}>
+            <colgroup>
+              {selectable ? <col style={{ width: '44px' }} /> : null}
+              {visibleColumns.map((column) => {
+                const width = getColumnWidth(column);
+                return <col key={column.id} style={width ? { width: `${width}px` } : undefined} />;
+              })}
+            </colgroup>
+
+            <TableHead>
+              {hasInlineFilters ? (
+                <TableFilterRow>
+                  {selectable ? <TableFilterCell className="w-11" /> : null}
+                  {visibleColumns.map((column) => (
+                    <TableFilterCell key={column.id} className={headerDensityClass}>
+                      {column.renderFilter?.() ?? null}
+                    </TableFilterCell>
+                  ))}
+                </TableFilterRow>
+              ) : null}
+
+              <TableHeaderRow hasFilters={hasInlineFilters}>
+                {selectable ? (
+                  <TableHeaderCell className={cn('w-11 text-center', headerDensityClass)}>
+                    <TableSelectionButton
+                      selected={selectionState === 'all'}
+                      indeterminate={selectionState === 'some'}
+                      onClick={() => handleSelectAll()}
+                      ariaLabel={selectionState === 'all' ? 'Deselect all rows' : 'Select all rows'}
                     />
-                  </th>
-                )}
+                  </TableHeaderCell>
+                ) : null}
 
-                {/* Column headers */}
-                {visibleColumns.map((col) => {
-                  const isSortable = !!col.sortField && !!onSort;
-                  const isActive = sortBy === col.sortField;
-                  const width = col.fixedWidth ?? columnWidths[col.id] ?? col.defaultWidth;
-                  const canResize = !col.fixedWidth && !!onColumnWidthChange;
+                {visibleColumns.map((column) => {
+                  const sortField = column.sortField;
+                  const sortable = Boolean(sortField && onSort && !column.renderHeader);
+                  const active = Boolean(sortField && sortBy === sortField);
+                  const resizable = !column.fixedWidth && Boolean(onColumnWidthChange);
 
                   return (
-                    <th
-                      key={col.id}
-                      style={width ? { width: `${width}px` } : undefined}
-                      className={cn(
-                        'relative text-xs font-medium text-text-secondary whitespace-nowrap',
-                        headerPadding,
-                        col.rightAligned ? 'text-right' : 'text-left'
-                      )}
+                    <TableHeaderCell
+                      key={column.id}
+                      style={getColumnWidth(column) ? { width: `${getColumnWidth(column)}px` } : undefined}
+                      label={column.renderHeader ? undefined : column.label}
+                      align={column.rightAligned ? 'right' : 'left'}
+                      sorted={active}
+                      sortOrder={sortOrder}
+                      onSort={sortable ? () => onSort?.(sortField!) : undefined}
+                      sortAriaLabel={sortable ? `Sort by ${column.label}` : undefined}
+                      resizable={resizable}
+                      onResizePointerDown={resizable ? (event) => handleColumnResize(event, column) : undefined}
+                      onResizeKeyDown={resizable ? (event) => handleColumnResizeKeyboard(event, column) : undefined}
+                      resizeAriaLabel={`Resize ${column.label} column`}
+                      className={headerDensityClass}
                     >
-                      {col.renderHeader ? (
-                        col.renderHeader()
-                      ) : isSortable ? (
-                        <button
-                          type="button"
-                          onClick={() => onSort(col.sortField!)}
-                          className={cn(
-                            'inline-flex items-center gap-1 select-none hover:text-text-primary transition-colors',
-                            isActive && 'text-text-primary'
-                          )}
-                        >
-                          <span>{col.label}</span>
-                          <SortIcon active={isActive} direction={isActive ? sortOrder : undefined} />
-                        </button>
-                      ) : (
-                        <span>{col.label}</span>
-                      )}
-
-                      {/* Resize handle */}
-                      {canResize && (
-                        <div
-                          onPointerDown={(e) => handleColumnResize(e, col.id)}
-                          className="absolute top-0 -right-2 h-full w-4 cursor-col-resize hover:bg-border-secondary/60 z-10 touch-none"
-                          title="Drag to resize"
-                        />
-                      )}
-                    </th>
+                      {column.renderHeader?.()}
+                    </TableHeaderCell>
                   );
                 })}
-              </tr>
-            </thead>
+              </TableHeaderRow>
+            </TableHead>
 
-            <tbody>
+            <TableBody>
               {data.map((row, index) => {
                 const rowKey = getRowKey(row);
-                const isSelected = selectedKeys.has(rowKey);
-
+                const selected = selectedKeys.has(rowKey);
                 return (
-                  <tr
+                  <TableRow
                     key={rowKey}
-                    className={cn(
-                      'border-b border-border-primary last:border-0 transition-colors',
-                      isSelected ? 'bg-oak-row-selected' : 'hover:bg-background-tertiary'
-                    )}
+                    index={index}
+                    selected={selected}
+                    interactive={Boolean(onRowActivate)}
+                    onActivate={onRowActivate ? () => onRowActivate(row) : undefined}
+                    aria-label={onRowActivate ? getRowAriaLabel?.(row) : undefined}
                   >
-                    {/* Selection cell */}
-                    {selectable && (
-                      <td className={cellPadding}>
-                        <SelectionCheckbox
-                          state={isSelected ? 'all' : 'none'}
+                    {selectable ? (
+                      <TableCell className={cn('w-11 text-center', cellDensityClass)}>
+                        <TableSelectionButton
+                          selected={selected}
                           onClick={() => handleRowSelect(rowKey)}
-                          label={isSelected ? 'Deselect row' : 'Select row'}
+                          ariaLabel={selected ? 'Deselect row' : 'Select row'}
                         />
-                      </td>
-                    )}
+                      </TableCell>
+                    ) : null}
 
-                    {/* Data cells */}
-                    {visibleColumns.map((col) => (
-                      <td
-                        key={col.id}
+                    {visibleColumns.map((column) => (
+                      <TableCell
+                        key={column.id}
                         className={cn(
-                          'text-sm',
-                          cellPadding,
-                          col.rightAligned ? 'text-right' : 'text-left'
+                          cellDensityClass,
+                          column.rightAligned ? 'text-right' : 'text-left',
                         )}
                       >
-                        {col.render(row, index)}
-                      </td>
+                        {column.render(row, index)}
+                      </TableCell>
                     ))}
-                  </tr>
+                  </TableRow>
                 );
               })}
-            </tbody>
-          </table>
-        </div>
-      </div>
+            </TableBody>
+          </TableRoot>
+        </TableViewport>
+      </TableShell>
 
-      {/* Pagination */}
-      {onPageChange && totalPages > 0 && (
+      {onPageChange && totalPages > 0 ? (
         <Pagination
           page={page}
           totalPages={totalPages}
@@ -488,7 +444,7 @@ export function DataGrid<T>({
           onPageChange={onPageChange}
           onLimitChange={onLimitChange}
         />
-      )}
+      ) : null}
     </div>
   );
 }
@@ -497,16 +453,13 @@ export function DataGrid<T>({
 // Utility Hooks
 // ============================================================================
 
-/**
- * Hook for managing DataGrid sorting state
- */
 export function useDataGridSort(defaultField: string, defaultOrder: 'asc' | 'desc' = 'asc') {
   const [sortBy, setSortBy] = useState(defaultField);
   const [sortOrder, setSortOrder] = useState(defaultOrder);
 
   const handleSort = useCallback((field: string) => {
     if (sortBy === field) {
-      setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+      setSortOrder((previous) => (previous === 'asc' ? 'desc' : 'asc'));
     } else {
       setSortBy(field);
       setSortOrder('asc');
@@ -516,9 +469,6 @@ export function useDataGridSort(defaultField: string, defaultOrder: 'asc' | 'des
   return { sortBy, sortOrder, handleSort };
 }
 
-/**
- * Hook for managing DataGrid selection state
- */
 export function useDataGridSelection() {
   const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
 
@@ -533,16 +483,13 @@ export function useDataGridSelection() {
   return { selectedKeys, setSelectedKeys, clearSelection, selectAll };
 }
 
-/**
- * Hook for managing DataGrid pagination state
- */
 export function useDataGridPagination(defaultLimit: number = 20) {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(defaultLimit);
 
   const handleLimitChange = useCallback((newLimit: number) => {
     setLimit(newLimit);
-    setPage(1); // Reset to first page when changing limit
+    setPage(1);
   }, []);
 
   const resetPage = useCallback(() => {

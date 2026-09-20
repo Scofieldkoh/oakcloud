@@ -277,14 +277,23 @@ describe('ServiceRoster', () => {
     expect(screen.queryByText('Status: None')).not.toBeInTheDocument();
   });
 
-  it('uses alternating rows and shows the full company name without its alias', () => {
-    setup();
+  it('uses the shared Vault-style alternating rows and shows the full company name without its alias', () => {
+    const secondItem: ServiceRosterItem = {
+      ...rosterItem,
+      id: '77777777-7777-4777-8777-777777777777',
+      serviceName: 'Annual return',
+      service: { ...rosterItem.service, id: '77777777-7777-4777-8777-777777777777', name: 'Annual return' },
+      updatedAt: '2026-08-19T00:00:00.000Z',
+    };
+    setup([rosterItem, secondItem]);
     render(<ServiceRoster workspaceId="workspace-1" />);
 
     const table = screen.getByRole('table', { name: 'Services roster table' });
     expect(within(table).queryByText('OACS')).not.toBeInTheDocument();
     expect(within(table).getByText('Oaktree Accounting & Corporate Solution Pte. Ltd.')).toBeVisible();
-    expect(screen.getAllByRole('row')[2]).toHaveClass('bg-oak-row-alt');
+    const bodyRows = within(table).getAllByRole('row').slice(2);
+    expect(bodyRows[0]).not.toHaveClass('bg-oak-row-alt');
+    expect(bodyRows[1]).toHaveClass('bg-oak-row-alt', 'hover:bg-oak-row-alt-hover');
   });
 
   it('renders the Family column as plain truncated text on the desktop roster', () => {
