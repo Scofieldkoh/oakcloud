@@ -89,12 +89,12 @@ const columnLabels: Record<TaskColumnId, string> = {
 };
 
 const defaultColumnWidths: Record<TaskColumnId, number> = {
-  company: 180,
-  task: 220,
-  status: 130,
-  pipeline: 180,
-  stages: 320,
-  owner: 180,
+  company: 270,
+  task: 308,
+  status: 136,
+  pipeline: 234,
+  stages: 364,
+  owner: 186,
   due: 140,
   actions: 72,
 };

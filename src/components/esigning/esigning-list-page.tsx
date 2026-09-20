@@ -149,10 +149,10 @@ type EsigningTableColumnId = (typeof ESIGNING_TABLE_COLUMNS)[number];
 
 const DEFAULT_ESIGNING_COLUMN_WIDTHS: Record<EsigningTableColumnId, number> = {
   status: 160,
-  envelope: 360,
-  company: 220,
-  details: 170,
-  updated: 190,
+  envelope: 578,
+  company: 411,
+  details: 224,
+  updated: 188,
 };
 
 const ESIGNING_TABLE_COLUMN_LABELS: Record<EsigningTableColumnId, string> = {

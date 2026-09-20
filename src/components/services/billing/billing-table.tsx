@@ -70,16 +70,16 @@ export const billingColumnLabels: Record<BillingColumnId, string> = {
 };
 
 export const defaultBillingColumnWidths: Record<BillingColumnId, number> = {
-  expectedDate: 140,
+  expectedDate: 174,
   timing: 110,
-  company: 200,
-  family: 160,
-  service: 180,
-  feeLine: 180,
-  period: 120,
-  status: 110,
-  amount: 150,
-  billedDate: 130,
+  company: 303,
+  family: 244,
+  service: 233,
+  feeLine: 373,
+  period: 128,
+  status: 115,
+  amount: 169,
+  billedDate: 135,
   reference: 170,
   actions: 100,
 };

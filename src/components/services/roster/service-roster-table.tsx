@@ -80,13 +80,13 @@ export const columnLabels: Record<ServiceRosterColumnId, string> = {
 };
 
 export const defaultWidths: Record<ServiceRosterColumnId, number> = {
-  company: 230,
-  family: 150,
-  service: 190,
+  company: 379,
+  family: 216,
+  service: 266,
   status: 100,
   cadence: 130,
   nextDeadline: 140,
-  startEnd: 150,
+  startEnd: 224,
   warnings: 120,
   billing: 170,
   actions: 82,

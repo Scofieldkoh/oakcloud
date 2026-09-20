@@ -116,6 +116,27 @@ const COLUMN_LABELS: Record<ColumnId, string> = {
   uploaded: 'Uploaded',
 };
 
+const DEFAULT_COLUMN_WIDTHS: Partial<Record<ColumnId, number>> = {
+  document: 455,
+  company: 395,
+  pipeline: 154,
+  status: 135,
+  duplicate: 120,
+  tags: 163,
+  category: 215,
+  subCategory: 170,
+  vendor: 345,
+  docNumber: 250,
+  docDate: 147,
+  currency: 108,
+  subtotal: 147,
+  tax: 141,
+  total: 141,
+  homeTax: 152,
+  homeTotal: 150,
+  uploaded: 157,
+};
+
 const RIGHT_ALIGNED_COLUMNS = new Set<ColumnId>([
   'subtotal',
   'tax',
@@ -707,7 +728,7 @@ export default function ProcessingDocumentsPage() {
 
     const handle = e.currentTarget as HTMLElement | null;
     const th = handle?.closest('th') as HTMLTableCellElement | null;
-    const startWidth = columnWidths[columnId] ?? th?.getBoundingClientRect().width ?? 120;
+    const startWidth = columnWidths[columnId] ?? DEFAULT_COLUMN_WIDTHS[columnId] ?? th?.getBoundingClientRect().width ?? 120;
     const startX = e.clientX;
     const pointerId = e.pointerId;
 
@@ -753,7 +774,7 @@ export default function ProcessingDocumentsPage() {
   const resizeColumnByKeyboard = useCallback((event: React.KeyboardEvent<HTMLSpanElement>, columnId: ColumnId) => {
     if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
     event.preventDefault();
-    const currentWidth = columnWidths[columnId] ?? 120;
+    const currentWidth = columnWidths[columnId] ?? DEFAULT_COLUMN_WIDTHS[columnId] ?? 120;
     const nextWidth = Math.max(30, currentWidth + (event.key === 'ArrowRight' ? 10 : -10));
     const nextWidths = { ...columnWidths, [columnId]: nextWidth };
     setColumnWidths(nextWidths);
@@ -1997,8 +2018,8 @@ export default function ProcessingDocumentsPage() {
                     style={
                       id === 'open'
                         ? { width: '44px' }
-                        : columnWidths[id]
-                          ? { width: `${columnWidths[id]}px` }
+                        : (columnWidths[id] ?? DEFAULT_COLUMN_WIDTHS[id])
+                          ? { width: `${columnWidths[id] ?? DEFAULT_COLUMN_WIDTHS[id]}px` }
                           : undefined
                     }
                   />
@@ -2350,7 +2371,7 @@ export default function ProcessingDocumentsPage() {
                     return (
                       <TableHeaderCell
                         key={columnId}
-                        style={columnWidths[columnId] ? { width: `${columnWidths[columnId]}px` } : undefined}
+                        style={(columnWidths[columnId] ?? DEFAULT_COLUMN_WIDTHS[columnId]) ? { width: `${columnWidths[columnId] ?? DEFAULT_COLUMN_WIDTHS[columnId]}px` } : undefined}
                         label={COLUMN_LABELS[columnId]}
                         align={RIGHT_ALIGNED_COLUMNS.has(columnId) ? 'right' : 'left'}
                         sorted={sorted}

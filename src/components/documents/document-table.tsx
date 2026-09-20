@@ -177,13 +177,13 @@ const STATUS_FILTER_OPTIONS = [
 
 const COLUMN_PREF_KEY = 'generated-documents:list:columns:v1';
 const DEFAULT_COLUMN_WIDTHS: Record<ColumnId, number> = {
-  document: 240,
-  company: 200,
-  template: 180,
-  status: 120,
-  signedOn: 140,
+  document: 616,
+  company: 285,
+  template: 330,
+  status: 144,
+  signedOn: 188,
   createdBy: 160,
-  updated: 140,
+  updated: 158,
   actions: 110,
 };
 const MINIMUM_COLUMN_WIDTHS: Record<ColumnId, number> = {

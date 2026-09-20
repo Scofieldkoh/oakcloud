@@ -107,13 +107,13 @@ const COLUMN_SORT_FIELDS: Partial<Record<ColumnId, string>> = {
 
 const DEFAULT_COLUMN_WIDTHS: Partial<Record<ColumnId, number>> = {
   open: 44,
-  name: 200,
-  type: 100,
+  name: 347,
+  type: 147,
   idNumber: 160,
-  nationality: 120,
-  email: 200,
-  phone: 140,
-  companies: 100,
+  nationality: 206,
+  email: 324,
+  phone: 195,
+  companies: 149,
   actions: 60,
 };
 
