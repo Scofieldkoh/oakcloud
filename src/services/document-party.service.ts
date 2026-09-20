@@ -3,7 +3,30 @@ import {
   buildPartyContactFields,
   type DocumentParty,
 } from '@/lib/document-party';
-import { rankAppointments } from '@/lib/representative-authority';
+import { canonicalAppointment, rankAppointments } from '@/lib/representative-authority';
+
+const POSITION_APPOINTMENTS = new Set([
+  'Director',
+  'Managing Director',
+  'Alternate Director',
+  'Nominee Director',
+  'Company Secretary',
+  'CEO',
+  'CFO',
+  'Auditor',
+  'Liquidator',
+  'Receiver',
+  'Judicial Manager',
+  'Shareholder',
+]);
+
+function isPositionRelationship(value: string): boolean {
+  const appointment = canonicalAppointment(value);
+  return Boolean(
+    appointment
+    && (POSITION_APPOINTMENTS.has(appointment) || appointment.endsWith('Shareholder'))
+  );
+}
 
 export interface DocumentPartySelections {
   selectedDirector?: DocumentParty;
@@ -41,7 +64,7 @@ export async function getDocumentPartyOptions(
     select: {
       id: true,
       officers: {
-        where: { isCurrent: true },
+        where: { isCurrent: true, cessationDate: null },
         select: {
           id: true,
           contactId: true,
@@ -85,7 +108,9 @@ export async function getDocumentPartyOptions(
       [
         ...company.officers.map((officer) => officer.contactId),
         ...company.shareholders.map((shareholder) => shareholder.contactId),
-        ...company.contacts.map((relation) => relation.contactId),
+        ...company.contacts
+          .filter((relation) => !isPositionRelationship(relation.relationship))
+          .map((relation) => relation.contactId),
       ].filter((contactId): contactId is string => Boolean(contactId)),
     ),
   );
@@ -202,7 +227,9 @@ export async function getDocumentPartyOptions(
     ]);
   };
   for (const relation of company.contacts) {
-    addAppointment(relation.contactId, relation.relationship);
+    if (!isPositionRelationship(relation.relationship)) {
+      addAppointment(relation.contactId, relation.relationship);
+    }
   }
   for (const officer of company.officers) {
     addAppointment(officer.contactId, officer.role);

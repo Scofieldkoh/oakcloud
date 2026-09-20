@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest';
 import type { EsigningEnvelopeRecipientDto } from '@/types/esigning';
 import {
   buildSignerEmailSet,
+  buildSignerNameSet,
   getLinkedCompanyQuickAddState,
   normalizeSignerEmail,
+  normalizeSignerName,
 } from '@/components/esigning/prepare/linked-company-signer-utils';
 
 function recipient(type: 'SIGNER' | 'CC', email: string | null): EsigningEnvelopeRecipientDto {
@@ -16,6 +18,11 @@ describe('linked company recipient shortcut rules', () => {
     expect(normalizeSignerEmail(null)).toBe('');
   });
 
+  it('normalizes signer names for name-based duplicate detection', () => {
+    expect(normalizeSignerName('  Jane   Example  ')).toBe('jane example');
+    expect(normalizeSignerName(null)).toBe('');
+  });
+
   it('builds the duplicate set from signers only', () => {
     const emails = buildSignerEmailSet([
       recipient('SIGNER', 'Signer@Example.com'),
@@ -23,6 +30,14 @@ describe('linked company recipient shortcut rules', () => {
       recipient('SIGNER', null),
     ]);
     expect([...emails]).toEqual(['signer@example.com']);
+  });
+
+  it('builds the signer-name set from signers only', () => {
+    const names = buildSignerNameSet([
+      { type: 'SIGNER', name: 'Jane Example' } as EsigningEnvelopeRecipientDto,
+      { type: 'CC', name: 'Copy Person' } as EsigningEnvelopeRecipientDto,
+    ]);
+    expect([...names]).toEqual(['jane example']);
   });
 
   it('keeps a company contact without email available for configuration', () => {
@@ -51,6 +66,15 @@ describe('linked company recipient shortcut rules', () => {
     );
     expect(state.isAdded).toBe(true);
     expect(state.stateLabel).toContain('already added');
+  });
+
+  it('recognizes a manual-link signer by name when no email is available', () => {
+    const state = getLinkedCompanyQuickAddState(
+      { id: 'contact-1', fullName: 'Manual Recipient', defaultEmail: null },
+      new Set(),
+      new Set(['manual recipient']),
+    );
+    expect(state.isAdded).toBe(true);
   });
 
   it('does not mark a contact without email as already added just because another manual-link signer has no email', () => {
