@@ -60,7 +60,7 @@ describe('table filter widget visual contract', () => {
     render(
       <SearchableSelect
         variant="table-filter"
-        options={[]}
+        options={[{ value: '', label: 'All' }]}
         value=""
         onChange={() => undefined}
         placeholder="All"
@@ -70,14 +70,16 @@ describe('table filter widget visual contract', () => {
 
     const input = screen.getByRole('combobox', { name: 'Filter status' });
     expectCanonicalSurface(input.parentElement);
+    expect(input).toHaveValue('All');
     expect(input).toHaveClass(
       'px-3',
       'text-xs',
       'font-normal',
-      'text-text-primary',
+      'text-text-muted',
       'placeholder:text-text-muted',
       'placeholder:font-normal',
     );
+    expect(input).not.toHaveClass('text-text-primary');
   });
 
   it('standardizes company search filters', () => {

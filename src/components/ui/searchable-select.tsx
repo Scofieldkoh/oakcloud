@@ -14,7 +14,7 @@ import {
 import { createPortal } from 'react-dom';
 import { ChevronDown, Check, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { TABLE_FILTER_CONTAINER_CLASS, TABLE_FILTER_TEXT_CLASS, TABLE_FILTER_PLACEHOLDER_CLASS } from '@/components/ui/table-filter-styles';
+import { TABLE_FILTER_CONTAINER_CLASS, TABLE_FILTER_TEXT_CLASS, TABLE_FILTER_PLACEHOLDER_CLASS, TABLE_FILTER_PLACEHOLDER_TEXT_CLASS } from '@/components/ui/table-filter-styles';
 
 export interface SelectOption {
   value: string;
@@ -411,7 +411,10 @@ export function SearchableSelect({
           className={cn(
             'flex-1 bg-transparent outline-none px-3 min-w-0',
             variant === 'table-filter'
-              ? cn(TABLE_FILTER_TEXT_CLASS, TABLE_FILTER_PLACEHOLDER_CLASS)
+              ? cn(
+                  value ? TABLE_FILTER_TEXT_CLASS : TABLE_FILTER_PLACEHOLDER_TEXT_CLASS,
+                  TABLE_FILTER_PLACEHOLDER_CLASS,
+                )
               : cn('placeholder:text-text-muted', !value ? 'text-text-secondary' : 'text-text-primary'),
             triggerSizeClasses
           )}
