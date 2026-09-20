@@ -137,7 +137,7 @@ describe('DocumentTable', () => {
 
     expect(table.style.width).toBe('');
     expect(table.style.minWidth).toBe('');
-    expect(table.querySelector('colgroup col')).toHaveStyle({ width: '250px' });
+    expect(table.querySelector('colgroup col')).toHaveStyle({ width: '626px' });
   });
 
   it('uses the Document Vault alternate-row surface', () => {

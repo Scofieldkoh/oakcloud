@@ -577,10 +577,10 @@ describe('ServiceRoster', () => {
 
     expect(table.style.width).toBe('');
     expect(table.style.minWidth).toBe('');
-    expect(table.querySelectorAll('colgroup col')[1]).toHaveStyle({ width: '240px' });
+    expect(table.querySelectorAll('colgroup col')[1]).toHaveStyle({ width: '389px' });
     await waitFor(() => expect(mutate).toHaveBeenLastCalledWith(expect.objectContaining({
       key: 'services.roster.table.v1',
-      value: expect.objectContaining({ columnWidths: expect.objectContaining({ company: 240 }) }),
+      value: expect.objectContaining({ columnWidths: expect.objectContaining({ company: 389 }) }),
     })));
   });
 

@@ -69,14 +69,14 @@ export const deadlineColumnLabels: Record<DeadlineTableColumnId, string> = {
 };
 
 export const defaultDeadlineColumnWidths: Record<DeadlineTableColumnId, number> = {
-  dueDate: 150,
-  timing: 110,
-  company: 220,
-  family: 160,
-  service: 220,
-  milestone: 180,
-  type: 110,
-  status: 110,
+  dueDate: 208,
+  timing: 115,
+  company: 394,
+  family: 272,
+  service: 223,
+  milestone: 214,
+  type: 129,
+  status: 138,
   actions: 90,
 };
 

@@ -4,6 +4,10 @@ import type { BillingOccurrenceDto } from '@/services/billing';
 import { BillingTable } from '@/components/services/billing/billing-table';
 import { BILLING_COLUMN_IDS, defaultBillingTablePreference } from '@/lib/validations/services-preferences';
 
+const allVisibleBillingColumns = Object.fromEntries(
+  BILLING_COLUMN_IDS.map((column) => [column, true]),
+) as Record<(typeof BILLING_COLUMN_IDS)[number], boolean>;
+
 const occurrence = {
   id: 'occurrence-1',
   tenantId: 'tenant-1',
@@ -56,7 +60,7 @@ describe('BillingTable', () => {
         items={[occurrence]}
         columnWidths={defaultBillingTablePreference.columnWidths}
         columnOrder={[...BILLING_COLUMN_IDS]}
-        columnVisibility={defaultBillingTablePreference.columnVisibility}
+        columnVisibility={allVisibleBillingColumns}
         sortBy="expectedDate"
         sortOrder="asc"
       />,
@@ -81,7 +85,7 @@ describe('BillingTable', () => {
         families={[{ id: 'family-1', name: 'Payroll', displayColor: '#715DA8' }]}
         columnWidths={defaultBillingTablePreference.columnWidths}
         columnOrder={[...BILLING_COLUMN_IDS]}
-        columnVisibility={defaultBillingTablePreference.columnVisibility}
+        columnVisibility={allVisibleBillingColumns}
         sortBy="expectedDate"
         sortOrder="asc"
       />,
@@ -108,7 +112,7 @@ describe('BillingTable', () => {
         families={[{ id: 'family-1', name: 'Payroll', displayColor: '#715DA8' }]}
         columnWidths={defaultBillingTablePreference.columnWidths}
         columnOrder={[...BILLING_COLUMN_IDS]}
-        columnVisibility={defaultBillingTablePreference.columnVisibility}
+        columnVisibility={allVisibleBillingColumns}
         sortBy="expectedDate"
         sortOrder="asc"
       />,
@@ -153,7 +157,7 @@ describe('BillingTable', () => {
         items={[occurrence]}
         columnWidths={defaultBillingTablePreference.columnWidths}
         columnOrder={[...BILLING_COLUMN_IDS]}
-        columnVisibility={defaultBillingTablePreference.columnVisibility}
+        columnVisibility={allVisibleBillingColumns}
         sortBy="expectedDate"
         sortOrder="asc"
       />,
@@ -170,7 +174,7 @@ describe('BillingTable', () => {
         items={[]}
         columnWidths={defaultBillingTablePreference.columnWidths}
         columnOrder={[...BILLING_COLUMN_IDS]}
-        columnVisibility={defaultBillingTablePreference.columnVisibility}
+        columnVisibility={allVisibleBillingColumns}
         sortBy="expectedDate"
         sortOrder="asc"
       />,
@@ -196,7 +200,7 @@ describe('BillingTable', () => {
         onToggleAll={() => undefined}
         columnWidths={defaultBillingTablePreference.columnWidths}
         columnOrder={[...BILLING_COLUMN_IDS]}
-        columnVisibility={defaultBillingTablePreference.columnVisibility}
+        columnVisibility={allVisibleBillingColumns}
         sortBy="expectedDate"
         sortOrder="asc"
       />,
@@ -216,7 +220,7 @@ describe('BillingTable', () => {
         items={[occurrence]}
         columnWidths={defaultBillingTablePreference.columnWidths}
         columnOrder={[...BILLING_COLUMN_IDS]}
-        columnVisibility={defaultBillingTablePreference.columnVisibility}
+        columnVisibility={allVisibleBillingColumns}
         sortBy="expectedDate"
         sortOrder="asc"
         onEdit={onEdit}
@@ -244,7 +248,7 @@ describe('BillingTable', () => {
         onToggleAll={onToggleAll}
         columnWidths={defaultBillingTablePreference.columnWidths}
         columnOrder={[...BILLING_COLUMN_IDS]}
-        columnVisibility={defaultBillingTablePreference.columnVisibility}
+        columnVisibility={allVisibleBillingColumns}
         sortBy="expectedDate"
         sortOrder="asc"
       />,
@@ -264,7 +268,7 @@ describe('BillingTable', () => {
         items={[occurrence]}
         columnWidths={defaultBillingTablePreference.columnWidths}
         columnOrder={[...BILLING_COLUMN_IDS]}
-        columnVisibility={defaultBillingTablePreference.columnVisibility}
+        columnVisibility={allVisibleBillingColumns}
         sortBy="expectedDate"
         sortOrder="asc"
         onSort={() => undefined}
@@ -285,7 +289,7 @@ describe('BillingTable', () => {
         items={[occurrence]}
         columnWidths={defaultBillingTablePreference.columnWidths}
         columnOrder={[...BILLING_COLUMN_IDS]}
-        columnVisibility={defaultBillingTablePreference.columnVisibility}
+        columnVisibility={allVisibleBillingColumns}
         sortBy="expectedDate"
         sortOrder="asc"
         onColumnWidthChange={onLiveResize}
@@ -307,12 +311,12 @@ describe('BillingTable', () => {
     fireEvent.pointerDown(resize, { clientX: 100, pointerId: 1 });
     fireEvent.pointerMove(window, { clientX: 140 });
     fireEvent.pointerUp(window, { clientX: 140 });
-    expect(onLiveResize).toHaveBeenLastCalledWith('company', 240);
-    expect(onResizeEnd).toHaveBeenLastCalledWith('company', 240);
+    expect(onLiveResize).toHaveBeenLastCalledWith('company', 343);
+    expect(onResizeEnd).toHaveBeenLastCalledWith('company', 343);
 
     fireEvent.keyDown(resize, { key: 'ArrowLeft' });
-    expect(onLiveResize).toHaveBeenLastCalledWith('company', 190);
-    expect(onResizeEnd).toHaveBeenLastCalledWith('company', 190);
+    expect(onLiveResize).toHaveBeenLastCalledWith('company', 293);
+    expect(onResizeEnd).toHaveBeenLastCalledWith('company', 293);
   });
 
   it('keeps the desktop edit action compact while preserving the mobile touch target', () => {
@@ -321,7 +325,7 @@ describe('BillingTable', () => {
         items={[occurrence]}
         columnWidths={defaultBillingTablePreference.columnWidths}
         columnOrder={[...BILLING_COLUMN_IDS]}
-        columnVisibility={defaultBillingTablePreference.columnVisibility}
+        columnVisibility={allVisibleBillingColumns}
         sortBy="expectedDate"
         sortOrder="asc"
       />,
