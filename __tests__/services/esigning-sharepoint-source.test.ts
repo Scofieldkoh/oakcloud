@@ -9,7 +9,7 @@ const mocks = vi.hoisted(() => ({
   },
   storageKeys: {
     esigningSignedDocument: vi.fn(),
-    esigningCertificateDocument: vi.fn(),
+    esigningEnvelopeCertificate: vi.fn(),
   },
 }));
 
@@ -46,7 +46,7 @@ describe('downloadSharePointFilingSource', () => {
     const combinedBuffer = Buffer.from('%PDF-combined');
     mocks.ensureArtifacts.mockResolvedValue(undefined);
     mocks.storageKeys.esigningSignedDocument.mockReturnValue('signed-path');
-    mocks.storageKeys.esigningCertificateDocument.mockReturnValue('certificate-path');
+    mocks.storageKeys.esigningEnvelopeCertificate.mockReturnValue('certificate-path');
     mocks.storage.exists.mockResolvedValue(true);
     mocks.storage.download
       .mockResolvedValueOnce(signedBuffer)
@@ -61,6 +61,7 @@ describe('downloadSharePointFilingSource', () => {
     })).resolves.toBe(combinedBuffer);
 
     expect(mocks.ensureArtifacts).toHaveBeenCalledWith({ envelopeId: 'envelope-1', requireCertificates: true });
+    expect(mocks.storageKeys.esigningEnvelopeCertificate).toHaveBeenCalledWith('tenant-1', 'envelope-1');
     expect(mocks.storage.download).toHaveBeenNthCalledWith(1, 'signed-path');
     expect(mocks.storage.download).toHaveBeenNthCalledWith(2, 'certificate-path');
     expect(mocks.mergePdfBuffers).toHaveBeenCalledWith([signedBuffer, certificateBuffer]);
@@ -73,7 +74,7 @@ describe('downloadSharePointFilingSource', () => {
       .mockResolvedValueOnce(Buffer.from('signed'))
       .mockResolvedValueOnce(Buffer.from('certificate'));
     mocks.mergePdfBuffers.mockResolvedValue(Buffer.from('%PDF-combined'));
-    mocks.storageKeys.esigningCertificateDocument.mockReturnValue('certificate-path');
+    mocks.storageKeys.esigningEnvelopeCertificate.mockReturnValue('certificate-path');
 
     await downloadSharePointFilingSource({
       tenantId: 'tenant-1',
