@@ -5,7 +5,6 @@ import {
   useEffect,
   useRef,
   useState,
-  type MouseEvent,
 } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -22,10 +21,6 @@ import {
   Building2,
   User,
   RotateCcw,
-  ArrowUp,
-  ArrowDown,
-  ArrowUpDown,
-  X,
   Square,
   CheckSquare,
   MinusSquare,
@@ -33,7 +28,7 @@ import {
 import type { GeneratedDocumentStatus } from '@/generated/prisma';
 import { PrefetchLink } from '@/components/ui/prefetch-link';
 import { MobileCard, CardDetailsGrid, CardDetailItem } from '@/components/ui/responsive-table';
-import { SearchableSelect } from '@/components/ui/searchable-select';
+import { TableBody, TableCell, TableFilterCell, TableFilterRow, TableHead, TableHeaderCell, TableHeaderRow, TableRoot, TableRow, TableSelectFilter, TableSelectionButton, TableShell, TableTextFilter, TableViewport } from '@/components/ui/data-table';
 import { CompanySelect } from '@/components/ui/company-select';
 import { DatePicker, type DatePickerValue } from '@/components/ui/date-picker';
 import { useUserPreferences, useUpsertUserPreference } from '@/hooks/use-user-preferences';
@@ -219,76 +214,6 @@ function parseLocalDate(value?: string): Date | undefined {
 // ============================================================================
 // Small building blocks
 // ============================================================================
-
-function InlineTextFilter({
-  ariaLabel,
-  value,
-  onChange,
-}: {
-  ariaLabel: string;
-  value?: string;
-  onChange: (value: string | undefined) => void;
-}) {
-  return (
-    <div className="w-full flex items-center gap-2 h-9 rounded-lg border bg-background-secondary/30 border-border-primary hover:border-oak-primary/50 focus-within:ring-2 focus-within:ring-oak-primary/30 transition-colors">
-      <input
-        type="text"
-        aria-label={ariaLabel}
-        value={value || ''}
-        onChange={(event) => onChange(event.target.value || undefined)}
-        placeholder="All"
-        className="flex-1 bg-transparent outline-none px-3 min-w-0 text-xs text-text-primary placeholder:text-text-secondary"
-      />
-      {value ? (
-        <button
-          type="button"
-          aria-label={`Clear ${ariaLabel.toLowerCase()}`}
-          onClick={() => onChange(undefined)}
-          className="mr-1 rounded p-0.5 transition-colors hover:bg-background-tertiary"
-        >
-          <X className="h-3.5 w-3.5 text-text-muted" aria-hidden="true" />
-        </button>
-      ) : null}
-    </div>
-  );
-}
-
-function SortHeader({
-  label,
-  field,
-  sortBy,
-  sortOrder,
-  onSort,
-}: {
-  label: string;
-  field: GeneratedDocumentSortField;
-  sortBy?: GeneratedDocumentSortField;
-  sortOrder?: GeneratedDocumentSortOrder;
-  onSort?: (field: GeneratedDocumentSortField) => void;
-}) {
-  const active = sortBy === field;
-  return (
-    <button
-      type="button"
-      onClick={() => onSort?.(field)}
-      className={cn(
-        'inline-flex items-center gap-1 select-none hover:text-text-primary transition-colors',
-        active && 'text-text-primary',
-      )}
-    >
-      <span>{label}</span>
-      <span className="flex-shrink-0">
-        {active ? (
-          sortOrder === 'asc'
-            ? <ArrowUp className="w-3.5 h-3.5" />
-            : <ArrowDown className="w-3.5 h-3.5" />
-        ) : (
-          <ArrowUpDown className="w-3.5 h-3.5 text-text-muted" />
-        )}
-      </span>
-    </button>
-  );
-}
 
 // ============================================================================
 // Action Icons Component
@@ -527,52 +452,33 @@ export function DocumentTable({
       : `/generated-documents/${doc.id}`;
   }, [canEdit]);
 
-  const handleRowClick = useCallback((
-    event: MouseEvent<HTMLTableRowElement>,
-    doc: GeneratedDocument,
-  ) => {
-    if (event.defaultPrevented) return;
-    if (event.button !== 0) return;
-    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-
-    const target = event.target as HTMLElement | null;
-    if (target?.closest('a,button,input,select,textarea,[role="button"]')) return;
-
-    router.push(getDetailHref(doc));
-  }, [getDetailHref, router]);
-
   if (isLoading) {
+    const skeletonColumns = ['Document', 'Company', 'Template', 'Status', 'Signed On', 'Created By', 'Updated', 'Actions'];
     return (
-      <div className="table-container">
-        <table className="table">
-          <thead>
-            <tr>
-              <th>Document</th>
-              <th>Company</th>
-              <th>Template</th>
-              <th>Status</th>
-              <th>Signed On</th>
-              <th>Created By</th>
-              <th>Updated</th>
-              <th className="text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {[...Array(5)].map((_, i) => (
-              <tr key={i}>
-                <td><div className="skeleton h-4 w-48" /></td>
-                <td><div className="skeleton h-4 w-32" /></td>
-                <td><div className="skeleton h-4 w-28" /></td>
-                <td><div className="skeleton h-4 w-20" /></td>
-                <td><div className="skeleton h-4 w-20" /></td>
-                <td><div className="skeleton h-4 w-24" /></td>
-                <td><div className="skeleton h-4 w-20" /></td>
-                <td><div className="skeleton h-4 w-24 ml-auto" /></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <TableShell>
+        <TableViewport>
+          <TableRoot>
+            <TableHead>
+              <TableHeaderRow hasFilters={false}>
+                {skeletonColumns.map((label) => (
+                  <TableHeaderCell key={label} label={label} align={label === 'Actions' ? 'right' : 'left'} />
+                ))}
+              </TableHeaderRow>
+            </TableHead>
+            <TableBody>
+              {Array.from({ length: 5 }).map((_, index) => (
+                <TableRow key={index} index={index}>
+                  {skeletonColumns.map((label) => (
+                    <TableCell key={label} className={label === 'Actions' ? 'text-right' : undefined}>
+                      <div className={`skeleton h-4 ${label === 'Document' ? 'w-48' : label === 'Company' ? 'w-32' : label === 'Actions' ? 'ml-auto w-24' : 'w-20'}`} />
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))}
+            </TableBody>
+          </TableRoot>
+        </TableViewport>
+      </TableShell>
     );
   }
 
@@ -718,10 +624,9 @@ export function DocumentTable({
       </div>
 
       {/* Desktop Table View */}
-      <div className="hidden md:block table-container overflow-x-auto">
-        <table
-          className="table w-full min-w-max"
-        >
+      <TableShell className="hidden md:block">
+        <TableViewport>
+          <TableRoot>
           <colgroup>
             {selectable && <col style={{ width: `${CHECKBOX_COLUMN_WIDTH}px` }} />}
             {COLUMN_IDS.map((columnId) => (
@@ -733,14 +638,14 @@ export function DocumentTable({
               />
             ))}
           </colgroup>
-          <thead className="bg-background-tertiary border-b border-border-primary">
+          <TableHead>
             {/* Inline filter row - moved above headers */}
-            <tr data-filter-row className="h-14 bg-background-secondary/50">
-              {selectable && <th className="max-w-0" />}
+            <TableFilterRow>
+              {selectable && <TableFilterCell className="w-11" />}
               {COLUMN_IDS.map((columnId) => (
-                <th key={columnId} className="max-w-0">
+                <TableFilterCell key={columnId}>
                   {columnId === 'document' ? (
-                    <InlineTextFilter
+                    <TableTextFilter
                       ariaLabel="Filter documents by title"
                       value={filters.title}
                       onChange={(value) => onFilterChange?.({ title: value })}
@@ -756,23 +661,20 @@ export function DocumentTable({
                       className="text-xs"
                     />
                   ) : columnId === 'template' ? (
-                    <InlineTextFilter
+                    <TableTextFilter
                       ariaLabel="Filter documents by template"
                       value={filters.templateName}
                       onChange={(value) => onFilterChange?.({ templateName: value })}
                     />
                   ) : columnId === 'status' ? (
-                    <SearchableSelect
-                      variant="table-filter"
+                    <TableSelectFilter
                       options={STATUS_FILTER_OPTIONS}
                       value={filters.status || ''}
                       onChange={(value) => onFilterChange?.({
                         status: value ? value as GeneratedDocumentStatus : undefined,
                       })}
                       placeholder="All statuses"
-                      className="text-xs"
-                      showChevron={false}
-                      showKeyboardHints={false}
+                      ariaLabel="All statuses"
                     />
                   ) : columnId === 'signedOn' ? (
                     <DatePicker
@@ -800,7 +702,7 @@ export function DocumentTable({
                       className="text-xs"
                     />
                   ) : columnId === 'createdBy' ? (
-                    <InlineTextFilter
+                    <TableTextFilter
                       ariaLabel="Filter documents by creator"
                       value={filters.createdBy}
                       onChange={(value) => onFilterChange?.({ createdBy: value })}
@@ -831,67 +733,44 @@ export function DocumentTable({
                       className="text-xs"
                     />
                   ) : null}
-                </th>
+                </TableFilterCell>
               ))}
-            </tr>
+            </TableFilterRow>
 
             {/* Column header row - below filters */}
-            <tr data-column-header-row className="h-[38px] border-t border-border-primary">
+            <TableHeaderRow>
               {selectable && (
-                <th className="relative px-2 py-2.5">
-                  <button
-                    onClick={onToggleAll}
-                    className="p-0.5 hover:bg-background-secondary rounded transition-colors"
-                    aria-label={isAllSelected ? 'Deselect all documents' : 'Select all documents'}
-                    aria-pressed={isAllSelected}
-                  >
-                    {isAllSelected ? (
-                      <CheckSquare className="w-4 h-4 text-oak-primary" aria-hidden="true" />
-                    ) : isIndeterminate ? (
-                      <MinusSquare className="w-4 h-4 text-oak-light" aria-hidden="true" />
-                    ) : (
-                      <Square className="w-4 h-4 text-text-muted" aria-hidden="true" />
-                    )}
-                  </button>
-                </th>
+                <TableHeaderCell className="w-11 px-2 text-center">
+                  <TableSelectionButton
+                    selected={isAllSelected}
+                    indeterminate={isIndeterminate}
+                    onClick={() => onToggleAll?.()}
+                    ariaLabel={isAllSelected ? 'Deselect all documents' : 'Select all documents'}
+                  />
+                </TableHeaderCell>
               )}
-              {COLUMN_IDS.map((columnId) => (
-                <th
-                  key={columnId}
-                  className={cn(
-                    'relative px-4 py-2.5 text-xs font-medium text-text-secondary whitespace-nowrap',
-                    columnId === 'actions' && 'text-right',
-                  )}
-                >
-                  {columnId === 'actions' ? (
-                    <span>{COLUMN_LABELS[columnId]}</span>
-                  ) : COLUMN_SORT_FIELDS[columnId] ? (
-                    <SortHeader
-                      label={COLUMN_LABELS[columnId]}
-                      field={COLUMN_SORT_FIELDS[columnId]!}
-                      sortBy={filters.sortBy}
-                      sortOrder={filters.sortOrder}
-                      onSort={onSortChange}
-                    />
-                  ) : (
-                    <span>{COLUMN_LABELS[columnId]}</span>
-                  )}
-                  {columnId !== 'actions' && (
-                    <span
-                      role="separator"
-                      aria-label={`Resize ${COLUMN_LABELS[columnId]} column`}
-                      aria-orientation="vertical"
-                      tabIndex={0}
-                      className="absolute inset-y-0 right-0 z-10 w-2 cursor-col-resize touch-none select-none border-r border-transparent hover:border-oak-primary focus:border-oak-primary focus:outline-none"
-                      onPointerDown={(event) => startResize(event, columnId)}
-                      onKeyDown={(event) => resizeWithKeyboard(event, columnId)}
-                    />
-                  )}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
+              {COLUMN_IDS.map((columnId) => {
+                const sortField = COLUMN_SORT_FIELDS[columnId];
+                const sorted = Boolean(sortField && filters.sortBy === sortField);
+                const isResizable = columnId !== 'actions';
+                return (
+                  <TableHeaderCell
+                    key={columnId}
+                    label={COLUMN_LABELS[columnId]}
+                    align={columnId === 'actions' ? 'right' : 'left'}
+                    sorted={sorted}
+                    sortOrder={filters.sortOrder}
+                    onSort={sortField && onSortChange ? () => onSortChange(sortField) : undefined}
+                    resizable={isResizable}
+                    onResizePointerDown={isResizable ? (event) => startResize(event, columnId) : undefined}
+                    onResizeKeyDown={isResizable ? (event) => resizeWithKeyboard(event, columnId) : undefined}
+                    resizeAriaLabel={`Resize ${COLUMN_LABELS[columnId]} column`}
+                  />
+                );
+              })}
+            </TableHeaderRow>
+          </TableHead>
+          <TableBody>
             {documents.length === 0 ? (
               <tr>
                 <td colSpan={COLUMN_IDS.length + (selectable ? 1 : 0)} className="px-4 py-12 text-center">
@@ -913,35 +792,27 @@ export function DocumentTable({
                 const isSelected = selectedIds.has(doc.id);
 
                 return (
-                  <tr
+                  <TableRow
                     key={doc.id}
-                    onClick={(event) => handleRowClick(event, doc)}
-                    className={cn(
-                      'border-b border-border-primary transition-colors cursor-pointer',
-                      isSelected
-                        ? 'bg-oak-row-selected hover:bg-oak-row-selected-hover'
-                        : index % 2 === 1
-                          ? 'bg-oak-row-alt hover:bg-oak-row-alt-hover'
-                          : 'hover:bg-background-tertiary/50',
-                    )}
+                    index={index}
+                    selected={isSelected}
+                    interactive
+                    onActivate={() => router.push(getDetailHref(doc))}
+                    aria-label={`Open ${doc.title}`}
                   >
                     {selectable && (
-                      <td className="px-4 py-3">
-                        <button
-                          onClick={() => onToggleOne?.(doc.id)}
-                          className="p-0.5 hover:bg-background-secondary rounded transition-colors"
-                          aria-label={isSelected ? `Deselect ${doc.title}` : `Select ${doc.title}`}
-                          aria-pressed={isSelected}
-                        >
-                          {isSelected ? (
-                            <CheckSquare className="w-4 h-4 text-oak-primary" aria-hidden="true" />
-                          ) : (
-                            <Square className="w-4 h-4 text-text-muted" aria-hidden="true" />
-                          )}
-                        </button>
+                      <td className="w-11 px-3 py-2">
+                        <TableSelectionButton
+                          selected={isSelected}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            onToggleOne?.(doc.id);
+                          }}
+                          ariaLabel={isSelected ? `Deselect ${doc.title}` : `Select ${doc.title}`}
+                        />
                       </td>
                     )}
-                    <td className="px-4 py-3">
+                    <td className="px-3 py-2">
                       <PrefetchLink
                         href={getDetailHref(doc)}
                         className="font-medium text-text-primary hover:text-oak-light transition-colors"
@@ -949,14 +820,14 @@ export function DocumentTable({
                         {doc.title}
                       </PrefetchLink>
                     </td>
-                    <td className="px-4 py-3 text-text-secondary">
+                    <td className="px-3 py-2 text-text-secondary">
                       {doc.company ? (
                         <span className="truncate max-w-[200px] block">{doc.company.name}</span>
                       ) : (
                         <span className="text-text-muted">—</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-text-secondary max-w-0">
+                    <td className="px-3 py-2 text-text-secondary max-w-0">
                       {doc.template ? (
                         <span className="truncate block" title={doc.template.name}>
                           {doc.template.name}
@@ -965,26 +836,26 @@ export function DocumentTable({
                         <span className="text-text-muted">—</span>
                       )}
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-3 py-2">
                       <span className={`badge ${status.color} inline-flex items-center gap-1`}>
                         <StatusIcon className="w-3 h-3" aria-hidden="true" />
                         {status.label}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-text-secondary">
+                    <td className="px-3 py-2 text-text-secondary">
                       {doc.signedAt ? (
                         formatDateShort(doc.signedAt)
                       ) : (
                         <span className="text-text-muted">—</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-text-secondary">
+                    <td className="px-3 py-2 text-text-secondary">
                       {doc.createdBy.firstName} {doc.createdBy.lastName}
                     </td>
-                    <td className="px-4 py-3 text-text-secondary">
+                    <td className="px-3 py-2 text-text-secondary">
                       {formatDateShort(doc.updatedAt)}
                     </td>
-                    <td className="px-4 py-3 text-right">
+                    <td className="px-3 py-2 text-right">
                       <DocumentActions
                         documentId={doc.id}
                         documentTitle={doc.title}
@@ -998,12 +869,13 @@ export function DocumentTable({
                         canExport={canExport}
                       />
                     </td>
-                  </tr>
+                  </TableRow>
                 );
             })}
-          </tbody>
-        </table>
-      </div>
+          </TableBody>
+          </TableRoot>
+        </TableViewport>
+      </TableShell>
     </>
   );
 }

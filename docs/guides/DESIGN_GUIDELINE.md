@@ -3123,6 +3123,72 @@ return (
 
 #### Table Design Patterns
 
+##### Canonical Reusable Table System
+
+All application data tables should use the shared table system in `src/components/ui/data-table.tsx`. Do not reimplement table shells, sortable headers, resize handles, zebra/selected row states, selection controls, inline text/select filters, or row click suppression inside feature modules.
+
+Use one of two composition levels:
+
+- **`DataGrid`** (`src/components/ui/data-grid.tsx`) for configuration-driven tables. Define columns once and opt into sorting, resizing, selection, inline filters, pagination, mobile cards, and row activation.
+- **`data-table.tsx` primitives** for feature-rich tables whose cells or filters need custom domain components. Compose `TableShell`, `TableViewport`, `TableRoot`, `TableHead`, `TableFilterRow`, `TableHeaderRow`, `TableHeaderCell`, `TableBody`, `TableRow`, and `TableSelectionButton`; keep only domain-specific cell/filter content in the feature module.
+
+The shared primitives own these interaction and visual rules:
+
+- standard desktop cell density (`px-3 py-2`) and compact variants where explicitly needed;
+- inline filter row height/alignment;
+- sortable header icons and `aria-sort`;
+- pointer and keyboard column resizing;
+- alternating row backgrounds, hover states, and selected-row states;
+- keyboard-accessible row activation;
+- suppression of row activation when the user interacts with links, buttons, inputs, menus, or resize handles;
+- common selection and empty-state presentation.
+
+Example for a custom table:
+
+```tsx
+<TableShell isFetching={isFetching}>
+  <TableViewport>
+    <TableRoot>
+      <TableHead>
+        <TableFilterRow>
+          <TableFilterCell>
+            <TableTextFilter
+              ariaLabel="Filter company"
+              value={filters.company}
+              onChange={(company) => setFilters({ ...filters, company })}
+            />
+          </TableFilterCell>
+        </TableFilterRow>
+        <TableHeaderRow>
+          <TableHeaderCell
+            label="Company"
+            sorted={sortBy === 'company'}
+            sortOrder={sortOrder}
+            onSort={() => setSortBy('company')}
+            resizable
+            onResizePointerDown={handleResize}
+          />
+        </TableHeaderRow>
+      </TableHead>
+      <TableBody>
+        {rows.map((row, index) => (
+          <TableRow
+            key={row.id}
+            index={index}
+            onActivate={() => openRow(row)}
+          >
+            <TableCell>{row.company}</TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </TableRoot>
+  </TableViewport>
+</TableShell>
+```
+
+Feature modules may use specialized filter controls such as `CompanySelect`, `DatePicker`, or `AmountFilter` inside `TableFilterCell`; they should not recreate the surrounding table/filter/header behavior.
+
+
 Comprehensive patterns for data tables, from simple lists to complex data grids with advanced filtering.
 
 ##### Table Types
@@ -3170,203 +3236,100 @@ Comprehensive patterns for data tables, from simple lists to complex data grids 
 </table>
 ```
 
-##### Complex Table Pattern (Document Processing Reference)
+##### Complex Table Pattern (Shared Primitive Composition)
 
-The document processing table is the **reference implementation** for advanced data grids:
+Document Processing is a useful example of a complex domain table, but the **shared primitives are the source of truth**. Advanced tables should compose domain-specific controls into the shared structure rather than copy Document Processing markup.
 
-**Key Features:**
-1. Multi-row header (filter row + column headers)
-2. Mixed filter types (combobox, text input, date picker, amount filter)
-3. Resizable columns with drag handles
-4. Sortable column headers with indicators
-5. Dense badge usage in cells
-6. Context-specific dropdown styling (transparent in headers)
-7. Keyboard shortcuts for actions
-8. Pagination with page info
+**Key features supported by the shared system:**
+1. Multi-row headers (filter row + column headers)
+2. Mixed filter types (select, text, date, amount, company, tags)
+3. Pointer and keyboard-resizable columns
+4. Sortable headers with consistent indicators and `aria-sort`
+5. Dense badges and rich domain cells
+6. Alternating, selected, hover, and focus row states
+7. Keyboard-accessible row activation with nested-control click suppression
+8. Pagination outside the scroll viewport but inside the table shell
 
 ###### Multi-Row Filter Headers
 
-Use two rows in `<thead>` for tables with inline filters:
+Use `TableFilterRow` above `TableHeaderRow`. Put specialized controls inside `TableFilterCell`.
 
 ```tsx
-<thead>
-  {/* Row 1: Filter controls */}
-  <tr className="bg-bg-secondary border-b border-border-primary">
-    <th className="px-2 py-1.5">
-      {/* Checkbox column has no filter */}
-    </th>
-    <th className="px-2 py-1.5">
-      <FormInput
-        size="xs"
-        type="search"
-        placeholder="Search..."
-        value={filters.name}
-        onChange={(e) => setFilters({ ...filters, name: e.target.value })}
-        className="min-w-[120px] bg-transparent border-0 focus:border focus:border-border-primary focus:bg-bg-primary"
+<TableHead>
+  <TableFilterRow>
+    <TableFilterCell>
+      <TableTextFilter
+        ariaLabel="Filter document name"
+        value={filters.documentName}
+        onChange={(documentName) => updateFilters({ documentName })}
       />
-    </th>
-    <th className="px-2 py-1.5">
-      <Select
-        size="xs"
-        value={filters.status}
-        onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-        className="min-w-[100px] bg-transparent border-0 focus:border focus:border-border-primary focus:bg-bg-primary"
-      >
-        <option value="">All statuses</option>
-        <option value="extracted">Extracted</option>
-        <option value="approved">Approved</option>
-      </Select>
-    </th>
-    <th className="px-2 py-1.5">
-      <div className="flex items-center gap-1">
-        <FormInput
-          size="xs"
-          type="date"
-          value={filters.dateFrom}
-          onChange={(e) => setFilters({ ...filters, dateFrom: e.target.value })}
-          className="bg-transparent border-0 focus:border focus:border-border-primary focus:bg-bg-primary"
-        />
-        <span className="text-text-muted">-</span>
-        <FormInput
-          size="xs"
-          type="date"
-          value={filters.dateTo}
-          onChange={(e) => setFilters({ ...filters, dateTo: e.target.value })}
-          className="bg-transparent border-0 focus:border focus:border-border-primary focus:bg-bg-primary"
-        />
-      </div>
-    </th>
-  </tr>
+    </TableFilterCell>
+    <TableFilterCell>
+      <CompanySelect
+        value={filters.companyId ?? ''}
+        onChange={(companyId) => updateFilters({ companyId: companyId || undefined })}
+        placeholder="All companies"
+      />
+    </TableFilterCell>
+  </TableFilterRow>
 
-  {/* Row 2: Column headers with sort */}
-  <tr className="bg-bg-secondary">
-    <th className="w-10 px-2 py-2">
-      <Checkbox size="sm" checked={isAllSelected} indeterminate={isIndeterminate} onChange={toggleSelectAll} />
-    </th>
-    <SortableHeader label="Company Name" field="name" currentSortBy={sortBy} currentSortOrder={sortOrder} onSort={handleSort} />
-    <SortableHeader label="Status" field="status" currentSortBy={sortBy} currentSortOrder={sortOrder} onSort={handleSort} />
-    <SortableHeader label="Date" field="date" currentSortBy={sortBy} currentSortOrder={sortOrder} onSort={handleSort} />
-    <th className="px-2 py-2 text-xs font-medium text-text-secondary uppercase">Actions</th>
-  </tr>
-</thead>
+  <TableHeaderRow>
+    <TableHeaderCell
+      label="Document"
+      sorted={sortBy === 'document'}
+      sortOrder={sortOrder}
+      onSort={() => setSortBy('document')}
+      resizable
+      onResizePointerDown={(event) => startResize(event, 'document')}
+      onResizeKeyDown={(event) => resizeWithKeyboard(event, 'document')}
+    />
+    <TableHeaderCell
+      label="Company"
+      sorted={sortBy === 'company'}
+      sortOrder={sortOrder}
+      onSort={() => setSortBy('company')}
+      resizable
+      onResizePointerDown={(event) => startResize(event, 'company')}
+      onResizeKeyDown={(event) => resizeWithKeyboard(event, 'company')}
+    />
+  </TableHeaderRow>
+</TableHead>
 ```
 
-**Key Points:**
-- Filter row has `border-b border-border-primary` to separate from column headers
-- Filter inputs use `bg-transparent border-0` to blend with header background
-- Focus state adds border: `focus:border focus:border-border-primary`
-- Column headers row uses standard table header styling
+###### Column Resizing
 
-###### Resizable Columns
+Do not add custom resize handles to feature modules. Set `resizable` on `TableHeaderCell` and provide pointer/keyboard callbacks. The shared resize handle owns cursor, focus, hover, separator semantics, and row-click suppression.
 
-For tables with many columns, allow users to resize column widths:
+###### Row Interaction
+
+Use `TableRow onActivate` when the row opens a detail page or performs a primary action. The shared row supports Enter/Space and ignores activation originating from links, buttons, inputs, menus, labels, or resize handles.
 
 ```tsx
-import { useDraggable } from '@/hooks/use-draggable';
-
-function ResizableColumn({ children, minWidth = 80, onResize }) {
-  const [width, setWidth] = useState(200);
-  const handleRef = useRef(null);
-
-  const handleDrag = useDraggable(handleRef, {
-    onDrag: (deltaX) => {
-      const newWidth = Math.max(minWidth, width + deltaX);
-      setWidth(newWidth);
-      onResize?.(newWidth);
-    }
-  });
-
-  return (
-    <th style={{ width, minWidth, position: 'relative' }}>
-      {children}
-      <div
-        ref={handleRef}
-        className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-oak-primary transition-colors"
-      />
-    </th>
-  );
-}
-```
-
-**Usage:**
-```tsx
-<thead>
-  <tr>
-    <ResizableColumn minWidth={120}>Name</ResizableColumn>
-    <ResizableColumn minWidth={100}>Status</ResizableColumn>
-  </tr>
-</thead>
+<TableRow
+  index={index}
+  selected={selectedIds.has(row.id)}
+  onActivate={() => router.push(`/items/${row.id}`)}
+>
+  <TableCell>{row.name}</TableCell>
+  <TableCell>
+    <Button onClick={() => edit(row)}>Edit</Button>
+  </TableCell>
+</TableRow>
 ```
 
 ###### Dense Badge Layout in Cells
 
-Complex tables often display multiple status indicators per cell:
+Rich status content remains domain-specific, but its container belongs inside the shared cell.
 
 ```tsx
-<TableCell className="px-2 py-1.5">
-  <div className="flex items-center gap-2 flex-wrap">
-    <Badge size="sm" variant="success">
-      <Icon name="check" className="w-3 h-3" />
-      Extracted
-    </Badge>
-    <Badge size="sm" variant="info">
-      Approved
-    </Badge>
-    <Badge size="sm" variant="default">
-      <Icon name="copy" className="w-3 h-3" />
-      Not Duplicate
-    </Badge>
+<TableCell>
+  <div className="flex flex-wrap items-center gap-2">
+    <Badge size="sm" variant="success">Extracted</Badge>
+    <Badge size="sm" variant="info">Approved</Badge>
   </div>
 </TableCell>
 ```
 
-**Guidelines for Badge Density:**
-- Use `size="sm"` for all badges in dense tables
-- Limit to 2-3 badges per cell to avoid overwhelming the layout
-- Use `gap-2` (8px) between badges for readability
-- Include icons only when they add semantic meaning (not decorative)
-- Use `flex-wrap` to handle overflow gracefully
-
-###### Keyboard Shortcuts in Tables
-
-Display keyboard shortcuts in table action buttons:
-
-```tsx
-<div className="flex items-center gap-2 mb-4">
-  <Button size="sm" variant="ghost" onClick={handleRefresh}>
-    <Icon name="refresh" className="w-4 h-4 mr-2" />
-    Refresh (Ctrl+R)
-  </Button>
-  <Button size="sm" variant="ghost" onClick={handleUpload}>
-    <Icon name="upload" className="w-4 h-4 mr-2" />
-    Upload (F1)
-  </Button>
-</div>
-
-// Implement keyboard listener
-useEffect(() => {
-  const handleKeyDown = (e: KeyboardEvent) => {
-    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'r') {
-      e.preventDefault();
-      handleRefresh();
-    }
-    if (e.key === 'F1') {
-      e.preventDefault();
-      handleUpload();
-    }
-  };
-
-  window.addEventListener('keydown', handleKeyDown);
-  return () => window.removeEventListener('keydown', handleKeyDown);
-}, []);
-```
-
-**Best Practices:**
-- Show shortcuts in button text: `Action (Key)`
-- Use Ctrl+letters for common actions (Ctrl+R = Refresh, Ctrl+A = Add)
-- Use function keys (F1, F2, F3) for primary/secondary actions
-- Don't trigger when input fields are focused
-- Document shortcuts in tooltip or help text
 
 ##### Table Row States
 

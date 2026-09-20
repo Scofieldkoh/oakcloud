@@ -1,10 +1,11 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from 'react';
-import { ArrowDown, ArrowUp, ArrowUpDown, MoreHorizontal } from 'lucide-react';
+import { MoreHorizontal } from 'lucide-react';
 import { MobileCard, CardDetailItem, CardDetailsGrid } from '@/components/ui/responsive-table';
 import { Pagination } from '@/components/ui/pagination';
 import { Checkbox } from '@/components/ui/checkbox';
+import { TableBody, TableEmptyState, TableFilterCell, TableFilterRow, TableHead, TableHeaderCell, TableHeaderRow, TableRoot, TableRow, TableShell, TableViewport, isTableInteractiveTarget } from '@/components/ui/data-table';
 import { cn } from '@/lib/utils';
 import type { DeadlineOccurrenceDto } from '@/services/deadline';
 import type { UpdateDeadlineOccurrenceInput } from '@/lib/validations/deadline';
@@ -277,15 +278,15 @@ interface DesktopCellProps {
 
 function DesktopCell({ occurrence, column, canEdit, isPending, mutationError, onUpdate, onResetOverride, actionOpen, actionAnchor, onActionOpen, onActionClose }: DesktopCellProps) {
   switch (column) {
-    case 'dueDate': return <td className="px-4 py-3 align-middle text-sm text-text-primary"><span className="whitespace-nowrap">{dateLabel(occurrence.operativeDueDate)}</span>{occurrence.dateOverridden ? <span className="ml-1 inline-flex rounded-full bg-background-tertiary px-1.5 py-0.5 text-[10px] text-text-secondary">Override</span> : null}</td>;
-    case 'timing': return <td className="px-4 py-3 align-middle"><span className={cn('badge', timingClass(occurrence.timingState, occurrence.status))}>{timingLabel(occurrence.timingState, occurrence.status)}</span></td>;
-    case 'company': return <td className="max-w-0 px-4 py-3 align-middle"><CompanyCell occurrence={occurrence} /></td>;
-    case 'family': return <td className="max-w-0 px-4 py-3 align-middle"><FamilyCell occurrence={occurrence} /></td>;
-    case 'service': return <td className="max-w-0 px-4 py-3 align-middle"><ServiceCell occurrence={occurrence} /></td>;
-    case 'milestone': return <td className="max-w-0 px-4 py-3 align-middle text-sm text-text-primary"><span className="block truncate" title={milestoneLabel(occurrence)}>{milestoneLabel(occurrence)}</span></td>;
-    case 'type': return <td className="px-4 py-3 align-middle"><span className="badge badge-info">{typeLabels[occurrence.deadlineType]}</span></td>;
-    case 'status': return <td className="px-4 py-3 align-middle"><span className={cn('badge', statusClass(occurrence.status))}>{occurrence.status.charAt(0) + occurrence.status.slice(1).toLowerCase()}</span></td>;
-    case 'actions': return <td className="px-4 py-3 align-middle"><DeadlineActions occurrence={occurrence} canEdit={canEdit} isPending={isPending} mutationError={mutationError} onUpdate={onUpdate} onResetOverride={onResetOverride} open={actionOpen} openAt={actionAnchor} onOpen={onActionOpen} onClose={onActionClose} /></td>;
+    case 'dueDate': return <td className="px-3 py-2 align-middle text-sm text-text-primary"><span className="whitespace-nowrap">{dateLabel(occurrence.operativeDueDate)}</span>{occurrence.dateOverridden ? <span className="ml-1 inline-flex rounded-full bg-background-tertiary px-1.5 py-0.5 text-[10px] text-text-secondary">Override</span> : null}</td>;
+    case 'timing': return <td className="px-3 py-2 align-middle"><span className={cn('badge', timingClass(occurrence.timingState, occurrence.status))}>{timingLabel(occurrence.timingState, occurrence.status)}</span></td>;
+    case 'company': return <td className="max-w-0 px-3 py-2 align-middle"><CompanyCell occurrence={occurrence} /></td>;
+    case 'family': return <td className="max-w-0 px-3 py-2 align-middle"><FamilyCell occurrence={occurrence} /></td>;
+    case 'service': return <td className="max-w-0 px-3 py-2 align-middle"><ServiceCell occurrence={occurrence} /></td>;
+    case 'milestone': return <td className="max-w-0 px-3 py-2 align-middle text-sm text-text-primary"><span className="block truncate" title={milestoneLabel(occurrence)}>{milestoneLabel(occurrence)}</span></td>;
+    case 'type': return <td className="px-3 py-2 align-middle"><span className="badge badge-info">{typeLabels[occurrence.deadlineType]}</span></td>;
+    case 'status': return <td className="px-3 py-2 align-middle"><span className={cn('badge', statusClass(occurrence.status))}>{occurrence.status.charAt(0) + occurrence.status.slice(1).toLowerCase()}</span></td>;
+    case 'actions': return <td className="px-3 py-2 align-middle"><DeadlineActions occurrence={occurrence} canEdit={canEdit} isPending={isPending} mutationError={mutationError} onUpdate={onUpdate} onResetOverride={onResetOverride} open={actionOpen} openAt={actionAnchor} onOpen={onActionOpen} onClose={onActionClose} /></td>;
   }
 }
 
@@ -328,11 +329,6 @@ interface DesktopDeadlineRowProps {
   onToggleSelection?: (occurrence: DeadlineOccurrenceDto) => void;
 }
 
-function isInteractiveRowTarget(target: EventTarget | null): boolean {
-  const element = target as Element | null;
-  return Boolean(element?.closest('button, input, textarea, select, a, label, [role="dialog"], [role="separator"]'));
-}
-
 function DesktopDeadlineRow({ occurrence, index, visibleColumns, canEdit, isPending, mutationError, onUpdate, onResetOverride, isSelected, onToggleSelection }: DesktopDeadlineRowProps) {
   const [actionsOpen, setActionsOpen] = useState(false);
   const [actionAnchor, setActionAnchor] = useState<ActionAnchorPoint | null>(null);
@@ -345,39 +341,39 @@ function DesktopDeadlineRow({ occurrence, index, visibleColumns, canEdit, isPend
     setActionsOpen(false);
   };
   const handleClick = (event: React.MouseEvent<HTMLTableRowElement>) => {
-    if (isInteractiveRowTarget(event.target)) return;
+    if (isTableInteractiveTarget(event.target)) return;
     openActions({ x: event.clientX, y: event.clientY });
   };
   const handleKeyDown = (event: React.KeyboardEvent<HTMLTableRowElement>) => {
-    if (isInteractiveRowTarget(event.target)) return;
+    if (isTableInteractiveTarget(event.target)) return;
     if (event.key !== 'Enter' && event.key !== ' ') return;
     event.preventDefault();
     openActions();
   };
 
   return (
-    <tr
-      tabIndex={0}
+    <TableRow
+      index={index}
+      interactive
       aria-label={`Open actions for ${occurrence.company.name} ${milestoneLabel(occurrence)}`}
       onClick={handleClick}
       onKeyDown={handleKeyDown}
-      className={cn('cursor-pointer border-b border-border-primary transition-colors hover:bg-background-tertiary/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-oak-primary/50', index % 2 === 0 && 'bg-oak-row-alt')}
+      className="focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-oak-primary/50"
     >
-      {onToggleSelection ? <td className="w-12 px-2 py-3 text-center align-middle" onClick={(event) => event.stopPropagation()}><div className="flex justify-center"><Checkbox checked={isSelected} onChange={() => onToggleSelection(occurrence)} aria-label={`Select deadline ${occurrence.company.name} ${milestoneLabel(occurrence)}`} size="sm" /></div></td> : null}
+      {onToggleSelection ? (
+        <td className="w-12 px-2 py-2 text-center align-middle">
+          <div className="flex justify-center">
+            <Checkbox
+              checked={isSelected}
+              onChange={() => onToggleSelection(occurrence)}
+              aria-label={`Select deadline ${occurrence.company.name} ${milestoneLabel(occurrence)}`}
+              size="sm"
+            />
+          </div>
+        </td>
+      ) : null}
       {visibleColumns.map((column) => <DesktopCell key={column} occurrence={occurrence} column={column} canEdit={canEdit} isPending={isPending} mutationError={mutationError} onUpdate={onUpdate} onResetOverride={onResetOverride} actionOpen={actionsOpen} actionAnchor={actionAnchor} onActionOpen={() => openActions()} onActionClose={closeActions} />)}
-    </tr>
-  );
-}
-
-function SortableHeader({ columnId, sortBy, sortOrder, onSort, onResize, onResizeKeyboard }: { columnId: DeadlineTableColumnId; sortBy: DeadlineSortBy; sortOrder: 'asc' | 'desc'; onSort?: (sortBy: DeadlineSortBy) => void; onResize: (columnId: DeadlineTableColumnId, event: React.PointerEvent<HTMLSpanElement>) => void; onResizeKeyboard: (columnId: DeadlineTableColumnId, delta: number) => void }) {
-  const field = sortFields[columnId];
-  const active = field === sortBy;
-  const label = deadlineColumnLabels[columnId];
-  return (
-    <th scope="col" aria-label={label} aria-sort={field ? (active ? (sortOrder === 'asc' ? 'ascending' : 'descending') : 'none') : undefined} className="relative px-4 py-2.5 text-left text-xs font-medium text-text-secondary">
-      {field && onSort ? <button type="button" aria-label={active ? `Sort by ${label}, currently ${sortOrder === 'asc' ? 'ascending' : 'descending'}` : `Sort by ${label}`} onClick={() => onSort(field)} className="inline-flex min-h-11 items-center gap-1 text-left hover:text-text-primary sm:min-h-8"><span>{label}</span>{active ? (sortOrder === 'asc' ? <ArrowUp className="h-3.5 w-3.5" aria-hidden="true" /> : <ArrowDown className="h-3.5 w-3.5" aria-hidden="true" />) : <ArrowUpDown className="h-3.5 w-3.5 text-text-muted" aria-hidden="true" />}</button> : <span>{label}</span>}
-      {columnId !== 'actions' ? <span role="separator" aria-label={`Resize ${label} column`} aria-orientation="vertical" tabIndex={0} onPointerDown={(event) => onResize(columnId, event)} onKeyDown={(event) => { if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') { event.preventDefault(); onResizeKeyboard(columnId, event.key === 'ArrowRight' ? 10 : -10); } }} className="absolute inset-y-0 -right-2 w-4 cursor-col-resize touch-none select-none" /> : null}
-    </th>
+    </TableRow>
   );
 }
 
@@ -472,26 +468,62 @@ export function DeadlineTable({
       <div className="space-y-3 md:hidden" aria-label="Deadline cards">
         {items.length === 0 ? <div className="rounded-xl border border-border-primary bg-background-secondary p-6 text-center text-sm text-text-secondary">No deadlines found</div> : items.map((occurrence) => <MobileDeadlineCard key={occurrence.id} occurrence={occurrence} canEdit={canEdit} isPending={isPending} mutationError={mutationError} onUpdate={onUpdate} onResetOverride={onResetOverride} isSelected={selectedIds?.has(occurrence.id) ?? false} onToggleSelection={selectionEnabled ? onToggleSelection : undefined} />)}
       </div>
-      <div className={cn('table-container hidden overflow-hidden md:block', isFetching && 'opacity-60')}>
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-max border-collapse" aria-label="Deadline occurrences table">
+      <TableShell className="hidden md:block" isFetching={isFetching}>
+        <TableViewport>
+          <TableRoot aria-label="Deadline occurrences table">
           <colgroup>{selectionEnabled ? <col style={{ width: '48px' }} /> : null}{visibleColumns.map((column) => <col key={column} style={column === 'actions' ? undefined : { width: `${columnWidths[column] ?? defaultDeadlineColumnWidths[column]}px` }} />)}</colgroup>
-          <thead>
-            {inlineFilters ? <tr className="border-b border-border-primary"><th colSpan={visibleColumns.length + (selectionEnabled ? 1 : 0)} className="p-0 text-left">{inlineFilters}</th></tr> : null}
-            <tr className="border-b border-border-primary bg-background-tertiary/70">{selectionEnabled ? <th scope="col" className="w-12 px-2 py-2.5 text-center"><div className="flex justify-center"><Checkbox checked={allVisibleSelected} indeterminate={someVisibleSelected && !allVisibleSelected} onChange={onToggleSelectAll} aria-label={allVisibleSelected ? 'Deselect all visible deadlines' : 'Select all visible deadlines'} size="sm" /></div></th> : null}{visibleColumns.map((column) => <SortableHeader key={column} columnId={column} sortBy={sortBy} sortOrder={sortOrder} onSort={onSort} onResize={startResize} onResizeKeyboard={resizeColumnByKeyboard} />)}</tr>
-          </thead>
-          <tbody>
+          <TableHead>
+            {inlineFilters ? (
+              <TableFilterRow className="h-auto">
+                <TableFilterCell colSpan={visibleColumns.length + (selectionEnabled ? 1 : 0)} className="p-0 text-left">
+                  {inlineFilters}
+                </TableFilterCell>
+              </TableFilterRow>
+            ) : null}
+            <TableHeaderRow hasFilters={Boolean(inlineFilters)}>
+              {selectionEnabled ? (
+                <TableHeaderCell className="w-12 px-2 text-center">
+                  <Checkbox
+                    checked={allVisibleSelected}
+                    indeterminate={someVisibleSelected && !allVisibleSelected}
+                    onChange={onToggleSelectAll}
+                    aria-label={allVisibleSelected ? 'Deselect all visible deadlines' : 'Select all visible deadlines'}
+                    size="sm"
+                  />
+                </TableHeaderCell>
+              ) : null}
+              {visibleColumns.map((column) => {
+                const field = sortFields[column];
+                const active = field === sortBy;
+                return (
+                  <TableHeaderCell
+                    key={column}
+                    label={deadlineColumnLabels[column]}
+                    sorted={active}
+                    sortOrder={sortOrder}
+                    onSort={field && onSort ? () => onSort(field) : undefined}
+                    sortAriaLabel={field ? (active ? `Sort by ${deadlineColumnLabels[column]}, currently ${sortOrder === 'asc' ? 'ascending' : 'descending'}` : `Sort by ${deadlineColumnLabels[column]}`) : undefined}
+                    resizable={column !== 'actions'}
+                    onResizePointerDown={column !== 'actions' ? (event) => startResize(column, event) : undefined}
+                    onResizeKeyDown={column !== 'actions' ? (event) => {
+                      if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+                      event.preventDefault();
+                      resizeColumnByKeyboard(column, event.key === 'ArrowRight' ? 10 : -10);
+                    } : undefined}
+                    resizeAriaLabel={`Resize ${deadlineColumnLabels[column]} column`}
+                  />
+                );
+              })}
+            </TableHeaderRow>
+          </TableHead>
+          <TableBody>
             {items.length === 0 ? (
-              <tr>
-                <td colSpan={visibleColumns.length + (selectionEnabled ? 1 : 0)} className="px-4 py-12 text-center">
-                  <p className="text-sm text-text-secondary">No deadlines found</p>
-                </td>
-              </tr>
+              <TableEmptyState colSpan={visibleColumns.length + (selectionEnabled ? 1 : 0)} message="No deadlines found" />
             ) : items.map((occurrence, index) => <DesktopDeadlineRow key={occurrence.id} occurrence={occurrence} index={index} visibleColumns={visibleColumns} canEdit={canEdit} isPending={isPending} mutationError={mutationError} onUpdate={onUpdate} onResetOverride={onResetOverride} isSelected={selectedIds?.has(occurrence.id) ?? false} onToggleSelection={selectionEnabled ? onToggleSelection : undefined} />)}
-          </tbody>
-          </table>
-        </div>
-      </div>
+          </TableBody>
+          </TableRoot>
+        </TableViewport>
+      </TableShell>
       {onPageChange ? <Pagination page={page} totalPages={totalPages} total={total} limit={limit} pageSizeOptions={[10, 20, 50, 100]} largeTouchTargets onPageChange={onPageChange} onLimitChange={onLimitChange} /> : null}
     </>
   );

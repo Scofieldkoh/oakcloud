@@ -8,7 +8,6 @@ import {
   Pause,
   Play,
   Trash2,
-  X,
   XCircle,
 } from 'lucide-react';
 import { DatePicker } from '@/components/ui/date-picker';
@@ -20,7 +19,7 @@ import {
   DropdownTrigger,
 } from '@/components/ui/dropdown';
 import { MobileCard, CardDetailsGrid, CardDetailItem } from '@/components/ui/responsive-table';
-import { SearchableSelect } from '@/components/ui/searchable-select';
+import { TableBody, TableEmptyState, TableFilterCell, TableFilterRow, TableHead, TableHeaderCell, TableHeaderRow, TableRoot, TableRow, TableSelectFilter, TableShell, TableTextFilter, TableViewport } from '@/components/ui/data-table';
 import { CompanySelect } from '@/components/ui/company-select';
 import { useUpsertUserPreference, useUserPreferences } from '@/hooks/use-user-preferences';
 import { cn } from '@/lib/utils';
@@ -190,39 +189,6 @@ function nextIncompleteStage(task: TaskListItem): TaskStageSummary | undefined {
   return [...task.stages]
     .sort((left, right) => left.position - right.position)
     .find((stage) => stage.status !== 'COMPLETED' && stage.status !== 'SKIPPED');
-}
-
-function InlineTextFilter({
-  ariaLabel,
-  value,
-  onChange,
-}: {
-  ariaLabel: string;
-  value?: string;
-  onChange: (value: string | undefined) => void;
-}) {
-  return (
-    <div className="flex h-9 w-full items-center gap-2 rounded-lg border border-border-primary bg-background-secondary/30 transition-colors hover:border-oak-primary/50 focus-within:ring-2 focus-within:ring-oak-primary/30">
-      <input
-        type="text"
-        aria-label={ariaLabel}
-        value={value ?? ''}
-        onChange={(event) => onChange(event.target.value || undefined)}
-        placeholder="All"
-        className="min-w-0 flex-1 bg-transparent px-3 text-xs text-text-primary outline-none placeholder:text-text-secondary"
-      />
-      {value ? (
-        <button
-          type="button"
-          aria-label={`Clear ${ariaLabel.toLowerCase()}`}
-          onClick={() => onChange(undefined)}
-          className="mr-1 rounded p-0.5 transition-colors hover:bg-background-tertiary"
-        >
-          <X className="h-3.5 w-3.5 text-text-muted" aria-hidden="true" />
-        </button>
-      ) : null}
-    </div>
-  );
 }
 
 interface TaskActionsProps extends Omit<
@@ -494,13 +460,12 @@ export function TaskList({
         })}
       </div>
 
-      <div
+      <TableShell
         data-testid="task-table-scroll"
-        className="table-container hidden overflow-x-auto md:block"
+        className="hidden md:block"
       >
-        <table
-          className="table w-full min-w-max"
-        >
+        <TableViewport>
+          <TableRoot>
           <colgroup>
             {TASK_COLUMN_IDS.map((columnId) => (
               <col
@@ -511,56 +476,50 @@ export function TaskList({
               />
             ))}
           </colgroup>
-          <thead>
-            <tr data-filter-row className="h-14 bg-background-secondary/50">
-              <th className="max-w-0">
+          <TableHead>
+            <TableFilterRow>
+              <TableFilterCell>
                 <CompanySelect
                   value={filters.companyId ?? ''}
                   onChange={(companyId) => updateFilters({ companyId: companyId || undefined })}
                   placeholder="All companies"
                   className="text-xs"
                 />
-              </th>
-              <th className="max-w-0">
-                <InlineTextFilter
+              </TableFilterCell>
+              <TableFilterCell>
+                <TableTextFilter
                   ariaLabel="Filter tasks by title"
                   value={filters.title}
                   onChange={(value) => updateFilters({ title: value })}
                 />
-              </th>
-              <th className="max-w-0">
-                <SearchableSelect
-                  variant="table-filter"
+              </TableFilterCell>
+              <TableFilterCell>
+                <TableSelectFilter
                   options={statusFilterOptions}
                   value={filters.status ?? ''}
                   onChange={(value) => updateFilters({ status: value as TaskListParams['status'] || undefined })}
                   placeholder="All statuses"
-                  className="text-xs"
-                  showChevron={false}
-                  showKeyboardHints={false}
+                  ariaLabel="Filter tasks by status"
                 />
-              </th>
-              <th className="max-w-0">
-                <SearchableSelect
-                  variant="table-filter"
+              </TableFilterCell>
+              <TableFilterCell>
+                <TableSelectFilter
                   options={pipelineFilterOptions}
                   value={filters.pipelineId ?? ''}
                   onChange={(value) => updateFilters({ pipelineId: value || undefined })}
                   placeholder="All pipelines"
-                  className="text-xs"
-                  showChevron={false}
-                  showKeyboardHints={false}
+                  ariaLabel="Filter tasks by pipeline"
                 />
-              </th>
-              <th aria-hidden="true" />
-              <th className="max-w-0">
-                <InlineTextFilter
+              </TableFilterCell>
+              <TableFilterCell aria-hidden="true" />
+              <TableFilterCell>
+                <TableTextFilter
                   ariaLabel="Filter tasks by owner"
                   value={filters.ownerQuery}
                   onChange={(value) => updateFilters({ ownerQuery: value })}
                 />
-              </th>
-              <th className="max-w-0">
+              </TableFilterCell>
+              <TableFilterCell>
                 <DatePicker
                   value={filters.dueDateFrom || filters.dueDateTo
                     ? {
@@ -584,46 +543,34 @@ export function TaskList({
                   defaultTab="range"
                   className="text-xs"
                 />
-              </th>
-              <th aria-hidden="true" />
-            </tr>
-            <tr data-column-header-row className="h-[38px] border-t border-border-primary">
+              </TableFilterCell>
+              <TableFilterCell aria-hidden="true" />
+            </TableFilterRow>
+            <TableHeaderRow>
               {TASK_COLUMN_IDS.map((columnId) => (
-                <th key={columnId} className="relative">
-                  {columnLabels[columnId]}
-                  {columnId !== 'actions' && (
-                    <span
-                      role="separator"
-                      aria-label={`Resize ${columnLabels[columnId]} column`}
-                      aria-orientation="vertical"
-                      tabIndex={0}
-                      className="absolute inset-y-0 right-0 z-10 w-2 cursor-col-resize touch-none select-none border-r border-transparent hover:border-oak-primary focus:border-oak-primary focus:outline-none"
-                      onPointerDown={(event) => startResize(event, columnId)}
-                      onKeyDown={(event) => resizeWithKeyboard(event, columnId)}
-                    />
-                  )}
-                </th>
+                <TableHeaderCell
+                  key={columnId}
+                  label={columnLabels[columnId]}
+                  resizable={columnId !== 'actions'}
+                  onResizePointerDown={columnId !== 'actions' ? (event) => startResize(event, columnId) : undefined}
+                  onResizeKeyDown={columnId !== 'actions' ? (event) => resizeWithKeyboard(event, columnId) : undefined}
+                  resizeAriaLabel={`Resize ${columnLabels[columnId]} column`}
+                  align={columnId === 'actions' ? 'center' : 'left'}
+                />
               ))}
-            </tr>
-          </thead>
-          <tbody>
+            </TableHeaderRow>
+          </TableHead>
+          <TableBody>
             {tasks.length === 0 ? (
-              <tr>
-                <td colSpan={TASK_COLUMN_IDS.length} className="px-4 py-12 text-center">
-                  <p className="text-sm text-text-secondary">No tasks found</p>
-                </td>
-              </tr>
+              <TableEmptyState colSpan={TASK_COLUMN_IDS.length} message="No tasks found" />
             ) : tasks.map((task, index) => {
               const due = dueDateLabel(task.dueDate);
               return (
-                <tr
+                <TableRow
                   key={task.id}
+                  index={index}
+                  interactive={Boolean(nextIncompleteStage(task))}
                   onClick={(event) => handleRowClick(event, task)}
-                  className={cn(
-                    'transition-colors hover:bg-background-tertiary/50',
-                    nextIncompleteStage(task) && 'cursor-pointer',
-                    index % 2 === 1 && 'bg-oak-row-alt hover:bg-oak-row-alt-hover',
-                  )}
                 >
                   <td
                     className="truncate align-middle"
@@ -728,12 +675,13 @@ export function TaskList({
                   <td className="text-center align-middle">
                     <TaskActions task={task} onEdit={onEdit} onStatusAction={onStatusAction} onArchive={onArchive} busyTaskId={busyTaskId} />
                   </td>
-                </tr>
+                </TableRow>
               );
             })}
-          </tbody>
-        </table>
-      </div>
+          </TableBody>
+          </TableRoot>
+        </TableViewport>
+      </TableShell>
     </div>
   );
 }
