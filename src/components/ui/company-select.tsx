@@ -26,6 +26,8 @@ export interface CompanySelectProps {
   renderSelected?: (item: CompanySearchOption) => ReactNode;
   emptySearchText?: string;
   noResultsText?: string;
+  /** Canonical inline-table visual treatment. */
+  variant?: 'default' | 'table-filter';
 }
 
 /**
@@ -47,6 +49,7 @@ export function CompanySelect({
   renderSelected,
   emptySearchText = 'No companies available',
   noResultsText = 'No companies match that search',
+  variant = 'default',
 }: CompanySelectProps) {
   const {
     searchQuery,
@@ -61,13 +64,13 @@ export function CompanySelect({
 
   const selectedRenderer = renderSelected ?? ((item: CompanySearchOption) => (
     <div className="flex-1 flex items-center gap-2 px-3 min-w-0">
-      {icon && <span className="text-text-tertiary shrink-0">{icon}</span>}
-      <span className="text-xs text-text-primary truncate">{item.label}</span>
-      {item.description && (
+      {variant === 'default' && icon ? <span className="text-text-tertiary shrink-0">{icon}</span> : null}
+      <span className={variant === 'table-filter' ? 'truncate text-xs font-normal text-text-primary' : 'truncate text-xs text-text-primary'}>{item.label}</span>
+      {variant === 'default' && item.description ? (
         <span className="text-xs text-text-muted truncate hidden sm:inline">
           ({item.description})
         </span>
-      )}
+      ) : null}
     </div>
   ));
 
@@ -86,7 +89,8 @@ export function CompanySelect({
       renderOption={renderOption}
       renderSelected={selectedRenderer}
       showSearchIcon={false}
-      inputClassName="text-xs text-text-primary placeholder:text-text-secondary"
+      variant={variant}
+      inputClassName={variant === 'table-filter' ? undefined : 'text-xs text-text-primary placeholder:text-text-muted'}
       emptySearchText={emptySearchText}
       noResultsText={noResultsText}
       pagination={{

@@ -7,7 +7,7 @@ import { ServiceFilterToolbar, quickFilterClass } from '@/components/services/sh
 import { Button } from '@/components/ui/button';
 import { DatePicker, type DatePickerValue } from '@/components/ui/date-picker';
 import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
-import { SearchableSelect } from '@/components/ui/searchable-select';
+import { TableSelectFilter, TableTextFilter } from '@/components/ui/data-table';
 
 export type DeadlineFilterType = 'STATUTORY' | 'CLIENT' | 'INTERNAL';
 export type DeadlineFilterStatus = 'OPEN' | 'COMPLETED' | 'WAIVED' | 'CANCELLED';
@@ -212,34 +212,26 @@ interface DeadlineInlineFiltersProps {
 
 function InlineTextFilter({ label, value, onChange, placeholder = 'All' }: { label: string; value: string; onChange: (value: string) => void; placeholder?: string }) {
   return (
-    <label className="block min-w-0 px-2 py-2">
-      <span className="sr-only">{label}</span>
-      <input
-        type="search"
-        aria-label={`Filter ${label}`}
-        value={value}
+    <div className="min-w-0 px-2 py-2">
+      <TableTextFilter
+        ariaLabel={`Filter ${label}`}
+        value={value || undefined}
+        onChange={(nextValue) => onChange(nextValue ?? '')}
         placeholder={placeholder}
-        onChange={(event) => onChange(event.target.value)}
-        className="input input-sm min-h-8 w-full min-w-0 px-3 text-xs"
       />
-    </label>
+    </div>
   );
 }
 
 function InlineSelectFilter({ label, options, value, onChange, placeholder = 'All' }: { label: string; options: { value: string; label: string }[]; value: string; onChange: (value: string) => void; placeholder?: string }) {
   return (
     <div className="min-w-0 px-2 py-2">
-      <SearchableSelect
-        label={label}
-        variant="table-filter"
+      <TableSelectFilter
         options={options}
         value={value}
         onChange={onChange}
         placeholder={placeholder}
-        className="w-full min-w-0 text-xs [&>label]:sr-only"
-        showChevron={false}
-        showKeyboardHints={false}
-        clearable
+        ariaLabel={`Filter ${label}`}
       />
     </div>
   );

@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronDown, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { TABLE_FILTER_PLACEHOLDER_TEXT_CLASS, TABLE_FILTER_TEXT_CLASS, TABLE_FILTER_TRIGGER_CLASS } from '@/components/ui/table-filter-styles';
 
 export interface AmountFilterValue {
   mode: 'single' | 'range';
@@ -21,6 +22,7 @@ interface AmountFilterProps {
   className?: string;
   size?: 'sm' | 'md';
   showChevron?: boolean;
+  variant?: 'default' | 'table-filter';
 }
 
 /**
@@ -51,6 +53,7 @@ export function AmountFilter({
   className,
   size = 'md',
   showChevron = true,
+  variant = 'default',
 }: AmountFilterProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [mode, setMode] = useState<'single' | 'range'>(value?.mode || 'range');
@@ -266,17 +269,21 @@ export function AmountFilter({
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
-          'flex items-center justify-between gap-1 w-full rounded-lg border transition-colors',
-          'bg-background-secondary/30',
-          size === 'sm' ? 'h-9 px-3 text-sm' : 'h-10 px-4 text-sm md:text-base',
-          isActive
-            ? 'border-oak-primary ring-2 ring-oak-primary/30 text-text-primary font-medium'
-            : 'border-border-primary hover:border-oak-primary/50',
+          'flex items-center justify-between gap-1',
+          variant === 'table-filter'
+            ? TABLE_FILTER_TRIGGER_CLASS
+            : cn(
+                'w-full rounded-lg border bg-background-secondary/30 transition-colors',
+                size === 'sm' ? 'h-9 px-3 text-sm' : 'h-10 px-4 text-sm md:text-base',
+                isActive
+                  ? 'border-oak-primary ring-2 ring-oak-primary/30 text-text-primary font-medium'
+                  : 'border-border-primary hover:border-oak-primary/50',
+              ),
           isOpen && 'ring-2 ring-oak-primary/30 border-oak-primary',
           className
         )}
       >
-        <span className={cn('truncate flex-1 text-left text-text-primary', !isActive && 'text-text-secondary')}>
+        <span className={cn('truncate flex-1 text-left', variant === 'table-filter' ? (isActive ? TABLE_FILTER_TEXT_CLASS : TABLE_FILTER_PLACEHOLDER_TEXT_CLASS) : cn('text-text-primary', !isActive && 'text-text-secondary'))}>
           {getDisplayText()}
         </span>
         <div className="flex items-center gap-1 flex-shrink-0">

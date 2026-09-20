@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback, useId, type ReactNode } from 
 import { createPortal } from 'react-dom';
 import { Search, Loader2, Check, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { TABLE_FILTER_CONTAINER_CLASS, TABLE_FILTER_PLACEHOLDER_CLASS, TABLE_FILTER_TEXT_CLASS } from '@/components/ui/table-filter-styles';
 
 export interface AsyncSearchSelectOption {
   id: string;
@@ -63,6 +64,8 @@ export interface AsyncSearchSelectProps<T extends AsyncSearchSelectOption> {
   pagination?: AsyncSearchSelectPagination;
   /** Allow users to click the selected value and search for a replacement. */
   allowReselect?: boolean;
+  /** Canonical inline-table visual treatment. */
+  variant?: 'default' | 'table-filter';
 }
 
 export function AsyncSearchSelect<T extends AsyncSearchSelectOption>({
@@ -87,6 +90,7 @@ export function AsyncSearchSelect<T extends AsyncSearchSelectOption>({
   noResultsText = 'No results found',
   pagination,
   allowReselect = false,
+  variant = 'default',
 }: AsyncSearchSelectProps<T>) {
   const [isOpen, setIsOpen] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(0);
@@ -322,10 +326,10 @@ export function AsyncSearchSelect<T extends AsyncSearchSelectOption>({
       <div
         ref={containerRef}
         className={cn(
-          'w-full flex min-h-11 items-center gap-2 rounded-lg border',
-          'bg-background-secondary/30 border-border-primary',
-          'hover:border-oak-primary/50 focus-within:ring-2 focus-within:ring-oak-primary/30',
-          'transition-colors',
+          'w-full flex items-center gap-2',
+          variant === 'table-filter'
+            ? TABLE_FILTER_CONTAINER_CLASS
+            : 'min-h-11 rounded-lg border bg-background-secondary/30 border-border-primary hover:border-oak-primary/50 focus-within:ring-2 focus-within:ring-oak-primary/30 transition-colors',
           controlClassName,
           disabled && 'opacity-50 cursor-not-allowed',
           isOpen && 'ring-2 ring-oak-primary/30 border-oak-primary'
@@ -352,7 +356,8 @@ export function AsyncSearchSelect<T extends AsyncSearchSelectOption>({
               setIsOpen(true);
             }}
             className={cn(
-              'flex min-h-11 min-w-0 flex-1 items-center rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-oak-primary/30',
+              'flex min-w-0 flex-1 items-center rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-oak-primary/30',
+              variant === 'table-filter' ? 'h-9 min-h-9' : 'min-h-11',
               allowReselect && 'cursor-pointer',
               controlClassName
             )}
@@ -388,7 +393,9 @@ export function AsyncSearchSelect<T extends AsyncSearchSelectOption>({
               className={cn(
                 'flex-1 bg-transparent outline-none min-w-0',
                 showSearchIcon ? 'pr-3' : 'px-3',
-                inputClassName,
+                variant === 'table-filter'
+                  ? cn(TABLE_FILTER_TEXT_CLASS, TABLE_FILTER_PLACEHOLDER_CLASS)
+                  : inputClassName,
               )}
             />
           </>
@@ -401,7 +408,8 @@ export function AsyncSearchSelect<T extends AsyncSearchSelectOption>({
             onClick={handleClear}
             aria-label={label ? `Clear ${label}` : 'Clear selection'}
             className={cn(
-              'mr-2 flex min-h-11 min-w-11 items-center justify-center rounded p-1 transition-colors hover:bg-background-tertiary',
+              'mr-1 flex items-center justify-center rounded p-1 transition-colors hover:bg-background-tertiary',
+              variant === 'table-filter' ? 'h-7 w-7' : 'min-h-11 min-w-11',
               controlClassName
             )}
           >

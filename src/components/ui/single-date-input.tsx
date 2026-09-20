@@ -6,6 +6,7 @@ import { DayPicker, type DropdownProps } from 'react-day-picker';
 import { format, parse, isValid } from 'date-fns';
 import { Calendar, AlertCircle, ChevronDown, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { TABLE_FILTER_CONTAINER_CLASS, TABLE_FILTER_PLACEHOLDER_CLASS, TABLE_FILTER_TEXT_CLASS } from '@/components/ui/table-filter-styles';
 
 // Import react-day-picker styles
 import 'react-day-picker/style.css';
@@ -794,10 +795,10 @@ export function SingleDateInput({
       <div
         ref={containerRef}
         className={cn(
-          'w-full flex items-center rounded-lg border transition-colors',
+          'w-full flex items-center',
           isTableFilter
-            ? 'h-9 bg-background-secondary/30 border-border-primary hover:border-oak-primary/50 focus-within:ring-2 focus-within:ring-oak-primary/30 focus-within:border-oak-primary'
-            : 'h-10 bg-[#F4F7F6] dark:bg-background-secondary border-[#D8E3DF] hover:border-[#294D44]/50 focus-within:ring-2 focus-within:ring-[#294D44]/20 focus-within:border-[#294D44]',
+            ? TABLE_FILTER_CONTAINER_CLASS
+            : 'h-10 rounded-lg border transition-colors bg-[#F4F7F6] dark:bg-background-secondary border-[#D8E3DF] hover:border-[#294D44]/50 focus-within:ring-2 focus-within:ring-[#294D44]/20 focus-within:border-[#294D44]',
           disabled && 'opacity-50 cursor-not-allowed',
           displayError && 'border-status-error hover:border-status-error focus-within:border-status-error focus-within:ring-status-error/30',
           controlClassName,
@@ -821,7 +822,7 @@ export function SingleDateInput({
           aria-describedby={displayError ? `${inputId}-error` : hint ? `${inputId}-hint` : undefined}
           className={cn(
             'flex-1 min-w-0 h-full px-3 bg-transparent text-text-primary',
-            isTableFilter ? 'text-xs placeholder:text-text-secondary' : 'text-sm placeholder-text-muted',
+            isTableFilter ? cn(TABLE_FILTER_TEXT_CLASS, TABLE_FILTER_PLACEHOLDER_CLASS) : 'text-sm placeholder-text-muted',
             'focus:outline-none',
             disabled && 'cursor-not-allowed'
           )}

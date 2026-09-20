@@ -19,6 +19,7 @@ import {
 } from 'date-fns';
 import { Calendar, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { TABLE_FILTER_CONTAINER_CLASS, TABLE_FILTER_PLACEHOLDER_TEXT_CLASS, TABLE_FILTER_TEXT_CLASS } from '@/components/ui/table-filter-styles';
 import { Button } from './button';
 import { SingleDateInput } from './single-date-input';
 
@@ -60,6 +61,8 @@ export interface DatePickerProps {
   label?: string;
   /** Default tab to show when opening the picker */
   defaultTab?: 'presets' | 'single' | 'range';
+  /** Canonical inline-table visual treatment. */
+  variant?: 'default' | 'table-filter';
 }
 
 // Format date for display: "1 Dec 2025"
@@ -298,6 +301,7 @@ export function DatePicker({
   size = 'sm',
   label,
   defaultTab = 'presets',
+  variant = 'default',
 }: DatePickerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<TabType>('presets');
@@ -595,18 +599,23 @@ export function DatePicker({
       <div
         ref={triggerRef}
         className={cn(
-          'w-full flex items-center gap-2 rounded-lg border',
-          'bg-background-secondary/30 border-border-primary',
-          'hover:border-oak-primary/50 focus-within:ring-2 focus-within:ring-oak-primary/30',
-          'transition-colors text-left cursor-pointer',
-          sizeClasses[size],
+          'w-full flex items-center gap-2 text-left cursor-pointer',
+          variant === 'table-filter'
+            ? TABLE_FILTER_CONTAINER_CLASS
+            : cn(
+                'rounded-lg border bg-background-secondary/30 border-border-primary',
+                'hover:border-oak-primary/50 focus-within:ring-2 focus-within:ring-oak-primary/30',
+                'transition-colors',
+                sizeClasses[size],
+              ),
+          variant === 'table-filter' && 'px-3',
           disabled && 'opacity-50 cursor-not-allowed',
           isOpen && 'ring-2 ring-oak-primary/30 border-oak-primary'
         )}
         onClick={() => !disabled && setIsOpen(!isOpen)}
       >
         <Calendar className="w-4 h-4 text-text-muted flex-shrink-0" />
-        <span className={cn('flex-1 truncate text-text-primary', !displayValue && 'text-text-secondary')}>
+        <span className={cn('flex-1 truncate', variant === 'table-filter' ? (displayValue ? TABLE_FILTER_TEXT_CLASS : TABLE_FILTER_PLACEHOLDER_TEXT_CLASS) : cn('text-text-primary', !displayValue && 'text-text-secondary'))}>
           {displayValue || placeholder}
         </span>
         {displayValue && !disabled && (

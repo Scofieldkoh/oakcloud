@@ -21,6 +21,7 @@ interface CompanySearchableSelectProps {
   containerClassName?: string;
   size?: 'sm' | 'md' | 'lg';
   clearable?: boolean;
+  variant?: 'default' | 'table-filter';
 }
 
 /**
@@ -39,6 +40,7 @@ export function CompanySearchableSelect({
   containerClassName,
   size = 'sm',
   clearable = true,
+  variant = 'default',
 }: CompanySearchableSelectProps) {
   const options = useMemo<SelectOption[]>(
     () =>
@@ -62,6 +64,7 @@ export function CompanySearchableSelect({
       className={className}
       containerClassName={containerClassName}
       size={size}
+      variant={variant}
       clearable={clearable}
     />
   );

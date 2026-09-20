@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { SearchableSelect, type SelectOption } from '@/components/ui/searchable-select';
+import { TABLE_FILTER_NATIVE_INPUT_CLASS } from '@/components/ui/table-filter-styles';
 
 export const TABLE_INTERACTIVE_TARGET_SELECTOR =
   'a,button,input,select,textarea,label,[role="button"],[role="menuitem"],[role="separator"],[data-prevent-row-click="true"]';
@@ -477,7 +478,7 @@ export function TableTextFilter({
         placeholder={placeholder}
         aria-label={ariaLabel}
         className={cn(
-          'input input-sm min-h-8 w-full min-w-0 px-3 text-xs placeholder:text-text-muted',
+          TABLE_FILTER_NATIVE_INPUT_CLASS,
           draft && 'pr-8',
         )}
       />

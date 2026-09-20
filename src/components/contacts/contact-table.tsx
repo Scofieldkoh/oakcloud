@@ -410,6 +410,7 @@ export function ContactTable({
             label="companies"
             size="sm"
             className="text-xs w-full min-w-0"
+            variant="table-filter"
           />
         );
 

@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronDown, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { TABLE_FILTER_PLACEHOLDER_TEXT_CLASS, TABLE_FILTER_TEXT_CLASS, TABLE_FILTER_TRIGGER_CLASS } from '@/components/ui/table-filter-styles';
 
 export interface CountFilterValue {
   min?: number;
@@ -18,6 +19,7 @@ interface CountFilterProps {
   className?: string;
   size?: 'sm' | 'md';
   showChevron?: boolean;
+  variant?: 'default' | 'table-filter';
 }
 
 /**
@@ -36,6 +38,7 @@ export function CountFilter({
   className,
   size = 'sm',
   showChevron = false,
+  variant = 'default',
 }: CountFilterProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [minValue, setMinValue] = useState(value?.min?.toString() || '');
@@ -188,17 +191,21 @@ export function CountFilter({
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
-          'flex items-center justify-between gap-1 w-full rounded-lg border transition-colors',
-          'bg-background-secondary/30',
-          size === 'sm' ? 'h-9 px-3 text-sm md:text-xs' : 'h-10 px-4 text-sm',
-          isActive
-            ? 'border-oak-primary ring-2 ring-oak-primary/30 text-text-primary font-medium'
-            : 'border-border-primary hover:border-oak-primary/50',
+          'flex items-center justify-between gap-1',
+          variant === 'table-filter'
+            ? TABLE_FILTER_TRIGGER_CLASS
+            : cn(
+                'w-full rounded-lg border bg-background-secondary/30 transition-colors',
+                size === 'sm' ? 'h-9 px-3 text-sm md:text-xs' : 'h-10 px-4 text-sm',
+                isActive
+                  ? 'border-oak-primary ring-2 ring-oak-primary/30 text-text-primary font-medium'
+                  : 'border-border-primary hover:border-oak-primary/50',
+              ),
           isOpen && 'ring-2 ring-oak-primary/30 border-oak-primary',
           className
         )}
       >
-        <span className={cn('truncate flex-1 text-left', !isActive && 'text-text-secondary')}>
+        <span className={cn('truncate flex-1 text-left', variant === 'table-filter' ? (isActive ? TABLE_FILTER_TEXT_CLASS : TABLE_FILTER_PLACEHOLDER_TEXT_CLASS) : (!isActive && 'text-text-secondary'))}>
           {getDisplayText()}
         </span>
         <div className="flex items-center gap-1 flex-shrink-0">

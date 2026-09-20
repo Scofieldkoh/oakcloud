@@ -659,6 +659,7 @@ export function DocumentTable({
                       })}
                       placeholder="All companies"
                       className="text-xs"
+                      variant="table-filter"
                     />
                   ) : columnId === 'template' ? (
                     <TableTextFilter
@@ -700,6 +701,7 @@ export function DocumentTable({
                       size="sm"
                       defaultTab="range"
                       className="text-xs"
+                      variant="table-filter"
                     />
                   ) : columnId === 'createdBy' ? (
                     <TableTextFilter
@@ -731,6 +733,7 @@ export function DocumentTable({
                       size="sm"
                       defaultTab="range"
                       className="text-xs"
+                      variant="table-filter"
                     />
                   ) : null}
                 </TableFilterCell>

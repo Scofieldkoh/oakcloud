@@ -484,6 +484,7 @@ export function TaskList({
                   onChange={(companyId) => updateFilters({ companyId: companyId || undefined })}
                   placeholder="All companies"
                   className="text-xs"
+                  variant="table-filter"
                 />
               </TableFilterCell>
               <TableFilterCell>
@@ -542,6 +543,7 @@ export function TaskList({
                   size="sm"
                   defaultTab="range"
                   className="text-xs"
+                  variant="table-filter"
                 />
               </TableFilterCell>
               <TableFilterCell aria-hidden="true" />
