@@ -17,6 +17,7 @@ import { FormInput } from '@/components/ui/form-input';
 import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Alert } from '@/components/ui/alert';
+import { Toggle } from '@/components/ui/toggle';
 import { useToast } from '@/components/ui/toast';
 import { useCompanies } from '@/hooks/use-companies';
 import { usePermissions } from '@/hooks/use-permissions';
@@ -194,6 +195,7 @@ export function EsigningDetailPage({ envelopeId }: Props) {
   const [isDeleteEnvelopeOpen, setIsDeleteEnvelopeOpen] = useState(false);
   const [isVoidOpen, setIsVoidOpen] = useState(false);
   const [isLinksModalOpen, setIsLinksModalOpen] = useState(false);
+  const [includeSignerNameInCopiedLinks, setIncludeSignerNameInCopiedLinks] = useState(true);
   const [pendingAutoSign, setPendingAutoSign] = useState<PendingAutoSign | null>(null);
   const [isAutoSignPromptOpen, setIsAutoSignPromptOpen] = useState(false);
 
@@ -709,6 +711,14 @@ export function EsigningDetailPage({ envelopeId }: Props) {
     </Modal>
   );
 
+  const formatManualLinkForClipboard = useCallback(
+    (link: EsigningManualLinkDto) =>
+      includeSignerNameInCopiedLinks
+        ? `${link.recipientName}: ${link.signingUrl}`
+        : link.signingUrl,
+    [includeSignerNameInCopiedLinks],
+  );
+
   const linksModal = (
     <Modal
       isOpen={isLinksModalOpen}
@@ -737,7 +747,7 @@ export function EsigningDetailPage({ envelopeId }: Props) {
                 leftIcon={<Copy className="h-3.5 w-3.5" />}
                 onClick={() =>
                   void navigator.clipboard
-                    .writeText(link.signingUrl)
+                    .writeText(formatManualLinkForClipboard(link))
                     .then(() => toast.success('Manual link copied'))
                     .catch(() => toast.error('Clipboard access failed'))
                 }
@@ -748,8 +758,29 @@ export function EsigningDetailPage({ envelopeId }: Props) {
           </div>
         ))}
       </ModalBody>
-      <ModalFooter>
-        <Button onClick={() => setIsLinksModalOpen(false)}>Done</Button>
+      <ModalFooter className="justify-between">
+        <Toggle
+          size="sm"
+          label="Include signer's name"
+          checked={includeSignerNameInCopiedLinks}
+          onChange={setIncludeSignerNameInCopiedLinks}
+        />
+        <div className="flex items-center gap-2">
+          <Button
+            variant="secondary"
+            leftIcon={<Copy className="h-4 w-4" />}
+            onClick={() =>
+              void navigator.clipboard
+                .writeText(manualLinks.map(formatManualLinkForClipboard).join('\n'))
+                .then(() => toast.success('All manual links copied'))
+                .catch(() => toast.error('Clipboard access failed'))
+            }
+            disabled={manualLinks.length === 0}
+          >
+            Copy All
+          </Button>
+          <Button onClick={() => setIsLinksModalOpen(false)}>Done</Button>
+        </div>
       </ModalFooter>
     </Modal>
   );
