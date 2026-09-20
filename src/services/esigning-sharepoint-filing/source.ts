@@ -18,10 +18,9 @@ export async function downloadSharePointFilingSource(input: {
   const signedStoragePath =
     input.signedStoragePath ??
     StorageKeys.esigningSignedDocument(input.tenantId, input.envelopeId, input.envelopeDocumentId);
-  const certificateStoragePath = StorageKeys.esigningCertificateDocument(
+  const certificateStoragePath = StorageKeys.esigningEnvelopeCertificate(
     input.tenantId,
     input.envelopeId,
-    input.envelopeDocumentId,
   );
 
   const [signedExists, certificateExists] = await Promise.all([
