@@ -711,13 +711,11 @@ export function EsigningDetailPage({ envelopeId }: Props) {
     </Modal>
   );
 
-  const formatManualLinkForClipboard = useCallback(
-    (link: EsigningManualLinkDto) =>
-      includeSignerNameInCopiedLinks
-        ? `${link.recipientName}: ${link.signingUrl}`
-        : link.signingUrl,
-    [includeSignerNameInCopiedLinks],
-  );
+  function formatManualLinkForClipboard(link: EsigningManualLinkDto): string {
+    return includeSignerNameInCopiedLinks
+      ? `${link.recipientName}: ${link.signingUrl}`
+      : link.signingUrl;
+  }
 
   const linksModal = (
     <Modal
