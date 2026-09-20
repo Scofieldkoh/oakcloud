@@ -14,6 +14,7 @@ import {
 import { createPortal } from 'react-dom';
 import { ChevronDown, Check, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { TABLE_FILTER_CONTAINER_CLASS, TABLE_FILTER_TEXT_CLASS, TABLE_FILTER_PLACEHOLDER_CLASS } from '@/components/ui/table-filter-styles';
 
 export interface SelectOption {
   value: string;
@@ -332,7 +333,7 @@ export function SearchableSelect({
     md: 'h-9 text-sm',
     lg: 'h-10 text-sm',
   };
-  const triggerSizeClasses = variant === 'table-filter' ? 'h-9 text-sm' : sizeClasses[size];
+  const triggerSizeClasses = variant === 'table-filter' ? '' : sizeClasses[size];
 
   // Display value in input: show search when typing, otherwise show selected label
   const inputValue = isOpen ? search : (selectedOption?.label || '');
@@ -374,12 +375,10 @@ export function SearchableSelect({
       <div
         ref={containerRef}
         className={cn(
-          'w-full flex items-center gap-2 rounded-lg border',
+          'w-full flex items-center gap-2',
           variant === 'table-filter'
-            ? 'bg-background-secondary/30 border-border-primary hover:border-oak-primary/50 focus-within:ring-oak-primary/30 focus-within:border-oak-primary'
-            : 'bg-[#F4F7F6] border-[#D8E3DF] hover:border-[#294D44]/50 focus-within:ring-[#294D44]/20 focus-within:border-[#294D44]',
-          'focus-within:ring-2',
-          'transition-colors',
+            ? TABLE_FILTER_CONTAINER_CLASS
+            : 'rounded-lg border bg-[#F4F7F6] border-[#D8E3DF] hover:border-[#294D44]/50 focus-within:ring-2 focus-within:ring-[#294D44]/20 focus-within:border-[#294D44] transition-colors',
           triggerSizeClasses,
           disabled && 'opacity-50 cursor-not-allowed',
           isOpen && (variant === 'table-filter'
@@ -411,9 +410,9 @@ export function SearchableSelect({
           disabled={disabled}
           className={cn(
             'flex-1 bg-transparent outline-none px-3 min-w-0',
-            'placeholder:text-text-muted',
-            // Use secondary color when showing placeholder-like "All" state (empty value)
-            !value ? 'text-text-secondary' : 'text-text-primary',
+            variant === 'table-filter'
+              ? cn(TABLE_FILTER_TEXT_CLASS, TABLE_FILTER_PLACEHOLDER_CLASS)
+              : cn('placeholder:text-text-muted', !value ? 'text-text-secondary' : 'text-text-primary'),
             triggerSizeClasses
           )}
         />

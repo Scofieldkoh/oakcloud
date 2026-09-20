@@ -3188,6 +3188,33 @@ Example for a custom table:
 
 Feature modules may use specialized filter controls such as `CompanySelect`, `DatePicker`, or `AmountFilter` inside `TableFilterCell`; they should not recreate the surrounding table/filter/header behavior.
 
+##### Inline Filter Visual Contract
+
+Every visible control in an inline table-filter row must use the canonical `table-filter` visual contract from `src/components/ui/table-filter-styles.ts`. Do not style an inline filter independently in a feature module.
+
+| Property | Canonical value |
+|---|---|
+| Control height | 36px (`h-9 min-h-9`) |
+| Horizontal padding | 12px (`px-3`) |
+| Border radius | `rounded-lg` |
+| Border | `border-border-primary` |
+| Background | `bg-background-secondary/30` |
+| Text | `text-xs font-normal text-text-primary` |
+| Placeholder | `text-xs font-normal text-text-muted` |
+| Hover | `border-oak-primary/50` |
+| Focus/open | Oak primary border + 2px `oak-primary/30` ring |
+| Disabled | Existing shared disabled opacity/cursor treatment |
+
+The following reusable widgets support this contract and should receive `variant="table-filter"` when used in an inline filter row:
+
+- `SearchableSelect` / `TableSelectFilter`
+- `CompanySelect` and `CompanySearchableSelect`
+- `DatePicker`
+- `SingleDateInput`
+- `AmountFilter`
+- `CountFilter`
+
+Use `TableTextFilter` for native text/search/number inputs; it applies the contract automatically. The selected-value state must not become bolder, darker, taller, or use a different surface from the empty state. Icons, clear buttons, and chevrons may differ by control type, but they must not change the control height, typography, surface, or padding.
 
 Comprehensive patterns for data tables, from simple lists to complex data grids with advanced filtering.
 

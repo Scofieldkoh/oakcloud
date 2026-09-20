@@ -125,8 +125,21 @@ describe('BillingTable', () => {
     expect(filterRow).toHaveClass('h-14', 'bg-background-secondary/50');
     expect(table.querySelector('thead')).toHaveClass('bg-background-tertiary', 'border-b', 'border-border-primary');
     expect(headerRow).toHaveClass('h-[38px]', 'border-t', 'border-border-primary');
-    expect(serviceInput).toHaveClass('input', 'input-sm', 'min-h-8', 'w-full', 'min-w-0', 'px-3', 'text-xs');
-    expect(serviceInput).toHaveClass('placeholder:text-text-muted');
+    expect(serviceInput).toHaveClass(
+      'h-9',
+      'min-h-9',
+      'w-full',
+      'min-w-0',
+      'rounded-lg',
+      'border-border-primary',
+      'bg-background-secondary/30',
+      'px-3',
+      'text-xs',
+      'font-normal',
+      'text-text-primary',
+      'placeholder:text-text-muted',
+      'placeholder:font-normal',
+    );
     expect(serviceInput).not.toHaveClass('placeholder:text-text-secondary');
     expect(serviceInput.closest('th')).toHaveClass('px-2', 'py-2');
     expect(expectedDateInput.closest('th')).toHaveClass('px-2', 'py-2');

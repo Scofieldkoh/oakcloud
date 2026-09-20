@@ -2022,6 +2022,7 @@ export default function ProcessingDocumentsPage() {
                           onChange={(companyId) => handleFiltersChange({ companyId: companyId || undefined })}
                           placeholder="All"
                           className="text-xs"
+                          variant="table-filter"
                         />
                       ) : columnId === 'pipeline' ? (
                         <SearchableSelect
@@ -2130,6 +2131,7 @@ export default function ProcessingDocumentsPage() {
                           size="sm"
                           defaultTab="range"
                           className="text-xs"
+                          variant="table-filter"
                         />
                       ) : columnId === 'uploaded' ? (
                         <DatePicker
@@ -2178,6 +2180,7 @@ export default function ProcessingDocumentsPage() {
                           size="sm"
                           defaultTab="range"
                           className="text-xs"
+                          variant="table-filter"
                         />
                       ) : columnId === 'category' ? (
                         <SearchableSelect
@@ -2257,6 +2260,7 @@ export default function ProcessingDocumentsPage() {
                           size="sm"
                           className="text-xs"
                           showChevron={false}
+                          variant="table-filter"
                         />
                       ) : columnId === 'tax' ? (
                         <AmountFilter
@@ -2268,6 +2272,7 @@ export default function ProcessingDocumentsPage() {
                           size="sm"
                           className="text-xs"
                           showChevron={false}
+                          variant="table-filter"
                         />
                       ) : columnId === 'total' ? (
                         <AmountFilter
@@ -2279,6 +2284,7 @@ export default function ProcessingDocumentsPage() {
                           size="sm"
                           className="text-xs"
                           showChevron={false}
+                          variant="table-filter"
                         />
                       ) : columnId === 'homeSubtotal' ? (
                         <AmountFilter
@@ -2290,6 +2296,7 @@ export default function ProcessingDocumentsPage() {
                           size="sm"
                           className="text-xs"
                           showChevron={false}
+                          variant="table-filter"
                         />
                       ) : columnId === 'homeTax' ? (
                         <AmountFilter
@@ -2301,6 +2308,7 @@ export default function ProcessingDocumentsPage() {
                           size="sm"
                           className="text-xs"
                           showChevron={false}
+                          variant="table-filter"
                         />
                       ) : columnId === 'homeTotal' ? (
                         <AmountFilter
@@ -2312,6 +2320,7 @@ export default function ProcessingDocumentsPage() {
                           size="sm"
                           className="text-xs"
                           showChevron={false}
+                          variant="table-filter"
                         />
                       ) : null}
                     </TableFilterCell>

@@ -440,6 +440,7 @@ export function CompanyTable({
             })}
             placeholder="All companies"
             className="text-xs"
+            variant="table-filter"
           />
         );
 
@@ -517,6 +518,7 @@ export function CompanyTable({
             size="sm"
             defaultTab="range"
             className="text-xs"
+            variant="table-filter"
           />
         );
 
@@ -549,6 +551,7 @@ export function CompanyTable({
             placeholder="All"
             size="sm"
             showChevron={false}
+            variant="table-filter"
           />
         );
 
@@ -581,6 +584,7 @@ export function CompanyTable({
             placeholder="All"
             size="sm"
             showChevron={false}
+            variant="table-filter"
           />
         );
 
@@ -641,6 +645,7 @@ export function CompanyTable({
             placeholder="All"
             size="sm"
             showChevron={false}
+            variant="table-filter"
           />
         );
 
@@ -673,6 +678,7 @@ export function CompanyTable({
             placeholder="All"
             size="sm"
             showChevron={false}
+            variant="table-filter"
           />
         );
 
