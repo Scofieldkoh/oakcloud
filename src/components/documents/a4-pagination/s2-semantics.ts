@@ -445,6 +445,22 @@ function exitEmptyListItem(item: HTMLElement): { point: A4DomPoint } | null {
   return { point: { node: paragraph, offset: 0 } };
 }
 
+function hasMeaningfulContentAfterPoint(
+  item: HTMLElement,
+  point: A4DomPoint,
+): boolean {
+  const range = document.createRange();
+  try {
+    range.setStart(point.node, point.offset);
+    range.setEnd(item, item.childNodes.length);
+  } catch {
+    // If the DOM point no longer belongs to this item, keep the normal split
+    // path rather than treating the caret as the end of the item.
+    return true;
+  }
+  return hasMeaningfulContent(range.cloneContents());
+}
+
 function splitListItemAtPoint(
   item: HTMLElement,
   block: HTMLElement,
@@ -532,6 +548,27 @@ export function insertA4S2ParagraphBreak(
       : rejected('invalid-list-structure', 'The empty list item could not be lifted safely.');
   }
   if (item) {
+    // Repagination is asynchronous. A second Enter can arrive while the DOM
+    // caret is still rendered at the end of the previous item even though the
+    // first Enter already created an empty trailing item canonically. Treat
+    // that stale second Enter as Enter on the empty item so we exit the list
+    // instead of creating another empty marker that the caret cannot reach.
+    const nextItem = item.nextElementSibling as HTMLElement | null;
+    const list = item.parentElement;
+    const hasEmptyTrailingItem =
+      nextItem?.tagName === 'LI' &&
+      nextItem === list?.lastElementChild &&
+      !hasMeaningfulContent(nextItem);
+    if (
+      hasEmptyTrailingItem &&
+      !hasMeaningfulContentAfterPoint(item, prepared.point)
+    ) {
+      const exited = exitEmptyListItem(nextItem);
+      return exited
+        ? finishAtPoint(canonical, prepared.root, exited.point, 'after')
+        : rejected('invalid-list-structure', 'The trailing empty list item could not be lifted safely.');
+    }
+
     const nextBlock = splitListItemAtPoint(item, block, prepared.point);
     return finishAtPoint(canonical, prepared.root, { node: nextBlock, offset: 0 }, 'after');
   }
