@@ -155,6 +155,48 @@ describe('A4 S2 Enter semantics', () => {
     expect(body.querySelector('ol > li')?.textContent).toBe('B');
   });
 
+  it('forwards a fast second Enter from a stale list caret to the trailing empty item', () => {
+    const canonical = createCanonicalEditorDocument(
+      '<ol class="list-alpha"><li><p>ABCD</p></li><li><p><br></p></li></ol>',
+    );
+    const result = insertA4S2ParagraphBreak(
+      canonical,
+      caret(canonical, 'ol > li:first-child > p', 4),
+    );
+    const document = applied(result);
+    const body = clean(document);
+
+    expect(body.querySelectorAll(':scope > ol > li')).toHaveLength(1);
+    expect(body.querySelector(':scope > ol > li > p')?.textContent).toBe('ABCD');
+    expect(body.querySelector(':scope > ol')?.nextElementSibling?.tagName).toBe('P');
+
+    if (result.status !== 'applied') throw new Error('Expected applied transaction');
+    const resultRoot = rootFor(document);
+    const selected = resultRoot.querySelector<HTMLElement>(
+      `[data-flow-id="${result.selection.anchor.nodeId}"]`,
+    );
+    expect(selected?.tagName).toBe('P');
+    expect(selected?.closest('li')).toBeNull();
+  });
+
+  it('does not forward a stale-list guard when the caret is mid-item', () => {
+    const canonical = createCanonicalEditorDocument(
+      '<ol class="list-alpha"><li><p>ABCD</p></li><li><p><br></p></li></ol>',
+    );
+    const body = clean(applied(insertA4S2ParagraphBreak(
+      canonical,
+      caret(canonical, 'ol > li:first-child > p', 2),
+    )));
+
+    expect(body.querySelectorAll(':scope > ol > li')).toHaveLength(3);
+    expect(
+      Array.from(body.querySelectorAll(':scope > ol > li > p'), (paragraph) =>
+        paragraph.textContent,
+      ),
+    ).toEqual(['AB', 'CD', '']);
+    expect(body.querySelector(':scope > ol')?.nextElementSibling).toBeNull();
+  });
+
   it('preserves authored blank paragraphs', () => {
     const canonical = createCanonicalEditorDocument('<p><br></p><p><br></p>');
     const body = clean(applied(insertA4S2ParagraphBreak(

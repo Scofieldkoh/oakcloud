@@ -602,6 +602,62 @@ describe('A4PageEditor', () => {
     });
   });
 
+  it('handles two rapid Enters in an alpha list without leaving an orphan marker', async () => {
+    const editorRef = createRef<A4PageEditorRef>();
+    render(
+      <A4PageEditor
+        ref={editorRef}
+        value={'<ol class="list-alpha"><li><p>ABCD</p></li></ol>'}
+      />,
+    );
+
+    const surface = screen.getByTestId('a4-document-surface');
+    await waitFor(() => expect(surface).toHaveAttribute('aria-busy', 'false'));
+    const page = screen.getByTestId('a4-page-content-1');
+    const text = page.querySelector('ol > li > p')?.firstChild;
+    expect(text).toBeTruthy();
+
+    act(() => {
+      surface.focus();
+      const selection = window.getSelection()!;
+      const range = document.createRange();
+      range.setStart(text!, 4);
+      range.collapse(true);
+      selection.removeAllRanges();
+      selection.addRange(range);
+
+      surface.dispatchEvent(
+        new InputEvent('beforeinput', {
+          bubbles: true,
+          cancelable: true,
+          inputType: 'insertParagraph',
+        }),
+      );
+      surface.dispatchEvent(
+        new InputEvent('beforeinput', {
+          bubbles: true,
+          cancelable: true,
+          inputType: 'insertParagraph',
+        }),
+      );
+    });
+
+    await waitFor(() => {
+      expect(surface).toHaveAttribute('aria-busy', 'false');
+      const body = new DOMParser()
+        .parseFromString(editorRef.current!.getContent(), 'text/html')
+        .body;
+      expect(body.querySelectorAll(':scope > ol > li')).toHaveLength(1);
+      expect(body.querySelector(':scope > ol > li > p')?.textContent).toBe('ABCD');
+      expect(body.querySelector(':scope > ol')?.nextElementSibling?.tagName).toBe('P');
+    });
+
+    const rendered = screen.getByTestId('a4-page-content-1');
+    expect(rendered.querySelectorAll(':scope > ol > li')).toHaveLength(1);
+    expect(rendered.querySelector(':scope > ol')?.nextElementSibling?.tagName).toBe('P');
+    expect(window.getSelection()?.anchorNode?.parentElement?.closest('li')).toBeNull();
+  });
+
   it('renders list markers and indentation inside editor pages', () => {
     render(
       <A4PageEditor
