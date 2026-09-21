@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Send, Copy, CheckCircle2, AlertTriangle } from 'lucide-react';
 import type { EsigningEnvelopeDetailDto, EsigningManualLinkDto } from '@/types/esigning';
 import type { PlacedField } from './esigning-field-canvas';
@@ -13,6 +13,7 @@ import {
 } from '@/components/esigning/esigning-shared';
 import { useToast } from '@/components/ui/toast';
 import { EsigningFieldCanvas } from './esigning-field-canvas';
+import { EsigningPostItTab } from '../signing/esigning-post-it-tab';
 
 interface EsigningStepReviewProps {
   envelope: EsigningEnvelopeDetailDto;
@@ -35,15 +36,59 @@ export function EsigningStepReview({
   const [previewRecipientId, setPreviewRecipientId] = useState<string>('ALL');
   const [previewDocumentId, setPreviewDocumentId] = useState<string>(() => envelope.documents[0]?.id ?? '');
   const [previewPage, setPreviewPage] = useState(1);
+  const [activePreviewFieldIndex, setActivePreviewFieldIndex] = useState(0);
   const signerRecipients = envelope.recipients.filter((r) => r.type === 'SIGNER');
   const activePreviewRecipientId = previewRecipientId || 'ALL';
   const previewFields = useMemo(
     () =>
-      activePreviewRecipientId === 'ALL'
+      (activePreviewRecipientId === 'ALL'
         ? fields
-        : fields.filter((field) => field.recipientId === activePreviewRecipientId),
-    [activePreviewRecipientId, fields]
+        : fields.filter((field) => field.recipientId === activePreviewRecipientId)
+      ).slice().sort((left, right) => {
+        const leftDocumentIndex = envelope.documents.findIndex((document) => document.id === left.documentId);
+        const rightDocumentIndex = envelope.documents.findIndex((document) => document.id === right.documentId);
+        return (
+          leftDocumentIndex - rightDocumentIndex
+          || left.pageNumber - right.pageNumber
+          || left.sortOrder - right.sortOrder
+        );
+      }),
+    [activePreviewRecipientId, envelope.documents, fields]
   );
+  const activePreviewField = previewFields[activePreviewFieldIndex] ?? null;
+
+  useEffect(() => {
+    setActivePreviewFieldIndex(0);
+  }, [activePreviewRecipientId]);
+
+  useEffect(() => {
+    if (previewFields.length === 0) {
+      setActivePreviewFieldIndex(0);
+      return;
+    }
+    setActivePreviewFieldIndex((current) => Math.min(current, previewFields.length - 1));
+  }, [previewFields.length]);
+
+  function goToPreviewField(index: number) {
+    if (previewFields.length === 0) return;
+    const nextIndex = ((index % previewFields.length) + previewFields.length) % previewFields.length;
+    const field = previewFields[nextIndex];
+    setActivePreviewFieldIndex(nextIndex);
+    if (field.documentId !== previewDocumentId) {
+      setPreviewDocumentId(field.documentId);
+    }
+    setPreviewPage(field.pageNumber);
+  }
+
+  function getPreviewFieldLabel(field: PlacedField | null): string {
+    if (!field) return 'Field';
+    if (field.type === 'SIGNATURE') return 'Sign';
+    if (field.type === 'INITIALS') return 'Initial';
+    if (field.type === 'DATE_SIGNED') return 'Date';
+    if (field.type === 'CHECKBOX') return 'Check';
+    return 'Fill';
+  }
+
   const fieldSummaryByRecipient = new Map(
     signerRecipients.map((recipient) => {
       const recipientFields = fields.filter((field) => field.recipientId === recipient.id);
@@ -347,25 +392,46 @@ export function EsigningStepReview({
                 </select>
               </label>
             </div>
-            <div className="min-h-0 flex-1 overflow-hidden border-t border-border-primary">
-              <EsigningFieldCanvas
-                documents={envelope.documents}
-                selectedDocumentId={previewDocumentId}
-                onDocumentChange={(documentId) => {
-                  setPreviewDocumentId(documentId);
-                  setPreviewPage(1);
-                }}
-                fields={previewFields}
-                onFieldsChange={() => undefined}
-                selectedFieldId={null}
-                onFieldSelect={() => undefined}
-                placementType={null}
-                placementRecipientId={activePreviewRecipientId}
-                recipients={envelope.recipients}
-                viewerPage={previewPage}
-                onPageChange={setPreviewPage}
-                canEdit={false}
-              />
+            <div className="min-h-0 flex-1 border-t border-border-primary">
+              <div className="relative h-full min-h-0 mr-14">
+                <div className="h-full min-h-0 overflow-hidden">
+                  <EsigningFieldCanvas
+                    documents={envelope.documents}
+                    selectedDocumentId={previewDocumentId}
+                    onDocumentChange={(documentId) => {
+                      setPreviewDocumentId(documentId);
+                      setPreviewPage(1);
+                      const nextFieldIndex = previewFields.findIndex(
+                        (field) => field.documentId === documentId
+                      );
+                      if (nextFieldIndex >= 0) {
+                        setActivePreviewFieldIndex(nextFieldIndex);
+                      }
+                    }}
+                    fields={previewFields}
+                    onFieldsChange={() => undefined}
+                    selectedFieldId={activePreviewField?.localId ?? null}
+                    onFieldSelect={() => undefined}
+                    placementType={null}
+                    placementRecipientId={activePreviewRecipientId}
+                    recipients={envelope.recipients}
+                    viewerPage={previewPage}
+                    onPageChange={setPreviewPage}
+                    canEdit={false}
+                  />
+                </div>
+                {previewFields.length > 0 ? (
+                  <EsigningPostItTab
+                    label={getPreviewFieldLabel(activePreviewField)}
+                    isComplete={false}
+                    currentIndex={activePreviewFieldIndex}
+                    totalCount={previewFields.length}
+                    onClick={() => goToPreviewField(activePreviewFieldIndex)}
+                    onNext={() => goToPreviewField(activePreviewFieldIndex + 1)}
+                    onPrev={() => goToPreviewField(activePreviewFieldIndex - 1)}
+                  />
+                ) : null}
+              </div>
             </div>
             </>
           ) : (

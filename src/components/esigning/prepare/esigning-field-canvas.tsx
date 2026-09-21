@@ -423,6 +423,22 @@ export function EsigningFieldCanvas({
     selectedDocumentId,
     selectedFieldId
   );
+  const recipientColorMap = new Map(
+    recipients.map((recipient) => [recipient.id, recipient.colorTag])
+  );
+  const thumbnailMarkers = fields
+    .filter((field) => field.documentId === selectedDocumentId)
+    .map((field) => ({
+      pageNumber: field.pageNumber,
+      x: field.xPercent,
+      y: field.yPercent,
+      width: field.widthPercent,
+      height: field.heightPercent,
+      color:
+        field.localId === selectedFieldId
+          ? '#f97316'
+          : recipientColorMap.get(field.recipientId) ?? '#294d44',
+    }));
 
   const fieldsOnPage = useMemo(
     () =>
@@ -1193,6 +1209,7 @@ export function EsigningFieldCanvas({
             zoomLevel={zoomLevel}
             onZoomLevelChange={onZoomLevelChange}
             highlights={canEdit ? [] : highlights}
+            thumbnailMarkers={thumbnailMarkers}
             onPageChange={onPageChange}
             viewMode="continuous"
             renderPageOverlay={canEdit ? renderPageFields : undefined}

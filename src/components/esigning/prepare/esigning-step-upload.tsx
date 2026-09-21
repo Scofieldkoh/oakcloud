@@ -509,7 +509,7 @@ const DEFAULT_RECIPIENT_FORM = {
   name: '',
   email: '',
   type: 'SIGNER' as EsigningRecipientType,
-  accessMode: 'MANUAL_LINK' as EsigningRecipientAccessMode,
+  accessMode: 'EMAIL_LINK' as EsigningRecipientAccessMode,
   accessCode: '',
 };
 
@@ -1812,7 +1812,13 @@ async function applyMixedGroupChange(
                 value={newRecipient.email}
                 onChange={(e) => setNewRecipient((prev) => ({ ...prev, email: e.target.value }))}
                 required={newRecipientRequiresEmail}
-                hint={newRecipientRequiresEmail ? undefined : 'Optional for manual-link recipients.'}
+                hint={
+                  newRecipient.type === 'CC'
+                    ? 'Required. The completed signed package is emailed after signing.'
+                    : newRecipientRequiresEmail
+                      ? undefined
+                      : 'Optional for manual-link recipients.'
+                }
                 className={EDITABLE_CONTROL_CLASS_NAME}
               />
               <label className="flex flex-col gap-2 text-xs font-medium text-text-secondary">
@@ -1821,7 +1827,12 @@ async function applyMixedGroupChange(
                   value={newRecipient.type}
                   onChange={(e) => {
                     const nextType = e.target.value as EsigningRecipientType;
-                    setNewRecipient((prev) => ({ ...prev, type: nextType }));
+                    setNewRecipient((prev) => ({
+                      ...prev,
+                      type: nextType,
+                      accessMode: nextType === 'CC' ? 'EMAIL_LINK' : prev.accessMode,
+                      accessCode: nextType === 'CC' ? '' : prev.accessCode,
+                    }));
                     if (nextType !== 'SIGNER') {
                       setSelectedContactId('');
                       setSelectedContact(null);
@@ -1843,17 +1854,29 @@ async function applyMixedGroupChange(
                 <select
                   value={newRecipient.accessMode}
                   onChange={(e) => setNewRecipient((prev) => ({ ...prev, accessMode: e.target.value as EsigningRecipientAccessMode }))}
+                  disabled={newRecipient.type === 'CC'}
                   className={cn(
                     'h-10 rounded-lg border border-border-primary bg-background-secondary px-3 text-sm text-text-primary',
                     EDITABLE_CONTROL_CLASS_NAME,
                   )}
                 >
-                  {Object.entries(ESIGNING_ACCESS_MODE_LABELS).map(([value, label]) => (
-                    <option key={value} value={value}>{label}</option>
-                  ))}
+                  {Object.entries(ESIGNING_ACCESS_MODE_LABELS)
+                    .filter(([value]) => newRecipient.type !== 'CC' || value === 'EMAIL_LINK')
+                    .map(([value, label]) => (
+                      <option key={value} value={value}>
+                        {newRecipient.type === 'CC' && value === 'EMAIL_LINK' ? 'Email' : label}
+                      </option>
+                    ))}
                 </select>
               </label>
             </div>
+
+            {newRecipient.type === 'CC' ? (
+              <p className="text-xs text-text-muted">
+                Receives Copy is emailed the completed signed package after signing finishes.
+                Document visibility controls signer access and does not limit this completion copy.
+              </p>
+            ) : null}
 
             {newRecipient.accessMode === 'EMAIL_WITH_CODE' && (
               <FormInput

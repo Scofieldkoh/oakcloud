@@ -63,6 +63,7 @@ export interface EsigningEnvelopeListItem {
   documents: Array<{
     id: string;
     fileName: string;
+    originalFileName: string | null;
   }>;
   recipients: Array<{
     id: string;
