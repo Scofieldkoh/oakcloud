@@ -509,7 +509,7 @@ const DEFAULT_RECIPIENT_FORM = {
   name: '',
   email: '',
   type: 'SIGNER' as EsigningRecipientType,
-  accessMode: 'EMAIL_LINK' as EsigningRecipientAccessMode,
+  accessMode: 'MANUAL_LINK' as EsigningRecipientAccessMode,
   accessCode: '',
 };
 
@@ -1830,7 +1830,12 @@ async function applyMixedGroupChange(
                     setNewRecipient((prev) => ({
                       ...prev,
                       type: nextType,
-                      accessMode: nextType === 'CC' ? 'EMAIL_LINK' : prev.accessMode,
+                      accessMode:
+                        nextType === 'CC'
+                          ? 'EMAIL_LINK'
+                          : prev.type === 'CC'
+                            ? 'MANUAL_LINK'
+                            : prev.accessMode,
                       accessCode: nextType === 'CC' ? '' : prev.accessCode,
                     }));
                     if (nextType !== 'SIGNER') {
