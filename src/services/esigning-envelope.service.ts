@@ -542,6 +542,7 @@ export async function listEsigningEnvelopes(
           select: {
             id: true,
             fileName: true,
+            originalFileName: true,
           },
         },
       },
@@ -678,6 +679,7 @@ export async function listEsigningEnvelopes(
       documents: envelope.documents.map((document) => ({
         id: document.id,
         fileName: document.fileName,
+        originalFileName: document.originalFileName ?? null,
       })),
       recipients: envelope.recipients.map((recipient) => {
         const copyDelivery = (envelope.emailDeliveries ?? []).find(
@@ -1253,6 +1255,9 @@ export async function addEsigningEnvelopeRecipient(
   if ((input.type === 'CC' || input.accessMode !== 'MANUAL_LINK') && !input.email?.trim()) {
     throw new Error(`${input.name} requires an email address for this recipient method`);
   }
+  if (input.type === 'CC' && input.accessMode !== 'EMAIL_LINK') {
+    throw new Error('Receives Copy recipients are delivered by email');
+  }
 
   const signingOrder = buildRecipientSigningOrder({
     envelopeSigningOrder: envelope.signingOrder,
@@ -1357,7 +1362,8 @@ export async function updateEsigningEnvelopeRecipient(
   const nextType = input.type ?? recipient.type;
   const nextEmail = input.email === undefined ? recipient.email : input.email;
   const nextName = input.name ?? recipient.name;
-  const nextAccessMode = input.accessMode ?? recipient.accessMode;
+  const nextAccessMode =
+    nextType === 'CC' ? 'EMAIL_LINK' : (input.accessMode ?? recipient.accessMode);
 
   if ((nextType === 'CC' || nextAccessMode !== 'MANUAL_LINK') && !nextEmail?.trim()) {
     throw new Error(`${nextName} requires an email address for this recipient method`);

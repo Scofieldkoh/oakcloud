@@ -256,18 +256,25 @@ function getEnvelopeSearchMatchContext(
   const needle = query.trim().toLocaleLowerCase();
   if (!needle) return null;
 
-  if (
-    envelope.title.toLocaleLowerCase().includes(needle)
-    || envelope.companyName?.toLocaleLowerCase().includes(needle)
-  ) {
-    return null;
+  if (envelope.title.toLocaleLowerCase().includes(needle)) {
+    return `Matched envelope: ${envelope.title}`;
   }
 
-  const matchedDocument = envelope.documents.find((document) =>
-    document.fileName.toLocaleLowerCase().includes(needle)
+  if (envelope.companyName?.toLocaleLowerCase().includes(needle)) {
+    return `Matched company: ${envelope.companyName}`;
+  }
+
+  const matchedDocument = envelope.documents.find(
+    (document) =>
+      document.fileName.toLocaleLowerCase().includes(needle)
+      || document.originalFileName?.toLocaleLowerCase().includes(needle)
   );
   if (matchedDocument) {
-    return `Matched document: ${matchedDocument.fileName}`;
+    const matchedName =
+      matchedDocument.originalFileName?.toLocaleLowerCase().includes(needle)
+        ? matchedDocument.originalFileName
+        : matchedDocument.fileName;
+    return `Matched document: ${matchedName}`;
   }
 
   const matchedRecipient = envelope.recipients.find((recipient) =>
@@ -284,7 +291,7 @@ function getEnvelopeSearchMatchContext(
     return `Matched email: ${matchedEmail.email}`;
   }
 
-  return null;
+  return 'Matched search';
 }
 
 function isStatusDuplicatedByTab(status: StatusFilter, tab: TabKey): boolean {

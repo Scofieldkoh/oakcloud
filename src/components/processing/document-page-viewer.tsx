@@ -83,6 +83,15 @@ export interface DocumentPageOverlayContext extends CanvasDimensions {
   pageNumber: number;
 }
 
+export interface DocumentPageThumbnailMarker {
+  pageNumber: number;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  color?: string;
+}
+
 interface DocumentPageViewerProps {
   /** Document ID to fetch PDF from (used with useDocumentPages hook) */
   documentId?: string;
@@ -120,6 +129,8 @@ interface DocumentPageViewerProps {
   viewMode?: DocumentPageViewMode;
   /** Whether the embedding surface permits the page-thumbnail panel and its toggle. */
   allowPagePanel?: boolean;
+  /** Optional normalized field markers rendered over page thumbnails. */
+  thumbnailMarkers?: DocumentPageThumbnailMarker[];
   /** Show full-height previous/next page controls beside the canvas. */
   showPageSideNavigation?: boolean;
   /** Optional page-relative content rendered over each PDF canvas. */
@@ -503,6 +514,7 @@ export function DocumentPageViewer({
   onRetry,
   viewMode = 'single',
   allowPagePanel = true,
+  thumbnailMarkers = [],
   showPageSideNavigation = true,
   renderPageOverlay,
   pageOverlayInteractive = true,
@@ -1658,6 +1670,7 @@ export function DocumentPageViewer({
             documentStatus={documentStatus}
             isPdf={data?.isPdf ?? true}
             onPagesChanged={onPagesChanged}
+            thumbnailMarkers={thumbnailMarkers}
           />
         )}
 
@@ -2036,6 +2049,7 @@ function SortableThumbnail({
   onError,
   disabled,
   canDelete,
+  markers,
 }: {
   page: PageInfo;
   displayNumber: number; // Visual position in the list (1-indexed)
@@ -2049,6 +2063,7 @@ function SortableThumbnail({
   onError: () => void;
   disabled?: boolean;
   canDelete?: boolean;
+  markers?: DocumentPageThumbnailMarker[];
 }) {
   const {
     attributes,
@@ -2140,6 +2155,20 @@ function SortableThumbnail({
           />
         </>
       )}
+      {markers?.map((marker, index) => (
+        <span
+          key={`field-marker-${displayNumber}-${index}`}
+          className="pointer-events-none absolute z-[5] rounded-[2px] border"
+          style={{
+            left: `${Math.max(0, Math.min(1, marker.x)) * 100}%`,
+            top: `${Math.max(0, Math.min(1, marker.y)) * 100}%`,
+            width: `${Math.max(0.015, Math.min(1, marker.width)) * 100}%`,
+            height: `${Math.max(0.012, Math.min(1, marker.height)) * 100}%`,
+            borderColor: marker.color ?? '#294d44',
+            backgroundColor: `${marker.color ?? '#294d44'}33`,
+          }}
+        />
+      ))}
       <span className={cn(
         'absolute bottom-0 left-0 right-0 text-white text-xs text-center py-0.5',
         currentPage === displayNumber ? 'bg-oak-primary' : 'bg-black/60'
@@ -2164,6 +2193,7 @@ export function PageThumbnailSidebar({
   documentStatus,
   isPdf = true,
   onPagesChanged,
+  thumbnailMarkers = [],
 }: {
   pages: PageInfo[];
   currentPage: number;
@@ -2174,6 +2204,7 @@ export function PageThumbnailSidebar({
   documentStatus?: 'DRAFT' | 'APPROVED' | 'SUPERSEDED';
   isPdf?: boolean;
   onPagesChanged?: () => void;
+  thumbnailMarkers?: DocumentPageThumbnailMarker[];
 }) {
   const isMobile = useIsMobile();
   const minSidebarWidth = isMobile ? MOBILE_MIN_SIDEBAR_WIDTH : MIN_SIDEBAR_WIDTH;
@@ -2564,6 +2595,7 @@ export function PageThumbnailSidebar({
                     }}
                     disabled={!canModify || isOperationPending}
                     canDelete={canModify && localPages.length > 1 && !isOperationPending}
+                    markers={thumbnailMarkers.filter((marker) => marker.pageNumber === index + 1)}
                   />
                 ))}
               </SortableContext>

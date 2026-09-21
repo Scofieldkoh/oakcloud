@@ -83,7 +83,7 @@ const DEFAULT_RECIPIENT_FORM: RecipientForm = {
   email: '',
   type: 'SIGNER',
   signingOrder: '1',
-  accessMode: 'MANUAL_LINK',
+  accessMode: 'EMAIL_LINK',
   accessCode: '',
 };
 
@@ -359,7 +359,7 @@ export function EsigningDetailPage({ envelopeId }: Props) {
       email: recipient.email ?? '',
       type: recipient.type,
       signingOrder: recipient.signingOrder?.toString() ?? '',
-      accessMode: recipient.accessMode,
+      accessMode: recipient.type === 'CC' ? 'EMAIL_LINK' : recipient.accessMode,
       accessCode: '',
     });
     setIsRecipientModalOpen(true);
@@ -632,9 +632,15 @@ export function EsigningDetailPage({ envelopeId }: Props) {
                   <span>Role</span>
                   <select
                     value={recipientForm.type}
-                    onChange={(e) =>
-                      setRecipientForm((prev) => ({ ...prev, type: e.target.value as EsigningRecipientType }))
-                    }
+                    onChange={(e) => {
+                      const nextType = e.target.value as EsigningRecipientType;
+                      setRecipientForm((prev) => ({
+                        ...prev,
+                        type: nextType,
+                        accessMode: nextType === 'CC' ? 'EMAIL_LINK' : prev.accessMode,
+                        accessCode: nextType === 'CC' ? '' : prev.accessCode,
+                      }));
+                    }}
                     className="h-8 rounded-lg border border-border-primary bg-background-primary px-3 text-sm text-text-primary"
                   >
                     {Object.entries(ESIGNING_RECIPIENT_TYPE_LABELS).map(([value, label]) => (
@@ -652,11 +658,16 @@ export function EsigningDetailPage({ envelopeId }: Props) {
                         accessMode: e.target.value as EsigningRecipientAccessMode,
                       }))
                     }
+                    disabled={recipientForm.type === 'CC'}
                     className="h-8 rounded-lg border border-border-primary bg-background-primary px-3 text-sm text-text-primary"
                   >
-                    {Object.entries(ESIGNING_ACCESS_MODE_LABELS).map(([value, label]) => (
-                      <option key={value} value={value}>{label}</option>
-                    ))}
+                    {Object.entries(ESIGNING_ACCESS_MODE_LABELS)
+                      .filter(([value]) => recipientForm.type !== 'CC' || value === 'EMAIL_LINK')
+                      .map(([value, label]) => (
+                        <option key={value} value={value}>
+                          {recipientForm.type === 'CC' && value === 'EMAIL_LINK' ? 'Email' : label}
+                        </option>
+                      ))}
                   </select>
                 </label>
               </div>
