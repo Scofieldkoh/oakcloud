@@ -160,7 +160,13 @@ export function LinkedCompanySignerQuickAdd({ companyId, companyName, recipients
     setDraft((current) => ({
       ...current,
       type: nextType,
-      accessMode: nextType === 'CC' && current.accessMode === 'MANUAL_LINK' ? 'EMAIL_LINK' : current.accessMode,
+      accessMode:
+        nextType === 'CC'
+          ? 'EMAIL_LINK'
+          : current.type === 'CC'
+            ? 'MANUAL_LINK'
+            : current.accessMode,
+      accessCode: nextType === 'CC' ? '' : current.accessCode,
     }));
   }
 

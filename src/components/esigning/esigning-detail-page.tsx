@@ -83,7 +83,7 @@ const DEFAULT_RECIPIENT_FORM: RecipientForm = {
   email: '',
   type: 'SIGNER',
   signingOrder: '1',
-  accessMode: 'EMAIL_LINK',
+  accessMode: 'MANUAL_LINK',
   accessCode: '',
 };
 
@@ -637,7 +637,12 @@ export function EsigningDetailPage({ envelopeId }: Props) {
                       setRecipientForm((prev) => ({
                         ...prev,
                         type: nextType,
-                        accessMode: nextType === 'CC' ? 'EMAIL_LINK' : prev.accessMode,
+                        accessMode:
+                          nextType === 'CC'
+                            ? 'EMAIL_LINK'
+                            : prev.type === 'CC'
+                              ? 'MANUAL_LINK'
+                              : prev.accessMode,
                         accessCode: nextType === 'CC' ? '' : prev.accessCode,
                       }));
                     }}
