@@ -54,6 +54,34 @@ export interface DeadlineCycleDto {
   periodEnd: string;
 }
 
+export interface DeadlineAwarenessItem {
+  id: string;
+  kind: 'PRIOR_TAX_YA_CONFIRMATION' | 'NOMINEE_DIRECTOR_MONITORING';
+  company: {
+    id: string;
+    name: string;
+    displayAlias: string | null;
+    uen: string | null;
+  };
+  dueDate: string;
+  ruleCode: string;
+  ruleName: string;
+  milestoneName: string;
+  coverageStatus: 'OUT_OF_SCOPE_REQUIRES_CONFIRMATION' | 'MONITORED_MANAGED' | 'MONITORING_ONLY';
+  monitoringService: {
+    id: string;
+    name: string;
+    familyName: string;
+  };
+  managedService: {
+    id: string;
+    name: string;
+    familyName: string;
+  } | null;
+  assessmentYear: number | null;
+  message: string;
+}
+
 export interface DeadlineOccurrenceDto {
   id: string;
   tenantId: string;
@@ -94,6 +122,7 @@ export interface DeadlineOccurrenceDto {
 
 export interface DeadlineTableResult {
   mode: 'TABLE';
+  awarenessItems: DeadlineAwarenessItem[];
   items: DeadlineOccurrenceDto[];
   total: number;
   page: number;
@@ -103,6 +132,7 @@ export interface DeadlineTableResult {
 
 export interface DeadlineCalendarResult {
   mode: 'CALENDAR';
+  awarenessItems: DeadlineAwarenessItem[];
   items: DeadlineOccurrenceDto[];
   truncated: boolean;
   warning?: string;

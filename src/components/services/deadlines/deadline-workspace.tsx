@@ -630,6 +630,24 @@ export function DeadlineWorkspace({ canEdit = false, deadlineWritesEnabled = fal
         </div>
       ) : null}
 
+      {(deadlines.data?.awarenessItems?.length ?? 0) > 0 ? (
+        <Alert variant="warning" title="Compliance attention">
+          <div className="space-y-2">
+            {deadlines.data!.awarenessItems.map((item) => (
+              <div key={item.id} className="text-sm">
+                <span className="font-medium">{item.company.displayAlias || item.company.name}</span>
+                {' · '}
+                <span>{item.milestoneName}</span>
+                {' · '}
+                <span>{item.dueDate}</span>
+                {' — '}
+                <span>{item.message}</span>
+              </div>
+            ))}
+          </div>
+        </Alert>
+      ) : null}
+
       {deadlines.error ? (
         <Alert variant="error" title="Unable to load deadlines">
           <div className="flex flex-wrap items-center gap-2">
