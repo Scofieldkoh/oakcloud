@@ -24,6 +24,7 @@ export { getManualDeadlineCycleOptions } from './manual-cycle-options';
 
 export type {
   DeadlineActor,
+  DeadlineAwarenessItem,
   DeadlineCalendarResult,
   DeadlineCompanyDto,
   DeadlineCycleDto,

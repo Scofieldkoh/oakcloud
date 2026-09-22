@@ -166,6 +166,6 @@ export function parseDeadlineSearchParams(input: Request | URL | URLSearchParams
 }
 
 export function emptyDeadlineResult(input: Pick<DeadlineSearch, 'mode' | 'page' | 'limit'>) {
-  if (input.mode === 'CALENDAR') return { mode: 'CALENDAR' as const, items: [], truncated: false };
-  return { mode: 'TABLE' as const, items: [], total: 0, page: input.page, limit: input.limit, totalPages: 0 };
+  if (input.mode === 'CALENDAR') return { mode: 'CALENDAR' as const, items: [], awarenessItems: [], truncated: false };
+  return { mode: 'TABLE' as const, items: [], awarenessItems: [], total: 0, page: input.page, limit: input.limit, totalPages: 0 };
 }

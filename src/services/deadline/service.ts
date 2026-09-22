@@ -36,6 +36,7 @@ import type {
   DeadlineTiming,
   ListDeadlinesOptions,
 } from './types';
+import { listDeadlineAwareness } from './awareness';
 
 const CALENDAR_RESULT_CAP = 5_000;
 const CALENDAR_QUERY_LIMIT = CALENDAR_RESULT_CAP + 1;
@@ -425,8 +426,10 @@ export async function listDeadlines(
     });
     const safeRows = rows.filter((row) => hasTenantIntegrity(asRecord(row), scope.tenantId));
     const truncated = safeRows.length > CALENDAR_RESULT_CAP;
+    const awarenessItems = await listDeadlineAwareness(scope, database as unknown as Parameters<typeof listDeadlineAwareness>[1], today);
     const result: DeadlineCalendarResult = {
       mode: 'CALENDAR',
+      awarenessItems,
       items: safeRows.slice(0, CALENDAR_RESULT_CAP).map((row) => toDeadlineDto(row, today)),
       truncated,
       ...(truncated ? { warning: `Calendar results are limited to ${CALENDAR_RESULT_CAP.toLocaleString()} occurrences` } : {}),
@@ -444,8 +447,10 @@ export async function listDeadlines(
     }),
     database.deadlineOccurrence.count({ where }),
   ]);
+  const awarenessItems = await listDeadlineAwareness(scope, database as unknown as Parameters<typeof listDeadlineAwareness>[1], today);
   const result: DeadlineTableResult = {
     mode: 'TABLE',
+    awarenessItems,
     items: rows.filter((row) => hasTenantIntegrity(asRecord(row), scope.tenantId)).map((row) => toDeadlineDto(row, today)),
     total,
     page: parsed.page,
