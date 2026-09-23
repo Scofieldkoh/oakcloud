@@ -41,6 +41,14 @@ import {
   type OakDocRepeaterSummary,
 } from '@/lib/document-editor/oakdoc-repeaters';
 import {
+  createOakDocCondition,
+  inspectOakDocConditions,
+  removeOakDocCondition,
+  resolveOakDocConditions,
+  type OakDocConditionOperator,
+  type OakDocConditionSummary,
+} from '@/lib/document-editor/oakdoc-conditions';
+import {
   readOakDocTemplateMetadata,
   type OakDocTemplateMetadata,
 } from '@/lib/document-editor/oakdoc-template';
@@ -100,6 +108,10 @@ const OAKDOC_FIELD_TAGS = new Set([
   ...OAKDOC_FIELDS.map((field) => field.tag),
   ...OAKDOC_REPEATER_ITEM_TAGS,
 ]);
+
+const OAKDOC_CONDITION_FIELD_TAGS = new Set(
+  OAKDOC_SIMPLE_FIELDS.map((field) => field.tag),
+);
 
 interface CompanyOption {
   id: string;
@@ -279,6 +291,16 @@ export function OakDocEditor() {
     count: 0,
     tags: [],
   });
+  const [conditionSummary, setConditionSummary] = useState<OakDocConditionSummary>({
+    count: 0,
+    fieldTags: [],
+    conditions: [],
+  });
+  const [conditionField, setConditionField] = useState(
+    OAKDOC_SIMPLE_FIELDS[0]?.tag ?? '',
+  );
+  const [conditionOperator, setConditionOperator] = useState<OakDocConditionOperator>('truthy');
+  const [conditionValue, setConditionValue] = useState('');
   const [status, setStatus] = useState(
     templateId ? 'Loading OakDoc template...' : 'Import a DOCX to begin.',
   );
@@ -324,6 +346,7 @@ export function OakDocEditor() {
   const updateFieldSummary = useCallback((bytes: Uint8Array) => {
     setFieldSummary(inspectOakDocFields(bytes, OAKDOC_FIELD_TAGS));
     setRepeaterSummary(inspectOakDocRepeaters(bytes));
+    setConditionSummary(inspectOakDocConditions(bytes));
   }, []);
 
   const replaceDocument = useCallback((
@@ -553,6 +576,107 @@ export function OakDocEditor() {
     }
   }, [currentDocxBytes, replaceDocument]);
 
+  const addCondition = useCallback(async () => {
+    const handle = editorRef.current;
+    const editor = handle?.getEditor();
+    if (!handle || !editor) {
+      setStatus('OakDoc is not ready.');
+      setStatusKind('error');
+      return;
+    }
+
+    if (!conditionField || !OAKDOC_CONDITION_FIELD_TAGS.has(conditionField)) {
+      setStatus('Choose a field for the condition.');
+      setStatusKind('error');
+      return;
+    }
+
+    const selection = editor.snapshot().selection;
+    if (!selection || !('paraId' in selection.from) || !('paraId' in selection.to)) {
+      setStatus(
+        'Place the caret inside the paragraph or table row you want to make conditional.',
+      );
+      setStatusKind('error');
+      return;
+    }
+
+    setBusy(true);
+    try {
+      const bytes = await currentDocxBytes();
+      const created = createOakDocCondition({
+        docxBytes: bytes,
+        fromParaId: selection.from.paraId,
+        toParaId: selection.to.paraId,
+        condition: {
+          field: conditionField,
+          operator: conditionOperator,
+          ...(conditionOperator === 'truthy' ? {} : { value: conditionValue }),
+        },
+        allowedFields: OAKDOC_CONDITION_FIELD_TAGS,
+      });
+      const fieldLabel = OAKDOC_FIELD_BY_TAG.get(conditionField)?.label ?? conditionField;
+      const comparison = conditionOperator === 'truthy'
+        ? 'has a value'
+        : conditionOperator === 'equals'
+          ? `equals "${conditionValue}"`
+          : `does not equal "${conditionValue}"`;
+      replaceDocument(
+        created.bytes,
+        `Made the current ${created.targetKind} conditional: ${fieldLabel} ${comparison}.`,
+      );
+      setIsDirty(true);
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : 'Could not create conditional section.');
+      setStatusKind('error');
+    } finally {
+      setBusy(false);
+    }
+  }, [
+    conditionField,
+    conditionOperator,
+    conditionValue,
+    currentDocxBytes,
+    replaceDocument,
+  ]);
+
+  const removeConditionAtCaret = useCallback(async () => {
+    const handle = editorRef.current;
+    const editor = handle?.getEditor();
+    if (!handle || !editor) {
+      setStatus('OakDoc is not ready.');
+      setStatusKind('error');
+      return;
+    }
+
+    const selection = editor.snapshot().selection;
+    if (!selection || !('paraId' in selection.from)) {
+      setStatus('Place the caret inside the conditional section you want to remove.');
+      setStatusKind('error');
+      return;
+    }
+
+    setBusy(true);
+    try {
+      const bytes = await currentDocxBytes();
+      const removed = removeOakDocCondition({
+        docxBytes: bytes,
+        paraId: selection.from.paraId,
+      });
+      const fieldLabel = OAKDOC_FIELD_BY_TAG.get(removed.condition.field)?.label
+        ?? removed.condition.field;
+      replaceDocument(
+        removed.bytes,
+        `Removed the condition based on ${fieldLabel} and kept the document content.`,
+      );
+      setIsDirty(true);
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : 'Could not remove conditional section.');
+      setStatusKind('error');
+    } finally {
+      setBusy(false);
+    }
+  }, [currentDocxBytes, replaceDocument]);
+
   const generateResolvedCopy = useCallback(async () => {
     if (!company) {
       setStatus('Select a company before generating a document.');
@@ -564,24 +688,44 @@ export function OakDocEditor() {
     try {
       const bytes = await currentDocxBytes();
       const cleaned = pruneDeletedOakDocFields(bytes, OAKDOC_FIELD_TAGS);
-      const repeated = resolveOakDocRepeaters({
-        docxBytes: cleaned.bytes,
-        company,
-      });
       const generatedBy = session
         ? [session.firstName, session.lastName].filter(Boolean).join(' ')
         : undefined;
+      const resolutionTags = Array.from(new Set([
+        ...fieldSummary.tags,
+        ...conditionSummary.fieldTags,
+      ]));
       const values = buildOakDocResolutionValues({
         company,
-        fieldTags: fieldSummary.tags,
+        fieldTags: resolutionTags,
         selectedDirectorId: selectedDirectorId || undefined,
         selectedShareholderId: selectedShareholderId || undefined,
         generatedBy,
       });
+      const conditioned = resolveOakDocConditions({
+        docxBytes: cleaned.bytes,
+        values,
+        allowedFields: OAKDOC_CONDITION_FIELD_TAGS,
+      });
+      if (conditioned.unresolvedFields.length > 0) {
+        throw new Error(
+          `Conditional fields are unavailable: ${conditioned.unresolvedFields.join(', ')}.`,
+        );
+      }
+      const repeated = resolveOakDocRepeaters({
+        docxBytes: conditioned.bytes,
+        company,
+      });
       const resolved = resolveOakDocFields(repeated.bytes, values);
 
-      if (resolved.updated === 0 && repeated.repeatersResolved === 0) {
-        throw new Error('No OakDoc fields or repeating sections could be resolved with the selected context.');
+      if (
+        resolved.updated === 0
+        && repeated.repeatersResolved === 0
+        && conditioned.resolved === 0
+      ) {
+        throw new Error(
+          'No OakDoc fields, conditional sections, or repeating sections could be resolved with the selected context.',
+        );
       }
 
       const generatedName = safeDocxName(`${title} - ${company.name}`);
@@ -589,11 +733,14 @@ export function OakDocEditor() {
       const unresolvedMessage = resolved.unresolvedTags.length > 0
         ? ` ${resolved.unresolvedTags.length} field type${resolved.unresolvedTags.length === 1 ? '' : 's'} still need additional context.`
         : '';
+      const conditionMessage = conditioned.resolved > 0
+        ? ` Evaluated ${conditioned.resolved} conditional section${conditioned.resolved === 1 ? '' : 's'} (${conditioned.kept} kept, ${conditioned.removed} removed).`
+        : '';
       const repeaterMessage = repeated.repeatersResolved > 0
         ? ` Expanded ${repeated.repeatersResolved} repeating section${repeated.repeatersResolved === 1 ? '' : 's'} into ${repeated.itemsCreated} item${repeated.itemsCreated === 1 ? '' : 's'}.`
         : '';
       setStatus(
-        `Generated a resolved DOCX from ${company.name} without changing the master template.${repeaterMessage}${unresolvedMessage}`,
+        `Generated a resolved DOCX from ${company.name} without changing the master template.${conditionMessage}${repeaterMessage}${unresolvedMessage}`,
       );
       setStatusKind(resolved.unresolvedTags.length > 0 ? 'neutral' : 'success');
     } catch (error) {
@@ -605,6 +752,7 @@ export function OakDocEditor() {
   }, [
     company,
     currentDocxBytes,
+    conditionSummary.fieldTags,
     fieldSummary.tags,
     selectedDirectorId,
     selectedShareholderId,
@@ -643,8 +791,13 @@ export function OakDocEditor() {
       formData.set('tenantId', activeTenantId);
       const savedFields = inspectOakDocFields(cleaned.bytes, OAKDOC_FIELD_TAGS).tags;
       const savedRepeaters = inspectOakDocRepeaters(cleaned.bytes).tags;
+      const savedConditions = inspectOakDocConditions(cleaned.bytes).fieldTags;
       formData.set('fieldTags', JSON.stringify(
-        Array.from(new Set([...savedFields, ...savedRepeaters])).sort(),
+        Array.from(new Set([
+          ...savedFields,
+          ...savedRepeaters,
+          ...savedConditions,
+        ])).sort(),
       ));
       if (templateId && templateRevision !== null) {
         formData.set('expectedRevision', String(templateRevision));
@@ -767,7 +920,11 @@ export function OakDocEditor() {
               !hasDocument
               || !company
               || busy
-              || (fieldSummary.count === 0 && repeaterSummary.count === 0)
+              || (
+                fieldSummary.count === 0
+                && repeaterSummary.count === 0
+                && conditionSummary.count === 0
+              )
             }
             onClick={() => void generateResolvedCopy()}
           >
@@ -1014,6 +1171,111 @@ export function OakDocEditor() {
                     </div>
                   </div>
                 ))}
+            </section>
+
+            <div className="my-4 border-t border-border-secondary" />
+
+            <section className="space-y-3">
+              <div>
+                <div className="flex items-end justify-between gap-2">
+                  <h2 className="text-xs font-semibold uppercase tracking-wide text-text-muted">
+                    Conditional sections
+                  </h2>
+                  <span className="text-[11px] text-text-muted">
+                    {conditionSummary.count} in document
+                  </span>
+                </div>
+                <p className="mt-1 text-xs text-text-secondary">
+                  Choose a rule, place the caret in a paragraph or table row, then apply the condition.
+                </p>
+              </div>
+
+              <select
+                value={conditionField}
+                onChange={(event) => setConditionField(event.target.value)}
+                className="h-9 w-full rounded-lg border border-border-primary bg-background-primary px-2.5 text-sm text-text-primary focus:border-oak-primary focus:outline-none focus:ring-2 focus:ring-oak-primary/20"
+              >
+                {OAKDOC_FIELD_CATEGORIES.map((category) => (
+                  <optgroup key={category.key} label={category.label}>
+                    {category.fields.map((field) => (
+                      <option key={field.key} value={field.key}>
+                        {field.label}
+                      </option>
+                    ))}
+                  </optgroup>
+                ))}
+              </select>
+
+              <select
+                value={conditionOperator}
+                onChange={(event) => {
+                  setConditionOperator(event.target.value as OakDocConditionOperator);
+                  if (event.target.value === 'truthy') setConditionValue('');
+                }}
+                className="h-9 w-full rounded-lg border border-border-primary bg-background-primary px-2.5 text-sm text-text-primary focus:border-oak-primary focus:outline-none focus:ring-2 focus:ring-oak-primary/20"
+              >
+                <option value="truthy">Has a value / is true</option>
+                <option value="equals">Equals</option>
+                <option value="notEquals">Does not equal</option>
+              </select>
+
+              {conditionOperator !== 'truthy' ? (
+                <input
+                  value={conditionValue}
+                  onChange={(event) => setConditionValue(event.target.value)}
+                  placeholder="Comparison value"
+                  className="h-9 w-full rounded-lg border border-border-primary bg-background-primary px-2.5 text-sm text-text-primary placeholder:text-text-muted focus:border-oak-primary focus:outline-none focus:ring-2 focus:ring-oak-primary/20"
+                />
+              ) : null}
+
+              <button
+                type="button"
+                disabled={!hasDocument || busy || !conditionField}
+                onPointerDown={(event) => event.preventDefault()}
+                onClick={() => void addCondition()}
+                className="w-full rounded-md border border-oak-primary/30 bg-oak-primary/5 px-2.5 py-2 text-xs font-medium text-oak-primary transition-colors hover:bg-oak-primary/10 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                Apply condition at caret
+              </button>
+
+              {conditionSummary.count > 0 ? (
+                <>
+                  <button
+                    type="button"
+                    disabled={!hasDocument || busy}
+                    onPointerDown={(event) => event.preventDefault()}
+                    onClick={() => void removeConditionAtCaret()}
+                    className="w-full rounded-md border border-border-primary px-2.5 py-2 text-xs text-text-secondary transition-colors hover:border-status-error/40 hover:bg-status-error/5 hover:text-status-error disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    Remove condition at caret
+                  </button>
+
+                  <div className="space-y-1.5">
+                    {conditionSummary.conditions.map((condition) => {
+                      const fieldLabel = OAKDOC_FIELD_BY_TAG.get(condition.field)?.label
+                        ?? condition.field;
+                      const rule = condition.operator === 'truthy'
+                        ? 'has a value'
+                        : condition.operator === 'equals'
+                          ? `equals "${condition.value ?? ''}"`
+                          : `does not equal "${condition.value ?? ''}"`;
+                      return (
+                        <div
+                          key={condition.id}
+                          className="rounded-lg border border-border-primary bg-background-primary px-2.5 py-2"
+                        >
+                          <div className="truncate text-xs font-medium text-text-primary">
+                            {fieldLabel}
+                          </div>
+                          <div className="mt-0.5 truncate text-[10px] text-text-muted">
+                            {rule}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
+              ) : null}
             </section>
 
             <div className="my-4 border-t border-border-secondary" />
