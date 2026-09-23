@@ -265,6 +265,46 @@ const EIGENPAL_LAB_FRAME = String.raw`<!doctype html>
       return getWordVal(tag);
     }
 
+    function seedEmptyFieldTokens(docxBytes, field) {
+      const files = unzipSync(docxBytes);
+      let updated = 0;
+      const token = '{{' + field.tag + '}}';
+
+      for (const name of wordXmlPartNames(files)) {
+        const xml = parseXml(files[name]);
+        let changed = false;
+
+        for (const sdt of Array.from(xml.getElementsByTagNameNS(W_NS, 'sdt'))) {
+          if (tagOfContentControl(sdt) !== field.tag) continue;
+
+          const properties = wordChildren(sdt).find((child) => isWordElement(child, 'sdtPr'));
+          const showingPlaceholder = properties
+            ? wordChildren(properties).find((child) => isWordElement(child, 'showingPlcHdr'))
+            : null;
+          if (!showingPlaceholder) continue;
+
+          const content = wordChildren(sdt).find((child) => isWordElement(child, 'sdtContent'));
+          if (!content) continue;
+          const textNodes = Array.from(content.getElementsByTagNameNS(W_NS, 't'));
+          if (!textNodes.length) continue;
+
+          setTextValue(textNodes[0], token);
+          for (let index = 1; index < textNodes.length; index += 1) setTextValue(textNodes[index], '');
+          properties.removeChild(showingPlaceholder);
+
+          updated += 1;
+          changed = true;
+        }
+
+        if (changed) files[name] = serializeXml(xml);
+      }
+
+      return {
+        bytes: updated ? zipSync(files, { level: 6 }) : docxBytes,
+        updated
+      };
+    }
+
     function inspectNativeFields(docxBytes) {
       const files = unzipSync(docxBytes);
       const tags = [];
@@ -480,11 +520,21 @@ const EIGENPAL_LAB_FRAME = String.raw`<!doctype html>
           }
 
           const bytes = await currentDocxBytes();
-          refreshFieldSummary(bytes);
-          setStatus(
-            'Created native Word field ' + field.tag + '. If text was selected, EigenPal wrapped that selection; otherwise it inserted an empty field at the caret.',
-            'ok'
-          );
+          const seeded = seedEmptyFieldTokens(bytes, field);
+
+          if (seeded.updated > 0) {
+            replaceDocument(
+              seeded.bytes,
+              'Created native Word field ' + field.tag + '. Empty fields now display {{' + field.tag + '}} until resolved.'
+            );
+            setStatus('Preparing Oakcloud field token...', '');
+          } else {
+            refreshFieldSummary(bytes);
+            setStatus(
+              'Created native Word field ' + field.tag + ' around the selected text.',
+              'ok'
+            );
+          }
         } catch (error) {
           console.error(error);
           setStatus(error instanceof Error ? error.message : 'Could not create the Word content control.');
