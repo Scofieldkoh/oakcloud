@@ -576,25 +576,12 @@ export default function GeneratedDocumentsPage() {
           </Link>
           {canCreate && (
             <Link
-              href="/generated-documents/generate?editorPoc=eigenpal"
+              href="/generated-documents/generate?editor=oakdoc"
               className="inline-flex min-h-10 items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-oak-primary/30 bg-oak-primary/5 px-3 text-sm font-medium text-oak-primary transition-colors hover:bg-oak-primary/10 sm:min-h-8"
-              title="OakDoc Lab using EigenPal Apache-licensed open packages"
+              title="Open OakDoc Word template editor"
             >
               <FileText className="h-4 w-4" aria-hidden="true" />
-              OakDoc Lab
-              <span className="rounded bg-oak-primary/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide">
-                Experimental
-              </span>
-            </Link>
-          )}
-          {canCreate && (
-            <Link
-              href="/generated-documents/generate?editorPoc=superdoc"
-              className="inline-flex min-h-10 items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-border-primary bg-background-elevated px-3 text-sm font-medium text-text-secondary transition-colors hover:bg-background-tertiary sm:min-h-8"
-              title="Earlier SuperDoc proof of concept"
-            >
-              <FileText className="h-4 w-4" aria-hidden="true" />
-              SuperDoc POC
+              OakDoc
             </Link>
           )}
           {canCreate && (

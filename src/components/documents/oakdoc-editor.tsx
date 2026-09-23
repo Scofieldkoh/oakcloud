@@ -454,7 +454,7 @@ const EIGENPAL_LAB_FRAME = String.raw`<!doctype html>
       const [documentBytes, setDocumentBytes] = useState(null);
       const [documentVersion, setDocumentVersion] = useState(0);
       const [fileName, setFileName] = useState('');
-      const [title, setTitle] = useState('OakDoc Lab document');
+      const [title, setTitle] = useState('OakDoc document');
       const [status, setStatus] = useState('Import a DOCX to begin.');
       const [statusKind, setStatusKind] = useState('');
       const [busy, setBusy] = useState(false);
@@ -513,7 +513,7 @@ const EIGENPAL_LAB_FRAME = String.raw`<!doctype html>
 
       async function currentDocxBytes() {
         const editor = editorRef.current;
-        if (!editor || typeof editor.save !== 'function') throw new Error('The document editor is not ready.');
+        if (!editor || typeof editor.save !== 'function') throw new Error('OakDoc is not ready.');
         const buffer = await editor.save();
         if (!buffer) throw new Error('The editor did not return a DOCX file.');
         return new Uint8Array(buffer);
@@ -576,7 +576,7 @@ const EIGENPAL_LAB_FRAME = String.raw`<!doctype html>
 
           const result = editor.exec(command);
           if (result && result.ok === false) {
-            throw new Error(result.reason || result.message || 'EigenPal could not create the content control.');
+            throw new Error(result.reason || result.message || 'OakDoc could not create the content control.');
           }
 
           const afterBytes = await currentDocxBytes();
@@ -688,8 +688,8 @@ const EIGENPAL_LAB_FRAME = String.raw`<!doctype html>
 
       return h('div', { className: 'lab-shell' },
         h('header', { className: 'lab-topbar' },
-          h('div', { className: 'lab-title' }, 'OakDoc Lab · Native Word fields'),
-          h('span', { className: 'lab-badge' }, 'EigenPal Apache 2.0 core + OakDoc OOXML field adapter'),
+          h('div', { className: 'lab-title' }, 'OakDoc'),
+          h('span', { className: 'lab-badge' }, 'DOCX-native editor'),
           h('label', { className: 'lab-upload' },
             'Import Word .docx',
             h('input', {
@@ -728,10 +728,10 @@ const EIGENPAL_LAB_FRAME = String.raw`<!doctype html>
             ),
             h('section', { className: 'lab-section' },
               h('h2', null, 'Field target'),
-              h('p', null, 'Use EigenPal\'s own document selection: highlight existing text to wrap it, or leave the caret where you want an empty Word field inserted.'),
+              h('p', null, 'Use the document selection: highlight existing text to wrap it, or leave the caret where you want an empty Word field inserted.'),
               h('div', { className: 'lab-selection' },
-                h('strong', null, 'Current EigenPal selection'),
-                'The field buttons now act directly on the editor selection; no browser DOM selection capture is required.'
+                h('strong', null, 'Current document selection'),
+                'Highlight existing text to wrap it as a field, or place the caret where you want a new field inserted.'
               )
             ),
             h('section', { className: 'lab-section' },
@@ -784,11 +784,11 @@ const EIGENPAL_LAB_FRAME = String.raw`<!doctype html>
 </body>
 </html>`;
 
-export function EigenPalPoc() {
+export function OakDocEditor() {
   return (
     <div className="h-[calc(100vh-1rem)] min-h-[720px] overflow-hidden bg-background-primary p-2">
       <iframe
-        title="OakDoc Lab EigenPal proof of concept"
+        title="OakDoc document editor"
         srcDoc={EIGENPAL_LAB_FRAME}
         className="h-full w-full rounded-lg border border-border-primary bg-white"
         allow="clipboard-read; clipboard-write"
