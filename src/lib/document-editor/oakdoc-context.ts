@@ -26,6 +26,7 @@ export interface OakDocShareholder {
   id: string;
   name: string;
   shareholderType?: string | null;
+  isNominee?: boolean | null;
   identificationNumber?: string | null;
   nationality?: string | null;
   address?: string | null;

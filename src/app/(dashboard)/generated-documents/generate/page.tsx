@@ -25,6 +25,7 @@ import type {
   DocumentTemplateSummary,
 } from '@/types/document-generation';
 import type { GenerationSessionEnvelope } from '@/lib/document-generation-session';
+import { isOakDocTemplate } from '@/lib/document-editor/oakdoc-template';
 
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -228,7 +229,9 @@ function GenerateDocumentContent() {
         const rawContacts = Array.isArray(contactsData.options)
           ? contactsData.options as Array<Record<string, unknown>>
           : [];
-        const templateList = rawTemplates.map(mapTemplateSummary);
+        const templateList = rawTemplates
+          .filter((template) => !isOakDocTemplate(template.contentJson))
+          .map(mapTemplateSummary);
         setTemplates(templateList);
         setCompanies(rawCompanies.map(mapCompanyOption));
         setContacts(rawContacts.map(mapContactOption));
