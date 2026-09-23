@@ -4,6 +4,7 @@ import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { SuperDocPoc } from '@/components/documents/superdoc-poc';
 import {
   DocumentGenerationBatchWorkspace,
   type EditableDocumentGenerationBatch,
@@ -342,10 +343,20 @@ function GenerateDocumentContent() {
   );
 }
 
+function GenerateDocumentRouter() {
+  const searchParams = useSearchParams();
+
+  if (searchParams.get('editorPoc') === 'superdoc') {
+    return <SuperDocPoc />;
+  }
+
+  return <GenerateDocumentContent />;
+}
+
 export default function GenerateDocumentPage() {
   return (
     <Suspense fallback={<WorkspaceSkeleton />}>
-      <GenerateDocumentContent />
+      <GenerateDocumentRouter />
     </Suspense>
   );
 }
