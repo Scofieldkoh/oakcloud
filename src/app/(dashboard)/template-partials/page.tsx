@@ -45,6 +45,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
+import { isOakDocTemplate as isOakDocContentJson } from '@/lib/document-editor/oakdoc-template';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 // ============================================================================
@@ -59,6 +60,7 @@ interface DocumentTemplate {
   description?: string | null;
   category: string;
   content: string;
+  contentJson?: unknown;
   placeholders: PlaceholderDefinition[];
   isActive: boolean;
   version: number;
@@ -72,6 +74,10 @@ interface DocumentTemplate {
   _count?: {
     generatedDocuments: number;
   };
+}
+
+function isOakDocTemplate(template: Pick<DocumentTemplate, 'contentJson'>): boolean {
+  return isOakDocContentJson(template.contentJson);
 }
 
 interface PlaceholderDefinition {
@@ -367,6 +373,12 @@ function DocumentTemplatesTab({
   };
 
   const openEditModal = (template: DocumentTemplate) => {
+    if (isOakDocTemplate(template)) {
+      router.push(
+        `/generated-documents/generate?editor=oakdoc&templateId=${encodeURIComponent(template.id)}`,
+      );
+      return;
+    }
     router.push(`/template-partials/editor?id=${template.id}&tab=templates`);
   };
 
@@ -425,6 +437,16 @@ function DocumentTemplatesTab({
             </option>
           ))}
         </select>
+        {canCreate && (
+          <Button
+            variant="secondary"
+            className="h-9"
+            leftIcon={<FileText />}
+            onClick={() => router.push('/generated-documents/generate?editor=oakdoc')}
+          >
+            New Word Template
+          </Button>
+        )}
         {canCreate && (
           <Button variant="primary" className="h-9" leftIcon={<Plus />} onClick={openCreateModal}>
             New Template
@@ -545,6 +567,11 @@ function DocumentTemplatesTab({
                     <span className="badge bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 text-xs">
                       {getCategoryLabel(template.category)}
                     </span>
+                    {isOakDocTemplate(template) && (
+                      <span className="badge bg-background-tertiary text-text-secondary text-xs">
+                        Word / OakDoc
+                      </span>
+                    )}
                   </div>
                   {template.description && (
                     <p className="text-sm text-text-secondary mt-1 line-clamp-2">
@@ -643,7 +670,19 @@ function DocumentTemplatesTab({
               )}
 
               <div className="border border-border-primary rounded-lg p-4 bg-background-secondary">
-                <RichTextDisplay content={viewingTemplate.content} />
+                {isOakDocTemplate(viewingTemplate) ? (
+                  <div className="py-8 text-center">
+                    <FileText className="mx-auto h-8 w-8 text-accent-primary" />
+                    <p className="mt-2 text-sm font-medium text-text-primary">
+                      DOCX-native OakDoc template
+                    </p>
+                    <p className="mt-1 text-xs text-text-muted">
+                      Open this template in OakDoc to view and edit the Word document.
+                    </p>
+                  </div>
+                ) : (
+                  <RichTextDisplay content={viewingTemplate.content} />
+                )}
               </div>
             </div>
           )}
