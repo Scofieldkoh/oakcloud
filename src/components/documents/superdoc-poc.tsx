@@ -3,7 +3,7 @@ const SUPERDOC_POC_FRAME = String.raw`<!doctype html>
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/superdoc@2.16.0/style.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/superdoc@2.16.0/dist-cdn/superdoc.min.css" />
   <style>
     :root { color-scheme: light; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
     * { box-sizing: border-box; }
