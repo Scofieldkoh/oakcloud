@@ -31,6 +31,16 @@ import {
   type OakDocCompanyDetail,
 } from '@/lib/document-editor/oakdoc-context';
 import {
+  createOakDocRepeater,
+  inspectOakDocRepeaters,
+  OAKDOC_REPEATER_DEFINITIONS,
+  OAKDOC_REPEATER_ITEM_TAGS,
+  removeOakDocRepeater,
+  resolveOakDocRepeaters,
+  type OakDocRepeaterDefinition,
+  type OakDocRepeaterSummary,
+} from '@/lib/document-editor/oakdoc-repeaters';
+import {
   readOakDocTemplateMetadata,
   type OakDocTemplateMetadata,
 } from '@/lib/document-editor/oakdoc-template';
@@ -65,7 +75,7 @@ const OAKDOC_FIELD_CATEGORIES = TEMPLATE_FIELD_CATEGORIES
   }))
   .filter((category) => category.fields.length > 0);
 
-const OAKDOC_FIELDS: readonly OakDocFieldDefinition[] = OAKDOC_FIELD_CATEGORIES.flatMap(
+const OAKDOC_SIMPLE_FIELDS: readonly OakDocFieldDefinition[] = OAKDOC_FIELD_CATEGORIES.flatMap(
   (category) =>
     category.fields.map((field) => ({
       tag: field.key,
@@ -74,11 +84,22 @@ const OAKDOC_FIELDS: readonly OakDocFieldDefinition[] = OAKDOC_FIELD_CATEGORIES.
     })),
 );
 
+const OAKDOC_REPEATER_FIELDS: readonly OakDocFieldDefinition[] =
+  OAKDOC_REPEATER_DEFINITIONS.flatMap((definition) => definition.fields);
+
+const OAKDOC_FIELDS: readonly OakDocFieldDefinition[] = [
+  ...OAKDOC_SIMPLE_FIELDS,
+  ...OAKDOC_REPEATER_FIELDS,
+];
+
 const OAKDOC_FIELD_BY_TAG = new Map(
   OAKDOC_FIELDS.map((field) => [field.tag, field]),
 );
 
-const OAKDOC_FIELD_TAGS = new Set(OAKDOC_FIELDS.map((field) => field.tag));
+const OAKDOC_FIELD_TAGS = new Set([
+  ...OAKDOC_FIELDS.map((field) => field.tag),
+  ...OAKDOC_REPEATER_ITEM_TAGS,
+]);
 
 interface CompanyOption {
   id: string;
@@ -254,6 +275,10 @@ export function OakDocEditor() {
     count: 0,
     tags: [],
   });
+  const [repeaterSummary, setRepeaterSummary] = useState<OakDocRepeaterSummary>({
+    count: 0,
+    tags: [],
+  });
   const [status, setStatus] = useState(
     templateId ? 'Loading OakDoc template...' : 'Import a DOCX to begin.',
   );
@@ -298,6 +323,7 @@ export function OakDocEditor() {
 
   const updateFieldSummary = useCallback((bytes: Uint8Array) => {
     setFieldSummary(inspectOakDocFields(bytes, OAKDOC_FIELD_TAGS));
+    setRepeaterSummary(inspectOakDocRepeaters(bytes));
   }, []);
 
   const replaceDocument = useCallback((
@@ -440,6 +466,93 @@ export function OakDocEditor() {
     }
   }, [currentDocxBytes, replaceDocument, updateFieldSummary]);
 
+  const addRepeater = useCallback(async (definition: OakDocRepeaterDefinition) => {
+    const handle = editorRef.current;
+    const editor = handle?.getEditor();
+    if (!handle || !editor) {
+      setStatus('OakDoc is not ready.');
+      setStatusKind('error');
+      return;
+    }
+
+    const selection = editor.snapshot().selection;
+    if (!selection) {
+      setStatus('Place the caret inside the paragraph or table row you want to repeat.');
+      setStatusKind('error');
+      return;
+    }
+
+    if (!('paraId' in selection.from) || !('paraId' in selection.to)) {
+      setStatus(
+        'OakDoc cannot create a repeating section from this structural selection. '
+        + 'Place the caret inside a normal paragraph or table row.',
+      );
+      setStatusKind('error');
+      return;
+    }
+
+    setBusy(true);
+    try {
+      const bytes = await currentDocxBytes();
+      const created = createOakDocRepeater({
+        docxBytes: bytes,
+        fromParaId: selection.from.paraId,
+        toParaId: selection.to.paraId,
+        definition,
+      });
+      replaceDocument(
+        created.bytes,
+        `Created ${definition.label} repeating section around the current ${created.targetKind}. `
+        + `Add ${definition.itemLabel.toLowerCase()} fields inside that structure, then save the template.`,
+      );
+      setIsDirty(true);
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : 'Could not create repeating section.');
+      setStatusKind('error');
+    } finally {
+      setBusy(false);
+    }
+  }, [currentDocxBytes, replaceDocument]);
+
+  const removeRepeaterAtCaret = useCallback(async () => {
+    const handle = editorRef.current;
+    const editor = handle?.getEditor();
+    if (!handle || !editor) {
+      setStatus('OakDoc is not ready.');
+      setStatusKind('error');
+      return;
+    }
+
+    const selection = editor.snapshot().selection;
+    if (!selection || !('paraId' in selection.from)) {
+      setStatus('Place the caret inside the repeating section you want to remove.');
+      setStatusKind('error');
+      return;
+    }
+
+    setBusy(true);
+    try {
+      const bytes = await currentDocxBytes();
+      const removed = removeOakDocRepeater({
+        docxBytes: bytes,
+        paraId: selection.from.paraId,
+      });
+      const definition = OAKDOC_REPEATER_DEFINITIONS.find(
+        (candidate) => candidate.tag === removed.tag,
+      );
+      replaceDocument(
+        removed.bytes,
+        `Removed ${definition?.label ?? 'OakDoc'} repeating section and kept its template row or paragraph.`,
+      );
+      setIsDirty(true);
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : 'Could not remove repeating section.');
+      setStatusKind('error');
+    } finally {
+      setBusy(false);
+    }
+  }, [currentDocxBytes, replaceDocument]);
+
   const generateResolvedCopy = useCallback(async () => {
     if (!company) {
       setStatus('Select a company before generating a document.');
@@ -451,6 +564,10 @@ export function OakDocEditor() {
     try {
       const bytes = await currentDocxBytes();
       const cleaned = pruneDeletedOakDocFields(bytes, OAKDOC_FIELD_TAGS);
+      const repeated = resolveOakDocRepeaters({
+        docxBytes: cleaned.bytes,
+        company,
+      });
       const generatedBy = session
         ? [session.firstName, session.lastName].filter(Boolean).join(' ')
         : undefined;
@@ -461,10 +578,10 @@ export function OakDocEditor() {
         selectedShareholderId: selectedShareholderId || undefined,
         generatedBy,
       });
-      const resolved = resolveOakDocFields(cleaned.bytes, values);
+      const resolved = resolveOakDocFields(repeated.bytes, values);
 
-      if (resolved.updated === 0) {
-        throw new Error('No OakDoc fields could be resolved with the selected context.');
+      if (resolved.updated === 0 && repeated.repeatersResolved === 0) {
+        throw new Error('No OakDoc fields or repeating sections could be resolved with the selected context.');
       }
 
       const generatedName = safeDocxName(`${title} - ${company.name}`);
@@ -472,8 +589,11 @@ export function OakDocEditor() {
       const unresolvedMessage = resolved.unresolvedTags.length > 0
         ? ` ${resolved.unresolvedTags.length} field type${resolved.unresolvedTags.length === 1 ? '' : 's'} still need additional context.`
         : '';
+      const repeaterMessage = repeated.repeatersResolved > 0
+        ? ` Expanded ${repeated.repeatersResolved} repeating section${repeated.repeatersResolved === 1 ? '' : 's'} into ${repeated.itemsCreated} item${repeated.itemsCreated === 1 ? '' : 's'}.`
+        : '';
       setStatus(
-        `Generated a resolved DOCX from ${company.name} without changing the master template.${unresolvedMessage}`,
+        `Generated a resolved DOCX from ${company.name} without changing the master template.${repeaterMessage}${unresolvedMessage}`,
       );
       setStatusKind(resolved.unresolvedTags.length > 0 ? 'neutral' : 'success');
     } catch (error) {
@@ -521,10 +641,11 @@ export function OakDocEditor() {
       formData.set('category', templateCategory);
       formData.set('isActive', String(templateIsActive));
       formData.set('tenantId', activeTenantId);
-      formData.set('fieldTags', JSON.stringify(inspectOakDocFields(
-        cleaned.bytes,
-        OAKDOC_FIELD_TAGS,
-      ).tags));
+      const savedFields = inspectOakDocFields(cleaned.bytes, OAKDOC_FIELD_TAGS).tags;
+      const savedRepeaters = inspectOakDocRepeaters(cleaned.bytes).tags;
+      formData.set('fieldTags', JSON.stringify(
+        Array.from(new Set([...savedFields, ...savedRepeaters])).sort(),
+      ));
       if (templateId && templateRevision !== null) {
         formData.set('expectedRevision', String(templateRevision));
       }
@@ -642,7 +763,12 @@ export function OakDocEditor() {
           <Button
             variant="secondary"
             size="sm"
-            disabled={!hasDocument || !company || busy || fieldSummary.count === 0}
+            disabled={
+              !hasDocument
+              || !company
+              || busy
+              || (fieldSummary.count === 0 && repeaterSummary.count === 0)
+            }
             onClick={() => void generateResolvedCopy()}
           >
             Generate copy
@@ -795,6 +921,99 @@ export function OakDocEditor() {
                   ))}
                 </select>
               ) : null}
+            </section>
+
+            <div className="my-4 border-t border-border-secondary" />
+
+            <section className="space-y-3">
+              <div>
+                <div className="flex items-end justify-between gap-2">
+                  <h2 className="text-xs font-semibold uppercase tracking-wide text-text-muted">
+                    Repeating sections
+                  </h2>
+                  <span className="text-[11px] text-text-muted">
+                    {repeaterSummary.count} in document
+                  </span>
+                </div>
+                <p className="mt-1 text-xs text-text-secondary">
+                  Put the caret in a paragraph or table row, then make that structure repeat for every current person.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                {OAKDOC_REPEATER_DEFINITIONS.map((definition) => {
+                  const present = repeaterSummary.tags.includes(definition.tag);
+                  return (
+                    <button
+                      key={definition.tag}
+                      type="button"
+                      disabled={!hasDocument || busy}
+                      onPointerDown={(event) => event.preventDefault()}
+                      onClick={() => void addRepeater(definition)}
+                      className="rounded-lg border border-border-primary bg-background-primary px-2.5 py-2 text-left transition-colors hover:border-oak-primary/40 hover:bg-oak-primary/5 disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      <span className="flex items-center justify-between gap-2">
+                        <span className="text-xs font-medium text-text-primary">{definition.label}</span>
+                        {present ? (
+                          <span className="h-1.5 w-1.5 rounded-full bg-oak-primary" title="Used in this document" />
+                        ) : null}
+                      </span>
+                      <span className="mt-0.5 block text-[10px] text-text-muted">{definition.tag}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {repeaterSummary.count > 0 ? (
+                <button
+                  type="button"
+                  disabled={!hasDocument || busy}
+                  onClick={() => void removeRepeaterAtCaret()}
+                  className="w-full rounded-md border border-border-primary px-2.5 py-2 text-xs text-text-secondary transition-colors hover:border-status-error/40 hover:bg-status-error/5 hover:text-status-error disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Remove repeater at caret
+                </button>
+              ) : null}
+
+              {OAKDOC_REPEATER_DEFINITIONS
+                .filter((definition) => repeaterSummary.tags.includes(definition.tag))
+                .map((definition) => (
+                  <div key={definition.tag} className="rounded-lg border border-border-primary p-2.5">
+                    <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-text-muted">
+                      {definition.itemLabel} fields
+                    </div>
+                    <p className="mb-2 text-[10px] leading-relaxed text-text-muted">
+                      Select sample text inside the repeated row or paragraph, then assign the matching field.
+                    </p>
+                    <div className="space-y-1">
+                      {definition.fields.map((field) => {
+                        const present = fieldSummary.tags.includes(field.tag);
+                        return (
+                          <button
+                            key={field.tag}
+                            type="button"
+                            disabled={!hasDocument || busy}
+                            onPointerDown={(event) => event.preventDefault()}
+                            onClick={() => void assignField(field)}
+                            className="flex w-full items-center justify-between gap-2 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-oak-primary/5 disabled:cursor-not-allowed disabled:opacity-40"
+                          >
+                            <span className="min-w-0">
+                              <span className="block truncate text-xs font-medium text-text-primary">
+                                {field.label}
+                              </span>
+                              <span className="block truncate text-[10px] text-text-muted">
+                                {field.tag}
+                              </span>
+                            </span>
+                            {present ? (
+                              <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-oak-primary" title="Used in this document" />
+                            ) : null}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
             </section>
 
             <div className="my-4 border-t border-border-secondary" />
