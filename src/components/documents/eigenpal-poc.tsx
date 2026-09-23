@@ -364,7 +364,6 @@ const EIGENPAL_LAB_FRAME = String.raw`<!doctype html>
       const [companyId, setCompanyId] = useState('');
       const [companyLoading, setCompanyLoading] = useState(false);
       const [fieldSearch, setFieldSearch] = useState('');
-      const [capturedSelection, setCapturedSelection] = useState('');
       const [fieldSummary, setFieldSummary] = useState({ count: 0, tags: [] });
 
       const visibleFields = useMemo(() => {
@@ -397,16 +396,6 @@ const EIGENPAL_LAB_FRAME = String.raw`<!doctype html>
         return () => { cancelled = true; };
       }, []);
 
-      useEffect(() => {
-        function captureSelection() {
-          const selection = window.getSelection();
-          if (!selection || selection.isCollapsed || !isSelectionInsideEditor(selection)) return;
-          const text = normalizeSelectedText(selection.toString());
-          if (text) setCapturedSelection(text);
-        }
-        document.addEventListener('selectionchange', captureSelection);
-        return () => document.removeEventListener('selectionchange', captureSelection);
-      }, [documentVersion]);
 
       function refreshFieldSummary(bytes) {
         try {
@@ -445,8 +434,7 @@ const EIGENPAL_LAB_FRAME = String.raw`<!doctype html>
           const buffer = new Uint8Array(await file.arrayBuffer());
           setFileName(file.name);
           setTitle(file.name.replace(/\.docx$/i, ''));
-          setCapturedSelection('');
-          readyMessageRef.current = 'DOCX loaded. Select existing text, then assign an Oakcloud field from the left.';
+          readyMessageRef.current = 'DOCX loaded. Select text or place the caret, then assign an Oakcloud field from the left.';
           setDocumentBytes(buffer);
           setDocumentVersion((version) => version + 1);
           refreshFieldSummary(buffer);
@@ -462,23 +450,41 @@ const EIGENPAL_LAB_FRAME = String.raw`<!doctype html>
       }
 
       async function assignField(field) {
-        const selectedText = normalizeSelectedText(capturedSelection);
-        if (!selectedText) {
-          setStatus('Select the existing text in the Word document first, then click a field.');
+        const editorHandle = editorRef.current;
+        const editor = editorHandle && typeof editorHandle.getEditor === 'function'
+          ? editorHandle.getEditor()
+          : null;
+        if (!editor) {
+          setStatus('The document editor is not ready.');
           setStatusKind('error');
           return;
         }
+
+        const command = {
+          type: 'insertContentControl',
+          subtype: 'plainText',
+          tag: field.tag,
+          title: field.label
+        };
+
         setBusy(true);
         try {
+          const allowed = typeof editor.can === 'function' ? editor.can(command) : null;
+          if (allowed && allowed.ok === false) {
+            throw new Error(allowed.reason || allowed.message || 'The current selection cannot be wrapped in a content control.');
+          }
+
+          const result = editor.exec(command);
+          if (result && result.ok === false) {
+            throw new Error(result.reason || result.message || 'EigenPal could not create the content control.');
+          }
+
           const bytes = await currentDocxBytes();
-          const transformed = wrapSelectedTextAsField(bytes, selectedText, field);
-          replaceDocument(
-            transformed,
-            'Created native Word content control ' + field.tag + ' around "' + selectedText + '".'
+          refreshFieldSummary(bytes);
+          setStatus(
+            'Created native Word field ' + field.tag + '. If text was selected, EigenPal wrapped that selection; otherwise it inserted an empty field at the caret.',
+            'ok'
           );
-          setCapturedSelection('');
-          setStatus('Creating native Word field ' + field.tag + '...');
-          setStatusKind('');
         } catch (error) {
           console.error(error);
           setStatus(error instanceof Error ? error.message : 'Could not create the Word content control.');
@@ -606,11 +612,11 @@ const EIGENPAL_LAB_FRAME = String.raw`<!doctype html>
               )
             ),
             h('section', { className: 'lab-section' },
-              h('h2', null, 'Selected document text'),
-              h('p', null, 'Highlight existing text in the document. OakDoc will wrap that exact Word run range in a native w:sdt content control.'),
+              h('h2', null, 'Field target'),
+              h('p', null, 'Use EigenPal\'s own document selection: highlight existing text to wrap it, or leave the caret where you want an empty Word field inserted.'),
               h('div', { className: 'lab-selection' },
-                h('strong', null, capturedSelection ? 'Captured selection' : 'Nothing selected'),
-                capturedSelection || 'Select text such as the company name in the document.'
+                h('strong', null, 'Current EigenPal selection'),
+                'The field buttons now act directly on the editor selection; no browser DOM selection capture is required.'
               )
             ),
             h('section', { className: 'lab-section' },
@@ -627,7 +633,7 @@ const EIGENPAL_LAB_FRAME = String.raw`<!doctype html>
                     key: field.tag,
                     type: 'button',
                     className: 'lab-field',
-                    disabled: !documentBytes || !capturedSelection || busy,
+                    disabled: !documentBytes || busy,
                     onPointerDown: (event) => event.preventDefault(),
                     onClick: () => void assignField(field)
                   },
