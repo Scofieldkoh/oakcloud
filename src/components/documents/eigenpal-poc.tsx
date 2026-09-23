@@ -5,7 +5,7 @@ const EIGENPAL_LAB_FRAME = String.raw`<!doctype html>
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@docx-editor.dev/react@2.21.1/styles.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@docx-editor.dev/core@2.21.1/styles/editor.css" />
   <style>
     :root { color-scheme: light; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
     * { box-sizing: border-box; }
@@ -66,7 +66,7 @@ const EIGENPAL_LAB_FRAME = String.raw`<!doctype html>
         }
         try {
           const buffer = await file.arrayBuffer();
-          setDocumentBytes(buffer);
+          setDocumentBytes(new Uint8Array(buffer));
           setFileName(file.name);
           setTitle(file.name.replace(/\\.docx$/i, ''));
           setStatus('Opening ' + file.name + ' with the Apache-licensed EigenPal editor...');
