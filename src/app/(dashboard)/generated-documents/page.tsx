@@ -575,6 +575,19 @@ export default function GeneratedDocumentsPage() {
             Manage Template
           </Link>
           {canCreate && (
+            <Link
+              href="/generated-documents/generate?editorPoc=superdoc"
+              className="inline-flex min-h-10 items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-oak-primary/30 bg-oak-primary/5 px-3 text-sm font-medium text-oak-primary transition-colors hover:bg-oak-primary/10 sm:min-h-8"
+              title="Experimental DOCX-native editor proof of concept"
+            >
+              <FileText className="h-4 w-4" aria-hidden="true" />
+              DOCX Editor POC
+              <span className="rounded bg-oak-primary/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide">
+                Experimental
+              </span>
+            </Link>
+          )}
+          {canCreate && (
             <Link href="/generated-documents/generate">
               <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
                 Generate Document
