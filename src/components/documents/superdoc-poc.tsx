@@ -7,9 +7,9 @@ const SUPERDOC_POC_FRAME = String.raw`<!doctype html>
   <style>
     :root { color-scheme: light; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
     * { box-sizing: border-box; }
-    html, body { margin: 0; min-height: 100%; background: #f8f9fb; color: #1a1d23; }
+    html, body { margin: 0; width: 100%; max-width: 100vw; min-height: 100%; overflow: hidden; background: #f8f9fb; color: #1a1d23; }
     button, input, select { font: inherit; }
-    .shell { min-height: 100vh; display: grid; grid-template-rows: auto 1fr; }
+    .shell { width: 100%; max-width: 100vw; min-width: 0; min-height: 100vh; display: grid; grid-template-rows: auto minmax(0, 1fr); overflow: hidden; }
     .topbar { background: #fff; border-bottom: 1px solid #e2e4e9; padding: 12px 16px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
     .title { font-size: 15px; font-weight: 700; margin-right: auto; }
     .badge { display: inline-flex; align-items: center; height: 24px; padding: 0 8px; border-radius: 999px; font-size: 12px; background: #eef5f3; color: #294d44; border: 1px solid #cdded9; }
@@ -21,8 +21,8 @@ const SUPERDOC_POC_FRAME = String.raw`<!doctype html>
     .action.primary { background: #294d44; border-color: #294d44; color: #fff; }
     .action.primary:hover:not(:disabled) { background: #23423a; }
     .action:disabled { opacity: .5; cursor: not-allowed; }
-    .workspace { min-height: 0; display: grid; grid-template-columns: 280px minmax(0, 1fr); }
-    .sidebar { background: #fff; border-right: 1px solid #e2e4e9; padding: 14px; overflow: auto; }
+    .workspace { width: 100%; max-width: 100%; min-width: 0; min-height: 0; display: grid; grid-template-columns: 280px minmax(0, 1fr); overflow: hidden; }
+    .sidebar { min-width: 0; background: #fff; border-right: 1px solid #e2e4e9; padding: 14px; overflow: auto; }
     .section { margin-bottom: 18px; }
     .section h2 { margin: 0 0 8px; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: #7d838f; }
     .help { margin: 0 0 10px; font-size: 12px; line-height: 1.45; color: #5c6370; }
@@ -36,10 +36,10 @@ const SUPERDOC_POC_FRAME = String.raw`<!doctype html>
     .status { margin-top: 10px; border-radius: 7px; padding: 9px 10px; font-size: 12px; line-height: 1.4; background: #f1f3f5; color: #5c6370; }
     .status.ok { background: #eef7f1; color: #275b39; }
     .status.error { background: #fff1f1; color: #9b2c2c; }
-    .editor-shell { min-width: 0; min-height: 0; display: grid; grid-template-rows: auto 1fr; }
-    #superdoc-toolbar { min-height: 42px; background: #fff; border-bottom: 1px solid #e2e4e9; }
-    #editor-wrap { min-height: 0; position: relative; overflow: hidden; background: #eceff1; }
-    #editor { height: calc(100vh - 99px); overflow: auto; }
+    .editor-shell { width: 100%; max-width: 100%; min-width: 0; min-height: 0; display: grid; grid-template-rows: auto minmax(0, 1fr); overflow: hidden; contain: inline-size; }
+    #superdoc-toolbar { width: 100%; max-width: 100%; min-width: 0; min-height: 42px; overflow: hidden; background: #fff; border-bottom: 1px solid #e2e4e9; contain: inline-size; }
+    #editor-wrap { width: 100%; max-width: 100%; min-width: 0; min-height: 0; position: relative; overflow: hidden; background: #eceff1; contain: inline-size; }
+    #editor { width: 100%; max-width: 100%; min-width: 0; height: calc(100vh - 99px); overflow: auto; overscroll-behavior: contain; scrollbar-gutter: stable; }
     .empty { position: absolute; inset: 24px; display: grid; place-items: center; pointer-events: none; }
     .empty-card { max-width: 520px; background: #fff; border: 1px dashed #c7cbd1; border-radius: 12px; padding: 26px; text-align: center; box-shadow: 0 8px 24px rgba(0,0,0,.04); }
     .empty-card strong { display: block; font-size: 16px; margin-bottom: 8px; }
@@ -328,13 +328,14 @@ const SUPERDOC_POC_FRAME = String.raw`<!doctype html>
             reviewIndex: '/api/document-templates/render-test?superdocPocWorker=reviewIndex'
           },
           ui: {
-            toolbar: { container: '#superdoc-toolbar' },
+            toolbar: { container: '#superdoc-toolbar', responsiveToContainer: true },
             search: true,
             ruler: true,
             contentControls: { chrome: 'default' }
           },
           onReady: async ({ superdoc: ready }) => {
             ready.setDocumentMode('editing');
+            ready.setZoomMode('fit-width');
             exportButton.disabled = false;
             resolveButton.disabled = !companySelect.value;
             setStatus('DOCX loaded. Place the caret or select text, then insert an Oakcloud field.', 'ok');
