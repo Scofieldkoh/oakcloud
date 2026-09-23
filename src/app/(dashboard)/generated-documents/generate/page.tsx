@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SuperDocPoc } from '@/components/documents/superdoc-poc';
+import { EigenPalPoc } from '@/components/documents/eigenpal-poc';
 import {
   DocumentGenerationBatchWorkspace,
   type EditableDocumentGenerationBatch,
@@ -348,6 +349,10 @@ function GenerateDocumentRouter() {
 
   if (searchParams.get('editorPoc') === 'superdoc') {
     return <SuperDocPoc />;
+  }
+
+  if (searchParams.get('editorPoc') === 'eigenpal') {
+    return <EigenPalPoc />;
   }
 
   return <GenerateDocumentContent />;
