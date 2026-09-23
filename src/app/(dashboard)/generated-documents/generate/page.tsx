@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SuperDocPoc } from '@/components/documents/superdoc-poc';
-import { EigenPalPoc } from '@/components/documents/eigenpal-poc';
+import { OakDocEditor } from '@/components/documents/oakdoc-editor';
 import {
   DocumentGenerationBatchWorkspace,
   type EditableDocumentGenerationBatch,
@@ -351,8 +351,11 @@ function GenerateDocumentRouter() {
     return <SuperDocPoc />;
   }
 
-  if (searchParams.get('editorPoc') === 'eigenpal') {
-    return <EigenPalPoc />;
+  if (
+    searchParams.get('editor') === 'oakdoc' ||
+    searchParams.get('editorPoc') === 'eigenpal'
+  ) {
+    return <OakDocEditor />;
   }
 
   return <GenerateDocumentContent />;
