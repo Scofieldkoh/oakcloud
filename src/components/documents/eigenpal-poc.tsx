@@ -1,6 +1,6 @@
 'use client';
 
-const EIGENPAL_LAB_FRAME = String.raw\`<!doctype html>
+const EIGENPAL_LAB_FRAME = String.raw`<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
@@ -165,7 +165,7 @@ const EIGENPAL_LAB_FRAME = String.raw\`<!doctype html>
     createRoot(document.getElementById('root')).render(h(App));
   </script>
 </body>
-</html>\`;
+</html>`;
 
 export function EigenPalPoc() {
   return (
