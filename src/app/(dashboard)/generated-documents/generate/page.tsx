@@ -4,7 +4,6 @@ import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { SuperDocPoc } from '@/components/documents/superdoc-poc';
 import { OakDocEditor } from '@/components/documents/oakdoc-editor';
 import {
   DocumentGenerationBatchWorkspace,
@@ -347,14 +346,7 @@ function GenerateDocumentContent() {
 function GenerateDocumentRouter() {
   const searchParams = useSearchParams();
 
-  if (searchParams.get('editorPoc') === 'superdoc') {
-    return <SuperDocPoc />;
-  }
-
-  if (
-    searchParams.get('editor') === 'oakdoc' ||
-    searchParams.get('editorPoc') === 'eigenpal'
-  ) {
+  if (searchParams.get('editor') === 'oakdoc') {
     return <OakDocEditor />;
   }
 
