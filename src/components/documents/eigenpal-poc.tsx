@@ -73,6 +73,7 @@ const EIGENPAL_LAB_FRAME = String.raw`<!doctype html>
       { tag: 'company.homeCurrency', label: 'Home currency' },
       { tag: 'system.currentDate', label: 'Current date' }
     ];
+    const OAKCLOUD_FIELD_TAGS = new Set(FIELD_DEFINITIONS.map((field) => field.tag));
 
     function parseXml(bytes) {
       const parser = new DOMParser();
@@ -265,44 +266,101 @@ const EIGENPAL_LAB_FRAME = String.raw`<!doctype html>
       return getWordVal(tag);
     }
 
-    function seedEmptyFieldTokens(docxBytes, field) {
+    function contentControlId(sdt) {
+      const properties = wordChildren(sdt).find((child) => isWordElement(child, 'sdtPr'));
+      if (!properties) return '';
+      const id = wordChildren(properties).find((child) => isWordElement(child, 'id'));
+      return getWordVal(id);
+    }
+
+    function contentControlPlaceholderState(sdt) {
+      const properties = wordChildren(sdt).find((child) => isWordElement(child, 'sdtPr'));
+      const showingPlaceholder = properties
+        ? wordChildren(properties).find((child) => isWordElement(child, 'showingPlcHdr'))
+        : null;
+      const content = wordChildren(sdt).find((child) => isWordElement(child, 'sdtContent'));
+      const text = content
+        ? Array.from(content.getElementsByTagNameNS(W_NS, 't')).map((node) => node.textContent || '').join('')
+        : '';
+      const promptOnly = /^(?:Click here to enter text\.?\s*)+$/i.test(text.trim());
+      return { properties, showingPlaceholder, content, text, promptOnly };
+    }
+
+    function oakcloudControlIds(docxBytes) {
       const files = unzipSync(docxBytes);
-      let updated = 0;
-      const token = '{{' + field.tag + '}}';
+      const ids = new Set();
+      for (const name of wordXmlPartNames(files)) {
+        const xml = parseXml(files[name]);
+        for (const sdt of Array.from(xml.getElementsByTagNameNS(W_NS, 'sdt'))) {
+          const tag = tagOfContentControl(sdt);
+          if (!OAKCLOUD_FIELD_TAGS.has(tag)) continue;
+          const id = contentControlId(sdt);
+          if (id) ids.add(name + '::' + id);
+        }
+      }
+      return ids;
+    }
+
+    function normalizeOakcloudFields(beforeBytes, afterBytes, insertedField) {
+      const files = unzipSync(afterBytes);
+      const beforeIds = beforeBytes ? oakcloudControlIds(beforeBytes) : new Set();
+      let removed = 0;
+      let seeded = 0;
+      let fallbackSeeded = false;
 
       for (const name of wordXmlPartNames(files)) {
         const xml = parseXml(files[name]);
         let changed = false;
 
         for (const sdt of Array.from(xml.getElementsByTagNameNS(W_NS, 'sdt'))) {
-          if (tagOfContentControl(sdt) !== field.tag) continue;
+          const tag = tagOfContentControl(sdt);
+          if (!OAKCLOUD_FIELD_TAGS.has(tag)) continue;
 
-          const properties = wordChildren(sdt).find((child) => isWordElement(child, 'sdtPr'));
-          const showingPlaceholder = properties
-            ? wordChildren(properties).find((child) => isWordElement(child, 'showingPlcHdr'))
-            : null;
-          if (!showingPlaceholder) continue;
+          const state = contentControlPlaceholderState(sdt);
+          if (!state.showingPlaceholder && !state.promptOnly) continue;
 
-          const content = wordChildren(sdt).find((child) => isWordElement(child, 'sdtContent'));
-          if (!content) continue;
-          const textNodes = Array.from(content.getElementsByTagNameNS(W_NS, 't'));
-          if (!textNodes.length) continue;
+          const id = contentControlId(sdt);
+          const isNew = Boolean(
+            insertedField &&
+            tag === insertedField.tag &&
+            ((id && !beforeIds.has(name + '::' + id)) || (!id && !fallbackSeeded))
+          );
 
-          setTextValue(textNodes[0], token);
-          for (let index = 1; index < textNodes.length; index += 1) setTextValue(textNodes[index], '');
-          properties.removeChild(showingPlaceholder);
+          if (isNew && state.content && state.properties) {
+            const textNodes = Array.from(state.content.getElementsByTagNameNS(W_NS, 't'));
+            if (textNodes.length) {
+              const token = '{{' + tag + '}}';
+              setTextValue(textNodes[0], token);
+              for (let index = 1; index < textNodes.length; index += 1) setTextValue(textNodes[index], '');
+              if (state.showingPlaceholder.parentNode === state.properties) {
+                state.properties.removeChild(state.showingPlaceholder);
+              }
+              seeded += 1;
+              fallbackSeeded = true;
+              changed = true;
+              continue;
+            }
+          }
 
-          updated += 1;
-          changed = true;
+          if (sdt.parentNode) {
+            sdt.parentNode.removeChild(sdt);
+            removed += 1;
+            changed = true;
+          }
         }
 
         if (changed) files[name] = serializeXml(xml);
       }
 
       return {
-        bytes: updated ? zipSync(files, { level: 6 }) : docxBytes,
-        updated
+        bytes: seeded || removed ? zipSync(files, { level: 6 }) : afterBytes,
+        seeded,
+        removed
       };
+    }
+
+    function pruneDeletedOakcloudFields(docxBytes) {
+      return normalizeOakcloudFields(null, docxBytes, null);
     }
 
     function inspectNativeFields(docxBytes) {
@@ -514,22 +572,27 @@ const EIGENPAL_LAB_FRAME = String.raw`<!doctype html>
             throw new Error(allowed.reason || allowed.message || 'The current selection cannot be wrapped in a content control.');
           }
 
+          const beforeBytes = await currentDocxBytes();
+
           const result = editor.exec(command);
           if (result && result.ok === false) {
             throw new Error(result.reason || result.message || 'EigenPal could not create the content control.');
           }
 
-          const bytes = await currentDocxBytes();
-          const seeded = seedEmptyFieldTokens(bytes, field);
+          const afterBytes = await currentDocxBytes();
+          const normalized = normalizeOakcloudFields(beforeBytes, afterBytes, field);
 
-          if (seeded.updated > 0) {
+          if (normalized.seeded > 0 || normalized.removed > 0) {
+            const cleanupNote = normalized.removed > 0
+              ? ' Removed ' + normalized.removed + ' previously deleted field' + (normalized.removed === 1 ? '' : 's') + '.'
+              : '';
             replaceDocument(
-              seeded.bytes,
-              'Created native Word field ' + field.tag + '. Empty fields now display {{' + field.tag + '}} until resolved.'
+              normalized.bytes,
+              'Created native Word field ' + field.tag + '. Empty new fields display {{' + field.tag + '}} until resolved.' + cleanupNote
             );
-            setStatus('Preparing Oakcloud field token...', '');
+            setStatus('Preparing Oakcloud field...', '');
           } else {
-            refreshFieldSummary(bytes);
+            refreshFieldSummary(afterBytes);
             setStatus(
               'Created native Word field ' + field.tag + ' around the selected text.',
               'ok'
@@ -556,7 +619,8 @@ const EIGENPAL_LAB_FRAME = String.raw`<!doctype html>
           if (!companyResponse.ok) throw new Error('Could not load the selected company.');
           const company = await companyResponse.json();
           const bytes = await currentDocxBytes();
-          const resolved = resolveNativeFields(bytes, companyValues(company));
+          const cleaned = pruneDeletedOakcloudFields(bytes);
+          const resolved = resolveNativeFields(cleaned.bytes, companyValues(company));
           replaceDocument(
             resolved.bytes,
             'Resolved ' + resolved.updated + ' native Word field' + (resolved.updated === 1 ? '' : 's') + ' from ' + company.name + '.'
@@ -576,7 +640,8 @@ const EIGENPAL_LAB_FRAME = String.raw`<!doctype html>
         setBusy(true);
         try {
           const bytes = await currentDocxBytes();
-          const blob = new Blob([bytes], { type: DOCX_MIME });
+          const cleaned = pruneDeletedOakcloudFields(bytes);
+          const blob = new Blob([cleaned.bytes], { type: DOCX_MIME });
           const url = URL.createObjectURL(blob);
           const link = document.createElement('a');
           link.href = url;
