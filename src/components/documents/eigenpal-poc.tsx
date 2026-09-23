@@ -5,7 +5,7 @@ const EIGENPAL_LAB_FRAME = String.raw`<!doctype html>
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@docx-editor.dev/core@2.21.1/styles/editor.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@docx-editor.dev/core@2.21.1/dist/editor.css" />
   <style>
     :root { color-scheme: light; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
     * { box-sizing: border-box; }
