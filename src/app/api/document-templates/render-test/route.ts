@@ -10,6 +10,61 @@ import {
 } from '@/services/document-template-preview.service';
 import type { PlaceholderContext } from '@/lib/placeholder-resolver';
 
+const SUPERDOC_POC_WORKERS = {
+  document: 'https://cdn.jsdelivr.net/npm/@superdoc/docx-engine@0.15.0/dist/assets/browser-worker-entry-CsWhwFNb.js',
+  collaboration: 'https://cdn.jsdelivr.net/npm/@superdoc/docx-engine@0.15.0/dist/assets/collaboration-worker-entry-BFoMg_Zo.js',
+  reviewIndex: 'https://cdn.jsdelivr.net/npm/@superdoc/docx-engine@0.15.0/dist/assets/review-index-worker-entry-B-MDAFnP.js',
+} as const;
+
+type SuperDocPocWorker = keyof typeof SUPERDOC_POC_WORKERS;
+
+function isSuperDocPocWorker(value: string | null): value is SuperDocPocWorker {
+  return value === 'document' || value === 'collaboration' || value === 'reviewIndex';
+}
+
+export async function GET(request: NextRequest) {
+  try {
+    const session = await requireAuth();
+    await requirePermission(session, 'document', 'read');
+
+    const worker = new URL(request.url).searchParams.get('superdocPocWorker');
+    if (!isSuperDocPocWorker(worker)) {
+      return NextResponse.json({ error: 'Unknown SuperDoc POC worker' }, { status: 404 });
+    }
+
+    const upstream = await fetch(SUPERDOC_POC_WORKERS[worker], {
+      headers: { Accept: 'application/javascript' },
+      cache: 'force-cache',
+    });
+
+    if (!upstream.ok) {
+      return NextResponse.json(
+        { error: 'SuperDoc POC worker is unavailable' },
+        { status: 502 },
+      );
+    }
+
+    return new NextResponse(await upstream.arrayBuffer(), {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/javascript; charset=utf-8',
+        'Cache-Control': 'private, max-age=86400, immutable',
+        'X-Content-Type-Options': 'nosniff',
+      },
+    });
+  } catch (error) {
+    if (error instanceof Error) {
+      if (error.message === 'Unauthorized') {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
+      if (error.message === 'Forbidden' || error.message.startsWith('Permission denied')) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
+    }
+    return NextResponse.json({ error: 'SuperDoc POC worker proxy failed' }, { status: 500 });
+  }
+}
+
 const renderTestSchema = z.object({
   templateId: z.string().uuid().optional(),
   content: z.string().min(1).optional(),
