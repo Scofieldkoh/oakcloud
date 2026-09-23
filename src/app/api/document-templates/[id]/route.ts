@@ -4,13 +4,21 @@ import { requirePermission } from '@/lib/rbac';
 import { prisma } from '@/lib/prisma';
 import { ApiError } from '@/lib/errors';
 import { assertA4WriterCanPreserve } from '@/lib/document-editor/a4-editor-format';
-import { updateDocumentTemplateSchema } from '@/lib/validations/document-template';
+import { parseOakDocFieldTags } from '@/lib/document-editor/oakdoc-template';
+import {
+  documentTemplateCategoryEnum,
+  updateDocumentTemplateSchema,
+} from '@/lib/validations/document-template';
 import {
   getDocumentTemplateById,
   updateDocumentTemplate,
   deleteDocumentTemplate,
   restoreDocumentTemplate,
 } from '@/services/document-template.service';
+import {
+  downloadOakDocTemplate,
+  updateOakDocTemplate,
+} from '@/services/oakdoc-template.service';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -58,6 +66,20 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
     }
 
+    if (searchParams.get('format') === 'docx') {
+      const { buffer, metadata } = await downloadOakDocTemplate(id, effectiveTenantId);
+      return new NextResponse(new Uint8Array(buffer), {
+        status: 200,
+        headers: {
+          'Content-Type': metadata.mimeType,
+          'Content-Length': String(buffer.byteLength),
+          'Content-Disposition': `attachment; filename*=UTF-8''${encodeURIComponent(metadata.fileName)}`,
+          'Cache-Control': 'private, no-store',
+          'X-Content-Type-Options': 'nosniff',
+        },
+      });
+    }
+
     const includeDeleted = searchParams.get('includeDeleted') === 'true' && session.isWorkspaceAdmin;
     const template = await getDocumentTemplateById(id, effectiveTenantId, { includeDeleted });
 
@@ -77,6 +99,72 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     const session = await requireAuth();
     const { id } = await params;
     await requirePermission(session, 'document', 'update');
+
+    if (request.headers.get('content-type')?.includes('multipart/form-data')) {
+      const formData = await request.formData();
+      const file = formData.get('file');
+      if (!(file instanceof File)) {
+        return NextResponse.json({ error: 'DOCX file is required' }, { status: 400 });
+      }
+
+      const tenantIdFromForm = formData.get('tenantId');
+      let tenantId = session.tenantId;
+      if (session.isSuperAdmin) {
+        if (typeof tenantIdFromForm === 'string' && tenantIdFromForm) {
+          tenantId = tenantIdFromForm;
+        } else {
+          const existingTemplate = await prisma.documentTemplate.findFirst({
+            where: { id, deletedAt: null },
+            select: { tenantId: true },
+          });
+          if (!existingTemplate) {
+            return NextResponse.json({ error: 'Template not found' }, { status: 404 });
+          }
+          tenantId = existingTemplate.tenantId;
+        }
+      }
+      if (!tenantId) {
+        return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
+      }
+
+      const expectedRevisionRaw = formData.get('expectedRevision');
+      const expectedRevision = typeof expectedRevisionRaw === 'string'
+        ? Number(expectedRevisionRaw)
+        : Number.NaN;
+      if (!Number.isInteger(expectedRevision) || expectedRevision < 0) {
+        return NextResponse.json(
+          { error: 'A valid expectedRevision is required to save an OakDoc template' },
+          { status: 400 },
+        );
+      }
+
+      const categoryValue = formData.get('category');
+      const categoryResult = categoryValue === null
+        ? null
+        : documentTemplateCategoryEnum.safeParse(categoryValue);
+      if (categoryResult && !categoryResult.success) {
+        return NextResponse.json({ error: 'Invalid template category' }, { status: 400 });
+      }
+
+      const nameValue = formData.get('name');
+      const descriptionValue = formData.get('description');
+      const isActiveValue = formData.get('isActive');
+      const template = await updateOakDocTemplate({
+        id,
+        expectedRevision,
+        name: typeof nameValue === 'string' && nameValue.trim() ? nameValue.trim() : undefined,
+        description: typeof descriptionValue === 'string'
+          ? (descriptionValue.trim() || null)
+          : undefined,
+        category: categoryResult?.success ? categoryResult.data : undefined,
+        isActive: typeof isActiveValue === 'string' ? isActiveValue !== 'false' : undefined,
+        fileName: file.name,
+        buffer: Buffer.from(await file.arrayBuffer()),
+        fieldTags: parseOakDocFieldTags(formData.get('fieldTags')),
+      }, { tenantId, userId: session.id });
+
+      return NextResponse.json(withRevision(template));
+    }
 
     const body = await request.json();
     const data = updateDocumentTemplateSchema.parse({ ...body, id });

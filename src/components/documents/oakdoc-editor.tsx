@@ -9,9 +9,11 @@ import {
 } from 'react';
 import { DocxEditor, type DocxEditorRef, type EditorCommand } from '@docx-editor.dev/react';
 import { useQuery } from '@tanstack/react-query';
-import { Download, FileUp, Loader2, Search } from 'lucide-react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Download, FileUp, Loader2, Save, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSession } from '@/hooks/use-auth';
+import { useActiveWorkspaceId } from '@/components/ui/workspace-selector';
 import {
   TEMPLATE_FIELD_CATEGORIES,
   type TemplateField,
@@ -28,9 +30,23 @@ import {
   buildOakDocResolutionValues,
   type OakDocCompanyDetail,
 } from '@/lib/document-editor/oakdoc-context';
+import {
+  readOakDocTemplateMetadata,
+  type OakDocTemplateMetadata,
+} from '@/lib/document-editor/oakdoc-template';
 
 const DOCX_MIME =
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+
+const TEMPLATE_CATEGORIES = [
+  { value: 'RESOLUTION', label: 'Resolution' },
+  { value: 'CONTRACT', label: 'Contract' },
+  { value: 'LETTER', label: 'Letter' },
+  { value: 'MINUTES', label: 'Minutes' },
+  { value: 'NOTICE', label: 'Notice' },
+  { value: 'CERTIFICATE', label: 'Certificate' },
+  { value: 'OTHER', label: 'Other' },
+] as const;
 
 const SUPPORTED_FIELD_CATEGORY_KEYS = new Set([
   'company',
@@ -74,6 +90,23 @@ interface CompanyOptionsResponse {
   options: CompanyOption[];
 }
 
+interface OakDocTemplateRecord {
+  id: string;
+  revision: number;
+  version: number;
+  name: string;
+  description?: string | null;
+  category: string;
+  isActive: boolean;
+  contentJson?: unknown;
+}
+
+interface LoadedOakDocTemplate {
+  template: OakDocTemplateRecord;
+  metadata: OakDocTemplateMetadata;
+  bytes: Uint8Array;
+}
+
 type StatusKind = 'neutral' | 'success' | 'error';
 
 function asUint8Array(buffer: ArrayBuffer): Uint8Array {
@@ -91,6 +124,58 @@ async function fetchCompany(companyId: string): Promise<OakDocCompanyDetail> {
   const response = await fetch(`/api/companies/${encodeURIComponent(companyId)}`);
   if (!response.ok) throw new Error('Could not load the selected company.');
   return response.json() as Promise<OakDocCompanyDetail>;
+}
+
+async function fetchOakDocTemplate(
+  templateId: string,
+  tenantId?: string | null,
+): Promise<LoadedOakDocTemplate> {
+  const params = new URLSearchParams();
+  if (tenantId) params.set('tenantId', tenantId);
+  const metadataResponse = await fetch(
+    `/api/document-templates/${encodeURIComponent(templateId)}?${params.toString()}`,
+  );
+  if (!metadataResponse.ok) {
+    const payload = await metadataResponse.json().catch(() => ({}));
+    throw new Error(payload.error || 'Could not load OakDoc template.');
+  }
+
+  const template = await metadataResponse.json() as OakDocTemplateRecord;
+  const metadata = readOakDocTemplateMetadata(template.contentJson);
+  if (!metadata) throw new Error('This template is not an OakDoc template.');
+
+  params.set('format', 'docx');
+  const fileResponse = await fetch(
+    `/api/document-templates/${encodeURIComponent(templateId)}?${params.toString()}`,
+    { cache: 'no-store' },
+  );
+  if (!fileResponse.ok) {
+    const payload = await fileResponse.json().catch(() => ({}));
+    throw new Error(payload.error || 'Could not load the OakDoc DOCX file.');
+  }
+
+  return {
+    template,
+    metadata,
+    bytes: new Uint8Array(await fileResponse.arrayBuffer()),
+  };
+}
+
+function downloadDocx(bytes: Uint8Array, fileName: string): void {
+  const blob = new Blob([bytes], { type: DOCX_MIME });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = fileName;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function safeDocxName(value: string): string {
+  const base = value.replace(/[\\/:*?"<>|]/g, '_').trim() || 'OakDoc';
+  return base.toLowerCase().endsWith('.docx') ? base : `${base}.docx`;
 }
 
 function fieldDefinition(field: TemplateField, category: string): OakDocFieldDefinition {
@@ -125,12 +210,36 @@ export function OakDocEditor() {
   const editorRef = useRef<DocxEditorRef>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const readyMessageRef = useRef('');
+  const loadedTemplateRevisionRef = useRef<number | null>(null);
 
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const { data: session } = useSession();
+  const activeTenantId = useActiveWorkspaceId(
+    session?.isSuperAdmin ?? false,
+    session?.tenantId,
+  );
+
+  const [templateId, setTemplateId] = useState<string | null>(
+    searchParams.get('templateId'),
+  );
+  const [templateRevision, setTemplateRevision] = useState<number | null>(null);
+  const [templateCategory, setTemplateCategory] = useState('OTHER');
+  const [templateDescription, setTemplateDescription] = useState('');
+  const [templateIsActive, setTemplateIsActive] = useState(true);
+  const [isDirty, setIsDirty] = useState(false);
+
   const companiesQuery = useQuery({
     queryKey: ['oakdoc', 'company-options'],
     queryFn: fetchCompanyOptions,
     staleTime: 5 * 60 * 1000,
+  });
+
+  const templateQuery = useQuery({
+    queryKey: ['oakdoc', 'template', templateId, activeTenantId],
+    queryFn: () => fetchOakDocTemplate(templateId!, activeTenantId),
+    enabled: Boolean(templateId && activeTenantId),
+    staleTime: 60 * 1000,
   });
 
   const [documentBytes, setDocumentBytes] = useState<Uint8Array | null>(null);
@@ -145,7 +254,9 @@ export function OakDocEditor() {
     count: 0,
     tags: [],
   });
-  const [status, setStatus] = useState('Import a DOCX to begin.');
+  const [status, setStatus] = useState(
+    templateId ? 'Loading OakDoc template...' : 'Import a DOCX to begin.',
+  );
   const [statusKind, setStatusKind] = useState<StatusKind>('neutral');
   const [busy, setBusy] = useState(false);
 
@@ -202,6 +313,36 @@ export function OakDocEditor() {
     setStatusKind(kind);
   }, [updateFieldSummary]);
 
+  useEffect(() => {
+    const loaded = templateQuery.data;
+    if (!loaded) return;
+    const revision = loaded.template.revision ?? loaded.template.version;
+    if (loadedTemplateRevisionRef.current === revision) return;
+
+    loadedTemplateRevisionRef.current = revision;
+    setTemplateRevision(revision);
+    setTitle(loaded.template.name);
+    setTemplateDescription(loaded.template.description ?? '');
+    setTemplateCategory(loaded.template.category || 'OTHER');
+    setTemplateIsActive(loaded.template.isActive);
+    setFileName(loaded.metadata.fileName);
+    replaceDocument(
+      loaded.bytes,
+      `Loaded OakDoc template "${loaded.template.name}" version ${revision}.`,
+    );
+    setIsDirty(false);
+  }, [replaceDocument, templateQuery.data]);
+
+  useEffect(() => {
+    if (!templateQuery.error) return;
+    setStatus(
+      templateQuery.error instanceof Error
+        ? templateQuery.error.message
+        : 'Could not load OakDoc template.',
+    );
+    setStatusKind('error');
+  }, [templateQuery.error]);
+
   const currentDocxBytes = useCallback(async (): Promise<Uint8Array> => {
     const handle = editorRef.current;
     if (!handle) throw new Error('OakDoc is not ready.');
@@ -229,6 +370,7 @@ export function OakDocEditor() {
       updateFieldSummary(bytes);
       setStatus(`Opening ${file.name}...`);
       setStatusKind('neutral');
+      setIsDirty(true);
     } catch (error) {
       setStatus(error instanceof Error ? error.message : 'Could not read the DOCX file.');
       setStatusKind('error');
@@ -283,10 +425,12 @@ export function OakDocEditor() {
           normalized.bytes,
           `Created ${field.label} field. Empty fields display {{${field.tag}}} until resolved.${cleanupMessage}`,
         );
+        setIsDirty(true);
       } else {
         updateFieldSummary(afterBytes);
         setStatus(`Created ${field.label} field around the selected text.`);
         setStatusKind('success');
+        setIsDirty(true);
       }
     } catch (error) {
       setStatus(error instanceof Error ? error.message : 'Could not create the Word field.');
@@ -296,9 +440,9 @@ export function OakDocEditor() {
     }
   }, [currentDocxBytes, replaceDocument, updateFieldSummary]);
 
-  const resolveFields = useCallback(async () => {
+  const generateResolvedCopy = useCallback(async () => {
     if (!company) {
-      setStatus('Select a company before resolving fields.');
+      setStatus('Select a company before generating a document.');
       setStatusKind('error');
       return;
     }
@@ -323,17 +467,17 @@ export function OakDocEditor() {
         throw new Error('No OakDoc fields could be resolved with the selected context.');
       }
 
+      const generatedName = safeDocxName(`${title} - ${company.name}`);
+      downloadDocx(resolved.bytes, generatedName);
       const unresolvedMessage = resolved.unresolvedTags.length > 0
         ? ` ${resolved.unresolvedTags.length} field type${resolved.unresolvedTags.length === 1 ? '' : 's'} still need additional context.`
         : '';
-
-      replaceDocument(
-        resolved.bytes,
-        `Resolved ${resolved.updated} field${resolved.updated === 1 ? '' : 's'} from ${company.name}.${unresolvedMessage}`,
-        resolved.unresolvedTags.length > 0 ? 'neutral' : 'success',
+      setStatus(
+        `Generated a resolved DOCX from ${company.name} without changing the master template.${unresolvedMessage}`,
       );
+      setStatusKind(resolved.unresolvedTags.length > 0 ? 'neutral' : 'success');
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : 'Field resolution failed.');
+      setStatus(error instanceof Error ? error.message : 'Document generation failed.');
       setStatusKind('error');
     } finally {
       setBusy(false);
@@ -342,10 +486,98 @@ export function OakDocEditor() {
     company,
     currentDocxBytes,
     fieldSummary.tags,
-    replaceDocument,
     selectedDirectorId,
     selectedShareholderId,
     session,
+    title,
+  ]);
+
+  const saveTemplate = useCallback(async () => {
+    if (!activeTenantId) {
+      setStatus('Select a workspace before saving the template.');
+      setStatusKind('error');
+      return;
+    }
+    if (!title.trim()) {
+      setStatus('Template name is required.');
+      setStatusKind('error');
+      return;
+    }
+    if (templateId && templateRevision === null) {
+      setStatus('Template revision is still loading.');
+      setStatusKind('error');
+      return;
+    }
+
+    setBusy(true);
+    try {
+      const bytes = await currentDocxBytes();
+      const cleaned = pruneDeletedOakDocFields(bytes, OAKDOC_FIELD_TAGS);
+      const savedFileName = safeDocxName(fileName || title);
+      const formData = new FormData();
+      formData.set('file', new File([cleaned.bytes], savedFileName, { type: DOCX_MIME }));
+      formData.set('name', title.trim());
+      formData.set('description', templateDescription);
+      formData.set('category', templateCategory);
+      formData.set('isActive', String(templateIsActive));
+      formData.set('tenantId', activeTenantId);
+      formData.set('fieldTags', JSON.stringify(inspectOakDocFields(
+        cleaned.bytes,
+        OAKDOC_FIELD_TAGS,
+      ).tags));
+      if (templateId && templateRevision !== null) {
+        formData.set('expectedRevision', String(templateRevision));
+      }
+
+      const response = await fetch(
+        templateId
+          ? `/api/document-templates/${encodeURIComponent(templateId)}`
+          : '/api/document-templates',
+        {
+          method: templateId ? 'PUT' : 'POST',
+          body: formData,
+        },
+      );
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(payload.error || 'Could not save OakDoc template.');
+      }
+
+      const savedId = String(payload.id);
+      const savedRevision = Number(payload.revision ?? payload.version);
+      setTemplateId(savedId);
+      setTemplateRevision(savedRevision);
+      loadedTemplateRevisionRef.current = savedRevision;
+      setFileName(savedFileName);
+      replaceDocument(
+        cleaned.bytes,
+        `Saved OakDoc template "${title.trim()}" version ${savedRevision}.`,
+      );
+      setIsDirty(false);
+
+      if (!templateId) {
+        router.replace(
+          `/generated-documents/generate?editor=oakdoc&templateId=${encodeURIComponent(savedId)}`,
+        );
+      }
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : 'Could not save OakDoc template.');
+      setStatusKind('error');
+    } finally {
+      setBusy(false);
+    }
+  }, [
+    activeTenantId,
+    currentDocxBytes,
+    fileName,
+    replaceDocument,
+    router,
+    templateCategory,
+    templateDescription,
+    templateId,
+    templateIsActive,
+    templateRevision,
+    title,
   ]);
 
   const exportDocx = useCallback(async () => {
@@ -411,23 +643,96 @@ export function OakDocEditor() {
             variant="secondary"
             size="sm"
             disabled={!hasDocument || !company || busy || fieldSummary.count === 0}
-            onClick={() => void resolveFields()}
+            onClick={() => void generateResolvedCopy()}
           >
-            Resolve fields
+            Generate copy
           </Button>
           <Button
-            variant="primary"
+            variant="secondary"
             size="sm"
             leftIcon={<Download className="h-4 w-4" />}
             disabled={!hasDocument || busy}
             onClick={() => void exportDocx()}
           >
-            Export DOCX
+            Export master
+          </Button>
+          <Button
+            variant="primary"
+            size="sm"
+            leftIcon={<Save className="h-4 w-4" />}
+            disabled={!hasDocument || busy || !activeTenantId || !title.trim()}
+            onClick={() => void saveTemplate()}
+          >
+            {templateId ? 'Save Template' : 'Save as Template'}
           </Button>
         </header>
 
         <main className="grid min-h-0 min-w-0 grid-cols-[320px_minmax(0,1fr)] overflow-hidden">
           <aside className="min-h-0 overflow-y-auto border-r border-border-primary bg-background-primary p-3">
+            <section className="space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <div>
+                  <h2 className="text-xs font-semibold uppercase tracking-wide text-text-muted">
+                    Template
+                  </h2>
+                  <p className="mt-1 text-xs text-text-secondary">
+                    Save the DOCX as the reusable Oakcloud master template.
+                  </p>
+                </div>
+                <span className="text-[10px] text-text-muted">
+                  {templateId
+                    ? `v${templateRevision ?? '...'}${isDirty ? ' · Unsaved' : ''}`
+                    : isDirty ? 'New · Unsaved' : 'New'}
+                </span>
+              </div>
+              <input
+                value={title}
+                onChange={(event) => {
+                  setTitle(event.target.value);
+                  setIsDirty(true);
+                }}
+                placeholder="Template name"
+                className="h-9 w-full rounded-lg border border-border-primary bg-background-primary px-2.5 text-sm text-text-primary placeholder:text-text-muted focus:border-oak-primary focus:outline-none focus:ring-2 focus:ring-oak-primary/20"
+              />
+              <select
+                value={templateCategory}
+                onChange={(event) => {
+                  setTemplateCategory(event.target.value);
+                  setIsDirty(true);
+                }}
+                className="h-9 w-full rounded-lg border border-border-primary bg-background-primary px-2.5 text-sm text-text-primary focus:border-oak-primary focus:outline-none focus:ring-2 focus:ring-oak-primary/20"
+              >
+                {TEMPLATE_CATEGORIES.map((category) => (
+                  <option key={category.value} value={category.value}>
+                    {category.label}
+                  </option>
+                ))}
+              </select>
+              <textarea
+                value={templateDescription}
+                rows={2}
+                onChange={(event) => {
+                  setTemplateDescription(event.target.value);
+                  setIsDirty(true);
+                }}
+                placeholder="Description (optional)"
+                className="w-full rounded-lg border border-border-primary bg-background-primary px-2.5 py-2 text-sm text-text-primary placeholder:text-text-muted focus:border-oak-primary focus:outline-none focus:ring-2 focus:ring-oak-primary/20"
+              />
+              <label className="flex items-center gap-2 text-xs text-text-secondary">
+                <input
+                  type="checkbox"
+                  checked={templateIsActive}
+                  onChange={(event) => {
+                    setTemplateIsActive(event.target.checked);
+                    setIsDirty(true);
+                  }}
+                />
+                Active template
+              </label>
+            </section>
+
+            <div className="my-4 border-t border-border-secondary" />
+
             <section className="space-y-2">
               <div>
                 <h2 className="text-xs font-semibold uppercase tracking-wide text-text-muted">
@@ -606,14 +911,17 @@ export function OakDocEditor() {
                 ref={editorRef}
                 document={documentBytes}
                 title={title}
-                onTitleChange={setTitle}
+                onTitleChange={(value) => {
+                  setTitle(value);
+                  setIsDirty(true);
+                }}
                 mode="edit"
                 zoomMode="auto"
                 locale="en-SG"
                 colorMode="light"
                 menu={{ reportIssue: false }}
                 onOpen={() => fileInputRef.current?.click()}
-                onSave={() => void exportDocx()}
+                onSave={() => void saveTemplate()}
                 onReady={() => {
                   const message = readyMessageRef.current || 'DOCX ready.';
                   readyMessageRef.current = '';
@@ -622,6 +930,7 @@ export function OakDocEditor() {
                 }}
                 onChange={() => {
                   if (!readyMessageRef.current) {
+                    setIsDirty(true);
                     setStatus('Document changed.');
                     setStatusKind('neutral');
                   }

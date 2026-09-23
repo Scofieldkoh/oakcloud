@@ -149,6 +149,15 @@ export const StorageKeys = {
   },
 
   /**
+   * Generate an immutable storage key for one OakDoc template asset.
+   * Template revisions point at immutable assets so failed/concurrent saves
+   * cannot overwrite the currently persisted DOCX.
+   */
+  oakDocTemplateAsset(tenantId: string, assetId: string): string {
+    return `${tenantId}/templates/oakdoc/assets/${assetId}.docx`;
+  },
+
+  /**
    * Generate storage key for tenant branding logo
    */
   tenantLogo(tenantId: string, extension: string): string {

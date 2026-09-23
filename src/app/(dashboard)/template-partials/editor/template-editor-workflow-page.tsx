@@ -66,6 +66,7 @@ import {
   storagePlaceholdersToEditor,
   type StoredEditorPlaceholder,
 } from '@/lib/template-placeholder-storage';
+import { isOakDocTemplate } from '@/lib/document-editor/oakdoc-template';
 import type {
   CustomPlaceholderDefinition,
   MergedPlaceholder,
@@ -463,6 +464,12 @@ export function TemplateEditorWorkflowPage() {
       linkings[field.key.replace(/^custom\./, '')] = field.linkedTo;
     }
     const contentJson = asRecord(existing.contentJson);
+    if (isOakDocTemplate(contentJson)) {
+      router.replace(
+        `/generated-documents/generate?editor=oakdoc&templateId=${encodeURIComponent(existing.id)}`,
+      );
+      return;
+    }
     setTemplateContentJson(contentJson);
     setFormData({
       name: existing.name ?? '',
@@ -485,7 +492,7 @@ export function TemplateEditorWorkflowPage() {
     latestSnapshotRef.current = null;
     acknowledgedRef.current = null;
     setIsDirty(false);
-  }, [activeTenantId, existingTemplateQuery.data, isPartialMode]);
+  }, [activeTenantId, existingTemplateQuery.data, isPartialMode, router]);
 
   useEffect(() => {
     const existing = existingPartialQuery.data;

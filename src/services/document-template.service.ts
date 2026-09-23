@@ -47,7 +47,7 @@ export interface DocumentTemplateWithRelations extends DocumentTemplate {
 export type { TenantAwareParams } from '@/lib/types';
 
 const TRACKED_FIELDS: (keyof DocumentTemplate)[] = [
-  'name', 'description', 'category', 'compositionType', 'content', 'isActive',
+  'name', 'description', 'category', 'compositionType', 'content', 'contentJson', 'isActive',
   'sharePointRelativeFolderPath',
 ];
 
