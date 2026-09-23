@@ -2,9 +2,9 @@
 
 import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import { AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { OakDocEditor } from '@/components/documents/oakdoc-editor';
 import {
   DocumentGenerationBatchWorkspace,
   type EditableDocumentGenerationBatch,
@@ -31,6 +31,11 @@ const UUID_PATTERN =
 
 /** First page of options; the workspace searches the server from there. */
 const OPTION_SEED_LIMIT = 25;
+
+const OakDocEditor = dynamic(
+  () => import('@/components/documents/oakdoc-editor').then((module) => module.OakDocEditor),
+  { ssr: false, loading: () => <WorkspaceSkeleton /> },
+);
 
 function dtoToEditableBatch(dto: DocumentGenerationBatchDto): EditableDocumentGenerationBatch {
   return {

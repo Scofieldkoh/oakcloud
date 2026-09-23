@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import '@docx-editor.dev/core/styles/editor.css';
 import { IOSViewportFix } from '@/components/ui/ios-viewport-fix';
 
 export const metadata: Metadata = {
