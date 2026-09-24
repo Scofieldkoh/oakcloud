@@ -34,12 +34,9 @@ function serializeXml(xml: XMLDocument): Uint8Array {
 }
 
 function isWordElement(node: Node | null | undefined, localName: string): node is Element {
-  return Boolean(
-    node
-    && node.nodeType === Node.ELEMENT_NODE
-    && node.namespaceURI === WORD_NS
-    && node.localName === localName,
-  );
+  if (!node || node.nodeType !== Node.ELEMENT_NODE) return false;
+  const element = node as Element;
+  return element.namespaceURI === WORD_NS && element.localName === localName;
 }
 
 function wordChildren(node: Node): Element[] {
