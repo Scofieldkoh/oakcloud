@@ -144,6 +144,18 @@ function textPoint(element: HTMLElement, requestedOffset: number): DomPoint {
     remaining -= length;
   }
 
+  // A sole BR is the browser-editable placeholder for an otherwise empty
+  // block. Restoring offset 0 after that BR can make the caret invisible even
+  // though subsequent typing still targets this block. Put the caret before
+  // the placeholder so a newly created blank paragraph visibly owns focus.
+  if (
+    requestedOffset === 0 &&
+    element.childNodes.length === 1 &&
+    element.firstChild instanceof HTMLBRElement
+  ) {
+    return { node: element, offset: 0 };
+  }
+
   return { node: element, offset: element.childNodes.length };
 }
 

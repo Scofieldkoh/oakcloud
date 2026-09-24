@@ -28,6 +28,24 @@ describe('A4 pagination selection bookmarks', () => {
     root.remove();
   });
 
+  it('restores offset zero before a sole editable BR placeholder', () => {
+    const root = document.createElement('div');
+    root.innerHTML = '<p data-flow-id="blank"><br></p>';
+    document.body.appendChild(root);
+
+    const restored = restoreFlowSelection(root, {
+      anchor: { flowId: 'blank', offset: 0 },
+      focus: { flowId: 'blank', offset: 0 },
+      collapsed: true,
+    });
+
+    expect(restored).toBe(true);
+    const paragraph = root.querySelector('p')!;
+    expect(window.getSelection()?.anchorNode).toBe(paragraph);
+    expect(window.getSelection()?.anchorOffset).toBe(0);
+    root.remove();
+  });
+
   it('captures a logical offset across continuation fragments', () => {
     const root = document.createElement('div');
     root.innerHTML = [
