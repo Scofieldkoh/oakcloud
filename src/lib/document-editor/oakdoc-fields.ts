@@ -99,6 +99,37 @@ function contentControlPlaceholderState(sdt: Element) {
   return { properties, showingPlaceholder, content, promptOnly };
 }
 
+function unwrapDeletedOakDocField(
+  sdt: Element,
+  state: ReturnType<typeof contentControlPlaceholderState>,
+): void {
+  const parent = sdt.parentNode;
+  if (!parent) return;
+
+  const content = state.content;
+  if (content) {
+    for (const textNode of Array.from(content.getElementsByTagNameNS(WORD_NS, 't'))) {
+      setTextValue(textNode, '');
+    }
+
+    while (content.firstChild) {
+      parent.insertBefore(content.firstChild, sdt);
+    }
+  }
+
+  parent.removeChild(sdt);
+
+  // Word table cells must retain paragraph structure. A deleted block-level
+  // content control can otherwise leave an empty <w:tc>, which editors may
+  // reflow into collapsed columns on the next DOCX reload.
+  if (isWordElement(parent, 'tc')) {
+    const hasParagraph = wordChildren(parent).some((child) => isWordElement(child, 'p'));
+    if (!hasParagraph) {
+      parent.appendChild(sdt.ownerDocument.createElementNS(WORD_NS, 'w:p'));
+    }
+  }
+}
+
 function oakDocControlIds(
   docxBytes: Uint8Array,
   knownTags: ReadonlySet<string>,
@@ -172,7 +203,7 @@ export function normalizeOakDocFields(input: {
         }
       }
 
-      sdt.parentNode?.removeChild(sdt);
+      unwrapDeletedOakDocField(sdt, state);
       removed += 1;
       changed = true;
     }
