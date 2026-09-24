@@ -84,7 +84,7 @@ function serializeXml(xml: XMLDocument): Uint8Array {
   return strToU8(new XMLSerializer().serializeToString(xml));
 }
 
-function isWordElement(node: Node | null | undefined, localName: string): node is Element {
+function isWordElement(node: Node | null | undefined, localName: string): boolean {
   if (!node || node.nodeType !== Node.ELEMENT_NODE) return false;
   const element = node as Element;
   return element.namespaceURI === WORD_NS && element.localName === localName;
