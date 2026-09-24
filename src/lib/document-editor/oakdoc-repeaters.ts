@@ -85,12 +85,9 @@ function serializeXml(xml: XMLDocument): Uint8Array {
 }
 
 function isWordElement(node: Node | null | undefined, localName: string): node is Element {
-  return Boolean(
-    node
-    && node.nodeType === Node.ELEMENT_NODE
-    && node.namespaceURI === WORD_NS
-    && node.localName === localName,
-  );
+  if (!node || node.nodeType !== Node.ELEMENT_NODE) return false;
+  const element = node as Element;
+  return element.namespaceURI === WORD_NS && element.localName === localName;
 }
 
 function wordChildren(node: Node): Element[] {
@@ -137,11 +134,11 @@ function hasW15Property(sdt: Element, localName: string): boolean {
   return Boolean(
     properties
     && Array.from(properties.childNodes).some(
-      (child) => (
-        child.nodeType === Node.ELEMENT_NODE
-        && child.namespaceURI === WORD15_NS
-        && child.localName === localName
-      ),
+      (child) => {
+        if (child.nodeType !== Node.ELEMENT_NODE) return false;
+        const element = child as Element;
+        return element.namespaceURI === WORD15_NS && element.localName === localName;
+      },
     ),
   );
 }
