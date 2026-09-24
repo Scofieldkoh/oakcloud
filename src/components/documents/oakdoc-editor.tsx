@@ -194,8 +194,14 @@ async function fetchOakDocTemplate(
   };
 }
 
+function toArrayBuffer(bytes: Uint8Array): ArrayBuffer {
+  const copy = new Uint8Array(bytes.byteLength);
+  copy.set(bytes);
+  return copy.buffer;
+}
+
 function downloadDocx(bytes: Uint8Array, fileName: string): void {
-  const blob = new Blob([bytes], { type: DOCX_MIME });
+  const blob = new Blob([toArrayBuffer(bytes)], { type: DOCX_MIME });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
@@ -783,7 +789,10 @@ export function OakDocEditor() {
       const cleaned = pruneDeletedOakDocFields(bytes, OAKDOC_FIELD_TAGS);
       const savedFileName = safeDocxName(fileName || title);
       const formData = new FormData();
-      formData.set('file', new File([cleaned.bytes], savedFileName, { type: DOCX_MIME }));
+      formData.set(
+        'file',
+        new File([toArrayBuffer(cleaned.bytes)], savedFileName, { type: DOCX_MIME }),
+      );
       formData.set('name', title.trim());
       formData.set('description', templateDescription);
       formData.set('category', templateCategory);
@@ -859,7 +868,7 @@ export function OakDocEditor() {
     try {
       const bytes = await currentDocxBytes();
       const cleaned = pruneDeletedOakDocFields(bytes, OAKDOC_FIELD_TAGS);
-      const blob = new Blob([cleaned.bytes], { type: DOCX_MIME });
+      const blob = new Blob([toArrayBuffer(cleaned.bytes)], { type: DOCX_MIME });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
