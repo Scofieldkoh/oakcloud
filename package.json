@@ -7,7 +7,7 @@
   },
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "npm run check:assistant-capabilities && npm run db:generate && next build",
+    "build": "npm run check:assistant-capabilities && npm run db:generate && node --max-old-space-size=8192 node_modules/next/dist/bin/next build",
     "start": "next start",
     "lint": "eslint src",
     "test": "vitest",
