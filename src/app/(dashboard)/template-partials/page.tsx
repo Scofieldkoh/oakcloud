@@ -136,12 +136,13 @@ const CATEGORIES = [
 // ============================================================================
 
 async function fetchTemplates(
-  params: { search?: string; category?: string; editor?: 'oakdoc'; page: number; limit: number },
+  params: { search?: string; category?: string; isActive?: boolean; editor?: 'oakdoc'; page: number; limit: number },
   tenantId?: string
 ): Promise<TemplateSearchResult> {
   const searchParams = new URLSearchParams();
   if (params.search) searchParams.set('query', params.search);
   if (params.category) searchParams.set('category', params.category);
+  if (params.isActive !== undefined) searchParams.set('isActive', String(params.isActive));
   if (params.editor) searchParams.set('editor', params.editor);
   searchParams.set('page', params.page.toString());
   searchParams.set('limit', params.limit.toString());
@@ -197,6 +198,7 @@ async function updateTemplate(
     category?: string;
     content?: string;
     isActive?: boolean;
+    expectedRevision?: number;
     tenantId?: string;
     reason?: string;
   }
@@ -214,9 +216,15 @@ async function updateTemplate(
   return response.json();
 }
 
-async function deleteTemplate(id: string, reason: string, tenantId?: string): Promise<void> {
+async function deleteTemplate(
+  id: string,
+  reason: string,
+  tenantId?: string,
+  expectedRevision?: number,
+): Promise<void> {
   const searchParams = new URLSearchParams({ reason });
   if (tenantId) searchParams.set('tenantId', tenantId);
+  if (expectedRevision !== undefined) searchParams.set('expectedRevision', String(expectedRevision));
   const response = await fetch(`/api/document-templates/${id}?${searchParams}`, {
     method: 'DELETE',
   });
@@ -291,6 +299,7 @@ function DocumentTemplatesTab({
   // List state
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
 
@@ -305,7 +314,7 @@ function DocumentTemplatesTab({
   // Query
   const queryKey = [
     'document-templates',
-    { search, categoryFilter, page, limit, oakDocOnly },
+    { search, categoryFilter, statusFilter, page, limit, oakDocOnly },
     activeTenantId,
   ] as const;
   const { initialData, restoredFromSession } = useSessionListRestore<TemplateSearchResult>(
@@ -318,6 +327,7 @@ function DocumentTemplatesTab({
     queryFn: () => fetchTemplates({
       search,
       category: categoryFilter,
+      isActive: statusFilter === 'active' ? true : statusFilter === 'inactive' ? false : undefined,
       editor: oakDocOnly ? 'oakdoc' : undefined,
       page,
       limit,
@@ -336,8 +346,8 @@ function DocumentTemplatesTab({
 
   // Mutations
   const deleteMutation = useMutation({
-    mutationFn: ({ id, reason }: { id: string; reason: string }) =>
-      deleteTemplate(id, reason, activeTenantId),
+    mutationFn: ({ id, reason, revision }: { id: string; reason: string; revision: number }) =>
+      deleteTemplate(id, reason, activeTenantId, revision),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['document-templates'] });
       queryClient.invalidateQueries({ queryKey: ['document-templates-stats'] });
@@ -361,10 +371,11 @@ function DocumentTemplatesTab({
   });
 
   const toggleActiveMutation = useMutation({
-    mutationFn: ({ id, isActive }: { id: string; isActive: boolean }) =>
+    mutationFn: ({ id, isActive, revision }: { id: string; isActive: boolean; revision: number }) =>
       updateTemplate({
         id,
         isActive,
+        expectedRevision: revision,
         tenantId: activeTenantId,
         reason: isActive ? 'Activated template' : 'Deactivated template',
       }),
@@ -393,7 +404,11 @@ function DocumentTemplatesTab({
 
   const handleDelete = (reason?: string) => {
     if (!deletingTemplate) return;
-    deleteMutation.mutate({ id: deletingTemplate.id, reason: reason || 'Deleted by user' });
+    deleteMutation.mutate({
+      id: deletingTemplate.id,
+      reason: reason || 'Deleted by user',
+      revision: deletingTemplate.version,
+    });
   };
 
   const handleDuplicate = () => {
@@ -446,6 +461,20 @@ function DocumentTemplatesTab({
             </option>
           ))}
         </select>
+        {oakDocOnly && (
+          <select
+            value={statusFilter}
+            onChange={(e) => {
+              setStatusFilter(e.target.value);
+              setPage(1);
+            }}
+            className="h-9 px-3 text-sm border border-border-primary rounded-md bg-background-primary text-text-primary focus:outline-none focus:ring-2 focus:ring-accent-primary/50 w-full sm:w-40"
+          >
+            <option value="">All Statuses</option>
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
+        )}
         {canCreate && oakDocOnly && (
           <Button
             variant="primary"
@@ -538,7 +567,7 @@ function DocumentTemplatesTab({
         <div className="flex flex-col items-center justify-center py-12">
           <FileText className="w-12 h-12 mb-3 opacity-50 text-text-muted" />
           <p className="text-sm text-text-muted">
-            {search || categoryFilter
+            {search || categoryFilter || statusFilter
               ? oakDocOnly
                 ? 'No OakDoc templates found matching your search'
                 : 'No templates found matching your search'
@@ -546,7 +575,7 @@ function DocumentTemplatesTab({
                 ? 'No OakDoc templates yet'
                 : 'No templates yet'}
           </p>
-          {canCreate && !search && !categoryFilter && (
+          {canCreate && !search && !categoryFilter && !statusFilter && (
             <button
               onClick={() => {
                 if (oakDocOnly) {
@@ -640,10 +669,14 @@ function DocumentTemplatesTab({
                       </DropdownTrigger>
                       <DropdownMenu align="right">
                         {canUpdate && <DropdownItem icon={<Pencil className="w-4 h-4" />} onClick={() => openEditModal(template)}>Edit</DropdownItem>}
-                        {canCreate && !oakDocOnly && <DropdownItem icon={<Copy className="w-4 h-4" />} onClick={() => openDuplicateDialog(template)}>Duplicate</DropdownItem>}
+                        {canCreate && <DropdownItem icon={<Copy className="w-4 h-4" />} onClick={() => openDuplicateDialog(template)}>Duplicate</DropdownItem>}
                         {canUpdate && <DropdownItem
                           icon={template.isActive ? <X className="w-4 h-4" /> : <Check className="w-4 h-4" />}
-                          onClick={() => toggleActiveMutation.mutate({ id: template.id, isActive: !template.isActive })}
+                          onClick={() => toggleActiveMutation.mutate({
+                            id: template.id,
+                            isActive: !template.isActive,
+                            revision: template.version,
+                          })}
                         >{template.isActive ? 'Deactivate' : 'Activate'}</DropdownItem>}
                         {canDelete && <DropdownItem icon={<Trash2 className="w-4 h-4" />} destructive onClick={() => setDeletingTemplate(template)}>Delete</DropdownItem>}
                       </DropdownMenu>
