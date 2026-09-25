@@ -14,6 +14,7 @@ import {
   searchDocumentTemplates,
 } from '@/services/document-template.service';
 import { createOakDocTemplate } from '@/services/oakdoc-template.service';
+import { getOakDocMigrationInventory } from '@/services/oakdoc-migration.service';
 
 function withRevision<T extends { version: number }>(value: T) {
   return { ...value, revision: value.version };
@@ -63,6 +64,11 @@ export async function GET(request: NextRequest) {
 
     if (!effectiveTenantId) {
       return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
+    }
+
+    if (searchParams.get('migrationInventory') === 'true') {
+      const inventory = await getOakDocMigrationInventory(effectiveTenantId);
+      return NextResponse.json({ inventory });
     }
 
     const result = await searchDocumentTemplates(params, effectiveTenantId);
