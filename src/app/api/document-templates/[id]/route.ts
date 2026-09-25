@@ -19,6 +19,11 @@ import {
   downloadOakDocTemplate,
   updateOakDocTemplate,
 } from '@/services/oakdoc-template.service';
+import {
+  linkOakDocMigration,
+  recordOakDocMigrationValidation,
+  setOakDocMigrationPreference,
+} from '@/services/oakdoc-migration.service';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -278,12 +283,15 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     await requirePermission(session, 'document', 'update');
 
     const body = await request.json();
-    if (body.action !== 'restore') {
-      return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
-    }
     const expectedRevision = body.expectedRevision;
-    if (expectedRevision !== undefined && (!Number.isInteger(expectedRevision) || expectedRevision < 0)) {
-      return NextResponse.json({ error: 'expectedRevision must be a non-negative integer' }, { status: 400 });
+    if (
+      expectedRevision !== undefined
+      && (!Number.isInteger(expectedRevision) || expectedRevision < 0)
+    ) {
+      return NextResponse.json(
+        { error: 'expectedRevision must be a non-negative integer' },
+        { status: 400 },
+      );
     }
 
     let tenantId = session.tenantId;
@@ -306,13 +314,80 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
     }
 
-    const template = await restoreDocumentTemplate(
-      id,
-      { tenantId, userId: session.id },
-      expectedRevision,
-    );
+    if (body.action === 'restore') {
+      const template = await restoreDocumentTemplate(
+        id,
+        { tenantId, userId: session.id },
+        expectedRevision,
+      );
+      return NextResponse.json(withRevision(template));
+    }
 
-    return NextResponse.json(withRevision(template));
+    if (!Number.isInteger(expectedRevision) || expectedRevision < 0) {
+      return NextResponse.json(
+        { error: 'expectedRevision is required for migration control changes' },
+        { status: 400 },
+      );
+    }
+
+    if (body.action === 'linkOakDocMigration') {
+      if (typeof body.legacyTemplateId !== 'string' || !body.legacyTemplateId.trim()) {
+        return NextResponse.json({ error: 'legacyTemplateId is required' }, { status: 400 });
+      }
+      if (typeof body.reason !== 'string' || !body.reason.trim()) {
+        return NextResponse.json({ error: 'reason is required' }, { status: 400 });
+      }
+      const template = await linkOakDocMigration({
+        oakDocTemplateId: id,
+        legacyTemplateId: body.legacyTemplateId,
+        expectedRevision,
+        reason: body.reason,
+      }, { tenantId, userId: session.id });
+      return NextResponse.json(withRevision(template));
+    }
+
+    if (body.action === 'recordOakDocMigrationValidation') {
+      if (typeof body.passed !== 'boolean') {
+        return NextResponse.json({ error: 'passed must be a boolean' }, { status: 400 });
+      }
+      if (
+        body.issueCodes !== undefined
+        && (!Array.isArray(body.issueCodes)
+          || body.issueCodes.some((value: unknown) => typeof value !== 'string'))
+      ) {
+        return NextResponse.json({ error: 'issueCodes must be an array of strings' }, { status: 400 });
+      }
+      const template = await recordOakDocMigrationValidation({
+        oakDocTemplateId: id,
+        expectedRevision,
+        passed: body.passed,
+        issueCodes: body.issueCodes,
+        summary: typeof body.summary === 'string' ? body.summary : undefined,
+        checkedAt: typeof body.checkedAt === 'string' ? body.checkedAt : undefined,
+      }, { tenantId, userId: session.id });
+      return NextResponse.json(withRevision(template));
+    }
+
+    if (body.action === 'setOakDocMigrationPreference') {
+      if (body.preference !== 'LEGACY' && body.preference !== 'OAKDOC') {
+        return NextResponse.json(
+          { error: 'preference must be LEGACY or OAKDOC' },
+          { status: 400 },
+        );
+      }
+      if (typeof body.reason !== 'string' || !body.reason.trim()) {
+        return NextResponse.json({ error: 'reason is required' }, { status: 400 });
+      }
+      const template = await setOakDocMigrationPreference({
+        oakDocTemplateId: id,
+        expectedRevision,
+        preference: body.preference,
+        reason: body.reason,
+      }, { tenantId, userId: session.id });
+      return NextResponse.json(withRevision(template));
+    }
+
+    return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
   } catch (error) {
     return apiError(error);
   }
