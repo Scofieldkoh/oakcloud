@@ -214,7 +214,7 @@ function envelope(overrides: Partial<EsigningEnvelopeListItem> = {}): EsigningEn
     signerCount: 1,
     completedSignerCount: 1,
     documentCount: 1,
-    documents: [{ id: 'document-1', fileName: 'NDA.pdf' }],
+    documents: [{ id: 'document-1', fileName: 'NDA.pdf', originalFileName: null }],
     recipients: [],
     ...overrides,
   };

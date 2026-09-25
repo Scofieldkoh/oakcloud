@@ -1,7 +1,9 @@
 // @vitest-environment jsdom
 
 import { describe, expect, it } from 'vitest';
-import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate';
+import { strFromU8, unzipSync } from 'fflate';
+
+import { createDocxFixture } from '../helpers/docx-fixture';
 
 import {
   createOakDocCondition,
@@ -47,10 +49,10 @@ function docx(body: string): Uint8Array {
     '</Relationships>',
   ].join('');
 
-  return zipSync({
-    '[Content_Types].xml': strToU8(contentTypes),
-    '_rels/.rels': strToU8(relationships),
-    'word/document.xml': strToU8(documentXml),
+  return createDocxFixture({
+    '[Content_Types].xml': contentTypes,
+    '_rels/.rels': relationships,
+    'word/document.xml': documentXml,
   });
 }
 

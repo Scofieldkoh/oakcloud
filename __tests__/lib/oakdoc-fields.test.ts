@@ -1,7 +1,9 @@
 // @vitest-environment jsdom
 
 import { describe, expect, it } from 'vitest';
-import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate';
+import { strFromU8, unzipSync } from 'fflate';
+
+import { createDocxFixture } from '../helpers/docx-fixture';
 
 import {
   normalizeOakDocFields,
@@ -21,8 +23,8 @@ function docx(body: string): Uint8Array {
     '</w:document>',
   ].join('');
 
-  return zipSync({
-    'word/document.xml': strToU8(xml),
+  return createDocxFixture({
+    'word/document.xml': xml,
   });
 }
 

@@ -1,4 +1,5 @@
-import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate';
+import { strFromU8, unzipSync, zipSync } from 'fflate';
+import { encodeOakDocZipText } from '@/lib/document-editor/oakdoc-zip';
 import type { OakDocCompanyDetail, OakDocOfficer, OakDocShareholder } from '@/lib/document-editor/oakdoc-context';
 import type { OakDocFieldDefinition } from '@/lib/document-editor/oakdoc-fields';
 
@@ -81,7 +82,7 @@ function parseXml(bytes: Uint8Array): XMLDocument {
 }
 
 function serializeXml(xml: XMLDocument): Uint8Array {
-  return strToU8(new XMLSerializer().serializeToString(xml));
+  return encodeOakDocZipText(new XMLSerializer().serializeToString(xml));
 }
 
 function isWordElement(node: Node | null | undefined, localName: string): boolean {
