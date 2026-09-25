@@ -69,6 +69,7 @@ export interface OakDocGenerationInput {
   companyId: string;
   selectedDirectorId?: string;
   selectedShareholderId?: string;
+  resolutionDate?: Date | string;
   generatedBy?: string;
 }
 
@@ -139,6 +140,7 @@ export async function generateOakDocBytes(
     fieldTags: resolutionTags,
     selectedDirectorId: input.selectedDirectorId,
     selectedShareholderId: input.selectedShareholderId,
+    resolution: { date: input.resolutionDate },
     generatedBy: input.generatedBy,
   });
 

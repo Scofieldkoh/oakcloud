@@ -192,6 +192,11 @@ export async function buildBatchItemRenderInput(
       companyId: batch.primaryCompanyId,
       selectedDirectorId: configuration.selectedDirectorId ?? undefined,
       selectedShareholderId: configuration.selectedShareholderId ?? undefined,
+      resolutionDate:
+        effectiveCustomData.resolution_date instanceof Date
+        || typeof effectiveCustomData.resolution_date === 'string'
+          ? effectiveCustomData.resolution_date
+          : undefined,
       generatedBy: actorName,
     }, params);
     const fingerprint = createPreviewFingerprint({

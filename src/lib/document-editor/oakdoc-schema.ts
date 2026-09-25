@@ -1,5 +1,8 @@
 import type { OakDocFieldDefinition } from '@/lib/document-editor/oakdoc-fields';
-import { OAKDOC_AGREEMENT_FIELD_DEFINITIONS } from '@/lib/document-editor/oakdoc-context';
+import {
+  OAKDOC_AGREEMENT_FIELD_DEFINITIONS,
+  OAKDOC_RESOLUTION_FIELD_DEFINITIONS,
+} from '@/lib/document-editor/oakdoc-context';
 import {
   OAKDOC_GENERIC_REPEATER_DEFINITIONS,
   OAKDOC_GENERIC_REPEATER_ITEM_TAGS,
@@ -32,6 +35,7 @@ export const OAKDOC_SELECTED_CONTACT_FIELD_DEFINITIONS: ReadonlyArray<
 export const OAKDOC_STAGE4_CONTEXT_FIELDS: readonly OakDocFieldDefinition[] = [
   ...OAKDOC_SELECTED_CONTACT_FIELD_DEFINITIONS,
   ...OAKDOC_AGREEMENT_FIELD_DEFINITIONS,
+  ...OAKDOC_RESOLUTION_FIELD_DEFINITIONS,
 ];
 
 export const OAKDOC_STAGE4_CONTEXT_FIELD_TAGS = new Set(

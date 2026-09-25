@@ -78,6 +78,10 @@ export interface OakDocAgreementContext {
   termMonths?: number | string | null;
 }
 
+export interface OakDocResolutionContext {
+  date?: Date | string | null;
+}
+
 export interface OakDocCompanyDetail {
   id: string;
   name: string;
@@ -118,6 +122,21 @@ export const OAKDOC_AGREEMENT_FIELD_DEFINITIONS: ReadonlyArray<
 
 export const OAKDOC_AGREEMENT_FIELD_TAGS = new Set(
   OAKDOC_AGREEMENT_FIELD_DEFINITIONS.map((field) => field.tag),
+);
+
+export const OAKDOC_RESOLUTION_FIELD_DEFINITIONS: ReadonlyArray<
+  OakDocFieldDefinition & { example: string }
+> = [
+  {
+    tag: 'resolution.date',
+    label: 'Resolution Date',
+    category: 'Resolution Context',
+    example: '25 Sep 2026',
+  },
+];
+
+export const OAKDOC_RESOLUTION_FIELD_TAGS = new Set(
+  OAKDOC_RESOLUTION_FIELD_DEFINITIONS.map((field) => field.tag),
 );
 
 function formatDate(value: unknown): string | undefined {
@@ -260,6 +279,7 @@ export function buildOakDocResolutionValues(input: {
   selectedContactId?: string;
   selectedContact?: OakDocContact;
   agreement?: OakDocAgreementContext;
+  resolution?: OakDocResolutionContext;
   generatedBy?: string;
 }): Record<string, string> {
   const selectedDirector = input.company.officers?.find(
@@ -281,6 +301,9 @@ export function buildOakDocResolutionValues(input: {
       agreementDate: input.agreement?.agreementDate,
       effectiveDate: input.agreement?.effectiveDate,
       termMonths: input.agreement?.termMonths,
+    },
+    resolution: {
+      date: input.resolution?.date,
     },
     system: {
       currentDate: new Date(),

@@ -15,6 +15,10 @@ import {
   type TenantAwareParams,
 } from '@/services/document-template.service';
 import type { DocumentTemplateCategory } from '@/generated/prisma';
+import type {
+  JsonValue,
+  PlaceholderDefinition,
+} from '@/lib/validations/document-template';
 
 const MAX_OAKDOC_FILE_SIZE = 10 * 1024 * 1024;
 const MAX_REQUIRED_XML_SIZE = 20 * 1024 * 1024;
@@ -111,6 +115,8 @@ export async function createOakDocTemplate(input: {
   fileName: string;
   buffer: Buffer;
   fieldTags: string[];
+  contentJson?: Record<string, JsonValue>;
+  placeholders?: PlaceholderDefinition[];
 }, params: TenantAwareParams) {
   const asset = await persistAsset({
     tenantId: params.tenantId,
@@ -127,8 +133,8 @@ export async function createOakDocTemplate(input: {
       category: input.category,
       compositionType: 'STANDARD',
       content: OAKDOC_TEMPLATE_CONTENT,
-      contentJson: mergeOakDocTemplateMetadata(null, asset),
-      placeholders: [],
+      contentJson: mergeOakDocTemplateMetadata(input.contentJson ?? null, asset),
+      placeholders: input.placeholders ?? [],
       isActive: input.isActive,
       sharePointRelativeFolderPath: null,
     }, params);

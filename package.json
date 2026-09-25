@@ -44,7 +44,8 @@
     "docker:db:up": "docker compose -f oakcloud_db.yml up -d",
     "docker:db:down": "docker compose -f oakcloud_db.yml down",
     "docker:db:logs": "docker compose -f oakcloud_db.yml logs -f",
-    "repair:deadlines": "tsx scripts/remediate-deadline-occurrences.ts"
+    "repair:deadlines": "tsx scripts/remediate-deadline-occurrences.ts",
+    "db:seed-oakdoc-migrations": "tsx scripts/seed-oakdoc-template-migrations.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.71.0",
