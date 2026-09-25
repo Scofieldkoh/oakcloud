@@ -1,3 +1,5 @@
+import type { OakDocFieldDefinition } from '@/lib/document-editor/oakdoc-fields';
+
 export interface OakDocCompanyAddress {
   addressType?: string | null;
   fullAddress?: string | null;
@@ -11,6 +13,11 @@ export interface OakDocCompanyAddress {
   isCurrent?: boolean;
 }
 
+export interface OakDocPartyAddress {
+  full?: string | null;
+  letter?: string | null;
+}
+
 export interface OakDocOfficer {
   id: string;
   name: string;
@@ -18,6 +25,9 @@ export interface OakDocOfficer {
   identificationNumber?: string | null;
   nationality?: string | null;
   address?: string | null;
+  letterAddress?: string | null;
+  email?: string | null;
+  phone?: string | null;
   appointmentDate?: string | null;
   isCurrent?: boolean;
 }
@@ -30,10 +40,42 @@ export interface OakDocShareholder {
   identificationNumber?: string | null;
   nationality?: string | null;
   address?: string | null;
+  letterAddress?: string | null;
+  email?: string | null;
+  phone?: string | null;
   shareClass?: string | null;
   numberOfShares?: number | null;
   percentageHeld?: number | string | null;
   isCurrent?: boolean;
+}
+
+export interface OakDocContact {
+  id: string;
+  contactId?: string | null;
+  name: string;
+  detail?: string | null;
+  appointments?: string[];
+  role?: string | null;
+  contactType?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  nationality?: string | null;
+  identificationNumber?: string | null;
+  address?: OakDocPartyAddress | string | null;
+}
+
+export interface OakDocAgreementEntity {
+  id: string;
+  name: string;
+  uen?: string | null;
+  entityType?: string | null;
+  registeredAddress?: string | null;
+}
+
+export interface OakDocAgreementContext {
+  agreementDate?: Date | string | null;
+  effectiveDate?: Date | string | null;
+  termMonths?: number | string | null;
 }
 
 export interface OakDocCompanyDetail {
@@ -48,17 +90,45 @@ export interface OakDocCompanyDetail {
   addresses?: OakDocCompanyAddress[];
   officers?: OakDocOfficer[];
   shareholders?: OakDocShareholder[];
+  contacts?: OakDocContact[];
 }
+
+export const OAKDOC_AGREEMENT_FIELD_DEFINITIONS: ReadonlyArray<
+  OakDocFieldDefinition & { example: string }
+> = [
+  {
+    tag: 'agreement.agreementDate',
+    label: 'Agreement Date',
+    category: 'Agreement Context',
+    example: '25 Sep 2026',
+  },
+  {
+    tag: 'agreement.effectiveDate',
+    label: 'Effective Date',
+    category: 'Agreement Context',
+    example: '1 Oct 2026',
+  },
+  {
+    tag: 'agreement.termMonths',
+    label: 'Term (Months)',
+    category: 'Agreement Context',
+    example: '12',
+  },
+];
+
+export const OAKDOC_AGREEMENT_FIELD_TAGS = new Set(
+  OAKDOC_AGREEMENT_FIELD_DEFINITIONS.map((field) => field.tag),
+);
 
 function formatDate(value: unknown): string | undefined {
   if (!value) return undefined;
   const parsed = value instanceof Date ? value : new Date(String(value));
   if (Number.isNaN(parsed.getTime())) return String(value);
-  return new Intl.DateTimeFormat('en-SG', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  }).format(parsed);
+  const months = [
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+  ] as const;
+  return `${parsed.getDate()} ${months[parsed.getMonth()]} ${parsed.getFullYear()}`;
 }
 
 function formatValue(value: unknown): string | undefined {
@@ -97,9 +167,10 @@ function registeredAddress(company: OakDocCompanyDetail): OakDocCompanyAddress |
 
 function buildCompanyContext(company: OakDocCompanyDetail) {
   const address = registeredAddress(company);
+  const fullAddress = company.registeredAddress ?? address?.fullAddress ?? '';
   return {
     ...company,
-    registeredAddress: company.registeredAddress ?? address?.fullAddress ?? '',
+    registeredAddress: fullAddress,
     address: {
       block: address?.block ?? '',
       street: address?.streetName ?? '',
@@ -107,6 +178,7 @@ function buildCompanyContext(company: OakDocCompanyDetail) {
       unit: address?.unit ?? '',
       building: address?.buildingName ?? '',
       postalCode: address?.postalCode ?? '',
+      letter: fullAddress,
     },
     capital: company.paidUpCapitalAmount ?? company.issuedCapitalAmount ?? '',
   };
@@ -117,12 +189,15 @@ function buildSelectedDirector(officer: OakDocOfficer | undefined) {
   return {
     name: officer.name,
     detail: officer.role || 'Director',
+    email: officer.email,
+    phone: officer.phone,
     nationality: officer.nationality,
     identificationNumber: officer.identificationNumber,
     role: officer.role,
     appointmentDate: officer.appointmentDate,
     address: {
       full: officer.address ?? '',
+      letter: officer.letterAddress ?? officer.address ?? '',
     },
   };
 }
@@ -132,6 +207,8 @@ function buildSelectedShareholder(shareholder: OakDocShareholder | undefined) {
   return {
     name: shareholder.name,
     detail: shareholder.shareholderType || shareholder.shareClass || 'Shareholder',
+    email: shareholder.email,
+    phone: shareholder.phone,
     nationality: shareholder.nationality,
     identificationNumber: shareholder.identificationNumber,
     shareholderType: shareholder.shareholderType,
@@ -140,7 +217,38 @@ function buildSelectedShareholder(shareholder: OakDocShareholder | undefined) {
     percentageHeld: shareholder.percentageHeld,
     address: {
       full: shareholder.address ?? '',
+      letter: shareholder.letterAddress ?? shareholder.address ?? '',
     },
+  };
+}
+
+function contactAddress(contact: OakDocContact): OakDocPartyAddress {
+  if (typeof contact.address === 'string') {
+    return { full: contact.address, letter: contact.address };
+  }
+  return {
+    full: contact.address?.full ?? '',
+    letter: contact.address?.letter ?? contact.address?.full ?? '',
+  };
+}
+
+function buildSelectedContact(contact: OakDocContact | undefined) {
+  if (!contact) return undefined;
+  return {
+    name: contact.name,
+    detail:
+      contact.detail
+      || contact.role
+      || contact.appointments?.[0]
+      || contact.contactType
+      || 'Contact',
+    role: contact.role ?? contact.appointments?.[0] ?? contact.detail,
+    email: contact.email,
+    phone: contact.phone,
+    nationality: contact.nationality,
+    identificationNumber: contact.identificationNumber,
+    contactType: contact.contactType,
+    address: contactAddress(contact),
   };
 }
 
@@ -149,6 +257,9 @@ export function buildOakDocResolutionValues(input: {
   fieldTags: readonly string[];
   selectedDirectorId?: string;
   selectedShareholderId?: string;
+  selectedContactId?: string;
+  selectedContact?: OakDocContact;
+  agreement?: OakDocAgreementContext;
   generatedBy?: string;
 }): Record<string, string> {
   const selectedDirector = input.company.officers?.find(
@@ -157,11 +268,20 @@ export function buildOakDocResolutionValues(input: {
   const selectedShareholder = input.company.shareholders?.find(
     (shareholder) => shareholder.id === input.selectedShareholderId,
   );
+  const selectedContact = input.selectedContact ?? input.company.contacts?.find(
+    (contact) => contact.id === input.selectedContactId,
+  );
 
   const context = {
     company: buildCompanyContext(input.company),
     selectedDirector: buildSelectedDirector(selectedDirector),
     selectedShareholder: buildSelectedShareholder(selectedShareholder),
+    selectedContact: buildSelectedContact(selectedContact),
+    agreement: {
+      agreementDate: input.agreement?.agreementDate,
+      effectiveDate: input.agreement?.effectiveDate,
+      termMonths: input.agreement?.termMonths,
+    },
     system: {
       currentDate: new Date(),
       generatedBy: input.generatedBy,
