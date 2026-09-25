@@ -30,6 +30,11 @@ import {
 } from '@/lib/document-generation-title';
 import { claimGeneratedDocumentRevision } from '@/lib/document-editor/generated-document-revision';
 import { renderTemplateForWorkflow } from '@/services/document-workflow-renderer.service';
+import {
+  getDocumentTemplateEngine,
+  OAKDOC_GENERATED_CONTENT,
+} from '@/lib/document-editor/document-engine';
+import { generateOakDocBytes } from '@/services/oakdoc-generation.service';
 import type {
   BatchItemMutationInput,
   DocumentGenerationBatchDto,
@@ -57,7 +62,8 @@ export interface EvaluatedPreview {
   blockingErrors: string[];
   effectiveCustomData: Record<string, unknown>;
   resolvedTitle: string;
-  rendered: Awaited<ReturnType<typeof renderTemplateForWorkflow>>;
+  templateVersion: number;
+  rendered: Awaited<ReturnType<typeof renderTemplateForWorkflow>> | null;
 }
 
 async function templateCustomFields(
@@ -176,6 +182,43 @@ export async function buildBatchItemRenderInput(
     companyName: batch.primaryCompany?.name,
     date: titleDate,
   });
+  const engine = getDocumentTemplateEngine(item.template.contentJson);
+  if (engine === 'OAKDOC') {
+    if (!batch.primaryCompanyId) {
+      throw new ValidationError('Select a primary company before previewing an OakDoc document');
+    }
+    const oakdoc = await generateOakDocBytes({
+      templateId: item.templateId,
+      companyId: batch.primaryCompanyId,
+      selectedDirectorId: configuration.selectedDirectorId ?? undefined,
+      selectedShareholderId: configuration.selectedShareholderId ?? undefined,
+      generatedBy: actorName,
+    }, params);
+    const fingerprint = createPreviewFingerprint({
+      templateId: item.templateId,
+      templateVersion: oakdoc.template.version,
+      partials: [],
+      primaryCompanyId: batch.primaryCompanyId,
+      contactIds: configuration.contactIds,
+      selectedDirectorId: configuration.selectedDirectorId,
+      selectedDirectorIds: configuration.selectedDirectorIds,
+      selectedShareholderId: configuration.selectedShareholderId,
+      selectedContactId: configuration.selectedContactId,
+      effectiveCustomData,
+      itemValues: configuration.itemValues,
+      useLetterhead: false,
+    });
+    return {
+      content: OAKDOC_GENERATED_CONTENT,
+      fingerprint,
+      blockingErrors: titleErrors,
+      effectiveCustomData,
+      resolvedTitle,
+      templateVersion: oakdoc.template.version,
+      rendered: null,
+    };
+  }
+
   const rendered = await renderTemplateForWorkflow({
     templateId: item.templateId,
     tenantId: params.tenantId,
@@ -214,6 +257,7 @@ export async function buildBatchItemRenderInput(
     blockingErrors: [...rendered.blockingErrors, ...titleErrors],
     effectiveCustomData,
     resolvedTitle,
+    templateVersion: rendered.template.version,
     rendered,
   };
 }
@@ -300,7 +344,7 @@ export async function previewDocumentGenerationBatchItem(
     await tx.documentGenerationBatchItem.update({
       where: { id: item.id },
       data: {
-        templateVersion: evaluated.rendered.template.version,
+        templateVersion: evaluated.templateVersion,
         previewContent: evaluated.content,
         previewFingerprint: evaluated.fingerprint,
         reviewedFingerprint: null,

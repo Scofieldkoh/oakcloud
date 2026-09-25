@@ -8,6 +8,7 @@
  */
 
 import type { DocumentParty } from '@/lib/document-party';
+import type { DocumentEngine } from '@/lib/document-editor/document-engine';
 import type { CustomPlaceholderDefinition } from '@/types/placeholders';
 import type {
   ServiceAgreementItemInput,
@@ -51,6 +52,7 @@ export interface DocumentTemplateSummary {
   compositionType: DocumentTemplateCompositionType;
   version: number;
   isActive: boolean;
+  engine: DocumentEngine;
   content: string;
   contentJson?: unknown;
   placeholders: CustomPlaceholderDefinition[];

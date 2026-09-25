@@ -158,6 +158,15 @@ export const StorageKeys = {
   },
 
   /**
+   * Generate an immutable storage key for one generated OakDoc artefact.
+   * Generated assets live outside the template prefix so generation can never
+   * overwrite the reusable master DOCX.
+   */
+  oakDocGeneratedAsset(tenantId: string, documentId: string, assetId: string): string {
+    return `${tenantId}/generated-documents/${documentId}/oakdoc/${assetId}.docx`;
+  },
+
+  /**
    * Generate storage key for tenant branding logo
    */
   tenantLogo(tenantId: string, extension: string): string {

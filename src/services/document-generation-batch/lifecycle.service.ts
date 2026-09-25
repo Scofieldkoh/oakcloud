@@ -20,6 +20,7 @@ import {
   assertA4WriterCanPreserve,
   readA4StoredDocument,
 } from '@/lib/document-editor/a4-editor-format';
+import { getDocumentTemplateEngine } from '@/lib/document-editor/document-engine';
 import {
   claimGeneratedDocumentRevision,
   readGeneratedDocumentRevision,
@@ -150,22 +151,26 @@ export async function loadMasterCatalogueForTemplateIds(
     }),
   ]);
   for (const template of templates) {
-    readA4StoredDocument(template.content, template.contentJson);
+    if (getDocumentTemplateEngine(template.contentJson) === 'A4') {
+      readA4StoredDocument(template.content, template.contentJson);
+    }
   }
   for (const partial of partials) {
     readA4StoredDocument(partial.content);
   }
-  const sources = templates.map((template) => ({
-    templateId: template.id,
-    fields: mergeTemplateAndPartialPlaceholders({
-      templatePlaceholders: storageFormatToCustomPlaceholders(
-        normalizeStoredPlaceholders(template.placeholders),
-        { scope: { kind: 'template', id: template.id } },
-      ),
-      templateContent: template.content,
-      partials,
-    }),
-  }));
+  const sources = templates
+    .filter((template) => getDocumentTemplateEngine(template.contentJson) === 'A4')
+    .map((template) => ({
+      templateId: template.id,
+      fields: mergeTemplateAndPartialPlaceholders({
+        templatePlaceholders: storageFormatToCustomPlaceholders(
+          normalizeStoredPlaceholders(template.placeholders),
+          { scope: { kind: 'template', id: template.id } },
+        ),
+        templateContent: template.content,
+        partials,
+      }),
+    }));
   return deriveMasterFieldCatalogue(sources);
 }
 
@@ -204,7 +209,11 @@ async function resolveTemplates(
   if (inactive) {
     throw new ValidationError(`Template "${inactive.name}" is not active`);
   }
-  templates.forEach((template) => readA4StoredDocument(template.content, template.contentJson));
+  templates.forEach((template) => {
+    if (getDocumentTemplateEngine(template.contentJson) === 'A4') {
+      readA4StoredDocument(template.content, template.contentJson);
+    }
+  });
   return templates;
 }
 

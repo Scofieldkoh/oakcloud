@@ -36,6 +36,7 @@ export interface EditableBatchItem {
   templateName: string;
   templateKind: 'STANDARD' | 'SERVICE_AGREEMENT';
   templateVersion: number;
+  templateEngine: DocumentTemplateSummary['engine'];
   status: BatchItemStatus;
   configuration: BatchItemConfiguration;
   previewContent: string | null;
@@ -143,6 +144,7 @@ export function itemFromTemplate(template: DocumentTemplateSummary): EditableBat
     templateName: template.name,
     templateKind: template.compositionType,
     templateVersion: template.version,
+    templateEngine: template.engine,
     status: 'NOT_STARTED',
     configuration: defaultItemConfiguration(template),
     previewContent: null,
@@ -195,6 +197,7 @@ export function editableBatchFromDto(
       templateName: item.templateName,
       templateKind: item.templateKind,
       templateVersion: item.templateVersion,
+      templateEngine: item.templateEngine,
       status: item.status,
       configuration: item.configuration,
       previewContent: item.previewContent,

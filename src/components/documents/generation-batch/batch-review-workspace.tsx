@@ -319,26 +319,40 @@ export function BatchReviewWorkspace({
               'min-h-0 flex-1 overflow-hidden rounded-lg border border-border-primary shadow-sm',
             )}>
               {activeItem.previewContent ? (
-                <A4PageEditor
-                  sessionKey={`batch-item:${activeItem.templateId}`}
-                  value={activeItem.editedContent ?? activeItem.previewContent ?? ''}
-                  contentJson={itemContentJson ?? undefined}
-                  onChange={(html) => onEditContent(
-                    activeItem.key,
-                    html,
-                    activeItem.editedContentJson,
-                  )}
-                  onLayoutChange={(nextLayout) => onEditContent(
-                    activeItem.key,
-                    activeItem.editedContent ?? activeItem.previewContent ?? '',
-                    mergeA4DocumentLayout(
-                      itemContentJson ?? activeItem.editedContentJson,
-                      nextLayout,
-                    ),
-                  )}
-                  readOnly={generated}
-                  layout={effectiveLayout}
-                />
+                activeItem.templateEngine === 'OAKDOC' ? (
+                  <div className="flex h-full flex-col items-center justify-center gap-3 bg-background-secondary p-8 text-center">
+                    <FileText className="h-10 w-10 text-oak-primary" aria-hidden="true" />
+                    <div>
+                      <p className="text-sm font-semibold text-text-primary">Word · OakDoc preview validated</p>
+                      <p className="mt-1 max-w-lg text-sm text-text-secondary">
+                        This document stays DOCX-native. Oakcloud validated the current template,
+                        company context, fields, conditions, and repeaters without converting it
+                        through the A4/HTML renderer.
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <A4PageEditor
+                    sessionKey={`batch-item:${activeItem.templateId}`}
+                    value={activeItem.editedContent ?? activeItem.previewContent ?? ''}
+                    contentJson={itemContentJson ?? undefined}
+                    onChange={(html) => onEditContent(
+                      activeItem.key,
+                      html,
+                      activeItem.editedContentJson,
+                    )}
+                    onLayoutChange={(nextLayout) => onEditContent(
+                      activeItem.key,
+                      activeItem.editedContent ?? activeItem.previewContent ?? '',
+                      mergeA4DocumentLayout(
+                        itemContentJson ?? activeItem.editedContentJson,
+                        nextLayout,
+                      ),
+                    )}
+                    readOnly={generated}
+                    layout={effectiveLayout}
+                  />
+                )
               ) : pending || rendering ? (
                 <A4Skeleton label="Rendering this document…" />
               ) : (
