@@ -404,6 +404,18 @@ export function OakDocEditor() {
     setStatusKind('error');
   }, [templateQuery.error]);
 
+  useEffect(() => {
+    if (!isDirty) return;
+
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [isDirty]);
+
   const selectionCrossesSectionBoundary = useCallback((): boolean => {
     const handle = editorRef.current;
     if (!handle || !documentBytes) return false;

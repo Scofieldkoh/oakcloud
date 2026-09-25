@@ -38,6 +38,11 @@ import {
   normalizeStoredFieldDefinitionInput,
   preserveStoredFieldDefinitions,
 } from '@/lib/document-editor/template-field-workflow';
+import { storage, StorageKeys } from '@/lib/storage';
+import {
+  mergeOakDocTemplateMetadata,
+  readOakDocTemplateMetadata,
+} from '@/lib/document-editor/oakdoc-template';
 
 export interface DocumentTemplateWithRelations extends DocumentTemplate {
   createdBy?: { id: string; firstName: string; lastName: string };
@@ -345,24 +350,49 @@ export async function duplicateDocumentTemplate(
     if (counter > 100) throw new Error('Unable to generate unique name');
   }
 
+  const oakDocMetadata = readOakDocTemplateMetadata(existing.contentJson);
+  let duplicatedContentJson = existing.contentJson ?? undefined;
+  let copiedOakDocStorageKey: string | null = null;
+
+  if (oakDocMetadata) {
+    if (!oakDocMetadata.storageKey.startsWith(`${tenantId}/templates/oakdoc/assets/`)) {
+      throw new Error('OakDoc template storage scope is invalid');
+    }
+
+    copiedOakDocStorageKey = StorageKeys.oakDocTemplateAsset(tenantId, randomUUID());
+    await storage.copy(oakDocMetadata.storageKey, copiedOakDocStorageKey);
+    duplicatedContentJson = mergeOakDocTemplateMetadata(existing.contentJson, {
+      ...oakDocMetadata,
+      storageKey: copiedOakDocStorageKey,
+    }) as Prisma.InputJsonValue;
+  }
+
   const id = randomUUID();
-  const template = await prisma.documentTemplate.create({
-    data: {
-      id,
-      tenantId,
-      name: newName,
-      description: existing.description,
-      category: existing.category,
-      compositionType: existing.compositionType,
-      content: existing.content,
-      contentJson: existing.contentJson ?? undefined,
-      placeholders: preserveTemplatePlaceholders(existing.placeholders, id),
-      sharePointRelativeFolderPath: existing.sharePointRelativeFolderPath,
-      isActive: true,
-      createdById: userId,
-      version: 1,
-    },
-  });
+  let template: DocumentTemplate;
+  try {
+    template = await prisma.documentTemplate.create({
+      data: {
+        id,
+        tenantId,
+        name: newName,
+        description: existing.description,
+        category: existing.category,
+        compositionType: existing.compositionType,
+        content: existing.content,
+        contentJson: duplicatedContentJson,
+        placeholders: preserveTemplatePlaceholders(existing.placeholders, id),
+        sharePointRelativeFolderPath: existing.sharePointRelativeFolderPath,
+        isActive: true,
+        createdById: userId,
+        version: 1,
+      },
+    });
+  } catch (error) {
+    if (copiedOakDocStorageKey) {
+      await storage.delete(copiedOakDocStorageKey).catch(() => undefined);
+    }
+    throw error;
+  }
 
   await createAuditLog({
     tenantId,
@@ -377,6 +407,7 @@ export async function duplicateDocumentTemplate(
       sourceTemplateId: existing.id,
       sourceTemplateName: existing.name,
       newName: template.name,
+      ...(copiedOakDocStorageKey ? { duplicatedOakDocAsset: true } : {}),
     },
   });
   return template;
