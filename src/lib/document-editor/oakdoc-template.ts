@@ -3,6 +3,12 @@ import type { JsonValue } from '@/lib/validations/document-template';
 export const OAKDOC_TEMPLATE_SCHEMA_VERSION = 1;
 export const OAKDOC_TEMPLATE_CONTENT =
   '<p data-oakdoc-template="true">DOCX-native template. Open this template in OakDoc.</p>';
+export const OAKDOC_SERVICE_AGREEMENT_CONTENT = [
+  OAKDOC_TEMPLATE_CONTENT,
+  '{{@agreement.serviceSections}}',
+  '{{@agreement.feeTable}}',
+  '{{@agreement.entityAppendix}}',
+].join('\n');
 export const OAKDOC_MIME_TYPE =
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 
