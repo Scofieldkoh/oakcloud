@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { Check, Loader2, RefreshCw, UserRound } from 'lucide-react';
+import { Check, Loader2, RefreshCw, UserRound, UsersRound } from 'lucide-react';
 import type { EsigningRecipientAccessMode, EsigningRecipientType } from '@/generated/prisma';
 import type { EsigningEnvelopeRecipientDto } from '@/types/esigning';
 import type { EsigningRecipientInput } from '@/lib/validations/esigning';
@@ -17,6 +17,7 @@ import { useActiveWorkspaceId } from '@/components/ui/workspace-selector';
 import { useToast } from '@/components/ui/toast';
 import { cn } from '@/lib/utils';
 import {
+  buildLinkedCompanyBulkSignerContacts,
   buildSignerEmailSet,
   buildSignerNameSet,
   getLinkedCompanyQuickAddState,
@@ -81,6 +82,7 @@ export function LinkedCompanySignerQuickAdd({ companyId, companyName, recipients
   const [selectedContactDefaultEmailDetailId, setSelectedContactDefaultEmailDetailId] = useState<string | null>(null);
   const [draft, setDraft] = useState<RecipientDraft>(EMPTY_DRAFT);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isAddingAll, setIsAddingAll] = useState(false);
   const [isSavingContactEmail, setIsSavingContactEmail] = useState(false);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const {
@@ -104,6 +106,15 @@ export function LinkedCompanySignerQuickAdd({ companyId, companyName, recipients
   const availableContacts = useMemo(
     () => contacts.filter((contact) => !getLinkedCompanyQuickAddState(contact, signerEmails, signerNames).isAdded),
     [contacts, signerEmails, signerNames],
+  );
+  const recipientSlotsRemaining = Math.max(0, ESIGNING_LIMITS.MAX_RECIPIENTS - recipients.length);
+  const bulkEligibleContacts = useMemo(
+    () => buildLinkedCompanyBulkSignerContacts(contacts, signerEmails, signerNames, contacts.length),
+    [contacts, signerEmails, signerNames],
+  );
+  const bulkContacts = useMemo(
+    () => bulkEligibleContacts.slice(0, recipientSlotsRemaining),
+    [bulkEligibleContacts, recipientSlotsRemaining],
   );
   const selectedContactEmailChanged = Boolean(
     selectedContact
@@ -168,6 +179,53 @@ export function LinkedCompanySignerQuickAdd({ companyId, companyName, recipients
             : current.accessMode,
       accessCode: nextType === 'CC' ? '' : current.accessCode,
     }));
+  }
+
+  async function handleAddAllContacts() {
+    if (bulkEligibleContacts.length === 0) return;
+    if (recipientSlotsRemaining === 0) {
+      toast.error(`This envelope already has the maximum of ${ESIGNING_LIMITS.MAX_RECIPIENTS} recipients`);
+      return;
+    }
+
+    setIsAddingAll(true);
+    let addedCount = 0;
+    const failedContacts: string[] = [];
+
+    try {
+      for (const contact of bulkContacts) {
+        const name = contact.fullName.trim();
+        const email = normalizeSignerEmail(contact.defaultEmail);
+
+        try {
+          await onAddRecipient({
+            name,
+            email: email || null,
+            type: 'SIGNER',
+            signingOrder: null,
+            accessMode: 'MANUAL_LINK',
+          });
+          addedCount += 1;
+        } catch {
+          failedContacts.push(name);
+        }
+      }
+
+      const skippedForLimit = bulkEligibleContacts.length - bulkContacts.length;
+      if (addedCount > 0) {
+        const signerLabel = addedCount === 1 ? 'signer' : 'signers';
+        const limitMessage = skippedForLimit > 0
+          ? ` ${skippedForLimit} contact${skippedForLimit === 1 ? '' : 's'} not added because the envelope limit is ${ESIGNING_LIMITS.MAX_RECIPIENTS} recipients.`
+          : '';
+        toast.success(`Added ${addedCount} company contact${addedCount === 1 ? '' : 's'} as ${signerLabel}.${limitMessage}`);
+      }
+
+      if (failedContacts.length > 0) {
+        toast.error(`${failedContacts.length} contact${failedContacts.length === 1 ? '' : 's'} could not be added. Please add ${failedContacts.length === 1 ? 'that contact' : 'them'} individually.`);
+      }
+    } finally {
+      setIsAddingAll(false);
+    }
   }
 
   async function handleSaveContactEmail() {
@@ -240,7 +298,29 @@ export function LinkedCompanySignerQuickAdd({ companyId, companyName, recipients
           <p className="text-xs font-medium text-text-secondary">Company contacts</p>
           <p className="truncate text-xs text-text-muted">{companyName ? `${companyName} · ` : ''}Select a contact to configure how they receive this document.</p>
         </div>
-        {isLoading ? <Loader2 className="h-4 w-4 animate-spin text-text-muted" aria-label="Loading company contacts" /> : null}
+        <div className="flex shrink-0 items-center gap-2">
+          {!isLoading && bulkEligibleContacts.length > 0 ? (
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              leftIcon={<UsersRound className="h-4 w-4" />}
+              onClick={() => void handleAddAllContacts()}
+              isLoading={isAddingAll}
+              disabled={isAddingAll || isSubmitting || isSavingContactEmail || isEditorOpen || bulkContacts.length === 0}
+              title={
+                recipientSlotsRemaining === 0
+                  ? `Maximum of ${ESIGNING_LIMITS.MAX_RECIPIENTS} recipients reached`
+                  : isEditorOpen
+                    ? 'Close the recipient editor before adding all contacts'
+                    : undefined
+              }
+            >
+              Add all as signers
+            </Button>
+          ) : null}
+          {isLoading ? <Loader2 className="h-4 w-4 animate-spin text-text-muted" aria-label="Loading company contacts" /> : null}
+        </div>
       </div>
 
       {error && contacts.length === 0 ? (
@@ -264,7 +344,8 @@ export function LinkedCompanySignerQuickAdd({ companyId, companyName, recipients
                 key={contact.id}
                 type="button"
                 onClick={() => selectCompanyContact(contact)}
-                className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary transition-colors hover:border-oak-primary/40 hover:bg-background-tertiary"
+                disabled={isAddingAll}
+                className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary transition-colors hover:border-oak-primary/40 hover:bg-background-tertiary disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <UserRound className="h-4 w-4 text-text-muted" aria-hidden="true" />
                 <span className="max-w-72 truncate">
@@ -327,7 +408,7 @@ export function LinkedCompanySignerQuickAdd({ companyId, companyName, recipients
             {draft.type === 'CC' ? <p className="text-xs text-text-muted">Copy recipients require email delivery, so Manual Link is not available.</p> : null}
             {draft.accessMode === 'EMAIL_WITH_CODE' ? <FormInput label="Access code" inputSize="lg" value={draft.accessCode} onChange={(event) => setDraft((current) => ({ ...current, accessCode: event.target.value }))} placeholder={`Min ${ESIGNING_LIMITS.MIN_ACCESS_CODE_LENGTH} characters`} className={EDITABLE_CONTROL_CLASS_NAME} /> : null}
             <div className="flex flex-wrap justify-end gap-2 border-t border-border-primary pt-3">
-              <Button type="button" variant="secondary" size="sm" onClick={closeEditor} disabled={isSubmitting || isSavingContactEmail}>Cancel</Button>
+              <Button type="button" variant="secondary" size="sm" onClick={closeEditor} disabled={isSubmitting || isSavingContactEmail || isAddingAll}>Cancel</Button>
               {selectedContact && selectedContactEmailChanged ? (
                 <Button
                   type="button"
@@ -335,12 +416,12 @@ export function LinkedCompanySignerQuickAdd({ companyId, companyName, recipients
                   size="sm"
                   onClick={() => void handleSaveContactEmail()}
                   isLoading={isSavingContactEmail}
-                  disabled={isSubmitting || isSavingContactEmail || !draft.email.trim()}
+                  disabled={isSubmitting || isSavingContactEmail || isAddingAll || !draft.email.trim()}
                 >
                   Save email to Contacts
                 </Button>
               ) : null}
-              <Button type="button" size="sm" leftIcon={<Check className="h-4 w-4" />} onClick={() => void handleConfirm()} isLoading={isSubmitting} disabled={isSubmitting || isSavingContactEmail}>Add recipient</Button>
+              <Button type="button" size="sm" leftIcon={<Check className="h-4 w-4" />} onClick={() => void handleConfirm()} isLoading={isSubmitting} disabled={isSubmitting || isSavingContactEmail || isAddingAll}>Add recipient</Button>
             </div>
           </div>
         </div>
