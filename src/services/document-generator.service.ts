@@ -19,6 +19,7 @@ import {
   normalizeStoredFieldDefinitionInput,
   resolveTopLevelCustomValues,
 } from '@/lib/document-editor/template-field-workflow';
+import { readGeneratedDocumentEngine } from '@/lib/document-editor/document-engine';
 import {
   assertA4WriterCanPreserve,
   readA4StoredDocument,
@@ -1279,7 +1280,9 @@ export async function getGeneratedDocumentById(
     },
   });
   if (!document) return null;
-  readA4StoredDocument(document.content, document.contentJson);
+  if (readGeneratedDocumentEngine(document.metadata) === 'A4') {
+    readA4StoredDocument(document.content, document.contentJson);
+  }
   const revision = await readGeneratedDocumentRevision(prisma, document.id, tenantId);
   return { ...document, revision } as GeneratedDocumentWithRelations;
 }

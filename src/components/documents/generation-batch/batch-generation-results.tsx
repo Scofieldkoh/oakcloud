@@ -150,12 +150,14 @@ export function BatchGenerationResults({
             {item.status === 'GENERATED' && item.generatedDocumentId && (
               <div className="flex flex-wrap items-center gap-3">
                 <a
-                  href={`/api/generated-documents/${item.generatedDocumentId}/export/pdf`}
+                  href={item.templateEngine === 'OAKDOC'
+                    ? `/api/generated-documents/${item.generatedDocumentId}?format=docx`
+                    : `/api/generated-documents/${item.generatedDocumentId}/export/pdf`}
                   className="inline-flex min-h-9 items-center gap-1 text-sm font-medium text-text-secondary transition-colors hover:text-text-primary"
-                  aria-label={`Download ${item.configuration.title || item.templateName} as PDF`}
+                  aria-label={`Download ${item.configuration.title || item.templateName} as ${item.templateEngine === 'OAKDOC' ? 'DOCX' : 'PDF'}`}
                 >
                   <Download className="h-4 w-4" aria-hidden="true" />
-                  PDF
+                  {item.templateEngine === 'OAKDOC' ? 'DOCX' : 'PDF'}
                 </a>
                 <Link
                   href={`/generated-documents/${item.generatedDocumentId}`}

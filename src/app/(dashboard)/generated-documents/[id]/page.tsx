@@ -78,6 +78,7 @@ interface GeneratedDocument {
   status: 'DRAFT' | 'FINALIZED' | 'ARCHIVED';
   content: string;
   contentJson?: Record<string, unknown> | null;
+  metadata?: { documentEngine?: string; [key: string]: unknown } | null;
   useLetterhead: boolean;
   createdAt: string;
   updatedAt: string;
@@ -420,6 +421,7 @@ export default function DocumentViewPage() {
   }
 
   const linkedEnvelopes = docData.esigningEnvelopeDocuments?.map(({ envelope }) => envelope) ?? [];
+  const isOakDoc = docData.metadata?.documentEngine === 'OAKDOC';
 
   return (
     <div className="p-4 sm:p-6">
@@ -455,7 +457,7 @@ export default function DocumentViewPage() {
         {/* Actions */}
         <div className="flex items-center gap-2">
           {/* Letterhead toggle */}
-          <button
+          {!isOakDoc && <button
             type="button"
             onClick={() => setIncludeLetterhead(!includeLetterhead)}
             className={cn(
@@ -472,12 +474,12 @@ export default function DocumentViewPage() {
               <EyeOff className="w-4 h-4" />
             )}
             Letterhead
-          </button>
+          </button>}
 
           <div className="w-px h-6 bg-border-secondary" />
 
           {/* Edit (only for drafts) */}
-          {docData.status === 'DRAFT' && (
+          {!isOakDoc && docData.status === 'DRAFT' && (
             <Link href={withTaskLaunchContext(
               `/generated-documents/${docData.id}/edit`,
               taskContext,
@@ -512,10 +514,19 @@ export default function DocumentViewPage() {
           )}
 
           {/* Export */}
-          <Button variant="secondary" size="sm" onClick={handleExport}>
-            <Download className="w-4 h-4 mr-2" />
-            Export
-          </Button>
+          {isOakDoc ? (
+            <a href={`/api/generated-documents/${documentId}?format=docx`}>
+              <Button variant="secondary" size="sm">
+                <Download className="w-4 h-4 mr-2" />
+                Download DOCX
+              </Button>
+            </a>
+          ) : (
+            <Button variant="secondary" size="sm" onClick={handleExport}>
+              <Download className="w-4 h-4 mr-2" />
+              Export
+            </Button>
+          )}
 
           {/* More actions */}
           <div className="relative group">
@@ -523,22 +534,22 @@ export default function DocumentViewPage() {
               <MoreVertical className="w-4 h-4" />
             </Button>
             <div className="absolute right-0 top-full mt-1 w-40 py-1 bg-background-elevated border border-border-primary rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-20">
-              <button
+              {!isOakDoc && <button
                 type="button"
                 onClick={handlePrint}
                 className="w-full px-3 py-1.5 text-left text-sm hover:bg-background-secondary flex items-center gap-2"
               >
                 <Printer className="w-4 h-4" />
                 Print
-              </button>
-              <button
+              </button>}
+              {!isOakDoc && <button
                 type="button"
                 onClick={handleClone}
                 className="w-full px-3 py-1.5 text-left text-sm hover:bg-background-secondary flex items-center gap-2"
               >
                 <Copy className="w-4 h-4" />
                 Clone
-              </button>
+              </button>}
               {docData.status !== 'ARCHIVED' && (
                 <>
                   <div className="h-px bg-border-secondary my-1" />
@@ -697,11 +708,32 @@ export default function DocumentViewPage() {
           {/* Document content using A4PageEditor in read-only mode */}
           <div className="flex-1 min-w-0">
             <div className="border border-border-primary rounded-lg shadow-sm overflow-hidden h-[calc(100vh-12rem)]">
-              <A4PageEditor
-                value={docData.content}
-                readOnly={true}
-                layout={extractA4DocumentLayout(docData.contentJson)}
-              />
+              {isOakDoc ? (
+                <div className="flex h-full flex-col items-center justify-center gap-4 bg-background-secondary p-8 text-center">
+                  <FileText className="h-12 w-12 text-oak-primary" aria-hidden="true" />
+                  <div className="max-w-lg">
+                    <h3 className="text-base font-semibold text-text-primary">Word · OakDoc document</h3>
+                    <p className="mt-2 text-sm text-text-secondary">
+                      This generated document is stored as its own resolved DOCX artefact.
+                      The reusable master template is not opened or edited from this record.
+                    </p>
+                  </div>
+                  <a href={`/api/generated-documents/${documentId}?format=docx`}>
+                    <Button variant="primary" size="sm" leftIcon={<Download className="h-4 w-4" />}>
+                      Download generated DOCX
+                    </Button>
+                  </a>
+                  <p className="text-xs text-text-muted">
+                    Inline OakDoc review is a separate capability; PDF conversion is not enabled yet.
+                  </p>
+                </div>
+              ) : (
+                <A4PageEditor
+                  value={docData.content}
+                  readOnly={true}
+                  layout={extractA4DocumentLayout(docData.contentJson)}
+                />
+              )}
             </div>
           </div>
         </div>

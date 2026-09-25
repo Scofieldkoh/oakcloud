@@ -4,6 +4,7 @@ import { requirePermission } from '@/lib/rbac';
 import { requireSessionWorkspaceId } from '@/lib/api-helpers';
 import { exportToPDF } from '@/services/document-export.service';
 import { getGeneratedDocumentById } from '@/services/document-generator.service';
+import { readGeneratedDocumentEngine } from '@/lib/document-editor/document-engine';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -28,6 +29,17 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const document = await getGeneratedDocumentById(id, tenantId);
     if (!document) {
       return NextResponse.json({ error: 'Document not found' }, { status: 404 });
+    }
+
+    if (readGeneratedDocumentEngine(document.metadata) === 'OAKDOC') {
+      return NextResponse.json(
+        {
+          error: 'PDF conversion is not yet available for OakDoc documents',
+          capability: 'pdf-export',
+          available: ['docx-download'],
+        },
+        { status: 409 },
+      );
     }
 
     // Parse export options from query params

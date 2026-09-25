@@ -13,7 +13,7 @@ import {
 import {
   mapCompanyOption,
   mapContactOption,
-  mapTemplateSummary,
+  mapGenerationTemplateSummaries,
 } from '@/lib/document-generation-option-mappers';
 import { readTaskLaunchContext } from '@/lib/task-launch-context';
 import type {
@@ -25,7 +25,6 @@ import type {
   DocumentTemplateSummary,
 } from '@/types/document-generation';
 import type { GenerationSessionEnvelope } from '@/lib/document-generation-session';
-import { isOakDocTemplate } from '@/lib/document-editor/oakdoc-template';
 
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -49,6 +48,7 @@ function dtoToEditableBatch(dto: DocumentGenerationBatchDto): EditableDocumentGe
       templateName: item.templateName,
       templateKind: item.templateKind,
       templateVersion: item.templateVersion,
+      templateEngine: item.templateEngine,
       status: item.status,
       configuration: item.configuration,
       previewContent: item.previewContent,
@@ -76,6 +76,7 @@ function sessionToEditableItem(
     templateName: template.name,
     templateKind: template.compositionType,
     templateVersion: template.version,
+    templateEngine: template.engine,
     status: 'NOT_STARTED',
     configuration: {
       version: 1,
@@ -229,9 +230,7 @@ function GenerateDocumentContent() {
         const rawContacts = Array.isArray(contactsData.options)
           ? contactsData.options as Array<Record<string, unknown>>
           : [];
-        const templateList = rawTemplates
-          .filter((template) => !isOakDocTemplate(template.contentJson))
-          .map(mapTemplateSummary);
+        const templateList = mapGenerationTemplateSummaries(rawTemplates);
         setTemplates(templateList);
         setCompanies(rawCompanies.map(mapCompanyOption));
         setContacts(rawContacts.map(mapContactOption));
@@ -286,6 +285,7 @@ function GenerateDocumentContent() {
               templateName: template.name,
               templateKind: template.compositionType,
               templateVersion: template.version,
+              templateEngine: template.engine,
               status: 'NOT_STARTED',
               configuration: {
                 version: 1,

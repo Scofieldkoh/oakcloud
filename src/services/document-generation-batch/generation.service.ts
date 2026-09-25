@@ -8,9 +8,11 @@ import {
   ValidationError,
 } from '@/lib/errors';
 import { assertA4WriterCanPreserve } from '@/lib/document-editor/a4-editor-format';
+import { getDocumentTemplateEngine } from '@/lib/document-editor/document-engine';
 import {
   createReviewedFingerprint,
 } from '@/lib/document-generation-fingerprint';
+import { materializeOakDocGeneratedDocument } from '@/services/oakdoc-generation.service';
 import {
   finalizeDocument,
   materializeDocumentFromTemplate,
@@ -115,6 +117,65 @@ function diagnosticsFromEvaluation(
     errors,
     fieldErrors: [],
   };
+}
+
+export async function materializeBatchDocumentByEngine(input: {
+  batch: BatchWithRelations;
+  item: BatchItemWithRelations;
+  configuration: ReturnType<typeof parseBatchItemConfiguration>;
+  evaluated: Awaited<ReturnType<typeof buildBatchItemRenderInput>>;
+  actor: string;
+  params: TenantAwareParams;
+  taskContext?: TaskLaunchContext;
+}) {
+  const { batch, item, configuration, evaluated, actor, params, taskContext } = input;
+  const engine = getDocumentTemplateEngine(item.template.contentJson);
+  if (engine === 'OAKDOC') {
+    if (!batch.primaryCompanyId) {
+      throw new ValidationError('Select a primary company before generating an OakDoc document');
+    }
+    return materializeOakDocGeneratedDocument({
+      templateId: item.templateId,
+      generatedDocumentId: item.generatedDocumentId,
+      expectedRevision: item.generatedDocument.revision,
+      expectedBatchItemId: item.id,
+      companyId: batch.primaryCompanyId,
+      selectedDirectorId: configuration.selectedDirectorId ?? undefined,
+      selectedShareholderId: configuration.selectedShareholderId ?? undefined,
+      generatedBy: actor,
+      title: evaluated.resolvedTitle,
+      contactIds: configuration.contactIds,
+    }, params, taskContext);
+  }
+
+  assertA4WriterCanPreserve(
+    item.editedContent ?? evaluated.content,
+    item.editedContentJson ?? item.template.contentJson,
+  );
+  return materializeDocumentFromTemplate(
+    {
+      templateId: item.templateId,
+      expectedRevision: item.generatedDocument.revision,
+      companyId: batch.primaryCompanyId ?? undefined,
+      contactIds: configuration.contactIds,
+      selectedDirectorId: configuration.selectedDirectorId ?? undefined,
+      selectedDirectorIds: configuration.selectedDirectorIds,
+      selectedShareholderId: configuration.selectedShareholderId ?? undefined,
+      selectedContactId: configuration.selectedContactId ?? undefined,
+      title: evaluated.resolvedTitle,
+      customData: evaluated.effectiveCustomData,
+      useLetterhead: configuration.useLetterhead,
+      editedContent: item.editedContent ?? undefined,
+      editedContentJson: item.editedContentJson ?? undefined,
+      serviceAgreementId: item.generatedDocument?.serviceAgreement?.id ?? undefined,
+    },
+    params,
+    {
+      generatedDocumentId: item.generatedDocumentId,
+      expectedBatchItemId: item.id,
+    },
+    taskContext,
+  );
 }
 
 async function persistDiagnostics(
@@ -345,34 +406,15 @@ export async function generateDocumentGenerationBatch(
       try {
         const configuration = parseBatchItemConfiguration(item.configuration);
         const evaluated = await buildBatchItemRenderInput(batch, item, params, actor);
-        assertA4WriterCanPreserve(
-          item.editedContent ?? evaluated.content,
-          item.editedContentJson ?? item.template.contentJson,
-        );
-        const document = await materializeDocumentFromTemplate(
-          {
-            templateId: item.templateId,
-            expectedRevision: item.generatedDocument.revision,
-            companyId: batch.primaryCompanyId ?? undefined,
-            contactIds: configuration.contactIds,
-            selectedDirectorId: configuration.selectedDirectorId ?? undefined,
-            selectedDirectorIds: configuration.selectedDirectorIds,
-            selectedShareholderId: configuration.selectedShareholderId ?? undefined,
-            selectedContactId: configuration.selectedContactId ?? undefined,
-            title: evaluated.resolvedTitle,
-            customData: evaluated.effectiveCustomData,
-            useLetterhead: configuration.useLetterhead,
-            editedContent: item.editedContent ?? undefined,
-            editedContentJson: item.editedContentJson ?? undefined,
-            serviceAgreementId: item.generatedDocument?.serviceAgreement?.id ?? undefined,
-          },
+        const document = await materializeBatchDocumentByEngine({
+          batch,
+          item,
+          configuration,
+          evaluated,
+          actor,
           params,
-          {
-            generatedDocumentId: item.generatedDocumentId,
-            expectedBatchItemId: item.id,
-          },
           taskContext,
-        );
+        });
         await finalizeDocument(document.id, params, document.revision);
         await prisma.documentGenerationBatchItem.update({
           where: { id: item.id },
@@ -547,34 +589,15 @@ export async function retryDocumentGenerationBatchItem(
 
   const taskContext = taskLaunchContextFromBatch(batch.taskContext);
   try {
-    assertA4WriterCanPreserve(
-      item.editedContent ?? evaluated.content,
-      item.editedContentJson ?? item.template.contentJson,
-    );
-    const document = await materializeDocumentFromTemplate(
-      {
-        templateId: item.templateId,
-        expectedRevision: item.generatedDocument.revision,
-        companyId: batch.primaryCompanyId ?? undefined,
-        contactIds: configuration.contactIds,
-        selectedDirectorId: configuration.selectedDirectorId ?? undefined,
-        selectedDirectorIds: configuration.selectedDirectorIds,
-        selectedShareholderId: configuration.selectedShareholderId ?? undefined,
-        selectedContactId: configuration.selectedContactId ?? undefined,
-        title: evaluated.resolvedTitle,
-        customData: evaluated.effectiveCustomData,
-        useLetterhead: configuration.useLetterhead,
-        editedContent: item.editedContent ?? undefined,
-        editedContentJson: item.editedContentJson ?? undefined,
-        serviceAgreementId: item.generatedDocument?.serviceAgreement?.id ?? undefined,
-      },
+    const document = await materializeBatchDocumentByEngine({
+      batch,
+      item,
+      configuration,
+      evaluated,
+      actor,
       params,
-      {
-        generatedDocumentId: item.generatedDocumentId,
-        expectedBatchItemId: item.id,
-      },
       taskContext,
-    );
+    });
     await finalizeDocument(document.id, params, document.revision);
     await prisma.documentGenerationBatchItem.update({
       where: { id: item.id },

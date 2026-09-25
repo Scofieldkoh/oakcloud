@@ -230,6 +230,9 @@ export function BatchTemplatePicker({
                       <span className="block truncate text-sm font-medium text-text-primary">
                         {template.name}
                       </span>
+                      <span className="mt-0.5 block text-xs text-text-muted">
+                        {template.engine === 'OAKDOC' ? 'Word · OakDoc' : 'A4 editor'}
+                      </span>
                     </span>
                     <span
                       className={cn(

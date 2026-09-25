@@ -9,6 +9,8 @@ import {
   archiveDocument,
 } from '@/services/document-generator.service';
 import { createErrorResponse, requireSessionWorkspaceId } from '@/lib/api-helpers';
+import { readGeneratedDocumentEngine } from '@/lib/document-editor/document-engine';
+import { downloadGeneratedOakDoc } from '@/services/oakdoc-generation.service';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -40,6 +42,22 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     if (!document) {
       return NextResponse.json({ error: 'Document not found' }, { status: 404 });
+    }
+    if (searchParams.get('format') === 'docx') {
+      if (readGeneratedDocumentEngine(document.metadata) !== 'OAKDOC') {
+        return NextResponse.json(
+          { error: 'DOCX download is only available for OakDoc documents' },
+          { status: 409 },
+        );
+      }
+      const asset = await downloadGeneratedOakDoc(id, tenantId);
+      return new NextResponse(new Uint8Array(asset.buffer), {
+        headers: {
+          'Content-Type': asset.metadata.mimeType,
+          'Content-Disposition': `attachment; filename="${asset.metadata.fileName.replace(/"/g, '')}"`,
+          'Content-Length': String(asset.buffer.byteLength),
+        },
+      });
     }
     return NextResponse.json(document);
   } catch (error) {

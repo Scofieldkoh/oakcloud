@@ -11,6 +11,7 @@ import type {
   ServiceAgreementItemInput,
 } from '@/services/service-agreement/types';
 import type { PlaceholderValueType } from '@/types/placeholders';
+import type { DocumentEngine } from '@/lib/document-editor/document-engine';
 
 export type BatchItemStatus =
   | 'NOT_STARTED'
@@ -104,6 +105,7 @@ export interface DocumentGenerationBatchItemDto {
   templateName: string;
   templateKind: 'STANDARD' | 'SERVICE_AGREEMENT';
   templateVersion: number;
+  templateEngine: DocumentEngine;
   displayOrder: number;
   status: BatchItemStatus;
   configuration: BatchItemConfiguration;

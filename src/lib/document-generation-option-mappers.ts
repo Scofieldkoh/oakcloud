@@ -4,6 +4,7 @@
  * hooks cannot drift apart on field naming (`name` vs `fullName`).
  */
 
+import { getDocumentTemplateEngine } from '@/lib/document-editor/document-engine';
 import {
   normalizeStoredPlaceholders,
   storageFormatToCustomPlaceholders,
@@ -57,6 +58,7 @@ export function mapTemplateSummary(raw: Record<string, unknown>): DocumentTempla
       : 'STANDARD',
     version: Number(raw.version ?? 1),
     isActive: raw.isActive !== false,
+    engine: getDocumentTemplateEngine(raw.contentJson),
     content: String(raw.content ?? ''),
     contentJson: raw.contentJson ?? undefined,
     placeholders: storageFormatToCustomPlaceholders(
@@ -65,4 +67,17 @@ export function mapTemplateSummary(raw: Record<string, unknown>): DocumentTempla
     createdAt: String(raw.createdAt ?? ''),
     updatedAt: String(raw.updatedAt ?? ''),
   };
+}
+
+
+/**
+ * Normal generation picker source. Engine is intentionally not a filter:
+ * active A4 and OakDoc templates are both first-class choices.
+ */
+export function mapGenerationTemplateSummaries(
+  rawTemplates: Array<Record<string, unknown>>,
+): DocumentTemplateSummary[] {
+  return rawTemplates
+    .filter((template) => template.isActive !== false)
+    .map(mapTemplateSummary);
 }
