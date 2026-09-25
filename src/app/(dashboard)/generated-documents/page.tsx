@@ -568,22 +568,13 @@ export default function GeneratedDocumentsPage() {
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <Link
-            href="/template-partials"
+            href="/generated-documents/generate?editor=oakdoc"
             className="inline-flex min-h-10 items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-border-primary bg-background-elevated px-4 text-sm font-medium text-text-primary transition-colors hover:bg-background-tertiary sm:min-h-8"
+            title="Open OakDoc Word template editor"
           >
             <FileText className="h-4 w-4" aria-hidden="true" />
             Manage Template
           </Link>
-          {canCreate && (
-            <Link
-              href="/generated-documents/generate?editor=oakdoc"
-              className="inline-flex min-h-10 items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-oak-primary/30 bg-oak-primary/5 px-3 text-sm font-medium text-oak-primary transition-colors hover:bg-oak-primary/10 sm:min-h-8"
-              title="Open OakDoc Word template editor"
-            >
-              <FileText className="h-4 w-4" aria-hidden="true" />
-              OakDoc
-            </Link>
-          )}
           {canCreate && (
             <Link href="/generated-documents/generate">
               <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
