@@ -173,6 +173,8 @@ ${pageBreak}
 ${SERVICE_AGREEMENT_SLOTS.entityAppendix}
 `.trim();
 
+export const OAKTREE_SERVICE_AGREEMENT_MASTER_HTML = masterTemplate;
+
 export const OAKTREE_SERVICE_AGREEMENT_V1 = {
   families: [
     {

@@ -3,6 +3,7 @@ import { unzipSync } from 'fflate';
 import { storage, StorageKeys } from '@/lib/storage';
 import {
   OAKDOC_MIME_TYPE,
+  OAKDOC_SERVICE_AGREEMENT_CONTENT,
   OAKDOC_TEMPLATE_CONTENT,
   mergeOakDocTemplateMetadata,
   readOakDocTemplateMetadata,
@@ -117,6 +118,7 @@ export async function createOakDocTemplate(input: {
   fieldTags: string[];
   contentJson?: Record<string, JsonValue>;
   placeholders?: PlaceholderDefinition[];
+  compositionType?: 'STANDARD' | 'SERVICE_AGREEMENT';
 }, params: TenantAwareParams) {
   const asset = await persistAsset({
     tenantId: params.tenantId,
@@ -131,8 +133,10 @@ export async function createOakDocTemplate(input: {
       name: input.name,
       description: input.description,
       category: input.category,
-      compositionType: 'STANDARD',
-      content: OAKDOC_TEMPLATE_CONTENT,
+      compositionType: input.compositionType ?? 'STANDARD',
+      content: input.compositionType === 'SERVICE_AGREEMENT'
+        ? OAKDOC_SERVICE_AGREEMENT_CONTENT
+        : OAKDOC_TEMPLATE_CONTENT,
       contentJson: mergeOakDocTemplateMetadata(input.contentJson ?? null, asset),
       placeholders: input.placeholders ?? [],
       isActive: input.isActive,
@@ -154,6 +158,7 @@ export async function updateOakDocTemplate(input: {
   fileName: string;
   buffer: Buffer;
   fieldTags: string[];
+  compositionType?: 'STANDARD' | 'SERVICE_AGREEMENT';
 }, params: TenantAwareParams) {
   const existing = await getDocumentTemplateById(input.id, params.tenantId);
   if (!existing) throw new Error('Template not found');
@@ -180,7 +185,12 @@ export async function updateOakDocTemplate(input: {
       name: input.name,
       description: input.description,
       category: input.category,
-      content: OAKDOC_TEMPLATE_CONTENT,
+      compositionType: input.compositionType,
+      content: input.compositionType === 'SERVICE_AGREEMENT'
+        ? OAKDOC_SERVICE_AGREEMENT_CONTENT
+        : input.compositionType === 'STANDARD'
+          ? OAKDOC_TEMPLATE_CONTENT
+          : existing.content,
       contentJson: mergeOakDocTemplateMetadata(existing.contentJson, asset),
       isActive: input.isActive,
     }, params, 'Saved from OakDoc');

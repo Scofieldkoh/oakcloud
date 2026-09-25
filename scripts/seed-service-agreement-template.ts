@@ -1,11 +1,23 @@
+import { createHash } from 'node:crypto';
 import { prisma } from '../src/lib/prisma';
 import { OAKTREE_SERVICE_AGREEMENT_V1 } from '../src/content/service-agreement/oaktree-service-agreement-v1';
+import {
+  OAKTREE_SERVICE_AGREEMENT_OAKDOC,
+  SERVICE_AGREEMENT_OAKDOC_EXPECTED_STAGE4_TAGS,
+  SERVICE_AGREEMENT_OAKDOC_FIELD_TAGS,
+  buildOaktreeServiceAgreementOakDoc,
+} from '../src/content/service-agreement/oaktree-service-agreement-oakdoc';
 import { Prisma } from '../src/generated/prisma';
 import { pathToFileURL } from 'node:url';
 import {
   normalizeMaterialContent,
   stableSerialize,
 } from '../src/services/template-partial.service';
+import { readOakDocTemplateMetadata } from '../src/lib/document-editor/oakdoc-template';
+import {
+  createOakDocTemplate,
+  updateOakDocTemplate,
+} from '../src/services/oakdoc-template.service';
 
 function argument(name: string): string {
   const index = process.argv.indexOf(`--${name}`);
@@ -240,13 +252,81 @@ export async function seedServiceAgreementBundle(
 
 }
 
+
+export async function seedOaktreeServiceAgreementOakDocTemplate(input: {
+  tenantId: string;
+  userId: string;
+}) {
+  const buffer = Buffer.from(buildOaktreeServiceAgreementOakDoc());
+  const digest = createHash('sha256').update(buffer).digest('hex');
+  const fieldTags = [
+    ...SERVICE_AGREEMENT_OAKDOC_FIELD_TAGS,
+    ...SERVICE_AGREEMENT_OAKDOC_EXPECTED_STAGE4_TAGS,
+  ];
+
+  const existing = await prisma.documentTemplate.findFirst({
+    where: {
+      tenantId: input.tenantId,
+      name: OAKTREE_SERVICE_AGREEMENT_OAKDOC.name,
+      deletedAt: null,
+    },
+  });
+
+  if (!existing) {
+    return createOakDocTemplate({
+      name: OAKTREE_SERVICE_AGREEMENT_OAKDOC.name,
+      description: OAKTREE_SERVICE_AGREEMENT_OAKDOC.description,
+      category: OAKTREE_SERVICE_AGREEMENT_OAKDOC.category,
+      compositionType: OAKTREE_SERVICE_AGREEMENT_OAKDOC.compositionType,
+      isActive: OAKTREE_SERVICE_AGREEMENT_OAKDOC.isActive,
+      fileName: OAKTREE_SERVICE_AGREEMENT_OAKDOC.fileName,
+      buffer,
+      fieldTags,
+    }, input);
+  }
+
+  const metadata = readOakDocTemplateMetadata(existing.contentJson);
+  if (!metadata) {
+    throw new Error(
+      `A non-OakDoc template already uses the reserved name "${OAKTREE_SERVICE_AGREEMENT_OAKDOC.name}".`,
+    );
+  }
+
+  const sameAsset = metadata.sha256 === digest
+    && metadata.fileName === OAKTREE_SERVICE_AGREEMENT_OAKDOC.fileName
+    && metadata.fieldTags.join('\u0000') === [...fieldTags].sort().join('\u0000');
+  const sameRecord = existing.description === OAKTREE_SERVICE_AGREEMENT_OAKDOC.description
+    && existing.category === OAKTREE_SERVICE_AGREEMENT_OAKDOC.category
+    && existing.compositionType === OAKTREE_SERVICE_AGREEMENT_OAKDOC.compositionType
+    && existing.isActive === OAKTREE_SERVICE_AGREEMENT_OAKDOC.isActive;
+
+  if (sameAsset && sameRecord) return existing;
+
+  return updateOakDocTemplate({
+    id: existing.id,
+    expectedRevision: existing.version,
+    name: OAKTREE_SERVICE_AGREEMENT_OAKDOC.name,
+    description: OAKTREE_SERVICE_AGREEMENT_OAKDOC.description,
+    category: OAKTREE_SERVICE_AGREEMENT_OAKDOC.category,
+    compositionType: OAKTREE_SERVICE_AGREEMENT_OAKDOC.compositionType,
+    isActive: OAKTREE_SERVICE_AGREEMENT_OAKDOC.isActive,
+    fileName: OAKTREE_SERVICE_AGREEMENT_OAKDOC.fileName,
+    buffer,
+    fieldTags,
+  }, input);
+}
+
 async function main() {
   const result = await seedServiceAgreementBundle({
     tenantId: argument('tenantId'),
     userId: argument('userId'),
     deactivate: process.argv.includes('--deactivate'),
   });
-  console.log(JSON.stringify(result));
+  const oakDocTemplate = await seedOaktreeServiceAgreementOakDocTemplate({
+    tenantId: argument('tenantId'),
+    userId: argument('userId'),
+  });
+  console.log(JSON.stringify({ ...result, oakDocTemplateId: oakDocTemplate.id }));
 }
 
 if (
