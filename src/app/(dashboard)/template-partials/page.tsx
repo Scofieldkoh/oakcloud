@@ -136,12 +136,13 @@ const CATEGORIES = [
 // ============================================================================
 
 async function fetchTemplates(
-  params: { search?: string; category?: string; page: number; limit: number },
+  params: { search?: string; category?: string; editor?: 'oakdoc'; page: number; limit: number },
   tenantId?: string
 ): Promise<TemplateSearchResult> {
   const searchParams = new URLSearchParams();
   if (params.search) searchParams.set('query', params.search);
   if (params.category) searchParams.set('category', params.category);
+  if (params.editor) searchParams.set('editor', params.editor);
   searchParams.set('page', params.page.toString());
   searchParams.set('limit', params.limit.toString());
   if (tenantId) searchParams.set('tenantId', tenantId);
@@ -275,11 +276,13 @@ function DocumentTemplatesTab({
   canCreate,
   canUpdate,
   canDelete,
+  oakDocOnly = false,
 }: {
   activeTenantId: string;
   canCreate: boolean;
   canUpdate: boolean;
   canDelete: boolean;
+  oakDocOnly?: boolean;
 }) {
   const router = useRouter();
   const { success, error: showError } = useToast();
@@ -302,7 +305,7 @@ function DocumentTemplatesTab({
   // Query
   const queryKey = [
     'document-templates',
-    { search, categoryFilter, page, limit },
+    { search, categoryFilter, page, limit, oakDocOnly },
     activeTenantId,
   ] as const;
   const { initialData, restoredFromSession } = useSessionListRestore<TemplateSearchResult>(
@@ -312,7 +315,13 @@ function DocumentTemplatesTab({
   );
   const { data, isLoading, error } = useQuery({
     queryKey,
-    queryFn: () => fetchTemplates({ search, category: categoryFilter, page, limit }, activeTenantId),
+    queryFn: () => fetchTemplates({
+      search,
+      category: categoryFilter,
+      editor: oakDocOnly ? 'oakdoc' : undefined,
+      page,
+      limit,
+    }, activeTenantId),
     enabled: !!activeTenantId,
     initialData,
     initialDataUpdatedAt: restoredFromSession ? 0 : undefined,
@@ -322,7 +331,7 @@ function DocumentTemplatesTab({
   const { data: templateStats } = useQuery({
     queryKey: ['document-templates-stats', activeTenantId],
     queryFn: () => fetchTemplateStats(activeTenantId),
-    enabled: !!activeTenantId,
+    enabled: !!activeTenantId && !oakDocOnly,
   });
 
   // Mutations
@@ -418,7 +427,7 @@ function DocumentTemplatesTab({
               setSearch(e.target.value);
               setPage(1);
             }}
-            placeholder="Search templates..."
+            placeholder={oakDocOnly ? 'Search OakDoc templates...' : 'Search templates...'}
             className="w-full h-9 pl-9 pr-4 border border-border-primary rounded-md bg-background-primary text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-primary/50 text-sm"
           />
         </div>
@@ -437,7 +446,17 @@ function DocumentTemplatesTab({
             </option>
           ))}
         </select>
-        {canCreate && (
+        {canCreate && oakDocOnly && (
+          <Button
+            variant="primary"
+            className="h-9"
+            leftIcon={<Plus />}
+            onClick={() => router.push('/generated-documents/generate?editor=oakdoc')}
+          >
+            New OakDoc Template
+          </Button>
+        )}
+        {canCreate && !oakDocOnly && (
           <Button
             variant="secondary"
             className="h-9"
@@ -447,14 +466,14 @@ function DocumentTemplatesTab({
             New Word Template
           </Button>
         )}
-        {canCreate && (
+        {canCreate && !oakDocOnly && (
           <Button variant="primary" className="h-9" leftIcon={<Plus />} onClick={openCreateModal}>
             New Template
           </Button>
         )}
       </div>
 
-      {health && (
+      {!oakDocOnly && health && (
         <div className="card mb-6 border-border-primary bg-background-secondary">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             <div>
@@ -520,15 +539,25 @@ function DocumentTemplatesTab({
           <FileText className="w-12 h-12 mb-3 opacity-50 text-text-muted" />
           <p className="text-sm text-text-muted">
             {search || categoryFilter
-              ? 'No templates found matching your search'
-              : 'No templates yet'}
+              ? oakDocOnly
+                ? 'No OakDoc templates found matching your search'
+                : 'No templates found matching your search'
+              : oakDocOnly
+                ? 'No OakDoc templates yet'
+                : 'No templates yet'}
           </p>
           {canCreate && !search && !categoryFilter && (
             <button
-              onClick={openCreateModal}
+              onClick={() => {
+                if (oakDocOnly) {
+                  router.push('/generated-documents/generate?editor=oakdoc');
+                } else {
+                  openCreateModal();
+                }
+              }}
               className="mt-3 px-4 py-1.5 text-sm text-text-secondary bg-background-tertiary hover:bg-background-elevated rounded-full transition-colors"
             >
-              Create your first template
+              {oakDocOnly ? 'Create your first OakDoc template' : 'Create your first template'}
             </button>
           )}
         </div>
@@ -589,8 +618,14 @@ function DocumentTemplatesTab({
 
                 <div className="flex items-center gap-2">
                   <button
-                    onClick={() => setViewingTemplate(template)}
-                    title="Preview template"
+                    onClick={() => {
+                      if (oakDocOnly) {
+                        openEditModal(template);
+                      } else {
+                        setViewingTemplate(template);
+                      }
+                    }}
+                    title={oakDocOnly ? 'Open in OakDoc' : 'Preview template'}
                     className="p-1.5 rounded hover:bg-background-tertiary text-text-muted hover:text-text-primary transition-colors"
                   >
                     <Eye className="w-4 h-4" />
@@ -605,7 +640,7 @@ function DocumentTemplatesTab({
                       </DropdownTrigger>
                       <DropdownMenu align="right">
                         {canUpdate && <DropdownItem icon={<Pencil className="w-4 h-4" />} onClick={() => openEditModal(template)}>Edit</DropdownItem>}
-                        {canCreate && <DropdownItem icon={<Copy className="w-4 h-4" />} onClick={() => openDuplicateDialog(template)}>Duplicate</DropdownItem>}
+                        {canCreate && !oakDocOnly && <DropdownItem icon={<Copy className="w-4 h-4" />} onClick={() => openDuplicateDialog(template)}>Duplicate</DropdownItem>}
                         {canUpdate && <DropdownItem
                           icon={template.isActive ? <X className="w-4 h-4" /> : <Check className="w-4 h-4" />}
                           onClick={() => toggleActiveMutation.mutate({ id: template.id, isActive: !template.isActive })}
@@ -1136,6 +1171,7 @@ export default function TemplatesPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialTab = searchParams.get('tab');
+  const oakDocMode = searchParams.get('editor') === 'oakdoc';
   const [activeTab, setActiveTab] = useState<TabType>(
     initialTab === 'partials'
       ? initialTab
@@ -1173,10 +1209,12 @@ export default function TemplatesPage() {
             Back to Document Generation
           </Link>
           <h1 className="text-xl sm:text-2xl font-semibold text-text-primary">
-            Templates
+            {oakDocMode ? 'OakDoc Templates' : 'Templates'}
           </h1>
           <p className="text-sm text-text-secondary mt-1">
-            Manage document templates and reusable partials.
+            {oakDocMode
+              ? 'Manage DOCX-native templates used by OakDoc.'
+              : 'Manage document templates and reusable partials.'}
           </p>
         </div>
       </div>
@@ -1193,7 +1231,7 @@ export default function TemplatesPage() {
       ) : activeTenantId ? (
         <>
           {/* Tab Navigation */}
-          <div className="border-b border-border-primary mb-6">
+          {!oakDocMode && <div className="border-b border-border-primary mb-6">
             <nav className="flex gap-6" aria-label="Tabs">
               <button
                 onClick={() => setActiveTab('templates')}
@@ -1224,15 +1262,16 @@ export default function TemplatesPage() {
                 </span>
               </button>
             </nav>
-          </div>
+          </div>}
 
           {/* Tab Content */}
-          {activeTab === 'templates' ? (
+          {oakDocMode || activeTab === 'templates' ? (
             <DocumentTemplatesTab
               activeTenantId={activeTenantId}
               canCreate={can.createDocument}
               canUpdate={can.updateDocument}
               canDelete={can.deleteDocument}
+              oakDocOnly={oakDocMode}
             />
           ) : (
             <TemplatePartialsTab

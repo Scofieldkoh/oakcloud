@@ -421,6 +421,12 @@ export async function searchDocumentTemplates(
   }
   if (params.category) where.category = params.category;
   if (params.isActive !== undefined) where.isActive = params.isActive;
+  if (params.editor === 'oakdoc') {
+    where.contentJson = {
+      path: ['oakDoc', 'schemaVersion'],
+      equals: 1,
+    };
+  }
 
   const orderBy: Prisma.DocumentTemplateOrderByWithRelationInput = {};
   orderBy[params.sortBy] = params.sortOrder;
