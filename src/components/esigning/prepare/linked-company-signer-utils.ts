@@ -38,6 +38,33 @@ export function buildSignerNameSet(recipients: EsigningEnvelopeRecipientDto[]): 
   );
 }
 
+export function buildLinkedCompanyBulkSignerContacts(
+  contacts: LinkedCompanyQuickAddContact[],
+  signerEmails: Set<string>,
+  signerNames: Set<string>,
+  maxCount: number,
+): LinkedCompanyQuickAddContact[] {
+  if (maxCount <= 0) return [];
+
+  const seenEmails = new Set(signerEmails);
+  const seenNames = new Set(signerNames);
+  const result: LinkedCompanyQuickAddContact[] = [];
+
+  for (const contact of contacts) {
+    if (result.length >= maxCount) break;
+
+    const state = getLinkedCompanyQuickAddState(contact, seenEmails, seenNames);
+    const normalizedName = normalizeSignerName(contact.fullName);
+    if (state.isAdded || !normalizedName) continue;
+
+    result.push(contact);
+    if (state.email) seenEmails.add(state.email);
+    seenNames.add(normalizedName);
+  }
+
+  return result;
+}
+
 export function getLinkedCompanyQuickAddState(
   contact: LinkedCompanyQuickAddContact,
   signerEmails: Set<string>,

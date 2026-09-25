@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { EsigningEnvelopeRecipientDto } from '@/types/esigning';
 import {
+  buildLinkedCompanyBulkSignerContacts,
   buildSignerEmailSet,
   buildSignerNameSet,
   getLinkedCompanyQuickAddState,
@@ -83,5 +84,37 @@ describe('linked company recipient shortcut rules', () => {
       new Set(),
     );
     expect(state.isAdded).toBe(false);
+  });
+
+
+  it('builds a bulk signer list that skips existing and duplicate company contacts', () => {
+    const contacts = buildLinkedCompanyBulkSignerContacts(
+      [
+        { id: 'contact-1', fullName: 'Existing Person', defaultEmail: 'existing@example.com' },
+        { id: 'contact-2', fullName: 'Jane Example', defaultEmail: 'jane@example.com' },
+        { id: 'contact-3', fullName: 'Jane Example', defaultEmail: 'jane.secondary@example.com' },
+        { id: 'contact-4', fullName: 'No Email', defaultEmail: null },
+      ],
+      new Set(['existing@example.com']),
+      new Set(['existing person']),
+      20,
+    );
+
+    expect(contacts.map((contact) => contact.id)).toEqual(['contact-2', 'contact-4']);
+  });
+
+  it('caps the bulk signer list at the available recipient slots', () => {
+    const contacts = buildLinkedCompanyBulkSignerContacts(
+      [
+        { id: 'contact-1', fullName: 'One', defaultEmail: 'one@example.com' },
+        { id: 'contact-2', fullName: 'Two', defaultEmail: 'two@example.com' },
+        { id: 'contact-3', fullName: 'Three', defaultEmail: 'three@example.com' },
+      ],
+      new Set(),
+      new Set(),
+      2,
+    );
+
+    expect(contacts.map((contact) => contact.id)).toEqual(['contact-1', 'contact-2']);
   });
 });
