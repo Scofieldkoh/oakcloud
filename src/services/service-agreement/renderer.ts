@@ -9,8 +9,27 @@ import {
 } from '@/lib/service-agreement-template';
 import type {
   ServiceAgreementDraftDto,
+  ServiceAgreementEntityDto,
   ServiceAgreementFeeLineDto,
+  ServiceAgreementItemDto,
 } from './types';
+
+export interface ServiceAgreementItemPlaceholderContext {
+  service: {
+    itemId: string;
+    familyName: string;
+    variantName: string;
+    cadence: ServiceAgreementItemDto['serviceCadence'];
+    startDate: Date;
+    endDate: Date | null;
+    entities: Array<{
+      id: string;
+      name: string;
+      uen: string;
+    }>;
+    fields: Record<string, string>;
+  };
+}
 
 function escapeHtml(value: string): string {
   return value
@@ -21,7 +40,10 @@ function escapeHtml(value: string): string {
     .replace(/'/g, '&#39;');
 }
 
-function currency(amount: string, currencyCode: string): string {
+export function formatServiceAgreementCurrency(
+  amount: string,
+  currencyCode: string,
+): string {
   const formatted = new Intl.NumberFormat('en-SG', {
     style: 'currency',
     currency: currencyCode,
@@ -41,10 +63,28 @@ const FREQUENCY_LABELS: Record<string, string> = {
   ONE_TIME: 'one time',
 };
 
-function frequency(fee: ServiceAgreementFeeLineDto): string {
+export function formatServiceAgreementFrequency(
+  fee: ServiceAgreementFeeLineDto,
+): string {
   return fee.billingFrequency === 'CUSTOM'
     ? fee.customFrequencyLabel ?? ''
     : FREQUENCY_LABELS[fee.billingFrequency] ?? fee.billingFrequency;
+}
+
+export function orderedServiceAgreementEntities(
+  agreement: ServiceAgreementDraftDto,
+): ServiceAgreementEntityDto[] {
+  return [...agreement.entities].sort(
+    (left, right) => left.displayOrder - right.displayOrder,
+  );
+}
+
+export function orderedServiceAgreementItems(
+  agreement: ServiceAgreementDraftDto,
+): ServiceAgreementItemDto[] {
+  return [...agreement.items].sort(
+    (left, right) => left.displayOrder - right.displayOrder,
+  );
 }
 
 function valueAtPath(value: unknown, path: string): unknown {
@@ -52,6 +92,74 @@ function valueAtPath(value: unknown, path: string): unknown {
     if (!current || typeof current !== 'object') return undefined;
     return (current as Record<string, unknown>)[key];
   }, value);
+}
+
+export function buildServiceAgreementItemPlaceholderContext(input: {
+  agreement: ServiceAgreementDraftDto;
+  item: ServiceAgreementItemDto;
+}): ServiceAgreementItemPlaceholderContext {
+  const entityById = new Map(
+    orderedServiceAgreementEntities(input.agreement).map((entity) => [entity.id, entity]),
+  );
+  const targetedEntities = input.item.entityIds
+    .map((entityId) => entityById.get(entityId))
+    .filter((entity): entity is ServiceAgreementEntityDto => Boolean(entity))
+    .map((entity) => ({
+      id: entity.id,
+      name: entity.nameSnapshot,
+      uen: entity.uenSnapshot,
+    }));
+
+  return {
+    service: {
+      itemId: input.item.id,
+      familyName: input.item.familyNameSnapshot,
+      variantName: input.item.variantNameSnapshot,
+      cadence: input.item.serviceCadence,
+      startDate: new Date(`${input.item.startDate}T00:00:00.000Z`),
+      endDate: input.item.endDate
+        ? new Date(`${input.item.endDate}T00:00:00.000Z`)
+        : null,
+      entities: targetedEntities,
+      fields: { ...input.item.fieldValues },
+    },
+  };
+}
+
+export function findMissingServiceAgreementItemPlaceholders(input: {
+  item: ServiceAgreementItemDto;
+  context: ServiceAgreementItemPlaceholderContext;
+}): string[] {
+  return input.item.partialPlaceholdersSnapshot
+    .filter((placeholder) => placeholder.required)
+    .map((placeholder) => placeholder.key)
+    .filter((key) => {
+      const result = valueAtPath(input.context, key);
+      return result === undefined || result === null || result === '';
+    });
+}
+
+function escapeServiceAgreementItemContext(
+  context: ServiceAgreementItemPlaceholderContext,
+): ServiceAgreementItemPlaceholderContext {
+  return {
+    service: {
+      ...context.service,
+      familyName: escapeHtml(context.service.familyName),
+      variantName: escapeHtml(context.service.variantName),
+      entities: context.service.entities.map((entity) => ({
+        ...entity,
+        name: escapeHtml(entity.name),
+        uen: escapeHtml(entity.uen),
+      })),
+      fields: Object.fromEntries(
+        Object.entries(context.service.fields).map(([key, value]) => [
+          key,
+          escapeHtml(value),
+        ]),
+      ),
+    },
+  };
 }
 
 /**
@@ -113,13 +221,8 @@ export function assembleServiceAgreementTemplate(input: {
   const [violation] = findServiceAgreementSlotViolations(input.templateContent);
   if (violation) throw new Error(violation.message);
 
-  const entities = [...input.agreement.entities].sort(
-    (left, right) => left.displayOrder - right.displayOrder,
-  );
-  const entityById = new Map(entities.map((entity) => [entity.id, entity]));
-  const items = [...input.agreement.items].sort(
-    (left, right) => left.displayOrder - right.displayOrder,
-  );
+  const entities = orderedServiceAgreementEntities(input.agreement);
+  const items = orderedServiceAgreementItems(input.agreement);
   const itemDiagnostics: Array<{
     itemId: string;
     missingPlaceholders: string[];
@@ -127,44 +230,20 @@ export function assembleServiceAgreementTemplate(input: {
 
   const serviceSections = items
     .map((item, index) => {
-      const targetedEntities = item.entityIds
-        .map((entityId) => entityById.get(entityId))
-        .filter((entity): entity is NonNullable<typeof entity> => Boolean(entity))
-        .map((entity) => ({
-          id: entity.id,
-          name: escapeHtml(entity.nameSnapshot),
-          uen: escapeHtml(entity.uenSnapshot),
-        }));
-      const service = {
-        itemId: item.id,
-        familyName: escapeHtml(item.familyNameSnapshot),
-        variantName: escapeHtml(item.variantNameSnapshot),
-        cadence: item.serviceCadence,
-        startDate: new Date(`${item.startDate}T00:00:00.000Z`),
-        endDate: item.endDate
-          ? new Date(`${item.endDate}T00:00:00.000Z`)
-          : null,
-        entities: targetedEntities,
-        fields: Object.fromEntries(
-          Object.entries(item.fieldValues).map(([key, value]) => [
-            key,
-            escapeHtml(value),
-          ]),
-        ),
-      };
-      const missingPlaceholders = item.partialPlaceholdersSnapshot
-        .filter((placeholder) => placeholder.required)
-        .map((placeholder) => placeholder.key)
-        .filter((key) => {
-          const result = valueAtPath({ service }, key);
-          return result === undefined || result === null || result === '';
-        });
+      const rawContext = buildServiceAgreementItemPlaceholderContext({
+        agreement: input.agreement,
+        item,
+      });
+      const missingPlaceholders = findMissingServiceAgreementItemPlaceholders({
+        item,
+        context: rawContext,
+      });
       if (missingPlaceholders.length) {
         itemDiagnostics.push({ itemId: item.id, missingPlaceholders });
       }
       const rendered = resolvePlaceholders(
         item.partialContentSnapshot,
-        { service },
+        escapeServiceAgreementItemContext(rawContext),
         { missingPlaceholder: 'keep', dateFormat: 'dd MMMM yyyy' },
       );
       return [
@@ -179,8 +258,8 @@ export function assembleServiceAgreementTemplate(input: {
   const feeRow = (fee: ServiceAgreementFeeLineDto): string => [
     '<tr>',
     `<td>${escapeHtml(fee.description)}</td>`,
-    `<td>${escapeHtml(currency(fee.amount, fee.currency))} ${escapeHtml(
-      frequency(fee),
+    `<td>${escapeHtml(formatServiceAgreementCurrency(fee.amount, fee.currency))} ${escapeHtml(
+      formatServiceAgreementFrequency(fee),
     )}</td>`,
     '</tr>',
   ].join('');
