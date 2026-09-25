@@ -11,7 +11,7 @@ import {
 import { DocxEditor, type DocxEditorRef, type EditorCommand } from '@docx-editor.dev/react';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Download, FileUp, Loader2, Save, Search } from 'lucide-react';
+import { ArrowLeft, Download, FileUp, Loader2, Save, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSession } from '@/hooks/use-auth';
 import { useActiveWorkspaceId } from '@/components/ui/workspace-selector';
@@ -1080,6 +1080,21 @@ export function OakDocEditor() {
               DOCX-native Oakcloud document editor
             </div>
           </div>
+
+          <Button
+            variant="secondary"
+            size="sm"
+            leftIcon={<ArrowLeft className="h-4 w-4" />}
+            disabled={busy}
+            onClick={() => {
+              if (isDirty && !window.confirm('You have unsaved OakDoc changes. Leave without saving them?')) {
+                return;
+              }
+              router.push('/template-partials?editor=oakdoc');
+            }}
+          >
+            Templates
+          </Button>
 
           <input
             ref={fileInputRef}

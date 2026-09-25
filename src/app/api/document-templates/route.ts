@@ -50,6 +50,7 @@ export async function GET(request: NextRequest) {
       isActive: searchParams.get('isActive')
         ? searchParams.get('isActive') === 'true'
         : undefined,
+      editor: searchParams.get('editor') || undefined,
       page: searchParams.get('page') ? Number(searchParams.get('page')) : undefined,
       limit: searchParams.get('limit') ? Number(searchParams.get('limit')) : undefined,
       sortBy: searchParams.get('sortBy') || undefined,

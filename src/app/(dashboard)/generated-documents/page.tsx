@@ -568,7 +568,7 @@ export default function GeneratedDocumentsPage() {
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <Link
-            href="/generated-documents/generate?editor=oakdoc"
+            href="/template-partials?editor=oakdoc"
             className="inline-flex min-h-10 items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-border-primary bg-background-elevated px-4 text-sm font-medium text-text-primary transition-colors hover:bg-background-tertiary sm:min-h-8"
             title="Open OakDoc Word template editor"
           >
