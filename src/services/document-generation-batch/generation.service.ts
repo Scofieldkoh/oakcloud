@@ -142,6 +142,11 @@ export async function materializeBatchDocumentByEngine(input: {
       companyId: batch.primaryCompanyId,
       selectedDirectorId: configuration.selectedDirectorId ?? undefined,
       selectedShareholderId: configuration.selectedShareholderId ?? undefined,
+      resolutionDate:
+        evaluated.effectiveCustomData.resolution_date instanceof Date
+        || typeof evaluated.effectiveCustomData.resolution_date === 'string'
+          ? evaluated.effectiveCustomData.resolution_date
+          : undefined,
       generatedBy: actor,
       title: evaluated.resolvedTitle,
       contactIds: configuration.contactIds,

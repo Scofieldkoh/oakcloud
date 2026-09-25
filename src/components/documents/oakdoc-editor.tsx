@@ -29,6 +29,7 @@ import {
 } from '@/lib/document-editor/oakdoc-fields';
 import {
   buildOakDocResolutionValues,
+  OAKDOC_RESOLUTION_FIELD_DEFINITIONS,
   type OakDocCompanyDetail,
 } from '@/lib/document-editor/oakdoc-context';
 import {
@@ -89,14 +90,17 @@ const OAKDOC_FIELD_CATEGORIES = TEMPLATE_FIELD_CATEGORIES
   }))
   .filter((category) => category.fields.length > 0);
 
-const OAKDOC_SIMPLE_FIELDS: readonly OakDocFieldDefinition[] = OAKDOC_FIELD_CATEGORIES.flatMap(
-  (category) =>
-    category.fields.map((field) => ({
-      tag: field.key,
-      label: field.label,
-      category: category.label,
-    })),
-);
+const OAKDOC_SIMPLE_FIELDS: readonly OakDocFieldDefinition[] = [
+  ...OAKDOC_FIELD_CATEGORIES.flatMap(
+    (category) =>
+      category.fields.map((field) => ({
+        tag: field.key,
+        label: field.label,
+        category: category.label,
+      })),
+  ),
+  ...OAKDOC_RESOLUTION_FIELD_DEFINITIONS,
+];
 
 const OAKDOC_REPEATER_FIELDS: readonly OakDocFieldDefinition[] =
   OAKDOC_REPEATER_DEFINITIONS.flatMap((definition) => definition.fields);
