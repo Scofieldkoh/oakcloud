@@ -1,4 +1,5 @@
 import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate';
+import { encodeOakDocZipText } from '@/lib/document-editor/oakdoc-zip';
 
 const WORD_NS = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
 const WORD14_NS = 'http://schemas.microsoft.com/office/word/2010/wordml';
@@ -53,7 +54,7 @@ function parseXmlText(value: string): XMLDocument {
 }
 
 function serializeXml(xml: XMLDocument): Uint8Array {
-  return strToU8(new XMLSerializer().serializeToString(xml));
+  return encodeOakDocZipText(new XMLSerializer().serializeToString(xml));
 }
 
 function isWordElement(node: Node | null | undefined, localName: string): boolean {
