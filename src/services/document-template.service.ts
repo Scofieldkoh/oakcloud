@@ -35,6 +35,15 @@ import {
   readA4StoredDocument,
 } from '@/lib/document-editor/a4-editor-format';
 import {
+  RESERVED_TEMPLATE_CONTENT_JSON_KEYS,
+  TEMPLATE_AUTHORITY_KEYS,
+  assertNoReservedKeys,
+  mergeUserJsonPreservingReserved,
+  stripKeys,
+} from '@/lib/document-editor/oakdoc-reserved-metadata';
+import { getDocumentTemplateEngineState } from '@/lib/document-editor/document-engine';
+import { ValidationError } from '@/lib/errors';
+import {
   normalizeStoredFieldDefinitionInput,
   preserveStoredFieldDefinitions,
 } from '@/lib/document-editor/template-field-workflow';
@@ -100,11 +109,25 @@ async function classifyTemplateRevisionMiss(
   );
 }
 
+/**
+ * `user` writes come from generic JSON routes and may not touch server-owned
+ * OakDoc namespaces. Only OakDoc asset/migration services pass `oakdoc-service`.
+ */
+export type TemplateWriter = 'user' | 'oakdoc-service';
+
+export interface TemplateWriteOptions {
+  writer?: TemplateWriter;
+}
+
 export async function createDocumentTemplate(
   data: CreateDocumentTemplateInput,
   params: TenantAwareParams,
+  options: TemplateWriteOptions = {},
 ): Promise<DocumentTemplate> {
   const { tenantId, userId } = params;
+  if ((options.writer ?? 'user') === 'user') {
+    assertNoReservedKeys(data.contentJson, RESERVED_TEMPLATE_CONTENT_JSON_KEYS, 'contentJson');
+  }
   assertValidTemplateComposition(data.compositionType, data.content);
   assertA4WriterCanPreserve(data.content, data.contentJson);
 
@@ -146,17 +169,36 @@ export async function createDocumentTemplate(
 }
 
 export async function updateDocumentTemplate(
-  data: UpdateDocumentTemplateInput,
+  input: UpdateDocumentTemplateInput,
   params: TenantAwareParams,
   reason?: string,
+  options: TemplateWriteOptions = {},
 ): Promise<DocumentTemplate> {
   const { tenantId, userId } = params;
-  assertRevisionPrecondition(data.expectedRevision, 'document-template');
+  assertRevisionPrecondition(input.expectedRevision, 'document-template');
 
   const existing = await prisma.documentTemplate.findFirst({
-    where: { id: data.id, tenantId, deletedAt: null },
+    where: { id: input.id, tenantId, deletedAt: null },
   });
   if (!existing) throw new Error('Template not found');
+
+  let data = input;
+  if ((options.writer ?? 'user') === 'user') {
+    if (getDocumentTemplateEngineState(existing.contentJson) !== 'A4' && input.content !== undefined) {
+      throw new ValidationError('OakDoc template content is edited in the Word document, not as HTML');
+    }
+    if (input.contentJson !== undefined) {
+      data = {
+        ...input,
+        contentJson: mergeUserJsonPreservingReserved(
+          existing.contentJson,
+          input.contentJson,
+          RESERVED_TEMPLATE_CONTENT_JSON_KEYS,
+          'contentJson',
+        ) as UpdateDocumentTemplateInput['contentJson'],
+      };
+    }
+  }
 
   const effectiveContent = data.content ?? existing.content;
   const effectiveContentJson = data.contentJson === undefined ? existing.contentJson : data.contentJson;
@@ -351,9 +393,12 @@ export async function duplicateDocumentTemplate(
   }
 
   const oakDocMetadata = readOakDocTemplateMetadata(existing.contentJson);
-  let duplicatedContentJson: Prisma.InputJsonValue | undefined = existing.contentJson == null
+  // Migration links, seed identity and validation evidence belong to the
+  // source record only; a duplicate starts without that authority.
+  const contentJsonWithoutAuthority = stripKeys(existing.contentJson, TEMPLATE_AUTHORITY_KEYS);
+  let duplicatedContentJson: Prisma.InputJsonValue | undefined = contentJsonWithoutAuthority == null
     ? undefined
-    : existing.contentJson as Prisma.InputJsonValue;
+    : contentJsonWithoutAuthority as Prisma.InputJsonValue;
   let copiedOakDocStorageKey: string | null = null;
 
   if (oakDocMetadata) {
@@ -363,7 +408,7 @@ export async function duplicateDocumentTemplate(
 
     copiedOakDocStorageKey = StorageKeys.oakDocTemplateAsset(tenantId, randomUUID());
     await storage.copy(oakDocMetadata.storageKey, copiedOakDocStorageKey);
-    duplicatedContentJson = mergeOakDocTemplateMetadata(existing.contentJson, {
+    duplicatedContentJson = mergeOakDocTemplateMetadata(contentJsonWithoutAuthority, {
       ...oakDocMetadata,
       storageKey: copiedOakDocStorageKey,
     });

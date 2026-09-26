@@ -115,7 +115,7 @@ export async function linkOakDocMigration(input: {
     id: oakDoc.id,
     expectedRevision: input.expectedRevision,
     contentJson: mergeOakDocMigrationMetadata(oakDoc.contentJson, metadata),
-  }, params, cleanReason(input.reason));
+  }, params, cleanReason(input.reason), { writer: 'oakdoc-service' });
 }
 
 export async function recordOakDocMigrationValidation(input: {
@@ -168,7 +168,7 @@ export async function recordOakDocMigrationValidation(input: {
     id: oakDoc.id,
     expectedRevision: input.expectedRevision,
     contentJson: mergeOakDocMigrationMetadata(oakDoc.contentJson, nextMetadata),
-  }, params, 'Recorded OakDoc migration parity validation');
+  }, params, 'Recorded OakDoc migration parity validation', { writer: 'oakdoc-service' });
 
   await createAuditLog({
     tenantId: params.tenantId,
@@ -235,7 +235,7 @@ export async function setOakDocMigrationPreference(input: {
     id: oakDoc.id,
     expectedRevision: input.expectedRevision,
     contentJson: mergeOakDocMigrationMetadata(oakDoc.contentJson, nextMetadata),
-  }, params, reason);
+  }, params, reason, { writer: 'oakdoc-service' });
 
   await createAuditLog({
     tenantId: params.tenantId,

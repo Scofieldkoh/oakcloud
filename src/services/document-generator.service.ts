@@ -19,7 +19,13 @@ import {
   normalizeStoredFieldDefinitionInput,
   resolveTopLevelCustomValues,
 } from '@/lib/document-editor/template-field-workflow';
-import { readGeneratedDocumentEngine } from '@/lib/document-editor/document-engine';
+import { readGeneratedDocumentEngineState } from '@/lib/document-editor/document-engine';
+import {
+  RESERVED_GENERATED_CONTENT_JSON_KEYS,
+  RESERVED_GENERATED_METADATA_KEYS,
+  assertNoReservedKeys,
+  mergeUserJsonPreservingReserved,
+} from '@/lib/document-editor/oakdoc-reserved-metadata';
 import {
   assertA4WriterCanPreserve,
   readA4StoredDocument,
@@ -825,6 +831,7 @@ export async function createBlankDocument(
   taskIntegrationContext?: TaskLaunchContext,
 ): Promise<GeneratedDocumentWithRevision> {
   const { tenantId, userId } = params;
+  assertNoReservedKeys(data.contentJson, RESERVED_GENERATED_CONTENT_JSON_KEYS, 'contentJson');
   assertA4WriterCanPreserve(data.content, data.contentJson);
   if (data.companyId) {
     const company = await prisma.company.findFirst({
@@ -886,22 +893,43 @@ export async function updateGeneratedDocument(
     throw generatedDocumentStateConflict();
   }
 
-  if (data.content !== undefined || data.contentJson !== undefined) {
+  const engine = readGeneratedDocumentEngineState(existing.metadata);
+  if (engine !== 'A4' && (data.content !== undefined || data.contentJson !== undefined)) {
+    throw new ValidationError('OakDoc document content is saved from the Word editor, not as HTML');
+  }
+  const contentJson = data.contentJson === undefined
+    ? undefined
+    : mergeUserJsonPreservingReserved(
+      existing.contentJson,
+      data.contentJson,
+      RESERVED_GENERATED_CONTENT_JSON_KEYS,
+      'contentJson',
+    );
+  const metadata = data.metadata === undefined
+    ? undefined
+    : mergeUserJsonPreservingReserved(
+      existing.metadata,
+      data.metadata,
+      RESERVED_GENERATED_METADATA_KEYS,
+      'metadata',
+    );
+
+  if (data.content !== undefined || contentJson !== undefined) {
     assertA4WriterCanPreserve(
       data.content ?? existing.content,
-      data.contentJson === undefined ? existing.contentJson : data.contentJson,
+      contentJson === undefined ? existing.contentJson : contentJson,
     );
   }
 
   const updateData: Prisma.GeneratedDocumentUpdateInput = {};
   if (data.title !== undefined) updateData.title = data.title;
   if (data.content !== undefined) updateData.content = data.content;
-  if (data.contentJson !== undefined) {
-    updateData.contentJson = data.contentJson ? (data.contentJson as Prisma.InputJsonValue) : Prisma.JsonNull;
+  if (contentJson !== undefined) {
+    updateData.contentJson = contentJson ? (contentJson as Prisma.InputJsonValue) : Prisma.JsonNull;
   }
   if (data.useLetterhead !== undefined) updateData.useLetterhead = data.useLetterhead;
-  if (data.metadata !== undefined) {
-    updateData.metadata = data.metadata ? (data.metadata as Prisma.InputJsonValue) : Prisma.JsonNull;
+  if (metadata !== undefined) {
+    updateData.metadata = metadata ? (metadata as Prisma.InputJsonValue) : Prisma.JsonNull;
   }
 
   const document = await prisma.$transaction(async (tx) => {
@@ -1304,7 +1332,7 @@ export async function getGeneratedDocumentById(
     },
   });
   if (!document) return null;
-  if (readGeneratedDocumentEngine(document.metadata) === 'A4') {
+  if (readGeneratedDocumentEngineState(document.metadata) === 'A4') {
     readA4StoredDocument(document.content, document.contentJson);
   }
   const revision = await readGeneratedDocumentRevision(prisma, document.id, tenantId);

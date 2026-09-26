@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from 'node:crypto';
-import { unzipSync } from 'fflate';
 import { storage, StorageKeys } from '@/lib/storage';
+import { inspectOakDocPackage } from '@/lib/document-editor/oakdoc-package-policy';
 import {
   OAKDOC_MIME_TYPE,
   OAKDOC_SERVICE_AGREEMENT_CONTENT,
@@ -21,53 +21,10 @@ import type {
   PlaceholderDefinition,
 } from '@/lib/validations/document-template';
 
-const MAX_OAKDOC_FILE_SIZE = 10 * 1024 * 1024;
-const MAX_REQUIRED_XML_SIZE = 20 * 1024 * 1024;
-
 function normalizeFileName(value: string): string {
   const base = value.replace(/[\\/:*?"<>|\u0000-\u001f]/g, '_').trim();
   const safe = base || 'template.docx';
   return safe.toLowerCase().endsWith('.docx') ? safe : `${safe}.docx`;
-}
-
-function validateDocx(buffer: Buffer): void {
-  if (buffer.byteLength === 0) throw new Error('The DOCX file is empty');
-  if (buffer.byteLength > MAX_OAKDOC_FILE_SIZE) {
-    throw new Error('DOCX file size exceeds the 10MB template limit');
-  }
-  if (buffer[0] !== 0x50 || buffer[1] !== 0x4b) {
-    throw new Error('The uploaded file is not a valid DOCX package');
-  }
-
-  let totalSelectedSize = 0;
-  let files: Record<string, Uint8Array>;
-  try {
-    files = unzipSync(buffer, {
-      filter: (entry) => {
-        const selected =
-          entry.name === '[Content_Types].xml'
-          || entry.name === 'word/document.xml';
-        if (!selected) return false;
-        totalSelectedSize += entry.originalSize;
-        if (totalSelectedSize > MAX_REQUIRED_XML_SIZE) {
-          throw new Error('DOCX document XML exceeds the safe processing limit');
-        }
-        return true;
-      },
-    });
-  } catch (error) {
-    if (error instanceof Error && error.message.includes('safe processing limit')) throw error;
-    throw new Error('The uploaded file is not a readable DOCX package');
-  }
-
-  if (!files['[Content_Types].xml'] || !files['word/document.xml']) {
-    throw new Error('The uploaded file does not contain a Word document');
-  }
-
-  const contentTypes = Buffer.from(files['[Content_Types].xml']).toString('utf8');
-  if (!contentTypes.includes('wordprocessingml.document.main+xml')) {
-    throw new Error('The uploaded file is not a standard Word DOCX document');
-  }
 }
 
 function sha256(buffer: Buffer): string {
@@ -81,7 +38,7 @@ async function persistAsset(input: {
   buffer: Buffer;
   fieldTags: string[];
 }): Promise<OakDocTemplateMetadata> {
-  validateDocx(input.buffer);
+  inspectOakDocPackage(input.buffer, 'master');
   const assetId = randomUUID();
   const storageKey = StorageKeys.oakDocTemplateAsset(input.tenantId, assetId);
   const fileName = normalizeFileName(input.fileName);
@@ -141,7 +98,7 @@ export async function createOakDocTemplate(input: {
       placeholders: input.placeholders ?? [],
       isActive: input.isActive,
       sharePointRelativeFolderPath: null,
-    }, params);
+    }, params, { writer: 'oakdoc-service' });
   } catch (error) {
     await storage.delete(asset.storageKey).catch(() => undefined);
     throw error;
@@ -193,7 +150,7 @@ export async function updateOakDocTemplate(input: {
           : existing.content,
       contentJson: mergeOakDocTemplateMetadata(existing.contentJson, asset),
       isActive: input.isActive,
-    }, params, 'Saved from OakDoc');
+    }, params, 'Saved from OakDoc', { writer: 'oakdoc-service' });
   } catch (error) {
     await storage.delete(asset.storageKey).catch(() => undefined);
     throw error;

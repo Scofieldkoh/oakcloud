@@ -11,7 +11,7 @@ import type {
   MasterFieldCatalogue,
 } from '@/types/document-generation-batch';
 import type { ServiceAgreementDraftDto } from '@/services/service-agreement/types';
-import { getDocumentTemplateEngine } from '@/lib/document-editor/document-engine';
+import { getDocumentTemplateDisplayEngine } from '@/lib/document-editor/document-engine';
 import type {
   BatchWithRelations,
   BatchItemWithRelations,
@@ -86,7 +86,7 @@ export function mapBatchItemToDto(
       ? 'SERVICE_AGREEMENT'
       : 'STANDARD',
     templateVersion: item.templateVersion,
-    templateEngine: getDocumentTemplateEngine(item.template.contentJson),
+    templateEngine: getDocumentTemplateDisplayEngine(item.template.contentJson),
     displayOrder: item.displayOrder,
     status: item.status,
     configuration,
