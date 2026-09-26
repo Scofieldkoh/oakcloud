@@ -80,6 +80,10 @@ function isOakDocTemplate(template: Pick<DocumentTemplate, 'contentJson'>): bool
   return isOakDocContentJson(template.contentJson);
 }
 
+function isWordPartial(partial: { contentJson?: unknown }): boolean {
+  return isOakDocContentJson(partial.contentJson);
+}
+
 interface PlaceholderDefinition {
   key: string;
   label: string;
@@ -389,7 +393,7 @@ function DocumentTemplatesTab({
 
   // Handlers - Navigate to editor page for create/edit
   const openCreateModal = () => {
-    router.push('/template-partials/editor?tab=templates');
+    router.push('/generated-documents/generate?editor=oakdoc');
   };
 
   const openEditModal = (template: DocumentTemplate) => {
@@ -486,18 +490,8 @@ function DocumentTemplatesTab({
           </Button>
         )}
         {canCreate && !oakDocOnly && (
-          <Button
-            variant="secondary"
-            className="h-9"
-            leftIcon={<FileText />}
-            onClick={() => router.push('/generated-documents/generate?editor=oakdoc')}
-          >
-            New Word Template
-          </Button>
-        )}
-        {canCreate && !oakDocOnly && (
           <Button variant="primary" className="h-9" leftIcon={<Plus />} onClick={openCreateModal}>
-            New Template
+            New Word Template
           </Button>
         )}
       </div>
@@ -668,8 +662,8 @@ function DocumentTemplatesTab({
                         </button>
                       </DropdownTrigger>
                       <DropdownMenu align="right">
-                        {canUpdate && <DropdownItem icon={<Pencil className="w-4 h-4" />} onClick={() => openEditModal(template)}>Edit</DropdownItem>}
-                        {canCreate && <DropdownItem icon={<Copy className="w-4 h-4" />} onClick={() => openDuplicateDialog(template)}>Duplicate</DropdownItem>}
+                        {canUpdate && <DropdownItem icon={<Pencil className="w-4 h-4" />} onClick={() => openEditModal(template)}>{isOakDocTemplate(template) ? 'Edit' : 'View'}</DropdownItem>}
+                        {canCreate && isOakDocTemplate(template) && <DropdownItem icon={<Copy className="w-4 h-4" />} onClick={() => openDuplicateDialog(template)}>Duplicate</DropdownItem>}
                         {canUpdate && <DropdownItem
                           icon={template.isActive ? <X className="w-4 h-4" /> : <Check className="w-4 h-4" />}
                           onClick={() => toggleActiveMutation.mutate({
@@ -960,7 +954,7 @@ function TemplatePartialsTab({
         </div>
         {canCreate && (
           <Button variant="primary" className="h-9" leftIcon={<Plus />} onClick={openCreate}>
-            New Partial
+            New Word partial
           </Button>
         )}
       </div>
@@ -988,7 +982,7 @@ function TemplatePartialsTab({
               onClick={openCreate}
               className="mt-3 px-4 py-1.5 text-sm text-text-secondary bg-background-tertiary hover:bg-background-elevated rounded-full transition-colors"
             >
-              Create your first partial
+              Create your first Word partial
             </button>
           )}
         </div>
@@ -1048,8 +1042,8 @@ function TemplatePartialsTab({
                           </button>
                         </DropdownTrigger>
                         <DropdownMenu align="right">
-                          {canUpdate && <DropdownItem icon={<Pencil className="w-4 h-4" />} onClick={() => openEdit(partial)}>Edit</DropdownItem>}
-                          {canCreate && <DropdownItem icon={<Copy className="w-4 h-4" />} onClick={() => openDuplicate(partial)}>Duplicate</DropdownItem>}
+                          {canUpdate && <DropdownItem icon={<Pencil className="w-4 h-4" />} onClick={() => openEdit(partial)}>{isWordPartial(partial) ? 'Edit' : 'View'}</DropdownItem>}
+                          {canCreate && isWordPartial(partial) && <DropdownItem icon={<Copy className="w-4 h-4" />} onClick={() => openDuplicate(partial)}>Duplicate</DropdownItem>}
                           <DropdownItem
                             icon={<FileCode className="w-4 h-4" />}
                             onClick={() => openUsage(partial)}

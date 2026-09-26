@@ -7,5 +7,4 @@ export {};
 
 process.env.TEST_DATABASE_URL ??= process.env.BUSINESS_ASSISTANT_TEST_DATABASE_URL;
 
-await import('../a4-editor-workflow-w1.postgres.test');
 await import('../document-generation-batch.postgres.test');

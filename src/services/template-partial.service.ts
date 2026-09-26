@@ -18,10 +18,8 @@ import {
   assertRevisionPrecondition,
   classifyRevisionMiss,
 } from '@/lib/document-editor/revision-concurrency';
-import {
-  assertA4WriterCanPreserve,
-  readA4StoredDocument,
-} from '@/lib/document-editor/a4-editor-format';
+import { readA4StoredDocument } from '@/lib/document-editor/a4-editor-format';
+import { rejectRetiredA4Operation } from '@/lib/document-editor/a4-retirement';
 import {
   normalizeStoredFieldDefinitionInput,
   preserveStoredFieldDefinitions,
@@ -150,50 +148,11 @@ async function classifyPartialRevisionMiss(
 }
 
 export async function createTemplatePartial(
-  data: CreatePartialInput,
-  params: TenantAwareParams,
+  _data: CreatePartialInput,
+  _params: TenantAwareParams,
 ): Promise<TemplatePartial> {
-  const { tenantId, userId } = params;
-
-  if (!/^[a-zA-Z][a-zA-Z0-9_-]*$/.test(data.name)) {
-    throw new Error(
-      'Partial name must start with a letter and contain only letters, numbers, hyphens, and underscores',
-    );
-  }
-  assertA4WriterCanPreserve(data.content);
-
-  const existingName = await prisma.templatePartial.findFirst({
-    where: { tenantId, name: data.name, deletedAt: null },
-  });
-  if (existingName) throw new Error('A partial with this name already exists');
-
-  const id = randomUUID();
-  const partial = await prisma.templatePartial.create({
-    data: {
-      id,
-      tenantId,
-      name: data.name,
-      displayName: data.displayName,
-      description: data.description ?? null,
-      content: data.content,
-      placeholders: preservePartialPlaceholders(data.placeholders, id),
-      createdById: userId,
-    },
-  });
-
-  await createAuditLog({
-    tenantId,
-    userId,
-    action: 'CREATE',
-    entityType: 'TemplatePartial',
-    entityId: partial.id,
-    entityName: partial.name,
-    summary: `Created template partial "${partial.name}"`,
-    changeSource: 'MANUAL',
-    metadata: { name: partial.name },
-  });
-
-  return partial;
+  // Word partials are created by the OakDoc partial service.
+  return rejectRetiredA4Operation('partial-create');
 }
 
 export async function updateTemplatePartial(
@@ -219,7 +178,7 @@ export async function updateTemplatePartial(
       throw new ValidationError('Word partial content is edited in the Word document, not as HTML');
     }
 
-    if (data.content !== undefined) assertA4WriterCanPreserve(data.content);
+    if (data.content !== undefined) rejectRetiredA4Operation('partial-edit');
 
     if (data.name && data.name !== existing.name) {
       const existingName = await tx.templatePartial.findFirst({
@@ -593,7 +552,7 @@ export async function duplicateTemplatePartial(
   });
   if (!source) throw new Error('Partial not found');
   const nativeAsset = readOakDocTemplateMetadata(source.contentJson);
-  if (!nativeAsset) assertA4WriterCanPreserve(source.content);
+  if (!nativeAsset) rejectRetiredA4Operation('partial-duplicate');
 
   if (!/^[a-zA-Z][a-zA-Z0-9_-]*$/.test(newName)) {
     throw new Error(

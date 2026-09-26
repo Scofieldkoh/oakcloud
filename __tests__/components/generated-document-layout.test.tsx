@@ -1,13 +1,7 @@
 import { render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { DEFAULT_A4_DOCUMENT_LAYOUT } from '@/components/documents/a4-pagination/layout';
 import { BatchReviewWorkspace } from '@/components/documents/generation-batch';
-
-vi.mock('@/components/documents/a4-page-editor', () => ({
-  A4PageEditor: ({ value }: { value: string }) => (
-    <div data-testid="preview-content">{value}</div>
-  ),
-}));
 
 describe('generated document layout', () => {
   it('keeps the A4 editor layout defaults stable for previews and exports', () => {
@@ -61,10 +55,9 @@ describe('generated document layout', () => {
         onSaveOakDoc={async () => undefined}
         onPreview={() => Promise.resolve()}
         onReview={() => Promise.resolve()}
-        onEditContent={() => undefined}
       />,
     );
-    expect(screen.getByTestId('preview-content')).toHaveTextContent('Layout preview');
+    expect(screen.getByRole('article', { name: /read-only/i })).toHaveTextContent('Layout preview');
     unmount();
   });
 });

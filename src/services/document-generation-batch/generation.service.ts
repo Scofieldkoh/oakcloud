@@ -7,7 +7,6 @@ import {
   UnprocessableEntityError,
   ValidationError,
 } from '@/lib/errors';
-import { assertA4WriterCanPreserve } from '@/lib/document-editor/a4-editor-format';
 import {
   getDocumentTemplateEngine,
   readGeneratedOakDocAssetMetadata,
@@ -177,10 +176,6 @@ export async function materializeBatchDocumentByEngine(input: {
     }, params, taskContext);
   }
 
-  assertA4WriterCanPreserve(
-    item.editedContent ?? evaluated.content,
-    item.editedContentJson ?? item.template.contentJson,
-  );
   return materializeDocumentFromTemplate(
     {
       templateId: item.templateId,

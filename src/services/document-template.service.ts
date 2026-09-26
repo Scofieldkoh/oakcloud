@@ -30,14 +30,11 @@ import {
   assertRevisionPrecondition,
   classifyRevisionMiss,
 } from '@/lib/document-editor/revision-concurrency';
-import {
-  assertA4WriterCanPreserve,
-  readA4StoredDocument,
-} from '@/lib/document-editor/a4-editor-format';
+import { readA4StoredDocument } from '@/lib/document-editor/a4-editor-format';
+import { rejectRetiredA4Operation } from '@/lib/document-editor/a4-retirement';
 import {
   RESERVED_TEMPLATE_CONTENT_JSON_KEYS,
   TEMPLATE_AUTHORITY_KEYS,
-  assertNoReservedKeys,
   mergeUserJsonPreservingReserved,
   stripKeys,
 } from '@/lib/document-editor/oakdoc-reserved-metadata';
@@ -125,11 +122,9 @@ export async function createDocumentTemplate(
   options: TemplateWriteOptions = {},
 ): Promise<DocumentTemplate> {
   const { tenantId, userId } = params;
-  if ((options.writer ?? 'user') === 'user') {
-    assertNoReservedKeys(data.contentJson, RESERVED_TEMPLATE_CONTENT_JSON_KEYS, 'contentJson');
-  }
+  // Only the OakDoc services create templates; a user write would be A4.
+  if ((options.writer ?? 'user') === 'user') rejectRetiredA4Operation('template-create');
   assertValidTemplateComposition(data.compositionType, data.content);
-  assertA4WriterCanPreserve(data.content, data.contentJson);
 
   const existingName = await prisma.documentTemplate.findFirst({
     where: { tenantId, name: data.name, deletedAt: null },
@@ -184,8 +179,12 @@ export async function updateDocumentTemplate(
 
   let data = input;
   if ((options.writer ?? 'user') === 'user') {
-    if (getDocumentTemplateEngineState(existing.contentJson) !== 'A4' && input.content !== undefined) {
+    const engine = getDocumentTemplateEngineState(existing.contentJson);
+    if (engine !== 'A4' && input.content !== undefined) {
       throw new ValidationError('OakDoc template content is edited in the Word document, not as HTML');
+    }
+    if (engine === 'A4' && (input.content !== undefined || input.contentJson !== undefined)) {
+      rejectRetiredA4Operation('template-edit');
     }
     if (input.contentJson !== undefined) {
       data = {
@@ -201,11 +200,7 @@ export async function updateDocumentTemplate(
   }
 
   const effectiveContent = data.content ?? existing.content;
-  const effectiveContentJson = data.contentJson === undefined ? existing.contentJson : data.contentJson;
   assertValidTemplateComposition(data.compositionType ?? existing.compositionType, effectiveContent);
-  if (data.content !== undefined || data.contentJson !== undefined) {
-    assertA4WriterCanPreserve(effectiveContent, effectiveContentJson);
-  }
 
   if (data.name && data.name !== existing.name) {
     const existingName = await prisma.documentTemplate.findFirst({
@@ -377,8 +372,10 @@ export async function duplicateDocumentTemplate(
     where: { id: data.id, tenantId, deletedAt: null },
   });
   if (!existing) throw new Error('Template not found');
+  if (getDocumentTemplateEngineState(existing.contentJson) === 'A4') {
+    rejectRetiredA4Operation('template-duplicate');
+  }
   assertValidTemplateComposition(existing.compositionType, existing.content);
-  assertA4WriterCanPreserve(existing.content, existing.contentJson);
 
   let newName = data.name || `Copy of ${existing.name}`;
   let counter = 1;

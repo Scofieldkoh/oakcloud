@@ -63,57 +63,12 @@ describe('template partial material versioning', () => {
     });
   });
 
-  it('increments version for normalized content changes and audits versions', async () => {
-    prismaMock.templatePartial.update.mockResolvedValue({
-      ...partial,
-      content: '<p>Updated scope</p>',
-      version: 4,
-    });
-    auditMock.computeChanges.mockReturnValue({
-      content: { old: partial.content, new: '<p>Updated scope</p>' },
-    });
-
-    await updateTemplatePartial(
-      { id: partial.id, content: '  <p>Updated scope</p>  ' },
+  it('refuses content changes to A4 partials now that the editor is retired', async () => {
+    await expect(updateTemplatePartial(
+      { id: partial.id, content: '<p>Updated scope</p>' },
       actor,
-    );
-
-    expect(prismaMock.templatePartial.update).toHaveBeenCalledWith({
-      where: { id: partial.id },
-      data: {
-        content: '  <p>Updated scope</p>  ',
-        version: { increment: 1 },
-      },
-    });
-    expect(auditMock.createAuditLog).toHaveBeenCalledWith(
-      expect.objectContaining({
-        metadata: { oldVersion: 3, newVersion: 4 },
-      }),
-      prismaMock,
-    );
-  });
-
-  it('records the actual transaction result version instead of assuming plus one', async () => {
-    prismaMock.templatePartial.update.mockResolvedValue({
-      ...partial,
-      content: '<p>Concurrent update</p>',
-      version: 5,
-    });
-    auditMock.computeChanges.mockReturnValue({
-      content: { old: partial.content, new: '<p>Concurrent update</p>' },
-    });
-
-    await updateTemplatePartial(
-      { id: partial.id, content: '<p>Concurrent update</p>' },
-      actor,
-    );
-
-    expect(auditMock.createAuditLog).toHaveBeenCalledWith(
-      expect.objectContaining({
-        metadata: { oldVersion: 3, newVersion: 5 },
-      }),
-      prismaMock,
-    );
+    )).rejects.toMatchObject({ details: { reason: 'A4_EDITOR_RETIRED', operation: 'partial-edit' } });
+    expect(prismaMock.templatePartial.update).not.toHaveBeenCalled();
   });
 
   it('does not increment when a display-name edit resubmits unchanged service placeholders', async () => {

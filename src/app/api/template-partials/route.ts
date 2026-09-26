@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
 import { ApiError } from '@/lib/errors';
-import { assertA4WriterCanPreserve } from '@/lib/document-editor/a4-editor-format';
 import {
   createTemplatePartialSchema,
   searchTemplatePartialsSchema,
@@ -95,7 +94,6 @@ export async function POST(request: NextRequest) {
     }
 
     const input = createTemplatePartialSchema.parse(partialData);
-    assertA4WriterCanPreserve(input.content);
     const partial = await createTemplatePartial(input, {
       tenantId: effectiveTenantId,
       userId: session.id,

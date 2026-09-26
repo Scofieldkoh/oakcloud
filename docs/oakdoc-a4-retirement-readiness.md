@@ -205,6 +205,8 @@ Call `resolvePreferredMigratedTemplate` at new-generation selection, batch plann
 
 Proposed workspace modes in the existing settings mechanism: `compatibility`, `oakdoc-primary`, `oakdoc-only`. Compatibility allows explicit legacy operation while migration is evaluated. Primary routes approved sources to valid targets; stale/broken mappings block rather than silently generate new A4. Oakdoc-only rejects legacy create/content-edit/generate at services, including old clients/scripts/restores/duplicates. Historical read/export remains allowed.
 
+Implemented (PR #62, 2026-09-26): the owner chose to retire A4 for every workspace at once, so there is no per-workspace mode. Every service that would write A4 content refuses with reason `A4_EDITOR_RETIRED` (`src/lib/document-editor/a4-retirement.ts`); reading and exporting A4 records still works. Rollback is the previous application release, per 8.3.
+
 Retain legacy records through rollback. Do not simply deactivate after validation: current version checks/task validation break. Redirect operational use first; final deactivation is fingerprint-aware/audited. C0 freezes settings/transaction semantics.
 
 ## 8. Operations, history and rollback
