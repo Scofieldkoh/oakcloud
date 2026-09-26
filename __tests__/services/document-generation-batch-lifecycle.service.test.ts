@@ -13,6 +13,7 @@ vi.mock('@/lib/prisma', () => ({
     documentGenerationBatchItem: {
       create: vi.fn(),
       findMany: vi.fn(),
+      findFirst: vi.fn(),
       findUnique: vi.fn(),
       update: vi.fn(),
       delete: vi.fn(),
@@ -37,8 +38,10 @@ vi.mock('@/lib/prisma', () => ({
     },
     serviceAgreement: {
       delete: vi.fn(),
+      findFirst: vi.fn(),
       findUnique: vi.fn(),
     },
+    $queryRaw: vi.fn(),
     $transaction: vi.fn(),
   },
 }));
@@ -209,6 +212,9 @@ describe('document generation batch lifecycle', () => {
     vi.mocked(prisma.$transaction).mockImplementation(
       (callback) => callback(prisma as never) as never,
     );
+    vi.mocked(prisma.$queryRaw).mockResolvedValue([{ revision: 0 }] as never);
+    vi.mocked(prisma.documentGenerationBatchItem.findFirst).mockResolvedValue(null);
+    vi.mocked(prisma.serviceAgreement.findFirst).mockResolvedValue(null);
     vi.mocked(prisma.templatePartial.findMany).mockResolvedValue([]);
     vi.mocked(prisma.generatedDocument.update).mockResolvedValue({ id: 'child' } as never);
     vi.mocked(prisma.documentGenerationBatch.update).mockResolvedValue({ id: 'batch-1' } as never);
@@ -446,9 +452,9 @@ describe('document generation batch lifecycle', () => {
       serviceAgreementId: null,
     });
     vi.mocked(prisma.generatedDocument.findFirst).mockResolvedValue(draft as never);
-    vi.mocked(prisma.documentGenerationBatchItem.findUnique).mockResolvedValue(null);
+    vi.mocked(prisma.documentGenerationBatchItem.findFirst).mockResolvedValue(null);
     vi.mocked(prisma.documentTemplate.findFirst).mockResolvedValue(templateA as never);
-    vi.mocked(prisma.serviceAgreement.findUnique).mockResolvedValue(null);
+    vi.mocked(prisma.serviceAgreement.findFirst).mockResolvedValue(null);
     vi.mocked(prisma.documentGenerationBatch.create).mockResolvedValue({ id: 'batch-1' } as never);
     vi.mocked(prisma.documentGenerationBatchItem.create).mockResolvedValue({
       id: 'item-a',
@@ -505,7 +511,7 @@ describe('document generation batch lifecycle', () => {
       deletedAt: null,
       metadata: {},
     } as never);
-    vi.mocked(prisma.documentGenerationBatchItem.findUnique).mockResolvedValue({
+    vi.mocked(prisma.documentGenerationBatchItem.findFirst).mockResolvedValue({
       batchId: 'batch-1',
     } as never);
     vi.mocked(prisma.documentGenerationBatch.findFirst).mockResolvedValue(
@@ -521,6 +527,62 @@ describe('document generation batch lifecycle', () => {
 
     expect(result.id).toBe('batch-1');
     expect(prisma.documentGenerationBatch.create).not.toHaveBeenCalled();
+  });
+
+  it('returns the winning batch when concurrent legacy adoption loses the document revision claim', async () => {
+    const draftId = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd';
+    sessionMock.readActiveGenerationSession.mockReturnValue({
+      version: 2,
+      currentStep: 0,
+      templateId: templateA.id,
+      companyId: null,
+      contactIds: [],
+      selectedDirectorId: null,
+      selectedShareholderId: null,
+      selectedContactId: null,
+      title: 'Legacy draft',
+      customData: {},
+      useLetterhead: true,
+      previewContent: null,
+      editedContent: null,
+      editedContentJson: null,
+      serviceAgreementId: null,
+    });
+    vi.mocked(prisma.generatedDocument.findFirst).mockResolvedValue({
+      id: draftId,
+      tenantId,
+      status: 'DRAFT',
+      deletedAt: null,
+      metadata: { generationSession: { version: 2 } },
+      content: '<p>preview</p>',
+      contentJson: null,
+    } as never);
+    vi.mocked(prisma.documentTemplate.findFirst).mockResolvedValue(templateA as never);
+    vi.mocked(prisma.documentGenerationBatchItem.findFirst)
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({ batchId: 'batch-1' } as never);
+    vi.mocked(prisma.$queryRaw)
+      .mockResolvedValueOnce([{ revision: 0 }] as never)
+      .mockResolvedValueOnce([] as never)
+      .mockResolvedValueOnce([{
+        revision: 1,
+        deletedAt: null,
+        status: 'DRAFT',
+      }] as never);
+    vi.mocked(prisma.documentGenerationBatch.findFirst).mockResolvedValue(
+      batchWith([batchItem('item-a', templateA, 0, { generatedDocumentId: draftId })]) as never,
+    );
+    vi.mocked(prisma.documentTemplate.findMany).mockResolvedValue([templateA] as never);
+
+    const result = await adoptLegacyGenerationSession(
+      draftId,
+      { items: [{ templateId: templateA.id }] },
+      actor,
+    );
+
+    expect(result.id).toBe('batch-1');
+    expect(prisma.documentGenerationBatch.create).not.toHaveBeenCalled();
+    expect(prisma.documentGenerationBatchItem.create).not.toHaveBeenCalled();
   });
 
   it('resolves an activeItemId that references a newly added item by template id', async () => {
@@ -569,6 +631,43 @@ describe('document generation batch lifecycle', () => {
     );
     expect(result.activeItemId).toBe('item-c');
     expect(result.items.map((item) => item.id)).toEqual(['item-a', 'item-c']);
+  });
+
+  it('preserves a finalized child when generation completed before the batch item status was persisted', async () => {
+    const finalized = batchItem('item-finalized', templateA, 0, {
+      status: 'GENERATING',
+      generatedDocument: {
+        ...childDocument('child-finalized', 'Generated'),
+        status: 'FINALIZED',
+      },
+    });
+    vi.mocked(prisma.documentGenerationBatch.findFirst).mockResolvedValue(
+      batchWith([finalized]) as never,
+    );
+
+    const result = await discardDocumentGenerationBatch('batch-1', {}, actor);
+
+    expect(result).toEqual({ discardedItemCount: 0, preservedItemCount: 1 });
+    expect(prisma.generatedDocument.update).not.toHaveBeenCalled();
+  });
+
+  it('preserves a child with a non-draft Service Agreement even when the item status is stale', async () => {
+    const effectiveAgreement = batchItem('item-effective', templateB, 0, {
+      status: 'READY',
+      generatedDocument: {
+        ...childDocument('child-effective', 'Service Agreement'),
+        serviceAgreement: { id: 'agreement-effective', status: 'EFFECTIVE' },
+      },
+    });
+    vi.mocked(prisma.documentGenerationBatch.findFirst).mockResolvedValue(
+      batchWith([effectiveAgreement]) as never,
+    );
+
+    const result = await discardDocumentGenerationBatch('batch-1', {}, actor);
+
+    expect(result).toEqual({ discardedItemCount: 0, preservedItemCount: 1 });
+    expect(prisma.serviceAgreement.delete).not.toHaveBeenCalled();
+    expect(prisma.generatedDocument.update).not.toHaveBeenCalled();
   });
 
   it('discards incomplete children but preserves generated outputs', async () => {

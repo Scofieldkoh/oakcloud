@@ -579,19 +579,33 @@ export function triggerQueuedTaskEsigningPreparationProcessing() {
 export async function assertGeneratedDocumentCanBeUnfinalized(
   tenantId: string,
   generatedDocumentId: string,
+  client: Prisma.TransactionClient | typeof prisma = prisma,
 ) {
-  const active = await prisma.taskEsigningPreparation.findFirst({
-    where: {
-      tenantId,
-      generatedDocumentId,
-      esigningEnvelope: {
-        status: { notIn: ['DRAFT', 'VOIDED'] },
-        deletedAt: null,
+  const [activePreparation, activeLinkedDocument] = await Promise.all([
+    client.taskEsigningPreparation.findFirst({
+      where: {
+        tenantId,
+        generatedDocumentId,
+        esigningEnvelope: {
+          status: { notIn: ['DRAFT', 'VOIDED'] },
+          deletedAt: null,
+        },
       },
-    },
-    select: { esigningEnvelopeId: true },
-  });
-  if (active) {
+      select: { esigningEnvelopeId: true },
+    }),
+    client.esigningEnvelopeDocument.findFirst({
+      where: {
+        tenantId,
+        generatedDocumentId,
+        envelope: {
+          status: { notIn: ['DRAFT', 'VOIDED'] },
+          deletedAt: null,
+        },
+      },
+      select: { envelopeId: true },
+    }),
+  ]);
+  if (activePreparation || activeLinkedDocument) {
     throw new ValidationError(
       'Void the active E-signing envelope before unfinalizing this document',
     );

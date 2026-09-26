@@ -723,8 +723,25 @@ export async function materializeDocumentFromTemplate(
         expectedRevision: data.expectedRevision,
         allowedStatuses: ['DRAFT'],
       });
-      if (attachedAgreement && template.compositionType === 'STANDARD') {
-        await tx.serviceAgreement.delete({ where: { id: attachedAgreement.id } });
+      if (template.compositionType === 'STANDARD') {
+        const currentAgreement = await tx.serviceAgreement.findFirst({
+          where: {
+            tenantId,
+            generatedDocumentId: target.generatedDocumentId!,
+          },
+          select: { id: true, status: true },
+        });
+        if (currentAgreement) {
+          if (!data.discardServiceAgreement) {
+            throw new ValidationError(
+              'Discard the attached Service Agreement before switching templates',
+            );
+          }
+          if (currentAgreement.status !== 'DRAFT') {
+            throw new ValidationError('Only draft Service Agreements can be discarded');
+          }
+          await tx.serviceAgreement.delete({ where: { id: currentAgreement.id } });
+        }
       }
       const updated = await tx.generatedDocument.update({
         where: { id: target.generatedDocumentId! },
@@ -988,7 +1005,6 @@ export async function unfinalizeDocument(
   });
   if (!existing) throw new NotFoundError('Document not found');
   if (existing.status !== 'FINALIZED') throw generatedDocumentStateConflict();
-  await assertGeneratedDocumentCanBeUnfinalized(tenantId, existing.id);
 
   const document = await prisma.$transaction(async (tx) => {
     const claim = await claimGeneratedDocumentRevision(tx, {
@@ -997,6 +1013,7 @@ export async function unfinalizeDocument(
       expectedRevision,
       allowedStatuses: ['FINALIZED'],
     });
+    await assertGeneratedDocumentCanBeUnfinalized(tenantId, existing.id, tx);
     const updated = await tx.generatedDocument.update({
       where: { id },
       data: { status: 'DRAFT', unfinalizedAt: new Date() },

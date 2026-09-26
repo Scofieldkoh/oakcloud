@@ -11,6 +11,7 @@ vi.mock('@/lib/prisma', () => ({
     },
     serviceAgreement: {
       delete: vi.fn(),
+      findFirst: vi.fn(),
     },
     documentTemplate: {
       findFirst: vi.fn(),
@@ -21,6 +22,7 @@ vi.mock('@/lib/prisma', () => ({
     user: {
       findFirst: vi.fn(),
     },
+    $queryRaw: vi.fn(),
     $transaction: vi.fn(),
   },
 }));
@@ -136,6 +138,8 @@ describe('Document generator service', () => {
     vi.mocked(prisma.user.findFirst).mockResolvedValue(null);
     serviceAgreementMock.getServiceAgreementDraft.mockResolvedValue(null);
     serviceAgreementMock.getServiceAgreementDraftById.mockResolvedValue(null);
+    vi.mocked(prisma.serviceAgreement.findFirst).mockResolvedValue(null);
+    vi.mocked(prisma.$queryRaw).mockResolvedValue([{ revision: 1 }] as never);
     vi.mocked(prisma.$transaction).mockImplementation(async (callback) => callback(prisma));
     vi.mocked(getDocumentPartyOptions).mockResolvedValue({
       directors: [],
@@ -446,7 +450,7 @@ describe('Document generator service', () => {
     expect(prisma.generatedDocument.update).toHaveBeenCalledWith({
       where: { id: draftId },
       data: expect.objectContaining({
-        templateId,
+        template: { connect: { id: templateId } },
         title: 'Final title',
         content: '<p>Resolved template content</p>',
         status: 'DRAFT',
@@ -518,6 +522,10 @@ describe('Document generator service', () => {
       id: 'agreement-1',
       status: 'DRAFT',
     } as never);
+    vi.mocked(prisma.serviceAgreement.findFirst).mockResolvedValue({
+      id: 'agreement-1',
+      status: 'DRAFT',
+    } as never);
 
     await createDocumentFromTemplate({
       draftId,
@@ -533,6 +541,48 @@ describe('Document generator service', () => {
     expect(prisma.generatedDocument.update).toHaveBeenCalledWith(expect.objectContaining({
       where: { id: draftId },
     }));
+  });
+
+  it('rechecks agreement status inside the conversion transaction before discarding it', async () => {
+    const draftId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+    const templateId = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+    vi.mocked(prisma.documentTemplate.findFirst).mockResolvedValue({
+      id: templateId,
+      tenantId: 'workspace-1',
+      name: 'Resolution',
+      content: '<p>Resolution</p>',
+      contentJson: null,
+      version: 1,
+      isActive: true,
+      compositionType: 'STANDARD',
+    } as never);
+    vi.mocked(prisma.generatedDocument.findFirst).mockResolvedValue({
+      id: draftId,
+      tenantId: 'workspace-1',
+      status: 'DRAFT',
+      deletedAt: null,
+      metadata: activeSessionMetadata(templateId),
+    } as never);
+    serviceAgreementMock.getServiceAgreementDraft.mockResolvedValue({
+      id: 'agreement-1',
+      status: 'DRAFT',
+    } as never);
+    vi.mocked(prisma.serviceAgreement.findFirst).mockResolvedValue({
+      id: 'agreement-1',
+      status: 'EFFECTIVE',
+    } as never);
+
+    await expect(createDocumentFromTemplate({
+      draftId,
+      templateId,
+      title: 'Resolution',
+      discardServiceAgreement: true,
+    }, { tenantId: 'workspace-1', userId: 'user-1' })).rejects.toThrow(
+      'Only draft Service Agreements can be discarded',
+    );
+
+    expect(prisma.serviceAgreement.delete).not.toHaveBeenCalled();
+    expect(prisma.generatedDocument.update).not.toHaveBeenCalled();
   });
 
   it('never discards an attached non-draft agreement during generation', async () => {
@@ -784,6 +834,8 @@ describe('Document generator service', () => {
       { tenantId: 'workspace-1', userId: 'user-1' },
       'Needs changes',
     );
+    expect(assertGeneratedDocumentCanBeUnfinalized)
+      .toHaveBeenLastCalledWith('workspace-1', 'doc-1', prisma);
     expect(queueTaskEsigningPreparationsForGeneratedDocument)
       .toHaveBeenCalledWith('workspace-1', 'doc-1', 'user-1');
   });
