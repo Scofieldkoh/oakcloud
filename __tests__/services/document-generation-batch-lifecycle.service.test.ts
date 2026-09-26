@@ -398,6 +398,38 @@ describe('document generation batch lifecycle', () => {
     expect(upsertServiceAgreementDraft).not.toHaveBeenCalled();
   });
 
+  it('saves an OakDoc Service Agreement batch that echoes its unchanged edits', async () => {
+    const item = batchItem('item-b', templateB, 0, {
+      editedContent: null,
+      editedContentJson: { oakDocReviewDraft: { revision: 2 } },
+    });
+    const batch = batchWith([item], { primaryCompanyId: null });
+    vi.mocked(prisma.documentGenerationBatch.findFirst).mockResolvedValue(batch as never);
+    vi.mocked(prisma.documentGenerationBatch.updateMany).mockResolvedValue({ count: 1 });
+    vi.mocked(prisma.documentTemplate.findMany).mockResolvedValue([templateB] as never);
+    vi.mocked(prisma.documentGenerationBatchItem.findMany).mockImplementation(
+      ((args: { select?: unknown }) =>
+        args.select
+          ? Promise.resolve([{ status: 'NOT_STARTED' }])
+          : Promise.resolve([item])) as never,
+    );
+    vi.mocked(prisma.documentGenerationBatch.update).mockResolvedValue(batch as never);
+
+    await expect(updateDocumentGenerationBatch(
+      'batch-1',
+      {
+        expectedRevision: 0,
+        primaryCompanyId: null,
+        items: [{
+          templateId: templateB.id,
+          editedContent: null,
+          editedContentJson: { oakDocReviewDraft: { revision: 2 } },
+        }],
+      },
+      actor,
+    )).resolves.toBeDefined();
+  });
+
   it('rejects a primary company outside the workspace on update', async () => {
     const item = batchItem('item-a', templateA, 0);
     const batch = batchWith([item], { primaryCompanyId: null });
