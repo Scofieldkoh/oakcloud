@@ -183,6 +183,17 @@ describe('canonical Client Onboarding document template seed', () => {
     });
   });
 
+  it('creates the A4 template for a new workspace but not once a Word template covers its category', async () => {
+    const fresh = templateRepository(null);
+    await ensureSeededDocumentTemplate(fresh.transaction, 'tenant-1', 'user-1', canonicalDefinition);
+    expect(fresh.record).toMatchObject({ id: 'created-template', name: canonicalDefinition.name });
+
+    const retired = templateRepository(null, { id: 'word-template' });
+    await expect(ensureSeededDocumentTemplate(retired.transaction, 'tenant-1', 'user-1', canonicalDefinition))
+      .resolves.toBeNull();
+    expect(retired.record).toBeNull();
+  });
+
   it('never overwrites a Word template or an A4 template with a linked Word replacement', async () => {
     const stale = {
       id: 'existing-template',

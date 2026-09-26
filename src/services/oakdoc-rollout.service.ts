@@ -8,10 +8,13 @@ import {
   readGeneratedDocumentEngineState,
 } from '@/lib/document-editor/document-engine';
 import { readGeneratedDocumentRevisions } from '@/lib/document-editor/generated-document-revision';
+import { readOakDocTemplateMetadata } from '@/lib/document-editor/oakdoc-template';
 import {
   getOakDocMigrationInventory,
   setOakDocMigrationPreference,
 } from '@/services/oakdoc-migration.service';
+import { deleteDocumentTemplate } from '@/services/document-template.service';
+import { deleteTemplatePartial } from '@/services/template-partial.service';
 import {
   A4_DRAFT_CONVERSION_METHOD,
   convertA4DraftToOakDoc,
@@ -284,7 +287,7 @@ async function requireOperator(tenantId: string, userId: string): Promise<void> 
 async function journalRolloutRun(input: {
   tenantId: string;
   userId: string;
-  operation: 'DRAFT_CONVERSION' | 'TEMPLATE_CUTOVER' | 'TEMPLATE_ROLLBACK';
+  operation: 'DRAFT_CONVERSION' | 'TEMPLATE_CUTOVER' | 'TEMPLATE_ROLLBACK' | 'A4_LIBRARY_REMOVAL';
   manifestHash: string;
   results: Array<{ outcome: string }>;
   reason?: string;
@@ -410,4 +413,135 @@ export async function applyTemplateCutover(input: {
     reason,
   });
   return { direction: input.direction, manifestHash: plan.hash, results };
+}
+
+export interface A4LibraryRemovalItem {
+  kind: 'template' | 'partial';
+  id: string;
+  name: string;
+  expectedRevision: number;
+  /** Informational: records that keep pointing at the item after a soft delete. */
+  generatedDocuments?: number;
+  serviceVariants?: number;
+}
+
+export interface A4LibraryRemovalPlan {
+  hash: string;
+  items: A4LibraryRemovalItem[];
+}
+
+/**
+ * Every remaining A4 template and HTML partial in the workspace. Removal is
+ * the normal audited soft delete, so generated documents keep their
+ * history and the items stay recoverable from the Recycle Bin.
+ */
+export async function buildA4LibraryRemovalPlan(tenantId: string): Promise<A4LibraryRemovalPlan> {
+  const [templates, partials] = await Promise.all([
+    prisma.documentTemplate.findMany({
+      where: { tenantId, deletedAt: null },
+      select: {
+        id: true,
+        name: true,
+        version: true,
+        contentJson: true,
+        _count: { select: { generatedDocuments: true } },
+      },
+    }),
+    prisma.templatePartial.findMany({
+      where: { tenantId, deletedAt: null },
+      select: { id: true, name: true, version: true, contentJson: true },
+    }),
+  ]);
+  const a4Partials = partials.filter((partial) => !readOakDocTemplateMetadata(partial.contentJson));
+  const variants = a4Partials.length > 0
+    ? await prisma.serviceVariant.findMany({
+      where: { tenantId, deletedAt: null, sowPartialId: { in: a4Partials.map((partial) => partial.id) } },
+      select: { sowPartialId: true },
+    })
+    : [];
+
+  const items: A4LibraryRemovalItem[] = [
+    ...templates
+      .filter((template) => getDocumentTemplateEngineState(template.contentJson) === 'A4')
+      .map((template) => ({
+        kind: 'template' as const,
+        id: template.id,
+        name: template.name,
+        expectedRevision: template.version,
+        generatedDocuments: template._count.generatedDocuments,
+      })),
+    ...a4Partials.map((partial) => ({
+      kind: 'partial' as const,
+      id: partial.id,
+      name: partial.name,
+      expectedRevision: partial.version,
+      serviceVariants: variants.filter((variant) => variant.sowPartialId === partial.id).length,
+    })),
+  ].sort((a, b) => a.kind.localeCompare(b.kind) || a.id.localeCompare(b.id));
+
+  const bound = items.map(({ kind, id, expectedRevision }) => ({ kind, id, expectedRevision }));
+  return {
+    hash: sha256(canonicalJson({ tenantId, operation: 'a4-library-removal', items: bound })),
+    items,
+  };
+}
+
+export interface A4LibraryRemovalResult {
+  manifestHash: string;
+  results: Array<{ kind: 'template' | 'partial'; id: string; outcome: 'removed' | 'failed'; reason?: string }>;
+}
+
+/**
+ * Soft-delete every item in an approved removal plan. Templates go first so
+ * A4 partials are no longer in use by them; a partial still linked to a
+ * service variant is refused by the partial service and reported as failed.
+ */
+export async function applyA4LibraryRemoval(input: {
+  tenantId: string;
+  userId: string;
+  manifestHash: string;
+  reason: string;
+}): Promise<A4LibraryRemovalResult> {
+  await requireOperator(input.tenantId, input.userId);
+  const reason = input.reason.trim();
+  if (!reason) throw new ValidationError('A reason is required to remove the A4 library');
+
+  const plan = await buildA4LibraryRemovalPlan(input.tenantId);
+  if (plan.hash !== input.manifestHash) {
+    throw new ConflictError('The A4 templates or partials changed since the dry run. Run the dry run again and approve the new plan.', {
+      reason: 'OAKDOC_MANIFEST_CHANGED',
+      currentManifestHash: plan.hash,
+    });
+  }
+
+  const params = { tenantId: input.tenantId, userId: input.userId };
+  const results: A4LibraryRemovalResult['results'] = [];
+  for (const kind of ['template', 'partial'] as const) {
+    for (const item of plan.items.filter((entry) => entry.kind === kind)) {
+      try {
+        if (kind === 'template') {
+          await deleteDocumentTemplate(item.id, params, reason, item.expectedRevision);
+        } else {
+          await deleteTemplatePartial(item.id, params, reason, item.expectedRevision);
+        }
+        results.push({ kind, id: item.id, outcome: 'removed' });
+      } catch (error) {
+        results.push({
+          kind,
+          id: item.id,
+          outcome: 'failed',
+          reason: (error instanceof Error ? error.message : 'REMOVAL_FAILED').slice(0, 300),
+        });
+      }
+    }
+  }
+  await journalRolloutRun({
+    tenantId: input.tenantId,
+    userId: input.userId,
+    operation: 'A4_LIBRARY_REMOVAL',
+    manifestHash: plan.hash,
+    results,
+    reason,
+  });
+  return { manifestHash: plan.hash, results };
 }

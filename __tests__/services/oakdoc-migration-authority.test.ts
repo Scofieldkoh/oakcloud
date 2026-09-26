@@ -33,7 +33,7 @@ vi.mock('@/lib/prisma', () => ({
       findMany: vi.fn(async ({ where }: { where: Record<string, unknown> }) => (
         Array.from(store.values()).filter((row) => (
           row.tenantId === where.tenantId
-          && row.deletedAt === null
+          && (!('deletedAt' in where) || row.deletedAt === where.deletedAt)
           && (!where.id || row.id !== (where.id as { not: string }).not)
         ))
       )),
@@ -189,6 +189,13 @@ describe('OakDoc migration authority (M1)', () => {
   it('keeps a new run on the A4 template until its replacement is preferred', async () => {
     await linkAndRun();
     await expect(resolveTemplateIdsForNewRun(['legacy-1'], 'tenant-1')).resolves.toEqual(['legacy-1']);
+  });
+
+  it('sends a new run on a removed A4 template to its linked Word template', async () => {
+    await linkAndRun();
+    const legacy = store.get('legacy-1')!;
+    store.set('legacy-1', { ...legacy, version: legacy.version + 1, isActive: false, deletedAt: new Date() });
+    await expect(resolveTemplateIdsForNewRun(['legacy-1'], 'tenant-1')).resolves.toEqual(['oak-1']);
   });
 
   it('invalidates evidence when the legacy source changes', async () => {
