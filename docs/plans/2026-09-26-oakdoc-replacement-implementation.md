@@ -18,7 +18,7 @@ Read the [replacement specification](../oakdoc-a4-retirement-readiness.md) first
 
 Confirmed: OakDoc replacement; Microsoft 365 conversion reuse. Preserve historical originals and canonical business boundaries. Keep existing manual signing placement; automatic signature-coordinate extraction is not added scope.
 
-D04 remains a clearly labeled assumption: reviewed copy of old drafts on next edit. P8/M2 can inventory and design without an answer; do not perform real draft migration or call final rollout ready until policy is resolved. The default plan can be implemented behind the conversion boundary, with U1/L1/I2 coordinating relation transfer. No other user clarification is required to start foundation work.
+D04 was confirmed by the owner on 2026-09-26: existing A4 drafts become reviewed OakDoc copies on next edit, keeping the original. P8/M2 can inventory and design without an answer; do not perform real draft migration or call final rollout ready until policy is resolved. The default plan can be implemented behind the conversion boundary, with U1/L1/I2 coordinating relation transfer. No other user clarification is required to start foundation work.
 
 Implementation refinements to resolve in C0: exact native metadata version/schema; partial and clause snapshot persistence; transactional mapping uniqueness; typed error DTOs; limits; reference performance environment. The integrator can settle these from repository constraints without repeatedly asking the user. Record choices here before workers publish incompatible producers.
 
@@ -401,7 +401,7 @@ Integrator merge checklist: inspect focused diff; verify current producer contra
 | E1 / U1 | Done, unit level (PR #62) | `OakDocEditorSession`, `OakDocDocumentHost`, shared section-delete guard, engine-aware edit route. Tests: `__tests__/components/oakdoc/`. Browser smoke not run. |
 | M1 | Foundation done (PR #62) | Server-run static checks, evidence bound to definition hashes, unique mapping, caller-submitted passes refused. Tests: `__tests__/services/oakdoc-migration-authority.test.ts`, `__tests__/api/document-template-migration-route.test.ts`. Real-render comparison (`renderCheck`) stays `pending` until L2. |
 | S1 / S2 / E2 / L2 | Not started | Canonical field registry and native partials first. |
-| M2 / P8 | Not started | D04 (convert existing A4 drafts) still needs the owner's decision. |
+| M2 / P8 | Not started | D04 confirmed 2026-09-26 (convert drafts to reviewed copies). No conversion runs without the owner's approval of that run. |
 | I2 / Q1 / Q2 | Not started | Needs L2/M2 evidence; A4 code removal waits for the owner's go-ahead. |
 | R5/R6 | Not authorized/executed by this planning task | Production inventory, release gates and operator rollout |
 
