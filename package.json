@@ -13,7 +13,7 @@
     "test": "vitest",
     "test:run": "vitest run",
     "test:chromium": "tsx scripts/smoke-chromium.ts",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "node --max-old-space-size=8192 ./node_modules/typescript/bin/tsc --noEmit",
     "generate:assistant-capabilities": "tsx scripts/generate-business-assistant-registry.mts",
     "check:assistant-capabilities": "tsx scripts/generate-business-assistant-registry.mts --check",
     "business-assistant:worker": "tsx scripts/business-assistant-worker.ts",
