@@ -19,6 +19,7 @@ import {
 import { readA4StoredDocument } from '@/lib/document-editor/a4-editor-format';
 import { rejectRetiredA4Operation } from '@/lib/document-editor/a4-retirement';
 import { getDocumentTemplateEngine } from '@/lib/document-editor/document-engine';
+import { resolveTemplateIdsForNewRun } from '@/services/oakdoc-migration.service';
 import {
   claimGeneratedDocumentRevision,
   readGeneratedDocumentRevision,
@@ -256,7 +257,12 @@ export async function createDocumentGenerationBatch(
     );
   }
   const { tenantId, userId } = params;
-  const templateIds = input.items.map((item) => item.templateId);
+  // A new run uses the approved Word replacement of an A4 template.
+  const templateIds = await resolveTemplateIdsForNewRun(
+    input.items.map((item) => item.templateId),
+    tenantId,
+  );
+  const items = input.items.map((item, index) => ({ ...item, templateId: templateIds[index] }));
   const batch = await prisma.$transaction(async (tx) => {
     const templates = await resolveTemplates(tx, templateIds, tenantId);
     const templateById = new Map(templates.map((template) => [template.id, template]));
@@ -271,7 +277,7 @@ export async function createDocumentGenerationBatch(
       },
     });
     const createdItems: Array<{ id: string; displayOrder: number }> = [];
-    for (const [displayOrder, itemInput] of input.items.entries()) {
+    for (const [displayOrder, itemInput] of items.entries()) {
       const template = templateById.get(itemInput.templateId)!;
       const child = await tx.generatedDocument.create({
         data: {

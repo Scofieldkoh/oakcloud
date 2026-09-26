@@ -92,6 +92,8 @@ export interface StageActionRecord {
 export interface StageActionAdapterContext {
   tenantId: string;
   stage: StageActionRecord;
+  /** Configured document templates with approved Word replacements applied. */
+  resolvedTemplateIds?: string[];
 }
 
 export interface ResolvedStageOutcome {

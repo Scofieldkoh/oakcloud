@@ -427,6 +427,45 @@ export async function setOakDocMigrationPreference(input: {
   return updated;
 }
 
+function pickPreferredOakDoc(
+  legacy: DocumentTemplate,
+  oakDocs: DocumentTemplate[],
+): DocumentTemplate | null {
+  const linked = oakDocs.filter((oakDoc) => (
+    readOakDocMigrationMetadata(oakDoc.contentJson)?.legacyTemplateId === legacy.id
+  ));
+  if (linked.length > 1) {
+    log.warn('Ambiguous OakDoc migration mapping; using legacy template', {
+      legacyTemplateId: legacy.id,
+      oakDocTemplateIds: linked.map((oakDoc) => oakDoc.id),
+    });
+    return null;
+  }
+
+  const [oakDoc] = linked;
+  if (!oakDoc || !oakDoc.isActive) return null;
+  const readiness = getOakDocMigrationReadiness({
+    metadata: readOakDocMigrationMetadata(oakDoc.contentJson),
+    legacyTemplateVersion: legacy.version,
+    oakDocTemplateVersion: oakDoc.version,
+    definitionHashes: definitionHashes(legacy, oakDoc),
+  });
+  return readiness === 'OAKDOC_PRIMARY' ? oakDoc : null;
+}
+
+function findOakDocTemplates(tenantId: string): Promise<DocumentTemplate[]> {
+  return prisma.documentTemplate.findMany({
+    where: {
+      tenantId,
+      deletedAt: null,
+      contentJson: {
+        path: ['oakDoc', 'schemaVersion'],
+        equals: 1,
+      },
+    },
+  });
+}
+
 /**
  * Resolve a legacy template to its validated preferred OakDoc pair. This does
  * not mutate either template and never disables the legacy source. An
@@ -440,36 +479,32 @@ export async function resolvePreferredMigratedTemplate(
   if (isOakDocTemplate(legacy.contentJson)) {
     throw new ValidationError('Preferred migration resolution expects a legacy A4 template ID');
   }
+  return pickPreferredOakDoc(legacy, await findOakDocTemplates(tenantId)) ?? legacy;
+}
 
-  const oakDocs = await prisma.documentTemplate.findMany({
-    where: {
-      tenantId,
-      deletedAt: null,
-      contentJson: {
-        path: ['oakDoc', 'schemaVersion'],
-        equals: 1,
-      },
-    },
+/**
+ * Template IDs for a new generation run. A4 templates whose Word replacement
+ * is validated and set as preferred resolve to that replacement; everything
+ * else, including unknown IDs, is returned unchanged for the caller's own
+ * checks. Stored references (pipeline configs, existing batches) are never
+ * rewritten.
+ */
+export async function resolveTemplateIdsForNewRun(
+  templateIds: string[],
+  tenantId: string,
+): Promise<string[]> {
+  if (templateIds.length === 0) return templateIds;
+  const templates = await prisma.documentTemplate.findMany({
+    where: { id: { in: templateIds }, tenantId, deletedAt: null },
   });
+  const legacy = templates.filter((template) => !isOakDocTemplate(template.contentJson));
+  if (legacy.length === 0) return templateIds;
 
-  const linked = oakDocs.filter((oakDoc) => (
-    readOakDocMigrationMetadata(oakDoc.contentJson)?.legacyTemplateId === legacy.id
-  ));
-  if (linked.length > 1) {
-    log.warn('Ambiguous OakDoc migration mapping; using legacy template', {
-      legacyTemplateId: legacy.id,
-      oakDocTemplateIds: linked.map((oakDoc) => oakDoc.id),
-    });
-    return legacy;
+  const oakDocs = await findOakDocTemplates(tenantId);
+  const replacements = new Map<string, string>();
+  for (const template of legacy) {
+    const oakDoc = pickPreferredOakDoc(template, oakDocs);
+    if (oakDoc) replacements.set(template.id, oakDoc.id);
   }
-
-  const [oakDoc] = linked;
-  if (!oakDoc || !oakDoc.isActive) return legacy;
-  const readiness = getOakDocMigrationReadiness({
-    metadata: readOakDocMigrationMetadata(oakDoc.contentJson),
-    legacyTemplateVersion: legacy.version,
-    oakDocTemplateVersion: oakDoc.version,
-    definitionHashes: definitionHashes(legacy, oakDoc),
-  });
-  return readiness === 'OAKDOC_PRIMARY' ? oakDoc : legacy;
+  return templateIds.map((id) => replacements.get(id) ?? id);
 }

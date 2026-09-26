@@ -73,6 +73,12 @@ const taskIntegrationMock = vi.hoisted(() => ({
 
 vi.mock('@/services/tasks/integration.service', () => taskIntegrationMock);
 
+const migrationMock = vi.hoisted(() => ({
+  resolveTemplateIdsForNewRun: vi.fn(async (ids: string[]) => ids),
+}));
+
+vi.mock('@/services/oakdoc-migration.service', () => migrationMock);
+
 import { prisma } from '@/lib/prisma';
 import {
   adoptLegacyGenerationSession,
@@ -241,6 +247,23 @@ describe('document generation batch lifecycle', () => {
       actor,
     )).rejects.toMatchObject({ details: { reason: 'A4_EDITOR_RETIRED' } });
     expect(prisma.documentGenerationBatch.create).not.toHaveBeenCalled();
+  });
+
+  it('starts a new batch on the approved Word replacement of an A4 template', async () => {
+    migrationMock.resolveTemplateIdsForNewRun.mockResolvedValueOnce([templateA.id]);
+    vi.mocked(prisma.documentTemplate.findMany).mockResolvedValue([templateA] as never);
+    vi.mocked(prisma.generatedDocument.create).mockResolvedValue({ id: 'child' } as never);
+    vi.mocked(prisma.documentGenerationBatchItem.create).mockResolvedValue({ id: 'item-a' } as never);
+    vi.mocked(prisma.documentGenerationBatch.create).mockResolvedValue({ id: 'batch-1', tenantId } as never);
+    vi.mocked(prisma.documentGenerationBatch.findFirstOrThrow)
+      .mockResolvedValue(batchWith([batchItem('item-a', templateA, 0)]) as never);
+
+    await createDocumentGenerationBatch({ items: [{ templateId: 'legacy-a4-template' }] }, actor);
+
+    expect(migrationMock.resolveTemplateIdsForNewRun).toHaveBeenCalledWith(['legacy-a4-template'], tenantId);
+    expect(prisma.documentGenerationBatchItem.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ templateId: templateA.id }) }),
+    );
   });
 
   it('creates one hidden generated-document child per ordered item', async () => {
