@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { AlertTriangle } from 'lucide-react';
+import { Alert } from '@/components/ui/alert';
 import {
   useAllTemplatePartials,
   type TemplatePartialSummary,
@@ -86,15 +86,12 @@ export function OakDocPartialPanel({
       )}
 
       {missing.length > 0 ? (
-        <div className="flex gap-2 rounded-md border border-status-warning/40 bg-status-warning/5 p-2 text-xs text-text-secondary">
-          <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-status-warning" />
-          <span>
-            {missing.length === 1
-              ? 'One partial in this document no longer exists.'
-              : `${missing.length} partials in this document no longer exist.`}
-            {' '}Saving will fail until the reference is removed.
-          </span>
-        </div>
+        <Alert variant="warning" compact>
+          {missing.length === 1
+            ? 'One partial in this document no longer exists.'
+            : `${missing.length} partials in this document no longer exist.`}
+          {' '}Saving will fail until the reference is removed.
+        </Alert>
       ) : null}
     </section>
   );

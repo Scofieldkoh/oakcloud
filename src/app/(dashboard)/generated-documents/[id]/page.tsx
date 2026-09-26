@@ -28,6 +28,9 @@ import {
   PenLine,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ConvertToOakDocButton } from '@/components/documents/oakdoc/convert-to-oakdoc-button';
+import { OakDocConversionReview } from '@/components/documents/oakdoc/oakdoc-conversion-review';
+import { isPendingA4DraftConversion } from '@/lib/document-editor/oakdoc-draft-conversion';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useToast } from '@/components/ui/toast';
 import { cn } from '@/lib/utils';
@@ -435,6 +438,7 @@ export default function DocumentViewPage() {
 
   const linkedEnvelopes = docData.esigningEnvelopeDocuments?.map(({ envelope }) => envelope) ?? [];
   const isOakDoc = docData.metadata?.documentEngine === 'OAKDOC';
+  const conversionPending = isOakDoc && isPendingA4DraftConversion(docData.metadata);
 
   return (
     <div className="p-4 sm:p-6">
@@ -504,14 +508,25 @@ export default function DocumentViewPage() {
             </Link>
           )}
 
+          {!isOakDoc && docData.status === 'DRAFT' && !docData.signedAt && (
+            <ConvertToOakDocButton
+              documentId={docData.id}
+              revision={docData.revision}
+              disabled={isProcessing}
+              onError={toastError}
+            />
+          )}
+
           {/* Finalize/Unfinalize */}
           {docData.status === 'DRAFT' && (
             <Button
               variant="secondary"
               size="sm"
               onClick={() => setFinalizeDialogOpen(true)}
-              disabled={isOakDoc && oakDocDirty}
-              title={isOakDoc && oakDocDirty ? 'Save your Word edits before finalizing' : undefined}
+              disabled={(isOakDoc && oakDocDirty) || conversionPending}
+              title={conversionPending
+                ? 'Accept the converted copy before finalizing'
+                : isOakDoc && oakDocDirty ? 'Save your Word edits before finalizing' : undefined}
             >
               <Lock className="w-4 h-4 mr-2" />
               Finalize
@@ -594,6 +609,30 @@ export default function DocumentViewPage() {
           </div>
         </div>
       </div>
+
+      {isOakDoc ? (
+        <OakDocConversionReview
+          documentId={docData.id}
+          revision={docData.revision}
+          metadata={docData.metadata}
+          dirty={oakDocDirty}
+          onAccepted={(result) => {
+            setDocData((current) => current
+              ? {
+                  ...current,
+                  revision: result.document.revision ?? current.revision,
+                  metadata: (result.document.metadata as GeneratedDocument['metadata']) ?? current.metadata,
+                }
+              : current);
+            success('Copy accepted');
+          }}
+          onRejected={() => {
+            success('Copy rejected');
+            router.push(returnHref);
+          }}
+          onError={toastError}
+        />
+      ) : null}
 
       {/* Main content */}
       <div className="mt-6">
