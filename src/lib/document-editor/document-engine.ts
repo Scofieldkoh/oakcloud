@@ -38,6 +38,21 @@ export interface GeneratedOakDocAssetMetadata {
   repeaterItemsCreated: number;
 }
 
+export interface OakDocReviewDraftMetadata {
+  schemaVersion: 1;
+  previewFingerprint: string;
+  savedAt: string;
+  edited: boolean;
+}
+
+export interface OakDocEditedContentMetadata {
+  documentEngine: 'OAKDOC';
+  schemaVersion: 1;
+  oakDocDraftSha256: string;
+  previewFingerprint: string;
+  savedAt: string;
+}
+
 export const OAKDOC_GENERATED_CONTENT =
   '<p data-oakdoc-generated="true">DOCX-native generated document. Open the Word document to review its content.</p>';
 
@@ -163,6 +178,65 @@ export function readGeneratedOakDocAssetMetadata(
     conditionsRemoved: raw.conditionsRemoved,
     repeatersResolved: raw.repeatersResolved,
     repeaterItemsCreated: raw.repeaterItemsCreated,
+  };
+}
+
+
+export function readOakDocReviewDraftMetadata(
+  metadata: unknown,
+): OakDocReviewDraftMetadata | null {
+  if (!isRecord(metadata) || !isRecord(metadata.oakDocReviewDraft)) return null;
+  const raw = metadata.oakDocReviewDraft;
+  if (
+    raw.schemaVersion !== 1
+    || typeof raw.previewFingerprint !== 'string'
+    || !/^[a-f0-9]{64}$/i.test(raw.previewFingerprint)
+    || typeof raw.savedAt !== 'string'
+    || !raw.savedAt
+    || typeof raw.edited !== 'boolean'
+  ) {
+    return null;
+  }
+  return {
+    schemaVersion: 1,
+    previewFingerprint: raw.previewFingerprint.toLowerCase(),
+    savedAt: raw.savedAt,
+    edited: raw.edited,
+  };
+}
+
+export function mergeOakDocReviewDraftMetadata(
+  currentMetadata: unknown,
+  reviewDraft: OakDocReviewDraftMetadata,
+): Record<string, unknown> {
+  const current = isRecord(currentMetadata) ? { ...currentMetadata } : {};
+  return {
+    ...current,
+    oakDocReviewDraft: reviewDraft,
+  };
+}
+
+export function readOakDocEditedContentMetadata(
+  contentJson: unknown,
+): OakDocEditedContentMetadata | null {
+  if (!isRecord(contentJson) || contentJson.documentEngine !== 'OAKDOC') return null;
+  if (
+    contentJson.schemaVersion !== 1
+    || typeof contentJson.oakDocDraftSha256 !== 'string'
+    || !/^[a-f0-9]{64}$/i.test(contentJson.oakDocDraftSha256)
+    || typeof contentJson.previewFingerprint !== 'string'
+    || !/^[a-f0-9]{64}$/i.test(contentJson.previewFingerprint)
+    || typeof contentJson.savedAt !== 'string'
+    || !contentJson.savedAt
+  ) {
+    return null;
+  }
+  return {
+    documentEngine: 'OAKDOC',
+    schemaVersion: 1,
+    oakDocDraftSha256: contentJson.oakDocDraftSha256.toLowerCase(),
+    previewFingerprint: contentJson.previewFingerprint.toLowerCase(),
+    savedAt: contentJson.savedAt,
   };
 }
 

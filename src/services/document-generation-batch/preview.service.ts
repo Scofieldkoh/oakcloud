@@ -1,3 +1,4 @@
+import { createHash, randomUUID } from 'node:crypto';
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@/generated/prisma';
 import {
@@ -32,9 +33,20 @@ import { claimGeneratedDocumentRevision } from '@/lib/document-editor/generated-
 import { renderTemplateForWorkflow } from '@/services/document-workflow-renderer.service';
 import {
   getDocumentTemplateEngine,
+  mergeGeneratedOakDocMetadata,
+  mergeOakDocReviewDraftMetadata,
   OAKDOC_GENERATED_CONTENT,
+  readGeneratedOakDocAssetMetadata,
+  readOakDocEditedContentMetadata,
+  readOakDocReviewDraftMetadata,
+  type GeneratedOakDocAssetMetadata,
 } from '@/lib/document-editor/document-engine';
-import { generateOakDocBytes } from '@/services/oakdoc-generation.service';
+import { OAKDOC_MIME_TYPE } from '@/lib/document-editor/oakdoc-template';
+import {
+  generateOakDocBytes,
+  type OakDocGenerationResult,
+} from '@/services/oakdoc-generation.service';
+import { storage, StorageKeys } from '@/lib/storage';
 import type {
   BatchItemMutationInput,
   DocumentGenerationBatchDto,
@@ -64,6 +76,7 @@ export interface EvaluatedPreview {
   resolvedTitle: string;
   templateVersion: number;
   rendered: Awaited<ReturnType<typeof renderTemplateForWorkflow>> | null;
+  oakDocGeneration: OakDocGenerationResult | null;
 }
 
 async function templateCustomFields(
@@ -221,6 +234,7 @@ export async function buildBatchItemRenderInput(
       resolvedTitle,
       templateVersion: oakdoc.template.version,
       rendered: null,
+      oakDocGeneration: oakdoc,
     };
   }
 
@@ -264,7 +278,13 @@ export async function buildBatchItemRenderInput(
     resolvedTitle,
     templateVersion: rendered.template.version,
     rendered,
+    oakDocGeneration: null,
   };
+}
+
+function oakDocPreviewFileName(title: string): string {
+  const base = title.replace(/[\\/:*?"<>|\u0000-\u001f]/g, '_').trim() || 'OakDoc';
+  return base.toLowerCase().endsWith('.docx') ? base : `${base}.docx`;
 }
 
 function itemNotFound(itemId: string): NotFoundError {
@@ -300,84 +320,198 @@ export async function previewDocumentGenerationBatchItem(
   input: BatchItemMutationInput,
   params: TenantAwareParams,
 ): Promise<DocumentGenerationBatchDto> {
-  const batch = await prisma.$transaction(async (tx) => {
-    const claimed = await tx.documentGenerationBatch.updateMany({
-      where: {
-        id: batchId,
-        tenantId: params.tenantId,
-        deletedAt: null,
-        revision: input.expectedRevision,
-      },
-      data: { revision: { increment: 1 } },
-    });
-    if (claimed.count !== 1) {
-      throw await revisionConflict(batchId, params.tenantId);
-    }
-    const loaded = await loadBatchForService(batchId, params, tx);
-    if (!loaded) throw new NotFoundError('Document generation batch not found');
-    const item = loaded.items.find((entry) => entry.id === itemId);
-    if (!item) throw itemNotFound(itemId);
-    if (item.status === 'GENERATED') {
-      throw new ValidationError('Generated documents cannot be previewed again');
-    }
+  const oakDocUpload = {
+    newKey: null as string | null,
+    previousKey: null as string | null,
+  };
 
-    const hasManualEdits = Boolean(
-      (item.editedContent && item.editedContent !== item.previewContent)
-      || item.editedContentJson,
-    );
-    if (hasManualEdits && !input.replaceEditedContent) {
-      throw new ConflictError(
-        'Refreshing the preview would replace manual edits',
-        { requiresReplaceEditedContent: true },
+  try {
+    const batch = await prisma.$transaction(async (tx) => {
+      const claimed = await tx.documentGenerationBatch.updateMany({
+        where: {
+          id: batchId,
+          tenantId: params.tenantId,
+          deletedAt: null,
+          revision: input.expectedRevision,
+        },
+        data: { revision: { increment: 1 } },
+      });
+      if (claimed.count !== 1) {
+        throw await revisionConflict(batchId, params.tenantId);
+      }
+      const loaded = await loadBatchForService(batchId, params, tx);
+      if (!loaded) throw new NotFoundError('Document generation batch not found');
+      const item = loaded.items.find((entry) => entry.id === itemId);
+      if (!item) throw itemNotFound(itemId);
+      if (item.status === 'GENERATED') {
+        throw new ValidationError('Generated documents cannot be previewed again');
+      }
+
+      const hasManualEdits = Boolean(
+        (item.editedContent && item.editedContent !== item.previewContent)
+        || item.editedContentJson,
       );
+      if (hasManualEdits && !input.replaceEditedContent) {
+        throw new ConflictError(
+          'Refreshing the preview would replace manual edits',
+          { requiresReplaceEditedContent: true },
+        );
+      }
+
+      const creator = await tx.user.findFirst({
+        where: { id: params.userId, tenantId: params.tenantId },
+        select: { firstName: true, lastName: true },
+      });
+      const actorName = creator
+        ? [creator.firstName, creator.lastName].filter(Boolean).join(' ').trim()
+        : '';
+      const evaluated = await buildBatchItemRenderInput(loaded, item, params, actorName);
+      const diagnostics = evaluateDiagnostics(
+        item.id,
+        evaluated,
+        null,
+        item.previewFingerprint,
+      );
+
+      await tx.documentGenerationBatchItem.update({
+        where: { id: item.id },
+        data: {
+          templateVersion: evaluated.templateVersion,
+          previewContent: evaluated.content,
+          previewFingerprint: evaluated.fingerprint,
+          reviewedFingerprint: null,
+          editedContent: null,
+          editedContentJson: Prisma.DbNull,
+          status: diagnostics.status,
+          validationDiagnostics: diagnostics as never,
+        },
+      });
+
+      if (evaluated.oakDocGeneration) {
+        const generation = evaluated.oakDocGeneration;
+        const generatedAt = new Date().toISOString();
+        const digest = createHash('sha256').update(generation.bytes).digest('hex');
+        const storageKey = StorageKeys.oakDocGeneratedAsset(
+          params.tenantId,
+          item.generatedDocumentId,
+          randomUUID(),
+        );
+        const previousAsset = readGeneratedOakDocAssetMetadata(item.generatedDocument.metadata);
+
+        await storage.upload(storageKey, generation.bytes, {
+          contentType: OAKDOC_MIME_TYPE,
+          metadata: {
+            tenantId: params.tenantId,
+            generatedDocumentId: item.generatedDocumentId,
+            templateId: generation.template.id,
+            templateVersion: String(generation.template.version),
+            templateSha256: generation.template.sha256,
+            sha256: digest,
+            generatedBy: params.userId,
+            previewFingerprint: evaluated.fingerprint,
+          },
+        });
+        oakDocUpload.newKey = storageKey;
+        oakDocUpload.previousKey = previousAsset?.storageKey ?? null;
+
+        const assetMetadata: GeneratedOakDocAssetMetadata = {
+          ...generation.metadata,
+          storageKey,
+          fileName: oakDocPreviewFileName(evaluated.resolvedTitle),
+          fileSize: generation.bytes.byteLength,
+          sha256: digest,
+          generatedAt,
+        };
+        const configuration = parseBatchItemConfiguration(item.configuration);
+        const selectedParties = {
+          ...(configuration.selectedDirectorId
+            ? { directorId: configuration.selectedDirectorId }
+            : {}),
+          ...(configuration.selectedShareholderId
+            ? { shareholderId: configuration.selectedShareholderId }
+            : {}),
+          ...(configuration.selectedContactId
+            ? { selectedContactId: configuration.selectedContactId }
+            : {}),
+          ...(configuration.contactIds.length
+            ? { contactIds: configuration.contactIds }
+            : {}),
+        };
+        const generatedMetadata = mergeGeneratedOakDocMetadata(
+          item.generatedDocument.metadata,
+          assetMetadata,
+          selectedParties,
+        );
+        const metadata = mergeOakDocReviewDraftMetadata(generatedMetadata, {
+          schemaVersion: 1,
+          previewFingerprint: evaluated.fingerprint,
+          savedAt: generatedAt,
+          edited: false,
+        });
+
+        await claimGeneratedDocumentRevision(tx, {
+          id: item.generatedDocumentId,
+          tenantId: params.tenantId,
+          expectedRevision: item.generatedDocument.revision,
+          allowedStatuses: ['DRAFT'],
+        });
+        await tx.generatedDocument.update({
+          where: { id: item.generatedDocumentId },
+          data: {
+            template: { connect: { id: generation.template.id } },
+            templateVersion: generation.template.version,
+            company: loaded.primaryCompanyId
+              ? { connect: { id: loaded.primaryCompanyId } }
+              : undefined,
+            title: evaluated.resolvedTitle,
+            content: OAKDOC_GENERATED_CONTENT,
+            contentJson: {
+              documentEngine: 'OAKDOC',
+              schemaVersion: 1,
+            } as Prisma.InputJsonValue,
+            useLetterhead: false,
+            placeholderData: generation.values as Prisma.InputJsonValue,
+            metadata: metadata as Prisma.InputJsonValue,
+          },
+        });
+      } else {
+        await claimGeneratedDocumentRevision(tx, {
+          id: item.generatedDocumentId,
+          tenantId: params.tenantId,
+          allowedStatuses: ['DRAFT'],
+        });
+        await tx.generatedDocument.update({
+          where: { id: item.generatedDocumentId },
+          data: { title: evaluated.resolvedTitle },
+        });
+      }
+
+      return tx.documentGenerationBatch.findFirstOrThrow({
+        where: { id: batchId },
+        include: batchInclude,
+      });
+    });
+
+    const uploadedOakDocKey = oakDocUpload.newKey;
+    const previousOakDocKey = oakDocUpload.previousKey;
+    if (previousOakDocKey && uploadedOakDocKey && previousOakDocKey !== uploadedOakDocKey) {
+      const assetPrefix = uploadedOakDocKey.slice(0, uploadedOakDocKey.lastIndexOf('/') + 1);
+      if (assetPrefix && previousOakDocKey.startsWith(assetPrefix)) {
+        await storage.delete(previousOakDocKey).catch(() => undefined);
+      }
     }
 
-    const creator = await tx.user.findFirst({
-      where: { id: params.userId, tenantId: params.tenantId },
-      select: { firstName: true, lastName: true },
-    });
-    const actorName = creator
-      ? [creator.firstName, creator.lastName].filter(Boolean).join(' ').trim()
-      : '';
-    const evaluated = await buildBatchItemRenderInput(loaded, item, params, actorName);
-    const diagnostics = evaluateDiagnostics(
-      item.id,
-      evaluated,
-      null,
-      item.previewFingerprint,
+    const catalogue = await loadMasterCatalogueForTemplateIds(
+      batch.items.map((entry) => entry.templateId),
+      params.tenantId,
     );
-    await tx.documentGenerationBatchItem.update({
-      where: { id: item.id },
-      data: {
-        templateVersion: evaluated.templateVersion,
-        previewContent: evaluated.content,
-        previewFingerprint: evaluated.fingerprint,
-        reviewedFingerprint: null,
-        editedContent: null,
-        editedContentJson: Prisma.DbNull,
-        status: diagnostics.status,
-        validationDiagnostics: diagnostics as never,
-      },
-    });
-    await claimGeneratedDocumentRevision(tx, {
-      id: item.generatedDocumentId,
-      tenantId: params.tenantId,
-      allowedStatuses: ['DRAFT'],
-    });
-    await tx.generatedDocument.update({
-      where: { id: item.generatedDocumentId },
-      data: { title: evaluated.resolvedTitle },
-    });
-    return tx.documentGenerationBatch.findFirstOrThrow({
-      where: { id: batchId },
-      include: batchInclude,
-    });
-  });
-  const catalogue = await loadMasterCatalogueForTemplateIds(
-    batch.items.map((entry) => entry.templateId),
-    params.tenantId,
-  );
-  return mapBatchToDto(batch, catalogue);
+    return mapBatchToDto(batch, catalogue);
+  } catch (error) {
+    if (oakDocUpload.newKey) {
+      await storage.delete(oakDocUpload.newKey).catch(() => undefined);
+    }
+    throw error;
+  }
 }
 
 export async function reviewDocumentGenerationBatchItem(
@@ -430,6 +564,42 @@ export async function reviewDocumentGenerationBatchItem(
         { blockingErrors: evaluated.blockingErrors },
       );
     }
+    if (getDocumentTemplateEngine(item.template.contentJson) === 'OAKDOC') {
+      const asset = readGeneratedOakDocAssetMetadata(item.generatedDocument.metadata);
+      const reviewDraft = readOakDocReviewDraftMetadata(item.generatedDocument.metadata);
+      if (
+        !asset
+        || !reviewDraft
+        || reviewDraft.previewFingerprint !== item.previewFingerprint
+        || asset.templateId !== item.templateId
+        || asset.templateVersion !== item.templateVersion
+      ) {
+        throw new ConflictError(
+          'The generated Word draft no longer matches this preview. Refresh it before review.',
+          { stale: true },
+        );
+      }
+
+      if (item.editedContentJson) {
+        const edited = readOakDocEditedContentMetadata(item.editedContentJson);
+        if (
+          !edited
+          || edited.previewFingerprint !== item.previewFingerprint
+          || edited.oakDocDraftSha256 !== asset.sha256
+        ) {
+          throw new ConflictError(
+            'The saved Word edits no longer match the generated draft. Save or refresh before review.',
+            { stale: true },
+          );
+        }
+      } else if (reviewDraft.edited) {
+        throw new ConflictError(
+          'The generated Word draft has saved edits that are not bound to this batch item.',
+          { stale: true },
+        );
+      }
+    }
+
     const reviewedFingerprint = createReviewedFingerprint({
       previewFingerprint: item.previewFingerprint,
       editedContent: item.editedContent ?? item.previewContent,

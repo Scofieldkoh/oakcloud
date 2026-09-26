@@ -12,6 +12,7 @@ import {
   retryDocumentGenerationBatchItem,
   reviewDocumentGenerationBatchItem,
   saveDocumentGenerationBatch,
+  saveOakDocGeneratedDraft,
 } from '@/lib/document-generation-batch-api';
 import type {
   BatchExecutionInput,
@@ -49,6 +50,10 @@ export interface DocumentGenerationBatchCommands {
     replaceEditedContent?: boolean,
   ) => Promise<EditableDocumentGenerationBatch>;
   reviewItem: (itemId: string) => Promise<EditableDocumentGenerationBatch>;
+  saveOakDocDraft: (
+    itemId: string,
+    bytes: Uint8Array,
+  ) => Promise<EditableDocumentGenerationBatch>;
   preflight: () => Promise<EditableDocumentGenerationBatch>;
   generate: () => Promise<BatchGenerationResult>;
   retry: (itemId: string) => Promise<EditableDocumentGenerationBatch>;
@@ -387,6 +392,45 @@ export function useDocumentGenerationBatch(
     }
   }, [commit, ensurePersisted, recordConflict, resolveItemId]);
 
+  const saveOakDocDraft = useCallback(async (
+    itemId: string,
+    bytes: Uint8Array,
+  ) => {
+    await ensurePersisted();
+    const current = stateRef.current;
+    const item = current.batch.items.find(
+      (entry) => entry.id === itemId || entry.key === itemId || entry.templateId === itemId,
+    );
+    if (!item) throw new Error('OakDoc batch item not found');
+    if (!item.generatedDocumentId) {
+      throw new Error('Save the batch before editing the generated Word draft');
+    }
+    if (!item.generatedDocumentId) {
+      throw new Error('Save the batch before editing the generated Word draft');
+    }
+    if (!item.previewFingerprint) {
+      throw new Error('Render the OakDoc preview before saving edits');
+    }
+    const requestFingerprint = batchWorkspaceWriteFingerprint(current);
+    dispatch({ type: 'request/start', pending: 'save' });
+    try {
+      const saved = await saveOakDocGeneratedDraft(
+        item.generatedDocumentId,
+        {
+          expectedBatchRevision: current.batch.revision ?? 0,
+          previewFingerprint: item.previewFingerprint,
+          bytes,
+        },
+      );
+      return commit(saved, requestFingerprint);
+    } catch (error) {
+      recordConflict(error);
+      throw error;
+    } finally {
+      dispatch({ type: 'request/end' });
+    }
+  }, [commit, ensurePersisted, recordConflict]);
+
   const preflight = useCallback(async () => {
     await ensurePersisted();
     const current = stateRef.current;
@@ -480,6 +524,7 @@ export function useDocumentGenerationBatch(
     continueTo,
     previewItem,
     reviewItem,
+    saveOakDocDraft,
     preflight,
     generate,
     retry,

@@ -167,3 +167,68 @@ export function retryDocumentGenerationBatchItem(
     mutation(input, signal),
   );
 }
+
+
+const OAKDOC_MIME_TYPE =
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+
+async function parseApiError(response: Response): Promise<DocumentGenerationBatchApiError> {
+  const body = await response.json().catch(() => null);
+  return new DocumentGenerationBatchApiError(
+    (body as { error?: string } | null)?.error ?? 'Request failed',
+    response.status,
+    (body as { details?: unknown } | null)?.details,
+  );
+}
+
+export async function getOakDocGeneratedDraft(
+  generatedDocumentId: string,
+  signal?: AbortSignal,
+): Promise<Uint8Array> {
+  const response = await fetch(
+    `/api/generated-documents/${encodeURIComponent(generatedDocumentId)}?format=docx`,
+    { method: 'GET', signal },
+  );
+  if (!response.ok) throw await parseApiError(response);
+  return new Uint8Array(await response.arrayBuffer());
+}
+
+function exactArrayBuffer(bytes: Uint8Array): ArrayBuffer {
+  if (
+    bytes.buffer instanceof ArrayBuffer
+    && bytes.byteOffset === 0
+    && bytes.byteLength === bytes.buffer.byteLength
+  ) {
+    return bytes.buffer;
+  }
+  const copy = new Uint8Array(bytes.byteLength);
+  copy.set(bytes);
+  return copy.buffer;
+}
+
+export async function saveOakDocGeneratedDraft(
+  generatedDocumentId: string,
+  input: {
+    expectedBatchRevision: number;
+    previewFingerprint: string;
+    bytes: Uint8Array;
+  },
+  signal?: AbortSignal,
+): Promise<DocumentGenerationBatchDto> {
+  const query = new URLSearchParams({
+    format: 'docx',
+    expectedBatchRevision: String(input.expectedBatchRevision),
+    previewFingerprint: input.previewFingerprint,
+  });
+  const response = await fetch(
+    `/api/generated-documents/${encodeURIComponent(generatedDocumentId)}?${query.toString()}`,
+    {
+      method: 'PUT',
+      headers: { 'Content-Type': OAKDOC_MIME_TYPE },
+      body: exactArrayBuffer(input.bytes),
+      signal,
+    },
+  );
+  if (!response.ok) throw await parseApiError(response);
+  return response.json() as Promise<DocumentGenerationBatchDto>;
+}
