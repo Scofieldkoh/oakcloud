@@ -11,6 +11,8 @@ const rollout = vi.hoisted(() => ({
   applyA4DraftConversionManifest: vi.fn(async () => ({ manifestHash: 'h', results: [] })),
   buildTemplateCutoverPlan: vi.fn(async (_tenantId: string, direction: string) => ({ direction, hash: 'p', items: [] })),
   applyTemplateCutover: vi.fn(async () => ({ direction: 'OAKDOC', manifestHash: 'p', results: [] })),
+  buildA4LibraryRemovalPlan: vi.fn(async () => ({ hash: 'r', items: [] })),
+  applyA4LibraryRemoval: vi.fn(async () => ({ manifestHash: 'r', results: [] })),
 }));
 vi.mock('@/services/oakdoc-rollout.service', () => rollout);
 const templates = vi.hoisted(() => ({ migrateCanonicalOakDocTemplates: vi.fn() }));
@@ -79,6 +81,30 @@ describe('OakDoc template cutover CLI', () => {
     ]);
     expect(rollout.applyTemplateCutover).toHaveBeenCalledWith({
       tenantId: workspace, userId: operator, direction: 'LEGACY', manifestHash: manifest, reason: 'Undo pilot',
+    });
+  });
+});
+
+describe('A4 library removal CLI', () => {
+  it('shows the removal plan in the dry run and removes only with an operator, a plan hash and a reason', async () => {
+    const dryRun = await runOakDocRollout(['--workspace', workspace]);
+    expect(dryRun).toMatchObject({ a4LibraryRemoval: { hash: 'r' } });
+    expect(rollout.applyA4LibraryRemoval).not.toHaveBeenCalled();
+
+    await expect(runOakDocRollout(['--workspace', workspace, '--remove-a4-library', '--operator', operator]))
+      .rejects.toThrow('--manifest');
+    await expect(runOakDocRollout([
+      '--workspace', workspace, '--remove-a4-library', '--apply-template-cutover',
+      '--operator', operator, '--manifest', manifest,
+    ])).rejects.toThrow('one apply step');
+
+    const run = await runOakDocRollout([
+      '--workspace', workspace, '--remove-a4-library', '--operator', operator,
+      '--manifest', manifest, '--reason', 'A4 retired',
+    ]);
+    expect(run.mode).toBe('remove-a4-library');
+    expect(rollout.applyA4LibraryRemoval).toHaveBeenCalledWith({
+      tenantId: workspace, userId: operator, manifestHash: manifest, reason: 'A4 retired',
     });
   });
 });

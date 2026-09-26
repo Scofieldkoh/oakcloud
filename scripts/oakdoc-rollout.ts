@@ -3,7 +3,9 @@ import { pathToFileURL } from 'node:url';
 import { prisma } from '@/lib/prisma';
 import {
   applyA4DraftConversionManifest,
+  applyA4LibraryRemoval,
   applyTemplateCutover,
+  buildA4LibraryRemovalPlan,
   buildOakDocRolloutInventory,
   buildTemplateCutoverPlan,
 } from '@/services/oakdoc-rollout.service';
@@ -31,6 +33,10 @@ function manifestOption(argv: readonly string[]): string {
  *       --operator <user id> --manifest <hash> --reason "<why>"
  *     tsx scripts/oakdoc-rollout.ts --workspace <id> --apply-template-rollback \
  *       --operator <user id> --manifest <hash> --reason "<why>"
+ *   Remove (soft-delete) every remaining A4 template and HTML partial, using
+ *   the a4LibraryRemoval hash from the dry run:
+ *     tsx scripts/oakdoc-rollout.ts --workspace <id> --remove-a4-library \
+ *       --operator <user id> --manifest <hash> --reason "<why>"
  *
  * Every apply run is journaled in the audit log (OakDocRolloutRun).
  * Output is JSON with IDs, revisions, hashes and dispositions only.
@@ -40,8 +46,18 @@ export async function runOakDocRollout(argv: readonly string[]) {
   const cutover = flag(argv, 'apply-template-cutover');
   const rollback = flag(argv, 'apply-template-rollback');
   const conversions = flag(argv, 'apply-draft-conversions');
-  if ([cutover, rollback, conversions].filter(Boolean).length > 1) {
+  const removeA4 = flag(argv, 'remove-a4-library');
+  if ([cutover, rollback, conversions, removeA4].filter(Boolean).length > 1) {
     throw new Error('Choose one apply step per run');
+  }
+  if (removeA4) {
+    const run = await applyA4LibraryRemoval({
+      tenantId,
+      userId: uuidOption(argv, 'operator'),
+      manifestHash: manifestOption(argv),
+      reason: option(argv, 'reason') ?? '',
+    });
+    return { mode: 'remove-a4-library', ...run };
   }
   if (cutover || rollback) {
     const run = await applyTemplateCutover({
@@ -54,12 +70,13 @@ export async function runOakDocRollout(argv: readonly string[]) {
     return { mode: cutover ? 'apply-template-cutover' : 'apply-template-rollback', ...run };
   }
   if (!conversions) {
-    const [inventory, templateCutover, templateRollback] = await Promise.all([
+    const [inventory, templateCutover, templateRollback, a4LibraryRemoval] = await Promise.all([
       buildOakDocRolloutInventory(tenantId),
       buildTemplateCutoverPlan(tenantId, 'OAKDOC'),
       buildTemplateCutoverPlan(tenantId, 'LEGACY'),
+      buildA4LibraryRemovalPlan(tenantId),
     ]);
-    return { mode: 'dry-run', inventory, templateCutover, templateRollback };
+    return { mode: 'dry-run', inventory, templateCutover, templateRollback, a4LibraryRemoval };
   }
   const manifestHash = manifestOption(argv);
   const run = await applyA4DraftConversionManifest({

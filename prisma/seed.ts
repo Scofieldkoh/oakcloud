@@ -4,6 +4,7 @@ import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
 import bcrypt from 'bcryptjs';
 import { v5 as uuidv5 } from 'uuid';
+import { isOakDocTemplate } from '@/lib/document-editor/oakdoc-template';
 import { ensureWorkspaceSeedFoundation } from './seed-workspace-foundation';
 import {
   CLIENT_ONBOARDING_DOCUMENT_TEMPLATES,
@@ -141,16 +142,21 @@ async function seedClientOnboardingPipelines(createdById: string) {
           isActive: true,
           deletedAt: null,
         },
-        select: { id: true, category: true },
+        select: { id: true, category: true, contentJson: true },
         orderBy: [
           { category: 'asc' },
           { createdAt: 'asc' },
           { id: 'asc' },
         ],
       });
+      // Word templates come first: A4 templates can no longer generate.
+      const pick = (category: string) => {
+        const matches = templates.filter((template) => template.category === category);
+        return (matches.find((template) => isOakDocTemplate(template.contentJson)) ?? matches[0])?.id ?? null;
+      };
       const templateIds = {
-        contract: templates.find((template) => template.category === 'CONTRACT')?.id ?? null,
-        resolution: templates.find((template) => template.category === 'RESOLUTION')?.id ?? null,
+        contract: pick('CONTRACT'),
+        resolution: pick('RESOLUTION'),
       };
 
       await tx.taskPipeline.upsert({
