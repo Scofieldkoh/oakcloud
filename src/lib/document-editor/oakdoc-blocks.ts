@@ -99,7 +99,7 @@ function nearestCommonParent(
 }
 
 function containsSectionProperties(node: Element): boolean {
-  if (isWordElement(node, 'sectPr')) return true;
+  if (node.namespaceURI === WORD_NS && node.localName === 'sectPr') return true;
   return node.getElementsByTagNameNS(WORD_NS, 'sectPr').length > 0;
 }
 
@@ -149,7 +149,7 @@ export function resolveOakDocBlockRange(
     }
     const parent = fromRow.parentElement;
     const nodes = orderedRange(parent, fromRow, toRow);
-    if (nodes.some((node) => !isWordElement(node, 'tr'))) {
+    if (nodes.some((node) => node.namespaceURI !== WORD_NS || node.localName !== 'tr')) {
       throw new Error('OakDoc found an unsupported structure between the selected table rows.');
     }
     if (nodes.some(containsSectionProperties)) {
@@ -174,7 +174,10 @@ export function resolveOakDocBlockRange(
   }
 
   const nodes = orderedRange(parent, fromNode, toNode);
-  if (nodes.some((node) => !isWordElement(node, 'p') && !isWordElement(node, 'tbl'))) {
+  if (nodes.some((node) => (
+    node.namespaceURI !== WORD_NS
+    || (node.localName !== 'p' && node.localName !== 'tbl')
+  ))) {
     throw new Error('OakDoc found an unsupported structure inside the selected block range.');
   }
   if (nodes.some(containsSectionProperties)) {
@@ -184,7 +187,9 @@ export function resolveOakDocBlockRange(
   return {
     parent,
     nodes,
-    kind: nodes.length === 1 && isWordElement(nodes[0], 'p')
+    kind: nodes.length === 1
+      && nodes[0].namespaceURI === WORD_NS
+      && nodes[0].localName === 'p'
       ? 'paragraph'
       : 'block range',
   };

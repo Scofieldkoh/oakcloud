@@ -123,6 +123,28 @@ describe('OakDoc package diagnostics', () => {
     ]));
   });
 
+  it('checks the full required table cell value rather than only its first character', () => {
+    const bytes = docx({
+      'word/document.xml': documentXml(`
+        <w:tbl>
+          <w:tr>
+            <w:tc><w:p><w:r><w:t>Annual corporate secretarial fee</w:t></w:r></w:p></w:tc>
+          </w:tr>
+        </w:tbl>
+      `),
+    });
+
+    const result = diagnoseOakDocPackage(bytes, {
+      requiredTableCells: [
+        { tableIndex: 0, rowIndex: 0, cellIndex: 0, label: 'fee description' },
+      ],
+    });
+
+    expect(result.issues).not.toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'SUSPICIOUS_EMPTY_REQUIRED_TABLE_CELL' }),
+    ]));
+  });
+
   it('reports a package with no word/document.xml instead of guessing', () => {
     const result = diagnoseOakDocPackage(docx({
       'word/styles.xml': '<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"/>',
