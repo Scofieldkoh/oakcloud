@@ -393,14 +393,16 @@ Integrator merge checklist: inspect focused diff; verify current producer contra
 
 ## 10. Implementation tracking
 
-| Packet | Status at handover | Evidence / next dependency |
+| Packet | Status | Evidence / next dependency |
 | --- | --- | --- |
-| C0 | Not started | Freeze contracts/schema/limits and baseline inventory |
-| E1 / S1 / L1 | Not started | C0 |
-| S2 / O1 / M1 | Not started | Wave 1 producers |
-| E2 / L2 / Q1 | Not started | Wave 2 producers; M1 render integration after L2 |
-| U1 / M2 / P8 | Not started | Wave 3; D04 conversion policy |
-| I2 / Q2 | Not started | All relevant producers and evidence |
+| C0 | Done (PR #62) | `src/types/oakdoc.ts`; engine states A4/OAKDOC/INVALID in `document-engine.ts`; `oakdoc-reserved-metadata.ts`; `oakdoc-package-policy.ts`. Tests: `__tests__/lib/oakdoc-package-policy.test.ts`, `oakdoc-reserved-metadata.test.ts`, `document-engine-state.test.ts`. Schema/partial contract (C06) not started. |
+| L1 | Done (PR #62) | Save receipts, Idempotency-Key retries, required revision (428), post-commit cleanup, native clone, finalization re-inspection. Tests: `__tests__/services/oakdoc-generated-lifecycle.test.ts`, `__tests__/api/generated-document-docx-save-route.test.ts`. |
+| O1 | Done, mocked (PR #62) | `oakdoc-output.service.ts`; Graph timeouts/retries/typed errors. Tests: `oakdoc-output.service.test.ts`, `document-export-oakdoc-dispatch.test.ts`. Real Microsoft 365 conversion smoke still needs a connected workspace. |
+| E1 / U1 | Done, unit level (PR #62) | `OakDocEditorSession`, `OakDocDocumentHost`, shared section-delete guard, engine-aware edit route. Tests: `__tests__/components/oakdoc/`. Browser smoke not run. |
+| M1 | Foundation done (PR #62) | Server-run static checks, evidence bound to definition hashes, unique mapping, caller-submitted passes refused. Tests: `__tests__/services/oakdoc-migration-authority.test.ts`, `__tests__/api/document-template-migration-route.test.ts`. Real-render comparison (`renderCheck`) stays `pending` until L2. |
+| S1 / S2 / E2 / L2 | Not started | Canonical field registry and native partials first. |
+| M2 / P8 | Not started | D04 (convert existing A4 drafts) still needs the owner's decision. |
+| I2 / Q1 / Q2 | Not started | Needs L2/M2 evidence; A4 code removal waits for the owner's go-ahead. |
 | R5/R6 | Not authorized/executed by this planning task | Production inventory, release gates and operator rollout |
 
 Documentation preparation is complete when the spec/plan links, source baseline and packet ownership are reconciled. That does not certify application readiness or retire A4 in the running product.
