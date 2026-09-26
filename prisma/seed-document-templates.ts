@@ -1,5 +1,6 @@
 import type { Prisma } from '@/generated/prisma';
 import { isDeepStrictEqual } from 'node:util';
+import { oakDocContentJsonFilter } from '@/lib/document-editor/oakdoc-template';
 import canonicalTemplates from './seed-data/client-onboarding-document-templates.json';
 
 export type SeedDocumentTemplate = {
@@ -74,6 +75,20 @@ export async function ensureSeededDocumentTemplate(
   const templateData = canonicalTemplateData(definition);
 
   if (!existingTemplate) {
+    // A4 templates can no longer generate. Once the workspace has a Word
+    // template for this category, reruns don't bring the A4 template back.
+    const wordTemplate = await tx.documentTemplate.findFirst({
+      where: {
+        tenantId,
+        category: definition.category,
+        isActive: true,
+        deletedAt: null,
+        contentJson: oakDocContentJsonFilter(),
+      },
+      select: { id: true },
+    });
+    if (wordTemplate) return null;
+
     return tx.documentTemplate.create({
       data: {
         tenantId,
