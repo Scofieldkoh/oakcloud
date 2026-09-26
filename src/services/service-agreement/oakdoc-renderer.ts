@@ -13,6 +13,12 @@ import {
   OAKDOC_AGREEMENT_SERVICE_ITEM_TAG_PREFIX,
   OAKDOC_AGREEMENT_SLOT_TAGS,
 } from '@/lib/document-editor/oakdoc-field-registry';
+import {
+  oakDocPartialTag,
+  readOakDocSowSnapshot,
+  type OakDocPartialPin,
+  type OakDocSowSnapshot,
+} from '@/lib/document-editor/oakdoc-partials';
 import { canonicalJson } from '@/lib/document-generation-fingerprint';
 import { resolvePlaceholders } from '@/lib/placeholder-resolver';
 import {
@@ -161,6 +167,11 @@ export interface ServiceAgreementOakDocRenderResult {
     signerContactIds: string[];
     providedSignerCount: number;
   };
+  /**
+   * Word scope-of-work partials the rendered bytes reference. The caller
+   * expands them from their pinned bytes before resolving fields.
+   */
+  sowPartialPins: OakDocPartialPin[];
 }
 
 function isWordElement(
@@ -369,18 +380,9 @@ function createServiceItemControl(input: {
   allocator: WordIdAllocator;
   agreement: ServiceAgreementDraftDto;
   item: ServiceAgreementItemDto;
+  sowSnapshot: OakDocSowSnapshot | null;
   pageBreakBefore: boolean;
 }): Element {
-  const context = buildServiceAgreementItemPlaceholderContext({
-    agreement: input.agreement,
-    item: input.item,
-  });
-  const rendered = resolvePlaceholders(
-    input.item.partialContentSnapshot,
-    htmlSafeServiceContext(context),
-    { missingPlaceholder: 'keep', dateFormat: 'dd MMMM yyyy' },
-  );
-
   const wrapper = wordElement(input.document, 'sdt');
   const properties = wordElement(input.document, 'sdtPr');
   properties.appendChild(
@@ -406,11 +408,37 @@ function createServiceItemControl(input: {
     pageBreak.appendChild(paragraphProperties);
     content.appendChild(pageBreak);
   }
-  for (const block of htmlToWordBlocks(input.document, rendered.resolved)) {
-    content.appendChild(block);
+  if (input.sowSnapshot) {
+    content.appendChild(createPartialReference(input.document, input.allocator, input.sowSnapshot.pin.partialId));
+  } else {
+    const context = buildServiceAgreementItemPlaceholderContext({
+      agreement: input.agreement,
+      item: input.item,
+    });
+    const rendered = resolvePlaceholders(
+      input.item.partialContentSnapshot,
+      htmlSafeServiceContext(context),
+      { missingPlaceholder: 'keep', dateFormat: 'dd MMMM yyyy' },
+    );
+    for (const block of htmlToWordBlocks(input.document, rendered.resolved)) {
+      content.appendChild(block);
+    }
   }
   wrapper.appendChild(content);
   return wrapper;
+}
+
+/** A block reference that generation replaces with the pinned Word partial. */
+function createPartialReference(document: XMLDocument, allocator: WordIdAllocator, partialId: string): Element {
+  const reference = wordElement(document, 'sdt');
+  const properties = wordElement(document, 'sdtPr');
+  properties.appendChild(wordElement(document, 'tag', { val: oakDocPartialTag(partialId) }));
+  properties.appendChild(wordElement(document, 'id', { val: String(allocator.take()) }));
+  reference.appendChild(properties);
+  const content = wordElement(document, 'sdtContent');
+  content.appendChild(wordElement(document, 'p'));
+  reference.appendChild(content);
+  return reference;
 }
 
 function rowProperties(
@@ -803,6 +831,7 @@ export function renderServiceAgreementOakDoc(input: {
         signerContactIds: [...input.agreement.signerContactIds],
         providedSignerCount: signers.length,
       },
+      sowPartialPins: [],
     };
   }
 
@@ -839,6 +868,7 @@ export function renderServiceAgreementOakDoc(input: {
         signerContactIds: [...input.agreement.signerContactIds],
         providedSignerCount: signers.length,
       },
+      sowPartialPins: [],
     };
   }
 
@@ -865,19 +895,25 @@ export function renderServiceAgreementOakDoc(input: {
         signerContactIds: [...input.agreement.signerContactIds],
         providedSignerCount: signers.length,
       },
+      sowPartialPins: [],
     };
   }
 
   const allocator = new WordIdAllocator(xml);
+  const sowPartialPins: OakDocPartialPin[] = [];
   const serviceControls = orderedServiceAgreementItems(input.agreement).map(
-    (item, index) =>
-      createServiceItemControl({
+    (item, index) => {
+      const sowSnapshot = readOakDocSowSnapshot(item.partialContentSnapshot);
+      if (sowSnapshot) sowPartialPins.push(sowSnapshot.pin);
+      return createServiceItemControl({
         document: xml,
         allocator,
         agreement: input.agreement,
         item,
+        sowSnapshot,
         pageBreakBefore: index > 0,
-      }),
+      });
+    },
   );
 
   const replacements: Array<{
@@ -924,6 +960,7 @@ export function renderServiceAgreementOakDoc(input: {
         signerContactIds: [...input.agreement.signerContactIds],
         providedSignerCount: signers.length,
       },
+      sowPartialPins: [],
     };
   }
 
@@ -966,5 +1003,6 @@ export function renderServiceAgreementOakDoc(input: {
       signerContactIds: [...input.agreement.signerContactIds],
       providedSignerCount: signers.length,
     },
+    sowPartialPins,
   };
 }

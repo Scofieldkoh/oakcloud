@@ -6,6 +6,11 @@ import { strFromU8, unzipSync } from 'fflate';
 import { createDocxFixture } from '../helpers/docx-fixture';
 import { resolveOakDocFields } from '@/lib/document-editor/oakdoc-fields';
 import {
+  encodeOakDocSowSnapshot,
+  expandOakDocPartials,
+  readOakDocSowSnapshot,
+} from '@/lib/document-editor/oakdoc-partials';
+import {
   renderServiceAgreementOakDoc,
   type ServiceAgreementDraftDto,
   type ServiceAgreementOakDocFieldResolutionAdapter,
@@ -472,5 +477,53 @@ describe('OakDoc-native Service Agreement renderer', () => {
         expect.objectContaining({ code: 'CANONICAL_HASH_MISMATCH' }),
       ]),
     );
+  });
+
+  it('places a Word scope-of-work partial by its pin and expands it from pinned bytes', () => {
+    const partialId = '33333333-3333-4333-8333-333333333333';
+    const pin = {
+      partialId,
+      version: 4,
+      sha256: 'a'.repeat(64),
+      storageKey: `tenant-1/template-partials/${partialId}/oakdoc/${'a'.repeat(64)}.docx`,
+      nested: [],
+    };
+    const agreement = agreementFixture();
+    agreement.items[0].partialContentSnapshot = encodeOakDocSowSnapshot({ pin, fieldTags: ['company.name'] });
+
+    expect(readOakDocSowSnapshot(agreement.items[0].partialContentSnapshot)).toEqual({ pin, fieldTags: ['company.name'] });
+    expect(agreement.items[0].partialContentSnapshot).toContain('appears in the OakDoc version');
+
+    const master = createDocxFixture({
+      '[Content_Types].xml': '<?xml version="1.0" encoding="UTF-8"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"/>',
+      'word/document.xml': documentXml(masterDocx()),
+    });
+    const result = renderServiceAgreementOakDoc({
+      masterDocxBytes: master,
+      agreement,
+      fieldContext: { values: {} },
+    });
+    const rendered = documentXml(result.bytes);
+    expect(result.sowPartialPins).toEqual([pin]);
+    expect(rendered).toContain(`oakdoc.partial:${partialId}`);
+    expect(rendered).not.toContain('appears in the OakDoc version');
+
+    const fragment = createDocxFixture({
+      'word/document.xml': `<?xml version="1.0" encoding="UTF-8"?><w:document xmlns:w="${WORD_NS}"><w:body><w:p><w:r><w:t>Word scope of work</w:t></w:r></w:p><w:sectPr/></w:body></w:document>`,
+    });
+    const expanded = expandOakDocPartials({
+      docxBytes: result.bytes,
+      fragments: new Map([[partialId, fragment]]),
+    });
+    const output = documentXml(expanded.bytes);
+    expect(expanded.diagnostics.filter((entry) => entry.severity === 'error')).toEqual([]);
+    expect(output).toContain('Word scope of work');
+    expect(output).toContain('agreement.service.item:item-1');
+    expect(output).not.toContain(`oakdoc.partial:${partialId}`);
+  });
+
+  it('rejects a damaged Word scope-of-work snapshot', () => {
+    expect(() => readOakDocSowSnapshot('<div data-oakdoc-sow="%7Bbad">x</div>')).toThrow(/damaged/);
+    expect(readOakDocSowSnapshot('<p>HTML wording</p>')).toBeNull();
   });
 });

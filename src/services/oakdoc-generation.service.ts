@@ -70,6 +70,7 @@ import {
   expandPinnedOakDocPartials,
   readOakDocPartialPins,
 } from '@/services/oakdoc-partial.service';
+import { readOakDocSowSnapshot } from '@/lib/document-editor/oakdoc-partials';
 
 const log = createLogger('oakdoc-generation');
 
@@ -220,17 +221,23 @@ export async function generateOakDocBytes(
   });
   const masterBytes = partials.bytes;
 
+  const composition = template.compositionType === 'SERVICE_AGREEMENT'
+    ? await loadAgreementComposition(input.serviceAgreementId, params.tenantId)
+    : null;
+  // Word scope-of-work partials are inserted after composition, so their
+  // fields are collected from the item snapshots up front.
+  const sowFieldTags = (composition?.agreement.items ?? []).flatMap(
+    (item) => readOakDocSowSnapshot(item.partialContentSnapshot)?.fieldTags ?? [],
+  );
+
   const fieldSummary = inspectOakDocFields(masterBytes);
   const conditionSummary = inspectOakDocConditions(masterBytes);
   const resolutionTags = Array.from(new Set([
     ...downloadedMetadata.fieldTags,
     ...fieldSummary.tags,
     ...conditionSummary.fieldTags,
+    ...sowFieldTags,
   ]));
-
-  const composition = template.compositionType === 'SERVICE_AGREEMENT'
-    ? await loadAgreementComposition(input.serviceAgreementId, params.tenantId)
-    : null;
   const agreementContext = input.agreement ?? (composition
     ? {
         agreementDate: composition.agreement.agreementDate,
@@ -260,7 +267,7 @@ export async function generateOakDocBytes(
   const diagnostics = [
     ...partials.diagnostics,
     ...diagnoseOakDocGeneration({
-      usedTags: [...fieldSummary.tags, ...conditionSummary.fieldTags],
+      usedTags: [...fieldSummary.tags, ...conditionSummary.fieldTags, ...sowFieldTags],
       provided,
     }),
   ];
@@ -316,7 +323,13 @@ export async function generateOakDocBytes(
         authorizedRepresentatives: composition.representatives.map(toAgreementParty),
       },
     });
-    composedBytes = rendered.bytes;
+    const sowPartials = await expandPinnedOakDocPartials({
+      bytes: rendered.bytes,
+      pins: rendered.sowPartialPins,
+      tenantId: params.tenantId,
+    });
+    diagnostics.push(...sowPartials.diagnostics);
+    composedBytes = sowPartials.bytes;
     agreementHash = rendered.agreementMetadata.canonicalHash;
     for (const diagnostic of rendered.diagnostics) {
       if (diagnostic.severity === 'info') continue;

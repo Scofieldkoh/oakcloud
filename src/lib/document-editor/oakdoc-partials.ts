@@ -795,3 +795,46 @@ export function expandOakDocPartials(input: {
   );
   return { bytes: master.toBytes(), diagnostics, expanded: Array.from(expanded) };
 }
+
+/**
+ * A service variant whose scope of work is a Word partial snapshots the
+ * partial's pin instead of HTML wording. The snapshot is kept in the item's
+ * text column as a small HTML wrapper, so A4 renderers show a short notice
+ * and OakDoc expands the pinned Word body in its place.
+ */
+export interface OakDocSowSnapshot {
+  pin: OakDocPartialPin;
+  /** Field tags the pinned partial uses, so generation resolves them. */
+  fieldTags: string[];
+}
+
+const SOW_SNAPSHOT_PATTERN = /^<div data-oakdoc-sow="([^"]*)">/;
+const SOW_SNAPSHOT_NOTICE =
+  '<p>This scope of work is a Word partial and appears in the OakDoc version of this agreement.</p>';
+
+export function encodeOakDocSowSnapshot(snapshot: OakDocSowSnapshot): string {
+  const payload = encodeURIComponent(JSON.stringify({ schemaVersion: 1, ...snapshot }));
+  return `<div data-oakdoc-sow="${payload}">${SOW_SNAPSHOT_NOTICE}</div>`;
+}
+
+/** Read a Word scope-of-work snapshot, or null for HTML wording. */
+export function readOakDocSowSnapshot(content: string): OakDocSowSnapshot | null {
+  const match = SOW_SNAPSHOT_PATTERN.exec(content);
+  if (!match) return null;
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(decodeURIComponent(match[1]));
+  } catch {
+    parsed = null;
+  }
+  const pin = isRecord(parsed) ? readPin(parsed.pin, 0) : null;
+  if (!isRecord(parsed) || parsed.schemaVersion !== 1 || !pin) {
+    throw new ValidationError('The Word scope-of-work snapshot is damaged', {
+      reason: 'OAKDOC_SOW_SNAPSHOT_INVALID',
+    });
+  }
+  const fieldTags = Array.isArray(parsed.fieldTags)
+    ? parsed.fieldTags.filter((tag): tag is string => typeof tag === 'string')
+    : [];
+  return { pin, fieldTags };
+}
