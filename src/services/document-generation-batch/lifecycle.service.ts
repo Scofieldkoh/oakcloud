@@ -25,6 +25,7 @@ import {
   claimGeneratedDocumentRevision,
   readGeneratedDocumentRevision,
 } from '@/lib/document-editor/generated-document-revision';
+import { VersionConflictError } from '@/lib/document-editor/revision-concurrency';
 import { serviceAgreementDraftSchema } from '@/lib/validations/service-agreement';
 import {
   upsertServiceAgreementDraft,
@@ -236,6 +237,13 @@ export function computeBatchStatus(itemStatuses: string[]): 'DRAFT' | 'PARTIAL' 
   if (generated === itemStatuses.length && itemStatuses.length > 0) return 'COMPLETED';
   if (generated > 0) return 'PARTIAL';
   return 'DRAFT';
+}
+
+function hasDurableGeneratedOutput(item: BatchWithRelations['items'][number]): boolean {
+  if (item.status === 'GENERATED') return true;
+  if (item.generatedDocument.status !== 'DRAFT') return true;
+  const agreement = item.generatedDocument.serviceAgreement;
+  return Boolean(agreement && agreement.status !== 'DRAFT');
 }
 
 export async function createDocumentGenerationBatch(
@@ -506,7 +514,7 @@ export async function updateDocumentGenerationBatch(
 
     for (const item of current.items) {
       if (submittedTemplateIds.includes(item.templateId)) continue;
-      if (item.status === 'GENERATED') {
+      if (hasDurableGeneratedOutput(item)) {
         throw new ValidationError(
           'Generated documents cannot be removed from the batch',
         );
@@ -769,7 +777,7 @@ export async function discardDocumentGenerationBatch(
     let discardedItemCount = 0;
     let preservedItemCount = 0;
     for (const item of batch.items) {
-      if (item.status === 'GENERATED') {
+      if (hasDurableGeneratedOutput(item)) {
         preservedItemCount += 1;
         continue;
       }
@@ -859,8 +867,12 @@ export async function adoptLegacyGenerationSession(
   readA4StoredDocument(template.content, template.contentJson);
 
   const agreement = state.serviceAgreementId
-    ? await prisma.serviceAgreement.findUnique({
-        where: { generatedDocumentId: draftId },
+    ? await prisma.serviceAgreement.findFirst({
+        where: {
+          id: state.serviceAgreementId,
+          tenantId: params.tenantId,
+          generatedDocumentId: draftId,
+        },
       })
     : null;
 
@@ -879,59 +891,79 @@ export async function adoptLegacyGenerationSession(
       : null,
   };
 
-  const batch = (await prisma.$transaction(async (tx) => {
-    const created = await tx.documentGenerationBatch.create({
-      data: {
+  let batch: BatchWithRelations;
+  try {
+    batch = (await prisma.$transaction(async (tx) => {
+      // Claim the adopted document before creating ownership records. This makes
+      // concurrent migration requests serialize on the authoritative document
+      // revision instead of racing to create duplicate batches/items.
+      await claimGeneratedDocumentRevision(tx, {
+        id: document.id,
         tenantId: params.tenantId,
-        createdById: params.userId,
-        primaryCompanyId: state.companyId ?? null,
-        currentStage: Math.min(state.currentStep, 3),
-        status: 'DRAFT',
-        masterFieldValues: {},
-        taskContext: taskLaunchContextToJson(taskContext) as never,
-      },
-    });
-    const item = await tx.documentGenerationBatchItem.create({
-      data: {
-        tenantId: params.tenantId,
-        batchId: created.id,
-        templateId: template.id,
-        generatedDocumentId: document.id,
-        templateVersion: template.version,
-        displayOrder: 0,
-        configuration: configuration as never,
-        previewContent: state.previewContent,
-        editedContent: state.editedContent,
-        editedContentJson: state.editedContentJson
-          ? (state.editedContentJson as never)
-          : Prisma.DbNull,
-      },
-    });
-    const metadata = { ...(document.metadata as Record<string, unknown>) };
-    delete metadata.generationSession;
-    await claimGeneratedDocumentRevision(tx, {
-      id: document.id,
-      tenantId: params.tenantId,
-      expectedRevision: observedRevision,
-      allowedStatuses: ['DRAFT'],
-    });
-    await tx.generatedDocument.update({
-      where: { id: document.id },
-      data: {
-        metadata: metadata as never,
-        title: configuration.title,
-        useLetterhead: configuration.useLetterhead,
-      },
-    });
-    await tx.documentGenerationBatch.update({
-      where: { id: created.id },
-      data: { activeItemId: item.id },
-    });
-    return tx.documentGenerationBatch.findFirstOrThrow({
-      where: { id: created.id },
-      include: batchInclude,
-    });
-  })) as BatchWithRelations;
+        expectedRevision: observedRevision,
+        allowedStatuses: ['DRAFT'],
+      });
+
+      const created = await tx.documentGenerationBatch.create({
+        data: {
+          tenantId: params.tenantId,
+          createdById: params.userId,
+          primaryCompanyId: state.companyId ?? null,
+          currentStage: Math.min(state.currentStep, 3),
+          status: 'DRAFT',
+          masterFieldValues: {},
+          taskContext: taskLaunchContextToJson(taskContext) as never,
+        },
+      });
+      const item = await tx.documentGenerationBatchItem.create({
+        data: {
+          tenantId: params.tenantId,
+          batchId: created.id,
+          templateId: template.id,
+          generatedDocumentId: document.id,
+          templateVersion: template.version,
+          displayOrder: 0,
+          configuration: configuration as never,
+          previewContent: state.previewContent,
+          editedContent: state.editedContent,
+          editedContentJson: state.editedContentJson
+            ? (state.editedContentJson as never)
+            : Prisma.DbNull,
+        },
+      });
+      const metadata = { ...(document.metadata as Record<string, unknown>) };
+      delete metadata.generationSession;
+      await tx.generatedDocument.update({
+        where: { id: document.id },
+        data: {
+          metadata: metadata as never,
+          title: configuration.title,
+          useLetterhead: configuration.useLetterhead,
+        },
+      });
+      await tx.documentGenerationBatch.update({
+        where: { id: created.id },
+        data: { activeItemId: item.id },
+      });
+      return tx.documentGenerationBatch.findFirstOrThrow({
+        where: { id: created.id },
+        include: batchInclude,
+      });
+    })) as BatchWithRelations;
+  } catch (error) {
+    if (error instanceof VersionConflictError) {
+      const owner = await prisma.documentGenerationBatchItem.findFirst({
+        where: { generatedDocumentId: draftId, tenantId: params.tenantId },
+        select: { batchId: true },
+      });
+      if (owner) {
+        const existingBatch = await getDocumentGenerationBatch(owner.batchId, params);
+        await safelyLinkBatchOutcome(existingBatch, params, taskContext);
+        return existingBatch;
+      }
+    }
+    throw error;
+  }
 
   await createAuditLog({
     tenantId: params.tenantId,
