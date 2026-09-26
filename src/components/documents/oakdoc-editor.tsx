@@ -10,7 +10,7 @@ import {
 import { DocxEditor, type DocxEditorRef, type EditorCommand } from '@docx-editor.dev/react';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ArrowLeft, Download, FileUp, Loader2, Save, Search } from 'lucide-react';
+import { ArrowLeft, Download, FileUp, Loader2, Save, Search, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSession } from '@/hooks/use-auth';
 import { useActiveWorkspaceId } from '@/components/ui/workspace-selector';
@@ -51,6 +51,8 @@ import {
 } from '@/lib/document-editor/oakdoc-template';
 import { useOakDocSectionDeleteGuard } from '@/components/documents/oakdoc/use-oakdoc-section-delete-guard';
 import { OakDocPartialPanel } from '@/components/documents/oakdoc/oakdoc-partial-panel';
+import { useOakDocAiSelection } from '@/components/documents/oakdoc/use-oakdoc-ai-selection';
+import { AISidebar, type DocumentCategory } from '@/components/documents/ai-sidebar';
 import type { TemplatePartialSummary } from '@/hooks/use-template-partials';
 import {
   insertOakDocPartialReference,
@@ -316,6 +318,17 @@ export function OakDocEditor() {
   });
 
   const company = companyQuery.data;
+  const [aiOpen, setAiOpen] = useState(false);
+  // Bumped when a DocxEditor instance is ready, so the AI selection
+  // subscription attaches to the live editor.
+  const [editorReadyKey, setEditorReadyKey] = useState(0);
+  const getLocalRevision = useCallback(() => localRevisionRef.current, []);
+  const aiSelection = useOakDocAiSelection({
+    editorRef,
+    enabled: aiOpen && documentBytes !== null,
+    documentKey: editorReadyKey,
+    getRevision: getLocalRevision,
+  });
   const directors = useMemo(
     () => company?.officers?.filter(
       (officer) => officer.isCurrent !== false && officer.role === 'DIRECTOR',
@@ -804,6 +817,18 @@ export function OakDocEditor() {
     title,
   ]);
 
+  const applyAiText = useCallback((mode: 'insert' | 'replace', content: string) => {
+    const result = mode === 'insert' ? aiSelection.insert(content) : aiSelection.replace(content);
+    if (result.ok) {
+      setIsDirty(true);
+      setStatus(mode === 'insert' ? 'Inserted the AI text as plain text.' : 'Replaced the selection with the AI text.');
+      setStatusKind('success');
+    } else {
+      setStatus(result.message);
+      setStatusKind('error');
+    }
+  }, [aiSelection, setIsDirty]);
+
   const saveTemplate = useCallback(async () => {
     if (!activeTenantId) {
       setStatus('Select a workspace before saving the template.');
@@ -980,6 +1005,16 @@ export function OakDocEditor() {
           <Button
             variant="secondary"
             size="sm"
+            leftIcon={<Sparkles className="h-4 w-4" />}
+            disabled={!hasDocument}
+            aria-pressed={aiOpen}
+            onClick={() => setAiOpen((open) => !open)}
+          >
+            AI assistant
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
             disabled={
               !hasDocument
               || !company
@@ -1014,7 +1049,7 @@ export function OakDocEditor() {
           </Button>
         </header>
 
-        <main className="grid min-h-0 min-w-0 grid-cols-[320px_minmax(0,1fr)] overflow-hidden">
+        <main className="grid min-h-0 min-w-0 grid-cols-[320px_minmax(0,1fr)_auto] overflow-hidden">
           <aside className="min-h-0 overflow-y-auto border-r border-border-primary bg-background-primary p-3">
             <section className="space-y-2">
               <div className="flex items-center justify-between gap-2">
@@ -1483,6 +1518,7 @@ export function OakDocEditor() {
                 onOpen={() => fileInputRef.current?.click()}
                 onSave={() => void saveTemplate()}
                 onReady={() => {
+                  setEditorReadyKey((value) => value + 1);
                   const message = readyMessageRef.current || 'DOCX ready.';
                   readyMessageRef.current = '';
                   setStatus(message);
@@ -1520,6 +1556,19 @@ export function OakDocEditor() {
               </div>
             )}
           </section>
+          <AISidebar
+            isOpen={aiOpen && hasDocument}
+            onClose={() => setAiOpen(false)}
+            context={{
+              mode: 'template_editor',
+              templateCategory: templateCategory as DocumentCategory,
+              templateName: title,
+              tenantId: activeTenantId ?? undefined,
+              selectedText: aiSelection.selectedText,
+            }}
+            onInsert={(content) => applyAiText('insert', content)}
+            onReplace={(content) => applyAiText('replace', content)}
+          />
         </main>
       </div>
     </div>
