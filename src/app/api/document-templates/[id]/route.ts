@@ -21,7 +21,7 @@ import {
 } from '@/services/oakdoc-template.service';
 import {
   linkOakDocMigration,
-  recordOakDocMigrationValidation,
+  runOakDocMigrationValidation,
   setOakDocMigrationPreference,
 } from '@/services/oakdoc-migration.service';
 
@@ -347,25 +347,23 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     }
 
     if (body.action === 'recordOakDocMigrationValidation') {
-      if (typeof body.passed !== 'boolean') {
-        return NextResponse.json({ error: 'passed must be a boolean' }, { status: 400 });
-      }
-      if (
-        body.issueCodes !== undefined
-        && (!Array.isArray(body.issueCodes)
-          || body.issueCodes.some((value: unknown) => typeof value !== 'string'))
-      ) {
-        return NextResponse.json({ error: 'issueCodes must be an array of strings' }, { status: 400 });
-      }
-      const template = await recordOakDocMigrationValidation({
+      // Parity results are produced by the server checker, never submitted.
+      return NextResponse.json(
+        {
+          error: 'Migration results can no longer be submitted. Use runOakDocMigrationValidation to run the server check.',
+          code: 'VALIDATION_ERROR',
+          details: { reason: 'OAKDOC_CALLER_VALIDATION_REJECTED' },
+        },
+        { status: 400 },
+      );
+    }
+
+    if (body.action === 'runOakDocMigrationValidation') {
+      const { template, validation } = await runOakDocMigrationValidation({
         oakDocTemplateId: id,
         expectedRevision,
-        passed: body.passed,
-        issueCodes: body.issueCodes,
-        summary: typeof body.summary === 'string' ? body.summary : undefined,
-        checkedAt: typeof body.checkedAt === 'string' ? body.checkedAt : undefined,
       }, { tenantId, userId: session.id });
-      return NextResponse.json(withRevision(template));
+      return NextResponse.json({ ...withRevision(template), migrationValidation: validation });
     }
 
     if (body.action === 'setOakDocMigrationPreference') {
