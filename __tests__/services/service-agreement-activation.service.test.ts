@@ -8,7 +8,7 @@ const prismaMock = vi.hoisted(() => ({
   serviceVariantDeadlineRule: { findMany: vi.fn() },
   clientServiceDeadlineRule: { createMany: vi.fn() },
   serviceScheduleReconciliationRequest: { findUnique: vi.fn(), upsert: vi.fn() },
-  generatedDocument: { updateMany: vi.fn() },
+  generatedDocument: { findFirst: vi.fn(), updateMany: vi.fn() },
   esigningEnvelopeDocument: { findMany: vi.fn() },
   $transaction: vi.fn(),
   $queryRaw: vi.fn(),
@@ -20,7 +20,10 @@ vi.mock('@/lib/prisma', () => ({ prisma: prismaMock }));
 vi.mock('@/lib/audit', () => auditMock);
 vi.mock('@/lib/logger', () => ({ createLogger: () => loggerMock }));
 vi.mock('@/services/schedule-reconciliation/worker', () => reconciliationMock);
+const oakDocCheckMock = vi.hoisted(() => ({ checkGeneratedOakDocFinalization: vi.fn() }));
+vi.mock('@/services/oakdoc-generation.service', () => oakDocCheckMock);
 
+import { mergeGeneratedOakDocMetadata } from '@/lib/document-editor/document-engine';
 import { processServiceAgreementActivation, queueServiceAgreementActivationsForEnvelope, requestManualServiceAgreementActivation, retryServiceAgreementActivation } from '@/services/service-agreement';
 
 const agreement = {
@@ -46,6 +49,7 @@ describe('service agreement activation', () => {
     vi.clearAllMocks();
     prismaMock.$transaction.mockImplementation(async (callback) => callback(prismaMock));
     prismaMock.clientService.findUnique.mockResolvedValue(null);
+    prismaMock.generatedDocument.findFirst.mockResolvedValue(null);
     prismaMock.clientService.create.mockImplementation(async ({ data }) => ({ id: `service-${data.companyId}`, ...data, createdAt: new Date(), updatedAt: new Date() }));
     prismaMock.clientService.count.mockResolvedValue(2);
     prismaMock.serviceAgreement.updateMany.mockResolvedValue({ count: 1 });
@@ -164,6 +168,7 @@ describe('service agreement activation', () => {
   it('creates an independent agreement service when a manual row with null lineage already exists', async () => {
     prismaMock.serviceAgreement.findFirst.mockResolvedValue(agreement);
     prismaMock.clientService.findUnique.mockResolvedValue(null);
+    prismaMock.generatedDocument.findFirst.mockResolvedValue(null);
 
     const result = await processServiceAgreementActivation({ agreementId: agreement.id, tenantId: agreement.tenantId, claimToken: 'claim-1' });
 
@@ -214,6 +219,76 @@ describe('service agreement activation', () => {
     await expect(processServiceAgreementActivation({ agreementId: agreement.id, tenantId: agreement.tenantId, claimToken: 'claim-1' })).resolves.toMatchObject({ status: 'permanent-failure' });
     expect(prismaMock.clientService.create).not.toHaveBeenCalled();
     expect(prismaMock.generatedDocument.updateMany).not.toHaveBeenCalled();
+  });
+
+  describe('finalized agreement documents', () => {
+    const oakDocMetadata = mergeGeneratedOakDocMetadata({}, {
+      schemaVersion: 1,
+      storageKey: 'tenant-1/oakdoc/document-1.docx',
+      fileName: 'Agreement.docx',
+      fileSize: 10,
+      sha256: 'a'.repeat(64),
+      mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      templateId: 'template-1',
+      templateVersion: 1,
+      templateSha256: 'b'.repeat(64),
+      generatedAt: '2026-09-26T00:00:00.000Z',
+      fieldsUpdated: 0,
+      unresolvedTags: [],
+      conditionsResolved: 0,
+      conditionsKept: 0,
+      conditionsRemoved: 0,
+      repeatersResolved: 0,
+      repeaterItemsCreated: 0,
+    }, {});
+    const finalized = (metadata: unknown, revision = 3) => ({
+      ...agreement,
+      generatedDocument: { id: 'document-1', status: 'FINALIZED', revision, metadata },
+    });
+    const run = () => processServiceAgreementActivation({ agreementId: agreement.id, tenantId: agreement.tenantId, claimToken: 'claim-1' });
+
+    it('blocks a finalized document that still carries unresolved generation diagnostics', async () => {
+      prismaMock.serviceAgreement.findFirst.mockResolvedValue(finalized({ missingPlaceholders: ['client.name'] }));
+      await expect(run()).resolves.toMatchObject({ status: 'permanent-failure' });
+      expect(prismaMock.clientService.create).not.toHaveBeenCalled();
+    });
+
+    it('blocks a finalized document whose OakDoc metadata is invalid', async () => {
+      prismaMock.generatedDocument.findFirst.mockResolvedValue({ id: 'document-1', revision: 3, metadata: { documentEngine: 'OAKDOC' } });
+      prismaMock.serviceAgreement.findFirst.mockResolvedValue(finalized({ documentEngine: 'OAKDOC' }));
+      await expect(run()).resolves.toMatchObject({ status: 'permanent-failure' });
+      expect(prismaMock.clientService.create).not.toHaveBeenCalled();
+    });
+
+    it('blocks a finalized OakDoc document whose stored DOCX still has unresolved controls', async () => {
+      prismaMock.generatedDocument.findFirst.mockResolvedValue({ id: 'document-1', revision: 3, metadata: oakDocMetadata });
+      oakDocCheckMock.checkGeneratedOakDocFinalization.mockResolvedValue({
+        ready: false, unresolvedFields: ['client.name'], unresolvedConditions: 0, unresolvedRepeaters: 0,
+      });
+      prismaMock.serviceAgreement.findFirst.mockResolvedValue(finalized(oakDocMetadata));
+      await expect(run()).resolves.toMatchObject({ status: 'permanent-failure' });
+      expect(prismaMock.clientService.create).not.toHaveBeenCalled();
+    });
+
+    it('retries when the OakDoc document changed after it was inspected', async () => {
+      prismaMock.generatedDocument.findFirst.mockResolvedValue({ id: 'document-1', revision: 3, metadata: oakDocMetadata });
+      oakDocCheckMock.checkGeneratedOakDocFinalization.mockResolvedValue({
+        ready: true, unresolvedFields: [], unresolvedConditions: 0, unresolvedRepeaters: 0,
+      });
+      prismaMock.serviceAgreement.findFirst.mockResolvedValue(finalized(oakDocMetadata, 4));
+      await expect(run()).resolves.toMatchObject({ status: 'retryable-failure' });
+      expect(prismaMock.clientService.create).not.toHaveBeenCalled();
+    });
+
+    it('activates a finalized OakDoc document with clean native evidence', async () => {
+      prismaMock.generatedDocument.findFirst.mockResolvedValue({ id: 'document-1', revision: 3, metadata: oakDocMetadata });
+      oakDocCheckMock.checkGeneratedOakDocFinalization.mockResolvedValue({
+        ready: true, unresolvedFields: [], unresolvedConditions: 0, unresolvedRepeaters: 0,
+      });
+      prismaMock.serviceAgreement.findFirst.mockResolvedValue(finalized(oakDocMetadata));
+      await expect(run()).resolves.toEqual({ status: 'completed', clientServiceCount: 2 });
+      expect(prismaMock.generatedDocument.updateMany).not.toHaveBeenCalled();
+    });
   });
 
   it('writes creation and activation audits through the active transaction with the manual actor', async () => {

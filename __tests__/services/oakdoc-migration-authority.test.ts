@@ -67,6 +67,7 @@ const {
   hashTemplateDefinition,
   linkOakDocMigration,
   resolvePreferredMigratedTemplate,
+  resolveTemplateIdsForNewRun,
   runOakDocMigrationValidation,
   setOakDocMigrationPreference,
 } = await import('@/services/oakdoc-migration.service');
@@ -179,6 +180,15 @@ describe('OakDoc migration authority (M1)', () => {
     expect(readOakDocMigrationMetadata(promoted.contentJson)?.preference).toBe('OAKDOC');
     await expect(resolvePreferredMigratedTemplate('legacy-1', 'tenant-1'))
       .resolves.toMatchObject({ id: 'oak-1' });
+    // New runs (tasks, batches) switch to the preferred replacement; other
+    // IDs pass through unchanged.
+    await expect(resolveTemplateIdsForNewRun(['legacy-1', 'oak-1', 'missing'], 'tenant-1'))
+      .resolves.toEqual(['oak-1', 'oak-1', 'missing']);
+  });
+
+  it('keeps a new run on the A4 template until its replacement is preferred', async () => {
+    await linkAndRun();
+    await expect(resolveTemplateIdsForNewRun(['legacy-1'], 'tenant-1')).resolves.toEqual(['legacy-1']);
   });
 
   it('invalidates evidence when the legacy source changes', async () => {
