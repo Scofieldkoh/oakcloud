@@ -49,6 +49,7 @@ const evaluated = {
   resolvedTitle: 'Generated',
   templateVersion: 3,
   rendered: null,
+  oakDocGeneration: null,
 };
 
 function item(contentJson: unknown) {

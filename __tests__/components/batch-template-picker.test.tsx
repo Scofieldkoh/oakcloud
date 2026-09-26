@@ -19,6 +19,7 @@ function template(id: string, name: string, overrides: Partial<DocumentTemplateS
     compositionType: 'STANDARD',
     version: 1,
     isActive: true,
+    engine: 'A4',
     content: '<p>x</p>',
     placeholders: [],
     createdAt: '2026-08-12T00:00:00.000Z',
@@ -43,6 +44,7 @@ function item(template: DocumentTemplateSummary): EditableBatchItem {
     templateName: template.name,
     templateKind: template.compositionType,
     templateVersion: template.version,
+    templateEngine: 'A4',
     status: 'NOT_STARTED',
     configuration: {
       version: 1,

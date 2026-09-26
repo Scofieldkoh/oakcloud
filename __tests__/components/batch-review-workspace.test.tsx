@@ -32,6 +32,7 @@ function item(overrides: Partial<EditableBatchItem> = {}): EditableBatchItem {
     templateName: 'Engagement Letter',
     templateKind: 'STANDARD',
     templateVersion: 1,
+    templateEngine: 'A4',
     status: 'READY',
     configuration: {
       version: 1,
@@ -64,6 +65,7 @@ function props(overrides: Partial<BatchReviewWorkspaceProps> = {}): BatchReviewW
     onPreview: vi.fn(),
     onReview: vi.fn(),
     onEditContent: vi.fn(),
+    onSaveOakDoc: vi.fn(),
     ...overrides,
   };
 }

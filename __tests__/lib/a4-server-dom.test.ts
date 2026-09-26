@@ -8,7 +8,7 @@ afterEach(() => {
   if (originalXmlSerializer) {
     Object.defineProperty(globalThis, 'XMLSerializer', originalXmlSerializer);
   } else {
-    delete (globalThis as typeof globalThis & { XMLSerializer?: unknown }).XMLSerializer;
+    Reflect.deleteProperty(globalThis, 'XMLSerializer');
   }
 });
 
