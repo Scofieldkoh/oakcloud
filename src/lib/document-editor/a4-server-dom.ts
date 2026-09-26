@@ -26,6 +26,7 @@ const DOM_GLOBALS = [
   'Range',
   'DocumentFragment',
   'DOMParser',
+  'XMLSerializer',
 ] as const;
 
 export function ensureA4ServerDomGlobals(): void {
@@ -33,6 +34,8 @@ export function ensureA4ServerDomGlobals(): void {
     typeof document !== 'undefined'
     && typeof Node !== 'undefined'
     && typeof NodeFilter !== 'undefined'
+    && typeof DOMParser !== 'undefined'
+    && typeof XMLSerializer !== 'undefined'
   ) {
     return;
   }
