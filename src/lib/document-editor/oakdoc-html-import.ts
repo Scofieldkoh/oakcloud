@@ -648,3 +648,8 @@ export function buildOakDocFromHtml(html: string): OakDocHtmlImportResult {
   }
   return { bytes, diagnostics };
 }
+
+/** An empty A4 Word document: the starting point for blank documents, templates and partials. */
+export function buildBlankOakDocBytes(): Uint8Array {
+  return buildOakDocFromHtml('<p></p>').bytes;
+}

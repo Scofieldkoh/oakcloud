@@ -10,6 +10,9 @@ import { Button } from '@/components/ui/button';
 import { FormInput } from '@/components/ui/form-input';
 import { useToast } from '@/components/ui/toast';
 import { A4HistoricalViewer } from '@/components/documents/a4-historical-viewer';
+import { WordPartialEditor } from '@/components/documents/oakdoc/word-partial-editor';
+import { buildBlankOakDocBytes } from '@/lib/document-editor/oakdoc-html-import';
+import { OAKDOC_MIME_TYPE } from '@/lib/document-editor/oakdoc-template';
 import { extractA4DocumentLayout } from '@/components/documents/a4-pagination/layout';
 import { readOakDocTemplateMetadata, isOakDocTemplate } from '@/lib/document-editor/oakdoc-template';
 import {
@@ -134,7 +137,20 @@ function TemplateSource({ id }: { id: string | null }) {
   );
 }
 
-function WordPartialForm({ partial }: { partial: TemplatePartialWithRelations | null }) {
+function blankPartialFile(name: string): File {
+  const bytes = buildBlankOakDocBytes();
+  const copy = new Uint8Array(bytes.byteLength);
+  copy.set(bytes);
+  return new File([copy.buffer], `${name}.docx`, { type: OAKDOC_MIME_TYPE });
+}
+
+function WordPartialForm({
+  partial,
+  onUploaded,
+}: {
+  partial: TemplatePartialWithRelations | null;
+  onUploaded?: () => void;
+}) {
   const router = useRouter();
   const { success, error: toastError } = useToast();
   const save = useSaveWordPartial();
@@ -146,13 +162,19 @@ function WordPartialForm({ partial }: { partial: TemplatePartialWithRelations | 
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
-    if (!file) return;
+    if (partial && !file) return;
     try {
       const saved = await save.mutateAsync(partial
-        ? { id: partial.id, expectedRevision: partial.version, file }
-        : { name: name.trim(), displayName: displayName.trim(), description: description.trim(), file });
+        ? { id: partial.id, expectedRevision: partial.version, file: file! }
+        : {
+            name: name.trim(),
+            displayName: displayName.trim(),
+            description: description.trim(),
+            file: file ?? blankPartialFile(name.trim()),
+          });
       success(partial ? 'New version uploaded' : 'Word partial created');
       setFile(null);
+      onUploaded?.();
       if (!partial) router.replace(`/template-partials/editor?type=partial&tab=partials&id=${saved.id}`);
     } catch (caught) {
       toastError(caught instanceof Error ? caught.message : 'Failed to save the Word partial');
@@ -162,7 +184,7 @@ function WordPartialForm({ partial }: { partial: TemplatePartialWithRelations | 
   return (
     <form onSubmit={(event) => void submit(event)} className="max-w-xl space-y-4">
       <p className="text-sm text-text-secondary">
-        A Word partial is a .docx with reusable wording, inserted into Word templates from the template editor.
+        A Word partial is reusable Word wording, inserted into Word templates from the template editor.
         Templates keep the version they were saved with until someone updates them.
       </p>
       {partial ? (
@@ -192,7 +214,8 @@ function WordPartialForm({ partial }: { partial: TemplatePartialWithRelations | 
         </>
       )}
       <FormInput
-        label={partial ? 'New version (.docx)' : 'Word document (.docx)'}
+        label={partial ? 'Replace with a .docx' : 'Word document (.docx, optional)'}
+        hint={partial ? undefined : 'Leave empty to start from a blank page and write it here.'}
         type="file"
         accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         onChange={(event) => setFile(event.target.files?.[0] ?? null)}
@@ -201,9 +224,9 @@ function WordPartialForm({ partial }: { partial: TemplatePartialWithRelations | 
         type="submit"
         variant="primary"
         leftIcon={<Upload className="h-4 w-4" />}
-        disabled={!file || (!partial && !name.trim()) || save.isPending}
+        disabled={(partial ? !file : !name.trim()) || save.isPending}
       >
-        {partial ? 'Upload new version' : 'Create Word partial'}
+        {partial ? 'Upload new version' : file ? 'Create Word partial' : 'Create blank partial'}
       </Button>
     </form>
   );
@@ -211,6 +234,7 @@ function WordPartialForm({ partial }: { partial: TemplatePartialWithRelations | 
 
 function PartialSource({ id }: { id: string | null }) {
   const { data: partial, error, isLoading } = useTemplatePartial(id);
+  const [uploadCount, setUploadCount] = useState(0);
   if (!id) {
     return (
       <PageShell backHref="/template-partials?tab=partials" backLabel="Back to partials" title="New Word partial">
@@ -226,7 +250,19 @@ function PartialSource({ id }: { id: string | null }) {
   return (
     <PageShell backHref="/template-partials?tab=partials" backLabel="Back to partials" title={title}>
       {readOakDocTemplateMetadata(partial.contentJson) ? (
-        <WordPartialForm partial={partial} />
+        <div className="space-y-6">
+          <div className="h-[calc(100vh-16rem)] min-h-[28rem] overflow-hidden rounded-lg border border-border-primary shadow-sm">
+            <WordPartialEditor
+              partialId={partial.id}
+              loadKey={uploadCount}
+              title={title}
+              fileName={readOakDocTemplateMetadata(partial.contentJson)?.fileName ?? `${partial.name}.docx`}
+              version={partial.version}
+              readOnly={false}
+            />
+          </div>
+          <WordPartialForm partial={partial} onUploaded={() => setUploadCount((value) => value + 1)} />
+        </div>
       ) : (
         <RetiredA4Source
           html={partial.content}
@@ -240,7 +276,8 @@ function PartialSource({ id }: { id: string | null }) {
 /**
  * Template and partial source page. The A4 editor is retired, so A4
  * templates and HTML partials are shown read-only, Word templates open in
- * the OakDoc editor and Word partials are created or replaced by upload.
+ * the OakDoc editor and Word partials are edited here, created blank or
+ * from a .docx, and can be replaced by upload.
  */
 export function TemplateSourcePage() {
   const searchParams = useSearchParams();
