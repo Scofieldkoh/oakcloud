@@ -27,6 +27,14 @@ interface StoredTemplate {
   contentJson: unknown;
 }
 
+async function fetchWordReplacementId(id: string): Promise<string | null> {
+  const response = await fetch(`/api/document-templates/new-run?templateId=${encodeURIComponent(id)}`);
+  if (!response.ok) return null;
+  const payload = await response.json().catch(() => ({}));
+  const [replacementId] = Array.isArray(payload.templateIds) ? payload.templateIds : [];
+  return typeof replacementId === 'string' && replacementId !== id ? replacementId : null;
+}
+
 async function fetchTemplate(id: string): Promise<StoredTemplate> {
   const response = await fetch(`/api/document-templates/${encodeURIComponent(id)}`);
   const payload = await response.json().catch(() => ({}));
@@ -89,6 +97,11 @@ function TemplateSource({ id }: { id: string | null }) {
     enabled: Boolean(id),
   });
   const isOakDoc = data ? isOakDocTemplate(data.contentJson) : false;
+  const { data: replacementId } = useQuery({
+    queryKey: ['document-template-word-replacement', id],
+    queryFn: () => fetchWordReplacementId(id!),
+    enabled: Boolean(id && data && !isOakDoc),
+  });
 
   useEffect(() => {
     if (!id) router.replace(OAKDOC_TEMPLATE_EDITOR);
@@ -101,6 +114,17 @@ function TemplateSource({ id }: { id: string | null }) {
   }
   return (
     <PageShell backHref="/template-partials?tab=templates" backLabel="Back to templates" title={data.name}>
+      {replacementId && (
+        <Alert variant="success" compact>
+          This template has an approved Word version.{' '}
+          <Link
+            href={`${OAKDOC_TEMPLATE_EDITOR}&templateId=${encodeURIComponent(replacementId)}`}
+            className="font-medium underline"
+          >
+            Open the Word version
+          </Link>
+        </Alert>
+      )}
       <RetiredA4Source
         html={data.content}
         contentJson={data.contentJson}
