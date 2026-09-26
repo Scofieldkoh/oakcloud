@@ -14,6 +14,7 @@ import {
   type GeneratedOakDocAssetMetadata,
 } from '@/lib/document-editor/document-engine';
 import {
+  OAKDOC_CONDITION_TAG_PREFIX,
   inspectOakDocConditions,
   resolveOakDocConditions,
 } from '@/lib/document-editor/oakdoc-conditions';
@@ -23,22 +24,34 @@ import {
   resolveOakDocFields,
 } from '@/lib/document-editor/oakdoc-fields';
 import {
-  resolveOakDocRepeaters,
-} from '@/lib/document-editor/oakdoc-repeaters';
-import {
   buildOakDocResolutionValues,
   type OakDocCompanyDetail,
 } from '@/lib/document-editor/oakdoc-context';
 import {
   claimGeneratedDocumentRevision,
+  readGeneratedDocumentRevision,
 } from '@/lib/document-editor/generated-document-revision';
-import { NotFoundError, ValidationError } from '@/lib/errors';
+import {
+  resolveOakDocRepeaters,
+  OAKDOC_REPEATER_OUTER_TAGS,
+  inspectOakDocRepeaters,
+} from '@/lib/document-editor/oakdoc-repeaters';
+import { OAKDOC_SIGNATURE_TAGS } from '@/lib/document-editor/oakdoc-signatures';
+import { ConflictError, NotFoundError, ValidationError } from '@/lib/errors';
+import { createLogger } from '@/lib/logger';
+import {
+  OAKDOC_ERROR_REASONS,
+  type OakDocSaveReceipt,
+  type OakDocSnapshotIdentity,
+} from '@/types/oakdoc';
 import { storage, StorageKeys } from '@/lib/storage';
 import { inspectOakDocPackage } from '@/lib/document-editor/oakdoc-package-policy';
 import type { TenantAwareParams } from '@/lib/types';
 import type { TaskLaunchContext } from '@/services/tasks/types';
 import { getCompanyById } from '@/services/company.service';
 import { downloadOakDocTemplate } from '@/services/oakdoc-template.service';
+
+const log = createLogger('oakdoc-generation');
 
 function sha256(buffer: Buffer | Uint8Array): string {
   return createHash('sha256').update(buffer).digest('hex');
@@ -281,8 +294,9 @@ export async function materializeOakDocGeneratedDocument(
     ...(input.contactIds?.length ? { contactIds: input.contactIds } : {}),
   };
 
+  let document;
   try {
-    const document = await prisma.$transaction(async (tx) => {
+    document = await prisma.$transaction(async (tx) => {
       const claim = await claimGeneratedDocumentRevision(tx, {
         id: input.generatedDocumentId,
         tenantId: params.tenantId,
@@ -314,44 +328,40 @@ export async function materializeOakDocGeneratedDocument(
       });
       return { ...updated, revision: claim.revision };
     });
-
-    const previousAsset = readGeneratedOakDocAssetMetadata(existing.metadata);
-    if (
-      previousAsset
-      && previousAsset.storageKey !== storageKey
-      && previousAsset.storageKey.startsWith(
-        `${params.tenantId}/generated-documents/${input.generatedDocumentId}/oakdoc/`,
-      )
-    ) {
-      await storage.delete(previousAsset.storageKey).catch(() => undefined);
-    }
-
-    await createAuditLog({
-      tenantId: params.tenantId,
-      userId: params.userId,
-      companyId: input.companyId,
-      action: 'DOCUMENT_GENERATED',
-      entityType: 'GeneratedDocument',
-      entityId: document.id,
-      entityName: document.title,
-      summary: `Generated OakDoc document "${document.title}" from template "${generation.template.name}"`,
-      changeSource: 'MANUAL',
-      metadata: {
-        documentEngine: 'OAKDOC',
-        templateId: generation.template.id,
-        templateVersion: generation.template.version,
-        templateSha256: generation.template.sha256,
-        generatedAssetSha256: digest,
-        revision: document.revision,
-        selectedParties,
-      },
-    });
-
-    return document;
   } catch (error) {
+    // Pre-commit failure: the new upload is unreferenced and safe to remove.
     await storage.delete(storageKey).catch(() => undefined);
     throw error;
   }
+
+  const previousAsset = readGeneratedOakDocAssetMetadata(existing.metadata);
+  await afterCommit('delete superseded generated asset', () => deleteSupersededAsset(
+    previousAsset?.storageKey,
+    storageKey,
+    `${params.tenantId}/generated-documents/${input.generatedDocumentId}/oakdoc/`,
+  ));
+  await afterCommit('audit generated materialization', () => createAuditLog({
+    tenantId: params.tenantId,
+    userId: params.userId,
+    companyId: input.companyId,
+    action: 'DOCUMENT_GENERATED',
+    entityType: 'GeneratedDocument',
+    entityId: document.id,
+    entityName: document.title,
+    summary: `Generated OakDoc document "${document.title}" from template "${generation.template.name}"`,
+    changeSource: 'MANUAL',
+    metadata: {
+      documentEngine: 'OAKDOC',
+      templateId: generation.template.id,
+      templateVersion: generation.template.version,
+      templateSha256: generation.template.sha256,
+      generatedAssetSha256: digest,
+      revision: document.revision,
+      selectedParties,
+    },
+  }));
+
+  return document;
 }
 
 export async function downloadGeneratedOakDoc(
@@ -379,15 +389,55 @@ export async function downloadGeneratedOakDoc(
 }
 
 
+function readRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : {};
+}
+
+function selectedPartiesOf(metadata: unknown): Record<string, unknown> {
+  return readRecord(readRecord(metadata).selectedParties);
+}
+
+/**
+ * Work that runs after the database commit (old-asset cleanup, audit). A
+ * failure here must never delete the committed asset or turn a committed save
+ * into an error response, so it is logged and swallowed.
+ */
+async function afterCommit(label: string, work: () => Promise<unknown>): Promise<void> {
+  try {
+    await work();
+  } catch (error) {
+    log.warn(`OakDoc post-commit step failed: ${label}`, {
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+}
+
+async function deleteSupersededAsset(
+  previousKey: string | undefined,
+  nextKey: string,
+  requiredPrefix: string,
+): Promise<void> {
+  if (!previousKey || previousKey === nextKey || !previousKey.startsWith(requiredPrefix)) return;
+  await storage.delete(previousKey);
+}
+
+export interface SaveGeneratedOakDocInput {
+  documentId: string;
+  expectedRevision: number;
+  bytes: Uint8Array;
+  /** Client operation identity; a retried operation returns the same receipt. */
+  operationId?: string;
+  snapshot?: OakDocSnapshotIdentity;
+}
+
 export async function saveGeneratedOakDocDocument(
-  input: {
-    documentId: string;
-    expectedRevision: number;
-    bytes: Uint8Array;
-  },
+  input: SaveGeneratedOakDocInput,
   params: TenantAwareParams,
-): Promise<{ revision: number; updatedAt: Date }> {
+): Promise<OakDocSaveReceipt & { updatedAt: string }> {
   inspectOakDocPackage(input.bytes, 'draft');
+  const operationId = input.operationId ?? randomUUID();
 
   const existing = await prisma.generatedDocument.findFirst({
     where: {
@@ -401,16 +451,36 @@ export async function saveGeneratedOakDocDocument(
       status: true,
       companyId: true,
       metadata: true,
+      updatedAt: true,
     },
   });
   if (!existing) throw new NotFoundError('Document not found');
-  if (existing.status !== 'DRAFT') {
-    throw new ValidationError('Unlock the document before editing its DOCX');
-  }
 
   const currentAsset = readGeneratedOakDocAssetMetadata(existing.metadata);
   if (!currentAsset) {
     throw new ValidationError('This generated document is not an OakDoc document');
+  }
+  const digest = sha256(input.bytes);
+
+  // Ambiguous-response retry: the same operation already committed these bytes.
+  if (input.operationId && currentAsset.lastOperationId === input.operationId) {
+    if (currentAsset.sha256 !== digest) {
+      throw new ConflictError('This save operation was already used for different content', {
+        reason: OAKDOC_ERROR_REASONS.STALE_REVISION,
+      });
+    }
+    const revision = await readGeneratedDocumentRevision(prisma, existing.id, params.tenantId);
+    return {
+      ...input.snapshot,
+      operationId,
+      revision,
+      assetSha256: digest,
+      updatedAt: existing.updatedAt.toISOString(),
+    };
+  }
+
+  if (existing.status !== 'DRAFT') {
+    throw new ValidationError('Unlock the document before editing its DOCX');
   }
 
   const requiredPrefix = `${params.tenantId}/generated-documents/${input.documentId}/oakdoc/`;
@@ -418,7 +488,6 @@ export async function saveGeneratedOakDocDocument(
     throw new ValidationError('Generated OakDoc storage scope is invalid');
   }
 
-  const digest = sha256(input.bytes);
   const savedAt = new Date().toISOString();
   const storageKey = StorageKeys.oakDocGeneratedAsset(
     params.tenantId,
@@ -440,37 +509,36 @@ export async function saveGeneratedOakDocDocument(
     },
   });
 
+  const nextAsset: GeneratedOakDocAssetMetadata = {
+    ...currentAsset,
+    storageKey,
+    fileSize: input.bytes.byteLength,
+    sha256: digest,
+    generatedAt: savedAt,
+    lastOperationId: operationId,
+  };
+
+  let result: { revision: number; updatedAt: Date };
   try {
-    const selectedPartiesValue = (
-      existing.metadata
-      && typeof existing.metadata === 'object'
-      && !Array.isArray(existing.metadata)
-    )
-      ? (existing.metadata as Record<string, unknown>).selectedParties
-      : undefined;
-    const selectedParties = (
-      selectedPartiesValue
-      && typeof selectedPartiesValue === 'object'
-      && !Array.isArray(selectedPartiesValue)
-    )
-      ? selectedPartiesValue as Record<string, unknown>
-      : {};
-
-    const nextAsset: GeneratedOakDocAssetMetadata = {
-      ...currentAsset,
-      storageKey,
-      fileSize: input.bytes.byteLength,
-      sha256: digest,
-      generatedAt: savedAt,
-    };
-
-    const result = await prisma.$transaction(async (tx) => {
+    result = await prisma.$transaction(async (tx) => {
       const claim = await claimGeneratedDocumentRevision(tx, {
         id: input.documentId,
         tenantId: params.tenantId,
         expectedRevision: input.expectedRevision,
         allowedStatuses: ['DRAFT'],
       });
+      // A batch preview under review must be saved through the batch route,
+      // which also checks batch revision and preview freshness.
+      const batchItem = await tx.documentGenerationBatchItem.findFirst({
+        where: { generatedDocumentId: input.documentId, tenantId: params.tenantId },
+        select: { status: true },
+      });
+      if (batchItem && batchItem.status !== 'GENERATED') {
+        throw new ConflictError('Save this draft from its generation batch review', {
+          reason: OAKDOC_ERROR_REASONS.STALE_REVISION,
+          batchReview: true,
+        });
+      }
       const updated = await tx.generatedDocument.update({
         where: { id: input.documentId },
         data: {
@@ -482,7 +550,7 @@ export async function saveGeneratedOakDocDocument(
           metadata: mergeGeneratedOakDocMetadata(
             existing.metadata,
             nextAsset,
-            selectedParties,
+            selectedPartiesOf(existing.metadata),
           ) as Prisma.InputJsonValue,
         },
         select: { updatedAt: true },
@@ -492,31 +560,213 @@ export async function saveGeneratedOakDocDocument(
         updatedAt: updated.updatedAt,
       };
     });
+  } catch (error) {
+    // Pre-commit failure: the new upload is unreferenced and safe to remove.
+    await storage.delete(storageKey).catch(() => undefined);
+    throw error;
+  }
 
-    if (currentAsset.storageKey !== storageKey) {
-      await storage.delete(currentAsset.storageKey).catch(() => undefined);
-    }
+  await afterCommit('delete superseded generated asset', () => (
+    deleteSupersededAsset(currentAsset.storageKey, storageKey, requiredPrefix)
+  ));
+  await afterCommit('audit generated save', () => createAuditLog({
+    tenantId: params.tenantId,
+    userId: params.userId,
+    companyId: existing.companyId ?? undefined,
+    action: 'UPDATE',
+    entityType: 'GeneratedDocument',
+    entityId: existing.id,
+    entityName: existing.title,
+    summary: `Saved edited OakDoc document "${existing.title}"`,
+    changeSource: 'MANUAL',
+    metadata: {
+      documentEngine: 'OAKDOC',
+      generatedAssetSha256: digest,
+      revision: result.revision,
+      operationId,
+    },
+  }));
 
-    await createAuditLog({
+  return {
+    ...input.snapshot,
+    operationId,
+    revision: result.revision,
+    assetSha256: digest,
+    updatedAt: result.updatedAt.toISOString(),
+  };
+}
+
+export interface OakDocFinalizationCheck {
+  ready: boolean;
+  unresolvedFields: string[];
+  unresolvedConditions: number;
+  unresolvedRepeaters: number;
+}
+
+/**
+ * Validate the actual reviewed bytes (not template output or old top-level
+ * arrays) before a native document is finalized or used for activation.
+ */
+export async function checkGeneratedOakDocFinalization(
+  documentId: string,
+  tenantId: string,
+): Promise<OakDocFinalizationCheck> {
+  ensureA4ServerDomGlobals();
+  const document = await prisma.generatedDocument.findFirst({
+    where: { id: documentId, tenantId, deletedAt: null },
+    select: { placeholderData: true },
+  });
+  if (!document) throw new NotFoundError('Document not found');
+  const { buffer } = await downloadGeneratedOakDoc(documentId, tenantId);
+  const bytes = new Uint8Array(buffer);
+  inspectOakDocPackage(bytes, 'draft');
+
+  const values: Record<string, string> = {};
+  for (const [key, value] of Object.entries(readRecord(document.placeholderData))) {
+    if (typeof value === 'string') values[key] = value;
+  }
+  const unresolvedFields = resolveOakDocFields(bytes, values).unresolvedTags
+    .filter((tag) => !OAKDOC_SIGNATURE_TAGS.has(tag))
+    .filter((tag) => !OAKDOC_REPEATER_OUTER_TAGS.has(tag))
+    .filter((tag) => !tag.startsWith(OAKDOC_CONDITION_TAG_PREFIX));
+  const unresolvedConditions = inspectOakDocConditions(bytes).count;
+  const unresolvedRepeaters = inspectOakDocRepeaters(bytes).count;
+
+  return {
+    ready: unresolvedFields.length === 0 && unresolvedConditions === 0 && unresolvedRepeaters === 0,
+    unresolvedFields,
+    unresolvedConditions,
+    unresolvedRepeaters,
+  };
+}
+
+export async function assertGeneratedOakDocReadyForFinalization(
+  documentId: string,
+  tenantId: string,
+): Promise<void> {
+  const check = await checkGeneratedOakDocFinalization(documentId, tenantId);
+  if (check.ready) return;
+  throw new ValidationError(
+    'Resolve the remaining OakDoc fields, conditions and repeaters before finalizing',
+    {
+      reason: OAKDOC_ERROR_REASONS.UNRESOLVED_CONTROLS,
+      fields: check.unresolvedFields,
+      conditions: check.unresolvedConditions,
+      repeaters: check.unresolvedRepeaters,
+    },
+  );
+}
+
+/** Metadata that belongs to the source record's lifecycle and is not cloned. */
+const CLONE_RESET_METADATA_KEYS = [
+  'oakDocReviewDraft',
+  'oakDocPdfRendition',
+  'oakDocValidation',
+  'oakDocMigration',
+  'taskIntegrationContext',
+  'missingPlaceholders',
+  'missingPartials',
+  'circularPartials',
+  'syntaxErrors',
+  'unknownPlaceholders',
+];
+
+/**
+ * Clone a native generated document into a new DRAFT that owns its own copy
+ * of the verified DOCX bytes. Finalization, review, rendition, validation and
+ * task authority are not inherited; source provenance is recorded instead.
+ */
+export async function cloneOakDocGeneratedDocument(
+  input: { sourceId: string; title: string },
+  params: TenantAwareParams,
+) {
+  const source = await prisma.generatedDocument.findFirst({
+    where: { id: input.sourceId, tenantId: params.tenantId, deletedAt: null },
+  });
+  if (!source) throw new NotFoundError('Document not found');
+  const { buffer, metadata: sourceAsset } = await downloadGeneratedOakDoc(source.id, params.tenantId);
+  const sourceRevision = await readGeneratedDocumentRevision(prisma, source.id, params.tenantId);
+
+  const id = randomUUID();
+  const storageKey = StorageKeys.oakDocGeneratedAsset(params.tenantId, id, randomUUID());
+  const clonedAt = new Date().toISOString();
+  await storage.upload(storageKey, buffer, {
+    contentType: OAKDOC_MIME_TYPE,
+    metadata: {
       tenantId: params.tenantId,
-      userId: params.userId,
-      companyId: existing.companyId ?? undefined,
-      action: 'UPDATE',
-      entityType: 'GeneratedDocument',
-      entityId: existing.id,
-      entityName: existing.title,
-      summary: `Saved edited OakDoc document "${existing.title}"`,
-      changeSource: 'MANUAL',
-      metadata: {
-        documentEngine: 'OAKDOC',
-        generatedAssetSha256: digest,
-        revision: result.revision,
+      generatedDocumentId: id,
+      templateId: sourceAsset.templateId,
+      templateVersion: String(sourceAsset.templateVersion),
+      templateSha256: sourceAsset.templateSha256,
+      sha256: sourceAsset.sha256,
+      generatedBy: params.userId,
+      clonedFrom: source.id,
+    },
+  });
+
+  const baseMetadata = { ...readRecord(source.metadata) };
+  for (const key of CLONE_RESET_METADATA_KEYS) delete baseMetadata[key];
+  const { lastOperationId: _lastOperationId, ...assetWithoutOperation } = sourceAsset;
+  const metadata = {
+    ...mergeGeneratedOakDocMetadata(
+      baseMetadata,
+      {
+        ...assetWithoutOperation,
+        storageKey,
+        fileName: safeDocxName(input.title),
+        generatedAt: clonedAt,
+      },
+      selectedPartiesOf(source.metadata),
+    ),
+    oakDocCloneSource: {
+      documentId: source.id,
+      revision: sourceRevision,
+      sha256: sourceAsset.sha256,
+      clonedAt,
+    },
+  };
+
+  let created;
+  try {
+    created = await prisma.generatedDocument.create({
+      data: {
+        id,
+        tenantId: params.tenantId,
+        templateId: source.templateId,
+        templateVersion: source.templateVersion,
+        sharePointRelativeFolderPathSnapshot: source.sharePointRelativeFolderPathSnapshot,
+        companyId: source.companyId,
+        title: input.title,
+        content: OAKDOC_GENERATED_CONTENT,
+        contentJson: { documentEngine: 'OAKDOC', schemaVersion: 1 } as Prisma.InputJsonValue,
+        status: 'DRAFT',
+        useLetterhead: source.useLetterhead,
+        placeholderData: source.placeholderData ?? undefined,
+        metadata: metadata as Prisma.InputJsonValue,
+        createdById: params.userId,
       },
     });
-
-    return result;
   } catch (error) {
     await storage.delete(storageKey).catch(() => undefined);
     throw error;
   }
+
+  await afterCommit('audit generated clone', () => createAuditLog({
+    tenantId: params.tenantId,
+    userId: params.userId,
+    companyId: created.companyId ?? undefined,
+    action: 'DOCUMENT_CLONED',
+    entityType: 'GeneratedDocument',
+    entityId: created.id,
+    entityName: created.title,
+    summary: `Cloned OakDoc document "${source.title}" as "${created.title}"`,
+    changeSource: 'MANUAL',
+    metadata: {
+      documentEngine: 'OAKDOC',
+      sourceDocumentId: source.id,
+      sourceRevision,
+      sourceSha256: sourceAsset.sha256,
+    },
+  }));
+  return created;
 }

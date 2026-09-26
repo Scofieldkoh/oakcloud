@@ -32,7 +32,10 @@ vi.mock('@/services/company.service', () => companyMock);
 const templateMock = vi.hoisted(() => ({ downloadOakDocTemplate: vi.fn() }));
 vi.mock('@/services/oakdoc-template.service', () => templateMock);
 
-const revisionMock = vi.hoisted(() => ({ claimGeneratedDocumentRevision: vi.fn() }));
+const revisionMock = vi.hoisted(() => ({
+  claimGeneratedDocumentRevision: vi.fn(),
+  readGeneratedDocumentRevision: vi.fn(),
+}));
 vi.mock('@/lib/document-editor/generated-document-revision', () => revisionMock);
 
 const fieldMock = vi.hoisted(() => ({
@@ -43,12 +46,14 @@ const fieldMock = vi.hoisted(() => ({
 vi.mock('@/lib/document-editor/oakdoc-fields', () => fieldMock);
 
 const conditionMock = vi.hoisted(() => ({
+  OAKDOC_CONDITION_TAG_PREFIX: 'oakdoc.condition.',
   inspectOakDocConditions: vi.fn(),
   resolveOakDocConditions: vi.fn(),
 }));
 vi.mock('@/lib/document-editor/oakdoc-conditions', () => conditionMock);
 
 const repeaterMock = vi.hoisted(() => ({
+  OAKDOC_REPEATER_OUTER_TAGS: new Set<string>(),
   inspectOakDocRepeaters: vi.fn(),
   resolveOakDocRepeaters: vi.fn(),
 }));
@@ -210,6 +215,7 @@ describe('OakDoc generation service', () => {
       },
     });
     revisionMock.claimGeneratedDocumentRevision.mockResolvedValue({ revision: 5 });
+    prismaMock.documentGenerationBatchItem.findFirst.mockResolvedValue(null);
 
     const bytes = zipSync({
       '[Content_Types].xml': strToU8('<Types><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>'),

@@ -17,7 +17,8 @@ const CUSTOM_PROPERTIES_CONTENT_TYPE =
 const CUSTOM_PROPERTIES_REL_TYPE =
   'http://schemas.openxmlformats.org/officeDocument/2006/relationships/custom-properties';
 const CUSTOM_PROPERTY_FMTID = '{D5CDD505-2E9C-101B-9397-08002B2CF9AE}';
-const CONDITION_TAG_PREFIX = 'oakdoc.condition.';
+export const OAKDOC_CONDITION_TAG_PREFIX = 'oakdoc.condition.';
+const CONDITION_TAG_PREFIX = OAKDOC_CONDITION_TAG_PREFIX;
 const CONDITION_PROPERTY_PREFIX = 'OakDoc.Condition.';
 const CONDITION_SCHEMA_VERSION = 1;
 
