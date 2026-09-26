@@ -208,6 +208,7 @@ export default function DocumentViewPage() {
   const [unfinalizeDialogOpen, setUnfinalizeDialogOpen] = useState(false);
   const [archiveDialogOpen, setArchiveDialogOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [oakDocDirty, setOakDocDirty] = useState(false);
 
   // Fetch document and comments
   useEffect(() => {
@@ -340,18 +341,22 @@ export default function DocumentViewPage() {
     }
   };
 
+  const isOakDocDocument = docData?.metadata?.documentEngine === 'OAKDOC';
+
   // Handle export
   const handleExport = async () => {
     try {
       const params = new URLSearchParams();
-      params.set('letterhead', String(includeLetterhead));
+      // OakDoc letterhead and page layout come from the Word document itself.
+      if (!isOakDocDocument) params.set('letterhead', String(includeLetterhead));
 
       const response = await fetch(
         `/api/generated-documents/${documentId}/export/pdf?${params}`
       );
 
       if (!response.ok) {
-        throw new Error('Failed to export document');
+        const payload = await response.json().catch(() => null) as { error?: string } | null;
+        throw new Error(payload?.error || 'Failed to export document');
       }
 
       const blob = await response.blob();
@@ -363,7 +368,7 @@ export default function DocumentViewPage() {
       URL.revokeObjectURL(url);
     } catch (err) {
       console.error('Export error:', err);
-      toastError('Failed to export document');
+      toastError(err instanceof Error ? err.message : 'Failed to export document');
     }
   };
 
@@ -505,6 +510,8 @@ export default function DocumentViewPage() {
               variant="secondary"
               size="sm"
               onClick={() => setFinalizeDialogOpen(true)}
+              disabled={isOakDoc && oakDocDirty}
+              title={isOakDoc && oakDocDirty ? 'Save your Word edits before finalizing' : undefined}
             >
               <Lock className="w-4 h-4 mr-2" />
               Finalize
@@ -523,12 +530,24 @@ export default function DocumentViewPage() {
 
           {/* Export */}
           {isOakDoc ? (
-            <a href={`/api/generated-documents/${documentId}?format=docx`}>
-              <Button variant="secondary" size="sm">
+            <>
+              <a href={`/api/generated-documents/${documentId}?format=docx`}>
+                <Button variant="secondary" size="sm">
+                  <Download className="w-4 h-4 mr-2" />
+                  Download DOCX
+                </Button>
+              </a>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={handleExport}
+                disabled={oakDocDirty}
+                title={oakDocDirty ? 'Save your Word edits before exporting a PDF' : 'Convert with Microsoft 365'}
+              >
                 <Download className="w-4 h-4 mr-2" />
-                Download DOCX
+                PDF
               </Button>
-            </a>
+            </>
           ) : (
             <Button variant="secondary" size="sm" onClick={handleExport}>
               <Download className="w-4 h-4 mr-2" />
@@ -550,7 +569,7 @@ export default function DocumentViewPage() {
                 <Printer className="w-4 h-4" />
                 Print
               </button>}
-              {!isOakDoc && <button
+              {(!isOakDoc || !oakDocDirty) && <button
                 type="button"
                 onClick={handleClone}
                 className="w-full px-3 py-1.5 text-left text-sm hover:bg-background-secondary flex items-center gap-2"
@@ -723,6 +742,7 @@ export default function DocumentViewPage() {
                   revision={docData.revision}
                   readOnly={docData.status !== 'DRAFT'}
                   disabled={isProcessing}
+                  onDirtyChange={setOakDocDirty}
                   onSaved={(result) => {
                     setDocData((current) => current
                       ? {
