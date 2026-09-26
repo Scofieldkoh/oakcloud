@@ -144,7 +144,7 @@ describe('OakDoc standard template migration framework', () => {
         required: true,
       },
     ]);
-    expect(input.contentJson.oakDocMigration).toMatchObject({
+    expect(input.contentJson.oakDocSeedMigration).toMatchObject({
       migrationId: 'standard-template:dr-appointment-of-corp-sec',
       migrationVersion: 1,
       legacyTemplateName: 'DR_Appointment of Corp Sec',

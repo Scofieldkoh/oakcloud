@@ -42,6 +42,8 @@ export interface OakDocStandardTemplateMigrationDefinition {
   buildDocx: () => Uint8Array;
 }
 
+export const OAKDOC_SEED_MIGRATION_METADATA_KEY = 'oakDocSeedMigration';
+
 export interface OakDocTemplateMigrationMetadata {
   migrationId: string;
   migrationVersion: number;
@@ -351,11 +353,7 @@ export function migrationMetadataFor(
   };
 }
 
-export function readOakDocMigrationMetadata(
-  contentJson: unknown,
-): OakDocTemplateMigrationMetadata | null {
-  if (!contentJson || typeof contentJson !== 'object' || Array.isArray(contentJson)) return null;
-  const raw = (contentJson as Record<string, unknown>).oakDocMigration;
+function parseSeedMigrationMetadata(raw: unknown): OakDocTemplateMigrationMetadata | null {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
   const value = raw as Record<string, unknown>;
   if (
@@ -377,13 +375,44 @@ export function readOakDocMigrationMetadata(
   };
 }
 
+export function readOakDocSeedMigrationMetadata(
+  contentJson: unknown,
+): OakDocTemplateMigrationMetadata | null {
+  if (!contentJson || typeof contentJson !== 'object' || Array.isArray(contentJson)) return null;
+  const record = contentJson as Record<string, unknown>;
+
+  // Stage 3 originally stored source/seed identity under `oakDocMigration`.
+  // Stage 7 later assigned that key to parity/preference metadata. Read the
+  // original shape as a backwards-compatible fallback, but write only to the
+  // dedicated seed key from now on.
+  return parseSeedMigrationMetadata(record[OAKDOC_SEED_MIGRATION_METADATA_KEY])
+    ?? parseSeedMigrationMetadata(record.oakDocMigration);
+}
+
+export function mergeOakDocSeedMigrationMetadata(
+  contentJson: unknown,
+  metadata: OakDocTemplateMigrationMetadata,
+): Record<string, unknown> {
+  const base = contentJson && typeof contentJson === 'object' && !Array.isArray(contentJson)
+    ? { ...(contentJson as Record<string, unknown>) }
+    : {};
+  return {
+    ...base,
+    [OAKDOC_SEED_MIGRATION_METADATA_KEY]: { ...metadata },
+  };
+}
+
+/** @deprecated Use readOakDocSeedMigrationMetadata. */
+export const readOakDocMigrationMetadata = readOakDocSeedMigrationMetadata;
+
 export function buildOakDocMigrationContentJson(
   definition: OakDocStandardTemplateMigrationDefinition,
   sourceBytes: Uint8Array = definition.buildDocx(),
 ): Record<string, unknown> {
-  return {
-    oakDocMigration: migrationMetadataFor(definition, sourceBytes),
-  };
+  return mergeOakDocSeedMigrationMetadata(
+    null,
+    migrationMetadataFor(definition, sourceBytes),
+  );
 }
 
 export function generateOakDocMigrationDocument(input: {
