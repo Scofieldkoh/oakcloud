@@ -20,6 +20,7 @@ import {
 } from '@/lib/document-editor/generated-document-revision';
 import { OAKDOC_MIME_TYPE } from '@/lib/document-editor/oakdoc-template';
 import type { TenantAwareParams } from '@/lib/types';
+import { safelyReconcileGeneratedDocumentTaskOutcomes } from '@/services/tasks/integration.service';
 import {
   A4_DRAFT_CONVERSION_METHOD,
   isPendingA4DraftConversion,
@@ -327,6 +328,7 @@ export async function reviewA4DraftConversion(
   }
 
   const acknowledgedCodes = Array.from(new Set(input.acknowledgedCodes ?? [])).sort();
+  let sourceMetadata: Record<string, unknown> = {};
   if (input.decision === 'accept') {
     const outstanding = Array.from(new Set(
       conversion.diagnostics
@@ -341,8 +343,9 @@ export async function reviewA4DraftConversion(
     }
     const source = await prisma.generatedDocument.findFirst({
       where: { id: conversion.sourceDocumentId, tenantId: params.tenantId },
-      select: { content: true, deletedAt: true },
+      select: { content: true, deletedAt: true, metadata: true },
     });
+    sourceMetadata = isRecord(source?.metadata) ? source.metadata : {};
     if (source && !source.deletedAt) {
       const sourceRevision = await readGeneratedDocumentRevision(
         prisma,
@@ -368,6 +371,7 @@ export async function reviewA4DraftConversion(
     reviewedById: params.userId,
     acknowledgedCodes,
   };
+  let transferredTaskStageIds: string[] = [];
   const updated = await prisma.$transaction(async (tx) => {
     const claim = await claimGeneratedDocumentRevision(tx, {
       id: target.id,
@@ -375,22 +379,50 @@ export async function reviewA4DraftConversion(
       expectedRevision: input.expectedRevision,
       allowedStatuses: ['DRAFT'],
     });
-    const document = input.decision === 'accept'
-      ? await tx.generatedDocument.update({
-          where: { id: target.id },
-          data: {
-            metadata: {
-              ...(isRecord(target.metadata) ? target.metadata : {}),
-              oakDocMigration: reviewed,
-            } as unknown as Prisma.InputJsonValue,
+    if (input.decision === 'reject') {
+      const document = await tx.generatedDocument.update({
+        where: { id: target.id },
+        data: { deletedAt: new Date() },
+      });
+      return { ...document, revision: claim.revision };
+    }
+    // The accepted copy takes over the original's task stage outcomes, so a
+    // task continues with the Word draft and never counts both. Batches stay
+    // bound to the documents they created.
+    const outcomes = await tx.taskStageOutcome.findMany({
+      where: { tenantId: params.tenantId, generatedDocumentId: conversion.sourceDocumentId },
+      select: { id: true, taskStageId: true },
+    });
+    if (outcomes.length > 0) {
+      await tx.taskStageOutcome.updateMany({
+        where: { id: { in: outcomes.map((outcome) => outcome.id) } },
+        data: { generatedDocumentId: target.id },
+      });
+    }
+    const targetMetadata = isRecord(target.metadata) ? target.metadata : {};
+    const taskIntegrationContext = targetMetadata.taskIntegrationContext
+      ?? sourceMetadata.taskIntegrationContext;
+    const document = await tx.generatedDocument.update({
+      where: { id: target.id },
+      data: {
+        metadata: {
+          ...targetMetadata,
+          ...(taskIntegrationContext ? { taskIntegrationContext } : {}),
+          oakDocMigration: {
+            ...reviewed,
+            ...(outcomes.length > 0
+              ? { transferredTaskStageIds: outcomes.map((outcome) => outcome.taskStageId) }
+              : {}),
           },
-        })
-      : await tx.generatedDocument.update({
-          where: { id: target.id },
-          data: { deletedAt: new Date() },
-        });
+        } as unknown as Prisma.InputJsonValue,
+      },
+    });
+    transferredTaskStageIds = outcomes.map((outcome) => outcome.taskStageId);
     return { ...document, revision: claim.revision };
   });
+  if (transferredTaskStageIds.length > 0) {
+    await safelyReconcileGeneratedDocumentTaskOutcomes(params.tenantId, target.id, params.userId);
+  }
 
   await createAuditLog({
     tenantId: params.tenantId,
@@ -409,6 +441,7 @@ export async function reviewA4DraftConversion(
       sourceDocumentId: conversion.sourceDocumentId,
       decision: input.decision,
       acknowledgedCodes,
+      ...(transferredTaskStageIds.length > 0 ? { transferredTaskStageIds } : {}),
     },
   }).catch((error) => log.warn('Conversion review audit failed', {
     error: error instanceof Error ? error.message : String(error),

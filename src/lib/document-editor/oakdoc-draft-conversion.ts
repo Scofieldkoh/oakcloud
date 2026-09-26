@@ -27,6 +27,8 @@ export interface A4DraftConversionMetadata {
   reviewedAt?: string;
   reviewedById?: string;
   acknowledgedCodes?: string[];
+  /** Task stages whose document outcome moved from the original on accept. */
+  transferredTaskStageIds?: string[];
 }
 
 export function readA4DraftConversionMetadata(metadata: unknown): A4DraftConversionMetadata | null {
