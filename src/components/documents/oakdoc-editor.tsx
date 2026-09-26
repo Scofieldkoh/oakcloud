@@ -14,10 +14,14 @@ import { ArrowLeft, Download, FileUp, Loader2, Save, Search } from 'lucide-react
 import { Button } from '@/components/ui/button';
 import { useSession } from '@/hooks/use-auth';
 import { useActiveWorkspaceId } from '@/components/ui/workspace-selector';
+import type { TemplateField } from '@/components/documents/template-editor/template-field-catalog';
 import {
-  TEMPLATE_FIELD_CATEGORIES,
-  type TemplateField,
-} from '@/components/documents/template-editor/template-field-catalog';
+  OAKDOC_CATALOG_FIELD_CATEGORIES as OAKDOC_FIELD_CATEGORIES,
+  OAKDOC_CONDITION_FIELD_TAGS,
+  OAKDOC_FIELD_BY_TAG,
+  OAKDOC_FIELD_TAGS,
+  OAKDOC_SCALAR_FIELDS,
+} from '@/lib/document-editor/oakdoc-field-registry';
 import {
   inspectOakDocFields,
   normalizeOakDocFields,
@@ -28,14 +32,12 @@ import {
 } from '@/lib/document-editor/oakdoc-fields';
 import {
   buildOakDocResolutionValues,
-  OAKDOC_RESOLUTION_FIELD_DEFINITIONS,
   type OakDocCompanyDetail,
 } from '@/lib/document-editor/oakdoc-context';
 import {
   createOakDocRepeater,
   inspectOakDocRepeaters,
   OAKDOC_REPEATER_DEFINITIONS,
-  OAKDOC_REPEATER_ITEM_TAGS,
   removeOakDocRepeater,
   resolveOakDocRepeaters,
   type OakDocRepeaterDefinition,
@@ -67,56 +69,6 @@ const TEMPLATE_CATEGORIES = [
   { value: 'CERTIFICATE', label: 'Certificate' },
   { value: 'OTHER', label: 'Other' },
 ] as const;
-
-const SUPPORTED_FIELD_CATEGORY_KEYS = new Set([
-  'company',
-  'selected-director',
-  'selected-shareholder',
-  'system',
-]);
-
-const OAKDOC_FIELD_CATEGORIES = TEMPLATE_FIELD_CATEGORIES
-  .filter((category) => SUPPORTED_FIELD_CATEGORY_KEYS.has(category.key))
-  .map((category) => ({
-    ...category,
-    fields: category.fields.filter(
-      (field) => !field.builder && !field.key.includes('{{'),
-    ),
-  }))
-  .filter((category) => category.fields.length > 0);
-
-const OAKDOC_SIMPLE_FIELDS: readonly OakDocFieldDefinition[] = [
-  ...OAKDOC_FIELD_CATEGORIES.flatMap(
-    (category) =>
-      category.fields.map((field) => ({
-        tag: field.key,
-        label: field.label,
-        category: category.label,
-      })),
-  ),
-  ...OAKDOC_RESOLUTION_FIELD_DEFINITIONS,
-];
-
-const OAKDOC_REPEATER_FIELDS: readonly OakDocFieldDefinition[] =
-  OAKDOC_REPEATER_DEFINITIONS.flatMap((definition) => definition.fields);
-
-const OAKDOC_FIELDS: readonly OakDocFieldDefinition[] = [
-  ...OAKDOC_SIMPLE_FIELDS,
-  ...OAKDOC_REPEATER_FIELDS,
-];
-
-const OAKDOC_FIELD_BY_TAG = new Map(
-  OAKDOC_FIELDS.map((field) => [field.tag, field]),
-);
-
-const OAKDOC_FIELD_TAGS = new Set([
-  ...OAKDOC_FIELDS.map((field) => field.tag),
-  ...OAKDOC_REPEATER_ITEM_TAGS,
-]);
-
-const OAKDOC_CONDITION_FIELD_TAGS = new Set(
-  OAKDOC_SIMPLE_FIELDS.map((field) => field.tag),
-);
 
 interface CompanyOption {
   id: string;
@@ -320,7 +272,7 @@ export function OakDocEditor() {
     conditions: [],
   });
   const [conditionField, setConditionField] = useState(
-    OAKDOC_SIMPLE_FIELDS[0]?.tag ?? '',
+    OAKDOC_SCALAR_FIELDS[0]?.tag ?? '',
   );
   const [conditionOperator, setConditionOperator] = useState<OakDocConditionOperator>('truthy');
   const [conditionValue, setConditionValue] = useState('');
@@ -843,16 +795,6 @@ export function OakDocEditor() {
       formData.set('category', templateCategory);
       formData.set('isActive', String(templateIsActive));
       formData.set('tenantId', activeTenantId);
-      const savedFields = inspectOakDocFields(cleaned.bytes, OAKDOC_FIELD_TAGS).tags;
-      const savedRepeaters = inspectOakDocRepeaters(cleaned.bytes).tags;
-      const savedConditions = inspectOakDocConditions(cleaned.bytes).fieldTags;
-      formData.set('fieldTags', JSON.stringify(
-        Array.from(new Set([
-          ...savedFields,
-          ...savedRepeaters,
-          ...savedConditions,
-        ])).sort(),
-      ));
       if (templateId && templateRevision !== null) {
         formData.set('expectedRevision', String(templateRevision));
       }

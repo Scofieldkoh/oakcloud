@@ -6,8 +6,6 @@ import {
 } from '@/lib/document-editor/oakdoc-standard-template-migrations';
 import {
   OAKTREE_SERVICE_AGREEMENT_OAKDOC,
-  SERVICE_AGREEMENT_OAKDOC_EXPECTED_STAGE4_TAGS,
-  SERVICE_AGREEMENT_OAKDOC_FIELD_TAGS,
   buildOaktreeServiceAgreementOakDoc,
 } from '@/content/service-agreement/oaktree-service-agreement-oakdoc';
 import { OAKTREE_SERVICE_AGREEMENT_V1 } from '@/content/service-agreement/oaktree-service-agreement-v1';
@@ -52,10 +50,6 @@ async function findLegacyTemplate(tenantId: string, name: string) {
 async function ensureServiceAgreementOakDoc(params: TenantAwareParams) {
   const source = Buffer.from(buildOaktreeServiceAgreementOakDoc());
   const digest = createHash('sha256').update(source).digest('hex');
-  const fieldTags = Array.from(new Set([
-    ...SERVICE_AGREEMENT_OAKDOC_FIELD_TAGS,
-    ...SERVICE_AGREEMENT_OAKDOC_EXPECTED_STAGE4_TAGS,
-  ])).sort();
 
   const existing = await prisma.documentTemplate.findFirst({
     where: {
@@ -90,7 +84,6 @@ async function ensureServiceAgreementOakDoc(params: TenantAwareParams) {
     isActive: OAKTREE_SERVICE_AGREEMENT_OAKDOC.isActive,
     fileName: OAKTREE_SERVICE_AGREEMENT_OAKDOC.fileName,
     buffer: source,
-    fieldTags,
   }, params);
 
   return {

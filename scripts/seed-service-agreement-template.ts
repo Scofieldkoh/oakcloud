@@ -281,7 +281,6 @@ export async function seedOaktreeServiceAgreementOakDocTemplate(input: {
       isActive: OAKTREE_SERVICE_AGREEMENT_OAKDOC.isActive,
       fileName: OAKTREE_SERVICE_AGREEMENT_OAKDOC.fileName,
       buffer,
-      fieldTags,
     }, input);
   }
 
@@ -312,7 +311,6 @@ export async function seedOaktreeServiceAgreementOakDocTemplate(input: {
     isActive: OAKTREE_SERVICE_AGREEMENT_OAKDOC.isActive,
     fileName: OAKTREE_SERVICE_AGREEMENT_OAKDOC.fileName,
     buffer,
-    fieldTags,
   }, input);
 }
 
