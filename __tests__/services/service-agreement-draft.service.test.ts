@@ -33,6 +33,7 @@ import {
   snapshotServiceVariant,
   upsertServiceAgreementDraft,
 } from '@/services/service-agreement';
+import { readOakDocSowSnapshot } from '@/lib/document-editor/oakdoc-partials';
 
 const tenantId = 'tenant-1';
 const actor = { tenantId, userId: 'user-1' };
@@ -100,6 +101,49 @@ describe('service agreement draft persistence', () => {
       '<h2>Nested wording</h2>{{service.fields.software}}',
     );
     expect(snapshot.dependencies).toEqual(currentSnapshot.dependencies);
+  });
+
+  it('pins the exact bytes of a Word scope-of-work partial', async () => {
+    const sha = 'b'.repeat(64);
+    const storageKey = `tenant-1/template-partials/partial-1/oakdoc/${sha}.docx`;
+    prismaMock.templatePartial.findMany.mockClear();
+    prismaMock.serviceVariant.findFirst.mockResolvedValue({
+      id: 'variant-1',
+      version: 2,
+      name: 'Corporate Secretarial',
+      serviceCadence: 'ANNUALLY',
+      customCadenceLabel: null,
+      family: { name: 'Corporate Services' },
+      sowPartial: {
+        id: 'partial-1',
+        name: 'corporate-secretarial',
+        version: 5,
+        content: '<p data-oakdoc-partial="true">Word-native partial.</p>',
+        placeholders: [],
+        contentJson: {
+          oakDoc: {
+            schemaVersion: 1,
+            storageKey,
+            fileName: 'sow.docx',
+            fileSize: 100,
+            sha256: sha,
+            mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            fieldTags: ['company.name'],
+          },
+          oakDocPartials: [],
+        },
+      },
+    });
+
+    const snapshot = await snapshotServiceVariant('variant-1', tenantId);
+
+    expect(prismaMock.templatePartial.findMany).not.toHaveBeenCalled();
+    expect(snapshot.partialVersion).toBe(5);
+    expect(snapshot.placeholders).toEqual([]);
+    expect(readOakDocSowSnapshot(snapshot.partialContent)).toEqual({
+      pin: { partialId: 'partial-1', version: 5, sha256: sha, storageKey, nested: [] },
+      fieldTags: ['company.name'],
+    });
   });
 
   it('merges required service placeholders declared by nested partials', async () => {

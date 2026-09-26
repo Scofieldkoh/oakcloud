@@ -2,6 +2,11 @@ import { NotFoundError, ValidationError } from '@/lib/errors';
 import { prisma } from '@/lib/prisma';
 import type { ServiceCadence } from '@/lib/validations/service-catalog';
 import type { PlaceholderDefinition } from '@/types/placeholders';
+import { readOakDocTemplateMetadata } from '@/lib/document-editor/oakdoc-template';
+import {
+  encodeOakDocSowSnapshot,
+  readOakDocPartialPins,
+} from '@/lib/document-editor/oakdoc-partials';
 
 const PARTIAL_TOKEN = /{{>\s*([A-Za-z0-9_-]+)\s*}}/g;
 
@@ -85,6 +90,38 @@ export async function snapshotServiceVariant(
   });
   if (!variant) throw new NotFoundError('Service variant not found');
 
+  const base = {
+    variantId: variant.id,
+    variantVersion: variant.version,
+    familyName: variant.family.name,
+    variantName: variant.name,
+    serviceCadence: variant.serviceCadence,
+    customCadenceLabel: variant.customCadenceLabel,
+    partialId: variant.sowPartial.id,
+    partialVersion: variant.sowPartial.version,
+  };
+
+  // A Word scope of work pins its exact bytes (and nested partials) now, so
+  // later edits to the partial never change this agreement's wording.
+  const wordAsset = readOakDocTemplateMetadata(variant.sowPartial.contentJson);
+  if (wordAsset) {
+    return {
+      ...base,
+      partialContent: encodeOakDocSowSnapshot({
+        pin: {
+          partialId: variant.sowPartial.id,
+          version: variant.sowPartial.version,
+          sha256: wordAsset.sha256,
+          storageKey: wordAsset.storageKey,
+          nested: readOakDocPartialPins(variant.sowPartial.contentJson),
+        },
+        fieldTags: wordAsset.fieldTags,
+      }),
+      placeholders: [],
+      dependencies: [],
+    };
+  }
+
   const partials = await prisma.templatePartial.findMany({
     where: { tenantId, deletedAt: null },
     select: {
@@ -99,14 +136,7 @@ export async function snapshotServiceVariant(
   const composed = composeServicePartialGraph(variant.sowPartial, partials);
 
   return {
-    variantId: variant.id,
-    variantVersion: variant.version,
-    familyName: variant.family.name,
-    variantName: variant.name,
-    serviceCadence: variant.serviceCadence,
-    customCadenceLabel: variant.customCadenceLabel,
-    partialId: variant.sowPartial.id,
-    partialVersion: variant.sowPartial.version,
+    ...base,
     partialContent: composed.content,
     placeholders: composed.placeholders,
     dependencies: composed.dependencies.map((dependency) => ({
