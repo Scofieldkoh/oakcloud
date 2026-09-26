@@ -10,7 +10,8 @@ import {
 import { DocxEditor, type DocxEditorRef, type EditorCommand } from '@docx-editor.dev/react';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ArrowLeft, Download, FileUp, Loader2, Save, Search, Sparkles } from 'lucide-react';
+import { ArrowLeft, Download, FilePlus, FileUp, Loader2, Save, Search, Sparkles } from 'lucide-react';
+import { buildBlankOakDocBytes } from '@/lib/document-editor/oakdoc-html-import';
 import { Button } from '@/components/ui/button';
 import { useSession } from '@/hooks/use-auth';
 import { useActiveWorkspaceId } from '@/components/ui/workspace-selector';
@@ -305,7 +306,7 @@ export function OakDocEditor() {
   const [conditionOperator, setConditionOperator] = useState<OakDocConditionOperator>('truthy');
   const [conditionValue, setConditionValue] = useState('');
   const [status, setStatus] = useState(
-    templateId ? 'Loading OakDoc template...' : 'Import a DOCX to begin.',
+    templateId ? 'Loading OakDoc template...' : 'Start blank or import a DOCX to begin.',
   );
   const [statusKind, setStatusKind] = useState<StatusKind>('neutral');
   const [busy, setBusy] = useState(false);
@@ -443,6 +444,19 @@ export function OakDocEditor() {
     return asUint8Array(buffer);
   }, []);
 
+  const openNewDocument = useCallback((bytes: Uint8Array, name: string) => {
+    setFileName(name);
+    setTitle(name.replace(/\.docx$/i, ''));
+    readyMessageRef.current =
+      'DOCX loaded. Highlight text or place the caret, then assign an Oakcloud field.';
+    setDocumentBytes(bytes);
+    setDocumentVersion((value) => value + 1);
+    updateFieldSummary(bytes);
+    setStatus(`Opening ${name}...`);
+    setStatusKind('neutral');
+    setIsDirty(true);
+  }, [updateFieldSummary, setIsDirty]);
+
   const handleImport = useCallback(async (file: File) => {
     if (!file.name.toLowerCase().endsWith('.docx')) {
       setStatus('Please choose a Microsoft Word .docx file.');
@@ -452,24 +466,18 @@ export function OakDocEditor() {
 
     setBusy(true);
     try {
-      const bytes = asUint8Array(await file.arrayBuffer());
-      setFileName(file.name);
-      setTitle(file.name.replace(/\.docx$/i, ''));
-      readyMessageRef.current =
-        'DOCX loaded. Highlight text or place the caret, then assign an Oakcloud field.';
-      setDocumentBytes(bytes);
-      setDocumentVersion((value) => value + 1);
-      updateFieldSummary(bytes);
-      setStatus(`Opening ${file.name}...`);
-      setStatusKind('neutral');
-      setIsDirty(true);
+      openNewDocument(asUint8Array(await file.arrayBuffer()), file.name);
     } catch (error) {
       setStatus(error instanceof Error ? error.message : 'Could not read the DOCX file.');
       setStatusKind('error');
     } finally {
       setBusy(false);
     }
-  }, [updateFieldSummary, setIsDirty]);
+  }, [openNewDocument]);
+
+  const startBlank = useCallback(() => {
+    openNewDocument(buildBlankOakDocBytes(), 'Untitled template.docx');
+  }, [openNewDocument]);
 
   const assignField = useCallback(async (field: OakDocFieldDefinition) => {
     const handle = editorRef.current;
@@ -1537,21 +1545,32 @@ export function OakDocEditor() {
               <div className="absolute inset-6 grid place-items-center">
                 <div className="max-w-lg rounded-xl border border-dashed border-border-primary bg-background-primary p-8 text-center shadow-sm">
                   <div className="text-sm font-semibold text-text-primary">
-                    Import an existing Microsoft Word template
+                    Start a Word template
                   </div>
                   <p className="mt-2 text-sm leading-relaxed text-text-secondary">
-                    OakDoc keeps DOCX as the native document format and uses Word content controls
-                    for Oakcloud fields.
+                    Start from a blank page or import an existing Microsoft Word document. OakDoc
+                    keeps DOCX as the native format and uses Word content controls for Oakcloud fields.
                   </p>
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    className="mt-4"
-                    leftIcon={<FileUp className="h-4 w-4" />}
-                    onClick={() => fileInputRef.current?.click()}
-                  >
-                    Import Word .docx
-                  </Button>
+                  <div className="mt-4 flex flex-wrap justify-center gap-2">
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      leftIcon={<FilePlus className="h-4 w-4" />}
+                      onClick={startBlank}
+                      disabled={busy}
+                    >
+                      Start blank
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      leftIcon={<FileUp className="h-4 w-4" />}
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={busy}
+                    >
+                      Import Word .docx
+                    </Button>
+                  </div>
                 </div>
               </div>
             )}

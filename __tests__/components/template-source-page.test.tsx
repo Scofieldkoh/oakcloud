@@ -13,6 +13,11 @@ vi.mock('next/navigation', () => ({
 }));
 const toast = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn() }));
 vi.mock('@/components/ui/toast', () => ({ useToast: () => toast }));
+vi.mock('@/components/documents/oakdoc/word-partial-editor', () => ({
+  WordPartialEditor: ({ partialId, version }: { partialId: string; version: number }) => (
+    <div data-testid="word-partial-editor">{`${partialId}@${version}`}</div>
+  ),
+}));
 
 import { TemplateSourcePage } from '@/app/(dashboard)/template-partials/editor/template-source-page';
 
@@ -91,7 +96,7 @@ describe('TemplateSourcePage', () => {
 
     await user.type(screen.getByLabelText('Name'), 'audit-scope');
     await user.upload(
-      screen.getByLabelText('Word document (.docx)'),
+      screen.getByLabelText('Word document (.docx, optional)'),
       new File(['docx'], 'scope.docx', { type: wordAsset.mimeType }),
     );
     await user.click(screen.getByRole('button', { name: 'Create Word partial' }));
@@ -106,6 +111,25 @@ describe('TemplateSourcePage', () => {
       .toHaveBeenCalledWith('/template-partials/editor?type=partial&tab=partials&id=p-new'));
   });
 
+  it('creates a blank Word partial when no DOCX is chosen', async () => {
+    const user = userEvent.setup();
+    const fetchMock = vi.spyOn(global, 'fetch').mockImplementation(() => respond({ id: 'p-blank' }, 201));
+    renderPage('type=partial&tab=partials');
+
+    await user.type(screen.getByLabelText('Name'), 'engagement-scope');
+    await user.click(screen.getByRole('button', { name: 'Create blank partial' }));
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledWith(
+      '/api/template-partials/oakdoc',
+      expect.objectContaining({ method: 'POST' }),
+    ));
+    const file = (fetchMock.mock.calls[0][1]!.body as FormData).get('file') as File;
+    expect(file.name).toBe('engagement-scope.docx');
+    expect(file.size).toBeGreaterThan(0);
+    await waitFor(() => expect(navigation.replace)
+      .toHaveBeenCalledWith('/template-partials/editor?type=partial&tab=partials&id=p-blank'));
+  });
+
   it('uploads a new version of a Word partial against its current version', async () => {
     const user = userEvent.setup();
     const fetchMock = vi.spyOn(global, 'fetch').mockImplementation((input) => (
@@ -116,10 +140,11 @@ describe('TemplateSourcePage', () => {
     renderPage('type=partial&tab=partials&id=p-2');
 
     expect(await screen.findByText('Audit scope')).toBeInTheDocument();
+    expect(screen.getByTestId('word-partial-editor')).toHaveTextContent('p-2@4');
     expect(screen.getByRole('link', { name: /download current version/i }))
       .toHaveAttribute('href', '/api/template-partials/p-2/oakdoc');
     await user.upload(
-      screen.getByLabelText('New version (.docx)'),
+      screen.getByLabelText('Replace with a .docx'),
       new File(['docx'], 'scope-v5.docx', { type: wordAsset.mimeType }),
     );
     await user.click(screen.getByRole('button', { name: 'Upload new version' }));

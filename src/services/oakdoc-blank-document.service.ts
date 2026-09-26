@@ -5,7 +5,7 @@ import { createAuditLog } from '@/lib/audit';
 import { NotFoundError } from '@/lib/errors';
 import { storage, StorageKeys } from '@/lib/storage';
 import { ensureA4ServerDomGlobals } from '@/lib/document-editor/a4-server-dom';
-import { buildOakDocFromHtml } from '@/lib/document-editor/oakdoc-html-import';
+import { buildBlankOakDocBytes } from '@/lib/document-editor/oakdoc-html-import';
 import { inspectOakDocPackage } from '@/lib/document-editor/oakdoc-package-policy';
 import {
   OAKDOC_GENERATED_CONTENT,
@@ -42,7 +42,7 @@ export async function createBlankOakDocDocument(
   }
 
   ensureA4ServerDomGlobals();
-  const { bytes } = buildOakDocFromHtml('<p></p>');
+  const bytes = buildBlankOakDocBytes();
   inspectOakDocPackage(bytes, 'draft');
   const buffer = Buffer.from(bytes);
   const sha256 = createHash('sha256').update(bytes).digest('hex');
