@@ -6,7 +6,7 @@ import type {
 import {
   buildOakDocMigrationContentJson,
   OAKDOC_STANDARD_TEMPLATE_MIGRATIONS,
-  readOakDocMigrationMetadata,
+  readOakDocSeedMigrationMetadata,
   validateOakDocMigrationMaster,
   type OakDocStandardTemplateMigrationDefinition,
 } from '@/lib/document-editor/oakdoc-standard-template-migrations';
@@ -48,7 +48,7 @@ const defaultDependencies: OakDocTemplateMigrationDependencies = {
         OR: [
           {
             contentJson: {
-              path: ['oakDocMigration', 'migrationId'],
+              path: ['oakDocSeedMigration', 'migrationId'],
               equals: definition.migrationId,
             },
           },
@@ -75,7 +75,7 @@ export async function ensureOakDocTemplateMigration(
     params.tenantId,
   );
   if (existing) {
-    const migration = readOakDocMigrationMetadata(existing.contentJson);
+    const migration = readOakDocSeedMigrationMetadata(existing.contentJson);
     const oakDoc = readOakDocTemplateMetadata(existing.contentJson);
     const isUntouchedSeed = Boolean(
       migration
