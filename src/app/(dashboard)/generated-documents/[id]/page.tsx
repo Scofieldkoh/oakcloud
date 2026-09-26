@@ -34,7 +34,7 @@ import { isPendingA4DraftConversion } from '@/lib/document-editor/oakdoc-draft-c
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useToast } from '@/components/ui/toast';
 import { cn } from '@/lib/utils';
-import { A4PageEditor } from '@/components/documents/a4-page-editor';
+import { A4HistoricalViewer } from '@/components/documents/a4-historical-viewer';
 import { extractA4DocumentLayout } from '@/components/documents/a4-pagination/layout';
 import {
   GeneratedDocumentEnvelopeHistory,
@@ -771,7 +771,7 @@ export default function DocumentViewPage() {
             </div>
           </div>
 
-          {/* Document content using A4PageEditor in read-only mode */}
+          {/* Document content: OakDoc editor, or a static view of A4 content */}
           <div className="flex-1 min-w-0">
             <div className="border border-border-primary rounded-lg shadow-sm overflow-hidden h-[calc(100vh-12rem)]">
               {isOakDoc ? (
@@ -794,9 +794,8 @@ export default function DocumentViewPage() {
                   }}
                 />
               ) : (
-                <A4PageEditor
-                  value={docData.content}
-                  readOnly={true}
+                <A4HistoricalViewer
+                  html={docData.content}
                   layout={extractA4DocumentLayout(docData.contentJson)}
                 />
               )}
