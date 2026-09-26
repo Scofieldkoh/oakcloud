@@ -34,6 +34,7 @@ describe('generated document layout', () => {
           templateName: 'Engagement Letter',
           templateKind: 'STANDARD',
           templateVersion: 1,
+          templateEngine: 'A4',
           status: 'READY',
           configuration: {
             version: 1,
@@ -57,6 +58,7 @@ describe('generated document layout', () => {
         }]}
         activeItemId="item-1"
         onSelect={() => undefined}
+        onSaveOakDoc={async () => undefined}
         onPreview={() => Promise.resolve()}
         onReview={() => Promise.resolve()}
         onEditContent={() => undefined}

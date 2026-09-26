@@ -15,6 +15,7 @@ function item(): EditableBatchItem {
     templateName: 'Engagement Letter',
     templateKind: 'STANDARD',
     templateVersion: 1,
+    templateEngine: 'A4',
     status: 'NEEDS_INPUT',
     configuration: {
       version: 1,
