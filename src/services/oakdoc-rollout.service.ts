@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import { prisma } from '@/lib/prisma';
+import { createAuditLog } from '@/lib/audit';
 import { ConflictError, ValidationError } from '@/lib/errors';
 import { canonicalJson } from '@/lib/document-generation-fingerprint';
 import {
@@ -7,7 +8,10 @@ import {
   readGeneratedDocumentEngineState,
 } from '@/lib/document-editor/document-engine';
 import { readGeneratedDocumentRevisions } from '@/lib/document-editor/generated-document-revision';
-import { getOakDocMigrationInventory } from '@/services/oakdoc-migration.service';
+import {
+  getOakDocMigrationInventory,
+  setOakDocMigrationPreference,
+} from '@/services/oakdoc-migration.service';
 import {
   A4_DRAFT_CONVERSION_METHOD,
   convertA4DraftToOakDoc,
@@ -32,7 +36,7 @@ export type A4DocumentDisposition =
   | 'HISTORICAL'
   /** Linked to e-signing: never converted. */
   | 'BLOCKED_IN_SIGNING'
-  /** Linked to a task outcome, batch or Service Agreement: needs relation transfer first. */
+  /** Part of a generation batch or a Service Agreement, which stay bound to it. */
   | 'BLOCKED_RELATION';
 
 export interface A4DocumentInventoryItem {
@@ -104,7 +108,7 @@ async function inventoryA4Documents(tenantId: string): Promise<A4DocumentInvento
       metadata: true,
       serviceAgreement: { select: { id: true } },
       batchItem: { select: { id: true } },
-      _count: { select: { taskStageOutcomes: true, esigningEnvelopeDocuments: true } },
+      _count: { select: { esigningEnvelopeDocuments: true } },
     },
     orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
   });
@@ -135,11 +139,9 @@ async function inventoryA4Documents(tenantId: string): Promise<A4DocumentInvento
       disposition = 'BLOCKED_IN_SIGNING';
     } else if (target) {
       disposition = target.status === 'ACCEPTED' ? 'CONVERTED_ACCEPTED' : 'CONVERTED_PENDING_REVIEW';
-    } else if (
-      document.serviceAgreement
-      || document.batchItem
-      || document._count.taskStageOutcomes > 0
-    ) {
+    } else if (document.serviceAgreement || document.batchItem) {
+      // Task outcomes move to the copy when it is accepted; batches and
+      // agreements stay bound to the document they created.
       disposition = 'BLOCKED_RELATION';
     } else {
       disposition = 'CONVERT';
@@ -223,11 +225,7 @@ export async function applyA4DraftConversionManifest(input: {
   userId: string;
   manifestHash: string;
 }): Promise<A4DraftConversionRunResult> {
-  const operator = await prisma.user.findFirst({
-    where: { id: input.userId, tenantId: input.tenantId, isActive: true, deletedAt: null },
-    select: { id: true },
-  });
-  if (!operator) throw new ValidationError('The operator is not an active member of this workspace');
+  await requireOperator(input.tenantId, input.userId);
 
   const inventory = await buildOakDocRolloutInventory(input.tenantId);
   const manifest = inventory.draftConversionManifest;
@@ -260,5 +258,156 @@ export async function applyA4DraftConversionManifest(input: {
       });
     }
   }
+  await journalRolloutRun({
+    tenantId: input.tenantId,
+    userId: input.userId,
+    operation: 'DRAFT_CONVERSION',
+    manifestHash: manifest.hash,
+    results,
+  });
   return { manifestHash: manifest.hash, results };
+}
+
+async function requireOperator(tenantId: string, userId: string): Promise<void> {
+  const operator = await prisma.user.findFirst({
+    where: { id: userId, tenantId, isActive: true, deletedAt: null },
+    select: { id: true },
+  });
+  if (!operator) throw new ValidationError('The operator is not an active member of this workspace');
+}
+
+/**
+ * Journal one apply run in the audit log: operator, manifest hash and every
+ * item's outcome. Items are idempotent, so resuming after a failure is a new
+ * dry run plus apply; the journal shows what each earlier run did.
+ */
+async function journalRolloutRun(input: {
+  tenantId: string;
+  userId: string;
+  operation: 'DRAFT_CONVERSION' | 'TEMPLATE_CUTOVER' | 'TEMPLATE_ROLLBACK';
+  manifestHash: string;
+  results: Array<{ outcome: string }>;
+  reason?: string;
+}): Promise<void> {
+  const outcomes = countBy(input.results.map((item) => item.outcome));
+  await createAuditLog({
+    tenantId: input.tenantId,
+    userId: input.userId,
+    action: 'UPDATE',
+    entityType: 'OakDocRolloutRun',
+    entityId: input.manifestHash,
+    summary: `OakDoc rollout ${input.operation.toLowerCase().replace(/_/g, ' ')}: ${input.results.length} item(s)`,
+    changeSource: 'SYSTEM',
+    ...(input.reason ? { reason: input.reason } : {}),
+    metadata: {
+      operation: input.operation,
+      manifestHash: input.manifestHash,
+      outcomes,
+      results: input.results,
+    },
+  });
+}
+
+export type OakDocCutoverDirection = 'OAKDOC' | 'LEGACY';
+
+export interface OakDocTemplateCutoverItem {
+  oakDocTemplateId: string;
+  legacyTemplateId: string;
+  expectedRevision: number;
+}
+
+export interface OakDocTemplateCutoverPlan {
+  direction: OakDocCutoverDirection;
+  hash: string;
+  items: OakDocTemplateCutoverItem[];
+}
+
+/**
+ * Pairs a workspace cutover would switch. Moving to Word covers validated
+ * pairs still on A4; rollback covers pairs currently on Word. The hash binds
+ * the apply step to exactly these templates at these revisions.
+ */
+export async function buildTemplateCutoverPlan(
+  tenantId: string,
+  direction: OakDocCutoverDirection,
+): Promise<OakDocTemplateCutoverPlan> {
+  const inventory = await getOakDocMigrationInventory(tenantId);
+  const wanted = direction === 'OAKDOC' ? 'READY_FOR_SWITCHOVER' : 'OAKDOC_PRIMARY';
+  const items = inventory
+    .filter((item) => item.readiness === wanted && item.oakDocTemplate && item.legacyTemplate)
+    .map((item) => ({
+      oakDocTemplateId: item.oakDocTemplate!.id,
+      legacyTemplateId: item.legacyTemplate!.id,
+      expectedRevision: item.oakDocTemplate!.version,
+    }))
+    .sort((a, b) => a.oakDocTemplateId.localeCompare(b.oakDocTemplateId));
+  return {
+    direction,
+    hash: sha256(canonicalJson({ tenantId, operation: 'template-cutover', direction, items })),
+    items,
+  };
+}
+
+export interface OakDocTemplateCutoverResult {
+  direction: OakDocCutoverDirection;
+  manifestHash: string;
+  results: Array<{
+    oakDocTemplateId: string;
+    outcome: 'switched' | 'failed';
+    revision?: number;
+    reason?: string;
+  }>;
+}
+
+/**
+ * Switch every pair in an approved cutover plan to Word, or roll them back
+ * to A4, through the audited per-template preference change (which re-checks
+ * parity evidence and the expected revision). A changed plan is refused.
+ */
+export async function applyTemplateCutover(input: {
+  tenantId: string;
+  userId: string;
+  direction: OakDocCutoverDirection;
+  manifestHash: string;
+  reason: string;
+}): Promise<OakDocTemplateCutoverResult> {
+  await requireOperator(input.tenantId, input.userId);
+  const reason = input.reason.trim();
+  if (!reason) throw new ValidationError('A reason is required for a cutover or rollback');
+
+  const plan = await buildTemplateCutoverPlan(input.tenantId, input.direction);
+  if (plan.hash !== input.manifestHash) {
+    throw new ConflictError('The templates changed since the dry run. Run the dry run again and approve the new plan.', {
+      reason: 'OAKDOC_MANIFEST_CHANGED',
+      currentManifestHash: plan.hash,
+    });
+  }
+
+  const results: OakDocTemplateCutoverResult['results'] = [];
+  for (const item of plan.items) {
+    try {
+      const updated = await setOakDocMigrationPreference({
+        oakDocTemplateId: item.oakDocTemplateId,
+        expectedRevision: item.expectedRevision,
+        preference: input.direction,
+        reason,
+      }, { tenantId: input.tenantId, userId: input.userId });
+      results.push({ oakDocTemplateId: item.oakDocTemplateId, outcome: 'switched', revision: updated.version });
+    } catch (error) {
+      const details = (error as { details?: { reason?: unknown } }).details;
+      const reason = typeof details?.reason === 'string'
+        ? details.reason
+        : (error instanceof Error ? error.message : 'PREFERENCE_CHANGE_FAILED').slice(0, 300);
+      results.push({ oakDocTemplateId: item.oakDocTemplateId, outcome: 'failed', reason });
+    }
+  }
+  await journalRolloutRun({
+    tenantId: input.tenantId,
+    userId: input.userId,
+    operation: input.direction === 'OAKDOC' ? 'TEMPLATE_CUTOVER' : 'TEMPLATE_ROLLBACK',
+    manifestHash: plan.hash,
+    results,
+    reason,
+  });
+  return { direction: input.direction, manifestHash: plan.hash, results };
 }

@@ -9,6 +9,8 @@ vi.mock('@/lib/prisma', () => ({ prisma: prismaMock }));
 const rollout = vi.hoisted(() => ({
   buildOakDocRolloutInventory: vi.fn(async () => ({ draftConversionManifest: { hash: 'h' } })),
   applyA4DraftConversionManifest: vi.fn(async () => ({ manifestHash: 'h', results: [] })),
+  buildTemplateCutoverPlan: vi.fn(async (_tenantId: string, direction: string) => ({ direction, hash: 'p', items: [] })),
+  applyTemplateCutover: vi.fn(async () => ({ direction: 'OAKDOC', manifestHash: 'p', results: [] })),
 }));
 vi.mock('@/services/oakdoc-rollout.service', () => rollout);
 const templates = vi.hoisted(() => ({ migrateCanonicalOakDocTemplates: vi.fn() }));
@@ -49,6 +51,34 @@ describe('OakDoc rollout CLI', () => {
       tenantId: workspace,
       userId: operator,
       manifestHash: manifest,
+    });
+  });
+});
+
+describe('OakDoc template cutover CLI', () => {
+  it('shows both cutover plans in the dry run', async () => {
+    const result = await runOakDocRollout(['--workspace', workspace]);
+    expect(result).toMatchObject({
+      templateCutover: { direction: 'OAKDOC' },
+      templateRollback: { direction: 'LEGACY' },
+    });
+    expect(rollout.applyTemplateCutover).not.toHaveBeenCalled();
+  });
+
+  it('applies a cutover or rollback only with an operator, a plan hash and a reason', async () => {
+    await expect(runOakDocRollout(['--workspace', workspace, '--apply-template-cutover', '--operator', operator]))
+      .rejects.toThrow('--manifest');
+    await expect(runOakDocRollout([
+      '--workspace', workspace, '--apply-template-cutover', '--apply-template-rollback',
+      '--operator', operator, '--manifest', manifest,
+    ])).rejects.toThrow('one apply step');
+
+    await runOakDocRollout([
+      '--workspace', workspace, '--apply-template-rollback', '--operator', operator,
+      '--manifest', manifest, '--reason', 'Undo pilot',
+    ]);
+    expect(rollout.applyTemplateCutover).toHaveBeenCalledWith({
+      tenantId: workspace, userId: operator, direction: 'LEGACY', manifestHash: manifest, reason: 'Undo pilot',
     });
   });
 });

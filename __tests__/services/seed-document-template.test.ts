@@ -29,7 +29,10 @@ const canonicalDefinition: SeedDocumentTemplate = {
   placeholders: [],
 };
 
-function templateRepository(initial: Record<string, unknown> | null) {
+function templateRepository(
+  initial: Record<string, unknown> | null,
+  linkedReplacement: Record<string, unknown> | null = null,
+) {
   let record = initial ? structuredClone(initial) : null;
 
   return {
@@ -38,8 +41,8 @@ function templateRepository(initial: Record<string, unknown> | null) {
     },
     transaction: {
       documentTemplate: {
-        async findFirst() {
-          return record;
+        async findFirst({ where }: { where: Record<string, unknown> }) {
+          return where.contentJson ? linkedReplacement : record;
         },
         async update({ data }: { data: Record<string, unknown> }) {
           if (!record) throw new Error('Template does not exist');
@@ -178,6 +181,30 @@ describe('canonical Client Onboarding document template seed', () => {
       deletedAt: null,
       version: 7,
     });
+  });
+
+  it('never overwrites a Word template or an A4 template with a linked Word replacement', async () => {
+    const stale = {
+      id: 'existing-template',
+      tenantId: 'tenant-1',
+      name: canonicalDefinition.name,
+      description: 'customised',
+      category: 'RESOLUTION',
+      compositionType: 'STANDARD',
+      content: '<p>customised</p>',
+      contentJson: null,
+      placeholders: [],
+      isActive: true,
+      deletedAt: null,
+      version: 4,
+    };
+    const word = templateRepository({ ...stale, contentJson: { oakDoc: { schemaVersion: 1 } } });
+    await ensureSeededDocumentTemplate(word.transaction, 'tenant-1', 'user-1', canonicalDefinition);
+    expect(word.record).toMatchObject({ content: '<p>customised</p>', version: 4 });
+
+    const linked = templateRepository(stale, { id: 'word-replacement' });
+    await ensureSeededDocumentTemplate(linked.transaction, 'tenant-1', 'user-1', canonicalDefinition);
+    expect(linked.record).toMatchObject({ content: '<p>customised</p>', version: 4 });
   });
 
   it('creates a fresh template with its canonical content and layout', async () => {
