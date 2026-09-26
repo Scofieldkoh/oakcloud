@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
 import { ApiError } from '@/lib/errors';
-import { assertA4WriterCanPreserve } from '@/lib/document-editor/a4-editor-format';
 import {
   createDocumentTemplateSchema,
   documentTemplateCategoryEnum,
@@ -135,7 +134,6 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { tenantId: bodyTenantId, ...templateData } = body;
     const data = createDocumentTemplateSchema.parse(templateData);
-    assertA4WriterCanPreserve(data.content, data.contentJson);
 
     let tenantId = session.tenantId;
     if (session.isSuperAdmin && bodyTenantId) tenantId = bodyTenantId;

@@ -6,6 +6,7 @@
  * Fully integrated with multi-tenancy support.
  */
 
+import { rejectRetiredA4Operation } from '@/lib/document-editor/a4-retirement';
 import { prisma } from '@/lib/prisma';
 import { createAuditLog, computeChanges } from '@/lib/audit';
 import {
@@ -30,11 +31,9 @@ import {
 import {
   RESERVED_GENERATED_CONTENT_JSON_KEYS,
   RESERVED_GENERATED_METADATA_KEYS,
-  assertNoReservedKeys,
   mergeUserJsonPreservingReserved,
 } from '@/lib/document-editor/oakdoc-reserved-metadata';
 import {
-  assertA4WriterCanPreserve,
   readA4StoredDocument,
 } from '@/lib/document-editor/a4-editor-format';
 import { getPartialsUsedInTemplate } from '@/services/template-partial.service';
@@ -57,7 +56,6 @@ import type {
   SearchGeneratedDocumentsInput,
   CloneDocumentInput,
   CreateDocumentCommentInput,
-  SaveDraftInput,
 } from '@/lib/validations/generated-document';
 import { Prisma } from '@/generated/prisma';
 import type {
@@ -73,21 +71,15 @@ import { createLogger } from '@/lib/logger';
 import { readActiveGenerationSession } from '@/lib/document-generation-session';
 import { metadataHasUnresolvedTemplateData } from '@/lib/document-finalization';
 import { safelyReconcileGeneratedDocumentTaskOutcomes } from '@/services/tasks/integration.service';
-import { createHash } from 'node:crypto';
 import {
   assembleServiceAgreementTemplate,
-  canonicalServiceAgreementData,
-  getServiceAgreementDraft,
   getServiceAgreementDraftById,
 } from '@/services/service-agreement';
 import {
   assertGeneratedDocumentCanBeUnfinalized,
   queueTaskEsigningPreparationsForGeneratedDocument,
 } from '@/services/tasks/esigning-preparation.service';
-import {
-  assertRevisionPrecondition,
-  VersionConflictError,
-} from '@/lib/document-editor/revision-concurrency';
+import { assertRevisionPrecondition } from '@/lib/document-editor/revision-concurrency';
 import {
   claimGeneratedDocumentRevision,
   readGeneratedDocumentRevision,
@@ -176,17 +168,6 @@ export interface RenderTemplateForGenerationResult {
       }>;
     };
   };
-}
-
-function canonicalJson(value: unknown): string {
-  if (Array.isArray(value)) return `[${value.map(canonicalJson).join(',')}]`;
-  if (value && typeof value === 'object') {
-    return `{${Object.keys(value as Record<string, unknown>)
-      .sort()
-      .map((key) => `${JSON.stringify(key)}:${canonicalJson((value as Record<string, unknown>)[key])}`)
-      .join(',')}}`;
-  }
-  return JSON.stringify(value);
 }
 
 export type { TenantAwareParams } from '@/lib/types';
@@ -592,219 +573,13 @@ export interface MaterializeDocumentTarget {
 }
 
 export async function materializeDocumentFromTemplate(
-  data: CreateDocumentFromTemplateInput,
-  params: TenantAwareParams,
-  target: MaterializeDocumentTarget = {},
-  taskIntegrationContext?: TaskLaunchContext,
+  _data: CreateDocumentFromTemplateInput,
+  _params: TenantAwareParams,
+  _target: MaterializeDocumentTarget = {},
+  _taskIntegrationContext?: TaskLaunchContext,
 ): Promise<GeneratedDocumentWithRevision> {
-  const { tenantId, userId } = params;
-  const contactIds = data.contactIds ?? [];
-  const useLetterhead = data.useLetterhead ?? true;
-  if (target.generatedDocumentId) {
-    assertRevisionPrecondition(data.expectedRevision, 'generated-document');
-  }
-
-  const creator = await prisma.user.findFirst({
-    where: { id: userId, tenantId },
-    select: { firstName: true, lastName: true },
-  });
-  const generatedBy = creator
-    ? [creator.firstName, creator.lastName].filter(Boolean).join(' ').trim()
-    : undefined;
-
-  if (target.generatedDocumentId) {
-    const existingChild = await prisma.generatedDocument.findFirst({
-      where: { id: target.generatedDocumentId, tenantId, deletedAt: null },
-    });
-    if (!existingChild) throw new NotFoundError('Document draft not found');
-    if (existingChild.status !== 'DRAFT') throw generatedDocumentStateConflict();
-    if (target.expectedBatchItemId) {
-      const batchItem = await prisma.documentGenerationBatchItem.findFirst({
-        where: {
-          id: target.expectedBatchItemId,
-          tenantId,
-          generatedDocumentId: target.generatedDocumentId,
-        },
-      });
-      if (!batchItem) throw new NotFoundError('Batch item not found');
-    }
-  }
-
-  const template = await prisma.documentTemplate.findFirst({
-    where: { id: data.templateId, tenantId, deletedAt: null },
-  });
-  if (!template) throw new NotFoundError('Template not found');
-  if (!template.isActive) throw new Error('Template is not active');
-
-  const attachedAgreement = target.generatedDocumentId
-    ? await getServiceAgreementDraft(target.generatedDocumentId, params)
-    : null;
-  if (template.compositionType === 'STANDARD' && attachedAgreement && !data.discardServiceAgreement) {
-    throw new ValidationError('Discard the attached Service Agreement before switching templates');
-  }
-  if (
-    template.compositionType === 'STANDARD'
-    && attachedAgreement
-    && attachedAgreement.status !== 'DRAFT'
-  ) {
-    throw new ValidationError('Only draft Service Agreements can be discarded');
-  }
-  const linkedAgreement = template.compositionType === 'SERVICE_AGREEMENT' ? attachedAgreement : null;
-  if (data.serviceAgreementId && linkedAgreement?.id !== data.serviceAgreementId) {
-    throw new Error('Service Agreement does not match the document draft');
-  }
-
-  const rendered = await renderTemplateForGeneration({
-    templateId: data.templateId,
-    tenantId,
-    userId,
-    companyId: data.companyId,
-    contactIds,
-    selectedDirectorId: data.selectedDirectorId,
-    ...(data.selectedDirectorIds !== undefined ? { selectedDirectorIds: data.selectedDirectorIds } : {}),
-    selectedShareholderId: data.selectedShareholderId,
-    selectedContactId: data.selectedContactId,
-    customData: data.customData,
-    generatedBy,
-    mode: 'generate',
-    serviceAgreementId: linkedAgreement?.id,
-    generatedDocumentId: target.generatedDocumentId,
-  });
-  if (rendered.blockingErrors.length > 0) {
-    throw new ValidationError(rendered.blockingErrors.join('; '), {
-      blockingErrors: rendered.blockingErrors,
-    });
-  }
-
-  const canonicalContent = data.editedContent ?? rendered.content;
-  const canonicalContentJson = data.editedContentJson ?? template.contentJson ?? null;
-  assertA4WriterCanPreserve(canonicalContent, canonicalContentJson);
-
-  const selectedParties = {
-    ...(data.selectedDirectorId ? { directorId: data.selectedDirectorId } : {}),
-    ...(data.selectedDirectorIds !== undefined ? { directorIds: data.selectedDirectorIds } : {}),
-    ...(data.selectedShareholderId ? { shareholderId: data.selectedShareholderId } : {}),
-    ...(data.selectedContactId ? { contactId: data.selectedContactId } : {}),
-  };
-  const generatedMetadata = {
-    missingPlaceholders: rendered.missingPlaceholders,
-    missingPartials: rendered.missingPartials,
-    circularPartials: rendered.diagnostics.circularPartials,
-    syntaxErrors: rendered.diagnostics.syntaxErrors,
-    unknownPlaceholders: rendered.diagnostics.unknownPlaceholders,
-    dependencySnapshot: rendered.dependencySnapshot,
-    selectedParties,
-    ...(linkedAgreement
-      ? {
-          serviceAgreementId: linkedAgreement.id,
-          serviceAgreementStructuredHash: createHash('sha256')
-            .update(canonicalJson(canonicalServiceAgreementData(linkedAgreement)))
-            .digest('hex'),
-          serviceAgreementContentEdited: Boolean(data.editedContent && data.editedContent !== rendered.content),
-        }
-      : {}),
-    ...(taskIntegrationContext
-      ? {
-          taskIntegrationContext: {
-            taskId: taskIntegrationContext.taskId,
-            taskStageId: taskIntegrationContext.taskStageId,
-            ...(taskIntegrationContext.returnTo ? { returnTo: taskIntegrationContext.returnTo } : {}),
-          },
-        }
-      : {}),
-  };
-
-  const updateData: Prisma.GeneratedDocumentUpdateInput = {
-    template: { connect: { id: template.id } },
-    templateVersion: template.version,
-    company: data.companyId ? { connect: { id: data.companyId } } : { disconnect: true },
-    title: data.title,
-    content: canonicalContent,
-    contentJson: canonicalContentJson ?? Prisma.JsonNull,
-    status: 'DRAFT',
-    useLetterhead,
-    placeholderData: rendered.context as Prisma.InputJsonValue,
-    metadata: generatedMetadata as Prisma.InputJsonValue,
-  };
-
-  let document: GeneratedDocumentWithRevision;
-  if (target.generatedDocumentId) {
-    document = await prisma.$transaction(async (tx) => {
-      const claim = await claimGeneratedDocumentRevision(tx, {
-        id: target.generatedDocumentId!,
-        tenantId,
-        expectedRevision: data.expectedRevision,
-        allowedStatuses: ['DRAFT'],
-      });
-      if (template.compositionType === 'STANDARD') {
-        const currentAgreement = await tx.serviceAgreement.findFirst({
-          where: {
-            tenantId,
-            generatedDocumentId: target.generatedDocumentId!,
-          },
-          select: { id: true, status: true },
-        });
-        if (currentAgreement) {
-          if (!data.discardServiceAgreement) {
-            throw new ValidationError(
-              'Discard the attached Service Agreement before switching templates',
-            );
-          }
-          if (currentAgreement.status !== 'DRAFT') {
-            throw new ValidationError('Only draft Service Agreements can be discarded');
-          }
-          await tx.serviceAgreement.delete({ where: { id: currentAgreement.id } });
-        }
-      }
-      const updated = await tx.generatedDocument.update({
-        where: { id: target.generatedDocumentId! },
-        data: updateData,
-      });
-      return withRevision(updated, claim.revision);
-    });
-  } else {
-    const created = await prisma.generatedDocument.create({
-      data: {
-        tenantId,
-        templateId: template.id,
-        templateVersion: template.version,
-        sharePointRelativeFolderPathSnapshot: template.sharePointRelativeFolderPath,
-        companyId: data.companyId,
-        title: data.title,
-        content: canonicalContent,
-        contentJson: canonicalContentJson ?? undefined,
-        status: 'DRAFT',
-        useLetterhead,
-        placeholderData: rendered.context as Prisma.InputJsonValue,
-        metadata: generatedMetadata as Prisma.InputJsonValue,
-        createdById: userId,
-      },
-    });
-    document = withRevision(created, 0);
-  }
-
-  await createAuditLog({
-    tenantId,
-    userId,
-    companyId: data.companyId ?? undefined,
-    action: 'DOCUMENT_GENERATED',
-    entityType: 'GeneratedDocument',
-    entityId: document.id,
-    entityName: document.title,
-    summary: `Generated document "${document.title}" from template "${template.name}"`,
-    changeSource: 'MANUAL',
-    metadata: {
-      templateId: template.id,
-      templateName: template.name,
-      missingPlaceholders: rendered.missingPlaceholders,
-      missingPartials: rendered.missingPartials,
-      dependencySnapshot: rendered.dependencySnapshot,
-      selectedParties,
-      revision: document.revision,
-    },
-  });
-
-  return document;
+  // Generation from templates is OakDoc-only (materializeOakDocGeneratedDocument).
+  return rejectRetiredA4Operation('document-generate');
 }
 
 export async function createDocumentFromTemplate(
@@ -833,55 +608,12 @@ export async function createDocumentFromTemplate(
 }
 
 export async function createBlankDocument(
-  data: CreateBlankDocumentInput,
-  params: TenantAwareParams,
-  taskIntegrationContext?: TaskLaunchContext,
+  _data: CreateBlankDocumentInput,
+  _params: TenantAwareParams,
+  _taskIntegrationContext?: TaskLaunchContext,
 ): Promise<GeneratedDocumentWithRevision> {
-  const { tenantId, userId } = params;
-  assertNoReservedKeys(data.contentJson, RESERVED_GENERATED_CONTENT_JSON_KEYS, 'contentJson');
-  assertA4WriterCanPreserve(data.content, data.contentJson);
-  if (data.companyId) {
-    const company = await prisma.company.findFirst({
-      where: { id: data.companyId, tenantId, deletedAt: null },
-    });
-    if (!company) throw new NotFoundError('Company not found');
-  }
-
-  const created = await prisma.generatedDocument.create({
-    data: {
-      tenantId,
-      companyId: data.companyId,
-      title: data.title,
-      content: data.content,
-      contentJson: data.contentJson ?? undefined,
-      status: 'DRAFT',
-      useLetterhead: data.useLetterhead,
-      metadata: taskIntegrationContext
-        ? {
-            taskIntegrationContext: {
-              taskId: taskIntegrationContext.taskId,
-              taskStageId: taskIntegrationContext.taskStageId,
-              ...(taskIntegrationContext.returnTo ? { returnTo: taskIntegrationContext.returnTo } : {}),
-            },
-          }
-        : undefined,
-      createdById: userId,
-    },
-  });
-  const document = withRevision(created, 0);
-
-  await createAuditLog({
-    tenantId,
-    userId,
-    companyId: data.companyId ?? undefined,
-    action: 'DOCUMENT_GENERATED',
-    entityType: 'GeneratedDocument',
-    entityId: document.id,
-    entityName: document.title,
-    summary: `Created blank document "${document.title}"`,
-    changeSource: 'MANUAL',
-  });
-  return document;
+  // Blank documents are created by createBlankOakDocDocument.
+  return rejectRetiredA4Operation('document-create-blank');
 }
 
 export async function updateGeneratedDocument(
@@ -901,7 +633,8 @@ export async function updateGeneratedDocument(
   }
 
   const engine = readGeneratedDocumentEngineState(existing.metadata);
-  if (engine !== 'A4' && (data.content !== undefined || data.contentJson !== undefined)) {
+  if (data.content !== undefined || data.contentJson !== undefined) {
+    if (engine === 'A4') rejectRetiredA4Operation('document-edit');
     throw new ValidationError('OakDoc document content is saved from the Word editor, not as HTML');
   }
   const contentJson = data.contentJson === undefined
@@ -921,12 +654,6 @@ export async function updateGeneratedDocument(
       'metadata',
     );
 
-  if (data.content !== undefined || contentJson !== undefined) {
-    assertA4WriterCanPreserve(
-      data.content ?? existing.content,
-      contentJson === undefined ? existing.contentJson : contentJson,
-    );
-  }
 
   const updateData: Prisma.GeneratedDocumentUpdateInput = {};
   if (data.title !== undefined) updateData.title = data.title;
@@ -1240,7 +967,7 @@ export async function cloneDocument(
   if (!source) throw new NotFoundError('Document not found');
   const sourceEngine = readGeneratedDocumentEngineState(source.metadata);
   if (sourceEngine === 'INVALID') throw new InvalidDocumentEngineError('generated-document');
-  if (sourceEngine === 'A4') assertA4WriterCanPreserve(source.content, source.contentJson);
+  if (sourceEngine === 'A4') rejectRetiredA4Operation('document-clone');
 
   let newTitle = data.title || `Copy of ${source.title}`;
   let counter = 1;
@@ -1593,44 +1320,6 @@ export async function unhideComment(
   return prisma.documentComment.update({
     where: { id: commentId },
     data: { hiddenAt: null, hiddenById: null, hiddenReason: null },
-  });
-}
-
-export async function saveDraft(
-  data: SaveDraftInput,
-  params: TenantAwareParams,
-): Promise<void> {
-  const { tenantId, userId } = params;
-  const document = await prisma.generatedDocument.findFirst({
-    where: { id: data.documentId, tenantId, deletedAt: null },
-  });
-  if (!document) throw new NotFoundError('Document not found');
-  assertA4WriterCanPreserve(data.content, data.contentJson);
-
-  const canonicalRevision = await readGeneratedDocumentRevision(prisma, data.documentId, tenantId);
-  if (data.baseRevision !== undefined && data.baseRevision !== canonicalRevision) {
-    throw new VersionConflictError({
-      resource: 'generated-document',
-      expectedRevision: data.baseRevision,
-      revision: canonicalRevision,
-    });
-  }
-  const metadata = {
-    ...((data.metadata ?? {}) as Record<string, unknown>),
-    baseCanonicalRevision: data.baseRevision ?? canonicalRevision,
-  };
-
-  await prisma.$transaction(async (tx) => {
-    await tx.documentDraft.deleteMany({ where: { documentId: data.documentId, userId } });
-    await tx.documentDraft.create({
-      data: {
-        documentId: data.documentId,
-        userId,
-        content: data.content,
-        contentJson: data.contentJson ? (data.contentJson as Prisma.InputJsonValue) : undefined,
-        metadata: metadata as Prisma.InputJsonValue,
-      },
-    });
   });
 }
 

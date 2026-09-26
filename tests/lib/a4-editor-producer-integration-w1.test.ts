@@ -6,7 +6,6 @@ import {
   mapA4ProjectedTextPoint,
   partitionA4SemanticBreaks,
 } from '@/components/documents/a4-pagination/semantic-break-projection';
-import { paginateA4StructuralHtml } from '@/components/documents/a4-pagination/structural-pagination';
 import {
   assertA4WriterCanPreserve,
   readA4StoredDocument,
@@ -122,19 +121,6 @@ describe('W1 integrated S1 reader/pagination adapters', () => {
         index: candidate.binding.sourceIndex,
       },
     });
-  });
-
-  it('uses revision-qualified S1 pagination instead of the synthetic legacy identity', () => {
-    const html = '<p>First</p><span data-a4-break="page"></span><p>Last</p>';
-    const result = paginateA4StructuralHtml(
-      html,
-      source,
-      { measure: (candidate) => candidate.length },
-      10_000,
-    );
-    expect(result.pages).toHaveLength(2);
-    expect(result.pages[1]?.hardBreakBefore).toBe(true);
-    expect(result.positionMap).toMatchObject(source);
   });
 
   it('keeps level-2 writes disabled after level-2 reader rollout', () => {

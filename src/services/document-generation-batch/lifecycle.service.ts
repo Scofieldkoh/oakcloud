@@ -16,10 +16,8 @@ import {
 import {
   deriveMasterFieldCatalogue,
 } from '@/lib/document-generation-master-fields';
-import {
-  assertA4WriterCanPreserve,
-  readA4StoredDocument,
-} from '@/lib/document-editor/a4-editor-format';
+import { readA4StoredDocument } from '@/lib/document-editor/a4-editor-format';
+import { rejectRetiredA4Operation } from '@/lib/document-editor/a4-retirement';
 import { getDocumentTemplateEngine } from '@/lib/document-editor/document-engine';
 import {
   claimGeneratedDocumentRevision,
@@ -210,11 +208,9 @@ async function resolveTemplates(
   if (inactive) {
     throw new ValidationError(`Template "${inactive.name}" is not active`);
   }
-  templates.forEach((template) => {
-    if (getDocumentTemplateEngine(template.contentJson) === 'A4') {
-      readA4StoredDocument(template.content, template.contentJson);
-    }
-  });
+  if (templates.some((template) => getDocumentTemplateEngine(template.contentJson) === 'A4')) {
+    rejectRetiredA4Operation('document-generate');
+  }
   return templates;
 }
 
@@ -569,14 +565,7 @@ export async function updateDocumentGenerationBatch(
           }
         }
         if (submitted.editedContent !== undefined || submitted.editedContentJson !== undefined) {
-          const effectiveContent = submitted.editedContent
-            ?? existingItem.editedContent
-            ?? existingItem.previewContent
-            ?? '';
-          const effectiveContentJson = submitted.editedContentJson !== undefined
-            ? submitted.editedContentJson
-            : (existingItem.editedContentJson ?? existingItem.template.contentJson);
-          assertA4WriterCanPreserve(effectiveContent, effectiveContentJson);
+          rejectRetiredA4Operation('batch-edit');
         }
         const changed =
           submitted.configuration !== undefined

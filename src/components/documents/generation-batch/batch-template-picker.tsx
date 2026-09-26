@@ -70,6 +70,7 @@ export function BatchTemplatePicker({
   const categoryCounts = useMemo(() => {
     const counts = new Map<string, number>();
     for (const template of templates) {
+      if (template.engine !== 'OAKDOC') continue;
       counts.set(template.category, (counts.get(template.category) ?? 0) + 1);
     }
     return [...counts.entries()].sort(([a], [b]) => a.localeCompare(b));
@@ -78,6 +79,8 @@ export function BatchTemplatePicker({
   const visible = useMemo(() => {
     const normalized = query.trim().toLocaleLowerCase();
     return templates.filter((template) => {
+      // A4 templates are retired and can't be generated.
+      if (template.engine !== 'OAKDOC') return false;
       if (category && template.category !== category) return false;
       if (!normalized) return true;
       return [template.name, template.category, template.description ?? '']
@@ -231,7 +234,7 @@ export function BatchTemplatePicker({
                         {template.name}
                       </span>
                       <span className="mt-0.5 block text-xs text-text-muted">
-                        {template.engine === 'OAKDOC' ? 'Word · OakDoc' : 'A4 editor'}
+                        {template.category}
                       </span>
                     </span>
                     <span

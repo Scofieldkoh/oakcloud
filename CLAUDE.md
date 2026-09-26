@@ -8,5 +8,4 @@
 ## Known Unrelated Issues
 
 - A cold `tsc --noEmit` needs about 5.2 GB of heap, above Node's default limit, so `npm run typecheck` now runs tsc with `--max-old-space-size=8192` (the same limit as the CI build step). (2026-09-26)
-- `__tests__/api/document-template-layout.test.ts` (PUT without `expectedRevision`) already fails on `main`. (2026-09-26)
-- These component suites already fail on `main` and are not run in CI: billing-table, business-assistant-bizfile-upload, company-create-workspace, deadline-calendar, deadline-review-remediations, deadline-rules-admin, document-navigation-source, document-table, esigning-detail-hydration, esigning-list-actions, esigning-step-upload, form-url-health-field-warning, service-roster, template-editor-page, template-editor-partial-service-placeholder, and template-editor/template-validation. a4-page-editor fails intermittently. (2026-09-26)
+- These component suites already fail on `main` and are not run in CI: billing-table, business-assistant-bizfile-upload, company-create-workspace, deadline-calendar, deadline-review-remediations, deadline-rules-admin, document-navigation-source, document-table, esigning-detail-hydration, esigning-list-actions, esigning-step-upload, form-url-health-field-warning, service-roster and template-editor/template-validation. (2026-09-26)

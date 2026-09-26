@@ -96,7 +96,18 @@ const templateA = {
   category: 'LETTER',
   compositionType: 'STANDARD',
   content: '<p>{{custom.reference}}</p>',
-  contentJson: null,
+  // A4 templates are retired, so batches are built from OakDoc templates.
+  contentJson: {
+    oakDoc: {
+      schemaVersion: 1,
+      storageKey: `${tenantId}/templates/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/oakdoc/${'a'.repeat(64)}.docx`,
+      fileName: 'template.docx',
+      fileSize: 100,
+      sha256: 'a'.repeat(64),
+      mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      fieldTags: [],
+    },
+  },
   placeholders: [],
   isActive: true,
   version: 2,
@@ -218,6 +229,18 @@ describe('document generation batch lifecycle', () => {
     vi.mocked(prisma.templatePartial.findMany).mockResolvedValue([]);
     vi.mocked(prisma.generatedDocument.update).mockResolvedValue({ id: 'child' } as never);
     vi.mocked(prisma.documentGenerationBatch.update).mockResolvedValue({ id: 'batch-1' } as never);
+  });
+
+  it('refuses a batch that includes a retired A4 template', async () => {
+    vi.mocked(prisma.documentTemplate.findMany).mockResolvedValue([
+      { ...templateA, contentJson: null },
+    ] as never);
+
+    await expect(createDocumentGenerationBatch(
+      { items: [{ templateId: templateA.id }] },
+      actor,
+    )).rejects.toMatchObject({ details: { reason: 'A4_EDITOR_RETIRED' } });
+    expect(prisma.documentGenerationBatch.create).not.toHaveBeenCalled();
   });
 
   it('creates one hidden generated-document child per ordered item', async () => {

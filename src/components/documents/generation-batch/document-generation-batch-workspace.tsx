@@ -920,12 +920,6 @@ export function DocumentGenerationBatchWorkspace({
                   toastError(caught instanceof Error ? caught.message : 'Review failed');
                 }
               }}
-              onEditContent={(itemId, content, json) => dispatch({
-                type: 'item/edit-content',
-                itemId,
-                editedContent: content,
-                editedContentJson: json,
-              })}
               onSaveOakDoc={async (itemId, bytes) => {
                 try {
                   await saveOakDocDraft(itemId, bytes);

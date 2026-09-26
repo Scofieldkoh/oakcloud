@@ -3,7 +3,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { TemplatePartial } from '@/generated/prisma';
 import type {
-  CreateTemplatePartialInput,
   UpdateTemplatePartialInput,
   SearchTemplatePartialsInput,
 } from '@/lib/validations/template-partial';
@@ -125,15 +124,33 @@ async function fetchPartialUsage(id: string, tenantId?: string): Promise<Partial
   return response.json();
 }
 
-async function createPartial(data: CreateTemplatePartialInput & { tenantId?: string }): Promise<TemplatePartial> {
-  const response = await fetch('/api/template-partials', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  });
+export interface WordPartialInput {
+  /** Existing partial to replace with a new version; omit to create one. */
+  id?: string;
+  expectedRevision?: number;
+  name?: string;
+  displayName?: string;
+  description?: string;
+  file: File;
+}
+
+async function saveWordPartial(input: WordPartialInput): Promise<TemplatePartial> {
+  const form = new FormData();
+  form.set('file', input.file);
+  if (input.id) {
+    form.set('expectedRevision', String(input.expectedRevision ?? ''));
+  } else {
+    form.set('name', input.name ?? '');
+    if (input.displayName) form.set('displayName', input.displayName);
+    if (input.description) form.set('description', input.description);
+  }
+  const response = await fetch(
+    input.id ? `/api/template-partials/${input.id}/oakdoc` : '/api/template-partials/oakdoc',
+    { method: input.id ? 'PUT' : 'POST', body: form },
+  );
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to create partial');
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.error || 'Failed to save the Word partial');
   }
   return response.json();
 }
@@ -231,11 +248,12 @@ export function usePartialUsage(id: string | null, tenantId?: string) {
   });
 }
 
-export function useCreatePartial() {
+/** Create a Word partial, or upload a new version of one. */
+export function useSaveWordPartial() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: createPartial,
+    mutationFn: saveWordPartial,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: partialKeys.all });
     },
