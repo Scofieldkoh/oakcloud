@@ -1,3 +1,4 @@
+import { isDeepStrictEqual } from 'node:util';
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@/generated/prisma';
 import { createAuditLog } from '@/lib/audit';
@@ -570,7 +571,14 @@ export async function updateDocumentGenerationBatch(
             );
           }
         }
-        if (submitted.editedContent !== undefined || submitted.editedContentJson !== undefined) {
+        // Saves echo every item's stored edits back, so only a real change to an
+        // A4 item's content is refused.
+        const editsContent =
+          (submitted.editedContent !== undefined
+            && submitted.editedContent !== existingItem.editedContent)
+          || (submitted.editedContentJson !== undefined
+            && !isDeepStrictEqual(submitted.editedContentJson ?? null, existingItem.editedContentJson ?? null));
+        if (editsContent && getDocumentTemplateEngine(existingItem.template.contentJson) === 'A4') {
           rejectRetiredA4Operation('batch-edit');
         }
         const changed =
