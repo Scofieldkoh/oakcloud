@@ -10,6 +10,7 @@ import {
   validateOakDocPartialPackage,
 } from '@/lib/document-editor/oakdoc-partials';
 import { classifyOakDocTag } from '@/lib/document-editor/oakdoc-field-registry';
+import { buildBlankOakDocBytes } from '@/lib/document-editor/oakdoc-html-import';
 import { inspectOakDocPackage } from '@/lib/document-editor/oakdoc-package-policy';
 
 const W = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
@@ -188,5 +189,12 @@ describe('native partial expansion', () => {
       .toThrow('caret');
     expect(() => insertOakDocPartialReference({ docxBytes: master, paraId: '0A1B2C3D', partialId: 'not-a-uuid', label: 'x' }))
       .toThrow();
+  });
+
+  it('accepts a blank Word document as a new template or partial', () => {
+    const bytes = buildBlankOakDocBytes();
+
+    expect(() => inspectOakDocPackage(bytes, 'master')).not.toThrow();
+    expect(validateOakDocPartialPackage(bytes).filter((entry) => entry.severity === 'error')).toEqual([]);
   });
 });

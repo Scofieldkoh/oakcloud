@@ -135,7 +135,7 @@ export interface WordPartialInput {
   file: File;
 }
 
-async function saveWordPartial(input: WordPartialInput): Promise<TemplatePartial> {
+export async function saveWordPartial(input: WordPartialInput): Promise<TemplatePartial> {
   const form = new FormData();
   form.set('file', input.file);
   if (input.id) {
