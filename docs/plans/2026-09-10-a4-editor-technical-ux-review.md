@@ -1,5 +1,7 @@
 # A4Editor technical and usability review: implementation handover
 
+> **Historical review; replacement direction superseded on 26 September 2026.** The user accepted OakDoc and selected it to replace A4Editor. Use the [OakDoc specification](../oakdoc-a4-retirement-readiness.md) and [implementation handover](2026-09-26-oakdoc-replacement-implementation.md). The conclusions below about retaining A4 are not current instructions; the recorded failures remain useful regression evidence.
+
 Reviewed: 10 September 2026. Baseline: `c660b47f1731a9262cf722197907e21f8e3e98fe`.
 
 Scope: Templates, template partials, Document Generation batch review, generated-document editing/viewing, field resolution, HTML/PDF export, and editor print. This is a review and implementation blueprint. No application fixes, migrations, or dependency changes were made.
