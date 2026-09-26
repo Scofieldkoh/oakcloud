@@ -213,6 +213,12 @@ Retain legacy records through rollback. Do not simply deactivate after validatio
 
 Migration is dry-run by default with explicit workspace/source selection or reviewed manifest, explicit operator/report path and `--apply` against exact manifest hash/expected revisions. These are proposed CLI capabilities. Reject implicit earliest-user attribution and all-workspace mutation.
 
+Implemented commands (PR #62), one workspace at a time. Each prints JSON with IDs, revisions, hashes and dispositions only:
+
+- `npm run oakdoc:rollout -- --workspace <id>` is a dry run. It lists template mapping status, every A4 generated document with its disposition (`CONVERT`, `CONVERTED_PENDING_REVIEW`, `CONVERTED_ACCEPTED`, `HISTORICAL`, `BLOCKED_IN_SIGNING`, `BLOCKED_RELATION`), unfinished batch items on A4 templates, and the draft-conversion manifest with its hash. It makes no writes.
+- `npm run oakdoc:rollout -- --workspace <id> --apply-draft-conversions --operator <user id> --manifest <hash>` converts the drafts in that manifest. It refuses if the manifest no longer hashes to the approved value. Each item is idempotent and reports `created`, `reused` or `failed` with a reason. To resume after a failure, run the dry run again and approve the new manifest. Run it only with the owner's approval of that run.
+- `npm run db:migrate-oakdoc-templates -- --workspace <id> --operator <user id> [--apply]` requires an explicit workspace and operator. Without `--apply` it makes no changes.
+
 Report old/new IDs/hashes, per-item results, validation state, changes and safe issue codes. Apply is additive/resumable/idempotent and protects edited targets. Stale items fail without overwrite; partial success is reported; retries never duplicate pairs. No reset/destructive rewrite/purge. Audit mapping/validation/preference/mode changes. Older agreement seed and current scripts share preservation rules; reruns cannot reset customized bytes or activation.
 
 ### 8.2 Historical records
@@ -227,7 +233,7 @@ After editor removal, use a tested compatibility application release plus preser
 
 ### 8.4 Existing A4 draft disposition (D04)
 
-Default assumption pending clarification: next edit creates a linked native DRAFT from current saved legacy content including manual edits; preserve original. Record source ID/revision/hash, target/hash, conversion method and warnings. Do not regenerate from current company/template values and call it the same draft.
+Confirmed by the owner 2026-09-26. The per-draft path is implemented (`convertA4DraftToOakDoc`, `POST /api/generated-documents/[id]/oakdoc-conversion`); drafts linked to tasks, batches or Service Agreements are held as `BLOCKED_RELATION` until relation transfer exists. Policy: next edit creates a linked native DRAFT from current saved legacy content including manual edits; preserve original. Record source ID/revision/hash, target/hash, conversion method and warnings. Do not regenerate from current company/template values and call it the same draft.
 
 No universal converter is proved here. P8 first proves bounded conversion of inventoried constructs using canonical HTML readers; unsupported content requires native reauthor/import-and-compare. Never flatten/drop silently. Review precedes acceptance. Transfer pending task/batch links through canonical services with CAS/provenance and no duplicate outcomes/envelopes. Already-in-signing documents cannot take this path.
 
