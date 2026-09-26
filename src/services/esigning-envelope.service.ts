@@ -5,6 +5,7 @@ import type { SessionUser } from '@/lib/auth';
 import { canAccessCompany } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { createLogger } from '@/lib/logger';
+import { ConflictError } from '@/lib/errors';
 import { hashBlake3, hashPassword } from '@/lib/encryption';
 import { createAuditLog } from '@/lib/audit';
 import { storage, StorageKeys } from '@/lib/storage';
@@ -1727,6 +1728,35 @@ export async function uploadEsigningEnvelopeDocument(
   return getEsigningEnvelopeDetail(session, tenantId, envelopeId);
 }
 
+/**
+ * The PDF sent for signing must be the finalized revision that was checked.
+ * OakDoc output names the revision it converted, so a mismatch is caught
+ * before upload; the commit re-checks that the document was not unfinalized
+ * or edited while the PDF was being produced.
+ */
+function assertExportMatchesRevision(exported: { provenance?: { documentRevision: number } }, revision: number) {
+  if (exported.provenance && exported.provenance.documentRevision !== revision) {
+    throw new ConflictError('The document changed while its PDF was being prepared. Try again.');
+  }
+}
+
+async function assertStillFinalizedAtRevision(
+  tx: Prisma.TransactionClient,
+  tenantId: string,
+  generatedDocumentId: string,
+  revision: number,
+) {
+  const [locked] = await tx.$queryRaw<Array<{ status: string; revision: number; deleted_at: Date | null }>>`
+    SELECT status::text AS status, revision, deleted_at
+    FROM generated_documents
+    WHERE id = ${generatedDocumentId} AND tenant_id = ${tenantId}
+    FOR SHARE
+  `;
+  if (!locked || locked.deleted_at || locked.status !== 'FINALIZED' || locked.revision !== revision) {
+    throw new ConflictError('The document changed while its PDF was being prepared. Try again.');
+  }
+}
+
 export async function uploadGeneratedDocumentToEsigningEnvelope(
   session: SessionUser,
   tenantId: string,
@@ -1826,7 +1856,7 @@ export async function attachGeneratedDocumentToDraftEnvelope(input: {
       status: 'FINALIZED',
       deletedAt: null,
     },
-    select: { id: true, title: true, companyId: true },
+    select: { id: true, title: true, companyId: true, revision: true },
   });
   if (!generatedDocument) {
     throw new Error('Selected generated document must be finalized and eligible');
@@ -1839,6 +1869,7 @@ export async function attachGeneratedDocumentToDraftEnvelope(input: {
     userId: input.actorUserId,
     includeLetterhead: true,
   });
+  assertExportMatchesRevision(exported, generatedDocument.revision);
   const exportedBytes = new Uint8Array(exported.buffer);
   const pdf = await PDFDocument.load(exportedBytes);
   const pdfBuffer = Buffer.from(exportedBytes);
@@ -1885,6 +1916,8 @@ export async function attachGeneratedDocumentToDraftEnvelope(input: {
       envelopeId: input.envelopeId,
       documentId: envelopeDocumentId,
       generatedDocumentId: generatedDocument.id,
+      generatedDocumentRevision: String(generatedDocument.revision),
+      ...(exported.provenance ? { generatedDocxSha256: exported.provenance.docxSha256 } : {}),
       originalFileName: generatedDocument.title,
       sourceFormat: 'generated-document',
     },
@@ -1892,6 +1925,12 @@ export async function attachGeneratedDocumentToDraftEnvelope(input: {
 
   try {
     await prisma.$transaction(async (tx) => {
+      await assertStillFinalizedAtRevision(
+        tx,
+        input.tenantId,
+        generatedDocument.id,
+        generatedDocument.revision,
+      );
       await tx.esigningEnvelopeDocument.create({
         data: {
           id: envelopeDocumentId,
@@ -1950,6 +1989,8 @@ export async function attachGeneratedDocumentToDraftEnvelope(input: {
     metadata: {
       envelopeDocumentId,
       generatedDocumentId: generatedDocument.id,
+      generatedDocumentRevision: generatedDocument.revision,
+      ...(exported.provenance ? { docxSha256: exported.provenance.docxSha256 } : {}),
       pageCount,
       fileSize: pdfBuffer.length,
     },

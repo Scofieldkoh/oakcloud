@@ -47,6 +47,17 @@ const template = {
   version: 2,
   isActive: true,
   content: '<p>{{custom.reference}}</p>',
+  contentJson: {
+    oakDoc: {
+      schemaVersion: 1,
+      storageKey: 'tenant/templates/oakdoc/assets/master.docx',
+      fileName: 'master.docx',
+      fileSize: 100,
+      sha256: 'a'.repeat(64),
+      mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      fieldTags: [],
+    },
+  },
   placeholders: [
     {
       key: 'custom.reference',

@@ -19,6 +19,9 @@ export type OakDocMigrationInventoryStatus =
   | 'MIGRATION_PENDING'
   | 'MIGRATION_VALIDATION_FAILED';
 
+/** Version of the server-side migration checker (M1 static checks). */
+export const OAKDOC_MIGRATION_CHECKER_VERSION = 'oakdoc-migration-static/1';
+
 export interface OakDocMigrationValidation {
   checkedAt: string;
   passed: boolean;
@@ -26,6 +29,24 @@ export interface OakDocMigrationValidation {
   oakDocTemplateVersion: number;
   issueCodes: string[];
   summary?: string;
+  /**
+   * `server` evidence was produced by the migration checker over exact
+   * definition hashes. Anything else is a legacy self-reported result: it is
+   * still read for existing routing but can never promote a template.
+   */
+  authority?: 'server';
+  runId?: string;
+  checkerVersion?: string;
+  legacyDefinitionHash?: string;
+  oakDocDefinitionHash?: string;
+  /** Real-render comparison runs after L2; until then it stays pending. */
+  renderCheck?: 'pending' | 'passed';
+}
+
+/** Current definition identities of a linked pair. */
+export interface OakDocMigrationDefinitionHashes {
+  legacyDefinitionHash: string;
+  oakDocDefinitionHash: string;
 }
 
 export interface OakDocMigrationMetadata {
@@ -45,6 +66,8 @@ export interface OakDocMigrationTemplateRecord {
   name: string;
   version: number;
   contentJson: unknown;
+  content?: string;
+  placeholders?: unknown;
   isActive?: boolean;
   deletedAt?: Date | string | null;
 }
@@ -102,6 +125,12 @@ function parseValidation(value: unknown): OakDocMigrationValidation | undefined 
     return undefined;
   }
 
+  const serverEvidence = value.authority === 'server'
+    && typeof value.runId === 'string'
+    && typeof value.checkerVersion === 'string'
+    && typeof value.legacyDefinitionHash === 'string'
+    && typeof value.oakDocDefinitionHash === 'string';
+
   return {
     checkedAt,
     passed: value.passed,
@@ -111,7 +140,26 @@ function parseValidation(value: unknown): OakDocMigrationValidation | undefined 
     ...(typeof value.summary === 'string' && value.summary.trim()
       ? { summary: value.summary.trim().slice(0, 1000) }
       : {}),
+    ...(serverEvidence
+      ? {
+          authority: 'server' as const,
+          runId: value.runId as string,
+          checkerVersion: value.checkerVersion as string,
+          legacyDefinitionHash: value.legacyDefinitionHash as string,
+          oakDocDefinitionHash: value.oakDocDefinitionHash as string,
+          renderCheck: value.renderCheck === 'passed' ? 'passed' as const : 'pending' as const,
+        }
+      : {}),
   };
+}
+
+export function isServerMigrationEvidence(
+  validation: OakDocMigrationValidation | undefined,
+): validation is OakDocMigrationValidation & Required<Pick<
+  OakDocMigrationValidation,
+  'authority' | 'runId' | 'checkerVersion' | 'legacyDefinitionHash' | 'oakDocDefinitionHash'
+>> {
+  return validation?.authority === 'server';
 }
 
 export function readOakDocMigrationMetadata(contentJson: unknown): OakDocMigrationMetadata | null {
@@ -162,6 +210,16 @@ export function mergeOakDocMigrationMetadata(
         oakDocTemplateVersion: metadata.validation.oakDocTemplateVersion,
         issueCodes: metadata.validation.issueCodes,
         ...(metadata.validation.summary ? { summary: metadata.validation.summary } : {}),
+        ...(isServerMigrationEvidence(metadata.validation)
+          ? {
+              authority: metadata.validation.authority,
+              runId: metadata.validation.runId,
+              checkerVersion: metadata.validation.checkerVersion,
+              legacyDefinitionHash: metadata.validation.legacyDefinitionHash,
+              oakDocDefinitionHash: metadata.validation.oakDocDefinitionHash,
+              renderCheck: metadata.validation.renderCheck ?? 'pending',
+            }
+          : {}),
       }
     : undefined;
 
@@ -220,10 +278,27 @@ export function migrationValidationMatchesCurrentVersions(input: {
   );
 }
 
+/**
+ * Server evidence is bound to definition hashes, not record versions, so
+ * metadata-only revisions (preference, activity) keep it and any content
+ * edit invalidates it, however many toggles follow.
+ */
+export function migrationEvidenceMatchesDefinitions(
+  metadata: OakDocMigrationMetadata,
+  hashes: OakDocMigrationDefinitionHashes,
+): boolean {
+  const validation = metadata.validation;
+  return isServerMigrationEvidence(validation)
+    && validation.checkerVersion === OAKDOC_MIGRATION_CHECKER_VERSION
+    && validation.legacyDefinitionHash === hashes.legacyDefinitionHash
+    && validation.oakDocDefinitionHash === hashes.oakDocDefinitionHash;
+}
+
 export function getOakDocMigrationReadiness(input: {
   metadata: OakDocMigrationMetadata | null;
   legacyTemplateVersion?: number;
   oakDocTemplateVersion?: number;
+  definitionHashes?: OakDocMigrationDefinitionHashes;
 }): OakDocMigrationReadiness {
   const metadata = input.metadata;
   if (!metadata) return 'NOT_MIGRATED';
@@ -231,7 +306,11 @@ export function getOakDocMigrationReadiness(input: {
   const validation = metadata.validation;
   if (!validation) return 'OAKDOC_DRAFT';
 
-  if (
+  if (isServerMigrationEvidence(validation) && input.definitionHashes) {
+    if (!migrationEvidenceMatchesDefinitions(metadata, input.definitionHashes)) {
+      return 'OAKDOC_DRAFT';
+    }
+  } else if (
     input.legacyTemplateVersion !== undefined
     && input.oakDocTemplateVersion !== undefined
     && !migrationValidationMatchesCurrentVersions({
@@ -263,12 +342,18 @@ function isDeleted(template: OakDocMigrationTemplateRecord): boolean {
 
 export function buildOakDocMigrationInventory(
   templates: readonly OakDocMigrationTemplateRecord[],
+  options: { hashDefinition?: (template: OakDocMigrationTemplateRecord) => string } = {},
 ): OakDocMigrationInventoryItem[] {
   const activeRecords = templates.filter((template) => !isDeleted(template));
   const byId = new Map(activeRecords.map((template) => [template.id, template]));
   const oakDocs = activeRecords.filter((template) => isOakDocTemplate(template.contentJson));
   const legacyTemplates = activeRecords.filter((template) => !isOakDocTemplate(template.contentJson));
   const linkedLegacyIds = new Set<string>();
+  const linkCounts = new Map<string, number>();
+  for (const oakDoc of oakDocs) {
+    const legacyId = readOakDocMigrationMetadata(oakDoc.contentJson)?.legacyTemplateId;
+    if (legacyId) linkCounts.set(legacyId, (linkCounts.get(legacyId) ?? 0) + 1);
+  }
   const result: OakDocMigrationInventoryItem[] = [];
 
   for (const oakDoc of oakDocs) {
@@ -298,10 +383,25 @@ export function buildOakDocMigrationInventory(
       );
     }
 
+    if ((linkCounts.get(metadata.legacyTemplateId) ?? 0) > 1) {
+      warnings.push('More than one OakDoc template is linked to this legacy template; keep exactly one.');
+    }
+    if (metadata.validation && !isServerMigrationEvidence(metadata.validation)) {
+      warnings.push('Parity result was self-reported; run the server migration check before switching over.');
+    }
+
     const readiness = getOakDocMigrationReadiness({
       metadata,
       ...(legacy ? { legacyTemplateVersion: legacy.version } : {}),
       oakDocTemplateVersion: oakDoc.version,
+      ...(legacy && options.hashDefinition
+        ? {
+            definitionHashes: {
+              legacyDefinitionHash: options.hashDefinition(legacy),
+              oakDocDefinitionHash: options.hashDefinition(oakDoc),
+            },
+          }
+        : {}),
     });
 
     const status: OakDocMigrationInventoryStatus =
@@ -344,11 +444,19 @@ export function assertOakDocCanBecomePrimary(input: {
   metadata: OakDocMigrationMetadata | null;
   legacyTemplateVersion: number;
   oakDocTemplateVersion: number;
+  definitionHashes?: OakDocMigrationDefinitionHashes;
 }): void {
+  const message = 'OakDoc cannot become primary until the current legacy and OakDoc versions pass server parity validation.';
   const readiness = getOakDocMigrationReadiness(input);
   if (readiness !== 'READY_FOR_SWITCHOVER' && readiness !== 'OAKDOC_PRIMARY') {
-    throw new Error(
-      'OakDoc cannot become primary until the current legacy and OakDoc versions pass parity validation.',
-    );
+    throw new Error(message);
+  }
+  // Self-reported (legacy v1) passes never promote.
+  if (
+    !input.metadata
+    || !input.definitionHashes
+    || !migrationEvidenceMatchesDefinitions(input.metadata, input.definitionHashes)
+  ) {
+    throw new Error(message);
   }
 }

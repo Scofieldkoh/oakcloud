@@ -37,6 +37,16 @@ import {
 } from '@/services/a4-output-browser.service';
 import { sanitizeCanonicalA4Html } from '@/services/a4-content-sanitizer.service';
 import archiver from 'archiver';
+import {
+  InvalidDocumentEngineError,
+  readGeneratedDocumentEngineState,
+} from '@/lib/document-editor/document-engine';
+import {
+  OakDocUnsupportedOutputError,
+  assertNoNativeLayoutOverride,
+  renderGeneratedOakDocPdf,
+  type OakDocPdfRendition,
+} from '@/services/oakdoc-output.service';
 
 export { buildA4PrintCss } from '@/components/documents/a4-print-styles';
 export { findChromePath };
@@ -57,6 +67,8 @@ export interface PDFResult {
   filename: string;
   pageCount: number;
   mimeType: string;
+  /** Present for OakDoc output: the exact DOCX revision/hash converted. */
+  provenance?: OakDocPdfRendition;
 }
 
 export interface ExportHTMLParams {
@@ -174,6 +186,40 @@ export async function exportToPDF(params: ExportPDFParams): Promise<PDFResult> {
     },
   });
   if (!document) throw new Error('Document not found');
+
+  // Engine dispatch precedes any HTML handling so no caller (download, bulk
+  // ZIP, e-sign preparation) can render OakDoc sentinel content.
+  const engine = readGeneratedDocumentEngineState(document.metadata);
+  if (engine === 'INVALID') throw new InvalidDocumentEngineError('generated-document');
+  if (engine === 'OAKDOC') {
+    assertNoNativeLayoutOverride({ format: params.format, orientation: params.orientation });
+    const native = await renderGeneratedOakDocPdf({ documentId, tenantId, filename, signal });
+    await createAuditLog({
+      action: 'EXPORT',
+      entityType: 'GeneratedDocument',
+      entityId: documentId,
+      entityName: document.title,
+      summary: `Exported document "${document.title}" to PDF`,
+      metadata: {
+        format: 'PDF',
+        documentEngine: 'OAKDOC',
+        docxSha256: native.rendition.docxSha256,
+        pdfSha256: native.rendition.pdfSha256,
+        documentRevision: native.rendition.documentRevision,
+        cached: native.cached,
+      },
+      userId,
+      tenantId,
+      companyId: document.companyId || undefined,
+    }).catch(() => undefined);
+    return {
+      buffer: native.buffer,
+      filename: native.filename,
+      pageCount: native.pageCount,
+      mimeType: native.mimeType,
+      provenance: native.rendition,
+    };
+  }
 
   const canonicalHtml = canonicalOutputHtml(document.content, document.contentJson);
   const letterhead = includeLetterhead && document.useLetterhead
@@ -386,6 +432,9 @@ export async function exportToHTML(params: ExportHTMLParams): Promise<HTMLResult
     where: { id: documentId, tenantId, deletedAt: null },
   });
   if (!document) throw new Error('Document not found');
+  const engine = readGeneratedDocumentEngineState(document.metadata);
+  if (engine === 'INVALID') throw new InvalidDocumentEngineError('generated-document');
+  if (engine === 'OAKDOC') throw new OakDocUnsupportedOutputError('html');
 
   const canonicalHtml = canonicalOutputHtml(document.content, document.contentJson);
   const letterhead = includeLetterhead && document.useLetterhead

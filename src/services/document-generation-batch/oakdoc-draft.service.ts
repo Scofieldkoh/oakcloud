@@ -1,5 +1,4 @@
 import { createHash, randomUUID } from 'node:crypto';
-import { unzipSync } from 'fflate';
 import { Prisma } from '@/generated/prisma';
 import { prisma } from '@/lib/prisma';
 import { createAuditLog } from '@/lib/audit';
@@ -16,6 +15,8 @@ import {
 import { claimGeneratedDocumentRevision } from '@/lib/document-editor/generated-document-revision';
 import { OAKDOC_MIME_TYPE } from '@/lib/document-editor/oakdoc-template';
 import { storage, StorageKeys } from '@/lib/storage';
+import { createLogger } from '@/lib/logger';
+import { inspectOakDocPackage } from '@/lib/document-editor/oakdoc-package-policy';
 import type { TenantAwareParams } from '@/lib/types';
 import {
   loadMasterCatalogueForTemplateIds,
@@ -25,29 +26,10 @@ import { mapBatchToDto } from './mapper';
 import { batchInclude } from './types';
 import type { DocumentGenerationBatchDto } from '@/types/document-generation-batch';
 
-const MAX_OAKDOC_DRAFT_BYTES = 50 * 1024 * 1024;
+const log = createLogger('oakdoc-batch-draft');
 
 function sha256(bytes: Uint8Array): string {
   return createHash('sha256').update(bytes).digest('hex');
-}
-
-function validateDocx(bytes: Uint8Array): void {
-  if (bytes.byteLength === 0) {
-    throw new ValidationError('The OakDoc draft is empty');
-  }
-  if (bytes.byteLength > MAX_OAKDOC_DRAFT_BYTES) {
-    throw new ValidationError('The OakDoc draft exceeds the 50 MB limit');
-  }
-
-  let files: Record<string, Uint8Array>;
-  try {
-    files = unzipSync(bytes);
-  } catch {
-    throw new ValidationError('The edited OakDoc draft is not a valid DOCX package');
-  }
-  if (!files['word/document.xml']) {
-    throw new ValidationError('The edited OakDoc draft has no word/document.xml part');
-  }
 }
 
 export async function saveOakDocBatchDraft(
@@ -62,7 +44,7 @@ export async function saveOakDocBatchDraft(
   if (!/^[a-f0-9]{64}$/i.test(input.previewFingerprint)) {
     throw new ValidationError('OakDoc preview fingerprint is invalid');
   }
-  validateDocx(input.bytes);
+  inspectOakDocPackage(input.bytes, 'draft');
 
   const existing = await prisma.generatedDocument.findFirst({
     where: {
@@ -122,8 +104,9 @@ export async function saveOakDocBatchDraft(
     },
   });
 
+  let batch;
   try {
-    const batch = await prisma.$transaction(async (tx) => {
+    batch = await prisma.$transaction(async (tx) => {
       const claimed = await tx.documentGenerationBatch.updateMany({
         where: {
           id: item.batchId,
@@ -212,16 +195,29 @@ export async function saveOakDocBatchDraft(
         include: batchInclude,
       });
     });
+  } catch (error) {
+    // Pre-commit failure: the new upload is unreferenced and safe to remove.
+    await storage.delete(storageKey).catch(() => undefined);
+    throw error;
+  }
 
-    if (
-      currentAsset.storageKey !== storageKey
-      && currentAsset.storageKey.startsWith(
-        `${params.tenantId}/generated-documents/${existing.id}/oakdoc/`,
-      )
-    ) {
-      await storage.delete(currentAsset.storageKey).catch(() => undefined);
+  // Post-commit work never deletes the committed asset or fails the save.
+  if (
+    currentAsset.storageKey !== storageKey
+    && currentAsset.storageKey.startsWith(
+      `${params.tenantId}/generated-documents/${existing.id}/oakdoc/`,
+    )
+  ) {
+    try {
+      await storage.delete(currentAsset.storageKey);
+    } catch (error) {
+      log.warn('Failed to delete superseded OakDoc batch draft asset', {
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
+  }
 
+  try {
     await createAuditLog({
       tenantId: params.tenantId,
       userId: params.userId,
@@ -238,14 +234,15 @@ export async function saveOakDocBatchDraft(
         sha256: digest,
       },
     });
-
-    const catalogue = await loadMasterCatalogueForTemplateIds(
-      batch.items.map((entry) => entry.templateId),
-      params.tenantId,
-    );
-    return mapBatchToDto(batch, catalogue);
   } catch (error) {
-    await storage.delete(storageKey).catch(() => undefined);
-    throw error;
+    log.warn('Failed to audit OakDoc batch draft save', {
+      error: error instanceof Error ? error.message : String(error),
+    });
   }
+
+  const catalogue = await loadMasterCatalogueForTemplateIds(
+    batch.items.map((entry) => entry.templateId),
+    params.tenantId,
+  );
+  return mapBatchToDto(batch, catalogue);
 }

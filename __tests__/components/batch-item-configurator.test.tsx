@@ -31,6 +31,7 @@ function item(kind: 'STANDARD' | 'SERVICE_AGREEMENT' = 'STANDARD'): EditableBatc
     templateName: kind === 'SERVICE_AGREEMENT' ? 'Service Agreement' : 'Engagement Letter',
     templateKind: kind,
     templateVersion: 1,
+    templateEngine: 'A4',
     status: 'NEEDS_INPUT',
     configuration: {
       version: 1,

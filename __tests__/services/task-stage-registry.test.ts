@@ -294,6 +294,26 @@ describe('stage action registry', () => {
     });
   });
 
+  it('launches with resolved replacement templates instead of the stored configuration', () => {
+    const adapter = getStageActionAdapter(TaskStageActionType.DOCUMENT_GENERATION);
+
+    expect(adapter.launch({
+      tenantId: 'tenant-a',
+      resolvedTemplateIds: ['33333333-3333-4333-8333-333333333333'],
+      stage: {
+        id: 'stage-2',
+        tenantId: 'tenant-a',
+        taskId: 'task-1',
+        actionType: TaskStageActionType.DOCUMENT_GENERATION,
+        actionConfig: {
+          templateId: '11111111-1111-4111-8111-111111111111',
+        },
+        status: TaskStageStatus.NOT_STARTED,
+        task: { companyId: null },
+      },
+    }).href).toBe('/generated-documents/generate?templateId=33333333-3333-4333-8333-333333333333');
+  });
+
   it('passes multiple configured templates into the document generation workspace', () => {
     const adapter = getStageActionAdapter(TaskStageActionType.DOCUMENT_GENERATION);
 

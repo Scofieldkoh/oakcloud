@@ -24,6 +24,10 @@ export function canonicalJson(value: unknown): string {
 export interface PreviewFingerprintInput {
   templateId: string;
   templateVersion: number;
+  /** Native template asset hash; version numbers alone do not identify content. */
+  templateSha256?: string;
+  /** Canonical hash of a composed native Service Agreement. */
+  agreementHash?: string;
   partials: Array<{
     name: string;
     version?: number | null;

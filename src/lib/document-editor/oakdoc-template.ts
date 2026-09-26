@@ -94,12 +94,3 @@ export function mergeOakDocTemplateMetadata(
     },
   };
 }
-
-export function parseOakDocFieldTags(value: FormDataEntryValue | null): string[] {
-  if (typeof value !== 'string' || !value.trim()) return [];
-  try {
-    return sanitizeFieldTags(JSON.parse(value));
-  } catch {
-    throw new Error('Invalid OakDoc field metadata');
-  }
-}

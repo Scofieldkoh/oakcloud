@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { strToU8, zipSync } from 'fflate';
 
@@ -112,7 +113,6 @@ describe('OakDoc template edit storage isolation', () => {
       name: 'OakDoc Copy edited',
       fileName: 'copy.docx',
       buffer: docxFixture('edited copy'),
-      fieldTags: ['company.name', 'director.name'],
     }, actor);
 
     expect(storageMock.upload).toHaveBeenCalledOnce();
@@ -128,11 +128,13 @@ describe('OakDoc template edit storage isolation', () => {
       }),
       actor,
       'Saved from OakDoc',
+      { writer: 'oakdoc-service' },
     );
 
     const metadata = readOakDocTemplateMetadata(result.contentJson);
     expect(metadata?.storageKey).toBe(newStorageKey);
-    expect(metadata?.fieldTags).toEqual(['company.name', 'director.name']);
+    // The fixture has no content controls; the manifest comes from the bytes.
+    expect(metadata?.fieldTags).toEqual([]);
     expect(storageMock.delete).not.toHaveBeenCalledWith(duplicateStorageKey);
     expect(storageMock.delete).not.toHaveBeenCalledWith(sourceStorageKey);
   });

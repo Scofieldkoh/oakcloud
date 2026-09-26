@@ -9,6 +9,7 @@ import {
 } from '@/lib/document-editor/oakdoc-standard-template-migrations';
 import { mergeOakDocTemplateMetadata } from '@/lib/document-editor/oakdoc-template';
 import { ensureOakDocTemplateMigration } from '@/services/oakdoc-template-migration.service';
+import { deriveOakDocTemplateFieldTags } from '@/services/oakdoc-template.service';
 
 const params = { tenantId: 'workspace-1', userId: 'user-1' };
 
@@ -126,12 +127,15 @@ describe('OakDoc standard template migration framework', () => {
     });
     const input = createTemplate.mock.calls[0][0];
     expect(input.name).toBe('DR_Appointment of Corp Sec (OakDoc)');
-    expect(input.fieldTags).toEqual([
+    // The manifest is derived from the stored bytes, not supplied by callers.
+    expect(input).not.toHaveProperty('fieldTags');
+    expect(deriveOakDocTemplateFieldTags(new Uint8Array(input.buffer))).toEqual([
       'company.name',
       'company.uen',
-      'resolution.date',
       'director.name',
       'director.role',
+      'repeat.directors',
+      'resolution.date',
     ]);
     expect(input.placeholders).toEqual([
       {

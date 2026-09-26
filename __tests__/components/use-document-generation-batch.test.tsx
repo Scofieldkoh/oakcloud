@@ -47,6 +47,7 @@ const serverBatch: EditableDocumentGenerationBatch = {
     templateName: 'Engagement Letter',
     templateKind: 'STANDARD',
     templateVersion: 1,
+    templateEngine: 'A4',
     status: 'READY',
     configuration: {
       version: 1,

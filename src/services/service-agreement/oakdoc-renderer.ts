@@ -3,6 +3,22 @@ import { strFromU8, unzipSync, zipSync } from 'fflate';
 
 import { encodeOakDocZipText } from '@/lib/document-editor/oakdoc-zip';
 import { resolveOakDocFields } from '@/lib/document-editor/oakdoc-fields';
+import {
+  WORD_NS,
+  appendTextRun,
+  htmlToWordBlocks,
+  wordElement,
+} from '@/lib/document-editor/oakdoc-html-import';
+import {
+  OAKDOC_AGREEMENT_SERVICE_ITEM_TAG_PREFIX,
+  OAKDOC_AGREEMENT_SLOT_TAGS,
+} from '@/lib/document-editor/oakdoc-field-registry';
+import {
+  oakDocPartialTag,
+  readOakDocSowSnapshot,
+  type OakDocPartialPin,
+  type OakDocSowSnapshot,
+} from '@/lib/document-editor/oakdoc-partials';
 import { canonicalJson } from '@/lib/document-generation-fingerprint';
 import { resolvePlaceholders } from '@/lib/placeholder-resolver';
 import {
@@ -21,15 +37,9 @@ import type {
   ServiceAgreementItemDto,
 } from './types';
 
-const WORD_NS = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
-const XML_NS = 'http://www.w3.org/XML/1998/namespace';
 const DOCUMENT_PART = 'word/document.xml';
 
-export const OAKDOC_SERVICE_AGREEMENT_SLOT_TAGS = {
-  serviceSections: 'agreement.serviceSections',
-  feeTable: 'agreement.feeTable',
-  entityAppendix: 'agreement.entityAppendix',
-} as const;
+export const OAKDOC_SERVICE_AGREEMENT_SLOT_TAGS = OAKDOC_AGREEMENT_SLOT_TAGS;
 
 const SLOT_TAG_ALIASES: Record<
   keyof typeof OAKDOC_SERVICE_AGREEMENT_SLOT_TAGS,
@@ -49,7 +59,7 @@ const SLOT_TAG_ALIASES: Record<
   ],
 };
 
-const SERVICE_ITEM_TAG_PREFIX = 'agreement.service.item:';
+const SERVICE_ITEM_TAG_PREFIX = OAKDOC_AGREEMENT_SERVICE_ITEM_TAG_PREFIX;
 
 export interface ServiceAgreementOakDocParty {
   contactId: string;
@@ -157,6 +167,11 @@ export interface ServiceAgreementOakDocRenderResult {
     signerContactIds: string[];
     providedSignerCount: number;
   };
+  /**
+   * Word scope-of-work partials the rendered bytes reference. The caller
+   * expands them from their pinned bytes before resolving fields.
+   */
+  sowPartialPins: OakDocPartialPin[];
 }
 
 function isWordElement(
@@ -185,62 +200,6 @@ function getWordVal(element: Element | undefined): string {
   return element
     ? (element.getAttributeNS(WORD_NS, 'val') || element.getAttribute('w:val') || '')
     : '';
-}
-
-function wordElement(
-  document: XMLDocument,
-  localName: string,
-  attributes: Readonly<Record<string, string>> = {},
-): Element {
-  const element = document.createElementNS(WORD_NS, `w:${localName}`);
-  for (const [name, value] of Object.entries(attributes)) {
-    element.setAttributeNS(WORD_NS, `w:${name}`, value);
-  }
-  return element;
-}
-
-function appendTextRun(
-  document: XMLDocument,
-  parent: Element,
-  value: string,
-  marks: InlineMarks = {},
-): Element {
-  const run = wordElement(document, 'r');
-  const needsProperties = marks.bold
-    || marks.italic
-    || marks.underline
-    || marks.strike
-    || marks.fontSizeHalfPoints;
-  if (needsProperties) {
-    const properties = wordElement(document, 'rPr');
-    if (marks.bold) properties.appendChild(wordElement(document, 'b'));
-    if (marks.italic) properties.appendChild(wordElement(document, 'i'));
-    if (marks.underline) {
-      properties.appendChild(wordElement(document, 'u', { val: 'single' }));
-    }
-    if (marks.strike) properties.appendChild(wordElement(document, 'strike'));
-    if (marks.fontSizeHalfPoints) {
-      properties.appendChild(
-        wordElement(document, 'sz', { val: String(marks.fontSizeHalfPoints) }),
-      );
-      properties.appendChild(
-        wordElement(document, 'szCs', { val: String(marks.fontSizeHalfPoints) }),
-      );
-    }
-    run.appendChild(properties);
-  }
-  const text = wordElement(document, 't');
-  text.setAttributeNS(XML_NS, 'xml:space', 'preserve');
-  text.textContent = value;
-  run.appendChild(text);
-  parent.appendChild(run);
-  return run;
-}
-
-function appendLineBreak(document: XMLDocument, parent: Element): void {
-  const run = wordElement(document, 'r');
-  run.appendChild(wordElement(document, 'br'));
-  parent.appendChild(run);
 }
 
 function serializeXml(xml: XMLDocument): Uint8Array {
@@ -399,282 +358,6 @@ function diagnosticForServices(
   });
 }
 
-interface InlineMarks {
-  bold?: boolean;
-  italic?: boolean;
-  underline?: boolean;
-  strike?: boolean;
-  fontSizeHalfPoints?: number;
-}
-
-function styleMap(element: Element): Map<string, string> {
-  const style = element.getAttribute('style') || '';
-  return new Map(
-    style
-      .split(';')
-      .map((part) => part.trim())
-      .filter(Boolean)
-      .map((part) => {
-        const separator = part.indexOf(':');
-        return separator >= 0
-          ? [part.slice(0, separator).trim().toLowerCase(), part.slice(separator + 1).trim()]
-          : [part.toLowerCase(), ''];
-      }),
-  );
-}
-
-function fontSizeHalfPoints(value: string | undefined): number | undefined {
-  if (!value) return undefined;
-  const match = value.trim().match(/^([0-9.]+)(pt|px)$/i);
-  if (!match) return undefined;
-  const numeric = Number(match[1]);
-  if (!Number.isFinite(numeric) || numeric <= 0) return undefined;
-  const points = match[2].toLowerCase() === 'px' ? numeric * 0.75 : numeric;
-  return Math.max(2, Math.round(points * 2));
-}
-
-function inlineMarks(element: Element, inherited: InlineMarks): InlineMarks {
-  const tag = element.tagName.toLowerCase();
-  const styles = styleMap(element);
-  const fontWeight = styles.get('font-weight')?.toLowerCase();
-  const textDecoration = styles.get('text-decoration')?.toLowerCase() ?? '';
-  return {
-    bold: inherited.bold
-      || tag === 'b'
-      || tag === 'strong'
-      || fontWeight === 'bold'
-      || (fontWeight ? Number(fontWeight) >= 600 : false),
-    italic: inherited.italic
-      || tag === 'i'
-      || tag === 'em'
-      || styles.get('font-style')?.toLowerCase() === 'italic',
-    underline: inherited.underline
-      || tag === 'u'
-      || textDecoration.includes('underline'),
-    strike: inherited.strike
-      || tag === 's'
-      || tag === 'strike'
-      || tag === 'del'
-      || textDecoration.includes('line-through'),
-    fontSizeHalfPoints:
-      fontSizeHalfPoints(styles.get('font-size')) ?? inherited.fontSizeHalfPoints,
-  };
-}
-
-function appendInlineHtml(
-  document: XMLDocument,
-  parent: Element,
-  node: Node,
-  marks: InlineMarks = {},
-): void {
-  if (node.nodeType === Node.TEXT_NODE) {
-    const normalized = (node.textContent || '').replace(/\s+/g, ' ');
-    if (normalized) appendTextRun(document, parent, normalized, marks);
-    return;
-  }
-  if (node.nodeType !== Node.ELEMENT_NODE) return;
-
-  const element = node as Element;
-  const tag = element.tagName.toLowerCase();
-  if (tag === 'br') {
-    appendLineBreak(document, parent);
-    return;
-  }
-
-  const nextMarks = inlineMarks(element, marks);
-  for (const child of Array.from(element.childNodes)) {
-    appendInlineHtml(document, parent, child, nextMarks);
-  }
-}
-
-function paragraphPropertiesFromHtml(
-  document: XMLDocument,
-  element: Element | null,
-  headingLevel?: number,
-): Element | null {
-  const properties = wordElement(document, 'pPr');
-  let used = false;
-
-  if (headingLevel) {
-    properties.appendChild(
-      wordElement(document, 'pStyle', { val: `Heading${Math.min(headingLevel, 6)}` }),
-    );
-    used = true;
-  }
-
-  if (element) {
-    const styles = styleMap(element);
-    const alignment = styles.get('text-align')?.toLowerCase();
-    if (alignment && ['left', 'right', 'center', 'justify'].includes(alignment)) {
-      properties.appendChild(wordElement(document, 'jc', { val: alignment }));
-      used = true;
-    }
-
-    const marginLeft = styles.get('margin-left');
-    const match = marginLeft?.match(/^([0-9.]+)(em|pt|px)$/i);
-    if (match) {
-      const numeric = Number(match[1]);
-      const unit = match[2].toLowerCase();
-      const points = unit === 'em' ? numeric * 11 : unit === 'px' ? numeric * 0.75 : numeric;
-      properties.appendChild(
-        wordElement(document, 'ind', { left: String(Math.max(0, Math.round(points * 20))) }),
-      );
-      used = true;
-    }
-  }
-
-  return used ? properties : null;
-}
-
-function createParagraphFromHtml(
-  document: XMLDocument,
-  element: Element,
-  options: { prefix?: string; headingLevel?: number } = {},
-): Element {
-  const paragraph = wordElement(document, 'p');
-  const properties = paragraphPropertiesFromHtml(
-    document,
-    element,
-    options.headingLevel,
-  );
-  if (properties) paragraph.appendChild(properties);
-  if (options.prefix) appendTextRun(document, paragraph, options.prefix);
-  for (const child of Array.from(element.childNodes)) {
-    appendInlineHtml(document, paragraph, child);
-  }
-  return paragraph;
-}
-
-function createSimpleTableFromHtml(
-  document: XMLDocument,
-  table: Element,
-): Element {
-  const rows = Array.from(table.querySelectorAll(':scope > thead > tr, :scope > tbody > tr, :scope > tr'));
-  const effectiveRows = rows.length > 0 ? rows : Array.from(table.querySelectorAll('tr'));
-  const maxColumns = Math.max(
-    1,
-    ...effectiveRows.map((row) => row.querySelectorAll(':scope > th, :scope > td').length),
-  );
-  const width = 9000;
-  const columnWidth = Math.floor(width / maxColumns);
-  const result = wordElement(document, 'tbl');
-  const properties = wordElement(document, 'tblPr');
-  properties.appendChild(wordElement(document, 'tblW', { w: String(width), type: 'dxa' }));
-  properties.appendChild(wordElement(document, 'tblLayout', { type: 'fixed' }));
-  result.appendChild(properties);
-  const grid = wordElement(document, 'tblGrid');
-  for (let index = 0; index < maxColumns; index += 1) {
-    grid.appendChild(wordElement(document, 'gridCol', { w: String(columnWidth) }));
-  }
-  result.appendChild(grid);
-
-  effectiveRows.forEach((row) => {
-    const wordRow = wordElement(document, 'tr');
-    const cells = Array.from(row.querySelectorAll(':scope > th, :scope > td'));
-    cells.forEach((cell) => {
-      const wordCell = wordElement(document, 'tc');
-      const cellProperties = wordElement(document, 'tcPr');
-      cellProperties.appendChild(
-        wordElement(document, 'tcW', { w: String(columnWidth), type: 'dxa' }),
-      );
-      wordCell.appendChild(cellProperties);
-      const paragraph = wordElement(document, 'p');
-      for (const child of Array.from(cell.childNodes)) {
-        appendInlineHtml(
-          document,
-          paragraph,
-          child,
-          cell.tagName.toLowerCase() === 'th' ? { bold: true } : {},
-        );
-      }
-      wordCell.appendChild(paragraph);
-      wordRow.appendChild(wordCell);
-    });
-    result.appendChild(wordRow);
-  });
-  return result;
-}
-
-function htmlToWordBlocks(
-  wordDocument: XMLDocument,
-  html: string,
-): Element[] {
-  const parsed = new DOMParser().parseFromString(
-    `<!doctype html><html><body>${html}</body></html>`,
-    'text/html',
-  );
-  const body = parsed.body;
-  const blocks: Element[] = [];
-
-  const visit = (node: Node): void => {
-    if (node.nodeType === Node.TEXT_NODE) {
-      const text = (node.textContent || '').replace(/\s+/g, ' ').trim();
-      if (text) {
-        const paragraph = wordElement(wordDocument, 'p');
-        appendTextRun(wordDocument, paragraph, text);
-        blocks.push(paragraph);
-      }
-      return;
-    }
-    if (node.nodeType !== Node.ELEMENT_NODE) return;
-
-    const element = node as Element;
-    const tag = element.tagName.toLowerCase();
-
-    if (/^h[1-6]$/.test(tag)) {
-      blocks.push(
-        createParagraphFromHtml(wordDocument, element, {
-          headingLevel: Number(tag.slice(1)),
-        }),
-      );
-      return;
-    }
-    if (tag === 'p' || tag === 'blockquote') {
-      blocks.push(createParagraphFromHtml(wordDocument, element));
-      return;
-    }
-    if (tag === 'ul' || tag === 'ol') {
-      const items = Array.from(element.children).filter(
-        (child) => child.tagName.toLowerCase() === 'li',
-      );
-      items.forEach((item, index) => {
-        blocks.push(
-          createParagraphFromHtml(wordDocument, item, {
-            prefix: tag === 'ol' ? `${index + 1}. ` : '• ',
-          }),
-        );
-      });
-      return;
-    }
-    if (tag === 'table') {
-      blocks.push(createSimpleTableFromHtml(wordDocument, element));
-      return;
-    }
-    if (tag === 'br') {
-      const paragraph = wordElement(wordDocument, 'p');
-      appendLineBreak(wordDocument, paragraph);
-      blocks.push(paragraph);
-      return;
-    }
-
-    const blockChildren = Array.from(element.children).some((child) =>
-      /^(p|div|section|article|h[1-6]|ul|ol|table|blockquote)$/i.test(child.tagName),
-    );
-    if (blockChildren) {
-      for (const child of Array.from(element.childNodes)) visit(child);
-      return;
-    }
-
-    const paragraph = createParagraphFromHtml(wordDocument, element);
-    if (paragraph.getElementsByTagNameNS(WORD_NS, 't').length > 0) {
-      blocks.push(paragraph);
-    }
-  };
-
-  for (const child of Array.from(body.childNodes)) visit(child);
-  return blocks.length > 0 ? blocks : [wordElement(wordDocument, 'p')];
-}
-
 class WordIdAllocator {
   private nextId: number;
 
@@ -697,18 +380,9 @@ function createServiceItemControl(input: {
   allocator: WordIdAllocator;
   agreement: ServiceAgreementDraftDto;
   item: ServiceAgreementItemDto;
+  sowSnapshot: OakDocSowSnapshot | null;
   pageBreakBefore: boolean;
 }): Element {
-  const context = buildServiceAgreementItemPlaceholderContext({
-    agreement: input.agreement,
-    item: input.item,
-  });
-  const rendered = resolvePlaceholders(
-    input.item.partialContentSnapshot,
-    htmlSafeServiceContext(context),
-    { missingPlaceholder: 'keep', dateFormat: 'dd MMMM yyyy' },
-  );
-
   const wrapper = wordElement(input.document, 'sdt');
   const properties = wordElement(input.document, 'sdtPr');
   properties.appendChild(
@@ -734,11 +408,37 @@ function createServiceItemControl(input: {
     pageBreak.appendChild(paragraphProperties);
     content.appendChild(pageBreak);
   }
-  for (const block of htmlToWordBlocks(input.document, rendered.resolved)) {
-    content.appendChild(block);
+  if (input.sowSnapshot) {
+    content.appendChild(createPartialReference(input.document, input.allocator, input.sowSnapshot.pin.partialId));
+  } else {
+    const context = buildServiceAgreementItemPlaceholderContext({
+      agreement: input.agreement,
+      item: input.item,
+    });
+    const rendered = resolvePlaceholders(
+      input.item.partialContentSnapshot,
+      htmlSafeServiceContext(context),
+      { missingPlaceholder: 'keep', dateFormat: 'dd MMMM yyyy' },
+    );
+    for (const block of htmlToWordBlocks(input.document, rendered.resolved)) {
+      content.appendChild(block);
+    }
   }
   wrapper.appendChild(content);
   return wrapper;
+}
+
+/** A block reference that generation replaces with the pinned Word partial. */
+function createPartialReference(document: XMLDocument, allocator: WordIdAllocator, partialId: string): Element {
+  const reference = wordElement(document, 'sdt');
+  const properties = wordElement(document, 'sdtPr');
+  properties.appendChild(wordElement(document, 'tag', { val: oakDocPartialTag(partialId) }));
+  properties.appendChild(wordElement(document, 'id', { val: String(allocator.take()) }));
+  reference.appendChild(properties);
+  const content = wordElement(document, 'sdtContent');
+  content.appendChild(wordElement(document, 'p'));
+  reference.appendChild(content);
+  return reference;
 }
 
 function rowProperties(
@@ -1131,6 +831,7 @@ export function renderServiceAgreementOakDoc(input: {
         signerContactIds: [...input.agreement.signerContactIds],
         providedSignerCount: signers.length,
       },
+      sowPartialPins: [],
     };
   }
 
@@ -1167,6 +868,7 @@ export function renderServiceAgreementOakDoc(input: {
         signerContactIds: [...input.agreement.signerContactIds],
         providedSignerCount: signers.length,
       },
+      sowPartialPins: [],
     };
   }
 
@@ -1193,19 +895,25 @@ export function renderServiceAgreementOakDoc(input: {
         signerContactIds: [...input.agreement.signerContactIds],
         providedSignerCount: signers.length,
       },
+      sowPartialPins: [],
     };
   }
 
   const allocator = new WordIdAllocator(xml);
+  const sowPartialPins: OakDocPartialPin[] = [];
   const serviceControls = orderedServiceAgreementItems(input.agreement).map(
-    (item, index) =>
-      createServiceItemControl({
+    (item, index) => {
+      const sowSnapshot = readOakDocSowSnapshot(item.partialContentSnapshot);
+      if (sowSnapshot) sowPartialPins.push(sowSnapshot.pin);
+      return createServiceItemControl({
         document: xml,
         allocator,
         agreement: input.agreement,
         item,
+        sowSnapshot,
         pageBreakBefore: index > 0,
-      }),
+      });
+    },
   );
 
   const replacements: Array<{
@@ -1252,6 +960,7 @@ export function renderServiceAgreementOakDoc(input: {
         signerContactIds: [...input.agreement.signerContactIds],
         providedSignerCount: signers.length,
       },
+      sowPartialPins: [],
     };
   }
 
@@ -1294,5 +1003,6 @@ export function renderServiceAgreementOakDoc(input: {
       signerContactIds: [...input.agreement.signerContactIds],
       providedSignerCount: signers.length,
     },
+    sowPartialPins,
   };
 }

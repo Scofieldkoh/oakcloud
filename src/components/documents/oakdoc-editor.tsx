@@ -6,39 +6,35 @@ import {
   useMemo,
   useRef,
   useState,
-  type KeyboardEvent as ReactKeyboardEvent,
 } from 'react';
 import { DocxEditor, type DocxEditorRef, type EditorCommand } from '@docx-editor.dev/react';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ArrowLeft, Download, FileUp, Loader2, Save, Search } from 'lucide-react';
+import { ArrowLeft, Download, FileUp, Loader2, Save, Search, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSession } from '@/hooks/use-auth';
 import { useActiveWorkspaceId } from '@/components/ui/workspace-selector';
+import type { TemplateField } from '@/components/documents/template-editor/template-field-catalog';
 import {
-  TEMPLATE_FIELD_CATEGORIES,
-  type TemplateField,
-} from '@/components/documents/template-editor/template-field-catalog';
+  OAKDOC_CATALOG_FIELD_CATEGORIES as OAKDOC_FIELD_CATEGORIES,
+  OAKDOC_CONDITION_FIELD_TAGS,
+  OAKDOC_FIELD_BY_TAG,
+  OAKDOC_FIELD_TAGS,
+  OAKDOC_SCALAR_FIELDS,
+} from '@/lib/document-editor/oakdoc-field-registry';
 import {
   inspectOakDocFields,
   normalizeOakDocFields,
   pruneDeletedOakDocFields,
-  resolveOakDocFields,
   type OakDocFieldDefinition,
   type OakDocFieldSummary,
 } from '@/lib/document-editor/oakdoc-fields';
-import {
-  buildOakDocResolutionValues,
-  OAKDOC_RESOLUTION_FIELD_DEFINITIONS,
-  type OakDocCompanyDetail,
-} from '@/lib/document-editor/oakdoc-context';
+import type { OakDocCompanyDetail } from '@/lib/document-editor/oakdoc-context';
 import {
   createOakDocRepeater,
   inspectOakDocRepeaters,
   OAKDOC_REPEATER_DEFINITIONS,
-  OAKDOC_REPEATER_ITEM_TAGS,
   removeOakDocRepeater,
-  resolveOakDocRepeaters,
   type OakDocRepeaterDefinition,
   type OakDocRepeaterSummary,
 } from '@/lib/document-editor/oakdoc-repeaters';
@@ -46,7 +42,6 @@ import {
   createOakDocCondition,
   inspectOakDocConditions,
   removeOakDocCondition,
-  resolveOakDocConditions,
   type OakDocConditionOperator,
   type OakDocConditionSummary,
 } from '@/lib/document-editor/oakdoc-conditions';
@@ -54,11 +49,16 @@ import {
   readOakDocTemplateMetadata,
   type OakDocTemplateMetadata,
 } from '@/lib/document-editor/oakdoc-template';
+import { useOakDocSectionDeleteGuard } from '@/components/documents/oakdoc/use-oakdoc-section-delete-guard';
+import { OakDocPartialPanel } from '@/components/documents/oakdoc/oakdoc-partial-panel';
+import { useOakDocAiSelection } from '@/components/documents/oakdoc/use-oakdoc-ai-selection';
+import { AISidebar, type DocumentCategory } from '@/components/documents/ai-sidebar';
+import type { TemplatePartialSummary } from '@/hooks/use-template-partials';
 import {
-  oakDocCaretTouchesSectionBoundary,
-  oakDocSelectionCrossesSectionBoundary,
-  preserveTransferredOakDocSections,
-} from '@/lib/document-editor/oakdoc-section-compatibility';
+  insertOakDocPartialReference,
+  inspectOakDocPartialReferences,
+  readOakDocPartialPins,
+} from '@/lib/document-editor/oakdoc-partials';
 
 const DOCX_MIME =
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
@@ -72,56 +72,6 @@ const TEMPLATE_CATEGORIES = [
   { value: 'CERTIFICATE', label: 'Certificate' },
   { value: 'OTHER', label: 'Other' },
 ] as const;
-
-const SUPPORTED_FIELD_CATEGORY_KEYS = new Set([
-  'company',
-  'selected-director',
-  'selected-shareholder',
-  'system',
-]);
-
-const OAKDOC_FIELD_CATEGORIES = TEMPLATE_FIELD_CATEGORIES
-  .filter((category) => SUPPORTED_FIELD_CATEGORY_KEYS.has(category.key))
-  .map((category) => ({
-    ...category,
-    fields: category.fields.filter(
-      (field) => !field.builder && !field.key.includes('{{'),
-    ),
-  }))
-  .filter((category) => category.fields.length > 0);
-
-const OAKDOC_SIMPLE_FIELDS: readonly OakDocFieldDefinition[] = [
-  ...OAKDOC_FIELD_CATEGORIES.flatMap(
-    (category) =>
-      category.fields.map((field) => ({
-        tag: field.key,
-        label: field.label,
-        category: category.label,
-      })),
-  ),
-  ...OAKDOC_RESOLUTION_FIELD_DEFINITIONS,
-];
-
-const OAKDOC_REPEATER_FIELDS: readonly OakDocFieldDefinition[] =
-  OAKDOC_REPEATER_DEFINITIONS.flatMap((definition) => definition.fields);
-
-const OAKDOC_FIELDS: readonly OakDocFieldDefinition[] = [
-  ...OAKDOC_SIMPLE_FIELDS,
-  ...OAKDOC_REPEATER_FIELDS,
-];
-
-const OAKDOC_FIELD_BY_TAG = new Map(
-  OAKDOC_FIELDS.map((field) => [field.tag, field]),
-);
-
-const OAKDOC_FIELD_TAGS = new Set([
-  ...OAKDOC_FIELDS.map((field) => field.tag),
-  ...OAKDOC_REPEATER_ITEM_TAGS,
-]);
-
-const OAKDOC_CONDITION_FIELD_TAGS = new Set(
-  OAKDOC_SIMPLE_FIELDS.map((field) => field.tag),
-);
 
 interface CompanyOption {
   id: string;
@@ -169,6 +119,14 @@ async function fetchCompany(companyId: string): Promise<OakDocCompanyDetail> {
   return response.json() as Promise<OakDocCompanyDetail>;
 }
 
+function pinnedVersionsOf(contentJson: unknown): Record<string, number> {
+  try {
+    return Object.fromEntries(readOakDocPartialPins(contentJson).map((pin) => [pin.partialId, pin.version]));
+  } catch {
+    return {};
+  }
+}
+
 async function fetchOakDocTemplate(
   templateId: string,
   tenantId?: string | null,
@@ -208,6 +166,20 @@ function toArrayBuffer(bytes: Uint8Array): ArrayBuffer {
   const copy = new Uint8Array(bytes.byteLength);
   copy.set(bytes);
   return copy.buffer;
+}
+
+interface OakDocPreviewResponse {
+  error?: string;
+  docxBase64?: string;
+  diagnostics?: Array<{ severity: string; message: string }>;
+  unresolvedTags?: string[];
+}
+
+function base64ToBytes(value: string): Uint8Array {
+  const binary = atob(value);
+  const bytes = new Uint8Array(binary.length);
+  for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
+  return bytes;
 }
 
 function downloadDocx(bytes: Uint8Array, fileName: string): void {
@@ -276,7 +248,19 @@ export function OakDocEditor() {
   const [templateCategory, setTemplateCategory] = useState('OTHER');
   const [templateDescription, setTemplateDescription] = useState('');
   const [templateIsActive, setTemplateIsActive] = useState(true);
-  const [isDirty, setIsDirty] = useState(false);
+  const [isDirty, setIsDirtyState] = useState(false);
+  // C02: every local change bumps this; a save acknowledges only the revision
+  // it serialized, so edits made while saving stay dirty and on screen.
+  const localRevisionRef = useRef(0);
+  const acknowledgedRevisionRef = useRef(0);
+  const setIsDirty = useCallback((next: boolean) => {
+    if (next) {
+      localRevisionRef.current += 1;
+    } else {
+      acknowledgedRevisionRef.current = localRevisionRef.current;
+    }
+    setIsDirtyState(next);
+  }, []);
 
   const companiesQuery = useQuery({
     queryKey: ['oakdoc', 'company-options'],
@@ -303,6 +287,9 @@ export function OakDocEditor() {
     count: 0,
     tags: [],
   });
+  const [partialReferences, setPartialReferences] = useState<string[]>([]);
+  const [refreshPartials, setRefreshPartials] = useState(false);
+  const [pinnedPartialVersions, setPinnedPartialVersions] = useState<Record<string, number>>({});
   const [repeaterSummary, setRepeaterSummary] = useState<OakDocRepeaterSummary>({
     count: 0,
     tags: [],
@@ -313,7 +300,7 @@ export function OakDocEditor() {
     conditions: [],
   });
   const [conditionField, setConditionField] = useState(
-    OAKDOC_SIMPLE_FIELDS[0]?.tag ?? '',
+    OAKDOC_SCALAR_FIELDS[0]?.tag ?? '',
   );
   const [conditionOperator, setConditionOperator] = useState<OakDocConditionOperator>('truthy');
   const [conditionValue, setConditionValue] = useState('');
@@ -331,6 +318,17 @@ export function OakDocEditor() {
   });
 
   const company = companyQuery.data;
+  const [aiOpen, setAiOpen] = useState(false);
+  // Bumped when a DocxEditor instance is ready, so the AI selection
+  // subscription attaches to the live editor.
+  const [editorReadyKey, setEditorReadyKey] = useState(0);
+  const getLocalRevision = useCallback(() => localRevisionRef.current, []);
+  const aiSelection = useOakDocAiSelection({
+    editorRef,
+    enabled: aiOpen && documentBytes !== null,
+    documentKey: editorReadyKey,
+    getRevision: getLocalRevision,
+  });
   const directors = useMemo(
     () => company?.officers?.filter(
       (officer) => officer.isCurrent !== false && officer.role === 'DIRECTOR',
@@ -363,6 +361,7 @@ export function OakDocEditor() {
     setFieldSummary(inspectOakDocFields(bytes, OAKDOC_FIELD_TAGS));
     setRepeaterSummary(inspectOakDocRepeaters(bytes));
     setConditionSummary(inspectOakDocConditions(bytes));
+    setPartialReferences(inspectOakDocPartialReferences(bytes));
   }, []);
 
   const replaceDocument = useCallback((
@@ -391,12 +390,14 @@ export function OakDocEditor() {
     setTemplateCategory(loaded.template.category || 'OTHER');
     setTemplateIsActive(loaded.template.isActive);
     setFileName(loaded.metadata.fileName);
+    setPinnedPartialVersions(pinnedVersionsOf(loaded.template.contentJson));
+    setRefreshPartials(false);
     replaceDocument(
       loaded.bytes,
       `Loaded OakDoc template "${loaded.template.name}" version ${revision}.`,
     );
     setIsDirty(false);
-  }, [replaceDocument, templateQuery.data]);
+  }, [replaceDocument, templateQuery.data, setIsDirty]);
 
   useEffect(() => {
     if (!templateQuery.error) return;
@@ -420,179 +421,19 @@ export function OakDocEditor() {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [isDirty]);
 
-  const selectionCrossesSectionBoundary = useCallback((): boolean => {
-    const handle = editorRef.current;
-    if (!handle || !documentBytes) return false;
-
-    const snapshot = handle.snapshot();
-    if (snapshot.selectionCollapsed || !snapshot.selection) return false;
-
-    const from = snapshot.selection.from;
-    const to = snapshot.selection.to;
-    if (!('paraId' in from) || !('paraId' in to)) return false;
-
-    const fromId = from.paraId.toUpperCase();
-    const toId = to.paraId.toUpperCase();
-    if (fromId === toId) return false;
-
-    return oakDocSelectionCrossesSectionBoundary({
-      docxBytes: documentBytes,
-      fromParagraphId: fromId,
-      toParagraphId: toId,
-    });
-  }, [documentBytes]);
-
-  const collapsedCaretTouchesSectionBoundary = useCallback((): boolean => {
-    const handle = editorRef.current;
-    if (!handle || !documentBytes) return false;
-
-    const snapshot = handle.snapshot();
-    if (!snapshot.selectionCollapsed || !snapshot.selection) return false;
-    const from = snapshot.selection.from;
-    if (!('paraId' in from)) return false;
-
-    return oakDocCaretTouchesSectionBoundary({
-      docxBytes: documentBytes,
-      paragraphId: from.paraId,
-    });
-  }, [documentBytes]);
-
-  const repairSectionBoundaryDelete = useCallback(async () => {
-    const handle = editorRef.current;
-    if (!handle) return;
-
-    setBusy(true);
-    setStatus('Deleting content while preserving Word section layout...');
-    setStatusKind('neutral');
-
-    try {
-      const beforeBuffer = await handle.save();
-      if (!beforeBuffer) throw new Error('OakDoc could not snapshot the document before deletion.');
-      const beforeBytes = new Uint8Array(beforeBuffer);
-
-      const editor = handle.getEditor();
-      const selection = editor?.snapshot().selection;
-      if (!editor || !selection) {
-        throw new Error('OakDoc could not resolve the selected content.');
-      }
-
-      const deleted = editor.exec({
-        type: 'deleteText',
-        target: selection,
-      } as EditorCommand);
-      if (!deleted.ok) {
-        throw new Error(deleted.reason || 'OakDoc could not delete the selected content.');
-      }
-
-      const afterBuffer = await handle.save();
-      if (!afterBuffer) throw new Error('OakDoc could not snapshot the document after deletion.');
-
-      const repaired = preserveTransferredOakDocSections({
-        beforeBytes,
-        afterBytes: new Uint8Array(afterBuffer),
-      });
-      const cleaned = pruneDeletedOakDocFields(repaired.bytes, OAKDOC_FIELD_TAGS);
-
-      if (repaired.restored > 0 || cleaned.removed > 0) {
-        const sectionMessage = repaired.restored > 0
-          ? ' Word section layout was preserved.'
-          : '';
-        const fieldMessage = cleaned.removed > 0
-          ? ` Removed ${cleaned.removed} deleted OakDoc field${cleaned.removed === 1 ? '' : 's'}.`
-          : '';
-        replaceDocument(
-          cleaned.bytes,
-          `Content deleted.${sectionMessage}${fieldMessage}`,
-          'success',
-        );
-      } else {
-        setStatus('Document changed.');
-        setStatusKind('neutral');
-      }
-      setIsDirty(true);
-    } catch (error) {
-      setStatus(error instanceof Error ? error.message : 'Could not safely delete the selection.');
+  const handleEditorKeyDownCapture = useOakDocSectionDeleteGuard({
+    editorRef,
+    documentBytes,
+    disabled: busy,
+    cleanup: (bytes) => pruneDeletedOakDocFields(bytes, OAKDOC_FIELD_TAGS),
+    onRepaired: (bytes, message) => replaceDocument(bytes, message, 'success'),
+    onChanged: () => setIsDirty(true),
+    onBusyChange: setBusy,
+    onError: (message) => {
+      setStatus(message);
       setStatusKind('error');
-    } finally {
-      setBusy(false);
-    }
-  }, [replaceDocument]);
-
-  const repairNativeCollapsedSectionDelete = useCallback((
-    beforeSave: Promise<ArrayBuffer | null>,
-  ) => {
-    // A collapsed caret exposes no character offset through the public editor
-    // API. Start a live pre-delete serialization during capture, let the native
-    // one-key delete run, then compare it with the post-transaction document.
-    // The strict repair below is a no-op unless joinParagraphs transferred an
-    // exact deleted w:sectPr.
-    queueMicrotask(() => {
-      void (async () => {
-        const handle = editorRef.current;
-        if (!handle) return;
-
-        try {
-          const beforeBuffer = await beforeSave;
-          if (!beforeBuffer) return;
-          const afterBuffer = await handle.save();
-          if (!afterBuffer) return;
-
-          const repaired = preserveTransferredOakDocSections({
-            beforeBytes: new Uint8Array(beforeBuffer),
-            afterBytes: new Uint8Array(afterBuffer),
-          });
-          if (repaired.restored === 0) return;
-
-          const cleaned = pruneDeletedOakDocFields(repaired.bytes, OAKDOC_FIELD_TAGS);
-          replaceDocument(
-            cleaned.bytes,
-            'Content deleted. Word section layout was preserved.',
-            'success',
-          );
-          setIsDirty(true);
-        } catch (error) {
-          setStatus(
-            error instanceof Error
-              ? error.message
-              : 'Could not verify Word section layout after deletion.',
-          );
-          setStatusKind('error');
-        }
-      })();
-    });
-  }, [replaceDocument]);
-
-  const handleEditorKeyDownCapture = useCallback((
-    event: ReactKeyboardEvent<HTMLElement>,
-  ) => {
-    if (busy || (event.key !== 'Backspace' && event.key !== 'Delete')) return;
-
-    if (selectionCrossesSectionBoundary()) {
-      // @docx-editor.dev currently transfers the later paragraph's w:sectPr
-      // onto the surviving paragraph when a range delete joins across a
-      // section boundary. Handle that confirmed structural case ourselves.
-      event.preventDefault();
-      event.stopPropagation();
-      void repairSectionBoundaryDelete();
-      return;
-    }
-
-    if (!collapsedCaretTouchesSectionBoundary()) return;
-
-    const handle = editorRef.current;
-    if (!handle) return;
-
-    // For a collapsed caret, keep native Word-like Backspace/Delete semantics.
-    // Begin capturing the LIVE pre-delete bytes before the native handler runs;
-    // they are used only as structural evidence after the transaction.
-    repairNativeCollapsedSectionDelete(handle.save());
-  }, [
-    busy,
-    collapsedCaretTouchesSectionBoundary,
-    repairNativeCollapsedSectionDelete,
-    repairSectionBoundaryDelete,
-    selectionCrossesSectionBoundary,
-  ]);
+    },
+  });
 
   const currentDocxBytes = useCallback(async (): Promise<Uint8Array> => {
     const handle = editorRef.current;
@@ -628,7 +469,7 @@ export function OakDocEditor() {
     } finally {
       setBusy(false);
     }
-  }, [updateFieldSummary]);
+  }, [updateFieldSummary, setIsDirty]);
 
   const assignField = useCallback(async (field: OakDocFieldDefinition) => {
     const handle = editorRef.current;
@@ -689,7 +530,7 @@ export function OakDocEditor() {
     } finally {
       setBusy(false);
     }
-  }, [currentDocxBytes, replaceDocument, updateFieldSummary]);
+  }, [currentDocxBytes, replaceDocument, updateFieldSummary, setIsDirty]);
 
   const addRepeater = useCallback(async (definition: OakDocRepeaterDefinition) => {
     const handle = editorRef.current;
@@ -737,7 +578,38 @@ export function OakDocEditor() {
     } finally {
       setBusy(false);
     }
-  }, [currentDocxBytes, replaceDocument]);
+  }, [currentDocxBytes, replaceDocument, setIsDirty]);
+
+  const insertPartial = useCallback(async (partial: TemplatePartialSummary) => {
+    const editor = editorRef.current?.getEditor();
+    const selection = editor?.snapshot().selection;
+    if (!selection || !('paraId' in selection.from)) {
+      setStatus('Place the caret in the paragraph the partial should follow.');
+      setStatusKind('error');
+      return;
+    }
+
+    setBusy(true);
+    try {
+      const bytes = await currentDocxBytes();
+      const label = partial.displayName || partial.name;
+      replaceDocument(
+        insertOakDocPartialReference({
+          docxBytes: bytes,
+          paraId: selection.from.paraId,
+          partialId: partial.id,
+          label,
+        }),
+        `Inserted the ${label} partial. Save the template to pin this version.`,
+      );
+      setIsDirty(true);
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : 'Could not insert the partial.');
+      setStatusKind('error');
+    } finally {
+      setBusy(false);
+    }
+  }, [currentDocxBytes, replaceDocument, setIsDirty]);
 
   const removeRepeaterAtCaret = useCallback(async () => {
     const handle = editorRef.current;
@@ -776,7 +648,7 @@ export function OakDocEditor() {
     } finally {
       setBusy(false);
     }
-  }, [currentDocxBytes, replaceDocument]);
+  }, [currentDocxBytes, replaceDocument, setIsDirty]);
 
   const addCondition = useCallback(async () => {
     const handle = editorRef.current;
@@ -839,6 +711,7 @@ export function OakDocEditor() {
     conditionValue,
     currentDocxBytes,
     replaceDocument,
+    setIsDirty,
   ]);
 
   const removeConditionAtCaret = useCallback(async () => {
@@ -877,7 +750,7 @@ export function OakDocEditor() {
     } finally {
       setBusy(false);
     }
-  }, [currentDocxBytes, replaceDocument]);
+  }, [currentDocxBytes, replaceDocument, setIsDirty]);
 
   const generateResolvedCopy = useCallback(async () => {
     if (!company) {
@@ -888,63 +761,45 @@ export function OakDocEditor() {
 
     setBusy(true);
     try {
+      // The server renders with the same pipeline as document generation,
+      // so the copy matches what a generated document would contain. The
+      // master is sent as it is now and is not saved.
       const bytes = await currentDocxBytes();
       const cleaned = pruneDeletedOakDocFields(bytes, OAKDOC_FIELD_TAGS);
-      const generatedBy = session
-        ? [session.firstName, session.lastName].filter(Boolean).join(' ')
-        : undefined;
-      const resolutionTags = Array.from(new Set([
-        ...fieldSummary.tags,
-        ...conditionSummary.fieldTags,
-      ]));
-      const values = buildOakDocResolutionValues({
-        company,
-        fieldTags: resolutionTags,
-        selectedDirectorId: selectedDirectorId || undefined,
-        selectedShareholderId: selectedShareholderId || undefined,
-        generatedBy,
+      const formData = new FormData();
+      formData.set(
+        'file',
+        new File([toArrayBuffer(cleaned.bytes)], safeDocxName(fileName || title), { type: DOCX_MIME }),
+      );
+      formData.set('context', JSON.stringify({
+        ...(templateId ? { templateId } : {}),
+        ...(refreshPartials ? { refreshPartialPins: 'all' } : {}),
+        companyId: company.id,
+        ...(selectedDirectorId ? { selectedDirectorId } : {}),
+        ...(selectedShareholderId ? { selectedShareholderId } : {}),
+      }));
+      const response = await fetch('/api/document-templates/oakdoc-preview', {
+        method: 'POST',
+        body: formData,
       });
-      const conditioned = resolveOakDocConditions({
-        docxBytes: cleaned.bytes,
-        values,
-        allowedFields: OAKDOC_CONDITION_FIELD_TAGS,
-      });
-      if (conditioned.unresolvedFields.length > 0) {
-        throw new Error(
-          `Conditional fields are unavailable: ${conditioned.unresolvedFields.join(', ')}.`,
-        );
-      }
-      const repeated = resolveOakDocRepeaters({
-        docxBytes: conditioned.bytes,
-        company,
-      });
-      const resolved = resolveOakDocFields(repeated.bytes, values);
-
-      if (
-        resolved.updated === 0
-        && repeated.repeatersResolved === 0
-        && conditioned.resolved === 0
-      ) {
-        throw new Error(
-          'No OakDoc fields, conditional sections, or repeating sections could be resolved with the selected context.',
-        );
+      const payload = await response.json().catch(() => ({})) as OakDocPreviewResponse;
+      if (!response.ok || !payload.docxBase64) {
+        throw new Error(payload.error || 'Document generation failed.');
       }
 
-      const generatedName = safeDocxName(`${title} - ${company.name}`);
-      downloadDocx(resolved.bytes, generatedName);
-      const unresolvedMessage = resolved.unresolvedTags.length > 0
-        ? ` ${resolved.unresolvedTags.length} field type${resolved.unresolvedTags.length === 1 ? '' : 's'} still need additional context.`
+      downloadDocx(base64ToBytes(payload.docxBase64), safeDocxName(`${title} - ${company.name}`));
+      const problems = (payload.diagnostics ?? []).filter((item) => item.severity === 'error');
+      const unresolved = payload.unresolvedTags?.length ?? 0;
+      const problemMessage = problems.length > 0
+        ? ` ${problems.map((item) => item.message).join(' ')}`
         : '';
-      const conditionMessage = conditioned.resolved > 0
-        ? ` Evaluated ${conditioned.resolved} conditional section${conditioned.resolved === 1 ? '' : 's'} (${conditioned.kept} kept, ${conditioned.removed} removed).`
-        : '';
-      const repeaterMessage = repeated.repeatersResolved > 0
-        ? ` Expanded ${repeated.repeatersResolved} repeating section${repeated.repeatersResolved === 1 ? '' : 's'} into ${repeated.itemsCreated} item${repeated.itemsCreated === 1 ? '' : 's'}.`
+      const unresolvedMessage = unresolved > 0
+        ? ` ${unresolved} field type${unresolved === 1 ? '' : 's'} still need additional context.`
         : '';
       setStatus(
-        `Generated a resolved DOCX from ${company.name} without changing the master template.${conditionMessage}${repeaterMessage}${unresolvedMessage}`,
+        `Generated a resolved DOCX from ${company.name} without changing the master template.${problemMessage}${unresolvedMessage}`,
       );
-      setStatusKind(resolved.unresolvedTags.length > 0 ? 'neutral' : 'success');
+      setStatusKind(problems.length > 0 ? 'error' : unresolved > 0 ? 'neutral' : 'success');
     } catch (error) {
       setStatus(error instanceof Error ? error.message : 'Document generation failed.');
       setStatusKind('error');
@@ -954,13 +809,25 @@ export function OakDocEditor() {
   }, [
     company,
     currentDocxBytes,
-    conditionSummary.fieldTags,
-    fieldSummary.tags,
+    fileName,
+    refreshPartials,
     selectedDirectorId,
     selectedShareholderId,
-    session,
+    templateId,
     title,
   ]);
+
+  const applyAiText = useCallback((mode: 'insert' | 'replace', content: string) => {
+    const result = mode === 'insert' ? aiSelection.insert(content) : aiSelection.replace(content);
+    if (result.ok) {
+      setIsDirty(true);
+      setStatus(mode === 'insert' ? 'Inserted the AI text as plain text.' : 'Replaced the selection with the AI text.');
+      setStatusKind('success');
+    } else {
+      setStatus(result.message);
+      setStatusKind('error');
+    }
+  }, [aiSelection, setIsDirty]);
 
   const saveTemplate = useCallback(async () => {
     if (!activeTenantId) {
@@ -980,6 +847,7 @@ export function OakDocEditor() {
     }
 
     setBusy(true);
+    const snapshotRevision = localRevisionRef.current;
     try {
       const bytes = await currentDocxBytes();
       const cleaned = pruneDeletedOakDocFields(bytes, OAKDOC_FIELD_TAGS);
@@ -994,19 +862,10 @@ export function OakDocEditor() {
       formData.set('category', templateCategory);
       formData.set('isActive', String(templateIsActive));
       formData.set('tenantId', activeTenantId);
-      const savedFields = inspectOakDocFields(cleaned.bytes, OAKDOC_FIELD_TAGS).tags;
-      const savedRepeaters = inspectOakDocRepeaters(cleaned.bytes).tags;
-      const savedConditions = inspectOakDocConditions(cleaned.bytes).fieldTags;
-      formData.set('fieldTags', JSON.stringify(
-        Array.from(new Set([
-          ...savedFields,
-          ...savedRepeaters,
-          ...savedConditions,
-        ])).sort(),
-      ));
       if (templateId && templateRevision !== null) {
         formData.set('expectedRevision', String(templateRevision));
       }
+      if (refreshPartials) formData.set('refreshPartialPins', 'all');
 
       const response = await fetch(
         templateId
@@ -1023,16 +882,25 @@ export function OakDocEditor() {
       }
 
       const savedId = String(payload.id);
+      setPinnedPartialVersions(pinnedVersionsOf(payload.contentJson));
+      setRefreshPartials(false);
       const savedRevision = Number(payload.revision ?? payload.version);
       setTemplateId(savedId);
       setTemplateRevision(savedRevision);
       loadedTemplateRevisionRef.current = savedRevision;
       setFileName(savedFileName);
-      replaceDocument(
-        cleaned.bytes,
-        `Saved OakDoc template "${title.trim()}" version ${savedRevision}.`,
-      );
-      setIsDirty(false);
+      const savedMessage = `Saved OakDoc template "${title.trim()}" version ${savedRevision}.`;
+      const changedSinceSnapshot = localRevisionRef.current !== snapshotRevision;
+      if (cleaned.removed > 0 && !changedSinceSnapshot) {
+        // Only remount when the server-bound bytes differ from the editor
+        // (deleted fields were pruned) and nothing changed during the save.
+        replaceDocument(cleaned.bytes, savedMessage);
+      } else {
+        setStatus(changedSinceSnapshot ? `${savedMessage} Newer edits are not saved yet.` : savedMessage);
+        setStatusKind('success');
+      }
+      acknowledgedRevisionRef.current = snapshotRevision;
+      setIsDirtyState(localRevisionRef.current !== acknowledgedRevisionRef.current);
 
       if (!templateId) {
         router.replace(
@@ -1049,6 +917,7 @@ export function OakDocEditor() {
     activeTenantId,
     currentDocxBytes,
     fileName,
+    refreshPartials,
     replaceDocument,
     router,
     templateCategory,
@@ -1136,6 +1005,16 @@ export function OakDocEditor() {
           <Button
             variant="secondary"
             size="sm"
+            leftIcon={<Sparkles className="h-4 w-4" />}
+            disabled={!hasDocument}
+            aria-pressed={aiOpen}
+            onClick={() => setAiOpen((open) => !open)}
+          >
+            AI assistant
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
             disabled={
               !hasDocument
               || !company
@@ -1170,7 +1049,7 @@ export function OakDocEditor() {
           </Button>
         </header>
 
-        <main className="grid min-h-0 min-w-0 grid-cols-[320px_minmax(0,1fr)] overflow-hidden">
+        <main className="grid min-h-0 min-w-0 grid-cols-[320px_minmax(0,1fr)_auto] overflow-hidden">
           <aside className="min-h-0 overflow-y-auto border-r border-border-primary bg-background-primary p-3">
             <section className="space-y-2">
               <div className="flex items-center justify-between gap-2">
@@ -1299,6 +1178,18 @@ export function OakDocEditor() {
                 </select>
               ) : null}
             </section>
+
+            <div className="my-4 border-t border-border-secondary" />
+
+            <OakDocPartialPanel
+              tenantId={activeTenantId ?? undefined}
+              referencedIds={partialReferences}
+              disabled={!hasDocument || busy}
+              onInsert={(partial) => void insertPartial(partial)}
+              pinnedVersions={pinnedPartialVersions}
+              refreshLatest={refreshPartials}
+              onRefreshLatestChange={setRefreshPartials}
+            />
 
             <div className="my-4 border-t border-border-secondary" />
 
@@ -1627,6 +1518,7 @@ export function OakDocEditor() {
                 onOpen={() => fileInputRef.current?.click()}
                 onSave={() => void saveTemplate()}
                 onReady={() => {
+                  setEditorReadyKey((value) => value + 1);
                   const message = readyMessageRef.current || 'DOCX ready.';
                   readyMessageRef.current = '';
                   setStatus(message);
@@ -1664,6 +1556,19 @@ export function OakDocEditor() {
               </div>
             )}
           </section>
+          <AISidebar
+            isOpen={aiOpen && hasDocument}
+            onClose={() => setAiOpen(false)}
+            context={{
+              mode: 'template_editor',
+              templateCategory: templateCategory as DocumentCategory,
+              templateName: title,
+              tenantId: activeTenantId ?? undefined,
+              selectedText: aiSelection.selectedText,
+            }}
+            onInsert={(content) => applyAiText('insert', content)}
+            onReplace={(content) => applyAiText('replace', content)}
+          />
         </main>
       </div>
     </div>

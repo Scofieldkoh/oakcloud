@@ -15,6 +15,7 @@ function saItem(): EditableBatchItem {
     templateName: 'Service Agreement',
     templateKind: 'SERVICE_AGREEMENT',
     templateVersion: 1,
+    templateEngine: 'A4',
     status: 'NEEDS_INPUT',
     configuration: {
       version: 1,

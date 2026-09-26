@@ -1,5 +1,24 @@
 import { randomUUID } from 'node:crypto';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import {
+  OAKDOC_MIME_TYPE,
+  OAKDOC_SERVICE_AGREEMENT_CONTENT,
+  OAKDOC_TEMPLATE_CONTENT,
+} from '@/lib/document-editor/oakdoc-template';
+
+// A4 templates can no longer generate, so the fixtures are Word templates.
+// Creating and editing a batch reads only the template metadata, not the file.
+const oakDocContentJson = (suffix: string, fieldTags: string[]) => ({
+  oakDoc: {
+    schemaVersion: 1,
+    storageKey: `integration/${suffix}.docx`,
+    fileName: `${suffix}.docx`,
+    fileSize: 1,
+    sha256: '0'.repeat(64),
+    mimeType: OAKDOC_MIME_TYPE,
+    fieldTags,
+  },
+});
 
 const describePostgres = process.env.TEST_DATABASE_URL ? describe : describe.skip;
 
@@ -68,7 +87,8 @@ describePostgres('document generation batch postgres integration', () => {
           createdById: user.id,
           name: `Engagement ${suffix}`,
           category: 'LETTER',
-          content: '<p>{{custom.reference}}</p>',
+          content: OAKDOC_TEMPLATE_CONTENT,
+          contentJson: oakDocContentJson(`engagement-${suffix}`, ['custom.reference']),
           placeholders: [
             {
               key: 'custom.reference',
@@ -88,7 +108,8 @@ describePostgres('document generation batch postgres integration', () => {
           name: `Agreement ${suffix}`,
           category: 'CONTRACT',
           compositionType: 'SERVICE_AGREEMENT',
-          content: '<p>{{selectedContact.name}}</p>',
+          content: OAKDOC_SERVICE_AGREEMENT_CONTENT,
+          contentJson: oakDocContentJson(`agreement-${suffix}`, ['selectedContact.name']),
         },
       }),
     ]);
