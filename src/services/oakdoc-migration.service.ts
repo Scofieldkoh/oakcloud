@@ -453,6 +453,21 @@ function pickPreferredOakDoc(
   return readiness === 'OAKDOC_PRIMARY' ? oakDoc : null;
 }
 
+/**
+ * A removed A4 template can no longer drift from its Word copy, so the one
+ * active Word template linked to it replaces it without a parity check.
+ */
+function pickRemovedLegacyReplacement(
+  legacy: DocumentTemplate,
+  oakDocs: DocumentTemplate[],
+): DocumentTemplate | null {
+  const linked = oakDocs.filter((oakDoc) => (
+    oakDoc.isActive
+    && readOakDocMigrationMetadata(oakDoc.contentJson)?.legacyTemplateId === legacy.id
+  ));
+  return linked.length === 1 ? linked[0] : null;
+}
+
 function findOakDocTemplates(tenantId: string): Promise<DocumentTemplate[]> {
   return prisma.documentTemplate.findMany({
     where: {
@@ -495,7 +510,7 @@ export async function resolveTemplateIdsForNewRun(
 ): Promise<string[]> {
   if (templateIds.length === 0) return templateIds;
   const templates = await prisma.documentTemplate.findMany({
-    where: { id: { in: templateIds }, tenantId, deletedAt: null },
+    where: { id: { in: templateIds }, tenantId },
   });
   const legacy = templates.filter((template) => !isOakDocTemplate(template.contentJson));
   if (legacy.length === 0) return templateIds;
@@ -503,7 +518,9 @@ export async function resolveTemplateIdsForNewRun(
   const oakDocs = await findOakDocTemplates(tenantId);
   const replacements = new Map<string, string>();
   for (const template of legacy) {
-    const oakDoc = pickPreferredOakDoc(template, oakDocs);
+    const oakDoc = template.deletedAt
+      ? pickRemovedLegacyReplacement(template, oakDocs)
+      : pickPreferredOakDoc(template, oakDocs);
     if (oakDoc) replacements.set(template.id, oakDoc.id);
   }
   return templateIds.map((id) => replacements.get(id) ?? id);

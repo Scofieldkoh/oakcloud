@@ -6,7 +6,16 @@ const prismaMock = vi.hoisted(() => ({
   generatedDocument: { findMany: vi.fn() },
   documentGenerationBatchItem: { findMany: vi.fn() },
   user: { findFirst: vi.fn() },
+  documentTemplate: { findMany: vi.fn() },
+  templatePartial: { findMany: vi.fn() },
+  serviceVariant: { findMany: vi.fn() },
 }));
+const libraryDeletes = vi.hoisted(() => ({
+  deleteDocumentTemplate: vi.fn(async () => undefined),
+  deleteTemplatePartial: vi.fn(async () => undefined),
+}));
+vi.mock('@/services/document-template.service', () => ({ deleteDocumentTemplate: libraryDeletes.deleteDocumentTemplate }));
+vi.mock('@/services/template-partial.service', () => ({ deleteTemplatePartial: libraryDeletes.deleteTemplatePartial }));
 vi.mock('@/lib/prisma', () => ({ prisma: prismaMock }));
 vi.mock('@/lib/document-editor/generated-document-revision', () => ({
   readGeneratedDocumentRevisions: vi.fn(async (_client: unknown, ids: string[]) => new Map(ids.map((id) => [id, 3]))),
@@ -44,7 +53,9 @@ vi.mock('@/services/oakdoc-draft-conversion.service', async (importOriginal) => 
 
 import {
   applyA4DraftConversionManifest,
+  applyA4LibraryRemoval,
   applyTemplateCutover,
+  buildA4LibraryRemovalPlan,
   buildOakDocRolloutInventory,
   buildTemplateCutoverPlan,
 } from '@/services/oakdoc-rollout.service';
@@ -283,5 +294,74 @@ describe('OakDoc draft conversion journal', () => {
       entityId: draftConversionManifest.hash,
       metadata: expect.objectContaining({ operation: 'DRAFT_CONVERSION', outcomes: { created: 1 } }),
     }));
+  });
+
+  describe('A4 library removal', () => {
+    const wordAsset = {
+      oakDoc: {
+        schemaVersion: 1,
+        storageKey: 'tenant-1/partials/p/oakdoc/a.docx',
+        fileName: 'a.docx',
+        fileSize: 10,
+        sha256: 'a'.repeat(64),
+        mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        fieldTags: [],
+      },
+    };
+
+    beforeEach(() => {
+      prismaMock.documentTemplate.findMany.mockResolvedValue([
+        { id: 'a4-template', name: 'Old letter', version: 3, contentJson: null, _count: { generatedDocuments: 2 } },
+        { id: 'word-template', name: 'Letter', version: 1, contentJson: wordAsset, _count: { generatedDocuments: 0 } },
+      ]);
+      prismaMock.templatePartial.findMany.mockResolvedValue([
+        { id: 'a4-partial', name: 'old-scope', version: 2, contentJson: null },
+        { id: 'word-partial', name: 'scope', version: 1, contentJson: wordAsset },
+      ]);
+      prismaMock.serviceVariant.findMany.mockResolvedValue([]);
+    });
+
+    it('plans only the A4 templates and HTML partials', async () => {
+      const plan = await buildA4LibraryRemovalPlan(tenantId);
+
+      expect(plan.hash).toMatch(/^[a-f0-9]{64}$/);
+      expect(plan.items).toEqual([
+        { kind: 'partial', id: 'a4-partial', name: 'old-scope', expectedRevision: 2, serviceVariants: 0 },
+        { kind: 'template', id: 'a4-template', name: 'Old letter', expectedRevision: 3, generatedDocuments: 2 },
+      ]);
+    });
+
+    it('soft-deletes templates before partials through the audited services and journals the run', async () => {
+      const plan = await buildA4LibraryRemovalPlan(tenantId);
+      libraryDeletes.deleteTemplatePartial.mockRejectedValueOnce(new Error('Cannot delete partial: relink 1 service variant(s)'));
+
+      const run = await applyA4LibraryRemoval({ tenantId, userId: 'user-1', manifestHash: plan.hash, reason: 'A4 retired' });
+
+      const params = { tenantId, userId: 'user-1' };
+      expect(libraryDeletes.deleteDocumentTemplate).toHaveBeenCalledWith('a4-template', params, 'A4 retired', 3);
+      expect(libraryDeletes.deleteTemplatePartial).toHaveBeenCalledWith('a4-partial', params, 'A4 retired', 2);
+      expect(libraryDeletes.deleteDocumentTemplate.mock.invocationCallOrder[0])
+        .toBeLessThan(libraryDeletes.deleteTemplatePartial.mock.invocationCallOrder[0]);
+      expect(run.results).toEqual([
+        { kind: 'template', id: 'a4-template', outcome: 'removed' },
+        { kind: 'partial', id: 'a4-partial', outcome: 'failed', reason: 'Cannot delete partial: relink 1 service variant(s)' },
+      ]);
+      expect(auditMock.createAuditLog).toHaveBeenCalledWith(expect.objectContaining({
+        entityType: 'OakDocRolloutRun',
+        entityId: plan.hash,
+        reason: 'A4 retired',
+        metadata: expect.objectContaining({ operation: 'A4_LIBRARY_REMOVAL' }),
+      }));
+    });
+
+    it('refuses a changed plan or a missing reason without deleting anything', async () => {
+      await expect(applyA4LibraryRemoval({ tenantId, userId: 'user-1', manifestHash: 'f'.repeat(64), reason: 'A4 retired' }))
+        .rejects.toMatchObject({ details: { reason: 'OAKDOC_MANIFEST_CHANGED' } });
+      const plan = await buildA4LibraryRemovalPlan(tenantId);
+      await expect(applyA4LibraryRemoval({ tenantId, userId: 'user-1', manifestHash: plan.hash, reason: ' ' }))
+        .rejects.toThrow('A reason is required');
+      expect(libraryDeletes.deleteDocumentTemplate).not.toHaveBeenCalled();
+      expect(libraryDeletes.deleteTemplatePartial).not.toHaveBeenCalled();
+    });
   });
 });
