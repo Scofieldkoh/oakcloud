@@ -14,6 +14,7 @@ export const RESERVED_TEMPLATE_CONTENT_JSON_KEYS = [
   'oakDocMigration',
   'oakDocSeedMigration',
   'oakDocValidation',
+  'oakDocPartials',
 ] as const;
 
 export const RESERVED_GENERATED_METADATA_KEYS = [

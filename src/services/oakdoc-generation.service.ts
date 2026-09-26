@@ -66,6 +66,10 @@ import type { TaskLaunchContext } from '@/services/tasks/types';
 import { getCompanyById } from '@/services/company.service';
 import { downloadOakDocTemplate } from '@/services/oakdoc-template.service';
 import { isPendingA4DraftConversion } from '@/services/oakdoc-draft-conversion.service';
+import {
+  expandPinnedOakDocPartials,
+  readOakDocPartialPins,
+} from '@/services/oakdoc-partial.service';
 
 const log = createLogger('oakdoc-generation');
 
@@ -206,8 +210,15 @@ export async function generateOakDocBytes(
 
   const { buffer: masterBuffer, metadata: downloadedMetadata } =
     await downloadOakDocTemplate(template.id, params.tenantId);
-  const masterBytes = new Uint8Array(masterBuffer);
   const knownTags = new Set(downloadedMetadata.fieldTags);
+  // Insert pinned native partials before anything reads the fields, so the
+  // partials' own fields, conditions and repeaters resolve like the master's.
+  const partials = await expandPinnedOakDocPartials({
+    bytes: pruneDeletedOakDocFields(new Uint8Array(masterBuffer), knownTags).bytes,
+    pins: readOakDocPartialPins(template.contentJson),
+    tenantId: params.tenantId,
+  });
+  const masterBytes = partials.bytes;
 
   const fieldSummary = inspectOakDocFields(masterBytes);
   const conditionSummary = inspectOakDocConditions(masterBytes);
@@ -246,10 +257,13 @@ export async function generateOakDocBytes(
   if (selectedContact) provided.add('selectedContact');
   if (agreementContext) provided.add('agreement');
   if (input.resolutionDate) provided.add('resolution');
-  const diagnostics = diagnoseOakDocGeneration({
-    usedTags: [...fieldSummary.tags, ...conditionSummary.fieldTags],
-    provided,
-  });
+  const diagnostics = [
+    ...partials.diagnostics,
+    ...diagnoseOakDocGeneration({
+      usedTags: [...fieldSummary.tags, ...conditionSummary.fieldTags],
+      provided,
+    }),
+  ];
 
   const values = buildOakDocResolutionValues({
     company: companyDetail,
@@ -262,9 +276,8 @@ export async function generateOakDocBytes(
     generatedBy: input.generatedBy,
   });
 
-  const cleaned = pruneDeletedOakDocFields(masterBytes, knownTags);
   const conditioned = resolveOakDocConditions({
-    docxBytes: cleaned.bytes,
+    docxBytes: masterBytes,
     values,
     allowedFields: new Set(resolutionTags),
   });

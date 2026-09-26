@@ -1,13 +1,11 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { storage, StorageKeys } from '@/lib/storage';
 import { inspectOakDocPackage } from '@/lib/document-editor/oakdoc-package-policy';
-import { ensureA4ServerDomGlobals } from '@/lib/document-editor/a4-server-dom';
-import { inspectOakDocFields } from '@/lib/document-editor/oakdoc-fields';
-import { inspectOakDocConditions } from '@/lib/document-editor/oakdoc-conditions';
+import { deriveOakDocTemplateFieldTags } from '@/lib/document-editor/oakdoc-field-manifest';
 import {
-  classifyOakDocTag,
-  OAKDOC_CONDITION_FIELD_TAGS,
-} from '@/lib/document-editor/oakdoc-field-registry';
+  pinOakDocPartials,
+  readOakDocPartialPins,
+} from '@/services/oakdoc-partial.service';
 import {
   OAKDOC_MIME_TYPE,
   OAKDOC_SERVICE_AGREEMENT_CONTENT,
@@ -38,23 +36,7 @@ function sha256(buffer: Buffer): string {
   return createHash('sha256').update(buffer).digest('hex');
 }
 
-/**
- * The field manifest is derived from the stored bytes, never from the
- * caller: every registered field, repeater and signature control in the
- * document plus the fields its conditions test. Unknown tags stay in the
- * document (they are reported at generation) but are not trusted here.
- */
-export function deriveOakDocTemplateFieldTags(bytes: Uint8Array): string[] {
-  ensureA4ServerDomGlobals();
-  const controls = inspectOakDocFields(bytes).tags
-    .filter((tag) => {
-      const kind = classifyOakDocTag(tag);
-      return kind !== 'unknown' && kind !== 'condition' && kind !== 'agreement-slot';
-    });
-  const conditionFields = inspectOakDocConditions(bytes).fieldTags
-    .filter((tag) => OAKDOC_CONDITION_FIELD_TAGS.has(tag));
-  return Array.from(new Set([...controls, ...conditionFields])).sort();
-}
+export { deriveOakDocTemplateFieldTags };
 
 async function persistAsset(input: {
   tenantId: string;
@@ -101,6 +83,10 @@ export async function createOakDocTemplate(input: {
   placeholders?: PlaceholderDefinition[];
   compositionType?: 'STANDARD' | 'SERVICE_AGREEMENT';
 }, params: TenantAwareParams) {
+  const partialPins = await pinOakDocPartials({
+    bytes: new Uint8Array(input.buffer),
+    tenantId: params.tenantId,
+  });
   const asset = await persistAsset({
     tenantId: params.tenantId,
     userId: params.userId,
@@ -117,7 +103,10 @@ export async function createOakDocTemplate(input: {
       content: input.compositionType === 'SERVICE_AGREEMENT'
         ? OAKDOC_SERVICE_AGREEMENT_CONTENT
         : OAKDOC_TEMPLATE_CONTENT,
-      contentJson: mergeOakDocTemplateMetadata(input.contentJson ?? null, asset),
+      contentJson: {
+        ...mergeOakDocTemplateMetadata(input.contentJson ?? null, asset),
+        oakDocPartials: partialPins as unknown as JsonValue,
+      },
       placeholders: input.placeholders ?? [],
       isActive: input.isActive,
       sharePointRelativeFolderPath: null,
@@ -138,6 +127,8 @@ export async function updateOakDocTemplate(input: {
   fileName: string;
   buffer: Buffer;
   compositionType?: 'STANDARD' | 'SERVICE_AGREEMENT';
+  /** Partials to move to their latest version; others keep their pin. */
+  refreshPartialPins?: 'all' | string[];
 }, params: TenantAwareParams) {
   const existing = await getDocumentTemplateById(input.id, params.tenantId);
   if (!existing) throw new Error('Template not found');
@@ -149,6 +140,12 @@ export async function updateOakDocTemplate(input: {
     throw new Error('OakDoc template storage scope is invalid');
   }
 
+  const partialPins = await pinOakDocPartials({
+    bytes: new Uint8Array(input.buffer),
+    tenantId: params.tenantId,
+    existingPins: readOakDocPartialPins(existing.contentJson),
+    refresh: input.refreshPartialPins,
+  });
   const asset = await persistAsset({
     tenantId: params.tenantId,
     userId: params.userId,
@@ -169,7 +166,10 @@ export async function updateOakDocTemplate(input: {
         : input.compositionType === 'STANDARD'
           ? OAKDOC_TEMPLATE_CONTENT
           : existing.content,
-      contentJson: mergeOakDocTemplateMetadata(existing.contentJson, asset),
+      contentJson: {
+        ...mergeOakDocTemplateMetadata(existing.contentJson, asset),
+        oakDocPartials: partialPins as unknown as JsonValue,
+      },
       isActive: input.isActive,
     }, params, 'Saved from OakDoc', { writer: 'oakdoc-service' });
   } catch (error) {

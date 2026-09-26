@@ -1128,6 +1128,8 @@ model TemplatePartial {
   displayName           String?                @map("display_name") @db.VarChar(200)
   description           String?
   content               String
+  /// C06 native partial asset (`oakDoc`) and its pinned nested partials; server-managed.
+  contentJson           Json?                  @map("content_json")
   placeholders          Json                   @default("[]")
   version               Int                    @default(1)
   createdById           String                 @map("created_by_id")

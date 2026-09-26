@@ -69,6 +69,7 @@ export type TemplatePartialCountAggregateOutputType = {
   displayName: number
   description: number
   content: number
+  contentJson: number
   placeholders: number
   version: number
   createdById: number
@@ -122,6 +123,7 @@ export type TemplatePartialCountAggregateInputType = {
   displayName?: true
   description?: true
   content?: true
+  contentJson?: true
   placeholders?: true
   version?: true
   createdById?: true
@@ -224,6 +226,7 @@ export type TemplatePartialGroupByOutputType = {
   displayName: string | null
   description: string | null
   content: string
+  contentJson: runtime.JsonValue | null
   placeholders: runtime.JsonValue
   version: number
   createdById: string
@@ -262,6 +265,7 @@ export type TemplatePartialWhereInput = {
   displayName?: Prisma.StringNullableFilter<"TemplatePartial"> | string | null
   description?: Prisma.StringNullableFilter<"TemplatePartial"> | string | null
   content?: Prisma.StringFilter<"TemplatePartial"> | string
+  contentJson?: Prisma.JsonNullableFilter<"TemplatePartial">
   placeholders?: Prisma.JsonFilter<"TemplatePartial">
   version?: Prisma.IntFilter<"TemplatePartial"> | number
   createdById?: Prisma.StringFilter<"TemplatePartial"> | string
@@ -281,6 +285,7 @@ export type TemplatePartialOrderByWithRelationInput = {
   displayName?: Prisma.SortOrderInput | Prisma.SortOrder
   description?: Prisma.SortOrderInput | Prisma.SortOrder
   content?: Prisma.SortOrder
+  contentJson?: Prisma.SortOrderInput | Prisma.SortOrder
   placeholders?: Prisma.SortOrder
   version?: Prisma.SortOrder
   createdById?: Prisma.SortOrder
@@ -304,6 +309,7 @@ export type TemplatePartialWhereUniqueInput = Prisma.AtLeast<{
   displayName?: Prisma.StringNullableFilter<"TemplatePartial"> | string | null
   description?: Prisma.StringNullableFilter<"TemplatePartial"> | string | null
   content?: Prisma.StringFilter<"TemplatePartial"> | string
+  contentJson?: Prisma.JsonNullableFilter<"TemplatePartial">
   placeholders?: Prisma.JsonFilter<"TemplatePartial">
   version?: Prisma.IntFilter<"TemplatePartial"> | number
   createdById?: Prisma.StringFilter<"TemplatePartial"> | string
@@ -323,6 +329,7 @@ export type TemplatePartialOrderByWithAggregationInput = {
   displayName?: Prisma.SortOrderInput | Prisma.SortOrder
   description?: Prisma.SortOrderInput | Prisma.SortOrder
   content?: Prisma.SortOrder
+  contentJson?: Prisma.SortOrderInput | Prisma.SortOrder
   placeholders?: Prisma.SortOrder
   version?: Prisma.SortOrder
   createdById?: Prisma.SortOrder
@@ -346,6 +353,7 @@ export type TemplatePartialScalarWhereWithAggregatesInput = {
   displayName?: Prisma.StringNullableWithAggregatesFilter<"TemplatePartial"> | string | null
   description?: Prisma.StringNullableWithAggregatesFilter<"TemplatePartial"> | string | null
   content?: Prisma.StringWithAggregatesFilter<"TemplatePartial"> | string
+  contentJson?: Prisma.JsonNullableWithAggregatesFilter<"TemplatePartial">
   placeholders?: Prisma.JsonWithAggregatesFilter<"TemplatePartial">
   version?: Prisma.IntWithAggregatesFilter<"TemplatePartial"> | number
   createdById?: Prisma.StringWithAggregatesFilter<"TemplatePartial"> | string
@@ -360,6 +368,7 @@ export type TemplatePartialCreateInput = {
   displayName?: string | null
   description?: string | null
   content: string
+  contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   version?: number
   createdAt?: Date | string
@@ -378,6 +387,7 @@ export type TemplatePartialUncheckedCreateInput = {
   displayName?: string | null
   description?: string | null
   content: string
+  contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   version?: number
   createdById: string
@@ -394,6 +404,7 @@ export type TemplatePartialUpdateInput = {
   displayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   content?: Prisma.StringFieldUpdateOperationsInput | string
+  contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   version?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -412,6 +423,7 @@ export type TemplatePartialUncheckedUpdateInput = {
   displayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   content?: Prisma.StringFieldUpdateOperationsInput | string
+  contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   version?: Prisma.IntFieldUpdateOperationsInput | number
   createdById?: Prisma.StringFieldUpdateOperationsInput | string
@@ -429,6 +441,7 @@ export type TemplatePartialCreateManyInput = {
   displayName?: string | null
   description?: string | null
   content: string
+  contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   version?: number
   createdById: string
@@ -443,6 +456,7 @@ export type TemplatePartialUpdateManyMutationInput = {
   displayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   content?: Prisma.StringFieldUpdateOperationsInput | string
+  contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   version?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -457,6 +471,7 @@ export type TemplatePartialUncheckedUpdateManyInput = {
   displayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   content?: Prisma.StringFieldUpdateOperationsInput | string
+  contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   version?: Prisma.IntFieldUpdateOperationsInput | number
   createdById?: Prisma.StringFieldUpdateOperationsInput | string
@@ -487,6 +502,7 @@ export type TemplatePartialCountOrderByAggregateInput = {
   displayName?: Prisma.SortOrder
   description?: Prisma.SortOrder
   content?: Prisma.SortOrder
+  contentJson?: Prisma.SortOrder
   placeholders?: Prisma.SortOrder
   version?: Prisma.SortOrder
   createdById?: Prisma.SortOrder
@@ -654,6 +670,7 @@ export type TemplatePartialCreateWithoutTenantInput = {
   displayName?: string | null
   description?: string | null
   content: string
+  contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   version?: number
   createdAt?: Date | string
@@ -670,6 +687,7 @@ export type TemplatePartialUncheckedCreateWithoutTenantInput = {
   displayName?: string | null
   description?: string | null
   content: string
+  contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   version?: number
   createdById: string
@@ -716,6 +734,7 @@ export type TemplatePartialScalarWhereInput = {
   displayName?: Prisma.StringNullableFilter<"TemplatePartial"> | string | null
   description?: Prisma.StringNullableFilter<"TemplatePartial"> | string | null
   content?: Prisma.StringFilter<"TemplatePartial"> | string
+  contentJson?: Prisma.JsonNullableFilter<"TemplatePartial">
   placeholders?: Prisma.JsonFilter<"TemplatePartial">
   version?: Prisma.IntFilter<"TemplatePartial"> | number
   createdById?: Prisma.StringFilter<"TemplatePartial"> | string
@@ -730,6 +749,7 @@ export type TemplatePartialCreateWithoutCreatedByInput = {
   displayName?: string | null
   description?: string | null
   content: string
+  contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   version?: number
   createdAt?: Date | string
@@ -747,6 +767,7 @@ export type TemplatePartialUncheckedCreateWithoutCreatedByInput = {
   displayName?: string | null
   description?: string | null
   content: string
+  contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   version?: number
   createdAt?: Date | string
@@ -788,6 +809,7 @@ export type TemplatePartialCreateWithoutServiceVariantsInput = {
   displayName?: string | null
   description?: string | null
   content: string
+  contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   version?: number
   createdAt?: Date | string
@@ -805,6 +827,7 @@ export type TemplatePartialUncheckedCreateWithoutServiceVariantsInput = {
   displayName?: string | null
   description?: string | null
   content: string
+  contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   version?: number
   createdById: string
@@ -836,6 +859,7 @@ export type TemplatePartialUpdateWithoutServiceVariantsInput = {
   displayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   content?: Prisma.StringFieldUpdateOperationsInput | string
+  contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   version?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -853,6 +877,7 @@ export type TemplatePartialUncheckedUpdateWithoutServiceVariantsInput = {
   displayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   content?: Prisma.StringFieldUpdateOperationsInput | string
+  contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   version?: Prisma.IntFieldUpdateOperationsInput | number
   createdById?: Prisma.StringFieldUpdateOperationsInput | string
@@ -868,6 +893,7 @@ export type TemplatePartialCreateWithoutServiceAgreementItemsInput = {
   displayName?: string | null
   description?: string | null
   content: string
+  contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   version?: number
   createdAt?: Date | string
@@ -885,6 +911,7 @@ export type TemplatePartialUncheckedCreateWithoutServiceAgreementItemsInput = {
   displayName?: string | null
   description?: string | null
   content: string
+  contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   version?: number
   createdById: string
@@ -916,6 +943,7 @@ export type TemplatePartialUpdateWithoutServiceAgreementItemsInput = {
   displayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   content?: Prisma.StringFieldUpdateOperationsInput | string
+  contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   version?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -933,6 +961,7 @@ export type TemplatePartialUncheckedUpdateWithoutServiceAgreementItemsInput = {
   displayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   content?: Prisma.StringFieldUpdateOperationsInput | string
+  contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   version?: Prisma.IntFieldUpdateOperationsInput | number
   createdById?: Prisma.StringFieldUpdateOperationsInput | string
@@ -948,6 +977,7 @@ export type TemplatePartialCreateManyTenantInput = {
   displayName?: string | null
   description?: string | null
   content: string
+  contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   version?: number
   createdById: string
@@ -962,6 +992,7 @@ export type TemplatePartialUpdateWithoutTenantInput = {
   displayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   content?: Prisma.StringFieldUpdateOperationsInput | string
+  contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   version?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -978,6 +1009,7 @@ export type TemplatePartialUncheckedUpdateWithoutTenantInput = {
   displayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   content?: Prisma.StringFieldUpdateOperationsInput | string
+  contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   version?: Prisma.IntFieldUpdateOperationsInput | number
   createdById?: Prisma.StringFieldUpdateOperationsInput | string
@@ -994,6 +1026,7 @@ export type TemplatePartialUncheckedUpdateManyWithoutTenantInput = {
   displayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   content?: Prisma.StringFieldUpdateOperationsInput | string
+  contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   version?: Prisma.IntFieldUpdateOperationsInput | number
   createdById?: Prisma.StringFieldUpdateOperationsInput | string
@@ -1009,6 +1042,7 @@ export type TemplatePartialCreateManyCreatedByInput = {
   displayName?: string | null
   description?: string | null
   content: string
+  contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   version?: number
   createdAt?: Date | string
@@ -1022,6 +1056,7 @@ export type TemplatePartialUpdateWithoutCreatedByInput = {
   displayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   content?: Prisma.StringFieldUpdateOperationsInput | string
+  contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   version?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1039,6 +1074,7 @@ export type TemplatePartialUncheckedUpdateWithoutCreatedByInput = {
   displayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   content?: Prisma.StringFieldUpdateOperationsInput | string
+  contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   version?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1055,6 +1091,7 @@ export type TemplatePartialUncheckedUpdateManyWithoutCreatedByInput = {
   displayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   content?: Prisma.StringFieldUpdateOperationsInput | string
+  contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   version?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1109,6 +1146,7 @@ export type TemplatePartialSelect<ExtArgs extends runtime.Types.Extensions.Inter
   displayName?: boolean
   description?: boolean
   content?: boolean
+  contentJson?: boolean
   placeholders?: boolean
   version?: boolean
   createdById?: boolean
@@ -1129,6 +1167,7 @@ export type TemplatePartialSelectCreateManyAndReturn<ExtArgs extends runtime.Typ
   displayName?: boolean
   description?: boolean
   content?: boolean
+  contentJson?: boolean
   placeholders?: boolean
   version?: boolean
   createdById?: boolean
@@ -1146,6 +1185,7 @@ export type TemplatePartialSelectUpdateManyAndReturn<ExtArgs extends runtime.Typ
   displayName?: boolean
   description?: boolean
   content?: boolean
+  contentJson?: boolean
   placeholders?: boolean
   version?: boolean
   createdById?: boolean
@@ -1163,6 +1203,7 @@ export type TemplatePartialSelectScalar = {
   displayName?: boolean
   description?: boolean
   content?: boolean
+  contentJson?: boolean
   placeholders?: boolean
   version?: boolean
   createdById?: boolean
@@ -1171,7 +1212,7 @@ export type TemplatePartialSelectScalar = {
   deletedAt?: boolean
 }
 
-export type TemplatePartialOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "name" | "displayName" | "description" | "content" | "placeholders" | "version" | "createdById" | "createdAt" | "updatedAt" | "deletedAt", ExtArgs["result"]["templatePartial"]>
+export type TemplatePartialOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "name" | "displayName" | "description" | "content" | "contentJson" | "placeholders" | "version" | "createdById" | "createdAt" | "updatedAt" | "deletedAt", ExtArgs["result"]["templatePartial"]>
 export type TemplatePartialInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   createdBy?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
@@ -1203,6 +1244,10 @@ export type $TemplatePartialPayload<ExtArgs extends runtime.Types.Extensions.Int
     displayName: string | null
     description: string | null
     content: string
+    /**
+     * C06 native partial asset (`oakDoc`) and its pinned nested partials; server-managed.
+     */
+    contentJson: runtime.JsonValue | null
     placeholders: runtime.JsonValue
     version: number
     createdById: string
@@ -1642,6 +1687,7 @@ export interface TemplatePartialFieldRefs {
   readonly displayName: Prisma.FieldRef<"TemplatePartial", 'String'>
   readonly description: Prisma.FieldRef<"TemplatePartial", 'String'>
   readonly content: Prisma.FieldRef<"TemplatePartial", 'String'>
+  readonly contentJson: Prisma.FieldRef<"TemplatePartial", 'Json'>
   readonly placeholders: Prisma.FieldRef<"TemplatePartial", 'Json'>
   readonly version: Prisma.FieldRef<"TemplatePartial", 'Int'>
   readonly createdById: Prisma.FieldRef<"TemplatePartial", 'String'>
