@@ -19,7 +19,14 @@ import {
   normalizeStoredFieldDefinitionInput,
   resolveTopLevelCustomValues,
 } from '@/lib/document-editor/template-field-workflow';
-import { readGeneratedDocumentEngineState } from '@/lib/document-editor/document-engine';
+import {
+  InvalidDocumentEngineError,
+  readGeneratedDocumentEngineState,
+} from '@/lib/document-editor/document-engine';
+import {
+  assertGeneratedOakDocReadyForFinalization,
+  cloneOakDocGeneratedDocument,
+} from '@/services/oakdoc-generation.service';
 import {
   RESERVED_GENERATED_CONTENT_JSON_KEYS,
   RESERVED_GENERATED_METADATA_KEYS,
@@ -981,6 +988,11 @@ export async function finalizeDocument(
   if (metadataHasUnresolvedTemplateData(existing.metadata)) {
     throw new Error('Cannot finalize document with unresolved placeholders or partials');
   }
+  const engine = readGeneratedDocumentEngineState(existing.metadata);
+  if (engine === 'INVALID') throw new InvalidDocumentEngineError('generated-document');
+  if (engine === 'OAKDOC') {
+    await assertGeneratedOakDocReadyForFinalization(id, tenantId);
+  }
 
   const document = await prisma.$transaction(async (tx) => {
     const claim = await claimGeneratedDocumentRevision(tx, {
@@ -1226,7 +1238,9 @@ export async function cloneDocument(
     where: { id: data.id, tenantId, deletedAt: null },
   });
   if (!source) throw new NotFoundError('Document not found');
-  assertA4WriterCanPreserve(source.content, source.contentJson);
+  const sourceEngine = readGeneratedDocumentEngineState(source.metadata);
+  if (sourceEngine === 'INVALID') throw new InvalidDocumentEngineError('generated-document');
+  if (sourceEngine === 'A4') assertA4WriterCanPreserve(source.content, source.contentJson);
 
   let newTitle = data.title || `Copy of ${source.title}`;
   let counter = 1;
@@ -1238,6 +1252,11 @@ export async function cloneDocument(
     counter++;
     newTitle = data.title ? `${data.title} (${counter})` : `Copy of ${source.title} (${counter})`;
     if (counter > 100) throw new Error('Unable to generate unique title');
+  }
+
+  if (sourceEngine === 'OAKDOC') {
+    const cloned = await cloneOakDocGeneratedDocument({ sourceId: source.id, title: newTitle }, params);
+    return withRevision(cloned, 0);
   }
 
   const created = await prisma.generatedDocument.create({

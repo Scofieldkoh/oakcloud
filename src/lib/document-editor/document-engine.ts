@@ -44,6 +44,8 @@ export interface GeneratedOakDocAssetMetadata {
   conditionsRemoved: number;
   repeatersResolved: number;
   repeaterItemsCreated: number;
+  /** Operation identity of the last native save, for idempotent retries. */
+  lastOperationId?: string;
 }
 
 export interface OakDocReviewDraftMetadata {
@@ -242,6 +244,9 @@ export function readGeneratedOakDocAssetMetadata(
     conditionsRemoved: raw.conditionsRemoved,
     repeatersResolved: raw.repeatersResolved,
     repeaterItemsCreated: raw.repeaterItemsCreated,
+    ...(typeof raw.lastOperationId === 'string' && raw.lastOperationId
+      ? { lastOperationId: raw.lastOperationId }
+      : {}),
   };
 }
 
