@@ -112,8 +112,12 @@ export const OAKDOC_AGREEMENT_SLOT_ALIASES: ReadonlySet<string> = new Set(
 /** Per-service controls the agreement renderer creates and owns. */
 export const OAKDOC_AGREEMENT_SERVICE_ITEM_TAG_PREFIX = 'agreement.service.item:';
 
+/** Block control replaced by a native reusable partial (C06). */
+export const OAKDOC_PARTIAL_TAG_PREFIX = 'oakdoc.partial:';
+
 export type OakDocTagKind =
   | 'field'
+  | 'partial'
   | 'agreement-slot'
   | 'repeater-item'
   | 'repeater'
@@ -126,6 +130,7 @@ export function classifyOakDocTag(tag: string): OakDocTagKind {
   if (OAKDOC_GENERIC_REPEATER_ITEM_TAGS.has(tag)) return 'repeater-item';
   if (OAKDOC_SIGNATURE_TAGS.has(tag)) return 'signature';
   if (tag.startsWith(OAKDOC_CONDITION_TAG_PREFIX)) return 'condition';
+  if (tag.startsWith(OAKDOC_PARTIAL_TAG_PREFIX)) return 'partial';
   if (
     OAKDOC_AGREEMENT_SLOT_ALIASES.has(tag)
     || tag.startsWith(OAKDOC_AGREEMENT_SERVICE_ITEM_TAG_PREFIX)

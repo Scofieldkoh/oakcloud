@@ -26,6 +26,9 @@ import {
   normalizeStoredFieldDefinitionInput,
   preserveStoredFieldDefinitions,
 } from '@/lib/document-editor/template-field-workflow';
+import { readOakDocTemplateMetadata } from '@/lib/document-editor/oakdoc-template';
+import { ValidationError } from '@/lib/errors';
+import { storage, StorageKeys } from '@/lib/storage';
 
 export interface TemplatePartialWithRelations extends TemplatePartial {
   createdBy?: {
@@ -212,6 +215,9 @@ export async function updateTemplatePartial(
       where: { id: data.id, tenantId, deletedAt: null },
     });
     if (!existing) throw new Error('Partial not found');
+    if (data.content !== undefined && readOakDocTemplateMetadata(existing.contentJson)) {
+      throw new ValidationError('Word partial content is edited in the Word document, not as HTML');
+    }
 
     if (data.content !== undefined) assertA4WriterCanPreserve(data.content);
 
@@ -571,7 +577,8 @@ export async function duplicateTemplatePartial(
     where: { id: partialId, tenantId, deletedAt: null },
   });
   if (!source) throw new Error('Partial not found');
-  assertA4WriterCanPreserve(source.content);
+  const nativeAsset = readOakDocTemplateMetadata(source.contentJson);
+  if (!nativeAsset) assertA4WriterCanPreserve(source.content);
 
   if (!/^[a-zA-Z][a-zA-Z0-9_-]*$/.test(newName)) {
     throw new Error(
@@ -585,11 +592,26 @@ export async function duplicateTemplatePartial(
   if (existingName) throw new Error('A partial with this name already exists');
 
   const id = randomUUID();
+  // A Word partial's copy owns its own asset under the new partial's prefix;
+  // its nested partial pins are kept as they are.
+  let contentJson: Prisma.InputJsonValue | undefined;
+  if (nativeAsset) {
+    if (!nativeAsset.storageKey.startsWith(`${tenantId}/template-partials/${source.id}/oakdoc/`)) {
+      throw new ValidationError('Partial storage scope is invalid');
+    }
+    const storageKey = StorageKeys.oakDocPartialAsset(tenantId, id, nativeAsset.sha256);
+    await storage.copy(nativeAsset.storageKey, storageKey);
+    contentJson = {
+      ...(source.contentJson as Record<string, unknown>),
+      oakDoc: { ...nativeAsset, storageKey },
+    } as Prisma.InputJsonValue;
+  }
   const partial = await prisma.templatePartial.create({
     data: {
       id,
       tenantId,
       name: newName,
+      ...(contentJson ? { contentJson } : {}),
       displayName: source.displayName
         ? `Copy of ${source.displayName}`
         : `Copy of ${source.name}`,
