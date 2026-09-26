@@ -1,3 +1,4 @@
+import { createBlankOakDocDocument } from '@/services/oakdoc-blank-document.service';
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
@@ -8,7 +9,6 @@ import {
 } from '@/lib/validations/generated-document';
 import {
   createDocumentFromTemplate,
-  createBlankDocument,
   searchGeneratedDocuments,
 } from '@/services/document-generator.service';
 import { createErrorResponse, requireSessionWorkspaceId } from '@/lib/api-helpers';
@@ -94,9 +94,7 @@ export async function POST(request: NextRequest) {
     if (type === 'blank' || !documentData.templateId) {
       const data = createBlankDocumentSchema.parse(documentData);
       const params = { tenantId, userId: session.id };
-      document = taskContext
-        ? await createBlankDocument(data, params, taskContext)
-        : await createBlankDocument(data, params);
+      document = await createBlankOakDocDocument(data, params, taskContext ?? undefined);
     } else {
       const data = createDocumentFromTemplateSchema.parse(documentData);
       const params = { tenantId, userId: session.id };

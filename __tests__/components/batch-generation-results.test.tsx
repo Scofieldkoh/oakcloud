@@ -15,6 +15,7 @@ function item(overrides: Partial<EditableBatchItem> = {}): EditableBatchItem {
     templateName: 'Engagement Letter',
     templateKind: 'STANDARD',
     templateVersion: 1,
+    templateEngine: 'A4',
     status: 'GENERATED',
     configuration: {
       version: 1,

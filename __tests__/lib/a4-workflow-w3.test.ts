@@ -4,11 +4,6 @@ import {
   assembleA4OutputPages,
   createA4OutputPreparationSession,
 } from '@/lib/document-editor/a4-output-preparation';
-import {
-  assessA4RevisionRolloutReadiness,
-  deriveA4WorkflowStatus,
-} from '@/lib/document-editor/a4-workflow-status';
-import { SERVER_A4_EDITOR_CAPABILITIES } from '@/lib/document-editor/a4-editor-capabilities';
 import { placeholderDefinitionSchema } from '@/lib/validations/document-template';
 import { batchItemConfigurationSchema } from '@/lib/validations/document-generation-batch';
 import { sanitizeCanonicalA4Html } from '@/services/a4-content-sanitizer.service';
@@ -83,51 +78,6 @@ describe('W3 shared output preparation', () => {
     expect(session.signal.aborted).toBe(true);
     expect(() => session.assertReady()).toThrow('cancelled');
     await session.dispose();
-  });
-});
-
-describe('W3 C07 rollout readiness', () => {
-  it('reports current production writer capability as not yet strict-ready without mutating it', () => {
-    const readiness = assessA4RevisionRolloutReadiness(SERVER_A4_EDITOR_CAPABILITIES);
-    expect(readiness.compatible).toBe(false);
-    expect(readiness.blockers).toEqual(expect.arrayContaining([
-      'writer-format-level-2',
-      'required-revision-precondition',
-    ]));
-    expect(SERVER_A4_EDITOR_CAPABILITIES.allowedWriterFormatLevel).toBe(1);
-    expect(SERVER_A4_EDITOR_CAPABILITIES.revisionPrecondition).toBe('optional');
-  });
-
-  it('accepts a synthetic fully compatible reader/writer capability', () => {
-    expect(assessA4RevisionRolloutReadiness({
-      ...SERVER_A4_EDITOR_CAPABILITIES,
-      readerFormatLevel: 2,
-      allowedWriterFormatLevel: 2,
-      revisionPrecondition: 'required',
-    })).toMatchObject({ compatible: true, blockers: [] });
-  });
-
-  it('exposes recoverable dirty, conflict and error status', () => {
-    expect(deriveA4WorkflowStatus({
-      serverRevision: 7,
-      acknowledgedRevision: 3,
-      localRevision: 4,
-      saving: false,
-    })).toMatchObject({ phase: 'dirty', dirty: true, canSave: true });
-    expect(deriveA4WorkflowStatus({
-      serverRevision: 8,
-      acknowledgedRevision: 4,
-      localRevision: 5,
-      saving: false,
-      conflict: true,
-    })).toMatchObject({ phase: 'conflict', canSave: false, shouldRetry: false });
-    expect(deriveA4WorkflowStatus({
-      serverRevision: 8,
-      acknowledgedRevision: 4,
-      localRevision: 5,
-      saving: false,
-      error: 'forced failure',
-    })).toMatchObject({ phase: 'error', shouldRetry: true, message: 'forced failure' });
   });
 });
 

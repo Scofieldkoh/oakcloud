@@ -1,7 +1,9 @@
 import { randomUUID } from 'node:crypto';
 import { createAuditLog } from '@/lib/audit';
 import { metadataHasUnresolvedTemplateData } from '@/lib/document-finalization';
-import { ConflictError, NotFoundError } from '@/lib/errors';
+import { readGeneratedDocumentEngineState } from '@/lib/document-editor/document-engine';
+import { isPendingA4DraftConversion } from '@/lib/document-editor/oakdoc-draft-conversion';
+import { ConflictError, NotFoundError, ValidationError } from '@/lib/errors';
 import { createLogger } from '@/lib/logger';
 import { prisma } from '@/lib/prisma';
 import { runSerializableTransaction } from '@/lib/prisma-transaction';
@@ -16,7 +18,7 @@ import { snapshotClientServiceFees } from '@/services/client-service/fee-summary
 
 const log = createLogger('service-agreement-activation');
 const activationInclude = {
-  generatedDocument: { select: { id: true, status: true, metadata: true } },
+  generatedDocument: { select: { id: true, status: true, revision: true, metadata: true } },
   entities: { select: { id: true, companyId: true } },
   items: {
     include: {
@@ -172,8 +174,50 @@ async function persistActivationFailure(claim: ActivationClaim, failure: Activat
   });
 }
 
+/**
+ * Activation turns the agreement document into operational services, so its
+ * generation evidence must be clean whether the document is still a draft or
+ * already finalized. Metadata diagnostics are checked for every engine.
+ */
+function assertDocumentMetadataActivatable(metadata: unknown): void {
+  if (
+    metadataHasUnresolvedTemplateData(metadata)
+    || readGeneratedDocumentEngineState(metadata) === 'INVALID'
+    || isPendingA4DraftConversion(metadata)
+  ) {
+    throw new ActivationFailure(PUBLIC_DOCUMENT_ERROR, true);
+  }
+}
+
+/**
+ * OakDoc documents are also re-inspected from their stored DOCX, outside the
+ * activation transaction because it reads object storage. Returns the
+ * revision that was inspected so the transaction can confirm it is current.
+ */
+async function inspectOakDocAgreementDocument(claim: ActivationClaim): Promise<number | null> {
+  const document = await prisma.generatedDocument.findFirst({
+    where: { tenantId: claim.tenantId, serviceAgreement: { id: claim.agreementId } },
+    select: { id: true, revision: true, metadata: true },
+  });
+  if (!document || readGeneratedDocumentEngineState(document.metadata) !== 'OAKDOC') return null;
+  assertDocumentMetadataActivatable(document.metadata);
+  const { checkGeneratedOakDocFinalization } = await import('@/services/oakdoc-generation.service');
+  try {
+    const check = await checkGeneratedOakDocFinalization(document.id, claim.tenantId);
+    if (!check.ready) throw new ActivationFailure(PUBLIC_DOCUMENT_ERROR, true);
+  } catch (error) {
+    // Covers package-policy failures, which are validation errors too.
+    if (error instanceof ValidationError || error instanceof NotFoundError) {
+      throw new ActivationFailure(PUBLIC_DOCUMENT_ERROR, true);
+    }
+    throw error;
+  }
+  return document.revision;
+}
+
 export async function processServiceAgreementActivation(claim: ActivationClaim): Promise<ActivationResult> {
   try {
+    const inspectedOakDocRevision = await inspectOakDocAgreementDocument(claim);
     const activationResult = await runSerializableTransaction(prisma, async (tx) => {
       const agreement = await tx.serviceAgreement.findFirst({ where: { id: claim.agreementId, tenantId: claim.tenantId }, include: activationInclude });
       if (!agreement) throw new NotFoundError('Service agreement not found');
@@ -183,8 +227,11 @@ export async function processServiceAgreementActivation(claim: ActivationClaim):
       }
       if (agreement.activationStatus !== 'PROCESSING' || agreement.activationClaimToken !== claim.claimToken) throw new LostActivationClaimError();
       if (agreement.status !== 'DRAFT') throw new ActivationFailure(PUBLIC_INELIGIBLE_ERROR, true);
-      if (agreement.generatedDocument.status === 'DRAFT' && metadataHasUnresolvedTemplateData(agreement.generatedDocument.metadata)) {
-        throw new ActivationFailure(PUBLIC_DOCUMENT_ERROR, true);
+      assertDocumentMetadataActivatable(agreement.generatedDocument.metadata);
+      const isOakDoc = readGeneratedDocumentEngineState(agreement.generatedDocument.metadata) === 'OAKDOC';
+      if (isOakDoc && agreement.generatedDocument.revision !== inspectedOakDocRevision) {
+        // Edited after inspection (or turned into OakDoc): retry with fresh evidence.
+        throw new Error('The agreement document changed during activation');
       }
 
       let clientServiceCount = 0;

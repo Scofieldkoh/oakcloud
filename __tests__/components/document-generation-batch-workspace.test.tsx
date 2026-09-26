@@ -80,6 +80,7 @@ const templates: DocumentTemplateSummary[] = [
     compositionType: 'STANDARD',
     version: 1,
     isActive: true,
+    engine: 'A4',
     content: '<p>x</p>',
     placeholders: [],
     createdAt: '',
@@ -92,6 +93,7 @@ const templates: DocumentTemplateSummary[] = [
     compositionType: 'SERVICE_AGREEMENT',
     version: 1,
     isActive: true,
+    engine: 'A4',
     content: '<p>x</p>',
     placeholders: [],
     createdAt: '',
@@ -145,6 +147,7 @@ function batch(items: Array<{
       templateName: entry.templateName,
       templateKind: entry.kind,
       templateVersion: 1,
+      templateEngine: 'A4',
       status: entry.status ?? 'NOT_STARTED',
       configuration: {
         version: 1,

@@ -13,7 +13,7 @@ This review inspected repository code, tests and installed `@docx-editor.dev/cor
 | D01 | OakDoc is the sole editor for new templates, reusable document blocks and generated documents. | User confirmed. Do not resume the September A4 editor rewrite. |
 | D02 | Reuse Microsoft 365 Word-to-PDF conversion. | User confirmed on 26 September. Extend the existing Graph converter; no new provider. A usable SharePoint/OneDrive connector is a workspace PDF/signing release prerequisite. |
 | D03 | Preserve finalized, signed and archived records and original provenance. | Required preservation invariant. Replacement does not authorize rewriting historical business records. |
-| D04 | Existing A4 drafts become reviewed OakDoc copies on next edit, retaining the original snapshot. | Planning assumption pending the user's answer. See section 8.4. P8/M2 own conversion; U1/L1/I2 must coordinate routing and relationship contracts if policy changes. |
+| D04 | Existing A4 drafts become reviewed OakDoc copies on next edit, retaining the original snapshot. | Confirmed by the owner on 2026-09-26. See section 8.4. P8/M2 own conversion; U1/L1/I2 must coordinate routing and relationship contracts if policy changes. |
 | D05 | Preserve fields, explicit parties, conditions/repeaters, partials, Service Agreements, task launches, comments, AI-assisted authoring, recovery, PDF, signing and filing. | Default scope of complete replacement; no silent omission of live features absent from the POC. |
 | D06 | DOCX is canonical for OakDoc; HTML export remains historical-A4-only. | Planned contract: explicit unsupported-capability response for OakDoc HTML requests, with DOCX/PDF alternatives. |
 | D07 | Native section layout and headers/footers are authoritative; Oakcloud letterhead is an explicit generation option. | Planned contract in section 6.2; no duplicate PDF overlay. |
@@ -205,6 +205,8 @@ Call `resolvePreferredMigratedTemplate` at new-generation selection, batch plann
 
 Proposed workspace modes in the existing settings mechanism: `compatibility`, `oakdoc-primary`, `oakdoc-only`. Compatibility allows explicit legacy operation while migration is evaluated. Primary routes approved sources to valid targets; stale/broken mappings block rather than silently generate new A4. Oakdoc-only rejects legacy create/content-edit/generate at services, including old clients/scripts/restores/duplicates. Historical read/export remains allowed.
 
+Implemented (PR #62, 2026-09-26): the owner chose to retire A4 for every workspace at once, so there is no per-workspace mode. Every service that would write A4 content refuses with reason `A4_EDITOR_RETIRED` (`src/lib/document-editor/a4-retirement.ts`); reading and exporting A4 records still works. Rollback is the previous application release, per 8.3.
+
 Retain legacy records through rollback. Do not simply deactivate after validation: current version checks/task validation break. Redirect operational use first; final deactivation is fingerprint-aware/audited. C0 freezes settings/transaction semantics.
 
 ## 8. Operations, history and rollback
@@ -212,6 +214,12 @@ Retain legacy records through rollback. Do not simply deactivate after validatio
 ### 8.1 Operator contract
 
 Migration is dry-run by default with explicit workspace/source selection or reviewed manifest, explicit operator/report path and `--apply` against exact manifest hash/expected revisions. These are proposed CLI capabilities. Reject implicit earliest-user attribution and all-workspace mutation.
+
+Implemented commands (PR #62), one workspace at a time. Each prints JSON with IDs, revisions, hashes and dispositions only:
+
+- `npm run oakdoc:rollout -- --workspace <id>` is a dry run. It lists template mapping status, every A4 generated document with its disposition (`CONVERT`, `CONVERTED_PENDING_REVIEW`, `CONVERTED_ACCEPTED`, `HISTORICAL`, `BLOCKED_IN_SIGNING`, `BLOCKED_RELATION`), unfinished batch items on A4 templates, and the draft-conversion manifest with its hash. It makes no writes.
+- `npm run oakdoc:rollout -- --workspace <id> --apply-draft-conversions --operator <user id> --manifest <hash>` converts the drafts in that manifest. It refuses if the manifest no longer hashes to the approved value. Each item is idempotent and reports `created`, `reused` or `failed` with a reason. To resume after a failure, run the dry run again and approve the new manifest. Run it only with the owner's approval of that run.
+- `npm run db:migrate-oakdoc-templates -- --workspace <id> --operator <user id> [--apply]` requires an explicit workspace and operator. Without `--apply` it makes no changes.
 
 Report old/new IDs/hashes, per-item results, validation state, changes and safe issue codes. Apply is additive/resumable/idempotent and protects edited targets. Stale items fail without overwrite; partial success is reported; retries never duplicate pairs. No reset/destructive rewrite/purge. Audit mapping/validation/preference/mode changes. Older agreement seed and current scripts share preservation rules; reruns cannot reset customized bytes or activation.
 
@@ -227,7 +235,7 @@ After editor removal, use a tested compatibility application release plus preser
 
 ### 8.4 Existing A4 draft disposition (D04)
 
-Default assumption pending clarification: next edit creates a linked native DRAFT from current saved legacy content including manual edits; preserve original. Record source ID/revision/hash, target/hash, conversion method and warnings. Do not regenerate from current company/template values and call it the same draft.
+Confirmed by the owner 2026-09-26. The per-draft path is implemented (`convertA4DraftToOakDoc`, `POST /api/generated-documents/[id]/oakdoc-conversion`); drafts linked to tasks, batches or Service Agreements are held as `BLOCKED_RELATION` until relation transfer exists. Policy: next edit creates a linked native DRAFT from current saved legacy content including manual edits; preserve original. Record source ID/revision/hash, target/hash, conversion method and warnings. Do not regenerate from current company/template values and call it the same draft.
 
 No universal converter is proved here. P8 first proves bounded conversion of inventoried constructs using canonical HTML readers; unsupported content requires native reauthor/import-and-compare. Never flatten/drop silently. Review precedes acceptance. Transfer pending task/batch links through canonical services with CAS/provenance and no duplicate outcomes/envelopes. Already-in-signing documents cannot take this path.
 

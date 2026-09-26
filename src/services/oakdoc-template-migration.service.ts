@@ -108,7 +108,6 @@ export async function ensureOakDocTemplateMigration(
     isActive: true,
     fileName: definition.fileName,
     buffer: Buffer.from(sourceBytes),
-    fieldTags: [...definition.expectedFieldTags],
     contentJson: buildOakDocMigrationContentJson(
       definition,
       sourceBytes,

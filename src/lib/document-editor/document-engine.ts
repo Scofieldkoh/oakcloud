@@ -2,8 +2,16 @@ import {
   OAKDOC_MIME_TYPE,
   readOakDocTemplateMetadata,
 } from '@/lib/document-editor/oakdoc-template';
+import { ValidationError } from '@/lib/errors';
+import { OAKDOC_ERROR_REASONS } from '@/types/oakdoc';
 
 export type DocumentEngine = 'A4' | 'OAKDOC';
+
+/**
+ * C01 engine discrimination. `INVALID` means native markers are present but
+ * the metadata cannot be trusted; it must never fall back to A4 handling.
+ */
+export type DocumentEngineState = DocumentEngine | 'INVALID';
 
 export type DocumentEngineCapability =
   | 'inline-edit'
@@ -36,6 +44,8 @@ export interface GeneratedOakDocAssetMetadata {
   conditionsRemoved: number;
   repeatersResolved: number;
   repeaterItemsCreated: number;
+  /** Operation identity of the last native save, for idempotent retries. */
+  lastOperationId?: string;
 }
 
 export interface OakDocReviewDraftMetadata {
@@ -67,31 +77,87 @@ function stringArray(value: unknown): string[] | null {
   return value as string[];
 }
 
-export function getDocumentTemplateEngine(contentJson: unknown): DocumentEngine {
-  return readOakDocTemplateMetadata(contentJson) ? 'OAKDOC' : 'A4';
+export class InvalidDocumentEngineError extends ValidationError {
+  constructor(entity: 'template' | 'generated-document') {
+    super(
+      entity === 'template'
+        ? 'This template has damaged OakDoc metadata and cannot be opened or generated'
+        : 'This document has damaged OakDoc metadata and cannot be opened or exported',
+      { reason: OAKDOC_ERROR_REASONS.INVALID_ENGINE_METADATA },
+    );
+    this.name = 'InvalidDocumentEngineError';
+  }
 }
 
-export function getDocumentEngineCapabilities(
-  engine: DocumentEngine,
+export function getDocumentTemplateEngineState(contentJson: unknown): DocumentEngineState {
+  if (readOakDocTemplateMetadata(contentJson)) return 'OAKDOC';
+  if (isRecord(contentJson) && (contentJson.oakDoc !== undefined || contentJson.documentEngine === 'OAKDOC')) {
+    return 'INVALID';
+  }
+  return 'A4';
+}
+
+/** Throws for damaged native metadata instead of treating it as A4. */
+export function getDocumentTemplateEngine(contentJson: unknown): DocumentEngine {
+  const state = getDocumentTemplateEngineState(contentJson);
+  if (state === 'INVALID') throw new InvalidDocumentEngineError('template');
+  return state;
+}
+
+/**
+ * Engine to present in lists and pickers. Damaged native metadata is shown as
+ * OakDoc so no A4 surface is offered; server operations then fail closed.
+ */
+export function getDocumentTemplateDisplayEngine(contentJson: unknown): DocumentEngine {
+  return getDocumentTemplateEngineState(contentJson) === 'A4' ? 'A4' : 'OAKDOC';
+}
+
+export type DocumentLifecycleStatus = 'DRAFT' | 'FINALIZED' | 'ARCHIVED';
+
+export interface DocumentCapabilityContext {
+  engine: DocumentEngineState;
+  status?: DocumentLifecycleStatus;
+  /** Caller holds the document update permission. Defaults to true. */
+  canUpdate?: boolean;
+  /** A usable Microsoft 365 converter is configured for the workspace. */
+  pdfConverterReady?: boolean;
+}
+
+/**
+ * Operation capabilities. UI uses these to describe availability; services
+ * still enforce the same rules independently.
+ */
+export function getDocumentCapabilities(
+  context: DocumentCapabilityContext,
 ): DocumentEngineCapabilities {
-  if (engine === 'OAKDOC') {
+  const editable = (context.status ?? 'DRAFT') === 'DRAFT' && context.canUpdate !== false;
+  if (context.engine === 'INVALID') {
+    return { inlineEdit: false, htmlExport: false, pdfExport: false, docxDownload: false };
+  }
+  if (context.engine === 'OAKDOC') {
     return {
-      inlineEdit: false,
+      inlineEdit: editable,
       htmlExport: false,
-      pdfExport: false,
+      pdfExport: context.pdfConverterReady === true,
       docxDownload: true,
     };
   }
   return {
-    inlineEdit: true,
+    inlineEdit: editable,
     htmlExport: true,
     pdfExport: true,
     docxDownload: false,
   };
 }
 
+export function getDocumentEngineCapabilities(
+  engine: DocumentEngineState,
+): DocumentEngineCapabilities {
+  return getDocumentCapabilities({ engine, status: 'DRAFT', pdfConverterReady: true });
+}
+
 export function documentEngineSupports(
-  engine: DocumentEngine,
+  engine: DocumentEngineState,
   capability: DocumentEngineCapability,
 ): boolean {
   const capabilities = getDocumentEngineCapabilities(engine);
@@ -178,6 +244,9 @@ export function readGeneratedOakDocAssetMetadata(
     conditionsRemoved: raw.conditionsRemoved,
     repeatersResolved: raw.repeatersResolved,
     repeaterItemsCreated: raw.repeaterItemsCreated,
+    ...(typeof raw.lastOperationId === 'string' && raw.lastOperationId
+      ? { lastOperationId: raw.lastOperationId }
+      : {}),
   };
 }
 
@@ -240,8 +309,19 @@ export function readOakDocEditedContentMetadata(
   };
 }
 
+export function readGeneratedDocumentEngineState(metadata: unknown): DocumentEngineState {
+  if (readGeneratedOakDocAssetMetadata(metadata)) return 'OAKDOC';
+  if (isRecord(metadata) && (metadata.documentEngine === 'OAKDOC' || metadata.oakDocGenerated !== undefined)) {
+    return 'INVALID';
+  }
+  return 'A4';
+}
+
+/** Throws for damaged native metadata instead of treating it as A4. */
 export function readGeneratedDocumentEngine(metadata: unknown): DocumentEngine {
-  return readGeneratedOakDocAssetMetadata(metadata) ? 'OAKDOC' : 'A4';
+  const state = readGeneratedDocumentEngineState(metadata);
+  if (state === 'INVALID') throw new InvalidDocumentEngineError('generated-document');
+  return state;
 }
 
 export function mergeGeneratedOakDocMetadata(

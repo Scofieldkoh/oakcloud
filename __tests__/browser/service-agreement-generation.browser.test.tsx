@@ -199,6 +199,7 @@ describe('Service Agreement batch generation browser workflow', () => {
               compositionType: 'SERVICE_AGREEMENT',
               version: 1,
               isActive: true,
+              engine: 'A4',
               content: '<p>x</p>',
               placeholders: [],
               createdAt: '',

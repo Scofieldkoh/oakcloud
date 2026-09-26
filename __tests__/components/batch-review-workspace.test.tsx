@@ -1,28 +1,11 @@
 import { describe, it, expect, vi } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {
   BatchReviewWorkspace,
   type BatchReviewWorkspaceProps,
 } from '@/components/documents/generation-batch/batch-review-workspace';
 import type { EditableBatchItem } from '@/components/documents/generation-batch/batch-workspace-state';
-
-vi.mock('@/components/documents/a4-page-editor', () => ({
-  A4PageEditor: ({ value, onChange, readOnly }: {
-    value: string;
-    onChange?: (html: string) => void;
-    readOnly?: boolean;
-  }) => (
-    <div>
-      <div data-testid="preview-content">{value}</div>
-      {!readOnly && (
-        <button type="button" onClick={() => onChange?.('<p>edited</p>')}>
-          mock-edit
-        </button>
-      )}
-    </div>
-  ),
-}));
 
 function item(overrides: Partial<EditableBatchItem> = {}): EditableBatchItem {
   return {
@@ -32,6 +15,7 @@ function item(overrides: Partial<EditableBatchItem> = {}): EditableBatchItem {
     templateName: 'Engagement Letter',
     templateKind: 'STANDARD',
     templateVersion: 1,
+    templateEngine: 'A4',
     status: 'READY',
     configuration: {
       version: 1,
@@ -63,7 +47,7 @@ function props(overrides: Partial<BatchReviewWorkspaceProps> = {}): BatchReviewW
     onSelect: vi.fn(),
     onPreview: vi.fn(),
     onReview: vi.fn(),
-    onEditContent: vi.fn(),
+    onSaveOakDoc: vi.fn(),
     ...overrides,
   };
 }
@@ -112,18 +96,18 @@ describe('BatchReviewWorkspace', () => {
     unmount();
   });
 
-  it('persists edits through the content callback', () => {
-    const p = props();
-    const { unmount } = render(<BatchReviewWorkspace {...p} />);
-    fireEvent.click(screen.getByRole('button', { name: /mock-edit/i }));
-    expect(p.onEditContent).toHaveBeenCalledWith('item-1', '<p>edited</p>', null);
+  it('shows A4 items read-only with a note that the A4 editor is retired', () => {
+    const { container, unmount } = render(<BatchReviewWorkspace {...props()} />);
+    expect(screen.getByText(/retired A4 editor/i)).toBeInTheDocument();
+    expect(screen.getByRole('article', { name: /read-only/i })).toHaveTextContent('Preview content');
+    expect(container.querySelector('[contenteditable]')).toBeNull();
     unmount();
   });
 
   it('renders the active preview and replaces approval with a locked notice', () => {
     const p = props();
     const { unmount } = render(<BatchReviewWorkspace {...p} />);
-    expect(screen.getByTestId('preview-content')).toHaveTextContent('Preview content');
+    expect(screen.getByRole('article', { name: /read-only/i })).toHaveTextContent('Preview content');
     expect(screen.queryByRole('button', { name: /approve for generation/i })).not.toBeInTheDocument();
     expect(screen.getByText(/approved for generation/i)).toBeInTheDocument();
     unmount();

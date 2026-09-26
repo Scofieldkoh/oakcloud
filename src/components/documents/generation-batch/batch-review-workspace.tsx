@@ -13,10 +13,10 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
-import { A4PageEditor } from '@/components/documents/a4-page-editor';
+import { Alert } from '@/components/ui/alert';
+import { A4HistoricalViewer } from '@/components/documents/a4-historical-viewer';
 import {
   extractA4DocumentLayout,
-  mergeA4DocumentLayout,
   type A4DocumentLayout,
 } from '@/components/documents/a4-pagination/layout';
 import { cn } from '@/lib/utils';
@@ -41,13 +41,10 @@ export interface BatchReviewWorkspaceProps {
   onSelect: (itemId: string) => void;
   onPreview: (itemId: string, replaceEditedContent?: boolean) => void | Promise<void>;
   onReview: (itemId: string) => void | Promise<void>;
-  onEditContent: (itemId: string, content: string | null, json: unknown) => void;
   onSaveOakDoc: (itemId: string, bytes: Uint8Array) => Promise<void>;
   onOakDocDirtyChange?: (dirty: boolean) => void;
   pending?: boolean;
   layout?: A4DocumentLayout;
-  /** Optional template metadata fallback. Item metadata always wins. */
-  contentJson?: Record<string, unknown> | null;
   completeness?: CompletenessMap;
   /** Documents preventing generation, rendered as jump-to links. */
   blockers?: GenerationBlocker[];
@@ -86,12 +83,10 @@ export function BatchReviewWorkspace({
   onSelect,
   onPreview,
   onReview,
-  onEditContent,
   onSaveOakDoc,
   onOakDocDirtyChange,
   pending = false,
   layout,
-  contentJson = null,
   completeness,
   blockers = [],
   previewProgress = null,
@@ -138,7 +133,6 @@ export function BatchReviewWorkspace({
   const diagnosticCount = diagnostics
     ? diagnostics.errors.length + diagnostics.fieldErrors.length
     : 0;
-  const itemContentJson = recordJson(activeItem?.editedContentJson) ?? contentJson;
   const effectiveLayout = recordJson(activeItem?.editedContentJson)
     ? extractA4DocumentLayout(activeItem?.editedContentJson)
     : layout;
@@ -366,26 +360,17 @@ export function BatchReviewWorkspace({
                     onSave={(bytes) => onSaveOakDoc(activeItem.key, bytes)}
                   />
                 ) : (
-                  <A4PageEditor
-                    sessionKey={`batch-item:${activeItem.templateId}`}
-                    value={activeItem.editedContent ?? activeItem.previewContent ?? ''}
-                    contentJson={itemContentJson ?? undefined}
-                    onChange={(html) => onEditContent(
-                      activeItem.key,
-                      html,
-                      activeItem.editedContentJson,
-                    )}
-                    onLayoutChange={(nextLayout) => onEditContent(
-                      activeItem.key,
-                      activeItem.editedContent ?? activeItem.previewContent ?? '',
-                      mergeA4DocumentLayout(
-                        itemContentJson ?? activeItem.editedContentJson,
-                        nextLayout,
-                      ),
-                    )}
-                    readOnly={generated}
-                    layout={effectiveLayout}
-                  />
+                  <div className="flex h-full flex-col">
+                    <Alert variant="warning" compact className="m-3">
+                      This template uses the retired A4 editor, so this document can&apos;t be edited or generated.
+                      Remove it from the batch and add an OakDoc template instead.
+                    </Alert>
+                    <A4HistoricalViewer
+                      html={activeItem.editedContent ?? activeItem.previewContent ?? ''}
+                      layout={effectiveLayout}
+                      className="min-h-0 flex-1"
+                    />
+                  </div>
                 )
               ) : pending || rendering ? (
                 <A4Skeleton label="Rendering this document…" />

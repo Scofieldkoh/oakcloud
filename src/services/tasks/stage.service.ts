@@ -21,8 +21,10 @@ import {
 import {
   assertOutcomeMatchesAction,
   getStageActionAdapter,
+  readDocumentStageTemplateIds,
   resolveStageActionOutcome,
 } from './action-registry';
+import { resolveTemplateIdsForNewRun } from '@/services/oakdoc-migration.service';
 import { deriveTaskStatus } from './status';
 import { lockTaskForUpdate } from './locking';
 import { queueTaskEsigningPreparationsForTask } from './esigning-preparation.service';
@@ -241,8 +243,16 @@ export async function getTaskStageDetail(
   )
     ? await findDocumentGenerationBatchId(tenantId, generatedDocumentId)
     : null;
+  const configuredTemplateIds = (
+    stage.actionType === TaskStageActionType.DOCUMENT_GENERATION && !generatedDocumentId
+  )
+    ? readDocumentStageTemplateIds(stage.actionConfig)
+    : undefined;
   const adapterContext = {
     tenantId,
+    resolvedTemplateIds: configuredTemplateIds
+      ? await resolveTemplateIdsForNewRun(configuredTemplateIds, tenantId)
+      : undefined,
     stage: {
       ...stage,
       outcome: stage.outcome

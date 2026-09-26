@@ -50,67 +50,34 @@ describe('document-template service agreement composition', () => {
     vi.clearAllMocks();
   });
 
-  it('rejects creation when a required agreement slot is missing', async () => {
+  it('refuses to create, edit or duplicate A4 templates now that the editor is retired', async () => {
     prismaMock.documentTemplate.findFirst.mockResolvedValue(null);
-
     await expect(
       createDocumentTemplate(
         {
-          name: 'Invalid Agreement',
+          name: 'Standard Contract',
           description: null,
           category: 'CONTRACT',
-          compositionType: 'SERVICE_AGREEMENT',
-          content:
-            '{{@agreement.serviceSections}}\n{{@agreement.feeTable}}',
+          compositionType: 'STANDARD',
+          content: '<p>Standard contract</p>',
           placeholders: [],
           isActive: true,
         },
         actor,
       ),
-    ).rejects.toThrow(
-      'Service Agreement template must contain exactly one entityAppendix slot.',
-    );
+    ).rejects.toMatchObject({ details: { reason: 'A4_EDITOR_RETIRED', operation: 'template-create' } });
+
+    prismaMock.documentTemplate.findFirst.mockResolvedValue(existingAgreement);
+    await expect(
+      updateDocumentTemplate({ id: existingAgreement.id, content: validAgreementContent }, actor),
+    ).rejects.toMatchObject({ details: { reason: 'A4_EDITOR_RETIRED', operation: 'template-edit' } });
+
+    prismaMock.documentTemplate.findFirst.mockResolvedValue(existingAgreement);
+    await expect(
+      duplicateDocumentTemplate({ id: existingAgreement.id, name: 'Agreement copy' }, actor),
+    ).rejects.toMatchObject({ details: { reason: 'A4_EDITOR_RETIRED', operation: 'template-duplicate' } });
 
     expect(prismaMock.documentTemplate.create).not.toHaveBeenCalled();
-  });
-
-  it('rejects creation when an agreement slot is duplicated', async () => {
-    prismaMock.documentTemplate.findFirst.mockResolvedValue(null);
-
-    await expect(
-      createDocumentTemplate(
-        {
-          name: 'Invalid Agreement',
-          description: null,
-          category: 'CONTRACT',
-          compositionType: 'SERVICE_AGREEMENT',
-          content: `${validAgreementContent}\n{{@agreement.feeTable}}`,
-          placeholders: [],
-          isActive: true,
-        },
-        actor,
-      ),
-    ).rejects.toThrow(
-      'Service Agreement template must contain exactly one feeTable slot.',
-    );
-  });
-
-  it('validates the merged persisted state when updating content only', async () => {
-    prismaMock.documentTemplate.findFirst.mockResolvedValue(existingAgreement);
-
-    await expect(
-      updateDocumentTemplate(
-        {
-          id: existingAgreement.id,
-          content:
-            '{{@agreement.serviceSections}}\n{{@agreement.entityAppendix}}',
-        },
-        actor,
-      ),
-    ).rejects.toThrow(
-      'Service Agreement template must contain exactly one feeTable slot.',
-    );
-
     expect(prismaMock.documentTemplate.update).not.toHaveBeenCalled();
   });
 
@@ -132,45 +99,4 @@ describe('document-template service agreement composition', () => {
     ).rejects.toThrow('Service Agreement template must contain exactly one');
   });
 
-  it('keeps standard template writes unaffected', async () => {
-    prismaMock.documentTemplate.findFirst.mockResolvedValue(null);
-    prismaMock.documentTemplate.create.mockResolvedValue({
-      ...existingAgreement,
-      compositionType: 'STANDARD',
-      content: '<p>Standard contract</p>',
-    });
-
-    await createDocumentTemplate(
-      {
-        name: 'Standard Contract',
-        description: null,
-        category: 'CONTRACT',
-        compositionType: 'STANDARD',
-        content: '<p>Standard contract</p>',
-        placeholders: [],
-        isActive: true,
-      },
-      actor,
-    );
-
-    expect(prismaMock.documentTemplate.create).toHaveBeenCalledOnce();
-  });
-
-  it('refuses to duplicate a persisted invalid agreement', async () => {
-    prismaMock.documentTemplate.findFirst
-      .mockResolvedValueOnce({
-        ...existingAgreement,
-        content: '{{@agreement.serviceSections}}',
-      })
-      .mockResolvedValueOnce(null);
-
-    await expect(
-      duplicateDocumentTemplate(
-        { id: existingAgreement.id, name: 'Agreement copy' },
-        actor,
-      ),
-    ).rejects.toThrow('Service Agreement template must contain exactly one');
-
-    expect(prismaMock.documentTemplate.create).not.toHaveBeenCalled();
-  });
 });

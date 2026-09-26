@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
-import { requireSessionWorkspaceId } from '@/lib/api-helpers';
+import { createErrorResponse, requireSessionWorkspaceId } from '@/lib/api-helpers';
+import { ApiError } from '@/lib/errors';
 import { exportToHTML } from '@/services/document-export.service';
 import { getGeneratedDocumentById } from '@/services/document-generator.service';
 
@@ -71,6 +72,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       },
     });
   } catch (error) {
+    if (error instanceof ApiError) return createErrorResponse(error);
     if (error instanceof Error) {
       if (error.message === 'Unauthorized') {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

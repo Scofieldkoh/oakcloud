@@ -3,8 +3,6 @@ import { requireAuth } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
 import { prisma } from '@/lib/prisma';
 import { ApiError } from '@/lib/errors';
-import { assertA4WriterCanPreserve } from '@/lib/document-editor/a4-editor-format';
-import { parseOakDocFieldTags } from '@/lib/document-editor/oakdoc-template';
 import {
   documentTemplateCategoryEnum,
   updateDocumentTemplateSchema,
@@ -21,7 +19,7 @@ import {
 } from '@/services/oakdoc-template.service';
 import {
   linkOakDocMigration,
-  recordOakDocMigrationValidation,
+  runOakDocMigrationValidation,
   setOakDocMigrationPreference,
 } from '@/services/oakdoc-migration.service';
 
@@ -165,7 +163,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         isActive: typeof isActiveValue === 'string' ? isActiveValue !== 'false' : undefined,
         fileName: file.name,
         buffer: Buffer.from(await file.arrayBuffer()),
-        fieldTags: parseOakDocFieldTags(formData.get('fieldTags')),
+        refreshPartialPins: formData.get('refreshPartialPins') === 'all' ? 'all' : undefined,
       }, { tenantId, userId: session.id });
 
       return NextResponse.json(withRevision(template));
@@ -192,20 +190,6 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
     if (!tenantId) {
       return NextResponse.json({ error: 'Tenant context required' }, { status: 400 });
-    }
-
-    if (data.content !== undefined || data.contentJson !== undefined) {
-      const current = await prisma.documentTemplate.findFirst({
-        where: { id, tenantId, deletedAt: null },
-        select: { content: true, contentJson: true },
-      });
-      if (!current) {
-        return NextResponse.json({ error: 'Template not found' }, { status: 404 });
-      }
-      assertA4WriterCanPreserve(
-        data.content ?? current.content,
-        data.contentJson === undefined ? current.contentJson : data.contentJson,
-      );
     }
 
     const template = await updateDocumentTemplate(
@@ -347,25 +331,23 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     }
 
     if (body.action === 'recordOakDocMigrationValidation') {
-      if (typeof body.passed !== 'boolean') {
-        return NextResponse.json({ error: 'passed must be a boolean' }, { status: 400 });
-      }
-      if (
-        body.issueCodes !== undefined
-        && (!Array.isArray(body.issueCodes)
-          || body.issueCodes.some((value: unknown) => typeof value !== 'string'))
-      ) {
-        return NextResponse.json({ error: 'issueCodes must be an array of strings' }, { status: 400 });
-      }
-      const template = await recordOakDocMigrationValidation({
+      // Parity results are produced by the server checker, never submitted.
+      return NextResponse.json(
+        {
+          error: 'Migration results can no longer be submitted. Use runOakDocMigrationValidation to run the server check.',
+          code: 'VALIDATION_ERROR',
+          details: { reason: 'OAKDOC_CALLER_VALIDATION_REJECTED' },
+        },
+        { status: 400 },
+      );
+    }
+
+    if (body.action === 'runOakDocMigrationValidation') {
+      const { template, validation } = await runOakDocMigrationValidation({
         oakDocTemplateId: id,
         expectedRevision,
-        passed: body.passed,
-        issueCodes: body.issueCodes,
-        summary: typeof body.summary === 'string' ? body.summary : undefined,
-        checkedAt: typeof body.checkedAt === 'string' ? body.checkedAt : undefined,
       }, { tenantId, userId: session.id });
-      return NextResponse.json(withRevision(template));
+      return NextResponse.json({ ...withRevision(template), migrationValidation: validation });
     }
 
     if (body.action === 'setOakDocMigrationPreference') {

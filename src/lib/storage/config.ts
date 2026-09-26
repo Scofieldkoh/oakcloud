@@ -158,6 +158,15 @@ export const StorageKeys = {
   },
 
   /**
+   * Generate the content-addressed key for one native partial version. Pinned
+   * template references keep reading these bytes after the partial changes,
+   * so they are never overwritten or deleted by a partial update.
+   */
+  oakDocPartialAsset(tenantId: string, partialId: string, sha256: string): string {
+    return `${tenantId}/template-partials/${partialId}/oakdoc/${sha256}.docx`;
+  },
+
+  /**
    * Generate an immutable storage key for one generated OakDoc artefact.
    * Generated assets live outside the template prefix so generation can never
    * overwrite the reusable master DOCX.

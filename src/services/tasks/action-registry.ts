@@ -118,6 +118,19 @@ const companyAdapter: StageActionAdapter = {
   ),
 };
 
+function configuredDocumentTemplateIds(
+  config: z.infer<typeof documentConfigSchema>,
+): string[] | undefined {
+  if (Array.isArray(config.templateIds)) return config.templateIds;
+  return config.templateId ? [config.templateId] : undefined;
+}
+
+/** Template IDs a document-generation stage config names, if it is valid. */
+export function readDocumentStageTemplateIds(actionConfig: unknown): string[] | undefined {
+  const parsed = documentConfigSchema.safeParse(actionConfig ?? {});
+  return parsed.success ? configuredDocumentTemplateIds(parsed.data) : undefined;
+}
+
 const documentAdapter: StageActionAdapter = {
   actionType: TaskStageActionType.DOCUMENT_GENERATION,
   defaultIcon: 'FileText',
@@ -145,11 +158,7 @@ const documentAdapter: StageActionAdapter = {
       }), context);
     }
     const config = documentConfigSchema.parse(context.stage.actionConfig ?? {});
-    const templateIds = Array.isArray(config.templateIds)
-      ? config.templateIds
-      : config.templateId
-        ? [config.templateId]
-        : undefined;
+    const templateIds = context.resolvedTemplateIds ?? configuredDocumentTemplateIds(config);
     return launch(configQuery('/generated-documents/generate', {
       templateId: templateIds,
       companyId: context.stage.task?.companyId ?? undefined,

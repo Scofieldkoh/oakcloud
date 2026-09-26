@@ -18,14 +18,15 @@ import {
   assertRevisionPrecondition,
   classifyRevisionMiss,
 } from '@/lib/document-editor/revision-concurrency';
-import {
-  assertA4WriterCanPreserve,
-  readA4StoredDocument,
-} from '@/lib/document-editor/a4-editor-format';
+import { readA4StoredDocument } from '@/lib/document-editor/a4-editor-format';
+import { rejectRetiredA4Operation } from '@/lib/document-editor/a4-retirement';
 import {
   normalizeStoredFieldDefinitionInput,
   preserveStoredFieldDefinitions,
 } from '@/lib/document-editor/template-field-workflow';
+import { readOakDocTemplateMetadata } from '@/lib/document-editor/oakdoc-template';
+import { ValidationError } from '@/lib/errors';
+import { storage, StorageKeys } from '@/lib/storage';
 
 export interface TemplatePartialWithRelations extends TemplatePartial {
   createdBy?: {
@@ -147,50 +148,11 @@ async function classifyPartialRevisionMiss(
 }
 
 export async function createTemplatePartial(
-  data: CreatePartialInput,
-  params: TenantAwareParams,
+  _data: CreatePartialInput,
+  _params: TenantAwareParams,
 ): Promise<TemplatePartial> {
-  const { tenantId, userId } = params;
-
-  if (!/^[a-zA-Z][a-zA-Z0-9_-]*$/.test(data.name)) {
-    throw new Error(
-      'Partial name must start with a letter and contain only letters, numbers, hyphens, and underscores',
-    );
-  }
-  assertA4WriterCanPreserve(data.content);
-
-  const existingName = await prisma.templatePartial.findFirst({
-    where: { tenantId, name: data.name, deletedAt: null },
-  });
-  if (existingName) throw new Error('A partial with this name already exists');
-
-  const id = randomUUID();
-  const partial = await prisma.templatePartial.create({
-    data: {
-      id,
-      tenantId,
-      name: data.name,
-      displayName: data.displayName,
-      description: data.description ?? null,
-      content: data.content,
-      placeholders: preservePartialPlaceholders(data.placeholders, id),
-      createdById: userId,
-    },
-  });
-
-  await createAuditLog({
-    tenantId,
-    userId,
-    action: 'CREATE',
-    entityType: 'TemplatePartial',
-    entityId: partial.id,
-    entityName: partial.name,
-    summary: `Created template partial "${partial.name}"`,
-    changeSource: 'MANUAL',
-    metadata: { name: partial.name },
-  });
-
-  return partial;
+  // Word partials are created by the OakDoc partial service.
+  return rejectRetiredA4Operation('partial-create');
 }
 
 export async function updateTemplatePartial(
@@ -212,8 +174,11 @@ export async function updateTemplatePartial(
       where: { id: data.id, tenantId, deletedAt: null },
     });
     if (!existing) throw new Error('Partial not found');
+    if (data.content !== undefined && readOakDocTemplateMetadata(existing.contentJson)) {
+      throw new ValidationError('Word partial content is edited in the Word document, not as HTML');
+    }
 
-    if (data.content !== undefined) assertA4WriterCanPreserve(data.content);
+    if (data.content !== undefined) rejectRetiredA4Operation('partial-edit');
 
     if (data.name && data.name !== existing.name) {
       const existingName = await tx.templatePartial.findFirst({
@@ -431,13 +396,28 @@ export async function searchTemplatePartials(
 
 export async function getAllTemplatePartials(
   tenantId: string,
-): Promise<Pick<TemplatePartial, 'id' | 'name' | 'displayName' | 'description' | 'content' | 'placeholders'>[]> {
+): Promise<Array<
+  Pick<TemplatePartial, 'id' | 'name' | 'displayName' | 'description' | 'content' | 'placeholders' | 'version'>
+  & { documentEngine: 'A4' | 'OAKDOC' }
+>> {
   const partials = await prisma.templatePartial.findMany({
     where: { tenantId, deletedAt: null },
-    select: { id: true, name: true, displayName: true, description: true, content: true, placeholders: true },
+    select: {
+      id: true,
+      name: true,
+      displayName: true,
+      description: true,
+      content: true,
+      placeholders: true,
+      version: true,
+      contentJson: true,
+    },
     orderBy: { name: 'asc' },
   });
-  return partials.map(assertReadablePartial);
+  return partials.map(({ contentJson, ...partial }) => ({
+    ...assertReadablePartial(partial),
+    documentEngine: readOakDocTemplateMetadata(contentJson) ? 'OAKDOC' as const : 'A4' as const,
+  }));
 }
 
 export async function getPartialUsage(
@@ -571,7 +551,8 @@ export async function duplicateTemplatePartial(
     where: { id: partialId, tenantId, deletedAt: null },
   });
   if (!source) throw new Error('Partial not found');
-  assertA4WriterCanPreserve(source.content);
+  const nativeAsset = readOakDocTemplateMetadata(source.contentJson);
+  if (!nativeAsset) rejectRetiredA4Operation('partial-duplicate');
 
   if (!/^[a-zA-Z][a-zA-Z0-9_-]*$/.test(newName)) {
     throw new Error(
@@ -585,11 +566,26 @@ export async function duplicateTemplatePartial(
   if (existingName) throw new Error('A partial with this name already exists');
 
   const id = randomUUID();
+  // A Word partial's copy owns its own asset under the new partial's prefix;
+  // its nested partial pins are kept as they are.
+  let contentJson: Prisma.InputJsonValue | undefined;
+  if (nativeAsset) {
+    if (!nativeAsset.storageKey.startsWith(`${tenantId}/template-partials/${source.id}/oakdoc/`)) {
+      throw new ValidationError('Partial storage scope is invalid');
+    }
+    const storageKey = StorageKeys.oakDocPartialAsset(tenantId, id, nativeAsset.sha256);
+    await storage.copy(nativeAsset.storageKey, storageKey);
+    contentJson = {
+      ...(source.contentJson as Record<string, unknown>),
+      oakDoc: { ...nativeAsset, storageKey },
+    } as Prisma.InputJsonValue;
+  }
   const partial = await prisma.templatePartial.create({
     data: {
       id,
       tenantId,
       name: newName,
+      ...(contentJson ? { contentJson } : {}),
       displayName: source.displayName
         ? `Copy of ${source.displayName}`
         : `Copy of ${source.name}`,

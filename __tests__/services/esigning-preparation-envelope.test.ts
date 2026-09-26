@@ -14,6 +14,7 @@ const mocks = vi.hoisted(() => ({
   exportPdf: vi.fn(),
   audit: vi.fn(),
   envelopeEvent: vi.fn(),
+  lockDocument: vi.fn(),
 }));
 
 vi.mock('@/lib/prisma', () => ({
@@ -30,6 +31,7 @@ vi.mock('@/lib/prisma', () => ({
       update: mocks.envelopeDocumentUpdate,
     },
     $transaction: vi.fn(async (callback: (tx: unknown) => unknown) => callback({
+      $queryRaw: mocks.lockDocument,
       esigningEnvelopeDocument: {
         create: mocks.envelopeDocumentCreate,
         delete: mocks.envelopeDocumentDelete,
@@ -104,7 +106,9 @@ describe('task-prepared E-signing envelopes', () => {
     mocks.documentFindFirst.mockResolvedValue({
       id: 'document-1',
       title: 'Engagement letter',
+      revision: 4,
     });
+    mocks.lockDocument.mockResolvedValue([{ status: 'FINALIZED', revision: 4, deleted_at: null }]);
   });
 
   it('reuses an envelope already owned by the same task stage', async () => {
@@ -189,6 +193,52 @@ describe('task-prepared E-signing envelopes', () => {
     });
   });
 
+  it('refuses a PDF converted from a different revision than the one checked', async () => {
+    mocks.envelopeFindFirst.mockResolvedValue({
+      id: 'envelope-1',
+      title: 'Engagement letter',
+      status: 'DRAFT',
+      companyId: 'company-1',
+      documents: [],
+    });
+    const exported = await mocks.exportPdf();
+    mocks.exportPdf.mockResolvedValue({
+      ...exported,
+      provenance: { documentRevision: 5, docxSha256: 'a'.repeat(64) },
+    });
+
+    await expect(attachGeneratedDocumentToDraftEnvelope({
+      tenantId: 'tenant-a',
+      envelopeId: 'envelope-1',
+      generatedDocumentId: 'document-1',
+      actorUserId: 'user-1',
+    })).rejects.toMatchObject({ statusCode: 409 });
+    expect(mocks.storageUpload).not.toHaveBeenCalled();
+    expect(mocks.envelopeDocumentCreate).not.toHaveBeenCalled();
+  });
+
+  it('discards the PDF when the document was unfinalized or edited before commit', async () => {
+    mocks.envelopeFindFirst.mockResolvedValue({
+      id: 'envelope-1',
+      title: 'Engagement letter',
+      status: 'DRAFT',
+      companyId: 'company-1',
+      documents: [],
+    });
+    mocks.lockDocument.mockResolvedValue([{ status: 'DRAFT', revision: 5, deleted_at: null }]);
+
+    await expect(attachGeneratedDocumentToDraftEnvelope({
+      tenantId: 'tenant-a',
+      envelopeId: 'envelope-1',
+      generatedDocumentId: 'document-1',
+      actorUserId: 'user-1',
+    })).rejects.toMatchObject({ statusCode: 409 });
+    expect(mocks.envelopeDocumentCreate).not.toHaveBeenCalled();
+    expect(mocks.storageDelete).toHaveBeenCalledWith(
+      expect.stringContaining('esigning/tenant-a/envelope-1/'),
+    );
+  });
+
   it('inherits the company from a generated document when the envelope has none', async () => {
     mocks.envelopeFindFirst.mockResolvedValue({
       id: 'envelope-1',
@@ -201,6 +251,7 @@ describe('task-prepared E-signing envelopes', () => {
       id: 'document-1',
       title: 'Engagement letter',
       companyId: 'company-1',
+      revision: 4,
     });
     mocks.envelopeDocumentCreate.mockImplementation(async ({ data }) => data);
     mocks.envelopeUpdateMany.mockResolvedValue({ count: 1 });

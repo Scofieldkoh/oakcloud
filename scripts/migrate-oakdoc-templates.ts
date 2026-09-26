@@ -1,73 +1,52 @@
 import 'dotenv/config';
+import { pathToFileURL } from 'node:url';
 import { prisma } from '@/lib/prisma';
 import { migrateCanonicalOakDocTemplates } from '@/services/oakdoc-consolidated-migration.service';
+import { flag, uuidOption } from './lib/oakdoc-cli-args';
 
-async function main() {
-  const workspaces = await prisma.workspace.findMany({
-    where: { deletedAt: null },
-    select: { id: true, name: true },
-    orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+/**
+ * Create or update the canonical OakDoc templates in one workspace.
+ *
+ *   tsx scripts/migrate-oakdoc-templates.ts --workspace <id> --operator <user id>          (dry run)
+ *   tsx scripts/migrate-oakdoc-templates.ts --workspace <id> --operator <user id> --apply  (writes)
+ *
+ * The workspace and operator are always explicit; there is no all-workspace
+ * mode and no "earliest user" fallback.
+ */
+export async function runTemplateMigration(argv: readonly string[]) {
+  const tenantId = uuidOption(argv, 'workspace');
+  const userId = uuidOption(argv, 'operator');
+  const operator = await prisma.user.findFirst({
+    where: { id: userId, tenantId, isActive: true, deletedAt: null },
+    select: { id: true },
   });
+  if (!operator) throw new Error('The operator is not an active member of this workspace');
 
-  const failures: Array<{ workspaceId: string; workspaceName: string; error: string }> = [];
-
-  for (const workspace of workspaces) {
-    try {
-      const creator = await prisma.user.findFirst({
-        where: {
-          tenantId: workspace.id,
-          isActive: true,
-          deletedAt: null,
-        },
-        select: { id: true },
-        orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
-      });
-
-      if (!creator) {
-        throw new Error('No active tenant user is available to own the migration');
-      }
-
-      const result = await migrateCanonicalOakDocTemplates({
-        tenantId: workspace.id,
-        userId: creator.id,
-      });
-
-      console.log(JSON.stringify({
-        workspaceId: workspace.id,
-        workspaceName: workspace.name,
-        status: 'ok',
-        standard: result.standard,
-        serviceAgreement: result.serviceAgreement,
-      }));
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      failures.push({
-        workspaceId: workspace.id,
-        workspaceName: workspace.name,
-        error: message,
-      });
-      console.error(JSON.stringify({
-        workspaceId: workspace.id,
-        workspaceName: workspace.name,
-        status: 'failed',
-        error: message,
-      }));
-    }
+  if (!flag(argv, 'apply')) {
+    return {
+      mode: 'dry-run',
+      workspaceId: tenantId,
+      operatorId: userId,
+      note: 'No changes made. Re-run with --apply to create or update the canonical OakDoc templates.',
+    };
   }
-
-  if (failures.length > 0) {
-    throw new Error(
-      `OakDoc migration failed for ${failures.length} workspace(s): `
-      + failures.map((failure) => `${failure.workspaceName}: ${failure.error}`).join('; '),
-    );
-  }
+  const result = await migrateCanonicalOakDocTemplates({ tenantId, userId });
+  return {
+    mode: 'apply',
+    workspaceId: tenantId,
+    standard: result.standard,
+    serviceAgreement: result.serviceAgreement,
+  };
 }
 
-main()
-  .catch((error) => {
-    console.error('OakDoc template migration failed:', error);
-    process.exitCode = 1;
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  runTemplateMigration(process.argv.slice(2))
+    .then((result) => process.stdout.write(`${JSON.stringify(result, null, 2)}\n`))
+    .catch((error) => {
+      console.error('OakDoc template migration failed:', error instanceof Error ? error.message : error);
+      process.exitCode = 1;
+    })
+    .finally(async () => {
+      await prisma.$disconnect();
+    });
+}

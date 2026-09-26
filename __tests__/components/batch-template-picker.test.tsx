@@ -19,6 +19,7 @@ function template(id: string, name: string, overrides: Partial<DocumentTemplateS
     compositionType: 'STANDARD',
     version: 1,
     isActive: true,
+    engine: 'OAKDOC',
     content: '<p>x</p>',
     placeholders: [],
     createdAt: '2026-08-12T00:00:00.000Z',
@@ -43,6 +44,7 @@ function item(template: DocumentTemplateSummary): EditableBatchItem {
     templateName: template.name,
     templateKind: template.compositionType,
     templateVersion: template.version,
+    templateEngine: 'A4',
     status: 'NOT_STARTED',
     configuration: {
       version: 1,
@@ -98,6 +100,14 @@ describe('BatchTemplatePicker', () => {
     expect(screen.queryByText('Service Agreement Template')).not.toBeInTheDocument();
     expect(screen.queryByText('Service Agreement · 0 fields · v33')).not.toBeInTheDocument();
     expect(container.querySelector('section[aria-label="Documents in this batch"]')).toBeInTheDocument();
+  });
+
+  it('leaves retired A4 templates out of the catalogue', () => {
+    const legacy = template('template-d', 'Legacy Letter', { engine: 'A4' });
+    render(<BatchTemplatePicker {...pickerProps({ templates: [engagement, legacy] })} />);
+
+    expect(screen.getByRole('button', { name: /^Engagement Letter/i })).toBeInTheDocument();
+    expect(screen.queryByText('Legacy Letter')).not.toBeInTheDocument();
   });
 
   it('opens the selected template editor from the far-right actions menu', async () => {

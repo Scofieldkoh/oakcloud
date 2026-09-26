@@ -7,7 +7,6 @@ import {
   UnprocessableEntityError,
   ValidationError,
 } from '@/lib/errors';
-import { assertA4WriterCanPreserve } from '@/lib/document-editor/a4-editor-format';
 import {
   getDocumentTemplateEngine,
   readGeneratedOakDocAssetMetadata,
@@ -17,6 +16,7 @@ import {
   createReviewedFingerprint,
 } from '@/lib/document-generation-fingerprint';
 import { materializeOakDocGeneratedDocument } from '@/services/oakdoc-generation.service';
+import { readOakDocTemplateMetadata } from '@/lib/document-editor/oakdoc-template';
 import {
   finalizeDocument,
   materializeDocumentFromTemplate,
@@ -41,6 +41,7 @@ import {
 } from './lifecycle.service';
 import {
   buildBatchItemRenderInput,
+  oakDocBatchContext,
 } from './preview.service';
 import {
   mapBatchToDto,
@@ -148,6 +149,7 @@ export async function materializeBatchDocumentByEngine(input: {
       && reviewedDraft.previewFingerprint === item.previewFingerprint
       && reviewedAsset.templateId === item.templateId
       && reviewedAsset.templateVersion === item.templateVersion
+      && reviewedAsset.templateSha256 === readOakDocTemplateMetadata(item.template.contentJson)?.sha256
     ) {
       // Review & Generate persists the exact resolved/edited DOCX on the
       // GeneratedDocument draft. Finalize that reviewed asset rather than
@@ -163,21 +165,17 @@ export async function materializeBatchDocumentByEngine(input: {
       companyId: batch.primaryCompanyId,
       selectedDirectorId: configuration.selectedDirectorId ?? undefined,
       selectedShareholderId: configuration.selectedShareholderId ?? undefined,
-      resolutionDate:
-        evaluated.effectiveCustomData.resolution_date instanceof Date
-        || typeof evaluated.effectiveCustomData.resolution_date === 'string'
-          ? evaluated.effectiveCustomData.resolution_date
-          : undefined,
+      ...oakDocBatchContext(
+        configuration,
+        evaluated.effectiveCustomData,
+        item.generatedDocument?.serviceAgreement?.id,
+      ),
       generatedBy: actor,
       title: evaluated.resolvedTitle,
       contactIds: configuration.contactIds,
     }, params, taskContext);
   }
 
-  assertA4WriterCanPreserve(
-    item.editedContent ?? evaluated.content,
-    item.editedContentJson ?? item.template.contentJson,
-  );
   return materializeDocumentFromTemplate(
     {
       templateId: item.templateId,

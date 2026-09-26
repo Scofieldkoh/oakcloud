@@ -16,6 +16,7 @@ function item(status: BatchItemStatus): EditableBatchItem {
     templateName: 'Engagement Letter',
     templateKind: 'STANDARD',
     templateVersion: 1,
+    templateEngine: 'A4',
     status,
     configuration: {
       version: 1,

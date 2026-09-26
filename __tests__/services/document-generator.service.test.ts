@@ -77,7 +77,10 @@ vi.mock('@/services/tasks/esigning-preparation.service', () => ({
 
 import { prisma } from '@/lib/prisma';
 import {
+  cloneDocument,
+  createBlankDocument,
   createDocumentFromTemplate,
+  updateGeneratedDocument,
   finalizeDocument,
   getGeneratedDocumentById,
   renderTemplateForGeneration,
@@ -86,9 +89,6 @@ import {
 } from '@/services/document-generator.service';
 import { extractPartialReferences, resolvePlaceholders } from '@/lib/placeholder-resolver';
 import { getPartialsUsedInTemplate } from '@/services/template-partial.service';
-import { createAuditLog } from '@/lib/audit';
-import { prepareCompanyContext } from '@/lib/placeholder-resolver';
-import { getCompanyById } from '@/services/company.service';
 import {
   getDocumentPartyOptions,
   resolveDocumentPartySelections,
@@ -99,26 +99,6 @@ import {
 } from '@/services/tasks/esigning-preparation.service';
 
 describe('Document generator service', () => {
-  const activeSessionMetadata = (templateId: string) => ({
-    generationSession: {
-      version: 2,
-      currentStep: 0,
-      templateId,
-      companyId: null,
-      contactIds: [],
-      selectedDirectorId: null,
-      selectedShareholderId: null,
-      selectedContactId: null,
-      title: '',
-      customData: {},
-      useLetterhead: true,
-      previewContent: null,
-      editedContent: null,
-      editedContentJson: null,
-      serviceAgreementId: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
-    },
-  });
-
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(prisma.generatedDocument.findMany).mockResolvedValue([]);
@@ -363,399 +343,6 @@ describe('Document generator service', () => {
     );
   });
 
-  it('creates template-generated documents as editable drafts', async () => {
-    vi.mocked(prisma.documentTemplate.findFirst).mockResolvedValue({
-      id: 'template-1',
-      tenantId: 'workspace-1',
-      name: 'Resolution',
-      content: '<p>{{company.name}}</p>',
-      contentJson: null,
-      version: 3,
-      isActive: true,
-    } as never);
-    vi.mocked(prisma.generatedDocument.create).mockResolvedValue({
-      id: 'doc-1',
-      status: 'DRAFT',
-    } as never);
-
-    const document = await createDocumentFromTemplate(
-      {
-        templateId: 'template-1',
-        title: 'Generated resolution',
-        customData: {},
-        useLetterhead: true,
-      },
-      { tenantId: 'workspace-1', userId: 'user-1' }
-    );
-
-    expect(document.status).toBe('DRAFT');
-    expect(prisma.generatedDocument.create).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: expect.objectContaining({ status: 'DRAFT' }),
-      })
-    );
-  });
-
-  it('converts an active generation session without creating a duplicate', async () => {
-    const draftId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
-    const templateId = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
-    vi.mocked(prisma.documentTemplate.findFirst).mockResolvedValue({
-      id: templateId,
-      tenantId: 'workspace-1',
-      name: 'Resolution',
-      content: '<p>Resolution</p>',
-      contentJson: null,
-      version: 3,
-      isActive: true,
-    } as never);
-    vi.mocked(prisma.generatedDocument.findFirst).mockResolvedValue({
-      id: draftId,
-      tenantId: 'workspace-1',
-      status: 'DRAFT',
-      deletedAt: null,
-      metadata: {
-        generationSession: {
-          version: 1,
-          currentStep: 4,
-          templateId,
-          companyId: null,
-          contactIds: [],
-          selectedDirectorId: null,
-          selectedShareholderId: null,
-          selectedContactId: null,
-          title: 'Final title',
-          customData: {},
-          useLetterhead: true,
-          previewContent: '<p>Resolved template content</p>',
-          editedContent: null,
-          editedContentJson: null,
-        },
-      },
-    } as never);
-    vi.mocked(prisma.generatedDocument.update).mockResolvedValue({
-      id: draftId,
-      title: 'Final title',
-      status: 'DRAFT',
-    } as never);
-
-    const result = await createDocumentFromTemplate({
-      draftId,
-      templateId,
-      title: 'Final title',
-      useLetterhead: true,
-    }, { tenantId: 'workspace-1', userId: 'user-1' });
-
-    expect(result.id).toBe(draftId);
-    expect(prisma.generatedDocument.create).not.toHaveBeenCalled();
-    expect(prisma.generatedDocument.update).toHaveBeenCalledWith({
-      where: { id: draftId },
-      data: expect.objectContaining({
-        template: { connect: { id: templateId } },
-        title: 'Final title',
-        content: '<p>Resolved template content</p>',
-        status: 'DRAFT',
-        metadata: expect.not.objectContaining({
-          generationSession: expect.anything(),
-        }),
-      }),
-    });
-  });
-
-  it('requires confirmation before a standard generation discards an attached agreement', async () => {
-    const draftId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
-    const templateId = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
-    vi.mocked(prisma.documentTemplate.findFirst).mockResolvedValue({
-      id: templateId,
-      tenantId: 'workspace-1',
-      name: 'Resolution',
-      content: '<p>Resolution</p>',
-      contentJson: null,
-      version: 1,
-      isActive: true,
-      compositionType: 'STANDARD',
-    } as never);
-    vi.mocked(prisma.generatedDocument.findFirst).mockResolvedValue({
-      id: draftId,
-      tenantId: 'workspace-1',
-      status: 'DRAFT',
-      deletedAt: null,
-      metadata: activeSessionMetadata(templateId),
-    } as never);
-    serviceAgreementMock.getServiceAgreementDraft.mockResolvedValue({
-      id: 'agreement-1',
-      status: 'DRAFT',
-    } as never);
-
-    await expect(createDocumentFromTemplate({
-      draftId,
-      templateId,
-      title: 'Resolution',
-    }, { tenantId: 'workspace-1', userId: 'user-1' })).rejects.toThrow(
-      'Discard the attached Service Agreement before switching templates',
-    );
-
-    expect(prisma.generatedDocument.update).not.toHaveBeenCalled();
-    expect(prisma.serviceAgreement.delete).not.toHaveBeenCalled();
-  });
-
-  it('atomically discards an attached draft agreement during confirmed standard generation', async () => {
-    const draftId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
-    const templateId = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
-    vi.mocked(prisma.documentTemplate.findFirst).mockResolvedValue({
-      id: templateId,
-      tenantId: 'workspace-1',
-      name: 'Resolution',
-      content: '<p>Resolution</p>',
-      contentJson: null,
-      version: 1,
-      isActive: true,
-      compositionType: 'STANDARD',
-    } as never);
-    vi.mocked(prisma.generatedDocument.findFirst).mockResolvedValue({
-      id: draftId,
-      tenantId: 'workspace-1',
-      status: 'DRAFT',
-      deletedAt: null,
-      metadata: activeSessionMetadata(templateId),
-    } as never);
-    serviceAgreementMock.getServiceAgreementDraft.mockResolvedValue({
-      id: 'agreement-1',
-      status: 'DRAFT',
-    } as never);
-    vi.mocked(prisma.serviceAgreement.findFirst).mockResolvedValue({
-      id: 'agreement-1',
-      status: 'DRAFT',
-    } as never);
-
-    await createDocumentFromTemplate({
-      draftId,
-      templateId,
-      title: 'Resolution',
-      discardServiceAgreement: true,
-    }, { tenantId: 'workspace-1', userId: 'user-1' });
-
-    expect(prisma.$transaction).toHaveBeenCalledOnce();
-    expect(prisma.serviceAgreement.delete).toHaveBeenCalledWith({
-      where: { id: 'agreement-1' },
-    });
-    expect(prisma.generatedDocument.update).toHaveBeenCalledWith(expect.objectContaining({
-      where: { id: draftId },
-    }));
-  });
-
-  it('rechecks agreement status inside the conversion transaction before discarding it', async () => {
-    const draftId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
-    const templateId = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
-    vi.mocked(prisma.documentTemplate.findFirst).mockResolvedValue({
-      id: templateId,
-      tenantId: 'workspace-1',
-      name: 'Resolution',
-      content: '<p>Resolution</p>',
-      contentJson: null,
-      version: 1,
-      isActive: true,
-      compositionType: 'STANDARD',
-    } as never);
-    vi.mocked(prisma.generatedDocument.findFirst).mockResolvedValue({
-      id: draftId,
-      tenantId: 'workspace-1',
-      status: 'DRAFT',
-      deletedAt: null,
-      metadata: activeSessionMetadata(templateId),
-    } as never);
-    serviceAgreementMock.getServiceAgreementDraft.mockResolvedValue({
-      id: 'agreement-1',
-      status: 'DRAFT',
-    } as never);
-    vi.mocked(prisma.serviceAgreement.findFirst).mockResolvedValue({
-      id: 'agreement-1',
-      status: 'EFFECTIVE',
-    } as never);
-
-    await expect(createDocumentFromTemplate({
-      draftId,
-      templateId,
-      title: 'Resolution',
-      discardServiceAgreement: true,
-    }, { tenantId: 'workspace-1', userId: 'user-1' })).rejects.toThrow(
-      'Only draft Service Agreements can be discarded',
-    );
-
-    expect(prisma.serviceAgreement.delete).not.toHaveBeenCalled();
-    expect(prisma.generatedDocument.update).not.toHaveBeenCalled();
-  });
-
-  it('never discards an attached non-draft agreement during generation', async () => {
-    const draftId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
-    const templateId = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
-    vi.mocked(prisma.documentTemplate.findFirst).mockResolvedValue({
-      id: templateId,
-      tenantId: 'workspace-1',
-      name: 'Resolution',
-      content: '<p>Resolution</p>',
-      contentJson: null,
-      version: 1,
-      isActive: true,
-      compositionType: 'STANDARD',
-    } as never);
-    vi.mocked(prisma.generatedDocument.findFirst).mockResolvedValue({
-      id: draftId,
-      tenantId: 'workspace-1',
-      status: 'DRAFT',
-      deletedAt: null,
-      metadata: activeSessionMetadata(templateId),
-    } as never);
-    serviceAgreementMock.getServiceAgreementDraft.mockResolvedValue({
-      id: 'agreement-1',
-      status: 'EFFECTIVE',
-    } as never);
-
-    await expect(createDocumentFromTemplate({
-      draftId,
-      templateId,
-      title: 'Resolution',
-      discardServiceAgreement: true,
-    }, { tenantId: 'workspace-1', userId: 'user-1' })).rejects.toThrow(
-      'Only draft Service Agreements can be discarded',
-    );
-
-    expect(prisma.serviceAgreement.delete).not.toHaveBeenCalled();
-  });
-
-  it('leaves a saved generation session untouched when rendering fails', async () => {
-    const draftId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
-    const templateId = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
-    vi.mocked(prisma.documentTemplate.findFirst).mockResolvedValue({
-      id: templateId,
-      tenantId: 'workspace-1',
-      name: 'Resolution',
-      content: '<p>Resolution</p>',
-      contentJson: null,
-      version: 3,
-      isActive: true,
-    } as never);
-    vi.mocked(prisma.generatedDocument.findFirst).mockResolvedValue({
-      id: draftId,
-      tenantId: 'workspace-1',
-      status: 'DRAFT',
-      deletedAt: null,
-      metadata: {
-        generationSession: {
-          version: 1,
-          currentStep: 4,
-          templateId,
-          companyId: null,
-          contactIds: [],
-          selectedDirectorId: null,
-          selectedShareholderId: null,
-          selectedContactId: null,
-          title: 'Final title',
-          customData: {},
-          useLetterhead: true,
-          previewContent: null,
-          editedContent: null,
-          editedContentJson: null,
-        },
-      },
-    } as never);
-    vi.mocked(resolvePlaceholders).mockImplementationOnce(() => {
-      throw new Error('Render failed');
-    });
-
-    await expect(createDocumentFromTemplate({
-      draftId,
-      templateId,
-      title: 'Final title',
-    }, { tenantId: 'workspace-1', userId: 'user-1' })).rejects.toThrow('Render failed');
-
-    expect(prisma.generatedDocument.create).not.toHaveBeenCalled();
-    expect(prisma.generatedDocument.update).not.toHaveBeenCalled();
-  });
-
-  it('persists user-edited preview content when supplied', async () => {
-    vi.mocked(prisma.documentTemplate.findFirst).mockResolvedValue({
-      id: 'template-1',
-      tenantId: 'workspace-1',
-      name: 'Resolution',
-      content: '<p>Original {{custom.value}}</p>',
-      contentJson: { type: 'doc', content: [] },
-      version: 1,
-      isActive: true,
-    } as never);
-    vi.mocked(prisma.generatedDocument.create).mockResolvedValue({
-      id: 'doc-1',
-    } as never);
-
-    await createDocumentFromTemplate(
-      {
-        templateId: 'template-1',
-        title: 'Edited document',
-        customData: { value: 'value' },
-        useLetterhead: false,
-        editedContent: '<p>User edited content</p>',
-        editedContentJson: { type: 'doc', content: [{ type: 'paragraph' }] },
-      },
-      { tenantId: 'workspace-1', userId: 'user-1' }
-    );
-
-    expect(prisma.generatedDocument.create).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: expect.objectContaining({
-          content: '<p>User edited content</p>',
-          contentJson: { type: 'doc', content: [{ type: 'paragraph' }] },
-        }),
-      })
-    );
-  });
-
-  it('copies template layout metadata when no edited JSON override is supplied', async () => {
-    const contentJson = {
-      version: 1,
-      customKey: true,
-      layout: {
-        version: 1,
-        fontFamily: 'Georgia, serif',
-        fontSize: '14pt',
-        lineHeight: 1.8,
-        paragraphSpacing: '8px',
-        marginsMm: { top: 10, right: 15, bottom: 20, left: 25 },
-      },
-    };
-    vi.mocked(prisma.documentTemplate.findFirst).mockResolvedValue({
-      id: 'template-1',
-      tenantId: 'workspace-1',
-      name: 'Resolution',
-      content: '<p>Original</p>',
-      contentJson,
-      version: 1,
-      isActive: true,
-    } as never);
-    vi.mocked(prisma.generatedDocument.create).mockResolvedValue({ id: 'doc-1' } as never);
-
-    await createDocumentFromTemplate(
-      { templateId: 'template-1', title: 'Generated document', customData: {} },
-      { tenantId: 'workspace-1', userId: 'user-1' },
-    );
-
-    expect(prisma.generatedDocument.create).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: expect.objectContaining({ contentJson }),
-      }),
-    );
-    expect(prisma.generatedDocument.create).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: expect.objectContaining({
-          contentJson: expect.objectContaining({
-            layout: expect.objectContaining({
-              fontFamily: 'Georgia, serif',
-              fontSize: '14pt',
-            }),
-          }),
-        }),
-      }),
-    );
-  });
-
   it('does not finalize documents with unresolved placeholders or partials', async () => {
     vi.mocked(prisma.generatedDocument.findFirst).mockResolvedValue({
       id: 'doc-1',
@@ -968,36 +555,28 @@ describe('Document generator service', () => {
     })).rejects.toThrow('Select a director for this template.');
   });
 
-  it.each([
-    ['selectedDirector.name', 'Select a director for this template.'],
-    ['selectedShareholder.name', 'Select a shareholder for this template.'],
-    ['selectedContact.name', 'Select a company contact for this template.'],
-  ])('does not persist final generation when %s lacks its required selection', async (placeholder, message) => {
-    vi.mocked(prisma.documentTemplate.findFirst).mockResolvedValue({
-      id: 'template-1',
-      tenantId: 'workspace-1',
-      name: 'Party letter',
-      category: 'OTHER',
-      content: `<p>{{${placeholder}}}</p>`,
-      contentJson: null,
-      version: 1,
-      isActive: true,
-    } as never);
-    vi.mocked(getCompanyById).mockResolvedValue({ id: 'company-1', name: 'Example' } as never);
-    vi.mocked(prepareCompanyContext).mockReturnValue({
-      company: { id: 'company-1', name: 'Example', uen: '202600001A' },
-      custom: {},
-      system: { currentDate: new Date('2026-07-17') },
-    });
-    vi.mocked(prisma.generatedDocument.create).mockResolvedValue({
-      id: 'unexpected-document',
-      title: 'Party letter',
-    } as never);
-
+  it('refuses A4 generation, blank A4 documents and A4 copies now that the editor is retired', async () => {
+    const params = { tenantId: 'workspace-1', userId: 'user-1' };
     await expect(createDocumentFromTemplate(
       { templateId: 'template-1', companyId: 'company-1', title: 'Party letter' },
-      { tenantId: 'workspace-1', userId: 'user-1' },
-    )).rejects.toThrow(message);
+      params,
+    )).rejects.toMatchObject({ details: { reason: 'A4_EDITOR_RETIRED', operation: 'document-generate' } });
+    await expect(createBlankDocument({ title: 'Blank', content: '', useLetterhead: true }, params))
+      .rejects.toMatchObject({ details: { reason: 'A4_EDITOR_RETIRED' } });
+
+    vi.mocked(prisma.generatedDocument.findFirst).mockResolvedValue({
+      id: 'document-1',
+      tenantId: 'workspace-1',
+      status: 'DRAFT',
+      title: 'Old letter',
+      content: '<p>Old</p>',
+      contentJson: null,
+      metadata: {},
+    } as never);
+    await expect(cloneDocument({ id: 'document-1' }, params))
+      .rejects.toMatchObject({ details: { reason: 'A4_EDITOR_RETIRED', operation: 'document-clone' } });
+    await expect(updateGeneratedDocument({ id: 'document-1', expectedRevision: 0, content: '<p>New</p>' }, params))
+      .rejects.toMatchObject({ details: { reason: 'A4_EDITOR_RETIRED', operation: 'document-edit' } });
     expect(prisma.generatedDocument.create).not.toHaveBeenCalled();
   });
 
@@ -1269,102 +848,4 @@ describe('Document generator service', () => {
     }));
   });
 
-  it('refuses to persist a generated document with blocking diagnostics', async () => {
-    vi.mocked(prisma.documentTemplate.findFirst).mockResolvedValue({
-      id: 'template-1',
-      tenantId: 'workspace-1',
-      name: 'Broken template',
-      category: 'OTHER',
-      content: '<p>{{missing.value}}</p>',
-      contentJson: null,
-      version: 1,
-      isActive: true,
-      compositionType: 'STANDARD',
-      placeholders: [],
-    } as never);
-    vi.mocked(resolvePlaceholders).mockReturnValue({
-      resolved: '<p>{{missing.value}}</p>',
-      missing: ['missing.value'],
-      missingPartials: [],
-    });
-
-    await expect(createDocumentFromTemplate(
-      { templateId: 'template-1', title: 'Blocked document' },
-      { tenantId: 'workspace-1', userId: 'user-1' },
-    )).rejects.toThrow('Unresolved placeholders: missing.value');
-
-    expect(prisma.generatedDocument.create).not.toHaveBeenCalled();
-  });
-
-  it('uses the authenticated creator name and persists selected party metadata', async () => {
-    vi.mocked(prisma.documentTemplate.findFirst).mockResolvedValue({
-      id: 'template-1',
-      tenantId: 'workspace-1',
-      name: 'Resolution',
-      category: 'RESOLUTION',
-      content: '<p>{{system.preparerName}}</p>',
-      contentJson: null,
-      version: 1,
-      isActive: true,
-    } as never);
-    vi.mocked(prisma.user.findFirst).mockResolvedValue({
-      firstName: 'Alice',
-      lastName: 'Tan',
-    } as never);
-    vi.mocked(getCompanyById).mockResolvedValue({ id: 'company-1', name: 'Example' } as never);
-    vi.mocked(prepareCompanyContext).mockReturnValue({
-      company: { id: 'company-1', name: 'Example', uen: '202600001A' },
-      custom: {},
-      system: { currentDate: new Date('2026-07-16') },
-    });
-    vi.mocked(resolveDocumentPartySelections).mockResolvedValue({});
-    vi.mocked(prisma.generatedDocument.create).mockResolvedValue({
-      id: 'doc-1',
-      title: 'Generated resolution',
-    } as never);
-
-    await createDocumentFromTemplate(
-      {
-        templateId: 'template-1',
-        companyId: 'company-1',
-        title: 'Generated resolution',
-        selectedDirectorId: 'officer-1',
-        selectedShareholderId: 'shareholder-1',
-        selectedContactId: 'contact-1',
-      },
-      { tenantId: 'workspace-1', userId: 'user-1' },
-    );
-
-    expect(prisma.user.findFirst).toHaveBeenCalledWith({
-      where: { id: 'user-1', tenantId: 'workspace-1' },
-      select: { firstName: true, lastName: true },
-    });
-    expect(resolvePlaceholders).toHaveBeenCalledWith(
-      expect.any(String),
-      expect.objectContaining({
-        system: expect.objectContaining({
-          preparerName: 'Alice Tan',
-          generatedBy: 'Alice Tan',
-        }),
-      }),
-      expect.any(Object),
-    );
-    const selectedParties = {
-      directorId: 'officer-1',
-      shareholderId: 'shareholder-1',
-      contactId: 'contact-1',
-    };
-    expect(prisma.generatedDocument.create).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: expect.objectContaining({
-          metadata: expect.objectContaining({ selectedParties }),
-        }),
-      }),
-    );
-    expect(createAuditLog).toHaveBeenCalledWith(
-      expect.objectContaining({
-        metadata: expect.objectContaining({ selectedParties }),
-      }),
-    );
-  });
 });

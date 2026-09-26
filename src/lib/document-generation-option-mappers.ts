@@ -4,7 +4,7 @@
  * hooks cannot drift apart on field naming (`name` vs `fullName`).
  */
 
-import { getDocumentTemplateEngine } from '@/lib/document-editor/document-engine';
+import { getDocumentTemplateDisplayEngine } from '@/lib/document-editor/document-engine';
 import {
   normalizeStoredPlaceholders,
   storageFormatToCustomPlaceholders,
@@ -58,7 +58,7 @@ export function mapTemplateSummary(raw: Record<string, unknown>): DocumentTempla
       : 'STANDARD',
     version: Number(raw.version ?? 1),
     isActive: raw.isActive !== false,
-    engine: getDocumentTemplateEngine(raw.contentJson),
+    engine: getDocumentTemplateDisplayEngine(raw.contentJson),
     content: String(raw.content ?? ''),
     contentJson: raw.contentJson ?? undefined,
     placeholders: storageFormatToCustomPlaceholders(

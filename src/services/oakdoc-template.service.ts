@@ -1,6 +1,11 @@
 import { createHash, randomUUID } from 'node:crypto';
-import { unzipSync } from 'fflate';
 import { storage, StorageKeys } from '@/lib/storage';
+import { inspectOakDocPackage } from '@/lib/document-editor/oakdoc-package-policy';
+import { deriveOakDocTemplateFieldTags } from '@/lib/document-editor/oakdoc-field-manifest';
+import {
+  pinOakDocPartials,
+  readOakDocPartialPins,
+} from '@/services/oakdoc-partial.service';
 import {
   OAKDOC_MIME_TYPE,
   OAKDOC_SERVICE_AGREEMENT_CONTENT,
@@ -21,67 +26,26 @@ import type {
   PlaceholderDefinition,
 } from '@/lib/validations/document-template';
 
-const MAX_OAKDOC_FILE_SIZE = 10 * 1024 * 1024;
-const MAX_REQUIRED_XML_SIZE = 20 * 1024 * 1024;
-
 function normalizeFileName(value: string): string {
   const base = value.replace(/[\\/:*?"<>|\u0000-\u001f]/g, '_').trim();
   const safe = base || 'template.docx';
   return safe.toLowerCase().endsWith('.docx') ? safe : `${safe}.docx`;
 }
 
-function validateDocx(buffer: Buffer): void {
-  if (buffer.byteLength === 0) throw new Error('The DOCX file is empty');
-  if (buffer.byteLength > MAX_OAKDOC_FILE_SIZE) {
-    throw new Error('DOCX file size exceeds the 10MB template limit');
-  }
-  if (buffer[0] !== 0x50 || buffer[1] !== 0x4b) {
-    throw new Error('The uploaded file is not a valid DOCX package');
-  }
-
-  let totalSelectedSize = 0;
-  let files: Record<string, Uint8Array>;
-  try {
-    files = unzipSync(buffer, {
-      filter: (entry) => {
-        const selected =
-          entry.name === '[Content_Types].xml'
-          || entry.name === 'word/document.xml';
-        if (!selected) return false;
-        totalSelectedSize += entry.originalSize;
-        if (totalSelectedSize > MAX_REQUIRED_XML_SIZE) {
-          throw new Error('DOCX document XML exceeds the safe processing limit');
-        }
-        return true;
-      },
-    });
-  } catch (error) {
-    if (error instanceof Error && error.message.includes('safe processing limit')) throw error;
-    throw new Error('The uploaded file is not a readable DOCX package');
-  }
-
-  if (!files['[Content_Types].xml'] || !files['word/document.xml']) {
-    throw new Error('The uploaded file does not contain a Word document');
-  }
-
-  const contentTypes = Buffer.from(files['[Content_Types].xml']).toString('utf8');
-  if (!contentTypes.includes('wordprocessingml.document.main+xml')) {
-    throw new Error('The uploaded file is not a standard Word DOCX document');
-  }
-}
-
 function sha256(buffer: Buffer): string {
   return createHash('sha256').update(buffer).digest('hex');
 }
+
+export { deriveOakDocTemplateFieldTags };
 
 async function persistAsset(input: {
   tenantId: string;
   userId: string;
   fileName: string;
   buffer: Buffer;
-  fieldTags: string[];
 }): Promise<OakDocTemplateMetadata> {
-  validateDocx(input.buffer);
+  inspectOakDocPackage(input.buffer, 'master');
+  const fieldTags = deriveOakDocTemplateFieldTags(new Uint8Array(input.buffer));
   const assetId = randomUUID();
   const storageKey = StorageKeys.oakDocTemplateAsset(input.tenantId, assetId);
   const fileName = normalizeFileName(input.fileName);
@@ -104,7 +68,7 @@ async function persistAsset(input: {
     fileSize: input.buffer.byteLength,
     sha256: digest,
     mimeType: OAKDOC_MIME_TYPE,
-    fieldTags: Array.from(new Set(input.fieldTags)).sort(),
+    fieldTags,
   };
 }
 
@@ -115,17 +79,19 @@ export async function createOakDocTemplate(input: {
   isActive: boolean;
   fileName: string;
   buffer: Buffer;
-  fieldTags: string[];
   contentJson?: Record<string, JsonValue>;
   placeholders?: PlaceholderDefinition[];
   compositionType?: 'STANDARD' | 'SERVICE_AGREEMENT';
 }, params: TenantAwareParams) {
+  const partialPins = await pinOakDocPartials({
+    bytes: new Uint8Array(input.buffer),
+    tenantId: params.tenantId,
+  });
   const asset = await persistAsset({
     tenantId: params.tenantId,
     userId: params.userId,
     fileName: input.fileName,
     buffer: input.buffer,
-    fieldTags: input.fieldTags,
   });
 
   try {
@@ -137,11 +103,14 @@ export async function createOakDocTemplate(input: {
       content: input.compositionType === 'SERVICE_AGREEMENT'
         ? OAKDOC_SERVICE_AGREEMENT_CONTENT
         : OAKDOC_TEMPLATE_CONTENT,
-      contentJson: mergeOakDocTemplateMetadata(input.contentJson ?? null, asset),
+      contentJson: {
+        ...mergeOakDocTemplateMetadata(input.contentJson ?? null, asset),
+        oakDocPartials: partialPins as unknown as JsonValue,
+      },
       placeholders: input.placeholders ?? [],
       isActive: input.isActive,
       sharePointRelativeFolderPath: null,
-    }, params);
+    }, params, { writer: 'oakdoc-service' });
   } catch (error) {
     await storage.delete(asset.storageKey).catch(() => undefined);
     throw error;
@@ -157,8 +126,9 @@ export async function updateOakDocTemplate(input: {
   isActive?: boolean;
   fileName: string;
   buffer: Buffer;
-  fieldTags: string[];
   compositionType?: 'STANDARD' | 'SERVICE_AGREEMENT';
+  /** Partials to move to their latest version; others keep their pin. */
+  refreshPartialPins?: 'all' | string[];
 }, params: TenantAwareParams) {
   const existing = await getDocumentTemplateById(input.id, params.tenantId);
   if (!existing) throw new Error('Template not found');
@@ -170,12 +140,17 @@ export async function updateOakDocTemplate(input: {
     throw new Error('OakDoc template storage scope is invalid');
   }
 
+  const partialPins = await pinOakDocPartials({
+    bytes: new Uint8Array(input.buffer),
+    tenantId: params.tenantId,
+    existingPins: readOakDocPartialPins(existing.contentJson),
+    refresh: input.refreshPartialPins,
+  });
   const asset = await persistAsset({
     tenantId: params.tenantId,
     userId: params.userId,
     fileName: input.fileName,
     buffer: input.buffer,
-    fieldTags: input.fieldTags,
   });
 
   try {
@@ -191,9 +166,12 @@ export async function updateOakDocTemplate(input: {
         : input.compositionType === 'STANDARD'
           ? OAKDOC_TEMPLATE_CONTENT
           : existing.content,
-      contentJson: mergeOakDocTemplateMetadata(existing.contentJson, asset),
+      contentJson: {
+        ...mergeOakDocTemplateMetadata(existing.contentJson, asset),
+        oakDocPartials: partialPins as unknown as JsonValue,
+      },
       isActive: input.isActive,
-    }, params, 'Saved from OakDoc');
+    }, params, 'Saved from OakDoc', { writer: 'oakdoc-service' });
   } catch (error) {
     await storage.delete(asset.storageKey).catch(() => undefined);
     throw error;
