@@ -1249,6 +1249,7 @@ export async function cloneDocument(
 export interface GetDocumentOptions {
   includeDeleted?: boolean;
   includeComments?: boolean;
+  includeBatchDrafts?: boolean;
 }
 
 export async function getGeneratedDocumentById(
@@ -1256,10 +1257,16 @@ export async function getGeneratedDocumentById(
   tenantId: string,
   options: GetDocumentOptions = {},
 ): Promise<GeneratedDocumentWithRelations | null> {
-  const { includeDeleted = false, includeComments = false } = options;
+  const {
+    includeDeleted = false,
+    includeComments = false,
+    includeBatchDrafts = false,
+  } = options;
   const where: Prisma.GeneratedDocumentWhereInput = { id, tenantId };
   if (!includeDeleted) where.deletedAt = null;
-  where.AND = [{ OR: [{ batchItem: null }, { batchItem: { status: 'GENERATED' } }] }];
+  if (!includeBatchDrafts) {
+    where.AND = [{ OR: [{ batchItem: null }, { batchItem: { status: 'GENERATED' } }] }];
+  }
 
   const document = await prisma.generatedDocument.findFirst({
     where,

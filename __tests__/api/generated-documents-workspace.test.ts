@@ -35,6 +35,14 @@ vi.mock('@/services/document-generator.service', () => ({
   archiveDocument: vi.fn(),
 }));
 
+vi.mock('@/lib/document-editor/document-engine', () => ({
+  readGeneratedDocumentEngine: vi.fn(() => 'OAKDOC'),
+}));
+
+vi.mock('@/services/oakdoc-generation.service', () => ({
+  downloadGeneratedOakDoc: vi.fn(),
+}));
+
 import { requireAuth } from '@/lib/auth';
 import {
   searchGeneratedDocuments,
@@ -43,6 +51,7 @@ import {
 } from '@/services/document-generator.service';
 import { GET as listGeneratedDocuments, POST as createGeneratedDocument } from '@/app/api/generated-documents/route';
 import { GET as getGeneratedDocument } from '@/app/api/generated-documents/[id]/route';
+import { downloadGeneratedOakDoc } from '@/services/oakdoc-generation.service';
 
 function request(url: string, init?: ConstructorParameters<typeof NextRequest>[1]) {
   return new NextRequest(url, init);
@@ -66,6 +75,14 @@ describe('Generated documents workspace scoping', () => {
     vi.mocked(getGeneratedDocumentById).mockResolvedValue({
       id: 'doc-1',
       title: 'Generated document',
+      metadata: {},
+    } as never);
+    vi.mocked(downloadGeneratedOakDoc).mockResolvedValue({
+      buffer: Buffer.from('docx-bytes'),
+      metadata: {
+        mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        fileName: 'Preview.docx',
+      },
     } as never);
   });
 
@@ -169,6 +186,27 @@ describe('Generated documents workspace scoping', () => {
       'doc-1',
       workspaceId,
       expect.objectContaining({ includeDeleted: false })
+    );
+  });
+
+  it('allows DOCX review downloads to load unfinished batch draft documents', async () => {
+    const response = await getGeneratedDocument(
+      request('http://localhost/api/generated-documents/doc-1?format=docx'),
+      { params: Promise.resolve({ id: 'doc-1' }) },
+    );
+
+    expect(response.status).toBe(200);
+    expect(getGeneratedDocumentById).toHaveBeenCalledWith(
+      'doc-1',
+      workspaceId,
+      expect.objectContaining({
+        includeDeleted: false,
+        includeBatchDrafts: true,
+      }),
+    );
+    expect(downloadGeneratedOakDoc).toHaveBeenCalledWith('doc-1', workspaceId);
+    expect(await response.arrayBuffer()).toEqual(
+      Uint8Array.from(Buffer.from('docx-bytes')).buffer,
     );
   });
 
