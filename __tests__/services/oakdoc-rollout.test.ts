@@ -11,11 +11,31 @@ vi.mock('@/lib/prisma', () => ({ prisma: prismaMock }));
 vi.mock('@/lib/document-editor/generated-document-revision', () => ({
   readGeneratedDocumentRevisions: vi.fn(async (_client: unknown, ids: string[]) => new Map(ids.map((id) => [id, 3]))),
 }));
-vi.mock('@/services/oakdoc-migration.service', () => ({
-  getOakDocMigrationInventory: vi.fn(async () => [
-    { status: 'UNMAPPED_LEGACY', legacyTemplate: { id: 'a4-template' }, oakDocTemplate: null, warnings: [] },
-  ]),
+const migration = vi.hoisted(() => ({
+  getOakDocMigrationInventory: vi.fn(),
+  setOakDocMigrationPreference: vi.fn(),
 }));
+vi.mock('@/services/oakdoc-migration.service', () => migration);
+const auditMock = vi.hoisted(() => ({ createAuditLog: vi.fn(async () => undefined) }));
+vi.mock('@/lib/audit', () => auditMock);
+
+const templateInventory = [
+  { status: 'A4_ONLY', readiness: 'NOT_MIGRATED', legacyTemplate: { id: 'a4-template', version: 1 }, oakDocTemplate: null, warnings: [] },
+  {
+    status: 'MIGRATED_PAIR',
+    readiness: 'READY_FOR_SWITCHOVER',
+    legacyTemplate: { id: 'a4-letter', version: 2 },
+    oakDocTemplate: { id: 'word-letter', version: 5 },
+    warnings: [],
+  },
+  {
+    status: 'MIGRATED_PAIR',
+    readiness: 'OAKDOC_PRIMARY',
+    legacyTemplate: { id: 'a4-resolution', version: 1 },
+    oakDocTemplate: { id: 'word-resolution', version: 3 },
+    warnings: [],
+  },
+];
 const convertA4DraftToOakDoc = vi.hoisted(() => vi.fn());
 vi.mock('@/services/oakdoc-draft-conversion.service', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/services/oakdoc-draft-conversion.service')>()),
@@ -24,7 +44,9 @@ vi.mock('@/services/oakdoc-draft-conversion.service', async (importOriginal) => 
 
 import {
   applyA4DraftConversionManifest,
+  applyTemplateCutover,
   buildOakDocRolloutInventory,
+  buildTemplateCutoverPlan,
 } from '@/services/oakdoc-rollout.service';
 
 const tenantId = 'tenant-1';
@@ -61,7 +83,7 @@ function doc(id: string, overrides: Record<string, unknown> = {}) {
     metadata: null,
     serviceAgreement: null,
     batchItem: null,
-    _count: { taskStageOutcomes: 0, esigningEnvelopeDocuments: 0 },
+    _count: { esigningEnvelopeDocuments: 0 },
     ...overrides,
   };
 }
@@ -73,8 +95,8 @@ beforeEach(() => {
   documents = [
     doc('draft-free'),
     doc('draft-final', { status: 'FINALIZED', finalizedAt: new Date() }),
-    doc('draft-signing', { _count: { taskStageOutcomes: 0, esigningEnvelopeDocuments: 1 } }),
-    doc('draft-task', { _count: { taskStageOutcomes: 1, esigningEnvelopeDocuments: 0 } }),
+    doc('draft-signing', { _count: { esigningEnvelopeDocuments: 1 } }),
+    doc('draft-batch', { batchItem: { id: 'item-1' } }),
     doc('draft-converted'),
     doc('copy-1', {
       metadata: {
@@ -97,6 +119,11 @@ beforeEach(() => {
     { template: { contentJson: { oakDoc: { schemaVersion: 1 } } } },
   ]);
   prismaMock.user.findFirst.mockResolvedValue({ id: 'user-1' });
+  migration.getOakDocMigrationInventory.mockResolvedValue(templateInventory);
+  migration.setOakDocMigrationPreference.mockImplementation(async (input: { oakDocTemplateId: string; expectedRevision: number }) => ({
+    id: input.oakDocTemplateId,
+    version: input.expectedRevision + 1,
+  }));
 });
 
 describe('OakDoc rollout inventory', () => {
@@ -110,7 +137,7 @@ describe('OakDoc rollout inventory', () => {
       'draft-free': 'CONVERT',
       'draft-final': 'HISTORICAL',
       'draft-signing': 'BLOCKED_IN_SIGNING',
-      'draft-task': 'BLOCKED_RELATION',
+      'draft-batch': 'BLOCKED_RELATION',
       'draft-converted': 'CONVERTED_PENDING_REVIEW',
     });
     expect(inventory.documents.items.find((item) => item.documentId === 'draft-converted')?.targetDocumentId)
@@ -121,7 +148,7 @@ describe('OakDoc rollout inventory', () => {
       contentSha256: createHash('sha256').update('<p>draft-free</p>').digest('hex'),
     }]);
     expect(inventory.draftConversionManifest.hash).toMatch(/^[a-f0-9]{64}$/);
-    expect(inventory.templates.byStatus).toEqual({ UNMAPPED_LEGACY: 1 });
+    expect(inventory.templates.byStatus).toEqual({ A4_ONLY: 1, MIGRATED_PAIR: 2 });
     expect(inventory.unfinishedBatchItemsOnA4Templates).toBe(1);
     expect(JSON.stringify(inventory)).not.toContain('<p>');
   });
@@ -178,5 +205,83 @@ describe('OakDoc rollout inventory', () => {
     });
     expect(run.results.map((item) => item.outcome)).toEqual(['failed', 'reused']);
     expect(run.results[0].reason).toBe('OAKDOC_CONVERSION_SOURCE_CHANGED');
+  });
+});
+
+describe('OakDoc template cutover', () => {
+  it('plans a cutover of validated pairs and a rollback of pairs already on Word', async () => {
+    const cutover = await buildTemplateCutoverPlan(tenantId, 'OAKDOC');
+    const rollback = await buildTemplateCutoverPlan(tenantId, 'LEGACY');
+    expect(cutover.items).toEqual([{ oakDocTemplateId: 'word-letter', legacyTemplateId: 'a4-letter', expectedRevision: 5 }]);
+    expect(rollback.items).toEqual([{ oakDocTemplateId: 'word-resolution', legacyTemplateId: 'a4-resolution', expectedRevision: 3 }]);
+    expect(cutover.hash).not.toBe(rollback.hash);
+  });
+
+  it('switches the approved plan through the audited preference change and journals the run', async () => {
+    const plan = await buildTemplateCutoverPlan(tenantId, 'OAKDOC');
+    const run = await applyTemplateCutover({
+      tenantId, userId: 'user-1', direction: 'OAKDOC', manifestHash: plan.hash, reason: 'Pilot cutover',
+    });
+
+    expect(migration.setOakDocMigrationPreference).toHaveBeenCalledWith(
+      { oakDocTemplateId: 'word-letter', expectedRevision: 5, preference: 'OAKDOC', reason: 'Pilot cutover' },
+      { tenantId, userId: 'user-1' },
+    );
+    expect(run.results).toEqual([{ oakDocTemplateId: 'word-letter', outcome: 'switched', revision: 6 }]);
+    expect(auditMock.createAuditLog).toHaveBeenCalledWith(expect.objectContaining({
+      entityType: 'OakDocRolloutRun',
+      entityId: plan.hash,
+      reason: 'Pilot cutover',
+      metadata: expect.objectContaining({ operation: 'TEMPLATE_CUTOVER', outcomes: { switched: 1 } }),
+    }));
+  });
+
+  it('refuses a changed plan, a missing reason and an unknown operator without switching anything', async () => {
+    const plan = await buildTemplateCutoverPlan(tenantId, 'OAKDOC');
+    await expect(applyTemplateCutover({
+      tenantId, userId: 'user-1', direction: 'OAKDOC', manifestHash: plan.hash, reason: '  ',
+    })).rejects.toThrow('reason');
+
+    migration.getOakDocMigrationInventory.mockResolvedValue([
+      { ...templateInventory[1], oakDocTemplate: { id: 'word-letter', version: 6 } },
+    ]);
+    await expect(applyTemplateCutover({
+      tenantId, userId: 'user-1', direction: 'OAKDOC', manifestHash: plan.hash, reason: 'go',
+    })).rejects.toMatchObject({ details: { reason: 'OAKDOC_MANIFEST_CHANGED' } });
+
+    prismaMock.user.findFirst.mockResolvedValue(null);
+    await expect(applyTemplateCutover({
+      tenantId, userId: 'user-x', direction: 'OAKDOC', manifestHash: plan.hash, reason: 'go',
+    })).rejects.toThrow('operator');
+    expect(migration.setOakDocMigrationPreference).not.toHaveBeenCalled();
+  });
+
+  it('rolls back pair by pair and reports failures without stopping', async () => {
+    migration.getOakDocMigrationInventory.mockResolvedValue([
+      templateInventory[2],
+      { ...templateInventory[2], legacyTemplate: { id: 'a4-other', version: 1 }, oakDocTemplate: { id: 'word-other', version: 2 } },
+    ]);
+    migration.setOakDocMigrationPreference.mockRejectedValueOnce(
+      Object.assign(new Error('stale'), { details: { reason: 'REVISION_CONFLICT' } }),
+    );
+    const plan = await buildTemplateCutoverPlan(tenantId, 'LEGACY');
+    const run = await applyTemplateCutover({
+      tenantId, userId: 'user-1', direction: 'LEGACY', manifestHash: plan.hash, reason: 'Rollback',
+    });
+    expect(run.results.map((item) => item.outcome)).toEqual(['failed', 'switched']);
+    expect(run.results[0].reason).toBe('REVISION_CONFLICT');
+  });
+});
+
+describe('OakDoc draft conversion journal', () => {
+  it('journals each conversion run with its manifest hash and outcomes', async () => {
+    const { draftConversionManifest } = await buildOakDocRolloutInventory(tenantId);
+    convertA4DraftToOakDoc.mockResolvedValue({ document: { id: 'copy-2' }, reused: false, conversion: { diagnostics: [] } });
+    await applyA4DraftConversionManifest({ tenantId, userId: 'user-1', manifestHash: draftConversionManifest.hash });
+    expect(auditMock.createAuditLog).toHaveBeenCalledWith(expect.objectContaining({
+      entityType: 'OakDocRolloutRun',
+      entityId: draftConversionManifest.hash,
+      metadata: expect.objectContaining({ operation: 'DRAFT_CONVERSION', outcomes: { created: 1 } }),
+    }));
   });
 });

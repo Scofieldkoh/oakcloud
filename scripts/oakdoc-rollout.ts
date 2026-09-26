@@ -3,9 +3,19 @@ import { pathToFileURL } from 'node:url';
 import { prisma } from '@/lib/prisma';
 import {
   applyA4DraftConversionManifest,
+  applyTemplateCutover,
   buildOakDocRolloutInventory,
+  buildTemplateCutoverPlan,
 } from '@/services/oakdoc-rollout.service';
 import { flag, option, uuidOption } from './lib/oakdoc-cli-args';
+
+function manifestOption(argv: readonly string[]): string {
+  const manifestHash = option(argv, 'manifest');
+  if (!manifestHash || !/^[a-f0-9]{64}$/.test(manifestHash)) {
+    throw new Error('--manifest must be the 64-character hash printed by the dry run');
+  }
+  return manifestHash;
+}
 
 /**
  * OakDoc rollout for one workspace.
@@ -15,18 +25,43 @@ import { flag, option, uuidOption } from './lib/oakdoc-cli-args';
  *   Convert the A4 drafts listed in an approved dry-run manifest:
  *     tsx scripts/oakdoc-rollout.ts --workspace <id> --apply-draft-conversions \
  *       --operator <user id> --manifest <hash from the dry run>
+ *   Switch validated template pairs to Word, or roll them back to A4, using
+ *   the matching plan hash from the dry run:
+ *     tsx scripts/oakdoc-rollout.ts --workspace <id> --apply-template-cutover \
+ *       --operator <user id> --manifest <hash> --reason "<why>"
+ *     tsx scripts/oakdoc-rollout.ts --workspace <id> --apply-template-rollback \
+ *       --operator <user id> --manifest <hash> --reason "<why>"
  *
+ * Every apply run is journaled in the audit log (OakDocRolloutRun).
  * Output is JSON with IDs, revisions, hashes and dispositions only.
  */
 export async function runOakDocRollout(argv: readonly string[]) {
   const tenantId = uuidOption(argv, 'workspace');
-  if (!flag(argv, 'apply-draft-conversions')) {
-    return { mode: 'dry-run', inventory: await buildOakDocRolloutInventory(tenantId) };
+  const cutover = flag(argv, 'apply-template-cutover');
+  const rollback = flag(argv, 'apply-template-rollback');
+  const conversions = flag(argv, 'apply-draft-conversions');
+  if ([cutover, rollback, conversions].filter(Boolean).length > 1) {
+    throw new Error('Choose one apply step per run');
   }
-  const manifestHash = option(argv, 'manifest');
-  if (!manifestHash || !/^[a-f0-9]{64}$/.test(manifestHash)) {
-    throw new Error('--manifest must be the 64-character hash printed by the dry run');
+  if (cutover || rollback) {
+    const run = await applyTemplateCutover({
+      tenantId,
+      userId: uuidOption(argv, 'operator'),
+      direction: cutover ? 'OAKDOC' : 'LEGACY',
+      manifestHash: manifestOption(argv),
+      reason: option(argv, 'reason') ?? '',
+    });
+    return { mode: cutover ? 'apply-template-cutover' : 'apply-template-rollback', ...run };
   }
+  if (!conversions) {
+    const [inventory, templateCutover, templateRollback] = await Promise.all([
+      buildOakDocRolloutInventory(tenantId),
+      buildTemplateCutoverPlan(tenantId, 'OAKDOC'),
+      buildTemplateCutoverPlan(tenantId, 'LEGACY'),
+    ]);
+    return { mode: 'dry-run', inventory, templateCutover, templateRollback };
+  }
+  const manifestHash = manifestOption(argv);
   const run = await applyA4DraftConversionManifest({
     tenantId,
     userId: uuidOption(argv, 'operator'),
