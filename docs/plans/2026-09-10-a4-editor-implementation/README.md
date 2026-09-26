@@ -1,5 +1,7 @@
 # A4Editor implementation programme
 
+> **Superseded for new implementation on 26 September 2026.** The user accepted the OakDoc POC and directed complete A4Editor replacement. Follow the [OakDoc specification](../../oakdoc-a4-retirement-readiness.md) and [parallel implementation handover](../2026-09-26-oakdoc-replacement-implementation.md). The instructions below to retain/rebuild the custom A4 editor are historical. Preserve relevant compatibility and regression evidence; do not resume this programme's work packets.
+
 Status: **planning complete; implementation not started**. Prepared 10–11 September 2026 against `c660b47f1731a9262cf722197907e21f8e3e98fe`.
 
 This is the execution plan for the [technical and UX review](../2026-09-10-a4-editor-technical-ux-review.md). The review owns evidence, reproductions, severity and A4E ticket IDs. This folder owns the proposed contracts, agent assignments, ordered changes and deployment gates. No application changes or deployments were performed while preparing these plans.
