@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useEffect } from 'react';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import {
   ChevronLeft,
@@ -41,6 +42,12 @@ import {
   withTaskLaunchContext,
 } from '@/lib/task-launch-context';
 
+const OakDocGeneratedDocumentEditor = dynamic(
+  () => import('@/components/documents/oakdoc-generated-document-editor')
+    .then((module) => module.OakDocGeneratedDocumentEditor),
+  { ssr: false },
+);
+
 // ============================================================================
 // Helper Functions
 // ============================================================================
@@ -74,6 +81,7 @@ function formatDateTime(dateStr: string): string {
 
 interface GeneratedDocument {
   id: string;
+  revision: number;
   title: string;
   status: 'DRAFT' | 'FINALIZED' | 'ARCHIVED';
   content: string;
@@ -290,7 +298,7 @@ export default function DocumentViewPage() {
       }
 
       const updated = await response.json();
-      setDocData(updated);
+      setDocData((current) => current ? { ...current, ...updated } : updated);
       success('Document unlocked for editing');
     } catch (err) {
       console.error('Unfinalize error:', err);
@@ -709,24 +717,23 @@ export default function DocumentViewPage() {
           <div className="flex-1 min-w-0">
             <div className="border border-border-primary rounded-lg shadow-sm overflow-hidden h-[calc(100vh-12rem)]">
               {isOakDoc ? (
-                <div className="flex h-full flex-col items-center justify-center gap-4 bg-background-secondary p-8 text-center">
-                  <FileText className="h-12 w-12 text-oak-primary" aria-hidden="true" />
-                  <div className="max-w-lg">
-                    <h3 className="text-base font-semibold text-text-primary">Word · OakDoc document</h3>
-                    <p className="mt-2 text-sm text-text-secondary">
-                      This generated document is stored as its own resolved DOCX artefact.
-                      The reusable master template is not opened or edited from this record.
-                    </p>
-                  </div>
-                  <a href={`/api/generated-documents/${documentId}?format=docx`}>
-                    <Button variant="primary" size="sm" leftIcon={<Download className="h-4 w-4" />}>
-                      Download generated DOCX
-                    </Button>
-                  </a>
-                  <p className="text-xs text-text-muted">
-                    Inline OakDoc review is a separate capability; PDF conversion is not enabled yet.
-                  </p>
-                </div>
+                <OakDocGeneratedDocumentEditor
+                  documentId={documentId}
+                  title={docData.title}
+                  revision={docData.revision}
+                  readOnly={docData.status !== 'DRAFT'}
+                  disabled={isProcessing}
+                  onSaved={(result) => {
+                    setDocData((current) => current
+                      ? {
+                          ...current,
+                          revision: result.revision,
+                          updatedAt: result.updatedAt,
+                        }
+                      : current);
+                    success('DOCX saved');
+                  }}
+                />
               ) : (
                 <A4PageEditor
                   value={docData.content}

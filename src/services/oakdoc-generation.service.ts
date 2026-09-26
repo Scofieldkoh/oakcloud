@@ -1,4 +1,5 @@
 import { createHash, randomUUID } from 'node:crypto';
+import { unzipSync } from 'fflate';
 import { Prisma } from '@/generated/prisma';
 import { prisma } from '@/lib/prisma';
 import { createAuditLog } from '@/lib/audit';
@@ -41,6 +42,24 @@ import { downloadOakDocTemplate } from '@/services/oakdoc-template.service';
 
 function sha256(buffer: Buffer | Uint8Array): string {
   return createHash('sha256').update(buffer).digest('hex');
+}
+
+function validateGeneratedOakDocBytes(bytes: Uint8Array): void {
+  if (bytes.byteLength === 0) {
+    throw new ValidationError('The OakDoc document is empty');
+  }
+  if (bytes.byteLength > 50 * 1024 * 1024) {
+    throw new ValidationError('The OakDoc document exceeds the 50 MB limit');
+  }
+  try {
+    const files = unzipSync(bytes);
+    if (!files['word/document.xml']) {
+      throw new ValidationError('The OakDoc document has no word/document.xml part');
+    }
+  } catch (error) {
+    if (error instanceof ValidationError) throw error;
+    throw new ValidationError('The edited OakDoc document is not a valid DOCX package');
+  }
 }
 
 function safeDocxName(value: string): string {
@@ -375,4 +394,147 @@ export async function downloadGeneratedOakDoc(
     throw new ValidationError('Generated OakDoc asset integrity check failed');
   }
   return { buffer, metadata };
+}
+
+
+export async function saveGeneratedOakDocDocument(
+  input: {
+    documentId: string;
+    expectedRevision: number;
+    bytes: Uint8Array;
+  },
+  params: TenantAwareParams,
+): Promise<{ revision: number; updatedAt: Date }> {
+  validateGeneratedOakDocBytes(input.bytes);
+
+  const existing = await prisma.generatedDocument.findFirst({
+    where: {
+      id: input.documentId,
+      tenantId: params.tenantId,
+      deletedAt: null,
+    },
+    select: {
+      id: true,
+      title: true,
+      status: true,
+      companyId: true,
+      metadata: true,
+    },
+  });
+  if (!existing) throw new NotFoundError('Document not found');
+  if (existing.status !== 'DRAFT') {
+    throw new ValidationError('Unlock the document before editing its DOCX');
+  }
+
+  const currentAsset = readGeneratedOakDocAssetMetadata(existing.metadata);
+  if (!currentAsset) {
+    throw new ValidationError('This generated document is not an OakDoc document');
+  }
+
+  const requiredPrefix = `${params.tenantId}/generated-documents/${input.documentId}/oakdoc/`;
+  if (!currentAsset.storageKey.startsWith(requiredPrefix)) {
+    throw new ValidationError('Generated OakDoc storage scope is invalid');
+  }
+
+  const digest = sha256(input.bytes);
+  const savedAt = new Date().toISOString();
+  const storageKey = StorageKeys.oakDocGeneratedAsset(
+    params.tenantId,
+    input.documentId,
+    randomUUID(),
+  );
+
+  await storage.upload(storageKey, Buffer.from(input.bytes), {
+    contentType: OAKDOC_MIME_TYPE,
+    metadata: {
+      tenantId: params.tenantId,
+      generatedDocumentId: input.documentId,
+      templateId: currentAsset.templateId,
+      templateVersion: String(currentAsset.templateVersion),
+      templateSha256: currentAsset.templateSha256,
+      sha256: digest,
+      generatedBy: params.userId,
+      edited: 'true',
+    },
+  });
+
+  try {
+    const selectedPartiesValue = (
+      existing.metadata
+      && typeof existing.metadata === 'object'
+      && !Array.isArray(existing.metadata)
+    )
+      ? (existing.metadata as Record<string, unknown>).selectedParties
+      : undefined;
+    const selectedParties = (
+      selectedPartiesValue
+      && typeof selectedPartiesValue === 'object'
+      && !Array.isArray(selectedPartiesValue)
+    )
+      ? selectedPartiesValue as Record<string, unknown>
+      : {};
+
+    const nextAsset: GeneratedOakDocAssetMetadata = {
+      ...currentAsset,
+      storageKey,
+      fileSize: input.bytes.byteLength,
+      sha256: digest,
+      generatedAt: savedAt,
+    };
+
+    const result = await prisma.$transaction(async (tx) => {
+      const claim = await claimGeneratedDocumentRevision(tx, {
+        id: input.documentId,
+        tenantId: params.tenantId,
+        expectedRevision: input.expectedRevision,
+        allowedStatuses: ['DRAFT'],
+      });
+      const updated = await tx.generatedDocument.update({
+        where: { id: input.documentId },
+        data: {
+          content: OAKDOC_GENERATED_CONTENT,
+          contentJson: {
+            documentEngine: 'OAKDOC',
+            schemaVersion: 1,
+          } as Prisma.InputJsonValue,
+          metadata: mergeGeneratedOakDocMetadata(
+            existing.metadata,
+            nextAsset,
+            selectedParties,
+          ) as Prisma.InputJsonValue,
+        },
+        select: { updatedAt: true },
+      });
+      return {
+        revision: claim.revision,
+        updatedAt: updated.updatedAt,
+      };
+    });
+
+    if (currentAsset.storageKey !== storageKey) {
+      await storage.delete(currentAsset.storageKey).catch(() => undefined);
+    }
+
+    await createAuditLog({
+      tenantId: params.tenantId,
+      userId: params.userId,
+      companyId: existing.companyId ?? undefined,
+      action: 'UPDATE',
+      entityType: 'GeneratedDocument',
+      entityId: existing.id,
+      entityName: existing.title,
+      summary: `Saved edited OakDoc document "${existing.title}"`,
+      changeSource: 'MANUAL',
+      metadata: {
+        documentEngine: 'OAKDOC',
+        generatedAssetSha256: digest,
+        revision: result.revision,
+      },
+    });
+
+    return result;
+  } catch (error) {
+    await storage.delete(storageKey).catch(() => undefined);
+    throw error;
+  }
 }
