@@ -1,6 +1,6 @@
 # Oakcloud Documentation
 
-> **Last Updated**: 2026-09-10
+> **Last Updated**: 2026-09-26
 > Central navigation for the current Oakcloud documentation set.
 
 ## Quick Start
@@ -49,6 +49,8 @@
 
 | Document | Description |
 |----------|-------------|
+| [OakDoc Replacement Specification](./oakdoc-a4-retirement-readiness.md) | Approved replacement direction, current capability gaps, native document contracts, migration and acceptance requirements |
+| [OakDoc Parallel Implementation Handover](./plans/2026-09-26-oakdoc-replacement-implementation.md) | Sub-agent packets, exclusive file ownership, dependency waves, validation and cutover/rollback gates |
 | [Business Assistant Specification](./features/business-assistant/SPECIFICATION.md) | General assistant architecture; BizFile is a reference use case; repository-grounded v1.4 review |
 | [Business Assistant BizFile Correction Workflow](./features/business-assistant/CORRECTION_WORKFLOW.md) | Implemented P12 deterministic-field correction UI, shared contract, API semantics, safety gates, and remaining correction work |
 | [Business Assistant Implementation Handover](./plans/2026-09-05-business-assistant-implementation.md) | Current implementation checkpoint, completed correction UI review record, active P12-P16 work, validation evidence, and next-session scope |
@@ -86,3 +88,4 @@ When working in this repo:
 3. Use [Service Patterns](./guides/SERVICE_PATTERNS.md) for backend work and [Design Guideline](./guides/DESIGN_GUIDELINE.md) for UI changes.
 4. Use the Business Assistant implementation handover plus correction workflow for ongoing Business Assistant work.
 5. Use the Forms rollout docs above for historical implementation context until a dedicated Forms feature spec exists.
+6. Use the OakDoc specification and handover for document-editor replacement. September A4 implementation plans are historical; do not resume their editor-rewrite direction.
