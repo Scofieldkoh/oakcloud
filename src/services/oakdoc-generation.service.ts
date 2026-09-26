@@ -1,5 +1,4 @@
 import { createHash, randomUUID } from 'node:crypto';
-import { unzipSync } from 'fflate';
 import { Prisma } from '@/generated/prisma';
 import { prisma } from '@/lib/prisma';
 import { createAuditLog } from '@/lib/audit';
@@ -35,6 +34,7 @@ import {
 } from '@/lib/document-editor/generated-document-revision';
 import { NotFoundError, ValidationError } from '@/lib/errors';
 import { storage, StorageKeys } from '@/lib/storage';
+import { inspectOakDocPackage } from '@/lib/document-editor/oakdoc-package-policy';
 import type { TenantAwareParams } from '@/lib/types';
 import type { TaskLaunchContext } from '@/services/tasks/types';
 import { getCompanyById } from '@/services/company.service';
@@ -42,24 +42,6 @@ import { downloadOakDocTemplate } from '@/services/oakdoc-template.service';
 
 function sha256(buffer: Buffer | Uint8Array): string {
   return createHash('sha256').update(buffer).digest('hex');
-}
-
-function validateGeneratedOakDocBytes(bytes: Uint8Array): void {
-  if (bytes.byteLength === 0) {
-    throw new ValidationError('The OakDoc document is empty');
-  }
-  if (bytes.byteLength > 50 * 1024 * 1024) {
-    throw new ValidationError('The OakDoc document exceeds the 50 MB limit');
-  }
-  try {
-    const files = unzipSync(bytes);
-    if (!files['word/document.xml']) {
-      throw new ValidationError('The OakDoc document has no word/document.xml part');
-    }
-  } catch (error) {
-    if (error instanceof ValidationError) throw error;
-    throw new ValidationError('The edited OakDoc document is not a valid DOCX package');
-  }
 }
 
 function safeDocxName(value: string): string {
@@ -405,7 +387,7 @@ export async function saveGeneratedOakDocDocument(
   },
   params: TenantAwareParams,
 ): Promise<{ revision: number; updatedAt: Date }> {
-  validateGeneratedOakDocBytes(input.bytes);
+  inspectOakDocPackage(input.bytes, 'draft');
 
   const existing = await prisma.generatedDocument.findFirst({
     where: {

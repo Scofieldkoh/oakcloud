@@ -129,6 +129,7 @@ describe('OakDoc template edit storage isolation', () => {
       }),
       actor,
       'Saved from OakDoc',
+      { writer: 'oakdoc-service' },
     );
 
     const metadata = readOakDocTemplateMetadata(result.contentJson);

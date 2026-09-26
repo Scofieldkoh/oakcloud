@@ -212,7 +212,7 @@ describe('OakDoc generation service', () => {
     revisionMock.claimGeneratedDocumentRevision.mockResolvedValue({ revision: 5 });
 
     const bytes = zipSync({
-      '[Content_Types].xml': strToU8('<Types/>'),
+      '[Content_Types].xml': strToU8('<Types><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>'),
       'word/document.xml': strToU8('<w:document xmlns:w="urn:test"><w:body/></w:document>'),
     });
 
