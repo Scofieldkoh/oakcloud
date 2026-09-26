@@ -26,20 +26,15 @@ import {
   inspectOakDocFields,
   normalizeOakDocFields,
   pruneDeletedOakDocFields,
-  resolveOakDocFields,
   type OakDocFieldDefinition,
   type OakDocFieldSummary,
 } from '@/lib/document-editor/oakdoc-fields';
-import {
-  buildOakDocResolutionValues,
-  type OakDocCompanyDetail,
-} from '@/lib/document-editor/oakdoc-context';
+import type { OakDocCompanyDetail } from '@/lib/document-editor/oakdoc-context';
 import {
   createOakDocRepeater,
   inspectOakDocRepeaters,
   OAKDOC_REPEATER_DEFINITIONS,
   removeOakDocRepeater,
-  resolveOakDocRepeaters,
   type OakDocRepeaterDefinition,
   type OakDocRepeaterSummary,
 } from '@/lib/document-editor/oakdoc-repeaters';
@@ -47,7 +42,6 @@ import {
   createOakDocCondition,
   inspectOakDocConditions,
   removeOakDocCondition,
-  resolveOakDocConditions,
   type OakDocConditionOperator,
   type OakDocConditionSummary,
 } from '@/lib/document-editor/oakdoc-conditions';
@@ -170,6 +164,20 @@ function toArrayBuffer(bytes: Uint8Array): ArrayBuffer {
   const copy = new Uint8Array(bytes.byteLength);
   copy.set(bytes);
   return copy.buffer;
+}
+
+interface OakDocPreviewResponse {
+  error?: string;
+  docxBase64?: string;
+  diagnostics?: Array<{ severity: string; message: string }>;
+  unresolvedTags?: string[];
+}
+
+function base64ToBytes(value: string): Uint8Array {
+  const binary = atob(value);
+  const bytes = new Uint8Array(binary.length);
+  for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
+  return bytes;
 }
 
 function downloadDocx(bytes: Uint8Array, fileName: string): void {
@@ -740,63 +748,45 @@ export function OakDocEditor() {
 
     setBusy(true);
     try {
+      // The server renders with the same pipeline as document generation,
+      // so the copy matches what a generated document would contain. The
+      // master is sent as it is now and is not saved.
       const bytes = await currentDocxBytes();
       const cleaned = pruneDeletedOakDocFields(bytes, OAKDOC_FIELD_TAGS);
-      const generatedBy = session
-        ? [session.firstName, session.lastName].filter(Boolean).join(' ')
-        : undefined;
-      const resolutionTags = Array.from(new Set([
-        ...fieldSummary.tags,
-        ...conditionSummary.fieldTags,
-      ]));
-      const values = buildOakDocResolutionValues({
-        company,
-        fieldTags: resolutionTags,
-        selectedDirectorId: selectedDirectorId || undefined,
-        selectedShareholderId: selectedShareholderId || undefined,
-        generatedBy,
+      const formData = new FormData();
+      formData.set(
+        'file',
+        new File([toArrayBuffer(cleaned.bytes)], safeDocxName(fileName || title), { type: DOCX_MIME }),
+      );
+      formData.set('context', JSON.stringify({
+        ...(templateId ? { templateId } : {}),
+        ...(refreshPartials ? { refreshPartialPins: 'all' } : {}),
+        companyId: company.id,
+        ...(selectedDirectorId ? { selectedDirectorId } : {}),
+        ...(selectedShareholderId ? { selectedShareholderId } : {}),
+      }));
+      const response = await fetch('/api/document-templates/oakdoc-preview', {
+        method: 'POST',
+        body: formData,
       });
-      const conditioned = resolveOakDocConditions({
-        docxBytes: cleaned.bytes,
-        values,
-        allowedFields: OAKDOC_CONDITION_FIELD_TAGS,
-      });
-      if (conditioned.unresolvedFields.length > 0) {
-        throw new Error(
-          `Conditional fields are unavailable: ${conditioned.unresolvedFields.join(', ')}.`,
-        );
-      }
-      const repeated = resolveOakDocRepeaters({
-        docxBytes: conditioned.bytes,
-        company,
-      });
-      const resolved = resolveOakDocFields(repeated.bytes, values);
-
-      if (
-        resolved.updated === 0
-        && repeated.repeatersResolved === 0
-        && conditioned.resolved === 0
-      ) {
-        throw new Error(
-          'No OakDoc fields, conditional sections, or repeating sections could be resolved with the selected context.',
-        );
+      const payload = await response.json().catch(() => ({})) as OakDocPreviewResponse;
+      if (!response.ok || !payload.docxBase64) {
+        throw new Error(payload.error || 'Document generation failed.');
       }
 
-      const generatedName = safeDocxName(`${title} - ${company.name}`);
-      downloadDocx(resolved.bytes, generatedName);
-      const unresolvedMessage = resolved.unresolvedTags.length > 0
-        ? ` ${resolved.unresolvedTags.length} field type${resolved.unresolvedTags.length === 1 ? '' : 's'} still need additional context.`
+      downloadDocx(base64ToBytes(payload.docxBase64), safeDocxName(`${title} - ${company.name}`));
+      const problems = (payload.diagnostics ?? []).filter((item) => item.severity === 'error');
+      const unresolved = payload.unresolvedTags?.length ?? 0;
+      const problemMessage = problems.length > 0
+        ? ` ${problems.map((item) => item.message).join(' ')}`
         : '';
-      const conditionMessage = conditioned.resolved > 0
-        ? ` Evaluated ${conditioned.resolved} conditional section${conditioned.resolved === 1 ? '' : 's'} (${conditioned.kept} kept, ${conditioned.removed} removed).`
-        : '';
-      const repeaterMessage = repeated.repeatersResolved > 0
-        ? ` Expanded ${repeated.repeatersResolved} repeating section${repeated.repeatersResolved === 1 ? '' : 's'} into ${repeated.itemsCreated} item${repeated.itemsCreated === 1 ? '' : 's'}.`
+      const unresolvedMessage = unresolved > 0
+        ? ` ${unresolved} field type${unresolved === 1 ? '' : 's'} still need additional context.`
         : '';
       setStatus(
-        `Generated a resolved DOCX from ${company.name} without changing the master template.${conditionMessage}${repeaterMessage}${unresolvedMessage}`,
+        `Generated a resolved DOCX from ${company.name} without changing the master template.${problemMessage}${unresolvedMessage}`,
       );
-      setStatusKind(resolved.unresolvedTags.length > 0 ? 'neutral' : 'success');
+      setStatusKind(problems.length > 0 ? 'error' : unresolved > 0 ? 'neutral' : 'success');
     } catch (error) {
       setStatus(error instanceof Error ? error.message : 'Document generation failed.');
       setStatusKind('error');
@@ -806,11 +796,11 @@ export function OakDocEditor() {
   }, [
     company,
     currentDocxBytes,
-    conditionSummary.fieldTags,
-    fieldSummary.tags,
+    fileName,
+    refreshPartials,
     selectedDirectorId,
     selectedShareholderId,
-    session,
+    templateId,
     title,
   ]);
 

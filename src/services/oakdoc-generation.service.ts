@@ -61,6 +61,7 @@ import {
 } from '@/types/oakdoc';
 import { storage, StorageKeys } from '@/lib/storage';
 import { inspectOakDocPackage } from '@/lib/document-editor/oakdoc-package-policy';
+import { deriveOakDocTemplateFieldTags } from '@/lib/document-editor/oakdoc-field-manifest';
 import type { TenantAwareParams } from '@/lib/types';
 import type { TaskLaunchContext } from '@/services/tasks/types';
 import { getCompanyById } from '@/services/company.service';
@@ -68,9 +69,13 @@ import { downloadOakDocTemplate } from '@/services/oakdoc-template.service';
 import { isPendingA4DraftConversion } from '@/services/oakdoc-draft-conversion.service';
 import {
   expandPinnedOakDocPartials,
+  pinOakDocPartials,
   readOakDocPartialPins,
 } from '@/services/oakdoc-partial.service';
-import { readOakDocSowSnapshot } from '@/lib/document-editor/oakdoc-partials';
+import {
+  readOakDocSowSnapshot,
+  type OakDocPartialPin,
+} from '@/lib/document-editor/oakdoc-partials';
 
 const log = createLogger('oakdoc-generation');
 
@@ -206,22 +211,108 @@ export async function generateOakDocBytes(
     throw new ValidationError('The selected template is not an OakDoc template');
   }
 
+  const { buffer: masterBuffer, metadata: downloadedMetadata } =
+    await downloadOakDocTemplate(template.id, params.tenantId);
+  return renderOakDocMaster({
+    id: template.id,
+    name: template.name,
+    version: template.version,
+    sha256: templateMetadata.sha256,
+    fileName: templateMetadata.fileName,
+    compositionType: template.compositionType,
+    bytes: new Uint8Array(masterBuffer),
+    fieldTags: downloadedMetadata.fieldTags,
+    partialPins: readOakDocPartialPins(template.contentJson),
+  }, input, params);
+}
+
+export interface OakDocMasterPreviewInput extends Omit<OakDocGenerationInput, 'templateId'> {
+  /** The editor's current, possibly unsaved, master bytes. */
+  bytes: Uint8Array;
+  fileName: string;
+  /** Saved template being edited, for its partial pins and composition. */
+  templateId?: string;
+  compositionType?: 'STANDARD' | 'SERVICE_AGREEMENT';
+  /** Same meaning as on save: partials to move to their latest version. */
+  refreshPartialPins?: 'all' | string[];
+}
+
+/**
+ * Preview unsaved master bytes with the production renderer. Partials are
+ * pinned exactly as a save would pin them, and nothing is written: the
+ * stored template, its asset and its pins stay unchanged.
+ */
+export async function previewOakDocMaster(
+  input: OakDocMasterPreviewInput,
+  params: Pick<TenantAwareParams, 'tenantId'>,
+): Promise<OakDocGenerationResult> {
+  ensureA4ServerDomGlobals();
+  inspectOakDocPackage(input.bytes, 'master');
+  const saved = input.templateId
+    ? await prisma.documentTemplate.findFirst({
+        where: { id: input.templateId, tenantId: params.tenantId, deletedAt: null },
+        select: { id: true, name: true, version: true, contentJson: true, compositionType: true },
+      })
+    : null;
+  if (input.templateId && !saved) throw new NotFoundError('OakDoc template not found');
+  if (saved && !readOakDocTemplateMetadata(saved.contentJson)) {
+    throw new ValidationError('The selected template is not an OakDoc template');
+  }
+  const partialPins = await pinOakDocPartials({
+    bytes: input.bytes,
+    tenantId: params.tenantId,
+    existingPins: saved ? readOakDocPartialPins(saved.contentJson) : undefined,
+    refresh: input.refreshPartialPins,
+  });
+  return renderOakDocMaster({
+    id: saved?.id ?? 'unsaved-template',
+    name: saved?.name ?? input.fileName,
+    version: saved?.version ?? 0,
+    sha256: sha256(input.bytes),
+    fileName: input.fileName,
+    compositionType: input.compositionType ?? saved?.compositionType ?? 'STANDARD',
+    bytes: input.bytes,
+    fieldTags: deriveOakDocTemplateFieldTags(input.bytes),
+    partialPins,
+  }, input, params);
+}
+
+interface OakDocMasterSource {
+  id: string;
+  name: string;
+  version: number;
+  sha256: string;
+  fileName: string;
+  compositionType: string;
+  bytes: Uint8Array;
+  fieldTags: readonly string[];
+  partialPins: OakDocPartialPin[];
+}
+
+/**
+ * Render a master with the production pipeline. Stored-template generation
+ * and the editor's preview both go through here, so a preview shows exactly
+ * what generation would produce from the same bytes and context.
+ */
+async function renderOakDocMaster(
+  master: OakDocMasterSource,
+  input: Omit<OakDocGenerationInput, 'templateId'>,
+  params: Pick<TenantAwareParams, 'tenantId'>,
+): Promise<OakDocGenerationResult> {
   const company = await getCompanyById(input.companyId, params.tenantId);
   if (!company) throw new NotFoundError('Company not found');
 
-  const { buffer: masterBuffer, metadata: downloadedMetadata } =
-    await downloadOakDocTemplate(template.id, params.tenantId);
-  const knownTags = new Set(downloadedMetadata.fieldTags);
+  const knownTags = new Set(master.fieldTags);
   // Insert pinned native partials before anything reads the fields, so the
   // partials' own fields, conditions and repeaters resolve like the master's.
   const partials = await expandPinnedOakDocPartials({
-    bytes: pruneDeletedOakDocFields(new Uint8Array(masterBuffer), knownTags).bytes,
-    pins: readOakDocPartialPins(template.contentJson),
+    bytes: pruneDeletedOakDocFields(master.bytes, knownTags).bytes,
+    pins: master.partialPins,
     tenantId: params.tenantId,
   });
   const masterBytes = partials.bytes;
 
-  const composition = template.compositionType === 'SERVICE_AGREEMENT'
+  const composition = master.compositionType === 'SERVICE_AGREEMENT'
     ? await loadAgreementComposition(input.serviceAgreementId, params.tenantId)
     : null;
   // Word scope-of-work partials are inserted after composition, so their
@@ -233,7 +324,7 @@ export async function generateOakDocBytes(
   const fieldSummary = inspectOakDocFields(masterBytes);
   const conditionSummary = inspectOakDocConditions(masterBytes);
   const resolutionTags = Array.from(new Set([
-    ...downloadedMetadata.fieldTags,
+    ...master.fieldTags,
     ...fieldSummary.tags,
     ...conditionSummary.fieldTags,
     ...sowFieldTags,
@@ -305,7 +396,7 @@ export async function generateOakDocBytes(
 
   let composedBytes = repeated.bytes;
   let agreementHash: string | undefined;
-  if (template.compositionType === 'SERVICE_AGREEMENT' && !composition) {
+  if (master.compositionType === 'SERVICE_AGREEMENT' && !composition) {
     diagnostics.push({
       code: 'OAKDOC_CONTEXT_MISSING',
       severity: 'error',
@@ -349,18 +440,18 @@ export async function generateOakDocBytes(
     bytes,
     values,
     template: {
-      id: template.id,
-      name: template.name,
-      version: template.version,
-      sha256: templateMetadata.sha256,
-      fileName: templateMetadata.fileName,
+      id: master.id,
+      name: master.name,
+      version: master.version,
+      sha256: master.sha256,
+      fileName: master.fileName,
     },
     metadata: {
       schemaVersion: 1,
       mimeType: OAKDOC_MIME_TYPE,
-      templateId: template.id,
-      templateVersion: template.version,
-      templateSha256: templateMetadata.sha256,
+      templateId: master.id,
+      templateVersion: master.version,
+      templateSha256: master.sha256,
       fieldsUpdated: resolved.updated,
       unresolvedTags: resolved.unresolvedTags,
       conditionsResolved: conditioned.resolved,
