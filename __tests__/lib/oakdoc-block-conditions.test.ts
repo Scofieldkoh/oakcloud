@@ -5,6 +5,7 @@ import { strFromU8, unzipSync } from 'fflate';
 
 import { createDocxFixture } from '../helpers/docx-fixture';
 import { createOakDocBlockCondition } from '@/lib/document-editor/oakdoc-block-conditions';
+import { closestWordElement } from '@/lib/document-editor/oakdoc-blocks';
 import { resolveOakDocConditions } from '@/lib/document-editor/oakdoc-conditions';
 
 const WORD_NS = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
@@ -40,6 +41,18 @@ function part(bytes: Uint8Array): string {
 const allowed = new Set(['company.name']);
 
 describe('OakDoc multi-block conditions', () => {
+  it('walks from a paragraph to its containing Word table row', () => {
+    const xml = new DOMParser().parseFromString(
+      '<w:document xmlns:w="' + WORD_NS + '"><w:body><w:tbl><w:tr><w:tc><w:p/></w:tc></w:tr></w:tbl></w:body></w:document>',
+      'application/xml',
+    );
+    const paragraph = xml.getElementsByTagNameNS(WORD_NS, 'p')[0];
+    const row = closestWordElement(paragraph, 'tr');
+
+    expect(row?.localName).toBe('tr');
+    expect(row?.namespaceURI).toBe(WORD_NS);
+  });
+
   it('wraps multiple sibling paragraphs and unwraps all of them when kept', () => {
     const created = createOakDocBlockCondition({
       docxBytes: docx(

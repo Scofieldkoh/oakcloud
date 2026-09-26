@@ -65,7 +65,7 @@ export function closestWordElement(
 ): Element | undefined {
   let current: Element | null = start;
   while (current) {
-    if (isWordElement(current, localName)) return current;
+    if (current.namespaceURI === WORD_NS && current.localName === localName) return current;
     current = current.parentElement;
   }
   return undefined;
