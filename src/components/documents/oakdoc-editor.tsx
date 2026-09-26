@@ -6,7 +6,6 @@ import {
   useMemo,
   useRef,
   useState,
-  type KeyboardEvent as ReactKeyboardEvent,
 } from 'react';
 import { DocxEditor, type DocxEditorRef, type EditorCommand } from '@docx-editor.dev/react';
 import { useQuery } from '@tanstack/react-query';
@@ -54,11 +53,7 @@ import {
   readOakDocTemplateMetadata,
   type OakDocTemplateMetadata,
 } from '@/lib/document-editor/oakdoc-template';
-import {
-  oakDocCaretTouchesSectionBoundary,
-  oakDocSelectionCrossesSectionBoundary,
-  preserveTransferredOakDocSections,
-} from '@/lib/document-editor/oakdoc-section-compatibility';
+import { useOakDocSectionDeleteGuard } from '@/components/documents/oakdoc/use-oakdoc-section-delete-guard';
 
 const DOCX_MIME =
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
@@ -276,7 +271,19 @@ export function OakDocEditor() {
   const [templateCategory, setTemplateCategory] = useState('OTHER');
   const [templateDescription, setTemplateDescription] = useState('');
   const [templateIsActive, setTemplateIsActive] = useState(true);
-  const [isDirty, setIsDirty] = useState(false);
+  const [isDirty, setIsDirtyState] = useState(false);
+  // C02: every local change bumps this; a save acknowledges only the revision
+  // it serialized, so edits made while saving stay dirty and on screen.
+  const localRevisionRef = useRef(0);
+  const acknowledgedRevisionRef = useRef(0);
+  const setIsDirty = useCallback((next: boolean) => {
+    if (next) {
+      localRevisionRef.current += 1;
+    } else {
+      acknowledgedRevisionRef.current = localRevisionRef.current;
+    }
+    setIsDirtyState(next);
+  }, []);
 
   const companiesQuery = useQuery({
     queryKey: ['oakdoc', 'company-options'],
@@ -396,7 +403,7 @@ export function OakDocEditor() {
       `Loaded OakDoc template "${loaded.template.name}" version ${revision}.`,
     );
     setIsDirty(false);
-  }, [replaceDocument, templateQuery.data]);
+  }, [replaceDocument, templateQuery.data, setIsDirty]);
 
   useEffect(() => {
     if (!templateQuery.error) return;
@@ -420,179 +427,19 @@ export function OakDocEditor() {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [isDirty]);
 
-  const selectionCrossesSectionBoundary = useCallback((): boolean => {
-    const handle = editorRef.current;
-    if (!handle || !documentBytes) return false;
-
-    const snapshot = handle.snapshot();
-    if (snapshot.selectionCollapsed || !snapshot.selection) return false;
-
-    const from = snapshot.selection.from;
-    const to = snapshot.selection.to;
-    if (!('paraId' in from) || !('paraId' in to)) return false;
-
-    const fromId = from.paraId.toUpperCase();
-    const toId = to.paraId.toUpperCase();
-    if (fromId === toId) return false;
-
-    return oakDocSelectionCrossesSectionBoundary({
-      docxBytes: documentBytes,
-      fromParagraphId: fromId,
-      toParagraphId: toId,
-    });
-  }, [documentBytes]);
-
-  const collapsedCaretTouchesSectionBoundary = useCallback((): boolean => {
-    const handle = editorRef.current;
-    if (!handle || !documentBytes) return false;
-
-    const snapshot = handle.snapshot();
-    if (!snapshot.selectionCollapsed || !snapshot.selection) return false;
-    const from = snapshot.selection.from;
-    if (!('paraId' in from)) return false;
-
-    return oakDocCaretTouchesSectionBoundary({
-      docxBytes: documentBytes,
-      paragraphId: from.paraId,
-    });
-  }, [documentBytes]);
-
-  const repairSectionBoundaryDelete = useCallback(async () => {
-    const handle = editorRef.current;
-    if (!handle) return;
-
-    setBusy(true);
-    setStatus('Deleting content while preserving Word section layout...');
-    setStatusKind('neutral');
-
-    try {
-      const beforeBuffer = await handle.save();
-      if (!beforeBuffer) throw new Error('OakDoc could not snapshot the document before deletion.');
-      const beforeBytes = new Uint8Array(beforeBuffer);
-
-      const editor = handle.getEditor();
-      const selection = editor?.snapshot().selection;
-      if (!editor || !selection) {
-        throw new Error('OakDoc could not resolve the selected content.');
-      }
-
-      const deleted = editor.exec({
-        type: 'deleteText',
-        target: selection,
-      } as EditorCommand);
-      if (!deleted.ok) {
-        throw new Error(deleted.reason || 'OakDoc could not delete the selected content.');
-      }
-
-      const afterBuffer = await handle.save();
-      if (!afterBuffer) throw new Error('OakDoc could not snapshot the document after deletion.');
-
-      const repaired = preserveTransferredOakDocSections({
-        beforeBytes,
-        afterBytes: new Uint8Array(afterBuffer),
-      });
-      const cleaned = pruneDeletedOakDocFields(repaired.bytes, OAKDOC_FIELD_TAGS);
-
-      if (repaired.restored > 0 || cleaned.removed > 0) {
-        const sectionMessage = repaired.restored > 0
-          ? ' Word section layout was preserved.'
-          : '';
-        const fieldMessage = cleaned.removed > 0
-          ? ` Removed ${cleaned.removed} deleted OakDoc field${cleaned.removed === 1 ? '' : 's'}.`
-          : '';
-        replaceDocument(
-          cleaned.bytes,
-          `Content deleted.${sectionMessage}${fieldMessage}`,
-          'success',
-        );
-      } else {
-        setStatus('Document changed.');
-        setStatusKind('neutral');
-      }
-      setIsDirty(true);
-    } catch (error) {
-      setStatus(error instanceof Error ? error.message : 'Could not safely delete the selection.');
+  const handleEditorKeyDownCapture = useOakDocSectionDeleteGuard({
+    editorRef,
+    documentBytes,
+    disabled: busy,
+    cleanup: (bytes) => pruneDeletedOakDocFields(bytes, OAKDOC_FIELD_TAGS),
+    onRepaired: (bytes, message) => replaceDocument(bytes, message, 'success'),
+    onChanged: () => setIsDirty(true),
+    onBusyChange: setBusy,
+    onError: (message) => {
+      setStatus(message);
       setStatusKind('error');
-    } finally {
-      setBusy(false);
-    }
-  }, [replaceDocument]);
-
-  const repairNativeCollapsedSectionDelete = useCallback((
-    beforeSave: Promise<ArrayBuffer | null>,
-  ) => {
-    // A collapsed caret exposes no character offset through the public editor
-    // API. Start a live pre-delete serialization during capture, let the native
-    // one-key delete run, then compare it with the post-transaction document.
-    // The strict repair below is a no-op unless joinParagraphs transferred an
-    // exact deleted w:sectPr.
-    queueMicrotask(() => {
-      void (async () => {
-        const handle = editorRef.current;
-        if (!handle) return;
-
-        try {
-          const beforeBuffer = await beforeSave;
-          if (!beforeBuffer) return;
-          const afterBuffer = await handle.save();
-          if (!afterBuffer) return;
-
-          const repaired = preserveTransferredOakDocSections({
-            beforeBytes: new Uint8Array(beforeBuffer),
-            afterBytes: new Uint8Array(afterBuffer),
-          });
-          if (repaired.restored === 0) return;
-
-          const cleaned = pruneDeletedOakDocFields(repaired.bytes, OAKDOC_FIELD_TAGS);
-          replaceDocument(
-            cleaned.bytes,
-            'Content deleted. Word section layout was preserved.',
-            'success',
-          );
-          setIsDirty(true);
-        } catch (error) {
-          setStatus(
-            error instanceof Error
-              ? error.message
-              : 'Could not verify Word section layout after deletion.',
-          );
-          setStatusKind('error');
-        }
-      })();
-    });
-  }, [replaceDocument]);
-
-  const handleEditorKeyDownCapture = useCallback((
-    event: ReactKeyboardEvent<HTMLElement>,
-  ) => {
-    if (busy || (event.key !== 'Backspace' && event.key !== 'Delete')) return;
-
-    if (selectionCrossesSectionBoundary()) {
-      // @docx-editor.dev currently transfers the later paragraph's w:sectPr
-      // onto the surviving paragraph when a range delete joins across a
-      // section boundary. Handle that confirmed structural case ourselves.
-      event.preventDefault();
-      event.stopPropagation();
-      void repairSectionBoundaryDelete();
-      return;
-    }
-
-    if (!collapsedCaretTouchesSectionBoundary()) return;
-
-    const handle = editorRef.current;
-    if (!handle) return;
-
-    // For a collapsed caret, keep native Word-like Backspace/Delete semantics.
-    // Begin capturing the LIVE pre-delete bytes before the native handler runs;
-    // they are used only as structural evidence after the transaction.
-    repairNativeCollapsedSectionDelete(handle.save());
-  }, [
-    busy,
-    collapsedCaretTouchesSectionBoundary,
-    repairNativeCollapsedSectionDelete,
-    repairSectionBoundaryDelete,
-    selectionCrossesSectionBoundary,
-  ]);
+    },
+  });
 
   const currentDocxBytes = useCallback(async (): Promise<Uint8Array> => {
     const handle = editorRef.current;
@@ -628,7 +475,7 @@ export function OakDocEditor() {
     } finally {
       setBusy(false);
     }
-  }, [updateFieldSummary]);
+  }, [updateFieldSummary, setIsDirty]);
 
   const assignField = useCallback(async (field: OakDocFieldDefinition) => {
     const handle = editorRef.current;
@@ -689,7 +536,7 @@ export function OakDocEditor() {
     } finally {
       setBusy(false);
     }
-  }, [currentDocxBytes, replaceDocument, updateFieldSummary]);
+  }, [currentDocxBytes, replaceDocument, updateFieldSummary, setIsDirty]);
 
   const addRepeater = useCallback(async (definition: OakDocRepeaterDefinition) => {
     const handle = editorRef.current;
@@ -737,7 +584,7 @@ export function OakDocEditor() {
     } finally {
       setBusy(false);
     }
-  }, [currentDocxBytes, replaceDocument]);
+  }, [currentDocxBytes, replaceDocument, setIsDirty]);
 
   const removeRepeaterAtCaret = useCallback(async () => {
     const handle = editorRef.current;
@@ -776,7 +623,7 @@ export function OakDocEditor() {
     } finally {
       setBusy(false);
     }
-  }, [currentDocxBytes, replaceDocument]);
+  }, [currentDocxBytes, replaceDocument, setIsDirty]);
 
   const addCondition = useCallback(async () => {
     const handle = editorRef.current;
@@ -839,6 +686,7 @@ export function OakDocEditor() {
     conditionValue,
     currentDocxBytes,
     replaceDocument,
+    setIsDirty,
   ]);
 
   const removeConditionAtCaret = useCallback(async () => {
@@ -877,7 +725,7 @@ export function OakDocEditor() {
     } finally {
       setBusy(false);
     }
-  }, [currentDocxBytes, replaceDocument]);
+  }, [currentDocxBytes, replaceDocument, setIsDirty]);
 
   const generateResolvedCopy = useCallback(async () => {
     if (!company) {
@@ -980,6 +828,7 @@ export function OakDocEditor() {
     }
 
     setBusy(true);
+    const snapshotRevision = localRevisionRef.current;
     try {
       const bytes = await currentDocxBytes();
       const cleaned = pruneDeletedOakDocFields(bytes, OAKDOC_FIELD_TAGS);
@@ -1028,11 +877,18 @@ export function OakDocEditor() {
       setTemplateRevision(savedRevision);
       loadedTemplateRevisionRef.current = savedRevision;
       setFileName(savedFileName);
-      replaceDocument(
-        cleaned.bytes,
-        `Saved OakDoc template "${title.trim()}" version ${savedRevision}.`,
-      );
-      setIsDirty(false);
+      const savedMessage = `Saved OakDoc template "${title.trim()}" version ${savedRevision}.`;
+      const changedSinceSnapshot = localRevisionRef.current !== snapshotRevision;
+      if (cleaned.removed > 0 && !changedSinceSnapshot) {
+        // Only remount when the server-bound bytes differ from the editor
+        // (deleted fields were pruned) and nothing changed during the save.
+        replaceDocument(cleaned.bytes, savedMessage);
+      } else {
+        setStatus(changedSinceSnapshot ? `${savedMessage} Newer edits are not saved yet.` : savedMessage);
+        setStatusKind('success');
+      }
+      acknowledgedRevisionRef.current = snapshotRevision;
+      setIsDirtyState(localRevisionRef.current !== acknowledgedRevisionRef.current);
 
       if (!templateId) {
         router.replace(
