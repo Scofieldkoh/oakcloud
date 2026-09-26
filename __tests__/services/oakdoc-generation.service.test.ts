@@ -21,6 +21,9 @@ vi.mock('@/lib/storage', async (importOriginal) => ({
 
 vi.mock('@/lib/audit', () => ({ createAuditLog: vi.fn() }));
 
+const serverDomMock = vi.hoisted(() => ({ ensureA4ServerDomGlobals: vi.fn() }));
+vi.mock('@/lib/document-editor/a4-server-dom', () => serverDomMock);
+
 const companyMock = vi.hoisted(() => ({ getCompanyById: vi.fn() }));
 vi.mock('@/services/company.service', () => companyMock);
 
@@ -159,6 +162,7 @@ describe('OakDoc generation service', () => {
       generatedBy: 'Ava Tan',
     }, { tenantId });
 
+    expect(serverDomMock.ensureA4ServerDomGlobals).toHaveBeenCalledOnce();
     expect(master.toString()).toBe('master');
     expect(result.bytes.toString()).toBe('generated');
     expect(result.template).toMatchObject({

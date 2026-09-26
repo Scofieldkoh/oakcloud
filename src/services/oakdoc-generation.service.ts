@@ -2,6 +2,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import { Prisma } from '@/generated/prisma';
 import { prisma } from '@/lib/prisma';
 import { createAuditLog } from '@/lib/audit';
+import { ensureA4ServerDomGlobals } from '@/lib/document-editor/a4-server-dom';
 import {
   OAKDOC_MIME_TYPE,
   readOakDocTemplateMetadata,
@@ -99,6 +100,11 @@ export async function generateOakDocBytes(
   input: OakDocGenerationInput,
   params: Pick<TenantAwareParams, 'tenantId'>,
 ): Promise<OakDocGenerationResult> {
+  // OakDoc's DOCX transforms use standard DOM XML APIs in both browser and
+  // server runtimes. Install the shared JSDOM-backed globals explicitly here
+  // so preview/generation never depends on an A4 code path running first.
+  ensureA4ServerDomGlobals();
+
   const template = await prisma.documentTemplate.findFirst({
     where: {
       id: input.templateId,
