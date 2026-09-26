@@ -261,11 +261,27 @@ function GenerateDocumentContent() {
             items: [sessionToEditableItem(envelope, template)],
           });
         } else if (requestedTemplateId) {
-          const selectedTemplates = requestedTemplateIds.map(
+          // Old links can name A4 templates; use their approved Word versions.
+          const linksA4 = requestedTemplateIds.some(
+            (templateId) => templateList.find((candidate) => candidate.id === templateId)?.engine === 'A4',
+          );
+          const runTemplateIds = linksA4
+            ? await fetchJson(`/api/document-templates/new-run?${new URLSearchParams(
+                requestedTemplateIds.map((templateId) => ['templateId', templateId]),
+              )}`).then((data) => (
+                Array.isArray(data.templateIds) ? data.templateIds.map(String) : requestedTemplateIds
+              ))
+            : requestedTemplateIds;
+          const selectedTemplates = runTemplateIds.map(
             (templateId) => templateList.find((candidate) => candidate.id === templateId),
           );
           if (selectedTemplates.some((template) => !template)) {
             throw new Error('One or more linked templates are unavailable.');
+          }
+          if (selectedTemplates.some((template) => template?.engine === 'A4')) {
+            throw new Error(
+              'This link uses a template made with the retired A4 editor, and it has no approved Word version yet. Choose a Word template instead.',
+            );
           }
           const templatesForBatch = selectedTemplates.filter(
             (template): template is DocumentTemplateSummary => Boolean(template),

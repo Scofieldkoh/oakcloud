@@ -46,6 +46,18 @@ describe('TemplateSourcePage', () => {
     navigation.replace.mockReset();
   });
 
+  it('links an A4 template to its approved Word version', async () => {
+    vi.spyOn(global, 'fetch').mockImplementation((input) => (
+      String(input).includes('/new-run')
+        ? respond({ templateIds: ['t-word'] })
+        : respond({ id: 't-1', name: 'Old engagement letter', content: '<p>Terms</p>', contentJson: null })
+    ));
+    renderPage('id=t-1&tab=templates');
+
+    expect(await screen.findByRole('link', { name: 'Open the Word version' }))
+      .toHaveAttribute('href', '/generated-documents/generate?editor=oakdoc&templateId=t-word');
+  });
+
   it('shows an A4 template read-only instead of opening the A4 editor', async () => {
     vi.spyOn(global, 'fetch').mockImplementation(() => respond({
       id: 't-1', name: 'Old engagement letter', content: '<p>Signed terms</p>', contentJson: null,
