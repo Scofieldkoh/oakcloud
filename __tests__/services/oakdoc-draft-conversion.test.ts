@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const prismaMock = vi.hoisted(() => ({
   generatedDocument: { findFirst: vi.fn(), create: vi.fn(), update: vi.fn() },
   esigningEnvelopeDocument: { findFirst: vi.fn() },
+  taskStageOutcome: { findMany: vi.fn(), updateMany: vi.fn() },
   $transaction: vi.fn(),
   $queryRaw: vi.fn(),
 }));
@@ -28,6 +29,9 @@ const revisionMock = vi.hoisted(() => ({
   readGeneratedDocumentRevision: vi.fn(),
 }));
 vi.mock('@/lib/document-editor/generated-document-revision', () => revisionMock);
+
+const taskMock = vi.hoisted(() => ({ safelyReconcileGeneratedDocumentTaskOutcomes: vi.fn(async () => undefined) }));
+vi.mock('@/services/tasks/integration.service', () => taskMock);
 
 import {
   convertA4DraftToOakDoc,
@@ -107,6 +111,8 @@ beforeEach(() => {
     return row;
   });
   prismaMock.esigningEnvelopeDocument.findFirst.mockResolvedValue(null);
+  prismaMock.taskStageOutcome.findMany.mockResolvedValue([]);
+  prismaMock.taskStageOutcome.updateMany.mockResolvedValue({ count: 0 });
   prismaMock.$queryRaw.mockResolvedValue([]);
   prismaMock.$transaction.mockImplementation(async (work: (tx: unknown) => unknown) => work(prismaMock));
   revisionMock.readGeneratedDocumentRevision.mockImplementation(
@@ -240,6 +246,36 @@ describe('A4 draft conversion to an OakDoc copy', () => {
 
     await expect(reviewA4DraftConversion({ documentId: copy.id, expectedRevision: 1, decision: 'accept' }, actor))
       .rejects.toMatchObject({ details: { reason: 'OAKDOC_CONVERSION_ALREADY_REVIEWED' } });
+  });
+
+  it('moves the original task outcome to the accepted copy so the task continues with it', async () => {
+    const context = { taskId: 'task-1', taskStageId: 'stage-1' };
+    seedSource({ metadata: { taskIntegrationContext: context } });
+    const { document } = await convertA4DraftToOakDoc({ documentId: 'a4-1', expectedRevision: 5 }, actor);
+    const copy = document as Row;
+    prismaMock.taskStageOutcome.findMany.mockResolvedValue([{ id: 'outcome-1', taskStageId: 'stage-1' }]);
+
+    await reviewA4DraftConversion({ documentId: copy.id, expectedRevision: 0, decision: 'accept' }, actor);
+
+    expect(prismaMock.taskStageOutcome.findMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: { tenantId, generatedDocumentId: 'a4-1' },
+    }));
+    expect(prismaMock.taskStageOutcome.updateMany).toHaveBeenCalledWith({
+      where: { id: { in: ['outcome-1'] } },
+      data: { generatedDocumentId: copy.id },
+    });
+    const metadata = rows.get(copy.id)!.metadata;
+    expect(metadata.taskIntegrationContext).toEqual(context);
+    expect(readA4DraftConversionMetadata(metadata)?.transferredTaskStageIds).toEqual(['stage-1']);
+    expect(taskMock.safelyReconcileGeneratedDocumentTaskOutcomes).toHaveBeenCalledWith(tenantId, copy.id, 'user-1');
+    expect(rows.get('a4-1')!.metadata).toEqual({ taskIntegrationContext: context });
+  });
+
+  it('leaves task outcomes alone when a copy is rejected', async () => {
+    seedSource();
+    const { document } = await convertA4DraftToOakDoc({ documentId: 'a4-1', expectedRevision: 5 }, actor);
+    await reviewA4DraftConversion({ documentId: (document as Row).id, expectedRevision: 0, decision: 'reject' }, actor);
+    expect(prismaMock.taskStageOutcome.updateMany).not.toHaveBeenCalled();
   });
 
   it('will not accept a copy of an original that changed afterwards', async () => {
