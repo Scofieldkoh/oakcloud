@@ -11,7 +11,8 @@ vi.mock('@/lib/audit', () => ({ createAuditLog: vi.fn() }));
 vi.mock('@/services/tasks/integration.service', () => ({
   linkFirstGeneratedDocumentTaskOutcomeForBatch: vi.fn(),
 }));
-vi.mock('@/services/document-generation-batch/preview.service', () => ({
+vi.mock('@/services/document-generation-batch/preview.service', async (importOriginal) => ({
+  oakDocBatchContext: (await importOriginal<typeof import('@/services/document-generation-batch/preview.service')>()).oakDocBatchContext,
   buildBatchItemRenderInput: vi.fn(),
 }));
 

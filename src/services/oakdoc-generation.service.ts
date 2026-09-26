@@ -25,6 +25,7 @@ import {
 } from '@/lib/document-editor/oakdoc-fields';
 import {
   buildOakDocResolutionValues,
+  type OakDocAgreementContext,
   type OakDocCompanyDetail,
 } from '@/lib/document-editor/oakdoc-context';
 import {
@@ -37,6 +38,13 @@ import {
   inspectOakDocRepeaters,
 } from '@/lib/document-editor/oakdoc-repeaters';
 import { OAKDOC_SIGNATURE_TAGS } from '@/lib/document-editor/oakdoc-signatures';
+import {
+  diagnoseOakDocTags,
+  oakDocFieldContext,
+  type OakDocFieldContext,
+} from '@/lib/document-editor/oakdoc-field-registry';
+import { resolveDocumentPartySelections } from '@/services/document-party.service';
+import type { OakDocDiagnostic } from '@/types/oakdoc';
 import { ConflictError, NotFoundError, ValidationError } from '@/lib/errors';
 import { createLogger } from '@/lib/logger';
 import {
@@ -84,8 +92,47 @@ export interface OakDocGenerationInput {
   companyId: string;
   selectedDirectorId?: string;
   selectedShareholderId?: string;
+  /** Resolved through the canonical party service (must be linked to the company). */
+  selectedContactId?: string;
+  agreement?: OakDocAgreementContext;
   resolutionDate?: Date | string;
   generatedBy?: string;
+}
+
+const CONTEXT_LABELS: Partial<Record<OakDocFieldContext, string>> = {
+  selectedDirector: 'a selected director',
+  selectedShareholder: 'a selected shareholder',
+  selectedContact: 'a selected contact',
+  agreement: 'agreement details',
+  resolution: 'a resolution date',
+};
+
+/**
+ * Structured generation diagnostics: unsupported controls, and fields whose
+ * required context was not supplied (distinct from a supplied-but-empty
+ * value, which resolves to an empty field).
+ */
+export function diagnoseOakDocGeneration(input: {
+  usedTags: readonly string[];
+  provided: ReadonlySet<OakDocFieldContext>;
+}): OakDocDiagnostic[] {
+  const diagnostics = diagnoseOakDocTags(input.usedTags, 'render');
+  const missing = new Map<OakDocFieldContext, string[]>();
+  for (const tag of new Set(input.usedTags)) {
+    const context = oakDocFieldContext(tag);
+    if (!context || !CONTEXT_LABELS[context] || input.provided.has(context)) continue;
+    missing.set(context, [...(missing.get(context) ?? []), tag]);
+  }
+  for (const [context, tags] of missing) {
+    diagnostics.push({
+      code: 'OAKDOC_CONTEXT_MISSING',
+      severity: 'error',
+      stage: 'render',
+      message: `This template needs ${CONTEXT_LABELS[context]} (${tags.sort().join(', ')}).`,
+      controlTag: tags[0],
+    });
+  }
+  return diagnostics;
 }
 
 export interface OakDocGenerationResult {
@@ -102,6 +149,7 @@ export interface OakDocGenerationResult {
     GeneratedOakDocAssetMetadata,
     'storageKey' | 'fileName' | 'fileSize' | 'sha256' | 'generatedAt'
   >;
+  diagnostics: OakDocDiagnostic[];
 }
 
 /**
@@ -155,11 +203,37 @@ export async function generateOakDocBytes(
     ...fieldSummary.tags,
     ...conditionSummary.fieldTags,
   ]));
+
+  const selectedContact = input.selectedContactId
+    ? (await resolveDocumentPartySelections({
+        companyId: input.companyId,
+        tenantId: params.tenantId,
+        selectedContactId: input.selectedContactId,
+      })).selectedContact
+    : undefined;
+  const companyDetail = toOakDocCompanyDetail(company);
+  const provided = new Set<OakDocFieldContext>(['company', 'system']);
+  if (companyDetail.officers?.some((officer) => officer.id === input.selectedDirectorId)) {
+    provided.add('selectedDirector');
+  }
+  if (companyDetail.shareholders?.some((holder) => holder.id === input.selectedShareholderId)) {
+    provided.add('selectedShareholder');
+  }
+  if (selectedContact) provided.add('selectedContact');
+  if (input.agreement) provided.add('agreement');
+  if (input.resolutionDate) provided.add('resolution');
+  const diagnostics = diagnoseOakDocGeneration({
+    usedTags: [...fieldSummary.tags, ...conditionSummary.fieldTags],
+    provided,
+  });
+
   const values = buildOakDocResolutionValues({
-    company: toOakDocCompanyDetail(company),
+    company: companyDetail,
     fieldTags: resolutionTags,
     selectedDirectorId: input.selectedDirectorId,
     selectedShareholderId: input.selectedShareholderId,
+    selectedContact,
+    agreement: input.agreement,
     resolution: { date: input.resolutionDate },
     generatedBy: input.generatedBy,
   });
@@ -179,7 +253,7 @@ export async function generateOakDocBytes(
 
   const repeated = resolveOakDocRepeaters({
     docxBytes: conditioned.bytes,
-    company: toOakDocCompanyDetail(company),
+    company: companyDetail,
   });
   const resolved = resolveOakDocFields(repeated.bytes, values);
   const bytes = Buffer.from(resolved.bytes);
@@ -208,6 +282,7 @@ export async function generateOakDocBytes(
       repeatersResolved: repeated.repeatersResolved,
       repeaterItemsCreated: repeated.itemsCreated,
     },
+    diagnostics,
   };
 }
 
