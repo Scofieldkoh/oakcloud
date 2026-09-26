@@ -4,7 +4,6 @@ import { requirePermission } from '@/lib/rbac';
 import { prisma } from '@/lib/prisma';
 import { ApiError } from '@/lib/errors';
 import { assertA4WriterCanPreserve } from '@/lib/document-editor/a4-editor-format';
-import { parseOakDocFieldTags } from '@/lib/document-editor/oakdoc-template';
 import {
   documentTemplateCategoryEnum,
   updateDocumentTemplateSchema,
@@ -165,7 +164,6 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         isActive: typeof isActiveValue === 'string' ? isActiveValue !== 'false' : undefined,
         fileName: file.name,
         buffer: Buffer.from(await file.arrayBuffer()),
-        fieldTags: parseOakDocFieldTags(formData.get('fieldTags')),
       }, { tenantId, userId: session.id });
 
       return NextResponse.json(withRevision(template));

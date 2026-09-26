@@ -1,6 +1,13 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { storage, StorageKeys } from '@/lib/storage';
 import { inspectOakDocPackage } from '@/lib/document-editor/oakdoc-package-policy';
+import { ensureA4ServerDomGlobals } from '@/lib/document-editor/a4-server-dom';
+import { inspectOakDocFields } from '@/lib/document-editor/oakdoc-fields';
+import { inspectOakDocConditions } from '@/lib/document-editor/oakdoc-conditions';
+import {
+  classifyOakDocTag,
+  OAKDOC_CONDITION_FIELD_TAGS,
+} from '@/lib/document-editor/oakdoc-field-registry';
 import {
   OAKDOC_MIME_TYPE,
   OAKDOC_SERVICE_AGREEMENT_CONTENT,
@@ -31,14 +38,32 @@ function sha256(buffer: Buffer): string {
   return createHash('sha256').update(buffer).digest('hex');
 }
 
+/**
+ * The field manifest is derived from the stored bytes, never from the
+ * caller: every registered field, repeater and signature control in the
+ * document plus the fields its conditions test. Unknown tags stay in the
+ * document (they are reported at generation) but are not trusted here.
+ */
+export function deriveOakDocTemplateFieldTags(bytes: Uint8Array): string[] {
+  ensureA4ServerDomGlobals();
+  const controls = inspectOakDocFields(bytes).tags
+    .filter((tag) => {
+      const kind = classifyOakDocTag(tag);
+      return kind !== 'unknown' && kind !== 'condition';
+    });
+  const conditionFields = inspectOakDocConditions(bytes).fieldTags
+    .filter((tag) => OAKDOC_CONDITION_FIELD_TAGS.has(tag));
+  return Array.from(new Set([...controls, ...conditionFields])).sort();
+}
+
 async function persistAsset(input: {
   tenantId: string;
   userId: string;
   fileName: string;
   buffer: Buffer;
-  fieldTags: string[];
 }): Promise<OakDocTemplateMetadata> {
   inspectOakDocPackage(input.buffer, 'master');
+  const fieldTags = deriveOakDocTemplateFieldTags(new Uint8Array(input.buffer));
   const assetId = randomUUID();
   const storageKey = StorageKeys.oakDocTemplateAsset(input.tenantId, assetId);
   const fileName = normalizeFileName(input.fileName);
@@ -61,7 +86,7 @@ async function persistAsset(input: {
     fileSize: input.buffer.byteLength,
     sha256: digest,
     mimeType: OAKDOC_MIME_TYPE,
-    fieldTags: Array.from(new Set(input.fieldTags)).sort(),
+    fieldTags,
   };
 }
 
@@ -72,7 +97,6 @@ export async function createOakDocTemplate(input: {
   isActive: boolean;
   fileName: string;
   buffer: Buffer;
-  fieldTags: string[];
   contentJson?: Record<string, JsonValue>;
   placeholders?: PlaceholderDefinition[];
   compositionType?: 'STANDARD' | 'SERVICE_AGREEMENT';
@@ -82,7 +106,6 @@ export async function createOakDocTemplate(input: {
     userId: params.userId,
     fileName: input.fileName,
     buffer: input.buffer,
-    fieldTags: input.fieldTags,
   });
 
   try {
@@ -114,7 +137,6 @@ export async function updateOakDocTemplate(input: {
   isActive?: boolean;
   fileName: string;
   buffer: Buffer;
-  fieldTags: string[];
   compositionType?: 'STANDARD' | 'SERVICE_AGREEMENT';
 }, params: TenantAwareParams) {
   const existing = await getDocumentTemplateById(input.id, params.tenantId);
@@ -132,7 +154,6 @@ export async function updateOakDocTemplate(input: {
     userId: params.userId,
     fileName: input.fileName,
     buffer: input.buffer,
-    fieldTags: input.fieldTags,
   });
 
   try {

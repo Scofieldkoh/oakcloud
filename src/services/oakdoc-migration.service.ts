@@ -23,6 +23,7 @@ import {
 } from '@/lib/document-editor/oakdoc-template';
 import { inspectOakDocPackage, OakDocPackageError } from '@/lib/document-editor/oakdoc-package-policy';
 import { diagnoseOakDocPackage } from '@/lib/document-editor/oakdoc-package-diagnostics';
+import { diagnoseOakDocTags } from '@/lib/document-editor/oakdoc-field-registry';
 import { TEMPLATE_AUTHORITY_KEYS, stripKeys } from '@/lib/document-editor/oakdoc-reserved-metadata';
 import {
   OAKDOC_STANDARD_TEMPLATE_MIGRATIONS,
@@ -251,6 +252,7 @@ async function checkMigrationPair(input: {
     if (diagnostics.unresolvedLegacyPlaceholders.length > 0) issues.add('LEGACY_PLACEHOLDERS_REMAIN');
 
     const presentTags = new Set(Object.keys(diagnostics.controlCounts));
+    if (diagnoseOakDocTags([...presentTags], 'template').length > 0) issues.add('UNSUPPORTED_FIELD');
     if (asset.fieldTags.some((tag) => !presentTags.has(tag))) issues.add('FIELD_MANIFEST_MISMATCH');
 
     // A source with fields cannot be certified by a target without any.

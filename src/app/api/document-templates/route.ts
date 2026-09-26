@@ -3,7 +3,6 @@ import { requireAuth } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
 import { ApiError } from '@/lib/errors';
 import { assertA4WriterCanPreserve } from '@/lib/document-editor/a4-editor-format';
-import { parseOakDocFieldTags } from '@/lib/document-editor/oakdoc-template';
 import {
   createDocumentTemplateSchema,
   documentTemplateCategoryEnum,
@@ -128,7 +127,6 @@ export async function POST(request: NextRequest) {
         isActive: isActiveValue !== 'false',
         fileName: file.name,
         buffer,
-        fieldTags: parseOakDocFieldTags(formData.get('fieldTags')),
       }, { tenantId, userId: session.id });
 
       return NextResponse.json(withRevision(template), { status: 201 });
