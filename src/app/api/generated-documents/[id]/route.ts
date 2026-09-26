@@ -36,15 +36,17 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const tenantId = requireSessionWorkspaceId(session);
     const includeDeleted = searchParams.get('includeDeleted') === 'true' && session.isWorkspaceAdmin;
     const includeComments = searchParams.get('includeComments') === 'true';
+    const wantsOakDocBytes = searchParams.get('format') === 'docx';
     const document = await getGeneratedDocumentById(id, tenantId, {
       includeDeleted,
       includeComments,
+      includeBatchDrafts: wantsOakDocBytes,
     });
 
     if (!document) {
       return NextResponse.json({ error: 'Document not found' }, { status: 404 });
     }
-    if (searchParams.get('format') === 'docx') {
+    if (wantsOakDocBytes) {
       if (readGeneratedDocumentEngine(document.metadata) !== 'OAKDOC') {
         return NextResponse.json(
           { error: 'DOCX download is only available for OakDoc documents' },
