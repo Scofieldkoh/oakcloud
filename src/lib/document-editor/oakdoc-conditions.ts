@@ -110,7 +110,7 @@ function findParagraph(xml: XMLDocument, paraId: string): Element | undefined {
 function closestWordElement(start: Element, localName: string): Element | undefined {
   let current: Element | null = start;
   while (current) {
-    if (isWordElement(current, localName)) return current;
+    if (current.namespaceURI === WORD_NS && current.localName === localName) return current;
     current = current.parentElement;
   }
   return undefined;
@@ -120,7 +120,8 @@ function closestOakDocCondition(start: Element): Element | undefined {
   let current: Element | null = start.parentElement;
   while (current) {
     if (
-      isWordElement(current, 'sdt')
+      current.namespaceURI === WORD_NS
+      && current.localName === 'sdt'
       && contentControlTag(current).startsWith(CONDITION_TAG_PREFIX)
     ) {
       return current;

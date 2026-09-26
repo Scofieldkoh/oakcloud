@@ -188,7 +188,7 @@ function tableCells(documentXml: string): Array<Array<Array<string>>> {
       Array.from(tableMatch[1].matchAll(/<w:tr\b[^>]*>([\s\S]*?)<\/w:tr>/gi))
         .map((rowMatch) =>
           Array.from(rowMatch[1].matchAll(/<w:tc\b[^>]*>([\s\S]*?)<\/w:tc>/gi))
-            .map((cellMatch) => [extractCellText(cellMatch[1])]),
+            .map((cellMatch) => extractCellText(cellMatch[1])),
         ));
 }
 
@@ -346,7 +346,7 @@ export function diagnoseOakDocPackage(
 
   const tables = tableCells(documentXml);
   for (const requiredCell of options.requiredTableCells ?? []) {
-    const value = tables[requiredCell.tableIndex]?.[requiredCell.rowIndex]?.[requiredCell.cellIndex]?.[0];
+    const value = tables[requiredCell.tableIndex]?.[requiredCell.rowIndex]?.[requiredCell.cellIndex];
     if (value === undefined) {
       addIssue(
         issues,

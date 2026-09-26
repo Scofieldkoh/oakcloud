@@ -4,7 +4,6 @@ import {
   WORD_NS,
   findParagraphById,
   getWordVal,
-  isWordElement,
   setWordVal,
   wordChild,
   wordChildren,
@@ -199,7 +198,9 @@ export function inspectOakDocSignatureMarkers(
     const definition = OAKDOC_SIGNATURE_BY_TAG.get(contentControlTag(sdt));
     if (!definition) continue;
     let parent = sdt.parentElement;
-    while (parent && !isWordElement(parent, 'p')) parent = parent.parentElement;
+    while (parent && (parent.namespaceURI !== WORD_NS || parent.localName !== 'p')) {
+      parent = parent.parentElement;
+    }
     markers.push({
       ...definition,
       controlId: contentControlId(sdt) || undefined,

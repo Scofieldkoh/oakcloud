@@ -135,7 +135,11 @@ function createProperties(
 function closestRepeater(start: Element): Element | undefined {
   let current: Element | null = start.parentElement;
   while (current) {
-    if (isWordElement(current, 'sdt') && isRepeatingSection(current)) return current;
+    if (
+      current.namespaceURI === WORD_NS
+      && current.localName === 'sdt'
+      && isRepeatingSection(current)
+    ) return current;
     current = current.parentElement;
   }
   return undefined;

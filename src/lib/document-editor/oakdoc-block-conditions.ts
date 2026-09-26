@@ -5,7 +5,6 @@ import {
   closestWordElement,
   findParagraphById,
   getWordVal,
-  isWordElement,
   resolveOakDocBlockRange,
   wordChild,
   type OakDocBlockRangeKind,
@@ -44,7 +43,8 @@ function closestCondition(start: Element): Element | undefined {
   let current: Element | null = start.parentElement;
   while (current) {
     if (
-      isWordElement(current, 'sdt')
+      current.namespaceURI === WORD_NS
+      && current.localName === 'sdt'
       && controlTag(current).startsWith(CONDITION_TAG_PREFIX)
     ) {
       return current;

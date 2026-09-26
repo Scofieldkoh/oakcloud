@@ -351,7 +351,9 @@ export async function duplicateDocumentTemplate(
   }
 
   const oakDocMetadata = readOakDocTemplateMetadata(existing.contentJson);
-  let duplicatedContentJson = existing.contentJson ?? undefined;
+  let duplicatedContentJson: Prisma.InputJsonValue | undefined = existing.contentJson == null
+    ? undefined
+    : existing.contentJson as Prisma.InputJsonValue;
   let copiedOakDocStorageKey: string | null = null;
 
   if (oakDocMetadata) {
@@ -364,7 +366,7 @@ export async function duplicateDocumentTemplate(
     duplicatedContentJson = mergeOakDocTemplateMetadata(existing.contentJson, {
       ...oakDocMetadata,
       storageKey: copiedOakDocStorageKey,
-    }) as Prisma.InputJsonValue;
+    });
   }
 
   const id = randomUUID();
