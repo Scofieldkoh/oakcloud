@@ -1258,7 +1258,7 @@ export default function TemplatesPage() {
       ) : activeTenantId ? (
         <>
           {/* Tab Navigation */}
-          {!oakDocMode && <div className="border-b border-border-primary mb-6">
+          <div className="border-b border-border-primary mb-6">
             <nav className="flex gap-6" aria-label="Tabs">
               <button
                 onClick={() => setActiveTab('templates')}
@@ -1289,10 +1289,10 @@ export default function TemplatesPage() {
                 </span>
               </button>
             </nav>
-          </div>}
+          </div>
 
           {/* Tab Content */}
-          {oakDocMode || activeTab === 'templates' ? (
+          {activeTab === 'templates' ? (
             <DocumentTemplatesTab
               activeTenantId={activeTenantId}
               canCreate={can.createDocument}
