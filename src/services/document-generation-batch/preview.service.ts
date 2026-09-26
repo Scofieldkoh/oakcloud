@@ -159,7 +159,8 @@ function stringValues(values: Readonly<Record<string, unknown>>): Record<string,
 export function oakDocBatchContext(
   configuration: ReturnType<typeof parseBatchItemConfiguration>,
   effectiveCustomData: Record<string, unknown>,
-): Pick<OakDocGenerationInput, 'selectedContactId' | 'agreement' | 'resolutionDate'> {
+  serviceAgreementId?: string | null,
+): Pick<OakDocGenerationInput, 'selectedContactId' | 'agreement' | 'resolutionDate' | 'serviceAgreementId'> {
   const resolutionDate = effectiveCustomData.resolution_date;
   const agreement = configuration.serviceAgreement;
   return {
@@ -174,6 +175,7 @@ export function oakDocBatchContext(
     resolutionDate: resolutionDate instanceof Date || typeof resolutionDate === 'string'
       ? resolutionDate
       : undefined,
+    ...(serviceAgreementId ? { serviceAgreementId } : {}),
   };
 }
 
@@ -228,7 +230,7 @@ export async function buildBatchItemRenderInput(
       companyId: batch.primaryCompanyId,
       selectedDirectorId: configuration.selectedDirectorId ?? undefined,
       selectedShareholderId: configuration.selectedShareholderId ?? undefined,
-      ...oakDocBatchContext(configuration, effectiveCustomData),
+      ...oakDocBatchContext(configuration, effectiveCustomData, agreement?.id),
       generatedBy: actorName,
     }, params);
     const fingerprint = createPreviewFingerprint({
@@ -236,6 +238,7 @@ export async function buildBatchItemRenderInput(
       templateVersion: oakdoc.template.version,
       // Source identity, not just the version number.
       templateSha256: oakdoc.template.sha256,
+      agreementHash: oakdoc.agreementHash,
       partials: [],
       primaryCompanyId: batch.primaryCompanyId,
       contactIds: configuration.contactIds,

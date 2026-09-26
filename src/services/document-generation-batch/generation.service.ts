@@ -166,7 +166,11 @@ export async function materializeBatchDocumentByEngine(input: {
       companyId: batch.primaryCompanyId,
       selectedDirectorId: configuration.selectedDirectorId ?? undefined,
       selectedShareholderId: configuration.selectedShareholderId ?? undefined,
-      ...oakDocBatchContext(configuration, evaluated.effectiveCustomData),
+      ...oakDocBatchContext(
+        configuration,
+        evaluated.effectiveCustomData,
+        item.generatedDocument?.serviceAgreement?.id,
+      ),
       generatedBy: actor,
       title: evaluated.resolvedTitle,
       contactIds: configuration.contactIds,

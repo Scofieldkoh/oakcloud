@@ -3,8 +3,6 @@ import { prisma } from '../src/lib/prisma';
 import { OAKTREE_SERVICE_AGREEMENT_V1 } from '../src/content/service-agreement/oaktree-service-agreement-v1';
 import {
   OAKTREE_SERVICE_AGREEMENT_OAKDOC,
-  SERVICE_AGREEMENT_OAKDOC_EXPECTED_STAGE4_TAGS,
-  SERVICE_AGREEMENT_OAKDOC_FIELD_TAGS,
   buildOaktreeServiceAgreementOakDoc,
 } from '../src/content/service-agreement/oaktree-service-agreement-oakdoc';
 import { Prisma } from '../src/generated/prisma';
@@ -16,6 +14,7 @@ import {
 import { readOakDocTemplateMetadata } from '../src/lib/document-editor/oakdoc-template';
 import {
   createOakDocTemplate,
+  deriveOakDocTemplateFieldTags,
   updateOakDocTemplate,
 } from '../src/services/oakdoc-template.service';
 
@@ -259,10 +258,8 @@ export async function seedOaktreeServiceAgreementOakDocTemplate(input: {
 }) {
   const buffer = Buffer.from(buildOaktreeServiceAgreementOakDoc());
   const digest = createHash('sha256').update(buffer).digest('hex');
-  const fieldTags = [
-    ...SERVICE_AGREEMENT_OAKDOC_FIELD_TAGS,
-    ...SERVICE_AGREEMENT_OAKDOC_EXPECTED_STAGE4_TAGS,
-  ];
+  // Compare against the manifest the server derives from these bytes.
+  const fieldTags = deriveOakDocTemplateFieldTags(new Uint8Array(buffer));
 
   const existing = await prisma.documentTemplate.findFirst({
     where: {

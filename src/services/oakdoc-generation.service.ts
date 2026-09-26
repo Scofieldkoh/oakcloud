@@ -27,6 +27,7 @@ import {
   buildOakDocResolutionValues,
   type OakDocAgreementContext,
   type OakDocCompanyDetail,
+  type OakDocContact,
 } from '@/lib/document-editor/oakdoc-context';
 import {
   claimGeneratedDocumentRevision,
@@ -44,6 +45,12 @@ import {
   type OakDocFieldContext,
 } from '@/lib/document-editor/oakdoc-field-registry';
 import { resolveDocumentPartySelections } from '@/services/document-party.service';
+import { getServiceAgreementDraftById } from '@/services/service-agreement/draft.service';
+import {
+  renderServiceAgreementOakDoc,
+  type ServiceAgreementOakDocParty,
+} from '@/services/service-agreement/oakdoc-renderer';
+import type { ServiceAgreementDraftDto } from '@/services/service-agreement/types';
 import type { OakDocDiagnostic } from '@/types/oakdoc';
 import { ConflictError, NotFoundError, ValidationError } from '@/lib/errors';
 import { createLogger } from '@/lib/logger';
@@ -95,6 +102,8 @@ export interface OakDocGenerationInput {
   /** Resolved through the canonical party service (must be linked to the company). */
   selectedContactId?: string;
   agreement?: OakDocAgreementContext;
+  /** Structured agreement composed into a SERVICE_AGREEMENT master. */
+  serviceAgreementId?: string;
   resolutionDate?: Date | string;
   generatedBy?: string;
 }
@@ -150,6 +159,8 @@ export interface OakDocGenerationResult {
     'storageKey' | 'fileName' | 'fileSize' | 'sha256' | 'generatedAt'
   >;
   diagnostics: OakDocDiagnostic[];
+  /** Canonical hash of the composed Service Agreement, when one was composed. */
+  agreementHash?: string;
 }
 
 /**
@@ -179,6 +190,7 @@ export async function generateOakDocBytes(
       name: true,
       version: true,
       contentJson: true,
+      compositionType: true,
     },
   });
   if (!template) throw new NotFoundError('OakDoc template not found');
@@ -204,13 +216,24 @@ export async function generateOakDocBytes(
     ...conditionSummary.fieldTags,
   ]));
 
+  const composition = template.compositionType === 'SERVICE_AGREEMENT'
+    ? await loadAgreementComposition(input.serviceAgreementId, params.tenantId)
+    : null;
+  const agreementContext = input.agreement ?? (composition
+    ? {
+        agreementDate: composition.agreement.agreementDate,
+        effectiveDate: composition.agreement.effectiveDate,
+        termMonths: composition.agreement.termMonths,
+      }
+    : undefined);
+
   const selectedContact = input.selectedContactId
     ? (await resolveDocumentPartySelections({
         companyId: input.companyId,
         tenantId: params.tenantId,
         selectedContactId: input.selectedContactId,
       })).selectedContact
-    : undefined;
+    : composition?.signers[0] ?? composition?.representatives[0];
   const companyDetail = toOakDocCompanyDetail(company);
   const provided = new Set<OakDocFieldContext>(['company', 'system']);
   if (companyDetail.officers?.some((officer) => officer.id === input.selectedDirectorId)) {
@@ -220,7 +243,7 @@ export async function generateOakDocBytes(
     provided.add('selectedShareholder');
   }
   if (selectedContact) provided.add('selectedContact');
-  if (input.agreement) provided.add('agreement');
+  if (agreementContext) provided.add('agreement');
   if (input.resolutionDate) provided.add('resolution');
   const diagnostics = diagnoseOakDocGeneration({
     usedTags: [...fieldSummary.tags, ...conditionSummary.fieldTags],
@@ -233,7 +256,7 @@ export async function generateOakDocBytes(
     selectedDirectorId: input.selectedDirectorId,
     selectedShareholderId: input.selectedShareholderId,
     selectedContact,
-    agreement: input.agreement,
+    agreement: agreementContext,
     resolution: { date: input.resolutionDate },
     generatedBy: input.generatedBy,
   });
@@ -254,8 +277,45 @@ export async function generateOakDocBytes(
   const repeated = resolveOakDocRepeaters({
     docxBytes: conditioned.bytes,
     company: companyDetail,
+    ...(composition
+      ? { signers: composition.signers, authorisedRepresentatives: composition.representatives }
+      : {}),
   });
-  const resolved = resolveOakDocFields(repeated.bytes, values);
+
+  let composedBytes = repeated.bytes;
+  let agreementHash: string | undefined;
+  if (template.compositionType === 'SERVICE_AGREEMENT' && !composition) {
+    diagnostics.push({
+      code: 'OAKDOC_CONTEXT_MISSING',
+      severity: 'error',
+      stage: 'render',
+      message: 'This Service Agreement template needs its structured agreement (services, fees and entities).',
+    });
+  }
+  if (composition) {
+    const rendered = renderServiceAgreementOakDoc({
+      masterDocxBytes: repeated.bytes,
+      agreement: composition.agreement,
+      fieldContext: {
+        values,
+        signers: composition.signers.map(toAgreementParty),
+        authorizedRepresentatives: composition.representatives.map(toAgreementParty),
+      },
+    });
+    composedBytes = rendered.bytes;
+    agreementHash = rendered.agreementMetadata.canonicalHash;
+    for (const diagnostic of rendered.diagnostics) {
+      if (diagnostic.severity === 'info') continue;
+      diagnostics.push({
+        code: `OAKDOC_AGREEMENT_${diagnostic.code}`,
+        severity: diagnostic.severity,
+        stage: 'render',
+        message: diagnostic.message,
+      });
+    }
+  }
+
+  const resolved = resolveOakDocFields(composedBytes, values);
   const bytes = Buffer.from(resolved.bytes);
 
   return {
@@ -283,6 +343,50 @@ export async function generateOakDocBytes(
       repeaterItemsCreated: repeated.itemsCreated,
     },
     diagnostics,
+    ...(agreementHash ? { agreementHash } : {}),
+  };
+}
+
+interface AgreementComposition {
+  agreement: ServiceAgreementDraftDto;
+  representatives: OakDocContact[];
+  signers: OakDocContact[];
+}
+
+async function loadAgreementComposition(
+  serviceAgreementId: string | undefined,
+  tenantId: string,
+): Promise<AgreementComposition | null> {
+  if (!serviceAgreementId) return null;
+  const agreement = await getServiceAgreementDraftById(serviceAgreementId, tenantId);
+  if (!agreement) throw new NotFoundError('Service Agreement not found');
+  const representatives: OakDocContact[] = agreement.authorizedRepresentativeSnapshots.map(
+    (representative) => ({
+      id: representative.id,
+      contactId: representative.id,
+      name: representative.name,
+      detail: representative.role,
+      role: representative.role,
+      contactType: 'INDIVIDUAL',
+      email: representative.email,
+      phone: representative.phone,
+    }),
+  );
+  const signerIds = new Set(agreement.signerContactIds);
+  return {
+    agreement,
+    representatives,
+    signers: representatives.filter((representative) => signerIds.has(representative.id)),
+  };
+}
+
+function toAgreementParty(contact: OakDocContact): ServiceAgreementOakDocParty {
+  return {
+    contactId: contact.contactId ?? contact.id,
+    name: contact.name,
+    role: contact.role,
+    email: contact.email,
+    phone: contact.phone,
   };
 }
 

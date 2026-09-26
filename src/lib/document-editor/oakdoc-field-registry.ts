@@ -97,8 +97,24 @@ export const OAKDOC_CONDITION_FIELD_TAGS: ReadonlySet<string> = new Set(
   OAKDOC_SCALAR_FIELDS.map((field) => field.tag),
 );
 
+/** Structural Service Agreement slots replaced by the agreement renderer. */
+export const OAKDOC_AGREEMENT_SLOT_TAGS = {
+  serviceSections: 'agreement.serviceSections',
+  feeTable: 'agreement.feeTable',
+  entityAppendix: 'agreement.entityAppendix',
+} as const;
+
+/** Legacy `@`-prefixed spellings still accepted for the same slots. */
+export const OAKDOC_AGREEMENT_SLOT_ALIASES: ReadonlySet<string> = new Set(
+  Object.values(OAKDOC_AGREEMENT_SLOT_TAGS).flatMap((tag) => [tag, `@${tag}`]),
+);
+
+/** Per-service controls the agreement renderer creates and owns. */
+export const OAKDOC_AGREEMENT_SERVICE_ITEM_TAG_PREFIX = 'agreement.service.item:';
+
 export type OakDocTagKind =
   | 'field'
+  | 'agreement-slot'
   | 'repeater-item'
   | 'repeater'
   | 'condition'
@@ -110,6 +126,12 @@ export function classifyOakDocTag(tag: string): OakDocTagKind {
   if (OAKDOC_GENERIC_REPEATER_ITEM_TAGS.has(tag)) return 'repeater-item';
   if (OAKDOC_SIGNATURE_TAGS.has(tag)) return 'signature';
   if (tag.startsWith(OAKDOC_CONDITION_TAG_PREFIX)) return 'condition';
+  if (
+    OAKDOC_AGREEMENT_SLOT_ALIASES.has(tag)
+    || tag.startsWith(OAKDOC_AGREEMENT_SERVICE_ITEM_TAG_PREFIX)
+  ) {
+    return 'agreement-slot';
+  }
   if (OAKDOC_CONDITION_FIELD_TAGS.has(tag)) return 'field';
   return 'unknown';
 }
