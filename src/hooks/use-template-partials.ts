@@ -87,7 +87,11 @@ async function fetchPartials(
   return response.json();
 }
 
-async function fetchAllPartials(tenantId?: string): Promise<{ partials: Pick<TemplatePartial, 'id' | 'name' | 'displayName' | 'description' | 'placeholders'>[] }> {
+export type TemplatePartialSummary =
+  Pick<TemplatePartial, 'id' | 'name' | 'displayName' | 'description' | 'placeholders' | 'version'>
+  & { documentEngine: 'A4' | 'OAKDOC' };
+
+async function fetchAllPartials(tenantId?: string): Promise<{ partials: TemplatePartialSummary[] }> {
   const searchParams = new URLSearchParams({ all: 'true' });
   if (tenantId) searchParams.set('tenantId', tenantId);
   const response = await fetch(`/api/template-partials?${searchParams}`);

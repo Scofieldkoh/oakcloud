@@ -56,6 +56,12 @@ import {
   type OakDocTemplateMetadata,
 } from '@/lib/document-editor/oakdoc-template';
 import { useOakDocSectionDeleteGuard } from '@/components/documents/oakdoc/use-oakdoc-section-delete-guard';
+import { OakDocPartialPanel } from '@/components/documents/oakdoc/oakdoc-partial-panel';
+import type { TemplatePartialSummary } from '@/hooks/use-template-partials';
+import {
+  insertOakDocPartialReference,
+  inspectOakDocPartialReferences,
+} from '@/lib/document-editor/oakdoc-partials';
 
 const DOCX_MIME =
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
@@ -262,6 +268,7 @@ export function OakDocEditor() {
     count: 0,
     tags: [],
   });
+  const [partialReferences, setPartialReferences] = useState<string[]>([]);
   const [repeaterSummary, setRepeaterSummary] = useState<OakDocRepeaterSummary>({
     count: 0,
     tags: [],
@@ -322,6 +329,7 @@ export function OakDocEditor() {
     setFieldSummary(inspectOakDocFields(bytes, OAKDOC_FIELD_TAGS));
     setRepeaterSummary(inspectOakDocRepeaters(bytes));
     setConditionSummary(inspectOakDocConditions(bytes));
+    setPartialReferences(inspectOakDocPartialReferences(bytes));
   }, []);
 
   const replaceDocument = useCallback((
@@ -532,6 +540,37 @@ export function OakDocEditor() {
       setIsDirty(true);
     } catch (error) {
       setStatus(error instanceof Error ? error.message : 'Could not create repeating section.');
+      setStatusKind('error');
+    } finally {
+      setBusy(false);
+    }
+  }, [currentDocxBytes, replaceDocument, setIsDirty]);
+
+  const insertPartial = useCallback(async (partial: TemplatePartialSummary) => {
+    const editor = editorRef.current?.getEditor();
+    const selection = editor?.snapshot().selection;
+    if (!selection || !('paraId' in selection.from)) {
+      setStatus('Place the caret in the paragraph the partial should follow.');
+      setStatusKind('error');
+      return;
+    }
+
+    setBusy(true);
+    try {
+      const bytes = await currentDocxBytes();
+      const label = partial.displayName || partial.name;
+      replaceDocument(
+        insertOakDocPartialReference({
+          docxBytes: bytes,
+          paraId: selection.from.paraId,
+          partialId: partial.id,
+          label,
+        }),
+        `Inserted the ${label} partial. Save the template to pin this version.`,
+      );
+      setIsDirty(true);
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : 'Could not insert the partial.');
       setStatusKind('error');
     } finally {
       setBusy(false);
@@ -1097,6 +1136,15 @@ export function OakDocEditor() {
                 </select>
               ) : null}
             </section>
+
+            <div className="my-4 border-t border-border-secondary" />
+
+            <OakDocPartialPanel
+              tenantId={activeTenantId ?? undefined}
+              referencedIds={partialReferences}
+              disabled={!hasDocument || busy}
+              onInsert={(partial) => void insertPartial(partial)}
+            />
 
             <div className="my-4 border-t border-border-secondary" />
 

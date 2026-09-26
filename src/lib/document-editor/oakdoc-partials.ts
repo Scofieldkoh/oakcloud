@@ -1,4 +1,3 @@
-import { createHash } from 'node:crypto';
 import { strFromU8, unzipSync, zipSync } from 'fflate';
 import { encodeOakDocZipText } from '@/lib/document-editor/oakdoc-zip';
 import {
@@ -200,6 +199,16 @@ export function validateOakDocPartialPackage(bytes: Uint8Array): OakDocDiagnosti
   return diagnostics;
 }
 
+/** Short content fingerprint for media names (FNV-1a; browser-safe). */
+function fingerprint(bytes: Uint8Array): string {
+  let hash = 0x811c9dc5;
+  for (const byte of bytes) {
+    hash ^= byte;
+    hash = Math.imul(hash, 0x01000193) >>> 0;
+  }
+  return `${hash.toString(16).padStart(8, '0')}${bytes.byteLength.toString(16)}`;
+}
+
 class IdAllocator {
   private next: number;
 
@@ -379,7 +388,7 @@ class MasterPackage {
 
   addMedia(sourceName: string, bytes: Uint8Array): string {
     const base = sourceName.split('/').pop() || 'image';
-    const digest = createHash('sha256').update(bytes).digest('hex').slice(0, 12);
+    const digest = fingerprint(bytes);
     const target = `media/oakpartial-${digest}-${base}`;
     this.files[`word/${target}`] = bytes;
     return target;
@@ -585,6 +594,70 @@ function importFragment(
   }
 
   return blocks;
+}
+
+/**
+ * Insert a reference to a partial as its own block after the paragraph the
+ * caret is in. The reference shows the partial's name until generation
+ * replaces it with the pinned partial body.
+ */
+export function insertOakDocPartialReference(input: {
+  docxBytes: Uint8Array;
+  paraId: string;
+  partialId: string;
+  label: string;
+}): Uint8Array {
+  if (!partialIdFromTag(oakDocPartialTag(input.partialId))) {
+    throw new Error('This partial cannot be referenced.');
+  }
+  const files = unzipSync(input.docxBytes);
+  if (!files[DOCUMENT_PART]) throw new Error('OakDoc could not find word/document.xml.');
+  const xml = parseXml(files[DOCUMENT_PART], DOCUMENT_PART);
+  const expected = input.paraId.trim().toUpperCase();
+  const paragraph = Array.from(xml.getElementsByTagNameNS(WORD_NS, 'p')).find((candidate) => (
+    (candidate.getAttributeNS('http://schemas.microsoft.com/office/word/2010/wordml', 'paraId')
+      || candidate.getAttribute('w14:paraId')
+      || '').toUpperCase() === expected
+  ));
+  if (!paragraph) throw new Error('Place the caret in a paragraph first.');
+  // Climb out of block controls so the reference lands at body or cell level.
+  let anchor: Element = paragraph;
+  while (anchor.parentNode && isWordElement(anchor.parentNode, 'sdtContent')) {
+    const sdt = anchor.parentNode.parentNode as Element | null;
+    if (!sdt) break;
+    anchor = sdt;
+  }
+  const parent = anchor.parentNode as Element | null;
+  if (!parent || !['body', 'tc'].includes(parent.localName)) {
+    throw new Error('Partials can only be inserted between paragraphs, not inside one.');
+  }
+
+  const element = (name: string, attributes: Record<string, string> = {}) => {
+    const created = xml.createElementNS(WORD_NS, `w:${name}`);
+    for (const [key, value] of Object.entries(attributes)) created.setAttributeNS(WORD_NS, `w:${key}`, value);
+    return created;
+  };
+  const ids = Array.from(xml.getElementsByTagNameNS(WORD_NS, 'id')).map((id) => wordAttribute(id, 'val'));
+  const sdt = element('sdt');
+  const properties = element('sdtPr');
+  properties.appendChild(element('alias', { val: `Partial: ${input.label}` }));
+  properties.appendChild(element('tag', { val: oakDocPartialTag(input.partialId) }));
+  properties.appendChild(element('id', { val: String(Math.max(300000, maxNumeric(ids) + 1)) }));
+  properties.appendChild(element('lock', { val: 'sdtContentLocked' }));
+  sdt.appendChild(properties);
+  const content = element('sdtContent');
+  const body = element('p');
+  const run = element('r');
+  const text = element('t');
+  text.textContent = `[Partial: ${input.label}]`;
+  run.appendChild(text);
+  body.appendChild(run);
+  content.appendChild(body);
+  sdt.appendChild(content);
+  parent.insertBefore(sdt, anchor.nextSibling);
+
+  files[DOCUMENT_PART] = serialize(xml);
+  return zipSync(files, { level: 6 });
 }
 
 export interface OakDocPartialExpansionResult {
