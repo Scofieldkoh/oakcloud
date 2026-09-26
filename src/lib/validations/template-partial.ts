@@ -60,6 +60,7 @@ export const searchTemplatePartialsSchema = z.object({
   limit: z.number().min(1).max(100).default(20),
   sortBy: z.enum(['name', 'createdAt', 'updatedAt']).default('name'),
   sortOrder: z.enum(['asc', 'desc']).default('asc'),
+  editor: z.enum(['oakdoc', 'a4']).optional(),
 });
 
 export type SearchTemplatePartialsInput = z.infer<typeof searchTemplatePartialsSchema>;

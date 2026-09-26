@@ -76,6 +76,7 @@ async function fetchPartials(
   if (params.limit) searchParams.set('limit', params.limit.toString());
   if (params.sortBy) searchParams.set('sortBy', params.sortBy);
   if (params.sortOrder) searchParams.set('sortOrder', params.sortOrder);
+  if (params.editor) searchParams.set('editor', params.editor);
   if (tenantId) searchParams.set('tenantId', tenantId);
 
   const response = await fetch(`/api/template-partials?${searchParams}`);
@@ -214,6 +215,7 @@ export function useTemplatePartials(options: UseTemplatePartialsOptions = {}) {
     sortBy: params.sortBy ?? 'name',
     sortOrder: params.sortOrder ?? 'asc',
     search: params.search,
+    editor: params.editor,
   };
 
   return useQuery({
