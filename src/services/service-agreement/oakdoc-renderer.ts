@@ -3,6 +3,10 @@ import { strFromU8, unzipSync, zipSync } from 'fflate';
 
 import { encodeOakDocZipText } from '@/lib/document-editor/oakdoc-zip';
 import { resolveOakDocFields } from '@/lib/document-editor/oakdoc-fields';
+import {
+  OAKDOC_AGREEMENT_SERVICE_ITEM_TAG_PREFIX,
+  OAKDOC_AGREEMENT_SLOT_TAGS,
+} from '@/lib/document-editor/oakdoc-field-registry';
 import { canonicalJson } from '@/lib/document-generation-fingerprint';
 import { resolvePlaceholders } from '@/lib/placeholder-resolver';
 import {
@@ -25,11 +29,7 @@ const WORD_NS = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
 const XML_NS = 'http://www.w3.org/XML/1998/namespace';
 const DOCUMENT_PART = 'word/document.xml';
 
-export const OAKDOC_SERVICE_AGREEMENT_SLOT_TAGS = {
-  serviceSections: 'agreement.serviceSections',
-  feeTable: 'agreement.feeTable',
-  entityAppendix: 'agreement.entityAppendix',
-} as const;
+export const OAKDOC_SERVICE_AGREEMENT_SLOT_TAGS = OAKDOC_AGREEMENT_SLOT_TAGS;
 
 const SLOT_TAG_ALIASES: Record<
   keyof typeof OAKDOC_SERVICE_AGREEMENT_SLOT_TAGS,
@@ -49,7 +49,7 @@ const SLOT_TAG_ALIASES: Record<
   ],
 };
 
-const SERVICE_ITEM_TAG_PREFIX = 'agreement.service.item:';
+const SERVICE_ITEM_TAG_PREFIX = OAKDOC_AGREEMENT_SERVICE_ITEM_TAG_PREFIX;
 
 export interface ServiceAgreementOakDocParty {
   contactId: string;
