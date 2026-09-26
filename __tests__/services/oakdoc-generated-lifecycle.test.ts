@@ -245,4 +245,27 @@ describe('native generated-document lifecycle (L1)', () => {
     await expect(assertGeneratedOakDocReadyForFinalization(documentId, tenantId))
       .rejects.toMatchObject({ details: { reason: 'OAKDOC_UNRESOLVED_CONTROLS' } });
   });
+
+  it('a converted A4 copy cannot be finalized until its review is accepted', async () => {
+    const bytes = docx(field('company.name', 'Acme'));
+    const key = seedDocument(bytes);
+    const conversion = {
+      schemaVersion: 1,
+      kind: 'A4_DRAFT_CONVERSION',
+      method: 'a4-html-import/1',
+      sourceDocumentId: 'a4-source',
+      sourceRevision: 4,
+      sourceContentSha256: 'a'.repeat(64),
+      diagnostics: [],
+      convertedAt: '2026-09-26T01:00:00.000Z',
+      convertedById: userId,
+    };
+    const metadata = { documentEngine: 'OAKDOC', oakDocGenerated: assetMetadata(key, bytes) };
+    stored = { ...stored, metadata: { ...metadata, oakDocMigration: { ...conversion, status: 'PENDING_REVIEW' } } };
+    await expect(assertGeneratedOakDocReadyForFinalization(documentId, tenantId))
+      .rejects.toMatchObject({ details: { reason: 'OAKDOC_CONVERSION_PENDING_REVIEW' } });
+
+    stored = { ...stored, metadata: { ...metadata, oakDocMigration: { ...conversion, status: 'ACCEPTED' } } };
+    await expect(assertGeneratedOakDocReadyForFinalization(documentId, tenantId)).resolves.toBeUndefined();
+  });
 });

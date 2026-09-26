@@ -65,6 +65,7 @@ import type { TenantAwareParams } from '@/lib/types';
 import type { TaskLaunchContext } from '@/services/tasks/types';
 import { getCompanyById } from '@/services/company.service';
 import { downloadOakDocTemplate } from '@/services/oakdoc-template.service';
+import { isPendingA4DraftConversion } from '@/services/oakdoc-draft-conversion.service';
 
 const log = createLogger('oakdoc-generation');
 
@@ -823,6 +824,16 @@ export async function assertGeneratedOakDocReadyForFinalization(
   documentId: string,
   tenantId: string,
 ): Promise<void> {
+  const document = await prisma.generatedDocument.findFirst({
+    where: { id: documentId, tenantId, deletedAt: null },
+    select: { metadata: true },
+  });
+  if (document && isPendingA4DraftConversion(document.metadata)) {
+    throw new ValidationError(
+      'Review and accept this converted copy before finalizing it',
+      { reason: 'OAKDOC_CONVERSION_PENDING_REVIEW' },
+    );
+  }
   const check = await checkGeneratedOakDocFinalization(documentId, tenantId);
   if (check.ready) return;
   throw new ValidationError(
