@@ -4,6 +4,7 @@ import { encodeOakDocZipText as strToU8 } from '@/lib/document-editor/oakdoc-zip
 import { describe, expect, it } from 'vitest';
 import {
   expandOakDocPartials,
+  insertOakDocPartialReference,
   inspectOakDocPartialReferences,
   oakDocPartialTag,
   validateOakDocPartialPackage,
@@ -157,5 +158,35 @@ describe('native partial expansion', () => {
     expect(validateOakDocPartialPackage(pkg({ body: '<w:p><w:r><w:t>Fine</w:t></w:r></w:p>' }))).toEqual([]);
     expect(inspectOakDocPartialReferences(pkg({ body: reference(A) + reference(A, 2) + reference(B, 3) }))).toEqual([A, B]);
     expect(classifyOakDocTag(oakDocPartialTag(A))).toBe('partial');
+  });
+
+  it('inserts a reference after the caret paragraph, never inside it', () => {
+    const W14 = 'http://schemas.microsoft.com/office/word/2010/wordml';
+    const master = zipSync({
+      ...unzipSync(pkg({ body: '' })),
+      'word/document.xml': strToU8(
+        `<w:document xmlns:w="${W}" xmlns:w14="${W14}"><w:body>`
+        + '<w:p w14:paraId="0A1B2C3D"><w:r><w:t>Intro</w:t></w:r></w:p>'
+        + '<w:p w14:paraId="0A1B2C3E"><w:r><w:t>Closing</w:t></w:r></w:p>'
+        + '<w:sectPr/></w:body></w:document>',
+      ),
+    });
+    const inserted = insertOakDocPartialReference({ docxBytes: master, paraId: '0a1b2c3d', partialId: A, label: 'Scope' });
+    const document = part(inserted, 'word/document.xml');
+    expect(inspectOakDocPartialReferences(inserted)).toEqual([A]);
+    expect(document.indexOf('Intro')).toBeLessThan(document.indexOf('[Partial: Scope]'));
+    expect(document.indexOf('[Partial: Scope]')).toBeLessThan(document.indexOf('Closing'));
+
+    const expanded = expandOakDocPartials({
+      docxBytes: inserted,
+      fragments: new Map([[A, pkg({ body: '<w:p><w:r><w:t>Scope of work</w:t></w:r></w:p>' })]]),
+    });
+    expect(part(expanded.bytes, 'word/document.xml')).toContain('Scope of work');
+    expect(part(expanded.bytes, 'word/document.xml')).not.toContain('[Partial: Scope]');
+
+    expect(() => insertOakDocPartialReference({ docxBytes: master, paraId: 'FFFFFFFF', partialId: A, label: 'x' }))
+      .toThrow('caret');
+    expect(() => insertOakDocPartialReference({ docxBytes: master, paraId: '0A1B2C3D', partialId: 'not-a-uuid', label: 'x' }))
+      .toThrow();
   });
 });

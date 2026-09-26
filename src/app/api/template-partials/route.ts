@@ -1,18 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
-import { prisma } from '@/lib/prisma';
 import { ApiError } from '@/lib/errors';
-import {
-  assertA4WriterCanPreserve,
-  readA4StoredDocument,
-} from '@/lib/document-editor/a4-editor-format';
+import { assertA4WriterCanPreserve } from '@/lib/document-editor/a4-editor-format';
 import {
   createTemplatePartialSchema,
   searchTemplatePartialsSchema,
 } from '@/lib/validations/template-partial';
 import {
   createTemplatePartial,
+  getAllTemplatePartials,
   searchTemplatePartials,
 } from '@/services/template-partial.service';
 
@@ -57,20 +54,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (searchParams.get('all') === 'true') {
-      const partials = await prisma.templatePartial.findMany({
-        where: { tenantId: effectiveTenantId, deletedAt: null },
-        select: {
-          id: true,
-          name: true,
-          displayName: true,
-          description: true,
-          content: true,
-          placeholders: true,
-          version: true,
-        },
-        orderBy: { name: 'asc' },
-      });
-      partials.forEach((partial) => readA4StoredDocument(partial.content));
+      const partials = await getAllTemplatePartials(effectiveTenantId);
       return NextResponse.json({ partials: partials.map(withRevision) });
     }
 

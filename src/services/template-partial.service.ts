@@ -437,13 +437,28 @@ export async function searchTemplatePartials(
 
 export async function getAllTemplatePartials(
   tenantId: string,
-): Promise<Pick<TemplatePartial, 'id' | 'name' | 'displayName' | 'description' | 'content' | 'placeholders'>[]> {
+): Promise<Array<
+  Pick<TemplatePartial, 'id' | 'name' | 'displayName' | 'description' | 'content' | 'placeholders' | 'version'>
+  & { documentEngine: 'A4' | 'OAKDOC' }
+>> {
   const partials = await prisma.templatePartial.findMany({
     where: { tenantId, deletedAt: null },
-    select: { id: true, name: true, displayName: true, description: true, content: true, placeholders: true },
+    select: {
+      id: true,
+      name: true,
+      displayName: true,
+      description: true,
+      content: true,
+      placeholders: true,
+      version: true,
+      contentJson: true,
+    },
     orderBy: { name: 'asc' },
   });
-  return partials.map(assertReadablePartial);
+  return partials.map(({ contentJson, ...partial }) => ({
+    ...assertReadablePartial(partial),
+    documentEngine: readOakDocTemplateMetadata(contentJson) ? 'OAKDOC' as const : 'A4' as const,
+  }));
 }
 
 export async function getPartialUsage(
