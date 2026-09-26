@@ -10,7 +10,10 @@ import {
 } from '@/services/document-generator.service';
 import { createErrorResponse, requireSessionWorkspaceId } from '@/lib/api-helpers';
 import { readGeneratedDocumentEngine } from '@/lib/document-editor/document-engine';
-import { downloadGeneratedOakDoc } from '@/services/oakdoc-generation.service';
+import {
+  downloadGeneratedOakDoc,
+  saveGeneratedOakDocDocument,
+} from '@/services/oakdoc-generation.service';
 import { saveOakDocBatchDraft } from '@/services/document-generation-batch/oakdoc-draft.service';
 
 interface RouteParams {
@@ -78,27 +81,48 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
     if (searchParams.get('format') === 'docx') {
       const expectedBatchRevisionParam = searchParams.get('expectedBatchRevision');
-      const expectedBatchRevision = expectedBatchRevisionParam === null
-        ? Number.NaN
-        : Number(expectedBatchRevisionParam);
-      const previewFingerprint = searchParams.get('previewFingerprint') ?? '';
-      if (!Number.isInteger(expectedBatchRevision) || expectedBatchRevision < 0) {
+      const bytes = new Uint8Array(await request.arrayBuffer());
+
+      if (expectedBatchRevisionParam !== null) {
+        const expectedBatchRevision = Number(expectedBatchRevisionParam);
+        const previewFingerprint = searchParams.get('previewFingerprint') ?? '';
+        if (!Number.isInteger(expectedBatchRevision) || expectedBatchRevision < 0) {
+          return NextResponse.json(
+            { error: 'expectedBatchRevision must be a non-negative integer' },
+            { status: 400 },
+          );
+        }
+        const batch = await saveOakDocBatchDraft({
+          generatedDocumentId: id,
+          expectedBatchRevision,
+          previewFingerprint,
+          bytes,
+        }, {
+          tenantId,
+          userId: session.id,
+        });
+        return NextResponse.json(batch);
+      }
+
+      const expectedRevision = Number(searchParams.get('expectedRevision'));
+      if (!Number.isInteger(expectedRevision) || expectedRevision < 0) {
         return NextResponse.json(
-          { error: 'expectedBatchRevision must be a non-negative integer' },
+          { error: 'expectedRevision must be a non-negative integer' },
           { status: 400 },
         );
       }
-      const bytes = new Uint8Array(await request.arrayBuffer());
-      const batch = await saveOakDocBatchDraft({
-        generatedDocumentId: id,
-        expectedBatchRevision,
-        previewFingerprint,
+      const result = await saveGeneratedOakDocDocument({
+        documentId: id,
+        expectedRevision,
         bytes,
       }, {
         tenantId,
         userId: session.id,
       });
-      return NextResponse.json(batch);
+      return NextResponse.json({
+        revision: result.revision,
+        updatedAt: result.updatedAt.toISOString(),
+      });
     }
 
     const body = await request.json();
