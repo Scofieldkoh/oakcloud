@@ -2,6 +2,7 @@
 
 import { useMemo } from 'react';
 import { Alert } from '@/components/ui/alert';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   useAllTemplatePartials,
   type TemplatePartialSummary,
@@ -13,6 +14,11 @@ interface OakDocPartialPanelProps {
   referencedIds: string[];
   disabled: boolean;
   onInsert: (partial: TemplatePartialSummary) => void;
+  /** Versions the saved template pins, by partial ID. */
+  pinnedVersions?: Readonly<Record<string, number>>;
+  /** Whether the next save moves every partial to its latest version. */
+  refreshLatest?: boolean;
+  onRefreshLatestChange?: (value: boolean) => void;
 }
 
 /**
@@ -24,6 +30,9 @@ export function OakDocPartialPanel({
   referencedIds,
   disabled,
   onInsert,
+  pinnedVersions = {},
+  refreshLatest = false,
+  onRefreshLatestChange,
 }: OakDocPartialPanelProps) {
   const { data, isLoading, error } = useAllTemplatePartials(tenantId, Boolean(tenantId));
   const wordPartials = useMemo(
@@ -32,6 +41,11 @@ export function OakDocPartialPanel({
   );
   const known = useMemo(() => new Set(wordPartials.map((partial) => partial.id)), [wordPartials]);
   const missing = data ? referencedIds.filter((id) => !known.has(id)) : [];
+  const outdated = wordPartials.filter((partial) => (
+    referencedIds.includes(partial.id)
+    && pinnedVersions[partial.id] !== undefined
+    && pinnedVersions[partial.id] < partial.version
+  ));
 
   return (
     <section className="space-y-3">
@@ -74,6 +88,9 @@ export function OakDocPartialPanel({
                   </span>
                   <span className="block truncate text-[10px] text-text-muted">
                     {partial.name} · v{partial.version}
+                    {pinnedVersions[partial.id] !== undefined && pinnedVersions[partial.id] < partial.version
+                      ? ` (this template uses v${pinnedVersions[partial.id]})`
+                      : ''}
                   </span>
                 </span>
                 {used ? (
@@ -84,6 +101,17 @@ export function OakDocPartialPanel({
           })}
         </div>
       )}
+
+      {outdated.length > 0 && onRefreshLatestChange ? (
+        <Checkbox
+          size="sm"
+          checked={refreshLatest}
+          disabled={disabled}
+          onChange={(event) => onRefreshLatestChange(event.target.checked)}
+          label="Use the latest partial versions when I save"
+          description={`${outdated.length === 1 ? 'One partial has' : `${outdated.length} partials have`} a newer version. Documents already generated don't change.`}
+        />
+      ) : null}
 
       {missing.length > 0 ? (
         <Alert variant="warning" compact>

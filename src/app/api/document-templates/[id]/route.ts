@@ -164,6 +164,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         isActive: typeof isActiveValue === 'string' ? isActiveValue !== 'false' : undefined,
         fileName: file.name,
         buffer: Buffer.from(await file.arrayBuffer()),
+        refreshPartialPins: formData.get('refreshPartialPins') === 'all' ? 'all' : undefined,
       }, { tenantId, userId: session.id });
 
       return NextResponse.json(withRevision(template));

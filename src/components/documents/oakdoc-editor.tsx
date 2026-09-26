@@ -61,6 +61,7 @@ import type { TemplatePartialSummary } from '@/hooks/use-template-partials';
 import {
   insertOakDocPartialReference,
   inspectOakDocPartialReferences,
+  readOakDocPartialPins,
 } from '@/lib/document-editor/oakdoc-partials';
 
 const DOCX_MIME =
@@ -120,6 +121,14 @@ async function fetchCompany(companyId: string): Promise<OakDocCompanyDetail> {
   const response = await fetch(`/api/companies/${encodeURIComponent(companyId)}`);
   if (!response.ok) throw new Error('Could not load the selected company.');
   return response.json() as Promise<OakDocCompanyDetail>;
+}
+
+function pinnedVersionsOf(contentJson: unknown): Record<string, number> {
+  try {
+    return Object.fromEntries(readOakDocPartialPins(contentJson).map((pin) => [pin.partialId, pin.version]));
+  } catch {
+    return {};
+  }
 }
 
 async function fetchOakDocTemplate(
@@ -269,6 +278,8 @@ export function OakDocEditor() {
     tags: [],
   });
   const [partialReferences, setPartialReferences] = useState<string[]>([]);
+  const [refreshPartials, setRefreshPartials] = useState(false);
+  const [pinnedPartialVersions, setPinnedPartialVersions] = useState<Record<string, number>>({});
   const [repeaterSummary, setRepeaterSummary] = useState<OakDocRepeaterSummary>({
     count: 0,
     tags: [],
@@ -358,6 +369,8 @@ export function OakDocEditor() {
     setTemplateCategory(loaded.template.category || 'OTHER');
     setTemplateIsActive(loaded.template.isActive);
     setFileName(loaded.metadata.fileName);
+    setPinnedPartialVersions(pinnedVersionsOf(loaded.template.contentJson));
+    setRefreshPartials(false);
     replaceDocument(
       loaded.bytes,
       `Loaded OakDoc template "${loaded.template.name}" version ${revision}.`,
@@ -837,6 +850,7 @@ export function OakDocEditor() {
       if (templateId && templateRevision !== null) {
         formData.set('expectedRevision', String(templateRevision));
       }
+      if (refreshPartials) formData.set('refreshPartialPins', 'all');
 
       const response = await fetch(
         templateId
@@ -853,6 +867,8 @@ export function OakDocEditor() {
       }
 
       const savedId = String(payload.id);
+      setPinnedPartialVersions(pinnedVersionsOf(payload.contentJson));
+      setRefreshPartials(false);
       const savedRevision = Number(payload.revision ?? payload.version);
       setTemplateId(savedId);
       setTemplateRevision(savedRevision);
@@ -886,6 +902,7 @@ export function OakDocEditor() {
     activeTenantId,
     currentDocxBytes,
     fileName,
+    refreshPartials,
     replaceDocument,
     router,
     templateCategory,
@@ -1144,6 +1161,9 @@ export function OakDocEditor() {
               referencedIds={partialReferences}
               disabled={!hasDocument || busy}
               onInsert={(partial) => void insertPartial(partial)}
+              pinnedVersions={pinnedPartialVersions}
+              refreshLatest={refreshPartials}
+              onRefreshLatestChange={setRefreshPartials}
             />
 
             <div className="my-4 border-t border-border-secondary" />

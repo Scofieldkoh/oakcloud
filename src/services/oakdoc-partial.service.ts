@@ -14,6 +14,10 @@ import {
   type OakDocTemplateMetadata,
 } from '@/lib/document-editor/oakdoc-template';
 import {
+  readOakDocPartialPins,
+  type OakDocPartialPin,
+} from '@/lib/document-editor/oakdoc-partials';
+import {
   expandOakDocPartials,
   inspectOakDocPartialReferences,
   validateOakDocPartialPackage,
@@ -22,6 +26,8 @@ import {
 import { deriveOakDocTemplateFieldTags } from '@/lib/document-editor/oakdoc-field-manifest';
 import type { OakDocDiagnostic } from '@/types/oakdoc';
 import type { TenantAwareParams } from '@/lib/types';
+
+export { readOakDocPartialPins, type OakDocPartialPin };
 
 /**
  * C06 native partials: upload, pinning and expansion.
@@ -36,56 +42,8 @@ import type { TenantAwareParams } from '@/lib/types';
 export const OAKDOC_PARTIAL_CONTENT =
   '<p data-oakdoc-partial="true">Word-native partial. Open the Word document to edit its content.</p>';
 
-export interface OakDocPartialPin {
-  partialId: string;
-  version: number;
-  sha256: string;
-  storageKey: string;
-  /** The partial's own pins at that version, so nested expansion is fixed too. */
-  nested: OakDocPartialPin[];
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
-}
-
 function sha256(bytes: Uint8Array): string {
   return createHash('sha256').update(bytes).digest('hex');
-}
-
-function readPin(value: unknown, depth: number): OakDocPartialPin | null {
-  if (!isRecord(value) || depth > 4) return null;
-  if (
-    typeof value.partialId !== 'string'
-    || typeof value.version !== 'number'
-    || typeof value.sha256 !== 'string'
-    || !/^[a-f0-9]{64}$/.test(value.sha256)
-    || typeof value.storageKey !== 'string'
-  ) {
-    return null;
-  }
-  const nested = Array.isArray(value.nested)
-    ? value.nested.map((entry) => readPin(entry, depth + 1))
-    : [];
-  if (nested.some((entry) => entry === null)) return null;
-  return {
-    partialId: value.partialId,
-    version: value.version,
-    sha256: value.sha256,
-    storageKey: value.storageKey,
-    nested: nested as OakDocPartialPin[],
-  };
-}
-
-export function readOakDocPartialPins(contentJson: unknown): OakDocPartialPin[] {
-  if (!isRecord(contentJson) || !Array.isArray(contentJson.oakDocPartials)) return [];
-  const pins = contentJson.oakDocPartials.map((entry) => readPin(entry, 0));
-  if (pins.some((entry) => entry === null)) {
-    throw new ValidationError('Pinned partial references are damaged', {
-      reason: 'OAKDOC_PARTIAL_PINS_INVALID',
-    });
-  }
-  return pins as OakDocPartialPin[];
 }
 
 export function readOakDocPartialMetadata(contentJson: unknown): OakDocTemplateMetadata | null {
