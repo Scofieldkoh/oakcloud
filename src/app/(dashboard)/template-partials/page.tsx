@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import Link from 'next/link';
 import { useSession } from '@/hooks/use-auth';
 import { usePermissions } from '@/hooks/use-permissions';
 import { Button } from '@/components/ui/button';
@@ -41,7 +40,6 @@ import {
   Check,
   X,
   Eye,
-  ArrowLeft,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
@@ -140,7 +138,7 @@ const CATEGORIES = [
 // ============================================================================
 
 async function fetchTemplates(
-  params: { search?: string; category?: string; isActive?: boolean; editor?: 'oakdoc'; page: number; limit: number },
+  params: { search?: string; category?: string; isActive?: boolean; editor?: 'oakdoc' | 'a4'; page: number; limit: number },
   tenantId?: string
 ): Promise<TemplateSearchResult> {
   const searchParams = new URLSearchParams();
@@ -283,24 +281,52 @@ function PartialSyntax({ name }: { name: string }) {
 // Document Templates Tab
 // ============================================================================
 
+type LibraryView = 'word' | 'archived';
+
+/**
+ * A4 templates and HTML partials are archived: read-only, kept for existing
+ * documents and links, and listed only when this switch asks for them.
+ */
+function LibraryViewSelect({
+  value,
+  onChange,
+  noun,
+}: {
+  value: LibraryView;
+  onChange: (view: LibraryView) => void;
+  noun: 'templates' | 'partials';
+}) {
+  return (
+    <select
+      aria-label={`Show ${noun}`}
+      value={value}
+      onChange={(e) => onChange(e.target.value as LibraryView)}
+      className="h-9 px-3 text-sm border border-border-primary rounded-md bg-background-primary text-text-primary focus:outline-none focus:ring-2 focus:ring-accent-primary/50 w-full sm:w-52"
+    >
+      <option value="word">Word {noun}</option>
+      <option value="archived">Archived A4 {noun}</option>
+    </select>
+  );
+}
+
 function DocumentTemplatesTab({
   activeTenantId,
   canCreate,
   canUpdate,
   canDelete,
-  oakDocOnly = false,
 }: {
   activeTenantId: string;
   canCreate: boolean;
   canUpdate: boolean;
   canDelete: boolean;
-  oakDocOnly?: boolean;
 }) {
   const router = useRouter();
   const { success, error: showError } = useToast();
   const queryClient = useQueryClient();
 
   // List state
+  const [view, setView] = useState<LibraryView>('word');
+  const oakDocOnly = view === 'word';
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
@@ -332,7 +358,7 @@ function DocumentTemplatesTab({
       search,
       category: categoryFilter,
       isActive: statusFilter === 'active' ? true : statusFilter === 'inactive' ? false : undefined,
-      editor: oakDocOnly ? 'oakdoc' : undefined,
+      editor: oakDocOnly ? 'oakdoc' : 'a4',
       page,
       limit,
     }, activeTenantId),
@@ -446,10 +472,18 @@ function DocumentTemplatesTab({
               setSearch(e.target.value);
               setPage(1);
             }}
-            placeholder={oakDocOnly ? 'Search OakDoc templates...' : 'Search templates...'}
+            placeholder={oakDocOnly ? 'Search Word templates...' : 'Search archived A4 templates...'}
             className="w-full h-9 pl-9 pr-4 border border-border-primary rounded-md bg-background-primary text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-primary/50 text-sm"
           />
         </div>
+        <LibraryViewSelect
+          value={view}
+          noun="templates"
+          onChange={(next) => {
+            setView(next);
+            setPage(1);
+          }}
+        />
         <select
           value={categoryFilter}
           onChange={(e) => {
@@ -486,11 +520,6 @@ function DocumentTemplatesTab({
             leftIcon={<Plus />}
             onClick={() => router.push('/generated-documents/generate?editor=oakdoc')}
           >
-            New OakDoc Template
-          </Button>
-        )}
-        {canCreate && !oakDocOnly && (
-          <Button variant="primary" className="h-9" leftIcon={<Plus />} onClick={openCreateModal}>
             New Word Template
           </Button>
         )}
@@ -563,24 +592,18 @@ function DocumentTemplatesTab({
           <p className="text-sm text-text-muted">
             {search || categoryFilter || statusFilter
               ? oakDocOnly
-                ? 'No OakDoc templates found matching your search'
-                : 'No templates found matching your search'
+                ? 'No Word templates found matching your search'
+                : 'No archived A4 templates found matching your search'
               : oakDocOnly
-                ? 'No OakDoc templates yet'
-                : 'No templates yet'}
+                ? 'No Word templates yet'
+                : 'No archived A4 templates'}
           </p>
-          {canCreate && !search && !categoryFilter && !statusFilter && (
+          {canCreate && oakDocOnly && !search && !categoryFilter && !statusFilter && (
             <button
-              onClick={() => {
-                if (oakDocOnly) {
-                  router.push('/generated-documents/generate?editor=oakdoc');
-                } else {
-                  openCreateModal();
-                }
-              }}
+              onClick={openCreateModal}
               className="mt-3 px-4 py-1.5 text-sm text-text-secondary bg-background-tertiary hover:bg-background-elevated rounded-full transition-colors"
             >
-              {oakDocOnly ? 'Create your first OakDoc template' : 'Create your first template'}
+              Create your first Word template
             </button>
           )}
         </div>
@@ -847,6 +870,7 @@ function TemplatePartialsTab({
   const { success, error: showError } = useToast();
 
   // Search state
+  const [view, setView] = useState<LibraryView>('word');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
@@ -863,6 +887,7 @@ function TemplatePartialsTab({
   // Queries and mutations
   const { data, isLoading, error } = useTemplatePartials({
     search: search || undefined,
+    editor: view === 'word' ? 'oakdoc' : 'a4',
     page,
     limit,
     tenantId: isSuperAdmin ? activeTenantId : undefined,
@@ -943,7 +968,7 @@ function TemplatePartialsTab({
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
           <input
             type="text"
-            placeholder="Search partials..."
+            placeholder={view === 'word' ? 'Search Word partials...' : 'Search archived A4 partials...'}
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
@@ -952,6 +977,14 @@ function TemplatePartialsTab({
             className="w-full h-9 pl-9 pr-4 border border-border-primary rounded-md bg-background-primary text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-primary/50 text-sm"
           />
         </div>
+        <LibraryViewSelect
+          value={view}
+          noun="partials"
+          onChange={(next) => {
+            setView(next);
+            setPage(1);
+          }}
+        />
         {canCreate && (
           <Button variant="primary" className="h-9" leftIcon={<Plus />} onClick={openCreate}>
             New Word partial
@@ -975,9 +1008,11 @@ function TemplatePartialsTab({
         <div className="flex flex-col items-center justify-center py-12">
           <Code className="w-12 h-12 mb-3 opacity-50 text-text-muted" />
           <p className="text-sm text-text-muted">
-            {search ? 'No partials found matching your search' : 'No partials yet'}
+            {view === 'archived'
+              ? search ? 'No archived A4 partials found matching your search' : 'No archived A4 partials'
+              : search ? 'No Word partials found matching your search' : 'No Word partials yet'}
           </p>
-          {!search && canCreate && (
+          {!search && canCreate && view === 'word' && (
             <button
               onClick={openCreate}
               className="mt-3 px-4 py-1.5 text-sm text-text-secondary bg-background-tertiary hover:bg-background-elevated rounded-full transition-colors"
@@ -1198,7 +1233,6 @@ export default function TemplatesPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialTab = searchParams.get('tab');
-  const oakDocMode = searchParams.get('editor') === 'oakdoc';
   const [activeTab, setActiveTab] = useState<TabType>(
     initialTab === 'partials'
       ? initialTab
@@ -1228,20 +1262,11 @@ export default function TemplatesPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
-          <Link
-            href="/generated-documents"
-            className="mb-3 inline-flex items-center gap-2 text-sm text-text-secondary transition-colors hover:text-text-primary"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back to Document Generation
-          </Link>
           <h1 className="text-xl sm:text-2xl font-semibold text-text-primary">
-            {oakDocMode ? 'OakDoc Templates' : 'Templates'}
+            Document Templates
           </h1>
           <p className="text-sm text-text-secondary mt-1">
-            {oakDocMode
-              ? 'Manage DOCX-native templates used by OakDoc.'
-              : 'Manage document templates and reusable partials.'}
+            Manage document templates and reusable partials.
           </p>
         </div>
       </div>
@@ -1258,7 +1283,7 @@ export default function TemplatesPage() {
       ) : activeTenantId ? (
         <>
           {/* Tab Navigation */}
-          {!oakDocMode && <div className="border-b border-border-primary mb-6">
+          <div className="border-b border-border-primary mb-6">
             <nav className="flex gap-6" aria-label="Tabs">
               <button
                 onClick={() => setActiveTab('templates')}
@@ -1289,16 +1314,15 @@ export default function TemplatesPage() {
                 </span>
               </button>
             </nav>
-          </div>}
+          </div>
 
           {/* Tab Content */}
-          {oakDocMode || activeTab === 'templates' ? (
+          {activeTab === 'templates' ? (
             <DocumentTemplatesTab
               activeTenantId={activeTenantId}
               canCreate={can.createDocument}
               canUpdate={can.updateDocument}
               canDelete={can.deleteDocument}
-              oakDocOnly={oakDocMode}
             />
           ) : (
             <TemplatePartialsTab

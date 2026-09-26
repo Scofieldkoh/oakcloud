@@ -1,4 +1,6 @@
 import { render, screen } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ToastProvider } from '@/components/ui/toast';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const navigation = vi.hoisted(() => ({
@@ -66,5 +68,22 @@ describe('TemplatesPage legacy Services tab redirect', () => {
 
     expect(screen.getByText('Manage document templates and reusable partials.')).toBeVisible();
     expect(screen.queryByText(/service offerings/i)).not.toBeInTheDocument();
+  });
+
+  it('keeps the Partials tab in the Word template view', () => {
+    pageState.searchParams = new URLSearchParams('editor=oakdoc');
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ templates: [], partials: [], total: 0 }))));
+
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <ToastProvider>
+          <TemplatesPage />
+        </ToastProvider>
+      </QueryClientProvider>,
+    );
+
+    expect(screen.getByRole('button', { name: 'Document Templates' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Partials' })).toBeVisible();
+    vi.unstubAllGlobals();
   });
 });
