@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
+import dynamic from 'next/dynamic';
 import {
   AlertCircle,
   AlertTriangle,
@@ -29,6 +30,11 @@ import {
   type GenerationBlocker,
 } from './batch-completeness';
 
+const OakDocReviewEditor = dynamic(
+  () => import('./oakdoc-review-editor').then((module) => module.OakDocReviewEditor),
+  { ssr: false },
+);
+
 export interface BatchReviewWorkspaceProps {
   items: EditableBatchItem[];
   activeItemId: string | null;
@@ -36,6 +42,8 @@ export interface BatchReviewWorkspaceProps {
   onPreview: (itemId: string, replaceEditedContent?: boolean) => void | Promise<void>;
   onReview: (itemId: string) => void | Promise<void>;
   onEditContent: (itemId: string, content: string | null, json: unknown) => void;
+  onSaveOakDoc: (itemId: string, bytes: Uint8Array) => Promise<void>;
+  onOakDocDirtyChange?: (dirty: boolean) => void;
   pending?: boolean;
   layout?: A4DocumentLayout;
   /** Optional template metadata fallback. Item metadata always wins. */
@@ -79,6 +87,8 @@ export function BatchReviewWorkspace({
   onPreview,
   onReview,
   onEditContent,
+  onSaveOakDoc,
+  onOakDocDirtyChange,
   pending = false,
   layout,
   contentJson = null,
@@ -87,10 +97,21 @@ export function BatchReviewWorkspace({
   previewProgress = null,
 }: BatchReviewWorkspaceProps) {
   const [replaceDialogItemId, setReplaceDialogItemId] = useState<string | null>(null);
+  const [oakDocDirty, setOakDocDirty] = useState(false);
+  const setOakDocDirtyState = useCallback((dirty: boolean) => {
+    setOakDocDirty(dirty);
+    onOakDocDirtyChange?.(dirty);
+  }, [onOakDocDirtyChange]);
   const activeItem = items.find((item) => item.key === activeItemId) ?? items[0] ?? null;
   const rendering = previewProgress !== null && previewProgress.done < previewProgress.total;
 
   const requestRefresh = (item: EditableBatchItem) => {
+    if (oakDocDirty && item.key === activeItem?.key) {
+      if (!window.confirm('This Word draft has unsaved edits. Refresh and discard those edits?')) {
+        return;
+      }
+      setOakDocDirtyState(false);
+    }
     if (hasManualEdits(item)) {
       setReplaceDialogItemId(item.key);
       return;
@@ -128,7 +149,17 @@ export function BatchReviewWorkspace({
         <BatchDocumentQueue
           items={items}
           activeItemId={activeItem?.key ?? null}
-          onSelect={onSelect}
+          onSelect={(itemId) => {
+            if (
+              oakDocDirty
+              && itemId !== activeItem?.key
+              && !window.confirm('This Word draft has unsaved edits. Switch documents and discard those edits?')
+            ) {
+              return;
+            }
+            setOakDocDirtyState(false);
+            onSelect(itemId);
+          }}
           completeness={completeness}
           mode="review"
           onNextIncomplete={selectNextUnapproved}
@@ -231,15 +262,18 @@ export function BatchReviewWorkspace({
                     disabled={
                       pending
                       || stale
+                      || oakDocDirty
                       || !activeItem.previewContent
                       || !activeCompleteness.isComplete
                     }
                     title={
                       !activeCompleteness.isComplete
                         ? `${activeCompleteness.missing.length} required value(s) missing`
-                        : stale
-                          ? 'Refresh the preview before approving'
-                          : !activeItem.previewContent
+                        : oakDocDirty
+                          ? 'Save the Word draft before approving'
+                          : stale
+                            ? 'Refresh the preview before approving'
+                            : !activeItem.previewContent
                             ? 'Render a preview before approving'
                             : undefined
                     }
@@ -319,18 +353,18 @@ export function BatchReviewWorkspace({
               'min-h-0 flex-1 overflow-hidden rounded-lg border border-border-primary shadow-sm',
             )}>
               {activeItem.previewContent ? (
-                activeItem.templateEngine === 'OAKDOC' ? (
-                  <div className="flex h-full flex-col items-center justify-center gap-3 bg-background-secondary p-8 text-center">
-                    <FileText className="h-10 w-10 text-oak-primary" aria-hidden="true" />
-                    <div>
-                      <p className="text-sm font-semibold text-text-primary">Word · OakDoc preview validated</p>
-                      <p className="mt-1 max-w-lg text-sm text-text-secondary">
-                        This document stays DOCX-native. Oakcloud validated the current template,
-                        company context, fields, conditions, and repeaters without converting it
-                        through the A4/HTML renderer.
-                      </p>
-                    </div>
-                  </div>
+                activeItem.templateEngine === 'OAKDOC'
+                && activeItem.generatedDocumentId
+                && activeItem.previewFingerprint ? (
+                  <OakDocReviewEditor
+                    generatedDocumentId={activeItem.generatedDocumentId}
+                    previewFingerprint={activeItem.previewFingerprint}
+                    title={displayTitle || activeItem.templateName}
+                    readOnly={generated}
+                    disabled={pending}
+                    onDirtyChange={setOakDocDirtyState}
+                    onSave={(bytes) => onSaveOakDoc(activeItem.key, bytes)}
+                  />
                 ) : (
                   <A4PageEditor
                     sessionKey={`batch-item:${activeItem.templateId}`}

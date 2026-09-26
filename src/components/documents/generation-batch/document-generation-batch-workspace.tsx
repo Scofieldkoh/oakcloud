@@ -109,6 +109,7 @@ export function DocumentGenerationBatchWorkspace({
     continueTo,
     previewItem,
     reviewItem,
+    saveOakDocDraft,
     preflight,
     generate,
     retry,
@@ -126,6 +127,7 @@ export function DocumentGenerationBatchWorkspace({
   >(null);
   const [showPreflight, setShowPreflight] = useState(false);
   const [isDownloadingAll, setIsDownloadingAll] = useState(false);
+  const [oakDocReviewDirty, setOakDocReviewDirty] = useState(false);
 
   const partyOptions = useDocumentPartyOptions(state.batch.primaryCompanyId);
   const activeItem = state.batch.items.find(
@@ -394,6 +396,14 @@ export function DocumentGenerationBatchWorkspace({
   }, [saveDraft, toastError]);
 
   const navigate = (stage: BatchStage) => {
+    if (
+      oakDocReviewDirty
+      && stage !== state.stage
+      && !window.confirm('This Word draft has unsaved edits. Leave this review stage and discard them?')
+    ) {
+      return;
+    }
+    if (stage !== state.stage) setOakDocReviewDirty(false);
     setResults(null);
     dispatch({ type: 'stage/navigate', stage });
   };
@@ -409,6 +419,10 @@ export function DocumentGenerationBatchWorkspace({
   };
 
   const handleGenerate = async () => {
+    if (oakDocReviewDirty) {
+      toastError('Save the Word draft before generating.');
+      return;
+    }
     setShowPreflight(false);
     try {
       await preflight();
@@ -912,6 +926,17 @@ export function DocumentGenerationBatchWorkspace({
                 editedContent: content,
                 editedContentJson: json,
               })}
+              onSaveOakDoc={async (itemId, bytes) => {
+                try {
+                  await saveOakDocDraft(itemId, bytes);
+                  setLastSavedAt(Date.now());
+                  success('Word draft saved');
+                } catch (caught) {
+                  toastError(caught instanceof Error ? caught.message : 'Could not save Word draft');
+                  throw caught;
+                }
+              }}
+              onOakDocDirtyChange={setOakDocReviewDirty}
               pending={state.pending !== null}
               layout={activeLayout}
               completeness={completeness}
@@ -943,7 +968,7 @@ export function DocumentGenerationBatchWorkspace({
               variant="primary"
               size="sm"
               onClick={() => setShowPreflight(true)}
-              disabled={!canGenerate || state.pending !== null || showResults}
+              disabled={!canGenerate || oakDocReviewDirty || state.pending !== null || showResults}
             >
               Generate All
             </Button>

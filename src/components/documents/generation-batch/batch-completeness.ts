@@ -291,5 +291,8 @@ export function isPreviewStale(item: EditableBatchItem): boolean {
 }
 
 export function hasManualEdits(item: EditableBatchItem): boolean {
-  return Boolean(item.editedContent && item.editedContent !== item.previewContent);
+  return Boolean(
+    (item.editedContent && item.editedContent !== item.previewContent)
+    || (item.templateEngine === 'OAKDOC' && item.editedContentJson),
+  );
 }

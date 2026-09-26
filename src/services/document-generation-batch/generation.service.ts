@@ -8,7 +8,11 @@ import {
   ValidationError,
 } from '@/lib/errors';
 import { assertA4WriterCanPreserve } from '@/lib/document-editor/a4-editor-format';
-import { getDocumentTemplateEngine } from '@/lib/document-editor/document-engine';
+import {
+  getDocumentTemplateEngine,
+  readGeneratedOakDocAssetMetadata,
+  readOakDocReviewDraftMetadata,
+} from '@/lib/document-editor/document-engine';
 import {
   createReviewedFingerprint,
 } from '@/lib/document-generation-fingerprint';
@@ -134,6 +138,23 @@ export async function materializeBatchDocumentByEngine(input: {
     if (!batch.primaryCompanyId) {
       throw new ValidationError('Select a primary company before generating an OakDoc document');
     }
+
+    const reviewedAsset = readGeneratedOakDocAssetMetadata(item.generatedDocument.metadata);
+    const reviewedDraft = readOakDocReviewDraftMetadata(item.generatedDocument.metadata);
+    if (
+      reviewedAsset
+      && reviewedDraft
+      && item.previewFingerprint
+      && reviewedDraft.previewFingerprint === item.previewFingerprint
+      && reviewedAsset.templateId === item.templateId
+      && reviewedAsset.templateVersion === item.templateVersion
+    ) {
+      // Review & Generate persists the exact resolved/edited DOCX on the
+      // GeneratedDocument draft. Finalize that reviewed asset rather than
+      // regenerating from the reusable template and losing manual Word edits.
+      return item.generatedDocument;
+    }
+
     return materializeOakDocGeneratedDocument({
       templateId: item.templateId,
       generatedDocumentId: item.generatedDocumentId,

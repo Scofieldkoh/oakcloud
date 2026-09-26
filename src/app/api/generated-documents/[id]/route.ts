@@ -11,6 +11,7 @@ import {
 import { createErrorResponse, requireSessionWorkspaceId } from '@/lib/api-helpers';
 import { readGeneratedDocumentEngine } from '@/lib/document-editor/document-engine';
 import { downloadGeneratedOakDoc } from '@/services/oakdoc-generation.service';
+import { saveOakDocBatchDraft } from '@/services/document-generation-batch/oakdoc-draft.service';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -70,10 +71,36 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     const session = await requireAuth();
     const { id } = await params;
     await requirePermission(session, 'document', 'update');
+    const tenantId = requireSessionWorkspaceId(session);
+    const { searchParams } = new URL(request.url);
+
+    if (searchParams.get('format') === 'docx') {
+      const expectedBatchRevisionParam = searchParams.get('expectedBatchRevision');
+      const expectedBatchRevision = expectedBatchRevisionParam === null
+        ? Number.NaN
+        : Number(expectedBatchRevisionParam);
+      const previewFingerprint = searchParams.get('previewFingerprint') ?? '';
+      if (!Number.isInteger(expectedBatchRevision) || expectedBatchRevision < 0) {
+        return NextResponse.json(
+          { error: 'expectedBatchRevision must be a non-negative integer' },
+          { status: 400 },
+        );
+      }
+      const bytes = new Uint8Array(await request.arrayBuffer());
+      const batch = await saveOakDocBatchDraft({
+        generatedDocumentId: id,
+        expectedBatchRevision,
+        previewFingerprint,
+        bytes,
+      }, {
+        tenantId,
+        userId: session.id,
+      });
+      return NextResponse.json(batch);
+    }
 
     const body = await request.json();
     const data = updateGeneratedDocumentSchema.parse({ ...body, id });
-    const tenantId = requireSessionWorkspaceId(session);
     const document = await updateGeneratedDocument(
       data,
       { tenantId, userId: session.id },
