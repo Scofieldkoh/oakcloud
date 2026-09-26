@@ -1,6 +1,10 @@
 import { randomUUID } from 'node:crypto';
 import { basename, extname } from 'node:path';
 import { incrementConnectorUsage, resolveConnector } from '@/services/connector.service';
+import { ApiError, ErrorCodes } from '@/lib/errors';
+import { createLogger } from '@/lib/logger';
+
+const log = createLogger('microsoft-graph-conversion');
 
 type FetchLike = typeof fetch;
 
@@ -134,18 +138,19 @@ function getTemporaryUploadPath(settings: MicrosoftGraphSettings, fileName: stri
 }
 
 async function resolveMicrosoftGraphStorageConnector(tenantId: string): Promise<GraphResolvedConnector> {
-  const resolved =
-    (await resolveConnector(tenantId, 'STORAGE', 'SHAREPOINT')) ??
-    (await resolveConnector(tenantId, 'STORAGE', 'ONEDRIVE'));
+  // Selection mirrors hasMicrosoftGraphDocumentConversionConnector(): an
+  // unusable SharePoint connector falls through to a usable OneDrive one.
+  const sharePoint = await resolveConnector(tenantId, 'STORAGE', 'SHAREPOINT') as GraphResolvedConnector | null;
+  if (isGraphConversionConnectorUsable(sharePoint)) return sharePoint as GraphResolvedConnector;
+  const oneDrive = await resolveConnector(tenantId, 'STORAGE', 'ONEDRIVE') as GraphResolvedConnector | null;
+  if (isGraphConversionConnectorUsable(oneDrive)) return oneDrive as GraphResolvedConnector;
 
-  if (!resolved) {
-    throw new Error('Configure a SharePoint or OneDrive connector before uploading Word documents');
+  if (!sharePoint && !oneDrive) {
+    throw new GraphConversionUnavailableError('Configure a SharePoint or OneDrive connector before uploading Word documents');
   }
-  if (!isGraphConversionConnectorUsable(resolved as GraphResolvedConnector)) {
-    throw new Error('Configure a SharePoint or OneDrive connector with a valid document library before uploading Word documents');
-  }
-
-  return resolved as GraphResolvedConnector;
+  throw new GraphConversionUnavailableError(
+    'Configure a SharePoint or OneDrive connector with a valid document library before uploading Word documents',
+  );
 }
 
 function isGraphConversionConnectorUsable(resolved: GraphResolvedConnector | null): boolean {
@@ -177,29 +182,113 @@ export async function hasMicrosoftGraphDocumentConversionConnector(tenantId: str
   return isGraphConversionConnectorUsable(oneDriveConnector);
 }
 
+const GRAPH_REQUEST_TIMEOUT_MS = 60_000;
+const GRAPH_MAX_RETRIES = 2;
+const GRAPH_MAX_RETRY_DELAY_MS = 10_000;
+
+/** No connector is usable; conversion (PDF/signing) is unavailable, DOCX still works. */
+export class GraphConversionUnavailableError extends ApiError {
+  constructor(message: string) {
+    super(ErrorCodes.SERVICE_UNAVAILABLE, message, 503, { reason: 'OAKDOC_CONVERTER_UNAVAILABLE' });
+    this.name = 'GraphConversionUnavailableError';
+  }
+}
+
+/** Microsoft 365 rejected or failed the conversion request. */
+export class GraphConversionError extends ApiError {
+  constructor(message: string, public readonly status?: number) {
+    super(ErrorCodes.SERVICE_UNAVAILABLE, message, 503, {
+      reason: 'OAKDOC_CONVERTER_UNAVAILABLE',
+      ...(status ? { status } : {}),
+    });
+    this.name = 'GraphConversionError';
+  }
+}
+
+function sleep(ms: number, signal?: AbortSignal): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (signal?.aborted) {
+      reject(new GraphConversionError('Microsoft 365 conversion was cancelled'));
+      return;
+    }
+    const timer = setTimeout(resolve, ms);
+    signal?.addEventListener('abort', () => {
+      clearTimeout(timer);
+      reject(new GraphConversionError('Microsoft 365 conversion was cancelled'));
+    }, { once: true });
+  });
+}
+
+function retryDelayMs(response: Response, attempt: number): number {
+  const header = Number(response.headers.get('retry-after'));
+  const seconds = Number.isFinite(header) && header > 0 ? header : 2 ** attempt;
+  return Math.min(seconds * 1000, GRAPH_MAX_RETRY_DELAY_MS);
+}
+
+/**
+ * Bounded Graph request: per-attempt timeout, caller cancellation and a small
+ * number of retries for throttling (429) and transient (502/503/504) replies.
+ */
+async function graphFetch(
+  fetchImpl: FetchLike,
+  url: string,
+  init: RequestInit,
+  signal?: AbortSignal,
+): Promise<Response> {
+  for (let attempt = 0; ; attempt += 1) {
+    if (signal?.aborted) throw new GraphConversionError('Microsoft 365 conversion was cancelled');
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), GRAPH_REQUEST_TIMEOUT_MS);
+    const onAbort = () => controller.abort();
+    signal?.addEventListener('abort', onAbort, { once: true });
+    let response: Response;
+    try {
+      response = await fetchImpl(url, { ...init, signal: controller.signal });
+    } catch (error) {
+      if (controller.signal.aborted) {
+        throw new GraphConversionError(
+          signal?.aborted ? 'Microsoft 365 conversion was cancelled' : 'Microsoft 365 conversion timed out',
+        );
+      }
+      throw error;
+    } finally {
+      clearTimeout(timer);
+      signal?.removeEventListener('abort', onAbort);
+    }
+    const transient = response.status === 429 || response.status === 502
+      || response.status === 503 || response.status === 504;
+    if (!transient || attempt >= GRAPH_MAX_RETRIES) return response;
+    await sleep(retryDelayMs(response, attempt), signal);
+  }
+}
+
 async function graphJson<T>(
   fetchImpl: FetchLike,
   url: string,
   token: string,
-  options: RequestInit
+  options: RequestInit,
+  signal?: AbortSignal,
 ): Promise<T> {
-  const response = await fetchImpl(url, {
+  const response = await graphFetch(fetchImpl, url, {
     ...options,
     headers: {
       Authorization: `Bearer ${token}`,
       ...(options.headers ?? {}),
     },
-  });
+  }, signal);
 
   if (!response.ok) {
-    throw new Error(await readGraphError(response, `Microsoft Graph request failed: ${response.status}`));
+    throw new GraphConversionError(
+      await readGraphError(response, `Microsoft Graph request failed: ${response.status}`),
+      response.status,
+    );
   }
 
   return response.json() as Promise<T>;
 }
 
 async function graphDelete(fetchImpl: FetchLike, url: string, token: string): Promise<void> {
-  const response = await fetchImpl(url, {
+  const response = await graphFetch(fetchImpl, url, {
     method: 'DELETE',
     headers: {
       Authorization: `Bearer ${token}`,
@@ -211,13 +300,22 @@ async function graphDelete(fetchImpl: FetchLike, url: string, token: string): Pr
   }
 }
 
-export async function convertOfficeDocumentToPdfWithMicrosoftGraph(input: {
+export interface GraphPdfConversionResult {
+  buffer: Buffer;
+  connectorId: string;
+  provider: string;
+  /** Temporary-file cleanup failed; the PDF is still valid. */
+  cleanupFailed: boolean;
+}
+
+export async function convertOfficeDocumentToPdfWithMicrosoftGraphDetailed(input: {
   tenantId: string;
   fileName: string;
   mimeType?: string;
   buffer: Buffer;
   fetchImpl?: FetchLike;
-}): Promise<Buffer> {
+  signal?: AbortSignal;
+}): Promise<GraphPdfConversionResult> {
   const fetchImpl = input.fetchImpl ?? fetch;
   const resolved = await resolveMicrosoftGraphStorageConnector(input.tenantId);
   const credentials = asCredentials(resolved.connector.credentials);
@@ -231,6 +329,8 @@ export async function convertOfficeDocumentToPdfWithMicrosoftGraph(input: {
   const temporaryPath = getTemporaryUploadPath(settings, input.fileName);
 
   let uploadedItemId: string | null = null;
+  let result: Buffer | null = null;
+  let primaryError: unknown = null;
 
   try {
     const uploaded = await graphJson<{ id: string }>(
@@ -243,30 +343,65 @@ export async function convertOfficeDocumentToPdfWithMicrosoftGraph(input: {
           'Content-Type': input.mimeType || WORD_DOCX_MIME_TYPE,
         },
         body: toBodyArrayBuffer(input.buffer),
-      }
+      },
+      input.signal,
     );
     uploadedItemId = uploaded.id;
 
-    const pdfResponse = await fetchImpl(`${driveBaseUrl}/items/${uploaded.id}/content?format=pdf`, {
+    const pdfResponse = await graphFetch(fetchImpl, `${driveBaseUrl}/items/${uploaded.id}/content?format=pdf`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
-    });
+    }, input.signal);
 
     if (!pdfResponse.ok) {
-      throw new Error(await readGraphError(pdfResponse, `Microsoft Graph PDF conversion failed: ${pdfResponse.status}`));
+      throw new GraphConversionError(
+        await readGraphError(pdfResponse, `Microsoft Graph PDF conversion failed: ${pdfResponse.status}`),
+        pdfResponse.status,
+      );
     }
 
     const pdfBuffer = Buffer.from(await pdfResponse.arrayBuffer());
     if (!pdfBuffer.subarray(0, 4).equals(Buffer.from('%PDF'))) {
-      throw new Error('Microsoft Graph conversion response was not a PDF');
+      throw new GraphConversionError('Microsoft Graph conversion response was not a PDF');
     }
 
     await incrementConnectorUsage(resolved.connector.id);
-    return pdfBuffer;
-  } finally {
-    if (uploadedItemId) {
+    result = pdfBuffer;
+  } catch (error) {
+    primaryError = error;
+  }
+
+  // Cleanup never masks the primary error and never discards a good PDF.
+  let cleanupFailed = false;
+  if (uploadedItemId) {
+    try {
       await graphDelete(fetchImpl, `${driveBaseUrl}/items/${uploadedItemId}`, token);
+    } catch (error) {
+      cleanupFailed = true;
+      log.warn('Failed to delete temporary Microsoft 365 conversion file', {
+        connectorId: resolved.connector.id,
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
   }
+
+  if (primaryError || !result) throw primaryError;
+  return {
+    buffer: result,
+    connectorId: resolved.connector.id,
+    provider: resolved.connector.provider,
+    cleanupFailed,
+  };
+}
+
+export async function convertOfficeDocumentToPdfWithMicrosoftGraph(input: {
+  tenantId: string;
+  fileName: string;
+  mimeType?: string;
+  buffer: Buffer;
+  fetchImpl?: FetchLike;
+  signal?: AbortSignal;
+}): Promise<Buffer> {
+  return (await convertOfficeDocumentToPdfWithMicrosoftGraphDetailed(input)).buffer;
 }

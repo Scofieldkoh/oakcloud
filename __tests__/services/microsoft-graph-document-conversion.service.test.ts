@@ -11,7 +11,10 @@ vi.mock('@/services/connector.service', () => ({
 }));
 
 import { convertOfficeDocumentToPdfWithMicrosoftGraph } from '@/services/microsoft-graph-document-conversion.service';
-import { hasMicrosoftGraphDocumentConversionConnector } from '@/services/microsoft-graph-document-conversion.service';
+import {
+  convertOfficeDocumentToPdfWithMicrosoftGraphDetailed,
+  hasMicrosoftGraphDocumentConversionConnector,
+} from '@/services/microsoft-graph-document-conversion.service';
 
 function response(body: unknown, init: ResponseInit = {}): Response {
   if (body instanceof Uint8Array) {
@@ -203,5 +206,98 @@ describe('microsoft-graph-document-conversion.service', () => {
       });
 
     await expect(hasMicrosoftGraphDocumentConversionConnector('workspace-id')).resolves.toBe(false);
+  });
+
+  describe('bounded conversion and cleanup (O1)', () => {
+    const sharePoint = {
+      source: 'workspace',
+      connector: {
+        id: 'connector-sharepoint',
+        provider: 'SHAREPOINT',
+        credentials: { clientId: 'c', clientSecret: 's', tenantId: 't', siteId: 'site-id', driveId: 'drive-id' },
+        settings: {},
+      },
+    };
+
+    function graph(handlers: { pdf: () => Response; remove?: () => Response }) {
+      return vi.fn(async (url: string | URL | Request, init?: RequestInit) => {
+        const target = url.toString();
+        if (target.includes('/oauth2/v2.0/token')) return response({ access_token: 'graph-token' });
+        if (init?.method === 'PUT') return response({ id: 'item-1' });
+        if (target.endsWith('/content?format=pdf')) return handlers.pdf();
+        if (init?.method === 'DELETE') return handlers.remove ? handlers.remove() : new Response(null, { status: 204 });
+        throw new Error(`Unexpected fetch: ${target}`);
+      });
+    }
+
+    it('returns the PDF and reports cleanup failure instead of discarding a good conversion', async () => {
+      mocks.resolveConnector.mockResolvedValue(sharePoint);
+      const fetchImpl = graph({
+        pdf: () => response(new Uint8Array(Buffer.from('%PDF-1.7 ok'))),
+        remove: () => response({ error: { message: 'locked' } }, { status: 423 }),
+      });
+
+      const result = await convertOfficeDocumentToPdfWithMicrosoftGraphDetailed({
+        tenantId: 'workspace-id', fileName: 'a.docx', buffer: Buffer.from('docx'), fetchImpl,
+      });
+
+      expect(result).toMatchObject({ connectorId: 'connector-sharepoint', provider: 'SHAREPOINT', cleanupFailed: true });
+      expect(result.buffer.toString()).toBe('%PDF-1.7 ok');
+    });
+
+    it('keeps the primary conversion error when cleanup also fails', async () => {
+      mocks.resolveConnector.mockResolvedValue(sharePoint);
+      const fetchImpl = graph({
+        pdf: () => response({ error: { message: 'Access denied' } }, { status: 403 }),
+        remove: () => response({ error: { message: 'locked' } }, { status: 423 }),
+      });
+
+      await expect(convertOfficeDocumentToPdfWithMicrosoftGraphDetailed({
+        tenantId: 'workspace-id', fileName: 'a.docx', buffer: Buffer.from('docx'), fetchImpl,
+      })).rejects.toMatchObject({ message: 'Access denied', statusCode: 503, status: 403 });
+    });
+
+    it('retries throttled conversion requests before succeeding', async () => {
+      vi.useFakeTimers();
+      try {
+        mocks.resolveConnector.mockResolvedValue(sharePoint);
+        let calls = 0;
+        const fetchImpl = graph({
+          pdf: () => {
+            calls += 1;
+            return calls === 1
+              ? new Response(null, { status: 429, headers: { 'Retry-After': '1' } })
+              : response(new Uint8Array(Buffer.from('%PDF-1.7 retried')));
+          },
+        });
+        const pending = convertOfficeDocumentToPdfWithMicrosoftGraphDetailed({
+          tenantId: 'workspace-id', fileName: 'a.docx', buffer: Buffer.from('docx'), fetchImpl,
+        });
+        await vi.advanceTimersByTimeAsync(1_000);
+        const result = await pending;
+        expect(calls).toBe(2);
+        expect(result.buffer.toString()).toBe('%PDF-1.7 retried');
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('selects a usable OneDrive connector when SharePoint lacks a site, matching the capability probe', async () => {
+      mocks.resolveConnector
+        .mockResolvedValueOnce({ ...sharePoint, connector: { ...sharePoint.connector, credentials: { clientId: 'c', clientSecret: 's', tenantId: 't' } } })
+        .mockResolvedValueOnce({
+          source: 'workspace',
+          connector: {
+            id: 'connector-onedrive', provider: 'ONEDRIVE',
+            credentials: { clientId: 'c', clientSecret: 's', tenantId: 't', driveId: 'drive-2' }, settings: {},
+          },
+        });
+      const fetchImpl = graph({ pdf: () => response(new Uint8Array(Buffer.from('%PDF-1.7 od'))) });
+
+      const result = await convertOfficeDocumentToPdfWithMicrosoftGraphDetailed({
+        tenantId: 'workspace-id', fileName: 'a.docx', buffer: Buffer.from('docx'), fetchImpl,
+      });
+      expect(result.connectorId).toBe('connector-onedrive');
+    });
   });
 });

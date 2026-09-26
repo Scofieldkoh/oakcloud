@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
-import { requireSessionWorkspaceId } from '@/lib/api-helpers';
+import { createErrorResponse, requireSessionWorkspaceId } from '@/lib/api-helpers';
+import { ApiError } from '@/lib/errors';
 import { exportToPDF } from '@/services/document-export.service';
 import { getGeneratedDocumentById } from '@/services/document-generator.service';
-import { readGeneratedDocumentEngine } from '@/lib/document-editor/document-engine';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -31,21 +31,12 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Document not found' }, { status: 404 });
     }
 
-    if (readGeneratedDocumentEngine(document.metadata) === 'OAKDOC') {
-      return NextResponse.json(
-        {
-          error: 'PDF conversion is not yet available for OakDoc documents',
-          capability: 'pdf-export',
-          available: ['docx-download'],
-        },
-        { status: 409 },
-      );
-    }
-
     // Parse export options from query params
     const includeLetterhead = searchParams.get('letterhead') !== 'false';
-    const format = (searchParams.get('format') || 'A4') as 'A4' | 'Letter';
-    const orientation = (searchParams.get('orientation') || 'portrait') as 'portrait' | 'landscape';
+    // Only explicit overrides are forwarded; OakDoc refuses them because its
+    // Word section layout is authoritative, A4 applies its own defaults.
+    const format = (searchParams.get('format') || undefined) as 'A4' | 'Letter' | undefined;
+    const orientation = (searchParams.get('orientation') || undefined) as 'portrait' | 'landscape' | undefined;
     const filename = searchParams.get('filename') || undefined;
 
     // Generate PDF
@@ -69,9 +60,11 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         'Content-Disposition': `attachment; filename="${result.filename}"`,
         'Content-Length': result.buffer.length.toString(),
         'X-Page-Count': result.pageCount.toString(),
+        'Cache-Control': 'private, no-store',
       },
     });
   } catch (error) {
+    if (error instanceof ApiError) return createErrorResponse(error);
     console.error('PDF export error:', error);
 
     if (error instanceof Error) {
