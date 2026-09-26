@@ -975,7 +975,7 @@ export function OakDocEditor() {
               if (isDirty && !window.confirm('You have unsaved OakDoc changes. Leave without saving them?')) {
                 return;
               }
-              router.push('/template-partials?editor=oakdoc');
+              router.push('/template-partials');
             }}
           >
             Templates
