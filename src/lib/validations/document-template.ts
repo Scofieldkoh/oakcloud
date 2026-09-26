@@ -139,7 +139,7 @@ export const searchDocumentTemplatesSchema = z.object({
   query: z.string().optional(),
   category: documentTemplateCategoryEnum.optional(),
   isActive: z.boolean().optional(),
-  editor: z.literal('oakdoc').optional(),
+  editor: z.enum(['oakdoc', 'a4']).optional(),
   page: z.number().min(1).default(1),
   limit: z.number().min(1).max(100).default(20),
   sortBy: z.enum(['name', 'category', 'createdAt', 'updatedAt']).default('name'),

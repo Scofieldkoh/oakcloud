@@ -47,6 +47,7 @@ import {
 import { storage, StorageKeys } from '@/lib/storage';
 import {
   mergeOakDocTemplateMetadata,
+  oakDocContentJsonFilter,
   readOakDocTemplateMetadata,
 } from '@/lib/document-editor/oakdoc-template';
 
@@ -497,10 +498,16 @@ export async function searchDocumentTemplates(
   if (params.category) where.category = params.category;
   if (params.isActive !== undefined) where.isActive = params.isActive;
   if (params.editor === 'oakdoc') {
-    where.contentJson = {
-      path: ['oakDoc', 'schemaVersion'],
-      equals: 1,
-    };
+    where.contentJson = oakDocContentJsonFilter();
+  } else if (params.editor === 'a4') {
+    // Archived A4 templates: everything that is not a Word template. A JSON
+    // path NOT would drop rows whose contentJson lacks the path, so exclude
+    // the Word IDs instead.
+    const wordTemplates = await prisma.documentTemplate.findMany({
+      where: { tenantId, deletedAt: null, contentJson: oakDocContentJsonFilter() },
+      select: { id: true },
+    });
+    where.id = { notIn: wordTemplates.map((template) => template.id) };
   }
 
   const orderBy: Prisma.DocumentTemplateOrderByWithRelationInput = {};

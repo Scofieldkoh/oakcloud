@@ -14,13 +14,16 @@ describe('document navigation source', () => {
     expect(sidebar).not.toContain("{ name: 'Templates', href: '/admin/template-partials'");
   });
 
-  it('replaces the shared Generated Documents/Templates tabs with a Manage Template action', () => {
+  it('lists Document Templates under Administration after Services instead of on Document Generation', () => {
+    const sidebar = readSource('src/components/ui/sidebar.tsx');
     const generatedDocuments = readSource('src/app/(dashboard)/generated-documents/page.tsx');
     const templates = readSource('src/app/(dashboard)/template-partials/page.tsx');
 
+    expect(sidebar).toContain(
+      "{ name: 'Services', href: '/admin/services', icon: BriefcaseBusiness, adminOnly: true },\n  { name: 'Document Templates', href: '/template-partials', icon: LayoutTemplate, adminOnly: true },",
+    );
     expect(generatedDocuments).not.toContain('DocumentGenerationTabs');
-    expect(generatedDocuments).toContain('Manage Template');
-    expect(generatedDocuments).toContain('href="/template-partials"');
+    expect(generatedDocuments).not.toContain('/template-partials');
     expect(templates).not.toContain('DocumentGenerationTabs');
   });
 

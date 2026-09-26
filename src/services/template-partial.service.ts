@@ -24,7 +24,7 @@ import {
   normalizeStoredFieldDefinitionInput,
   preserveStoredFieldDefinitions,
 } from '@/lib/document-editor/template-field-workflow';
-import { readOakDocTemplateMetadata } from '@/lib/document-editor/oakdoc-template';
+import { oakDocContentJsonFilter, readOakDocTemplateMetadata } from '@/lib/document-editor/oakdoc-template';
 import { ValidationError } from '@/lib/errors';
 import { storage, StorageKeys } from '@/lib/storage';
 
@@ -61,6 +61,8 @@ export interface UpdatePartialInput {
 
 export interface SearchPartialsInput {
   search?: string;
+  /** `oakdoc` lists Word partials, `a4` the archived HTML partials. */
+  editor?: 'oakdoc' | 'a4';
   page?: number;
   limit?: number;
   sortBy?: 'name' | 'createdAt' | 'updatedAt';
@@ -356,6 +358,7 @@ export async function searchTemplatePartials(
     limit = 20,
     sortBy = 'name',
     sortOrder = 'asc',
+    editor,
   } = input;
 
   const where: Prisma.TemplatePartialWhereInput = { tenantId, deletedAt: null };
@@ -364,6 +367,15 @@ export async function searchTemplatePartials(
       { name: { contains: search, mode: 'insensitive' } },
       { description: { contains: search, mode: 'insensitive' } },
     ];
+  }
+  if (editor === 'oakdoc') {
+    where.contentJson = oakDocContentJsonFilter();
+  } else if (editor === 'a4') {
+    const wordPartials = await prisma.templatePartial.findMany({
+      where: { tenantId, deletedAt: null, contentJson: oakDocContentJsonFilter() },
+      select: { id: true },
+    });
+    where.id = { notIn: wordPartials.map((partial) => partial.id) };
   }
 
   const [partials, total] = await Promise.all([

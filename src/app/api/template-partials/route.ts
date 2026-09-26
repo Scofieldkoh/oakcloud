@@ -63,6 +63,7 @@ export async function GET(request: NextRequest) {
       limit: searchParams.get('limit') ? parseInt(searchParams.get('limit')!, 10) : 20,
       sortBy: searchParams.get('sortBy') || 'name',
       sortOrder: searchParams.get('sortOrder') || 'asc',
+      editor: searchParams.get('editor') || undefined,
     });
 
     const result = await searchTemplatePartials(input, {

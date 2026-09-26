@@ -69,6 +69,11 @@ export function readOakDocTemplateMetadata(
   };
 }
 
+/** Database filter matching `contentJson` that carries OakDoc (Word) metadata. */
+export function oakDocContentJsonFilter() {
+  return { path: ['oakDoc', 'schemaVersion'], equals: 1 };
+}
+
 export function isOakDocTemplate(contentJson: unknown): boolean {
   return readOakDocTemplateMetadata(contentJson) !== null;
 }
