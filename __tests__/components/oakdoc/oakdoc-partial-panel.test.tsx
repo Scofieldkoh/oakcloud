@@ -46,4 +46,22 @@ describe('OakDocPartialPanel', () => {
     expect(screen.getByTitle('Used in this document')).toBeTruthy();
     expect(screen.getByText(/One partial in this document no longer exists/)).toBeTruthy();
   });
+
+  it('offers to move to the latest version when the template pins an older one', () => {
+    const onRefreshLatestChange = vi.fn();
+    render(
+      <OakDocPartialPanel
+        tenantId="tenant-1"
+        referencedIds={[wordPartial.id]}
+        disabled={false}
+        onInsert={vi.fn()}
+        pinnedVersions={{ [wordPartial.id]: 2 }}
+        refreshLatest={false}
+        onRefreshLatestChange={onRefreshLatestChange}
+      />,
+    );
+    expect(screen.getByText('scope · v3 (this template uses v2)')).toBeTruthy();
+    fireEvent.click(screen.getByLabelText(/Use the latest partial versions/));
+    expect(onRefreshLatestChange).toHaveBeenCalledWith(true);
+  });
 });

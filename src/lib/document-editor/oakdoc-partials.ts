@@ -8,6 +8,7 @@ import {
   wordChildren,
 } from '@/lib/document-editor/oakdoc-blocks';
 import { OAKDOC_PARTIAL_TAG_PREFIX } from '@/lib/document-editor/oakdoc-field-registry';
+import { ValidationError } from '@/lib/errors';
 import type { OakDocDiagnostic } from '@/types/oakdoc';
 
 /**
@@ -64,6 +65,54 @@ export function partialIdFromTag(tag: string): string | null {
   if (!tag.startsWith(OAKDOC_PARTIAL_TAG_PREFIX)) return null;
   const id = tag.slice(OAKDOC_PARTIAL_TAG_PREFIX.length);
   return UUID.test(id) ? id.toLowerCase() : null;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+export interface OakDocPartialPin {
+  partialId: string;
+  version: number;
+  sha256: string;
+  storageKey: string;
+  /** The partial's own pins at that version, so nested expansion is fixed too. */
+  nested: OakDocPartialPin[];
+}
+
+function readPin(value: unknown, depth: number): OakDocPartialPin | null {
+  if (!isRecord(value) || depth > 4) return null;
+  if (
+    typeof value.partialId !== 'string'
+    || typeof value.version !== 'number'
+    || typeof value.sha256 !== 'string'
+    || !/^[a-f0-9]{64}$/.test(value.sha256)
+    || typeof value.storageKey !== 'string'
+  ) {
+    return null;
+  }
+  const nested = Array.isArray(value.nested)
+    ? value.nested.map((entry) => readPin(entry, depth + 1))
+    : [];
+  if (nested.some((entry) => entry === null)) return null;
+  return {
+    partialId: value.partialId,
+    version: value.version,
+    sha256: value.sha256,
+    storageKey: value.storageKey,
+    nested: nested as OakDocPartialPin[],
+  };
+}
+
+export function readOakDocPartialPins(contentJson: unknown): OakDocPartialPin[] {
+  if (!isRecord(contentJson) || !Array.isArray(contentJson.oakDocPartials)) return [];
+  const pins = contentJson.oakDocPartials.map((entry) => readPin(entry, 0));
+  if (pins.some((entry) => entry === null)) {
+    throw new ValidationError('Pinned partial references are damaged', {
+      reason: 'OAKDOC_PARTIAL_PINS_INVALID',
+    });
+  }
+  return pins as OakDocPartialPin[];
 }
 
 type Files = Record<string, Uint8Array>;
