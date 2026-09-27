@@ -9,6 +9,7 @@ import { Dropdown, DropdownItem, DropdownMenu, DropdownTrigger } from '@/compone
 import { Modal } from '@/components/ui/modal';
 import { Pagination } from '@/components/ui/pagination';
 import {
+  useApplyDeadlineRulePreset,
   useArchiveDeadlineRule,
   useCreateDeadlineRule,
   useDeadlineRule,
@@ -109,6 +110,7 @@ export function DeadlineRulesPanel({
   const previewMutation = usePreviewDeadlineRuleImpact(workspaceId);
   const publish = usePublishDeadlineRule(workspaceId);
   const archive = useArchiveDeadlineRule(workspaceId);
+  const applyPreset = useApplyDeadlineRulePreset(workspaceId);
 
   const syncAuthoritativeRule = async (result: DeadlineRuleDto | undefined) => {
     if (result) {
@@ -176,6 +178,22 @@ export function DeadlineRulesPanel({
     } catch (error) {
       setActionError(error instanceof Error ? error.message : 'Unable to save the deadline rule.');
       throw error;
+    }
+  };
+
+  const handleApplyPreset = async (code: 'SG_ECI' | 'SG_FORM_C') => {
+    setActionError(null);
+    try {
+      const staged = await applyPreset.mutateAsync({ code });
+      setCreating(false);
+      setEditing(false);
+      setDraftDirty(false);
+      setPreview(null);
+      setArchivePreview(null);
+      setSelectedId(staged.id);
+      setSelectedOverride(staged);
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : 'Unable to apply the IRAS rule.');
     }
   };
 
@@ -270,9 +288,21 @@ export function DeadlineRulesPanel({
           <h2 id="deadline-rules-heading" className="text-lg font-semibold text-text-primary">Deadline rules</h2>
           <p className="mt-1 text-sm text-text-secondary">Define who each rule applies to, how deadlines are calculated, and preview the future impact before publishing.</p>
         </div>
-        <Button type="button" size="sm" className="min-h-11 sm:min-h-8" leftIcon={<Plus className="h-4 w-4" />} onClick={() => { setCreating(true); setDraftDirty(false); setPreview(null); }}>
-          Add deadline rule
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Dropdown>
+            <DropdownTrigger className="min-h-11 sm:min-h-8">
+              {applyPreset.isPending ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : null}
+              Add IRAS rule
+            </DropdownTrigger>
+            <DropdownMenu align="right">
+              <DropdownItem disabled={applyPreset.isPending} onClick={() => void handleApplyPreset('SG_ECI')}>Estimated Chargeable Income (ECI)</DropdownItem>
+              <DropdownItem disabled={applyPreset.isPending} onClick={() => void handleApplyPreset('SG_FORM_C')}>Corporate income tax return (Form C)</DropdownItem>
+            </DropdownMenu>
+          </Dropdown>
+          <Button type="button" size="sm" className="min-h-11 sm:min-h-8" leftIcon={<Plus className="h-4 w-4" />} onClick={() => { setCreating(true); setDraftDirty(false); setPreview(null); }}>
+            Add deadline rule
+          </Button>
+        </div>
       </div>
 
       {actionError ? <Alert variant="error" title="Action failed" onClose={() => setActionError(null)}>{actionError}</Alert> : null}

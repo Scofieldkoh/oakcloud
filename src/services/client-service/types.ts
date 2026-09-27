@@ -80,6 +80,8 @@ export interface ManualClientServiceCatalogVariantOption {
   family: { id: string; name: string; displayColor: string };
   serviceCadence: ServiceCadence;
   customCadenceLabel: string | null;
+  /** Company statutory monitoring this service starts once saved. */
+  monitoringProfiles?: Array<'CORPORATE_TAX' | 'NOMINEE_DIRECTOR'>;
   fields: ManualClientServiceCatalogField[];
   feeTemplates: ManualClientServiceCatalogFeeTemplate[];
   deadlineRules: ManualClientServiceCatalogDeadlineRule[];
