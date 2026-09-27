@@ -5,4 +5,5 @@ export * from './hash';
 export * from './applicability';
 export * from './evaluator';
 export * from './company-source';
+export * from './obligation-periods';
 export * from '../../lib/validations/service-schedule';

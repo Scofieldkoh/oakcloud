@@ -5,9 +5,10 @@ import type {
   BusinessCalendarSnapshot,
   DateOnly,
 } from '@/services/service-schedule';
-import { normalizeCompanyRuleSource } from '@/services/service-schedule';
+import { companyPeriodFacts, normalizeCompanyRuleSource } from '@/services/service-schedule';
 import { prisma } from '@/lib/prisma';
 import type { Prisma } from '@/generated/prisma';
+import { OBLIGATION_CATALOG } from '@/services/compliance-monitoring/catalog';
 import { ROLLING_PLAN_VERSION } from './planner';
 import { projectDeadlineRule } from './projection';
 import type {
@@ -18,6 +19,7 @@ import type {
   DeadlineRuleProjectionInput,
   EvaluatedDeadlineForDiff,
   PreserveReason,
+  ProjectedDeadline,
   ReconcileClientServiceDeadlinesInput,
   StoredDeadline,
   DeadlineReconciliationWarning,
@@ -169,6 +171,26 @@ async function updateCycleSnapshot(
   }
 }
 
+/**
+ * The cycle's recurrence anchor. Period-based rules also record their explicit
+ * financial period and YA so impact previews can re-evaluate the same period.
+ */
+export function recurrenceAnchorFor(
+  periodKey: string,
+  obligationPeriod: ProjectedDeadline['obligationPeriod'],
+): Prisma.InputJsonValue {
+  if (!obligationPeriod) return { periodKey };
+  return {
+    periodKey,
+    obligationPeriod: {
+      basis: obligationPeriod.basis,
+      start: obligationPeriod.start,
+      end: obligationPeriod.end,
+      yearOfAssessment: obligationPeriod.yearOfAssessment,
+    },
+  };
+}
+
 function defaultCalendar(id = 'default'): BusinessCalendarSnapshot {
   return {
     id,
@@ -176,6 +198,54 @@ function defaultCalendar(id = 'default'): BusinessCalendarSnapshot {
     revision: 1,
     weekendDays: new Set([0, 6]),
     holidays: new Set(),
+  };
+}
+
+const STATUTORY_PRESET_RULE_CODES = OBLIGATION_CATALOG
+  .map((definition) => definition.ruleCode)
+  .filter((code): code is string => code !== null);
+
+/** Statutory rule codes the company obligation writer owns for a monitored company. */
+async function companyOwnedStatutoryRuleCodes(
+  db: Prisma.TransactionClient | typeof prisma,
+  tenantId: string,
+  companyId: string,
+): Promise<Set<string>> {
+  const [coverages, scopes] = await Promise.all([
+    db.companyMonitoringCoverage.count({ where: { tenantId, companyId } }),
+    db.clientServiceObligationScope.count({ where: { tenantId, companyId } }),
+  ]);
+  return coverages + scopes > 0 ? new Set(STATUTORY_PRESET_RULE_CODES) : new Set();
+}
+
+/** The tenant's active business calendar, or the default Singapore weekend calendar. */
+export async function loadActiveBusinessCalendar(
+  db: Prisma.TransactionClient | typeof prisma,
+  tenantId: string,
+): Promise<{ record: { id: string; revision: number } | null; snapshot: BusinessCalendarSnapshot }> {
+  const record = await db.businessCalendar.findFirst({
+    where: { tenantId, isActive: true, archivedAt: null },
+    include: {
+      holidays: {
+        where: { tenantId, isActive: true },
+        orderBy: [{ date: 'asc' }, { id: 'asc' }],
+      },
+    },
+  });
+  if (!record) return { record: null, snapshot: defaultCalendar() };
+  return {
+    record,
+    snapshot: {
+      id: record.id,
+      timeZone: record.timeZone,
+      revision: record.revision,
+      weekendDays: new Set(record.weekendDays),
+      holidays: new Set(
+        record.holidays
+          .map((h) => safeDateOnly(h.date))
+          .filter((d): d is DateOnly => d !== null),
+      ),
+    },
   };
 }
 
@@ -400,30 +470,10 @@ export async function reconcileClientServiceDeadlines(
     };
   }
 
-  // Load business calendar
-  const activeCalendarRecord = await db.businessCalendar.findFirst({
-    where: { tenantId, isActive: true, archivedAt: null },
-    include: {
-      holidays: {
-        where: { tenantId, isActive: true },
-        orderBy: [{ date: 'asc' }, { id: 'asc' }],
-      },
-    },
-  });
-
-  const businessCalendar: BusinessCalendarSnapshot = activeCalendarRecord
-    ? {
-        id: activeCalendarRecord.id,
-        timeZone: activeCalendarRecord.timeZone,
-        revision: activeCalendarRecord.revision,
-        weekendDays: new Set(activeCalendarRecord.weekendDays),
-        holidays: new Set(
-          activeCalendarRecord.holidays
-            .map((h) => safeDateOnly(h.date))
-            .filter((d): d is DateOnly => d !== null),
-        ),
-      }
-    : defaultCalendar();
+  const { record: activeCalendarRecord, snapshot: businessCalendar } = await loadActiveBusinessCalendar(db, tenantId);
+  const companyOwnedRuleCodes = input.companyMonitoringEnabled
+    ? await companyOwnedStatutoryRuleCodes(db, tenantId, clientService.companyId)
+    : new Set<string>();
 
   const companySource = normalizeCompanyRuleSource(clientService.company, today);
 
@@ -476,6 +526,18 @@ export async function reconcileClientServiceDeadlines(
       continue;
     }
     if (rule.isActive === false || (rule.archivedAt !== null && rule.archivedAt !== undefined)) continue;
+    if (companyOwnedRuleCodes.has(rule.code)) {
+      // Existing service-owned rows stay untouched until a reviewed migration
+      // links them to the company obligation.
+      skipCleanupRuleIds.add(rule.id);
+      warnings.push({
+        code: 'COMPANY_MONITORING_OWNS_RULE',
+        message: `Rule ${rule.code} is tracked as a company obligation for this company`,
+        ruleId: rule.id,
+        permanent: false,
+      });
+      continue;
+    }
     if (!clientRule.enabled) {
       if (writeMode === 'APPLY') {
         await updateClientRule(db, tenantId, clientServiceId, clientRule.id, {
@@ -518,6 +580,7 @@ export async function reconcileClientServiceDeadlines(
         : [],
       milestones: milestonesInput,
       company: companySource,
+      periodFacts: companyPeriodFacts(clientService.company),
       calendar: businessCalendar,
       today,
       horizonEnd,
@@ -603,7 +666,7 @@ export async function reconcileClientServiceDeadlines(
             generationKey: ROLLING_PLAN_VERSION,
             origin: 'RULE',
             evaluationHash,
-            recurrenceAnchor: { periodKey: period.periodKey },
+            recurrenceAnchor: recurrenceAnchorFor(period.periodKey, proposedDeadlines[0]?.obligationPeriod),
             sourceSnapshot: sourceSnapshot as Prisma.InputJsonValue,
           },
           update: {

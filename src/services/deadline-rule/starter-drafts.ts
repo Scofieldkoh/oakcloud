@@ -1,6 +1,7 @@
 import { Prisma } from '@/generated/prisma';
 import type { CanonicalDeadlineRuleDefinition } from './canonical';
 import { hashDeadlineRuleDefinition } from './canonical';
+import { SG_ECI_PRESET, SG_FORM_C_PRESET } from './presets';
 
 export const STARTER_CALENDAR_NAME = 'Singapore Business Calendar';
 
@@ -18,7 +19,8 @@ const applicability = {
 /**
  * The single source of truth for the four statutory starter drafts. Rule
  * rows, version rows, relational children, and hashes are all derived from
- * these complete canonical objects.
+ * these complete canonical objects. ECI and the annual tax return use the
+ * reviewed period-based presets.
  */
 export const STARTER_DEFINITIONS: CanonicalDeadlineRuleDefinition[] = [
   {
@@ -68,6 +70,16 @@ export const STARTER_DEFINITIONS: CanonicalDeadlineRuleDefinition[] = [
       isActive: true,
     }],
   },
+  SG_ECI_PRESET.definition,
+  SG_FORM_C_PRESET.definition,
+];
+
+/**
+ * Starter drafts shipped before the period-based presets. Untouched copies of
+ * these exact drafts are upgraded in place; anything edited or published is
+ * left for an impact-reviewed preset upgrade instead.
+ */
+export const PREVIOUS_STARTER_DEFINITIONS: CanonicalDeadlineRuleDefinition[] = [
   {
     schemaVersion: 1,
     code: 'SG_ECI',
@@ -255,8 +267,8 @@ export async function upgradeLegacyFormCStarterDraft(
     || !isLegacyFormCExpression(draft.milestoneTemplates[0]?.dateExpression)
   ) return false;
 
-  const definition = STARTER_DEFINITIONS.find((candidate) => candidate.code === 'SG_FORM_C');
-  if (!definition) throw new Error('SG_FORM_C starter definition is missing');
+  const definition = PREVIOUS_STARTER_DEFINITIONS.find((candidate) => candidate.code === 'SG_FORM_C');
+  if (!definition) throw new Error('SG_FORM_C previous starter definition is missing');
   const milestone = definition.milestones[0];
   if (!milestone) throw new Error('SG_FORM_C starter milestone is missing');
 
@@ -268,14 +280,41 @@ export async function upgradeLegacyFormCStarterDraft(
     data: { dateExpression: milestone.expression },
   });
 
+  await removeParameterFromAssociations(tx, rule, 'monthsAfterFye');
+
+  await tx.deadlineRule.update({
+    where: { id: rule.id },
+    data: { description: definition.description },
+  });
+  await tx.deadlineRuleVersion.update({
+    where: { id: draft.id },
+    data: {
+      configHash: hashDeadlineRuleDefinition(definition),
+      draftRevision: { increment: 1 },
+    },
+  });
+  return true;
+}
+
+type StarterAssociations = {
+  variantAssociations: Array<{ id: string; parameterDefaults: unknown }>;
+  clientAssociations: Array<{ id: string; parameterValues: unknown; parameterProvenance: unknown }>;
+};
+
+/** Drop a parameter a starter no longer defines from catalog and client values. */
+async function removeParameterFromAssociations(
+  tx: Prisma.TransactionClient,
+  rule: StarterAssociations,
+  key: string,
+): Promise<void> {
   for (const association of rule.variantAssociations) {
     const defaults = typeof association.parameterDefaults === 'object'
       && association.parameterDefaults !== null
       && !Array.isArray(association.parameterDefaults)
       ? { ...(association.parameterDefaults as Record<string, unknown>) }
       : {};
-    if (!Object.prototype.hasOwnProperty.call(defaults, 'monthsAfterFye')) continue;
-    delete defaults.monthsAfterFye;
+    if (!Object.prototype.hasOwnProperty.call(defaults, key)) continue;
+    delete defaults[key];
     await tx.serviceVariantDeadlineRule.update({
       where: { id: association.id },
       data: { parameterDefaults: defaults as Prisma.InputJsonValue },
@@ -293,11 +332,11 @@ export async function upgradeLegacyFormCStarterDraft(
       && !Array.isArray(association.parameterProvenance)
       ? { ...(association.parameterProvenance as Record<string, unknown>) }
       : {};
-    const hadValue = Object.prototype.hasOwnProperty.call(values, 'monthsAfterFye');
-    const hadProvenance = Object.prototype.hasOwnProperty.call(provenance, 'monthsAfterFye');
+    const hadValue = Object.prototype.hasOwnProperty.call(values, key);
+    const hadProvenance = Object.prototype.hasOwnProperty.call(provenance, key);
     if (!hadValue && !hadProvenance) continue;
-    delete values.monthsAfterFye;
-    delete provenance.monthsAfterFye;
+    delete values[key];
+    delete provenance[key];
     await tx.clientServiceDeadlineRule.update({
       where: { id: association.id },
       data: {
@@ -307,16 +346,84 @@ export async function upgradeLegacyFormCStarterDraft(
     });
   }
 
-  await tx.deadlineRule.update({
-    where: { id: rule.id },
-    data: { description: definition.description },
+}
+
+/**
+ * Move an untouched copy of a previous starter draft to its reviewed preset.
+ * The draft must still hash to the exact previous starter definition and the
+ * rule must never have been published; otherwise nothing changes and staff
+ * upgrade through the preset draft and normal impact-reviewed publish.
+ */
+export async function upgradeUntouchedStarterDraftToPreset(
+  tx: Prisma.TransactionClient,
+  tenantId: string,
+  code: 'SG_ECI' | 'SG_FORM_C',
+): Promise<boolean> {
+  const previous = PREVIOUS_STARTER_DEFINITIONS.find((candidate) => candidate.code === code);
+  const next = STARTER_DEFINITIONS.find((candidate) => candidate.code === code);
+  if (!previous || !next) throw new Error(`${code} starter definitions are missing`);
+
+  const rule = await tx.deadlineRule.findFirst({
+    where: {
+      tenantId,
+      code,
+      name: previous.name,
+      description: previous.description,
+      isActive: true,
+      archivedAt: null,
+      currentVersionId: null,
+    },
+    select: {
+      id: true,
+      versions: {
+        select: { id: true, version: true, state: true, configHash: true },
+      },
+      variantAssociations: {
+        where: { archivedAt: null },
+        select: { id: true, parameterDefaults: true },
+      },
+      clientAssociations: {
+        select: { id: true, parameterValues: true, parameterProvenance: true },
+      },
+    },
   });
+  const versions = rule?.versions ?? [];
+  const draft = versions[0];
+  if (
+    !rule
+    || versions.length !== 1
+    || !draft
+    || draft.version !== 0
+    || draft.state !== 'DRAFT'
+    || draft.configHash !== hashDeadlineRuleDefinition(previous)
+  ) return false;
+
+  const nextParameterKeys = new Set(next.parameters.map((parameter) => parameter.key));
+  for (const parameter of previous.parameters) {
+    if (!nextParameterKeys.has(parameter.key)) {
+      await removeParameterFromAssociations(tx, rule, parameter.key);
+    }
+  }
+
+  const versionData = createVersionData(tenantId, rule.id, next);
   await tx.deadlineRuleVersion.update({
     where: { id: draft.id },
     data: {
-      configHash: hashDeadlineRuleDefinition(definition),
+      configHash: hashDeadlineRuleDefinition(next),
       draftRevision: { increment: 1 },
+      parameterDefinitions: {
+        deleteMany: { ruleVersionId: draft.id },
+        create: versionData.parameterDefinitions?.create as never,
+      },
+      milestoneTemplates: {
+        deleteMany: { ruleVersionId: draft.id },
+        create: versionData.milestoneTemplates?.create as never,
+      },
     },
+  });
+  await tx.deadlineRule.update({
+    where: { id: rule.id },
+    data: { name: next.name, description: next.description },
   });
   return true;
 }
@@ -433,6 +540,8 @@ export async function createServiceScheduleStarterData(
   }
 
   await upgradeLegacyFormCStarterDraft(tx, tenantId);
+  await upgradeUntouchedStarterDraftToPreset(tx, tenantId, 'SG_ECI');
+  await upgradeUntouchedStarterDraftToPreset(tx, tenantId, 'SG_FORM_C');
 
   for (const definition of STARTER_DEFINITIONS) {
     await ensureStarterRule(tx, tenantId, definition);

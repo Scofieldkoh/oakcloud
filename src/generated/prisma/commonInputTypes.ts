@@ -953,11 +953,28 @@ export type EnumDeadlineApplicabilityStateWithAggregatesFilter<$PrismaModel = ne
   _max?: Prisma.NestedEnumDeadlineApplicabilityStateFilter<$PrismaModel>
 }
 
+export type EnumDeadlineOwnershipScopeFilter<$PrismaModel = never> = {
+  equals?: $Enums.DeadlineOwnershipScope | Prisma.EnumDeadlineOwnershipScopeFieldRefInput<$PrismaModel>
+  in?: $Enums.DeadlineOwnershipScope[] | Prisma.ListEnumDeadlineOwnershipScopeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.DeadlineOwnershipScope[] | Prisma.ListEnumDeadlineOwnershipScopeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumDeadlineOwnershipScopeFilter<$PrismaModel> | $Enums.DeadlineOwnershipScope
+}
+
 export type EnumServiceCycleOriginFilter<$PrismaModel = never> = {
   equals?: $Enums.ServiceCycleOrigin | Prisma.EnumServiceCycleOriginFieldRefInput<$PrismaModel>
   in?: $Enums.ServiceCycleOrigin[] | Prisma.ListEnumServiceCycleOriginFieldRefInput<$PrismaModel>
   notIn?: $Enums.ServiceCycleOrigin[] | Prisma.ListEnumServiceCycleOriginFieldRefInput<$PrismaModel>
   not?: Prisma.NestedEnumServiceCycleOriginFilter<$PrismaModel> | $Enums.ServiceCycleOrigin
+}
+
+export type EnumDeadlineOwnershipScopeWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.DeadlineOwnershipScope | Prisma.EnumDeadlineOwnershipScopeFieldRefInput<$PrismaModel>
+  in?: $Enums.DeadlineOwnershipScope[] | Prisma.ListEnumDeadlineOwnershipScopeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.DeadlineOwnershipScope[] | Prisma.ListEnumDeadlineOwnershipScopeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumDeadlineOwnershipScopeWithAggregatesFilter<$PrismaModel> | $Enums.DeadlineOwnershipScope
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumDeadlineOwnershipScopeFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumDeadlineOwnershipScopeFilter<$PrismaModel>
 }
 
 export type EnumServiceCycleOriginWithAggregatesFilter<$PrismaModel = never> = {
@@ -970,11 +987,45 @@ export type EnumServiceCycleOriginWithAggregatesFilter<$PrismaModel = never> = {
   _max?: Prisma.NestedEnumServiceCycleOriginFilter<$PrismaModel>
 }
 
+export type EnumFilingResponsibilityNullableFilter<$PrismaModel = never> = {
+  equals?: $Enums.FilingResponsibility | Prisma.EnumFilingResponsibilityFieldRefInput<$PrismaModel> | null
+  in?: $Enums.FilingResponsibility[] | Prisma.ListEnumFilingResponsibilityFieldRefInput<$PrismaModel> | null
+  notIn?: $Enums.FilingResponsibility[] | Prisma.ListEnumFilingResponsibilityFieldRefInput<$PrismaModel> | null
+  not?: Prisma.NestedEnumFilingResponsibilityNullableFilter<$PrismaModel> | $Enums.FilingResponsibility | null
+}
+
+export type EnumResponsibilitySourceNullableFilter<$PrismaModel = never> = {
+  equals?: $Enums.ResponsibilitySource | Prisma.EnumResponsibilitySourceFieldRefInput<$PrismaModel> | null
+  in?: $Enums.ResponsibilitySource[] | Prisma.ListEnumResponsibilitySourceFieldRefInput<$PrismaModel> | null
+  notIn?: $Enums.ResponsibilitySource[] | Prisma.ListEnumResponsibilitySourceFieldRefInput<$PrismaModel> | null
+  not?: Prisma.NestedEnumResponsibilitySourceNullableFilter<$PrismaModel> | $Enums.ResponsibilitySource | null
+}
+
 export type EnumDeadlineOccurrenceStatusFilter<$PrismaModel = never> = {
   equals?: $Enums.DeadlineOccurrenceStatus | Prisma.EnumDeadlineOccurrenceStatusFieldRefInput<$PrismaModel>
   in?: $Enums.DeadlineOccurrenceStatus[] | Prisma.ListEnumDeadlineOccurrenceStatusFieldRefInput<$PrismaModel>
   notIn?: $Enums.DeadlineOccurrenceStatus[] | Prisma.ListEnumDeadlineOccurrenceStatusFieldRefInput<$PrismaModel>
   not?: Prisma.NestedEnumDeadlineOccurrenceStatusFilter<$PrismaModel> | $Enums.DeadlineOccurrenceStatus
+}
+
+export type EnumFilingResponsibilityNullableWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.FilingResponsibility | Prisma.EnumFilingResponsibilityFieldRefInput<$PrismaModel> | null
+  in?: $Enums.FilingResponsibility[] | Prisma.ListEnumFilingResponsibilityFieldRefInput<$PrismaModel> | null
+  notIn?: $Enums.FilingResponsibility[] | Prisma.ListEnumFilingResponsibilityFieldRefInput<$PrismaModel> | null
+  not?: Prisma.NestedEnumFilingResponsibilityNullableWithAggregatesFilter<$PrismaModel> | $Enums.FilingResponsibility | null
+  _count?: Prisma.NestedIntNullableFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumFilingResponsibilityNullableFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumFilingResponsibilityNullableFilter<$PrismaModel>
+}
+
+export type EnumResponsibilitySourceNullableWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.ResponsibilitySource | Prisma.EnumResponsibilitySourceFieldRefInput<$PrismaModel> | null
+  in?: $Enums.ResponsibilitySource[] | Prisma.ListEnumResponsibilitySourceFieldRefInput<$PrismaModel> | null
+  notIn?: $Enums.ResponsibilitySource[] | Prisma.ListEnumResponsibilitySourceFieldRefInput<$PrismaModel> | null
+  not?: Prisma.NestedEnumResponsibilitySourceNullableWithAggregatesFilter<$PrismaModel> | $Enums.ResponsibilitySource | null
+  _count?: Prisma.NestedIntNullableFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumResponsibilitySourceNullableFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumResponsibilitySourceNullableFilter<$PrismaModel>
 }
 
 export type EnumDeadlineOccurrenceStatusWithAggregatesFilter<$PrismaModel = never> = {
@@ -985,6 +1036,159 @@ export type EnumDeadlineOccurrenceStatusWithAggregatesFilter<$PrismaModel = neve
   _count?: Prisma.NestedIntFilter<$PrismaModel>
   _min?: Prisma.NestedEnumDeadlineOccurrenceStatusFilter<$PrismaModel>
   _max?: Prisma.NestedEnumDeadlineOccurrenceStatusFilter<$PrismaModel>
+}
+
+export type EnumFinancialPeriodProvenanceFilter<$PrismaModel = never> = {
+  equals?: $Enums.FinancialPeriodProvenance | Prisma.EnumFinancialPeriodProvenanceFieldRefInput<$PrismaModel>
+  in?: $Enums.FinancialPeriodProvenance[] | Prisma.ListEnumFinancialPeriodProvenanceFieldRefInput<$PrismaModel>
+  notIn?: $Enums.FinancialPeriodProvenance[] | Prisma.ListEnumFinancialPeriodProvenanceFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumFinancialPeriodProvenanceFilter<$PrismaModel> | $Enums.FinancialPeriodProvenance
+}
+
+export type EnumFinancialPeriodProvenanceWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.FinancialPeriodProvenance | Prisma.EnumFinancialPeriodProvenanceFieldRefInput<$PrismaModel>
+  in?: $Enums.FinancialPeriodProvenance[] | Prisma.ListEnumFinancialPeriodProvenanceFieldRefInput<$PrismaModel>
+  notIn?: $Enums.FinancialPeriodProvenance[] | Prisma.ListEnumFinancialPeriodProvenanceFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumFinancialPeriodProvenanceWithAggregatesFilter<$PrismaModel> | $Enums.FinancialPeriodProvenance
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumFinancialPeriodProvenanceFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumFinancialPeriodProvenanceFilter<$PrismaModel>
+}
+
+export type EnumMonitoringProfileFilter<$PrismaModel = never> = {
+  equals?: $Enums.MonitoringProfile | Prisma.EnumMonitoringProfileFieldRefInput<$PrismaModel>
+  in?: $Enums.MonitoringProfile[] | Prisma.ListEnumMonitoringProfileFieldRefInput<$PrismaModel>
+  notIn?: $Enums.MonitoringProfile[] | Prisma.ListEnumMonitoringProfileFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumMonitoringProfileFilter<$PrismaModel> | $Enums.MonitoringProfile
+}
+
+export type EnumMonitoringCoverageSourceFilter<$PrismaModel = never> = {
+  equals?: $Enums.MonitoringCoverageSource | Prisma.EnumMonitoringCoverageSourceFieldRefInput<$PrismaModel>
+  in?: $Enums.MonitoringCoverageSource[] | Prisma.ListEnumMonitoringCoverageSourceFieldRefInput<$PrismaModel>
+  notIn?: $Enums.MonitoringCoverageSource[] | Prisma.ListEnumMonitoringCoverageSourceFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumMonitoringCoverageSourceFilter<$PrismaModel> | $Enums.MonitoringCoverageSource
+}
+
+export type EnumMonitoringCoverageStatusFilter<$PrismaModel = never> = {
+  equals?: $Enums.MonitoringCoverageStatus | Prisma.EnumMonitoringCoverageStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.MonitoringCoverageStatus[] | Prisma.ListEnumMonitoringCoverageStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.MonitoringCoverageStatus[] | Prisma.ListEnumMonitoringCoverageStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumMonitoringCoverageStatusFilter<$PrismaModel> | $Enums.MonitoringCoverageStatus
+}
+
+export type EnumMonitoringProfileWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.MonitoringProfile | Prisma.EnumMonitoringProfileFieldRefInput<$PrismaModel>
+  in?: $Enums.MonitoringProfile[] | Prisma.ListEnumMonitoringProfileFieldRefInput<$PrismaModel>
+  notIn?: $Enums.MonitoringProfile[] | Prisma.ListEnumMonitoringProfileFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumMonitoringProfileWithAggregatesFilter<$PrismaModel> | $Enums.MonitoringProfile
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumMonitoringProfileFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumMonitoringProfileFilter<$PrismaModel>
+}
+
+export type EnumMonitoringCoverageSourceWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.MonitoringCoverageSource | Prisma.EnumMonitoringCoverageSourceFieldRefInput<$PrismaModel>
+  in?: $Enums.MonitoringCoverageSource[] | Prisma.ListEnumMonitoringCoverageSourceFieldRefInput<$PrismaModel>
+  notIn?: $Enums.MonitoringCoverageSource[] | Prisma.ListEnumMonitoringCoverageSourceFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumMonitoringCoverageSourceWithAggregatesFilter<$PrismaModel> | $Enums.MonitoringCoverageSource
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumMonitoringCoverageSourceFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumMonitoringCoverageSourceFilter<$PrismaModel>
+}
+
+export type EnumMonitoringCoverageStatusWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.MonitoringCoverageStatus | Prisma.EnumMonitoringCoverageStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.MonitoringCoverageStatus[] | Prisma.ListEnumMonitoringCoverageStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.MonitoringCoverageStatus[] | Prisma.ListEnumMonitoringCoverageStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumMonitoringCoverageStatusWithAggregatesFilter<$PrismaModel> | $Enums.MonitoringCoverageStatus
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumMonitoringCoverageStatusFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumMonitoringCoverageStatusFilter<$PrismaModel>
+}
+
+export type EnumObligationScopeConfirmationFilter<$PrismaModel = never> = {
+  equals?: $Enums.ObligationScopeConfirmation | Prisma.EnumObligationScopeConfirmationFieldRefInput<$PrismaModel>
+  in?: $Enums.ObligationScopeConfirmation[] | Prisma.ListEnumObligationScopeConfirmationFieldRefInput<$PrismaModel>
+  notIn?: $Enums.ObligationScopeConfirmation[] | Prisma.ListEnumObligationScopeConfirmationFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumObligationScopeConfirmationFilter<$PrismaModel> | $Enums.ObligationScopeConfirmation
+}
+
+export type EnumObligationScopeConfirmationWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.ObligationScopeConfirmation | Prisma.EnumObligationScopeConfirmationFieldRefInput<$PrismaModel>
+  in?: $Enums.ObligationScopeConfirmation[] | Prisma.ListEnumObligationScopeConfirmationFieldRefInput<$PrismaModel>
+  notIn?: $Enums.ObligationScopeConfirmation[] | Prisma.ListEnumObligationScopeConfirmationFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumObligationScopeConfirmationWithAggregatesFilter<$PrismaModel> | $Enums.ObligationScopeConfirmation
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumObligationScopeConfirmationFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumObligationScopeConfirmationFilter<$PrismaModel>
+}
+
+export type EnumCoverageLinkReasonFilter<$PrismaModel = never> = {
+  equals?: $Enums.CoverageLinkReason | Prisma.EnumCoverageLinkReasonFieldRefInput<$PrismaModel>
+  in?: $Enums.CoverageLinkReason[] | Prisma.ListEnumCoverageLinkReasonFieldRefInput<$PrismaModel>
+  notIn?: $Enums.CoverageLinkReason[] | Prisma.ListEnumCoverageLinkReasonFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumCoverageLinkReasonFilter<$PrismaModel> | $Enums.CoverageLinkReason
+}
+
+export type EnumCoverageLinkReasonWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.CoverageLinkReason | Prisma.EnumCoverageLinkReasonFieldRefInput<$PrismaModel>
+  in?: $Enums.CoverageLinkReason[] | Prisma.ListEnumCoverageLinkReasonFieldRefInput<$PrismaModel>
+  notIn?: $Enums.CoverageLinkReason[] | Prisma.ListEnumCoverageLinkReasonFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumCoverageLinkReasonWithAggregatesFilter<$PrismaModel> | $Enums.CoverageLinkReason
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumCoverageLinkReasonFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumCoverageLinkReasonFilter<$PrismaModel>
+}
+
+export type EnumFilingResponsibilityFilter<$PrismaModel = never> = {
+  equals?: $Enums.FilingResponsibility | Prisma.EnumFilingResponsibilityFieldRefInput<$PrismaModel>
+  in?: $Enums.FilingResponsibility[] | Prisma.ListEnumFilingResponsibilityFieldRefInput<$PrismaModel>
+  notIn?: $Enums.FilingResponsibility[] | Prisma.ListEnumFilingResponsibilityFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumFilingResponsibilityFilter<$PrismaModel> | $Enums.FilingResponsibility
+}
+
+export type EnumResponsibilitySourceFilter<$PrismaModel = never> = {
+  equals?: $Enums.ResponsibilitySource | Prisma.EnumResponsibilitySourceFieldRefInput<$PrismaModel>
+  in?: $Enums.ResponsibilitySource[] | Prisma.ListEnumResponsibilitySourceFieldRefInput<$PrismaModel>
+  notIn?: $Enums.ResponsibilitySource[] | Prisma.ListEnumResponsibilitySourceFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumResponsibilitySourceFilter<$PrismaModel> | $Enums.ResponsibilitySource
+}
+
+export type EnumFilingResponsibilityWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.FilingResponsibility | Prisma.EnumFilingResponsibilityFieldRefInput<$PrismaModel>
+  in?: $Enums.FilingResponsibility[] | Prisma.ListEnumFilingResponsibilityFieldRefInput<$PrismaModel>
+  notIn?: $Enums.FilingResponsibility[] | Prisma.ListEnumFilingResponsibilityFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumFilingResponsibilityWithAggregatesFilter<$PrismaModel> | $Enums.FilingResponsibility
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumFilingResponsibilityFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumFilingResponsibilityFilter<$PrismaModel>
+}
+
+export type EnumResponsibilitySourceWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.ResponsibilitySource | Prisma.EnumResponsibilitySourceFieldRefInput<$PrismaModel>
+  in?: $Enums.ResponsibilitySource[] | Prisma.ListEnumResponsibilitySourceFieldRefInput<$PrismaModel>
+  notIn?: $Enums.ResponsibilitySource[] | Prisma.ListEnumResponsibilitySourceFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumResponsibilitySourceWithAggregatesFilter<$PrismaModel> | $Enums.ResponsibilitySource
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumResponsibilitySourceFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumResponsibilitySourceFilter<$PrismaModel>
+}
+
+export type EnumCompanyComplianceIssueTypeFilter<$PrismaModel = never> = {
+  equals?: $Enums.CompanyComplianceIssueType | Prisma.EnumCompanyComplianceIssueTypeFieldRefInput<$PrismaModel>
+  in?: $Enums.CompanyComplianceIssueType[] | Prisma.ListEnumCompanyComplianceIssueTypeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.CompanyComplianceIssueType[] | Prisma.ListEnumCompanyComplianceIssueTypeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumCompanyComplianceIssueTypeFilter<$PrismaModel> | $Enums.CompanyComplianceIssueType
+}
+
+export type EnumCompanyComplianceIssueTypeWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.CompanyComplianceIssueType | Prisma.EnumCompanyComplianceIssueTypeFieldRefInput<$PrismaModel>
+  in?: $Enums.CompanyComplianceIssueType[] | Prisma.ListEnumCompanyComplianceIssueTypeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.CompanyComplianceIssueType[] | Prisma.ListEnumCompanyComplianceIssueTypeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumCompanyComplianceIssueTypeWithAggregatesFilter<$PrismaModel> | $Enums.CompanyComplianceIssueType
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumCompanyComplianceIssueTypeFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumCompanyComplianceIssueTypeFilter<$PrismaModel>
 }
 
 export type EnumScheduleReconciliationScopeTypeFilter<$PrismaModel = never> = {
@@ -3615,11 +3819,28 @@ export type NestedEnumDeadlineApplicabilityStateWithAggregatesFilter<$PrismaMode
   _max?: Prisma.NestedEnumDeadlineApplicabilityStateFilter<$PrismaModel>
 }
 
+export type NestedEnumDeadlineOwnershipScopeFilter<$PrismaModel = never> = {
+  equals?: $Enums.DeadlineOwnershipScope | Prisma.EnumDeadlineOwnershipScopeFieldRefInput<$PrismaModel>
+  in?: $Enums.DeadlineOwnershipScope[] | Prisma.ListEnumDeadlineOwnershipScopeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.DeadlineOwnershipScope[] | Prisma.ListEnumDeadlineOwnershipScopeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumDeadlineOwnershipScopeFilter<$PrismaModel> | $Enums.DeadlineOwnershipScope
+}
+
 export type NestedEnumServiceCycleOriginFilter<$PrismaModel = never> = {
   equals?: $Enums.ServiceCycleOrigin | Prisma.EnumServiceCycleOriginFieldRefInput<$PrismaModel>
   in?: $Enums.ServiceCycleOrigin[] | Prisma.ListEnumServiceCycleOriginFieldRefInput<$PrismaModel>
   notIn?: $Enums.ServiceCycleOrigin[] | Prisma.ListEnumServiceCycleOriginFieldRefInput<$PrismaModel>
   not?: Prisma.NestedEnumServiceCycleOriginFilter<$PrismaModel> | $Enums.ServiceCycleOrigin
+}
+
+export type NestedEnumDeadlineOwnershipScopeWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.DeadlineOwnershipScope | Prisma.EnumDeadlineOwnershipScopeFieldRefInput<$PrismaModel>
+  in?: $Enums.DeadlineOwnershipScope[] | Prisma.ListEnumDeadlineOwnershipScopeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.DeadlineOwnershipScope[] | Prisma.ListEnumDeadlineOwnershipScopeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumDeadlineOwnershipScopeWithAggregatesFilter<$PrismaModel> | $Enums.DeadlineOwnershipScope
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumDeadlineOwnershipScopeFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumDeadlineOwnershipScopeFilter<$PrismaModel>
 }
 
 export type NestedEnumServiceCycleOriginWithAggregatesFilter<$PrismaModel = never> = {
@@ -3632,11 +3853,45 @@ export type NestedEnumServiceCycleOriginWithAggregatesFilter<$PrismaModel = neve
   _max?: Prisma.NestedEnumServiceCycleOriginFilter<$PrismaModel>
 }
 
+export type NestedEnumFilingResponsibilityNullableFilter<$PrismaModel = never> = {
+  equals?: $Enums.FilingResponsibility | Prisma.EnumFilingResponsibilityFieldRefInput<$PrismaModel> | null
+  in?: $Enums.FilingResponsibility[] | Prisma.ListEnumFilingResponsibilityFieldRefInput<$PrismaModel> | null
+  notIn?: $Enums.FilingResponsibility[] | Prisma.ListEnumFilingResponsibilityFieldRefInput<$PrismaModel> | null
+  not?: Prisma.NestedEnumFilingResponsibilityNullableFilter<$PrismaModel> | $Enums.FilingResponsibility | null
+}
+
+export type NestedEnumResponsibilitySourceNullableFilter<$PrismaModel = never> = {
+  equals?: $Enums.ResponsibilitySource | Prisma.EnumResponsibilitySourceFieldRefInput<$PrismaModel> | null
+  in?: $Enums.ResponsibilitySource[] | Prisma.ListEnumResponsibilitySourceFieldRefInput<$PrismaModel> | null
+  notIn?: $Enums.ResponsibilitySource[] | Prisma.ListEnumResponsibilitySourceFieldRefInput<$PrismaModel> | null
+  not?: Prisma.NestedEnumResponsibilitySourceNullableFilter<$PrismaModel> | $Enums.ResponsibilitySource | null
+}
+
 export type NestedEnumDeadlineOccurrenceStatusFilter<$PrismaModel = never> = {
   equals?: $Enums.DeadlineOccurrenceStatus | Prisma.EnumDeadlineOccurrenceStatusFieldRefInput<$PrismaModel>
   in?: $Enums.DeadlineOccurrenceStatus[] | Prisma.ListEnumDeadlineOccurrenceStatusFieldRefInput<$PrismaModel>
   notIn?: $Enums.DeadlineOccurrenceStatus[] | Prisma.ListEnumDeadlineOccurrenceStatusFieldRefInput<$PrismaModel>
   not?: Prisma.NestedEnumDeadlineOccurrenceStatusFilter<$PrismaModel> | $Enums.DeadlineOccurrenceStatus
+}
+
+export type NestedEnumFilingResponsibilityNullableWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.FilingResponsibility | Prisma.EnumFilingResponsibilityFieldRefInput<$PrismaModel> | null
+  in?: $Enums.FilingResponsibility[] | Prisma.ListEnumFilingResponsibilityFieldRefInput<$PrismaModel> | null
+  notIn?: $Enums.FilingResponsibility[] | Prisma.ListEnumFilingResponsibilityFieldRefInput<$PrismaModel> | null
+  not?: Prisma.NestedEnumFilingResponsibilityNullableWithAggregatesFilter<$PrismaModel> | $Enums.FilingResponsibility | null
+  _count?: Prisma.NestedIntNullableFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumFilingResponsibilityNullableFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumFilingResponsibilityNullableFilter<$PrismaModel>
+}
+
+export type NestedEnumResponsibilitySourceNullableWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.ResponsibilitySource | Prisma.EnumResponsibilitySourceFieldRefInput<$PrismaModel> | null
+  in?: $Enums.ResponsibilitySource[] | Prisma.ListEnumResponsibilitySourceFieldRefInput<$PrismaModel> | null
+  notIn?: $Enums.ResponsibilitySource[] | Prisma.ListEnumResponsibilitySourceFieldRefInput<$PrismaModel> | null
+  not?: Prisma.NestedEnumResponsibilitySourceNullableWithAggregatesFilter<$PrismaModel> | $Enums.ResponsibilitySource | null
+  _count?: Prisma.NestedIntNullableFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumResponsibilitySourceNullableFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumResponsibilitySourceNullableFilter<$PrismaModel>
 }
 
 export type NestedEnumDeadlineOccurrenceStatusWithAggregatesFilter<$PrismaModel = never> = {
@@ -3647,6 +3902,159 @@ export type NestedEnumDeadlineOccurrenceStatusWithAggregatesFilter<$PrismaModel 
   _count?: Prisma.NestedIntFilter<$PrismaModel>
   _min?: Prisma.NestedEnumDeadlineOccurrenceStatusFilter<$PrismaModel>
   _max?: Prisma.NestedEnumDeadlineOccurrenceStatusFilter<$PrismaModel>
+}
+
+export type NestedEnumFinancialPeriodProvenanceFilter<$PrismaModel = never> = {
+  equals?: $Enums.FinancialPeriodProvenance | Prisma.EnumFinancialPeriodProvenanceFieldRefInput<$PrismaModel>
+  in?: $Enums.FinancialPeriodProvenance[] | Prisma.ListEnumFinancialPeriodProvenanceFieldRefInput<$PrismaModel>
+  notIn?: $Enums.FinancialPeriodProvenance[] | Prisma.ListEnumFinancialPeriodProvenanceFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumFinancialPeriodProvenanceFilter<$PrismaModel> | $Enums.FinancialPeriodProvenance
+}
+
+export type NestedEnumFinancialPeriodProvenanceWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.FinancialPeriodProvenance | Prisma.EnumFinancialPeriodProvenanceFieldRefInput<$PrismaModel>
+  in?: $Enums.FinancialPeriodProvenance[] | Prisma.ListEnumFinancialPeriodProvenanceFieldRefInput<$PrismaModel>
+  notIn?: $Enums.FinancialPeriodProvenance[] | Prisma.ListEnumFinancialPeriodProvenanceFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumFinancialPeriodProvenanceWithAggregatesFilter<$PrismaModel> | $Enums.FinancialPeriodProvenance
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumFinancialPeriodProvenanceFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumFinancialPeriodProvenanceFilter<$PrismaModel>
+}
+
+export type NestedEnumMonitoringProfileFilter<$PrismaModel = never> = {
+  equals?: $Enums.MonitoringProfile | Prisma.EnumMonitoringProfileFieldRefInput<$PrismaModel>
+  in?: $Enums.MonitoringProfile[] | Prisma.ListEnumMonitoringProfileFieldRefInput<$PrismaModel>
+  notIn?: $Enums.MonitoringProfile[] | Prisma.ListEnumMonitoringProfileFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumMonitoringProfileFilter<$PrismaModel> | $Enums.MonitoringProfile
+}
+
+export type NestedEnumMonitoringCoverageSourceFilter<$PrismaModel = never> = {
+  equals?: $Enums.MonitoringCoverageSource | Prisma.EnumMonitoringCoverageSourceFieldRefInput<$PrismaModel>
+  in?: $Enums.MonitoringCoverageSource[] | Prisma.ListEnumMonitoringCoverageSourceFieldRefInput<$PrismaModel>
+  notIn?: $Enums.MonitoringCoverageSource[] | Prisma.ListEnumMonitoringCoverageSourceFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumMonitoringCoverageSourceFilter<$PrismaModel> | $Enums.MonitoringCoverageSource
+}
+
+export type NestedEnumMonitoringCoverageStatusFilter<$PrismaModel = never> = {
+  equals?: $Enums.MonitoringCoverageStatus | Prisma.EnumMonitoringCoverageStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.MonitoringCoverageStatus[] | Prisma.ListEnumMonitoringCoverageStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.MonitoringCoverageStatus[] | Prisma.ListEnumMonitoringCoverageStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumMonitoringCoverageStatusFilter<$PrismaModel> | $Enums.MonitoringCoverageStatus
+}
+
+export type NestedEnumMonitoringProfileWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.MonitoringProfile | Prisma.EnumMonitoringProfileFieldRefInput<$PrismaModel>
+  in?: $Enums.MonitoringProfile[] | Prisma.ListEnumMonitoringProfileFieldRefInput<$PrismaModel>
+  notIn?: $Enums.MonitoringProfile[] | Prisma.ListEnumMonitoringProfileFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumMonitoringProfileWithAggregatesFilter<$PrismaModel> | $Enums.MonitoringProfile
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumMonitoringProfileFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumMonitoringProfileFilter<$PrismaModel>
+}
+
+export type NestedEnumMonitoringCoverageSourceWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.MonitoringCoverageSource | Prisma.EnumMonitoringCoverageSourceFieldRefInput<$PrismaModel>
+  in?: $Enums.MonitoringCoverageSource[] | Prisma.ListEnumMonitoringCoverageSourceFieldRefInput<$PrismaModel>
+  notIn?: $Enums.MonitoringCoverageSource[] | Prisma.ListEnumMonitoringCoverageSourceFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumMonitoringCoverageSourceWithAggregatesFilter<$PrismaModel> | $Enums.MonitoringCoverageSource
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumMonitoringCoverageSourceFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumMonitoringCoverageSourceFilter<$PrismaModel>
+}
+
+export type NestedEnumMonitoringCoverageStatusWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.MonitoringCoverageStatus | Prisma.EnumMonitoringCoverageStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.MonitoringCoverageStatus[] | Prisma.ListEnumMonitoringCoverageStatusFieldRefInput<$PrismaModel>
+  notIn?: $Enums.MonitoringCoverageStatus[] | Prisma.ListEnumMonitoringCoverageStatusFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumMonitoringCoverageStatusWithAggregatesFilter<$PrismaModel> | $Enums.MonitoringCoverageStatus
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumMonitoringCoverageStatusFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumMonitoringCoverageStatusFilter<$PrismaModel>
+}
+
+export type NestedEnumObligationScopeConfirmationFilter<$PrismaModel = never> = {
+  equals?: $Enums.ObligationScopeConfirmation | Prisma.EnumObligationScopeConfirmationFieldRefInput<$PrismaModel>
+  in?: $Enums.ObligationScopeConfirmation[] | Prisma.ListEnumObligationScopeConfirmationFieldRefInput<$PrismaModel>
+  notIn?: $Enums.ObligationScopeConfirmation[] | Prisma.ListEnumObligationScopeConfirmationFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumObligationScopeConfirmationFilter<$PrismaModel> | $Enums.ObligationScopeConfirmation
+}
+
+export type NestedEnumObligationScopeConfirmationWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.ObligationScopeConfirmation | Prisma.EnumObligationScopeConfirmationFieldRefInput<$PrismaModel>
+  in?: $Enums.ObligationScopeConfirmation[] | Prisma.ListEnumObligationScopeConfirmationFieldRefInput<$PrismaModel>
+  notIn?: $Enums.ObligationScopeConfirmation[] | Prisma.ListEnumObligationScopeConfirmationFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumObligationScopeConfirmationWithAggregatesFilter<$PrismaModel> | $Enums.ObligationScopeConfirmation
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumObligationScopeConfirmationFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumObligationScopeConfirmationFilter<$PrismaModel>
+}
+
+export type NestedEnumCoverageLinkReasonFilter<$PrismaModel = never> = {
+  equals?: $Enums.CoverageLinkReason | Prisma.EnumCoverageLinkReasonFieldRefInput<$PrismaModel>
+  in?: $Enums.CoverageLinkReason[] | Prisma.ListEnumCoverageLinkReasonFieldRefInput<$PrismaModel>
+  notIn?: $Enums.CoverageLinkReason[] | Prisma.ListEnumCoverageLinkReasonFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumCoverageLinkReasonFilter<$PrismaModel> | $Enums.CoverageLinkReason
+}
+
+export type NestedEnumCoverageLinkReasonWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.CoverageLinkReason | Prisma.EnumCoverageLinkReasonFieldRefInput<$PrismaModel>
+  in?: $Enums.CoverageLinkReason[] | Prisma.ListEnumCoverageLinkReasonFieldRefInput<$PrismaModel>
+  notIn?: $Enums.CoverageLinkReason[] | Prisma.ListEnumCoverageLinkReasonFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumCoverageLinkReasonWithAggregatesFilter<$PrismaModel> | $Enums.CoverageLinkReason
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumCoverageLinkReasonFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumCoverageLinkReasonFilter<$PrismaModel>
+}
+
+export type NestedEnumFilingResponsibilityFilter<$PrismaModel = never> = {
+  equals?: $Enums.FilingResponsibility | Prisma.EnumFilingResponsibilityFieldRefInput<$PrismaModel>
+  in?: $Enums.FilingResponsibility[] | Prisma.ListEnumFilingResponsibilityFieldRefInput<$PrismaModel>
+  notIn?: $Enums.FilingResponsibility[] | Prisma.ListEnumFilingResponsibilityFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumFilingResponsibilityFilter<$PrismaModel> | $Enums.FilingResponsibility
+}
+
+export type NestedEnumResponsibilitySourceFilter<$PrismaModel = never> = {
+  equals?: $Enums.ResponsibilitySource | Prisma.EnumResponsibilitySourceFieldRefInput<$PrismaModel>
+  in?: $Enums.ResponsibilitySource[] | Prisma.ListEnumResponsibilitySourceFieldRefInput<$PrismaModel>
+  notIn?: $Enums.ResponsibilitySource[] | Prisma.ListEnumResponsibilitySourceFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumResponsibilitySourceFilter<$PrismaModel> | $Enums.ResponsibilitySource
+}
+
+export type NestedEnumFilingResponsibilityWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.FilingResponsibility | Prisma.EnumFilingResponsibilityFieldRefInput<$PrismaModel>
+  in?: $Enums.FilingResponsibility[] | Prisma.ListEnumFilingResponsibilityFieldRefInput<$PrismaModel>
+  notIn?: $Enums.FilingResponsibility[] | Prisma.ListEnumFilingResponsibilityFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumFilingResponsibilityWithAggregatesFilter<$PrismaModel> | $Enums.FilingResponsibility
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumFilingResponsibilityFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumFilingResponsibilityFilter<$PrismaModel>
+}
+
+export type NestedEnumResponsibilitySourceWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.ResponsibilitySource | Prisma.EnumResponsibilitySourceFieldRefInput<$PrismaModel>
+  in?: $Enums.ResponsibilitySource[] | Prisma.ListEnumResponsibilitySourceFieldRefInput<$PrismaModel>
+  notIn?: $Enums.ResponsibilitySource[] | Prisma.ListEnumResponsibilitySourceFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumResponsibilitySourceWithAggregatesFilter<$PrismaModel> | $Enums.ResponsibilitySource
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumResponsibilitySourceFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumResponsibilitySourceFilter<$PrismaModel>
+}
+
+export type NestedEnumCompanyComplianceIssueTypeFilter<$PrismaModel = never> = {
+  equals?: $Enums.CompanyComplianceIssueType | Prisma.EnumCompanyComplianceIssueTypeFieldRefInput<$PrismaModel>
+  in?: $Enums.CompanyComplianceIssueType[] | Prisma.ListEnumCompanyComplianceIssueTypeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.CompanyComplianceIssueType[] | Prisma.ListEnumCompanyComplianceIssueTypeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumCompanyComplianceIssueTypeFilter<$PrismaModel> | $Enums.CompanyComplianceIssueType
+}
+
+export type NestedEnumCompanyComplianceIssueTypeWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.CompanyComplianceIssueType | Prisma.EnumCompanyComplianceIssueTypeFieldRefInput<$PrismaModel>
+  in?: $Enums.CompanyComplianceIssueType[] | Prisma.ListEnumCompanyComplianceIssueTypeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.CompanyComplianceIssueType[] | Prisma.ListEnumCompanyComplianceIssueTypeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumCompanyComplianceIssueTypeWithAggregatesFilter<$PrismaModel> | $Enums.CompanyComplianceIssueType
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumCompanyComplianceIssueTypeFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumCompanyComplianceIssueTypeFilter<$PrismaModel>
 }
 
 export type NestedEnumScheduleReconciliationScopeTypeFilter<$PrismaModel = never> = {

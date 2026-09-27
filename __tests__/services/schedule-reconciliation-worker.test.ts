@@ -13,6 +13,8 @@ const mocks = vi.hoisted(() => ({
   billingReconcile: vi.fn(),
   coverageReconcile: vi.fn(),
   enqueue: vi.fn(),
+  monitoredCompanyIds: vi.fn(),
+  reconcileCompany: vi.fn(),
   logger: { info: vi.fn() },
 }));
 
@@ -27,6 +29,10 @@ vi.mock('@/services/schedule-reconciliation/deadline-reconciler', () => ({
 vi.mock('@/services/billing', () => ({
   reconcileClientServiceBilling: mocks.billingReconcile,
   reconcileBillingCoverage: mocks.coverageReconcile,
+}));
+vi.mock('@/services/compliance-monitoring/writer', () => ({
+  monitoredCompanyIds: mocks.monitoredCompanyIds,
+  reconcileCompanyObligations: mocks.reconcileCompany,
 }));
 vi.mock('@/services/schedule-reconciliation/queue', () => ({
   enqueueScheduleReconciliation: mocks.enqueue,
@@ -104,7 +110,19 @@ describe('schedule reconciliation worker', () => {
     mocks.prisma.serviceScheduleReconciliationRequest.updateMany.mockResolvedValue({ count: 1 });
     mocks.prisma.clientService.findMany.mockResolvedValue([{ id: 'service-1' }]);
     mocks.prisma.workspace.findMany.mockResolvedValue([{ id: 'tenant-1' }]);
-    mocks.flags.mockResolvedValue({ workspaceEnabled: true, deadlineWritesEnabled: false });
+    mocks.flags.mockResolvedValue({ workspaceEnabled: true, deadlineWritesEnabled: false, companyMonitoringWritesEnabled: false });
+    mocks.monitoredCompanyIds.mockResolvedValue([]);
+    mocks.reconcileCompany.mockResolvedValue({
+      tenantId: 'tenant-1',
+      companyId: 'company-1',
+      writeMode: 'OBSERVE',
+      counts: { created: 2, recalculated: 0, cancelled: 0, preserved: 0, noChange: 0 },
+      preservedByReason: { MANUAL_TRIGGER: 0, HISTORICAL: 0, COMPLETED: 0, WAIVED: 0, CANCELLED: 0, OVERRIDDEN: 0 },
+      links: { attached: 2, released: 0 },
+      responsibilityChanges: 2,
+      issues: { opened: 1, refreshed: 0, resolved: 0, open: 1 },
+      projection: null,
+    });
     mocks.reconcile.mockResolvedValue({
       tenantId: 'tenant-1', clientServiceId: 'service-1', reconciliationRequestId: 'request-1',
       writeMode: 'OBSERVE',
@@ -158,6 +176,41 @@ describe('schedule reconciliation worker', () => {
     expect(mocks.prisma.serviceScheduleReconciliationRequest.updateMany.mock.calls.filter(([call]) => (
       call.where?.leaseOwner !== undefined && call.data?.leaseExpiresAt instanceof Date
     ))).not.toHaveLength(0);
+  });
+
+  it('reconciles monitored company obligations after the service loop without billing', async () => {
+    mocks.prisma.$queryRaw.mockResolvedValue([{ ...request, scopeType: 'COMPANY', scopeId: 'company-1' }]);
+    mocks.prisma.clientService.findMany.mockResolvedValue([]);
+    mocks.monitoredCompanyIds.mockResolvedValue(['company-1', 'company-2']);
+    mocks.flags.mockResolvedValue({ workspaceEnabled: true, deadlineWritesEnabled: true, companyMonitoringWritesEnabled: false });
+
+    const result = await processScheduleReconciliationBatch({ limit: 1, concurrency: 1 });
+
+    expect(result).toMatchObject({ claimed: 1, completed: 1, failed: 0 });
+    expect(mocks.reconcileCompany).toHaveBeenCalledTimes(1);
+    expect(mocks.reconcileCompany).toHaveBeenCalledWith(expect.objectContaining({
+      tenantId: 'tenant-1', companyId: 'company-1', writeMode: 'OBSERVE', today: '2026-08-18',
+    }), expect.anything());
+    expect(mocks.billingReconcile).not.toHaveBeenCalled();
+    expect(mocks.coverageReconcile).not.toHaveBeenCalled();
+    expect(mocks.prisma.serviceScheduleReconciliationRequest.updateMany).toHaveBeenLastCalledWith(expect.objectContaining({
+      data: expect.objectContaining({
+        summary: expect.objectContaining({
+          companyMonitoring: expect.objectContaining({ writeMode: 'OBSERVE', companyCount: 1, links: { attached: 2, released: 0 } }),
+        }),
+      }),
+    }));
+  });
+
+  it('applies company obligations only when company monitoring writes are enabled', async () => {
+    mocks.prisma.$queryRaw.mockResolvedValue([{ ...request, scopeType: 'TENANT', scopeId: 'tenant-1' }]);
+    mocks.monitoredCompanyIds.mockResolvedValue(['company-1']);
+    mocks.flags.mockResolvedValue({ workspaceEnabled: true, deadlineWritesEnabled: false, companyMonitoringWritesEnabled: true });
+
+    await processScheduleReconciliationBatch({ limit: 1, concurrency: 1 });
+
+    expect(mocks.reconcileCompany).toHaveBeenCalledWith(expect.objectContaining({ companyId: 'company-1', writeMode: 'APPLY' }), expect.anything());
+    expect(mocks.reconcile).toHaveBeenCalledWith(expect.objectContaining({ writeMode: 'OBSERVE', companyMonitoringEnabled: true }), expect.anything());
   });
 
   it('runs deadlines then billing through one leased service transaction', async () => {

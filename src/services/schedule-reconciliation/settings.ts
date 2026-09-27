@@ -5,6 +5,11 @@ import { prisma } from '@/lib/prisma';
 export type ServiceWorkspaceFlags = {
   workspaceEnabled: boolean;
   deadlineWritesEnabled: boolean;
+  /**
+   * Company statutory monitoring writes (company-owned deadlines, coverage
+   * links, review issues). Off by default: the worker only observes.
+   */
+  companyMonitoringWritesEnabled: boolean;
 };
 
 export function getServiceWorkspaceFlags(settings: unknown): ServiceWorkspaceFlags {
@@ -12,15 +17,21 @@ export function getServiceWorkspaceFlags(settings: unknown): ServiceWorkspaceFla
     servicesWorkspace: z.object({
       enabled: z.boolean().optional(),
       deadlineWritesEnabled: z.boolean().optional(),
+      companyMonitoringWritesEnabled: z.boolean().optional(),
     }).optional(),
   }).passthrough();
   const parsed = workspaceSettingsSchema.safeParse(settings);
   const tenantDeadlineWritesEnabled = parsed.success
     ? parsed.data.servicesWorkspace?.deadlineWritesEnabled
     : undefined;
+  const tenantCompanyMonitoringWritesEnabled = parsed.success
+    ? parsed.data.servicesWorkspace?.companyMonitoringWritesEnabled
+    : undefined;
   return {
     workspaceEnabled: parsed.success ? parsed.data.servicesWorkspace?.enabled ?? true : true,
     deadlineWritesEnabled: tenantDeadlineWritesEnabled === true || process.env.DEADLINE_OCCURRENCE_WRITES_ENABLED === 'true',
+    companyMonitoringWritesEnabled: tenantCompanyMonitoringWritesEnabled === true
+      || process.env.COMPANY_MONITORING_WRITES_ENABLED === 'true',
   };
 }
 

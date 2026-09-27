@@ -99,6 +99,27 @@ export function addMonthsClamped(value: DateOnly, amount: number): DateOnly {
 }
 
 /**
+ * Month arithmetic for statutory rules whose authority treats a month-end
+ * source as the end of the target month (IRAS ECI: 30 September + 3 months is
+ * 31 December). A source that is not a month end is clamped exactly like
+ * addMonthsClamped. Generic billing arithmetic must keep using the clamped form.
+ */
+export function addMonthsPreservingMonthEnd(value: DateOnly, amount: number): DateOnly {
+  assertInteger(amount, 'amount');
+  const { year, month, day } = parseComponents(value);
+  if (day !== daysInMonth(year, month)) return addMonthsClamped(value, amount);
+  const clamped = addMonthsClamped(`${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}-01` as DateOnly, amount);
+  const target = parseComponents(clamped);
+  return formatDateOnly(createUtcDate(target.year, target.month - 1, daysInMonth(target.year, target.month)));
+}
+
+/** True when the date is the last calendar day of its month. */
+export function isMonthEnd(value: DateOnly): boolean {
+  const { year, month, day } = parseComponents(value);
+  return day === daysInMonth(year, month);
+}
+
+/**
  * Rebuild a validated date with the same month/day in a different year,
  * clamping the day to the target year's calendar (leap-safe).
  */

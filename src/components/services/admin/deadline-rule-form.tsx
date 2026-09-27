@@ -28,7 +28,9 @@ const EXPRESSION_KINDS = [
   { value: 'ADD_CALENDAR_DAYS', label: 'Add calendar days' },
   { value: 'ADD_BUSINESS_DAYS', label: 'Add business days' },
   { value: 'ADD_MONTHS', label: 'Add months' },
+  { value: 'ADD_MONTHS_MONTH_END', label: 'Add months (month end stays month end)' },
   { value: 'FIXED_DATE_FROM_SOURCE_YEAR', label: 'Fixed date based on another date' },
+  { value: 'FIXED_DATE_IN_ASSESSMENT_YEAR', label: 'Fixed date in the Year of Assessment' },
   { value: 'RELATIVE_TO_SOURCE', label: 'Relative to source' },
   { value: 'ADJUST_BUSINESS_DAY', label: 'Adjust business day' },
 ] as const;
@@ -37,6 +39,8 @@ const SOURCE_KINDS = [
   { value: 'COMPANY_FIELD', label: 'Company date' },
   { value: 'CYCLE_START', label: 'Cycle start' },
   { value: 'CYCLE_END', label: 'Cycle end' },
+  { value: 'OBLIGATION_PERIOD_END', label: 'Financial period end' },
+  { value: 'OBLIGATION_PERIOD_START', label: 'Financial period start' },
   { value: 'SCHEDULE_ENTRY', label: 'Schedule entry' },
   { value: 'CURRENT_SCHEDULE_ENTRY', label: 'Current schedule entry' },
   { value: 'PARAMETER', label: 'Date parameter' },
@@ -167,6 +171,8 @@ function sourceLabel(source: FormNode): string {
   }
   if (kind === 'CYCLE_START') return 'Cycle start';
   if (kind === 'CYCLE_END') return 'Cycle end';
+  if (kind === 'OBLIGATION_PERIOD_END') return 'Financial period end';
+  if (kind === 'OBLIGATION_PERIOD_START') return 'Financial period start';
   if (kind === 'CURRENT_SCHEDULE_ENTRY') return 'Current schedule entry';
   if (kind === 'SCHEDULE_ENTRY') return typeof source.key === 'string' && source.key ? `Schedule entry "${source.key}"` : 'Schedule entry';
   if (kind === 'PARAMETER') return typeof source.key === 'string' && source.key ? `Variable "${source.key}"` : 'Date variable';
@@ -187,6 +193,14 @@ export function describeDeadlineExpression(value: unknown): string {
       : 0;
   if (kind === 'SOURCE') return sourceLabel(source);
   if (kind === 'ADD_MONTHS') return `${sourceLabel(source)} ${amount >= 0 ? '+' : '−'} ${Math.abs(amount)} month${Math.abs(amount) === 1 ? '' : 's'}`;
+  if (kind === 'ADD_MONTHS_MONTH_END') {
+    return `${sourceLabel(source)} ${amount >= 0 ? '+' : '−'} ${Math.abs(amount)} month${Math.abs(amount) === 1 ? '' : 's'} (a month end stays a month end)`;
+  }
+  if (kind === 'FIXED_DATE_IN_ASSESSMENT_YEAR') {
+    const month = typeof expression.month === 'number' ? expression.month : 1;
+    const day = typeof expression.day === 'number' ? expression.day : 1;
+    return `${day} ${MONTH_NAMES[month - 1] ?? `month ${month}`} of the Year of Assessment`;
+  }
   if (kind === 'ADD_CALENDAR_DAYS') return `${sourceLabel(source)} ${amount >= 0 ? '+' : '−'} ${Math.abs(amount)} calendar day${Math.abs(amount) === 1 ? '' : 's'}`;
   if (kind === 'ADD_BUSINESS_DAYS') return `${sourceLabel(source)} ${amount >= 0 ? '+' : '−'} ${Math.abs(amount)} business day${Math.abs(amount) === 1 ? '' : 's'}`;
   if (kind === 'FIXED_DATE_FROM_SOURCE_YEAR') {
@@ -554,6 +568,8 @@ function ExpressionEditor({
     if (nextKind === 'ADJUST_BUSINESS_DAY') return { kind: nextKind, adjustment: 'PREVIOUS' };
     if (nextKind === 'RELATIVE_TO_SOURCE') return { kind: nextKind, source: directSource(), offset: 0, unit: 'CALENDAR_DAY' };
     if (nextKind === 'FIXED_DATE_FROM_SOURCE_YEAR') return { kind: nextKind, source: directSource('financialYearEnd'), yearOffset: 0, month: 1, day: 1 };
+    if (nextKind === 'FIXED_DATE_IN_ASSESSMENT_YEAR') return { kind: nextKind, month: 11, day: 30 };
+    if (nextKind === 'ADD_MONTHS_MONTH_END') return { kind: nextKind, source: { kind: 'OBLIGATION_PERIOD_END' }, amount: 3 };
     return { kind: nextKind, source: directSource(), amount: 0 };
   };
 
@@ -576,11 +592,11 @@ function ExpressionEditor({
         </select>
       </label>
       {kind === 'SOURCE' ? <SourceEditor source={source} onChange={(next) => onChange({ kind: 'SOURCE', source: next })} disabled={disabled} prefix={prefix} /> : null}
-      {['ADD_CALENDAR_DAYS', 'ADD_BUSINESS_DAYS', 'ADD_MONTHS'].includes(kind) ? (
+      {['ADD_CALENDAR_DAYS', 'ADD_BUSINESS_DAYS', 'ADD_MONTHS', 'ADD_MONTHS_MONTH_END'].includes(kind) ? (
         <div className="space-y-3">
           <SourceEditor source={source} onChange={(next) => onChange({ ...expression, source: next })} disabled={disabled} prefix={prefix} />
           <RuleFormInput
-            label={kind === 'ADD_MONTHS' ? 'Months to add' : kind === 'ADD_BUSINESS_DAYS' ? 'Business days to add' : 'Calendar days to add'}
+            label={kind === 'ADD_MONTHS' || kind === 'ADD_MONTHS_MONTH_END' ? 'Months to add' : kind === 'ADD_BUSINESS_DAYS' ? 'Business days to add' : 'Calendar days to add'}
             type="number"
             value={String(amount)}
             disabled={disabled}
@@ -632,6 +648,30 @@ function ExpressionEditor({
               onChange={(event) => onChange({ ...expression, day: Number(event.target.value) })}
             />
           </div>
+        </div>
+      ) : null}
+      {kind === 'FIXED_DATE_IN_ASSESSMENT_YEAR' ? (
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <label className="text-xs font-medium text-text-secondary">
+            Month
+            <select
+              className={RULE_LABEL_CONTROL_CLASS}
+              value={String(typeof expression.month === 'number' ? expression.month : 11)}
+              disabled={disabled}
+              onChange={(event) => onChange({ ...expression, month: Number(event.target.value) })}
+            >
+              {MONTH_NAMES.map((monthName, index) => <option key={monthName} value={index + 1}>{monthName}</option>)}
+            </select>
+          </label>
+          <RuleFormInput
+            label="Day"
+            type="number"
+            min={1}
+            max={31}
+            value={String(typeof expression.day === 'number' ? expression.day : 30)}
+            disabled={disabled}
+            onChange={(event) => onChange({ ...expression, day: Number(event.target.value) })}
+          />
         </div>
       ) : null}
       {kind === 'RELATIVE_TO_SOURCE' ? (

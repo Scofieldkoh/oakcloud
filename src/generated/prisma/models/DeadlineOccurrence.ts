@@ -20,15 +20,41 @@ export type DeadlineOccurrenceModel = runtime.Types.Result.DefaultSelection<Pris
 
 export type AggregateDeadlineOccurrence = {
   _count: DeadlineOccurrenceCountAggregateOutputType | null
+  _avg: DeadlineOccurrenceAvgAggregateOutputType | null
+  _sum: DeadlineOccurrenceSumAggregateOutputType | null
   _min: DeadlineOccurrenceMinAggregateOutputType | null
   _max: DeadlineOccurrenceMaxAggregateOutputType | null
+}
+
+export type DeadlineOccurrenceAvgAggregateOutputType = {
+  yearOfAssessment: number | null
+}
+
+export type DeadlineOccurrenceSumAggregateOutputType = {
+  yearOfAssessment: number | null
 }
 
 export type DeadlineOccurrenceMinAggregateOutputType = {
   id: string | null
   tenantId: string | null
   companyId: string | null
+  ownershipScope: $Enums.DeadlineOwnershipScope | null
   clientServiceId: string | null
+  obligationCode: string | null
+  obligationPeriodKey: string | null
+  financialPeriodStart: Date | null
+  financialPeriodEnd: Date | null
+  yearOfAssessment: number | null
+  periodProvisional: boolean | null
+  filingResponsibility: $Enums.FilingResponsibility | null
+  responsibilitySource: $Enums.ResponsibilitySource | null
+  deliveryClientServiceId: string | null
+  filingProviderName: string | null
+  responsibilityConfirmedAt: Date | null
+  responsibilityConfirmedById: string | null
+  monitoringOwnerId: string | null
+  coverageTiming: string | null
+  filingStatusUnconfirmed: boolean | null
   cycleId: string | null
   ruleVersionId: string | null
   milestoneKey: string | null
@@ -60,7 +86,23 @@ export type DeadlineOccurrenceMaxAggregateOutputType = {
   id: string | null
   tenantId: string | null
   companyId: string | null
+  ownershipScope: $Enums.DeadlineOwnershipScope | null
   clientServiceId: string | null
+  obligationCode: string | null
+  obligationPeriodKey: string | null
+  financialPeriodStart: Date | null
+  financialPeriodEnd: Date | null
+  yearOfAssessment: number | null
+  periodProvisional: boolean | null
+  filingResponsibility: $Enums.FilingResponsibility | null
+  responsibilitySource: $Enums.ResponsibilitySource | null
+  deliveryClientServiceId: string | null
+  filingProviderName: string | null
+  responsibilityConfirmedAt: Date | null
+  responsibilityConfirmedById: string | null
+  monitoringOwnerId: string | null
+  coverageTiming: string | null
+  filingStatusUnconfirmed: boolean | null
   cycleId: string | null
   ruleVersionId: string | null
   milestoneKey: string | null
@@ -92,7 +134,23 @@ export type DeadlineOccurrenceCountAggregateOutputType = {
   id: number
   tenantId: number
   companyId: number
+  ownershipScope: number
   clientServiceId: number
+  obligationCode: number
+  obligationPeriodKey: number
+  financialPeriodStart: number
+  financialPeriodEnd: number
+  yearOfAssessment: number
+  periodProvisional: number
+  filingResponsibility: number
+  responsibilitySource: number
+  deliveryClientServiceId: number
+  filingProviderName: number
+  responsibilityConfirmedAt: number
+  responsibilityConfirmedById: number
+  monitoringOwnerId: number
+  coverageTiming: number
+  filingStatusUnconfirmed: number
   cycleId: number
   ruleVersionId: number
   milestoneKey: number
@@ -122,11 +180,35 @@ export type DeadlineOccurrenceCountAggregateOutputType = {
 }
 
 
+export type DeadlineOccurrenceAvgAggregateInputType = {
+  yearOfAssessment?: true
+}
+
+export type DeadlineOccurrenceSumAggregateInputType = {
+  yearOfAssessment?: true
+}
+
 export type DeadlineOccurrenceMinAggregateInputType = {
   id?: true
   tenantId?: true
   companyId?: true
+  ownershipScope?: true
   clientServiceId?: true
+  obligationCode?: true
+  obligationPeriodKey?: true
+  financialPeriodStart?: true
+  financialPeriodEnd?: true
+  yearOfAssessment?: true
+  periodProvisional?: true
+  filingResponsibility?: true
+  responsibilitySource?: true
+  deliveryClientServiceId?: true
+  filingProviderName?: true
+  responsibilityConfirmedAt?: true
+  responsibilityConfirmedById?: true
+  monitoringOwnerId?: true
+  coverageTiming?: true
+  filingStatusUnconfirmed?: true
   cycleId?: true
   ruleVersionId?: true
   milestoneKey?: true
@@ -158,7 +240,23 @@ export type DeadlineOccurrenceMaxAggregateInputType = {
   id?: true
   tenantId?: true
   companyId?: true
+  ownershipScope?: true
   clientServiceId?: true
+  obligationCode?: true
+  obligationPeriodKey?: true
+  financialPeriodStart?: true
+  financialPeriodEnd?: true
+  yearOfAssessment?: true
+  periodProvisional?: true
+  filingResponsibility?: true
+  responsibilitySource?: true
+  deliveryClientServiceId?: true
+  filingProviderName?: true
+  responsibilityConfirmedAt?: true
+  responsibilityConfirmedById?: true
+  monitoringOwnerId?: true
+  coverageTiming?: true
+  filingStatusUnconfirmed?: true
   cycleId?: true
   ruleVersionId?: true
   milestoneKey?: true
@@ -190,7 +288,23 @@ export type DeadlineOccurrenceCountAggregateInputType = {
   id?: true
   tenantId?: true
   companyId?: true
+  ownershipScope?: true
   clientServiceId?: true
+  obligationCode?: true
+  obligationPeriodKey?: true
+  financialPeriodStart?: true
+  financialPeriodEnd?: true
+  yearOfAssessment?: true
+  periodProvisional?: true
+  filingResponsibility?: true
+  responsibilitySource?: true
+  deliveryClientServiceId?: true
+  filingProviderName?: true
+  responsibilityConfirmedAt?: true
+  responsibilityConfirmedById?: true
+  monitoringOwnerId?: true
+  coverageTiming?: true
+  filingStatusUnconfirmed?: true
   cycleId?: true
   ruleVersionId?: true
   milestoneKey?: true
@@ -257,6 +371,18 @@ export type DeadlineOccurrenceAggregateArgs<ExtArgs extends runtime.Types.Extens
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
    *
+   * Select which fields to average
+  **/
+  _avg?: DeadlineOccurrenceAvgAggregateInputType
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+   *
+   * Select which fields to sum
+  **/
+  _sum?: DeadlineOccurrenceSumAggregateInputType
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+   *
    * Select which fields to find the minimum value
   **/
   _min?: DeadlineOccurrenceMinAggregateInputType
@@ -287,6 +413,8 @@ export type DeadlineOccurrenceGroupByArgs<ExtArgs extends runtime.Types.Extensio
   take?: number
   skip?: number
   _count?: DeadlineOccurrenceCountAggregateInputType | true
+  _avg?: DeadlineOccurrenceAvgAggregateInputType
+  _sum?: DeadlineOccurrenceSumAggregateInputType
   _min?: DeadlineOccurrenceMinAggregateInputType
   _max?: DeadlineOccurrenceMaxAggregateInputType
 }
@@ -295,7 +423,23 @@ export type DeadlineOccurrenceGroupByOutputType = {
   id: string
   tenantId: string
   companyId: string
-  clientServiceId: string
+  ownershipScope: $Enums.DeadlineOwnershipScope
+  clientServiceId: string | null
+  obligationCode: string | null
+  obligationPeriodKey: string | null
+  financialPeriodStart: Date | null
+  financialPeriodEnd: Date | null
+  yearOfAssessment: number | null
+  periodProvisional: boolean
+  filingResponsibility: $Enums.FilingResponsibility | null
+  responsibilitySource: $Enums.ResponsibilitySource | null
+  deliveryClientServiceId: string | null
+  filingProviderName: string | null
+  responsibilityConfirmedAt: Date | null
+  responsibilityConfirmedById: string | null
+  monitoringOwnerId: string | null
+  coverageTiming: string | null
+  filingStatusUnconfirmed: boolean
   cycleId: string
   ruleVersionId: string
   milestoneKey: string
@@ -322,6 +466,8 @@ export type DeadlineOccurrenceGroupByOutputType = {
   createdAt: Date
   updatedAt: Date
   _count: DeadlineOccurrenceCountAggregateOutputType | null
+  _avg: DeadlineOccurrenceAvgAggregateOutputType | null
+  _sum: DeadlineOccurrenceSumAggregateOutputType | null
   _min: DeadlineOccurrenceMinAggregateOutputType | null
   _max: DeadlineOccurrenceMaxAggregateOutputType | null
 }
@@ -348,7 +494,23 @@ export type DeadlineOccurrenceWhereInput = {
   id?: Prisma.StringFilter<"DeadlineOccurrence"> | string
   tenantId?: Prisma.StringFilter<"DeadlineOccurrence"> | string
   companyId?: Prisma.StringFilter<"DeadlineOccurrence"> | string
-  clientServiceId?: Prisma.StringFilter<"DeadlineOccurrence"> | string
+  ownershipScope?: Prisma.EnumDeadlineOwnershipScopeFilter<"DeadlineOccurrence"> | $Enums.DeadlineOwnershipScope
+  clientServiceId?: Prisma.StringNullableFilter<"DeadlineOccurrence"> | string | null
+  obligationCode?: Prisma.StringNullableFilter<"DeadlineOccurrence"> | string | null
+  obligationPeriodKey?: Prisma.StringNullableFilter<"DeadlineOccurrence"> | string | null
+  financialPeriodStart?: Prisma.DateTimeNullableFilter<"DeadlineOccurrence"> | Date | string | null
+  financialPeriodEnd?: Prisma.DateTimeNullableFilter<"DeadlineOccurrence"> | Date | string | null
+  yearOfAssessment?: Prisma.IntNullableFilter<"DeadlineOccurrence"> | number | null
+  periodProvisional?: Prisma.BoolFilter<"DeadlineOccurrence"> | boolean
+  filingResponsibility?: Prisma.EnumFilingResponsibilityNullableFilter<"DeadlineOccurrence"> | $Enums.FilingResponsibility | null
+  responsibilitySource?: Prisma.EnumResponsibilitySourceNullableFilter<"DeadlineOccurrence"> | $Enums.ResponsibilitySource | null
+  deliveryClientServiceId?: Prisma.StringNullableFilter<"DeadlineOccurrence"> | string | null
+  filingProviderName?: Prisma.StringNullableFilter<"DeadlineOccurrence"> | string | null
+  responsibilityConfirmedAt?: Prisma.DateTimeNullableFilter<"DeadlineOccurrence"> | Date | string | null
+  responsibilityConfirmedById?: Prisma.StringNullableFilter<"DeadlineOccurrence"> | string | null
+  monitoringOwnerId?: Prisma.StringNullableFilter<"DeadlineOccurrence"> | string | null
+  coverageTiming?: Prisma.StringNullableFilter<"DeadlineOccurrence"> | string | null
+  filingStatusUnconfirmed?: Prisma.BoolFilter<"DeadlineOccurrence"> | boolean
   cycleId?: Prisma.StringFilter<"DeadlineOccurrence"> | string
   ruleVersionId?: Prisma.StringFilter<"DeadlineOccurrence"> | string
   milestoneKey?: Prisma.StringFilter<"DeadlineOccurrence"> | string
@@ -376,8 +538,11 @@ export type DeadlineOccurrenceWhereInput = {
   updatedAt?: Prisma.DateTimeFilter<"DeadlineOccurrence"> | Date | string
   tenant?: Prisma.XOR<Prisma.WorkspaceScalarRelationFilter, Prisma.WorkspaceWhereInput>
   company?: Prisma.XOR<Prisma.CompanyScalarRelationFilter, Prisma.CompanyWhereInput>
-  clientService?: Prisma.XOR<Prisma.ClientServiceScalarRelationFilter, Prisma.ClientServiceWhereInput>
+  clientService?: Prisma.XOR<Prisma.ClientServiceNullableScalarRelationFilter, Prisma.ClientServiceWhereInput> | null
+  deliveryClientService?: Prisma.XOR<Prisma.ClientServiceNullableScalarRelationFilter, Prisma.ClientServiceWhereInput> | null
   cycle?: Prisma.XOR<Prisma.ServiceCycleScalarRelationFilter, Prisma.ServiceCycleWhereInput>
+  coverageLinks?: Prisma.DeadlineOccurrenceCoverageLinkListRelationFilter
+  responsibilityChanges?: Prisma.DeadlineResponsibilityChangeListRelationFilter
   ruleVersion?: Prisma.XOR<Prisma.DeadlineRuleVersionScalarRelationFilter, Prisma.DeadlineRuleVersionWhereInput>
   dateOverriddenBy?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
   completedBy?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
@@ -389,7 +554,23 @@ export type DeadlineOccurrenceOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   tenantId?: Prisma.SortOrder
   companyId?: Prisma.SortOrder
-  clientServiceId?: Prisma.SortOrder
+  ownershipScope?: Prisma.SortOrder
+  clientServiceId?: Prisma.SortOrderInput | Prisma.SortOrder
+  obligationCode?: Prisma.SortOrderInput | Prisma.SortOrder
+  obligationPeriodKey?: Prisma.SortOrderInput | Prisma.SortOrder
+  financialPeriodStart?: Prisma.SortOrderInput | Prisma.SortOrder
+  financialPeriodEnd?: Prisma.SortOrderInput | Prisma.SortOrder
+  yearOfAssessment?: Prisma.SortOrderInput | Prisma.SortOrder
+  periodProvisional?: Prisma.SortOrder
+  filingResponsibility?: Prisma.SortOrderInput | Prisma.SortOrder
+  responsibilitySource?: Prisma.SortOrderInput | Prisma.SortOrder
+  deliveryClientServiceId?: Prisma.SortOrderInput | Prisma.SortOrder
+  filingProviderName?: Prisma.SortOrderInput | Prisma.SortOrder
+  responsibilityConfirmedAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  responsibilityConfirmedById?: Prisma.SortOrderInput | Prisma.SortOrder
+  monitoringOwnerId?: Prisma.SortOrderInput | Prisma.SortOrder
+  coverageTiming?: Prisma.SortOrderInput | Prisma.SortOrder
+  filingStatusUnconfirmed?: Prisma.SortOrder
   cycleId?: Prisma.SortOrder
   ruleVersionId?: Prisma.SortOrder
   milestoneKey?: Prisma.SortOrder
@@ -418,7 +599,10 @@ export type DeadlineOccurrenceOrderByWithRelationInput = {
   tenant?: Prisma.WorkspaceOrderByWithRelationInput
   company?: Prisma.CompanyOrderByWithRelationInput
   clientService?: Prisma.ClientServiceOrderByWithRelationInput
+  deliveryClientService?: Prisma.ClientServiceOrderByWithRelationInput
   cycle?: Prisma.ServiceCycleOrderByWithRelationInput
+  coverageLinks?: Prisma.DeadlineOccurrenceCoverageLinkOrderByRelationAggregateInput
+  responsibilityChanges?: Prisma.DeadlineResponsibilityChangeOrderByRelationAggregateInput
   ruleVersion?: Prisma.DeadlineRuleVersionOrderByWithRelationInput
   dateOverriddenBy?: Prisma.UserOrderByWithRelationInput
   completedBy?: Prisma.UserOrderByWithRelationInput
@@ -434,7 +618,23 @@ export type DeadlineOccurrenceWhereUniqueInput = Prisma.AtLeast<{
   NOT?: Prisma.DeadlineOccurrenceWhereInput | Prisma.DeadlineOccurrenceWhereInput[]
   tenantId?: Prisma.StringFilter<"DeadlineOccurrence"> | string
   companyId?: Prisma.StringFilter<"DeadlineOccurrence"> | string
-  clientServiceId?: Prisma.StringFilter<"DeadlineOccurrence"> | string
+  ownershipScope?: Prisma.EnumDeadlineOwnershipScopeFilter<"DeadlineOccurrence"> | $Enums.DeadlineOwnershipScope
+  clientServiceId?: Prisma.StringNullableFilter<"DeadlineOccurrence"> | string | null
+  obligationCode?: Prisma.StringNullableFilter<"DeadlineOccurrence"> | string | null
+  obligationPeriodKey?: Prisma.StringNullableFilter<"DeadlineOccurrence"> | string | null
+  financialPeriodStart?: Prisma.DateTimeNullableFilter<"DeadlineOccurrence"> | Date | string | null
+  financialPeriodEnd?: Prisma.DateTimeNullableFilter<"DeadlineOccurrence"> | Date | string | null
+  yearOfAssessment?: Prisma.IntNullableFilter<"DeadlineOccurrence"> | number | null
+  periodProvisional?: Prisma.BoolFilter<"DeadlineOccurrence"> | boolean
+  filingResponsibility?: Prisma.EnumFilingResponsibilityNullableFilter<"DeadlineOccurrence"> | $Enums.FilingResponsibility | null
+  responsibilitySource?: Prisma.EnumResponsibilitySourceNullableFilter<"DeadlineOccurrence"> | $Enums.ResponsibilitySource | null
+  deliveryClientServiceId?: Prisma.StringNullableFilter<"DeadlineOccurrence"> | string | null
+  filingProviderName?: Prisma.StringNullableFilter<"DeadlineOccurrence"> | string | null
+  responsibilityConfirmedAt?: Prisma.DateTimeNullableFilter<"DeadlineOccurrence"> | Date | string | null
+  responsibilityConfirmedById?: Prisma.StringNullableFilter<"DeadlineOccurrence"> | string | null
+  monitoringOwnerId?: Prisma.StringNullableFilter<"DeadlineOccurrence"> | string | null
+  coverageTiming?: Prisma.StringNullableFilter<"DeadlineOccurrence"> | string | null
+  filingStatusUnconfirmed?: Prisma.BoolFilter<"DeadlineOccurrence"> | boolean
   cycleId?: Prisma.StringFilter<"DeadlineOccurrence"> | string
   ruleVersionId?: Prisma.StringFilter<"DeadlineOccurrence"> | string
   milestoneKey?: Prisma.StringFilter<"DeadlineOccurrence"> | string
@@ -462,8 +662,11 @@ export type DeadlineOccurrenceWhereUniqueInput = Prisma.AtLeast<{
   updatedAt?: Prisma.DateTimeFilter<"DeadlineOccurrence"> | Date | string
   tenant?: Prisma.XOR<Prisma.WorkspaceScalarRelationFilter, Prisma.WorkspaceWhereInput>
   company?: Prisma.XOR<Prisma.CompanyScalarRelationFilter, Prisma.CompanyWhereInput>
-  clientService?: Prisma.XOR<Prisma.ClientServiceScalarRelationFilter, Prisma.ClientServiceWhereInput>
+  clientService?: Prisma.XOR<Prisma.ClientServiceNullableScalarRelationFilter, Prisma.ClientServiceWhereInput> | null
+  deliveryClientService?: Prisma.XOR<Prisma.ClientServiceNullableScalarRelationFilter, Prisma.ClientServiceWhereInput> | null
   cycle?: Prisma.XOR<Prisma.ServiceCycleScalarRelationFilter, Prisma.ServiceCycleWhereInput>
+  coverageLinks?: Prisma.DeadlineOccurrenceCoverageLinkListRelationFilter
+  responsibilityChanges?: Prisma.DeadlineResponsibilityChangeListRelationFilter
   ruleVersion?: Prisma.XOR<Prisma.DeadlineRuleVersionScalarRelationFilter, Prisma.DeadlineRuleVersionWhereInput>
   dateOverriddenBy?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
   completedBy?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
@@ -475,7 +678,23 @@ export type DeadlineOccurrenceOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   tenantId?: Prisma.SortOrder
   companyId?: Prisma.SortOrder
-  clientServiceId?: Prisma.SortOrder
+  ownershipScope?: Prisma.SortOrder
+  clientServiceId?: Prisma.SortOrderInput | Prisma.SortOrder
+  obligationCode?: Prisma.SortOrderInput | Prisma.SortOrder
+  obligationPeriodKey?: Prisma.SortOrderInput | Prisma.SortOrder
+  financialPeriodStart?: Prisma.SortOrderInput | Prisma.SortOrder
+  financialPeriodEnd?: Prisma.SortOrderInput | Prisma.SortOrder
+  yearOfAssessment?: Prisma.SortOrderInput | Prisma.SortOrder
+  periodProvisional?: Prisma.SortOrder
+  filingResponsibility?: Prisma.SortOrderInput | Prisma.SortOrder
+  responsibilitySource?: Prisma.SortOrderInput | Prisma.SortOrder
+  deliveryClientServiceId?: Prisma.SortOrderInput | Prisma.SortOrder
+  filingProviderName?: Prisma.SortOrderInput | Prisma.SortOrder
+  responsibilityConfirmedAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  responsibilityConfirmedById?: Prisma.SortOrderInput | Prisma.SortOrder
+  monitoringOwnerId?: Prisma.SortOrderInput | Prisma.SortOrder
+  coverageTiming?: Prisma.SortOrderInput | Prisma.SortOrder
+  filingStatusUnconfirmed?: Prisma.SortOrder
   cycleId?: Prisma.SortOrder
   ruleVersionId?: Prisma.SortOrder
   milestoneKey?: Prisma.SortOrder
@@ -502,8 +721,10 @@ export type DeadlineOccurrenceOrderByWithAggregationInput = {
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.DeadlineOccurrenceCountOrderByAggregateInput
+  _avg?: Prisma.DeadlineOccurrenceAvgOrderByAggregateInput
   _max?: Prisma.DeadlineOccurrenceMaxOrderByAggregateInput
   _min?: Prisma.DeadlineOccurrenceMinOrderByAggregateInput
+  _sum?: Prisma.DeadlineOccurrenceSumOrderByAggregateInput
 }
 
 export type DeadlineOccurrenceScalarWhereWithAggregatesInput = {
@@ -513,7 +734,23 @@ export type DeadlineOccurrenceScalarWhereWithAggregatesInput = {
   id?: Prisma.StringWithAggregatesFilter<"DeadlineOccurrence"> | string
   tenantId?: Prisma.StringWithAggregatesFilter<"DeadlineOccurrence"> | string
   companyId?: Prisma.StringWithAggregatesFilter<"DeadlineOccurrence"> | string
-  clientServiceId?: Prisma.StringWithAggregatesFilter<"DeadlineOccurrence"> | string
+  ownershipScope?: Prisma.EnumDeadlineOwnershipScopeWithAggregatesFilter<"DeadlineOccurrence"> | $Enums.DeadlineOwnershipScope
+  clientServiceId?: Prisma.StringNullableWithAggregatesFilter<"DeadlineOccurrence"> | string | null
+  obligationCode?: Prisma.StringNullableWithAggregatesFilter<"DeadlineOccurrence"> | string | null
+  obligationPeriodKey?: Prisma.StringNullableWithAggregatesFilter<"DeadlineOccurrence"> | string | null
+  financialPeriodStart?: Prisma.DateTimeNullableWithAggregatesFilter<"DeadlineOccurrence"> | Date | string | null
+  financialPeriodEnd?: Prisma.DateTimeNullableWithAggregatesFilter<"DeadlineOccurrence"> | Date | string | null
+  yearOfAssessment?: Prisma.IntNullableWithAggregatesFilter<"DeadlineOccurrence"> | number | null
+  periodProvisional?: Prisma.BoolWithAggregatesFilter<"DeadlineOccurrence"> | boolean
+  filingResponsibility?: Prisma.EnumFilingResponsibilityNullableWithAggregatesFilter<"DeadlineOccurrence"> | $Enums.FilingResponsibility | null
+  responsibilitySource?: Prisma.EnumResponsibilitySourceNullableWithAggregatesFilter<"DeadlineOccurrence"> | $Enums.ResponsibilitySource | null
+  deliveryClientServiceId?: Prisma.StringNullableWithAggregatesFilter<"DeadlineOccurrence"> | string | null
+  filingProviderName?: Prisma.StringNullableWithAggregatesFilter<"DeadlineOccurrence"> | string | null
+  responsibilityConfirmedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"DeadlineOccurrence"> | Date | string | null
+  responsibilityConfirmedById?: Prisma.StringNullableWithAggregatesFilter<"DeadlineOccurrence"> | string | null
+  monitoringOwnerId?: Prisma.StringNullableWithAggregatesFilter<"DeadlineOccurrence"> | string | null
+  coverageTiming?: Prisma.StringNullableWithAggregatesFilter<"DeadlineOccurrence"> | string | null
+  filingStatusUnconfirmed?: Prisma.BoolWithAggregatesFilter<"DeadlineOccurrence"> | boolean
   cycleId?: Prisma.StringWithAggregatesFilter<"DeadlineOccurrence"> | string
   ruleVersionId?: Prisma.StringWithAggregatesFilter<"DeadlineOccurrence"> | string
   milestoneKey?: Prisma.StringWithAggregatesFilter<"DeadlineOccurrence"> | string
@@ -543,6 +780,21 @@ export type DeadlineOccurrenceScalarWhereWithAggregatesInput = {
 
 export type DeadlineOccurrenceCreateInput = {
   id?: string
+  ownershipScope?: $Enums.DeadlineOwnershipScope
+  obligationCode?: string | null
+  obligationPeriodKey?: string | null
+  financialPeriodStart?: Date | string | null
+  financialPeriodEnd?: Date | string | null
+  yearOfAssessment?: number | null
+  periodProvisional?: boolean
+  filingResponsibility?: $Enums.FilingResponsibility | null
+  responsibilitySource?: $Enums.ResponsibilitySource | null
+  filingProviderName?: string | null
+  responsibilityConfirmedAt?: Date | string | null
+  responsibilityConfirmedById?: string | null
+  monitoringOwnerId?: string | null
+  coverageTiming?: string | null
+  filingStatusUnconfirmed?: boolean
   milestoneKey: string
   scheduleEntryKey?: string
   deadlineType: $Enums.DeadlineType
@@ -564,8 +816,11 @@ export type DeadlineOccurrenceCreateInput = {
   updatedAt?: Date | string
   tenant: Prisma.WorkspaceCreateNestedOneWithoutDeadlineOccurrencesInput
   company: Prisma.CompanyCreateNestedOneWithoutDeadlineOccurrencesInput
-  clientService: Prisma.ClientServiceCreateNestedOneWithoutDeadlineOccurrencesInput
+  clientService?: Prisma.ClientServiceCreateNestedOneWithoutDeadlineOccurrencesInput
+  deliveryClientService?: Prisma.ClientServiceCreateNestedOneWithoutDeliveredDeadlinesInput
   cycle: Prisma.ServiceCycleCreateNestedOneWithoutOccurrencesInput
+  coverageLinks?: Prisma.DeadlineOccurrenceCoverageLinkCreateNestedManyWithoutOccurrenceInput
+  responsibilityChanges?: Prisma.DeadlineResponsibilityChangeCreateNestedManyWithoutOccurrenceInput
   ruleVersion: Prisma.DeadlineRuleVersionCreateNestedOneWithoutDeadlineOccurrencesInput
   dateOverriddenBy?: Prisma.UserCreateNestedOneWithoutOverriddenDeadlineOccurrencesInput
   completedBy?: Prisma.UserCreateNestedOneWithoutCompletedDeadlineOccurrencesInput
@@ -577,7 +832,23 @@ export type DeadlineOccurrenceUncheckedCreateInput = {
   id?: string
   tenantId: string
   companyId: string
-  clientServiceId: string
+  ownershipScope?: $Enums.DeadlineOwnershipScope
+  clientServiceId?: string | null
+  obligationCode?: string | null
+  obligationPeriodKey?: string | null
+  financialPeriodStart?: Date | string | null
+  financialPeriodEnd?: Date | string | null
+  yearOfAssessment?: number | null
+  periodProvisional?: boolean
+  filingResponsibility?: $Enums.FilingResponsibility | null
+  responsibilitySource?: $Enums.ResponsibilitySource | null
+  deliveryClientServiceId?: string | null
+  filingProviderName?: string | null
+  responsibilityConfirmedAt?: Date | string | null
+  responsibilityConfirmedById?: string | null
+  monitoringOwnerId?: string | null
+  coverageTiming?: string | null
+  filingStatusUnconfirmed?: boolean
   cycleId: string
   ruleVersionId: string
   milestoneKey: string
@@ -603,10 +874,27 @@ export type DeadlineOccurrenceUncheckedCreateInput = {
   origin?: $Enums.ServiceCycleOrigin
   createdAt?: Date | string
   updatedAt?: Date | string
+  coverageLinks?: Prisma.DeadlineOccurrenceCoverageLinkUncheckedCreateNestedManyWithoutOccurrenceInput
+  responsibilityChanges?: Prisma.DeadlineResponsibilityChangeUncheckedCreateNestedManyWithoutOccurrenceInput
 }
 
 export type DeadlineOccurrenceUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  ownershipScope?: Prisma.EnumDeadlineOwnershipScopeFieldUpdateOperationsInput | $Enums.DeadlineOwnershipScope
+  obligationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationPeriodKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  financialPeriodStart?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  financialPeriodEnd?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  yearOfAssessment?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  periodProvisional?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filingResponsibility?: Prisma.NullableEnumFilingResponsibilityFieldUpdateOperationsInput | $Enums.FilingResponsibility | null
+  responsibilitySource?: Prisma.NullableEnumResponsibilitySourceFieldUpdateOperationsInput | $Enums.ResponsibilitySource | null
+  filingProviderName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  responsibilityConfirmedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  responsibilityConfirmedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  monitoringOwnerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  coverageTiming?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  filingStatusUnconfirmed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   milestoneKey?: Prisma.StringFieldUpdateOperationsInput | string
   scheduleEntryKey?: Prisma.StringFieldUpdateOperationsInput | string
   deadlineType?: Prisma.EnumDeadlineTypeFieldUpdateOperationsInput | $Enums.DeadlineType
@@ -628,8 +916,11 @@ export type DeadlineOccurrenceUpdateInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutDeadlineOccurrencesNestedInput
   company?: Prisma.CompanyUpdateOneRequiredWithoutDeadlineOccurrencesNestedInput
-  clientService?: Prisma.ClientServiceUpdateOneRequiredWithoutDeadlineOccurrencesNestedInput
+  clientService?: Prisma.ClientServiceUpdateOneWithoutDeadlineOccurrencesNestedInput
+  deliveryClientService?: Prisma.ClientServiceUpdateOneWithoutDeliveredDeadlinesNestedInput
   cycle?: Prisma.ServiceCycleUpdateOneRequiredWithoutOccurrencesNestedInput
+  coverageLinks?: Prisma.DeadlineOccurrenceCoverageLinkUpdateManyWithoutOccurrenceNestedInput
+  responsibilityChanges?: Prisma.DeadlineResponsibilityChangeUpdateManyWithoutOccurrenceNestedInput
   ruleVersion?: Prisma.DeadlineRuleVersionUpdateOneRequiredWithoutDeadlineOccurrencesNestedInput
   dateOverriddenBy?: Prisma.UserUpdateOneWithoutOverriddenDeadlineOccurrencesNestedInput
   completedBy?: Prisma.UserUpdateOneWithoutCompletedDeadlineOccurrencesNestedInput
@@ -641,7 +932,23 @@ export type DeadlineOccurrenceUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   companyId?: Prisma.StringFieldUpdateOperationsInput | string
-  clientServiceId?: Prisma.StringFieldUpdateOperationsInput | string
+  ownershipScope?: Prisma.EnumDeadlineOwnershipScopeFieldUpdateOperationsInput | $Enums.DeadlineOwnershipScope
+  clientServiceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationPeriodKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  financialPeriodStart?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  financialPeriodEnd?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  yearOfAssessment?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  periodProvisional?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filingResponsibility?: Prisma.NullableEnumFilingResponsibilityFieldUpdateOperationsInput | $Enums.FilingResponsibility | null
+  responsibilitySource?: Prisma.NullableEnumResponsibilitySourceFieldUpdateOperationsInput | $Enums.ResponsibilitySource | null
+  deliveryClientServiceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  filingProviderName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  responsibilityConfirmedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  responsibilityConfirmedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  monitoringOwnerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  coverageTiming?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  filingStatusUnconfirmed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   cycleId?: Prisma.StringFieldUpdateOperationsInput | string
   ruleVersionId?: Prisma.StringFieldUpdateOperationsInput | string
   milestoneKey?: Prisma.StringFieldUpdateOperationsInput | string
@@ -667,13 +974,31 @@ export type DeadlineOccurrenceUncheckedUpdateInput = {
   origin?: Prisma.EnumServiceCycleOriginFieldUpdateOperationsInput | $Enums.ServiceCycleOrigin
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  coverageLinks?: Prisma.DeadlineOccurrenceCoverageLinkUncheckedUpdateManyWithoutOccurrenceNestedInput
+  responsibilityChanges?: Prisma.DeadlineResponsibilityChangeUncheckedUpdateManyWithoutOccurrenceNestedInput
 }
 
 export type DeadlineOccurrenceCreateManyInput = {
   id?: string
   tenantId: string
   companyId: string
-  clientServiceId: string
+  ownershipScope?: $Enums.DeadlineOwnershipScope
+  clientServiceId?: string | null
+  obligationCode?: string | null
+  obligationPeriodKey?: string | null
+  financialPeriodStart?: Date | string | null
+  financialPeriodEnd?: Date | string | null
+  yearOfAssessment?: number | null
+  periodProvisional?: boolean
+  filingResponsibility?: $Enums.FilingResponsibility | null
+  responsibilitySource?: $Enums.ResponsibilitySource | null
+  deliveryClientServiceId?: string | null
+  filingProviderName?: string | null
+  responsibilityConfirmedAt?: Date | string | null
+  responsibilityConfirmedById?: string | null
+  monitoringOwnerId?: string | null
+  coverageTiming?: string | null
+  filingStatusUnconfirmed?: boolean
   cycleId: string
   ruleVersionId: string
   milestoneKey: string
@@ -703,6 +1028,21 @@ export type DeadlineOccurrenceCreateManyInput = {
 
 export type DeadlineOccurrenceUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  ownershipScope?: Prisma.EnumDeadlineOwnershipScopeFieldUpdateOperationsInput | $Enums.DeadlineOwnershipScope
+  obligationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationPeriodKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  financialPeriodStart?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  financialPeriodEnd?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  yearOfAssessment?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  periodProvisional?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filingResponsibility?: Prisma.NullableEnumFilingResponsibilityFieldUpdateOperationsInput | $Enums.FilingResponsibility | null
+  responsibilitySource?: Prisma.NullableEnumResponsibilitySourceFieldUpdateOperationsInput | $Enums.ResponsibilitySource | null
+  filingProviderName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  responsibilityConfirmedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  responsibilityConfirmedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  monitoringOwnerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  coverageTiming?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  filingStatusUnconfirmed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   milestoneKey?: Prisma.StringFieldUpdateOperationsInput | string
   scheduleEntryKey?: Prisma.StringFieldUpdateOperationsInput | string
   deadlineType?: Prisma.EnumDeadlineTypeFieldUpdateOperationsInput | $Enums.DeadlineType
@@ -728,7 +1068,23 @@ export type DeadlineOccurrenceUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   companyId?: Prisma.StringFieldUpdateOperationsInput | string
-  clientServiceId?: Prisma.StringFieldUpdateOperationsInput | string
+  ownershipScope?: Prisma.EnumDeadlineOwnershipScopeFieldUpdateOperationsInput | $Enums.DeadlineOwnershipScope
+  clientServiceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationPeriodKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  financialPeriodStart?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  financialPeriodEnd?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  yearOfAssessment?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  periodProvisional?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filingResponsibility?: Prisma.NullableEnumFilingResponsibilityFieldUpdateOperationsInput | $Enums.FilingResponsibility | null
+  responsibilitySource?: Prisma.NullableEnumResponsibilitySourceFieldUpdateOperationsInput | $Enums.ResponsibilitySource | null
+  deliveryClientServiceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  filingProviderName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  responsibilityConfirmedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  responsibilityConfirmedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  monitoringOwnerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  coverageTiming?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  filingStatusUnconfirmed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   cycleId?: Prisma.StringFieldUpdateOperationsInput | string
   ruleVersionId?: Prisma.StringFieldUpdateOperationsInput | string
   milestoneKey?: Prisma.StringFieldUpdateOperationsInput | string
@@ -777,7 +1133,23 @@ export type DeadlineOccurrenceCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   tenantId?: Prisma.SortOrder
   companyId?: Prisma.SortOrder
+  ownershipScope?: Prisma.SortOrder
   clientServiceId?: Prisma.SortOrder
+  obligationCode?: Prisma.SortOrder
+  obligationPeriodKey?: Prisma.SortOrder
+  financialPeriodStart?: Prisma.SortOrder
+  financialPeriodEnd?: Prisma.SortOrder
+  yearOfAssessment?: Prisma.SortOrder
+  periodProvisional?: Prisma.SortOrder
+  filingResponsibility?: Prisma.SortOrder
+  responsibilitySource?: Prisma.SortOrder
+  deliveryClientServiceId?: Prisma.SortOrder
+  filingProviderName?: Prisma.SortOrder
+  responsibilityConfirmedAt?: Prisma.SortOrder
+  responsibilityConfirmedById?: Prisma.SortOrder
+  monitoringOwnerId?: Prisma.SortOrder
+  coverageTiming?: Prisma.SortOrder
+  filingStatusUnconfirmed?: Prisma.SortOrder
   cycleId?: Prisma.SortOrder
   ruleVersionId?: Prisma.SortOrder
   milestoneKey?: Prisma.SortOrder
@@ -805,11 +1177,31 @@ export type DeadlineOccurrenceCountOrderByAggregateInput = {
   updatedAt?: Prisma.SortOrder
 }
 
+export type DeadlineOccurrenceAvgOrderByAggregateInput = {
+  yearOfAssessment?: Prisma.SortOrder
+}
+
 export type DeadlineOccurrenceMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   tenantId?: Prisma.SortOrder
   companyId?: Prisma.SortOrder
+  ownershipScope?: Prisma.SortOrder
   clientServiceId?: Prisma.SortOrder
+  obligationCode?: Prisma.SortOrder
+  obligationPeriodKey?: Prisma.SortOrder
+  financialPeriodStart?: Prisma.SortOrder
+  financialPeriodEnd?: Prisma.SortOrder
+  yearOfAssessment?: Prisma.SortOrder
+  periodProvisional?: Prisma.SortOrder
+  filingResponsibility?: Prisma.SortOrder
+  responsibilitySource?: Prisma.SortOrder
+  deliveryClientServiceId?: Prisma.SortOrder
+  filingProviderName?: Prisma.SortOrder
+  responsibilityConfirmedAt?: Prisma.SortOrder
+  responsibilityConfirmedById?: Prisma.SortOrder
+  monitoringOwnerId?: Prisma.SortOrder
+  coverageTiming?: Prisma.SortOrder
+  filingStatusUnconfirmed?: Prisma.SortOrder
   cycleId?: Prisma.SortOrder
   ruleVersionId?: Prisma.SortOrder
   milestoneKey?: Prisma.SortOrder
@@ -841,7 +1233,23 @@ export type DeadlineOccurrenceMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   tenantId?: Prisma.SortOrder
   companyId?: Prisma.SortOrder
+  ownershipScope?: Prisma.SortOrder
   clientServiceId?: Prisma.SortOrder
+  obligationCode?: Prisma.SortOrder
+  obligationPeriodKey?: Prisma.SortOrder
+  financialPeriodStart?: Prisma.SortOrder
+  financialPeriodEnd?: Prisma.SortOrder
+  yearOfAssessment?: Prisma.SortOrder
+  periodProvisional?: Prisma.SortOrder
+  filingResponsibility?: Prisma.SortOrder
+  responsibilitySource?: Prisma.SortOrder
+  deliveryClientServiceId?: Prisma.SortOrder
+  filingProviderName?: Prisma.SortOrder
+  responsibilityConfirmedAt?: Prisma.SortOrder
+  responsibilityConfirmedById?: Prisma.SortOrder
+  monitoringOwnerId?: Prisma.SortOrder
+  coverageTiming?: Prisma.SortOrder
+  filingStatusUnconfirmed?: Prisma.SortOrder
   cycleId?: Prisma.SortOrder
   ruleVersionId?: Prisma.SortOrder
   milestoneKey?: Prisma.SortOrder
@@ -867,6 +1275,15 @@ export type DeadlineOccurrenceMinOrderByAggregateInput = {
   origin?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+}
+
+export type DeadlineOccurrenceSumOrderByAggregateInput = {
+  yearOfAssessment?: Prisma.SortOrder
+}
+
+export type DeadlineOccurrenceScalarRelationFilter = {
+  is?: Prisma.DeadlineOccurrenceWhereInput
+  isNot?: Prisma.DeadlineOccurrenceWhereInput
 }
 
 export type DeadlineOccurrenceCreateNestedManyWithoutTenantInput = {
@@ -1128,10 +1545,24 @@ export type DeadlineOccurrenceCreateNestedManyWithoutClientServiceInput = {
   connect?: Prisma.DeadlineOccurrenceWhereUniqueInput | Prisma.DeadlineOccurrenceWhereUniqueInput[]
 }
 
+export type DeadlineOccurrenceCreateNestedManyWithoutDeliveryClientServiceInput = {
+  create?: Prisma.XOR<Prisma.DeadlineOccurrenceCreateWithoutDeliveryClientServiceInput, Prisma.DeadlineOccurrenceUncheckedCreateWithoutDeliveryClientServiceInput> | Prisma.DeadlineOccurrenceCreateWithoutDeliveryClientServiceInput[] | Prisma.DeadlineOccurrenceUncheckedCreateWithoutDeliveryClientServiceInput[]
+  connectOrCreate?: Prisma.DeadlineOccurrenceCreateOrConnectWithoutDeliveryClientServiceInput | Prisma.DeadlineOccurrenceCreateOrConnectWithoutDeliveryClientServiceInput[]
+  createMany?: Prisma.DeadlineOccurrenceCreateManyDeliveryClientServiceInputEnvelope
+  connect?: Prisma.DeadlineOccurrenceWhereUniqueInput | Prisma.DeadlineOccurrenceWhereUniqueInput[]
+}
+
 export type DeadlineOccurrenceUncheckedCreateNestedManyWithoutClientServiceInput = {
   create?: Prisma.XOR<Prisma.DeadlineOccurrenceCreateWithoutClientServiceInput, Prisma.DeadlineOccurrenceUncheckedCreateWithoutClientServiceInput> | Prisma.DeadlineOccurrenceCreateWithoutClientServiceInput[] | Prisma.DeadlineOccurrenceUncheckedCreateWithoutClientServiceInput[]
   connectOrCreate?: Prisma.DeadlineOccurrenceCreateOrConnectWithoutClientServiceInput | Prisma.DeadlineOccurrenceCreateOrConnectWithoutClientServiceInput[]
   createMany?: Prisma.DeadlineOccurrenceCreateManyClientServiceInputEnvelope
+  connect?: Prisma.DeadlineOccurrenceWhereUniqueInput | Prisma.DeadlineOccurrenceWhereUniqueInput[]
+}
+
+export type DeadlineOccurrenceUncheckedCreateNestedManyWithoutDeliveryClientServiceInput = {
+  create?: Prisma.XOR<Prisma.DeadlineOccurrenceCreateWithoutDeliveryClientServiceInput, Prisma.DeadlineOccurrenceUncheckedCreateWithoutDeliveryClientServiceInput> | Prisma.DeadlineOccurrenceCreateWithoutDeliveryClientServiceInput[] | Prisma.DeadlineOccurrenceUncheckedCreateWithoutDeliveryClientServiceInput[]
+  connectOrCreate?: Prisma.DeadlineOccurrenceCreateOrConnectWithoutDeliveryClientServiceInput | Prisma.DeadlineOccurrenceCreateOrConnectWithoutDeliveryClientServiceInput[]
+  createMany?: Prisma.DeadlineOccurrenceCreateManyDeliveryClientServiceInputEnvelope
   connect?: Prisma.DeadlineOccurrenceWhereUniqueInput | Prisma.DeadlineOccurrenceWhereUniqueInput[]
 }
 
@@ -1149,6 +1580,20 @@ export type DeadlineOccurrenceUpdateManyWithoutClientServiceNestedInput = {
   deleteMany?: Prisma.DeadlineOccurrenceScalarWhereInput | Prisma.DeadlineOccurrenceScalarWhereInput[]
 }
 
+export type DeadlineOccurrenceUpdateManyWithoutDeliveryClientServiceNestedInput = {
+  create?: Prisma.XOR<Prisma.DeadlineOccurrenceCreateWithoutDeliveryClientServiceInput, Prisma.DeadlineOccurrenceUncheckedCreateWithoutDeliveryClientServiceInput> | Prisma.DeadlineOccurrenceCreateWithoutDeliveryClientServiceInput[] | Prisma.DeadlineOccurrenceUncheckedCreateWithoutDeliveryClientServiceInput[]
+  connectOrCreate?: Prisma.DeadlineOccurrenceCreateOrConnectWithoutDeliveryClientServiceInput | Prisma.DeadlineOccurrenceCreateOrConnectWithoutDeliveryClientServiceInput[]
+  upsert?: Prisma.DeadlineOccurrenceUpsertWithWhereUniqueWithoutDeliveryClientServiceInput | Prisma.DeadlineOccurrenceUpsertWithWhereUniqueWithoutDeliveryClientServiceInput[]
+  createMany?: Prisma.DeadlineOccurrenceCreateManyDeliveryClientServiceInputEnvelope
+  set?: Prisma.DeadlineOccurrenceWhereUniqueInput | Prisma.DeadlineOccurrenceWhereUniqueInput[]
+  disconnect?: Prisma.DeadlineOccurrenceWhereUniqueInput | Prisma.DeadlineOccurrenceWhereUniqueInput[]
+  delete?: Prisma.DeadlineOccurrenceWhereUniqueInput | Prisma.DeadlineOccurrenceWhereUniqueInput[]
+  connect?: Prisma.DeadlineOccurrenceWhereUniqueInput | Prisma.DeadlineOccurrenceWhereUniqueInput[]
+  update?: Prisma.DeadlineOccurrenceUpdateWithWhereUniqueWithoutDeliveryClientServiceInput | Prisma.DeadlineOccurrenceUpdateWithWhereUniqueWithoutDeliveryClientServiceInput[]
+  updateMany?: Prisma.DeadlineOccurrenceUpdateManyWithWhereWithoutDeliveryClientServiceInput | Prisma.DeadlineOccurrenceUpdateManyWithWhereWithoutDeliveryClientServiceInput[]
+  deleteMany?: Prisma.DeadlineOccurrenceScalarWhereInput | Prisma.DeadlineOccurrenceScalarWhereInput[]
+}
+
 export type DeadlineOccurrenceUncheckedUpdateManyWithoutClientServiceNestedInput = {
   create?: Prisma.XOR<Prisma.DeadlineOccurrenceCreateWithoutClientServiceInput, Prisma.DeadlineOccurrenceUncheckedCreateWithoutClientServiceInput> | Prisma.DeadlineOccurrenceCreateWithoutClientServiceInput[] | Prisma.DeadlineOccurrenceUncheckedCreateWithoutClientServiceInput[]
   connectOrCreate?: Prisma.DeadlineOccurrenceCreateOrConnectWithoutClientServiceInput | Prisma.DeadlineOccurrenceCreateOrConnectWithoutClientServiceInput[]
@@ -1160,6 +1605,20 @@ export type DeadlineOccurrenceUncheckedUpdateManyWithoutClientServiceNestedInput
   connect?: Prisma.DeadlineOccurrenceWhereUniqueInput | Prisma.DeadlineOccurrenceWhereUniqueInput[]
   update?: Prisma.DeadlineOccurrenceUpdateWithWhereUniqueWithoutClientServiceInput | Prisma.DeadlineOccurrenceUpdateWithWhereUniqueWithoutClientServiceInput[]
   updateMany?: Prisma.DeadlineOccurrenceUpdateManyWithWhereWithoutClientServiceInput | Prisma.DeadlineOccurrenceUpdateManyWithWhereWithoutClientServiceInput[]
+  deleteMany?: Prisma.DeadlineOccurrenceScalarWhereInput | Prisma.DeadlineOccurrenceScalarWhereInput[]
+}
+
+export type DeadlineOccurrenceUncheckedUpdateManyWithoutDeliveryClientServiceNestedInput = {
+  create?: Prisma.XOR<Prisma.DeadlineOccurrenceCreateWithoutDeliveryClientServiceInput, Prisma.DeadlineOccurrenceUncheckedCreateWithoutDeliveryClientServiceInput> | Prisma.DeadlineOccurrenceCreateWithoutDeliveryClientServiceInput[] | Prisma.DeadlineOccurrenceUncheckedCreateWithoutDeliveryClientServiceInput[]
+  connectOrCreate?: Prisma.DeadlineOccurrenceCreateOrConnectWithoutDeliveryClientServiceInput | Prisma.DeadlineOccurrenceCreateOrConnectWithoutDeliveryClientServiceInput[]
+  upsert?: Prisma.DeadlineOccurrenceUpsertWithWhereUniqueWithoutDeliveryClientServiceInput | Prisma.DeadlineOccurrenceUpsertWithWhereUniqueWithoutDeliveryClientServiceInput[]
+  createMany?: Prisma.DeadlineOccurrenceCreateManyDeliveryClientServiceInputEnvelope
+  set?: Prisma.DeadlineOccurrenceWhereUniqueInput | Prisma.DeadlineOccurrenceWhereUniqueInput[]
+  disconnect?: Prisma.DeadlineOccurrenceWhereUniqueInput | Prisma.DeadlineOccurrenceWhereUniqueInput[]
+  delete?: Prisma.DeadlineOccurrenceWhereUniqueInput | Prisma.DeadlineOccurrenceWhereUniqueInput[]
+  connect?: Prisma.DeadlineOccurrenceWhereUniqueInput | Prisma.DeadlineOccurrenceWhereUniqueInput[]
+  update?: Prisma.DeadlineOccurrenceUpdateWithWhereUniqueWithoutDeliveryClientServiceInput | Prisma.DeadlineOccurrenceUpdateWithWhereUniqueWithoutDeliveryClientServiceInput[]
+  updateMany?: Prisma.DeadlineOccurrenceUpdateManyWithWhereWithoutDeliveryClientServiceInput | Prisma.DeadlineOccurrenceUpdateManyWithWhereWithoutDeliveryClientServiceInput[]
   deleteMany?: Prisma.DeadlineOccurrenceScalarWhereInput | Prisma.DeadlineOccurrenceScalarWhereInput[]
 }
 
@@ -1247,12 +1706,63 @@ export type DeadlineOccurrenceUncheckedUpdateManyWithoutCycleNestedInput = {
   deleteMany?: Prisma.DeadlineOccurrenceScalarWhereInput | Prisma.DeadlineOccurrenceScalarWhereInput[]
 }
 
+export type NullableEnumFilingResponsibilityFieldUpdateOperationsInput = {
+  set?: $Enums.FilingResponsibility | null
+}
+
+export type NullableEnumResponsibilitySourceFieldUpdateOperationsInput = {
+  set?: $Enums.ResponsibilitySource | null
+}
+
 export type EnumDeadlineOccurrenceStatusFieldUpdateOperationsInput = {
   set?: $Enums.DeadlineOccurrenceStatus
 }
 
+export type DeadlineOccurrenceCreateNestedOneWithoutCoverageLinksInput = {
+  create?: Prisma.XOR<Prisma.DeadlineOccurrenceCreateWithoutCoverageLinksInput, Prisma.DeadlineOccurrenceUncheckedCreateWithoutCoverageLinksInput>
+  connectOrCreate?: Prisma.DeadlineOccurrenceCreateOrConnectWithoutCoverageLinksInput
+  connect?: Prisma.DeadlineOccurrenceWhereUniqueInput
+}
+
+export type DeadlineOccurrenceUpdateOneRequiredWithoutCoverageLinksNestedInput = {
+  create?: Prisma.XOR<Prisma.DeadlineOccurrenceCreateWithoutCoverageLinksInput, Prisma.DeadlineOccurrenceUncheckedCreateWithoutCoverageLinksInput>
+  connectOrCreate?: Prisma.DeadlineOccurrenceCreateOrConnectWithoutCoverageLinksInput
+  upsert?: Prisma.DeadlineOccurrenceUpsertWithoutCoverageLinksInput
+  connect?: Prisma.DeadlineOccurrenceWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.DeadlineOccurrenceUpdateToOneWithWhereWithoutCoverageLinksInput, Prisma.DeadlineOccurrenceUpdateWithoutCoverageLinksInput>, Prisma.DeadlineOccurrenceUncheckedUpdateWithoutCoverageLinksInput>
+}
+
+export type DeadlineOccurrenceCreateNestedOneWithoutResponsibilityChangesInput = {
+  create?: Prisma.XOR<Prisma.DeadlineOccurrenceCreateWithoutResponsibilityChangesInput, Prisma.DeadlineOccurrenceUncheckedCreateWithoutResponsibilityChangesInput>
+  connectOrCreate?: Prisma.DeadlineOccurrenceCreateOrConnectWithoutResponsibilityChangesInput
+  connect?: Prisma.DeadlineOccurrenceWhereUniqueInput
+}
+
+export type DeadlineOccurrenceUpdateOneRequiredWithoutResponsibilityChangesNestedInput = {
+  create?: Prisma.XOR<Prisma.DeadlineOccurrenceCreateWithoutResponsibilityChangesInput, Prisma.DeadlineOccurrenceUncheckedCreateWithoutResponsibilityChangesInput>
+  connectOrCreate?: Prisma.DeadlineOccurrenceCreateOrConnectWithoutResponsibilityChangesInput
+  upsert?: Prisma.DeadlineOccurrenceUpsertWithoutResponsibilityChangesInput
+  connect?: Prisma.DeadlineOccurrenceWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.DeadlineOccurrenceUpdateToOneWithWhereWithoutResponsibilityChangesInput, Prisma.DeadlineOccurrenceUpdateWithoutResponsibilityChangesInput>, Prisma.DeadlineOccurrenceUncheckedUpdateWithoutResponsibilityChangesInput>
+}
+
 export type DeadlineOccurrenceCreateWithoutTenantInput = {
   id?: string
+  ownershipScope?: $Enums.DeadlineOwnershipScope
+  obligationCode?: string | null
+  obligationPeriodKey?: string | null
+  financialPeriodStart?: Date | string | null
+  financialPeriodEnd?: Date | string | null
+  yearOfAssessment?: number | null
+  periodProvisional?: boolean
+  filingResponsibility?: $Enums.FilingResponsibility | null
+  responsibilitySource?: $Enums.ResponsibilitySource | null
+  filingProviderName?: string | null
+  responsibilityConfirmedAt?: Date | string | null
+  responsibilityConfirmedById?: string | null
+  monitoringOwnerId?: string | null
+  coverageTiming?: string | null
+  filingStatusUnconfirmed?: boolean
   milestoneKey: string
   scheduleEntryKey?: string
   deadlineType: $Enums.DeadlineType
@@ -1273,8 +1783,11 @@ export type DeadlineOccurrenceCreateWithoutTenantInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   company: Prisma.CompanyCreateNestedOneWithoutDeadlineOccurrencesInput
-  clientService: Prisma.ClientServiceCreateNestedOneWithoutDeadlineOccurrencesInput
+  clientService?: Prisma.ClientServiceCreateNestedOneWithoutDeadlineOccurrencesInput
+  deliveryClientService?: Prisma.ClientServiceCreateNestedOneWithoutDeliveredDeadlinesInput
   cycle: Prisma.ServiceCycleCreateNestedOneWithoutOccurrencesInput
+  coverageLinks?: Prisma.DeadlineOccurrenceCoverageLinkCreateNestedManyWithoutOccurrenceInput
+  responsibilityChanges?: Prisma.DeadlineResponsibilityChangeCreateNestedManyWithoutOccurrenceInput
   ruleVersion: Prisma.DeadlineRuleVersionCreateNestedOneWithoutDeadlineOccurrencesInput
   dateOverriddenBy?: Prisma.UserCreateNestedOneWithoutOverriddenDeadlineOccurrencesInput
   completedBy?: Prisma.UserCreateNestedOneWithoutCompletedDeadlineOccurrencesInput
@@ -1285,7 +1798,23 @@ export type DeadlineOccurrenceCreateWithoutTenantInput = {
 export type DeadlineOccurrenceUncheckedCreateWithoutTenantInput = {
   id?: string
   companyId: string
-  clientServiceId: string
+  ownershipScope?: $Enums.DeadlineOwnershipScope
+  clientServiceId?: string | null
+  obligationCode?: string | null
+  obligationPeriodKey?: string | null
+  financialPeriodStart?: Date | string | null
+  financialPeriodEnd?: Date | string | null
+  yearOfAssessment?: number | null
+  periodProvisional?: boolean
+  filingResponsibility?: $Enums.FilingResponsibility | null
+  responsibilitySource?: $Enums.ResponsibilitySource | null
+  deliveryClientServiceId?: string | null
+  filingProviderName?: string | null
+  responsibilityConfirmedAt?: Date | string | null
+  responsibilityConfirmedById?: string | null
+  monitoringOwnerId?: string | null
+  coverageTiming?: string | null
+  filingStatusUnconfirmed?: boolean
   cycleId: string
   ruleVersionId: string
   milestoneKey: string
@@ -1311,6 +1840,8 @@ export type DeadlineOccurrenceUncheckedCreateWithoutTenantInput = {
   origin?: $Enums.ServiceCycleOrigin
   createdAt?: Date | string
   updatedAt?: Date | string
+  coverageLinks?: Prisma.DeadlineOccurrenceCoverageLinkUncheckedCreateNestedManyWithoutOccurrenceInput
+  responsibilityChanges?: Prisma.DeadlineResponsibilityChangeUncheckedCreateNestedManyWithoutOccurrenceInput
 }
 
 export type DeadlineOccurrenceCreateOrConnectWithoutTenantInput = {
@@ -1346,7 +1877,23 @@ export type DeadlineOccurrenceScalarWhereInput = {
   id?: Prisma.StringFilter<"DeadlineOccurrence"> | string
   tenantId?: Prisma.StringFilter<"DeadlineOccurrence"> | string
   companyId?: Prisma.StringFilter<"DeadlineOccurrence"> | string
-  clientServiceId?: Prisma.StringFilter<"DeadlineOccurrence"> | string
+  ownershipScope?: Prisma.EnumDeadlineOwnershipScopeFilter<"DeadlineOccurrence"> | $Enums.DeadlineOwnershipScope
+  clientServiceId?: Prisma.StringNullableFilter<"DeadlineOccurrence"> | string | null
+  obligationCode?: Prisma.StringNullableFilter<"DeadlineOccurrence"> | string | null
+  obligationPeriodKey?: Prisma.StringNullableFilter<"DeadlineOccurrence"> | string | null
+  financialPeriodStart?: Prisma.DateTimeNullableFilter<"DeadlineOccurrence"> | Date | string | null
+  financialPeriodEnd?: Prisma.DateTimeNullableFilter<"DeadlineOccurrence"> | Date | string | null
+  yearOfAssessment?: Prisma.IntNullableFilter<"DeadlineOccurrence"> | number | null
+  periodProvisional?: Prisma.BoolFilter<"DeadlineOccurrence"> | boolean
+  filingResponsibility?: Prisma.EnumFilingResponsibilityNullableFilter<"DeadlineOccurrence"> | $Enums.FilingResponsibility | null
+  responsibilitySource?: Prisma.EnumResponsibilitySourceNullableFilter<"DeadlineOccurrence"> | $Enums.ResponsibilitySource | null
+  deliveryClientServiceId?: Prisma.StringNullableFilter<"DeadlineOccurrence"> | string | null
+  filingProviderName?: Prisma.StringNullableFilter<"DeadlineOccurrence"> | string | null
+  responsibilityConfirmedAt?: Prisma.DateTimeNullableFilter<"DeadlineOccurrence"> | Date | string | null
+  responsibilityConfirmedById?: Prisma.StringNullableFilter<"DeadlineOccurrence"> | string | null
+  monitoringOwnerId?: Prisma.StringNullableFilter<"DeadlineOccurrence"> | string | null
+  coverageTiming?: Prisma.StringNullableFilter<"DeadlineOccurrence"> | string | null
+  filingStatusUnconfirmed?: Prisma.BoolFilter<"DeadlineOccurrence"> | boolean
   cycleId?: Prisma.StringFilter<"DeadlineOccurrence"> | string
   ruleVersionId?: Prisma.StringFilter<"DeadlineOccurrence"> | string
   milestoneKey?: Prisma.StringFilter<"DeadlineOccurrence"> | string
@@ -1376,6 +1923,21 @@ export type DeadlineOccurrenceScalarWhereInput = {
 
 export type DeadlineOccurrenceCreateWithoutDateOverriddenByInput = {
   id?: string
+  ownershipScope?: $Enums.DeadlineOwnershipScope
+  obligationCode?: string | null
+  obligationPeriodKey?: string | null
+  financialPeriodStart?: Date | string | null
+  financialPeriodEnd?: Date | string | null
+  yearOfAssessment?: number | null
+  periodProvisional?: boolean
+  filingResponsibility?: $Enums.FilingResponsibility | null
+  responsibilitySource?: $Enums.ResponsibilitySource | null
+  filingProviderName?: string | null
+  responsibilityConfirmedAt?: Date | string | null
+  responsibilityConfirmedById?: string | null
+  monitoringOwnerId?: string | null
+  coverageTiming?: string | null
+  filingStatusUnconfirmed?: boolean
   milestoneKey: string
   scheduleEntryKey?: string
   deadlineType: $Enums.DeadlineType
@@ -1397,8 +1959,11 @@ export type DeadlineOccurrenceCreateWithoutDateOverriddenByInput = {
   updatedAt?: Date | string
   tenant: Prisma.WorkspaceCreateNestedOneWithoutDeadlineOccurrencesInput
   company: Prisma.CompanyCreateNestedOneWithoutDeadlineOccurrencesInput
-  clientService: Prisma.ClientServiceCreateNestedOneWithoutDeadlineOccurrencesInput
+  clientService?: Prisma.ClientServiceCreateNestedOneWithoutDeadlineOccurrencesInput
+  deliveryClientService?: Prisma.ClientServiceCreateNestedOneWithoutDeliveredDeadlinesInput
   cycle: Prisma.ServiceCycleCreateNestedOneWithoutOccurrencesInput
+  coverageLinks?: Prisma.DeadlineOccurrenceCoverageLinkCreateNestedManyWithoutOccurrenceInput
+  responsibilityChanges?: Prisma.DeadlineResponsibilityChangeCreateNestedManyWithoutOccurrenceInput
   ruleVersion: Prisma.DeadlineRuleVersionCreateNestedOneWithoutDeadlineOccurrencesInput
   completedBy?: Prisma.UserCreateNestedOneWithoutCompletedDeadlineOccurrencesInput
   waivedBy?: Prisma.UserCreateNestedOneWithoutWaivedDeadlineOccurrencesInput
@@ -1409,7 +1974,23 @@ export type DeadlineOccurrenceUncheckedCreateWithoutDateOverriddenByInput = {
   id?: string
   tenantId: string
   companyId: string
-  clientServiceId: string
+  ownershipScope?: $Enums.DeadlineOwnershipScope
+  clientServiceId?: string | null
+  obligationCode?: string | null
+  obligationPeriodKey?: string | null
+  financialPeriodStart?: Date | string | null
+  financialPeriodEnd?: Date | string | null
+  yearOfAssessment?: number | null
+  periodProvisional?: boolean
+  filingResponsibility?: $Enums.FilingResponsibility | null
+  responsibilitySource?: $Enums.ResponsibilitySource | null
+  deliveryClientServiceId?: string | null
+  filingProviderName?: string | null
+  responsibilityConfirmedAt?: Date | string | null
+  responsibilityConfirmedById?: string | null
+  monitoringOwnerId?: string | null
+  coverageTiming?: string | null
+  filingStatusUnconfirmed?: boolean
   cycleId: string
   ruleVersionId: string
   milestoneKey: string
@@ -1434,6 +2015,8 @@ export type DeadlineOccurrenceUncheckedCreateWithoutDateOverriddenByInput = {
   origin?: $Enums.ServiceCycleOrigin
   createdAt?: Date | string
   updatedAt?: Date | string
+  coverageLinks?: Prisma.DeadlineOccurrenceCoverageLinkUncheckedCreateNestedManyWithoutOccurrenceInput
+  responsibilityChanges?: Prisma.DeadlineResponsibilityChangeUncheckedCreateNestedManyWithoutOccurrenceInput
 }
 
 export type DeadlineOccurrenceCreateOrConnectWithoutDateOverriddenByInput = {
@@ -1448,6 +2031,21 @@ export type DeadlineOccurrenceCreateManyDateOverriddenByInputEnvelope = {
 
 export type DeadlineOccurrenceCreateWithoutCompletedByInput = {
   id?: string
+  ownershipScope?: $Enums.DeadlineOwnershipScope
+  obligationCode?: string | null
+  obligationPeriodKey?: string | null
+  financialPeriodStart?: Date | string | null
+  financialPeriodEnd?: Date | string | null
+  yearOfAssessment?: number | null
+  periodProvisional?: boolean
+  filingResponsibility?: $Enums.FilingResponsibility | null
+  responsibilitySource?: $Enums.ResponsibilitySource | null
+  filingProviderName?: string | null
+  responsibilityConfirmedAt?: Date | string | null
+  responsibilityConfirmedById?: string | null
+  monitoringOwnerId?: string | null
+  coverageTiming?: string | null
+  filingStatusUnconfirmed?: boolean
   milestoneKey: string
   scheduleEntryKey?: string
   deadlineType: $Enums.DeadlineType
@@ -1469,8 +2067,11 @@ export type DeadlineOccurrenceCreateWithoutCompletedByInput = {
   updatedAt?: Date | string
   tenant: Prisma.WorkspaceCreateNestedOneWithoutDeadlineOccurrencesInput
   company: Prisma.CompanyCreateNestedOneWithoutDeadlineOccurrencesInput
-  clientService: Prisma.ClientServiceCreateNestedOneWithoutDeadlineOccurrencesInput
+  clientService?: Prisma.ClientServiceCreateNestedOneWithoutDeadlineOccurrencesInput
+  deliveryClientService?: Prisma.ClientServiceCreateNestedOneWithoutDeliveredDeadlinesInput
   cycle: Prisma.ServiceCycleCreateNestedOneWithoutOccurrencesInput
+  coverageLinks?: Prisma.DeadlineOccurrenceCoverageLinkCreateNestedManyWithoutOccurrenceInput
+  responsibilityChanges?: Prisma.DeadlineResponsibilityChangeCreateNestedManyWithoutOccurrenceInput
   ruleVersion: Prisma.DeadlineRuleVersionCreateNestedOneWithoutDeadlineOccurrencesInput
   dateOverriddenBy?: Prisma.UserCreateNestedOneWithoutOverriddenDeadlineOccurrencesInput
   waivedBy?: Prisma.UserCreateNestedOneWithoutWaivedDeadlineOccurrencesInput
@@ -1481,7 +2082,23 @@ export type DeadlineOccurrenceUncheckedCreateWithoutCompletedByInput = {
   id?: string
   tenantId: string
   companyId: string
-  clientServiceId: string
+  ownershipScope?: $Enums.DeadlineOwnershipScope
+  clientServiceId?: string | null
+  obligationCode?: string | null
+  obligationPeriodKey?: string | null
+  financialPeriodStart?: Date | string | null
+  financialPeriodEnd?: Date | string | null
+  yearOfAssessment?: number | null
+  periodProvisional?: boolean
+  filingResponsibility?: $Enums.FilingResponsibility | null
+  responsibilitySource?: $Enums.ResponsibilitySource | null
+  deliveryClientServiceId?: string | null
+  filingProviderName?: string | null
+  responsibilityConfirmedAt?: Date | string | null
+  responsibilityConfirmedById?: string | null
+  monitoringOwnerId?: string | null
+  coverageTiming?: string | null
+  filingStatusUnconfirmed?: boolean
   cycleId: string
   ruleVersionId: string
   milestoneKey: string
@@ -1506,6 +2123,8 @@ export type DeadlineOccurrenceUncheckedCreateWithoutCompletedByInput = {
   origin?: $Enums.ServiceCycleOrigin
   createdAt?: Date | string
   updatedAt?: Date | string
+  coverageLinks?: Prisma.DeadlineOccurrenceCoverageLinkUncheckedCreateNestedManyWithoutOccurrenceInput
+  responsibilityChanges?: Prisma.DeadlineResponsibilityChangeUncheckedCreateNestedManyWithoutOccurrenceInput
 }
 
 export type DeadlineOccurrenceCreateOrConnectWithoutCompletedByInput = {
@@ -1520,6 +2139,21 @@ export type DeadlineOccurrenceCreateManyCompletedByInputEnvelope = {
 
 export type DeadlineOccurrenceCreateWithoutWaivedByInput = {
   id?: string
+  ownershipScope?: $Enums.DeadlineOwnershipScope
+  obligationCode?: string | null
+  obligationPeriodKey?: string | null
+  financialPeriodStart?: Date | string | null
+  financialPeriodEnd?: Date | string | null
+  yearOfAssessment?: number | null
+  periodProvisional?: boolean
+  filingResponsibility?: $Enums.FilingResponsibility | null
+  responsibilitySource?: $Enums.ResponsibilitySource | null
+  filingProviderName?: string | null
+  responsibilityConfirmedAt?: Date | string | null
+  responsibilityConfirmedById?: string | null
+  monitoringOwnerId?: string | null
+  coverageTiming?: string | null
+  filingStatusUnconfirmed?: boolean
   milestoneKey: string
   scheduleEntryKey?: string
   deadlineType: $Enums.DeadlineType
@@ -1541,8 +2175,11 @@ export type DeadlineOccurrenceCreateWithoutWaivedByInput = {
   updatedAt?: Date | string
   tenant: Prisma.WorkspaceCreateNestedOneWithoutDeadlineOccurrencesInput
   company: Prisma.CompanyCreateNestedOneWithoutDeadlineOccurrencesInput
-  clientService: Prisma.ClientServiceCreateNestedOneWithoutDeadlineOccurrencesInput
+  clientService?: Prisma.ClientServiceCreateNestedOneWithoutDeadlineOccurrencesInput
+  deliveryClientService?: Prisma.ClientServiceCreateNestedOneWithoutDeliveredDeadlinesInput
   cycle: Prisma.ServiceCycleCreateNestedOneWithoutOccurrencesInput
+  coverageLinks?: Prisma.DeadlineOccurrenceCoverageLinkCreateNestedManyWithoutOccurrenceInput
+  responsibilityChanges?: Prisma.DeadlineResponsibilityChangeCreateNestedManyWithoutOccurrenceInput
   ruleVersion: Prisma.DeadlineRuleVersionCreateNestedOneWithoutDeadlineOccurrencesInput
   dateOverriddenBy?: Prisma.UserCreateNestedOneWithoutOverriddenDeadlineOccurrencesInput
   completedBy?: Prisma.UserCreateNestedOneWithoutCompletedDeadlineOccurrencesInput
@@ -1553,7 +2190,23 @@ export type DeadlineOccurrenceUncheckedCreateWithoutWaivedByInput = {
   id?: string
   tenantId: string
   companyId: string
-  clientServiceId: string
+  ownershipScope?: $Enums.DeadlineOwnershipScope
+  clientServiceId?: string | null
+  obligationCode?: string | null
+  obligationPeriodKey?: string | null
+  financialPeriodStart?: Date | string | null
+  financialPeriodEnd?: Date | string | null
+  yearOfAssessment?: number | null
+  periodProvisional?: boolean
+  filingResponsibility?: $Enums.FilingResponsibility | null
+  responsibilitySource?: $Enums.ResponsibilitySource | null
+  deliveryClientServiceId?: string | null
+  filingProviderName?: string | null
+  responsibilityConfirmedAt?: Date | string | null
+  responsibilityConfirmedById?: string | null
+  monitoringOwnerId?: string | null
+  coverageTiming?: string | null
+  filingStatusUnconfirmed?: boolean
   cycleId: string
   ruleVersionId: string
   milestoneKey: string
@@ -1578,6 +2231,8 @@ export type DeadlineOccurrenceUncheckedCreateWithoutWaivedByInput = {
   origin?: $Enums.ServiceCycleOrigin
   createdAt?: Date | string
   updatedAt?: Date | string
+  coverageLinks?: Prisma.DeadlineOccurrenceCoverageLinkUncheckedCreateNestedManyWithoutOccurrenceInput
+  responsibilityChanges?: Prisma.DeadlineResponsibilityChangeUncheckedCreateNestedManyWithoutOccurrenceInput
 }
 
 export type DeadlineOccurrenceCreateOrConnectWithoutWaivedByInput = {
@@ -1592,6 +2247,21 @@ export type DeadlineOccurrenceCreateManyWaivedByInputEnvelope = {
 
 export type DeadlineOccurrenceCreateWithoutCancelledByInput = {
   id?: string
+  ownershipScope?: $Enums.DeadlineOwnershipScope
+  obligationCode?: string | null
+  obligationPeriodKey?: string | null
+  financialPeriodStart?: Date | string | null
+  financialPeriodEnd?: Date | string | null
+  yearOfAssessment?: number | null
+  periodProvisional?: boolean
+  filingResponsibility?: $Enums.FilingResponsibility | null
+  responsibilitySource?: $Enums.ResponsibilitySource | null
+  filingProviderName?: string | null
+  responsibilityConfirmedAt?: Date | string | null
+  responsibilityConfirmedById?: string | null
+  monitoringOwnerId?: string | null
+  coverageTiming?: string | null
+  filingStatusUnconfirmed?: boolean
   milestoneKey: string
   scheduleEntryKey?: string
   deadlineType: $Enums.DeadlineType
@@ -1613,8 +2283,11 @@ export type DeadlineOccurrenceCreateWithoutCancelledByInput = {
   updatedAt?: Date | string
   tenant: Prisma.WorkspaceCreateNestedOneWithoutDeadlineOccurrencesInput
   company: Prisma.CompanyCreateNestedOneWithoutDeadlineOccurrencesInput
-  clientService: Prisma.ClientServiceCreateNestedOneWithoutDeadlineOccurrencesInput
+  clientService?: Prisma.ClientServiceCreateNestedOneWithoutDeadlineOccurrencesInput
+  deliveryClientService?: Prisma.ClientServiceCreateNestedOneWithoutDeliveredDeadlinesInput
   cycle: Prisma.ServiceCycleCreateNestedOneWithoutOccurrencesInput
+  coverageLinks?: Prisma.DeadlineOccurrenceCoverageLinkCreateNestedManyWithoutOccurrenceInput
+  responsibilityChanges?: Prisma.DeadlineResponsibilityChangeCreateNestedManyWithoutOccurrenceInput
   ruleVersion: Prisma.DeadlineRuleVersionCreateNestedOneWithoutDeadlineOccurrencesInput
   dateOverriddenBy?: Prisma.UserCreateNestedOneWithoutOverriddenDeadlineOccurrencesInput
   completedBy?: Prisma.UserCreateNestedOneWithoutCompletedDeadlineOccurrencesInput
@@ -1625,7 +2298,23 @@ export type DeadlineOccurrenceUncheckedCreateWithoutCancelledByInput = {
   id?: string
   tenantId: string
   companyId: string
-  clientServiceId: string
+  ownershipScope?: $Enums.DeadlineOwnershipScope
+  clientServiceId?: string | null
+  obligationCode?: string | null
+  obligationPeriodKey?: string | null
+  financialPeriodStart?: Date | string | null
+  financialPeriodEnd?: Date | string | null
+  yearOfAssessment?: number | null
+  periodProvisional?: boolean
+  filingResponsibility?: $Enums.FilingResponsibility | null
+  responsibilitySource?: $Enums.ResponsibilitySource | null
+  deliveryClientServiceId?: string | null
+  filingProviderName?: string | null
+  responsibilityConfirmedAt?: Date | string | null
+  responsibilityConfirmedById?: string | null
+  monitoringOwnerId?: string | null
+  coverageTiming?: string | null
+  filingStatusUnconfirmed?: boolean
   cycleId: string
   ruleVersionId: string
   milestoneKey: string
@@ -1650,6 +2339,8 @@ export type DeadlineOccurrenceUncheckedCreateWithoutCancelledByInput = {
   origin?: $Enums.ServiceCycleOrigin
   createdAt?: Date | string
   updatedAt?: Date | string
+  coverageLinks?: Prisma.DeadlineOccurrenceCoverageLinkUncheckedCreateNestedManyWithoutOccurrenceInput
+  responsibilityChanges?: Prisma.DeadlineResponsibilityChangeUncheckedCreateNestedManyWithoutOccurrenceInput
 }
 
 export type DeadlineOccurrenceCreateOrConnectWithoutCancelledByInput = {
@@ -1728,6 +2419,21 @@ export type DeadlineOccurrenceUpdateManyWithWhereWithoutCancelledByInput = {
 
 export type DeadlineOccurrenceCreateWithoutCompanyInput = {
   id?: string
+  ownershipScope?: $Enums.DeadlineOwnershipScope
+  obligationCode?: string | null
+  obligationPeriodKey?: string | null
+  financialPeriodStart?: Date | string | null
+  financialPeriodEnd?: Date | string | null
+  yearOfAssessment?: number | null
+  periodProvisional?: boolean
+  filingResponsibility?: $Enums.FilingResponsibility | null
+  responsibilitySource?: $Enums.ResponsibilitySource | null
+  filingProviderName?: string | null
+  responsibilityConfirmedAt?: Date | string | null
+  responsibilityConfirmedById?: string | null
+  monitoringOwnerId?: string | null
+  coverageTiming?: string | null
+  filingStatusUnconfirmed?: boolean
   milestoneKey: string
   scheduleEntryKey?: string
   deadlineType: $Enums.DeadlineType
@@ -1748,8 +2454,11 @@ export type DeadlineOccurrenceCreateWithoutCompanyInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   tenant: Prisma.WorkspaceCreateNestedOneWithoutDeadlineOccurrencesInput
-  clientService: Prisma.ClientServiceCreateNestedOneWithoutDeadlineOccurrencesInput
+  clientService?: Prisma.ClientServiceCreateNestedOneWithoutDeadlineOccurrencesInput
+  deliveryClientService?: Prisma.ClientServiceCreateNestedOneWithoutDeliveredDeadlinesInput
   cycle: Prisma.ServiceCycleCreateNestedOneWithoutOccurrencesInput
+  coverageLinks?: Prisma.DeadlineOccurrenceCoverageLinkCreateNestedManyWithoutOccurrenceInput
+  responsibilityChanges?: Prisma.DeadlineResponsibilityChangeCreateNestedManyWithoutOccurrenceInput
   ruleVersion: Prisma.DeadlineRuleVersionCreateNestedOneWithoutDeadlineOccurrencesInput
   dateOverriddenBy?: Prisma.UserCreateNestedOneWithoutOverriddenDeadlineOccurrencesInput
   completedBy?: Prisma.UserCreateNestedOneWithoutCompletedDeadlineOccurrencesInput
@@ -1760,7 +2469,23 @@ export type DeadlineOccurrenceCreateWithoutCompanyInput = {
 export type DeadlineOccurrenceUncheckedCreateWithoutCompanyInput = {
   id?: string
   tenantId: string
-  clientServiceId: string
+  ownershipScope?: $Enums.DeadlineOwnershipScope
+  clientServiceId?: string | null
+  obligationCode?: string | null
+  obligationPeriodKey?: string | null
+  financialPeriodStart?: Date | string | null
+  financialPeriodEnd?: Date | string | null
+  yearOfAssessment?: number | null
+  periodProvisional?: boolean
+  filingResponsibility?: $Enums.FilingResponsibility | null
+  responsibilitySource?: $Enums.ResponsibilitySource | null
+  deliveryClientServiceId?: string | null
+  filingProviderName?: string | null
+  responsibilityConfirmedAt?: Date | string | null
+  responsibilityConfirmedById?: string | null
+  monitoringOwnerId?: string | null
+  coverageTiming?: string | null
+  filingStatusUnconfirmed?: boolean
   cycleId: string
   ruleVersionId: string
   milestoneKey: string
@@ -1786,6 +2511,8 @@ export type DeadlineOccurrenceUncheckedCreateWithoutCompanyInput = {
   origin?: $Enums.ServiceCycleOrigin
   createdAt?: Date | string
   updatedAt?: Date | string
+  coverageLinks?: Prisma.DeadlineOccurrenceCoverageLinkUncheckedCreateNestedManyWithoutOccurrenceInput
+  responsibilityChanges?: Prisma.DeadlineResponsibilityChangeUncheckedCreateNestedManyWithoutOccurrenceInput
 }
 
 export type DeadlineOccurrenceCreateOrConnectWithoutCompanyInput = {
@@ -1816,6 +2543,21 @@ export type DeadlineOccurrenceUpdateManyWithWhereWithoutCompanyInput = {
 
 export type DeadlineOccurrenceCreateWithoutClientServiceInput = {
   id?: string
+  ownershipScope?: $Enums.DeadlineOwnershipScope
+  obligationCode?: string | null
+  obligationPeriodKey?: string | null
+  financialPeriodStart?: Date | string | null
+  financialPeriodEnd?: Date | string | null
+  yearOfAssessment?: number | null
+  periodProvisional?: boolean
+  filingResponsibility?: $Enums.FilingResponsibility | null
+  responsibilitySource?: $Enums.ResponsibilitySource | null
+  filingProviderName?: string | null
+  responsibilityConfirmedAt?: Date | string | null
+  responsibilityConfirmedById?: string | null
+  monitoringOwnerId?: string | null
+  coverageTiming?: string | null
+  filingStatusUnconfirmed?: boolean
   milestoneKey: string
   scheduleEntryKey?: string
   deadlineType: $Enums.DeadlineType
@@ -1837,7 +2579,10 @@ export type DeadlineOccurrenceCreateWithoutClientServiceInput = {
   updatedAt?: Date | string
   tenant: Prisma.WorkspaceCreateNestedOneWithoutDeadlineOccurrencesInput
   company: Prisma.CompanyCreateNestedOneWithoutDeadlineOccurrencesInput
+  deliveryClientService?: Prisma.ClientServiceCreateNestedOneWithoutDeliveredDeadlinesInput
   cycle: Prisma.ServiceCycleCreateNestedOneWithoutOccurrencesInput
+  coverageLinks?: Prisma.DeadlineOccurrenceCoverageLinkCreateNestedManyWithoutOccurrenceInput
+  responsibilityChanges?: Prisma.DeadlineResponsibilityChangeCreateNestedManyWithoutOccurrenceInput
   ruleVersion: Prisma.DeadlineRuleVersionCreateNestedOneWithoutDeadlineOccurrencesInput
   dateOverriddenBy?: Prisma.UserCreateNestedOneWithoutOverriddenDeadlineOccurrencesInput
   completedBy?: Prisma.UserCreateNestedOneWithoutCompletedDeadlineOccurrencesInput
@@ -1849,6 +2594,22 @@ export type DeadlineOccurrenceUncheckedCreateWithoutClientServiceInput = {
   id?: string
   tenantId: string
   companyId: string
+  ownershipScope?: $Enums.DeadlineOwnershipScope
+  obligationCode?: string | null
+  obligationPeriodKey?: string | null
+  financialPeriodStart?: Date | string | null
+  financialPeriodEnd?: Date | string | null
+  yearOfAssessment?: number | null
+  periodProvisional?: boolean
+  filingResponsibility?: $Enums.FilingResponsibility | null
+  responsibilitySource?: $Enums.ResponsibilitySource | null
+  deliveryClientServiceId?: string | null
+  filingProviderName?: string | null
+  responsibilityConfirmedAt?: Date | string | null
+  responsibilityConfirmedById?: string | null
+  monitoringOwnerId?: string | null
+  coverageTiming?: string | null
+  filingStatusUnconfirmed?: boolean
   cycleId: string
   ruleVersionId: string
   milestoneKey: string
@@ -1874,6 +2635,8 @@ export type DeadlineOccurrenceUncheckedCreateWithoutClientServiceInput = {
   origin?: $Enums.ServiceCycleOrigin
   createdAt?: Date | string
   updatedAt?: Date | string
+  coverageLinks?: Prisma.DeadlineOccurrenceCoverageLinkUncheckedCreateNestedManyWithoutOccurrenceInput
+  responsibilityChanges?: Prisma.DeadlineResponsibilityChangeUncheckedCreateNestedManyWithoutOccurrenceInput
 }
 
 export type DeadlineOccurrenceCreateOrConnectWithoutClientServiceInput = {
@@ -1886,24 +2649,23 @@ export type DeadlineOccurrenceCreateManyClientServiceInputEnvelope = {
   skipDuplicates?: boolean
 }
 
-export type DeadlineOccurrenceUpsertWithWhereUniqueWithoutClientServiceInput = {
-  where: Prisma.DeadlineOccurrenceWhereUniqueInput
-  update: Prisma.XOR<Prisma.DeadlineOccurrenceUpdateWithoutClientServiceInput, Prisma.DeadlineOccurrenceUncheckedUpdateWithoutClientServiceInput>
-  create: Prisma.XOR<Prisma.DeadlineOccurrenceCreateWithoutClientServiceInput, Prisma.DeadlineOccurrenceUncheckedCreateWithoutClientServiceInput>
-}
-
-export type DeadlineOccurrenceUpdateWithWhereUniqueWithoutClientServiceInput = {
-  where: Prisma.DeadlineOccurrenceWhereUniqueInput
-  data: Prisma.XOR<Prisma.DeadlineOccurrenceUpdateWithoutClientServiceInput, Prisma.DeadlineOccurrenceUncheckedUpdateWithoutClientServiceInput>
-}
-
-export type DeadlineOccurrenceUpdateManyWithWhereWithoutClientServiceInput = {
-  where: Prisma.DeadlineOccurrenceScalarWhereInput
-  data: Prisma.XOR<Prisma.DeadlineOccurrenceUpdateManyMutationInput, Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutClientServiceInput>
-}
-
-export type DeadlineOccurrenceCreateWithoutRuleVersionInput = {
+export type DeadlineOccurrenceCreateWithoutDeliveryClientServiceInput = {
   id?: string
+  ownershipScope?: $Enums.DeadlineOwnershipScope
+  obligationCode?: string | null
+  obligationPeriodKey?: string | null
+  financialPeriodStart?: Date | string | null
+  financialPeriodEnd?: Date | string | null
+  yearOfAssessment?: number | null
+  periodProvisional?: boolean
+  filingResponsibility?: $Enums.FilingResponsibility | null
+  responsibilitySource?: $Enums.ResponsibilitySource | null
+  filingProviderName?: string | null
+  responsibilityConfirmedAt?: Date | string | null
+  responsibilityConfirmedById?: string | null
+  monitoringOwnerId?: string | null
+  coverageTiming?: string | null
+  filingStatusUnconfirmed?: boolean
   milestoneKey: string
   scheduleEntryKey?: string
   deadlineType: $Enums.DeadlineType
@@ -1925,8 +2687,151 @@ export type DeadlineOccurrenceCreateWithoutRuleVersionInput = {
   updatedAt?: Date | string
   tenant: Prisma.WorkspaceCreateNestedOneWithoutDeadlineOccurrencesInput
   company: Prisma.CompanyCreateNestedOneWithoutDeadlineOccurrencesInput
-  clientService: Prisma.ClientServiceCreateNestedOneWithoutDeadlineOccurrencesInput
+  clientService?: Prisma.ClientServiceCreateNestedOneWithoutDeadlineOccurrencesInput
   cycle: Prisma.ServiceCycleCreateNestedOneWithoutOccurrencesInput
+  coverageLinks?: Prisma.DeadlineOccurrenceCoverageLinkCreateNestedManyWithoutOccurrenceInput
+  responsibilityChanges?: Prisma.DeadlineResponsibilityChangeCreateNestedManyWithoutOccurrenceInput
+  ruleVersion: Prisma.DeadlineRuleVersionCreateNestedOneWithoutDeadlineOccurrencesInput
+  dateOverriddenBy?: Prisma.UserCreateNestedOneWithoutOverriddenDeadlineOccurrencesInput
+  completedBy?: Prisma.UserCreateNestedOneWithoutCompletedDeadlineOccurrencesInput
+  waivedBy?: Prisma.UserCreateNestedOneWithoutWaivedDeadlineOccurrencesInput
+  cancelledBy?: Prisma.UserCreateNestedOneWithoutCancelledDeadlineOccurrencesInput
+}
+
+export type DeadlineOccurrenceUncheckedCreateWithoutDeliveryClientServiceInput = {
+  id?: string
+  tenantId: string
+  companyId: string
+  ownershipScope?: $Enums.DeadlineOwnershipScope
+  clientServiceId?: string | null
+  obligationCode?: string | null
+  obligationPeriodKey?: string | null
+  financialPeriodStart?: Date | string | null
+  financialPeriodEnd?: Date | string | null
+  yearOfAssessment?: number | null
+  periodProvisional?: boolean
+  filingResponsibility?: $Enums.FilingResponsibility | null
+  responsibilitySource?: $Enums.ResponsibilitySource | null
+  filingProviderName?: string | null
+  responsibilityConfirmedAt?: Date | string | null
+  responsibilityConfirmedById?: string | null
+  monitoringOwnerId?: string | null
+  coverageTiming?: string | null
+  filingStatusUnconfirmed?: boolean
+  cycleId: string
+  ruleVersionId: string
+  milestoneKey: string
+  scheduleEntryKey?: string
+  deadlineType: $Enums.DeadlineType
+  calculatedDueDate: Date | string
+  operativeDueDate: Date | string
+  dateOverridden?: boolean
+  dateOverride?: Date | string | null
+  dateOverrideReason?: string | null
+  dateOverriddenById?: string | null
+  dateOverriddenAt?: Date | string | null
+  status?: $Enums.DeadlineOccurrenceStatus
+  completedAt?: Date | string | null
+  completedById?: string | null
+  waivedAt?: Date | string | null
+  waivedById?: string | null
+  waiverReason?: string | null
+  cancelledAt?: Date | string | null
+  cancelledById?: string | null
+  cancellationReason?: string | null
+  notes?: string | null
+  origin?: $Enums.ServiceCycleOrigin
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  coverageLinks?: Prisma.DeadlineOccurrenceCoverageLinkUncheckedCreateNestedManyWithoutOccurrenceInput
+  responsibilityChanges?: Prisma.DeadlineResponsibilityChangeUncheckedCreateNestedManyWithoutOccurrenceInput
+}
+
+export type DeadlineOccurrenceCreateOrConnectWithoutDeliveryClientServiceInput = {
+  where: Prisma.DeadlineOccurrenceWhereUniqueInput
+  create: Prisma.XOR<Prisma.DeadlineOccurrenceCreateWithoutDeliveryClientServiceInput, Prisma.DeadlineOccurrenceUncheckedCreateWithoutDeliveryClientServiceInput>
+}
+
+export type DeadlineOccurrenceCreateManyDeliveryClientServiceInputEnvelope = {
+  data: Prisma.DeadlineOccurrenceCreateManyDeliveryClientServiceInput | Prisma.DeadlineOccurrenceCreateManyDeliveryClientServiceInput[]
+  skipDuplicates?: boolean
+}
+
+export type DeadlineOccurrenceUpsertWithWhereUniqueWithoutClientServiceInput = {
+  where: Prisma.DeadlineOccurrenceWhereUniqueInput
+  update: Prisma.XOR<Prisma.DeadlineOccurrenceUpdateWithoutClientServiceInput, Prisma.DeadlineOccurrenceUncheckedUpdateWithoutClientServiceInput>
+  create: Prisma.XOR<Prisma.DeadlineOccurrenceCreateWithoutClientServiceInput, Prisma.DeadlineOccurrenceUncheckedCreateWithoutClientServiceInput>
+}
+
+export type DeadlineOccurrenceUpdateWithWhereUniqueWithoutClientServiceInput = {
+  where: Prisma.DeadlineOccurrenceWhereUniqueInput
+  data: Prisma.XOR<Prisma.DeadlineOccurrenceUpdateWithoutClientServiceInput, Prisma.DeadlineOccurrenceUncheckedUpdateWithoutClientServiceInput>
+}
+
+export type DeadlineOccurrenceUpdateManyWithWhereWithoutClientServiceInput = {
+  where: Prisma.DeadlineOccurrenceScalarWhereInput
+  data: Prisma.XOR<Prisma.DeadlineOccurrenceUpdateManyMutationInput, Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutClientServiceInput>
+}
+
+export type DeadlineOccurrenceUpsertWithWhereUniqueWithoutDeliveryClientServiceInput = {
+  where: Prisma.DeadlineOccurrenceWhereUniqueInput
+  update: Prisma.XOR<Prisma.DeadlineOccurrenceUpdateWithoutDeliveryClientServiceInput, Prisma.DeadlineOccurrenceUncheckedUpdateWithoutDeliveryClientServiceInput>
+  create: Prisma.XOR<Prisma.DeadlineOccurrenceCreateWithoutDeliveryClientServiceInput, Prisma.DeadlineOccurrenceUncheckedCreateWithoutDeliveryClientServiceInput>
+}
+
+export type DeadlineOccurrenceUpdateWithWhereUniqueWithoutDeliveryClientServiceInput = {
+  where: Prisma.DeadlineOccurrenceWhereUniqueInput
+  data: Prisma.XOR<Prisma.DeadlineOccurrenceUpdateWithoutDeliveryClientServiceInput, Prisma.DeadlineOccurrenceUncheckedUpdateWithoutDeliveryClientServiceInput>
+}
+
+export type DeadlineOccurrenceUpdateManyWithWhereWithoutDeliveryClientServiceInput = {
+  where: Prisma.DeadlineOccurrenceScalarWhereInput
+  data: Prisma.XOR<Prisma.DeadlineOccurrenceUpdateManyMutationInput, Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutDeliveryClientServiceInput>
+}
+
+export type DeadlineOccurrenceCreateWithoutRuleVersionInput = {
+  id?: string
+  ownershipScope?: $Enums.DeadlineOwnershipScope
+  obligationCode?: string | null
+  obligationPeriodKey?: string | null
+  financialPeriodStart?: Date | string | null
+  financialPeriodEnd?: Date | string | null
+  yearOfAssessment?: number | null
+  periodProvisional?: boolean
+  filingResponsibility?: $Enums.FilingResponsibility | null
+  responsibilitySource?: $Enums.ResponsibilitySource | null
+  filingProviderName?: string | null
+  responsibilityConfirmedAt?: Date | string | null
+  responsibilityConfirmedById?: string | null
+  monitoringOwnerId?: string | null
+  coverageTiming?: string | null
+  filingStatusUnconfirmed?: boolean
+  milestoneKey: string
+  scheduleEntryKey?: string
+  deadlineType: $Enums.DeadlineType
+  calculatedDueDate: Date | string
+  operativeDueDate: Date | string
+  dateOverridden?: boolean
+  dateOverride?: Date | string | null
+  dateOverrideReason?: string | null
+  dateOverriddenAt?: Date | string | null
+  status?: $Enums.DeadlineOccurrenceStatus
+  completedAt?: Date | string | null
+  waivedAt?: Date | string | null
+  waiverReason?: string | null
+  cancelledAt?: Date | string | null
+  cancellationReason?: string | null
+  notes?: string | null
+  origin?: $Enums.ServiceCycleOrigin
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  tenant: Prisma.WorkspaceCreateNestedOneWithoutDeadlineOccurrencesInput
+  company: Prisma.CompanyCreateNestedOneWithoutDeadlineOccurrencesInput
+  clientService?: Prisma.ClientServiceCreateNestedOneWithoutDeadlineOccurrencesInput
+  deliveryClientService?: Prisma.ClientServiceCreateNestedOneWithoutDeliveredDeadlinesInput
+  cycle: Prisma.ServiceCycleCreateNestedOneWithoutOccurrencesInput
+  coverageLinks?: Prisma.DeadlineOccurrenceCoverageLinkCreateNestedManyWithoutOccurrenceInput
+  responsibilityChanges?: Prisma.DeadlineResponsibilityChangeCreateNestedManyWithoutOccurrenceInput
   dateOverriddenBy?: Prisma.UserCreateNestedOneWithoutOverriddenDeadlineOccurrencesInput
   completedBy?: Prisma.UserCreateNestedOneWithoutCompletedDeadlineOccurrencesInput
   waivedBy?: Prisma.UserCreateNestedOneWithoutWaivedDeadlineOccurrencesInput
@@ -1937,7 +2842,23 @@ export type DeadlineOccurrenceUncheckedCreateWithoutRuleVersionInput = {
   id?: string
   tenantId: string
   companyId: string
-  clientServiceId: string
+  ownershipScope?: $Enums.DeadlineOwnershipScope
+  clientServiceId?: string | null
+  obligationCode?: string | null
+  obligationPeriodKey?: string | null
+  financialPeriodStart?: Date | string | null
+  financialPeriodEnd?: Date | string | null
+  yearOfAssessment?: number | null
+  periodProvisional?: boolean
+  filingResponsibility?: $Enums.FilingResponsibility | null
+  responsibilitySource?: $Enums.ResponsibilitySource | null
+  deliveryClientServiceId?: string | null
+  filingProviderName?: string | null
+  responsibilityConfirmedAt?: Date | string | null
+  responsibilityConfirmedById?: string | null
+  monitoringOwnerId?: string | null
+  coverageTiming?: string | null
+  filingStatusUnconfirmed?: boolean
   cycleId: string
   milestoneKey: string
   scheduleEntryKey?: string
@@ -1962,6 +2883,8 @@ export type DeadlineOccurrenceUncheckedCreateWithoutRuleVersionInput = {
   origin?: $Enums.ServiceCycleOrigin
   createdAt?: Date | string
   updatedAt?: Date | string
+  coverageLinks?: Prisma.DeadlineOccurrenceCoverageLinkUncheckedCreateNestedManyWithoutOccurrenceInput
+  responsibilityChanges?: Prisma.DeadlineResponsibilityChangeUncheckedCreateNestedManyWithoutOccurrenceInput
 }
 
 export type DeadlineOccurrenceCreateOrConnectWithoutRuleVersionInput = {
@@ -1992,6 +2915,21 @@ export type DeadlineOccurrenceUpdateManyWithWhereWithoutRuleVersionInput = {
 
 export type DeadlineOccurrenceCreateWithoutCycleInput = {
   id?: string
+  ownershipScope?: $Enums.DeadlineOwnershipScope
+  obligationCode?: string | null
+  obligationPeriodKey?: string | null
+  financialPeriodStart?: Date | string | null
+  financialPeriodEnd?: Date | string | null
+  yearOfAssessment?: number | null
+  periodProvisional?: boolean
+  filingResponsibility?: $Enums.FilingResponsibility | null
+  responsibilitySource?: $Enums.ResponsibilitySource | null
+  filingProviderName?: string | null
+  responsibilityConfirmedAt?: Date | string | null
+  responsibilityConfirmedById?: string | null
+  monitoringOwnerId?: string | null
+  coverageTiming?: string | null
+  filingStatusUnconfirmed?: boolean
   milestoneKey: string
   scheduleEntryKey?: string
   deadlineType: $Enums.DeadlineType
@@ -2013,7 +2951,10 @@ export type DeadlineOccurrenceCreateWithoutCycleInput = {
   updatedAt?: Date | string
   tenant: Prisma.WorkspaceCreateNestedOneWithoutDeadlineOccurrencesInput
   company: Prisma.CompanyCreateNestedOneWithoutDeadlineOccurrencesInput
-  clientService: Prisma.ClientServiceCreateNestedOneWithoutDeadlineOccurrencesInput
+  clientService?: Prisma.ClientServiceCreateNestedOneWithoutDeadlineOccurrencesInput
+  deliveryClientService?: Prisma.ClientServiceCreateNestedOneWithoutDeliveredDeadlinesInput
+  coverageLinks?: Prisma.DeadlineOccurrenceCoverageLinkCreateNestedManyWithoutOccurrenceInput
+  responsibilityChanges?: Prisma.DeadlineResponsibilityChangeCreateNestedManyWithoutOccurrenceInput
   ruleVersion: Prisma.DeadlineRuleVersionCreateNestedOneWithoutDeadlineOccurrencesInput
   dateOverriddenBy?: Prisma.UserCreateNestedOneWithoutOverriddenDeadlineOccurrencesInput
   completedBy?: Prisma.UserCreateNestedOneWithoutCompletedDeadlineOccurrencesInput
@@ -2025,7 +2966,23 @@ export type DeadlineOccurrenceUncheckedCreateWithoutCycleInput = {
   id?: string
   tenantId: string
   companyId: string
-  clientServiceId: string
+  ownershipScope?: $Enums.DeadlineOwnershipScope
+  clientServiceId?: string | null
+  obligationCode?: string | null
+  obligationPeriodKey?: string | null
+  financialPeriodStart?: Date | string | null
+  financialPeriodEnd?: Date | string | null
+  yearOfAssessment?: number | null
+  periodProvisional?: boolean
+  filingResponsibility?: $Enums.FilingResponsibility | null
+  responsibilitySource?: $Enums.ResponsibilitySource | null
+  deliveryClientServiceId?: string | null
+  filingProviderName?: string | null
+  responsibilityConfirmedAt?: Date | string | null
+  responsibilityConfirmedById?: string | null
+  monitoringOwnerId?: string | null
+  coverageTiming?: string | null
+  filingStatusUnconfirmed?: boolean
   ruleVersionId: string
   milestoneKey: string
   scheduleEntryKey?: string
@@ -2050,6 +3007,8 @@ export type DeadlineOccurrenceUncheckedCreateWithoutCycleInput = {
   origin?: $Enums.ServiceCycleOrigin
   createdAt?: Date | string
   updatedAt?: Date | string
+  coverageLinks?: Prisma.DeadlineOccurrenceCoverageLinkUncheckedCreateNestedManyWithoutOccurrenceInput
+  responsibilityChanges?: Prisma.DeadlineResponsibilityChangeUncheckedCreateNestedManyWithoutOccurrenceInput
 }
 
 export type DeadlineOccurrenceCreateOrConnectWithoutCycleInput = {
@@ -2078,10 +3037,450 @@ export type DeadlineOccurrenceUpdateManyWithWhereWithoutCycleInput = {
   data: Prisma.XOR<Prisma.DeadlineOccurrenceUpdateManyMutationInput, Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCycleInput>
 }
 
+export type DeadlineOccurrenceCreateWithoutCoverageLinksInput = {
+  id?: string
+  ownershipScope?: $Enums.DeadlineOwnershipScope
+  obligationCode?: string | null
+  obligationPeriodKey?: string | null
+  financialPeriodStart?: Date | string | null
+  financialPeriodEnd?: Date | string | null
+  yearOfAssessment?: number | null
+  periodProvisional?: boolean
+  filingResponsibility?: $Enums.FilingResponsibility | null
+  responsibilitySource?: $Enums.ResponsibilitySource | null
+  filingProviderName?: string | null
+  responsibilityConfirmedAt?: Date | string | null
+  responsibilityConfirmedById?: string | null
+  monitoringOwnerId?: string | null
+  coverageTiming?: string | null
+  filingStatusUnconfirmed?: boolean
+  milestoneKey: string
+  scheduleEntryKey?: string
+  deadlineType: $Enums.DeadlineType
+  calculatedDueDate: Date | string
+  operativeDueDate: Date | string
+  dateOverridden?: boolean
+  dateOverride?: Date | string | null
+  dateOverrideReason?: string | null
+  dateOverriddenAt?: Date | string | null
+  status?: $Enums.DeadlineOccurrenceStatus
+  completedAt?: Date | string | null
+  waivedAt?: Date | string | null
+  waiverReason?: string | null
+  cancelledAt?: Date | string | null
+  cancellationReason?: string | null
+  notes?: string | null
+  origin?: $Enums.ServiceCycleOrigin
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  tenant: Prisma.WorkspaceCreateNestedOneWithoutDeadlineOccurrencesInput
+  company: Prisma.CompanyCreateNestedOneWithoutDeadlineOccurrencesInput
+  clientService?: Prisma.ClientServiceCreateNestedOneWithoutDeadlineOccurrencesInput
+  deliveryClientService?: Prisma.ClientServiceCreateNestedOneWithoutDeliveredDeadlinesInput
+  cycle: Prisma.ServiceCycleCreateNestedOneWithoutOccurrencesInput
+  responsibilityChanges?: Prisma.DeadlineResponsibilityChangeCreateNestedManyWithoutOccurrenceInput
+  ruleVersion: Prisma.DeadlineRuleVersionCreateNestedOneWithoutDeadlineOccurrencesInput
+  dateOverriddenBy?: Prisma.UserCreateNestedOneWithoutOverriddenDeadlineOccurrencesInput
+  completedBy?: Prisma.UserCreateNestedOneWithoutCompletedDeadlineOccurrencesInput
+  waivedBy?: Prisma.UserCreateNestedOneWithoutWaivedDeadlineOccurrencesInput
+  cancelledBy?: Prisma.UserCreateNestedOneWithoutCancelledDeadlineOccurrencesInput
+}
+
+export type DeadlineOccurrenceUncheckedCreateWithoutCoverageLinksInput = {
+  id?: string
+  tenantId: string
+  companyId: string
+  ownershipScope?: $Enums.DeadlineOwnershipScope
+  clientServiceId?: string | null
+  obligationCode?: string | null
+  obligationPeriodKey?: string | null
+  financialPeriodStart?: Date | string | null
+  financialPeriodEnd?: Date | string | null
+  yearOfAssessment?: number | null
+  periodProvisional?: boolean
+  filingResponsibility?: $Enums.FilingResponsibility | null
+  responsibilitySource?: $Enums.ResponsibilitySource | null
+  deliveryClientServiceId?: string | null
+  filingProviderName?: string | null
+  responsibilityConfirmedAt?: Date | string | null
+  responsibilityConfirmedById?: string | null
+  monitoringOwnerId?: string | null
+  coverageTiming?: string | null
+  filingStatusUnconfirmed?: boolean
+  cycleId: string
+  ruleVersionId: string
+  milestoneKey: string
+  scheduleEntryKey?: string
+  deadlineType: $Enums.DeadlineType
+  calculatedDueDate: Date | string
+  operativeDueDate: Date | string
+  dateOverridden?: boolean
+  dateOverride?: Date | string | null
+  dateOverrideReason?: string | null
+  dateOverriddenById?: string | null
+  dateOverriddenAt?: Date | string | null
+  status?: $Enums.DeadlineOccurrenceStatus
+  completedAt?: Date | string | null
+  completedById?: string | null
+  waivedAt?: Date | string | null
+  waivedById?: string | null
+  waiverReason?: string | null
+  cancelledAt?: Date | string | null
+  cancelledById?: string | null
+  cancellationReason?: string | null
+  notes?: string | null
+  origin?: $Enums.ServiceCycleOrigin
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  responsibilityChanges?: Prisma.DeadlineResponsibilityChangeUncheckedCreateNestedManyWithoutOccurrenceInput
+}
+
+export type DeadlineOccurrenceCreateOrConnectWithoutCoverageLinksInput = {
+  where: Prisma.DeadlineOccurrenceWhereUniqueInput
+  create: Prisma.XOR<Prisma.DeadlineOccurrenceCreateWithoutCoverageLinksInput, Prisma.DeadlineOccurrenceUncheckedCreateWithoutCoverageLinksInput>
+}
+
+export type DeadlineOccurrenceUpsertWithoutCoverageLinksInput = {
+  update: Prisma.XOR<Prisma.DeadlineOccurrenceUpdateWithoutCoverageLinksInput, Prisma.DeadlineOccurrenceUncheckedUpdateWithoutCoverageLinksInput>
+  create: Prisma.XOR<Prisma.DeadlineOccurrenceCreateWithoutCoverageLinksInput, Prisma.DeadlineOccurrenceUncheckedCreateWithoutCoverageLinksInput>
+  where?: Prisma.DeadlineOccurrenceWhereInput
+}
+
+export type DeadlineOccurrenceUpdateToOneWithWhereWithoutCoverageLinksInput = {
+  where?: Prisma.DeadlineOccurrenceWhereInput
+  data: Prisma.XOR<Prisma.DeadlineOccurrenceUpdateWithoutCoverageLinksInput, Prisma.DeadlineOccurrenceUncheckedUpdateWithoutCoverageLinksInput>
+}
+
+export type DeadlineOccurrenceUpdateWithoutCoverageLinksInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  ownershipScope?: Prisma.EnumDeadlineOwnershipScopeFieldUpdateOperationsInput | $Enums.DeadlineOwnershipScope
+  obligationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationPeriodKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  financialPeriodStart?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  financialPeriodEnd?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  yearOfAssessment?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  periodProvisional?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filingResponsibility?: Prisma.NullableEnumFilingResponsibilityFieldUpdateOperationsInput | $Enums.FilingResponsibility | null
+  responsibilitySource?: Prisma.NullableEnumResponsibilitySourceFieldUpdateOperationsInput | $Enums.ResponsibilitySource | null
+  filingProviderName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  responsibilityConfirmedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  responsibilityConfirmedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  monitoringOwnerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  coverageTiming?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  filingStatusUnconfirmed?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  milestoneKey?: Prisma.StringFieldUpdateOperationsInput | string
+  scheduleEntryKey?: Prisma.StringFieldUpdateOperationsInput | string
+  deadlineType?: Prisma.EnumDeadlineTypeFieldUpdateOperationsInput | $Enums.DeadlineType
+  calculatedDueDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  operativeDueDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  dateOverridden?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  dateOverride?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  dateOverrideReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  dateOverriddenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  status?: Prisma.EnumDeadlineOccurrenceStatusFieldUpdateOperationsInput | $Enums.DeadlineOccurrenceStatus
+  completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  waivedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  waiverReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  cancelledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  cancellationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  origin?: Prisma.EnumServiceCycleOriginFieldUpdateOperationsInput | $Enums.ServiceCycleOrigin
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutDeadlineOccurrencesNestedInput
+  company?: Prisma.CompanyUpdateOneRequiredWithoutDeadlineOccurrencesNestedInput
+  clientService?: Prisma.ClientServiceUpdateOneWithoutDeadlineOccurrencesNestedInput
+  deliveryClientService?: Prisma.ClientServiceUpdateOneWithoutDeliveredDeadlinesNestedInput
+  cycle?: Prisma.ServiceCycleUpdateOneRequiredWithoutOccurrencesNestedInput
+  responsibilityChanges?: Prisma.DeadlineResponsibilityChangeUpdateManyWithoutOccurrenceNestedInput
+  ruleVersion?: Prisma.DeadlineRuleVersionUpdateOneRequiredWithoutDeadlineOccurrencesNestedInput
+  dateOverriddenBy?: Prisma.UserUpdateOneWithoutOverriddenDeadlineOccurrencesNestedInput
+  completedBy?: Prisma.UserUpdateOneWithoutCompletedDeadlineOccurrencesNestedInput
+  waivedBy?: Prisma.UserUpdateOneWithoutWaivedDeadlineOccurrencesNestedInput
+  cancelledBy?: Prisma.UserUpdateOneWithoutCancelledDeadlineOccurrencesNestedInput
+}
+
+export type DeadlineOccurrenceUncheckedUpdateWithoutCoverageLinksInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  companyId?: Prisma.StringFieldUpdateOperationsInput | string
+  ownershipScope?: Prisma.EnumDeadlineOwnershipScopeFieldUpdateOperationsInput | $Enums.DeadlineOwnershipScope
+  clientServiceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationPeriodKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  financialPeriodStart?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  financialPeriodEnd?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  yearOfAssessment?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  periodProvisional?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filingResponsibility?: Prisma.NullableEnumFilingResponsibilityFieldUpdateOperationsInput | $Enums.FilingResponsibility | null
+  responsibilitySource?: Prisma.NullableEnumResponsibilitySourceFieldUpdateOperationsInput | $Enums.ResponsibilitySource | null
+  deliveryClientServiceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  filingProviderName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  responsibilityConfirmedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  responsibilityConfirmedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  monitoringOwnerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  coverageTiming?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  filingStatusUnconfirmed?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  cycleId?: Prisma.StringFieldUpdateOperationsInput | string
+  ruleVersionId?: Prisma.StringFieldUpdateOperationsInput | string
+  milestoneKey?: Prisma.StringFieldUpdateOperationsInput | string
+  scheduleEntryKey?: Prisma.StringFieldUpdateOperationsInput | string
+  deadlineType?: Prisma.EnumDeadlineTypeFieldUpdateOperationsInput | $Enums.DeadlineType
+  calculatedDueDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  operativeDueDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  dateOverridden?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  dateOverride?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  dateOverrideReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  dateOverriddenById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  dateOverriddenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  status?: Prisma.EnumDeadlineOccurrenceStatusFieldUpdateOperationsInput | $Enums.DeadlineOccurrenceStatus
+  completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  completedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  waivedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  waivedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  waiverReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  cancelledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  cancelledById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  cancellationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  origin?: Prisma.EnumServiceCycleOriginFieldUpdateOperationsInput | $Enums.ServiceCycleOrigin
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  responsibilityChanges?: Prisma.DeadlineResponsibilityChangeUncheckedUpdateManyWithoutOccurrenceNestedInput
+}
+
+export type DeadlineOccurrenceCreateWithoutResponsibilityChangesInput = {
+  id?: string
+  ownershipScope?: $Enums.DeadlineOwnershipScope
+  obligationCode?: string | null
+  obligationPeriodKey?: string | null
+  financialPeriodStart?: Date | string | null
+  financialPeriodEnd?: Date | string | null
+  yearOfAssessment?: number | null
+  periodProvisional?: boolean
+  filingResponsibility?: $Enums.FilingResponsibility | null
+  responsibilitySource?: $Enums.ResponsibilitySource | null
+  filingProviderName?: string | null
+  responsibilityConfirmedAt?: Date | string | null
+  responsibilityConfirmedById?: string | null
+  monitoringOwnerId?: string | null
+  coverageTiming?: string | null
+  filingStatusUnconfirmed?: boolean
+  milestoneKey: string
+  scheduleEntryKey?: string
+  deadlineType: $Enums.DeadlineType
+  calculatedDueDate: Date | string
+  operativeDueDate: Date | string
+  dateOverridden?: boolean
+  dateOverride?: Date | string | null
+  dateOverrideReason?: string | null
+  dateOverriddenAt?: Date | string | null
+  status?: $Enums.DeadlineOccurrenceStatus
+  completedAt?: Date | string | null
+  waivedAt?: Date | string | null
+  waiverReason?: string | null
+  cancelledAt?: Date | string | null
+  cancellationReason?: string | null
+  notes?: string | null
+  origin?: $Enums.ServiceCycleOrigin
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  tenant: Prisma.WorkspaceCreateNestedOneWithoutDeadlineOccurrencesInput
+  company: Prisma.CompanyCreateNestedOneWithoutDeadlineOccurrencesInput
+  clientService?: Prisma.ClientServiceCreateNestedOneWithoutDeadlineOccurrencesInput
+  deliveryClientService?: Prisma.ClientServiceCreateNestedOneWithoutDeliveredDeadlinesInput
+  cycle: Prisma.ServiceCycleCreateNestedOneWithoutOccurrencesInput
+  coverageLinks?: Prisma.DeadlineOccurrenceCoverageLinkCreateNestedManyWithoutOccurrenceInput
+  ruleVersion: Prisma.DeadlineRuleVersionCreateNestedOneWithoutDeadlineOccurrencesInput
+  dateOverriddenBy?: Prisma.UserCreateNestedOneWithoutOverriddenDeadlineOccurrencesInput
+  completedBy?: Prisma.UserCreateNestedOneWithoutCompletedDeadlineOccurrencesInput
+  waivedBy?: Prisma.UserCreateNestedOneWithoutWaivedDeadlineOccurrencesInput
+  cancelledBy?: Prisma.UserCreateNestedOneWithoutCancelledDeadlineOccurrencesInput
+}
+
+export type DeadlineOccurrenceUncheckedCreateWithoutResponsibilityChangesInput = {
+  id?: string
+  tenantId: string
+  companyId: string
+  ownershipScope?: $Enums.DeadlineOwnershipScope
+  clientServiceId?: string | null
+  obligationCode?: string | null
+  obligationPeriodKey?: string | null
+  financialPeriodStart?: Date | string | null
+  financialPeriodEnd?: Date | string | null
+  yearOfAssessment?: number | null
+  periodProvisional?: boolean
+  filingResponsibility?: $Enums.FilingResponsibility | null
+  responsibilitySource?: $Enums.ResponsibilitySource | null
+  deliveryClientServiceId?: string | null
+  filingProviderName?: string | null
+  responsibilityConfirmedAt?: Date | string | null
+  responsibilityConfirmedById?: string | null
+  monitoringOwnerId?: string | null
+  coverageTiming?: string | null
+  filingStatusUnconfirmed?: boolean
+  cycleId: string
+  ruleVersionId: string
+  milestoneKey: string
+  scheduleEntryKey?: string
+  deadlineType: $Enums.DeadlineType
+  calculatedDueDate: Date | string
+  operativeDueDate: Date | string
+  dateOverridden?: boolean
+  dateOverride?: Date | string | null
+  dateOverrideReason?: string | null
+  dateOverriddenById?: string | null
+  dateOverriddenAt?: Date | string | null
+  status?: $Enums.DeadlineOccurrenceStatus
+  completedAt?: Date | string | null
+  completedById?: string | null
+  waivedAt?: Date | string | null
+  waivedById?: string | null
+  waiverReason?: string | null
+  cancelledAt?: Date | string | null
+  cancelledById?: string | null
+  cancellationReason?: string | null
+  notes?: string | null
+  origin?: $Enums.ServiceCycleOrigin
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  coverageLinks?: Prisma.DeadlineOccurrenceCoverageLinkUncheckedCreateNestedManyWithoutOccurrenceInput
+}
+
+export type DeadlineOccurrenceCreateOrConnectWithoutResponsibilityChangesInput = {
+  where: Prisma.DeadlineOccurrenceWhereUniqueInput
+  create: Prisma.XOR<Prisma.DeadlineOccurrenceCreateWithoutResponsibilityChangesInput, Prisma.DeadlineOccurrenceUncheckedCreateWithoutResponsibilityChangesInput>
+}
+
+export type DeadlineOccurrenceUpsertWithoutResponsibilityChangesInput = {
+  update: Prisma.XOR<Prisma.DeadlineOccurrenceUpdateWithoutResponsibilityChangesInput, Prisma.DeadlineOccurrenceUncheckedUpdateWithoutResponsibilityChangesInput>
+  create: Prisma.XOR<Prisma.DeadlineOccurrenceCreateWithoutResponsibilityChangesInput, Prisma.DeadlineOccurrenceUncheckedCreateWithoutResponsibilityChangesInput>
+  where?: Prisma.DeadlineOccurrenceWhereInput
+}
+
+export type DeadlineOccurrenceUpdateToOneWithWhereWithoutResponsibilityChangesInput = {
+  where?: Prisma.DeadlineOccurrenceWhereInput
+  data: Prisma.XOR<Prisma.DeadlineOccurrenceUpdateWithoutResponsibilityChangesInput, Prisma.DeadlineOccurrenceUncheckedUpdateWithoutResponsibilityChangesInput>
+}
+
+export type DeadlineOccurrenceUpdateWithoutResponsibilityChangesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  ownershipScope?: Prisma.EnumDeadlineOwnershipScopeFieldUpdateOperationsInput | $Enums.DeadlineOwnershipScope
+  obligationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationPeriodKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  financialPeriodStart?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  financialPeriodEnd?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  yearOfAssessment?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  periodProvisional?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filingResponsibility?: Prisma.NullableEnumFilingResponsibilityFieldUpdateOperationsInput | $Enums.FilingResponsibility | null
+  responsibilitySource?: Prisma.NullableEnumResponsibilitySourceFieldUpdateOperationsInput | $Enums.ResponsibilitySource | null
+  filingProviderName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  responsibilityConfirmedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  responsibilityConfirmedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  monitoringOwnerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  coverageTiming?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  filingStatusUnconfirmed?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  milestoneKey?: Prisma.StringFieldUpdateOperationsInput | string
+  scheduleEntryKey?: Prisma.StringFieldUpdateOperationsInput | string
+  deadlineType?: Prisma.EnumDeadlineTypeFieldUpdateOperationsInput | $Enums.DeadlineType
+  calculatedDueDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  operativeDueDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  dateOverridden?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  dateOverride?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  dateOverrideReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  dateOverriddenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  status?: Prisma.EnumDeadlineOccurrenceStatusFieldUpdateOperationsInput | $Enums.DeadlineOccurrenceStatus
+  completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  waivedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  waiverReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  cancelledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  cancellationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  origin?: Prisma.EnumServiceCycleOriginFieldUpdateOperationsInput | $Enums.ServiceCycleOrigin
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutDeadlineOccurrencesNestedInput
+  company?: Prisma.CompanyUpdateOneRequiredWithoutDeadlineOccurrencesNestedInput
+  clientService?: Prisma.ClientServiceUpdateOneWithoutDeadlineOccurrencesNestedInput
+  deliveryClientService?: Prisma.ClientServiceUpdateOneWithoutDeliveredDeadlinesNestedInput
+  cycle?: Prisma.ServiceCycleUpdateOneRequiredWithoutOccurrencesNestedInput
+  coverageLinks?: Prisma.DeadlineOccurrenceCoverageLinkUpdateManyWithoutOccurrenceNestedInput
+  ruleVersion?: Prisma.DeadlineRuleVersionUpdateOneRequiredWithoutDeadlineOccurrencesNestedInput
+  dateOverriddenBy?: Prisma.UserUpdateOneWithoutOverriddenDeadlineOccurrencesNestedInput
+  completedBy?: Prisma.UserUpdateOneWithoutCompletedDeadlineOccurrencesNestedInput
+  waivedBy?: Prisma.UserUpdateOneWithoutWaivedDeadlineOccurrencesNestedInput
+  cancelledBy?: Prisma.UserUpdateOneWithoutCancelledDeadlineOccurrencesNestedInput
+}
+
+export type DeadlineOccurrenceUncheckedUpdateWithoutResponsibilityChangesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  companyId?: Prisma.StringFieldUpdateOperationsInput | string
+  ownershipScope?: Prisma.EnumDeadlineOwnershipScopeFieldUpdateOperationsInput | $Enums.DeadlineOwnershipScope
+  clientServiceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationPeriodKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  financialPeriodStart?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  financialPeriodEnd?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  yearOfAssessment?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  periodProvisional?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filingResponsibility?: Prisma.NullableEnumFilingResponsibilityFieldUpdateOperationsInput | $Enums.FilingResponsibility | null
+  responsibilitySource?: Prisma.NullableEnumResponsibilitySourceFieldUpdateOperationsInput | $Enums.ResponsibilitySource | null
+  deliveryClientServiceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  filingProviderName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  responsibilityConfirmedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  responsibilityConfirmedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  monitoringOwnerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  coverageTiming?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  filingStatusUnconfirmed?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  cycleId?: Prisma.StringFieldUpdateOperationsInput | string
+  ruleVersionId?: Prisma.StringFieldUpdateOperationsInput | string
+  milestoneKey?: Prisma.StringFieldUpdateOperationsInput | string
+  scheduleEntryKey?: Prisma.StringFieldUpdateOperationsInput | string
+  deadlineType?: Prisma.EnumDeadlineTypeFieldUpdateOperationsInput | $Enums.DeadlineType
+  calculatedDueDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  operativeDueDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  dateOverridden?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  dateOverride?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  dateOverrideReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  dateOverriddenById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  dateOverriddenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  status?: Prisma.EnumDeadlineOccurrenceStatusFieldUpdateOperationsInput | $Enums.DeadlineOccurrenceStatus
+  completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  completedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  waivedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  waivedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  waiverReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  cancelledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  cancelledById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  cancellationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  origin?: Prisma.EnumServiceCycleOriginFieldUpdateOperationsInput | $Enums.ServiceCycleOrigin
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  coverageLinks?: Prisma.DeadlineOccurrenceCoverageLinkUncheckedUpdateManyWithoutOccurrenceNestedInput
+}
+
 export type DeadlineOccurrenceCreateManyTenantInput = {
   id?: string
   companyId: string
-  clientServiceId: string
+  ownershipScope?: $Enums.DeadlineOwnershipScope
+  clientServiceId?: string | null
+  obligationCode?: string | null
+  obligationPeriodKey?: string | null
+  financialPeriodStart?: Date | string | null
+  financialPeriodEnd?: Date | string | null
+  yearOfAssessment?: number | null
+  periodProvisional?: boolean
+  filingResponsibility?: $Enums.FilingResponsibility | null
+  responsibilitySource?: $Enums.ResponsibilitySource | null
+  deliveryClientServiceId?: string | null
+  filingProviderName?: string | null
+  responsibilityConfirmedAt?: Date | string | null
+  responsibilityConfirmedById?: string | null
+  monitoringOwnerId?: string | null
+  coverageTiming?: string | null
+  filingStatusUnconfirmed?: boolean
   cycleId: string
   ruleVersionId: string
   milestoneKey: string
@@ -2111,6 +3510,21 @@ export type DeadlineOccurrenceCreateManyTenantInput = {
 
 export type DeadlineOccurrenceUpdateWithoutTenantInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  ownershipScope?: Prisma.EnumDeadlineOwnershipScopeFieldUpdateOperationsInput | $Enums.DeadlineOwnershipScope
+  obligationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationPeriodKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  financialPeriodStart?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  financialPeriodEnd?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  yearOfAssessment?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  periodProvisional?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filingResponsibility?: Prisma.NullableEnumFilingResponsibilityFieldUpdateOperationsInput | $Enums.FilingResponsibility | null
+  responsibilitySource?: Prisma.NullableEnumResponsibilitySourceFieldUpdateOperationsInput | $Enums.ResponsibilitySource | null
+  filingProviderName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  responsibilityConfirmedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  responsibilityConfirmedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  monitoringOwnerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  coverageTiming?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  filingStatusUnconfirmed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   milestoneKey?: Prisma.StringFieldUpdateOperationsInput | string
   scheduleEntryKey?: Prisma.StringFieldUpdateOperationsInput | string
   deadlineType?: Prisma.EnumDeadlineTypeFieldUpdateOperationsInput | $Enums.DeadlineType
@@ -2131,8 +3545,11 @@ export type DeadlineOccurrenceUpdateWithoutTenantInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   company?: Prisma.CompanyUpdateOneRequiredWithoutDeadlineOccurrencesNestedInput
-  clientService?: Prisma.ClientServiceUpdateOneRequiredWithoutDeadlineOccurrencesNestedInput
+  clientService?: Prisma.ClientServiceUpdateOneWithoutDeadlineOccurrencesNestedInput
+  deliveryClientService?: Prisma.ClientServiceUpdateOneWithoutDeliveredDeadlinesNestedInput
   cycle?: Prisma.ServiceCycleUpdateOneRequiredWithoutOccurrencesNestedInput
+  coverageLinks?: Prisma.DeadlineOccurrenceCoverageLinkUpdateManyWithoutOccurrenceNestedInput
+  responsibilityChanges?: Prisma.DeadlineResponsibilityChangeUpdateManyWithoutOccurrenceNestedInput
   ruleVersion?: Prisma.DeadlineRuleVersionUpdateOneRequiredWithoutDeadlineOccurrencesNestedInput
   dateOverriddenBy?: Prisma.UserUpdateOneWithoutOverriddenDeadlineOccurrencesNestedInput
   completedBy?: Prisma.UserUpdateOneWithoutCompletedDeadlineOccurrencesNestedInput
@@ -2143,7 +3560,23 @@ export type DeadlineOccurrenceUpdateWithoutTenantInput = {
 export type DeadlineOccurrenceUncheckedUpdateWithoutTenantInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   companyId?: Prisma.StringFieldUpdateOperationsInput | string
-  clientServiceId?: Prisma.StringFieldUpdateOperationsInput | string
+  ownershipScope?: Prisma.EnumDeadlineOwnershipScopeFieldUpdateOperationsInput | $Enums.DeadlineOwnershipScope
+  clientServiceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationPeriodKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  financialPeriodStart?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  financialPeriodEnd?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  yearOfAssessment?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  periodProvisional?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filingResponsibility?: Prisma.NullableEnumFilingResponsibilityFieldUpdateOperationsInput | $Enums.FilingResponsibility | null
+  responsibilitySource?: Prisma.NullableEnumResponsibilitySourceFieldUpdateOperationsInput | $Enums.ResponsibilitySource | null
+  deliveryClientServiceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  filingProviderName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  responsibilityConfirmedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  responsibilityConfirmedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  monitoringOwnerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  coverageTiming?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  filingStatusUnconfirmed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   cycleId?: Prisma.StringFieldUpdateOperationsInput | string
   ruleVersionId?: Prisma.StringFieldUpdateOperationsInput | string
   milestoneKey?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2169,12 +3602,30 @@ export type DeadlineOccurrenceUncheckedUpdateWithoutTenantInput = {
   origin?: Prisma.EnumServiceCycleOriginFieldUpdateOperationsInput | $Enums.ServiceCycleOrigin
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  coverageLinks?: Prisma.DeadlineOccurrenceCoverageLinkUncheckedUpdateManyWithoutOccurrenceNestedInput
+  responsibilityChanges?: Prisma.DeadlineResponsibilityChangeUncheckedUpdateManyWithoutOccurrenceNestedInput
 }
 
 export type DeadlineOccurrenceUncheckedUpdateManyWithoutTenantInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   companyId?: Prisma.StringFieldUpdateOperationsInput | string
-  clientServiceId?: Prisma.StringFieldUpdateOperationsInput | string
+  ownershipScope?: Prisma.EnumDeadlineOwnershipScopeFieldUpdateOperationsInput | $Enums.DeadlineOwnershipScope
+  clientServiceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationPeriodKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  financialPeriodStart?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  financialPeriodEnd?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  yearOfAssessment?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  periodProvisional?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filingResponsibility?: Prisma.NullableEnumFilingResponsibilityFieldUpdateOperationsInput | $Enums.FilingResponsibility | null
+  responsibilitySource?: Prisma.NullableEnumResponsibilitySourceFieldUpdateOperationsInput | $Enums.ResponsibilitySource | null
+  deliveryClientServiceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  filingProviderName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  responsibilityConfirmedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  responsibilityConfirmedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  monitoringOwnerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  coverageTiming?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  filingStatusUnconfirmed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   cycleId?: Prisma.StringFieldUpdateOperationsInput | string
   ruleVersionId?: Prisma.StringFieldUpdateOperationsInput | string
   milestoneKey?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2206,7 +3657,23 @@ export type DeadlineOccurrenceCreateManyDateOverriddenByInput = {
   id?: string
   tenantId: string
   companyId: string
-  clientServiceId: string
+  ownershipScope?: $Enums.DeadlineOwnershipScope
+  clientServiceId?: string | null
+  obligationCode?: string | null
+  obligationPeriodKey?: string | null
+  financialPeriodStart?: Date | string | null
+  financialPeriodEnd?: Date | string | null
+  yearOfAssessment?: number | null
+  periodProvisional?: boolean
+  filingResponsibility?: $Enums.FilingResponsibility | null
+  responsibilitySource?: $Enums.ResponsibilitySource | null
+  deliveryClientServiceId?: string | null
+  filingProviderName?: string | null
+  responsibilityConfirmedAt?: Date | string | null
+  responsibilityConfirmedById?: string | null
+  monitoringOwnerId?: string | null
+  coverageTiming?: string | null
+  filingStatusUnconfirmed?: boolean
   cycleId: string
   ruleVersionId: string
   milestoneKey: string
@@ -2237,7 +3704,23 @@ export type DeadlineOccurrenceCreateManyCompletedByInput = {
   id?: string
   tenantId: string
   companyId: string
-  clientServiceId: string
+  ownershipScope?: $Enums.DeadlineOwnershipScope
+  clientServiceId?: string | null
+  obligationCode?: string | null
+  obligationPeriodKey?: string | null
+  financialPeriodStart?: Date | string | null
+  financialPeriodEnd?: Date | string | null
+  yearOfAssessment?: number | null
+  periodProvisional?: boolean
+  filingResponsibility?: $Enums.FilingResponsibility | null
+  responsibilitySource?: $Enums.ResponsibilitySource | null
+  deliveryClientServiceId?: string | null
+  filingProviderName?: string | null
+  responsibilityConfirmedAt?: Date | string | null
+  responsibilityConfirmedById?: string | null
+  monitoringOwnerId?: string | null
+  coverageTiming?: string | null
+  filingStatusUnconfirmed?: boolean
   cycleId: string
   ruleVersionId: string
   milestoneKey: string
@@ -2268,7 +3751,23 @@ export type DeadlineOccurrenceCreateManyWaivedByInput = {
   id?: string
   tenantId: string
   companyId: string
-  clientServiceId: string
+  ownershipScope?: $Enums.DeadlineOwnershipScope
+  clientServiceId?: string | null
+  obligationCode?: string | null
+  obligationPeriodKey?: string | null
+  financialPeriodStart?: Date | string | null
+  financialPeriodEnd?: Date | string | null
+  yearOfAssessment?: number | null
+  periodProvisional?: boolean
+  filingResponsibility?: $Enums.FilingResponsibility | null
+  responsibilitySource?: $Enums.ResponsibilitySource | null
+  deliveryClientServiceId?: string | null
+  filingProviderName?: string | null
+  responsibilityConfirmedAt?: Date | string | null
+  responsibilityConfirmedById?: string | null
+  monitoringOwnerId?: string | null
+  coverageTiming?: string | null
+  filingStatusUnconfirmed?: boolean
   cycleId: string
   ruleVersionId: string
   milestoneKey: string
@@ -2299,7 +3798,23 @@ export type DeadlineOccurrenceCreateManyCancelledByInput = {
   id?: string
   tenantId: string
   companyId: string
-  clientServiceId: string
+  ownershipScope?: $Enums.DeadlineOwnershipScope
+  clientServiceId?: string | null
+  obligationCode?: string | null
+  obligationPeriodKey?: string | null
+  financialPeriodStart?: Date | string | null
+  financialPeriodEnd?: Date | string | null
+  yearOfAssessment?: number | null
+  periodProvisional?: boolean
+  filingResponsibility?: $Enums.FilingResponsibility | null
+  responsibilitySource?: $Enums.ResponsibilitySource | null
+  deliveryClientServiceId?: string | null
+  filingProviderName?: string | null
+  responsibilityConfirmedAt?: Date | string | null
+  responsibilityConfirmedById?: string | null
+  monitoringOwnerId?: string | null
+  coverageTiming?: string | null
+  filingStatusUnconfirmed?: boolean
   cycleId: string
   ruleVersionId: string
   milestoneKey: string
@@ -2328,6 +3843,21 @@ export type DeadlineOccurrenceCreateManyCancelledByInput = {
 
 export type DeadlineOccurrenceUpdateWithoutDateOverriddenByInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  ownershipScope?: Prisma.EnumDeadlineOwnershipScopeFieldUpdateOperationsInput | $Enums.DeadlineOwnershipScope
+  obligationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationPeriodKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  financialPeriodStart?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  financialPeriodEnd?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  yearOfAssessment?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  periodProvisional?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filingResponsibility?: Prisma.NullableEnumFilingResponsibilityFieldUpdateOperationsInput | $Enums.FilingResponsibility | null
+  responsibilitySource?: Prisma.NullableEnumResponsibilitySourceFieldUpdateOperationsInput | $Enums.ResponsibilitySource | null
+  filingProviderName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  responsibilityConfirmedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  responsibilityConfirmedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  monitoringOwnerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  coverageTiming?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  filingStatusUnconfirmed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   milestoneKey?: Prisma.StringFieldUpdateOperationsInput | string
   scheduleEntryKey?: Prisma.StringFieldUpdateOperationsInput | string
   deadlineType?: Prisma.EnumDeadlineTypeFieldUpdateOperationsInput | $Enums.DeadlineType
@@ -2349,8 +3879,11 @@ export type DeadlineOccurrenceUpdateWithoutDateOverriddenByInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutDeadlineOccurrencesNestedInput
   company?: Prisma.CompanyUpdateOneRequiredWithoutDeadlineOccurrencesNestedInput
-  clientService?: Prisma.ClientServiceUpdateOneRequiredWithoutDeadlineOccurrencesNestedInput
+  clientService?: Prisma.ClientServiceUpdateOneWithoutDeadlineOccurrencesNestedInput
+  deliveryClientService?: Prisma.ClientServiceUpdateOneWithoutDeliveredDeadlinesNestedInput
   cycle?: Prisma.ServiceCycleUpdateOneRequiredWithoutOccurrencesNestedInput
+  coverageLinks?: Prisma.DeadlineOccurrenceCoverageLinkUpdateManyWithoutOccurrenceNestedInput
+  responsibilityChanges?: Prisma.DeadlineResponsibilityChangeUpdateManyWithoutOccurrenceNestedInput
   ruleVersion?: Prisma.DeadlineRuleVersionUpdateOneRequiredWithoutDeadlineOccurrencesNestedInput
   completedBy?: Prisma.UserUpdateOneWithoutCompletedDeadlineOccurrencesNestedInput
   waivedBy?: Prisma.UserUpdateOneWithoutWaivedDeadlineOccurrencesNestedInput
@@ -2361,7 +3894,23 @@ export type DeadlineOccurrenceUncheckedUpdateWithoutDateOverriddenByInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   companyId?: Prisma.StringFieldUpdateOperationsInput | string
-  clientServiceId?: Prisma.StringFieldUpdateOperationsInput | string
+  ownershipScope?: Prisma.EnumDeadlineOwnershipScopeFieldUpdateOperationsInput | $Enums.DeadlineOwnershipScope
+  clientServiceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationPeriodKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  financialPeriodStart?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  financialPeriodEnd?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  yearOfAssessment?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  periodProvisional?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filingResponsibility?: Prisma.NullableEnumFilingResponsibilityFieldUpdateOperationsInput | $Enums.FilingResponsibility | null
+  responsibilitySource?: Prisma.NullableEnumResponsibilitySourceFieldUpdateOperationsInput | $Enums.ResponsibilitySource | null
+  deliveryClientServiceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  filingProviderName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  responsibilityConfirmedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  responsibilityConfirmedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  monitoringOwnerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  coverageTiming?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  filingStatusUnconfirmed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   cycleId?: Prisma.StringFieldUpdateOperationsInput | string
   ruleVersionId?: Prisma.StringFieldUpdateOperationsInput | string
   milestoneKey?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2386,13 +3935,31 @@ export type DeadlineOccurrenceUncheckedUpdateWithoutDateOverriddenByInput = {
   origin?: Prisma.EnumServiceCycleOriginFieldUpdateOperationsInput | $Enums.ServiceCycleOrigin
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  coverageLinks?: Prisma.DeadlineOccurrenceCoverageLinkUncheckedUpdateManyWithoutOccurrenceNestedInput
+  responsibilityChanges?: Prisma.DeadlineResponsibilityChangeUncheckedUpdateManyWithoutOccurrenceNestedInput
 }
 
 export type DeadlineOccurrenceUncheckedUpdateManyWithoutDateOverriddenByInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   companyId?: Prisma.StringFieldUpdateOperationsInput | string
-  clientServiceId?: Prisma.StringFieldUpdateOperationsInput | string
+  ownershipScope?: Prisma.EnumDeadlineOwnershipScopeFieldUpdateOperationsInput | $Enums.DeadlineOwnershipScope
+  clientServiceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationPeriodKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  financialPeriodStart?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  financialPeriodEnd?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  yearOfAssessment?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  periodProvisional?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filingResponsibility?: Prisma.NullableEnumFilingResponsibilityFieldUpdateOperationsInput | $Enums.FilingResponsibility | null
+  responsibilitySource?: Prisma.NullableEnumResponsibilitySourceFieldUpdateOperationsInput | $Enums.ResponsibilitySource | null
+  deliveryClientServiceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  filingProviderName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  responsibilityConfirmedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  responsibilityConfirmedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  monitoringOwnerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  coverageTiming?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  filingStatusUnconfirmed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   cycleId?: Prisma.StringFieldUpdateOperationsInput | string
   ruleVersionId?: Prisma.StringFieldUpdateOperationsInput | string
   milestoneKey?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2421,6 +3988,21 @@ export type DeadlineOccurrenceUncheckedUpdateManyWithoutDateOverriddenByInput = 
 
 export type DeadlineOccurrenceUpdateWithoutCompletedByInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  ownershipScope?: Prisma.EnumDeadlineOwnershipScopeFieldUpdateOperationsInput | $Enums.DeadlineOwnershipScope
+  obligationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationPeriodKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  financialPeriodStart?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  financialPeriodEnd?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  yearOfAssessment?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  periodProvisional?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filingResponsibility?: Prisma.NullableEnumFilingResponsibilityFieldUpdateOperationsInput | $Enums.FilingResponsibility | null
+  responsibilitySource?: Prisma.NullableEnumResponsibilitySourceFieldUpdateOperationsInput | $Enums.ResponsibilitySource | null
+  filingProviderName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  responsibilityConfirmedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  responsibilityConfirmedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  monitoringOwnerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  coverageTiming?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  filingStatusUnconfirmed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   milestoneKey?: Prisma.StringFieldUpdateOperationsInput | string
   scheduleEntryKey?: Prisma.StringFieldUpdateOperationsInput | string
   deadlineType?: Prisma.EnumDeadlineTypeFieldUpdateOperationsInput | $Enums.DeadlineType
@@ -2442,8 +4024,11 @@ export type DeadlineOccurrenceUpdateWithoutCompletedByInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutDeadlineOccurrencesNestedInput
   company?: Prisma.CompanyUpdateOneRequiredWithoutDeadlineOccurrencesNestedInput
-  clientService?: Prisma.ClientServiceUpdateOneRequiredWithoutDeadlineOccurrencesNestedInput
+  clientService?: Prisma.ClientServiceUpdateOneWithoutDeadlineOccurrencesNestedInput
+  deliveryClientService?: Prisma.ClientServiceUpdateOneWithoutDeliveredDeadlinesNestedInput
   cycle?: Prisma.ServiceCycleUpdateOneRequiredWithoutOccurrencesNestedInput
+  coverageLinks?: Prisma.DeadlineOccurrenceCoverageLinkUpdateManyWithoutOccurrenceNestedInput
+  responsibilityChanges?: Prisma.DeadlineResponsibilityChangeUpdateManyWithoutOccurrenceNestedInput
   ruleVersion?: Prisma.DeadlineRuleVersionUpdateOneRequiredWithoutDeadlineOccurrencesNestedInput
   dateOverriddenBy?: Prisma.UserUpdateOneWithoutOverriddenDeadlineOccurrencesNestedInput
   waivedBy?: Prisma.UserUpdateOneWithoutWaivedDeadlineOccurrencesNestedInput
@@ -2454,7 +4039,23 @@ export type DeadlineOccurrenceUncheckedUpdateWithoutCompletedByInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   companyId?: Prisma.StringFieldUpdateOperationsInput | string
-  clientServiceId?: Prisma.StringFieldUpdateOperationsInput | string
+  ownershipScope?: Prisma.EnumDeadlineOwnershipScopeFieldUpdateOperationsInput | $Enums.DeadlineOwnershipScope
+  clientServiceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationPeriodKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  financialPeriodStart?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  financialPeriodEnd?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  yearOfAssessment?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  periodProvisional?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filingResponsibility?: Prisma.NullableEnumFilingResponsibilityFieldUpdateOperationsInput | $Enums.FilingResponsibility | null
+  responsibilitySource?: Prisma.NullableEnumResponsibilitySourceFieldUpdateOperationsInput | $Enums.ResponsibilitySource | null
+  deliveryClientServiceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  filingProviderName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  responsibilityConfirmedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  responsibilityConfirmedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  monitoringOwnerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  coverageTiming?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  filingStatusUnconfirmed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   cycleId?: Prisma.StringFieldUpdateOperationsInput | string
   ruleVersionId?: Prisma.StringFieldUpdateOperationsInput | string
   milestoneKey?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2479,13 +4080,31 @@ export type DeadlineOccurrenceUncheckedUpdateWithoutCompletedByInput = {
   origin?: Prisma.EnumServiceCycleOriginFieldUpdateOperationsInput | $Enums.ServiceCycleOrigin
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  coverageLinks?: Prisma.DeadlineOccurrenceCoverageLinkUncheckedUpdateManyWithoutOccurrenceNestedInput
+  responsibilityChanges?: Prisma.DeadlineResponsibilityChangeUncheckedUpdateManyWithoutOccurrenceNestedInput
 }
 
 export type DeadlineOccurrenceUncheckedUpdateManyWithoutCompletedByInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   companyId?: Prisma.StringFieldUpdateOperationsInput | string
-  clientServiceId?: Prisma.StringFieldUpdateOperationsInput | string
+  ownershipScope?: Prisma.EnumDeadlineOwnershipScopeFieldUpdateOperationsInput | $Enums.DeadlineOwnershipScope
+  clientServiceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationPeriodKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  financialPeriodStart?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  financialPeriodEnd?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  yearOfAssessment?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  periodProvisional?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filingResponsibility?: Prisma.NullableEnumFilingResponsibilityFieldUpdateOperationsInput | $Enums.FilingResponsibility | null
+  responsibilitySource?: Prisma.NullableEnumResponsibilitySourceFieldUpdateOperationsInput | $Enums.ResponsibilitySource | null
+  deliveryClientServiceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  filingProviderName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  responsibilityConfirmedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  responsibilityConfirmedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  monitoringOwnerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  coverageTiming?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  filingStatusUnconfirmed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   cycleId?: Prisma.StringFieldUpdateOperationsInput | string
   ruleVersionId?: Prisma.StringFieldUpdateOperationsInput | string
   milestoneKey?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2514,6 +4133,21 @@ export type DeadlineOccurrenceUncheckedUpdateManyWithoutCompletedByInput = {
 
 export type DeadlineOccurrenceUpdateWithoutWaivedByInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  ownershipScope?: Prisma.EnumDeadlineOwnershipScopeFieldUpdateOperationsInput | $Enums.DeadlineOwnershipScope
+  obligationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationPeriodKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  financialPeriodStart?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  financialPeriodEnd?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  yearOfAssessment?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  periodProvisional?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filingResponsibility?: Prisma.NullableEnumFilingResponsibilityFieldUpdateOperationsInput | $Enums.FilingResponsibility | null
+  responsibilitySource?: Prisma.NullableEnumResponsibilitySourceFieldUpdateOperationsInput | $Enums.ResponsibilitySource | null
+  filingProviderName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  responsibilityConfirmedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  responsibilityConfirmedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  monitoringOwnerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  coverageTiming?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  filingStatusUnconfirmed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   milestoneKey?: Prisma.StringFieldUpdateOperationsInput | string
   scheduleEntryKey?: Prisma.StringFieldUpdateOperationsInput | string
   deadlineType?: Prisma.EnumDeadlineTypeFieldUpdateOperationsInput | $Enums.DeadlineType
@@ -2535,8 +4169,11 @@ export type DeadlineOccurrenceUpdateWithoutWaivedByInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutDeadlineOccurrencesNestedInput
   company?: Prisma.CompanyUpdateOneRequiredWithoutDeadlineOccurrencesNestedInput
-  clientService?: Prisma.ClientServiceUpdateOneRequiredWithoutDeadlineOccurrencesNestedInput
+  clientService?: Prisma.ClientServiceUpdateOneWithoutDeadlineOccurrencesNestedInput
+  deliveryClientService?: Prisma.ClientServiceUpdateOneWithoutDeliveredDeadlinesNestedInput
   cycle?: Prisma.ServiceCycleUpdateOneRequiredWithoutOccurrencesNestedInput
+  coverageLinks?: Prisma.DeadlineOccurrenceCoverageLinkUpdateManyWithoutOccurrenceNestedInput
+  responsibilityChanges?: Prisma.DeadlineResponsibilityChangeUpdateManyWithoutOccurrenceNestedInput
   ruleVersion?: Prisma.DeadlineRuleVersionUpdateOneRequiredWithoutDeadlineOccurrencesNestedInput
   dateOverriddenBy?: Prisma.UserUpdateOneWithoutOverriddenDeadlineOccurrencesNestedInput
   completedBy?: Prisma.UserUpdateOneWithoutCompletedDeadlineOccurrencesNestedInput
@@ -2547,7 +4184,23 @@ export type DeadlineOccurrenceUncheckedUpdateWithoutWaivedByInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   companyId?: Prisma.StringFieldUpdateOperationsInput | string
-  clientServiceId?: Prisma.StringFieldUpdateOperationsInput | string
+  ownershipScope?: Prisma.EnumDeadlineOwnershipScopeFieldUpdateOperationsInput | $Enums.DeadlineOwnershipScope
+  clientServiceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationPeriodKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  financialPeriodStart?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  financialPeriodEnd?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  yearOfAssessment?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  periodProvisional?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filingResponsibility?: Prisma.NullableEnumFilingResponsibilityFieldUpdateOperationsInput | $Enums.FilingResponsibility | null
+  responsibilitySource?: Prisma.NullableEnumResponsibilitySourceFieldUpdateOperationsInput | $Enums.ResponsibilitySource | null
+  deliveryClientServiceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  filingProviderName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  responsibilityConfirmedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  responsibilityConfirmedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  monitoringOwnerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  coverageTiming?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  filingStatusUnconfirmed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   cycleId?: Prisma.StringFieldUpdateOperationsInput | string
   ruleVersionId?: Prisma.StringFieldUpdateOperationsInput | string
   milestoneKey?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2572,13 +4225,31 @@ export type DeadlineOccurrenceUncheckedUpdateWithoutWaivedByInput = {
   origin?: Prisma.EnumServiceCycleOriginFieldUpdateOperationsInput | $Enums.ServiceCycleOrigin
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  coverageLinks?: Prisma.DeadlineOccurrenceCoverageLinkUncheckedUpdateManyWithoutOccurrenceNestedInput
+  responsibilityChanges?: Prisma.DeadlineResponsibilityChangeUncheckedUpdateManyWithoutOccurrenceNestedInput
 }
 
 export type DeadlineOccurrenceUncheckedUpdateManyWithoutWaivedByInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   companyId?: Prisma.StringFieldUpdateOperationsInput | string
-  clientServiceId?: Prisma.StringFieldUpdateOperationsInput | string
+  ownershipScope?: Prisma.EnumDeadlineOwnershipScopeFieldUpdateOperationsInput | $Enums.DeadlineOwnershipScope
+  clientServiceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationPeriodKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  financialPeriodStart?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  financialPeriodEnd?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  yearOfAssessment?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  periodProvisional?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filingResponsibility?: Prisma.NullableEnumFilingResponsibilityFieldUpdateOperationsInput | $Enums.FilingResponsibility | null
+  responsibilitySource?: Prisma.NullableEnumResponsibilitySourceFieldUpdateOperationsInput | $Enums.ResponsibilitySource | null
+  deliveryClientServiceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  filingProviderName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  responsibilityConfirmedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  responsibilityConfirmedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  monitoringOwnerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  coverageTiming?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  filingStatusUnconfirmed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   cycleId?: Prisma.StringFieldUpdateOperationsInput | string
   ruleVersionId?: Prisma.StringFieldUpdateOperationsInput | string
   milestoneKey?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2607,6 +4278,21 @@ export type DeadlineOccurrenceUncheckedUpdateManyWithoutWaivedByInput = {
 
 export type DeadlineOccurrenceUpdateWithoutCancelledByInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  ownershipScope?: Prisma.EnumDeadlineOwnershipScopeFieldUpdateOperationsInput | $Enums.DeadlineOwnershipScope
+  obligationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationPeriodKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  financialPeriodStart?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  financialPeriodEnd?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  yearOfAssessment?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  periodProvisional?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filingResponsibility?: Prisma.NullableEnumFilingResponsibilityFieldUpdateOperationsInput | $Enums.FilingResponsibility | null
+  responsibilitySource?: Prisma.NullableEnumResponsibilitySourceFieldUpdateOperationsInput | $Enums.ResponsibilitySource | null
+  filingProviderName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  responsibilityConfirmedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  responsibilityConfirmedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  monitoringOwnerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  coverageTiming?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  filingStatusUnconfirmed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   milestoneKey?: Prisma.StringFieldUpdateOperationsInput | string
   scheduleEntryKey?: Prisma.StringFieldUpdateOperationsInput | string
   deadlineType?: Prisma.EnumDeadlineTypeFieldUpdateOperationsInput | $Enums.DeadlineType
@@ -2628,8 +4314,11 @@ export type DeadlineOccurrenceUpdateWithoutCancelledByInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutDeadlineOccurrencesNestedInput
   company?: Prisma.CompanyUpdateOneRequiredWithoutDeadlineOccurrencesNestedInput
-  clientService?: Prisma.ClientServiceUpdateOneRequiredWithoutDeadlineOccurrencesNestedInput
+  clientService?: Prisma.ClientServiceUpdateOneWithoutDeadlineOccurrencesNestedInput
+  deliveryClientService?: Prisma.ClientServiceUpdateOneWithoutDeliveredDeadlinesNestedInput
   cycle?: Prisma.ServiceCycleUpdateOneRequiredWithoutOccurrencesNestedInput
+  coverageLinks?: Prisma.DeadlineOccurrenceCoverageLinkUpdateManyWithoutOccurrenceNestedInput
+  responsibilityChanges?: Prisma.DeadlineResponsibilityChangeUpdateManyWithoutOccurrenceNestedInput
   ruleVersion?: Prisma.DeadlineRuleVersionUpdateOneRequiredWithoutDeadlineOccurrencesNestedInput
   dateOverriddenBy?: Prisma.UserUpdateOneWithoutOverriddenDeadlineOccurrencesNestedInput
   completedBy?: Prisma.UserUpdateOneWithoutCompletedDeadlineOccurrencesNestedInput
@@ -2640,7 +4329,23 @@ export type DeadlineOccurrenceUncheckedUpdateWithoutCancelledByInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   companyId?: Prisma.StringFieldUpdateOperationsInput | string
-  clientServiceId?: Prisma.StringFieldUpdateOperationsInput | string
+  ownershipScope?: Prisma.EnumDeadlineOwnershipScopeFieldUpdateOperationsInput | $Enums.DeadlineOwnershipScope
+  clientServiceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationPeriodKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  financialPeriodStart?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  financialPeriodEnd?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  yearOfAssessment?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  periodProvisional?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filingResponsibility?: Prisma.NullableEnumFilingResponsibilityFieldUpdateOperationsInput | $Enums.FilingResponsibility | null
+  responsibilitySource?: Prisma.NullableEnumResponsibilitySourceFieldUpdateOperationsInput | $Enums.ResponsibilitySource | null
+  deliveryClientServiceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  filingProviderName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  responsibilityConfirmedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  responsibilityConfirmedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  monitoringOwnerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  coverageTiming?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  filingStatusUnconfirmed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   cycleId?: Prisma.StringFieldUpdateOperationsInput | string
   ruleVersionId?: Prisma.StringFieldUpdateOperationsInput | string
   milestoneKey?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2665,13 +4370,31 @@ export type DeadlineOccurrenceUncheckedUpdateWithoutCancelledByInput = {
   origin?: Prisma.EnumServiceCycleOriginFieldUpdateOperationsInput | $Enums.ServiceCycleOrigin
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  coverageLinks?: Prisma.DeadlineOccurrenceCoverageLinkUncheckedUpdateManyWithoutOccurrenceNestedInput
+  responsibilityChanges?: Prisma.DeadlineResponsibilityChangeUncheckedUpdateManyWithoutOccurrenceNestedInput
 }
 
 export type DeadlineOccurrenceUncheckedUpdateManyWithoutCancelledByInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   companyId?: Prisma.StringFieldUpdateOperationsInput | string
-  clientServiceId?: Prisma.StringFieldUpdateOperationsInput | string
+  ownershipScope?: Prisma.EnumDeadlineOwnershipScopeFieldUpdateOperationsInput | $Enums.DeadlineOwnershipScope
+  clientServiceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationPeriodKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  financialPeriodStart?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  financialPeriodEnd?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  yearOfAssessment?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  periodProvisional?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filingResponsibility?: Prisma.NullableEnumFilingResponsibilityFieldUpdateOperationsInput | $Enums.FilingResponsibility | null
+  responsibilitySource?: Prisma.NullableEnumResponsibilitySourceFieldUpdateOperationsInput | $Enums.ResponsibilitySource | null
+  deliveryClientServiceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  filingProviderName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  responsibilityConfirmedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  responsibilityConfirmedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  monitoringOwnerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  coverageTiming?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  filingStatusUnconfirmed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   cycleId?: Prisma.StringFieldUpdateOperationsInput | string
   ruleVersionId?: Prisma.StringFieldUpdateOperationsInput | string
   milestoneKey?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2701,7 +4424,23 @@ export type DeadlineOccurrenceUncheckedUpdateManyWithoutCancelledByInput = {
 export type DeadlineOccurrenceCreateManyCompanyInput = {
   id?: string
   tenantId: string
-  clientServiceId: string
+  ownershipScope?: $Enums.DeadlineOwnershipScope
+  clientServiceId?: string | null
+  obligationCode?: string | null
+  obligationPeriodKey?: string | null
+  financialPeriodStart?: Date | string | null
+  financialPeriodEnd?: Date | string | null
+  yearOfAssessment?: number | null
+  periodProvisional?: boolean
+  filingResponsibility?: $Enums.FilingResponsibility | null
+  responsibilitySource?: $Enums.ResponsibilitySource | null
+  deliveryClientServiceId?: string | null
+  filingProviderName?: string | null
+  responsibilityConfirmedAt?: Date | string | null
+  responsibilityConfirmedById?: string | null
+  monitoringOwnerId?: string | null
+  coverageTiming?: string | null
+  filingStatusUnconfirmed?: boolean
   cycleId: string
   ruleVersionId: string
   milestoneKey: string
@@ -2731,6 +4470,21 @@ export type DeadlineOccurrenceCreateManyCompanyInput = {
 
 export type DeadlineOccurrenceUpdateWithoutCompanyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  ownershipScope?: Prisma.EnumDeadlineOwnershipScopeFieldUpdateOperationsInput | $Enums.DeadlineOwnershipScope
+  obligationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationPeriodKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  financialPeriodStart?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  financialPeriodEnd?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  yearOfAssessment?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  periodProvisional?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filingResponsibility?: Prisma.NullableEnumFilingResponsibilityFieldUpdateOperationsInput | $Enums.FilingResponsibility | null
+  responsibilitySource?: Prisma.NullableEnumResponsibilitySourceFieldUpdateOperationsInput | $Enums.ResponsibilitySource | null
+  filingProviderName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  responsibilityConfirmedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  responsibilityConfirmedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  monitoringOwnerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  coverageTiming?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  filingStatusUnconfirmed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   milestoneKey?: Prisma.StringFieldUpdateOperationsInput | string
   scheduleEntryKey?: Prisma.StringFieldUpdateOperationsInput | string
   deadlineType?: Prisma.EnumDeadlineTypeFieldUpdateOperationsInput | $Enums.DeadlineType
@@ -2751,8 +4505,11 @@ export type DeadlineOccurrenceUpdateWithoutCompanyInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutDeadlineOccurrencesNestedInput
-  clientService?: Prisma.ClientServiceUpdateOneRequiredWithoutDeadlineOccurrencesNestedInput
+  clientService?: Prisma.ClientServiceUpdateOneWithoutDeadlineOccurrencesNestedInput
+  deliveryClientService?: Prisma.ClientServiceUpdateOneWithoutDeliveredDeadlinesNestedInput
   cycle?: Prisma.ServiceCycleUpdateOneRequiredWithoutOccurrencesNestedInput
+  coverageLinks?: Prisma.DeadlineOccurrenceCoverageLinkUpdateManyWithoutOccurrenceNestedInput
+  responsibilityChanges?: Prisma.DeadlineResponsibilityChangeUpdateManyWithoutOccurrenceNestedInput
   ruleVersion?: Prisma.DeadlineRuleVersionUpdateOneRequiredWithoutDeadlineOccurrencesNestedInput
   dateOverriddenBy?: Prisma.UserUpdateOneWithoutOverriddenDeadlineOccurrencesNestedInput
   completedBy?: Prisma.UserUpdateOneWithoutCompletedDeadlineOccurrencesNestedInput
@@ -2763,7 +4520,23 @@ export type DeadlineOccurrenceUpdateWithoutCompanyInput = {
 export type DeadlineOccurrenceUncheckedUpdateWithoutCompanyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
-  clientServiceId?: Prisma.StringFieldUpdateOperationsInput | string
+  ownershipScope?: Prisma.EnumDeadlineOwnershipScopeFieldUpdateOperationsInput | $Enums.DeadlineOwnershipScope
+  clientServiceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationPeriodKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  financialPeriodStart?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  financialPeriodEnd?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  yearOfAssessment?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  periodProvisional?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filingResponsibility?: Prisma.NullableEnumFilingResponsibilityFieldUpdateOperationsInput | $Enums.FilingResponsibility | null
+  responsibilitySource?: Prisma.NullableEnumResponsibilitySourceFieldUpdateOperationsInput | $Enums.ResponsibilitySource | null
+  deliveryClientServiceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  filingProviderName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  responsibilityConfirmedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  responsibilityConfirmedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  monitoringOwnerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  coverageTiming?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  filingStatusUnconfirmed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   cycleId?: Prisma.StringFieldUpdateOperationsInput | string
   ruleVersionId?: Prisma.StringFieldUpdateOperationsInput | string
   milestoneKey?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2789,12 +4562,30 @@ export type DeadlineOccurrenceUncheckedUpdateWithoutCompanyInput = {
   origin?: Prisma.EnumServiceCycleOriginFieldUpdateOperationsInput | $Enums.ServiceCycleOrigin
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  coverageLinks?: Prisma.DeadlineOccurrenceCoverageLinkUncheckedUpdateManyWithoutOccurrenceNestedInput
+  responsibilityChanges?: Prisma.DeadlineResponsibilityChangeUncheckedUpdateManyWithoutOccurrenceNestedInput
 }
 
 export type DeadlineOccurrenceUncheckedUpdateManyWithoutCompanyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
-  clientServiceId?: Prisma.StringFieldUpdateOperationsInput | string
+  ownershipScope?: Prisma.EnumDeadlineOwnershipScopeFieldUpdateOperationsInput | $Enums.DeadlineOwnershipScope
+  clientServiceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationPeriodKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  financialPeriodStart?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  financialPeriodEnd?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  yearOfAssessment?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  periodProvisional?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filingResponsibility?: Prisma.NullableEnumFilingResponsibilityFieldUpdateOperationsInput | $Enums.FilingResponsibility | null
+  responsibilitySource?: Prisma.NullableEnumResponsibilitySourceFieldUpdateOperationsInput | $Enums.ResponsibilitySource | null
+  deliveryClientServiceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  filingProviderName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  responsibilityConfirmedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  responsibilityConfirmedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  monitoringOwnerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  coverageTiming?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  filingStatusUnconfirmed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   cycleId?: Prisma.StringFieldUpdateOperationsInput | string
   ruleVersionId?: Prisma.StringFieldUpdateOperationsInput | string
   milestoneKey?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2826,6 +4617,69 @@ export type DeadlineOccurrenceCreateManyClientServiceInput = {
   id?: string
   tenantId: string
   companyId: string
+  ownershipScope?: $Enums.DeadlineOwnershipScope
+  obligationCode?: string | null
+  obligationPeriodKey?: string | null
+  financialPeriodStart?: Date | string | null
+  financialPeriodEnd?: Date | string | null
+  yearOfAssessment?: number | null
+  periodProvisional?: boolean
+  filingResponsibility?: $Enums.FilingResponsibility | null
+  responsibilitySource?: $Enums.ResponsibilitySource | null
+  deliveryClientServiceId?: string | null
+  filingProviderName?: string | null
+  responsibilityConfirmedAt?: Date | string | null
+  responsibilityConfirmedById?: string | null
+  monitoringOwnerId?: string | null
+  coverageTiming?: string | null
+  filingStatusUnconfirmed?: boolean
+  cycleId: string
+  ruleVersionId: string
+  milestoneKey: string
+  scheduleEntryKey?: string
+  deadlineType: $Enums.DeadlineType
+  calculatedDueDate: Date | string
+  operativeDueDate: Date | string
+  dateOverridden?: boolean
+  dateOverride?: Date | string | null
+  dateOverrideReason?: string | null
+  dateOverriddenById?: string | null
+  dateOverriddenAt?: Date | string | null
+  status?: $Enums.DeadlineOccurrenceStatus
+  completedAt?: Date | string | null
+  completedById?: string | null
+  waivedAt?: Date | string | null
+  waivedById?: string | null
+  waiverReason?: string | null
+  cancelledAt?: Date | string | null
+  cancelledById?: string | null
+  cancellationReason?: string | null
+  notes?: string | null
+  origin?: $Enums.ServiceCycleOrigin
+  createdAt?: Date | string
+  updatedAt?: Date | string
+}
+
+export type DeadlineOccurrenceCreateManyDeliveryClientServiceInput = {
+  id?: string
+  tenantId: string
+  companyId: string
+  ownershipScope?: $Enums.DeadlineOwnershipScope
+  clientServiceId?: string | null
+  obligationCode?: string | null
+  obligationPeriodKey?: string | null
+  financialPeriodStart?: Date | string | null
+  financialPeriodEnd?: Date | string | null
+  yearOfAssessment?: number | null
+  periodProvisional?: boolean
+  filingResponsibility?: $Enums.FilingResponsibility | null
+  responsibilitySource?: $Enums.ResponsibilitySource | null
+  filingProviderName?: string | null
+  responsibilityConfirmedAt?: Date | string | null
+  responsibilityConfirmedById?: string | null
+  monitoringOwnerId?: string | null
+  coverageTiming?: string | null
+  filingStatusUnconfirmed?: boolean
   cycleId: string
   ruleVersionId: string
   milestoneKey: string
@@ -2855,6 +4709,21 @@ export type DeadlineOccurrenceCreateManyClientServiceInput = {
 
 export type DeadlineOccurrenceUpdateWithoutClientServiceInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  ownershipScope?: Prisma.EnumDeadlineOwnershipScopeFieldUpdateOperationsInput | $Enums.DeadlineOwnershipScope
+  obligationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationPeriodKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  financialPeriodStart?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  financialPeriodEnd?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  yearOfAssessment?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  periodProvisional?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filingResponsibility?: Prisma.NullableEnumFilingResponsibilityFieldUpdateOperationsInput | $Enums.FilingResponsibility | null
+  responsibilitySource?: Prisma.NullableEnumResponsibilitySourceFieldUpdateOperationsInput | $Enums.ResponsibilitySource | null
+  filingProviderName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  responsibilityConfirmedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  responsibilityConfirmedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  monitoringOwnerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  coverageTiming?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  filingStatusUnconfirmed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   milestoneKey?: Prisma.StringFieldUpdateOperationsInput | string
   scheduleEntryKey?: Prisma.StringFieldUpdateOperationsInput | string
   deadlineType?: Prisma.EnumDeadlineTypeFieldUpdateOperationsInput | $Enums.DeadlineType
@@ -2876,7 +4745,10 @@ export type DeadlineOccurrenceUpdateWithoutClientServiceInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutDeadlineOccurrencesNestedInput
   company?: Prisma.CompanyUpdateOneRequiredWithoutDeadlineOccurrencesNestedInput
+  deliveryClientService?: Prisma.ClientServiceUpdateOneWithoutDeliveredDeadlinesNestedInput
   cycle?: Prisma.ServiceCycleUpdateOneRequiredWithoutOccurrencesNestedInput
+  coverageLinks?: Prisma.DeadlineOccurrenceCoverageLinkUpdateManyWithoutOccurrenceNestedInput
+  responsibilityChanges?: Prisma.DeadlineResponsibilityChangeUpdateManyWithoutOccurrenceNestedInput
   ruleVersion?: Prisma.DeadlineRuleVersionUpdateOneRequiredWithoutDeadlineOccurrencesNestedInput
   dateOverriddenBy?: Prisma.UserUpdateOneWithoutOverriddenDeadlineOccurrencesNestedInput
   completedBy?: Prisma.UserUpdateOneWithoutCompletedDeadlineOccurrencesNestedInput
@@ -2888,6 +4760,71 @@ export type DeadlineOccurrenceUncheckedUpdateWithoutClientServiceInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   companyId?: Prisma.StringFieldUpdateOperationsInput | string
+  ownershipScope?: Prisma.EnumDeadlineOwnershipScopeFieldUpdateOperationsInput | $Enums.DeadlineOwnershipScope
+  obligationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationPeriodKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  financialPeriodStart?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  financialPeriodEnd?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  yearOfAssessment?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  periodProvisional?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filingResponsibility?: Prisma.NullableEnumFilingResponsibilityFieldUpdateOperationsInput | $Enums.FilingResponsibility | null
+  responsibilitySource?: Prisma.NullableEnumResponsibilitySourceFieldUpdateOperationsInput | $Enums.ResponsibilitySource | null
+  deliveryClientServiceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  filingProviderName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  responsibilityConfirmedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  responsibilityConfirmedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  monitoringOwnerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  coverageTiming?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  filingStatusUnconfirmed?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  cycleId?: Prisma.StringFieldUpdateOperationsInput | string
+  ruleVersionId?: Prisma.StringFieldUpdateOperationsInput | string
+  milestoneKey?: Prisma.StringFieldUpdateOperationsInput | string
+  scheduleEntryKey?: Prisma.StringFieldUpdateOperationsInput | string
+  deadlineType?: Prisma.EnumDeadlineTypeFieldUpdateOperationsInput | $Enums.DeadlineType
+  calculatedDueDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  operativeDueDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  dateOverridden?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  dateOverride?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  dateOverrideReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  dateOverriddenById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  dateOverriddenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  status?: Prisma.EnumDeadlineOccurrenceStatusFieldUpdateOperationsInput | $Enums.DeadlineOccurrenceStatus
+  completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  completedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  waivedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  waivedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  waiverReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  cancelledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  cancelledById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  cancellationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  origin?: Prisma.EnumServiceCycleOriginFieldUpdateOperationsInput | $Enums.ServiceCycleOrigin
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  coverageLinks?: Prisma.DeadlineOccurrenceCoverageLinkUncheckedUpdateManyWithoutOccurrenceNestedInput
+  responsibilityChanges?: Prisma.DeadlineResponsibilityChangeUncheckedUpdateManyWithoutOccurrenceNestedInput
+}
+
+export type DeadlineOccurrenceUncheckedUpdateManyWithoutClientServiceInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  companyId?: Prisma.StringFieldUpdateOperationsInput | string
+  ownershipScope?: Prisma.EnumDeadlineOwnershipScopeFieldUpdateOperationsInput | $Enums.DeadlineOwnershipScope
+  obligationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationPeriodKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  financialPeriodStart?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  financialPeriodEnd?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  yearOfAssessment?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  periodProvisional?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filingResponsibility?: Prisma.NullableEnumFilingResponsibilityFieldUpdateOperationsInput | $Enums.FilingResponsibility | null
+  responsibilitySource?: Prisma.NullableEnumResponsibilitySourceFieldUpdateOperationsInput | $Enums.ResponsibilitySource | null
+  deliveryClientServiceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  filingProviderName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  responsibilityConfirmedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  responsibilityConfirmedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  monitoringOwnerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  coverageTiming?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  filingStatusUnconfirmed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   cycleId?: Prisma.StringFieldUpdateOperationsInput | string
   ruleVersionId?: Prisma.StringFieldUpdateOperationsInput | string
   milestoneKey?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2915,10 +4852,124 @@ export type DeadlineOccurrenceUncheckedUpdateWithoutClientServiceInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
-export type DeadlineOccurrenceUncheckedUpdateManyWithoutClientServiceInput = {
+export type DeadlineOccurrenceUpdateWithoutDeliveryClientServiceInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  ownershipScope?: Prisma.EnumDeadlineOwnershipScopeFieldUpdateOperationsInput | $Enums.DeadlineOwnershipScope
+  obligationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationPeriodKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  financialPeriodStart?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  financialPeriodEnd?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  yearOfAssessment?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  periodProvisional?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filingResponsibility?: Prisma.NullableEnumFilingResponsibilityFieldUpdateOperationsInput | $Enums.FilingResponsibility | null
+  responsibilitySource?: Prisma.NullableEnumResponsibilitySourceFieldUpdateOperationsInput | $Enums.ResponsibilitySource | null
+  filingProviderName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  responsibilityConfirmedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  responsibilityConfirmedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  monitoringOwnerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  coverageTiming?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  filingStatusUnconfirmed?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  milestoneKey?: Prisma.StringFieldUpdateOperationsInput | string
+  scheduleEntryKey?: Prisma.StringFieldUpdateOperationsInput | string
+  deadlineType?: Prisma.EnumDeadlineTypeFieldUpdateOperationsInput | $Enums.DeadlineType
+  calculatedDueDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  operativeDueDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  dateOverridden?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  dateOverride?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  dateOverrideReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  dateOverriddenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  status?: Prisma.EnumDeadlineOccurrenceStatusFieldUpdateOperationsInput | $Enums.DeadlineOccurrenceStatus
+  completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  waivedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  waiverReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  cancelledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  cancellationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  origin?: Prisma.EnumServiceCycleOriginFieldUpdateOperationsInput | $Enums.ServiceCycleOrigin
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutDeadlineOccurrencesNestedInput
+  company?: Prisma.CompanyUpdateOneRequiredWithoutDeadlineOccurrencesNestedInput
+  clientService?: Prisma.ClientServiceUpdateOneWithoutDeadlineOccurrencesNestedInput
+  cycle?: Prisma.ServiceCycleUpdateOneRequiredWithoutOccurrencesNestedInput
+  coverageLinks?: Prisma.DeadlineOccurrenceCoverageLinkUpdateManyWithoutOccurrenceNestedInput
+  responsibilityChanges?: Prisma.DeadlineResponsibilityChangeUpdateManyWithoutOccurrenceNestedInput
+  ruleVersion?: Prisma.DeadlineRuleVersionUpdateOneRequiredWithoutDeadlineOccurrencesNestedInput
+  dateOverriddenBy?: Prisma.UserUpdateOneWithoutOverriddenDeadlineOccurrencesNestedInput
+  completedBy?: Prisma.UserUpdateOneWithoutCompletedDeadlineOccurrencesNestedInput
+  waivedBy?: Prisma.UserUpdateOneWithoutWaivedDeadlineOccurrencesNestedInput
+  cancelledBy?: Prisma.UserUpdateOneWithoutCancelledDeadlineOccurrencesNestedInput
+}
+
+export type DeadlineOccurrenceUncheckedUpdateWithoutDeliveryClientServiceInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   companyId?: Prisma.StringFieldUpdateOperationsInput | string
+  ownershipScope?: Prisma.EnumDeadlineOwnershipScopeFieldUpdateOperationsInput | $Enums.DeadlineOwnershipScope
+  clientServiceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationPeriodKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  financialPeriodStart?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  financialPeriodEnd?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  yearOfAssessment?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  periodProvisional?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filingResponsibility?: Prisma.NullableEnumFilingResponsibilityFieldUpdateOperationsInput | $Enums.FilingResponsibility | null
+  responsibilitySource?: Prisma.NullableEnumResponsibilitySourceFieldUpdateOperationsInput | $Enums.ResponsibilitySource | null
+  filingProviderName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  responsibilityConfirmedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  responsibilityConfirmedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  monitoringOwnerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  coverageTiming?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  filingStatusUnconfirmed?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  cycleId?: Prisma.StringFieldUpdateOperationsInput | string
+  ruleVersionId?: Prisma.StringFieldUpdateOperationsInput | string
+  milestoneKey?: Prisma.StringFieldUpdateOperationsInput | string
+  scheduleEntryKey?: Prisma.StringFieldUpdateOperationsInput | string
+  deadlineType?: Prisma.EnumDeadlineTypeFieldUpdateOperationsInput | $Enums.DeadlineType
+  calculatedDueDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  operativeDueDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  dateOverridden?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  dateOverride?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  dateOverrideReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  dateOverriddenById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  dateOverriddenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  status?: Prisma.EnumDeadlineOccurrenceStatusFieldUpdateOperationsInput | $Enums.DeadlineOccurrenceStatus
+  completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  completedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  waivedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  waivedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  waiverReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  cancelledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  cancelledById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  cancellationReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  origin?: Prisma.EnumServiceCycleOriginFieldUpdateOperationsInput | $Enums.ServiceCycleOrigin
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  coverageLinks?: Prisma.DeadlineOccurrenceCoverageLinkUncheckedUpdateManyWithoutOccurrenceNestedInput
+  responsibilityChanges?: Prisma.DeadlineResponsibilityChangeUncheckedUpdateManyWithoutOccurrenceNestedInput
+}
+
+export type DeadlineOccurrenceUncheckedUpdateManyWithoutDeliveryClientServiceInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  companyId?: Prisma.StringFieldUpdateOperationsInput | string
+  ownershipScope?: Prisma.EnumDeadlineOwnershipScopeFieldUpdateOperationsInput | $Enums.DeadlineOwnershipScope
+  clientServiceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationPeriodKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  financialPeriodStart?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  financialPeriodEnd?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  yearOfAssessment?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  periodProvisional?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filingResponsibility?: Prisma.NullableEnumFilingResponsibilityFieldUpdateOperationsInput | $Enums.FilingResponsibility | null
+  responsibilitySource?: Prisma.NullableEnumResponsibilitySourceFieldUpdateOperationsInput | $Enums.ResponsibilitySource | null
+  filingProviderName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  responsibilityConfirmedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  responsibilityConfirmedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  monitoringOwnerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  coverageTiming?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  filingStatusUnconfirmed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   cycleId?: Prisma.StringFieldUpdateOperationsInput | string
   ruleVersionId?: Prisma.StringFieldUpdateOperationsInput | string
   milestoneKey?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2950,7 +5001,23 @@ export type DeadlineOccurrenceCreateManyRuleVersionInput = {
   id?: string
   tenantId: string
   companyId: string
-  clientServiceId: string
+  ownershipScope?: $Enums.DeadlineOwnershipScope
+  clientServiceId?: string | null
+  obligationCode?: string | null
+  obligationPeriodKey?: string | null
+  financialPeriodStart?: Date | string | null
+  financialPeriodEnd?: Date | string | null
+  yearOfAssessment?: number | null
+  periodProvisional?: boolean
+  filingResponsibility?: $Enums.FilingResponsibility | null
+  responsibilitySource?: $Enums.ResponsibilitySource | null
+  deliveryClientServiceId?: string | null
+  filingProviderName?: string | null
+  responsibilityConfirmedAt?: Date | string | null
+  responsibilityConfirmedById?: string | null
+  monitoringOwnerId?: string | null
+  coverageTiming?: string | null
+  filingStatusUnconfirmed?: boolean
   cycleId: string
   milestoneKey: string
   scheduleEntryKey?: string
@@ -2979,6 +5046,21 @@ export type DeadlineOccurrenceCreateManyRuleVersionInput = {
 
 export type DeadlineOccurrenceUpdateWithoutRuleVersionInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  ownershipScope?: Prisma.EnumDeadlineOwnershipScopeFieldUpdateOperationsInput | $Enums.DeadlineOwnershipScope
+  obligationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationPeriodKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  financialPeriodStart?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  financialPeriodEnd?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  yearOfAssessment?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  periodProvisional?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filingResponsibility?: Prisma.NullableEnumFilingResponsibilityFieldUpdateOperationsInput | $Enums.FilingResponsibility | null
+  responsibilitySource?: Prisma.NullableEnumResponsibilitySourceFieldUpdateOperationsInput | $Enums.ResponsibilitySource | null
+  filingProviderName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  responsibilityConfirmedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  responsibilityConfirmedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  monitoringOwnerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  coverageTiming?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  filingStatusUnconfirmed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   milestoneKey?: Prisma.StringFieldUpdateOperationsInput | string
   scheduleEntryKey?: Prisma.StringFieldUpdateOperationsInput | string
   deadlineType?: Prisma.EnumDeadlineTypeFieldUpdateOperationsInput | $Enums.DeadlineType
@@ -3000,8 +5082,11 @@ export type DeadlineOccurrenceUpdateWithoutRuleVersionInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutDeadlineOccurrencesNestedInput
   company?: Prisma.CompanyUpdateOneRequiredWithoutDeadlineOccurrencesNestedInput
-  clientService?: Prisma.ClientServiceUpdateOneRequiredWithoutDeadlineOccurrencesNestedInput
+  clientService?: Prisma.ClientServiceUpdateOneWithoutDeadlineOccurrencesNestedInput
+  deliveryClientService?: Prisma.ClientServiceUpdateOneWithoutDeliveredDeadlinesNestedInput
   cycle?: Prisma.ServiceCycleUpdateOneRequiredWithoutOccurrencesNestedInput
+  coverageLinks?: Prisma.DeadlineOccurrenceCoverageLinkUpdateManyWithoutOccurrenceNestedInput
+  responsibilityChanges?: Prisma.DeadlineResponsibilityChangeUpdateManyWithoutOccurrenceNestedInput
   dateOverriddenBy?: Prisma.UserUpdateOneWithoutOverriddenDeadlineOccurrencesNestedInput
   completedBy?: Prisma.UserUpdateOneWithoutCompletedDeadlineOccurrencesNestedInput
   waivedBy?: Prisma.UserUpdateOneWithoutWaivedDeadlineOccurrencesNestedInput
@@ -3012,7 +5097,23 @@ export type DeadlineOccurrenceUncheckedUpdateWithoutRuleVersionInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   companyId?: Prisma.StringFieldUpdateOperationsInput | string
-  clientServiceId?: Prisma.StringFieldUpdateOperationsInput | string
+  ownershipScope?: Prisma.EnumDeadlineOwnershipScopeFieldUpdateOperationsInput | $Enums.DeadlineOwnershipScope
+  clientServiceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationPeriodKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  financialPeriodStart?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  financialPeriodEnd?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  yearOfAssessment?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  periodProvisional?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filingResponsibility?: Prisma.NullableEnumFilingResponsibilityFieldUpdateOperationsInput | $Enums.FilingResponsibility | null
+  responsibilitySource?: Prisma.NullableEnumResponsibilitySourceFieldUpdateOperationsInput | $Enums.ResponsibilitySource | null
+  deliveryClientServiceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  filingProviderName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  responsibilityConfirmedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  responsibilityConfirmedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  monitoringOwnerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  coverageTiming?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  filingStatusUnconfirmed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   cycleId?: Prisma.StringFieldUpdateOperationsInput | string
   milestoneKey?: Prisma.StringFieldUpdateOperationsInput | string
   scheduleEntryKey?: Prisma.StringFieldUpdateOperationsInput | string
@@ -3037,13 +5138,31 @@ export type DeadlineOccurrenceUncheckedUpdateWithoutRuleVersionInput = {
   origin?: Prisma.EnumServiceCycleOriginFieldUpdateOperationsInput | $Enums.ServiceCycleOrigin
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  coverageLinks?: Prisma.DeadlineOccurrenceCoverageLinkUncheckedUpdateManyWithoutOccurrenceNestedInput
+  responsibilityChanges?: Prisma.DeadlineResponsibilityChangeUncheckedUpdateManyWithoutOccurrenceNestedInput
 }
 
 export type DeadlineOccurrenceUncheckedUpdateManyWithoutRuleVersionInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   companyId?: Prisma.StringFieldUpdateOperationsInput | string
-  clientServiceId?: Prisma.StringFieldUpdateOperationsInput | string
+  ownershipScope?: Prisma.EnumDeadlineOwnershipScopeFieldUpdateOperationsInput | $Enums.DeadlineOwnershipScope
+  clientServiceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationPeriodKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  financialPeriodStart?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  financialPeriodEnd?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  yearOfAssessment?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  periodProvisional?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filingResponsibility?: Prisma.NullableEnumFilingResponsibilityFieldUpdateOperationsInput | $Enums.FilingResponsibility | null
+  responsibilitySource?: Prisma.NullableEnumResponsibilitySourceFieldUpdateOperationsInput | $Enums.ResponsibilitySource | null
+  deliveryClientServiceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  filingProviderName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  responsibilityConfirmedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  responsibilityConfirmedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  monitoringOwnerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  coverageTiming?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  filingStatusUnconfirmed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   cycleId?: Prisma.StringFieldUpdateOperationsInput | string
   milestoneKey?: Prisma.StringFieldUpdateOperationsInput | string
   scheduleEntryKey?: Prisma.StringFieldUpdateOperationsInput | string
@@ -3074,7 +5193,23 @@ export type DeadlineOccurrenceCreateManyCycleInput = {
   id?: string
   tenantId: string
   companyId: string
-  clientServiceId: string
+  ownershipScope?: $Enums.DeadlineOwnershipScope
+  clientServiceId?: string | null
+  obligationCode?: string | null
+  obligationPeriodKey?: string | null
+  financialPeriodStart?: Date | string | null
+  financialPeriodEnd?: Date | string | null
+  yearOfAssessment?: number | null
+  periodProvisional?: boolean
+  filingResponsibility?: $Enums.FilingResponsibility | null
+  responsibilitySource?: $Enums.ResponsibilitySource | null
+  deliveryClientServiceId?: string | null
+  filingProviderName?: string | null
+  responsibilityConfirmedAt?: Date | string | null
+  responsibilityConfirmedById?: string | null
+  monitoringOwnerId?: string | null
+  coverageTiming?: string | null
+  filingStatusUnconfirmed?: boolean
   ruleVersionId: string
   milestoneKey: string
   scheduleEntryKey?: string
@@ -3103,6 +5238,21 @@ export type DeadlineOccurrenceCreateManyCycleInput = {
 
 export type DeadlineOccurrenceUpdateWithoutCycleInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  ownershipScope?: Prisma.EnumDeadlineOwnershipScopeFieldUpdateOperationsInput | $Enums.DeadlineOwnershipScope
+  obligationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationPeriodKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  financialPeriodStart?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  financialPeriodEnd?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  yearOfAssessment?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  periodProvisional?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filingResponsibility?: Prisma.NullableEnumFilingResponsibilityFieldUpdateOperationsInput | $Enums.FilingResponsibility | null
+  responsibilitySource?: Prisma.NullableEnumResponsibilitySourceFieldUpdateOperationsInput | $Enums.ResponsibilitySource | null
+  filingProviderName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  responsibilityConfirmedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  responsibilityConfirmedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  monitoringOwnerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  coverageTiming?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  filingStatusUnconfirmed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   milestoneKey?: Prisma.StringFieldUpdateOperationsInput | string
   scheduleEntryKey?: Prisma.StringFieldUpdateOperationsInput | string
   deadlineType?: Prisma.EnumDeadlineTypeFieldUpdateOperationsInput | $Enums.DeadlineType
@@ -3124,7 +5274,10 @@ export type DeadlineOccurrenceUpdateWithoutCycleInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutDeadlineOccurrencesNestedInput
   company?: Prisma.CompanyUpdateOneRequiredWithoutDeadlineOccurrencesNestedInput
-  clientService?: Prisma.ClientServiceUpdateOneRequiredWithoutDeadlineOccurrencesNestedInput
+  clientService?: Prisma.ClientServiceUpdateOneWithoutDeadlineOccurrencesNestedInput
+  deliveryClientService?: Prisma.ClientServiceUpdateOneWithoutDeliveredDeadlinesNestedInput
+  coverageLinks?: Prisma.DeadlineOccurrenceCoverageLinkUpdateManyWithoutOccurrenceNestedInput
+  responsibilityChanges?: Prisma.DeadlineResponsibilityChangeUpdateManyWithoutOccurrenceNestedInput
   ruleVersion?: Prisma.DeadlineRuleVersionUpdateOneRequiredWithoutDeadlineOccurrencesNestedInput
   dateOverriddenBy?: Prisma.UserUpdateOneWithoutOverriddenDeadlineOccurrencesNestedInput
   completedBy?: Prisma.UserUpdateOneWithoutCompletedDeadlineOccurrencesNestedInput
@@ -3136,7 +5289,23 @@ export type DeadlineOccurrenceUncheckedUpdateWithoutCycleInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   companyId?: Prisma.StringFieldUpdateOperationsInput | string
-  clientServiceId?: Prisma.StringFieldUpdateOperationsInput | string
+  ownershipScope?: Prisma.EnumDeadlineOwnershipScopeFieldUpdateOperationsInput | $Enums.DeadlineOwnershipScope
+  clientServiceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationPeriodKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  financialPeriodStart?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  financialPeriodEnd?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  yearOfAssessment?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  periodProvisional?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filingResponsibility?: Prisma.NullableEnumFilingResponsibilityFieldUpdateOperationsInput | $Enums.FilingResponsibility | null
+  responsibilitySource?: Prisma.NullableEnumResponsibilitySourceFieldUpdateOperationsInput | $Enums.ResponsibilitySource | null
+  deliveryClientServiceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  filingProviderName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  responsibilityConfirmedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  responsibilityConfirmedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  monitoringOwnerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  coverageTiming?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  filingStatusUnconfirmed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   ruleVersionId?: Prisma.StringFieldUpdateOperationsInput | string
   milestoneKey?: Prisma.StringFieldUpdateOperationsInput | string
   scheduleEntryKey?: Prisma.StringFieldUpdateOperationsInput | string
@@ -3161,13 +5330,31 @@ export type DeadlineOccurrenceUncheckedUpdateWithoutCycleInput = {
   origin?: Prisma.EnumServiceCycleOriginFieldUpdateOperationsInput | $Enums.ServiceCycleOrigin
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  coverageLinks?: Prisma.DeadlineOccurrenceCoverageLinkUncheckedUpdateManyWithoutOccurrenceNestedInput
+  responsibilityChanges?: Prisma.DeadlineResponsibilityChangeUncheckedUpdateManyWithoutOccurrenceNestedInput
 }
 
 export type DeadlineOccurrenceUncheckedUpdateManyWithoutCycleInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   companyId?: Prisma.StringFieldUpdateOperationsInput | string
-  clientServiceId?: Prisma.StringFieldUpdateOperationsInput | string
+  ownershipScope?: Prisma.EnumDeadlineOwnershipScopeFieldUpdateOperationsInput | $Enums.DeadlineOwnershipScope
+  clientServiceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationPeriodKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  financialPeriodStart?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  financialPeriodEnd?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  yearOfAssessment?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  periodProvisional?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  filingResponsibility?: Prisma.NullableEnumFilingResponsibilityFieldUpdateOperationsInput | $Enums.FilingResponsibility | null
+  responsibilitySource?: Prisma.NullableEnumResponsibilitySourceFieldUpdateOperationsInput | $Enums.ResponsibilitySource | null
+  deliveryClientServiceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  filingProviderName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  responsibilityConfirmedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  responsibilityConfirmedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  monitoringOwnerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  coverageTiming?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  filingStatusUnconfirmed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   ruleVersionId?: Prisma.StringFieldUpdateOperationsInput | string
   milestoneKey?: Prisma.StringFieldUpdateOperationsInput | string
   scheduleEntryKey?: Prisma.StringFieldUpdateOperationsInput | string
@@ -3195,12 +5382,66 @@ export type DeadlineOccurrenceUncheckedUpdateManyWithoutCycleInput = {
 }
 
 
+/**
+ * Count Type DeadlineOccurrenceCountOutputType
+ */
+
+export type DeadlineOccurrenceCountOutputType = {
+  coverageLinks: number
+  responsibilityChanges: number
+}
+
+export type DeadlineOccurrenceCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  coverageLinks?: boolean | DeadlineOccurrenceCountOutputTypeCountCoverageLinksArgs
+  responsibilityChanges?: boolean | DeadlineOccurrenceCountOutputTypeCountResponsibilityChangesArgs
+}
+
+/**
+ * DeadlineOccurrenceCountOutputType without action
+ */
+export type DeadlineOccurrenceCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the DeadlineOccurrenceCountOutputType
+   */
+  select?: Prisma.DeadlineOccurrenceCountOutputTypeSelect<ExtArgs> | null
+}
+
+/**
+ * DeadlineOccurrenceCountOutputType without action
+ */
+export type DeadlineOccurrenceCountOutputTypeCountCoverageLinksArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.DeadlineOccurrenceCoverageLinkWhereInput
+}
+
+/**
+ * DeadlineOccurrenceCountOutputType without action
+ */
+export type DeadlineOccurrenceCountOutputTypeCountResponsibilityChangesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.DeadlineResponsibilityChangeWhereInput
+}
+
 
 export type DeadlineOccurrenceSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   tenantId?: boolean
   companyId?: boolean
+  ownershipScope?: boolean
   clientServiceId?: boolean
+  obligationCode?: boolean
+  obligationPeriodKey?: boolean
+  financialPeriodStart?: boolean
+  financialPeriodEnd?: boolean
+  yearOfAssessment?: boolean
+  periodProvisional?: boolean
+  filingResponsibility?: boolean
+  responsibilitySource?: boolean
+  deliveryClientServiceId?: boolean
+  filingProviderName?: boolean
+  responsibilityConfirmedAt?: boolean
+  responsibilityConfirmedById?: boolean
+  monitoringOwnerId?: boolean
+  coverageTiming?: boolean
+  filingStatusUnconfirmed?: boolean
   cycleId?: boolean
   ruleVersionId?: boolean
   milestoneKey?: boolean
@@ -3228,20 +5469,40 @@ export type DeadlineOccurrenceSelect<ExtArgs extends runtime.Types.Extensions.In
   updatedAt?: boolean
   tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
   company?: boolean | Prisma.CompanyDefaultArgs<ExtArgs>
-  clientService?: boolean | Prisma.ClientServiceDefaultArgs<ExtArgs>
+  clientService?: boolean | Prisma.DeadlineOccurrence$clientServiceArgs<ExtArgs>
+  deliveryClientService?: boolean | Prisma.DeadlineOccurrence$deliveryClientServiceArgs<ExtArgs>
   cycle?: boolean | Prisma.ServiceCycleDefaultArgs<ExtArgs>
+  coverageLinks?: boolean | Prisma.DeadlineOccurrence$coverageLinksArgs<ExtArgs>
+  responsibilityChanges?: boolean | Prisma.DeadlineOccurrence$responsibilityChangesArgs<ExtArgs>
   ruleVersion?: boolean | Prisma.DeadlineRuleVersionDefaultArgs<ExtArgs>
   dateOverriddenBy?: boolean | Prisma.DeadlineOccurrence$dateOverriddenByArgs<ExtArgs>
   completedBy?: boolean | Prisma.DeadlineOccurrence$completedByArgs<ExtArgs>
   waivedBy?: boolean | Prisma.DeadlineOccurrence$waivedByArgs<ExtArgs>
   cancelledBy?: boolean | Prisma.DeadlineOccurrence$cancelledByArgs<ExtArgs>
+  _count?: boolean | Prisma.DeadlineOccurrenceCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["deadlineOccurrence"]>
 
 export type DeadlineOccurrenceSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   tenantId?: boolean
   companyId?: boolean
+  ownershipScope?: boolean
   clientServiceId?: boolean
+  obligationCode?: boolean
+  obligationPeriodKey?: boolean
+  financialPeriodStart?: boolean
+  financialPeriodEnd?: boolean
+  yearOfAssessment?: boolean
+  periodProvisional?: boolean
+  filingResponsibility?: boolean
+  responsibilitySource?: boolean
+  deliveryClientServiceId?: boolean
+  filingProviderName?: boolean
+  responsibilityConfirmedAt?: boolean
+  responsibilityConfirmedById?: boolean
+  monitoringOwnerId?: boolean
+  coverageTiming?: boolean
+  filingStatusUnconfirmed?: boolean
   cycleId?: boolean
   ruleVersionId?: boolean
   milestoneKey?: boolean
@@ -3269,7 +5530,8 @@ export type DeadlineOccurrenceSelectCreateManyAndReturn<ExtArgs extends runtime.
   updatedAt?: boolean
   tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
   company?: boolean | Prisma.CompanyDefaultArgs<ExtArgs>
-  clientService?: boolean | Prisma.ClientServiceDefaultArgs<ExtArgs>
+  clientService?: boolean | Prisma.DeadlineOccurrence$clientServiceArgs<ExtArgs>
+  deliveryClientService?: boolean | Prisma.DeadlineOccurrence$deliveryClientServiceArgs<ExtArgs>
   cycle?: boolean | Prisma.ServiceCycleDefaultArgs<ExtArgs>
   ruleVersion?: boolean | Prisma.DeadlineRuleVersionDefaultArgs<ExtArgs>
   dateOverriddenBy?: boolean | Prisma.DeadlineOccurrence$dateOverriddenByArgs<ExtArgs>
@@ -3282,7 +5544,23 @@ export type DeadlineOccurrenceSelectUpdateManyAndReturn<ExtArgs extends runtime.
   id?: boolean
   tenantId?: boolean
   companyId?: boolean
+  ownershipScope?: boolean
   clientServiceId?: boolean
+  obligationCode?: boolean
+  obligationPeriodKey?: boolean
+  financialPeriodStart?: boolean
+  financialPeriodEnd?: boolean
+  yearOfAssessment?: boolean
+  periodProvisional?: boolean
+  filingResponsibility?: boolean
+  responsibilitySource?: boolean
+  deliveryClientServiceId?: boolean
+  filingProviderName?: boolean
+  responsibilityConfirmedAt?: boolean
+  responsibilityConfirmedById?: boolean
+  monitoringOwnerId?: boolean
+  coverageTiming?: boolean
+  filingStatusUnconfirmed?: boolean
   cycleId?: boolean
   ruleVersionId?: boolean
   milestoneKey?: boolean
@@ -3310,7 +5588,8 @@ export type DeadlineOccurrenceSelectUpdateManyAndReturn<ExtArgs extends runtime.
   updatedAt?: boolean
   tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
   company?: boolean | Prisma.CompanyDefaultArgs<ExtArgs>
-  clientService?: boolean | Prisma.ClientServiceDefaultArgs<ExtArgs>
+  clientService?: boolean | Prisma.DeadlineOccurrence$clientServiceArgs<ExtArgs>
+  deliveryClientService?: boolean | Prisma.DeadlineOccurrence$deliveryClientServiceArgs<ExtArgs>
   cycle?: boolean | Prisma.ServiceCycleDefaultArgs<ExtArgs>
   ruleVersion?: boolean | Prisma.DeadlineRuleVersionDefaultArgs<ExtArgs>
   dateOverriddenBy?: boolean | Prisma.DeadlineOccurrence$dateOverriddenByArgs<ExtArgs>
@@ -3323,7 +5602,23 @@ export type DeadlineOccurrenceSelectScalar = {
   id?: boolean
   tenantId?: boolean
   companyId?: boolean
+  ownershipScope?: boolean
   clientServiceId?: boolean
+  obligationCode?: boolean
+  obligationPeriodKey?: boolean
+  financialPeriodStart?: boolean
+  financialPeriodEnd?: boolean
+  yearOfAssessment?: boolean
+  periodProvisional?: boolean
+  filingResponsibility?: boolean
+  responsibilitySource?: boolean
+  deliveryClientServiceId?: boolean
+  filingProviderName?: boolean
+  responsibilityConfirmedAt?: boolean
+  responsibilityConfirmedById?: boolean
+  monitoringOwnerId?: boolean
+  coverageTiming?: boolean
+  filingStatusUnconfirmed?: boolean
   cycleId?: boolean
   ruleVersionId?: boolean
   milestoneKey?: boolean
@@ -3351,22 +5646,27 @@ export type DeadlineOccurrenceSelectScalar = {
   updatedAt?: boolean
 }
 
-export type DeadlineOccurrenceOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "companyId" | "clientServiceId" | "cycleId" | "ruleVersionId" | "milestoneKey" | "scheduleEntryKey" | "deadlineType" | "calculatedDueDate" | "operativeDueDate" | "dateOverridden" | "dateOverride" | "dateOverrideReason" | "dateOverriddenById" | "dateOverriddenAt" | "status" | "completedAt" | "completedById" | "waivedAt" | "waivedById" | "waiverReason" | "cancelledAt" | "cancelledById" | "cancellationReason" | "notes" | "origin" | "createdAt" | "updatedAt", ExtArgs["result"]["deadlineOccurrence"]>
+export type DeadlineOccurrenceOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "companyId" | "ownershipScope" | "clientServiceId" | "obligationCode" | "obligationPeriodKey" | "financialPeriodStart" | "financialPeriodEnd" | "yearOfAssessment" | "periodProvisional" | "filingResponsibility" | "responsibilitySource" | "deliveryClientServiceId" | "filingProviderName" | "responsibilityConfirmedAt" | "responsibilityConfirmedById" | "monitoringOwnerId" | "coverageTiming" | "filingStatusUnconfirmed" | "cycleId" | "ruleVersionId" | "milestoneKey" | "scheduleEntryKey" | "deadlineType" | "calculatedDueDate" | "operativeDueDate" | "dateOverridden" | "dateOverride" | "dateOverrideReason" | "dateOverriddenById" | "dateOverriddenAt" | "status" | "completedAt" | "completedById" | "waivedAt" | "waivedById" | "waiverReason" | "cancelledAt" | "cancelledById" | "cancellationReason" | "notes" | "origin" | "createdAt" | "updatedAt", ExtArgs["result"]["deadlineOccurrence"]>
 export type DeadlineOccurrenceInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
   company?: boolean | Prisma.CompanyDefaultArgs<ExtArgs>
-  clientService?: boolean | Prisma.ClientServiceDefaultArgs<ExtArgs>
+  clientService?: boolean | Prisma.DeadlineOccurrence$clientServiceArgs<ExtArgs>
+  deliveryClientService?: boolean | Prisma.DeadlineOccurrence$deliveryClientServiceArgs<ExtArgs>
   cycle?: boolean | Prisma.ServiceCycleDefaultArgs<ExtArgs>
+  coverageLinks?: boolean | Prisma.DeadlineOccurrence$coverageLinksArgs<ExtArgs>
+  responsibilityChanges?: boolean | Prisma.DeadlineOccurrence$responsibilityChangesArgs<ExtArgs>
   ruleVersion?: boolean | Prisma.DeadlineRuleVersionDefaultArgs<ExtArgs>
   dateOverriddenBy?: boolean | Prisma.DeadlineOccurrence$dateOverriddenByArgs<ExtArgs>
   completedBy?: boolean | Prisma.DeadlineOccurrence$completedByArgs<ExtArgs>
   waivedBy?: boolean | Prisma.DeadlineOccurrence$waivedByArgs<ExtArgs>
   cancelledBy?: boolean | Prisma.DeadlineOccurrence$cancelledByArgs<ExtArgs>
+  _count?: boolean | Prisma.DeadlineOccurrenceCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type DeadlineOccurrenceIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
   company?: boolean | Prisma.CompanyDefaultArgs<ExtArgs>
-  clientService?: boolean | Prisma.ClientServiceDefaultArgs<ExtArgs>
+  clientService?: boolean | Prisma.DeadlineOccurrence$clientServiceArgs<ExtArgs>
+  deliveryClientService?: boolean | Prisma.DeadlineOccurrence$deliveryClientServiceArgs<ExtArgs>
   cycle?: boolean | Prisma.ServiceCycleDefaultArgs<ExtArgs>
   ruleVersion?: boolean | Prisma.DeadlineRuleVersionDefaultArgs<ExtArgs>
   dateOverriddenBy?: boolean | Prisma.DeadlineOccurrence$dateOverriddenByArgs<ExtArgs>
@@ -3377,7 +5677,8 @@ export type DeadlineOccurrenceIncludeCreateManyAndReturn<ExtArgs extends runtime
 export type DeadlineOccurrenceIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
   company?: boolean | Prisma.CompanyDefaultArgs<ExtArgs>
-  clientService?: boolean | Prisma.ClientServiceDefaultArgs<ExtArgs>
+  clientService?: boolean | Prisma.DeadlineOccurrence$clientServiceArgs<ExtArgs>
+  deliveryClientService?: boolean | Prisma.DeadlineOccurrence$deliveryClientServiceArgs<ExtArgs>
   cycle?: boolean | Prisma.ServiceCycleDefaultArgs<ExtArgs>
   ruleVersion?: boolean | Prisma.DeadlineRuleVersionDefaultArgs<ExtArgs>
   dateOverriddenBy?: boolean | Prisma.DeadlineOccurrence$dateOverriddenByArgs<ExtArgs>
@@ -3391,8 +5692,11 @@ export type $DeadlineOccurrencePayload<ExtArgs extends runtime.Types.Extensions.
   objects: {
     tenant: Prisma.$WorkspacePayload<ExtArgs>
     company: Prisma.$CompanyPayload<ExtArgs>
-    clientService: Prisma.$ClientServicePayload<ExtArgs>
+    clientService: Prisma.$ClientServicePayload<ExtArgs> | null
+    deliveryClientService: Prisma.$ClientServicePayload<ExtArgs> | null
     cycle: Prisma.$ServiceCyclePayload<ExtArgs>
+    coverageLinks: Prisma.$DeadlineOccurrenceCoverageLinkPayload<ExtArgs>[]
+    responsibilityChanges: Prisma.$DeadlineResponsibilityChangePayload<ExtArgs>[]
     ruleVersion: Prisma.$DeadlineRuleVersionPayload<ExtArgs>
     dateOverriddenBy: Prisma.$UserPayload<ExtArgs> | null
     completedBy: Prisma.$UserPayload<ExtArgs> | null
@@ -3403,7 +5707,29 @@ export type $DeadlineOccurrencePayload<ExtArgs extends runtime.Types.Extensions.
     id: string
     tenantId: string
     companyId: string
-    clientServiceId: string
+    ownershipScope: $Enums.DeadlineOwnershipScope
+    clientServiceId: string | null
+    /**
+     * Canonical statutory identity for COMPANY rows (never the due date, filer or rule version).
+     */
+    obligationCode: string | null
+    obligationPeriodKey: string | null
+    financialPeriodStart: Date | null
+    financialPeriodEnd: Date | null
+    yearOfAssessment: number | null
+    periodProvisional: boolean
+    filingResponsibility: $Enums.FilingResponsibility | null
+    responsibilitySource: $Enums.ResponsibilitySource | null
+    deliveryClientServiceId: string | null
+    filingProviderName: string | null
+    responsibilityConfirmedAt: Date | null
+    responsibilityConfirmedById: string | null
+    monitoringOwnerId: string | null
+    coverageTiming: string | null
+    /**
+     * Created after its due date: filing status is unknown until evidence is recorded.
+     */
+    filingStatusUnconfirmed: boolean
     cycleId: string
     ruleVersionId: string
     milestoneKey: string
@@ -3825,8 +6151,11 @@ export interface Prisma__DeadlineOccurrenceClient<T, Null = never, ExtArgs exten
   readonly [Symbol.toStringTag]: "PrismaPromise"
   tenant<T extends Prisma.WorkspaceDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.WorkspaceDefaultArgs<ExtArgs>>): Prisma.Prisma__WorkspaceClient<runtime.Types.Result.GetResult<Prisma.$WorkspacePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   company<T extends Prisma.CompanyDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.CompanyDefaultArgs<ExtArgs>>): Prisma.Prisma__CompanyClient<runtime.Types.Result.GetResult<Prisma.$CompanyPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
-  clientService<T extends Prisma.ClientServiceDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ClientServiceDefaultArgs<ExtArgs>>): Prisma.Prisma__ClientServiceClient<runtime.Types.Result.GetResult<Prisma.$ClientServicePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  clientService<T extends Prisma.DeadlineOccurrence$clientServiceArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.DeadlineOccurrence$clientServiceArgs<ExtArgs>>): Prisma.Prisma__ClientServiceClient<runtime.Types.Result.GetResult<Prisma.$ClientServicePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  deliveryClientService<T extends Prisma.DeadlineOccurrence$deliveryClientServiceArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.DeadlineOccurrence$deliveryClientServiceArgs<ExtArgs>>): Prisma.Prisma__ClientServiceClient<runtime.Types.Result.GetResult<Prisma.$ClientServicePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   cycle<T extends Prisma.ServiceCycleDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ServiceCycleDefaultArgs<ExtArgs>>): Prisma.Prisma__ServiceCycleClient<runtime.Types.Result.GetResult<Prisma.$ServiceCyclePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  coverageLinks<T extends Prisma.DeadlineOccurrence$coverageLinksArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.DeadlineOccurrence$coverageLinksArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DeadlineOccurrenceCoverageLinkPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  responsibilityChanges<T extends Prisma.DeadlineOccurrence$responsibilityChangesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.DeadlineOccurrence$responsibilityChangesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DeadlineResponsibilityChangePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   ruleVersion<T extends Prisma.DeadlineRuleVersionDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.DeadlineRuleVersionDefaultArgs<ExtArgs>>): Prisma.Prisma__DeadlineRuleVersionClient<runtime.Types.Result.GetResult<Prisma.$DeadlineRuleVersionPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   dateOverriddenBy<T extends Prisma.DeadlineOccurrence$dateOverriddenByArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.DeadlineOccurrence$dateOverriddenByArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   completedBy<T extends Prisma.DeadlineOccurrence$completedByArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.DeadlineOccurrence$completedByArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
@@ -3864,7 +6193,23 @@ export interface DeadlineOccurrenceFieldRefs {
   readonly id: Prisma.FieldRef<"DeadlineOccurrence", 'String'>
   readonly tenantId: Prisma.FieldRef<"DeadlineOccurrence", 'String'>
   readonly companyId: Prisma.FieldRef<"DeadlineOccurrence", 'String'>
+  readonly ownershipScope: Prisma.FieldRef<"DeadlineOccurrence", 'DeadlineOwnershipScope'>
   readonly clientServiceId: Prisma.FieldRef<"DeadlineOccurrence", 'String'>
+  readonly obligationCode: Prisma.FieldRef<"DeadlineOccurrence", 'String'>
+  readonly obligationPeriodKey: Prisma.FieldRef<"DeadlineOccurrence", 'String'>
+  readonly financialPeriodStart: Prisma.FieldRef<"DeadlineOccurrence", 'DateTime'>
+  readonly financialPeriodEnd: Prisma.FieldRef<"DeadlineOccurrence", 'DateTime'>
+  readonly yearOfAssessment: Prisma.FieldRef<"DeadlineOccurrence", 'Int'>
+  readonly periodProvisional: Prisma.FieldRef<"DeadlineOccurrence", 'Boolean'>
+  readonly filingResponsibility: Prisma.FieldRef<"DeadlineOccurrence", 'FilingResponsibility'>
+  readonly responsibilitySource: Prisma.FieldRef<"DeadlineOccurrence", 'ResponsibilitySource'>
+  readonly deliveryClientServiceId: Prisma.FieldRef<"DeadlineOccurrence", 'String'>
+  readonly filingProviderName: Prisma.FieldRef<"DeadlineOccurrence", 'String'>
+  readonly responsibilityConfirmedAt: Prisma.FieldRef<"DeadlineOccurrence", 'DateTime'>
+  readonly responsibilityConfirmedById: Prisma.FieldRef<"DeadlineOccurrence", 'String'>
+  readonly monitoringOwnerId: Prisma.FieldRef<"DeadlineOccurrence", 'String'>
+  readonly coverageTiming: Prisma.FieldRef<"DeadlineOccurrence", 'String'>
+  readonly filingStatusUnconfirmed: Prisma.FieldRef<"DeadlineOccurrence", 'Boolean'>
   readonly cycleId: Prisma.FieldRef<"DeadlineOccurrence", 'String'>
   readonly ruleVersionId: Prisma.FieldRef<"DeadlineOccurrence", 'String'>
   readonly milestoneKey: Prisma.FieldRef<"DeadlineOccurrence", 'String'>
@@ -4283,6 +6628,92 @@ export type DeadlineOccurrenceDeleteManyArgs<ExtArgs extends runtime.Types.Exten
    * Limit how many DeadlineOccurrences to delete.
    */
   limit?: number
+}
+
+/**
+ * DeadlineOccurrence.clientService
+ */
+export type DeadlineOccurrence$clientServiceArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the ClientService
+   */
+  select?: Prisma.ClientServiceSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the ClientService
+   */
+  omit?: Prisma.ClientServiceOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ClientServiceInclude<ExtArgs> | null
+  where?: Prisma.ClientServiceWhereInput
+}
+
+/**
+ * DeadlineOccurrence.deliveryClientService
+ */
+export type DeadlineOccurrence$deliveryClientServiceArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the ClientService
+   */
+  select?: Prisma.ClientServiceSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the ClientService
+   */
+  omit?: Prisma.ClientServiceOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ClientServiceInclude<ExtArgs> | null
+  where?: Prisma.ClientServiceWhereInput
+}
+
+/**
+ * DeadlineOccurrence.coverageLinks
+ */
+export type DeadlineOccurrence$coverageLinksArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the DeadlineOccurrenceCoverageLink
+   */
+  select?: Prisma.DeadlineOccurrenceCoverageLinkSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the DeadlineOccurrenceCoverageLink
+   */
+  omit?: Prisma.DeadlineOccurrenceCoverageLinkOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.DeadlineOccurrenceCoverageLinkInclude<ExtArgs> | null
+  where?: Prisma.DeadlineOccurrenceCoverageLinkWhereInput
+  orderBy?: Prisma.DeadlineOccurrenceCoverageLinkOrderByWithRelationInput | Prisma.DeadlineOccurrenceCoverageLinkOrderByWithRelationInput[]
+  cursor?: Prisma.DeadlineOccurrenceCoverageLinkWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.DeadlineOccurrenceCoverageLinkScalarFieldEnum | Prisma.DeadlineOccurrenceCoverageLinkScalarFieldEnum[]
+}
+
+/**
+ * DeadlineOccurrence.responsibilityChanges
+ */
+export type DeadlineOccurrence$responsibilityChangesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the DeadlineResponsibilityChange
+   */
+  select?: Prisma.DeadlineResponsibilityChangeSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the DeadlineResponsibilityChange
+   */
+  omit?: Prisma.DeadlineResponsibilityChangeOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.DeadlineResponsibilityChangeInclude<ExtArgs> | null
+  where?: Prisma.DeadlineResponsibilityChangeWhereInput
+  orderBy?: Prisma.DeadlineResponsibilityChangeOrderByWithRelationInput | Prisma.DeadlineResponsibilityChangeOrderByWithRelationInput[]
+  cursor?: Prisma.DeadlineResponsibilityChangeWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.DeadlineResponsibilityChangeScalarFieldEnum | Prisma.DeadlineResponsibilityChangeScalarFieldEnum[]
 }
 
 /**

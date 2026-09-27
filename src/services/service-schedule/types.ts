@@ -18,6 +18,11 @@ export type DateSource =
         | 'incorporationDate';
     }
   | { kind: 'CYCLE_START' | 'CYCLE_END' }
+  /**
+   * The explicit financial period an obligation belongs to. Unlike the
+   * Company.financialYearEnd landmark it is never realigned to an anniversary.
+   */
+  | { kind: 'OBLIGATION_PERIOD_START' | 'OBLIGATION_PERIOD_END' }
   | { kind: 'PARAMETER'; key: string }
   | { kind: 'SCHEDULE_ENTRY'; key: string }
   | { kind: 'MILESTONE'; key: string }
@@ -60,6 +65,10 @@ export type DateOperation =
   | { kind: 'ADD_CALENDAR_DAYS'; source?: DateSource; amount: IntegerOperand }
   | { kind: 'ADD_BUSINESS_DAYS'; source?: DateSource; amount: IntegerOperand }
   | { kind: 'ADD_MONTHS'; source?: DateSource; amount: IntegerOperand }
+  /** Month arithmetic that maps a month-end source to the target month end. */
+  | { kind: 'ADD_MONTHS_MONTH_END'; source?: DateSource; amount: IntegerOperand }
+  /** A fixed calendar date in the obligation period's Year of Assessment. */
+  | { kind: 'FIXED_DATE_IN_ASSESSMENT_YEAR'; month: number; day: number }
   | {
       kind: 'FIXED_DATE_FROM_SOURCE_YEAR';
       source: DateSource;
@@ -210,6 +219,16 @@ export type DeadlineParameterDefinition = {
   type: 'STRING' | 'INTEGER' | 'DECIMAL' | 'BOOLEAN' | 'DATE' | 'ENUM';
   required: boolean;
   options?: string[];
+};
+
+/**
+ * The explicit financial/tax period an evaluation belongs to. Required only by
+ * expressions that use OBLIGATION_PERIOD_* sources or the assessment year.
+ */
+export type ObligationPeriodInput = {
+  start: DateOnly;
+  end: DateOnly;
+  yearOfAssessment: number | null;
 };
 
 export type BusinessCalendarSnapshot = {

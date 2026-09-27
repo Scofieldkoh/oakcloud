@@ -112,6 +112,8 @@ export const dateSourceSchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('COMPANY_FIELD'), field: companyDateFieldSchema }).strict(),
   z.object({ kind: z.literal('CYCLE_START') }).strict(),
   z.object({ kind: z.literal('CYCLE_END') }).strict(),
+  z.object({ kind: z.literal('OBLIGATION_PERIOD_START') }).strict(),
+  z.object({ kind: z.literal('OBLIGATION_PERIOD_END') }).strict(),
   z.object({ kind: z.literal('PARAMETER'), key: referenceKeySchema }).strict(),
   z.object({ kind: z.literal('SCHEDULE_ENTRY'), key: keySchema }).strict(),
   z.object({ kind: z.literal('MILESTONE'), key: referenceKeySchema }).strict(),
@@ -162,6 +164,16 @@ export const dateOperationSchema = z.discriminatedUnion('kind', [
     kind: z.literal('ADD_MONTHS'),
     source: dateSourceSchema.optional(),
     amount: integerOperandSchema,
+  }).strict(),
+  z.object({
+    kind: z.literal('ADD_MONTHS_MONTH_END'),
+    source: dateSourceSchema.optional(),
+    amount: integerOperandSchema,
+  }).strict(),
+  z.object({
+    kind: z.literal('FIXED_DATE_IN_ASSESSMENT_YEAR'),
+    month: z.number().int().min(1).max(12),
+    day: z.number().int().min(1).max(31),
   }).strict(),
   z.object({
     kind: z.literal('FIXED_DATE_FROM_SOURCE_YEAR'),
