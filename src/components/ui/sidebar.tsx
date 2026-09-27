@@ -36,6 +36,7 @@ import {
   Database,
   Sparkles,
   LayoutTemplate,
+  Puzzle,
 } from 'lucide-react';
 import { useSession, useLogout } from '@/hooks/use-auth';
 import { useServicesWorkspaceSettings } from '@/hooks/use-services-workspace-settings';
@@ -91,11 +92,19 @@ const ungroupedAdminItems: NavItem[] = [
   { name: 'Recycle Bin', href: '/admin/data-purge', icon: Trash2, superAdminOnly: true },
   { name: 'ACRA Records', href: '/admin/acra-data', icon: Database, adminOnly: true },
   { name: 'Services', href: '/admin/services', icon: BriefcaseBusiness, adminOnly: true },
-  { name: 'Document Templates', href: '/template-partials', icon: LayoutTemplate, adminOnly: true },
 ];
 
 // Grouped admin items
 const adminNavGroups: NavGroup[] = [
+  {
+    id: 'document-templates',
+    name: 'Document Templates',
+    icon: LayoutTemplate,
+    items: [
+      { name: 'Documents', href: '/template-partials/documents', icon: FileText, adminOnly: true },
+      { name: 'Partials', href: '/template-partials/partials', icon: Puzzle, adminOnly: true },
+    ],
+  },
   {
     id: 'security',
     name: 'Security',
