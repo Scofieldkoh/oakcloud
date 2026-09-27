@@ -3,7 +3,7 @@ import { createAuditLog } from '@/lib/audit';
 import { DeadlineApiError, ErrorCodes, NotFoundError, ValidationError } from '@/lib/errors';
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@/generated/prisma';
-import { normalizeCompanyRuleSource } from '@/services/service-schedule';
+import { companyPeriodFacts, normalizeCompanyRuleSource } from '@/services/service-schedule';
 import { compareDateOnly, parseDateOnly } from '@/services/service-schedule/date-only';
 import { hashConfiguration } from '@/services/service-schedule/hash';
 import type { BusinessCalendarSnapshot, DateOnly } from '@/services/service-schedule';
@@ -340,6 +340,7 @@ async function collectServiceRemediationClassification(
       scheduleEntries: Array.isArray(clientRule.scheduleEntries) ? (clientRule.scheduleEntries as never) : [],
       milestones: milestonesInput,
       company: companySource,
+      periodFacts: companyPeriodFacts(clientService.company),
       calendar: businessCalendar,
       today,
       horizonEnd,

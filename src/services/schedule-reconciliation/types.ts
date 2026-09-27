@@ -3,9 +3,12 @@ import type {
   ApplicabilityDefinition,
   ApplicabilityResult,
   BusinessCalendarSnapshot,
+  CompanyPeriodFacts,
   CompanyRuleSource,
   DateOnly,
   MilestoneDefinition,
+  ObligationPeriodBasis,
+  PeriodReviewReason,
   RuleRecurrenceDefinition,
   ScheduleEntry,
 } from '@/services/service-schedule';
@@ -143,7 +146,18 @@ export type ClassifyDeadlineChangeResult =
 
 export type DeadlineMaterializationPolicy =
   | 'ROLLING_HORIZON'
-  | 'AUTHORITATIVE_ANNUAL_BACKLOG';
+  | 'AUTHORITATIVE_ANNUAL_BACKLOG'
+  /** Period-based statutory rules planned by financial period or YA. */
+  | 'OBLIGATION_PERIOD';
+
+export type ProjectedObligationPeriod = {
+  basis: ObligationPeriodBasis;
+  start: DateOnly;
+  end: DateOnly;
+  yearOfAssessment: number | null;
+  provisional: boolean;
+  reviewReasons: PeriodReviewReason[];
+};
 
 export type ProjectedDeadlineIdentity = {
   ruleId: string;
@@ -157,6 +171,8 @@ export type ProjectedDeadline = ProjectedDeadlineIdentity & {
   deadlineType: 'STATUTORY' | 'CLIENT' | 'INTERNAL';
   calculatedDueDate: DateOnly;
   explanation: string[];
+  /** Present only for OBLIGATION_PERIOD rules. */
+  obligationPeriod?: ProjectedObligationPeriod;
 };
 
 export type DeadlineRuleProjectionInput = {
@@ -172,6 +188,13 @@ export type DeadlineRuleProjectionInput = {
   calendar: BusinessCalendarSnapshot;
   today: DateOnly;
   horizonEnd: DateOnly;
+  /** FYE preference, incorporation and confirmed periods for OBLIGATION_PERIOD rules. */
+  periodFacts?: CompanyPeriodFacts;
+  /**
+   * Earliest due date an OBLIGATION_PERIOD rule may return. Defaults to today;
+   * company monitoring passes its coverage start to include earlier filings.
+   */
+  windowStart?: DateOnly;
 };
 
 export type DeadlineRulePeriodEvaluation = {

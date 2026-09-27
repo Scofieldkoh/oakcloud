@@ -5,7 +5,7 @@ import type {
   BusinessCalendarSnapshot,
   DateOnly,
 } from '@/services/service-schedule';
-import { normalizeCompanyRuleSource } from '@/services/service-schedule';
+import { companyPeriodFacts, normalizeCompanyRuleSource } from '@/services/service-schedule';
 import { prisma } from '@/lib/prisma';
 import type { Prisma } from '@/generated/prisma';
 import { ROLLING_PLAN_VERSION } from './planner';
@@ -18,6 +18,7 @@ import type {
   DeadlineRuleProjectionInput,
   EvaluatedDeadlineForDiff,
   PreserveReason,
+  ProjectedDeadline,
   ReconcileClientServiceDeadlinesInput,
   StoredDeadline,
   DeadlineReconciliationWarning,
@@ -167,6 +168,26 @@ async function updateCycleSnapshot(
   } else {
     await db.serviceCycle.update({ where: { id }, data: data as never });
   }
+}
+
+/**
+ * The cycle's recurrence anchor. Period-based rules also record their explicit
+ * financial period and YA so impact previews can re-evaluate the same period.
+ */
+export function recurrenceAnchorFor(
+  periodKey: string,
+  obligationPeriod: ProjectedDeadline['obligationPeriod'],
+): Prisma.InputJsonValue {
+  if (!obligationPeriod) return { periodKey };
+  return {
+    periodKey,
+    obligationPeriod: {
+      basis: obligationPeriod.basis,
+      start: obligationPeriod.start,
+      end: obligationPeriod.end,
+      yearOfAssessment: obligationPeriod.yearOfAssessment,
+    },
+  };
 }
 
 function defaultCalendar(id = 'default'): BusinessCalendarSnapshot {
@@ -518,6 +539,7 @@ export async function reconcileClientServiceDeadlines(
         : [],
       milestones: milestonesInput,
       company: companySource,
+      periodFacts: companyPeriodFacts(clientService.company),
       calendar: businessCalendar,
       today,
       horizonEnd,
@@ -603,7 +625,7 @@ export async function reconcileClientServiceDeadlines(
             generationKey: ROLLING_PLAN_VERSION,
             origin: 'RULE',
             evaluationHash,
-            recurrenceAnchor: { periodKey: period.periodKey },
+            recurrenceAnchor: recurrenceAnchorFor(period.periodKey, proposedDeadlines[0]?.obligationPeriod),
             sourceSnapshot: sourceSnapshot as Prisma.InputJsonValue,
           },
           update: {
