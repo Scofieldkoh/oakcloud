@@ -4,7 +4,8 @@ import type { Prisma } from '@/generated/prisma';
 const prismaMock = vi.hoisted(() => ({
   templatePartial: {
     findFirst: vi.fn(),
-    update: vi.fn(),
+    findFirstOrThrow: vi.fn(),
+    updateMany: vi.fn(),
   },
   $transaction: vi.fn(),
 }));
@@ -44,12 +45,14 @@ describe('template partial material versioning', () => {
     vi.clearAllMocks();
     prismaMock.$transaction.mockImplementation(async (callback) => callback(prismaMock));
     prismaMock.templatePartial.findFirst.mockResolvedValue(partial);
+    prismaMock.templatePartial.updateMany.mockResolvedValue({ count: 1 });
   });
 
-  it('does not increment version for metadata-only changes', async () => {
-    prismaMock.templatePartial.update.mockResolvedValue({
+  it('bumps the revision but records no material change for metadata-only edits', async () => {
+    prismaMock.templatePartial.findFirstOrThrow.mockResolvedValue({
       ...partial,
       displayName: 'Renamed',
+      version: 4,
     });
 
     await updateTemplatePartial(
@@ -57,10 +60,16 @@ describe('template partial material versioning', () => {
       actor,
     );
 
-    expect(prismaMock.templatePartial.update).toHaveBeenCalledWith({
-      where: { id: partial.id },
-      data: { displayName: 'Renamed' },
+    expect(prismaMock.templatePartial.updateMany).toHaveBeenCalledWith({
+      where: { id: partial.id, tenantId: actor.tenantId, deletedAt: null },
+      data: { displayName: 'Renamed', version: { increment: 1 } },
     });
+    expect(auditMock.createAuditLog).toHaveBeenCalledWith(
+      expect.objectContaining({
+        metadata: { oldVersion: 3, newVersion: 4, materialChanged: false },
+      }),
+      prismaMock,
+    );
   });
 
   it('refuses content changes to A4 partials now that the editor is retired', async () => {
@@ -68,10 +77,10 @@ describe('template partial material versioning', () => {
       { id: partial.id, content: '<p>Updated scope</p>' },
       actor,
     )).rejects.toMatchObject({ details: { reason: 'A4_EDITOR_RETIRED', operation: 'partial-edit' } });
-    expect(prismaMock.templatePartial.update).not.toHaveBeenCalled();
+    expect(prismaMock.templatePartial.updateMany).not.toHaveBeenCalled();
   });
 
-  it('does not increment when a display-name edit resubmits unchanged service placeholders', async () => {
+  it('records no material change when a display-name edit resubmits unchanged service placeholders', async () => {
     const stored = [{
       key: 'service.fields.software',
       label: 'Accounting software',
@@ -85,10 +94,11 @@ describe('template partial material versioning', () => {
       ...partial,
       placeholders: stored,
     });
-    prismaMock.templatePartial.update.mockResolvedValue({
+    prismaMock.templatePartial.findFirstOrThrow.mockResolvedValue({
       ...partial,
       displayName: 'Renamed',
       placeholders: stored,
+      version: 4,
     });
 
     await updateTemplatePartial(
@@ -102,16 +112,23 @@ describe('template partial material versioning', () => {
       actor,
     );
 
-    expect(prismaMock.templatePartial.update).toHaveBeenCalledWith({
-      where: { id: partial.id },
+    expect(prismaMock.templatePartial.updateMany).toHaveBeenCalledWith({
+      where: { id: partial.id, tenantId: actor.tenantId, deletedAt: null },
       data: {
         displayName: 'Renamed',
         placeholders: stored,
+        version: { increment: 1 },
       },
     });
+    expect(auditMock.createAuditLog).toHaveBeenCalledWith(
+      expect.objectContaining({
+        metadata: expect.objectContaining({ materialChanged: false }),
+      }),
+      prismaMock,
+    );
   });
 
-  it('increments exactly once when a service placeholder definition changes', async () => {
+  it('increments exactly once and records a material change when a service placeholder definition changes', async () => {
     const changed = [{
       key: 'service.fields.software',
       label: 'Preferred accounting software',
@@ -119,7 +136,7 @@ describe('template partial material versioning', () => {
       source: 'service',
       required: true,
     }];
-    prismaMock.templatePartial.update.mockResolvedValue({
+    prismaMock.templatePartial.findFirstOrThrow.mockResolvedValue({
       ...partial,
       placeholders: changed,
       version: 4,
@@ -130,13 +147,19 @@ describe('template partial material versioning', () => {
       actor,
     );
 
-    expect(prismaMock.templatePartial.update).toHaveBeenCalledWith({
-      where: { id: partial.id },
+    expect(prismaMock.templatePartial.updateMany).toHaveBeenCalledWith({
+      where: { id: partial.id, tenantId: actor.tenantId, deletedAt: null },
       data: {
         placeholders: changed,
         version: { increment: 1 },
       },
     });
-    expect(prismaMock.templatePartial.update).toHaveBeenCalledOnce();
+    expect(prismaMock.templatePartial.updateMany).toHaveBeenCalledOnce();
+    expect(auditMock.createAuditLog).toHaveBeenCalledWith(
+      expect.objectContaining({
+        metadata: { oldVersion: 3, newVersion: 4, materialChanged: true },
+      }),
+      prismaMock,
+    );
   });
 });

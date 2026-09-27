@@ -268,7 +268,7 @@ describe('E-signing detail hydration', () => {
     container.innerHTML = serverHtml;
 
     const recoverableErrors: Error[] = [];
-    hydrateRoot(container, tree, {
+    renderedRoot = hydrateRoot(container, tree, {
       onRecoverableError: (error) => recoverableErrors.push(error as Error),
     });
 
@@ -286,6 +286,13 @@ describe('E-signing detail hydration', () => {
       status: 'COMPLETED',
       completedAt: '2026-08-02T00:00:00.000Z',
       pdfGenerationStatus: 'COMPLETED',
+      documents: [
+        {
+          ...makeEnvelope().documents[0],
+          signedHash: 'hash-signed',
+          signedPdfUrl: '/nda-signed.pdf',
+        },
+      ],
       recipients: [
         {
           ...makeEnvelope().recipients[0],
@@ -308,7 +315,7 @@ describe('E-signing detail hydration', () => {
     container.innerHTML = serverHtml;
 
     const recoverableErrors: Error[] = [];
-    hydrateRoot(container, tree, {
+    renderedRoot = hydrateRoot(container, tree, {
       onRecoverableError: (error) => recoverableErrors.push(error as Error),
     });
 

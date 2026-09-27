@@ -33,6 +33,8 @@ import {
 
 const readRepoFile = (path: string) => readFileSync(join(process.cwd(), path), 'utf8');
 const exportServiceSource = readRepoFile('src/services/document-export.service.ts');
+const sanitizerServiceSource = readRepoFile('src/services/a4-content-sanitizer.service.ts');
+const outputBrowserServiceSource = readRepoFile('src/services/a4-output-browser.service.ts');
 
 const CANONICAL_BREAK = '<span data-a4-break="page"></span>';
 const LEGACY_BREAK = '<div class="page-break" data-break-type="hard"></div>';
@@ -77,6 +79,7 @@ beforeEach(() => {
     evaluate: pdfMocks.evaluate,
     pdf: pdfMocks.pdf,
     close: pdfMocks.pageClose,
+    isClosed: vi.fn(() => false),
   };
   const browser = { newPage: pdfMocks.newPage, close: pdfMocks.browserClose };
   pdfMocks.newPage.mockResolvedValue(page);
@@ -131,10 +134,11 @@ describe('A4 editor WORKFLOW W1 preview / HTML / PDF compatibility proofs', () =
     for (const token of ['blockquote', 'caption', 'tfoot']) expect(policy.allowedTags).toContain(token);
     expect(policy.allowedAttributes).toContain('start');
     expect(policy.allowedAttributes).toContain('data-a4-break');
-    expect(exportServiceSource).toContain('getA4SanitizerPolicy');
-    expect(exportServiceSource).toContain('A4_EDITOR_DECORATION_ATTRIBUTES');
-    expect(exportServiceSource).toContain('ALLOW_DATA_ATTR: false');
-    expect(exportServiceSource).toContain('ALLOW_ARIA_ATTR: false');
+    expect(exportServiceSource).toContain('sanitizeCanonicalA4Html');
+    expect(sanitizerServiceSource).toContain('getA4SanitizerPolicy');
+    expect(sanitizerServiceSource).toContain('A4_EDITOR_DECORATION_ATTRIBUTES');
+    expect(sanitizerServiceSource).toContain('ALLOW_DATA_ATTR: false');
+    expect(sanitizerServiceSource).toContain('ALLOW_ARIA_ATTR: false');
     expect(exportServiceSource).toContain('serializeA4CanonicalBreakDocument');
     expect(exportServiceSource).toContain('readA4StoredDocument');
   });
@@ -190,7 +194,7 @@ describe('A4 editor WORKFLOW W1 preview / HTML / PDF compatibility proofs', () =
 
   it('W-OUTPUT-04 makes pagination failure explicit rather than warning and producing a clipped PDF', () => {
     expect(exportServiceSource).toContain('throw new ExportPaginationError');
-    expect(exportServiceSource).toContain('Pagination returned no printable fragments');
+    expect(outputBrowserServiceSource).toContain('Pagination returned no printable fragments');
     expect(exportServiceSource).not.toContain('falling back to natural page flow');
   });
 

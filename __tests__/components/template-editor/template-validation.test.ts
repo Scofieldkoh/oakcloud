@@ -11,7 +11,8 @@ import { placeholderDefinitionSchema } from '@/lib/validations/document-template
 describe('template syntax validation', () => {
   it('reports unmatched and unknown constructs with actionable messages', () => {
     const issues = validateTemplateSyntax(
-      '<p>{{#each directors}}</p><p>{{company.missing}}</p>',
+      // Built-in roots are open; only custom keys are checked against the template.
+      '<p>{{#each directors}}</p><p>{{custom.missing}}</p>',
       new Set(['company.name']),
     );
 
@@ -20,7 +21,7 @@ describe('template syntax validation', () => {
       'unknown-placeholder',
     ]);
     expect(issues[0].message).toContain('{{/each}}');
-    expect(issues[1].message).toContain('company.missing');
+    expect(issues[1].message).toContain('custom.missing');
   });
 
   it('returns deterministic issues for mismatched blocks, empty loops, and unresolved partials', () => {
@@ -63,7 +64,7 @@ describe('template syntax validation', () => {
 
   it('recovers from a nested mismatch without adding an EOF error before later unknown keys', () => {
     const issues = validateTemplateSyntax(
-      '{{#each directors}}{{#if company.name}}{{/each}}{{company.missing}}',
+      '{{#each directors}}{{#if company.name}}{{/each}}{{custom.missing}}',
       new Set(['company.name']),
     );
 

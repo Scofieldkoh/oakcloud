@@ -262,9 +262,9 @@ describe('Task 12 review remediations', () => {
     expect(within(inlineFilters).getByRole('searchbox', { name: 'Filter Company' })).toHaveValue('');
     expect(within(inlineFilters).getByRole('searchbox', { name: 'Filter Service' })).toHaveValue('');
     expect(within(inlineFilters).getByRole('searchbox', { name: 'Filter Milestone' })).toHaveValue('');
-    expect(within(inlineFilters).getByRole('combobox', { name: 'Family' })).toHaveValue('Accounting');
-    expect(within(inlineFilters).getByRole('combobox', { name: 'Deadline type' })).toHaveValue('Client');
-    expect(within(inlineFilters).getByRole('combobox', { name: 'Status' })).toHaveValue('Completed');
+    expect(within(inlineFilters).getByRole('combobox', { name: 'Filter Family' })).toHaveValue('Accounting');
+    expect(within(inlineFilters).getByRole('combobox', { name: 'Filter Deadline type' })).toHaveValue('Client');
+    expect(within(inlineFilters).getByRole('combobox', { name: 'Filter Status' })).toHaveValue('Completed');
     expect(within(inlineFilters).queryByRole('button', { name: 'Deadline type' })).not.toBeInTheDocument();
 
     const quickFilters = screen.getByRole('group', { name: 'Deadline filters' });

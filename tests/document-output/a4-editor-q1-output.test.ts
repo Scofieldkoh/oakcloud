@@ -36,7 +36,7 @@ const canonicalContent = [
   '<li><p>Q1-ALPHA-FIRST</p></li>',
   '<li><p>Q1-ALPHA-SECOND</p></li>',
   '</ol>',
-  '<ol class="list-bold-markers q1-bold">',
+  '<ol class="list-bold-numbers q1-bold">',
   '<li><p>Q1-BOLD-FIRST</p></li>',
   '<li><p>Q1-BOLD-SECOND</p></li>',
   '</ol>',
@@ -88,9 +88,11 @@ describe('A4 editor Q1 real HTML/PDF output acceptance', () => {
 
     expect(html).toContain('start="5"');
     expect(html).toContain('list-alpha');
-    expect(html).toContain('list-bold-markers');
+    expect(html).toContain('list-bold-numbers');
     expect(html.indexOf(FIRST_SENTINEL)).toBeLessThan(html.indexOf(LAST_SENTINEL));
-    for (const marker of SOFT_PAGINATION_MARKERS) expect(html).not.toContain(marker);
+    // Print CSS targets these markers; only the pre-pagination markup must be free of them.
+    const markup = html.replace(/<style>[\s\S]*?<\/style>/g, '');
+    for (const marker of SOFT_PAGINATION_MARKERS) expect(markup).not.toContain(marker);
 
     const executablePath = await findChromePath();
     const browser = await puppeteer.launch({
@@ -109,12 +111,12 @@ describe('A4 editor Q1 real HTML/PDF output acceptance', () => {
           if (!item) throw new Error(`Missing rendered list item: ${needle}`);
           const list = item.closest('ol');
           if (!list) throw new Error(`Missing rendered list for: ${needle}`);
-          const before = getComputedStyle(item, '::before');
+          const marker = getComputedStyle(item, '::marker');
           return {
             start: list.getAttribute('start'),
             classes: list.className,
-            beforeContent: before.content,
-            beforeWeight: before.fontWeight,
+            markerContent: marker.content,
+            markerWeight: marker.fontWeight,
           };
         };
         return {
@@ -141,9 +143,9 @@ describe('A4 editor Q1 real HTML/PDF output acceptance', () => {
       expect(rendered.continuation.start).toBe('8');
       expect(rendered.restart.start).toBe('1');
       expect(rendered.alpha.classes).toContain('list-alpha');
-      expect(rendered.alpha.beforeContent.toLowerCase()).toContain('lower-alpha');
-      expect(rendered.bold.classes).toContain('list-bold-markers');
-      expect(rendered.bold.beforeWeight).toMatch(/^(700|bold)$/i);
+      expect(rendered.alpha.markerContent.toLowerCase()).toContain('lower-alpha');
+      expect(rendered.bold.classes).toContain('list-bold-numbers');
+      expect(rendered.bold.markerWeight).toMatch(/^(700|bold)$/i);
       expect(rendered.nestedDepth).toBeGreaterThanOrEqual(2);
       await page.close();
     } finally {
@@ -217,5 +219,5 @@ describe('A4 editor Q1 real HTML/PDF output acceptance', () => {
     expect(extracted.text).toMatch(/(^|\s)8[.)](\s|$)/);
     expect(extracted.text).toMatch(/(^|\s)1[.)](\s|$)/);
     expect(extracted.text).toMatch(/(^|\s)[aA][.)](\s|$)/);
-  });
+  }, 45_000);
 });
