@@ -22,7 +22,7 @@ vi.mock('@/hooks/use-client-services', () => ({
   useUpdateClientService: () => updateMock,
   useArchiveClientService: () => archiveMock,
   useDeleteClientServicePermanently: () => deleteMock,
-  useCompanyObligations: (...args: unknown[]) => companyObligationsMock(...args),
+  useCompanyObligations: companyObligationsMock,
 }));
 
 const service: ClientServiceDto = {

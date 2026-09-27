@@ -42,7 +42,7 @@ vi.mock('@/hooks/use-client-services', () => ({
     error: null,
   }),
   useCreateManualClientService: () => createMock,
-  useCompanyObligations: (...args: unknown[]) => companyObligationsMock(...args),
+  useCompanyObligations: companyObligationsMock,
 }));
 
 vi.mock('@/components/ui/searchable-select', () => ({
