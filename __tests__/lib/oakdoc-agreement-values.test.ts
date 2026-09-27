@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
 import {
+  buildOakDocResolutionValues,
   formatAgreementTerm,
   formatOakDocDate,
   oakDocIsoDate,
@@ -30,6 +31,15 @@ describe('agreement value formatting', () => {
     expect(formatOakDocDate('2026-07-09', 'dd/MM/yyyy')).toBe('09/07/2026');
     expect(oakDocIsoDate('2026-07-09T00:00:00.000Z')).toBe('2026-07-09');
     expect(oakDocIsoDate('Director')).toBeUndefined();
+  });
+
+  it('uses the agreement date when there is no effective date, whoever supplies the dates', () => {
+    const values = buildOakDocResolutionValues({
+      company: { id: 'company-1', name: 'Example Pte. Ltd.' } as never,
+      fieldTags: ['agreement.effectiveDate'],
+      agreement: { agreementDate: '2026-07-09', effectiveDate: null, termMonths: 12 },
+    });
+    expect(values['agreement.effectiveDate']).toBe('9 Jul 2026');
   });
 
   it('writes the term in words', () => {

@@ -169,10 +169,11 @@ function termsOfBusiness(): string {
 }
 
 /**
- * Fee prototype: a bold company heading kept with a two-column SOW/Amount
- * table. Generation clones the company group per agreement entity and the
- * SOW row per service; the second paragraph in each cell is the prototype
- * for one labelled charge when a service has several.
+ * The fee table: one SOW/Amount table for the whole agreement. Each company
+ * with fees gets a blank separator row and a bold, underlined name row, then
+ * a row per SOW labelled like its scope heading, then a row per charge with
+ * its amount. A blank row closes the table. Every cell is centred
+ * vertically. The row controls are the prototypes the renderer repeats.
  */
 function feePrototype(ids: ControlIds): string {
   const tags = OAKDOC_AGREEMENT_PROTOTYPE_TAGS;
@@ -186,32 +187,42 @@ function feePrototype(ids: ControlIds): string {
     right: 107,
     ...format,
   });
-  const header = tableRow(
-    tableCell(cellParagraph(run(REFERENCE_FEES.columns[0], { bold: true }), { keepNext: true }), { width: sowWidth, fill: 'D9D9D9' })
-      + tableCell(cellParagraph(run(REFERENCE_FEES.columns[1], { bold: true }), { keepNext: true }), { width: amountWidth, fill: 'D9D9D9' }),
-    { header: true, cantSplit: true },
-  );
-  const sowRow = blockControl(ids, tags.feeSowRow, 'SOW fee row', tableRow(
+  const row = (
+    sow: string,
+    amount: string,
+    options: { header?: boolean; keepNext?: boolean; indent?: number } = {},
+  ) => tableRow(
     tableCell(
-      cellParagraph(`${run(REFERENCE_FEES.sowLabelPrefix)}${fieldControl(ids, tags.feeSowName)}`)
-        + cellParagraph(fieldControl(ids, tags.feeChargeDescription), { left: 391 }),
-      { width: sowWidth },
+      cellParagraph(sow, { keepNext: options.keepNext, ...(options.indent ? { left: options.indent } : {}) }),
+      { width: sowWidth, verticalAlign: 'center' },
     )
-      + tableCell(
-        cellParagraph(fieldControl(ids, tags.feeSowAmount))
-          + cellParagraph(fieldControl(ids, tags.feeChargeAmount)),
-        { width: amountWidth },
-      ),
-    { cantSplit: true },
+      + tableCell(cellParagraph(amount, { keepNext: options.keepNext }), { width: amountWidth, verticalAlign: 'center' }),
+    { header: options.header, cantSplit: true },
+  );
+  const header = row(
+    run(REFERENCE_FEES.columns[0], { bold: true }),
+    run(REFERENCE_FEES.columns[1], { bold: true }),
+    { header: true, keepNext: true },
+  );
+  const blank = row('', '');
+  const companyName = row(
+    `${fieldControl(ids, tags.feeCompanyName, { bold: true, underline: true })}${run(':', { bold: true, underline: true })}`,
+    '',
+    { keepNext: true },
+  );
+  // Charge descriptions sit one step in from the SOW label.
+  const chargeRow = blockControl(ids, tags.feeChargeRow, 'Charge row', row(
+    fieldControl(ids, tags.feeChargeDescription),
+    fieldControl(ids, tags.feeChargeAmount),
+    { indent: 391 },
   ));
-  return blockControl(ids, tags.feeCompany, 'Company fee group', [
-    paragraph(
-      `${fieldControl(ids, tags.feeCompanyName, { bold: true })}${run(':', { bold: true })}`,
-      { style: 'BodyText', left: 110, after: 120, keepNext: true, keepLines: true },
-    ),
-    table({ columns: [sowWidth, amountWidth], indent: 110, grid: true, rows: header + sowRow }),
-    blankLine(),
-  ].join(''));
+  const sowRow = blockControl(ids, tags.feeSowRow, 'SOW fee row', row(
+    `${run(REFERENCE_FEES.sowLabelPrefix)}${fieldControl(ids, tags.feeSowName)}`,
+    fieldControl(ids, tags.feeSowAmount),
+    { keepNext: true },
+  ) + chargeRow);
+  const company = blockControl(ids, tags.feeCompany, 'Company fee group', blank + companyName + sowRow);
+  return table({ columns: [sowWidth, amountWidth], indent: 110, grid: true, rows: header + company + blank });
 }
 
 function statementOfWork(ids: ControlIds): string {

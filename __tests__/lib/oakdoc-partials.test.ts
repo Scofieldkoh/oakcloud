@@ -98,12 +98,17 @@ describe('native partial expansion', () => {
     expect(numbering).toMatch(/<w:num w:numId="2"><w:abstractNumId w:val="1"\/>/);
     expect(numbering.indexOf('w:abstractNumId="1"')).toBeLessThan(numbering.indexOf('<w:num w:numId="1"'));
 
-    // Missing style copied; clashing style keeps the master's definition.
+    // Missing style copied; a clashing style keeps the partial's look under
+    // its own ID while the master's text keeps the master's definition.
     const styles = part(result.bytes, 'word/styles.xml');
     expect(styles).toContain('w:styleId="Clause"');
     expect(styles.match(/w:styleId="Title"/g)).toHaveLength(1);
-    expect(styles).not.toContain('FF0000');
-    expect(result.diagnostics.map((entry) => entry.code)).toContain('OAKDOC_PARTIAL_STYLE_CONFLICT');
+    const partialTitle = /w:styleId="(Title-[a-z0-9]+)"/.exec(styles)?.[1];
+    expect(partialTitle).toBeDefined();
+    expect(styles).toContain('FF0000');
+    expect(document).toContain('<w:pStyle w:val="Title"/></w:pPr><w:r><w:t>Letter');
+    expect(document).toContain(`<w:pStyle w:val="${partialTitle}"/>`);
+    expect(result.diagnostics.map((entry) => entry.code)).not.toContain('OAKDOC_PARTIAL_STYLE_CONFLICT');
 
     const rels = part(result.bytes, 'word/_rels/document.xml.rels');
     expect(rels).toContain('https://example.com/terms');
@@ -117,6 +122,55 @@ describe('native partial expansion', () => {
     expect(controlIds).not.toContain('7');
     expect(document).toContain('<w:bookmarkStart w:id="2');
     expect(() => inspectOakDocPackage(result.bytes, 'draft')).not.toThrow();
+  });
+
+  it('keeps partial paragraph spacing, line height and list indents when the master Normal differs', () => {
+    const normal = (spacing: string, size: string) => '<w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/>'
+      + `<w:pPr>${spacing}</w:pPr><w:rPr><w:sz w:val="${size}"/></w:rPr></w:style>`;
+    const master = pkg({
+      body: `<w:p><w:r><w:t>Master text</w:t></w:r></w:p>${reference(A)}`,
+      styles: '<w:docDefaults><w:pPrDefault><w:pPr><w:spacing w:after="160" w:line="259" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults>'
+        + normal('<w:spacing w:after="0" w:line="240" w:lineRule="auto"/>', '20')
+        + '<w:style w:type="paragraph" w:styleId="ListParagraph"><w:name w:val="List Paragraph"/><w:basedOn w:val="Normal"/></w:style>',
+    });
+    const fragment = pkg({
+      body: '<w:p><w:r><w:t>Scope intro</w:t></w:r></w:p>'
+        + '<w:p><w:pPr><w:pStyle w:val="ListParagraph"/></w:pPr><w:r><w:t>Item</w:t></w:r></w:p>',
+      styles: '<w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial"/></w:rPr></w:rPrDefault></w:docDefaults>'
+        + normal('<w:spacing w:after="120" w:line="276" w:lineRule="auto"/>', '20')
+        + '<w:style w:type="paragraph" w:styleId="ListParagraph"><w:name w:val="List Paragraph"/><w:basedOn w:val="Normal"/><w:pPr><w:ind w:left="720"/></w:pPr></w:style>',
+    });
+
+    const result = expandOakDocPartials({ docxBytes: master, fragments: new Map([[A, fragment]]) });
+    const document = part(result.bytes, 'word/document.xml');
+    const styles = new DOMParser().parseFromString(part(result.bytes, 'word/styles.xml'), 'application/xml');
+    const styleOf = (text: string) => /<w:pStyle w:val="([^"]+)"\/>(?:(?!<w:p[ >]).)*?<w:t>/.exec(document.slice(document.lastIndexOf('<w:p>', document.indexOf(text))))?.[1];
+    const properties = (id: string | undefined) => {
+      const style = Array.from(styles.getElementsByTagNameNS(W, 'style')).find((element) => element.getAttributeNS(W, 'styleId') === id);
+      return new XMLSerializer().serializeToString(style!);
+    };
+
+    // The master's own paragraph is untouched.
+    expect(document).toContain('<w:p><w:r><w:t>Master text</w:t></w:r></w:p>');
+    const intro = properties(styleOf('Scope intro'));
+    expect(intro).toContain('w:after="120"');
+    expect(intro).toContain('w:line="276"');
+    expect(intro).toContain('w:ascii="Arial"');
+    expect(intro).not.toContain('w:basedOn');
+    const item = properties(styleOf('Item'));
+    expect(item).toContain('w:left="720"');
+    expect(item).toContain('w:after="120"');
+    expect(result.diagnostics).toEqual([]);
+    expect(() => inspectOakDocPackage(result.bytes, 'draft')).not.toThrow();
+  });
+
+  it('shares a style that looks the same in the partial and the master', () => {
+    const style = '<w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:pPr><w:spacing w:after="120"/></w:pPr></w:style>';
+    const master = pkg({ body: reference(A), styles: style });
+    const fragment = pkg({ body: '<w:p><w:r><w:t>Same look</w:t></w:r></w:p>', styles: style });
+    const result = expandOakDocPartials({ docxBytes: master, fragments: new Map([[A, fragment]]) });
+    expect(part(result.bytes, 'word/styles.xml').match(/w:styleId=/g)).toHaveLength(1);
+    expect(part(result.bytes, 'word/document.xml')).toContain('<w:pStyle w:val="Normal"/>');
   });
 
   it('expands nested partials and stops cycles, depth and missing partials with errors', () => {

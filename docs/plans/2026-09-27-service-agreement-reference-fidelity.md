@@ -437,7 +437,7 @@ The attached agreement checked during implementation is byte-identical to this p
 | --- | --- | --- |
 | G01, G02, G03 | Done: the seeded master "Oaktree Master Services Agreement (OakDoc)" is replaced by a native OOXML build with explicit Arial 10 black runs, reference page and margins, no header or footer, borderless 567/8505 terms table | `src/content/service-agreement/oaktree-service-agreement-reference-*.ts`, `oakdoc-reference-ooxml.ts` |
 | G04 | Done: Word scope partials for both services with native lettered lists, nested Wingdings register bullets and per-subsection restarts | `oaktree-service-agreement-reference-sows.ts` |
-| G05 | Done: the fee slot holds a template-owned company group prototype (company heading, 7265/1800 SOW/Amount table with repeating header, one SOW row prototype). Each company with fees gets its own heading and table, including single-company agreements. Masters without the prototype keep the built-in table | `oakdoc-renderer.ts` (`renderFeePrototype`) |
+| G05 | Done, revised on 27 September 2026 at the firm's request: one 7265/1800 SOW/Amount table for the whole agreement, with a repeating header. Each company with fees adds a blank row and a bold, underlined name row. Each SOW then adds a "Statement of Work – <service>" row and one row per charge with its amount, even for a single charge. A blank row closes the table, and every cell is vertically centred. The group, SOW and charge rows are template-owned row prototypes; masters with the earlier heading-per-company prototype or none still render | `oakdoc-renderer.ts` (`renderFeePrototype`) |
 | G06 | Done: whole amounts print without cents in the prototype layout (`S$1,500 per year`, `S$800.50 per year`); date controls carry a Word date format (`9 July 2026`); `agreement.term` prints `1 year`, `2 years`, `18 months` | `oakdoc-context.ts`, `oakdoc-fields.ts`, `renderer.ts` |
 | G07 | Done: effective date (empty uses the agreement date) and term inputs in agreement setup; schema rejects impossible dates such as `2026-02-30` | `service-agreement-config.tsx`, `validations/service-agreement.ts` |
 | G08 | Done as decided on 27 September 2026: the firm name is fixed text; the signatory name is the preparer (`system.preparerName`, looked up from the user when a caller passes an id); the appointment line stays "Director" because users have no job title | master, `resolvePreparerName` |
@@ -446,13 +446,14 @@ The attached agreement checked during implementation is byte-identical to this p
 | G13 | Done: the service slot's placeholder breaks the page, so every service starts a page; the empty break line is folded into the service title after the scope is merged | `finalizeServiceAgreementPageBreaks` |
 | G16 | Partly done: structural tests for page, typography, keep chains, fee grouping, dates, address, links and merged scopes. Rendered page comparison is not done because this environment has no Word or LibreOffice Writer renderer | `__tests__/services/oaktree-service-agreement-reference.test.ts` |
 | G17 | Wording copied verbatim except the 8 slips the firm approved correcting, recorded in `REFERENCE_WORDING_CORRECTIONS` | wording module |
-| G10, G11, G14, G15, G18 | Not started (P1) | |
+| G14 | Done: a partial keeps its own look when merged. A paragraph or character style that resolves differently from the master's style of the same name (document defaults plus basedOn chain) is added as a self-contained copy under its own ID, and unstyled paragraphs take the partial's default style explicitly. Only table style clashes still warn | `oakdoc-partial-styles.ts` |
+| G10, G11, G15, G18 | Not started (P1) | |
 
 Known deviations from the reference, deliberate or for review:
 
 - Condensed character spacing on roughly 1,500 reference characters is not reproduced; line wrapping can therefore differ slightly.
 - Fee rows are labelled "Statement of Work – <service>" so they match the scope headings.
 - The letter address keeps Oakcloud's order, as the firm decided: building first, then street and unit, then the postal line, each on its own line. The reference prints the street first.
-- A continued fee table repeats its SOW/Amount header but does not repeat the company name.
+- A fee table continued on a new page repeats its SOW/Amount header but not the company name.
 - Re-running the seed no longer resets whether a seeded master is active; that stays with whoever switched it in the app.
 
