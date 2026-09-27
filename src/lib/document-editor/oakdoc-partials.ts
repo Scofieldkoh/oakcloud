@@ -8,6 +8,16 @@ import {
   wordChildren,
 } from '@/lib/document-editor/oakdoc-blocks';
 import { OAKDOC_PARTIAL_TAG_PREFIX } from '@/lib/document-editor/oakdoc-field-registry';
+import {
+  createResolvedStyle,
+  defaultParagraphStyleId,
+  readStyleSheet,
+  resolveStyle,
+  resolvedStyleKey,
+  styleKeyHash,
+  type StyleKind,
+  type StyleSheet,
+} from '@/lib/document-editor/oakdoc-partial-styles';
 import { ValidationError } from '@/lib/errors';
 import type { OakDocDiagnostic } from '@/types/oakdoc';
 
@@ -395,9 +405,16 @@ class MasterPackage {
     );
   }
 
-  addStyle(style: Element): void {
+  addStyle(style: Element): Element {
     const styles = this.ensureStyles();
-    styles.documentElement.appendChild(styles.importNode(style, true));
+    const imported = styles.importNode(style, true) as Element;
+    styles.documentElement.appendChild(imported);
+    this.dirty.add(STYLES_PART);
+    return imported;
+  }
+
+  styleSheet(): StyleSheet {
+    return readStyleSheet(this.styles);
   }
 
   addNumbering(abstractNum: Element, num: Element): string {
@@ -476,6 +493,137 @@ function resolvePartTarget(target: string): string {
  * Import one fragment's body into the master. Returns the blocks to insert,
  * or null (with an error diagnostic) when the fragment cannot be merged.
  */
+/** Word's built-in values, so a master's document defaults cannot leak in. */
+function withWordDefaults(document: Document, resolved: ReturnType<typeof resolveStyle>, kind: StyleKind) {
+  const pPr = resolved.pPr ?? document.createElementNS(WORD_NS, 'w:pPr');
+  const rPr = resolved.rPr ?? document.createElementNS(WORD_NS, 'w:rPr');
+  if (kind === 'paragraph') {
+    let spacing = wordChild(pPr, 'spacing');
+    if (!spacing) {
+      spacing = document.createElementNS(WORD_NS, 'w:spacing');
+      const before = wordChildren(pPr).find((child) => ['ind', 'contextualSpacing', 'mirrorIndents', 'suppressOverlap', 'jc', 'textDirection', 'textAlignment', 'textboxTightWrap', 'outlineLvl', 'divId', 'cnfStyle'].includes(child.localName));
+      pPr.insertBefore(spacing, before ?? null);
+    }
+    for (const [name, value] of [['before', '0'], ['after', '0'], ['line', '240'], ['lineRule', 'auto']] as const) {
+      if (!wordAttribute(spacing, name)) setWordAttribute(spacing, name, value);
+    }
+    for (const name of ['sz', 'szCs'] as const) {
+      if (!wordChild(rPr, name)) {
+        const size = document.createElementNS(WORD_NS, `w:${name}`);
+        setWordAttribute(size, 'val', '20');
+        const next = wordChildren(rPr).find((child) => ['highlight', 'u', 'effect', 'bdr', 'shd', 'fitText', 'vertAlign', 'rtl', 'cs', 'em', 'lang', 'eastAsianLayout', 'specVanish', 'oMath'].includes(child.localName)
+          || (name === 'sz' && child.localName === 'szCs'));
+        rPr.insertBefore(size, next ?? null);
+      }
+    }
+  }
+  return {
+    ...(pPr.childNodes.length > 0 ? { pPr } : {}),
+    ...(rPr.childNodes.length > 0 ? { rPr } : {}),
+  };
+}
+
+/**
+ * Give the partial's text the look it has in the partial. A paragraph or
+ * character style that resolves the same in both packages is shared; one
+ * that differs (or that the master lacks) is added as a self-contained copy,
+ * under a new ID when the master already uses the name. Paragraphs without
+ * a style take the partial's default paragraph style explicitly. Returns the
+ * added styles, whose list references still need renumbering.
+ */
+function importFragmentStyles(
+  master: MasterPackage,
+  fragmentSheet: StyleSheet,
+  blocks: Element[],
+  tag: string,
+  diagnostics: OakDocDiagnostic[],
+): Element[] {
+  const scratch = master.document;
+  const defaultStyle = defaultParagraphStyleId(fragmentSheet);
+  if (defaultStyle) {
+    for (const paragraph of descendants(blocks, WORD_NS, 'p')) {
+      let properties = wordChild(paragraph, 'pPr');
+      if (properties && wordChild(properties, 'pStyle')) continue;
+      if (!properties) {
+        properties = scratch.createElementNS(WORD_NS, 'w:pPr');
+        paragraph.insertBefore(properties, paragraph.firstChild);
+      }
+      const pStyle = scratch.createElementNS(WORD_NS, 'w:pStyle');
+      setWordAttribute(pStyle, 'val', defaultStyle);
+      properties.insertBefore(pStyle, properties.firstChild);
+    }
+  }
+
+  const masterSheet = master.styleSheet();
+  const references = ['pStyle', 'rStyle', 'tblStyle']
+    .flatMap((name) => descendants(blocks, WORD_NS, name))
+    .filter((element) => getWordVal(element));
+  const mapped = new Map<string, string>();
+  const copies: Element[] = [];
+  let tableConflicts = 0;
+  const serializer = new XMLSerializer();
+
+  for (const reference of references) {
+    const styleId = getWordVal(reference);
+    const known = mapped.get(styleId);
+    if (known !== undefined) {
+      setWordAttribute(reference, 'val', known);
+      continue;
+    }
+    const source = fragmentSheet.styles.get(styleId);
+    if (!source) {
+      mapped.set(styleId, styleId);
+      continue;
+    }
+    const type = wordAttribute(source, 'type');
+    if (type !== 'paragraph' && type !== 'character') {
+      // Table styles: copy what the master lacks; the master's wins otherwise.
+      const existing = masterSheet.styles.get(styleId);
+      if (!existing) {
+        master.addStyle(source);
+        (masterSheet.styles as Map<string, Element>).set(styleId, source);
+      } else if (serializer.serializeToString(existing) !== serializer.serializeToString(source)) {
+        tableConflicts += 1;
+      }
+      mapped.set(styleId, styleId);
+      continue;
+    }
+    const kind: StyleKind = type;
+    const resolved = withWordDefaults(scratch, resolveStyle(fragmentSheet, styleId, kind, scratch), kind);
+    const key = resolvedStyleKey(resolved);
+    const existing = masterSheet.styles.get(styleId);
+    if (existing && resolvedStyleKey(withWordDefaults(scratch, resolveStyle(masterSheet, styleId, kind, scratch), kind)) === key) {
+      mapped.set(styleId, styleId);
+      continue;
+    }
+    const targetId = existing ? `${styleId}-${styleKeyHash(key)}` : styleId;
+    if (!masterSheet.styles.has(targetId)) {
+      const name = getWordVal(wordChild(source, 'name')) || styleId;
+      const copy = master.addStyle(createResolvedStyle({
+        document: scratch,
+        styleId: targetId,
+        name: existing ? `${name} (${styleKeyHash(key)})` : name,
+        kind,
+        resolved,
+      }));
+      (masterSheet.styles as Map<string, Element>).set(targetId, copy);
+      copies.push(copy);
+    }
+    mapped.set(styleId, targetId);
+    setWordAttribute(reference, 'val', targetId);
+  }
+
+  if (tableConflicts > 0) {
+    diagnostics.push(diagnostic(
+      'STYLE_CONFLICT',
+      'warning',
+      `${tableConflicts} table style${tableConflicts === 1 ? '' : 's'} in a partial differ from the master's table styles of the same name; the master's formatting is used.`,
+      tag,
+    ));
+  }
+  return copies;
+}
+
 function importFragment(
   master: MasterPackage,
   fragmentFiles: Files,
@@ -546,50 +694,12 @@ function importFragment(
     }
   }
 
-  // Styles: copy what the master lacks (with its basedOn/link/next chain).
-  const fragmentStyles = fragmentFiles[STYLES_PART]
-    ? new Map(
-        Array.from(parseXml(fragmentFiles[STYLES_PART], STYLES_PART).getElementsByTagNameNS(WORD_NS, 'style'))
-          .map((style) => [wordAttribute(style, 'styleId'), style]),
-      )
-    : new Map<string, Element>();
-  const masterStyles = master.styleIds();
-  const used = new Set(
-    ['pStyle', 'rStyle', 'tblStyle']
-      .flatMap((name) => descendants(blocks, WORD_NS, name))
-      .map((element) => getWordVal(element))
-      .filter(Boolean),
-  );
-  const pending = Array.from(used);
-  const serializer = new XMLSerializer();
-  let conflicts = 0;
-  while (pending.length > 0) {
-    const styleId = pending.pop()!;
-    const source = fragmentStyles.get(styleId);
-    if (!source) continue;
-    const existing = masterStyles.get(styleId);
-    if (existing) {
-      if (serializer.serializeToString(existing) !== serializer.serializeToString(source)) conflicts += 1;
-      continue;
-    }
-    master.addStyle(source);
-    masterStyles.set(styleId, source);
-    for (const name of ['basedOn', 'link', 'next']) {
-      const reference = getWordVal(wordChild(source, name));
-      if (reference && !masterStyles.has(reference)) pending.push(reference);
-    }
-  }
-  if (conflicts > 0) {
-    diagnostics.push(diagnostic(
-      'STYLE_CONFLICT',
-      'warning',
-      `${conflicts} style${conflicts === 1 ? '' : 's'} in a partial differ from the master's styles of the same name; the master's formatting is used.`,
-      tag,
-    ));
-  }
+  // Styles: each paragraph and character style keeps the partial's look.
+  const fragmentStylesXml = fragmentFiles[STYLES_PART] ? parseXml(fragmentFiles[STYLES_PART], STYLES_PART) : null;
+  const styleCopies = importFragmentStyles(master, readStyleSheet(fragmentStylesXml), blocks, tag, diagnostics);
 
   // Numbering: copy each used list definition under new IDs.
-  const numIdElements = descendants(blocks, WORD_NS, 'numId')
+  const numIdElements = descendants([...blocks, ...styleCopies], WORD_NS, 'numId')
     .filter((element) => getWordVal(element) && getWordVal(element) !== '0');
   if (numIdElements.length > 0) {
     const numbering = fragmentFiles[NUMBERING_PART]
