@@ -258,7 +258,8 @@ function statementOfWork(ids: ControlIds): string {
 }
 
 function representativeTable(ids: ControlIds): string {
-  const columns = [2045, 1530, 3240, 2203] as const;
+  // The email column is widened so a long address fits on one line.
+  const columns = [1845, 1400, 3773, 2000] as const;
   const cellParagraph = (content: string) => paragraph(content, {
     style: 'TableParagraph',
     left: 107,
@@ -274,8 +275,9 @@ function representativeTable(ids: ControlIds): string {
     tableCell(cellParagraph(fieldControl(ids, 'authorisedRepresentative.name')), { width: columns[0], verticalAlign: 'center' }),
     tableCell(cellParagraph(fieldControl(ids, 'authorisedRepresentative.role')), { width: columns[1], verticalAlign: 'center' }),
     tableCell(
-      cellParagraph(emailFieldControl(ids, 'authorisedRepresentative.email')
-        + fieldControl(ids, 'authorisedRepresentative.phoneAfterEmail')),
+      // Email and mobile on their own lines, so neither pushes the other out.
+      cellParagraph(emailFieldControl(ids, 'authorisedRepresentative.email'))
+        + cellParagraph(fieldControl(ids, 'authorisedRepresentative.phone')),
       { width: columns[2], verticalAlign: 'center' },
     ),
     tableCell(
