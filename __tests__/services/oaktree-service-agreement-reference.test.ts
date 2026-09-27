@@ -350,7 +350,8 @@ describe('reference-layout generation', () => {
     expect(byId).toContain('Oaktree Accounting and Corporate Solutions Pte Ltd');
     const byName = text(parse(new Uint8Array((await generate(agreement(), 'Sam Lee')).bytes)).documentElement);
     expect(byName.split('Sam Lee').length - 1).toBe(2);
-  });
+    // Generates two agreements, which can exceed the default timeout under a full parallel run.
+  }, 20_000);
 
   it('prints the letter address on separate lines, building first', async () => {
     const result = await generate();

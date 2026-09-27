@@ -616,7 +616,8 @@ describe('EsigningListPage manual signing links', () => {
 
     render(<EsigningListPage />);
 
-    await userEvent.click(screen.getByRole('button', { name: 'Resend active requests' }));
+    // The desktop table and the mobile list each render the row's actions.
+    await userEvent.click(screen.getAllByRole('button', { name: 'Resend active requests' })[0]);
 
     const link = await screen.findByRole('link', { name: signingUrl });
     expect(link).toHaveClass('block', 'min-w-0', 'overflow-hidden', 'text-ellipsis', 'whitespace-nowrap');

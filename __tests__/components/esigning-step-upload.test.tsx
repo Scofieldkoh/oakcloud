@@ -386,7 +386,7 @@ describe('EsigningStepUpload', () => {
     expect(screen.getByRole('button', { name: 'Move nda.pdf later' })).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'nda.pdf' }));
-    expect(openSpy).toHaveBeenCalledWith(expect.stringContaining('/pdf?'), '_blank', 'noreferrer');
+    expect(openSpy).toHaveBeenCalledWith('/nda.pdf', '_blank', 'noreferrer');
 
     await user.click(screen.getByRole('button', { name: 'More actions for nda.pdf' }));
     const menu = screen.getByRole('menu');

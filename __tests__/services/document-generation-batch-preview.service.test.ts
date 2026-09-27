@@ -24,6 +24,7 @@ vi.mock('@/lib/prisma', () => ({
       findFirst: vi.fn(),
     },
     $transaction: vi.fn(),
+    $queryRaw: vi.fn(),
   },
 }));
 
@@ -191,6 +192,8 @@ describe('document generation batch preview and review', () => {
     vi.mocked(prisma.$transaction).mockImplementation(
       (callback) => callback(prisma as never) as never,
     );
+    // Claims the generated document's revision before its title is updated.
+    vi.mocked(prisma.$queryRaw).mockResolvedValue([{ revision: 2 }] as never);
     vi.mocked(prisma.documentTemplate.findMany).mockResolvedValue([template] as never);
     vi.mocked(prisma.templatePartial.findMany).mockResolvedValue([]);
     vi.mocked(prisma.documentTemplate.findFirst).mockResolvedValue(template as never);
@@ -264,7 +267,8 @@ describe('document generation batch preview and review', () => {
     expect(prisma.documentGenerationBatchItem.update).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
-          previewContent: '<p>rendered</p>',
+          // The workflow renderer re-renders the stored template with the item override.
+          previewContent: '<p>2026-09-01</p>',
           previewFingerprint: expect.stringMatching(/^[a-f0-9]{64}$/),
           reviewedFingerprint: null,
         }),

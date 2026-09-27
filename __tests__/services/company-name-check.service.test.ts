@@ -59,26 +59,29 @@ describe('checkCompanyNameAvailability', () => {
     expect(result.dataAsOf).toBe(METADATA_LAST_UPDATED);
   });
 
-  it('returns matching local records and marks the name unavailable', async () => {
+  it('returns identical local records and marks the name unavailable', async () => {
     prismaMock.acraEntity.findMany.mockResolvedValue([dbRow()]);
 
     const result = await checkCompanyNameAvailability('Acme Holdings');
 
     expect(result.available).toBe(false);
+    expect(result.assessment).toBe('IDENTICAL');
     expect(result.records).toEqual([
-      { uen: '201904999E', entityName: 'ACME HOLDINGS PTE. LTD.', entityStatus: 'Live Company' },
+      {
+        uen: '201904999E',
+        entityName: 'ACME HOLDINGS PTE. LTD.',
+        entityStatus: 'Live Company',
+        matchType: 'IDENTICAL',
+      },
     ]);
   });
 
-  it('queries the local table for every significant word with insensitive contains', async () => {
+  it('queries the local table by distinctive anchors with insensitive contains', async () => {
     await checkCompanyNameAvailability('Acme Holdings');
 
     expect(prismaMock.acraEntity.findMany).toHaveBeenCalledWith({
       where: {
-        AND: [
-          { entityName: { contains: 'acme', mode: 'insensitive' } },
-          { entityName: { contains: 'holdings', mode: 'insensitive' } },
-        ],
+        OR: [{ entityName: { contains: 'ACME', mode: 'insensitive' } }],
       },
       select: { uen: true, entityName: true, entityStatus: true },
       orderBy: { entityName: 'asc' },
@@ -90,43 +93,47 @@ describe('checkCompanyNameAvailability', () => {
     await checkCompanyNameAvailability('Acme Pte Ltd');
 
     const call = prismaMock.acraEntity.findMany.mock.calls[0][0];
-    expect(call.where.AND).toHaveLength(1);
-    expect(call.where.AND[0]).toEqual({ entityName: { contains: 'acme', mode: 'insensitive' } });
+    expect(call.where.OR).toEqual([{ entityName: { contains: 'ACME', mode: 'insensitive' } }]);
   });
 
-  it('falls back to a single contains on the normalized name when no significant words exist', async () => {
-    await checkCompanyNameAvailability('A & B');
+  it('falls back to a single contains on the normalized name when no search anchors exist', async () => {
+    await checkCompanyNameAvailability('A B');
 
     const call = prismaMock.acraEntity.findMany.mock.calls[0][0];
     expect(call.where).toEqual({
-      entityName: { contains: 'a & b', mode: 'insensitive' },
+      entityName: { contains: 'A B', mode: 'insensitive' },
     });
   });
 
-  it('drops rows that do not contain every significant word', async () => {
+  it('drops candidate rows that are neither identical nor similar', async () => {
     prismaMock.acraEntity.findMany.mockResolvedValue([
-      dbRow({ entityName: 'ACME PTE. LTD.' }),
+      dbRow({ entityName: 'ACME BAKERY PTE. LTD.' }),
       dbRow({ uen: '222222222B', entityName: 'ACME HOLDINGS (S) PTE. LTD.' }),
     ]);
 
-    const result = await checkCompanyNameAvailability('Acme Holdings');
+    const result = await checkCompanyNameAvailability('Acme Holdings (S)');
 
     expect(result.available).toBe(false);
     expect(result.records).toHaveLength(1);
     expect(result.records[0].uen).toBe('222222222B');
   });
 
-  it('dedupes by UEN and caps records at 10', async () => {
-    const rows = Array.from({ length: 15 }, (_, index) => dbRow({
-      uen: `UEN-${index % 5}`,
-      entityName: `ACME HOLDINGS COMPANY ${index}`,
-    }));
+  it('dedupes by UEN', async () => {
+    const rows = Array.from({ length: 15 }, (_, index) => dbRow({ uen: `UEN-${index % 5}` }));
     prismaMock.acraEntity.findMany.mockResolvedValue(rows);
 
     const result = await checkCompanyNameAvailability('Acme Holdings');
 
-    expect(result.records).toHaveLength(5);
     expect(result.records.map((record) => record.uen)).toEqual(['UEN-0', 'UEN-1', 'UEN-2', 'UEN-3', 'UEN-4']);
+  });
+
+  it('caps records at 10', async () => {
+    const rows = Array.from({ length: 15 }, (_, index) => dbRow({ uen: `UEN-${index}` }));
+    prismaMock.acraEntity.findMany.mockResolvedValue(rows);
+
+    const result = await checkCompanyNameAvailability('Acme Holdings');
+
+    expect(result.records).toHaveLength(10);
   });
 
   it('throws a typed error when the local table has no data yet', async () => {

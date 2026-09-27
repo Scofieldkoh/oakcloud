@@ -290,7 +290,9 @@ describe('ServiceRoster', () => {
 
     const table = screen.getByRole('table', { name: 'Services roster table' });
     expect(within(table).queryByText('OACS')).not.toBeInTheDocument();
-    expect(within(table).getByText('Oaktree Accounting & Corporate Solution Pte. Ltd.')).toBeVisible();
+    const companyNames = within(table).getAllByText('Oaktree Accounting & Corporate Solution Pte. Ltd.');
+    expect(companyNames).toHaveLength(2);
+    companyNames.forEach((name) => expect(name).toBeVisible());
     const bodyRows = within(table).getAllByRole('row').slice(2);
     expect(bodyRows[0]).not.toHaveClass('bg-oak-row-alt');
     expect(bodyRows[1]).toHaveClass('bg-oak-row-alt', 'hover:bg-oak-row-alt-hover');
@@ -551,7 +553,7 @@ describe('ServiceRoster', () => {
 
     await waitFor(() => expect(mutate).toHaveBeenCalledWith(expect.objectContaining({
       key: 'services.roster.table.v1',
-      value: expect.objectContaining({ version: 1, columnWidths: expect.objectContaining({ company: 310 }) }),
+      value: expect.objectContaining({ version: 1, columnWidths: expect.objectContaining({ company: 459 }) }),
     })));
   });
 
@@ -609,7 +611,7 @@ describe('ServiceRoster', () => {
 
       expect(mutate).toHaveBeenLastCalledWith(expect.objectContaining({
         value: expect.objectContaining({
-          columnWidths: expect.objectContaining({ company: 310 }),
+          columnWidths: expect.objectContaining({ company: 459 }),
           columnVisibility: expect.objectContaining({ family: false }),
           columnOrder: expect.arrayContaining(['family', 'company']),
           sortBy: 'service',

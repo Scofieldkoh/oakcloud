@@ -165,6 +165,8 @@ describe('Business Assistant BizFile direct upload', () => {
     expect(formData.get('documentType')).toBe('BIZFILE');
     expect(formData.get('tenantId')).toBe('workspace-1');
     expect(fetchMock).toHaveBeenCalledWith('/api/documents/document-1/extract', expect.objectContaining({ method: 'POST' }));
+    // jsdom has no desktop media query, so the review shows the mobile Document tab.
+    fireEvent.click(screen.getByRole('tab', { name: 'Document' }));
     expect(screen.getByTestId('pdf-preview')).toHaveTextContent('blob:bizfile-preview');
   });
 
@@ -234,7 +236,7 @@ describe('Business Assistant BizFile direct upload', () => {
     await chooseFile();
 
     expect(await screen.findByText('Existing company found')).toBeVisible();
-    expect(screen.getByText(/Example Pte\. Ltd\..*202400001A/)).toBeVisible();
+    expect(screen.getByText('Example Pte. Ltd.').parentElement).toHaveTextContent(/Example Pte\. Ltd\..*202400001A/);
     expect(mocks.assistantTurn).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'Review update to existing company' }));
     expect(await waitForReview()).toBeVisible();

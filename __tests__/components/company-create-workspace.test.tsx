@@ -1,6 +1,14 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import type { ReactElement } from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { fireEvent, render as renderUi, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { CompanyCreateWorkspace } from '@/components/companies/company-edit/company-create-workspace';
+
+// Officer and shareholder rows link contacts through React Query.
+function render(ui: ReactElement) {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
+  return renderUi(<QueryClientProvider client={client}>{ui}</QueryClientProvider>);
+}
 
 describe('CompanyCreateWorkspace', () => {
   it('prompts for an optional ALIAS during company creation', () => {

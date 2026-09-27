@@ -527,10 +527,10 @@ export function EsigningListPage() {
 
     const handle = event.currentTarget;
     const header = handle.closest('th') as HTMLTableCellElement | null;
+    // A header that has not been laid out measures 0px; fall back to the default width.
     const startWidth =
       columnWidths[columnId]
-      ?? header?.getBoundingClientRect().width
-      ?? DEFAULT_ESIGNING_COLUMN_WIDTHS[columnId];
+      ?? (header?.getBoundingClientRect().width || DEFAULT_ESIGNING_COLUMN_WIDTHS[columnId]);
     const startX = event.clientX;
     const pointerId = event.pointerId;
     let latestWidth = startWidth;

@@ -187,6 +187,8 @@ const WEAK_SEARCH_TOKENS = new Set([
   'TRADING', 'PARTNER', 'PARTNERS', 'PARTNERSHIP', 'PARTNERSHIPS', 'ASSOCIATES',
   'CONSULTING', 'CONSULTANT', 'CONSULTANCY', 'CONSULTATION', 'ACCOUNTING',
   'SERVICE', 'SERVICES', 'SOLUTION', 'SOLUTIONS',
+  // Entity-form words such as PTE or LTD match most of the registry.
+  ...ENTITY_SUFFIX_EXPRESSIONS.filter((expression) => !expression.includes(' ')),
 ]);
 
 const TERMINAL_DOMAIN_PATTERN = /\.(?:CO|COM|EDU|GOV|NET|ORG|SG)\s*$/i;

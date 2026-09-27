@@ -82,16 +82,16 @@ describe('DocumentTable', () => {
     expect(within(rows[1]).getAllByRole('columnheader').map((header) => header.textContent))
       .toEqual(['Document', 'Company', 'Template', 'Status', 'Signed On', 'Created By', 'Updated', 'Actions']);
 
-    expect(within(rows[0]).getByRole('textbox', { name: 'Filter documents by title' })).toBeInTheDocument();
+    expect(within(rows[0]).getByRole('searchbox', { name: 'Filter documents by title' })).toBeInTheDocument();
     expect(within(rows[0]).getByPlaceholderText('All companies')).toBeInTheDocument();
-    expect(within(rows[0]).getByRole('textbox', { name: 'Filter documents by template' })).toBeInTheDocument();
+    expect(within(rows[0]).getByRole('searchbox', { name: 'Filter documents by template' })).toBeInTheDocument();
     expect(within(rows[0]).getByRole('combobox', { name: 'All statuses' })).toBeInTheDocument();
-    expect(within(rows[0]).getByRole('textbox', { name: 'Filter documents by creator' })).toBeInTheDocument();
+    expect(within(rows[0]).getByRole('searchbox', { name: 'Filter documents by creator' })).toBeInTheDocument();
     expect(within(rows[0]).getAllByText('All dates')).toHaveLength(2);
     expect(screen.getByRole('separator', { name: 'Resize Document column' })).toBeInTheDocument();
 
     fireEvent.change(
-      within(rows[0]).getByRole('textbox', { name: 'Filter documents by title' }),
+      within(rows[0]).getByRole('searchbox', { name: 'Filter documents by title' }),
       { target: { value: 'minutes' } },
     );
     expect(onFilterChange).toHaveBeenCalledWith({ title: 'minutes' });
