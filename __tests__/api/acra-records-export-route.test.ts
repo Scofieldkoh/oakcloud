@@ -72,7 +72,8 @@ describe('GET /api/admin/acra-records/export', () => {
 
   it('exports every AcraEntity column as a streamed CSV', async () => {
     const response = await callGet('/api/admin/acra-records/export');
-    const csv = await response.text();
+    // Response.text() strips a leading BOM, so decode the raw bytes to keep it.
+    const csv = new TextDecoder('utf-8', { ignoreBOM: true }).decode(await response.arrayBuffer());
 
     expect(response.status).toBe(200);
     expect(response.headers.get('content-type')).toContain('text/csv');

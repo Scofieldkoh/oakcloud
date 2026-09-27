@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const prismaMock = vi.hoisted(() => ({
   templatePartial: {
     findFirst: vi.fn(),
-    update: vi.fn(),
+    updateMany: vi.fn(),
   },
   documentTemplate: {
     findMany: vi.fn(),
@@ -46,6 +46,7 @@ describe('template partial service-variant usage', () => {
     prismaMock.documentTemplate.findMany.mockResolvedValue([]);
     prismaMock.serviceVariant.findMany.mockResolvedValue([]);
     prismaMock.$transaction.mockImplementation(async (callback) => callback(prismaMock));
+    prismaMock.templatePartial.updateMany.mockResolvedValue({ count: 1 });
   });
 
   it('rejects deletion while any same-tenant non-deleted variant references the partial', async () => {
@@ -68,7 +69,7 @@ describe('template partial service-variant usage', () => {
       select: { id: true, name: true, isActive: true },
       orderBy: { name: 'asc' },
     });
-    expect(prismaMock.templatePartial.update).not.toHaveBeenCalled();
+    expect(prismaMock.templatePartial.updateMany).not.toHaveBeenCalled();
   });
 
   it('includes service variants in the usage result without cross-tenant reads', async () => {
@@ -91,9 +92,9 @@ describe('template partial service-variant usage', () => {
       expect.any(Function),
       { isolationLevel: 'Serializable' },
     );
-    expect(prismaMock.templatePartial.update).toHaveBeenCalledWith({
-      where: { id: partial.id },
-      data: { deletedAt: expect.any(Date) },
+    expect(prismaMock.templatePartial.updateMany).toHaveBeenCalledWith({
+      where: { id: partial.id, tenantId: actor.tenantId, deletedAt: null },
+      data: { deletedAt: expect.any(Date), version: { increment: 1 } },
     });
     expect(auditMock.createAuditLog).toHaveBeenCalledWith(
       expect.objectContaining({ entityId: partial.id, action: 'DELETE' }),
@@ -108,7 +109,7 @@ describe('template partial service-variant usage', () => {
       'Audit unavailable',
     );
 
-    expect(prismaMock.templatePartial.update).toHaveBeenCalledOnce();
+    expect(prismaMock.templatePartial.updateMany).toHaveBeenCalledOnce();
     expect(prismaMock.$transaction).toHaveBeenCalledOnce();
   });
 });

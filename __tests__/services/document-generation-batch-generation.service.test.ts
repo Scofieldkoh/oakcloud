@@ -275,8 +275,8 @@ describe('document generation batch execution', () => {
     ]);
     expect(result.batchStatus).toBe('PARTIAL');
     expect(materializeDocumentFromTemplate).toHaveBeenCalledTimes(3);
-    expect(finalizeDocument).toHaveBeenCalledWith('doc-a', actor);
-    expect(finalizeDocument).toHaveBeenCalledWith('doc-c', actor);
+    expect(finalizeDocument).toHaveBeenCalledWith('doc-a', actor, undefined);
+    expect(finalizeDocument).toHaveBeenCalledWith('doc-c', actor, undefined);
     expect(finalizeDocument).toHaveBeenCalledTimes(2);
   });
 
@@ -342,7 +342,7 @@ describe('document generation batch execution', () => {
       }),
       undefined,
     );
-    expect(finalizeDocument).toHaveBeenCalledWith('child-item-1', actor);
+    expect(finalizeDocument).toHaveBeenCalledWith('child-item-1', actor, undefined);
     expect(result.items.find((entry) => entry.id === 'item-1')?.status).toBe('GENERATED');
   });
 

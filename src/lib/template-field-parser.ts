@@ -295,7 +295,7 @@ function addBindingDiagnostics(
   for (const opening of blockStack) {
     diagnostics.push(diagnostic(
       'unclosed-block',
-      `{{#${opening.block}}} is not closed.`,
+      `{{#${opening.block}}} is not closed. Add {{/${opening.block}}}.`,
       opening.span,
       input.scope,
     ));

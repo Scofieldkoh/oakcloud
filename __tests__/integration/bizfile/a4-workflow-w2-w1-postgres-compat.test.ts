@@ -5,6 +5,10 @@
 // real-storage concurrency evidence.
 export {};
 
-process.env.TEST_DATABASE_URL ??= process.env.BUSINESS_ASSISTANT_TEST_DATABASE_URL;
+// Assigning undefined to process.env stores the string "undefined", which
+// would un-skip the suite on machines without a test database.
+if (!process.env.TEST_DATABASE_URL && process.env.BUSINESS_ASSISTANT_TEST_DATABASE_URL) {
+  process.env.TEST_DATABASE_URL = process.env.BUSINESS_ASSISTANT_TEST_DATABASE_URL;
+}
 
 await import('../document-generation-batch.postgres.test');

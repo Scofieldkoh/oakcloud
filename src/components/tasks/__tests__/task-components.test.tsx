@@ -166,21 +166,21 @@ describe('TaskList', () => {
       .toEqual(['Company', 'Task', 'Status', 'Pipeline', 'Stages', 'Owner', 'Due', 'Actions']);
     const filterCells = rows[0].querySelectorAll('th');
     expect(filterCells[1]).not.toContainElement(
-      within(rows[0]).getByRole('combobox', { name: 'All statuses' }),
+      within(rows[0]).getByRole('combobox', { name: 'Filter tasks by status' }),
     );
     expect(filterCells[2]).toContainElement(
-      within(rows[0]).getByRole('combobox', { name: 'All statuses' }),
+      within(rows[0]).getByRole('combobox', { name: 'Filter tasks by status' }),
     );
     const searchableSelects = [
-      within(rows[0]).getByRole('combobox', { name: 'All statuses' }),
-      within(rows[0]).getByRole('combobox', { name: 'All pipelines' }),
+      within(rows[0]).getByRole('combobox', { name: 'Filter tasks by status' }),
+      within(rows[0]).getByRole('combobox', { name: 'Filter tasks by pipeline' }),
     ];
     searchableSelects.forEach((filter) => {
       expect(filter.tagName).toBe('INPUT');
       expect(filter).toHaveAttribute('aria-autocomplete', 'list');
     });
-    const titleFilter = within(rows[0]).getByRole('textbox', { name: 'Filter tasks by title' });
-    const ownerFilter = within(rows[0]).getByRole('textbox', { name: 'Filter tasks by owner' });
+    const titleFilter = within(rows[0]).getByRole('searchbox', { name: 'Filter tasks by title' });
+    const ownerFilter = within(rows[0]).getByRole('searchbox', { name: 'Filter tasks by owner' });
     expect(filterCells[1]).toContainElement(titleFilter);
     expect(filterCells[5]).toContainElement(ownerFilter);
     expect(within(filterCells[6]).getByText('All dates')).toBeVisible();
@@ -188,7 +188,7 @@ describe('TaskList', () => {
     expect(onFiltersChange).toHaveBeenCalledWith({ page: 1, title: 'annual' });
     fireEvent.change(ownerFilter, { target: { value: 'sam' } });
     expect(onFiltersChange).toHaveBeenLastCalledWith({ page: 1, ownerQuery: 'sam' });
-    expect(screen.getByTestId('task-table-scroll')).toHaveClass('overflow-x-auto');
+    expect(screen.getByTestId('task-table-scroll').firstElementChild).toHaveClass('overflow-x-auto');
     expect(screen.getByTestId('task-stage-cell')).not.toHaveClass('overflow-x-auto');
     expect(within(screen.getByTestId('task-stage-cell')).getAllByRole('button')).toHaveLength(stages.length);
     expect(within(screen.getByTestId('task-pipeline-cell')).getByText('Annual review')).toBeVisible();
@@ -592,10 +592,11 @@ describe('TaskList', () => {
 
     expect(table.style.width).toBe('');
     expect(table.style.minWidth).toBe('');
-    expect(table.querySelector('colgroup col')).toHaveStyle({ width: '240px' });
+    // 270px default Company width plus the 60px drag.
+    expect(table.querySelector('colgroup col')).toHaveStyle({ width: '330px' });
     expect(preferenceMocks.save).toHaveBeenCalledWith({
       key: 'tasks:list:columns:v1',
-      value: expect.objectContaining({ company: 240 }),
+      value: expect.objectContaining({ company: 330 }),
     });
   });
 });

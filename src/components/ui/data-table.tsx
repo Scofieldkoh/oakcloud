@@ -2,6 +2,7 @@
 
 import {
   useEffect,
+  useId,
   useState,
   type HTMLAttributes,
   type KeyboardEvent,
@@ -211,11 +212,15 @@ export function TableHeaderCell({
   const content = children ?? label;
   const alignmentClass =
     align === 'right' ? 'text-right' : align === 'center' ? 'text-center' : 'text-left';
+  const contentId = useId();
+  // Name the header from its content only, so the resize handle's label is not read as part of it.
+  const labelledBy = resizable && !props['aria-label'] && !props['aria-labelledby'] ? contentId : undefined;
 
   return (
     <th
       scope="col"
-      aria-sort={onSort ? (sorted ? (sortOrder === 'asc' ? 'ascending' : 'descending') : 'none') : undefined}
+      aria-labelledby={labelledBy}
+      aria-sort={sorted ? (sortOrder === 'asc' ? 'ascending' : 'descending') : onSort ? 'none' : undefined}
       className={cn(
         'relative whitespace-nowrap px-3 py-2 text-xs font-medium text-text-secondary',
         alignmentClass,
@@ -233,7 +238,7 @@ export function TableHeaderCell({
             sorted && 'text-text-primary',
           )}
         >
-          <span>{content}</span>
+          <span id={contentId}>{content}</span>
           {sorted ? (
             sortOrder === 'asc' ? (
               <ArrowUp className="h-3.5 w-3.5" aria-hidden="true" />
@@ -244,6 +249,8 @@ export function TableHeaderCell({
             <ArrowUpDown className="h-3.5 w-3.5 text-text-muted" aria-hidden="true" />
           )}
         </button>
+      ) : labelledBy ? (
+        <span id={contentId}>{content}</span>
       ) : (
         content
       )}

@@ -250,7 +250,7 @@ describe('TaskWorkspace', () => {
 
     expect(screen.getByRole('table')).toBeInTheDocument();
     expect(screen.getByRole('combobox', { name: 'All companies' })).toBeInTheDocument();
-    expect(screen.getByRole('combobox', { name: 'All pipelines' })).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: 'Filter tasks by pipeline' })).toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: /Company/ })).toBeInTheDocument();
     expect(screen.getByRole('cell', { name: 'No tasks found' })).toHaveAttribute('colspan', '8');
   });
@@ -261,15 +261,15 @@ describe('TaskWorkspace', () => {
     fireEvent.change(screen.getByRole('searchbox', { name: 'Search tasks' }), {
       target: { value: 'annual' },
     });
-    const pipelineFilter = screen.getByRole('combobox', { name: 'All pipelines' });
+    const pipelineFilter = screen.getByRole('combobox', { name: 'Filter tasks by pipeline' });
     fireEvent.focus(pipelineFilter);
     fireEvent.change(pipelineFilter, { target: { value: 'Annual' } });
     fireEvent.keyDown(pipelineFilter, { key: 'ArrowDown' });
     fireEvent.keyDown(pipelineFilter, { key: 'Enter' });
-    fireEvent.change(screen.getByRole('textbox', { name: 'Filter tasks by title' }), {
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Filter tasks by title' }), {
       target: { value: 'compliance' },
     });
-    fireEvent.change(screen.getByRole('textbox', { name: 'Filter tasks by owner' }), {
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Filter tasks by owner' }), {
       target: { value: 'sam' },
     });
 

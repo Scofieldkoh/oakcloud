@@ -160,7 +160,7 @@ describe('DeadlineRulesPanel', () => {
     fireEvent.click(previewButton);
     const mutationResult = hooks.usePreviewDeadlineRuleImpact.mock.results[0]?.value;
     await waitFor(() => expect(mutationResult?.mutateAsync).toHaveBeenCalled());
-    expect(screen.getByText('Recalculated')).toBeVisible();
+    expect(screen.getByText('Date changes')).toBeVisible();
     expect(publish).toBeEnabled();
   });
 
@@ -169,7 +169,7 @@ describe('DeadlineRulesPanel', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Edit Annual Return' }));
     fireEvent.click(screen.getByRole('button', { name: 'Preview impact' }));
     const publish = screen.getByRole('button', { name: 'Publish changes' });
-    await waitFor(() => expect(screen.getByText('Recalculated')).toBeVisible());
+    await waitFor(() => expect(screen.getByText('Date changes')).toBeVisible());
     expect(publish).toBeEnabled();
 
     fireEvent.change(screen.getByLabelText('Rule name'), {
@@ -304,7 +304,7 @@ describe('DeadlineRulesPanel', () => {
       id: rule.id,
       input: expect.objectContaining({ expectedDraftRevision: 9, draftConfigHash: 'e'.repeat(64), previewFingerprint: 'f'.repeat(64) }),
     })));
-    await waitFor(() => expect(screen.getByText('Active v5')).toBeVisible());
+    await waitFor(() => expect(screen.getByText(/^Published v5 · /)).toBeVisible());
     expect(screen.getByText('Published version 5')).toBeVisible();
 
     fireEvent.click(screen.getByRole('button', { name: 'Preview impact' }));
@@ -354,9 +354,11 @@ describe('DeadlineRulesPanel', () => {
     fireEvent.click(within(reasonDialog).getByRole('button', { name: 'Archive rule' }));
 
     await waitFor(() => expect(archiveMutation.mutateAsync).toHaveBeenCalled());
-    await waitFor(() => expect(screen.getByText('Inactive')).toBeVisible());
+    await waitFor(() => expect(screen.getAllByText('Archived')[0]).toBeVisible());
     fireEvent.click(screen.getByRole('button', { name: 'More rule actions' }));
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Archive rule' }));
+    // An archived rule cannot be archived again; the next preview uses the refreshed draft.
+    expect(screen.getByRole('menuitem', { name: 'Archive rule' })).toBeDisabled();
+    fireEvent.click(screen.getByRole('button', { name: 'Preview impact' }));
     await waitFor(() => expect(previewMutation.mutateAsync).toHaveBeenCalledTimes(2));
     expect(previewMutation.mutateAsync.mock.calls[1]?.[0]).toEqual(expect.objectContaining({
       id: rule.id,

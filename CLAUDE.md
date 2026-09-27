@@ -8,5 +8,4 @@
 ## Known Unrelated Issues
 
 - A cold `tsc --noEmit` needs about 5.2 GB of heap, above Node's default limit, so `npm run typecheck` now runs tsc with `--max-old-space-size=8192` (the same limit as the CI build step). (2026-09-26)
-- These component suites already fail on `main` and are not run in CI: billing-table, business-assistant-bizfile-upload, company-create-workspace, deadline-calendar, deadline-review-remediations, deadline-rules-admin, document-table, esigning-detail-hydration, esigning-list-actions, esigning-step-upload, form-url-health-field-warning, service-roster and template-editor/template-validation. (2026-09-26)
-- `document-generation-batch-generation.service` (2 tests) and `document-generation-batch-preview.service` (5 tests) already fail on `main` and are not run in CI. (2026-09-27)
+- The real-Chromium PDF tests under `tests/document-output` need Chrome; on a Linux box without it, set `CHROME_PATH` (for example to Playwright's Chromium). Vitest runs in `Asia/Singapore` time so date assertions match the firm's time zone. (2026-09-27)
