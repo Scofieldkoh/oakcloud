@@ -4,11 +4,14 @@ import { Prisma } from '@/generated/prisma';
 
 import {
   LEGACY_FORM_C_STARTER_HASH,
+  PREVIOUS_STARTER_DEFINITIONS,
   STARTER_DEFINITIONS,
   createServiceScheduleStarterData,
   upgradeLegacyFormCStarterDraft,
+  upgradeUntouchedStarterDraftToPreset,
 } from '@/services/deadline-rule/starter-drafts';
 import { hashDeadlineRuleDefinition } from '@/services/deadline-rule/canonical';
+import { SG_ECI_PRESET, SG_FORM_C_PRESET } from '@/services/deadline-rule/presets';
 
 const tenantId = '11111111-1111-4111-8111-111111111111';
 
@@ -73,6 +76,12 @@ describe('deadline rule starter definitions', () => {
     expect(STARTER_DEFINITIONS.map((definition) => hashDeadlineRuleDefinition(definition))).toEqual([
       '5064178cfb8a0675bd7a4520c5e91e5e64c0b5f0097b97794d63ebbd52e5380d',
       'babbb099210ec2afbfaf460482b2200f609ea894dd4fda1b08bc5b6e6116797f',
+      hashDeadlineRuleDefinition(SG_ECI_PRESET.definition),
+      hashDeadlineRuleDefinition(SG_FORM_C_PRESET.definition),
+    ]);
+    // The drafts shipped before the presets keep their exact fingerprints so
+    // untouched copies can still be recognised and upgraded.
+    expect(PREVIOUS_STARTER_DEFINITIONS.map((definition) => hashDeadlineRuleDefinition(definition))).toEqual([
       '4124dcf4fcc2a1894d4517bc099d5d1c146587b3ad573eae1474cfb8ea134f2b',
       '75075fada015d102dadd965553bc82b67ba5362359c9994a0ac5e8217a7b06f4',
     ]);
@@ -95,16 +104,15 @@ describe('deadline rule starter definitions', () => {
       kind: 'SOURCE',
       source: { kind: 'COMPANY_FIELD', field: 'accountsDueDate' },
     });
-    expect(eci.parameters).toEqual([expect.objectContaining({
-      key: 'monthsAfterFye',
-      type: 'INTEGER',
-      required: true,
-    })]);
+    expect(eci.parameters).toEqual([]);
+    expect(eci.milestones[0]?.expression).toEqual({
+      kind: 'ADD_MONTHS_MONTH_END',
+      source: { kind: 'OBLIGATION_PERIOD_END' },
+      amount: 3,
+    });
     expect(formC.parameters).toEqual([]);
     expect(formC.milestones[0]?.expression).toEqual({
-      kind: 'FIXED_DATE_FROM_SOURCE_YEAR',
-      source: { kind: 'COMPANY_FIELD', field: 'financialYearEnd' },
-      yearOffset: 1,
+      kind: 'FIXED_DATE_IN_ASSESSMENT_YEAR',
       month: 11,
       day: 30,
     });
@@ -180,13 +188,13 @@ describe('deadline rule starter definitions', () => {
         tenantId,
         milestoneKey: 'eci-due',
         name: 'ECI due date',
-        description: null,
+        description: 'Within three months after the financial year ends',
         type: 'STATUTORY',
         generationMode: 'ONCE_PER_CYCLE',
         dateExpression: {
-          kind: 'ADD_MONTHS',
-          source: { kind: 'COMPANY_FIELD', field: 'financialYearEnd' },
-          amount: { kind: 'INTEGER_PARAMETER', key: 'monthsAfterFye' },
+          kind: 'ADD_MONTHS_MONTH_END',
+          source: { kind: 'OBLIGATION_PERIOD_END' },
+          amount: 3,
         },
         businessDayAdjustment: 'NONE',
         displayOrder: 0,
@@ -195,14 +203,12 @@ describe('deadline rule starter definitions', () => {
       {
         tenantId,
         milestoneKey: 'form-c-due',
-        name: 'Form C due date',
-        description: null,
+        name: 'Corporate income tax return due date',
+        description: '30 November of the Year of Assessment',
         type: 'STATUTORY',
         generationMode: 'ONCE_PER_CYCLE',
         dateExpression: {
-          kind: 'FIXED_DATE_FROM_SOURCE_YEAR',
-          source: { kind: 'COMPANY_FIELD', field: 'financialYearEnd' },
-          yearOffset: 1,
+          kind: 'FIXED_DATE_IN_ASSESSMENT_YEAR',
           month: 11,
           day: 30,
         },
@@ -266,7 +272,7 @@ describe('deadline rule starter definitions', () => {
       expect(actualParameters).toEqual(definition.parameters.length === 0 ? [] : [expectedParameter]);
       expect(actualMilestones).toEqual([expectedMilestones[index]]);
       const expectedMilestone = expectedMilestones[index];
-      if (definition.code !== 'SG_FORM_C') {
+      if (definition.code !== 'SG_FORM_C' && definition.code !== 'SG_ECI') {
         expect(migration).toContain(hashDeadlineRuleDefinition(definition));
         expect(migration).toContain(JSON.stringify(expectedMilestone.dateExpression));
       }
@@ -418,6 +424,48 @@ describe('deadline rule starter definitions', () => {
     expect(tx.deadlineRuleVersion.findFirst).not.toHaveBeenCalled();
     expect(tx.deadlineRuleVersion.create).not.toHaveBeenCalled();
   });
+
+  it('moves an untouched previous ECI starter draft to the reviewed preset', async () => {
+    const previous = PREVIOUS_STARTER_DEFINITIONS[0]!;
+    tx.deadlineRule.findFirst.mockResolvedValueOnce({
+      id: 'eci-rule',
+      versions: [{ id: 'eci-draft', version: 0, state: 'DRAFT', configHash: hashDeadlineRuleDefinition(previous) }],
+      variantAssociations: [{ id: 'variant-link', parameterDefaults: { monthsAfterFye: 3, other: 1 } }],
+      clientAssociations: [{ id: 'client-link', parameterValues: { monthsAfterFye: 3 }, parameterProvenance: { monthsAfterFye: 'CATALOG_DEFAULT' } }],
+    });
+
+    await expect(upgradeUntouchedStarterDraftToPreset(tx as never, tenantId, 'SG_ECI')).resolves.toBe(true);
+
+    expect(tx.deadlineRule.findFirst).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({ code: 'SG_ECI', name: previous.name, description: previous.description, currentVersionId: null }),
+    }));
+    expect(tx.serviceVariantDeadlineRule.update).toHaveBeenCalledWith({ where: { id: 'variant-link' }, data: { parameterDefaults: { other: 1 } } });
+    expect(tx.clientServiceDeadlineRule.update).toHaveBeenCalledWith({
+      where: { id: 'client-link' },
+      data: { parameterValues: {}, parameterProvenance: {} },
+    });
+    const versionUpdate = tx.deadlineRuleVersion.update.mock.calls[0]?.[0];
+    expect(versionUpdate.data.configHash).toBe(hashDeadlineRuleDefinition(SG_ECI_PRESET.definition));
+    expect(versionUpdate.data.parameterDefinitions.create).toEqual([]);
+    expect(versionUpdate.data.milestoneTemplates.create[0].dateExpression).toEqual(SG_ECI_PRESET.definition.milestones[0]!.expression);
+    expect(tx.deadlineRule.update).toHaveBeenCalledWith({
+      where: { id: 'eci-rule' },
+      data: { name: SG_ECI_PRESET.definition.name, description: SG_ECI_PRESET.definition.description },
+    });
+  });
+
+  it('leaves an edited or published ECI draft for the reviewed upgrade flow', async () => {
+    tx.deadlineRule.findFirst.mockResolvedValueOnce({
+      id: 'eci-rule',
+      versions: [{ id: 'eci-draft', version: 0, state: 'DRAFT', configHash: 'edited' }],
+      variantAssociations: [],
+      clientAssociations: [],
+    });
+    await expect(upgradeUntouchedStarterDraftToPreset(tx as never, tenantId, 'SG_ECI')).resolves.toBe(false);
+    tx.deadlineRule.findFirst.mockResolvedValueOnce(null);
+    await expect(upgradeUntouchedStarterDraftToPreset(tx as never, tenantId, 'SG_ECI')).resolves.toBe(false);
+    expect(tx.deadlineRuleVersion.update).not.toHaveBeenCalled();
+  });
 });
 
 describe('deadline rule starter migration', () => {
@@ -426,9 +474,11 @@ describe('deadline rule starter migration', () => {
       'prisma/migrations/20260817101000_deadline_rule_starter_drafts/migration.sql',
       'prisma/migrations/20260826171000_remove_duplicate_company_deadline_dates/migration.sql',
     ].map((path) => readFileSync(path, 'utf8')).join('\n');
-    for (const definition of STARTER_DEFINITIONS.filter((candidate) => candidate.code !== 'SG_FORM_C')) {
+    for (const definition of STARTER_DEFINITIONS.filter((candidate) => !['SG_FORM_C', 'SG_ECI'].includes(candidate.code))) {
       expect(migration).toContain(hashDeadlineRuleDefinition(definition));
     }
+    // The seeded ECI draft is the pre-preset definition; runtime upgrades it.
+    expect(migration).toContain(hashDeadlineRuleDefinition(PREVIOUS_STARTER_DEFINITIONS[0]!));
     expect(migration).toContain(LEGACY_FORM_C_STARTER_HASH);
     expect(migration).not.toContain(hashDeadlineRuleDefinition(
       STARTER_DEFINITIONS.find((candidate) => candidate.code === 'SG_FORM_C')!,

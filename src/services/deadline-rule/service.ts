@@ -15,6 +15,7 @@ import {
 import { canonicalDeadlineRuleDefinition, hashDeadlineRuleDefinition } from './canonical';
 import { validateVariantRuleAssociations } from './association-validation';
 import { upgradeLegacyFormCStarterDraft } from './starter-drafts';
+import { deadlineRulePresetFor } from './presets';
 import type {
   DeadlineMilestoneDto,
   DeadlineRuleDto,
@@ -558,4 +559,28 @@ export async function replaceVariantRuleAssociations(
       })),
     };
   });
+}
+
+/**
+ * Stage the reviewed preset for an existing SG_ECI / SG_FORM_C rule as its
+ * draft. Nothing is published here: staff still preview the impact and
+ * publish through the normal fingerprinted flow, and published history stays.
+ */
+export async function stageDeadlineRulePreset(
+  id: string,
+  input: { expectedDraftRevision?: number },
+  actor: TenantAwareParams,
+): Promise<DeadlineRuleDto> {
+  const rule = await prisma.deadlineRule.findFirst({
+    where: ruleWhere(id, actor.tenantId),
+    select: { code: true, archivedAt: true },
+  });
+  if (!rule) throw new NotFoundError('Deadline rule not found');
+  if (rule.archivedAt) throw new ValidationError('Archived deadline rules cannot take a preset');
+  const preset = deadlineRulePresetFor(rule.code);
+  if (!preset) throw new ValidationError(`No reviewed preset exists for rule code ${rule.code}`);
+  return updateDeadlineRuleDraft(id, {
+    ...preset.definition,
+    ...(input.expectedDraftRevision ? { expectedDraftRevision: input.expectedDraftRevision } : {}),
+  } as DeadlineRuleDraftInput, actor);
 }

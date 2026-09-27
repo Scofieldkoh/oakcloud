@@ -3,8 +3,14 @@ export {
   getDeadlineRule,
   listDeadlineRules,
   replaceVariantRuleAssociations,
+  stageDeadlineRulePreset,
   updateDeadlineRuleDraft,
 } from './service';
+export {
+  DEADLINE_RULE_PRESETS,
+  deadlineRulePresetFor,
+} from './presets';
+export type { DeadlineRulePreset, DeadlineRulePresetCode } from './presets';
 export {
   archiveDeadlineRule,
   deadlineRuleArchiveSchema,

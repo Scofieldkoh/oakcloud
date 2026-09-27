@@ -15,6 +15,7 @@ import {
 import {
   addCalendarDays,
   addMonthsClamped,
+  addMonthsPreservingMonthEnd,
   alignAnnualLandmarkToPeriod,
   compareDateOnly,
   dayOfMonth,
@@ -39,6 +40,7 @@ import type {
   IntegerOperand,
   MilestoneDefinition,
   MilestoneExpression,
+  ObligationPeriodInput,
   RuleRecurrenceDefinition,
   ScheduleEntry,
 } from './types';
@@ -61,6 +63,8 @@ export type DeadlineRuleEvaluationInput = {
   milestones: EvaluatorMilestoneDefinition[];
   company: CompanyRuleSource;
   period: { key: string; start: DateOnly; end: DateOnly };
+  /** Explicit financial/tax period for period-based statutory rules. */
+  obligationPeriod?: ObligationPeriodInput;
   calendar: BusinessCalendarSnapshot;
 };
 
@@ -118,7 +122,9 @@ const DATE_OPERATIONS = new Set([
   'ADD_CALENDAR_DAYS',
   'ADD_BUSINESS_DAYS',
   'ADD_MONTHS',
+  'ADD_MONTHS_MONTH_END',
   'FIXED_DATE_FROM_SOURCE_YEAR',
+  'FIXED_DATE_IN_ASSESSMENT_YEAR',
   'ADJUST_BUSINESS_DAY',
 ]);
 const SCHEDULE_KEY_PATTERN = /^[a-z][a-z0-9-]{0,63}$/;
@@ -325,6 +331,10 @@ function assertDateSource(source: unknown, path: string): DateSource {
     case 'CYCLE_END':
       if (Object.keys(source).some((key) => key !== 'kind')) throw new ValidationError(`${path} contains unknown fields`, { path });
       return { kind: source.kind };
+    case 'OBLIGATION_PERIOD_START':
+    case 'OBLIGATION_PERIOD_END':
+      if (Object.keys(source).some((key) => key !== 'kind')) throw new ValidationError(`${path} contains unknown fields`, { path });
+      return { kind: source.kind };
     case 'CURRENT_SCHEDULE_ENTRY':
       if (Object.keys(source).some((key) => key !== 'kind')) throw new ValidationError(`${path} contains unknown fields`, { path });
       return { kind: 'CURRENT_SCHEDULE_ENTRY' };
@@ -409,9 +419,15 @@ function assertExpression(expression: unknown, path: string, allowOperations = t
       assertIntegerOperand(expression.amount, `${path}.amount`);
       return expression as unknown as RuleDateExpression;
     case 'ADD_MONTHS':
+    case 'ADD_MONTHS_MONTH_END':
       if (Object.keys(expression).some((key) => !['kind', 'source', 'amount'].includes(key))) throw new ValidationError(`${path} contains unknown fields`, { path });
       if (expression.source !== undefined) assertDateSource(expression.source, `${path}.source`);
       assertIntegerOperand(expression.amount, `${path}.amount`);
+      return expression as unknown as RuleDateExpression;
+    case 'FIXED_DATE_IN_ASSESSMENT_YEAR':
+      if (Object.keys(expression).some((key) => !['kind', 'month', 'day'].includes(key))) throw new ValidationError(`${path} contains unknown fields`, { path });
+      safeInteger(expression.month, `${path}.month`, 1, 12);
+      safeInteger(expression.day, `${path}.day`, 1, 31);
       return expression as unknown as RuleDateExpression;
     case 'FIXED_DATE_FROM_SOURCE_YEAR':
       if (Object.keys(expression).some((key) => !['kind', 'source', 'yearOffset', 'month', 'day'].includes(key))) throw new ValidationError(`${path} contains unknown fields`, { path });
@@ -470,6 +486,7 @@ function sourcesFromExpression(expression: RuleDateExpression): DateSource[] {
     case 'ADD_CALENDAR_DAYS':
     case 'ADD_BUSINESS_DAYS':
     case 'ADD_MONTHS':
+    case 'ADD_MONTHS_MONTH_END':
       return expression.source ? [expression.source] : [];
     case 'FIXED_DATE_FROM_SOURCE_YEAR':
       return [expression.source];
@@ -572,6 +589,8 @@ function sourceName(source: DateSource): string {
     case 'COMPANY_FIELD': return `Company.${source.field}`;
     case 'CYCLE_START': return 'Cycle.start';
     case 'CYCLE_END': return 'Cycle.end';
+    case 'OBLIGATION_PERIOD_START': return 'ObligationPeriod.start';
+    case 'OBLIGATION_PERIOD_END': return 'ObligationPeriod.end';
     case 'PARAMETER': return `Parameter.${source.key}`;
     case 'SCHEDULE_ENTRY': return `ScheduleEntry.${source.key}`;
     case 'MILESTONE': return `Milestone.${source.key}`;
@@ -620,6 +639,16 @@ function resolveSource(
     case 'CYCLE_END':
       markProvenance(tracker, sourceName(source), input.period.end);
       return { date: input.period.end, explanation: [`Source ${sourceName(source)} = ${input.period.end}`] };
+    case 'OBLIGATION_PERIOD_START':
+    case 'OBLIGATION_PERIOD_END': {
+      if (!input.obligationPeriod) {
+        markProvenance(tracker, sourceName(source), null);
+        throw missingInput(`${sourceName(source)} is required`, { source });
+      }
+      const date = source.kind === 'OBLIGATION_PERIOD_START' ? input.obligationPeriod.start : input.obligationPeriod.end;
+      markProvenance(tracker, sourceName(source), date);
+      return { date, explanation: [`Source ${sourceName(source)} = ${date}`] };
+    }
     case 'PARAMETER': {
       tracker.parameters.add(source.key);
       const supplied = hasParameter(input.parameters, source.key);
@@ -807,6 +836,40 @@ function evaluateExpression(
         explanation: [...base.explanation, integerOperandExplanation(expression.amount, amount), `Applied ${amount} month${Math.abs(amount) === 1 ? '' : 's'}`],
       };
     }
+    case 'ADD_MONTHS_MONTH_END': {
+      const amount = resolveIntegerOperand(expression.amount, input, tracker, 'expression.amount');
+      const base = expression.source
+        ? resolveSource(assertDateSource(expression.source, 'expression.source'), context, input, scheduleDates, milestoneDates, tracker)
+        : { date: input.period.start, explanation: [`Default source Cycle.start = ${input.period.start}`] };
+      return {
+        date: addMonthsPreservingMonthEnd(base.date, amount),
+        explanation: [
+          ...base.explanation,
+          integerOperandExplanation(expression.amount, amount),
+          `Applied ${amount} month${Math.abs(amount) === 1 ? '' : 's'} (month end stays month end)`,
+        ],
+      };
+    }
+    case 'FIXED_DATE_IN_ASSESSMENT_YEAR': {
+      const yearOfAssessment = input.obligationPeriod?.yearOfAssessment ?? null;
+      if (yearOfAssessment === null) {
+        markProvenance(tracker, 'ObligationPeriod.yearOfAssessment', null);
+        throw missingInput('ObligationPeriod.yearOfAssessment is required', {
+          source: { kind: 'OBLIGATION_PERIOD_END' },
+          field: 'yearOfAssessment',
+        });
+      }
+      markProvenance(tracker, 'ObligationPeriod.yearOfAssessment', String(yearOfAssessment));
+      const yearStart = `${String(yearOfAssessment).padStart(4, '0')}-01-01` as DateOnly;
+      const date = fixedDateFromSourceYear(yearStart, 0, expression.month, expression.day);
+      return {
+        date,
+        explanation: [
+          `Year of Assessment ${yearOfAssessment}`,
+          `Fixed calendar date month ${expression.month} day ${expression.day} in YA ${yearOfAssessment} = ${date}`,
+        ],
+      };
+    }
     case 'FIXED_DATE_FROM_SOURCE_YEAR': {
       const base = resolveSource(assertDateSource(expression.source, 'expression.source'), context, input, scheduleDates, milestoneDates, tracker);
       const date = fixedDateFromSourceYear(base.date, expression.yearOffset, expression.month, expression.day);
@@ -974,6 +1037,26 @@ function normalizeParameters(value: unknown): Record<string, unknown> {
   return value;
 }
 
+function normalizeObligationPeriod(value: unknown): ObligationPeriodInput | undefined {
+  if (value === undefined) return undefined;
+  if (!isRecord(value)) throw new ValidationError('obligationPeriod must be an object');
+  guardJsonGraph(value, 'obligationPeriod');
+  if (Object.keys(value).some((key) => !['start', 'end', 'yearOfAssessment'].includes(key))) {
+    throw new ValidationError('obligationPeriod contains unknown fields');
+  }
+  const start = value.start as DateOnly;
+  const end = value.end as DateOnly;
+  parseDateOnly(start);
+  parseDateOnly(end);
+  if (compareDateOnly(start, end) > 0) {
+    throw new ValidationError('obligationPeriod.start must be on or before obligationPeriod.end');
+  }
+  const yearOfAssessment = value.yearOfAssessment === null || value.yearOfAssessment === undefined
+    ? null
+    : safeInteger(value.yearOfAssessment, 'obligationPeriod.yearOfAssessment', 1, 9999);
+  return { start, end, yearOfAssessment };
+}
+
 function normalizeEvaluationInput(input: DeadlineRuleEvaluationInput): DeadlineRuleEvaluationInput {
   if (!isRecord(input)) throw new ValidationError('Deadline rule evaluation input must be an object');
   requiredString(input.ruleId, 'ruleId');
@@ -991,8 +1074,10 @@ function normalizeEvaluationInput(input: DeadlineRuleEvaluationInput): DeadlineR
   const parameters = normalizeParameters(input.parameters);
   assertDatePeriod(input.period);
   validateCalendar(input.calendar, input.period.start);
+  const obligationPeriod = normalizeObligationPeriod(input.obligationPeriod);
   return {
     ...input,
+    ...(obligationPeriod ? { obligationPeriod } : {}),
     recurrence,
     applicability,
     scheduleEntries,
@@ -1034,6 +1119,9 @@ function buildSnapshot(
       result: applicability,
     },
     period: input.period,
+    // Only period-based rules carry an obligation period, so legacy snapshot
+    // hashes stay byte-for-byte unchanged.
+    ...(input.obligationPeriod ? { obligationPeriod: input.obligationPeriod } : {}),
     company,
     parameters,
     scheduleEntries: input.scheduleEntries,

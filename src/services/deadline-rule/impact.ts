@@ -22,7 +22,15 @@ import type {
   DateOnly,
   EvaluatedDeadline,
 } from '@/services/service-schedule';
-import { normalizeCompanyRuleSource } from '@/services/service-schedule';
+import {
+  companyPeriodFacts,
+  normalizeCompanyRuleSource,
+  obligationPeriodBasisForExpressions,
+  obligationPeriodFromCycle,
+  planFinancialPeriods,
+  planObligationPeriods,
+} from '@/services/service-schedule';
+import { OBLIGATION_PERIOD_LOOKBACK_MONTHS } from '@/services/schedule-reconciliation/projection';
 import { enqueueScheduleReconciliation } from '@/services/schedule-reconciliation';
 import {
   planRollingPeriods,
@@ -369,8 +377,18 @@ async function evaluatorInputFor(
     milestones: milestoneInput(version),
     company: normalizeCompanyRuleSource(context.clientService.company, today),
     period: { key: cycle.periodKey, start: periodStart, end: periodEnd },
+    ...obligationPeriodInputFor(cycle.periodKey, periodStart, periodEnd),
     calendar,
   };
+}
+
+function obligationPeriodInputFor(
+  periodKey: string,
+  start: DateOnly,
+  end: DateOnly,
+): Pick<DeadlineRuleEvaluationInput, 'obligationPeriod'> {
+  const obligationPeriod = obligationPeriodFromCycle(periodKey, start, end);
+  return obligationPeriod ? { obligationPeriod } : {};
 }
 
 async function loadRuleScope(db: ImpactDb, ruleId: string, tenantId: string, allowMissingDraft = false): Promise<{
@@ -545,12 +563,25 @@ async function computeImpact(
       .filter((cycle) => cycle.origin === undefined || cycle.origin === 'RULE')
       .map((cycle) => `${cycle.clientServiceId}|${cycle.periodKey}`),
   );
+  const draftMilestones = milestoneInput(scope.draft);
+  const draftPeriodBasis = obligationPeriodBasisForExpressions(draftMilestones.map((milestone) => milestone.expression));
   for (const context of [...contextByClientService.values()].sort((left, right) => left.clientServiceId.localeCompare(right.clientServiceId))) {
-    const periods = planRollingPeriods(
-      scope.draft.recurrence as DeadlineRuleEvaluationInput['recurrence'],
-      today,
-      horizonEnd,
-    );
+    // Period-based drafts plan the same financial periods / YAs as the
+    // reconciler's OBLIGATION_PERIOD projection, so preview and apply agree.
+    const periods = draftPeriodBasis
+      ? planObligationPeriods(
+          draftPeriodBasis,
+          planFinancialPeriods(
+            companyPeriodFacts(context.clientService?.company),
+            addMonthsClamped(today, -OBLIGATION_PERIOD_LOOKBACK_MONTHS),
+            horizonEnd,
+          ).periods,
+        )
+      : planRollingPeriods(
+          scope.draft.recurrence as DeadlineRuleEvaluationInput['recurrence'],
+          today,
+          horizonEnd,
+        );
     for (const period of periods) {
       const key = `${context.clientServiceId}|${period.periodKey}`;
       if (existingCycleKeys.has(key)) continue;
@@ -595,6 +626,13 @@ async function computeImpact(
       const identity = `cycle|${cycle.clientServiceId}|${cycleIdentity(cycle)}|warning`;
       decisions.push({ identity, clientServiceId: cycle.clientServiceId, deadlineOccurrenceId: null, action: 'WARN', oldDate: null, newDate: null, reason });
       fullIdentityStates.push({ identity, action: 'WARN', oldDate: null, newDate: null, reason });
+      continue;
+    }
+    if (draftPeriodBasis && !obligationPeriodFromCycle(cycle.periodKey, safeDateOnly(cycle.periodStart) ?? today, safeDateOnly(cycle.periodEnd) ?? today)) {
+      // A legacy rolling cycle has no financial period. The period-based
+      // reconciler no longer produces it, so its open future rows cancel.
+      evaluationStateByCycle.set(cycle.id, { status: 'OK', reason: null, hash: null, snapshot: null });
+      evaluatedByCycle.set(cycle.id, new Map());
       continue;
     }
     const input = await evaluatorInputFor(scope.rule, scope.draft, cycle, context, calendar, today);

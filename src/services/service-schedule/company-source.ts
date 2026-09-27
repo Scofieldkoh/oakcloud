@@ -1,5 +1,6 @@
 import { parseDateOnly } from './date-only';
 import type { CompanyRuleSource, DateOnly } from './types';
+import type { CompanyPeriodFacts } from './obligation-periods';
 
 function asRecord(value: unknown): Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -70,4 +71,24 @@ export function normalizeCompanyRuleSource(value: unknown, today?: DateOnly): Co
     }
   }
   return result as CompanyRuleSource;
+}
+
+/**
+ * Period facts for period-based statutory rules. Confirmed financial periods
+ * are passed by callers that load them; the FYE month/day is only the
+ * recurring preference used to derive provisional periods.
+ */
+export function companyPeriodFacts(
+  value: unknown,
+  confirmedPeriods: CompanyPeriodFacts['confirmedPeriods'] = [],
+): CompanyPeriodFacts {
+  const source = asRecord(value);
+  const month = source.financialYearEndMonth;
+  const day = source.financialYearEndDay;
+  return {
+    financialYearEndMonth: typeof month === 'number' ? month : null,
+    financialYearEndDay: typeof day === 'number' ? day : null,
+    incorporationDate: safeDateOnly(source.incorporationDate),
+    confirmedPeriods,
+  };
 }
