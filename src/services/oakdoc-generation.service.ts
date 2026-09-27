@@ -353,9 +353,7 @@ async function renderOakDocMaster(
   const agreementContext = input.agreement ?? (composition
     ? {
         agreementDate: composition.agreement.agreementDate,
-        // An agreement without its own effective date takes effect on the
-        // agreement date.
-        effectiveDate: composition.agreement.effectiveDate ?? composition.agreement.agreementDate,
+        effectiveDate: composition.agreement.effectiveDate,
         termMonths: composition.agreement.termMonths,
       }
     : undefined);

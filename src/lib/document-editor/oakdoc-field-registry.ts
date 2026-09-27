@@ -121,6 +121,7 @@ export const OAKDOC_AGREEMENT_PROTOTYPE_TAGS = {
   feeSowRow: 'agreement.feeTable.sowRow',
   feeSowName: 'agreement.feeTable.sowName',
   feeSowAmount: 'agreement.feeTable.sowAmount',
+  feeChargeRow: 'agreement.feeTable.chargeRow',
   feeChargeDescription: 'agreement.feeTable.chargeDescription',
   feeChargeAmount: 'agreement.feeTable.chargeAmount',
   entityName: 'agreement.entityAppendix.name',

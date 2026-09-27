@@ -372,33 +372,39 @@ describe('reference-layout generation', () => {
     expect(xml).not.toContain('mailto:"');
   });
 
-  it('groups fees by company with one SOW row per service', async () => {
+  it('lists every company, SOW and charge in one centred SOW/Amount table', async () => {
     const result = await generate();
     const document = parse(new Uint8Array(result.bytes));
     const feeTables = all(document, 'tbl').filter((table) => {
       const header = all(table, 'tr')[0];
       return header && text(header) === 'SOWAmount';
     });
-    expect(feeTables).toHaveLength(2);
+    expect(feeTables).toHaveLength(1);
 
-    const [first, second] = feeTables.map((table) => all(table, 'tr').slice(1).map((row) =>
-      all(row, 'tc').map((cell) => all(cell, 'p').map(text).filter(Boolean))));
-    expect(first).toEqual([
-      [['Statement of Work – Corporate Secretarial Services'], ['S$1,500 per year']],
-      [
-        ['Statement of Work – Unaudited Financial Statements and Corporate Tax Services', 'Unaudited financial statements', 'Corporate income tax filing'],
-        ['S$2,500 per year', 'S$800.50 per year'],
-      ],
+    const rows = all(feeTables[0], 'tr').slice(1).map((row) => all(row, 'tc').map(text));
+    expect(rows).toEqual([
+      ['', ''],
+      ['Example Holdings Pte. Ltd.:', ''],
+      ['Statement of Work – Corporate Secretarial Services', ''],
+      ['Corporate Secretarial Services', 'S$1,500 per year'],
+      ['Statement of Work – Unaudited Financial Statements and Corporate Tax Services', ''],
+      ['Unaudited financial statements', 'S$2,500 per year'],
+      ['Corporate income tax filing', 'S$800.50 per year'],
+      ['', ''],
+      ['Example Trading Pte. Ltd.:', ''],
+      ['Statement of Work – Corporate Secretarial Services', ''],
+      ['Corporate Secretarial Services', 'S$1,200 per year'],
+      ['', ''],
     ]);
-    expect(second).toEqual([[['Statement of Work – Corporate Secretarial Services'], ['S$1,200 per year']]]);
-
-    const headings = bodyParagraphs(document).map(text);
-    expect(headings).toContain('Example Holdings Pte. Ltd.:');
-    expect(headings).toContain('Example Trading Pte. Ltd.:');
+    for (const cell of all(feeTables[0], 'tc')) {
+      expect(val(child(child(cell, 'tcPr'), 'vAlign'))).toBe('center');
+    }
+    const companyRun = all(feeTables[0], 'r').find((runElement) => text(runElement) === 'Example Holdings Pte. Ltd.');
+    expect(child(child(companyRun!, 'rPr'), 'u')).toBeDefined();
     expect(tags(document).filter((tag) => tag.startsWith('agreement.feeTable.'))).toEqual([]);
   });
 
-  it('keeps a single company in its own heading and table', async () => {
+  it('keeps the company row for a single-company agreement', async () => {
     const draft = agreement();
     const result = await generate({
       ...draft,

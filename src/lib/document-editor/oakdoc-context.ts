@@ -410,7 +410,9 @@ function buildResolutionContext(input: OakDocResolutionInput) {
     selectedContact: buildSelectedContact(selectedContact),
     agreement: {
       agreementDate: input.agreement?.agreementDate,
-      effectiveDate: input.agreement?.effectiveDate,
+      // An agreement without its own effective date takes effect on the
+      // agreement date, whichever caller supplied the dates.
+      effectiveDate: input.agreement?.effectiveDate || input.agreement?.agreementDate,
       termMonths: input.agreement?.termMonths,
       term: formatAgreementTerm(input.agreement?.termMonths),
     },
