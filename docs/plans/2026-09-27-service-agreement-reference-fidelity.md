@@ -452,7 +452,7 @@ Known deviations from the reference, deliberate or for review:
 
 - Condensed character spacing on roughly 1,500 reference characters is not reproduced; line wrapping can therefore differ slightly.
 - The fee row label is the service name (for example "Corporate Secretarial Services"), not "Statement of Work – …".
-- The letter address comes from `formatLetterAddress`: building first, then street and unit, then `Singapore  520828` with two spaces. The reference prints street and unit first, then the building, then `Singapore 520828`.
+- The letter address comes from `formatLetterAddress`: building first, then street and unit, then `Singapore  123456` with two spaces. The reference prints street and unit first, then the building, then `Singapore 123456` with one space.
 - A continued fee table repeats its SOW/Amount header but does not repeat the company name.
 - Re-running the seed no longer resets whether a seeded master is active; that stays with whoever switched it in the app.
 
