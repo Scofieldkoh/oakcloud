@@ -12,6 +12,7 @@ import {
   enqueueScheduleReconciliation,
   processScheduleReconciliationBatch,
 } from '@/services/schedule-reconciliation';
+import { detachMonitoringFromDeletedService, endMonitoringForService, syncMonitoringEndForService } from '@/services/compliance-monitoring/coverage';
 import { assertConfiguredBillingState, canonicalizeBillingSchedule } from '@/services/billing/schedule';
 import {
   addMonthsClamped,
@@ -19,6 +20,7 @@ import {
   evaluateApplicability,
   hashConfiguration,
   canonicalJson,
+  companyPeriodFacts,
   normalizeCompanyRuleSource,
   dateOnlySchema,
   parseDateOnly,
@@ -754,6 +756,7 @@ export async function previewClientServiceDeadlineConfiguration(
         scheduleEntries: configuration.scheduleEntries as never,
         milestones,
         company: normalizeCompanyRuleSource(company, today),
+        periodFacts: companyPeriodFacts(company),
         calendar,
         today,
         horizonEnd,
@@ -1017,6 +1020,7 @@ export async function previewClientServiceDeadlineDraft(
         scheduleEntries: configuration.scheduleEntries as never,
         milestones,
         company: normalizeCompanyRuleSource(company, today),
+        periodFacts: companyPeriodFacts(company),
         calendar,
         today,
         horizonEnd,
@@ -1292,6 +1296,20 @@ export async function updateClientService(id: string, input: UpdateClientService
     });
     if (claimed.count !== 1) throw new ConflictError('This service was updated by someone else. Reload it and try again.');
 
+    // Company monitoring follows the service lifecycle; its obligations stay.
+    const nextStatus = input.status ?? current.status;
+    if (nextStatus === 'ENDED' && current.status !== 'ENDED') {
+      await endMonitoringForService(tx, {
+        tenantId: params.tenantId,
+        clientServiceId: id,
+        endDate: endDate ?? new Date(`${currentDateInSingapore()}T00:00:00.000Z`),
+        actorId: params.userId,
+        reason: 'Service ended',
+      });
+    } else if (input.endDate !== undefined) {
+      await syncMonitoringEndForService(tx, { tenantId: params.tenantId, clientServiceId: id, endDate: endDate ?? null });
+    }
+
     const billingArchiveAt = shouldArchiveBillingFees ? new Date() : null;
     if (billingDisposition === 'NOT_REQUIRED' && shouldArchiveBillingFees) {
       await tx.clientServiceFeeLine.updateMany({
@@ -1450,6 +1468,13 @@ export async function archiveClientService(id: string, reason: string, params: C
       data: { deletedAt: new Date(), deletedReason: reason },
     });
     if (archived.count !== 1) throw new ConflictError('Client service changed while archiving');
+    await endMonitoringForService(tx, {
+      tenantId: params.tenantId,
+      clientServiceId: id,
+      endDate: new Date(`${currentDateInSingapore()}T00:00:00.000Z`),
+      actorId: params.userId,
+      reason,
+    });
     await enqueueScheduleReconciliation(tx, {
       tenantId: params.tenantId,
       scopeType: 'CLIENT_SERVICE',
@@ -1498,6 +1523,20 @@ export async function deleteClientServicePermanently(
       data: { deletedAt: new Date(), deletedReason: input.reason },
     });
     if (markedForDeletion.count !== 1) throw new ConflictError('Client service changed while deleting');
+    await detachMonitoringFromDeletedService(tx, {
+      tenantId: params.tenantId,
+      clientServiceId: id,
+      actorId: params.userId,
+      reason: input.reason,
+    });
+    await enqueueScheduleReconciliation(tx, {
+      tenantId: params.tenantId,
+      scopeType: 'COMPANY',
+      scopeId: current.companyId,
+      triggerType: 'CLIENT_SERVICE_DELETED',
+      correlationId: `client-service-delete-${id}-${Date.now()}`,
+      requestedById: params.userId,
+    });
 
     const billingOccurrences = await tx.billingOccurrence.deleteMany({
       where: { tenantId: params.tenantId, clientServiceId: id },

@@ -335,6 +335,39 @@ export type ServiceCycle = Prisma.ServiceCycleModel
  */
 export type DeadlineOccurrence = Prisma.DeadlineOccurrenceModel
 /**
+ * Model CompanyFinancialPeriod
+ * Actual financial periods with their Year(s) of Assessment. The Company FYE
+ * month/day stays the recurring preference; these rows are the history.
+ */
+export type CompanyFinancialPeriod = Prisma.CompanyFinancialPeriodModel
+/**
+ * Model CompanyMonitoringCoverage
+ * Why and from when Oakcloud monitors a company's statutory obligations.
+ * Independent of billing; overlapping coverage never duplicates deadlines.
+ */
+export type CompanyMonitoringCoverage = Prisma.CompanyMonitoringCoverageModel
+/**
+ * Model ClientServiceObligationScope
+ * The obligations and periods a client service is contracted to file.
+ */
+export type ClientServiceObligationScope = Prisma.ClientServiceObligationScopeModel
+/**
+ * Model DeadlineOccurrenceCoverageLink
+ * Every reason a company obligation is tracked. Released links keep history.
+ */
+export type DeadlineOccurrenceCoverageLink = Prisma.DeadlineOccurrenceCoverageLinkModel
+/**
+ * Model DeadlineResponsibilityChange
+ * Audit trail of who files a company obligation; identity never changes.
+ */
+export type DeadlineResponsibilityChange = Prisma.DeadlineResponsibilityChangeModel
+/**
+ * Model CompanyComplianceIssue
+ * Durable review items for gaps a deadline row cannot represent (missing
+ * FYE, unreviewed families, conflicts, handovers).
+ */
+export type CompanyComplianceIssue = Prisma.CompanyComplianceIssueModel
+/**
  * Model ServiceScheduleReconciliationRequest
  *
  */

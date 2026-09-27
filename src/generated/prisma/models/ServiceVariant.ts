@@ -83,6 +83,7 @@ export type ServiceVariantCountAggregateOutputType = {
   serviceCadence: number
   customCadenceLabel: number
   displayOrder: number
+  monitoringProfiles: number
   version: number
   isActive: number
   createdAt: number
@@ -149,6 +150,7 @@ export type ServiceVariantCountAggregateInputType = {
   serviceCadence?: true
   customCadenceLabel?: true
   displayOrder?: true
+  monitoringProfiles?: true
   version?: true
   isActive?: true
   createdAt?: true
@@ -254,6 +256,7 @@ export type ServiceVariantGroupByOutputType = {
   serviceCadence: $Enums.ServiceCadence
   customCadenceLabel: string | null
   displayOrder: number
+  monitoringProfiles: $Enums.MonitoringProfile[]
   version: number
   isActive: boolean
   createdAt: Date
@@ -295,6 +298,7 @@ export type ServiceVariantWhereInput = {
   serviceCadence?: Prisma.EnumServiceCadenceFilter<"ServiceVariant"> | $Enums.ServiceCadence
   customCadenceLabel?: Prisma.StringNullableFilter<"ServiceVariant"> | string | null
   displayOrder?: Prisma.IntFilter<"ServiceVariant"> | number
+  monitoringProfiles?: Prisma.EnumMonitoringProfileNullableListFilter<"ServiceVariant">
   version?: Prisma.IntFilter<"ServiceVariant"> | number
   isActive?: Prisma.BoolFilter<"ServiceVariant"> | boolean
   createdAt?: Prisma.DateTimeFilter<"ServiceVariant"> | Date | string
@@ -320,6 +324,7 @@ export type ServiceVariantOrderByWithRelationInput = {
   serviceCadence?: Prisma.SortOrder
   customCadenceLabel?: Prisma.SortOrderInput | Prisma.SortOrder
   displayOrder?: Prisma.SortOrder
+  monitoringProfiles?: Prisma.SortOrder
   version?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -349,6 +354,7 @@ export type ServiceVariantWhereUniqueInput = Prisma.AtLeast<{
   serviceCadence?: Prisma.EnumServiceCadenceFilter<"ServiceVariant"> | $Enums.ServiceCadence
   customCadenceLabel?: Prisma.StringNullableFilter<"ServiceVariant"> | string | null
   displayOrder?: Prisma.IntFilter<"ServiceVariant"> | number
+  monitoringProfiles?: Prisma.EnumMonitoringProfileNullableListFilter<"ServiceVariant">
   version?: Prisma.IntFilter<"ServiceVariant"> | number
   isActive?: Prisma.BoolFilter<"ServiceVariant"> | boolean
   createdAt?: Prisma.DateTimeFilter<"ServiceVariant"> | Date | string
@@ -374,6 +380,7 @@ export type ServiceVariantOrderByWithAggregationInput = {
   serviceCadence?: Prisma.SortOrder
   customCadenceLabel?: Prisma.SortOrderInput | Prisma.SortOrder
   displayOrder?: Prisma.SortOrder
+  monitoringProfiles?: Prisma.SortOrder
   version?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -400,6 +407,7 @@ export type ServiceVariantScalarWhereWithAggregatesInput = {
   serviceCadence?: Prisma.EnumServiceCadenceWithAggregatesFilter<"ServiceVariant"> | $Enums.ServiceCadence
   customCadenceLabel?: Prisma.StringNullableWithAggregatesFilter<"ServiceVariant"> | string | null
   displayOrder?: Prisma.IntWithAggregatesFilter<"ServiceVariant"> | number
+  monitoringProfiles?: Prisma.EnumMonitoringProfileNullableListFilter<"ServiceVariant">
   version?: Prisma.IntWithAggregatesFilter<"ServiceVariant"> | number
   isActive?: Prisma.BoolWithAggregatesFilter<"ServiceVariant"> | boolean
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"ServiceVariant"> | Date | string
@@ -415,6 +423,7 @@ export type ServiceVariantCreateInput = {
   serviceCadence: $Enums.ServiceCadence
   customCadenceLabel?: string | null
   displayOrder?: number
+  monitoringProfiles?: Prisma.ServiceVariantCreatemonitoringProfilesInput | $Enums.MonitoringProfile[]
   version?: number
   isActive?: boolean
   createdAt?: Date | string
@@ -440,6 +449,7 @@ export type ServiceVariantUncheckedCreateInput = {
   serviceCadence: $Enums.ServiceCadence
   customCadenceLabel?: string | null
   displayOrder?: number
+  monitoringProfiles?: Prisma.ServiceVariantCreatemonitoringProfilesInput | $Enums.MonitoringProfile[]
   version?: number
   isActive?: boolean
   createdAt?: Date | string
@@ -459,6 +469,7 @@ export type ServiceVariantUpdateInput = {
   serviceCadence?: Prisma.EnumServiceCadenceFieldUpdateOperationsInput | $Enums.ServiceCadence
   customCadenceLabel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   displayOrder?: Prisma.IntFieldUpdateOperationsInput | number
+  monitoringProfiles?: Prisma.ServiceVariantUpdatemonitoringProfilesInput | $Enums.MonitoringProfile[]
   version?: Prisma.IntFieldUpdateOperationsInput | number
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -484,6 +495,7 @@ export type ServiceVariantUncheckedUpdateInput = {
   serviceCadence?: Prisma.EnumServiceCadenceFieldUpdateOperationsInput | $Enums.ServiceCadence
   customCadenceLabel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   displayOrder?: Prisma.IntFieldUpdateOperationsInput | number
+  monitoringProfiles?: Prisma.ServiceVariantUpdatemonitoringProfilesInput | $Enums.MonitoringProfile[]
   version?: Prisma.IntFieldUpdateOperationsInput | number
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -506,6 +518,7 @@ export type ServiceVariantCreateManyInput = {
   serviceCadence: $Enums.ServiceCadence
   customCadenceLabel?: string | null
   displayOrder?: number
+  monitoringProfiles?: Prisma.ServiceVariantCreatemonitoringProfilesInput | $Enums.MonitoringProfile[]
   version?: number
   isActive?: boolean
   createdAt?: Date | string
@@ -521,6 +534,7 @@ export type ServiceVariantUpdateManyMutationInput = {
   serviceCadence?: Prisma.EnumServiceCadenceFieldUpdateOperationsInput | $Enums.ServiceCadence
   customCadenceLabel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   displayOrder?: Prisma.IntFieldUpdateOperationsInput | number
+  monitoringProfiles?: Prisma.ServiceVariantUpdatemonitoringProfilesInput | $Enums.MonitoringProfile[]
   version?: Prisma.IntFieldUpdateOperationsInput | number
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -539,6 +553,7 @@ export type ServiceVariantUncheckedUpdateManyInput = {
   serviceCadence?: Prisma.EnumServiceCadenceFieldUpdateOperationsInput | $Enums.ServiceCadence
   customCadenceLabel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   displayOrder?: Prisma.IntFieldUpdateOperationsInput | number
+  monitoringProfiles?: Prisma.ServiceVariantUpdatemonitoringProfilesInput | $Enums.MonitoringProfile[]
   version?: Prisma.IntFieldUpdateOperationsInput | number
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -554,6 +569,14 @@ export type ServiceVariantListRelationFilter = {
 
 export type ServiceVariantOrderByRelationAggregateInput = {
   _count?: Prisma.SortOrder
+}
+
+export type EnumMonitoringProfileNullableListFilter<$PrismaModel = never> = {
+  equals?: $Enums.MonitoringProfile[] | Prisma.ListEnumMonitoringProfileFieldRefInput<$PrismaModel> | null
+  has?: $Enums.MonitoringProfile | Prisma.EnumMonitoringProfileFieldRefInput<$PrismaModel> | null
+  hasEvery?: $Enums.MonitoringProfile[] | Prisma.ListEnumMonitoringProfileFieldRefInput<$PrismaModel>
+  hasSome?: $Enums.MonitoringProfile[] | Prisma.ListEnumMonitoringProfileFieldRefInput<$PrismaModel>
+  isEmpty?: boolean
 }
 
 export type ServiceVariantTenantIdCodeCompoundUniqueInput = {
@@ -572,6 +595,7 @@ export type ServiceVariantCountOrderByAggregateInput = {
   serviceCadence?: Prisma.SortOrder
   customCadenceLabel?: Prisma.SortOrder
   displayOrder?: Prisma.SortOrder
+  monitoringProfiles?: Prisma.SortOrder
   version?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -756,8 +780,17 @@ export type ServiceVariantUncheckedUpdateManyWithoutFamilyNestedInput = {
   deleteMany?: Prisma.ServiceVariantScalarWhereInput | Prisma.ServiceVariantScalarWhereInput[]
 }
 
+export type ServiceVariantCreatemonitoringProfilesInput = {
+  set: $Enums.MonitoringProfile[]
+}
+
 export type EnumServiceCadenceFieldUpdateOperationsInput = {
   set?: $Enums.ServiceCadence
+}
+
+export type ServiceVariantUpdatemonitoringProfilesInput = {
+  set?: $Enums.MonitoringProfile[]
+  push?: $Enums.MonitoringProfile | $Enums.MonitoringProfile[]
 }
 
 export type ServiceVariantCreateNestedOneWithoutDefaultFeeTemplatesInput = {
@@ -824,6 +857,7 @@ export type ServiceVariantCreateWithoutTenantInput = {
   serviceCadence: $Enums.ServiceCadence
   customCadenceLabel?: string | null
   displayOrder?: number
+  monitoringProfiles?: Prisma.ServiceVariantCreatemonitoringProfilesInput | $Enums.MonitoringProfile[]
   version?: number
   isActive?: boolean
   createdAt?: Date | string
@@ -847,6 +881,7 @@ export type ServiceVariantUncheckedCreateWithoutTenantInput = {
   serviceCadence: $Enums.ServiceCadence
   customCadenceLabel?: string | null
   displayOrder?: number
+  monitoringProfiles?: Prisma.ServiceVariantCreatemonitoringProfilesInput | $Enums.MonitoringProfile[]
   version?: number
   isActive?: boolean
   createdAt?: Date | string
@@ -898,6 +933,7 @@ export type ServiceVariantScalarWhereInput = {
   serviceCadence?: Prisma.EnumServiceCadenceFilter<"ServiceVariant"> | $Enums.ServiceCadence
   customCadenceLabel?: Prisma.StringNullableFilter<"ServiceVariant"> | string | null
   displayOrder?: Prisma.IntFilter<"ServiceVariant"> | number
+  monitoringProfiles?: Prisma.EnumMonitoringProfileNullableListFilter<"ServiceVariant">
   version?: Prisma.IntFilter<"ServiceVariant"> | number
   isActive?: Prisma.BoolFilter<"ServiceVariant"> | boolean
   createdAt?: Prisma.DateTimeFilter<"ServiceVariant"> | Date | string
@@ -913,6 +949,7 @@ export type ServiceVariantCreateWithoutSowPartialInput = {
   serviceCadence: $Enums.ServiceCadence
   customCadenceLabel?: string | null
   displayOrder?: number
+  monitoringProfiles?: Prisma.ServiceVariantCreatemonitoringProfilesInput | $Enums.MonitoringProfile[]
   version?: number
   isActive?: boolean
   createdAt?: Date | string
@@ -936,6 +973,7 @@ export type ServiceVariantUncheckedCreateWithoutSowPartialInput = {
   serviceCadence: $Enums.ServiceCadence
   customCadenceLabel?: string | null
   displayOrder?: number
+  monitoringProfiles?: Prisma.ServiceVariantCreatemonitoringProfilesInput | $Enums.MonitoringProfile[]
   version?: number
   isActive?: boolean
   createdAt?: Date | string
@@ -981,6 +1019,7 @@ export type ServiceVariantCreateWithoutFamilyInput = {
   serviceCadence: $Enums.ServiceCadence
   customCadenceLabel?: string | null
   displayOrder?: number
+  monitoringProfiles?: Prisma.ServiceVariantCreatemonitoringProfilesInput | $Enums.MonitoringProfile[]
   version?: number
   isActive?: boolean
   createdAt?: Date | string
@@ -1004,6 +1043,7 @@ export type ServiceVariantUncheckedCreateWithoutFamilyInput = {
   serviceCadence: $Enums.ServiceCadence
   customCadenceLabel?: string | null
   displayOrder?: number
+  monitoringProfiles?: Prisma.ServiceVariantCreatemonitoringProfilesInput | $Enums.MonitoringProfile[]
   version?: number
   isActive?: boolean
   createdAt?: Date | string
@@ -1049,6 +1089,7 @@ export type ServiceVariantCreateWithoutDefaultFeeTemplatesInput = {
   serviceCadence: $Enums.ServiceCadence
   customCadenceLabel?: string | null
   displayOrder?: number
+  monitoringProfiles?: Prisma.ServiceVariantCreatemonitoringProfilesInput | $Enums.MonitoringProfile[]
   version?: number
   isActive?: boolean
   createdAt?: Date | string
@@ -1073,6 +1114,7 @@ export type ServiceVariantUncheckedCreateWithoutDefaultFeeTemplatesInput = {
   serviceCadence: $Enums.ServiceCadence
   customCadenceLabel?: string | null
   displayOrder?: number
+  monitoringProfiles?: Prisma.ServiceVariantCreatemonitoringProfilesInput | $Enums.MonitoringProfile[]
   version?: number
   isActive?: boolean
   createdAt?: Date | string
@@ -1107,6 +1149,7 @@ export type ServiceVariantUpdateWithoutDefaultFeeTemplatesInput = {
   serviceCadence?: Prisma.EnumServiceCadenceFieldUpdateOperationsInput | $Enums.ServiceCadence
   customCadenceLabel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   displayOrder?: Prisma.IntFieldUpdateOperationsInput | number
+  monitoringProfiles?: Prisma.ServiceVariantUpdatemonitoringProfilesInput | $Enums.MonitoringProfile[]
   version?: Prisma.IntFieldUpdateOperationsInput | number
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1131,6 +1174,7 @@ export type ServiceVariantUncheckedUpdateWithoutDefaultFeeTemplatesInput = {
   serviceCadence?: Prisma.EnumServiceCadenceFieldUpdateOperationsInput | $Enums.ServiceCadence
   customCadenceLabel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   displayOrder?: Prisma.IntFieldUpdateOperationsInput | number
+  monitoringProfiles?: Prisma.ServiceVariantUpdatemonitoringProfilesInput | $Enums.MonitoringProfile[]
   version?: Prisma.IntFieldUpdateOperationsInput | number
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1149,6 +1193,7 @@ export type ServiceVariantCreateWithoutServiceAgreementItemsInput = {
   serviceCadence: $Enums.ServiceCadence
   customCadenceLabel?: string | null
   displayOrder?: number
+  monitoringProfiles?: Prisma.ServiceVariantCreatemonitoringProfilesInput | $Enums.MonitoringProfile[]
   version?: number
   isActive?: boolean
   createdAt?: Date | string
@@ -1173,6 +1218,7 @@ export type ServiceVariantUncheckedCreateWithoutServiceAgreementItemsInput = {
   serviceCadence: $Enums.ServiceCadence
   customCadenceLabel?: string | null
   displayOrder?: number
+  monitoringProfiles?: Prisma.ServiceVariantCreatemonitoringProfilesInput | $Enums.MonitoringProfile[]
   version?: number
   isActive?: boolean
   createdAt?: Date | string
@@ -1207,6 +1253,7 @@ export type ServiceVariantUpdateWithoutServiceAgreementItemsInput = {
   serviceCadence?: Prisma.EnumServiceCadenceFieldUpdateOperationsInput | $Enums.ServiceCadence
   customCadenceLabel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   displayOrder?: Prisma.IntFieldUpdateOperationsInput | number
+  monitoringProfiles?: Prisma.ServiceVariantUpdatemonitoringProfilesInput | $Enums.MonitoringProfile[]
   version?: Prisma.IntFieldUpdateOperationsInput | number
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1231,6 +1278,7 @@ export type ServiceVariantUncheckedUpdateWithoutServiceAgreementItemsInput = {
   serviceCadence?: Prisma.EnumServiceCadenceFieldUpdateOperationsInput | $Enums.ServiceCadence
   customCadenceLabel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   displayOrder?: Prisma.IntFieldUpdateOperationsInput | number
+  monitoringProfiles?: Prisma.ServiceVariantUpdatemonitoringProfilesInput | $Enums.MonitoringProfile[]
   version?: Prisma.IntFieldUpdateOperationsInput | number
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1249,6 +1297,7 @@ export type ServiceVariantCreateWithoutClientServicesInput = {
   serviceCadence: $Enums.ServiceCadence
   customCadenceLabel?: string | null
   displayOrder?: number
+  monitoringProfiles?: Prisma.ServiceVariantCreatemonitoringProfilesInput | $Enums.MonitoringProfile[]
   version?: number
   isActive?: boolean
   createdAt?: Date | string
@@ -1273,6 +1322,7 @@ export type ServiceVariantUncheckedCreateWithoutClientServicesInput = {
   serviceCadence: $Enums.ServiceCadence
   customCadenceLabel?: string | null
   displayOrder?: number
+  monitoringProfiles?: Prisma.ServiceVariantCreatemonitoringProfilesInput | $Enums.MonitoringProfile[]
   version?: number
   isActive?: boolean
   createdAt?: Date | string
@@ -1307,6 +1357,7 @@ export type ServiceVariantUpdateWithoutClientServicesInput = {
   serviceCadence?: Prisma.EnumServiceCadenceFieldUpdateOperationsInput | $Enums.ServiceCadence
   customCadenceLabel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   displayOrder?: Prisma.IntFieldUpdateOperationsInput | number
+  monitoringProfiles?: Prisma.ServiceVariantUpdatemonitoringProfilesInput | $Enums.MonitoringProfile[]
   version?: Prisma.IntFieldUpdateOperationsInput | number
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1331,6 +1382,7 @@ export type ServiceVariantUncheckedUpdateWithoutClientServicesInput = {
   serviceCadence?: Prisma.EnumServiceCadenceFieldUpdateOperationsInput | $Enums.ServiceCadence
   customCadenceLabel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   displayOrder?: Prisma.IntFieldUpdateOperationsInput | number
+  monitoringProfiles?: Prisma.ServiceVariantUpdatemonitoringProfilesInput | $Enums.MonitoringProfile[]
   version?: Prisma.IntFieldUpdateOperationsInput | number
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1349,6 +1401,7 @@ export type ServiceVariantCreateWithoutDeadlineRuleAssociationsInput = {
   serviceCadence: $Enums.ServiceCadence
   customCadenceLabel?: string | null
   displayOrder?: number
+  monitoringProfiles?: Prisma.ServiceVariantCreatemonitoringProfilesInput | $Enums.MonitoringProfile[]
   version?: number
   isActive?: boolean
   createdAt?: Date | string
@@ -1373,6 +1426,7 @@ export type ServiceVariantUncheckedCreateWithoutDeadlineRuleAssociationsInput = 
   serviceCadence: $Enums.ServiceCadence
   customCadenceLabel?: string | null
   displayOrder?: number
+  monitoringProfiles?: Prisma.ServiceVariantCreatemonitoringProfilesInput | $Enums.MonitoringProfile[]
   version?: number
   isActive?: boolean
   createdAt?: Date | string
@@ -1407,6 +1461,7 @@ export type ServiceVariantUpdateWithoutDeadlineRuleAssociationsInput = {
   serviceCadence?: Prisma.EnumServiceCadenceFieldUpdateOperationsInput | $Enums.ServiceCadence
   customCadenceLabel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   displayOrder?: Prisma.IntFieldUpdateOperationsInput | number
+  monitoringProfiles?: Prisma.ServiceVariantUpdatemonitoringProfilesInput | $Enums.MonitoringProfile[]
   version?: Prisma.IntFieldUpdateOperationsInput | number
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1431,6 +1486,7 @@ export type ServiceVariantUncheckedUpdateWithoutDeadlineRuleAssociationsInput = 
   serviceCadence?: Prisma.EnumServiceCadenceFieldUpdateOperationsInput | $Enums.ServiceCadence
   customCadenceLabel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   displayOrder?: Prisma.IntFieldUpdateOperationsInput | number
+  monitoringProfiles?: Prisma.ServiceVariantUpdatemonitoringProfilesInput | $Enums.MonitoringProfile[]
   version?: Prisma.IntFieldUpdateOperationsInput | number
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1451,6 +1507,7 @@ export type ServiceVariantCreateManyTenantInput = {
   serviceCadence: $Enums.ServiceCadence
   customCadenceLabel?: string | null
   displayOrder?: number
+  monitoringProfiles?: Prisma.ServiceVariantCreatemonitoringProfilesInput | $Enums.MonitoringProfile[]
   version?: number
   isActive?: boolean
   createdAt?: Date | string
@@ -1466,6 +1523,7 @@ export type ServiceVariantUpdateWithoutTenantInput = {
   serviceCadence?: Prisma.EnumServiceCadenceFieldUpdateOperationsInput | $Enums.ServiceCadence
   customCadenceLabel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   displayOrder?: Prisma.IntFieldUpdateOperationsInput | number
+  monitoringProfiles?: Prisma.ServiceVariantUpdatemonitoringProfilesInput | $Enums.MonitoringProfile[]
   version?: Prisma.IntFieldUpdateOperationsInput | number
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1489,6 +1547,7 @@ export type ServiceVariantUncheckedUpdateWithoutTenantInput = {
   serviceCadence?: Prisma.EnumServiceCadenceFieldUpdateOperationsInput | $Enums.ServiceCadence
   customCadenceLabel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   displayOrder?: Prisma.IntFieldUpdateOperationsInput | number
+  monitoringProfiles?: Prisma.ServiceVariantUpdatemonitoringProfilesInput | $Enums.MonitoringProfile[]
   version?: Prisma.IntFieldUpdateOperationsInput | number
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1510,6 +1569,7 @@ export type ServiceVariantUncheckedUpdateManyWithoutTenantInput = {
   serviceCadence?: Prisma.EnumServiceCadenceFieldUpdateOperationsInput | $Enums.ServiceCadence
   customCadenceLabel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   displayOrder?: Prisma.IntFieldUpdateOperationsInput | number
+  monitoringProfiles?: Prisma.ServiceVariantUpdatemonitoringProfilesInput | $Enums.MonitoringProfile[]
   version?: Prisma.IntFieldUpdateOperationsInput | number
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1527,6 +1587,7 @@ export type ServiceVariantCreateManySowPartialInput = {
   serviceCadence: $Enums.ServiceCadence
   customCadenceLabel?: string | null
   displayOrder?: number
+  monitoringProfiles?: Prisma.ServiceVariantCreatemonitoringProfilesInput | $Enums.MonitoringProfile[]
   version?: number
   isActive?: boolean
   createdAt?: Date | string
@@ -1542,6 +1603,7 @@ export type ServiceVariantUpdateWithoutSowPartialInput = {
   serviceCadence?: Prisma.EnumServiceCadenceFieldUpdateOperationsInput | $Enums.ServiceCadence
   customCadenceLabel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   displayOrder?: Prisma.IntFieldUpdateOperationsInput | number
+  monitoringProfiles?: Prisma.ServiceVariantUpdatemonitoringProfilesInput | $Enums.MonitoringProfile[]
   version?: Prisma.IntFieldUpdateOperationsInput | number
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1565,6 +1627,7 @@ export type ServiceVariantUncheckedUpdateWithoutSowPartialInput = {
   serviceCadence?: Prisma.EnumServiceCadenceFieldUpdateOperationsInput | $Enums.ServiceCadence
   customCadenceLabel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   displayOrder?: Prisma.IntFieldUpdateOperationsInput | number
+  monitoringProfiles?: Prisma.ServiceVariantUpdatemonitoringProfilesInput | $Enums.MonitoringProfile[]
   version?: Prisma.IntFieldUpdateOperationsInput | number
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1586,6 +1649,7 @@ export type ServiceVariantUncheckedUpdateManyWithoutSowPartialInput = {
   serviceCadence?: Prisma.EnumServiceCadenceFieldUpdateOperationsInput | $Enums.ServiceCadence
   customCadenceLabel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   displayOrder?: Prisma.IntFieldUpdateOperationsInput | number
+  monitoringProfiles?: Prisma.ServiceVariantUpdatemonitoringProfilesInput | $Enums.MonitoringProfile[]
   version?: Prisma.IntFieldUpdateOperationsInput | number
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1603,6 +1667,7 @@ export type ServiceVariantCreateManyFamilyInput = {
   serviceCadence: $Enums.ServiceCadence
   customCadenceLabel?: string | null
   displayOrder?: number
+  monitoringProfiles?: Prisma.ServiceVariantCreatemonitoringProfilesInput | $Enums.MonitoringProfile[]
   version?: number
   isActive?: boolean
   createdAt?: Date | string
@@ -1618,6 +1683,7 @@ export type ServiceVariantUpdateWithoutFamilyInput = {
   serviceCadence?: Prisma.EnumServiceCadenceFieldUpdateOperationsInput | $Enums.ServiceCadence
   customCadenceLabel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   displayOrder?: Prisma.IntFieldUpdateOperationsInput | number
+  monitoringProfiles?: Prisma.ServiceVariantUpdatemonitoringProfilesInput | $Enums.MonitoringProfile[]
   version?: Prisma.IntFieldUpdateOperationsInput | number
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1641,6 +1707,7 @@ export type ServiceVariantUncheckedUpdateWithoutFamilyInput = {
   serviceCadence?: Prisma.EnumServiceCadenceFieldUpdateOperationsInput | $Enums.ServiceCadence
   customCadenceLabel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   displayOrder?: Prisma.IntFieldUpdateOperationsInput | number
+  monitoringProfiles?: Prisma.ServiceVariantUpdatemonitoringProfilesInput | $Enums.MonitoringProfile[]
   version?: Prisma.IntFieldUpdateOperationsInput | number
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1662,6 +1729,7 @@ export type ServiceVariantUncheckedUpdateManyWithoutFamilyInput = {
   serviceCadence?: Prisma.EnumServiceCadenceFieldUpdateOperationsInput | $Enums.ServiceCadence
   customCadenceLabel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   displayOrder?: Prisma.IntFieldUpdateOperationsInput | number
+  monitoringProfiles?: Prisma.ServiceVariantUpdatemonitoringProfilesInput | $Enums.MonitoringProfile[]
   version?: Prisma.IntFieldUpdateOperationsInput | number
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1738,6 +1806,7 @@ export type ServiceVariantSelect<ExtArgs extends runtime.Types.Extensions.Intern
   serviceCadence?: boolean
   customCadenceLabel?: boolean
   displayOrder?: boolean
+  monitoringProfiles?: boolean
   version?: boolean
   isActive?: boolean
   createdAt?: boolean
@@ -1764,6 +1833,7 @@ export type ServiceVariantSelectCreateManyAndReturn<ExtArgs extends runtime.Type
   serviceCadence?: boolean
   customCadenceLabel?: boolean
   displayOrder?: boolean
+  monitoringProfiles?: boolean
   version?: boolean
   isActive?: boolean
   createdAt?: boolean
@@ -1785,6 +1855,7 @@ export type ServiceVariantSelectUpdateManyAndReturn<ExtArgs extends runtime.Type
   serviceCadence?: boolean
   customCadenceLabel?: boolean
   displayOrder?: boolean
+  monitoringProfiles?: boolean
   version?: boolean
   isActive?: boolean
   createdAt?: boolean
@@ -1806,6 +1877,7 @@ export type ServiceVariantSelectScalar = {
   serviceCadence?: boolean
   customCadenceLabel?: boolean
   displayOrder?: boolean
+  monitoringProfiles?: boolean
   version?: boolean
   isActive?: boolean
   createdAt?: boolean
@@ -1813,7 +1885,7 @@ export type ServiceVariantSelectScalar = {
   deletedAt?: boolean
 }
 
-export type ServiceVariantOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "familyId" | "sowPartialId" | "code" | "name" | "description" | "serviceCadence" | "customCadenceLabel" | "displayOrder" | "version" | "isActive" | "createdAt" | "updatedAt" | "deletedAt", ExtArgs["result"]["serviceVariant"]>
+export type ServiceVariantOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "familyId" | "sowPartialId" | "code" | "name" | "description" | "serviceCadence" | "customCadenceLabel" | "displayOrder" | "monitoringProfiles" | "version" | "isActive" | "createdAt" | "updatedAt" | "deletedAt", ExtArgs["result"]["serviceVariant"]>
 export type ServiceVariantInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
   family?: boolean | Prisma.ServiceFamilyDefaultArgs<ExtArgs>
@@ -1857,6 +1929,10 @@ export type $ServiceVariantPayload<ExtArgs extends runtime.Types.Extensions.Inte
     serviceCadence: $Enums.ServiceCadence
     customCadenceLabel: string | null
     displayOrder: number
+    /**
+     * Coverage profiles an active service of this variant starts (explicit catalog metadata).
+     */
+    monitoringProfiles: $Enums.MonitoringProfile[]
     version: number
     isActive: boolean
     createdAt: Date
@@ -2302,6 +2378,7 @@ export interface ServiceVariantFieldRefs {
   readonly serviceCadence: Prisma.FieldRef<"ServiceVariant", 'ServiceCadence'>
   readonly customCadenceLabel: Prisma.FieldRef<"ServiceVariant", 'String'>
   readonly displayOrder: Prisma.FieldRef<"ServiceVariant", 'Int'>
+  readonly monitoringProfiles: Prisma.FieldRef<"ServiceVariant", 'MonitoringProfile[]'>
   readonly version: Prisma.FieldRef<"ServiceVariant", 'Int'>
   readonly isActive: Prisma.FieldRef<"ServiceVariant", 'Boolean'>
   readonly createdAt: Prisma.FieldRef<"ServiceVariant", 'DateTime'>

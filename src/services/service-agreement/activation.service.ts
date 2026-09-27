@@ -12,6 +12,7 @@ import type { MarkServiceAgreementEffectiveInput } from '@/lib/validations/clien
 import { Prisma } from '@/generated/prisma';
 import type { ServiceAgreementActivationDto } from '@/services/client-service';
 import { enqueueScheduleReconciliation } from '@/services/schedule-reconciliation';
+import { createMonitoringForActivatedService } from '@/services/compliance-monitoring/coverage';
 import { processScheduleReconciliationBatch } from '@/services/schedule-reconciliation/worker';
 import { canonicalizeBillingSchedule, isMaterializableBillingSchedule } from '@/services/billing/schedule';
 import { snapshotClientServiceFees } from '@/services/client-service/fee-summary';
@@ -307,6 +308,19 @@ export async function processServiceAgreementActivation(claim: ActivationClaim):
                 }),
               });
             }
+
+            await createMonitoringForActivatedService(tx, {
+              tenantId: agreement.tenantId,
+              companyId,
+              clientServiceId: service.id,
+              serviceVariantId: item.serviceVariantId,
+              agreementId: agreement.id,
+              agreementDate: agreement.agreementDate ?? null,
+              serviceStartDate: item.startDate ?? null,
+              serviceEndDate: item.endDate ?? null,
+              fieldValues: item.fieldValues,
+              actorId: agreement.activationRequestedById ?? null,
+            });
 
             await enqueueScheduleReconciliation(tx, {
               tenantId: agreement.tenantId,

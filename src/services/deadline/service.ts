@@ -45,7 +45,18 @@ type DeadlineRecord = {
   id: string;
   tenantId: string;
   companyId: string;
-  clientServiceId: string;
+  ownershipScope?: 'SERVICE' | 'COMPANY';
+  clientServiceId: string | null;
+  obligationCode?: string | null;
+  obligationPeriodKey?: string | null;
+  financialPeriodStart?: Date | string | null;
+  financialPeriodEnd?: Date | string | null;
+  yearOfAssessment?: number | null;
+  periodProvisional?: boolean;
+  filingResponsibility?: 'OAKCLOUD' | 'CLIENT' | 'EXTERNAL_PROVIDER' | 'UNCONFIRMED' | null;
+  deliveryClientServiceId?: string | null;
+  coverageTiming?: string | null;
+  filingStatusUnconfirmed?: boolean;
   cycleId: string;
   ruleVersionId: string;
   milestoneKey: string;
@@ -128,7 +139,12 @@ function toDateInput(value: `${number}-${number}-${number}`): Date {
   return parseDateOnly(value);
 }
 
+const COMPANY_OBLIGATION_FAMILY = 'Company statutory obligations';
+
 function familyFromRecord(record: DeadlineDbRecord) {
+  if (record.ownershipScope === 'COMPANY') {
+    return { id: null, name: COMPANY_OBLIGATION_FAMILY, displayColor: null };
+  }
   const variant = record.clientService?.serviceVariant;
   const family = variant?.family;
   return {
@@ -150,11 +166,15 @@ function tenantMatches(value: unknown, tenantId: string): boolean {
 function hasTenantIntegrity(record: DeadlineDbRecord, tenantId: string): boolean {
   const variant = record.clientService?.serviceVariant;
   const family = variant?.family;
+  // Company-owned obligations have no client service by design.
+  const serviceMatches = record.ownershipScope === 'COMPANY'
+    ? record.clientServiceId == null && record.clientService == null
+    : tenantMatches(record.clientService, tenantId)
+      && tenantMatches(variant, tenantId)
+      && tenantMatches(family, tenantId);
   return record.tenantId === tenantId
     && tenantMatches(record.company, tenantId)
-    && tenantMatches(record.clientService, tenantId)
-    && tenantMatches(variant, tenantId)
-    && tenantMatches(family, tenantId)
+    && serviceMatches
     && tenantMatches(record.cycle, tenantId)
     && tenantMatches(record.ruleVersion, tenantId);
 }
@@ -167,12 +187,14 @@ function toDeadlineDto(recordValue: unknown, today: `${number}-${number}-${numbe
   const companyName = company.name ?? '';
   const operativeDueDate = asDateOnly(record.operativeDueDate);
   const cycle = record.cycle;
+  const companyOwned = record.ownershipScope === 'COMPANY';
 
   return {
     id: record.id,
     tenantId: record.tenantId,
     companyId: record.companyId,
-    clientServiceId: record.clientServiceId,
+    ownershipScope: companyOwned ? 'COMPANY' : 'SERVICE',
+    clientServiceId: record.clientServiceId ?? null,
     cycleId: record.cycleId,
     ruleVersionId: record.ruleVersionId,
     milestoneKey: record.milestoneKey,
@@ -187,7 +209,7 @@ function toDeadlineDto(recordValue: unknown, today: `${number}-${number}-${numbe
     dateOverriddenById: record.dateOverriddenById,
     dateOverriddenAt: asInstant(record.dateOverriddenAt),
     status: record.status,
-    timingState: deriveDeadlineTiming(record.status, operativeDueDate, today),
+    timingState: deriveDeadlineTiming(record.status, operativeDueDate, today, record.filingStatusUnconfirmed === true),
     completedAt: asInstant(record.completedAt),
     completedById: record.completedById,
     waivedAt: asInstant(record.waivedAt),
@@ -208,13 +230,29 @@ function toDeadlineDto(recordValue: unknown, today: `${number}-${number}-${numbe
       uen: company.uen ?? null,
     },
     family: familyFromRecord(record),
-    service: {
-      id: clientService.id ?? record.clientServiceId,
-      name: clientService.serviceName ?? '',
-      familyName: clientService.familyName ?? familyFromRecord(record).name,
-      variantId: variant.id ?? null,
-      variantName: variant.name ?? null,
-    },
+    service: companyOwned
+      ? null
+      : {
+          id: clientService.id ?? record.clientServiceId ?? '',
+          name: clientService.serviceName ?? '',
+          familyName: clientService.familyName ?? familyFromRecord(record).name,
+          variantId: variant.id ?? null,
+          variantName: variant.name ?? null,
+        },
+    obligation: companyOwned && record.obligationCode && record.obligationPeriodKey
+      ? {
+          code: record.obligationCode,
+          periodKey: record.obligationPeriodKey,
+          financialPeriodStart: asNullableDateOnly(record.financialPeriodStart),
+          financialPeriodEnd: asNullableDateOnly(record.financialPeriodEnd),
+          yearOfAssessment: record.yearOfAssessment ?? null,
+          periodProvisional: record.periodProvisional === true,
+          filingResponsibility: record.filingResponsibility ?? null,
+          deliveryClientServiceId: record.deliveryClientServiceId ?? null,
+          coverageTiming: record.coverageTiming ?? null,
+          filingStatusUnconfirmed: record.filingStatusUnconfirmed === true,
+        }
+      : null,
     cycle: cycle?.id
       ? {
           id: cycle.id,
@@ -231,6 +269,7 @@ export function deriveDeadlineTiming(
   status: string,
   dueDate: `${number}-${number}-${number}` | Date | string,
   today: `${number}-${number}-${number}` | Date | string = currentDateInSingapore(),
+  filingStatusUnconfirmed = false,
 ): DeadlineTiming | null {
   if (status !== 'OPEN') return null;
   const due = dueDate instanceof Date ? formatDateOnly(dueDate) : asDateOnly(dueDate);
@@ -238,6 +277,8 @@ export function deriveDeadlineTiming(
   const comparison = compareDateOnly(due, current);
   if (comparison > 0) return 'UPCOMING';
   if (comparison === 0) return 'DUE';
+  // Taken over after it was due: filing status is unknown, not overdue.
+  if (filingStatusUnconfirmed) return 'REVIEW';
   return 'OVERDUE';
 }
 
@@ -259,7 +300,7 @@ function timingWhere(
   for (const timing of input.timing) {
     if (timing === 'UPCOMING') predicates.push({ operativeDueDate: { gt: todayDate } });
     if (timing === 'DUE') predicates.push({ operativeDueDate: todayDate });
-    if (timing === 'OVERDUE') predicates.push({ operativeDueDate: { lt: todayDate } });
+    if (timing === 'OVERDUE') predicates.push({ operativeDueDate: { lt: todayDate }, filingStatusUnconfirmed: false });
   }
   return { status: 'OPEN', OR: predicates };
 }
@@ -284,13 +325,19 @@ function occurrenceIntegrityWhere(
     tenantId,
     ...(companyIds === undefined ? {} : { companyId: { in: companyIds } }),
     company: { tenantId, deletedAt: null },
-    clientService: {
-      tenantId,
-      serviceVariant: {
-        tenantId,
-        family: { tenantId },
+    OR: [
+      { ownershipScope: 'COMPANY', clientServiceId: null },
+      {
+        ownershipScope: 'SERVICE',
+        clientService: {
+          tenantId,
+          serviceVariant: {
+            tenantId,
+            family: { tenantId },
+          },
+        },
       },
-    },
+    ],
     cycle: { tenantId },
     ruleVersion: { tenantId },
   };
@@ -329,15 +376,23 @@ export function deadlineWhereForSearch(
     ...(companyIds === undefined ? {} : { companyId: { in: companyIds } }),
     ...(input.types.length > 0 ? { deadlineType: { in: input.types } } : {}),
     ...(input.milestoneQuery ? { milestoneKey: { contains: normalizeMilestoneQuery(input.milestoneQuery), mode: 'insensitive' } } : {}),
-    clientService: {
-      tenantId: scope.tenantId,
-      ...(input.serviceQuery ? { serviceName: { contains: input.serviceQuery, mode: 'insensitive' } } : {}),
-      serviceVariant: {
-        tenantId: scope.tenantId,
-        family: { tenantId: scope.tenantId },
-        ...(input.familyIds.length > 0 ? { familyId: { in: input.familyIds } } : {}),
+    // Company-owned obligations belong to no service, so a service or family
+    // filter excludes them; otherwise both ownership scopes are listed.
+    OR: [
+      ...(input.serviceQuery || input.familyIds.length > 0 ? [] : [{ ownershipScope: 'COMPANY' as const, clientServiceId: null }]),
+      {
+        ownershipScope: 'SERVICE' as const,
+        clientService: {
+          tenantId: scope.tenantId,
+          ...(input.serviceQuery ? { serviceName: { contains: input.serviceQuery, mode: 'insensitive' as const } } : {}),
+          serviceVariant: {
+            tenantId: scope.tenantId,
+            family: { tenantId: scope.tenantId },
+            ...(input.familyIds.length > 0 ? { familyId: { in: input.familyIds } } : {}),
+          },
+        },
       },
-    },
+    ],
     cycle: { tenantId: scope.tenantId },
     ruleVersion: { tenantId: scope.tenantId },
     ...(input.origin ? { origin: input.origin } : {}),

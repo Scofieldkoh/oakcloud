@@ -255,6 +255,23 @@ export function getDocumentExporter(): IDocumentExporter {
   mode. Never include uploaded company documents, notes, rule wording, secrets,
   or other free-text content in that event.
 
+### Company statutory monitoring
+
+- Company obligations (ECI and the corporate income tax return today) are
+  owned by the company, not by a service. See section 26 of the services
+  design spec for the model.
+- `Workspace.settings.servicesWorkspace.companyMonitoringWritesEnabled` or
+  `COMPANY_MONITORING_WRITES_ENABLED=true` lets the worker write them;
+  otherwise each request's summary carries `companyMonitoring` counts in
+  observe mode. Turn it on per workspace only after the `SG_ECI` and
+  `SG_FORM_C` presets are published and the observe counts look right.
+- Services opt in through the variant's **Compliance monitoring** setting.
+  Nothing is monitored until a variant has a profile and an agreement for it
+  is activated.
+- Monitoring never sends client reminders and never writes billing records.
+- Pause by turning the flag off: stored company obligations stay readable and
+  the worker returns to observe mode. Do not delete company rows to roll back.
+
 ## Billing tracking and reconciliation
 
 Billing is tracking-only. A `BillingOccurrence` records an expected or

@@ -1,7 +1,14 @@
 import { ValidationError } from '@/lib/errors';
-import { compareDateOnly, parseDateOnly } from '@/services/service-schedule/date-only';
+import { addMonthsClamped, compareDateOnly, parseDateOnly } from '@/services/service-schedule/date-only';
 import { evaluateDeadlineRule } from '@/services/service-schedule/evaluator';
 import { hashConfiguration } from '@/services/service-schedule/hash';
+import {
+  obligationPeriodBasisForExpressions,
+  planFinancialPeriods,
+  planObligationPeriods,
+  toObligationPeriodInput,
+  type ObligationPeriodBasis,
+} from '@/services/service-schedule/obligation-periods';
 import type { ApplicabilityResult } from '@/services/service-schedule';
 import {
   MAX_AUTHORITATIVE_BACKLOG_CYCLES,
@@ -17,6 +24,11 @@ import type {
 } from './types';
 
 const MAX_HORIZON_OVERFLOW_WARNINGS = 10;
+/**
+ * How far before the window an obligation's financial period may end. An
+ * annual tax return is due up to about 20 months after its period ends.
+ */
+export const OBLIGATION_PERIOD_LOOKBACK_MONTHS = 24;
 
 function missingInputWarning(
   ruleId: string,
@@ -40,6 +52,10 @@ function missingFieldsFromError(error: unknown): string[] {
     const source = (details as { source?: { kind?: string; field?: string; key?: string } }).source;
     if (source?.kind === 'COMPANY_FIELD' && source.field) return [source.field];
     if (source?.kind === 'PARAMETER' && source.key) return [`parameter:${source.key}`];
+    if (source?.kind === 'OBLIGATION_PERIOD_START' || source?.kind === 'OBLIGATION_PERIOD_END') {
+      const field = (details as { field?: unknown }).field;
+      return [typeof field === 'string' ? field : 'financialPeriod'];
+    }
   }
   if (details && typeof details === 'object' && 'parameter' in details) {
     const parameter = (details as { parameter?: unknown }).parameter;
@@ -78,6 +94,8 @@ export function projectDeadlineRule(input: DeadlineRuleProjectionInput): Deadlin
   }
 
   const warnings: DeadlineReconciliationWarning[] = [];
+  const basis = obligationPeriodBasisForExpressions(input.milestones.map((milestone) => milestone.expression));
+  if (basis) return projectObligationPeriodRule(input, basis);
   const policy = deadlineMaterializationPolicyForRule(input.ruleCode);
 
   let periods;
@@ -216,6 +234,145 @@ export function projectDeadlineRule(input: DeadlineRuleProjectionInput): Deadlin
 
   return {
     materializationPolicy: policy,
+    periods,
+    occurrences,
+    applicability,
+    warnings,
+    periodEvaluations,
+  };
+}
+
+/**
+ * Project a period-based statutory rule. Each obligation period (financial
+ * period or YA) is evaluated against its own explicit dates, so an earlier
+ * FYE's filing that falls due inside the window is never lost to the legacy
+ * anniversary alignment.
+ */
+function projectObligationPeriodRule(
+  input: DeadlineRuleProjectionInput,
+  basis: ObligationPeriodBasis,
+): DeadlineRuleProjection {
+  const windowStart = input.windowStart ?? input.today;
+  parseDateOnly(windowStart);
+  if (compareDateOnly(windowStart, input.horizonEnd) > 0) {
+    throw new ValidationError('Projection window must not start after the horizon');
+  }
+  const warnings: DeadlineReconciliationWarning[] = [];
+  const plan = planFinancialPeriods(
+    input.periodFacts ?? {},
+    addMonthsClamped(windowStart, -OBLIGATION_PERIOD_LOOKBACK_MONTHS),
+    input.horizonEnd,
+  );
+  if (plan.missingFinancialYearEnd) {
+    const reason = 'Period-based rules require the company financial year end or a confirmed financial period';
+    warnings.push(missingInputWarning(input.ruleId, input.ruleVersionId, reason, ['financialYearEnd']));
+    return {
+      materializationPolicy: 'OBLIGATION_PERIOD',
+      periods: [],
+      occurrences: [],
+      applicability: { state: 'MISSING_INPUT', reason, missingFields: ['financialYearEnd'] },
+      warnings,
+      periodEvaluations: [],
+    };
+  }
+
+  const obligationPeriods = planObligationPeriods(basis, plan.periods);
+  const occurrences: ProjectedDeadline[] = [];
+  const periodEvaluations: DeadlineRuleProjection['periodEvaluations'] = [];
+  const periods: DeadlineRuleProjection['periods'] = [];
+  let applicability: ApplicabilityResult = { state: 'APPLICABLE', reason: null };
+  let evaluatedAny = false;
+
+  for (const period of obligationPeriods) {
+    let evaluation;
+    try {
+      evaluation = evaluateDeadlineRule({
+        ruleId: input.ruleId,
+        ruleVersionId: input.ruleVersionId,
+        recurrence: input.recurrence,
+        applicability: input.applicability,
+        parameters: input.parameters,
+        scheduleEntries: input.scheduleEntries,
+        milestones: input.milestones,
+        company: input.company,
+        period: { key: period.periodKey, start: period.start, end: period.end },
+        obligationPeriod: toObligationPeriodInput(period),
+        calendar: input.calendar,
+      });
+    } catch (error) {
+      if ((error as { code?: string })?.code !== 'MISSING_RULE_INPUT') throw error;
+      // One unmapped period (for example an unconfirmed YA) must not hide
+      // the other periods; it stays visible as a warning instead.
+      const message = error instanceof Error ? error.message : 'Rule input is missing';
+      warnings.push({
+        ...missingInputWarning(input.ruleId, input.ruleVersionId, `${period.periodKey}: ${message}`, missingFieldsFromError(error)),
+        permanent: false,
+      });
+      continue;
+    }
+
+    if (evaluation.applicability.state !== 'APPLICABLE') {
+      applicability = evaluation.applicability;
+      if (!evaluatedAny) {
+        return {
+          materializationPolicy: 'OBLIGATION_PERIOD',
+          periods: [],
+          occurrences: [],
+          applicability,
+          warnings,
+          periodEvaluations: [],
+        };
+      }
+      continue;
+    }
+    evaluatedAny = true;
+
+    const inWindow = evaluation.occurrences.filter((evaluated) => (
+      compareDateOnly(evaluated.calculatedDueDate, windowStart) >= 0
+      && compareDateOnly(evaluated.calculatedDueDate, input.horizonEnd) <= 0
+    ));
+    if (inWindow.length === 0) continue;
+
+    periods.push({ periodKey: period.periodKey, start: period.start, end: period.end });
+    periodEvaluations.push({
+      periodKey: period.periodKey,
+      sourceSnapshot: evaluation.sourceSnapshot,
+      evaluationHash: evaluation.evaluationHash ?? hashConfiguration(evaluation.sourceSnapshot),
+    });
+    for (const evaluated of inWindow) {
+      occurrences.push({
+        ruleId: input.ruleId,
+        ruleVersionId: input.ruleVersionId,
+        periodKey: period.periodKey,
+        milestoneKey: evaluated.milestoneKey,
+        scheduleEntryKey: evaluated.scheduleEntryKey,
+        deadlineType: evaluated.type,
+        calculatedDueDate: evaluated.calculatedDueDate,
+        explanation: [...evaluated.explanation],
+        obligationPeriod: {
+          basis,
+          start: period.start,
+          end: period.end,
+          yearOfAssessment: period.yearOfAssessment,
+          provisional: period.provisional,
+          reviewReasons: [...period.reviewReasons],
+        },
+      });
+    }
+  }
+
+  if (!evaluatedAny && warnings.length > 0) {
+    const first = warnings[0]!;
+    applicability = {
+      state: 'MISSING_INPUT',
+      reason: first.message,
+      missingFields: first.missingFields ?? [],
+    };
+  }
+
+  occurrences.sort(compareProjectedDeadline);
+  return {
+    materializationPolicy: 'OBLIGATION_PERIOD',
     periods,
     occurrences,
     applicability,
