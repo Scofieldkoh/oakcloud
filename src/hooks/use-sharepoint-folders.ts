@@ -79,3 +79,35 @@ export function useUpdateSharePointFilingSettings() {
   });
 }
 
+
+export interface CompanySharePointFolderMapping {
+  id: string;
+  companyId: string;
+  connectorId: string;
+  driveId: string;
+  folderItemId: string;
+  folderName: string;
+  folderWebUrl: string;
+  lastVerifiedAt: string | null;
+  isStale: boolean;
+}
+
+export function useCompanySharePointFolder(companyId?: string) {
+  return useQuery({
+    queryKey: ['company-sharepoint-folder', companyId],
+    queryFn: async () => (await readJson<{ folder: CompanySharePointFolderMapping | null }>(await fetch(`/api/companies/${encodeURIComponent(companyId!)}/sharepoint-folder`))).folder,
+    enabled: Boolean(companyId),
+    staleTime: 30_000,
+  });
+}
+
+export function useSetCompanySharePointFolder() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { companyId: string; connectorId: string; folder: { driveId: string; itemId: string; name: string; webUrl: string } }) => (await readJson<{ folder: CompanySharePointFolderMapping }>(await fetch(`/api/companies/${encodeURIComponent(input.companyId)}/sharepoint-folder`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ connectorId: input.connectorId, folder: input.folder }) }))).folder,
+    onSuccess: (folder, input) => {
+      queryClient.setQueryData(['company-sharepoint-folder', input.companyId], folder);
+      queryClient.invalidateQueries({ queryKey: ['company', input.companyId] });
+    },
+  });
+}
