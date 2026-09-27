@@ -69,6 +69,7 @@ describe('manual client service catalog options', () => {
         family: { id: 'family-1', name: 'Corporate Services', displayColor: '#2F6F5E' },
         serviceCadence: 'ANNUALLY',
         customCadenceLabel: null,
+        monitoringProfiles: [],
         fields: [
           { key: 'software', label: 'Software', type: 'text', defaultValue: 'Xero' },
           { key: 'filingMonth', label: 'Filing month', type: 'text', defaultValue: null },

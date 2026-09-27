@@ -379,6 +379,21 @@ describe('OperationalServiceForm', () => {
     expect(screen.getByRole('button', { name: 'No billing required' })).toHaveAttribute('aria-pressed', 'true');
   });
 
+  it('counts no billing items on the Billing tab once billing is not required', () => {
+    render(<Harness initial={{ ...baseValues(), billingDisposition: 'NOT_REQUIRED' }} />);
+    expect(screen.getByRole('tab', { name: /Billing/ })).toHaveTextContent('Billing0');
+    fireEvent.click(screen.getByRole('button', { name: 'Billing configured' }));
+    expect(screen.getByRole('tab', { name: /Billing/ })).toHaveTextContent('Billing2');
+  });
+
+  it('explains that a monitored variant tracks company deadlines outside the service rules', () => {
+    const { rerender } = render(<OperationalServiceForm values={{ ...baseValues(), deadlineRules: [] }} onChange={() => undefined} errors={{}} />);
+    fireEvent.click(screen.getByRole('tab', { name: /Deadline/ }));
+    expect(screen.queryByText(/Company monitoring/)).not.toBeInTheDocument();
+    rerender(<OperationalServiceForm values={{ ...baseValues(), deadlineRules: [] }} onChange={() => undefined} errors={{}} monitoringProfiles={['CORPORATE_TAX']} />);
+    expect(screen.getByText(/Company monitoring \(Tax engagement/)).toBeInTheDocument();
+  });
+
   it('renders rules collapsed by default and expands on click to reveal parameters and schedule', () => {
     const valuesWithRules: OperationalServiceValues = {
       ...baseValues(),
