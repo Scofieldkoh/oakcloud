@@ -116,7 +116,7 @@ function TemplateSource({ id }: { id: string | null }) {
     return <Alert variant="error">{error instanceof Error ? error.message : 'Failed to load the template'}</Alert>;
   }
   return (
-    <PageShell backHref="/template-partials?tab=templates" backLabel="Back to templates" title={data.name}>
+    <PageShell backHref="/template-partials/documents" backLabel="Back to templates" title={data.name}>
       {replacementId && (
         <Alert variant="success" compact>
           This template has an approved Word version.{' '}
@@ -237,7 +237,7 @@ function PartialSource({ id }: { id: string | null }) {
   const [uploadCount, setUploadCount] = useState(0);
   if (!id) {
     return (
-      <PageShell backHref="/template-partials?tab=partials" backLabel="Back to partials" title="New Word partial">
+      <PageShell backHref="/template-partials/partials" backLabel="Back to partials" title="New Word partial">
         <WordPartialForm partial={null} />
       </PageShell>
     );
@@ -248,7 +248,7 @@ function PartialSource({ id }: { id: string | null }) {
   }
   const title = partial.displayName || partial.name;
   return (
-    <PageShell backHref="/template-partials?tab=partials" backLabel="Back to partials" title={title}>
+    <PageShell backHref="/template-partials/partials" backLabel="Back to partials" title={title}>
       {readOakDocTemplateMetadata(partial.contentJson) ? (
         <div className="space-y-6">
           <div className="h-[calc(100vh-16rem)] min-h-[28rem] overflow-hidden rounded-lg border border-border-primary shadow-sm">

@@ -14,17 +14,22 @@ describe('document navigation source', () => {
     expect(sidebar).not.toContain("{ name: 'Templates', href: '/admin/template-partials'");
   });
 
-  it('lists Document Templates under Administration after Services instead of on Document Generation', () => {
+  it('groups Document Templates under Administration with separate Documents and Partials pages', () => {
     const sidebar = readSource('src/components/ui/sidebar.tsx');
     const generatedDocuments = readSource('src/app/(dashboard)/generated-documents/page.tsx');
-    const templates = readSource('src/app/(dashboard)/template-partials/page.tsx');
+    const documents = readSource('src/app/(dashboard)/template-partials/documents/page.tsx');
+    const partials = readSource('src/app/(dashboard)/template-partials/partials/page.tsx');
 
-    expect(sidebar).toContain(
-      "{ name: 'Services', href: '/admin/services', icon: BriefcaseBusiness, adminOnly: true },\n  { name: 'Document Templates', href: '/template-partials', icon: LayoutTemplate, adminOnly: true },",
-    );
+    expect(sidebar).toContain("id: 'document-templates',\n    name: 'Document Templates',");
+    expect(sidebar).toContain("{ name: 'Documents', href: '/template-partials/documents', icon: FileText, adminOnly: true },");
+    expect(sidebar).toContain("{ name: 'Partials', href: '/template-partials/partials', icon: Puzzle, adminOnly: true },");
+    expect(sidebar).not.toContain("{ name: 'Document Templates', href: '/template-partials'");
     expect(generatedDocuments).not.toContain('DocumentGenerationTabs');
     expect(generatedDocuments).not.toContain('/template-partials');
-    expect(templates).not.toContain('DocumentGenerationTabs');
+    for (const page of [documents, partials]) {
+      expect(page).not.toContain('DocumentGenerationTabs');
+      expect(page).not.toContain('aria-label="Tabs"');
+    }
   });
 
   it('uses Document Vault as the processing page heading', () => {

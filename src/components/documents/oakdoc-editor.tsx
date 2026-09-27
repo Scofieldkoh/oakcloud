@@ -983,7 +983,7 @@ export function OakDocEditor() {
               if (isDirty && !window.confirm('You have unsaved OakDoc changes. Leave without saving them?')) {
                 return;
               }
-              router.push('/template-partials');
+              router.push('/template-partials/documents');
             }}
           >
             Templates
