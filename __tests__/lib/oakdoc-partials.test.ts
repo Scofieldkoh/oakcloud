@@ -155,13 +155,36 @@ describe('native partial expansion', () => {
     const intro = properties(styleOf('Scope intro'));
     expect(intro).toContain('w:after="120"');
     expect(intro).toContain('w:line="276"');
-    expect(intro).toContain('w:ascii="Arial"');
+    // The partial's document default font follows the master.
+    expect(intro).not.toContain('w:rFonts');
     expect(intro).not.toContain('w:basedOn');
     const item = properties(styleOf('Item'));
     expect(item).toContain('w:left="720"');
     expect(item).toContain('w:after="120"');
     expect(result.diagnostics).toEqual([]);
     expect(() => inspectOakDocPackage(result.bytes, 'draft')).not.toThrow();
+  });
+
+  it('keeps fonts a partial style sets, but not its default or theme fonts', () => {
+    const master = pkg({
+      body: reference(A),
+      styles: '<w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial"/></w:rPr></w:rPrDefault></w:docDefaults>'
+        + '<w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/></w:style>',
+    });
+    const fragment = pkg({
+      body: '<w:p><w:r><w:t>Body</w:t></w:r></w:p>'
+        + '<w:p><w:pPr><w:pStyle w:val="Heading1"/></w:pPr><w:r><w:t>Heading</w:t></w:r></w:p>'
+        + '<w:p><w:pPr><w:pStyle w:val="Quote"/></w:pPr><w:r><w:t>Quote</w:t></w:r></w:p>',
+      styles: '<w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Aptos" w:hAnsi="Aptos"/><w:sz w:val="22"/></w:rPr></w:rPrDefault></w:docDefaults>'
+        + '<w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/></w:style>'
+        + '<w:style w:type="paragraph" w:styleId="Heading1"><w:name w:val="heading 1"/><w:basedOn w:val="Normal"/><w:rPr><w:rFonts w:asciiTheme="majorHAnsi" w:hAnsiTheme="majorHAnsi"/><w:b/></w:rPr></w:style>'
+        + '<w:style w:type="paragraph" w:styleId="Quote"><w:name w:val="Quote"/><w:basedOn w:val="Normal"/><w:rPr><w:rFonts w:ascii="Georgia" w:hAnsi="Georgia"/></w:rPr></w:style>',
+    });
+    const result = expandOakDocPartials({ docxBytes: master, fragments: new Map([[A, fragment]]) });
+    const styles = part(result.bytes, 'word/styles.xml');
+    expect(styles).not.toMatch(/Aptos|Theme=/);
+    expect(styles).toContain('w:ascii="Georgia"');
+    expect(styles).toContain('<w:sz w:val="22"/>');
   });
 
   it('shares a style that looks the same in the partial and the master', () => {
