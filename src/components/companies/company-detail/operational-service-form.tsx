@@ -17,6 +17,7 @@ import type { ClientServiceOpenBillingOccurrenceDto, ClientServiceOpenDeadlineOc
 import type { OperationalServiceValues, DeadlinePreviewState } from './client-service-form-state';
 import type { BillingScheduleConfigV1 } from '@/services/billing/types';
 import { canonicalizeBillingSchedule } from '@/services/billing/schedule';
+import { MONITORING_PROFILE_HINTS, MONITORING_PROFILE_LABELS, type MonitoringProfile } from '@/services/compliance-monitoring/catalog';
 
 const uuid = () => crypto.randomUUID();
 
@@ -476,6 +477,8 @@ export interface OperationalServiceFormProps {
   deadlinePreview?: DeadlinePreviewState;
   openDeadlineOccurrences?: ClientServiceOpenDeadlineOccurrenceDto[];
   openBillingOccurrences?: ClientServiceOpenBillingOccurrenceDto[];
+  /** The selected catalog service's company monitoring profiles. */
+  monitoringProfiles?: MonitoringProfile[];
 }
 
 export function OperationalServiceForm({
@@ -491,6 +494,7 @@ export function OperationalServiceForm({
   deadlinePreview,
   openDeadlineOccurrences,
   openBillingOccurrences,
+  monitoringProfiles = [],
 }: OperationalServiceFormProps) {
   const [billingHideConfirmationOpen, setBillingHideConfirmationOpen] = useState(false);
   const [userSelectedTab, setUserSelectedTab] = useState<'deadlines' | 'billing' | null>(null);
@@ -553,7 +557,9 @@ export function OperationalServiceForm({
       isoDate: item.operativeExpectedDate,
       timingExplanation: `Open · ${item.billingPeriodKey}`,
     }))
-    : projectedBillingItems;
+    : values.billingDisposition === 'NOT_REQUIRED'
+      ? []
+      : projectedBillingItems;
 
   const showDeadlinePanel = readOnly
     ? openDeadlineOccurrences !== undefined
@@ -783,6 +789,13 @@ export function OperationalServiceForm({
                   </div>
                   <span className="text-xs text-text-muted">{values.deadlineRules.length} rule{values.deadlineRules.length === 1 ? '' : 's'}</span>
                 </div>
+
+                {monitoringProfiles.length > 0 ? (
+                  <Alert variant="info" compact>
+                    Company monitoring ({monitoringProfiles.map((profile) => MONITORING_PROFILE_LABELS[profile]).join(', ')}): once saved, the company&apos;s statutory deadlines
+                    ({monitoringProfiles.map((profile) => MONITORING_PROFILE_HINTS[profile]).join('; ')}) are tracked in Deadlines as company obligations, not as rules here.
+                  </Alert>
+                ) : null}
 
                 {values.deadlineRules.length === 0 ? (
                   <div className="rounded-xl border border-dashed border-border-primary p-8 text-center text-text-secondary">

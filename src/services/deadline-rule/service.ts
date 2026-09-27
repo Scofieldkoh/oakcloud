@@ -15,7 +15,7 @@ import {
 import { canonicalDeadlineRuleDefinition, hashDeadlineRuleDefinition } from './canonical';
 import { validateVariantRuleAssociations } from './association-validation';
 import { upgradeLegacyFormCStarterDraft } from './starter-drafts';
-import { deadlineRulePresetFor } from './presets';
+import { deadlineRulePresetFor, type DeadlineRulePreset } from './presets';
 import type {
   DeadlineMilestoneDto,
   DeadlineRuleDto,
@@ -580,7 +580,35 @@ export async function stageDeadlineRulePreset(
   const preset = deadlineRulePresetFor(rule.code);
   if (!preset) throw new ValidationError(`No reviewed preset exists for rule code ${rule.code}`);
   return updateDeadlineRuleDraft(id, {
-    ...preset.definition,
+    ...presetDraftInput(preset),
     ...(input.expectedDraftRevision ? { expectedDraftRevision: input.expectedDraftRevision } : {}),
-  } as DeadlineRuleDraftInput, actor);
+  }, actor);
+}
+
+/** The preset's rule as draft input; the canonical schema version is not a draft field. */
+function presetDraftInput(preset: DeadlineRulePreset): DeadlineRuleDraftInput {
+  const { schemaVersion: _schemaVersion, ...definition } = preset.definition;
+  return definition as DeadlineRuleDraftInput;
+}
+
+/**
+ * Put a reviewed preset in place by code: stage it as the draft of the
+ * workspace's rule with that code, or create that rule as a new draft. Either
+ * way publishing still goes through the impact preview.
+ */
+export async function applyDeadlineRulePreset(
+  code: string,
+  actor: TenantAwareParams,
+): Promise<DeadlineRuleDto> {
+  const preset = deadlineRulePresetFor(code);
+  if (!preset) throw new ValidationError(`No reviewed preset exists for rule code ${code}`);
+  const existing = await prisma.deadlineRule.findFirst({
+    where: { tenantId: actor.tenantId, code: preset.code },
+    select: { id: true, archivedAt: true },
+  });
+  if (existing?.archivedAt) {
+    throw new ConflictError(`The ${preset.code} rule is archived. Restore it before applying the preset.`);
+  }
+  if (existing) return stageDeadlineRulePreset(existing.id, {}, actor);
+  return createDeadlineRule(presetDraftInput(preset), actor);
 }

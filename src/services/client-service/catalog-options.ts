@@ -151,6 +151,7 @@ export async function getManualClientServiceCatalogOptions(
       family: { id: variant.family.id, name: variant.family.name, displayColor: variant.family.displayColor ?? '#2F6F5E' },
       serviceCadence: variant.serviceCadence,
       customCadenceLabel: variant.customCadenceLabel,
+      monitoringProfiles: variant.monitoringProfiles ?? [],
       fields: composed.placeholders.map(toOperationalField).filter((field): field is ManualClientServiceCatalogField => field !== null),
       feeTemplates: variant.defaultFeeTemplates.map((fee) => ({
         description: fee.description,

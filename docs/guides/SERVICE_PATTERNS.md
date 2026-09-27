@@ -265,9 +265,18 @@ export function getDocumentExporter(): IDocumentExporter {
   otherwise each request's summary carries `companyMonitoring` counts in
   observe mode. Turn it on per workspace only after the `SG_ECI` and
   `SG_FORM_C` presets are published and the observe counts look right.
+- **Deadline Rules > Add IRAS rule** creates the `SG_ECI` or `SG_FORM_C` rule
+  from its reviewed preset as a draft, or re-stages the preset as the draft
+  of the existing rule (`POST /api/service-catalog/deadline-rules/presets`).
+  Publishing still goes through the impact preview.
 - Services opt in through the variant's **Compliance monitoring** setting.
-  Nothing is monitored until a variant has a profile and an agreement for it
-  is activated.
+  Nothing is monitored until a variant has a profile and a service for it
+  exists: an activated agreement starts monitoring at the agreement date, and
+  a service added by hand starts at its start date with a review item to
+  confirm that start. The company also needs a financial year end.
+- The Add service dialog's Deadline tab lists only the variant's own service
+  rules; for a monitored variant it notes that the company's statutory
+  deadlines appear in Deadlines as company obligations after saving.
 - Monitoring never sends client reminders and never writes billing records.
 - Pause by turning the flag off: stored company obligations stay readable and
   the worker returns to observe mode. Do not delete company rows to roll back.

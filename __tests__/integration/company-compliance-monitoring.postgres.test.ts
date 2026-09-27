@@ -128,6 +128,29 @@ describePostgres('company compliance monitoring on PostgreSQL', () => {
     expect(await prisma.deadlineOccurrence.count({ where: { tenantId: fixture.tenantId, ownershipScope: 'SERVICE' } })).toBe(0);
   });
 
+  it('stages an IRAS preset on the existing rule and creates a missing one as a draft', async () => {
+    const { applyDeadlineRulePreset } = await import('@/services/deadline-rule');
+    const actor = { tenantId: fixture.tenantId, userId: fixture.userId };
+    const staged = await applyDeadlineRulePreset('SG_ECI', actor);
+    expect(staged.code).toBe('SG_ECI');
+    expect(staged.draft?.state).toBe('DRAFT');
+    expect(staged.currentVersion).not.toBeNull();
+
+    const archived = await prisma.deadlineRule.findFirstOrThrow({ where: { tenantId: fixture.tenantId, code: 'SG_FORM_C' } });
+    await prisma.deadlineRule.update({ where: { id: archived.id }, data: { code: 'SG_FORM_C_OLD' } });
+    try {
+      const created = await applyDeadlineRulePreset('SG_FORM_C', actor);
+      expect(created.code).toBe('SG_FORM_C');
+      expect(created.currentVersion).toBeNull();
+      expect(created.draft?.milestones.length).toBeGreaterThan(0);
+      await prisma.deadlineMilestoneTemplate.deleteMany({ where: { ruleVersion: { ruleId: created.id } } });
+      await prisma.deadlineRuleVersion.deleteMany({ where: { ruleId: created.id } });
+      await prisma.deadlineRule.delete({ where: { id: created.id } });
+    } finally {
+      await prisma.deadlineRule.update({ where: { id: archived.id }, data: { code: 'SG_FORM_C' } });
+    }
+  });
+
   it('rejects a second company cycle for the same obligation period and rows that break ownership', async () => {
     const cycle = await prisma.serviceCycle.findFirstOrThrow({
       where: { tenantId: fixture.tenantId, ownershipScope: 'COMPANY', obligationCode: 'SG_FORM_C', obligationPeriodKey: 'YA2026' },

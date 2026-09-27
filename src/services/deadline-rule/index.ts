@@ -4,6 +4,7 @@ export {
   listDeadlineRules,
   replaceVariantRuleAssociations,
   stageDeadlineRulePreset,
+  applyDeadlineRulePreset,
   updateDeadlineRuleDraft,
 } from './service';
 export {
