@@ -38,7 +38,10 @@ export type ServiceCycleMinAggregateOutputType = {
   id: string | null
   tenantId: string | null
   companyId: string | null
+  ownershipScope: $Enums.DeadlineOwnershipScope | null
   clientServiceId: string | null
+  obligationCode: string | null
+  obligationPeriodKey: string | null
   ruleId: string | null
   ruleVersionId: string | null
   businessCalendarId: string | null
@@ -58,7 +61,10 @@ export type ServiceCycleMaxAggregateOutputType = {
   id: string | null
   tenantId: string | null
   companyId: string | null
+  ownershipScope: $Enums.DeadlineOwnershipScope | null
   clientServiceId: string | null
+  obligationCode: string | null
+  obligationPeriodKey: string | null
   ruleId: string | null
   ruleVersionId: string | null
   businessCalendarId: string | null
@@ -78,7 +84,10 @@ export type ServiceCycleCountAggregateOutputType = {
   id: number
   tenantId: number
   companyId: number
+  ownershipScope: number
   clientServiceId: number
+  obligationCode: number
+  obligationPeriodKey: number
   ruleId: number
   ruleVersionId: number
   businessCalendarId: number
@@ -110,7 +119,10 @@ export type ServiceCycleMinAggregateInputType = {
   id?: true
   tenantId?: true
   companyId?: true
+  ownershipScope?: true
   clientServiceId?: true
+  obligationCode?: true
+  obligationPeriodKey?: true
   ruleId?: true
   ruleVersionId?: true
   businessCalendarId?: true
@@ -130,7 +142,10 @@ export type ServiceCycleMaxAggregateInputType = {
   id?: true
   tenantId?: true
   companyId?: true
+  ownershipScope?: true
   clientServiceId?: true
+  obligationCode?: true
+  obligationPeriodKey?: true
   ruleId?: true
   ruleVersionId?: true
   businessCalendarId?: true
@@ -150,7 +165,10 @@ export type ServiceCycleCountAggregateInputType = {
   id?: true
   tenantId?: true
   companyId?: true
+  ownershipScope?: true
   clientServiceId?: true
+  obligationCode?: true
+  obligationPeriodKey?: true
   ruleId?: true
   ruleVersionId?: true
   businessCalendarId?: true
@@ -259,7 +277,10 @@ export type ServiceCycleGroupByOutputType = {
   id: string
   tenantId: string
   companyId: string
-  clientServiceId: string
+  ownershipScope: $Enums.DeadlineOwnershipScope
+  clientServiceId: string | null
+  obligationCode: string | null
+  obligationPeriodKey: string | null
   ruleId: string
   ruleVersionId: string
   businessCalendarId: string | null
@@ -304,7 +325,10 @@ export type ServiceCycleWhereInput = {
   id?: Prisma.StringFilter<"ServiceCycle"> | string
   tenantId?: Prisma.StringFilter<"ServiceCycle"> | string
   companyId?: Prisma.StringFilter<"ServiceCycle"> | string
-  clientServiceId?: Prisma.StringFilter<"ServiceCycle"> | string
+  ownershipScope?: Prisma.EnumDeadlineOwnershipScopeFilter<"ServiceCycle"> | $Enums.DeadlineOwnershipScope
+  clientServiceId?: Prisma.StringNullableFilter<"ServiceCycle"> | string | null
+  obligationCode?: Prisma.StringNullableFilter<"ServiceCycle"> | string | null
+  obligationPeriodKey?: Prisma.StringNullableFilter<"ServiceCycle"> | string | null
   ruleId?: Prisma.StringFilter<"ServiceCycle"> | string
   ruleVersionId?: Prisma.StringFilter<"ServiceCycle"> | string
   businessCalendarId?: Prisma.StringNullableFilter<"ServiceCycle"> | string | null
@@ -322,7 +346,7 @@ export type ServiceCycleWhereInput = {
   updatedAt?: Prisma.DateTimeFilter<"ServiceCycle"> | Date | string
   tenant?: Prisma.XOR<Prisma.WorkspaceScalarRelationFilter, Prisma.WorkspaceWhereInput>
   company?: Prisma.XOR<Prisma.CompanyScalarRelationFilter, Prisma.CompanyWhereInput>
-  clientService?: Prisma.XOR<Prisma.ClientServiceScalarRelationFilter, Prisma.ClientServiceWhereInput>
+  clientService?: Prisma.XOR<Prisma.ClientServiceNullableScalarRelationFilter, Prisma.ClientServiceWhereInput> | null
   rule?: Prisma.XOR<Prisma.DeadlineRuleScalarRelationFilter, Prisma.DeadlineRuleWhereInput>
   ruleVersion?: Prisma.XOR<Prisma.DeadlineRuleVersionScalarRelationFilter, Prisma.DeadlineRuleVersionWhereInput>
   businessCalendar?: Prisma.XOR<Prisma.BusinessCalendarNullableScalarRelationFilter, Prisma.BusinessCalendarWhereInput> | null
@@ -334,7 +358,10 @@ export type ServiceCycleOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   tenantId?: Prisma.SortOrder
   companyId?: Prisma.SortOrder
-  clientServiceId?: Prisma.SortOrder
+  ownershipScope?: Prisma.SortOrder
+  clientServiceId?: Prisma.SortOrderInput | Prisma.SortOrder
+  obligationCode?: Prisma.SortOrderInput | Prisma.SortOrder
+  obligationPeriodKey?: Prisma.SortOrderInput | Prisma.SortOrder
   ruleId?: Prisma.SortOrder
   ruleVersionId?: Prisma.SortOrder
   businessCalendarId?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -368,7 +395,10 @@ export type ServiceCycleWhereUniqueInput = Prisma.AtLeast<{
   NOT?: Prisma.ServiceCycleWhereInput | Prisma.ServiceCycleWhereInput[]
   tenantId?: Prisma.StringFilter<"ServiceCycle"> | string
   companyId?: Prisma.StringFilter<"ServiceCycle"> | string
-  clientServiceId?: Prisma.StringFilter<"ServiceCycle"> | string
+  ownershipScope?: Prisma.EnumDeadlineOwnershipScopeFilter<"ServiceCycle"> | $Enums.DeadlineOwnershipScope
+  clientServiceId?: Prisma.StringNullableFilter<"ServiceCycle"> | string | null
+  obligationCode?: Prisma.StringNullableFilter<"ServiceCycle"> | string | null
+  obligationPeriodKey?: Prisma.StringNullableFilter<"ServiceCycle"> | string | null
   ruleId?: Prisma.StringFilter<"ServiceCycle"> | string
   ruleVersionId?: Prisma.StringFilter<"ServiceCycle"> | string
   businessCalendarId?: Prisma.StringNullableFilter<"ServiceCycle"> | string | null
@@ -386,7 +416,7 @@ export type ServiceCycleWhereUniqueInput = Prisma.AtLeast<{
   updatedAt?: Prisma.DateTimeFilter<"ServiceCycle"> | Date | string
   tenant?: Prisma.XOR<Prisma.WorkspaceScalarRelationFilter, Prisma.WorkspaceWhereInput>
   company?: Prisma.XOR<Prisma.CompanyScalarRelationFilter, Prisma.CompanyWhereInput>
-  clientService?: Prisma.XOR<Prisma.ClientServiceScalarRelationFilter, Prisma.ClientServiceWhereInput>
+  clientService?: Prisma.XOR<Prisma.ClientServiceNullableScalarRelationFilter, Prisma.ClientServiceWhereInput> | null
   rule?: Prisma.XOR<Prisma.DeadlineRuleScalarRelationFilter, Prisma.DeadlineRuleWhereInput>
   ruleVersion?: Prisma.XOR<Prisma.DeadlineRuleVersionScalarRelationFilter, Prisma.DeadlineRuleVersionWhereInput>
   businessCalendar?: Prisma.XOR<Prisma.BusinessCalendarNullableScalarRelationFilter, Prisma.BusinessCalendarWhereInput> | null
@@ -398,7 +428,10 @@ export type ServiceCycleOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   tenantId?: Prisma.SortOrder
   companyId?: Prisma.SortOrder
-  clientServiceId?: Prisma.SortOrder
+  ownershipScope?: Prisma.SortOrder
+  clientServiceId?: Prisma.SortOrderInput | Prisma.SortOrder
+  obligationCode?: Prisma.SortOrderInput | Prisma.SortOrder
+  obligationPeriodKey?: Prisma.SortOrderInput | Prisma.SortOrder
   ruleId?: Prisma.SortOrder
   ruleVersionId?: Prisma.SortOrder
   businessCalendarId?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -428,7 +461,10 @@ export type ServiceCycleScalarWhereWithAggregatesInput = {
   id?: Prisma.StringWithAggregatesFilter<"ServiceCycle"> | string
   tenantId?: Prisma.StringWithAggregatesFilter<"ServiceCycle"> | string
   companyId?: Prisma.StringWithAggregatesFilter<"ServiceCycle"> | string
-  clientServiceId?: Prisma.StringWithAggregatesFilter<"ServiceCycle"> | string
+  ownershipScope?: Prisma.EnumDeadlineOwnershipScopeWithAggregatesFilter<"ServiceCycle"> | $Enums.DeadlineOwnershipScope
+  clientServiceId?: Prisma.StringNullableWithAggregatesFilter<"ServiceCycle"> | string | null
+  obligationCode?: Prisma.StringNullableWithAggregatesFilter<"ServiceCycle"> | string | null
+  obligationPeriodKey?: Prisma.StringNullableWithAggregatesFilter<"ServiceCycle"> | string | null
   ruleId?: Prisma.StringWithAggregatesFilter<"ServiceCycle"> | string
   ruleVersionId?: Prisma.StringWithAggregatesFilter<"ServiceCycle"> | string
   businessCalendarId?: Prisma.StringNullableWithAggregatesFilter<"ServiceCycle"> | string | null
@@ -448,6 +484,9 @@ export type ServiceCycleScalarWhereWithAggregatesInput = {
 
 export type ServiceCycleCreateInput = {
   id?: string
+  ownershipScope?: $Enums.DeadlineOwnershipScope
+  obligationCode?: string | null
+  obligationPeriodKey?: string | null
   businessCalendarRevision?: number | null
   periodKey: string
   periodStart: Date | string
@@ -461,7 +500,7 @@ export type ServiceCycleCreateInput = {
   updatedAt?: Date | string
   tenant: Prisma.WorkspaceCreateNestedOneWithoutServiceCyclesInput
   company: Prisma.CompanyCreateNestedOneWithoutServiceCyclesInput
-  clientService: Prisma.ClientServiceCreateNestedOneWithoutServiceCyclesInput
+  clientService?: Prisma.ClientServiceCreateNestedOneWithoutServiceCyclesInput
   rule: Prisma.DeadlineRuleCreateNestedOneWithoutServiceCyclesInput
   ruleVersion: Prisma.DeadlineRuleVersionCreateNestedOneWithoutServiceCyclesInput
   businessCalendar?: Prisma.BusinessCalendarCreateNestedOneWithoutServiceCyclesInput
@@ -473,7 +512,10 @@ export type ServiceCycleUncheckedCreateInput = {
   id?: string
   tenantId: string
   companyId: string
-  clientServiceId: string
+  ownershipScope?: $Enums.DeadlineOwnershipScope
+  clientServiceId?: string | null
+  obligationCode?: string | null
+  obligationPeriodKey?: string | null
   ruleId: string
   ruleVersionId: string
   businessCalendarId?: string | null
@@ -494,6 +536,9 @@ export type ServiceCycleUncheckedCreateInput = {
 
 export type ServiceCycleUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  ownershipScope?: Prisma.EnumDeadlineOwnershipScopeFieldUpdateOperationsInput | $Enums.DeadlineOwnershipScope
+  obligationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationPeriodKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   businessCalendarRevision?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   periodKey?: Prisma.StringFieldUpdateOperationsInput | string
   periodStart?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -507,7 +552,7 @@ export type ServiceCycleUpdateInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutServiceCyclesNestedInput
   company?: Prisma.CompanyUpdateOneRequiredWithoutServiceCyclesNestedInput
-  clientService?: Prisma.ClientServiceUpdateOneRequiredWithoutServiceCyclesNestedInput
+  clientService?: Prisma.ClientServiceUpdateOneWithoutServiceCyclesNestedInput
   rule?: Prisma.DeadlineRuleUpdateOneRequiredWithoutServiceCyclesNestedInput
   ruleVersion?: Prisma.DeadlineRuleVersionUpdateOneRequiredWithoutServiceCyclesNestedInput
   businessCalendar?: Prisma.BusinessCalendarUpdateOneWithoutServiceCyclesNestedInput
@@ -519,7 +564,10 @@ export type ServiceCycleUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   companyId?: Prisma.StringFieldUpdateOperationsInput | string
-  clientServiceId?: Prisma.StringFieldUpdateOperationsInput | string
+  ownershipScope?: Prisma.EnumDeadlineOwnershipScopeFieldUpdateOperationsInput | $Enums.DeadlineOwnershipScope
+  clientServiceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationPeriodKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   ruleId?: Prisma.StringFieldUpdateOperationsInput | string
   ruleVersionId?: Prisma.StringFieldUpdateOperationsInput | string
   businessCalendarId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -542,7 +590,10 @@ export type ServiceCycleCreateManyInput = {
   id?: string
   tenantId: string
   companyId: string
-  clientServiceId: string
+  ownershipScope?: $Enums.DeadlineOwnershipScope
+  clientServiceId?: string | null
+  obligationCode?: string | null
+  obligationPeriodKey?: string | null
   ruleId: string
   ruleVersionId: string
   businessCalendarId?: string | null
@@ -562,6 +613,9 @@ export type ServiceCycleCreateManyInput = {
 
 export type ServiceCycleUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  ownershipScope?: Prisma.EnumDeadlineOwnershipScopeFieldUpdateOperationsInput | $Enums.DeadlineOwnershipScope
+  obligationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationPeriodKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   businessCalendarRevision?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   periodKey?: Prisma.StringFieldUpdateOperationsInput | string
   periodStart?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -579,7 +633,10 @@ export type ServiceCycleUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   companyId?: Prisma.StringFieldUpdateOperationsInput | string
-  clientServiceId?: Prisma.StringFieldUpdateOperationsInput | string
+  ownershipScope?: Prisma.EnumDeadlineOwnershipScopeFieldUpdateOperationsInput | $Enums.DeadlineOwnershipScope
+  clientServiceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationPeriodKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   ruleId?: Prisma.StringFieldUpdateOperationsInput | string
   ruleVersionId?: Prisma.StringFieldUpdateOperationsInput | string
   businessCalendarId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -620,7 +677,10 @@ export type ServiceCycleCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   tenantId?: Prisma.SortOrder
   companyId?: Prisma.SortOrder
+  ownershipScope?: Prisma.SortOrder
   clientServiceId?: Prisma.SortOrder
+  obligationCode?: Prisma.SortOrder
+  obligationPeriodKey?: Prisma.SortOrder
   ruleId?: Prisma.SortOrder
   ruleVersionId?: Prisma.SortOrder
   businessCalendarId?: Prisma.SortOrder
@@ -646,7 +706,10 @@ export type ServiceCycleMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   tenantId?: Prisma.SortOrder
   companyId?: Prisma.SortOrder
+  ownershipScope?: Prisma.SortOrder
   clientServiceId?: Prisma.SortOrder
+  obligationCode?: Prisma.SortOrder
+  obligationPeriodKey?: Prisma.SortOrder
   ruleId?: Prisma.SortOrder
   ruleVersionId?: Prisma.SortOrder
   businessCalendarId?: Prisma.SortOrder
@@ -666,7 +729,10 @@ export type ServiceCycleMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   tenantId?: Prisma.SortOrder
   companyId?: Prisma.SortOrder
+  ownershipScope?: Prisma.SortOrder
   clientServiceId?: Prisma.SortOrder
+  obligationCode?: Prisma.SortOrder
+  obligationPeriodKey?: Prisma.SortOrder
   ruleId?: Prisma.SortOrder
   ruleVersionId?: Prisma.SortOrder
   businessCalendarId?: Prisma.SortOrder
@@ -985,6 +1051,10 @@ export type ServiceCycleUncheckedUpdateManyWithoutBusinessCalendarNestedInput = 
   deleteMany?: Prisma.ServiceCycleScalarWhereInput | Prisma.ServiceCycleScalarWhereInput[]
 }
 
+export type EnumDeadlineOwnershipScopeFieldUpdateOperationsInput = {
+  set?: $Enums.DeadlineOwnershipScope
+}
+
 export type EnumServiceCycleOriginFieldUpdateOperationsInput = {
   set?: $Enums.ServiceCycleOrigin
 }
@@ -1005,6 +1075,9 @@ export type ServiceCycleUpdateOneRequiredWithoutOccurrencesNestedInput = {
 
 export type ServiceCycleCreateWithoutTenantInput = {
   id?: string
+  ownershipScope?: $Enums.DeadlineOwnershipScope
+  obligationCode?: string | null
+  obligationPeriodKey?: string | null
   businessCalendarRevision?: number | null
   periodKey: string
   periodStart: Date | string
@@ -1017,7 +1090,7 @@ export type ServiceCycleCreateWithoutTenantInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   company: Prisma.CompanyCreateNestedOneWithoutServiceCyclesInput
-  clientService: Prisma.ClientServiceCreateNestedOneWithoutServiceCyclesInput
+  clientService?: Prisma.ClientServiceCreateNestedOneWithoutServiceCyclesInput
   rule: Prisma.DeadlineRuleCreateNestedOneWithoutServiceCyclesInput
   ruleVersion: Prisma.DeadlineRuleVersionCreateNestedOneWithoutServiceCyclesInput
   businessCalendar?: Prisma.BusinessCalendarCreateNestedOneWithoutServiceCyclesInput
@@ -1028,7 +1101,10 @@ export type ServiceCycleCreateWithoutTenantInput = {
 export type ServiceCycleUncheckedCreateWithoutTenantInput = {
   id?: string
   companyId: string
-  clientServiceId: string
+  ownershipScope?: $Enums.DeadlineOwnershipScope
+  clientServiceId?: string | null
+  obligationCode?: string | null
+  obligationPeriodKey?: string | null
   ruleId: string
   ruleVersionId: string
   businessCalendarId?: string | null
@@ -1080,7 +1156,10 @@ export type ServiceCycleScalarWhereInput = {
   id?: Prisma.StringFilter<"ServiceCycle"> | string
   tenantId?: Prisma.StringFilter<"ServiceCycle"> | string
   companyId?: Prisma.StringFilter<"ServiceCycle"> | string
-  clientServiceId?: Prisma.StringFilter<"ServiceCycle"> | string
+  ownershipScope?: Prisma.EnumDeadlineOwnershipScopeFilter<"ServiceCycle"> | $Enums.DeadlineOwnershipScope
+  clientServiceId?: Prisma.StringNullableFilter<"ServiceCycle"> | string | null
+  obligationCode?: Prisma.StringNullableFilter<"ServiceCycle"> | string | null
+  obligationPeriodKey?: Prisma.StringNullableFilter<"ServiceCycle"> | string | null
   ruleId?: Prisma.StringFilter<"ServiceCycle"> | string
   ruleVersionId?: Prisma.StringFilter<"ServiceCycle"> | string
   businessCalendarId?: Prisma.StringNullableFilter<"ServiceCycle"> | string | null
@@ -1100,6 +1179,9 @@ export type ServiceCycleScalarWhereInput = {
 
 export type ServiceCycleCreateWithoutCreatedByInput = {
   id?: string
+  ownershipScope?: $Enums.DeadlineOwnershipScope
+  obligationCode?: string | null
+  obligationPeriodKey?: string | null
   businessCalendarRevision?: number | null
   periodKey: string
   periodStart: Date | string
@@ -1113,7 +1195,7 @@ export type ServiceCycleCreateWithoutCreatedByInput = {
   updatedAt?: Date | string
   tenant: Prisma.WorkspaceCreateNestedOneWithoutServiceCyclesInput
   company: Prisma.CompanyCreateNestedOneWithoutServiceCyclesInput
-  clientService: Prisma.ClientServiceCreateNestedOneWithoutServiceCyclesInput
+  clientService?: Prisma.ClientServiceCreateNestedOneWithoutServiceCyclesInput
   rule: Prisma.DeadlineRuleCreateNestedOneWithoutServiceCyclesInput
   ruleVersion: Prisma.DeadlineRuleVersionCreateNestedOneWithoutServiceCyclesInput
   businessCalendar?: Prisma.BusinessCalendarCreateNestedOneWithoutServiceCyclesInput
@@ -1124,7 +1206,10 @@ export type ServiceCycleUncheckedCreateWithoutCreatedByInput = {
   id?: string
   tenantId: string
   companyId: string
-  clientServiceId: string
+  ownershipScope?: $Enums.DeadlineOwnershipScope
+  clientServiceId?: string | null
+  obligationCode?: string | null
+  obligationPeriodKey?: string | null
   ruleId: string
   ruleVersionId: string
   businessCalendarId?: string | null
@@ -1170,6 +1255,9 @@ export type ServiceCycleUpdateManyWithWhereWithoutCreatedByInput = {
 
 export type ServiceCycleCreateWithoutCompanyInput = {
   id?: string
+  ownershipScope?: $Enums.DeadlineOwnershipScope
+  obligationCode?: string | null
+  obligationPeriodKey?: string | null
   businessCalendarRevision?: number | null
   periodKey: string
   periodStart: Date | string
@@ -1182,7 +1270,7 @@ export type ServiceCycleCreateWithoutCompanyInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   tenant: Prisma.WorkspaceCreateNestedOneWithoutServiceCyclesInput
-  clientService: Prisma.ClientServiceCreateNestedOneWithoutServiceCyclesInput
+  clientService?: Prisma.ClientServiceCreateNestedOneWithoutServiceCyclesInput
   rule: Prisma.DeadlineRuleCreateNestedOneWithoutServiceCyclesInput
   ruleVersion: Prisma.DeadlineRuleVersionCreateNestedOneWithoutServiceCyclesInput
   businessCalendar?: Prisma.BusinessCalendarCreateNestedOneWithoutServiceCyclesInput
@@ -1193,7 +1281,10 @@ export type ServiceCycleCreateWithoutCompanyInput = {
 export type ServiceCycleUncheckedCreateWithoutCompanyInput = {
   id?: string
   tenantId: string
-  clientServiceId: string
+  ownershipScope?: $Enums.DeadlineOwnershipScope
+  clientServiceId?: string | null
+  obligationCode?: string | null
+  obligationPeriodKey?: string | null
   ruleId: string
   ruleVersionId: string
   businessCalendarId?: string | null
@@ -1240,6 +1331,9 @@ export type ServiceCycleUpdateManyWithWhereWithoutCompanyInput = {
 
 export type ServiceCycleCreateWithoutClientServiceInput = {
   id?: string
+  ownershipScope?: $Enums.DeadlineOwnershipScope
+  obligationCode?: string | null
+  obligationPeriodKey?: string | null
   businessCalendarRevision?: number | null
   periodKey: string
   periodStart: Date | string
@@ -1264,6 +1358,9 @@ export type ServiceCycleUncheckedCreateWithoutClientServiceInput = {
   id?: string
   tenantId: string
   companyId: string
+  ownershipScope?: $Enums.DeadlineOwnershipScope
+  obligationCode?: string | null
+  obligationPeriodKey?: string | null
   ruleId: string
   ruleVersionId: string
   businessCalendarId?: string | null
@@ -1310,6 +1407,9 @@ export type ServiceCycleUpdateManyWithWhereWithoutClientServiceInput = {
 
 export type ServiceCycleCreateWithoutRuleInput = {
   id?: string
+  ownershipScope?: $Enums.DeadlineOwnershipScope
+  obligationCode?: string | null
+  obligationPeriodKey?: string | null
   businessCalendarRevision?: number | null
   periodKey: string
   periodStart: Date | string
@@ -1323,7 +1423,7 @@ export type ServiceCycleCreateWithoutRuleInput = {
   updatedAt?: Date | string
   tenant: Prisma.WorkspaceCreateNestedOneWithoutServiceCyclesInput
   company: Prisma.CompanyCreateNestedOneWithoutServiceCyclesInput
-  clientService: Prisma.ClientServiceCreateNestedOneWithoutServiceCyclesInput
+  clientService?: Prisma.ClientServiceCreateNestedOneWithoutServiceCyclesInput
   ruleVersion: Prisma.DeadlineRuleVersionCreateNestedOneWithoutServiceCyclesInput
   businessCalendar?: Prisma.BusinessCalendarCreateNestedOneWithoutServiceCyclesInput
   createdBy?: Prisma.UserCreateNestedOneWithoutCreatedServiceCyclesInput
@@ -1334,7 +1434,10 @@ export type ServiceCycleUncheckedCreateWithoutRuleInput = {
   id?: string
   tenantId: string
   companyId: string
-  clientServiceId: string
+  ownershipScope?: $Enums.DeadlineOwnershipScope
+  clientServiceId?: string | null
+  obligationCode?: string | null
+  obligationPeriodKey?: string | null
   ruleVersionId: string
   businessCalendarId?: string | null
   businessCalendarRevision?: number | null
@@ -1380,6 +1483,9 @@ export type ServiceCycleUpdateManyWithWhereWithoutRuleInput = {
 
 export type ServiceCycleCreateWithoutRuleVersionInput = {
   id?: string
+  ownershipScope?: $Enums.DeadlineOwnershipScope
+  obligationCode?: string | null
+  obligationPeriodKey?: string | null
   businessCalendarRevision?: number | null
   periodKey: string
   periodStart: Date | string
@@ -1393,7 +1499,7 @@ export type ServiceCycleCreateWithoutRuleVersionInput = {
   updatedAt?: Date | string
   tenant: Prisma.WorkspaceCreateNestedOneWithoutServiceCyclesInput
   company: Prisma.CompanyCreateNestedOneWithoutServiceCyclesInput
-  clientService: Prisma.ClientServiceCreateNestedOneWithoutServiceCyclesInput
+  clientService?: Prisma.ClientServiceCreateNestedOneWithoutServiceCyclesInput
   rule: Prisma.DeadlineRuleCreateNestedOneWithoutServiceCyclesInput
   businessCalendar?: Prisma.BusinessCalendarCreateNestedOneWithoutServiceCyclesInput
   createdBy?: Prisma.UserCreateNestedOneWithoutCreatedServiceCyclesInput
@@ -1404,7 +1510,10 @@ export type ServiceCycleUncheckedCreateWithoutRuleVersionInput = {
   id?: string
   tenantId: string
   companyId: string
-  clientServiceId: string
+  ownershipScope?: $Enums.DeadlineOwnershipScope
+  clientServiceId?: string | null
+  obligationCode?: string | null
+  obligationPeriodKey?: string | null
   ruleId: string
   businessCalendarId?: string | null
   businessCalendarRevision?: number | null
@@ -1450,6 +1559,9 @@ export type ServiceCycleUpdateManyWithWhereWithoutRuleVersionInput = {
 
 export type ServiceCycleCreateWithoutBusinessCalendarInput = {
   id?: string
+  ownershipScope?: $Enums.DeadlineOwnershipScope
+  obligationCode?: string | null
+  obligationPeriodKey?: string | null
   businessCalendarRevision?: number | null
   periodKey: string
   periodStart: Date | string
@@ -1463,7 +1575,7 @@ export type ServiceCycleCreateWithoutBusinessCalendarInput = {
   updatedAt?: Date | string
   tenant: Prisma.WorkspaceCreateNestedOneWithoutServiceCyclesInput
   company: Prisma.CompanyCreateNestedOneWithoutServiceCyclesInput
-  clientService: Prisma.ClientServiceCreateNestedOneWithoutServiceCyclesInput
+  clientService?: Prisma.ClientServiceCreateNestedOneWithoutServiceCyclesInput
   rule: Prisma.DeadlineRuleCreateNestedOneWithoutServiceCyclesInput
   ruleVersion: Prisma.DeadlineRuleVersionCreateNestedOneWithoutServiceCyclesInput
   createdBy?: Prisma.UserCreateNestedOneWithoutCreatedServiceCyclesInput
@@ -1474,7 +1586,10 @@ export type ServiceCycleUncheckedCreateWithoutBusinessCalendarInput = {
   id?: string
   tenantId: string
   companyId: string
-  clientServiceId: string
+  ownershipScope?: $Enums.DeadlineOwnershipScope
+  clientServiceId?: string | null
+  obligationCode?: string | null
+  obligationPeriodKey?: string | null
   ruleId: string
   ruleVersionId: string
   businessCalendarRevision?: number | null
@@ -1520,6 +1635,9 @@ export type ServiceCycleUpdateManyWithWhereWithoutBusinessCalendarInput = {
 
 export type ServiceCycleCreateWithoutOccurrencesInput = {
   id?: string
+  ownershipScope?: $Enums.DeadlineOwnershipScope
+  obligationCode?: string | null
+  obligationPeriodKey?: string | null
   businessCalendarRevision?: number | null
   periodKey: string
   periodStart: Date | string
@@ -1533,7 +1651,7 @@ export type ServiceCycleCreateWithoutOccurrencesInput = {
   updatedAt?: Date | string
   tenant: Prisma.WorkspaceCreateNestedOneWithoutServiceCyclesInput
   company: Prisma.CompanyCreateNestedOneWithoutServiceCyclesInput
-  clientService: Prisma.ClientServiceCreateNestedOneWithoutServiceCyclesInput
+  clientService?: Prisma.ClientServiceCreateNestedOneWithoutServiceCyclesInput
   rule: Prisma.DeadlineRuleCreateNestedOneWithoutServiceCyclesInput
   ruleVersion: Prisma.DeadlineRuleVersionCreateNestedOneWithoutServiceCyclesInput
   businessCalendar?: Prisma.BusinessCalendarCreateNestedOneWithoutServiceCyclesInput
@@ -1544,7 +1662,10 @@ export type ServiceCycleUncheckedCreateWithoutOccurrencesInput = {
   id?: string
   tenantId: string
   companyId: string
-  clientServiceId: string
+  ownershipScope?: $Enums.DeadlineOwnershipScope
+  clientServiceId?: string | null
+  obligationCode?: string | null
+  obligationPeriodKey?: string | null
   ruleId: string
   ruleVersionId: string
   businessCalendarId?: string | null
@@ -1580,6 +1701,9 @@ export type ServiceCycleUpdateToOneWithWhereWithoutOccurrencesInput = {
 
 export type ServiceCycleUpdateWithoutOccurrencesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  ownershipScope?: Prisma.EnumDeadlineOwnershipScopeFieldUpdateOperationsInput | $Enums.DeadlineOwnershipScope
+  obligationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationPeriodKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   businessCalendarRevision?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   periodKey?: Prisma.StringFieldUpdateOperationsInput | string
   periodStart?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1593,7 +1717,7 @@ export type ServiceCycleUpdateWithoutOccurrencesInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutServiceCyclesNestedInput
   company?: Prisma.CompanyUpdateOneRequiredWithoutServiceCyclesNestedInput
-  clientService?: Prisma.ClientServiceUpdateOneRequiredWithoutServiceCyclesNestedInput
+  clientService?: Prisma.ClientServiceUpdateOneWithoutServiceCyclesNestedInput
   rule?: Prisma.DeadlineRuleUpdateOneRequiredWithoutServiceCyclesNestedInput
   ruleVersion?: Prisma.DeadlineRuleVersionUpdateOneRequiredWithoutServiceCyclesNestedInput
   businessCalendar?: Prisma.BusinessCalendarUpdateOneWithoutServiceCyclesNestedInput
@@ -1604,7 +1728,10 @@ export type ServiceCycleUncheckedUpdateWithoutOccurrencesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   companyId?: Prisma.StringFieldUpdateOperationsInput | string
-  clientServiceId?: Prisma.StringFieldUpdateOperationsInput | string
+  ownershipScope?: Prisma.EnumDeadlineOwnershipScopeFieldUpdateOperationsInput | $Enums.DeadlineOwnershipScope
+  clientServiceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationPeriodKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   ruleId?: Prisma.StringFieldUpdateOperationsInput | string
   ruleVersionId?: Prisma.StringFieldUpdateOperationsInput | string
   businessCalendarId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1625,7 +1752,10 @@ export type ServiceCycleUncheckedUpdateWithoutOccurrencesInput = {
 export type ServiceCycleCreateManyTenantInput = {
   id?: string
   companyId: string
-  clientServiceId: string
+  ownershipScope?: $Enums.DeadlineOwnershipScope
+  clientServiceId?: string | null
+  obligationCode?: string | null
+  obligationPeriodKey?: string | null
   ruleId: string
   ruleVersionId: string
   businessCalendarId?: string | null
@@ -1645,6 +1775,9 @@ export type ServiceCycleCreateManyTenantInput = {
 
 export type ServiceCycleUpdateWithoutTenantInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  ownershipScope?: Prisma.EnumDeadlineOwnershipScopeFieldUpdateOperationsInput | $Enums.DeadlineOwnershipScope
+  obligationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationPeriodKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   businessCalendarRevision?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   periodKey?: Prisma.StringFieldUpdateOperationsInput | string
   periodStart?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1657,7 +1790,7 @@ export type ServiceCycleUpdateWithoutTenantInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   company?: Prisma.CompanyUpdateOneRequiredWithoutServiceCyclesNestedInput
-  clientService?: Prisma.ClientServiceUpdateOneRequiredWithoutServiceCyclesNestedInput
+  clientService?: Prisma.ClientServiceUpdateOneWithoutServiceCyclesNestedInput
   rule?: Prisma.DeadlineRuleUpdateOneRequiredWithoutServiceCyclesNestedInput
   ruleVersion?: Prisma.DeadlineRuleVersionUpdateOneRequiredWithoutServiceCyclesNestedInput
   businessCalendar?: Prisma.BusinessCalendarUpdateOneWithoutServiceCyclesNestedInput
@@ -1668,7 +1801,10 @@ export type ServiceCycleUpdateWithoutTenantInput = {
 export type ServiceCycleUncheckedUpdateWithoutTenantInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   companyId?: Prisma.StringFieldUpdateOperationsInput | string
-  clientServiceId?: Prisma.StringFieldUpdateOperationsInput | string
+  ownershipScope?: Prisma.EnumDeadlineOwnershipScopeFieldUpdateOperationsInput | $Enums.DeadlineOwnershipScope
+  clientServiceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationPeriodKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   ruleId?: Prisma.StringFieldUpdateOperationsInput | string
   ruleVersionId?: Prisma.StringFieldUpdateOperationsInput | string
   businessCalendarId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1690,7 +1826,10 @@ export type ServiceCycleUncheckedUpdateWithoutTenantInput = {
 export type ServiceCycleUncheckedUpdateManyWithoutTenantInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   companyId?: Prisma.StringFieldUpdateOperationsInput | string
-  clientServiceId?: Prisma.StringFieldUpdateOperationsInput | string
+  ownershipScope?: Prisma.EnumDeadlineOwnershipScopeFieldUpdateOperationsInput | $Enums.DeadlineOwnershipScope
+  clientServiceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationPeriodKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   ruleId?: Prisma.StringFieldUpdateOperationsInput | string
   ruleVersionId?: Prisma.StringFieldUpdateOperationsInput | string
   businessCalendarId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1712,7 +1851,10 @@ export type ServiceCycleCreateManyCreatedByInput = {
   id?: string
   tenantId: string
   companyId: string
-  clientServiceId: string
+  ownershipScope?: $Enums.DeadlineOwnershipScope
+  clientServiceId?: string | null
+  obligationCode?: string | null
+  obligationPeriodKey?: string | null
   ruleId: string
   ruleVersionId: string
   businessCalendarId?: string | null
@@ -1731,6 +1873,9 @@ export type ServiceCycleCreateManyCreatedByInput = {
 
 export type ServiceCycleUpdateWithoutCreatedByInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  ownershipScope?: Prisma.EnumDeadlineOwnershipScopeFieldUpdateOperationsInput | $Enums.DeadlineOwnershipScope
+  obligationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationPeriodKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   businessCalendarRevision?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   periodKey?: Prisma.StringFieldUpdateOperationsInput | string
   periodStart?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1744,7 +1889,7 @@ export type ServiceCycleUpdateWithoutCreatedByInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutServiceCyclesNestedInput
   company?: Prisma.CompanyUpdateOneRequiredWithoutServiceCyclesNestedInput
-  clientService?: Prisma.ClientServiceUpdateOneRequiredWithoutServiceCyclesNestedInput
+  clientService?: Prisma.ClientServiceUpdateOneWithoutServiceCyclesNestedInput
   rule?: Prisma.DeadlineRuleUpdateOneRequiredWithoutServiceCyclesNestedInput
   ruleVersion?: Prisma.DeadlineRuleVersionUpdateOneRequiredWithoutServiceCyclesNestedInput
   businessCalendar?: Prisma.BusinessCalendarUpdateOneWithoutServiceCyclesNestedInput
@@ -1755,7 +1900,10 @@ export type ServiceCycleUncheckedUpdateWithoutCreatedByInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   companyId?: Prisma.StringFieldUpdateOperationsInput | string
-  clientServiceId?: Prisma.StringFieldUpdateOperationsInput | string
+  ownershipScope?: Prisma.EnumDeadlineOwnershipScopeFieldUpdateOperationsInput | $Enums.DeadlineOwnershipScope
+  clientServiceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationPeriodKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   ruleId?: Prisma.StringFieldUpdateOperationsInput | string
   ruleVersionId?: Prisma.StringFieldUpdateOperationsInput | string
   businessCalendarId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1777,7 +1925,10 @@ export type ServiceCycleUncheckedUpdateManyWithoutCreatedByInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   companyId?: Prisma.StringFieldUpdateOperationsInput | string
-  clientServiceId?: Prisma.StringFieldUpdateOperationsInput | string
+  ownershipScope?: Prisma.EnumDeadlineOwnershipScopeFieldUpdateOperationsInput | $Enums.DeadlineOwnershipScope
+  clientServiceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationPeriodKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   ruleId?: Prisma.StringFieldUpdateOperationsInput | string
   ruleVersionId?: Prisma.StringFieldUpdateOperationsInput | string
   businessCalendarId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1797,7 +1948,10 @@ export type ServiceCycleUncheckedUpdateManyWithoutCreatedByInput = {
 export type ServiceCycleCreateManyCompanyInput = {
   id?: string
   tenantId: string
-  clientServiceId: string
+  ownershipScope?: $Enums.DeadlineOwnershipScope
+  clientServiceId?: string | null
+  obligationCode?: string | null
+  obligationPeriodKey?: string | null
   ruleId: string
   ruleVersionId: string
   businessCalendarId?: string | null
@@ -1817,6 +1971,9 @@ export type ServiceCycleCreateManyCompanyInput = {
 
 export type ServiceCycleUpdateWithoutCompanyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  ownershipScope?: Prisma.EnumDeadlineOwnershipScopeFieldUpdateOperationsInput | $Enums.DeadlineOwnershipScope
+  obligationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationPeriodKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   businessCalendarRevision?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   periodKey?: Prisma.StringFieldUpdateOperationsInput | string
   periodStart?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1829,7 +1986,7 @@ export type ServiceCycleUpdateWithoutCompanyInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutServiceCyclesNestedInput
-  clientService?: Prisma.ClientServiceUpdateOneRequiredWithoutServiceCyclesNestedInput
+  clientService?: Prisma.ClientServiceUpdateOneWithoutServiceCyclesNestedInput
   rule?: Prisma.DeadlineRuleUpdateOneRequiredWithoutServiceCyclesNestedInput
   ruleVersion?: Prisma.DeadlineRuleVersionUpdateOneRequiredWithoutServiceCyclesNestedInput
   businessCalendar?: Prisma.BusinessCalendarUpdateOneWithoutServiceCyclesNestedInput
@@ -1840,7 +1997,10 @@ export type ServiceCycleUpdateWithoutCompanyInput = {
 export type ServiceCycleUncheckedUpdateWithoutCompanyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
-  clientServiceId?: Prisma.StringFieldUpdateOperationsInput | string
+  ownershipScope?: Prisma.EnumDeadlineOwnershipScopeFieldUpdateOperationsInput | $Enums.DeadlineOwnershipScope
+  clientServiceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationPeriodKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   ruleId?: Prisma.StringFieldUpdateOperationsInput | string
   ruleVersionId?: Prisma.StringFieldUpdateOperationsInput | string
   businessCalendarId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1862,7 +2022,10 @@ export type ServiceCycleUncheckedUpdateWithoutCompanyInput = {
 export type ServiceCycleUncheckedUpdateManyWithoutCompanyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
-  clientServiceId?: Prisma.StringFieldUpdateOperationsInput | string
+  ownershipScope?: Prisma.EnumDeadlineOwnershipScopeFieldUpdateOperationsInput | $Enums.DeadlineOwnershipScope
+  clientServiceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationPeriodKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   ruleId?: Prisma.StringFieldUpdateOperationsInput | string
   ruleVersionId?: Prisma.StringFieldUpdateOperationsInput | string
   businessCalendarId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1884,6 +2047,9 @@ export type ServiceCycleCreateManyClientServiceInput = {
   id?: string
   tenantId: string
   companyId: string
+  ownershipScope?: $Enums.DeadlineOwnershipScope
+  obligationCode?: string | null
+  obligationPeriodKey?: string | null
   ruleId: string
   ruleVersionId: string
   businessCalendarId?: string | null
@@ -1903,6 +2069,9 @@ export type ServiceCycleCreateManyClientServiceInput = {
 
 export type ServiceCycleUpdateWithoutClientServiceInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  ownershipScope?: Prisma.EnumDeadlineOwnershipScopeFieldUpdateOperationsInput | $Enums.DeadlineOwnershipScope
+  obligationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationPeriodKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   businessCalendarRevision?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   periodKey?: Prisma.StringFieldUpdateOperationsInput | string
   periodStart?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1927,6 +2096,9 @@ export type ServiceCycleUncheckedUpdateWithoutClientServiceInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   companyId?: Prisma.StringFieldUpdateOperationsInput | string
+  ownershipScope?: Prisma.EnumDeadlineOwnershipScopeFieldUpdateOperationsInput | $Enums.DeadlineOwnershipScope
+  obligationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationPeriodKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   ruleId?: Prisma.StringFieldUpdateOperationsInput | string
   ruleVersionId?: Prisma.StringFieldUpdateOperationsInput | string
   businessCalendarId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1949,6 +2121,9 @@ export type ServiceCycleUncheckedUpdateManyWithoutClientServiceInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   companyId?: Prisma.StringFieldUpdateOperationsInput | string
+  ownershipScope?: Prisma.EnumDeadlineOwnershipScopeFieldUpdateOperationsInput | $Enums.DeadlineOwnershipScope
+  obligationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationPeriodKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   ruleId?: Prisma.StringFieldUpdateOperationsInput | string
   ruleVersionId?: Prisma.StringFieldUpdateOperationsInput | string
   businessCalendarId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1970,7 +2145,10 @@ export type ServiceCycleCreateManyRuleInput = {
   id?: string
   tenantId: string
   companyId: string
-  clientServiceId: string
+  ownershipScope?: $Enums.DeadlineOwnershipScope
+  clientServiceId?: string | null
+  obligationCode?: string | null
+  obligationPeriodKey?: string | null
   ruleVersionId: string
   businessCalendarId?: string | null
   businessCalendarRevision?: number | null
@@ -1989,6 +2167,9 @@ export type ServiceCycleCreateManyRuleInput = {
 
 export type ServiceCycleUpdateWithoutRuleInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  ownershipScope?: Prisma.EnumDeadlineOwnershipScopeFieldUpdateOperationsInput | $Enums.DeadlineOwnershipScope
+  obligationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationPeriodKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   businessCalendarRevision?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   periodKey?: Prisma.StringFieldUpdateOperationsInput | string
   periodStart?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -2002,7 +2183,7 @@ export type ServiceCycleUpdateWithoutRuleInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutServiceCyclesNestedInput
   company?: Prisma.CompanyUpdateOneRequiredWithoutServiceCyclesNestedInput
-  clientService?: Prisma.ClientServiceUpdateOneRequiredWithoutServiceCyclesNestedInput
+  clientService?: Prisma.ClientServiceUpdateOneWithoutServiceCyclesNestedInput
   ruleVersion?: Prisma.DeadlineRuleVersionUpdateOneRequiredWithoutServiceCyclesNestedInput
   businessCalendar?: Prisma.BusinessCalendarUpdateOneWithoutServiceCyclesNestedInput
   createdBy?: Prisma.UserUpdateOneWithoutCreatedServiceCyclesNestedInput
@@ -2013,7 +2194,10 @@ export type ServiceCycleUncheckedUpdateWithoutRuleInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   companyId?: Prisma.StringFieldUpdateOperationsInput | string
-  clientServiceId?: Prisma.StringFieldUpdateOperationsInput | string
+  ownershipScope?: Prisma.EnumDeadlineOwnershipScopeFieldUpdateOperationsInput | $Enums.DeadlineOwnershipScope
+  clientServiceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationPeriodKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   ruleVersionId?: Prisma.StringFieldUpdateOperationsInput | string
   businessCalendarId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   businessCalendarRevision?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -2035,7 +2219,10 @@ export type ServiceCycleUncheckedUpdateManyWithoutRuleInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   companyId?: Prisma.StringFieldUpdateOperationsInput | string
-  clientServiceId?: Prisma.StringFieldUpdateOperationsInput | string
+  ownershipScope?: Prisma.EnumDeadlineOwnershipScopeFieldUpdateOperationsInput | $Enums.DeadlineOwnershipScope
+  clientServiceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationPeriodKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   ruleVersionId?: Prisma.StringFieldUpdateOperationsInput | string
   businessCalendarId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   businessCalendarRevision?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -2056,7 +2243,10 @@ export type ServiceCycleCreateManyRuleVersionInput = {
   id?: string
   tenantId: string
   companyId: string
-  clientServiceId: string
+  ownershipScope?: $Enums.DeadlineOwnershipScope
+  clientServiceId?: string | null
+  obligationCode?: string | null
+  obligationPeriodKey?: string | null
   ruleId: string
   businessCalendarId?: string | null
   businessCalendarRevision?: number | null
@@ -2075,6 +2265,9 @@ export type ServiceCycleCreateManyRuleVersionInput = {
 
 export type ServiceCycleUpdateWithoutRuleVersionInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  ownershipScope?: Prisma.EnumDeadlineOwnershipScopeFieldUpdateOperationsInput | $Enums.DeadlineOwnershipScope
+  obligationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationPeriodKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   businessCalendarRevision?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   periodKey?: Prisma.StringFieldUpdateOperationsInput | string
   periodStart?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -2088,7 +2281,7 @@ export type ServiceCycleUpdateWithoutRuleVersionInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutServiceCyclesNestedInput
   company?: Prisma.CompanyUpdateOneRequiredWithoutServiceCyclesNestedInput
-  clientService?: Prisma.ClientServiceUpdateOneRequiredWithoutServiceCyclesNestedInput
+  clientService?: Prisma.ClientServiceUpdateOneWithoutServiceCyclesNestedInput
   rule?: Prisma.DeadlineRuleUpdateOneRequiredWithoutServiceCyclesNestedInput
   businessCalendar?: Prisma.BusinessCalendarUpdateOneWithoutServiceCyclesNestedInput
   createdBy?: Prisma.UserUpdateOneWithoutCreatedServiceCyclesNestedInput
@@ -2099,7 +2292,10 @@ export type ServiceCycleUncheckedUpdateWithoutRuleVersionInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   companyId?: Prisma.StringFieldUpdateOperationsInput | string
-  clientServiceId?: Prisma.StringFieldUpdateOperationsInput | string
+  ownershipScope?: Prisma.EnumDeadlineOwnershipScopeFieldUpdateOperationsInput | $Enums.DeadlineOwnershipScope
+  clientServiceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationPeriodKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   ruleId?: Prisma.StringFieldUpdateOperationsInput | string
   businessCalendarId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   businessCalendarRevision?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -2121,7 +2317,10 @@ export type ServiceCycleUncheckedUpdateManyWithoutRuleVersionInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   companyId?: Prisma.StringFieldUpdateOperationsInput | string
-  clientServiceId?: Prisma.StringFieldUpdateOperationsInput | string
+  ownershipScope?: Prisma.EnumDeadlineOwnershipScopeFieldUpdateOperationsInput | $Enums.DeadlineOwnershipScope
+  clientServiceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationPeriodKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   ruleId?: Prisma.StringFieldUpdateOperationsInput | string
   businessCalendarId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   businessCalendarRevision?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -2142,7 +2341,10 @@ export type ServiceCycleCreateManyBusinessCalendarInput = {
   id?: string
   tenantId: string
   companyId: string
-  clientServiceId: string
+  ownershipScope?: $Enums.DeadlineOwnershipScope
+  clientServiceId?: string | null
+  obligationCode?: string | null
+  obligationPeriodKey?: string | null
   ruleId: string
   ruleVersionId: string
   businessCalendarRevision?: number | null
@@ -2161,6 +2363,9 @@ export type ServiceCycleCreateManyBusinessCalendarInput = {
 
 export type ServiceCycleUpdateWithoutBusinessCalendarInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  ownershipScope?: Prisma.EnumDeadlineOwnershipScopeFieldUpdateOperationsInput | $Enums.DeadlineOwnershipScope
+  obligationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationPeriodKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   businessCalendarRevision?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   periodKey?: Prisma.StringFieldUpdateOperationsInput | string
   periodStart?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -2174,7 +2379,7 @@ export type ServiceCycleUpdateWithoutBusinessCalendarInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutServiceCyclesNestedInput
   company?: Prisma.CompanyUpdateOneRequiredWithoutServiceCyclesNestedInput
-  clientService?: Prisma.ClientServiceUpdateOneRequiredWithoutServiceCyclesNestedInput
+  clientService?: Prisma.ClientServiceUpdateOneWithoutServiceCyclesNestedInput
   rule?: Prisma.DeadlineRuleUpdateOneRequiredWithoutServiceCyclesNestedInput
   ruleVersion?: Prisma.DeadlineRuleVersionUpdateOneRequiredWithoutServiceCyclesNestedInput
   createdBy?: Prisma.UserUpdateOneWithoutCreatedServiceCyclesNestedInput
@@ -2185,7 +2390,10 @@ export type ServiceCycleUncheckedUpdateWithoutBusinessCalendarInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   companyId?: Prisma.StringFieldUpdateOperationsInput | string
-  clientServiceId?: Prisma.StringFieldUpdateOperationsInput | string
+  ownershipScope?: Prisma.EnumDeadlineOwnershipScopeFieldUpdateOperationsInput | $Enums.DeadlineOwnershipScope
+  clientServiceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationPeriodKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   ruleId?: Prisma.StringFieldUpdateOperationsInput | string
   ruleVersionId?: Prisma.StringFieldUpdateOperationsInput | string
   businessCalendarRevision?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -2207,7 +2415,10 @@ export type ServiceCycleUncheckedUpdateManyWithoutBusinessCalendarInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   companyId?: Prisma.StringFieldUpdateOperationsInput | string
-  clientServiceId?: Prisma.StringFieldUpdateOperationsInput | string
+  ownershipScope?: Prisma.EnumDeadlineOwnershipScopeFieldUpdateOperationsInput | $Enums.DeadlineOwnershipScope
+  clientServiceId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  obligationPeriodKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   ruleId?: Prisma.StringFieldUpdateOperationsInput | string
   ruleVersionId?: Prisma.StringFieldUpdateOperationsInput | string
   businessCalendarRevision?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -2259,7 +2470,10 @@ export type ServiceCycleSelect<ExtArgs extends runtime.Types.Extensions.Internal
   id?: boolean
   tenantId?: boolean
   companyId?: boolean
+  ownershipScope?: boolean
   clientServiceId?: boolean
+  obligationCode?: boolean
+  obligationPeriodKey?: boolean
   ruleId?: boolean
   ruleVersionId?: boolean
   businessCalendarId?: boolean
@@ -2277,7 +2491,7 @@ export type ServiceCycleSelect<ExtArgs extends runtime.Types.Extensions.Internal
   updatedAt?: boolean
   tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
   company?: boolean | Prisma.CompanyDefaultArgs<ExtArgs>
-  clientService?: boolean | Prisma.ClientServiceDefaultArgs<ExtArgs>
+  clientService?: boolean | Prisma.ServiceCycle$clientServiceArgs<ExtArgs>
   rule?: boolean | Prisma.DeadlineRuleDefaultArgs<ExtArgs>
   ruleVersion?: boolean | Prisma.DeadlineRuleVersionDefaultArgs<ExtArgs>
   businessCalendar?: boolean | Prisma.ServiceCycle$businessCalendarArgs<ExtArgs>
@@ -2290,7 +2504,10 @@ export type ServiceCycleSelectCreateManyAndReturn<ExtArgs extends runtime.Types.
   id?: boolean
   tenantId?: boolean
   companyId?: boolean
+  ownershipScope?: boolean
   clientServiceId?: boolean
+  obligationCode?: boolean
+  obligationPeriodKey?: boolean
   ruleId?: boolean
   ruleVersionId?: boolean
   businessCalendarId?: boolean
@@ -2308,7 +2525,7 @@ export type ServiceCycleSelectCreateManyAndReturn<ExtArgs extends runtime.Types.
   updatedAt?: boolean
   tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
   company?: boolean | Prisma.CompanyDefaultArgs<ExtArgs>
-  clientService?: boolean | Prisma.ClientServiceDefaultArgs<ExtArgs>
+  clientService?: boolean | Prisma.ServiceCycle$clientServiceArgs<ExtArgs>
   rule?: boolean | Prisma.DeadlineRuleDefaultArgs<ExtArgs>
   ruleVersion?: boolean | Prisma.DeadlineRuleVersionDefaultArgs<ExtArgs>
   businessCalendar?: boolean | Prisma.ServiceCycle$businessCalendarArgs<ExtArgs>
@@ -2319,7 +2536,10 @@ export type ServiceCycleSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.
   id?: boolean
   tenantId?: boolean
   companyId?: boolean
+  ownershipScope?: boolean
   clientServiceId?: boolean
+  obligationCode?: boolean
+  obligationPeriodKey?: boolean
   ruleId?: boolean
   ruleVersionId?: boolean
   businessCalendarId?: boolean
@@ -2337,7 +2557,7 @@ export type ServiceCycleSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.
   updatedAt?: boolean
   tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
   company?: boolean | Prisma.CompanyDefaultArgs<ExtArgs>
-  clientService?: boolean | Prisma.ClientServiceDefaultArgs<ExtArgs>
+  clientService?: boolean | Prisma.ServiceCycle$clientServiceArgs<ExtArgs>
   rule?: boolean | Prisma.DeadlineRuleDefaultArgs<ExtArgs>
   ruleVersion?: boolean | Prisma.DeadlineRuleVersionDefaultArgs<ExtArgs>
   businessCalendar?: boolean | Prisma.ServiceCycle$businessCalendarArgs<ExtArgs>
@@ -2348,7 +2568,10 @@ export type ServiceCycleSelectScalar = {
   id?: boolean
   tenantId?: boolean
   companyId?: boolean
+  ownershipScope?: boolean
   clientServiceId?: boolean
+  obligationCode?: boolean
+  obligationPeriodKey?: boolean
   ruleId?: boolean
   ruleVersionId?: boolean
   businessCalendarId?: boolean
@@ -2366,11 +2589,11 @@ export type ServiceCycleSelectScalar = {
   updatedAt?: boolean
 }
 
-export type ServiceCycleOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "companyId" | "clientServiceId" | "ruleId" | "ruleVersionId" | "businessCalendarId" | "businessCalendarRevision" | "periodKey" | "periodStart" | "periodEnd" | "generationKey" | "origin" | "recurrenceAnchor" | "sourceSnapshot" | "evaluationHash" | "createdById" | "createdAt" | "updatedAt", ExtArgs["result"]["serviceCycle"]>
+export type ServiceCycleOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "companyId" | "ownershipScope" | "clientServiceId" | "obligationCode" | "obligationPeriodKey" | "ruleId" | "ruleVersionId" | "businessCalendarId" | "businessCalendarRevision" | "periodKey" | "periodStart" | "periodEnd" | "generationKey" | "origin" | "recurrenceAnchor" | "sourceSnapshot" | "evaluationHash" | "createdById" | "createdAt" | "updatedAt", ExtArgs["result"]["serviceCycle"]>
 export type ServiceCycleInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
   company?: boolean | Prisma.CompanyDefaultArgs<ExtArgs>
-  clientService?: boolean | Prisma.ClientServiceDefaultArgs<ExtArgs>
+  clientService?: boolean | Prisma.ServiceCycle$clientServiceArgs<ExtArgs>
   rule?: boolean | Prisma.DeadlineRuleDefaultArgs<ExtArgs>
   ruleVersion?: boolean | Prisma.DeadlineRuleVersionDefaultArgs<ExtArgs>
   businessCalendar?: boolean | Prisma.ServiceCycle$businessCalendarArgs<ExtArgs>
@@ -2381,7 +2604,7 @@ export type ServiceCycleInclude<ExtArgs extends runtime.Types.Extensions.Interna
 export type ServiceCycleIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
   company?: boolean | Prisma.CompanyDefaultArgs<ExtArgs>
-  clientService?: boolean | Prisma.ClientServiceDefaultArgs<ExtArgs>
+  clientService?: boolean | Prisma.ServiceCycle$clientServiceArgs<ExtArgs>
   rule?: boolean | Prisma.DeadlineRuleDefaultArgs<ExtArgs>
   ruleVersion?: boolean | Prisma.DeadlineRuleVersionDefaultArgs<ExtArgs>
   businessCalendar?: boolean | Prisma.ServiceCycle$businessCalendarArgs<ExtArgs>
@@ -2390,7 +2613,7 @@ export type ServiceCycleIncludeCreateManyAndReturn<ExtArgs extends runtime.Types
 export type ServiceCycleIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
   company?: boolean | Prisma.CompanyDefaultArgs<ExtArgs>
-  clientService?: boolean | Prisma.ClientServiceDefaultArgs<ExtArgs>
+  clientService?: boolean | Prisma.ServiceCycle$clientServiceArgs<ExtArgs>
   rule?: boolean | Prisma.DeadlineRuleDefaultArgs<ExtArgs>
   ruleVersion?: boolean | Prisma.DeadlineRuleVersionDefaultArgs<ExtArgs>
   businessCalendar?: boolean | Prisma.ServiceCycle$businessCalendarArgs<ExtArgs>
@@ -2402,7 +2625,7 @@ export type $ServiceCyclePayload<ExtArgs extends runtime.Types.Extensions.Intern
   objects: {
     tenant: Prisma.$WorkspacePayload<ExtArgs>
     company: Prisma.$CompanyPayload<ExtArgs>
-    clientService: Prisma.$ClientServicePayload<ExtArgs>
+    clientService: Prisma.$ClientServicePayload<ExtArgs> | null
     rule: Prisma.$DeadlineRulePayload<ExtArgs>
     ruleVersion: Prisma.$DeadlineRuleVersionPayload<ExtArgs>
     businessCalendar: Prisma.$BusinessCalendarPayload<ExtArgs> | null
@@ -2413,7 +2636,13 @@ export type $ServiceCyclePayload<ExtArgs extends runtime.Types.Extensions.Intern
     id: string
     tenantId: string
     companyId: string
-    clientServiceId: string
+    /**
+     * SERVICE cycles belong to a client service; COMPANY cycles are canonical statutory periods.
+     */
+    ownershipScope: $Enums.DeadlineOwnershipScope
+    clientServiceId: string | null
+    obligationCode: string | null
+    obligationPeriodKey: string | null
     ruleId: string
     ruleVersionId: string
     businessCalendarId: string | null
@@ -2825,7 +3054,7 @@ export interface Prisma__ServiceCycleClient<T, Null = never, ExtArgs extends run
   readonly [Symbol.toStringTag]: "PrismaPromise"
   tenant<T extends Prisma.WorkspaceDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.WorkspaceDefaultArgs<ExtArgs>>): Prisma.Prisma__WorkspaceClient<runtime.Types.Result.GetResult<Prisma.$WorkspacePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   company<T extends Prisma.CompanyDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.CompanyDefaultArgs<ExtArgs>>): Prisma.Prisma__CompanyClient<runtime.Types.Result.GetResult<Prisma.$CompanyPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
-  clientService<T extends Prisma.ClientServiceDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ClientServiceDefaultArgs<ExtArgs>>): Prisma.Prisma__ClientServiceClient<runtime.Types.Result.GetResult<Prisma.$ClientServicePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  clientService<T extends Prisma.ServiceCycle$clientServiceArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ServiceCycle$clientServiceArgs<ExtArgs>>): Prisma.Prisma__ClientServiceClient<runtime.Types.Result.GetResult<Prisma.$ClientServicePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   rule<T extends Prisma.DeadlineRuleDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.DeadlineRuleDefaultArgs<ExtArgs>>): Prisma.Prisma__DeadlineRuleClient<runtime.Types.Result.GetResult<Prisma.$DeadlineRulePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   ruleVersion<T extends Prisma.DeadlineRuleVersionDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.DeadlineRuleVersionDefaultArgs<ExtArgs>>): Prisma.Prisma__DeadlineRuleVersionClient<runtime.Types.Result.GetResult<Prisma.$DeadlineRuleVersionPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   businessCalendar<T extends Prisma.ServiceCycle$businessCalendarArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ServiceCycle$businessCalendarArgs<ExtArgs>>): Prisma.Prisma__BusinessCalendarClient<runtime.Types.Result.GetResult<Prisma.$BusinessCalendarPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
@@ -2863,7 +3092,10 @@ export interface ServiceCycleFieldRefs {
   readonly id: Prisma.FieldRef<"ServiceCycle", 'String'>
   readonly tenantId: Prisma.FieldRef<"ServiceCycle", 'String'>
   readonly companyId: Prisma.FieldRef<"ServiceCycle", 'String'>
+  readonly ownershipScope: Prisma.FieldRef<"ServiceCycle", 'DeadlineOwnershipScope'>
   readonly clientServiceId: Prisma.FieldRef<"ServiceCycle", 'String'>
+  readonly obligationCode: Prisma.FieldRef<"ServiceCycle", 'String'>
+  readonly obligationPeriodKey: Prisma.FieldRef<"ServiceCycle", 'String'>
   readonly ruleId: Prisma.FieldRef<"ServiceCycle", 'String'>
   readonly ruleVersionId: Prisma.FieldRef<"ServiceCycle", 'String'>
   readonly businessCalendarId: Prisma.FieldRef<"ServiceCycle", 'String'>
@@ -3272,6 +3504,25 @@ export type ServiceCycleDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.
    * Limit how many ServiceCycles to delete.
    */
   limit?: number
+}
+
+/**
+ * ServiceCycle.clientService
+ */
+export type ServiceCycle$clientServiceArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the ClientService
+   */
+  select?: Prisma.ClientServiceSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the ClientService
+   */
+  omit?: Prisma.ClientServiceOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ClientServiceInclude<ExtArgs> | null
+  where?: Prisma.ClientServiceWhereInput
 }
 
 /**

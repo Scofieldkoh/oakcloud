@@ -130,6 +130,7 @@ function toVariantDto(variant: VariantRecord): ServiceVariantDto {
     displayOrder: variant.displayOrder,
     version: variant.version,
     isActive: variant.isActive,
+    monitoringProfiles: variant.monitoringProfiles ?? [],
     sowPartial: {
       id: variant.sowPartial.id,
       name: variant.sowPartial.name,
@@ -528,6 +529,7 @@ export async function createServiceVariant(
         customCadenceLabel: input.customCadenceLabel,
         displayOrder: input.displayOrder,
         isActive: input.isActive,
+        monitoringProfiles: input.monitoringProfiles ?? [],
         defaultFeeTemplates: {
           create: feeCreateData(input.feeTemplates, params.tenantId),
         },
@@ -636,6 +638,7 @@ export async function updateServiceVariant(
           : { customCadenceLabel }),
         ...(input.displayOrder === undefined ? {} : { displayOrder: input.displayOrder }),
         ...(input.isActive === undefined ? {} : { isActive: input.isActive }),
+        ...(input.monitoringProfiles === undefined ? {} : { monitoringProfiles: input.monitoringProfiles }),
         ...(feesChanged
           ? {
               defaultFeeTemplates: {

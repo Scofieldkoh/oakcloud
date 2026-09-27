@@ -139,6 +139,11 @@ export const MONITORING_PROFILE_LABELS: Record<MonitoringProfile, string> = {
   NOMINEE_DIRECTOR: 'Nominee director',
 };
 
+export const MONITORING_PROFILE_HINTS: Record<MonitoringProfile, string> = {
+  CORPORATE_TAX: 'ECI and the corporate income tax return',
+  NOMINEE_DIRECTOR: 'All statutory obligations of the company',
+};
+
 export function obligationDefinition(code: string): ObligationDefinition | null {
   return OBLIGATION_CATALOG.find((definition) => definition.code === code) ?? null;
 }

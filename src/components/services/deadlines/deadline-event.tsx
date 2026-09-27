@@ -27,6 +27,7 @@ const timingLabels: Record<NonNullable<DeadlineOccurrenceDto['timingState']>, st
   UPCOMING: 'Upcoming',
   DUE: 'Due today',
   OVERDUE: 'Overdue',
+  REVIEW: 'Takeover review',
 };
 
 function dateLabel(value: string): string {
@@ -35,6 +36,12 @@ function dateLabel(value: string): string {
     ? ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][Number(month) - 1]
     : undefined;
   return year && day && monthName ? `${day} ${monthName} ${year}` : value;
+}
+
+/** Service shown for a deadline; company obligations belong to no single service. */
+export function serviceLabel(occurrence: DeadlineOccurrenceDto): string {
+  if (!occurrence.service) return 'Company monitoring';
+  return occurrence.service.name || occurrence.service.variantName || '—';
 }
 
 export function milestoneLabel(occurrence: DeadlineOccurrenceDto): string {
@@ -88,7 +95,7 @@ export function DeadlineEventPanel({
   const [notes, setNotes] = useState(occurrence.notes ?? '');
   const companyLabel = occurrence.company.displayLabel || getCompanyDisplayLabel(occurrence.company);
   const milestone = milestoneLabel(occurrence);
-  const familyName = occurrence.family.name || occurrence.service.familyName || 'Unassigned family';
+  const familyName = occurrence.family.name || occurrence.service?.familyName || 'Unassigned family';
   const familyColor = occurrence.family.displayColor ?? '#58736a';
   const state = stateLabel(occurrence);
 
@@ -127,7 +134,7 @@ export function DeadlineEventPanel({
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="font-semibold text-text-primary">{occurrence.company.name}</p>
-          <p className="text-xs text-text-secondary">{companyLabel} · {occurrence.service.name || occurrence.service.variantName || '—'} · {milestone}</p>
+          <p className="text-xs text-text-secondary">{companyLabel} · {serviceLabel(occurrence)} · {milestone}</p>
         </div>
         {onClose ? <button type="button" aria-label="Close deadline details" onClick={onClose} className="flex min-h-11 min-w-11 items-center justify-center rounded-lg text-text-muted hover:bg-background-tertiary"><X className="h-4 w-4" aria-hidden="true" /></button> : null}
       </div>
@@ -137,7 +144,7 @@ export function DeadlineEventPanel({
         <span className="inline-flex min-h-8 items-center rounded-full border px-2" style={{ borderColor: familyColor }}>{familyName}</span>
       </div>
       <dl className="grid grid-cols-2 gap-x-3 gap-y-2 text-xs">
-        <div><dt className="text-text-muted">Service</dt><dd className="text-text-primary">{occurrence.service.name || occurrence.service.variantName || '—'}</dd></div>
+        <div><dt className="text-text-muted">Service</dt><dd className="text-text-primary">{serviceLabel(occurrence)}</dd></div>
         <div><dt className="text-text-muted">Milestone</dt><dd className="text-text-primary">{milestone}</dd></div>
         <div><dt className="text-text-muted">Type</dt><dd className="text-text-primary">{typeLabels[occurrence.deadlineType]}</dd></div>
         <div><dt className="text-text-muted">Lifecycle</dt><dd className="text-text-primary">{occurrence.status}</dd></div>
@@ -185,7 +192,7 @@ export function DeadlineEvent({
   const [position, setPosition] = useState({ left: 16, top: 16 });
   const companyLabel = occurrence.company.displayLabel || getCompanyDisplayLabel(occurrence.company);
   const milestone = milestoneLabel(occurrence);
-  const familyName = occurrence.family.name || occurrence.service.familyName || 'Unassigned family';
+  const familyName = occurrence.family.name || occurrence.service?.familyName || 'Unassigned family';
   const familyColor = occurrence.family.displayColor ?? '#58736a';
   const state = stateLabel(occurrence);
   const label = `${companyLabel} ${milestone}`;

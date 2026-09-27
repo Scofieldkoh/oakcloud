@@ -1318,6 +1318,12 @@ and overrides any earlier acceptance language that permitted weaker behavior.
   from \inancialYearEnd\, automatically generates historical backlog. Use
   manual historical cycles for all non-authoritative historical deadlines.
 
+> **Superseded for company statutory coverage (2026-09-27).** The limits above
+> still govern service-owned rules. ECI and the corporate income tax return
+> under company monitoring follow section 26 instead: they are planned by
+> financial period or Year of Assessment, backfilled from the agreement date,
+> and include contracted periods beyond the horizon.
+
 ### 25.2 Preview/apply parity
 
 - The client-service impact preview and the write-mode reconciler both call
@@ -1344,3 +1350,61 @@ pm run repair:deadlines\) is the only supported bypass, and only for
   repeat-idempotent. Incorrect unmatched occurrences are cancelled with a
   repair reason; matched incorrect occurrences are recalculated in place.
   Deadline history is never deleted.
+
+## 26. Company statutory monitoring addendum (2026-09-27)
+
+Plan: `docs/plans/2026-09-27-deadline-rules-and-compliance-monitoring.md`.
+Packages 1–4 (a correct tracker) are implemented; guided setup, evidence,
+reminders and migration of existing service-owned rows (packages 5–7) are not.
+
+### 26.1 Period-based tax presets
+
+- `SG_ECI` and `SG_FORM_C` keep their codes. Their reviewed presets use
+  `OBLIGATION_PERIOD_END` with `ADD_MONTHS_MONTH_END` (+3 months; a month-end
+  FYE maps to the target month end) and `FIXED_DATE_IN_ASSESSMENT_YEAR`
+  (30 November of the YA). Presets are staged as drafts and still go through
+  impact preview and publish.
+- Rules using these parts materialize with the `OBLIGATION_PERIOD` policy:
+  periods come from confirmed `CompanyFinancialPeriod` rows, otherwise from
+  the FYE preference; the normal YA is the FYE year + 1. First periods, FYE
+  changes and multi-YA periods are provisional and raise period review items.
+
+### 26.2 Ownership, coverage and responsibility
+
+- `ServiceCycle` / `DeadlineOccurrence.ownershipScope` is `SERVICE` or
+  `COMPANY`. Company rows have no `clientServiceId`, are identified by
+  `(tenant, company, obligationCode, obligationPeriodKey, milestone)` and are
+  enforced by CHECK constraints and a partial unique index.
+- `CompanyMonitoringCoverage` records why and from when a company is
+  monitored (profiles `CORPORATE_TAX`, `NOMINEE_DIRECTOR`, set on the
+  service variant). Activation starts coverage at the agreement date; without
+  one, coverage starts provisionally at the service start with a
+  `MONITORING_START_REVIEW` item.
+- `ClientServiceObligationScope` is the contracted filing scope. An explicit
+  `filingScope` field value is confirmed; a legacy YA field only proposes an
+  unconfirmed scope. Filing responsibility is `OAKCLOUD` only for a confirmed
+  scope on an active service; history is kept in
+  `DeadlineResponsibilityChange`, and staff-set responsibility is never
+  overwritten.
+- An obligation is included when its due date falls in coverage, when a
+  scope contracts it (even beyond the 24-month horizon), or when it fell due
+  in the 12 months before coverage started (takeover review). Each reason is
+  a `DeadlineOccurrenceCoverageLink`; removed reasons are released, not
+  deleted. Items created after their due date carry
+  `filingStatusUnconfirmed` and show as “Takeover review”, not overdue.
+
+### 26.3 Lifecycle and worker boundary
+
+- The worker reconciles monitored companies after the service loop, one
+  transaction per company, and writes no fee lines, billing occurrences or
+  billing-coverage issues. Writes need
+  `servicesWorkspace.companyMonitoringWritesEnabled` (or
+  `COMPANY_MONITORING_WRITES_ENABLED=true`); otherwise it observes.
+- While that flag is on, a monitored company's `SG_ECI` / `SG_FORM_C`
+  service associations are skipped by the service reconciler (warning
+  `COMPANY_MONITORING_OWNS_RULE`) and their existing service-owned rows are
+  left untouched until a reviewed migration links them.
+- Ending, archiving or deleting a service never cancels company obligations.
+  Coverage ends at the service end; obligations that lose every reason
+  become `HANDOVER_REVIEW` items. Missing rules or FYE raise review issues
+  rather than erasing obligations.

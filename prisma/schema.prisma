@@ -74,6 +74,12 @@ model Workspace {
   businessHolidays                 BusinessHoliday[]
   serviceCycles                    ServiceCycle[]
   deadlineOccurrences              DeadlineOccurrence[]
+  companyFinancialPeriods          CompanyFinancialPeriod[]
+  companyMonitoringCoverages       CompanyMonitoringCoverage[]
+  clientServiceObligationScopes    ClientServiceObligationScope[]
+  deadlineOccurrenceCoverageLinks  DeadlineOccurrenceCoverageLink[]
+  deadlineResponsibilityChanges    DeadlineResponsibilityChange[]
+  companyComplianceIssues          CompanyComplianceIssue[]
   billingOccurrences               BillingOccurrence[]
   billingCoverageIssues            BillingCoverageIssue[]
   reconciliationRequests           ServiceScheduleReconciliationRequest[]
@@ -368,6 +374,10 @@ model Company {
   primaryGenerationBatches    DocumentGenerationBatch[]    @relation("DocumentGenerationBatchPrimaryCompany")
   serviceCycles               ServiceCycle[]
   deadlineOccurrences         DeadlineOccurrence[]
+  financialPeriods            CompanyFinancialPeriod[]
+  monitoringCoverages         CompanyMonitoringCoverage[]
+  obligationScopes            ClientServiceObligationScope[]
+  complianceIssues            CompanyComplianceIssue[]
   billingOccurrences          BillingOccurrence[]
   billingCoverageIssues       BillingCoverageIssue[]
   sharePointFolderMapping     CompanySharePointFolder?
@@ -1178,6 +1188,8 @@ model ServiceVariant {
   serviceCadence           ServiceCadence               @map("service_cadence")
   customCadenceLabel       String?                      @map("custom_cadence_label") @db.VarChar(100)
   displayOrder             Int                          @default(0) @map("display_order")
+  /// Coverage profiles an active service of this variant starts (explicit catalog metadata).
+  monitoringProfiles       MonitoringProfile[]          @default([]) @map("monitoring_profiles")
   version                  Int                          @default(1)
   isActive                 Boolean                      @default(true) @map("is_active")
   createdAt                DateTime                     @default(now()) @map("created_at")
@@ -1379,6 +1391,9 @@ model ClientService {
   deadlineRules       ClientServiceDeadlineRule[]
   serviceCycles       ServiceCycle[]
   deadlineOccurrences DeadlineOccurrence[]
+  monitoringCoverages CompanyMonitoringCoverage[]
+  obligationScopes    ClientServiceObligationScope[]
+  deliveredDeadlines  DeadlineOccurrence[]          @relation("DeadlineOccurrenceDeliveryService")
   billingOccurrences       BillingOccurrence[]
   billingCoverageIssues    BillingCoverageIssue[]
 
@@ -1800,7 +1815,11 @@ model ServiceCycle {
   id                       String               @id @default(uuid())
   tenantId                 String               @map("tenant_id")
   companyId                String               @map("company_id")
-  clientServiceId          String               @map("client_service_id")
+  /// SERVICE cycles belong to a client service; COMPANY cycles are canonical statutory periods.
+  ownershipScope           DeadlineOwnershipScope @default(SERVICE) @map("ownership_scope")
+  clientServiceId          String?              @map("client_service_id")
+  obligationCode           String?              @map("obligation_code") @db.VarChar(100)
+  obligationPeriodKey      String?              @map("obligation_period_key") @db.VarChar(40)
   ruleId                   String               @map("rule_id")
   ruleVersionId            String               @map("rule_version_id")
   businessCalendarId       String?              @map("business_calendar_id")
@@ -1818,7 +1837,7 @@ model ServiceCycle {
   updatedAt                DateTime             @updatedAt @map("updated_at")
   tenant                   Workspace            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   company                  Company              @relation(fields: [companyId], references: [id], onDelete: Restrict)
-  clientService            ClientService        @relation(fields: [clientServiceId], references: [id], onDelete: Restrict)
+  clientService            ClientService?       @relation(fields: [clientServiceId], references: [id], onDelete: Restrict)
   rule                     DeadlineRule         @relation(fields: [ruleId], references: [id], onDelete: Restrict)
   ruleVersion              DeadlineRuleVersion  @relation(fields: [ruleVersionId], references: [id], onDelete: Restrict)
   businessCalendar         BusinessCalendar?    @relation(fields: [businessCalendarId], references: [id], onDelete: Restrict)
@@ -1836,7 +1855,25 @@ model DeadlineOccurrence {
   id                 String                   @id @default(uuid())
   tenantId           String                   @map("tenant_id")
   companyId          String                   @map("company_id")
-  clientServiceId    String                   @map("client_service_id")
+  ownershipScope     DeadlineOwnershipScope   @default(SERVICE) @map("ownership_scope")
+  clientServiceId    String?                  @map("client_service_id")
+  /// Canonical statutory identity for COMPANY rows (never the due date, filer or rule version).
+  obligationCode      String?                 @map("obligation_code") @db.VarChar(100)
+  obligationPeriodKey String?                 @map("obligation_period_key") @db.VarChar(40)
+  financialPeriodStart DateTime?              @map("financial_period_start") @db.Date
+  financialPeriodEnd  DateTime?               @map("financial_period_end") @db.Date
+  yearOfAssessment    Int?                    @map("year_of_assessment")
+  periodProvisional   Boolean                 @default(false) @map("period_provisional")
+  filingResponsibility FilingResponsibility?  @map("filing_responsibility")
+  responsibilitySource ResponsibilitySource?  @map("responsibility_source")
+  deliveryClientServiceId String?             @map("delivery_client_service_id")
+  filingProviderName  String?                 @map("filing_provider_name") @db.VarChar(200)
+  responsibilityConfirmedAt DateTime?         @map("responsibility_confirmed_at")
+  responsibilityConfirmedById String?         @map("responsibility_confirmed_by_id")
+  monitoringOwnerId   String?                 @map("monitoring_owner_id")
+  coverageTiming      String?                 @map("coverage_timing") @db.VarChar(20)
+  /// Created after its due date: filing status is unknown until evidence is recorded.
+  filingStatusUnconfirmed Boolean             @default(false) @map("filing_status_unconfirmed")
   cycleId            String                   @map("cycle_id")
   ruleVersionId      String                   @map("rule_version_id")
   milestoneKey       String                   @map("milestone_key")
@@ -1864,8 +1901,11 @@ model DeadlineOccurrence {
   updatedAt          DateTime                 @updatedAt @map("updated_at")
   tenant             Workspace                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   company            Company                  @relation(fields: [companyId], references: [id], onDelete: Restrict)
-  clientService      ClientService            @relation(fields: [clientServiceId], references: [id], onDelete: Restrict)
+  clientService      ClientService?           @relation(fields: [clientServiceId], references: [id], onDelete: Restrict)
+  deliveryClientService ClientService?        @relation("DeadlineOccurrenceDeliveryService", fields: [deliveryClientServiceId], references: [id], onDelete: Restrict)
   cycle              ServiceCycle             @relation(fields: [cycleId], references: [id], onDelete: Restrict)
+  coverageLinks      DeadlineOccurrenceCoverageLink[]
+  responsibilityChanges DeadlineResponsibilityChange[]
   ruleVersion        DeadlineRuleVersion      @relation(fields: [ruleVersionId], references: [id], onDelete: Restrict)
   dateOverriddenBy   User?                    @relation("DeadlineOccurrenceOverrideActor", fields: [dateOverriddenById], references: [id], onDelete: SetNull)
   completedBy        User?                    @relation("DeadlineOccurrenceCompletionActor", fields: [completedById], references: [id], onDelete: SetNull)
@@ -1876,7 +1916,220 @@ model DeadlineOccurrence {
   @@index([tenantId, operativeDueDate, status])
   @@index([tenantId, companyId, operativeDueDate, status])
   @@index([tenantId, clientServiceId, operativeDueDate])
+  @@index([tenantId, ownershipScope, filingResponsibility])
   @@map("deadline_occurrences")
+}
+
+enum DeadlineOwnershipScope {
+  SERVICE
+  COMPANY
+}
+
+enum MonitoringProfile {
+  CORPORATE_TAX
+  NOMINEE_DIRECTOR
+}
+
+enum MonitoringCoverageSource {
+  AGREEMENT
+  NOMINEE_APPOINTMENT
+  MANUAL
+}
+
+enum MonitoringCoverageStatus {
+  ACTIVE
+  ENDED
+}
+
+enum FinancialPeriodProvenance {
+  CONFIRMED
+  IMPORTED
+}
+
+enum ObligationScopeConfirmation {
+  CONFIRMED
+  UNCONFIRMED
+}
+
+enum FilingResponsibility {
+  OAKCLOUD
+  CLIENT
+  EXTERNAL_PROVIDER
+  UNCONFIRMED
+}
+
+enum ResponsibilitySource {
+  PROJECTED
+  STAFF
+}
+
+enum CoverageLinkReason {
+  MONITORING_INTERVAL
+  CONTRACTED_DELIVERY
+  TAKEOVER_REVIEW
+}
+
+enum CompanyComplianceIssueType {
+  MISSING_FINANCIAL_YEAR_END
+  PERIOD_REVIEW
+  RULE_NOT_PUBLISHED
+  RULE_INPUT_MISSING
+  FAMILY_NOT_AUTOMATED
+  RESPONSIBILITY_CONFLICT
+  DELIVERY_ENDED
+  DELIVERY_SCOPE_UNMATCHED
+  MONITORING_START_REVIEW
+  HANDOVER_REVIEW
+}
+
+/// Actual financial periods with their Year(s) of Assessment. The Company FYE
+/// month/day stays the recurring preference; these rows are the history.
+model CompanyFinancialPeriod {
+  id                String                    @id @default(uuid())
+  tenantId          String                    @map("tenant_id")
+  companyId         String                    @map("company_id")
+  periodStart       DateTime                  @map("period_start") @db.Date
+  periodEnd         DateTime                  @map("period_end") @db.Date
+  /// Explicit basis allocation; empty means the normal mapping (end year + 1).
+  yearsOfAssessment Int[]                     @default([]) @map("years_of_assessment")
+  provenance        FinancialPeriodProvenance @default(CONFIRMED)
+  confirmedAt       DateTime?                 @map("confirmed_at")
+  confirmedById     String?                   @map("confirmed_by_id")
+  notes             String?                   @db.VarChar(1000)
+  createdAt         DateTime                  @default(now()) @map("created_at")
+  updatedAt         DateTime                  @updatedAt @map("updated_at")
+  tenant            Workspace                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  company           Company                   @relation(fields: [tenantId, companyId], references: [tenantId, id], onDelete: Restrict)
+
+  @@unique([tenantId, companyId, periodEnd])
+  @@index([tenantId, companyId, periodStart])
+  @@map("company_financial_periods")
+}
+
+/// Why and from when Oakcloud monitors a company's statutory obligations.
+/// Independent of billing; overlapping coverage never duplicates deadlines.
+model CompanyMonitoringCoverage {
+  id                String                   @id @default(uuid())
+  tenantId          String                   @map("tenant_id")
+  companyId         String                   @map("company_id")
+  profile           MonitoringProfile
+  source            MonitoringCoverageSource
+  agreementId       String?                  @map("agreement_id")
+  clientServiceId   String?                  @map("client_service_id")
+  monitoringStart   DateTime                 @map("monitoring_start") @db.Date
+  monitoringEnd     DateTime?                @map("monitoring_end") @db.Date
+  startSource       String                   @map("start_source") @db.VarChar(40)
+  reason            String?                  @db.VarChar(1000)
+  status            MonitoringCoverageStatus @default(ACTIVE)
+  ownerUserId       String?                  @map("owner_user_id")
+  endedAt           DateTime?                @map("ended_at")
+  endedById         String?                  @map("ended_by_id")
+  endedReason       String?                  @map("ended_reason") @db.VarChar(1000)
+  createdById       String?                  @map("created_by_id")
+  createdAt         DateTime                 @default(now()) @map("created_at")
+  updatedAt         DateTime                 @updatedAt @map("updated_at")
+  tenant            Workspace                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  company           Company                  @relation(fields: [tenantId, companyId], references: [tenantId, id], onDelete: Restrict)
+  clientService     ClientService?           @relation(fields: [tenantId, clientServiceId, companyId], references: [tenantId, id, companyId], onDelete: Restrict)
+  occurrenceLinks   DeadlineOccurrenceCoverageLink[]
+  issues            CompanyComplianceIssue[]
+
+  @@unique([tenantId, clientServiceId, profile])
+  @@index([tenantId, companyId, status])
+  @@index([tenantId, profile, status])
+  @@map("company_monitoring_coverages")
+}
+
+/// The obligations and periods a client service is contracted to file.
+model ClientServiceObligationScope {
+  id              String                      @id @default(uuid())
+  tenantId        String                      @map("tenant_id")
+  companyId       String                      @map("company_id")
+  clientServiceId String                      @map("client_service_id")
+  obligationCode  String                      @map("obligation_code") @db.VarChar(100)
+  periodKey       String                      @map("period_key") @db.VarChar(40)
+  confirmation    ObligationScopeConfirmation @default(UNCONFIRMED)
+  source          String                      @db.VarChar(40)
+  confirmedAt     DateTime?                   @map("confirmed_at")
+  confirmedById   String?                     @map("confirmed_by_id")
+  createdAt       DateTime                    @default(now()) @map("created_at")
+  updatedAt       DateTime                    @updatedAt @map("updated_at")
+  tenant          Workspace                   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  company         Company                     @relation(fields: [tenantId, companyId], references: [tenantId, id], onDelete: Restrict)
+  clientService   ClientService               @relation(fields: [tenantId, clientServiceId, companyId], references: [tenantId, id, companyId], onDelete: Restrict)
+  occurrenceLinks DeadlineOccurrenceCoverageLink[]
+
+  @@unique([tenantId, clientServiceId, obligationCode, periodKey])
+  @@index([tenantId, companyId, obligationCode, periodKey])
+  @@map("client_service_obligation_scopes")
+}
+
+/// Every reason a company obligation is tracked. Released links keep history.
+model DeadlineOccurrenceCoverageLink {
+  id              String                        @id @default(uuid())
+  tenantId        String                        @map("tenant_id")
+  occurrenceId    String                        @map("occurrence_id")
+  linkKey         String                        @map("link_key") @db.VarChar(120)
+  reason          CoverageLinkReason
+  coverageId      String?                       @map("coverage_id")
+  deliveryScopeId String?                       @map("delivery_scope_id")
+  linkedAt        DateTime                      @default(now()) @map("linked_at")
+  releasedAt      DateTime?                     @map("released_at")
+  tenant          Workspace                     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  occurrence      DeadlineOccurrence            @relation(fields: [occurrenceId], references: [id], onDelete: Cascade)
+  coverage        CompanyMonitoringCoverage?    @relation(fields: [coverageId], references: [id], onDelete: Restrict)
+  deliveryScope   ClientServiceObligationScope? @relation(fields: [deliveryScopeId], references: [id], onDelete: Restrict)
+
+  @@unique([occurrenceId, linkKey])
+  @@index([tenantId, coverageId])
+  @@map("deadline_occurrence_coverage_links")
+}
+
+/// Audit trail of who files a company obligation; identity never changes.
+model DeadlineResponsibilityChange {
+  id                              String                @id @default(uuid())
+  tenantId                        String                @map("tenant_id")
+  occurrenceId                    String                @map("occurrence_id")
+  previousResponsibility          FilingResponsibility? @map("previous_responsibility")
+  newResponsibility               FilingResponsibility  @map("new_responsibility")
+  previousDeliveryClientServiceId String?               @map("previous_delivery_client_service_id")
+  newDeliveryClientServiceId      String?               @map("new_delivery_client_service_id")
+  providerName                    String?               @map("provider_name") @db.VarChar(200)
+  source                          ResponsibilitySource
+  actorId                         String?               @map("actor_id")
+  reason                          String?               @db.VarChar(1000)
+  createdAt                       DateTime              @default(now()) @map("created_at")
+  tenant                          Workspace             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  occurrence                      DeadlineOccurrence    @relation(fields: [occurrenceId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, occurrenceId, createdAt])
+  @@map("deadline_responsibility_changes")
+}
+
+/// Durable review items for gaps a deadline row cannot represent (missing
+/// FYE, unreviewed families, conflicts, handovers).
+model CompanyComplianceIssue {
+  id             String                     @id @default(uuid())
+  tenantId       String                     @map("tenant_id")
+  companyId      String                     @map("company_id")
+  coverageId     String?                    @map("coverage_id")
+  type           CompanyComplianceIssueType
+  dedupeKey      String                     @map("dedupe_key") @db.VarChar(400)
+  obligationCode String?                    @map("obligation_code") @db.VarChar(100)
+  periodKey      String?                    @map("period_key") @db.VarChar(40)
+  message        String                     @db.VarChar(1000)
+  openedAt       DateTime                   @default(now()) @map("opened_at")
+  lastSeenAt     DateTime                   @default(now()) @map("last_seen_at")
+  resolvedAt     DateTime?                  @map("resolved_at")
+  resolvedById   String?                    @map("resolved_by_id")
+  resolutionNote String?                    @map("resolution_note") @db.VarChar(1000)
+  tenant         Workspace                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  company        Company                    @relation(fields: [tenantId, companyId], references: [tenantId, id], onDelete: Restrict)
+  coverage       CompanyMonitoringCoverage? @relation(fields: [coverageId], references: [id], onDelete: SetNull)
+
+  @@unique([tenantId, companyId, dedupeKey])
+  @@index([tenantId, resolvedAt, type])
+  @@map("company_compliance_issues")
 }
 
 model ServiceScheduleReconciliationRequest {
