@@ -51,6 +51,19 @@ function normalizeProperties(properties: Element, order: readonly string[]): voi
     .forEach((child) => properties.appendChild(child));
 }
 
+/**
+ * Theme font references name the package's body or heading font; the
+ * master's theme decides those, so they are dropped rather than copied.
+ */
+function dropThemeFonts(rPr: Element): void {
+  const fonts = wordChild(rPr, 'rFonts');
+  if (!fonts) return;
+  for (const attribute of Array.from(fonts.attributes)) {
+    if (/theme$/i.test(attribute.localName)) fonts.removeAttributeNode(attribute);
+  }
+  if (fonts.attributes.length === 0) rPr.removeChild(fonts);
+}
+
 function wordAttribute(element: Element, name: string): string {
   return element.getAttributeNS(WORD_NS, name) || element.getAttribute(`w:${name}`) || '';
 }
@@ -126,6 +139,10 @@ export function resolveStyle(
     const runDefaults = runDefault ? wordChild(runDefault, 'rPr') : undefined;
     if (paragraphDefaults) mergeProperties(pPr, paragraphDefaults);
     if (runDefaults) mergeProperties(rPr, runDefaults);
+    // The document's default font is not a choice the partial made, so it
+    // follows the master, like any other document text.
+    const defaultFonts = wordChild(rPr, 'rFonts');
+    if (defaultFonts) rPr.removeChild(defaultFonts);
   }
   for (const style of chain) {
     const stylePPr = wordChild(style, 'pPr');
@@ -133,6 +150,7 @@ export function resolveStyle(
     if (stylePPr && kind === 'paragraph') mergeProperties(pPr, stylePPr);
     if (styleRPr) mergeProperties(rPr, styleRPr);
   }
+  dropThemeFonts(rPr);
   normalizeProperties(pPr, PARAGRAPH_ORDER);
   normalizeProperties(rPr, RUN_ORDER);
   return {
