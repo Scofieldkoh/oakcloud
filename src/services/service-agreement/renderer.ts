@@ -43,13 +43,17 @@ function escapeHtml(value: string): string {
 export function formatServiceAgreementCurrency(
   amount: string,
   currencyCode: string,
+  options: { wholeAmounts?: boolean } = {},
 ): string {
+  const value = Number(amount);
+  // The reference layout writes whole amounts without cents (S$1,500).
+  const fractionDigits = options.wholeAmounts && Number.isInteger(value) ? 0 : 2;
   const formatted = new Intl.NumberFormat('en-SG', {
     style: 'currency',
     currency: currencyCode,
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(Number(amount));
+    minimumFractionDigits: fractionDigits,
+    maximumFractionDigits: fractionDigits,
+  }).format(value);
   return currencyCode === 'SGD'
     ? formatted.replace(/^SGD\s*|\$/u, 'S$')
     : formatted;

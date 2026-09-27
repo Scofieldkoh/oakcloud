@@ -11,6 +11,8 @@ import type {
   ServiceAgreementWorkspaceState,
 } from '@/types/document-generation-batch';
 import { SingleDateInput } from '@/components/ui/single-date-input';
+import { FormInput } from '@/components/ui/form-input';
+import { formatAgreementTerm } from '@/lib/document-editor/oakdoc-context';
 import { ServiceAgreementSetup } from '@/components/documents/service-agreement/service-agreement-setup';
 import { ServiceSelectionStep } from '@/components/documents/service-agreement/service-selection-step';
 import type {
@@ -223,6 +225,42 @@ export function ServiceAgreementConfig({
               controlClassName=""
             />
           </div>
+        </div>
+        <div className="mt-4 grid max-w-full gap-4 sm:grid-cols-[11rem_11rem]">
+          <div className="block">
+            <label htmlFor="agreement-effective-date" className="mb-1.5 block text-sm font-medium text-text-primary">
+              Effective date
+            </label>
+            <SingleDateInput
+              id="agreement-effective-date"
+              value={workspace.effectiveDate ?? ''}
+              onChange={(next) => updateWorkspace({ effectiveDate: next || null })}
+              placeholder="Agreement date"
+              disabled={disabled}
+              ariaLabel="Effective date"
+              className="w-44 max-w-full"
+              controlClassName="h-11"
+            />
+            <p className="mt-1 text-xs text-text-muted">Leave empty to use the agreement date.</p>
+          </div>
+          <FormInput
+            id="agreement-term-months"
+            label="Term (months)"
+            type="number"
+            min={1}
+            max={1200}
+            step={1}
+            inputMode="numeric"
+            value={workspace.termMonths}
+            onChange={(event) => {
+              const months = Number.parseInt(event.target.value, 10);
+              updateWorkspace({ termMonths: Number.isFinite(months) ? months : 0 });
+            }}
+            error={formatAgreementTerm(workspace.termMonths) ? undefined : 'Enter at least 1 month.'}
+            hint={`Shown in the agreement as "${formatAgreementTerm(workspace.termMonths) ?? ''}".`}
+            disabled={disabled}
+            containerClassName="w-44 max-w-full"
+          />
         </div>
       </BatchSection>
 

@@ -79,6 +79,8 @@ describe('initial Service Agreement content bundle', () => {
       },
       templatePartial: {
         findUnique: async ({ where }: any) => partials.get(where.tenantId_name.name) ?? null,
+        findMany: async ({ where }: any) => [...partials.values()]
+          .filter((partial: any) => where.name.in.includes(partial.name)),
         upsert: async ({ where, create, update }: any) => {
           const key = where.tenantId_name.name;
           const current = partials.get(key);
@@ -158,5 +160,17 @@ describe('initial Service Agreement content bundle', () => {
     expect(changedVariant.version).toBe(2);
     expect(template.version).toBe(2);
     expect([...fees.values()].flat().map((fee) => fee.id)).toEqual(feeTemplateIds);
+
+    // A service already switched to its Word scope stays on it.
+    const wordPartial = { id: 'word-partial', name: 'service-agreement-corporate-secretarial-oakdoc-v1', version: 1 };
+    partials.set(wordPartial.name, wordPartial);
+    const secretarial = [...variants.values()].find(
+      (variant) => variant.sowPartialId === partials.get('service-agreement-corporate-secretarial-v1').id,
+    );
+    secretarial.sowPartialId = wordPartial.id;
+    const versionBefore = secretarial.version;
+    await seedServiceAgreementBundle(input, db as never);
+    expect(secretarial.sowPartialId).toBe(wordPartial.id);
+    expect(secretarial.version).toBe(versionBefore);
   });
 });

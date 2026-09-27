@@ -12,6 +12,7 @@ import {
   wordChildren,
   type OakDocBlockRangeKind,
 } from '@/lib/document-editor/oakdoc-blocks';
+import { writeOakDocControlValue } from '@/lib/document-editor/oakdoc-fields';
 import {
   OAKDOC_GENERIC_REPEATER_BY_TAG,
   OAKDOC_GENERIC_REPEATER_TAGS,
@@ -20,7 +21,6 @@ import {
 } from '@/lib/document-editor/oakdoc-repeater-definitions';
 
 const WORD15_NS = 'http://schemas.microsoft.com/office/word/2012/wordml';
-const XML_NS = 'http://www.w3.org/XML/1998/namespace';
 const XMLNS_NS = 'http://www.w3.org/2000/xmlns/';
 const MC_NS = 'http://schemas.openxmlformats.org/markup-compatibility/2006';
 const DOCUMENT_PART = 'word/document.xml';
@@ -36,15 +36,6 @@ function parseXml(bytes: Uint8Array): XMLDocument {
 
 function serializeXml(xml: XMLDocument): Uint8Array {
   return encodeOakDocZipText(new XMLSerializer().serializeToString(xml));
-}
-
-function setTextValue(textElement: Element, value: string): void {
-  textElement.textContent = value;
-  if (/^\s|\s$/.test(value)) {
-    textElement.setAttributeNS(XML_NS, 'xml:space', 'preserve');
-  } else {
-    textElement.removeAttributeNS(XML_NS, 'space');
-  }
 }
 
 function properties(sdt: Element): Element | undefined {
@@ -252,13 +243,8 @@ function resolveItemFields(root: Node, values: Readonly<Record<string, string>>)
   for (const sdt of controls) {
     const tag = controlTag(sdt);
     if (!Object.prototype.hasOwnProperty.call(values, tag)) continue;
-    const content = wordChild(sdt, 'sdtContent');
-    if (!content) continue;
-    const textNodes = Array.from(content.getElementsByTagNameNS(WORD_NS, 't'));
-    if (textNodes.length > 0) {
-      setTextValue(textNodes[0], values[tag]);
-      for (let i = 1; i < textNodes.length; i += 1) setTextValue(textNodes[i], '');
-    }
+    if (!wordChild(sdt, 'sdtContent')) continue;
+    writeOakDocControlValue(sdt, values[tag]);
     unwrap(sdt);
     updated += 1;
   }

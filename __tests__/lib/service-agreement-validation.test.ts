@@ -147,4 +147,11 @@ describe('serviceAgreementDraftSchema', () => {
     const parsed = serviceAgreementDraftSchema.parse(standardInput);
     expect(parsed.items[0].feeLines[0].customFrequencyLabel).toBeNull();
   });
+
+  it('accepts only real calendar dates', () => {
+    expect(serviceAgreementDraftSchema.safeParse({ ...validDraft(), agreementDate: '2026-02-30' }).success).toBe(false);
+    expect(serviceAgreementDraftSchema.safeParse({ ...validDraft(), effectiveDate: '2026-13-01' }).success).toBe(false);
+    expect(serviceAgreementDraftSchema.safeParse({ ...validDraft(), agreementDate: '2028-02-29' }).success).toBe(true);
+    expect(serviceAgreementDraftSchema.safeParse({ ...validDraft(), effectiveDate: null }).success).toBe(true);
+  });
 });

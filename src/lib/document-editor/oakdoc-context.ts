@@ -1,4 +1,5 @@
 import type { OakDocFieldDefinition } from '@/lib/document-editor/oakdoc-fields';
+import { formatLetterAddress } from '@/lib/document-party';
 
 export interface OakDocCompanyAddress {
   addressType?: string | null;
@@ -118,6 +119,12 @@ export const OAKDOC_AGREEMENT_FIELD_DEFINITIONS: ReadonlyArray<
     category: 'Agreement Context',
     example: '12',
   },
+  {
+    tag: 'agreement.term',
+    label: 'Term',
+    category: 'Agreement Context',
+    example: '1 year',
+  },
 ];
 
 export const OAKDOC_AGREEMENT_FIELD_TAGS = new Set(
@@ -154,15 +161,91 @@ export const OAKDOC_RESOLUTION_FIELD_TAGS = new Set(
   OAKDOC_RESOLUTION_FIELD_DEFINITIONS.map((field) => field.tag),
 );
 
+const MONTHS = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December',
+] as const;
+
+const DATE_ONLY = /^(\d{4})-(\d{2})-(\d{2})(?:T00:00:00(?:\.000)?Z)?$/;
+
+interface CalendarDate {
+  year: number;
+  month: number;
+  day: number;
+}
+
+/**
+ * Read a value as a calendar date. Date-only values (`YYYY-MM-DD`, or the
+ * UTC midnight Prisma returns for `@db.Date`) keep their calendar day in
+ * every timezone; other timestamps use the local day.
+ */
+function calendarDate(value: unknown): CalendarDate | null {
+  if (value instanceof Date) {
+    if (Number.isNaN(value.getTime())) return null;
+    const utcMidnight = value.getUTCHours() === 0
+      && value.getUTCMinutes() === 0
+      && value.getUTCSeconds() === 0
+      && value.getUTCMilliseconds() === 0;
+    return utcMidnight
+      ? { year: value.getUTCFullYear(), month: value.getUTCMonth() + 1, day: value.getUTCDate() }
+      : { year: value.getFullYear(), month: value.getMonth() + 1, day: value.getDate() };
+  }
+  if (typeof value !== 'string') return null;
+  const dateOnly = DATE_ONLY.exec(value);
+  if (dateOnly) {
+    return { year: Number(dateOnly[1]), month: Number(dateOnly[2]), day: Number(dateOnly[3]) };
+  }
+  if (!/^\d{4}-\d{2}-\d{2}T/.test(value)) return null;
+  return calendarDate(new Date(value));
+}
+
+/**
+ * Format a date with a Word date pattern (`d`, `dd`, `M`, `MM`, `MMM`,
+ * `MMMM`, `yy`, `yyyy`). The default keeps OakDoc's short style.
+ */
+export function formatOakDocDate(value: unknown, pattern = 'd MMM yyyy'): string | undefined {
+  const date = calendarDate(value);
+  if (!date) return undefined;
+  const month = MONTHS[date.month - 1];
+  return pattern.replace(/yyyy|yy|MMMM|MMM|MM|M|dd|d/g, (token) => {
+    switch (token) {
+      case 'yyyy': return String(date.year);
+      case 'yy': return String(date.year).slice(-2);
+      case 'MMMM': return month;
+      case 'MMM': return month.slice(0, 3);
+      case 'MM': return String(date.month).padStart(2, '0');
+      case 'M': return String(date.month);
+      case 'dd': return String(date.day).padStart(2, '0');
+      default: return String(date.day);
+    }
+  });
+}
+
+/** The ISO calendar date (`YYYY-MM-DD`) of a date-valued field, if any. */
+export function oakDocIsoDate(value: unknown): string | undefined {
+  const date = calendarDate(value);
+  if (!date) return undefined;
+  return [
+    String(date.year).padStart(4, '0'),
+    String(date.month).padStart(2, '0'),
+    String(date.day).padStart(2, '0'),
+  ].join('-');
+}
+
+/** Agreement term in words: 12 → 1 year, 24 → 2 years, 18 → 18 months. */
+export function formatAgreementTerm(months: unknown): string | undefined {
+  const value = Number(months);
+  if (!Number.isInteger(value) || value <= 0) return undefined;
+  if (value % 12 === 0) {
+    const years = value / 12;
+    return `${years} year${years === 1 ? '' : 's'}`;
+  }
+  return `${value} month${value === 1 ? '' : 's'}`;
+}
+
 function formatDate(value: unknown): string | undefined {
   if (!value) return undefined;
-  const parsed = value instanceof Date ? value : new Date(String(value));
-  if (Number.isNaN(parsed.getTime())) return String(value);
-  const months = [
-    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
-  ] as const;
-  return `${parsed.getDate()} ${months[parsed.getMonth()]} ${parsed.getFullYear()}`;
+  return formatOakDocDate(value) ?? String(value);
 }
 
 function formatValue(value: unknown): string | undefined {
@@ -202,6 +285,17 @@ function registeredAddress(company: OakDocCompanyDetail): OakDocCompanyAddress |
 function buildCompanyContext(company: OakDocCompanyDetail) {
   const address = registeredAddress(company);
   const fullAddress = company.registeredAddress ?? address?.fullAddress ?? '';
+  // The letter form is multi-line; field replacement writes each line break.
+  const letter = formatLetterAddress({
+    fullAddress: address?.fullAddress ?? company.registeredAddress,
+    block: address?.block,
+    street: address?.streetName,
+    level: address?.level,
+    unit: address?.unit,
+    building: address?.buildingName,
+    postalCode: address?.postalCode,
+    country: address?.country,
+  }).letter ?? fullAddress;
   return {
     ...company,
     registeredAddress: fullAddress,
@@ -212,7 +306,7 @@ function buildCompanyContext(company: OakDocCompanyDetail) {
       unit: address?.unit ?? '',
       building: address?.buildingName ?? '',
       postalCode: address?.postalCode ?? '',
-      letter: fullAddress,
+      letter,
     },
     capital: company.paidUpCapitalAmount ?? company.issuedCapitalAmount ?? '',
   };
@@ -286,7 +380,7 @@ function buildSelectedContact(contact: OakDocContact | undefined) {
   };
 }
 
-export function buildOakDocResolutionValues(input: {
+export interface OakDocResolutionInput {
   company: OakDocCompanyDetail;
   fieldTags: readonly string[];
   selectedDirectorId?: string;
@@ -296,7 +390,9 @@ export function buildOakDocResolutionValues(input: {
   agreement?: OakDocAgreementContext;
   resolution?: OakDocResolutionContext;
   generatedBy?: string;
-}): Record<string, string> {
+}
+
+function buildResolutionContext(input: OakDocResolutionInput) {
   const selectedDirector = input.company.officers?.find(
     (officer) => officer.id === input.selectedDirectorId,
   );
@@ -307,7 +403,7 @@ export function buildOakDocResolutionValues(input: {
     (contact) => contact.id === input.selectedContactId,
   );
 
-  const context = {
+  return {
     company: buildCompanyContext(input.company),
     selectedDirector: buildSelectedDirector(selectedDirector),
     selectedShareholder: buildSelectedShareholder(selectedShareholder),
@@ -316,6 +412,7 @@ export function buildOakDocResolutionValues(input: {
       agreementDate: input.agreement?.agreementDate,
       effectiveDate: input.agreement?.effectiveDate,
       termMonths: input.agreement?.termMonths,
+      term: formatAgreementTerm(input.agreement?.termMonths),
     },
     resolution: {
       date: input.resolution?.date,
@@ -326,11 +423,28 @@ export function buildOakDocResolutionValues(input: {
       preparerName: input.generatedBy,
     },
   };
+}
 
+export function buildOakDocResolutionValues(input: OakDocResolutionInput): Record<string, string> {
+  const context = buildResolutionContext(input);
   const values: Record<string, string> = {};
   for (const tag of input.fieldTags) {
     const value = formatValue(getValueByPath(context, tag));
     if (value !== undefined) values[tag] = value;
   }
   return values;
+}
+
+/**
+ * The calendar dates behind date-valued fields, so a field control that
+ * asks for its own Word date pattern can be formatted per occurrence.
+ */
+export function buildOakDocResolutionDates(input: OakDocResolutionInput): Record<string, string> {
+  const context = buildResolutionContext(input);
+  const dates: Record<string, string> = {};
+  for (const tag of input.fieldTags) {
+    const date = oakDocIsoDate(getValueByPath(context, tag));
+    if (date) dates[tag] = date;
+  }
+  return dates;
 }

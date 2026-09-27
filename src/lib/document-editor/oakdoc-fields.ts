@@ -1,5 +1,6 @@
 import { strFromU8, unzipSync, zipSync } from 'fflate';
 import { encodeOakDocZipText } from '@/lib/document-editor/oakdoc-zip';
+import { formatOakDocDate } from '@/lib/document-editor/oakdoc-context';
 
 const WORD_NS = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
 const XML_NS = 'http://www.w3.org/XML/1998/namespace';
@@ -59,6 +60,86 @@ function setTextValue(textElement: Element, value: string): void {
   } else {
     textElement.removeAttributeNS(XML_NS, 'space');
   }
+}
+
+/** The Word date pattern a date content control asks for, if any. */
+function controlDateFormat(sdt: Element): string {
+  const properties = wordChildren(sdt).find((child) => isWordElement(child, 'sdtPr'));
+  const date = properties
+    ? wordChildren(properties).find((child) => isWordElement(child, 'date'))
+    : undefined;
+  const format = date
+    ? wordChildren(date).find((child) => isWordElement(child, 'dateFormat'))
+    : undefined;
+  return getWordVal(format);
+}
+
+/**
+ * Point a HYPERLINK field inside the control at `mailto:<value>`, or drop
+ * the field codes when there is no address, leaving plain (empty) text.
+ */
+function retargetMailtoField(content: Element, value: string): void {
+  const instructions = Array.from(content.getElementsByTagNameNS(WORD_NS, 'instrText'))
+    .filter((node) => /^\s*HYPERLINK\s+"mailto:/i.test(node.textContent || ''));
+  if (instructions.length === 0) return;
+  const address = value.trim();
+  if (address) {
+    for (const node of instructions) {
+      node.textContent = ` HYPERLINK "mailto:${address.replace(/"/g, '')}" `;
+    }
+    return;
+  }
+  const fieldRuns = [
+    ...Array.from(content.getElementsByTagNameNS(WORD_NS, 'fldChar')),
+    ...instructions,
+  ].map((node) => node.parentNode as Element | null);
+  for (const fieldRun of fieldRuns) fieldRun?.parentNode?.removeChild(fieldRun);
+}
+
+/**
+ * Write a resolved value into a field control's content. The first text
+ * node keeps its run formatting; line breaks in the value become Word line
+ * breaks in that same run, and any other text in the control is cleared.
+ */
+export function writeOakDocControlValue(
+  sdt: Element,
+  value: string,
+  options: { isoDate?: string } = {},
+): boolean {
+  const content = wordChildren(sdt).find((child) => isWordElement(child, 'sdtContent'));
+  if (!content) return false;
+  const textNodes = Array.from(content.getElementsByTagNameNS(WORD_NS, 't'));
+  if (textNodes.length === 0) return false;
+
+  const dateFormat = options.isoDate ? controlDateFormat(sdt) : '';
+  const display = dateFormat
+    ? formatOakDocDate(options.isoDate, dateFormat) ?? value
+    : value;
+  const [first, ...rest] = display.replace(/\r\n?/g, '\n').split('\n');
+  // Line breaks in the placeholder belong to the old value.
+  for (const lineBreak of [
+    ...Array.from(content.getElementsByTagNameNS(WORD_NS, 'br')),
+    ...Array.from(content.getElementsByTagNameNS(WORD_NS, 'cr')),
+  ]) {
+    if (lineBreak.getAttributeNS(WORD_NS, 'type') === 'page') continue;
+    lineBreak.parentNode?.removeChild(lineBreak);
+  }
+  setTextValue(textNodes[0], first);
+  for (let index = 1; index < textNodes.length; index += 1) {
+    setTextValue(textNodes[index], '');
+  }
+  let anchor: Node = textNodes[0];
+  const document = textNodes[0].ownerDocument;
+  for (const line of rest) {
+    const lineBreak = document.createElementNS(WORD_NS, 'w:br');
+    const text = document.createElementNS(WORD_NS, 'w:t');
+    setTextValue(text, line);
+    anchor.parentNode?.insertBefore(lineBreak, anchor.nextSibling);
+    lineBreak.parentNode?.insertBefore(text, lineBreak.nextSibling);
+    anchor = text;
+  }
+  retargetMailtoField(content, value);
+  return true;
 }
 
 function wordXmlPartNames(files: Record<string, Uint8Array>): string[] {
@@ -256,6 +337,10 @@ export function inspectOakDocFields(
 export function resolveOakDocFields(
   docxBytes: Uint8Array,
   values: Readonly<Record<string, string>>,
+  options: {
+    /** ISO calendar dates for date fields whose controls set a date pattern. */
+    dates?: Readonly<Record<string, string>>;
+  } = {},
 ): OakDocFieldResolutionResult {
   const files = unzipSync(docxBytes);
   let updated = 0;
@@ -271,16 +356,7 @@ export function resolveOakDocFields(
       seenTags.add(tag);
       if (!Object.prototype.hasOwnProperty.call(values, tag)) continue;
 
-      const content = wordChildren(sdt).find((child) => isWordElement(child, 'sdtContent'));
-      if (!content) continue;
-
-      const textNodes = Array.from(content.getElementsByTagNameNS(WORD_NS, 't'));
-      if (textNodes.length === 0) continue;
-
-      setTextValue(textNodes[0], values[tag]);
-      for (let index = 1; index < textNodes.length; index += 1) {
-        setTextValue(textNodes[index], '');
-      }
+      if (!writeOakDocControlValue(sdt, values[tag], { isoDate: options.dates?.[tag] })) continue;
       updated += 1;
       changed = true;
     }
