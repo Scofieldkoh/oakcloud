@@ -4,6 +4,8 @@ Date: **26 September 2026**. Reviewed baseline: **`6aa660a9`**, including the in
 
 Read the [replacement specification](../oakdoc-a4-retirement-readiness.md) first. It owns decisions D01-D07, gaps G01-G15, contracts C01-C06 and acceptance A01-A08. This plan owns packet scope, dependencies, file leases and evidence. It supersedes the September A4 implementation programme's direction and scheduling; historical A4 regressions remain useful acceptance fixtures.
 
+For agreement-specific follow-up, see the [27 September service agreement reference fidelity plan](2026-09-27-service-agreement-reference-fidelity.md). It compares the supplied 13-page Word agreement with the implemented native workflow and scopes the remaining variables, template structure, formatting, pagination and visual acceptance work. Its local gap/acceptance IDs are separate from this replacement programme's IDs.
+
 ## 1. Handover rules
 
 1. Read root/nearest `AGENTS.md`, the spec, this plan, relevant existing services/tests and the design/service/RBAC guides. Recheck HEAD and uncommitted changes before implementation; concurrent work is possible.
