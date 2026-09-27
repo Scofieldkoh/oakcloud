@@ -2,7 +2,10 @@ import { createHash } from 'node:crypto';
 import { strFromU8, unzipSync, zipSync } from 'fflate';
 
 import { encodeOakDocZipText } from '@/lib/document-editor/oakdoc-zip';
-import { resolveOakDocFields } from '@/lib/document-editor/oakdoc-fields';
+import {
+  resolveOakDocFields,
+  writeOakDocControlValue,
+} from '@/lib/document-editor/oakdoc-fields';
 import {
   WORD_NS,
   appendTextRun,
@@ -10,8 +13,10 @@ import {
   wordElement,
 } from '@/lib/document-editor/oakdoc-html-import';
 import {
+  OAKDOC_AGREEMENT_PROTOTYPE_TAGS,
   OAKDOC_AGREEMENT_SERVICE_ITEM_TAG_PREFIX,
   OAKDOC_AGREEMENT_SLOT_TAGS,
+  isOakDocAgreementPrototypeTag,
 } from '@/lib/document-editor/oakdoc-field-registry';
 import {
   oakDocPartialTag,
@@ -124,6 +129,8 @@ export interface ServiceAgreementOakDocDiagnostic {
     | 'STALE_SERVICE_WORDING'
     | 'GENERATED_DOCUMENT_MISMATCH'
     | 'CANONICAL_HASH_MISMATCH'
+    | 'INVALID_LAYOUT_PROTOTYPE'
+    | 'FEE_ENTITY_MISSING'
     | 'FIELD_RESOLUTION';
   severity: 'error' | 'warning' | 'info';
   message: string;
@@ -224,7 +231,8 @@ function contentControlTag(sdt: Element): string {
 
 function isRendererOwnedTag(tag: string): boolean {
   return Object.values(SLOT_TAG_ALIASES).some((aliases) => aliases.includes(tag))
-    || tag.startsWith(SERVICE_ITEM_TAG_PREFIX);
+    || tag.startsWith(SERVICE_ITEM_TAG_PREFIX)
+    || isOakDocAgreementPrototypeTag(tag);
 }
 
 function defaultFieldResolver(
@@ -485,10 +493,13 @@ function createTableCell(input: {
   return cell;
 }
 
-function feeDisplay(fee: ServiceAgreementFeeLineDto): string {
+function feeDisplay(
+  fee: ServiceAgreementFeeLineDto,
+  options: { wholeAmounts?: boolean } = {},
+): string {
   const frequency = formatServiceAgreementFrequency(fee);
   return [
-    formatServiceAgreementCurrency(fee.amount, fee.currency),
+    formatServiceAgreementCurrency(fee.amount, fee.currency, options),
     frequency,
   ].filter(Boolean).join(' ');
 }
@@ -652,6 +663,245 @@ function createEntityAppendix(
     );
     return paragraph;
   });
+}
+
+function controlsTagged(root: Element, tag: string): Element[] {
+  return Array.from(root.getElementsByTagNameNS(WORD_NS, 'sdt'))
+    .filter((sdt) => contentControlTag(sdt) === tag);
+}
+
+/** Replace a control with its own content. */
+function unwrapControl(sdt: Element): void {
+  const content = wordChild(sdt, 'sdtContent');
+  const parent = sdt.parentNode;
+  if (!parent) return;
+  while (content?.firstChild) parent.insertBefore(content.firstChild, sdt);
+  parent.removeChild(sdt);
+}
+
+/** Fill every prototype field with this tag under `root` and unwrap it. */
+function fillPrototypeField(root: Element, tag: string, value: string): void {
+  for (const sdt of controlsTagged(root, tag)) {
+    writeOakDocControlValue(sdt, value);
+    unwrapControl(sdt);
+  }
+}
+
+/** The paragraph that holds a prototype field, if any. */
+function paragraphHolding(root: Element, tag: string): Element | undefined {
+  let node: Node | null | undefined = controlsTagged(root, tag)[0];
+  while (node && !isWordElement(node, 'p')) node = node.parentNode;
+  return node ?? undefined;
+}
+
+function reseedControlIds(root: Element, allocator: WordIdAllocator): void {
+  for (const sdt of Array.from(root.getElementsByTagNameNS(WORD_NS, 'sdt'))) {
+    const properties = wordChild(sdt, 'sdtPr');
+    const id = properties ? wordChild(properties, 'id') : undefined;
+    if (id) id.setAttributeNS(WORD_NS, 'w:val', String(allocator.take()));
+  }
+}
+
+function normalizedLabel(value: string): string {
+  return value.normalize('NFKC').replace(/\s+/g, ' ').trim().toLowerCase();
+}
+
+/**
+ * Fill one SOW row prototype. A service with a single charge named like the
+ * service shows its amount on the service line; otherwise each charge is a
+ * labelled line under the service name with its amount beside it. Amounts
+ * are never summed.
+ */
+function fillSowRow(
+  row: Element,
+  item: ServiceAgreementItemDto,
+  fees: readonly ServiceAgreementFeeLineDto[],
+): void {
+  const tags = OAKDOC_AGREEMENT_PROTOTYPE_TAGS;
+  const descriptionPrototype = paragraphHolding(row, tags.feeChargeDescription);
+  const amountPrototype = paragraphHolding(row, tags.feeChargeAmount);
+  const compact = fees.length === 1
+    && normalizedLabel(fees[0].description) === normalizedLabel(item.variantNameSnapshot);
+
+  fillPrototypeField(row, tags.feeSowName, item.variantNameSnapshot);
+  fillPrototypeField(row, tags.feeSowAmount, compact ? feeDisplay(fees[0], { wholeAmounts: true }) : '');
+  if (!compact) {
+    for (const fee of fees) {
+      if (descriptionPrototype) {
+        const line = descriptionPrototype.cloneNode(true) as Element;
+        fillPrototypeField(line, tags.feeChargeDescription, fee.description);
+        descriptionPrototype.parentNode?.insertBefore(line, descriptionPrototype);
+      }
+      if (amountPrototype) {
+        const line = amountPrototype.cloneNode(true) as Element;
+        fillPrototypeField(line, tags.feeChargeAmount, feeDisplay(fee, { wholeAmounts: true }));
+        amountPrototype.parentNode?.insertBefore(line, amountPrototype);
+      }
+    }
+  }
+  descriptionPrototype?.parentNode?.removeChild(descriptionPrototype);
+  amountPrototype?.parentNode?.removeChild(amountPrototype);
+}
+
+/**
+ * Template-owned fee layout: the master's fee slot holds one company group
+ * prototype (a company heading and a SOW/Amount table with one SOW row
+ * prototype). Each agreement entity with fees gets its own heading and
+ * table, even when there is only one entity, with one row per service in
+ * agreement order. Returns null when the slot has no prototype, so older
+ * masters keep the built-in table.
+ */
+function renderFeePrototype(input: {
+  slot: Element;
+  agreement: ServiceAgreementDraftDto;
+  allocator: WordIdAllocator;
+  diagnostics: ServiceAgreementOakDocDiagnostic[];
+}): Element[] | null {
+  const tags = OAKDOC_AGREEMENT_PROTOTYPE_TAGS;
+  const [groupPrototype] = controlsTagged(input.slot, tags.feeCompany);
+  if (!groupPrototype) return null;
+  if (controlsTagged(groupPrototype, tags.feeSowRow).length !== 1) {
+    input.diagnostics.push({
+      code: 'INVALID_LAYOUT_PROTOTYPE',
+      severity: 'error',
+      slot: 'feeTable',
+      message: 'The company fee group must contain exactly one SOW row prototype.',
+    });
+    return null;
+  }
+
+  const entities = orderedServiceAgreementEntities(input.agreement);
+  const items = orderedServiceAgreementItems(input.agreement);
+  const knownEntityIds = new Set(entities.map((entity) => entity.id));
+  const orphanFees = items.flatMap((item) => item.feeLines)
+    .filter((fee) => !knownEntityIds.has(fee.agreementEntityId));
+  if (orphanFees.length > 0) {
+    input.diagnostics.push({
+      code: 'FEE_ENTITY_MISSING',
+      severity: 'error',
+      slot: 'feeTable',
+      message: `${orphanFees.length} fee line${orphanFees.length === 1 ? ' belongs' : 's belong'} to a company that is not in this agreement.`,
+    });
+  }
+
+  const blocks: Element[] = [];
+  for (const entity of entities) {
+    const services = items
+      .map((item) => ({
+        item,
+        fees: [...item.feeLines]
+          .filter((fee) => fee.agreementEntityId === entity.id)
+          .sort((left, right) => left.displayOrder - right.displayOrder),
+      }))
+      .filter((service) => service.fees.length > 0);
+    if (services.length === 0) continue;
+
+    const group = groupPrototype.cloneNode(true) as Element;
+    const [rowPrototype] = controlsTagged(group, tags.feeSowRow);
+    for (const service of services) {
+      const row = rowPrototype.cloneNode(true) as Element;
+      fillSowRow(row, service.item, service.fees);
+      rowPrototype.parentNode?.insertBefore(row, rowPrototype);
+      unwrapControl(row);
+    }
+    rowPrototype.parentNode?.removeChild(rowPrototype);
+    fillPrototypeField(group, tags.feeCompanyName, entity.nameSnapshot);
+    reseedControlIds(group, input.allocator);
+    const content = wordChild(group, 'sdtContent');
+    if (content) blocks.push(...wordChildren(content));
+  }
+  return blocks;
+}
+
+/**
+ * Template-owned entity list: the entity slot's content is repeated once
+ * per agreement entity with the name and UEN filled in, keeping its own
+ * numbering and formatting. Returns null for masters without a prototype.
+ */
+function renderEntityPrototype(
+  slot: Element,
+  agreement: ServiceAgreementDraftDto,
+  allocator: WordIdAllocator,
+): Element[] | null {
+  const tags = OAKDOC_AGREEMENT_PROTOTYPE_TAGS;
+  const content = wordChild(slot, 'sdtContent');
+  if (!content || controlsTagged(content, tags.entityName).length === 0) return null;
+  return orderedServiceAgreementEntities(agreement).flatMap((entity) => {
+    const copy = content.cloneNode(true) as Element;
+    fillPrototypeField(copy, tags.entityName, entity.nameSnapshot);
+    fillPrototypeField(copy, tags.entityUen, entity.uenSnapshot);
+    reseedControlIds(copy, allocator);
+    return wordChildren(copy);
+  });
+}
+
+/**
+ * A service slot whose placeholder paragraph breaks the page asks for every
+ * service, including the first, to start on a new page. Otherwise only the
+ * second and later services do, as before.
+ */
+function everyServiceStartsNewPage(slot: Element): boolean {
+  const content = wordChild(slot, 'sdtContent');
+  const first = content ? wordChildren(content).find((child) => isWordElement(child, 'p')) : undefined;
+  const properties = first ? wordChild(first, 'pPr') : undefined;
+  const pageBreak = properties ? wordChild(properties, 'pageBreakBefore') : undefined;
+  return Boolean(pageBreak) && !['0', 'false', 'off'].includes(getWordVal(pageBreak));
+}
+
+const PARAGRAPH_PROPERTY_ORDER = [
+  'pStyle', 'keepNext', 'keepLines', 'pageBreakBefore', 'framePr', 'widowControl',
+  'numPr', 'suppressLineNumbers', 'pBdr', 'shd', 'tabs', 'suppressAutoHyphens',
+  'kinsoku', 'wordWrap', 'overflowPunct', 'topLinePunct', 'autoSpaceDE',
+  'autoSpaceDN', 'bidi', 'adjustRightInd', 'snapToGrid', 'spacing', 'ind',
+  'contextualSpacing', 'mirrorIndents', 'suppressOverlap', 'jc', 'textDirection',
+  'textAlignment', 'textboxTightWrap', 'outlineLvl', 'divId', 'cnfStyle', 'rPr',
+  'sectPr', 'pPrChange',
+] as const;
+
+function addPageBreakBefore(paragraph: Element): void {
+  const document = paragraph.ownerDocument;
+  let properties = wordChild(paragraph, 'pPr');
+  if (!properties) {
+    properties = document.createElementNS(WORD_NS, 'w:pPr');
+    paragraph.insertBefore(properties, paragraph.firstChild);
+  }
+  const existing = wordChild(properties, 'pageBreakBefore');
+  if (existing) existing.parentNode?.removeChild(existing);
+  const position = PARAGRAPH_PROPERTY_ORDER.indexOf('pageBreakBefore');
+  const next = wordChildren(properties).find((child) => {
+    const index = PARAGRAPH_PROPERTY_ORDER.indexOf(child.localName as typeof PARAGRAPH_PROPERTY_ORDER[number]);
+    return index > position;
+  });
+  properties.insertBefore(document.createElementNS(WORD_NS, 'w:pageBreakBefore'), next ?? null);
+}
+
+/**
+ * Move the page break that starts each service onto the service's first
+ * paragraph, so a new page does not open with an empty line. Runs after the
+ * services' Word partials are expanded.
+ */
+export function finalizeServiceAgreementPageBreaks(docxBytes: Uint8Array): Uint8Array {
+  const files = unzipSync(docxBytes);
+  const documentBytes = files[DOCUMENT_PART];
+  if (!documentBytes) return docxBytes;
+  const xml = parseWordXml(documentBytes);
+  let changed = false;
+  for (const sdt of Array.from(xml.getElementsByTagNameNS(WORD_NS, 'sdt'))) {
+    if (!contentControlTag(sdt).startsWith(SERVICE_ITEM_TAG_PREFIX)) continue;
+    const content = wordChild(sdt, 'sdtContent');
+    const [breakParagraph, next] = content ? wordChildren(content) : [];
+    if (!breakParagraph || !isWordElement(breakParagraph, 'p') || !isWordElement(next, 'p')) continue;
+    const properties = wordChild(breakParagraph, 'pPr');
+    const isBareBreak = Boolean(properties && wordChild(properties, 'pageBreakBefore'))
+      && wordChildren(breakParagraph).every((child) => isWordElement(child, 'pPr'));
+    if (!isBareBreak) continue;
+    addPageBreakBefore(next);
+    content!.removeChild(breakParagraph);
+    changed = true;
+  }
+  if (!changed) return docxBytes;
+  files[DOCUMENT_PART] = serializeXml(xml);
+  return zipSync(files, { level: 6 });
 }
 
 function findSlotControls(
@@ -901,6 +1151,8 @@ export function renderServiceAgreementOakDoc(input: {
 
   const allocator = new WordIdAllocator(xml);
   const sowPartialPins: OakDocPartialPin[] = [];
+  const [serviceSlot] = findSlotControls(xml, 'serviceSections');
+  const breakBeforeFirstService = everyServiceStartsNewPage(serviceSlot);
   const serviceControls = orderedServiceAgreementItems(input.agreement).map(
     (item, index) => {
       const sowSnapshot = readOakDocSowSnapshot(item.partialContentSnapshot);
@@ -911,18 +1163,29 @@ export function renderServiceAgreementOakDoc(input: {
         agreement: input.agreement,
         item,
         sowSnapshot,
-        pageBreakBefore: index > 0,
+        pageBreakBefore: index > 0 || breakBeforeFirstService,
       });
     },
   );
+
+  const [feeSlot] = findSlotControls(xml, 'feeTable');
+  const [entitySlot] = findSlotControls(xml, 'entityAppendix');
+  const feeBlocks = renderFeePrototype({
+    slot: feeSlot,
+    agreement: input.agreement,
+    allocator,
+    diagnostics,
+  }) ?? [createFeeTable(xml, input.agreement)];
+  const entityBlocks = renderEntityPrototype(entitySlot, input.agreement, allocator)
+    ?? createEntityAppendix(xml, input.agreement);
 
   const replacements: Array<{
     slot: keyof typeof OAKDOC_SERVICE_AGREEMENT_SLOT_TAGS;
     nodes: Element[];
   }> = [
     { slot: 'serviceSections', nodes: serviceControls },
-    { slot: 'feeTable', nodes: [createFeeTable(xml, input.agreement)] },
-    { slot: 'entityAppendix', nodes: createEntityAppendix(xml, input.agreement) },
+    { slot: 'feeTable', nodes: feeBlocks },
+    { slot: 'entityAppendix', nodes: entityBlocks },
   ];
 
   const structuralFailures: Array<keyof typeof OAKDOC_SERVICE_AGREEMENT_SLOT_TAGS> = [];

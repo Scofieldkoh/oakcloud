@@ -1,5 +1,8 @@
 import { z } from 'zod';
-import { serviceAgreementItemSchema } from '@/lib/validations/service-agreement';
+import {
+  serviceAgreementDateString,
+  serviceAgreementItemSchema,
+} from '@/lib/validations/service-agreement';
 
 const uuid = z.string().uuid();
 const nullableUuid = uuid.nullable();
@@ -24,8 +27,8 @@ export const serviceAgreementWorkspaceSchema = z.object({
     .optional(),
   signerContactIds: z.array(uuid).max(100),
   entityIds: z.array(uuid).max(100),
-  agreementDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-  effectiveDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable(),
+  agreementDate: serviceAgreementDateString,
+  effectiveDate: serviceAgreementDateString.nullable(),
   termMonths: z.number().int().min(1).max(1200),
   items: z.array(serviceAgreementItemSchema).max(50),
 }).strict().superRefine((value, context) => {

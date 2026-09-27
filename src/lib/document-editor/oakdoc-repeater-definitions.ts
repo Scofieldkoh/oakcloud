@@ -61,6 +61,14 @@ function contactAddress(contact: OakDocContact): string {
   return contact.address?.full ?? '';
 }
 
+/** The phone as it follows the email in "email / mobile", without a dangling slash. */
+function phoneAfterEmail(contact: OakDocContact): string {
+  const email = contact.email?.trim() ?? '';
+  const phone = contact.phone?.trim() ?? '';
+  if (!phone) return '';
+  return email ? ` / ${phone}` : phone;
+}
+
 function contactValues(namespace: string, contact: OakDocContact): Record<string, string> {
   return {
     [namespace + '.name']: contact.name || '',
@@ -68,6 +76,7 @@ function contactValues(namespace: string, contact: OakDocContact): Record<string
       contact.role || contact.detail || contact.appointments?.[0] || '',
     [namespace + '.email']: contact.email || '',
     [namespace + '.phone']: contact.phone || '',
+    [namespace + '.phoneAfterEmail']: phoneAfterEmail(contact),
     [namespace + '.address']: contactAddress(contact),
   };
 }
@@ -159,6 +168,7 @@ readonly OakDocGenericRepeaterDefinition[] = [
       { tag: 'signer.role', label: 'Signer Role', category: 'Repeating Signer', example: 'Director' },
       { tag: 'signer.email', label: 'Signer Email', category: 'Repeating Signer', example: 'alex@example.com' },
       { tag: 'signer.phone', label: 'Signer Phone', category: 'Repeating Signer', example: '+65 6123 4567' },
+      { tag: 'signer.phoneAfterEmail', label: 'Signer Phone (after email)', category: 'Repeating Signer', example: ' / +65 6123 4567' },
       { tag: 'signer.address', label: 'Signer Address', category: 'Repeating Signer', example: '123 Sample Street' },
     ],
     generationDataAdapter: (data) => (data.signers ?? [])
@@ -175,6 +185,7 @@ readonly OakDocGenericRepeaterDefinition[] = [
       { tag: 'authorisedRepresentative.role', label: 'Representative Role', category: 'Repeating Authorised Representative', example: 'Director' },
       { tag: 'authorisedRepresentative.email', label: 'Representative Email', category: 'Repeating Authorised Representative', example: 'alex@example.com' },
       { tag: 'authorisedRepresentative.phone', label: 'Representative Phone', category: 'Repeating Authorised Representative', example: '+65 6123 4567' },
+      { tag: 'authorisedRepresentative.phoneAfterEmail', label: 'Representative Phone (after email)', category: 'Repeating Authorised Representative', example: ' / +65 6123 4567' },
       { tag: 'authorisedRepresentative.address', label: 'Representative Address', category: 'Repeating Authorised Representative', example: '123 Sample Street' },
     ],
     generationDataAdapter: (data) => (data.authorisedRepresentatives ?? [])
