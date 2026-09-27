@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { createAuditLog } from '@/lib/audit';
 import { NotFoundError, ValidationError } from '@/lib/errors';
 import { prisma } from '@/lib/prisma';
+import { createMonitoringForActivatedService } from '@/services/compliance-monitoring/coverage';
 import { isSerializationConflict, runSerializableTransaction } from '@/lib/prisma-transaction';
 import type { TenantAwareParams } from '@/lib/types';
 import type { ClientServiceDeadlineRuleInput, CreateManualClientServiceInput, CreateManualClientServiceRequest } from '@/lib/validations/client-service';
@@ -275,6 +276,21 @@ export async function createManualClientService(
           userId: params.userId,
         }, deadlineRuleValidation);
       }
+
+      // Manual onboarding has no agreement date: coverage starts provisionally
+      // at the service start and raises a review item to confirm it.
+      await createMonitoringForActivatedService(tx, {
+        tenantId: params.tenantId,
+        companyId,
+        clientServiceId: service.id,
+        serviceVariantId: variant.id,
+        agreementId: null,
+        agreementDate: null,
+        serviceStartDate: service.startDate,
+        serviceEndDate: service.endDate,
+        fieldValues: input.fieldValues,
+        actorId: params.userId ?? null,
+      });
 
       const reconciliationCorrelationId = `manual-service-${service.id}-${Date.now()}`;
       await enqueueScheduleReconciliation(tx, {

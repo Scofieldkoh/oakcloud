@@ -10,7 +10,7 @@ import { cn } from '@/lib/utils';
 import type { DeadlineOccurrenceDto } from '@/services/deadline';
 import type { UpdateDeadlineOccurrenceInput } from '@/lib/validations/deadline';
 import { DEADLINE_COLUMN_WIDTH_MAX, DEADLINE_COLUMN_WIDTH_MIN } from '@/lib/validations/services-preferences';
-import { DeadlineEventPanel, milestoneLabel } from './deadline-event';
+import { DeadlineEventPanel, milestoneLabel, serviceLabel } from './deadline-event';
 
 export const DEADLINE_TABLE_COLUMNS = [
   'dueDate',
@@ -108,6 +108,7 @@ function timingLabel(value: DeadlineOccurrenceDto['timingState'], status: Deadli
   if (status !== 'OPEN') return status.charAt(0) + status.slice(1).toLowerCase();
   if (value === 'DUE') return 'Due today';
   if (value === 'OVERDUE') return 'Overdue';
+  if (value === 'REVIEW') return 'Takeover review';
   return 'Upcoming';
 }
 
@@ -121,7 +122,7 @@ function statusClass(value: DeadlineOccurrenceDto['status']): string {
 function timingClass(value: DeadlineOccurrenceDto['timingState'], status: DeadlineOccurrenceDto['status']): string {
   if (status !== 'OPEN') return 'badge-neutral';
   if (value === 'OVERDUE') return 'badge-error';
-  if (value === 'DUE') return 'badge-warning';
+  if (value === 'DUE' || value === 'REVIEW') return 'badge-warning';
   return 'badge-info';
 }
 
@@ -134,12 +135,12 @@ function CompanyCell({ occurrence }: { occurrence: DeadlineOccurrenceDto }) {
 }
 
 function FamilyCell({ occurrence }: { occurrence: DeadlineOccurrenceDto }) {
-  const familyName = occurrence.family.name || occurrence.service.familyName || '—';
+  const familyName = occurrence.family.name || occurrence.service?.familyName || '—';
   return <span className="block truncate text-sm text-text-primary" title={familyName}>{familyName}</span>;
 }
 
 function ServiceCell({ occurrence }: { occurrence: DeadlineOccurrenceDto }) {
-  const serviceName = occurrence.service.name || occurrence.service.variantName || '—';
+  const serviceName = serviceLabel(occurrence);
   return <span className="block truncate text-sm text-text-primary" title={serviceName}>{serviceName}</span>;
 }
 
@@ -299,15 +300,15 @@ function MobileDeadlineCard({ occurrence, canEdit, isPending, mutationError, onU
       onToggle={() => onToggleSelection?.(occurrence)}
       selectionLabel={`Select deadline ${occurrence.company.name} ${milestoneLabel(occurrence)}`}
       title={<CompanyCell occurrence={occurrence} />}
-      subtitle={<span title={occurrence.service.name}>{occurrence.service.name || occurrence.service.variantName || '—'} · {milestoneLabel(occurrence)}</span>}
+      subtitle={<span title={serviceLabel(occurrence)}>{serviceLabel(occurrence)} · {milestoneLabel(occurrence)}</span>}
       badge={<span className={cn('badge', timingClass(occurrence.timingState, occurrence.status))}>{timingLabel(occurrence.timingState, occurrence.status)}</span>}
       onCardClick={() => setActionsOpen(true)}
       actions={<DeadlineActions occurrence={occurrence} canEdit={canEdit} isPending={isPending} mutationError={mutationError} onUpdate={onUpdate} onResetOverride={onResetOverride} open={actionsOpen} onOpen={() => setActionsOpen(true)} onClose={() => setActionsOpen(false)} />}
       details={(
         <CardDetailsGrid>
           <CardDetailItem label="Due date" value={dateLabel(occurrence.operativeDueDate)} />
-          <CardDetailItem label="Family" value={occurrence.family.name || occurrence.service.familyName || '—'} />
-          <CardDetailItem label="Service" value={occurrence.service.name || occurrence.service.variantName || '—'} />
+          <CardDetailItem label="Family" value={occurrence.family.name || occurrence.service?.familyName || '—'} />
+          <CardDetailItem label="Service" value={serviceLabel(occurrence)} />
           <CardDetailItem label="Type" value={typeLabels[occurrence.deadlineType]} />
           <CardDetailItem label="Status" value={occurrence.status.charAt(0) + occurrence.status.slice(1).toLowerCase()} />
         </CardDetailsGrid>

@@ -24,6 +24,7 @@ const occurrence: DeadlineOccurrenceDto = {
   id: '44444444-4444-4444-8444-444444444444',
   tenantId: '11111111-1111-4111-8111-111111111111',
   companyId: '22222222-2222-4222-8222-222222222222',
+  ownershipScope: 'SERVICE',
   clientServiceId: '55555555-5555-4555-8555-555555555555',
   cycleId: '66666666-6666-4666-8666-666666666666',
   ruleVersionId: '77777777-7777-4777-8777-777777777777',
@@ -67,6 +68,7 @@ const occurrence: DeadlineOccurrenceDto = {
     variantId: '55555555-5555-4555-8555-555555555555',
     variantName: 'Annual Return',
   },
+  obligation: null,
   cycle: {
     id: '66666666-6666-4666-8666-666666666666',
     periodKey: '2026',

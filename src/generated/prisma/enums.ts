@@ -174,6 +174,98 @@ export const ScheduleReconciliationStatus = {
 export type ScheduleReconciliationStatus = (typeof ScheduleReconciliationStatus)[keyof typeof ScheduleReconciliationStatus]
 
 
+export const DeadlineOwnershipScope = {
+  SERVICE: 'SERVICE',
+  COMPANY: 'COMPANY'
+} as const
+
+export type DeadlineOwnershipScope = (typeof DeadlineOwnershipScope)[keyof typeof DeadlineOwnershipScope]
+
+
+export const MonitoringProfile = {
+  CORPORATE_TAX: 'CORPORATE_TAX',
+  NOMINEE_DIRECTOR: 'NOMINEE_DIRECTOR'
+} as const
+
+export type MonitoringProfile = (typeof MonitoringProfile)[keyof typeof MonitoringProfile]
+
+
+export const MonitoringCoverageSource = {
+  AGREEMENT: 'AGREEMENT',
+  NOMINEE_APPOINTMENT: 'NOMINEE_APPOINTMENT',
+  MANUAL: 'MANUAL'
+} as const
+
+export type MonitoringCoverageSource = (typeof MonitoringCoverageSource)[keyof typeof MonitoringCoverageSource]
+
+
+export const MonitoringCoverageStatus = {
+  ACTIVE: 'ACTIVE',
+  ENDED: 'ENDED'
+} as const
+
+export type MonitoringCoverageStatus = (typeof MonitoringCoverageStatus)[keyof typeof MonitoringCoverageStatus]
+
+
+export const FinancialPeriodProvenance = {
+  CONFIRMED: 'CONFIRMED',
+  IMPORTED: 'IMPORTED'
+} as const
+
+export type FinancialPeriodProvenance = (typeof FinancialPeriodProvenance)[keyof typeof FinancialPeriodProvenance]
+
+
+export const ObligationScopeConfirmation = {
+  CONFIRMED: 'CONFIRMED',
+  UNCONFIRMED: 'UNCONFIRMED'
+} as const
+
+export type ObligationScopeConfirmation = (typeof ObligationScopeConfirmation)[keyof typeof ObligationScopeConfirmation]
+
+
+export const FilingResponsibility = {
+  OAKCLOUD: 'OAKCLOUD',
+  CLIENT: 'CLIENT',
+  EXTERNAL_PROVIDER: 'EXTERNAL_PROVIDER',
+  UNCONFIRMED: 'UNCONFIRMED'
+} as const
+
+export type FilingResponsibility = (typeof FilingResponsibility)[keyof typeof FilingResponsibility]
+
+
+export const ResponsibilitySource = {
+  PROJECTED: 'PROJECTED',
+  STAFF: 'STAFF'
+} as const
+
+export type ResponsibilitySource = (typeof ResponsibilitySource)[keyof typeof ResponsibilitySource]
+
+
+export const CoverageLinkReason = {
+  MONITORING_INTERVAL: 'MONITORING_INTERVAL',
+  CONTRACTED_DELIVERY: 'CONTRACTED_DELIVERY',
+  TAKEOVER_REVIEW: 'TAKEOVER_REVIEW'
+} as const
+
+export type CoverageLinkReason = (typeof CoverageLinkReason)[keyof typeof CoverageLinkReason]
+
+
+export const CompanyComplianceIssueType = {
+  MISSING_FINANCIAL_YEAR_END: 'MISSING_FINANCIAL_YEAR_END',
+  PERIOD_REVIEW: 'PERIOD_REVIEW',
+  RULE_NOT_PUBLISHED: 'RULE_NOT_PUBLISHED',
+  RULE_INPUT_MISSING: 'RULE_INPUT_MISSING',
+  FAMILY_NOT_AUTOMATED: 'FAMILY_NOT_AUTOMATED',
+  RESPONSIBILITY_CONFLICT: 'RESPONSIBILITY_CONFLICT',
+  DELIVERY_ENDED: 'DELIVERY_ENDED',
+  DELIVERY_SCOPE_UNMATCHED: 'DELIVERY_SCOPE_UNMATCHED',
+  MONITORING_START_REVIEW: 'MONITORING_START_REVIEW',
+  HANDOVER_REVIEW: 'HANDOVER_REVIEW'
+} as const
+
+export type CompanyComplianceIssueType = (typeof CompanyComplianceIssueType)[keyof typeof CompanyComplianceIssueType]
+
+
 export const TaskStatus = {
   NOT_STARTED: 'NOT_STARTED',
   IN_PROGRESS: 'IN_PROGRESS',

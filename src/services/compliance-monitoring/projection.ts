@@ -87,11 +87,16 @@ export type ProjectedCompanyObligation = {
   obligationName: string;
   periodKey: string;
   milestoneKey: string;
+  scheduleEntryKey: string;
+  deadlineType: 'STATUTORY' | 'CLIENT' | 'INTERNAL';
   ruleId: string;
   ruleVersionId: string;
   dueDate: DateOnly;
   explanation: string[];
   obligationPeriod: ProjectedObligationPeriod;
+  /** Evaluator snapshot and hash for the obligation's period (cycle provenance). */
+  sourceSnapshot: Record<string, unknown>;
+  evaluationHash: string;
   reasons: InclusionReason[];
   coverageTiming: CoverageTiming;
   filingResponsibility: FilingResponsibility;
@@ -344,6 +349,7 @@ export function projectCompanyObligations(input: CompanyMonitoringProjectionInpu
       }));
     }
 
+    const evaluations = new Map(projection.periodEvaluations.map((evaluation) => [evaluation.periodKey, evaluation]));
     for (const occurrence of projection.occurrences) {
       const period = occurrence.obligationPeriod;
       if (!period) continue;
@@ -402,11 +408,15 @@ export function projectCompanyObligations(input: CompanyMonitoringProjectionInpu
         obligationName: definition.displayName,
         periodKey: occurrence.periodKey,
         milestoneKey: occurrence.milestoneKey,
+        scheduleEntryKey: occurrence.scheduleEntryKey,
+        deadlineType: occurrence.deadlineType,
         ruleId: rule.ruleId,
         ruleVersionId: rule.ruleVersionId,
         dueDate,
         explanation: occurrence.explanation,
         obligationPeriod: period,
+        sourceSnapshot: evaluations.get(occurrence.periodKey)?.sourceSnapshot ?? {},
+        evaluationHash: evaluations.get(occurrence.periodKey)?.evaluationHash ?? '',
         reasons,
         coverageTiming,
         filingResponsibility: responsibility,

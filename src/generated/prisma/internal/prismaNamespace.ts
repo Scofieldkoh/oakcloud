@@ -443,6 +443,12 @@ export const ModelName = {
   BusinessHoliday: 'BusinessHoliday',
   ServiceCycle: 'ServiceCycle',
   DeadlineOccurrence: 'DeadlineOccurrence',
+  CompanyFinancialPeriod: 'CompanyFinancialPeriod',
+  CompanyMonitoringCoverage: 'CompanyMonitoringCoverage',
+  ClientServiceObligationScope: 'ClientServiceObligationScope',
+  DeadlineOccurrenceCoverageLink: 'DeadlineOccurrenceCoverageLink',
+  DeadlineResponsibilityChange: 'DeadlineResponsibilityChange',
+  CompanyComplianceIssue: 'CompanyComplianceIssue',
   ServiceScheduleReconciliationRequest: 'ServiceScheduleReconciliationRequest',
   AiConversation: 'AiConversation',
   EsigningEnvelope: 'EsigningEnvelope',
@@ -540,7 +546,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "workspace" | "role" | "permission" | "rolePermission" | "userRoleAssignment" | "user" | "userPreference" | "performanceMeasurement" | "userCompanyAssignment" | "company" | "companySharePointFolder" | "companyFormerName" | "companyAddress" | "contact" | "companyContact" | "contactDetail" | "companyOfficer" | "shareCapital" | "companyAuditor" | "companyShareholder" | "companyCharge" | "document" | "auditLog" | "connector" | "workspaceConnectorAccess" | "connectorUsageLog" | "connectorModelConfig" | "noteTab" | "documentTemplate" | "generatedDocument" | "documentGenerationBatch" | "documentGenerationBatchItem" | "documentSection" | "workspaceLetterhead" | "documentComment" | "documentDraft" | "templatePartial" | "serviceFamily" | "serviceVariant" | "serviceVariantFeeTemplate" | "serviceAgreement" | "serviceAgreementEntity" | "serviceAgreementItem" | "serviceAgreementItemEntity" | "serviceAgreementFeeLine" | "clientService" | "clientServiceFeeLine" | "billingOccurrence" | "billingCoverageIssue" | "deadlineRule" | "deadlineRuleVersion" | "deadlineRuleParameterDefinition" | "deadlineMilestoneTemplate" | "serviceVariantDeadlineRule" | "clientServiceDeadlineRule" | "businessCalendar" | "businessHoliday" | "serviceCycle" | "deadlineOccurrence" | "serviceScheduleReconciliationRequest" | "aiConversation" | "esigningEnvelope" | "esigningEnvelopeDocument" | "esigningSharePointFiling" | "esigningEnvelopeRecipient" | "esigningDocumentFieldDefinition" | "esigningDocumentFieldValue" | "esigningEnvelopeEvent" | "esigningEmailDelivery" | "esigningEmailDeliveryAttempt" | "processingDocument" | "documentLink" | "documentTag" | "processingDocumentTag" | "documentPage" | "documentExtraction" | "documentRevision" | "documentRevisionLineItem" | "vendorAlias" | "customerAlias" | "contactDuplicateDecision" | "contactMergeOperation" | "duplicateDecision" | "processingAttempt" | "processingCheckpoint" | "splitPlan" | "documentStateEvent" | "documentDerivedFile" | "idempotencyRecord" | "webhookSubscription" | "exchangeRate" | "bankAccount" | "bankTransaction" | "matchGroup" | "matchGroupItem" | "reconciliationPeriod" | "form" | "formField" | "formOptionPreset" | "formUrlHealth" | "formSubmission" | "formDraft" | "formUpload" | "clientPortalUser" | "clientRequest" | "communication" | "accountingIntegration" | "externalPosting" | "fieldMapping" | "workspaceBackup" | "backupSchedule" | "chartOfAccount" | "chartOfAccountsMapping" | "taskPipeline" | "taskPipelineVersion" | "taskPipelineStage" | "task" | "taskStage" | "taskStageChecklistItem" | "taskStageOutcome" | "taskEsigningPreparation" | "taskCompanyRecoveryContext" | "acraEntity" | "acraSyncState" | "businessAssistantConversation" | "businessAssistantMessage" | "businessAssistantRun" | "businessAssistantRunItem" | "businessAssistantRunStep" | "businessAssistantProposal" | "businessAssistantApproval" | "businessAssistantReview" | "businessAssistantFeedback" | "businessAssistantMemory" | "businessAssistantLearningChange" | "businessAssistantLearningActiveTarget" | "businessAssistantActionRequest" | "businessAssistantCapacitySlot" | "bizFileOperationReceipt" | "bizFileOperationEvidence" | "bizFileOperationEffectIntent"
+    modelProps: "workspace" | "role" | "permission" | "rolePermission" | "userRoleAssignment" | "user" | "userPreference" | "performanceMeasurement" | "userCompanyAssignment" | "company" | "companySharePointFolder" | "companyFormerName" | "companyAddress" | "contact" | "companyContact" | "contactDetail" | "companyOfficer" | "shareCapital" | "companyAuditor" | "companyShareholder" | "companyCharge" | "document" | "auditLog" | "connector" | "workspaceConnectorAccess" | "connectorUsageLog" | "connectorModelConfig" | "noteTab" | "documentTemplate" | "generatedDocument" | "documentGenerationBatch" | "documentGenerationBatchItem" | "documentSection" | "workspaceLetterhead" | "documentComment" | "documentDraft" | "templatePartial" | "serviceFamily" | "serviceVariant" | "serviceVariantFeeTemplate" | "serviceAgreement" | "serviceAgreementEntity" | "serviceAgreementItem" | "serviceAgreementItemEntity" | "serviceAgreementFeeLine" | "clientService" | "clientServiceFeeLine" | "billingOccurrence" | "billingCoverageIssue" | "deadlineRule" | "deadlineRuleVersion" | "deadlineRuleParameterDefinition" | "deadlineMilestoneTemplate" | "serviceVariantDeadlineRule" | "clientServiceDeadlineRule" | "businessCalendar" | "businessHoliday" | "serviceCycle" | "deadlineOccurrence" | "companyFinancialPeriod" | "companyMonitoringCoverage" | "clientServiceObligationScope" | "deadlineOccurrenceCoverageLink" | "deadlineResponsibilityChange" | "companyComplianceIssue" | "serviceScheduleReconciliationRequest" | "aiConversation" | "esigningEnvelope" | "esigningEnvelopeDocument" | "esigningSharePointFiling" | "esigningEnvelopeRecipient" | "esigningDocumentFieldDefinition" | "esigningDocumentFieldValue" | "esigningEnvelopeEvent" | "esigningEmailDelivery" | "esigningEmailDeliveryAttempt" | "processingDocument" | "documentLink" | "documentTag" | "processingDocumentTag" | "documentPage" | "documentExtraction" | "documentRevision" | "documentRevisionLineItem" | "vendorAlias" | "customerAlias" | "contactDuplicateDecision" | "contactMergeOperation" | "duplicateDecision" | "processingAttempt" | "processingCheckpoint" | "splitPlan" | "documentStateEvent" | "documentDerivedFile" | "idempotencyRecord" | "webhookSubscription" | "exchangeRate" | "bankAccount" | "bankTransaction" | "matchGroup" | "matchGroupItem" | "reconciliationPeriod" | "form" | "formField" | "formOptionPreset" | "formUrlHealth" | "formSubmission" | "formDraft" | "formUpload" | "clientPortalUser" | "clientRequest" | "communication" | "accountingIntegration" | "externalPosting" | "fieldMapping" | "workspaceBackup" | "backupSchedule" | "chartOfAccount" | "chartOfAccountsMapping" | "taskPipeline" | "taskPipelineVersion" | "taskPipelineStage" | "task" | "taskStage" | "taskStageChecklistItem" | "taskStageOutcome" | "taskEsigningPreparation" | "taskCompanyRecoveryContext" | "acraEntity" | "acraSyncState" | "businessAssistantConversation" | "businessAssistantMessage" | "businessAssistantRun" | "businessAssistantRunItem" | "businessAssistantRunStep" | "businessAssistantProposal" | "businessAssistantApproval" | "businessAssistantReview" | "businessAssistantFeedback" | "businessAssistantMemory" | "businessAssistantLearningChange" | "businessAssistantLearningActiveTarget" | "businessAssistantActionRequest" | "businessAssistantCapacitySlot" | "bizFileOperationReceipt" | "bizFileOperationEvidence" | "bizFileOperationEffectIntent"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -4907,6 +4913,450 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.DeadlineOccurrenceCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.DeadlineOccurrenceCountAggregateOutputType> | number
+        }
+      }
+    }
+    CompanyFinancialPeriod: {
+      payload: Prisma.$CompanyFinancialPeriodPayload<ExtArgs>
+      fields: Prisma.CompanyFinancialPeriodFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.CompanyFinancialPeriodFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CompanyFinancialPeriodPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.CompanyFinancialPeriodFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CompanyFinancialPeriodPayload>
+        }
+        findFirst: {
+          args: Prisma.CompanyFinancialPeriodFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CompanyFinancialPeriodPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.CompanyFinancialPeriodFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CompanyFinancialPeriodPayload>
+        }
+        findMany: {
+          args: Prisma.CompanyFinancialPeriodFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CompanyFinancialPeriodPayload>[]
+        }
+        create: {
+          args: Prisma.CompanyFinancialPeriodCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CompanyFinancialPeriodPayload>
+        }
+        createMany: {
+          args: Prisma.CompanyFinancialPeriodCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.CompanyFinancialPeriodCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CompanyFinancialPeriodPayload>[]
+        }
+        delete: {
+          args: Prisma.CompanyFinancialPeriodDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CompanyFinancialPeriodPayload>
+        }
+        update: {
+          args: Prisma.CompanyFinancialPeriodUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CompanyFinancialPeriodPayload>
+        }
+        deleteMany: {
+          args: Prisma.CompanyFinancialPeriodDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.CompanyFinancialPeriodUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.CompanyFinancialPeriodUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CompanyFinancialPeriodPayload>[]
+        }
+        upsert: {
+          args: Prisma.CompanyFinancialPeriodUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CompanyFinancialPeriodPayload>
+        }
+        aggregate: {
+          args: Prisma.CompanyFinancialPeriodAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateCompanyFinancialPeriod>
+        }
+        groupBy: {
+          args: Prisma.CompanyFinancialPeriodGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.CompanyFinancialPeriodGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.CompanyFinancialPeriodCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.CompanyFinancialPeriodCountAggregateOutputType> | number
+        }
+      }
+    }
+    CompanyMonitoringCoverage: {
+      payload: Prisma.$CompanyMonitoringCoveragePayload<ExtArgs>
+      fields: Prisma.CompanyMonitoringCoverageFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.CompanyMonitoringCoverageFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CompanyMonitoringCoveragePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.CompanyMonitoringCoverageFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CompanyMonitoringCoveragePayload>
+        }
+        findFirst: {
+          args: Prisma.CompanyMonitoringCoverageFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CompanyMonitoringCoveragePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.CompanyMonitoringCoverageFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CompanyMonitoringCoveragePayload>
+        }
+        findMany: {
+          args: Prisma.CompanyMonitoringCoverageFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CompanyMonitoringCoveragePayload>[]
+        }
+        create: {
+          args: Prisma.CompanyMonitoringCoverageCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CompanyMonitoringCoveragePayload>
+        }
+        createMany: {
+          args: Prisma.CompanyMonitoringCoverageCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.CompanyMonitoringCoverageCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CompanyMonitoringCoveragePayload>[]
+        }
+        delete: {
+          args: Prisma.CompanyMonitoringCoverageDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CompanyMonitoringCoveragePayload>
+        }
+        update: {
+          args: Prisma.CompanyMonitoringCoverageUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CompanyMonitoringCoveragePayload>
+        }
+        deleteMany: {
+          args: Prisma.CompanyMonitoringCoverageDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.CompanyMonitoringCoverageUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.CompanyMonitoringCoverageUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CompanyMonitoringCoveragePayload>[]
+        }
+        upsert: {
+          args: Prisma.CompanyMonitoringCoverageUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CompanyMonitoringCoveragePayload>
+        }
+        aggregate: {
+          args: Prisma.CompanyMonitoringCoverageAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateCompanyMonitoringCoverage>
+        }
+        groupBy: {
+          args: Prisma.CompanyMonitoringCoverageGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.CompanyMonitoringCoverageGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.CompanyMonitoringCoverageCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.CompanyMonitoringCoverageCountAggregateOutputType> | number
+        }
+      }
+    }
+    ClientServiceObligationScope: {
+      payload: Prisma.$ClientServiceObligationScopePayload<ExtArgs>
+      fields: Prisma.ClientServiceObligationScopeFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.ClientServiceObligationScopeFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ClientServiceObligationScopePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.ClientServiceObligationScopeFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ClientServiceObligationScopePayload>
+        }
+        findFirst: {
+          args: Prisma.ClientServiceObligationScopeFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ClientServiceObligationScopePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.ClientServiceObligationScopeFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ClientServiceObligationScopePayload>
+        }
+        findMany: {
+          args: Prisma.ClientServiceObligationScopeFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ClientServiceObligationScopePayload>[]
+        }
+        create: {
+          args: Prisma.ClientServiceObligationScopeCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ClientServiceObligationScopePayload>
+        }
+        createMany: {
+          args: Prisma.ClientServiceObligationScopeCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.ClientServiceObligationScopeCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ClientServiceObligationScopePayload>[]
+        }
+        delete: {
+          args: Prisma.ClientServiceObligationScopeDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ClientServiceObligationScopePayload>
+        }
+        update: {
+          args: Prisma.ClientServiceObligationScopeUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ClientServiceObligationScopePayload>
+        }
+        deleteMany: {
+          args: Prisma.ClientServiceObligationScopeDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.ClientServiceObligationScopeUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.ClientServiceObligationScopeUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ClientServiceObligationScopePayload>[]
+        }
+        upsert: {
+          args: Prisma.ClientServiceObligationScopeUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ClientServiceObligationScopePayload>
+        }
+        aggregate: {
+          args: Prisma.ClientServiceObligationScopeAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateClientServiceObligationScope>
+        }
+        groupBy: {
+          args: Prisma.ClientServiceObligationScopeGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ClientServiceObligationScopeGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.ClientServiceObligationScopeCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ClientServiceObligationScopeCountAggregateOutputType> | number
+        }
+      }
+    }
+    DeadlineOccurrenceCoverageLink: {
+      payload: Prisma.$DeadlineOccurrenceCoverageLinkPayload<ExtArgs>
+      fields: Prisma.DeadlineOccurrenceCoverageLinkFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.DeadlineOccurrenceCoverageLinkFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineOccurrenceCoverageLinkPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.DeadlineOccurrenceCoverageLinkFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineOccurrenceCoverageLinkPayload>
+        }
+        findFirst: {
+          args: Prisma.DeadlineOccurrenceCoverageLinkFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineOccurrenceCoverageLinkPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.DeadlineOccurrenceCoverageLinkFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineOccurrenceCoverageLinkPayload>
+        }
+        findMany: {
+          args: Prisma.DeadlineOccurrenceCoverageLinkFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineOccurrenceCoverageLinkPayload>[]
+        }
+        create: {
+          args: Prisma.DeadlineOccurrenceCoverageLinkCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineOccurrenceCoverageLinkPayload>
+        }
+        createMany: {
+          args: Prisma.DeadlineOccurrenceCoverageLinkCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.DeadlineOccurrenceCoverageLinkCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineOccurrenceCoverageLinkPayload>[]
+        }
+        delete: {
+          args: Prisma.DeadlineOccurrenceCoverageLinkDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineOccurrenceCoverageLinkPayload>
+        }
+        update: {
+          args: Prisma.DeadlineOccurrenceCoverageLinkUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineOccurrenceCoverageLinkPayload>
+        }
+        deleteMany: {
+          args: Prisma.DeadlineOccurrenceCoverageLinkDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.DeadlineOccurrenceCoverageLinkUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.DeadlineOccurrenceCoverageLinkUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineOccurrenceCoverageLinkPayload>[]
+        }
+        upsert: {
+          args: Prisma.DeadlineOccurrenceCoverageLinkUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineOccurrenceCoverageLinkPayload>
+        }
+        aggregate: {
+          args: Prisma.DeadlineOccurrenceCoverageLinkAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateDeadlineOccurrenceCoverageLink>
+        }
+        groupBy: {
+          args: Prisma.DeadlineOccurrenceCoverageLinkGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DeadlineOccurrenceCoverageLinkGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.DeadlineOccurrenceCoverageLinkCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DeadlineOccurrenceCoverageLinkCountAggregateOutputType> | number
+        }
+      }
+    }
+    DeadlineResponsibilityChange: {
+      payload: Prisma.$DeadlineResponsibilityChangePayload<ExtArgs>
+      fields: Prisma.DeadlineResponsibilityChangeFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.DeadlineResponsibilityChangeFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineResponsibilityChangePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.DeadlineResponsibilityChangeFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineResponsibilityChangePayload>
+        }
+        findFirst: {
+          args: Prisma.DeadlineResponsibilityChangeFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineResponsibilityChangePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.DeadlineResponsibilityChangeFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineResponsibilityChangePayload>
+        }
+        findMany: {
+          args: Prisma.DeadlineResponsibilityChangeFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineResponsibilityChangePayload>[]
+        }
+        create: {
+          args: Prisma.DeadlineResponsibilityChangeCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineResponsibilityChangePayload>
+        }
+        createMany: {
+          args: Prisma.DeadlineResponsibilityChangeCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.DeadlineResponsibilityChangeCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineResponsibilityChangePayload>[]
+        }
+        delete: {
+          args: Prisma.DeadlineResponsibilityChangeDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineResponsibilityChangePayload>
+        }
+        update: {
+          args: Prisma.DeadlineResponsibilityChangeUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineResponsibilityChangePayload>
+        }
+        deleteMany: {
+          args: Prisma.DeadlineResponsibilityChangeDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.DeadlineResponsibilityChangeUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.DeadlineResponsibilityChangeUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineResponsibilityChangePayload>[]
+        }
+        upsert: {
+          args: Prisma.DeadlineResponsibilityChangeUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeadlineResponsibilityChangePayload>
+        }
+        aggregate: {
+          args: Prisma.DeadlineResponsibilityChangeAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateDeadlineResponsibilityChange>
+        }
+        groupBy: {
+          args: Prisma.DeadlineResponsibilityChangeGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DeadlineResponsibilityChangeGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.DeadlineResponsibilityChangeCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DeadlineResponsibilityChangeCountAggregateOutputType> | number
+        }
+      }
+    }
+    CompanyComplianceIssue: {
+      payload: Prisma.$CompanyComplianceIssuePayload<ExtArgs>
+      fields: Prisma.CompanyComplianceIssueFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.CompanyComplianceIssueFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CompanyComplianceIssuePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.CompanyComplianceIssueFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CompanyComplianceIssuePayload>
+        }
+        findFirst: {
+          args: Prisma.CompanyComplianceIssueFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CompanyComplianceIssuePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.CompanyComplianceIssueFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CompanyComplianceIssuePayload>
+        }
+        findMany: {
+          args: Prisma.CompanyComplianceIssueFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CompanyComplianceIssuePayload>[]
+        }
+        create: {
+          args: Prisma.CompanyComplianceIssueCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CompanyComplianceIssuePayload>
+        }
+        createMany: {
+          args: Prisma.CompanyComplianceIssueCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.CompanyComplianceIssueCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CompanyComplianceIssuePayload>[]
+        }
+        delete: {
+          args: Prisma.CompanyComplianceIssueDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CompanyComplianceIssuePayload>
+        }
+        update: {
+          args: Prisma.CompanyComplianceIssueUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CompanyComplianceIssuePayload>
+        }
+        deleteMany: {
+          args: Prisma.CompanyComplianceIssueDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.CompanyComplianceIssueUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.CompanyComplianceIssueUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CompanyComplianceIssuePayload>[]
+        }
+        upsert: {
+          args: Prisma.CompanyComplianceIssueUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CompanyComplianceIssuePayload>
+        }
+        aggregate: {
+          args: Prisma.CompanyComplianceIssueAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateCompanyComplianceIssue>
+        }
+        groupBy: {
+          args: Prisma.CompanyComplianceIssueGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.CompanyComplianceIssueGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.CompanyComplianceIssueCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.CompanyComplianceIssueCountAggregateOutputType> | number
         }
       }
     }
@@ -11767,6 +12217,7 @@ export const ServiceVariantScalarFieldEnum = {
   serviceCadence: 'serviceCadence',
   customCadenceLabel: 'customCadenceLabel',
   displayOrder: 'displayOrder',
+  monitoringProfiles: 'monitoringProfiles',
   version: 'version',
   isActive: 'isActive',
   createdAt: 'createdAt',
@@ -12160,7 +12611,10 @@ export const ServiceCycleScalarFieldEnum = {
   id: 'id',
   tenantId: 'tenantId',
   companyId: 'companyId',
+  ownershipScope: 'ownershipScope',
   clientServiceId: 'clientServiceId',
+  obligationCode: 'obligationCode',
+  obligationPeriodKey: 'obligationPeriodKey',
   ruleId: 'ruleId',
   ruleVersionId: 'ruleVersionId',
   businessCalendarId: 'businessCalendarId',
@@ -12185,7 +12639,23 @@ export const DeadlineOccurrenceScalarFieldEnum = {
   id: 'id',
   tenantId: 'tenantId',
   companyId: 'companyId',
+  ownershipScope: 'ownershipScope',
   clientServiceId: 'clientServiceId',
+  obligationCode: 'obligationCode',
+  obligationPeriodKey: 'obligationPeriodKey',
+  financialPeriodStart: 'financialPeriodStart',
+  financialPeriodEnd: 'financialPeriodEnd',
+  yearOfAssessment: 'yearOfAssessment',
+  periodProvisional: 'periodProvisional',
+  filingResponsibility: 'filingResponsibility',
+  responsibilitySource: 'responsibilitySource',
+  deliveryClientServiceId: 'deliveryClientServiceId',
+  filingProviderName: 'filingProviderName',
+  responsibilityConfirmedAt: 'responsibilityConfirmedAt',
+  responsibilityConfirmedById: 'responsibilityConfirmedById',
+  monitoringOwnerId: 'monitoringOwnerId',
+  coverageTiming: 'coverageTiming',
+  filingStatusUnconfirmed: 'filingStatusUnconfirmed',
   cycleId: 'cycleId',
   ruleVersionId: 'ruleVersionId',
   milestoneKey: 'milestoneKey',
@@ -12214,6 +12684,120 @@ export const DeadlineOccurrenceScalarFieldEnum = {
 } as const
 
 export type DeadlineOccurrenceScalarFieldEnum = (typeof DeadlineOccurrenceScalarFieldEnum)[keyof typeof DeadlineOccurrenceScalarFieldEnum]
+
+
+export const CompanyFinancialPeriodScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  companyId: 'companyId',
+  periodStart: 'periodStart',
+  periodEnd: 'periodEnd',
+  yearsOfAssessment: 'yearsOfAssessment',
+  provenance: 'provenance',
+  confirmedAt: 'confirmedAt',
+  confirmedById: 'confirmedById',
+  notes: 'notes',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type CompanyFinancialPeriodScalarFieldEnum = (typeof CompanyFinancialPeriodScalarFieldEnum)[keyof typeof CompanyFinancialPeriodScalarFieldEnum]
+
+
+export const CompanyMonitoringCoverageScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  companyId: 'companyId',
+  profile: 'profile',
+  source: 'source',
+  agreementId: 'agreementId',
+  clientServiceId: 'clientServiceId',
+  monitoringStart: 'monitoringStart',
+  monitoringEnd: 'monitoringEnd',
+  startSource: 'startSource',
+  reason: 'reason',
+  status: 'status',
+  ownerUserId: 'ownerUserId',
+  endedAt: 'endedAt',
+  endedById: 'endedById',
+  endedReason: 'endedReason',
+  createdById: 'createdById',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type CompanyMonitoringCoverageScalarFieldEnum = (typeof CompanyMonitoringCoverageScalarFieldEnum)[keyof typeof CompanyMonitoringCoverageScalarFieldEnum]
+
+
+export const ClientServiceObligationScopeScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  companyId: 'companyId',
+  clientServiceId: 'clientServiceId',
+  obligationCode: 'obligationCode',
+  periodKey: 'periodKey',
+  confirmation: 'confirmation',
+  source: 'source',
+  confirmedAt: 'confirmedAt',
+  confirmedById: 'confirmedById',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ClientServiceObligationScopeScalarFieldEnum = (typeof ClientServiceObligationScopeScalarFieldEnum)[keyof typeof ClientServiceObligationScopeScalarFieldEnum]
+
+
+export const DeadlineOccurrenceCoverageLinkScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  occurrenceId: 'occurrenceId',
+  linkKey: 'linkKey',
+  reason: 'reason',
+  coverageId: 'coverageId',
+  deliveryScopeId: 'deliveryScopeId',
+  linkedAt: 'linkedAt',
+  releasedAt: 'releasedAt'
+} as const
+
+export type DeadlineOccurrenceCoverageLinkScalarFieldEnum = (typeof DeadlineOccurrenceCoverageLinkScalarFieldEnum)[keyof typeof DeadlineOccurrenceCoverageLinkScalarFieldEnum]
+
+
+export const DeadlineResponsibilityChangeScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  occurrenceId: 'occurrenceId',
+  previousResponsibility: 'previousResponsibility',
+  newResponsibility: 'newResponsibility',
+  previousDeliveryClientServiceId: 'previousDeliveryClientServiceId',
+  newDeliveryClientServiceId: 'newDeliveryClientServiceId',
+  providerName: 'providerName',
+  source: 'source',
+  actorId: 'actorId',
+  reason: 'reason',
+  createdAt: 'createdAt'
+} as const
+
+export type DeadlineResponsibilityChangeScalarFieldEnum = (typeof DeadlineResponsibilityChangeScalarFieldEnum)[keyof typeof DeadlineResponsibilityChangeScalarFieldEnum]
+
+
+export const CompanyComplianceIssueScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  companyId: 'companyId',
+  coverageId: 'coverageId',
+  type: 'type',
+  dedupeKey: 'dedupeKey',
+  obligationCode: 'obligationCode',
+  periodKey: 'periodKey',
+  message: 'message',
+  openedAt: 'openedAt',
+  lastSeenAt: 'lastSeenAt',
+  resolvedAt: 'resolvedAt',
+  resolvedById: 'resolvedById',
+  resolutionNote: 'resolutionNote'
+} as const
+
+export type CompanyComplianceIssueScalarFieldEnum = (typeof CompanyComplianceIssueScalarFieldEnum)[keyof typeof CompanyComplianceIssueScalarFieldEnum]
 
 
 export const ServiceScheduleReconciliationRequestScalarFieldEnum = {
@@ -14318,6 +14902,20 @@ export type ListEnumServiceCadenceFieldRefInput<$PrismaModel> = FieldRefInputTyp
 
 
 /**
+ * Reference to a field of type 'MonitoringProfile[]'
+ */
+export type ListEnumMonitoringProfileFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'MonitoringProfile[]'>
+
+
+
+/**
+ * Reference to a field of type 'MonitoringProfile'
+ */
+export type EnumMonitoringProfileFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'MonitoringProfile'>
+
+
+
+/**
  * Reference to a field of type 'BillingFrequency'
  */
 export type EnumBillingFrequencyFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BillingFrequency'>
@@ -14542,6 +15140,20 @@ export type ListEnumDeadlineApplicabilityStateFieldRefInput<$PrismaModel> = Fiel
 
 
 /**
+ * Reference to a field of type 'DeadlineOwnershipScope'
+ */
+export type EnumDeadlineOwnershipScopeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DeadlineOwnershipScope'>
+
+
+
+/**
+ * Reference to a field of type 'DeadlineOwnershipScope[]'
+ */
+export type ListEnumDeadlineOwnershipScopeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DeadlineOwnershipScope[]'>
+
+
+
+/**
  * Reference to a field of type 'ServiceCycleOrigin'
  */
 export type EnumServiceCycleOriginFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ServiceCycleOrigin'>
@@ -14556,6 +15168,34 @@ export type ListEnumServiceCycleOriginFieldRefInput<$PrismaModel> = FieldRefInpu
 
 
 /**
+ * Reference to a field of type 'FilingResponsibility'
+ */
+export type EnumFilingResponsibilityFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'FilingResponsibility'>
+
+
+
+/**
+ * Reference to a field of type 'FilingResponsibility[]'
+ */
+export type ListEnumFilingResponsibilityFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'FilingResponsibility[]'>
+
+
+
+/**
+ * Reference to a field of type 'ResponsibilitySource'
+ */
+export type EnumResponsibilitySourceFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ResponsibilitySource'>
+
+
+
+/**
+ * Reference to a field of type 'ResponsibilitySource[]'
+ */
+export type ListEnumResponsibilitySourceFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ResponsibilitySource[]'>
+
+
+
+/**
  * Reference to a field of type 'DeadlineOccurrenceStatus'
  */
 export type EnumDeadlineOccurrenceStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DeadlineOccurrenceStatus'>
@@ -14566,6 +15206,90 @@ export type EnumDeadlineOccurrenceStatusFieldRefInput<$PrismaModel> = FieldRefIn
  * Reference to a field of type 'DeadlineOccurrenceStatus[]'
  */
 export type ListEnumDeadlineOccurrenceStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DeadlineOccurrenceStatus[]'>
+
+
+
+/**
+ * Reference to a field of type 'FinancialPeriodProvenance'
+ */
+export type EnumFinancialPeriodProvenanceFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'FinancialPeriodProvenance'>
+
+
+
+/**
+ * Reference to a field of type 'FinancialPeriodProvenance[]'
+ */
+export type ListEnumFinancialPeriodProvenanceFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'FinancialPeriodProvenance[]'>
+
+
+
+/**
+ * Reference to a field of type 'MonitoringCoverageSource'
+ */
+export type EnumMonitoringCoverageSourceFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'MonitoringCoverageSource'>
+
+
+
+/**
+ * Reference to a field of type 'MonitoringCoverageSource[]'
+ */
+export type ListEnumMonitoringCoverageSourceFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'MonitoringCoverageSource[]'>
+
+
+
+/**
+ * Reference to a field of type 'MonitoringCoverageStatus'
+ */
+export type EnumMonitoringCoverageStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'MonitoringCoverageStatus'>
+
+
+
+/**
+ * Reference to a field of type 'MonitoringCoverageStatus[]'
+ */
+export type ListEnumMonitoringCoverageStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'MonitoringCoverageStatus[]'>
+
+
+
+/**
+ * Reference to a field of type 'ObligationScopeConfirmation'
+ */
+export type EnumObligationScopeConfirmationFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ObligationScopeConfirmation'>
+
+
+
+/**
+ * Reference to a field of type 'ObligationScopeConfirmation[]'
+ */
+export type ListEnumObligationScopeConfirmationFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ObligationScopeConfirmation[]'>
+
+
+
+/**
+ * Reference to a field of type 'CoverageLinkReason'
+ */
+export type EnumCoverageLinkReasonFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'CoverageLinkReason'>
+
+
+
+/**
+ * Reference to a field of type 'CoverageLinkReason[]'
+ */
+export type ListEnumCoverageLinkReasonFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'CoverageLinkReason[]'>
+
+
+
+/**
+ * Reference to a field of type 'CompanyComplianceIssueType'
+ */
+export type EnumCompanyComplianceIssueTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'CompanyComplianceIssueType'>
+
+
+
+/**
+ * Reference to a field of type 'CompanyComplianceIssueType[]'
+ */
+export type ListEnumCompanyComplianceIssueTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'CompanyComplianceIssueType[]'>
 
 
 
@@ -16094,6 +16818,12 @@ export type GlobalOmitConfig = {
   businessHoliday?: Prisma.BusinessHolidayOmit
   serviceCycle?: Prisma.ServiceCycleOmit
   deadlineOccurrence?: Prisma.DeadlineOccurrenceOmit
+  companyFinancialPeriod?: Prisma.CompanyFinancialPeriodOmit
+  companyMonitoringCoverage?: Prisma.CompanyMonitoringCoverageOmit
+  clientServiceObligationScope?: Prisma.ClientServiceObligationScopeOmit
+  deadlineOccurrenceCoverageLink?: Prisma.DeadlineOccurrenceCoverageLinkOmit
+  deadlineResponsibilityChange?: Prisma.DeadlineResponsibilityChangeOmit
+  companyComplianceIssue?: Prisma.CompanyComplianceIssueOmit
   serviceScheduleReconciliationRequest?: Prisma.ServiceScheduleReconciliationRequestOmit
   aiConversation?: Prisma.AiConversationOmit
   esigningEnvelope?: Prisma.EsigningEnvelopeOmit

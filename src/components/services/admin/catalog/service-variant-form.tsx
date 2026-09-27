@@ -21,6 +21,12 @@ import type {
   ServiceVariantDto,
 } from '@/services/service-catalog/types';
 import type { DeadlineRuleParameterDto } from '@/services/deadline-rule';
+import {
+  MONITORING_PROFILES,
+  MONITORING_PROFILE_HINTS,
+  MONITORING_PROFILE_LABELS,
+  type MonitoringProfile,
+} from '@/services/compliance-monitoring/catalog';
 
 export interface ServicePartialOption {
   id: string;
@@ -203,6 +209,9 @@ export function ServiceVariantForm({
     String(initialValue?.displayOrder ?? 0),
   );
   const [isActive, setIsActive] = useState(initialValue?.isActive ?? true);
+  const [monitoringProfiles, setMonitoringProfiles] = useState<MonitoringProfile[]>(
+    initialValue?.monitoringProfiles ?? [],
+  );
   const [feeTemplates, setFeeTemplates] = useState<
     ServiceVariantFeeTemplateInput[]
   >(
@@ -345,6 +354,7 @@ export function ServiceVariantForm({
         serviceCadence === 'CUSTOM' ? customCadenceLabel : null,
       displayOrder: Number.parseInt(displayOrder, 10) || 0,
       isActive,
+      monitoringProfiles,
       feeTemplates: feeTemplates.map((fee, index) => ({
         ...fee,
         defaultAmount: fee.defaultAmount || null,
@@ -456,6 +466,30 @@ export function ServiceVariantForm({
             Active
           </label>
         </div>
+
+        <section className="border-t border-border-primary pt-4">
+          <h3 className="text-sm font-semibold text-text-primary">Compliance monitoring</h3>
+          <p className="mb-2 text-xs text-text-muted">
+            Once an agreement for this service is activated, Oakcloud tracks the company&apos;s statutory deadlines from the agreement date.
+          </p>
+          <div className="flex flex-col gap-1">
+            {MONITORING_PROFILES.map((profile) => (
+              <label key={profile} className="flex min-h-11 items-center gap-2 text-sm text-text-secondary">
+                <input
+                  type="checkbox"
+                  checked={monitoringProfiles.includes(profile)}
+                  onChange={(event) => setMonitoringProfiles((current) => (
+                    event.target.checked
+                      ? [...current.filter((value) => value !== profile), profile]
+                      : current.filter((value) => value !== profile)
+                  ))}
+                />
+                {MONITORING_PROFILE_LABELS[profile]}
+                <span className="text-xs text-text-muted">· {MONITORING_PROFILE_HINTS[profile]}</span>
+              </label>
+            ))}
+          </div>
+        </section>
 
         <section className="border-t border-border-primary pt-4">
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">

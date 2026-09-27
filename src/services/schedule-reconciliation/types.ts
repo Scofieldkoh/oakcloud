@@ -113,6 +113,12 @@ export type ReconcileClientServiceDeadlinesInput = {
   writeMode: 'OBSERVE' | 'APPLY';
   reconciliationRequestId: string;
   assertLease?: () => Promise<void>;
+  /**
+   * The company obligation writer is live for this tenant. Statutory preset
+   * rules of a monitored company are then left to it, so a service
+   * association never creates a second copy of the same company obligation.
+   */
+  companyMonitoringEnabled?: boolean;
 };
 
 export type StoredDeadline = {

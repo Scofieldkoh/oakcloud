@@ -10,7 +10,11 @@ export type {
   UpdateDeadlineOccurrenceInput,
 };
 
-export type DeadlineTiming = 'UPCOMING' | 'DUE' | 'OVERDUE';
+/**
+ * REVIEW marks a company obligation that was already due when monitoring took
+ * it on: its filing status is unknown, so it is not described as overdue.
+ */
+export type DeadlineTiming = 'UPCOMING' | 'DUE' | 'OVERDUE' | 'REVIEW';
 
 export interface DeadlineScope {
   tenantId: string;
@@ -45,6 +49,20 @@ export interface DeadlineServiceDto {
   familyName: string;
   variantId: string | null;
   variantName: string | null;
+}
+
+/** Company statutory obligation details; null on service-owned rows. */
+export interface DeadlineObligationDto {
+  code: string;
+  periodKey: string;
+  financialPeriodStart: string | null;
+  financialPeriodEnd: string | null;
+  yearOfAssessment: number | null;
+  periodProvisional: boolean;
+  filingResponsibility: 'OAKCLOUD' | 'CLIENT' | 'EXTERNAL_PROVIDER' | 'UNCONFIRMED' | null;
+  deliveryClientServiceId: string | null;
+  coverageTiming: string | null;
+  filingStatusUnconfirmed: boolean;
 }
 
 export interface DeadlineCycleDto {
@@ -86,7 +104,9 @@ export interface DeadlineOccurrenceDto {
   id: string;
   tenantId: string;
   companyId: string;
-  clientServiceId: string;
+  /** SERVICE rows belong to a client service; COMPANY rows are company obligations. */
+  ownershipScope: 'SERVICE' | 'COMPANY';
+  clientServiceId: string | null;
   cycleId: string;
   ruleVersionId: string;
   milestoneKey: string;
@@ -116,7 +136,9 @@ export interface DeadlineOccurrenceDto {
   updatedAt: string;
   company: DeadlineCompanyDto;
   family: DeadlineFamilyDto;
-  service: DeadlineServiceDto;
+  /** Null for company-owned obligations, which belong to no single service. */
+  service: DeadlineServiceDto | null;
+  obligation: DeadlineObligationDto | null;
   cycle: DeadlineCycleDto | null;
 }
 

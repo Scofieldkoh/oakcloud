@@ -177,15 +177,62 @@ describe('deadline service', () => {
 
     const [args] = prismaMock.deadlineOccurrence.findMany.mock.calls[0] as [{ where: Record<string, unknown> }];
     expect(args.where.company).toEqual({ tenantId: actor.tenantId, deletedAt: null });
-    expect(args.where.clientService).toEqual(expect.objectContaining({
-      tenantId: actor.tenantId,
-      serviceVariant: expect.objectContaining({
-        tenantId: actor.tenantId,
-        family: { tenantId: actor.tenantId },
-      }),
-    }));
+    expect(args.where.OR).toEqual([
+      { ownershipScope: 'COMPANY', clientServiceId: null },
+      {
+        ownershipScope: 'SERVICE',
+        clientService: expect.objectContaining({
+          tenantId: actor.tenantId,
+          serviceVariant: expect.objectContaining({
+            tenantId: actor.tenantId,
+            family: { tenantId: actor.tenantId },
+          }),
+        }),
+      },
+    ]);
     expect(args.where.cycle).toEqual({ tenantId: actor.tenantId });
     expect(args.where.ruleVersion).toEqual({ tenantId: actor.tenantId });
+  });
+
+  it('excludes company-owned obligations when filtering by service or family', async () => {
+    await listDeadlines({ ...search, serviceQuery: 'Tax' }, actor);
+
+    const [args] = prismaMock.deadlineOccurrence.findMany.mock.calls[0] as [{ where: { OR: Array<Record<string, unknown>> } }];
+    expect(args.where.OR).toHaveLength(1);
+    expect(args.where.OR[0]).toMatchObject({ ownershipScope: 'SERVICE' });
+  });
+
+  it('maps a company-owned obligation without a service and marks earlier filings for review', async () => {
+    prismaMock.deadlineOccurrence.findFirst.mockResolvedValue({
+      ...occurrence,
+      ownershipScope: 'COMPANY',
+      clientServiceId: null,
+      clientService: null,
+      obligationCode: 'SG_FORM_C',
+      obligationPeriodKey: 'YA2026',
+      financialPeriodStart: new Date('2025-01-01T00:00:00.000Z'),
+      financialPeriodEnd: new Date('2025-12-31T00:00:00.000Z'),
+      yearOfAssessment: 2026,
+      periodProvisional: false,
+      filingResponsibility: 'UNCONFIRMED',
+      deliveryClientServiceId: null,
+      coverageTiming: 'BEFORE_START',
+      filingStatusUnconfirmed: true,
+      status: 'OPEN',
+      operativeDueDate: new Date('2020-11-30T00:00:00.000Z'),
+      calculatedDueDate: new Date('2020-11-30T00:00:00.000Z'),
+    });
+
+    const dto = await getDeadlineOccurrence('deadline-1', actor);
+
+    expect(dto).toMatchObject({
+      ownershipScope: 'COMPANY',
+      clientServiceId: null,
+      service: null,
+      timingState: 'REVIEW',
+      family: { name: 'Company statutory obligations' },
+      obligation: { code: 'SG_FORM_C', periodKey: 'YA2026', yearOfAssessment: 2026, filingStatusUnconfirmed: true },
+    });
   });
 
   it('returns not found for a detail row with a mismatched related tenant', async () => {

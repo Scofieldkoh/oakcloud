@@ -110,6 +110,12 @@ export const ModelName = {
   BusinessHoliday: 'BusinessHoliday',
   ServiceCycle: 'ServiceCycle',
   DeadlineOccurrence: 'DeadlineOccurrence',
+  CompanyFinancialPeriod: 'CompanyFinancialPeriod',
+  CompanyMonitoringCoverage: 'CompanyMonitoringCoverage',
+  ClientServiceObligationScope: 'ClientServiceObligationScope',
+  DeadlineOccurrenceCoverageLink: 'DeadlineOccurrenceCoverageLink',
+  DeadlineResponsibilityChange: 'DeadlineResponsibilityChange',
+  CompanyComplianceIssue: 'CompanyComplianceIssue',
   ServiceScheduleReconciliationRequest: 'ServiceScheduleReconciliationRequest',
   AiConversation: 'AiConversation',
   EsigningEnvelope: 'EsigningEnvelope',
@@ -960,6 +966,7 @@ export const ServiceVariantScalarFieldEnum = {
   serviceCadence: 'serviceCadence',
   customCadenceLabel: 'customCadenceLabel',
   displayOrder: 'displayOrder',
+  monitoringProfiles: 'monitoringProfiles',
   version: 'version',
   isActive: 'isActive',
   createdAt: 'createdAt',
@@ -1353,7 +1360,10 @@ export const ServiceCycleScalarFieldEnum = {
   id: 'id',
   tenantId: 'tenantId',
   companyId: 'companyId',
+  ownershipScope: 'ownershipScope',
   clientServiceId: 'clientServiceId',
+  obligationCode: 'obligationCode',
+  obligationPeriodKey: 'obligationPeriodKey',
   ruleId: 'ruleId',
   ruleVersionId: 'ruleVersionId',
   businessCalendarId: 'businessCalendarId',
@@ -1378,7 +1388,23 @@ export const DeadlineOccurrenceScalarFieldEnum = {
   id: 'id',
   tenantId: 'tenantId',
   companyId: 'companyId',
+  ownershipScope: 'ownershipScope',
   clientServiceId: 'clientServiceId',
+  obligationCode: 'obligationCode',
+  obligationPeriodKey: 'obligationPeriodKey',
+  financialPeriodStart: 'financialPeriodStart',
+  financialPeriodEnd: 'financialPeriodEnd',
+  yearOfAssessment: 'yearOfAssessment',
+  periodProvisional: 'periodProvisional',
+  filingResponsibility: 'filingResponsibility',
+  responsibilitySource: 'responsibilitySource',
+  deliveryClientServiceId: 'deliveryClientServiceId',
+  filingProviderName: 'filingProviderName',
+  responsibilityConfirmedAt: 'responsibilityConfirmedAt',
+  responsibilityConfirmedById: 'responsibilityConfirmedById',
+  monitoringOwnerId: 'monitoringOwnerId',
+  coverageTiming: 'coverageTiming',
+  filingStatusUnconfirmed: 'filingStatusUnconfirmed',
   cycleId: 'cycleId',
   ruleVersionId: 'ruleVersionId',
   milestoneKey: 'milestoneKey',
@@ -1407,6 +1433,120 @@ export const DeadlineOccurrenceScalarFieldEnum = {
 } as const
 
 export type DeadlineOccurrenceScalarFieldEnum = (typeof DeadlineOccurrenceScalarFieldEnum)[keyof typeof DeadlineOccurrenceScalarFieldEnum]
+
+
+export const CompanyFinancialPeriodScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  companyId: 'companyId',
+  periodStart: 'periodStart',
+  periodEnd: 'periodEnd',
+  yearsOfAssessment: 'yearsOfAssessment',
+  provenance: 'provenance',
+  confirmedAt: 'confirmedAt',
+  confirmedById: 'confirmedById',
+  notes: 'notes',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type CompanyFinancialPeriodScalarFieldEnum = (typeof CompanyFinancialPeriodScalarFieldEnum)[keyof typeof CompanyFinancialPeriodScalarFieldEnum]
+
+
+export const CompanyMonitoringCoverageScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  companyId: 'companyId',
+  profile: 'profile',
+  source: 'source',
+  agreementId: 'agreementId',
+  clientServiceId: 'clientServiceId',
+  monitoringStart: 'monitoringStart',
+  monitoringEnd: 'monitoringEnd',
+  startSource: 'startSource',
+  reason: 'reason',
+  status: 'status',
+  ownerUserId: 'ownerUserId',
+  endedAt: 'endedAt',
+  endedById: 'endedById',
+  endedReason: 'endedReason',
+  createdById: 'createdById',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type CompanyMonitoringCoverageScalarFieldEnum = (typeof CompanyMonitoringCoverageScalarFieldEnum)[keyof typeof CompanyMonitoringCoverageScalarFieldEnum]
+
+
+export const ClientServiceObligationScopeScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  companyId: 'companyId',
+  clientServiceId: 'clientServiceId',
+  obligationCode: 'obligationCode',
+  periodKey: 'periodKey',
+  confirmation: 'confirmation',
+  source: 'source',
+  confirmedAt: 'confirmedAt',
+  confirmedById: 'confirmedById',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ClientServiceObligationScopeScalarFieldEnum = (typeof ClientServiceObligationScopeScalarFieldEnum)[keyof typeof ClientServiceObligationScopeScalarFieldEnum]
+
+
+export const DeadlineOccurrenceCoverageLinkScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  occurrenceId: 'occurrenceId',
+  linkKey: 'linkKey',
+  reason: 'reason',
+  coverageId: 'coverageId',
+  deliveryScopeId: 'deliveryScopeId',
+  linkedAt: 'linkedAt',
+  releasedAt: 'releasedAt'
+} as const
+
+export type DeadlineOccurrenceCoverageLinkScalarFieldEnum = (typeof DeadlineOccurrenceCoverageLinkScalarFieldEnum)[keyof typeof DeadlineOccurrenceCoverageLinkScalarFieldEnum]
+
+
+export const DeadlineResponsibilityChangeScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  occurrenceId: 'occurrenceId',
+  previousResponsibility: 'previousResponsibility',
+  newResponsibility: 'newResponsibility',
+  previousDeliveryClientServiceId: 'previousDeliveryClientServiceId',
+  newDeliveryClientServiceId: 'newDeliveryClientServiceId',
+  providerName: 'providerName',
+  source: 'source',
+  actorId: 'actorId',
+  reason: 'reason',
+  createdAt: 'createdAt'
+} as const
+
+export type DeadlineResponsibilityChangeScalarFieldEnum = (typeof DeadlineResponsibilityChangeScalarFieldEnum)[keyof typeof DeadlineResponsibilityChangeScalarFieldEnum]
+
+
+export const CompanyComplianceIssueScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  companyId: 'companyId',
+  coverageId: 'coverageId',
+  type: 'type',
+  dedupeKey: 'dedupeKey',
+  obligationCode: 'obligationCode',
+  periodKey: 'periodKey',
+  message: 'message',
+  openedAt: 'openedAt',
+  lastSeenAt: 'lastSeenAt',
+  resolvedAt: 'resolvedAt',
+  resolvedById: 'resolvedById',
+  resolutionNote: 'resolutionNote'
+} as const
+
+export type CompanyComplianceIssueScalarFieldEnum = (typeof CompanyComplianceIssueScalarFieldEnum)[keyof typeof CompanyComplianceIssueScalarFieldEnum]
 
 
 export const ServiceScheduleReconciliationRequestScalarFieldEnum = {

@@ -113,6 +113,9 @@ const variantFields = {
   isActive: z.boolean(),
   feeTemplates: z.array(serviceVariantFeeTemplateSchema).max(50, 'At most 50 fee rows are allowed'),
   deadlineRules: serviceVariantRuleAssociationsSchema.optional(),
+  /** Company statutory monitoring this service commits Oakcloud to. */
+  monitoringProfiles: z.array(z.enum(['CORPORATE_TAX', 'NOMINEE_DIRECTOR'])).max(2)
+    .transform((profiles) => [...new Set(profiles)]),
 };
 
 function validateVariant(
@@ -156,6 +159,7 @@ export const createServiceVariantSchema = z
     isActive: variantFields.isActive.default(true),
     feeTemplates: variantFields.feeTemplates.default([]),
     deadlineRules: variantFields.deadlineRules,
+    monitoringProfiles: variantFields.monitoringProfiles.optional(),
   })
   .superRefine(validateVariant)
   .transform((value) => ({
@@ -177,6 +181,7 @@ export const updateServiceVariantSchema = z
     isActive: variantFields.isActive.optional(),
     feeTemplates: variantFields.feeTemplates.optional(),
     deadlineRules: variantFields.deadlineRules,
+    monitoringProfiles: variantFields.monitoringProfiles.optional(),
   })
   .superRefine(validateVariant)
   .transform((value) => ({

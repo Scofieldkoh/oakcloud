@@ -8,6 +8,7 @@ import { getServiceWorkspaceFlagsForTenant } from './settings';
 import { reconcileClientServiceDeadlines } from './deadline-reconciler';
 import { enqueueScheduleReconciliation } from './queue';
 import { reconcileBillingCoverage, reconcileClientServiceBilling } from '@/services/billing';
+import { monitoredCompanyIds, reconcileCompanyObligations } from '@/services/compliance-monitoring/writer';
 import type {
   BillingCoverageResult,
   BillingReconciliationPreservedCounts,
@@ -49,6 +50,7 @@ const PUBLIC_RECONCILIATION_CODES = new Set([
   'INVALID_SCHEDULE',
   'INVALID_AMOUNT_OR_CURRENCY',
   'BILLING_RECONCILIATION_CONFLICT',
+  'COMPANY_MONITORING_OWNS_RULE',
 ]);
 const SAFE_TRANSIENT_ERROR_MESSAGE = 'Reconciliation failed and will retry';
 const SAFE_PERMANENT_ERROR_MESSAGE = 'Reconciliation request completed with a permanent configuration error';
@@ -379,6 +381,7 @@ export type WorkerServiceReconciliationInput = {
   reconciliationRequestId: string;
   includeHistoricalBillingStart?: boolean;
   cancellationActorId?: string | null;
+  companyMonitoringEnabled?: boolean;
   assertLease: () => Promise<void>;
 };
 
@@ -403,6 +406,7 @@ export async function reconcileClientServiceThroughWorkerTransaction(
       writeMode: input.writeMode,
       reconciliationRequestId: input.reconciliationRequestId,
       assertLease: input.assertLease,
+      companyMonitoringEnabled: input.companyMonitoringEnabled,
     }, tx);
     const billing = await reconcileClientServiceBilling({
       tenantId: input.tenantId,
@@ -538,6 +542,32 @@ async function resolveClientServiceIds(
       return services.map((s) => s.id);
     }
 
+    default:
+      return [];
+  }
+}
+
+/**
+ * Companies whose statutory obligations a request re-evaluates. Only companies
+ * with monitoring coverage or a contracted filing scope are candidates.
+ */
+async function resolveMonitoredCompanyIds(req: ClaimedRequest): Promise<string[]> {
+  const monitored = await monitoredCompanyIds(prisma, req.tenantId);
+  if (monitored.length === 0) return [];
+  switch (req.scopeType) {
+    case 'COMPANY':
+      return monitored.includes(req.scopeId) ? [req.scopeId] : [];
+    case 'CLIENT_SERVICE': {
+      const service = await prisma.clientService.findFirst({
+        where: { id: req.scopeId, tenantId: req.tenantId },
+        select: { companyId: true },
+      });
+      return service && monitored.includes(service.companyId) ? [service.companyId] : [];
+    }
+    case 'RULE':
+    case 'BUSINESS_CALENDAR':
+    case 'TENANT':
+      return monitored;
     default:
       return [];
   }
@@ -692,6 +722,7 @@ async function processSingleRequest(
         reconciliationRequestId: req.id,
         includeHistoricalBillingStart,
         cancellationActorId: req.requestedById,
+        companyMonitoringEnabled: flags.companyMonitoringWritesEnabled,
         assertLease,
       });
       summaries.push(summary);
@@ -751,6 +782,40 @@ async function processSingleRequest(
       await assertLease();
     }
 
+    // Company statutory obligations: one transaction per company, no billing.
+    // Until the workspace enables company monitoring writes, this observes.
+    const companyWriteMode = flags.companyMonitoringWritesEnabled ? 'APPLY' as const : 'OBSERVE' as const;
+    const companyIds = await resolveMonitoredCompanyIds(req);
+    const companyMonitoring = {
+      writeMode: companyWriteMode,
+      companyCount: companyIds.length,
+      counts: emptyReconciliationCounts(),
+      links: { attached: 0, released: 0 },
+      responsibilityChanges: 0,
+      issues: { opened: 0, refreshed: 0, resolved: 0, open: 0 },
+    };
+    for (const companyId of companyIds) {
+      await assertLease();
+      const result = await prisma.$transaction((tx) => reconcileCompanyObligations({
+        tenantId: req.tenantId,
+        companyId,
+        today,
+        writeMode: companyWriteMode,
+        reconciliationRequestId: req.id,
+        assertLease,
+      }, tx));
+      for (const key of Object.keys(companyMonitoring.counts) as Array<keyof DeadlineReconciliationCounts>) {
+        companyMonitoring.counts[key] += result.counts[key];
+      }
+      companyMonitoring.links.attached += result.links.attached;
+      companyMonitoring.links.released += result.links.released;
+      companyMonitoring.responsibilityChanges += result.responsibilityChanges;
+      companyMonitoring.issues.opened += result.issues.opened;
+      companyMonitoring.issues.refreshed += result.issues.refreshed;
+      companyMonitoring.issues.resolved += result.issues.resolved;
+      companyMonitoring.issues.open += result.issues.open;
+    }
+
     const completed = await prisma.serviceScheduleReconciliationRequest.updateMany({
       where: {
         id: req.id,
@@ -765,6 +830,7 @@ async function processSingleRequest(
         leaseExpiresAt: null,
         summary: {
           clientServiceCount: clientServiceIds.length,
+          companyMonitoring,
           counts: aggregatedCounts,
           preservedByReason: aggregatedPreserved,
           billing: billingCounts,
