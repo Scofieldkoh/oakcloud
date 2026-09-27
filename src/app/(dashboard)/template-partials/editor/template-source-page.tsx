@@ -4,7 +4,7 @@ import { useEffect, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowLeft, Download, Loader2, Upload } from 'lucide-react';
+import { ArrowLeft, Download, Loader2, Save, Upload } from 'lucide-react';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { FormInput } from '@/components/ui/form-input';
@@ -18,6 +18,7 @@ import { readOakDocTemplateMetadata, isOakDocTemplate } from '@/lib/document-edi
 import {
   useSaveWordPartial,
   useTemplatePartial,
+  useUpdatePartial,
   type TemplatePartialWithRelations,
 } from '@/hooks/use-template-partials';
 
@@ -232,9 +233,91 @@ function WordPartialForm({
   );
 }
 
+/** Name, display name and description of an existing Word partial. */
+function PartialDetailsForm({
+  partial,
+  documentDirty,
+  onSaved,
+}: {
+  partial: TemplatePartialWithRelations;
+  /** Saving details bumps the revision, so unsaved Word edits must be saved first. */
+  documentDirty: boolean;
+  onSaved: () => void;
+}) {
+  const { success, error: toastError } = useToast();
+  const update = useUpdatePartial();
+  const [name, setName] = useState(partial.name);
+  const [displayName, setDisplayName] = useState(partial.displayName ?? '');
+  const [description, setDescription] = useState(partial.description ?? '');
+
+  useEffect(() => {
+    setName(partial.name);
+    setDisplayName(partial.displayName ?? '');
+    setDescription(partial.description ?? '');
+  }, [partial.name, partial.displayName, partial.description]);
+
+  const trimmed = {
+    name: name.trim(),
+    displayName: displayName.trim(),
+    description: description.trim(),
+  };
+  const changed = trimmed.name !== partial.name
+    || trimmed.displayName !== (partial.displayName ?? '')
+    || trimmed.description !== (partial.description ?? '');
+
+  const submit = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!changed || !trimmed.name || documentDirty) return;
+    try {
+      await update.mutateAsync({
+        id: partial.id,
+        expectedRevision: partial.version,
+        name: trimmed.name,
+        // An empty display name falls back to the name.
+        displayName: trimmed.displayName || trimmed.name,
+        description: trimmed.description || null,
+        reason: 'Updated partial details',
+      });
+      success('Partial details saved');
+      onSaved();
+    } catch (caught) {
+      toastError(caught instanceof Error ? caught.message : 'Failed to save the partial details');
+    }
+  };
+
+  return (
+    <form onSubmit={(event) => void submit(event)} className="max-w-xl space-y-4">
+      <h2 className="text-base font-medium text-text-primary">Details</h2>
+      <FormInput
+        label="Name"
+        value={name}
+        onChange={(event) => setName(event.target.value)}
+        hint="Letters, numbers, hyphens and underscores, starting with a letter. Templates that insert this partial keep working after a rename."
+        required
+      />
+      <FormInput label="Display name" value={displayName} onChange={(event) => setDisplayName(event.target.value)} />
+      <FormInput label="Description" value={description} onChange={(event) => setDescription(event.target.value)} />
+      {documentDirty && changed && (
+        <p className="text-sm text-text-secondary">Save your changes to the document first, then save the details.</p>
+      )}
+      <Button
+        type="submit"
+        variant="primary"
+        leftIcon={<Save className="h-4 w-4" />}
+        disabled={!changed || !trimmed.name || documentDirty || update.isPending}
+        isLoading={update.isPending}
+      >
+        Save details
+      </Button>
+    </form>
+  );
+}
+
 function PartialSource({ id }: { id: string | null }) {
   const { data: partial, error, isLoading } = useTemplatePartial(id);
   const [uploadCount, setUploadCount] = useState(0);
+  const [documentDirty, setDocumentDirty] = useState(false);
+  const reloadDocument = () => setUploadCount((value) => value + 1);
   if (!id) {
     return (
       <PageShell backHref="/template-partials/partials" backLabel="Back to partials" title="New Word partial">
@@ -259,9 +342,11 @@ function PartialSource({ id }: { id: string | null }) {
               fileName={readOakDocTemplateMetadata(partial.contentJson)?.fileName ?? `${partial.name}.docx`}
               version={partial.version}
               readOnly={false}
+              onDirtyChange={setDocumentDirty}
             />
           </div>
-          <WordPartialForm partial={partial} onUploaded={() => setUploadCount((value) => value + 1)} />
+          <PartialDetailsForm partial={partial} documentDirty={documentDirty} onSaved={reloadDocument} />
+          <WordPartialForm partial={partial} onUploaded={reloadDocument} />
         </div>
       ) : (
         <RetiredA4Source
