@@ -2,10 +2,7 @@
 import { createHash } from 'node:crypto';
 import { strFromU8, unzipSync } from 'fflate';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import {
-  OAKTREE_SERVICE_AGREEMENT_REFERENCE_OAKDOC,
-  buildOaktreeServiceAgreementReferenceOakDoc,
-} from '@/content/service-agreement/oaktree-service-agreement-reference-oakdoc';
+import { buildOaktreeServiceAgreementReferenceOakDoc } from '@/content/service-agreement/oaktree-service-agreement-reference-oakdoc';
 import {
   REFERENCE_SOW_PARTIALS,
   buildCorporateSecretarialSowOakDoc,
@@ -13,7 +10,7 @@ import {
 } from '@/content/service-agreement/oaktree-service-agreement-reference-sows';
 import {
   REFERENCE_TERMS,
-  REFERENCE_WORDING_QUERIES,
+  REFERENCE_WORDING_CORRECTIONS,
 } from '@/content/service-agreement/oaktree-service-agreement-reference-wording';
 import { classifyOakDocTag } from '@/lib/document-editor/oakdoc-field-registry';
 import { encodeOakDocSowSnapshot } from '@/lib/document-editor/oakdoc-partials';
@@ -32,7 +29,7 @@ const master = buildOaktreeServiceAgreementReferenceOakDoc();
 
 const templateRow = {
   id: 'template-reference',
-  name: OAKTREE_SERVICE_AGREEMENT_REFERENCE_OAKDOC.name,
+  name: 'Oaktree Master Services Agreement (OakDoc)',
   version: 1,
   compositionType: 'SERVICE_AGREEMENT',
   contentJson: {
@@ -48,9 +45,17 @@ const templateRow = {
   },
 };
 
+const PREPARER_ID = '77777777-7777-4777-8777-777777777777';
 const getServiceAgreementDraftById = vi.fn();
 vi.mock('@/lib/prisma', () => ({
-  prisma: { documentTemplate: { findFirst: vi.fn(async () => templateRow) } },
+  prisma: {
+    documentTemplate: { findFirst: vi.fn(async () => templateRow) },
+    user: {
+      findFirst: vi.fn(async ({ where }: { where: { id: string } }) => (
+        where.id === PREPARER_ID ? { firstName: 'Robin', lastName: 'Teo' } : null
+      )),
+    },
+  },
 }));
 vi.mock('@/services/company.service', () => ({
   getCompanyById: vi.fn(async () => ({
@@ -204,12 +209,13 @@ function agreement(overrides: Partial<ServiceAgreementDraftDto> = {}): ServiceAg
   } as ServiceAgreementDraftDto;
 }
 
-async function generate(draft = agreement()) {
+async function generate(draft = agreement(), generatedBy: string = PREPARER_ID) {
   getServiceAgreementDraftById.mockResolvedValue(draft);
   return generateOakDocBytes({
     templateId: 'template-reference',
     companyId: 'company-1',
     serviceAgreementId: 'agreement-1',
+    generatedBy,
   }, { tenantId: 'tenant-1' });
 }
 
@@ -218,9 +224,7 @@ beforeEach(() => getServiceAgreementDraftById.mockReset());
 describe('reference-layout master', () => {
   const document = parse(master);
 
-  it('is a separate, inactive Service Agreement master', () => {
-    expect(OAKTREE_SERVICE_AGREEMENT_REFERENCE_OAKDOC.isActive).toBe(false);
-    expect(OAKTREE_SERVICE_AGREEMENT_REFERENCE_OAKDOC.name).toContain('Reference layout');
+  it('is a valid master package', () => {
     expect(() => inspectOakDocPackage(master, 'master')).not.toThrow();
   });
 
@@ -290,11 +294,16 @@ describe('reference-layout master', () => {
     expect(unknown).toEqual([]);
   });
 
-  it('records the reference wording queries instead of silently fixing them', () => {
-    expect(REFERENCE_WORDING_QUERIES.length).toBeGreaterThanOrEqual(8);
-    for (const query of REFERENCE_WORDING_QUERIES) {
-      expect(query.asWritten).not.toEqual(query.proposed);
+  it('applies the approved wording corrections', () => {
+    const body = text(document.documentElement);
+    expect(REFERENCE_WORDING_CORRECTIONS).toHaveLength(8);
+    for (const correction of REFERENCE_WORDING_CORRECTIONS) {
+      if (correction.location.includes('Corporate Secretarial')) continue;
+      expect(body).toContain(correction.corrected);
+      if (!correction.corrected.includes(correction.asWritten)) expect(body).not.toContain(correction.asWritten);
     }
+    const scope = text(parse(buildCorporateSecretarialSowOakDoc()).documentElement);
+    expect(scope).toContain('based on the time required and we will provide');
   });
 });
 
@@ -335,7 +344,15 @@ describe('reference-layout generation', () => {
     expect(result.values['agreement.effectiveDate']).toBe('9 Jul 2026');
   });
 
-  it('prints the letter address on separate lines', async () => {
+  it('signs for the firm as the preparer, whether given by id or by name', async () => {
+    const byId = text(parse(new Uint8Array((await generate()).bytes)).documentElement);
+    expect(byId.split('Robin Teo').length - 1).toBe(2);
+    expect(byId).toContain('Oaktree Accounting and Corporate Solutions Pte Ltd');
+    const byName = text(parse(new Uint8Array((await generate(agreement(), 'Sam Lee')).bytes)).documentElement);
+    expect(byName.split('Sam Lee').length - 1).toBe(2);
+  });
+
+  it('prints the letter address on separate lines, building first', async () => {
     const result = await generate();
     const document = parse(new Uint8Array(result.bytes));
     const addressParagraph = bodyParagraphs(document).find((p) => text(p).startsWith('Sample Court'));
@@ -366,13 +383,13 @@ describe('reference-layout generation', () => {
     const [first, second] = feeTables.map((table) => all(table, 'tr').slice(1).map((row) =>
       all(row, 'tc').map((cell) => all(cell, 'p').map(text).filter(Boolean))));
     expect(first).toEqual([
-      [['Corporate Secretarial Services'], ['S$1,500 per year']],
+      [['Statement of Work – Corporate Secretarial Services'], ['S$1,500 per year']],
       [
-        ['Unaudited Financial Statements and Corporate Tax Services', 'Unaudited financial statements', 'Corporate income tax filing'],
+        ['Statement of Work – Unaudited Financial Statements and Corporate Tax Services', 'Unaudited financial statements', 'Corporate income tax filing'],
         ['S$2,500 per year', 'S$800.50 per year'],
       ],
     ]);
-    expect(second).toEqual([[['Corporate Secretarial Services'], ['S$1,200 per year']]]);
+    expect(second).toEqual([[['Statement of Work – Corporate Secretarial Services'], ['S$1,200 per year']]]);
 
     const headings = bodyParagraphs(document).map(text);
     expect(headings).toContain('Example Holdings Pte. Ltd.:');

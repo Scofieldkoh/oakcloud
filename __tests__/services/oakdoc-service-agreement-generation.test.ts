@@ -126,7 +126,7 @@ describe('OakDoc Service Agreement generation', () => {
     expect(xml).toContain('Bookkeeping in Xero');
     expect(xml).toContain('Alpha Pte. Ltd.');
     expect(result.values['selectedContact.name']).toBe('Alex Tan');
-    expect(result.values['agreement.termMonths']).toBe('12');
+    expect(result.values['agreement.term']).toBe('1 year');
     expect(result.agreementHash).toMatch(/^[a-f0-9]{64}$/);
     expect(result.diagnostics.filter((diagnostic) => diagnostic.severity === 'error')).toEqual([]);
     expect(getServiceAgreementDraftById).toHaveBeenCalledWith('agreement-1', 'tenant-1');

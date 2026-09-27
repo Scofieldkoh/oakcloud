@@ -182,6 +182,25 @@ export interface OakDocGenerationResult {
  * The immutable template asset is downloaded, copied into Uint8Array transforms,
  * and never written back to the template storage key.
  */
+const USER_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Some callers pass the acting user's id as `generatedBy`, others their
+ * name. Documents print the preparer's name, so an id is looked up here.
+ */
+async function resolvePreparerName(
+  generatedBy: string | undefined,
+  tenantId: string,
+): Promise<string | undefined> {
+  if (!generatedBy || !USER_ID.test(generatedBy)) return generatedBy;
+  const user = await prisma.user.findFirst({
+    where: { id: generatedBy, tenantId, deletedAt: null },
+    select: { firstName: true, lastName: true },
+  });
+  const name = user ? [user.firstName, user.lastName].filter(Boolean).join(' ').trim() : '';
+  return name || undefined;
+}
+
 export async function generateOakDocBytes(
   input: OakDocGenerationInput,
   params: Pick<TenantAwareParams, 'tenantId'>,
@@ -367,6 +386,7 @@ async function renderOakDocMaster(
     }),
   ];
 
+  const preparerName = await resolvePreparerName(input.generatedBy, params.tenantId);
   const resolutionInput = {
     company: companyDetail,
     fieldTags: resolutionTags,
@@ -375,7 +395,7 @@ async function renderOakDocMaster(
     selectedContact,
     agreement: agreementContext,
     resolution: { date: input.resolutionDate },
-    generatedBy: input.generatedBy,
+    generatedBy: preparerName,
   };
   const values = buildOakDocResolutionValues(resolutionInput);
   const dates = buildOakDocResolutionDates(resolutionInput);
