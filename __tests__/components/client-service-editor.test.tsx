@@ -10,6 +10,8 @@ const updateMock = vi.hoisted(() => ({ mutateAsync: vi.fn().mockResolvedValue(un
 const archiveMock = vi.hoisted(() => ({ mutateAsync: vi.fn().mockResolvedValue(undefined), isPending: false }));
 const deleteMock = vi.hoisted(() => ({ mutateAsync: vi.fn().mockResolvedValue(undefined), isPending: false }));
 
+const companyObligationsMock = vi.hoisted(() => vi.fn(() => ({ data: { items: [], notices: [] }, isLoading: false, error: null })));
+
 vi.mock('@/hooks/use-client-services', () => ({
   isHttpRequestError: (error: unknown, status?: number) => {
     const value = error as { status?: number };
@@ -20,6 +22,7 @@ vi.mock('@/hooks/use-client-services', () => ({
   useUpdateClientService: () => updateMock,
   useArchiveClientService: () => archiveMock,
   useDeleteClientServicePermanently: () => deleteMock,
+  useCompanyObligations: (...args: unknown[]) => companyObligationsMock(...args),
 }));
 
 const service: ClientServiceDto = {

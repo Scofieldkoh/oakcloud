@@ -1,6 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import type { CompanyObligationPreview } from '@/services/compliance-monitoring/writer';
 import type { ClientServiceDeadlineDraftPreview, ClientServiceDeadlineImpact, ClientServiceDto, CompanyServiceActivationDto, DuplicateClientServiceMatches, ManualClientServiceCatalogOptionsResponse, PermanentDeleteClientServiceResult, ServiceAgreementActivationDto } from '@/services/client-service';
 import type { ClientServiceDeadlineDraftPreviewInput, ClientServiceDeadlineImpactInput, CreateManualClientServiceRequest, SearchClientServicesInput, UpdateClientServiceInput } from '@/lib/validations/client-service';
 
@@ -85,6 +86,25 @@ export async function previewClientServiceDeadlineDraft(
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify(input),
     ...(signal ? { signal } : {}),
+  });
+}
+
+/** The company's statutory obligations, optionally with a new service's coverage. */
+export function useCompanyObligations(
+  companyId: string,
+  input: { profiles?: string[]; start?: string | null; end?: string | null; serviceId?: string | null },
+  enabled = true,
+) {
+  const search = new URLSearchParams();
+  if (input.profiles?.length) search.set('profiles', input.profiles.join(','));
+  if (input.start) search.set('start', input.start);
+  if (input.end) search.set('end', input.end);
+  if (input.serviceId) search.set('serviceId', input.serviceId);
+  const query = search.toString();
+  return useQuery({
+    queryKey: ['company-obligations', companyId, query],
+    queryFn: () => requestJson<CompanyObligationPreview>(`/api/companies/${companyId}/services/company-obligations${query ? `?${query}` : ''}`),
+    enabled: enabled && Boolean(companyId),
   });
 }
 

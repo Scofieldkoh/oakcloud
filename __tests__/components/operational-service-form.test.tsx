@@ -386,12 +386,41 @@ describe('OperationalServiceForm', () => {
     expect(screen.getByRole('tab', { name: /Billing/ })).toHaveTextContent('Billing2');
   });
 
-  it('explains that a monitored variant tracks company deadlines outside the service rules', () => {
+  it('lists the company obligations a monitored service tracks and counts them on the Deadline tab', () => {
     const { rerender } = render(<OperationalServiceForm values={{ ...baseValues(), deadlineRules: [] }} onChange={() => undefined} errors={{}} />);
-    fireEvent.click(screen.getByRole('tab', { name: /Deadline/ }));
-    expect(screen.queryByText(/Company monitoring/)).not.toBeInTheDocument();
-    rerender(<OperationalServiceForm values={{ ...baseValues(), deadlineRules: [] }} onChange={() => undefined} errors={{}} monitoringProfiles={['CORPORATE_TAX']} />);
-    expect(screen.getByText(/Company monitoring \(Tax engagement/)).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Company obligations' })).not.toBeInTheDocument();
+
+    rerender(
+      <OperationalServiceForm
+        mode="create"
+        values={{ ...baseValues(), deadlineRules: [] }}
+        onChange={() => undefined}
+        errors={{}}
+        monitoringProfiles={['CORPORATE_TAX']}
+        companyObligations={{
+          isLoading: false,
+          error: null,
+          notices: ['Corporate income tax return is monitored but its SG_FORM_C rule is not published yet.'],
+          items: [{
+            obligationCode: 'SG_ECI',
+            obligationName: 'Estimated Chargeable Income (ECI)',
+            periodKey: 'FY2026-12-31',
+            milestoneName: 'ECI filing',
+            dueDate: '2027-03-31' as DateOnly,
+            coverageTiming: 'DURING',
+            explanation: ['Due three months after the financial year ends'],
+          }],
+        }}
+      />,
+    );
+
+    expect(screen.getByRole('tab', { name: /Deadline/ })).toHaveTextContent('Deadline1');
+    expect(screen.getByRole('heading', { name: 'Company obligations' })).toBeInTheDocument();
+    expect(screen.getByText('Estimated Chargeable Income (ECI)')).toBeInTheDocument();
+    expect(screen.getByText('31 Mar 2027')).toBeInTheDocument();
+    expect(screen.getByText('Monitored')).toBeInTheDocument();
+    expect(screen.getByText(/SG_FORM_C rule is not published yet/)).toBeInTheDocument();
+    expect(screen.queryByText('No deadline rules are associated with this service.')).not.toBeInTheDocument();
   });
 
   it('renders rules collapsed by default and expands on click to reveal parameters and schedule', () => {
