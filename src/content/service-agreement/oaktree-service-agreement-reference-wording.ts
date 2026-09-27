@@ -2,9 +2,9 @@
  * Controlled wording of the Oaktree Local Master Services Agreement as the
  * firm uses it today (reference agreement reviewed on 27 September 2026).
  *
- * The text is copied exactly, including the reference's own spelling and
- * punctuation. Apparent slips are listed in REFERENCE_WORDING_QUERIES so they
- * can be corrected deliberately; they are never "fixed" silently here.
+ * The text is copied exactly, except for the slips the firm approved
+ * correcting on 27 September 2026; REFERENCE_WORDING_CORRECTIONS records each
+ * one against the wording it replaced.
  * Inline `**bold**` marks the defined terms the reference sets in bold.
  */
 
@@ -20,7 +20,7 @@ export const REFERENCE_COVER = {
   paragraphs: [
     'Thank you for appointing OakTree Accounting and Corporate Solutions (“**Oaktree**” or “**we**”) to provide services to the company listed in Appendix 3 (“**Client**” or “**you**”) on terms set out in this Local Master Services Agreement (this “**Agreement**”), which include the Terms of Business set out in Appendix 1.',
     'Unless the context requires otherwise, all terms defined in the Terms of Business shall have the same meaning when used herein.',
-    'We will provide the services (the “**Services**”) set out in each Statement of Work (substantially in the format as set out in Appendix 2 signed between Oaktree and you and issued hereunder. Each Statement of Work (i) shall be deemed to include all the terms and provisions of this Agreement; and (ii) together with the terms set out in this Agreement, which are deemed to be included, shall form a separate contract between the parties thereto. Any amendments to each Statement of Work shall be set out in an Addendum and signed by both parties.',
+    'We will provide the services (the “**Services**”) set out in each Statement of Work (substantially in the format as set out in Appendix 2) signed between Oaktree and you and issued hereunder. Each Statement of Work (i) shall be deemed to include all the terms and provisions of this Agreement; and (ii) together with the terms set out in this Agreement, which are deemed to be included, shall form a separate contract between the parties thereto. Any amendments to each Statement of Work shall be set out in an Addendum and signed by both parties.',
     'In case of any conflict between the provisions of any Addendum, a Statement of Work and this Agreement, the order or priority shall be as follows (unless expressly agreed otherwise): (i) the latest Addendum for specific amendment(s) to each Statement of Work; (ii) the relevant Statement of Work; and (iii) this Agreement. For the avoidance of doubt, the provisions set out in any Addendum and the relevant Statement of Work shall prevail but only for the purposes of that particular Statement of Work. Services will be performed in such manner, at such place or places, and on such further terms as may be agreed in the relevant Statement of Work or as otherwise varied by any Addenda from time to time.',
     'Please record your agreement to the terms of this Agreement by signing the enclosed copy of this letter in the space provided and returning it to us.',
   ],
@@ -28,10 +28,13 @@ export const REFERENCE_COVER = {
   providerSigningLabel: 'Signed for and on behalf of',
 } as const;
 
-/** Provider identity printed in the agreement (see the plan's G08 note). */
+/**
+ * The firm's name is fixed; the signatory's name is the preparer's, filled in
+ * at generation. The appointment line stays fixed because users carry no
+ * job title yet.
+ */
 export const REFERENCE_PROVIDER = {
   legalName: 'Oaktree Accounting and Corporate Solutions Pte Ltd',
-  signatoryName: 'Koh Zhi Yong',
   signatoryRole: 'Director',
 } as const;
 
@@ -66,7 +69,7 @@ export const REFERENCE_TERMS: readonly ReferenceTermsGroup[] = [
     number: '2',
     heading: 'Your responsibilities',
     clauses: [
-      ['2.1', 'You agree to: (i) provide us promptly all information, resources and assistance (including access to records, systems, premises and people) that we reasonably require to perform the Services; (ii) ensure that all information provided by you or on your behalf (“Client Information”) will be accurate and complete in all material respects and will not infringe any copyright or other third- party rights; and (iii) alert us to changes to any Client Information.'],
+      ['2.1', 'You agree to: (i) provide us promptly all information, resources and assistance (including access to records, systems, premises and people) that we reasonably require to perform the Services; (ii) ensure that all information provided by you or on your behalf (“Client Information”) will be accurate and complete in all material respects and will not infringe any copyright or other third-party rights; and (iii) alert us to changes to any Client Information.'],
       ['2.2', 'You acknowledge that we will rely on the Client Information and will not evaluate or verify any Client Information.'],
       ['2.3', 'You agree that all instructions given by you shall comply with all applicable law and regulations.'],
       ['2.4', 'You agree to provide all information necessary for us to fulfill our anti-money laundering and know-your-client obligations under applicable laws and regulations. If changes in laws or regulations materially affect our ability to provide the Services or increase the cost of doing so, we may adjust the scope, fees, or terms of this Agreement upon written notice to you.'],
@@ -166,15 +169,15 @@ export const REFERENCE_TERMS: readonly ReferenceTermsGroup[] = [
     number: '12',
     heading: 'Force Majeure',
     clauses: [
-      ['12.1', 'Neither you nor we shall be liable for breach of this Agreement (other than payment obligations) cause by circumstances beyond your or our reasonable control'],
+      ['12.1', 'Neither you nor we shall be liable for breach of this Agreement (other than payment obligations) caused by circumstances beyond your or our reasonable control.'],
     ],
   },
   {
     number: '13',
     heading: 'Governing Law and Dispute Resolution',
     clauses: [
-      ['13.1', 'This Agreement, and any non-contractual matters or obligations arising out of this Agreement or the Services, shall be governed by, and construed in accordance with, the laws of Singapore'],
-      ['13.2', 'Except as otherwise expressly provided in the Engagement Letter, disputes relating to this Agreement or the Services shall be submitted to mediation before a mediator chosen by the parties or, where the parties cannot agree, by the Singapore Mediation Centre, If the controversy or claim is not resolved within 90 days (or longer period, as agreed by both parties), the mediation shall terminate and the dispute shall be referred to and finally resolved by arbitration administered by the Singapore International Arbitration Centre (“SIAC”) in accordance with the Arbitration Rules of the SIAC for the time being in force.'],
+      ['13.1', 'This Agreement, and any non-contractual matters or obligations arising out of this Agreement or the Services, shall be governed by, and construed in accordance with, the laws of Singapore.'],
+      ['13.2', 'Except as otherwise expressly provided in the Engagement Letter, disputes relating to this Agreement or the Services shall be submitted to mediation before a mediator chosen by the parties or, where the parties cannot agree, by the Singapore Mediation Centre. If the controversy or claim is not resolved within 90 days (or longer period, as agreed by both parties), the mediation shall terminate and the dispute shall be referred to and finally resolved by arbitration administered by the Singapore International Arbitration Centre (“SIAC”) in accordance with the Arbitration Rules of the SIAC for the time being in force.'],
     ],
   },
 ];
@@ -189,7 +192,7 @@ export const REFERENCE_STATEMENT_OF_WORK = {
   ],
   paragraphs: [
     'Our Services shall be conducted on the basis that the Client, Client\'s management team and where appropriate, those charged with governance, acknowledge and understand that they have the responsibility to provide the relevant documents at a reasonable timeline to ensure that we have a timely closing.',
-    'The Client will be solely responsible to supply us with all information, materials, data, and documents necessary to perform the Services agreed under this Agreement. The Client acknowledges and agrees that the accuracy of financial information supplied to the us is the sole responsibility of the Client. We shall not be held responsible for the production of inaccurate financial statements, records, and billings, or any other financial reports if the financial data submitted by the Client is inaccurate.',
+    'The Client will be solely responsible to supply us with all information, materials, data, and documents necessary to perform the Services agreed under this Agreement. The Client acknowledges and agrees that the accuracy of financial information supplied to us is the sole responsibility of the Client. We shall not be held responsible for the production of inaccurate financial statements, records, and billings, or any other financial reports if the financial data submitted by the Client is inaccurate.',
   ],
 } as const;
 
@@ -197,6 +200,8 @@ export const REFERENCE_FEES = {
   title: 'Fees',
   introduction: 'Fees for the Services are set out below:',
   columns: ['SOW', 'Amount'],
+  /** Each fee row is labelled like its scope-of-work heading. */
+  sowLabelPrefix: 'Statement of Work – ',
   notes: [
     'Provisions related to fees and payments are set out in Clause 9 of the Terms of Business.',
     'In the event that the actual time spent on the Services is substantially more than agreed in the relevant Statement of Work, we will mutually agree with you on a revised fee.',
@@ -221,7 +226,7 @@ export const REFERENCE_INSTRUCTIONS = {
     ', unless otherwise terminated in accordance with Clause 10.2 of the Agreement.',
   ],
   providerSigningLabel: 'Signed for and on behalf of',
-  clientSigningLabel: 'Sign for and on behalf of Client',
+  clientSigningLabel: 'Signed for and on behalf of Client',
 } as const;
 
 export const REFERENCE_ENTITY_APPENDIX_TITLE = 'Appendix 3 - List of Client entities within this Agreement';
@@ -263,7 +268,7 @@ export const REFERENCE_CORPORATE_SECRETARIAL_SOW = {
     'Assistance with directors’ and shareholders’ meetings such as preparing notices of meetings, organizing agenda papers and recording minutes of meetings; and',
     'Any other matters not included in the ongoing services.',
   ],
-  closing: 'Our fee for specific secretarial work is based on the time required and will provide an estimate of our time cost before commencing any such work.',
+  closing: 'Our fee for specific secretarial work is based on the time required and we will provide an estimate of our time cost before commencing any such work.',
 } as const;
 
 export const REFERENCE_FINANCIAL_STATEMENTS_TAX_SOW = {
@@ -290,21 +295,18 @@ export const REFERENCE_FINANCIAL_STATEMENTS_TAX_SOW = {
   ],
 } as const;
 
-/**
- * Places where the reference wording looks like a slip. They are kept as
- * written until the firm decides; each entry names the proposed correction.
- */
-export const REFERENCE_WORDING_QUERIES: ReadonlyArray<{
+/** Slips in the reference agreement, corrected at the firm's request. */
+export const REFERENCE_WORDING_CORRECTIONS: ReadonlyArray<{
   location: string;
   asWritten: string;
-  proposed: string;
+  corrected: string;
 }> = [
-  { location: 'Cover letter, third paragraph', asWritten: 'as set out in Appendix 2 signed between', proposed: 'as set out in Appendix 2) signed between' },
-  { location: 'Terms 2.1', asWritten: 'third- party rights', proposed: 'third-party rights' },
-  { location: 'Terms 12.1', asWritten: 'cause by circumstances beyond your or our reasonable control', proposed: 'caused by circumstances beyond your or our reasonable control.' },
-  { location: 'Terms 13.1', asWritten: 'the laws of Singapore', proposed: 'the laws of Singapore.' },
-  { location: 'Terms 13.2', asWritten: 'Singapore Mediation Centre, If the controversy', proposed: 'Singapore Mediation Centre. If the controversy' },
-  { location: 'Appendix 2 introduction', asWritten: 'supplied to the us', proposed: 'supplied to us' },
-  { location: 'Corporate Secretarial scope, closing', asWritten: 'based on the time required and will provide', proposed: 'based on the time required and we will provide' },
-  { location: 'Statement of Work signatures', asWritten: 'Sign for and on behalf of Client', proposed: 'Signed for and on behalf of Client' },
+  { location: 'Cover letter, third paragraph', asWritten: 'as set out in Appendix 2 signed between', corrected: 'as set out in Appendix 2) signed between' },
+  { location: 'Terms 2.1', asWritten: 'third- party rights', corrected: 'third-party rights' },
+  { location: 'Terms 12.1', asWritten: 'cause by circumstances beyond your or our reasonable control', corrected: 'caused by circumstances beyond your or our reasonable control.' },
+  { location: 'Terms 13.1', asWritten: 'the laws of Singapore', corrected: 'the laws of Singapore.' },
+  { location: 'Terms 13.2', asWritten: 'Singapore Mediation Centre, If the controversy', corrected: 'Singapore Mediation Centre. If the controversy' },
+  { location: 'Appendix 2 introduction', asWritten: 'supplied to the us', corrected: 'supplied to us' },
+  { location: 'Corporate Secretarial scope, closing', asWritten: 'based on the time required and will provide', corrected: 'based on the time required and we will provide' },
+  { location: 'Statement of Work signatures', asWritten: 'Sign for and on behalf of Client', corrected: 'Signed for and on behalf of Client' },
 ];

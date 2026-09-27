@@ -5,10 +5,6 @@ import {
   OAKTREE_SERVICE_AGREEMENT_OAKDOC,
   buildOaktreeServiceAgreementOakDoc,
 } from '../src/content/service-agreement/oaktree-service-agreement-oakdoc';
-import {
-  OAKTREE_SERVICE_AGREEMENT_REFERENCE_OAKDOC,
-  buildOaktreeServiceAgreementReferenceOakDoc,
-} from '../src/content/service-agreement/oaktree-service-agreement-reference-oakdoc';
 import { REFERENCE_SOW_PARTIALS } from '../src/content/service-agreement/oaktree-service-agreement-reference-sows';
 import { Prisma } from '../src/generated/prisma';
 import { pathToFileURL } from 'node:url';
@@ -357,22 +353,6 @@ export async function seedOaktreeServiceAgreementOakDocTemplate(input: {
 }
 
 /**
- * The reference-layout master is a separate template that starts inactive,
- * so the current Service Agreement master is untouched until someone
- * chooses to switch.
- */
-export async function seedOaktreeServiceAgreementReferenceOakDocTemplate(input: {
-  tenantId: string;
-  userId: string;
-}) {
-  return seedOakDocMaster(
-    OAKTREE_SERVICE_AGREEMENT_REFERENCE_OAKDOC,
-    buildOaktreeServiceAgreementReferenceOakDoc,
-    input,
-  );
-}
-
-/**
  * Create or refresh the Word scope-of-work partials. A partial whose bytes
  * already match is left alone, so re-running does not bump versions.
  */
@@ -419,20 +399,24 @@ export async function seedReferenceSowPartials(input: { tenantId: string; userId
 export async function switchVariantsToReferenceSowPartials(input: { tenantId: string }) {
   const switched: string[] = [];
   for (const definition of REFERENCE_SOW_PARTIALS) {
-    const [word, html] = await Promise.all([
-      prisma.templatePartial.findFirst({
-        where: { tenantId: input.tenantId, name: definition.name, deletedAt: null },
-        select: { id: true },
-      }),
-      prisma.templatePartial.findFirst({
-        where: { tenantId: input.tenantId, name: definition.replacesPartialName, deletedAt: null },
-        select: { id: true },
-      }),
-    ]);
-    if (!word) throw new Error(`Run with --reference-layout first: "${definition.name}" does not exist yet.`);
-    if (!html) continue;
+    const word = await prisma.templatePartial.findFirst({
+      where: { tenantId: input.tenantId, name: definition.name, deletedAt: null },
+      select: { id: true },
+    });
+    if (!word) throw new Error(`The Word scope "${definition.name}" does not exist yet.`);
+    // The HTML scope may already be in the Recycle Bin after the A4 library
+    // removal; the services still point at it until they are switched.
+    const html = await prisma.templatePartial.findMany({
+      where: { tenantId: input.tenantId, name: definition.replacesPartialName },
+      select: { id: true },
+    });
+    if (html.length === 0) continue;
     const variants = await prisma.serviceVariant.findMany({
-      where: { tenantId: input.tenantId, sowPartialId: html.id, deletedAt: null },
+      where: {
+        tenantId: input.tenantId,
+        sowPartialId: { in: html.map((partial) => partial.id) },
+        deletedAt: null,
+      },
       select: { id: true, code: true },
     });
     for (const variant of variants) {
@@ -447,27 +431,25 @@ export async function switchVariantsToReferenceSowPartials(input: { tenantId: st
 }
 
 async function main() {
-  const result = await seedServiceAgreementBundle({
-    tenantId: argument('tenantId'),
-    userId: argument('userId'),
-    deactivate: process.argv.includes('--deactivate'),
-  });
   const actor = { tenantId: argument('tenantId'), userId: argument('userId') };
+  // --agreement-only replaces the Service Agreement template and scopes
+  // without re-running the original catalogue bundle, which would recreate
+  // the retired A4 template.
+  const bundle = process.argv.includes('--agreement-only')
+    ? {}
+    : await seedServiceAgreementBundle({
+        ...actor,
+        deactivate: process.argv.includes('--deactivate'),
+      });
+  const referenceSowPartialIds = await seedReferenceSowPartials(actor);
+  const switchedVariants = await switchVariantsToReferenceSowPartials(actor);
   const oakDocTemplate = await seedOaktreeServiceAgreementOakDocTemplate(actor);
-  const referenceLayout = process.argv.includes('--reference-layout')
-    ? {
-        referenceTemplateId: (await seedOaktreeServiceAgreementReferenceOakDocTemplate(actor)).id,
-        referenceSowPartialIds: await seedReferenceSowPartials(actor),
-      }
-    : {};
-  const switchedVariants = process.argv.includes('--use-word-scopes')
-    ? { switchedVariants: await switchVariantsToReferenceSowPartials(actor) }
-    : {};
   console.log(JSON.stringify({
-    ...result,
+    ...bundle,
+    referenceSowPartialIds,
+    switchedVariants,
     oakDocTemplateId: oakDocTemplate.id,
-    ...referenceLayout,
-    ...switchedVariants,
+    oakDocTemplateVersion: oakDocTemplate.version,
   }));
 }
 

@@ -431,28 +431,28 @@ Completion means **the normal Oakcloud generation workflow produces the approved
 
 ## 10 Implementation status (27 September 2026)
 
-The attached agreement checked during implementation is byte-identical to this plan's reference (SHA-256 `fee782eb…ef01`, 63,862 bytes), so there is no reference-versus-plan conflict. Nothing was run against tenant data; seeding, switching and activation wait for an explicit approval of each run.
+The attached agreement checked during implementation is byte-identical to this plan's reference (SHA-256 `fee782eb…ef01`, 63,862 bytes), so there is no reference-versus-plan conflict. Nothing was run against tenant data. `npm run db:seed-service-agreement -- --tenantId … --userId … --agreement-only` replaces the template, creates the Word scopes and points both services at them; it runs only with the firm's approval.
 
 | Gap | State | Where |
 | --- | --- | --- |
-| G01, G02, G03 | Done: separate inactive master "Oaktree Local Master Services Agreement (Reference layout)", built as native OOXML with explicit Arial 10 black runs, reference page and margins, no header or footer, borderless 567/8505 terms table | `src/content/service-agreement/oaktree-service-agreement-reference-*.ts`, `oakdoc-reference-ooxml.ts` |
+| G01, G02, G03 | Done: the seeded master "Oaktree Master Services Agreement (OakDoc)" is replaced by a native OOXML build with explicit Arial 10 black runs, reference page and margins, no header or footer, borderless 567/8505 terms table | `src/content/service-agreement/oaktree-service-agreement-reference-*.ts`, `oakdoc-reference-ooxml.ts` |
 | G04 | Done: Word scope partials for both services with native lettered lists, nested Wingdings register bullets and per-subsection restarts | `oaktree-service-agreement-reference-sows.ts` |
 | G05 | Done: the fee slot holds a template-owned company group prototype (company heading, 7265/1800 SOW/Amount table with repeating header, one SOW row prototype). Each company with fees gets its own heading and table, including single-company agreements. Masters without the prototype keep the built-in table | `oakdoc-renderer.ts` (`renderFeePrototype`) |
 | G06 | Done: whole amounts print without cents in the prototype layout (`S$1,500 per year`, `S$800.50 per year`); date controls carry a Word date format (`9 July 2026`); `agreement.term` prints `1 year`, `2 years`, `18 months` | `oakdoc-context.ts`, `oakdoc-fields.ts`, `renderer.ts` |
 | G07 | Done: effective date (empty uses the agreement date) and term inputs in agreement setup; schema rejects impossible dates such as `2026-02-30` | `service-agreement-config.tsx`, `validations/service-agreement.ts` |
-| G08 | Not done: provider name, signatory and appointment are static master text matching the reference | Needs a provider configuration decision |
+| G08 | Done as decided on 27 September 2026: the firm name is fixed text; the signatory name is the preparer (`system.preparerName`, looked up from the user when a caller passes an id); the appointment line stays "Director" because users have no job title | master, `resolvePreparerName` |
 | G09 | Done: multi-line values write `w:br` line breaks in the field's own run; placeholder breaks are removed; email fields keep a live `mailto:` link, retargeted or removed with the value | `writeOakDocControlValue` |
 | G12 | Done in markup: every signer block is a keep-with-next chain ended explicitly, rows cannot split, and the representative contact prints `email / phone` only when both exist | master, `phoneAfterEmail` |
 | G13 | Done: the service slot's placeholder breaks the page, so every service starts a page; the empty break line is folded into the service title after the scope is merged | `finalizeServiceAgreementPageBreaks` |
 | G16 | Partly done: structural tests for page, typography, keep chains, fee grouping, dates, address, links and merged scopes. Rendered page comparison is not done because this environment has no Word or LibreOffice Writer renderer | `__tests__/services/oaktree-service-agreement-reference.test.ts` |
-| G17 | Wording copied verbatim; apparent slips listed in `REFERENCE_WORDING_QUERIES` for review rather than corrected | wording module |
+| G17 | Wording copied verbatim except the 8 slips the firm approved correcting, recorded in `REFERENCE_WORDING_CORRECTIONS` | wording module |
 | G10, G11, G14, G15, G18 | Not started (P1) | |
 
 Known deviations from the reference, deliberate or for review:
 
 - Condensed character spacing on roughly 1,500 reference characters is not reproduced; line wrapping can therefore differ slightly.
-- The fee row label is the service name (for example "Corporate Secretarial Services"), not "Statement of Work – …".
-- The letter address comes from `formatLetterAddress`: building first, then street and unit, then `Singapore  123456` with two spaces. The reference prints street and unit first, then the building, then `Singapore 123456` with one space.
+- Fee rows are labelled "Statement of Work – <service>" so they match the scope headings.
+- The letter address keeps Oakcloud's order, as the firm decided: building first, then street and unit, then the postal line, each on its own line. The reference prints the street first.
 - A continued fee table repeats its SOW/Amount header but does not repeat the company name.
 - Re-running the seed no longer resets whether a seeded master is active; that stays with whoever switched it in the app.
 

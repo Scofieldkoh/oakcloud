@@ -32,27 +32,11 @@ import {
   REFERENCE_TERMS_TITLE,
 } from './oaktree-service-agreement-reference-wording';
 
-/**
- * The Oaktree Local Master Services Agreement rebuilt natively from the
- * firm's reference agreement: Arial 10 pt black typography, the borderless
- * two-column Terms of Business table, the reference page geometry with no
- * header or footer, explicit page starts, signer blocks that never split
- * across pages, and template-owned fee and entity prototypes.
- *
- * It is a separate, inactive template so the existing OakDoc master and
- * every agreement generated from it stay unchanged until the firm selects it.
- */
-export const OAKTREE_SERVICE_AGREEMENT_REFERENCE_OAKDOC = {
-  name: 'Oaktree Local Master Services Agreement (Reference layout)',
-  fileName: 'Oaktree Local Master Services Agreement - Reference layout.docx',
-  description: 'Service Agreement master matching the firm\'s current agreement layout, with company-grouped SOW fee tables.',
-  category: 'CONTRACT' as const,
-  compositionType: 'SERVICE_AGREEMENT' as const,
-  isActive: false,
-} as const;
-
 /** Word date pattern for every printed agreement date (9 July 2026). */
 export const REFERENCE_DATE_FORMAT = 'd MMMM yyyy';
+
+/** The firm signs by whoever prepares the agreement. */
+const PREPARER_TAG = 'system.preparerName';
 
 /** Twips of one blank body line (10 pt Arial at 1.15 line spacing). */
 const LINE = 267;
@@ -111,7 +95,7 @@ function cover(ids: ControlIds): string {
       signatureLabel: 'Oaktree / provider signature',
       left: 0,
       lines: [
-        run(REFERENCE_PROVIDER.signatoryName),
+        fieldControl(ids, PREPARER_TAG),
         run(REFERENCE_PROVIDER.signatoryRole),
         fieldControl(ids, 'agreement.agreementDate', {}, { dateFormat: REFERENCE_DATE_FORMAT }),
       ],
@@ -209,7 +193,7 @@ function feePrototype(ids: ControlIds): string {
   );
   const sowRow = blockControl(ids, tags.feeSowRow, 'SOW fee row', tableRow(
     tableCell(
-      cellParagraph(fieldControl(ids, tags.feeSowName))
+      cellParagraph(`${run(REFERENCE_FEES.sowLabelPrefix)}${fieldControl(ids, tags.feeSowName)}`)
         + cellParagraph(fieldControl(ids, tags.feeChargeDescription), { left: 391 }),
       { width: sowWidth },
     )
@@ -328,7 +312,7 @@ function instructions(ids: ControlIds): string {
     signingBlock(ids, {
       signatureTag: 'oakdoc.signature.v1.provider',
       signatureLabel: 'Oaktree / provider signature',
-      lines: [run(REFERENCE_PROVIDER.signatoryName), run(REFERENCE_PROVIDER.signatoryRole)],
+      lines: [fieldControl(ids, PREPARER_TAG), run(REFERENCE_PROVIDER.signatoryRole)],
     }),
     paragraph(run(REFERENCE_INSTRUCTIONS.clientSigningLabel, { bold: true }), {
       style: 'BodyText',
@@ -366,6 +350,13 @@ function entityAppendix(ids: ControlIds): string {
   ].join('');
 }
 
+/**
+ * The Oaktree Local Master Services Agreement rebuilt natively from the
+ * firm's reference agreement: Arial 10 pt black typography, the borderless
+ * two-column Terms of Business table, the reference page geometry with no
+ * header or footer, explicit page starts, signer blocks that never split
+ * across pages, and template-owned fee and entity prototypes.
+ */
 export function buildOaktreeServiceAgreementReferenceOakDoc(): Uint8Array {
   const ids = new ControlIds(7000);
   const body = [
