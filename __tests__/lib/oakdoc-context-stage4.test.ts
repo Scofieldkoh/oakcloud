@@ -66,6 +66,7 @@ describe('OakDoc Stage 4 generation context', () => {
         'agreement.agreementDate',
         'agreement.effectiveDate',
         'agreement.termMonths',
+        'agreement.term',
         'custom.agreementDate',
         'custom.foo',
       ],
@@ -80,11 +81,13 @@ describe('OakDoc Stage 4 generation context', () => {
       'agreement.agreementDate',
       'agreement.effectiveDate',
       'agreement.termMonths',
+      'agreement.term',
     ]));
     expect(values).toMatchObject({
       'agreement.agreementDate': '25 Sep 2026',
       'agreement.effectiveDate': '1 Oct 2026',
       'agreement.termMonths': '12',
+      'agreement.term': '1 year',
     });
     expect(values).not.toHaveProperty('custom.agreementDate');
     expect(values).not.toHaveProperty('custom.foo');

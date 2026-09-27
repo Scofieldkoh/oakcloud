@@ -1,10 +1,11 @@
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { prisma } from '../src/lib/prisma';
 import { OAKTREE_SERVICE_AGREEMENT_V1 } from '../src/content/service-agreement/oaktree-service-agreement-v1';
 import {
   OAKTREE_SERVICE_AGREEMENT_OAKDOC,
   buildOaktreeServiceAgreementOakDoc,
 } from '../src/content/service-agreement/oaktree-service-agreement-oakdoc';
+import { REFERENCE_SOW_PARTIALS } from '../src/content/service-agreement/oaktree-service-agreement-reference-sows';
 import { Prisma } from '../src/generated/prisma';
 import { pathToFileURL } from 'node:url';
 import {
@@ -17,6 +18,11 @@ import {
   deriveOakDocTemplateFieldTags,
   updateOakDocTemplate,
 } from '../src/services/oakdoc-template.service';
+import {
+  createOakDocPartial,
+  downloadOakDocPartial,
+  updateOakDocPartial,
+} from '../src/services/oakdoc-partial.service';
 
 function argument(name: string): string {
   const index = process.argv.indexOf(`--${name}`);
@@ -113,6 +119,21 @@ export async function seedServiceAgreementBundle(
       partials.set(partial.name, saved.id);
     }
 
+    // A variant already switched to its Word scope keeps it; re-running the
+    // bundle seed must not quietly move it back to the HTML partial.
+    const wordPartials = new Map((await tx.templatePartial.findMany({
+      where: {
+        tenantId,
+        name: { in: REFERENCE_SOW_PARTIALS.map((partial) => partial.name) },
+        deletedAt: null,
+      },
+      select: { id: true, name: true },
+    })).map((partial) => [partial.name, partial.id]));
+    const wordPartialFor = (htmlPartialName: string) => {
+      const word = REFERENCE_SOW_PARTIALS.find((partial) => partial.replacesPartialName === htmlPartialName);
+      return word ? wordPartials.get(word.name) : undefined;
+    };
+
     const variantIds: string[] = [];
     for (const variant of OAKTREE_SERVICE_AGREEMENT_V1.variants) {
       const {
@@ -131,7 +152,10 @@ export async function seedServiceAgreementBundle(
         },
       });
       const familyId = families.get(familyCode)!;
-      const sowPartialId = partials.get(partialName)!;
+      const wordPartialId = wordPartialFor(partialName);
+      const sowPartialId = wordPartialId && existing?.sowPartialId === wordPartialId
+        ? wordPartialId
+        : partials.get(partialName)!;
       const materialChanged = Boolean(
         existing
         && (
@@ -252,11 +276,21 @@ export async function seedServiceAgreementBundle(
 }
 
 
-export async function seedOaktreeServiceAgreementOakDocTemplate(input: {
-  tenantId: string;
-  userId: string;
-}) {
-  const buffer = Buffer.from(buildOaktreeServiceAgreementOakDoc());
+interface SeededOakDocMaster {
+  name: string;
+  description: string;
+  category: typeof OAKTREE_SERVICE_AGREEMENT_OAKDOC.category;
+  compositionType: typeof OAKTREE_SERVICE_AGREEMENT_OAKDOC.compositionType;
+  isActive: boolean;
+  fileName: string;
+}
+
+async function seedOakDocMaster(
+  definition: SeededOakDocMaster,
+  build: () => Uint8Array,
+  input: { tenantId: string; userId: string },
+) {
+  const buffer = Buffer.from(build());
   const digest = createHash('sha256').update(buffer).digest('hex');
   // Compare against the manifest the server derives from these bytes.
   const fieldTags = deriveOakDocTemplateFieldTags(new Uint8Array(buffer));
@@ -264,19 +298,19 @@ export async function seedOaktreeServiceAgreementOakDocTemplate(input: {
   const existing = await prisma.documentTemplate.findFirst({
     where: {
       tenantId: input.tenantId,
-      name: OAKTREE_SERVICE_AGREEMENT_OAKDOC.name,
+      name: definition.name,
       deletedAt: null,
     },
   });
 
   if (!existing) {
     return createOakDocTemplate({
-      name: OAKTREE_SERVICE_AGREEMENT_OAKDOC.name,
-      description: OAKTREE_SERVICE_AGREEMENT_OAKDOC.description,
-      category: OAKTREE_SERVICE_AGREEMENT_OAKDOC.category,
-      compositionType: OAKTREE_SERVICE_AGREEMENT_OAKDOC.compositionType,
-      isActive: OAKTREE_SERVICE_AGREEMENT_OAKDOC.isActive,
-      fileName: OAKTREE_SERVICE_AGREEMENT_OAKDOC.fileName,
+      name: definition.name,
+      description: definition.description,
+      category: definition.category,
+      compositionType: definition.compositionType,
+      isActive: definition.isActive,
+      fileName: definition.fileName,
       buffer,
     }, input);
   }
@@ -284,44 +318,154 @@ export async function seedOaktreeServiceAgreementOakDocTemplate(input: {
   const metadata = readOakDocTemplateMetadata(existing.contentJson);
   if (!metadata) {
     throw new Error(
-      `A non-OakDoc template already uses the reserved name "${OAKTREE_SERVICE_AGREEMENT_OAKDOC.name}".`,
+      `A non-OakDoc template already uses the reserved name "${definition.name}".`,
     );
   }
 
   const sameAsset = metadata.sha256 === digest
-    && metadata.fileName === OAKTREE_SERVICE_AGREEMENT_OAKDOC.fileName
+    && metadata.fileName === definition.fileName
     && metadata.fieldTags.join('\u0000') === [...fieldTags].sort().join('\u0000');
-  const sameRecord = existing.description === OAKTREE_SERVICE_AGREEMENT_OAKDOC.description
-    && existing.category === OAKTREE_SERVICE_AGREEMENT_OAKDOC.category
-    && existing.compositionType === OAKTREE_SERVICE_AGREEMENT_OAKDOC.compositionType
-    && existing.isActive === OAKTREE_SERVICE_AGREEMENT_OAKDOC.isActive;
+  const sameRecord = existing.description === definition.description
+    && existing.category === definition.category
+    && existing.compositionType === definition.compositionType;
 
   if (sameAsset && sameRecord) return existing;
 
   return updateOakDocTemplate({
     id: existing.id,
     expectedRevision: existing.version,
-    name: OAKTREE_SERVICE_AGREEMENT_OAKDOC.name,
-    description: OAKTREE_SERVICE_AGREEMENT_OAKDOC.description,
-    category: OAKTREE_SERVICE_AGREEMENT_OAKDOC.category,
-    compositionType: OAKTREE_SERVICE_AGREEMENT_OAKDOC.compositionType,
-    isActive: OAKTREE_SERVICE_AGREEMENT_OAKDOC.isActive,
-    fileName: OAKTREE_SERVICE_AGREEMENT_OAKDOC.fileName,
+    name: definition.name,
+    description: definition.description,
+    category: definition.category,
+    compositionType: definition.compositionType,
+    // Whoever switched a master on or off in the app decides that, not a re-seed.
+    isActive: existing.isActive,
+    fileName: definition.fileName,
     buffer,
   }, input);
 }
 
+export async function seedOaktreeServiceAgreementOakDocTemplate(input: {
+  tenantId: string;
+  userId: string;
+}) {
+  return seedOakDocMaster(OAKTREE_SERVICE_AGREEMENT_OAKDOC, buildOaktreeServiceAgreementOakDoc, input);
+}
+
+/**
+ * Create or refresh the Word scope-of-work partials. A partial whose bytes
+ * already match is left alone, so re-running does not bump versions.
+ */
+export async function seedReferenceSowPartials(input: { tenantId: string; userId: string }) {
+  const ids: Record<string, string> = {};
+  for (const definition of REFERENCE_SOW_PARTIALS) {
+    const buffer = Buffer.from(definition.build());
+    const existing = await prisma.templatePartial.findFirst({
+      where: { tenantId: input.tenantId, name: definition.name, deletedAt: null },
+      select: { id: true, version: true },
+    });
+    if (!existing) {
+      const created = await createOakDocPartial({
+        id: randomUUID(),
+        name: definition.name,
+        displayName: definition.displayName,
+        description: definition.description,
+        fileName: definition.fileName,
+        buffer,
+      }, input);
+      ids[definition.name] = created.id;
+      continue;
+    }
+    const current = await downloadOakDocPartial(existing.id, input.tenantId);
+    if (!current.buffer.equals(buffer)) {
+      await updateOakDocPartial({
+        id: existing.id,
+        expectedRevision: existing.version,
+        fileName: definition.fileName,
+        buffer,
+        displayName: definition.displayName,
+        description: definition.description,
+      }, input);
+    }
+    ids[definition.name] = existing.id;
+  }
+  return ids;
+}
+
+/**
+ * Point the two reference services at their Word scopes. New agreements
+ * pick this up; agreements already drafted keep the scope they captured.
+ */
+export async function switchVariantsToReferenceSowPartials(input: { tenantId: string }) {
+  const switched: string[] = [];
+  for (const definition of REFERENCE_SOW_PARTIALS) {
+    const word = await prisma.templatePartial.findFirst({
+      where: { tenantId: input.tenantId, name: definition.name, deletedAt: null },
+      select: { id: true },
+    });
+    if (!word) throw new Error(`The Word scope "${definition.name}" does not exist yet.`);
+    // The HTML scope may already be in the Recycle Bin after the A4 library
+    // removal; the services still point at it until they are switched.
+    const html = await prisma.templatePartial.findMany({
+      where: { tenantId: input.tenantId, name: definition.replacesPartialName },
+      select: { id: true },
+    });
+    if (html.length === 0) continue;
+    const variants = await prisma.serviceVariant.findMany({
+      where: {
+        tenantId: input.tenantId,
+        sowPartialId: { in: html.map((partial) => partial.id) },
+        deletedAt: null,
+      },
+      select: { id: true, code: true },
+    });
+    for (const variant of variants) {
+      await prisma.serviceVariant.update({
+        where: { id: variant.id },
+        data: { sowPartialId: word.id, version: { increment: 1 } },
+      });
+      switched.push(variant.code);
+    }
+  }
+  return switched;
+}
+
+/** The operator, by --email or by --tenantId and --userId. */
+async function operator(): Promise<{ tenantId: string; userId: string }> {
+  const index = process.argv.indexOf('--email');
+  if (index < 0) return { tenantId: argument('tenantId'), userId: argument('userId') };
+  const email = process.argv[index + 1]?.trim().toLowerCase();
+  const user = email
+    ? await prisma.user.findFirst({
+        where: { email: { equals: email, mode: 'insensitive' }, deletedAt: null, isActive: true },
+        select: { id: true, tenantId: true },
+      })
+    : null;
+  if (!user?.tenantId) throw new Error('--email must name an active user in a workspace');
+  return { tenantId: user.tenantId, userId: user.id };
+}
+
 async function main() {
-  const result = await seedServiceAgreementBundle({
-    tenantId: argument('tenantId'),
-    userId: argument('userId'),
-    deactivate: process.argv.includes('--deactivate'),
-  });
-  const oakDocTemplate = await seedOaktreeServiceAgreementOakDocTemplate({
-    tenantId: argument('tenantId'),
-    userId: argument('userId'),
-  });
-  console.log(JSON.stringify({ ...result, oakDocTemplateId: oakDocTemplate.id }));
+  const actor = await operator();
+  // --agreement-only replaces the Service Agreement template and scopes
+  // without re-running the original catalogue bundle, which would recreate
+  // the retired A4 template.
+  const bundle = process.argv.includes('--agreement-only')
+    ? {}
+    : await seedServiceAgreementBundle({
+        ...actor,
+        deactivate: process.argv.includes('--deactivate'),
+      });
+  const referenceSowPartialIds = await seedReferenceSowPartials(actor);
+  const switchedVariants = await switchVariantsToReferenceSowPartials(actor);
+  const oakDocTemplate = await seedOaktreeServiceAgreementOakDocTemplate(actor);
+  console.log(JSON.stringify({
+    ...bundle,
+    referenceSowPartialIds,
+    switchedVariants,
+    oakDocTemplateId: oakDocTemplate.id,
+    oakDocTemplateVersion: oakDocTemplate.version,
+  }));
 }
 
 if (

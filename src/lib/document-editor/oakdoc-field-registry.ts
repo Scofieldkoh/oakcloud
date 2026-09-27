@@ -109,6 +109,33 @@ export const OAKDOC_AGREEMENT_SLOT_ALIASES: ReadonlySet<string> = new Set(
   Object.values(OAKDOC_AGREEMENT_SLOT_TAGS).flatMap((tag) => [tag, `@${tag}`]),
 );
 
+/**
+ * Prototype controls a master may place inside the fee and entity slots.
+ * The agreement renderer clones them per company, service and entity and
+ * fills them, so the template owns the layout and typography of those
+ * generated blocks. They never survive generation.
+ */
+export const OAKDOC_AGREEMENT_PROTOTYPE_TAGS = {
+  feeCompany: 'agreement.feeTable.company',
+  feeCompanyName: 'agreement.feeTable.companyName',
+  feeSowRow: 'agreement.feeTable.sowRow',
+  feeSowName: 'agreement.feeTable.sowName',
+  feeSowAmount: 'agreement.feeTable.sowAmount',
+  feeChargeDescription: 'agreement.feeTable.chargeDescription',
+  feeChargeAmount: 'agreement.feeTable.chargeAmount',
+  entityName: 'agreement.entityAppendix.name',
+  entityUen: 'agreement.entityAppendix.uen',
+} as const;
+
+const OAKDOC_AGREEMENT_PROTOTYPE_PREFIXES = [
+  `${OAKDOC_AGREEMENT_SLOT_TAGS.feeTable}.`,
+  `${OAKDOC_AGREEMENT_SLOT_TAGS.entityAppendix}.`,
+] as const;
+
+export function isOakDocAgreementPrototypeTag(tag: string): boolean {
+  return OAKDOC_AGREEMENT_PROTOTYPE_PREFIXES.some((prefix) => tag.startsWith(prefix));
+}
+
 /** Per-service controls the agreement renderer creates and owns. */
 export const OAKDOC_AGREEMENT_SERVICE_ITEM_TAG_PREFIX = 'agreement.service.item:';
 
@@ -134,6 +161,7 @@ export function classifyOakDocTag(tag: string): OakDocTagKind {
   if (
     OAKDOC_AGREEMENT_SLOT_ALIASES.has(tag)
     || tag.startsWith(OAKDOC_AGREEMENT_SERVICE_ITEM_TAG_PREFIX)
+    || isOakDocAgreementPrototypeTag(tag)
   ) {
     return 'agreement-slot';
   }
