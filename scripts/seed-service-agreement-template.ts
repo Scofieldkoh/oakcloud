@@ -430,8 +430,23 @@ export async function switchVariantsToReferenceSowPartials(input: { tenantId: st
   return switched;
 }
 
+/** The operator, by --email or by --tenantId and --userId. */
+async function operator(): Promise<{ tenantId: string; userId: string }> {
+  const index = process.argv.indexOf('--email');
+  if (index < 0) return { tenantId: argument('tenantId'), userId: argument('userId') };
+  const email = process.argv[index + 1]?.trim().toLowerCase();
+  const user = email
+    ? await prisma.user.findFirst({
+        where: { email: { equals: email, mode: 'insensitive' }, deletedAt: null, isActive: true },
+        select: { id: true, tenantId: true },
+      })
+    : null;
+  if (!user?.tenantId) throw new Error('--email must name an active user in a workspace');
+  return { tenantId: user.tenantId, userId: user.id };
+}
+
 async function main() {
-  const actor = { tenantId: argument('tenantId'), userId: argument('userId') };
+  const actor = await operator();
   // --agreement-only replaces the Service Agreement template and scopes
   // without re-running the original catalogue bundle, which would recreate
   // the retired A4 template.
