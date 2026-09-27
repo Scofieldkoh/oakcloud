@@ -9,6 +9,7 @@ const hooks = vi.hoisted(() => ({
   usePreviewDeadlineRuleImpact: vi.fn(),
   usePublishDeadlineRule: vi.fn(),
   useArchiveDeadlineRule: vi.fn(),
+  useApplyDeadlineRulePreset: vi.fn(),
 }));
 
 vi.mock('@/hooks/use-deadline-rules', () => hooks);
@@ -137,6 +138,7 @@ describe('DeadlineRulesPanel', () => {
     });
     hooks.usePublishDeadlineRule.mockReturnValue(mutation());
     hooks.useArchiveDeadlineRule.mockReturnValue(mutation());
+    hooks.useApplyDeadlineRulePreset.mockReturnValue(mutation());
   });
 
   it('renders a searchable rule list and current published version history', () => {
@@ -147,6 +149,17 @@ describe('DeadlineRulesPanel', () => {
     expect(screen.getByRole('button', { name: /Annual ReturnDraft/ })).toBeVisible();
     expect(screen.getByText('No published versions yet.')).toBeVisible();
     expect(screen.getByText('Revision history')).toBeVisible();
+  });
+
+  it('adds a reviewed IRAS rule as a draft from the header action', async () => {
+    const applyPreset = { ...mutation(), mutateAsync: vi.fn().mockResolvedValue({ ...rule, code: 'SG_ECI', name: 'Estimated Chargeable Income (ECI)' }) };
+    hooks.useApplyDeadlineRulePreset.mockReturnValue(applyPreset);
+    render(<DeadlineRulesPanel workspaceId="22222222-2222-4222-8222-222222222222" />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add IRAS rule' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Estimated Chargeable Income (ECI)' }));
+
+    await waitFor(() => expect(applyPreset.mutateAsync).toHaveBeenCalledWith({ code: 'SG_ECI' }));
   });
 
   it('requires a current impact preview before publishing', async () => {

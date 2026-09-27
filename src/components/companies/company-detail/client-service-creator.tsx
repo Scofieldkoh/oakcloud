@@ -283,6 +283,7 @@ export function ClientServiceCreator({
           errors={errors}
           disabled={pending}
           sectionsDisabled={!selectedVariant}
+          monitoringProfiles={selectedVariant?.monitoringProfiles ?? []}
           serviceSelector={serviceSelector}
           deadlinePreview={deadlinePreview}
         />

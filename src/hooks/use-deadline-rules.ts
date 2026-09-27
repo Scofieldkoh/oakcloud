@@ -227,6 +227,21 @@ export function usePublishDeadlineRule(workspaceId: string | undefined) {
   });
 }
 
+export function useApplyDeadlineRulePreset(workspaceId: string | undefined) {
+  const queryClient = useQueryClient();
+  return useMutation<DeadlineRuleDto, AdminRequestError, { code: 'SG_ECI' | 'SG_FORM_C' }>({
+    mutationFn: ({ code }) => requestJson<DeadlineRuleDto>(
+      `/api/service-catalog/deadline-rules/presets${queryString(workspaceId!)}`,
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ code, tenantId: workspaceId }),
+      },
+    ),
+    onSuccess: (data) => invalidateRuleQueries(queryClient, workspaceId, data.id),
+  });
+}
+
 export function useArchiveDeadlineRule(workspaceId: string | undefined) {
   const queryClient = useQueryClient();
   return useMutation<DeadlineRuleDto, AdminRequestError, { id: string; input: DeadlineRuleArchiveInput }>({
