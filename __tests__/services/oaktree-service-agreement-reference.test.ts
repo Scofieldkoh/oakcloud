@@ -362,12 +362,14 @@ describe('reference-layout generation', () => {
     expect(text(addressParagraph!)).toContain('10 Sample Street 1, #02-34');
   });
 
-  it('links representative emails and shows phones after them', async () => {
+  it('links representative emails and puts phones on the line below', async () => {
     const result = await generate();
     const xml = strFromU8(unzipSync(new Uint8Array(result.bytes))['word/document.xml']);
     expect(xml).toContain('HYPERLINK "mailto:jamie@example.com"');
     const body = text(parse(new Uint8Array(result.bytes)).documentElement);
-    expect(body).toContain('jamie@example.com / +65 6000 0001');
+    const cell = all(parse(new Uint8Array(result.bytes)), 'tc').find((element) => text(element).startsWith('jamie@example.com'))!;
+    expect(all(cell, 'p').map(text)).toEqual(['jamie@example.com', '+65 6000 0001']);
+    expect(body).not.toContain(' / +65');
     expect(body).toContain('+65 6000 0002');
     expect(xml).not.toContain('mailto:"');
   });
