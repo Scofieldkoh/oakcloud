@@ -4,6 +4,7 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 const hooksMock = vi.hoisted(() => ({
   useClientServices: vi.fn(), useClientService: vi.fn(), useUpdateClientService: vi.fn(), useArchiveClientService: vi.fn(), useDeleteClientServicePermanently: vi.fn(), useRetryServiceAgreementActivation: vi.fn(),
   useManualClientServiceCatalogOptions: vi.fn(), useCreateManualClientService: vi.fn(),
+  useCompanyObligations: vi.fn(() => ({ data: { items: [], notices: [] }, isLoading: false, error: null })),
   isHttpRequestError: vi.fn((error: unknown, status?: number) => Boolean(
     error && typeof error === 'object' && 'status' in error
       && (status === undefined || error.status === status)

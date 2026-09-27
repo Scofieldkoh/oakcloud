@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import type { DateOnly } from '@/services/service-schedule';
 import { SG_ECI_PRESET, SG_FORM_C_PRESET, type DeadlineRulePreset } from '@/services/deadline-rule/presets';
 
 const testDatabaseUrl = process.env.TEST_DATABASE_URL;
@@ -126,6 +127,22 @@ describePostgres('company compliance monitoring on PostgreSQL', () => {
 
     expect(result.warnings.map((warning) => warning.code)).toContain('COMPANY_MONITORING_OWNS_RULE');
     expect(await prisma.deadlineOccurrence.count({ where: { tenantId: fixture.tenantId, ownershipScope: 'SERVICE' } })).toBe(0);
+  });
+
+  it('previews company obligations for a service being added without writing anything', async () => {
+    const { previewCompanyObligations } = await import('@/services/compliance-monitoring/writer');
+    const before = await prisma.serviceCycle.count({ where: { tenantId: fixture.tenantId } });
+    const preview = await previewCompanyObligations({
+      tenantId: fixture.tenantId,
+      companyId: fixture.companyId,
+      today: '2026-09-27' as DateOnly,
+      proposedCoverage: { profiles: ['CORPORATE_TAX'], monitoringStart: '2026-01-01' as DateOnly, monitoringEnd: null },
+    }, prisma);
+    const codes = new Set(preview.items.map((item) => item.obligationCode));
+    expect(codes).toEqual(new Set(['SG_ECI', 'SG_FORM_C']));
+    expect(preview.items.every((item) => /^\d{4}-\d{2}-\d{2}$/.test(item.dueDate))).toBe(true);
+    expect(preview.items.map((item) => item.dueDate)).toEqual([...preview.items.map((item) => item.dueDate)].sort());
+    expect(await prisma.serviceCycle.count({ where: { tenantId: fixture.tenantId } })).toBe(before);
   });
 
   it('stages an IRAS preset on the existing rule and creates a missing one as a draft', async () => {

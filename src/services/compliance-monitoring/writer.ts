@@ -685,3 +685,69 @@ export async function monitoredCompanyIds(
   ]);
   return [...new Set([...coverages, ...scopes].map((row) => row.companyId))].sort();
 }
+
+export type CompanyObligationPreviewItem = {
+  obligationCode: string;
+  obligationName: string;
+  periodKey: string;
+  milestoneName: string;
+  dueDate: DateOnly;
+  coverageTiming: ProjectedCompanyObligation['coverageTiming'];
+  explanation: string[];
+};
+
+export type CompanyObligationPreview = {
+  items: CompanyObligationPreviewItem[];
+  /** Setup gaps that stop or qualify the dates (no FYE, rule not published). */
+  notices: string[];
+};
+
+/**
+ * Read-only view of a company's statutory obligations, including coverage a
+ * service being added would start. Nothing is written; the worker still owns
+ * the stored company obligations.
+ */
+export async function previewCompanyObligations(
+  input: {
+    tenantId: string;
+    companyId: string;
+    today: DateOnly;
+    proposedCoverage?: { profiles: readonly string[]; monitoringStart: DateOnly | null; monitoringEnd: DateOnly | null };
+  },
+  db: Db = prisma,
+): Promise<CompanyObligationPreview> {
+  const loaded = await loadProjectionInput(db, input.tenantId, input.companyId, input.today);
+  if (!loaded) return { items: [], notices: [] };
+  const proposed = input.proposedCoverage;
+  const proposedCoverages: CoverageInput[] = proposed?.monitoringStart
+    ? proposed.profiles.filter(isMonitoringProfile).map((profile) => ({
+      id: `proposed-${profile}`,
+      profile,
+      monitoringStart: proposed.monitoringStart!,
+      monitoringEnd: proposed.monitoringEnd,
+    }))
+    : [];
+  const projectionInput = {
+    ...loaded.input,
+    coverages: [...loaded.input.coverages, ...proposedCoverages],
+  };
+  if (projectionInput.coverages.length === 0) return { items: [], notices: [] };
+  const projection = projectCompanyObligations(projectionInput);
+  const milestoneName = (code: string, key: string) => (
+    projectionInput.rulesByCode[code]?.milestones.find((milestone) => milestone.key === key)?.name ?? key
+  );
+  const items = projection.obligations
+    .filter((obligation) => obligation.coverageTiming !== 'AFTER_END')
+    .map((obligation) => ({
+      obligationCode: obligation.obligationCode,
+      obligationName: obligation.obligationName,
+      periodKey: obligation.periodKey,
+      milestoneName: milestoneName(obligation.obligationCode, obligation.milestoneKey),
+      dueDate: obligation.dueDate,
+      coverageTiming: obligation.coverageTiming,
+      explanation: obligation.explanation,
+    }))
+    .sort((left, right) => left.dueDate.localeCompare(right.dueDate) || left.obligationCode.localeCompare(right.obligationCode));
+  const notices = [...new Set(projection.issues.map((issue) => issue.message))];
+  return { items, notices };
+}

@@ -12,10 +12,11 @@ import {
   previewClientServiceDeadlineImpact,
   useArchiveClientService,
   useClientService,
+  useCompanyObligations,
   useDeleteClientServicePermanently,
   useUpdateClientService,
 } from '@/hooks/use-client-services';
-import { OperationalServiceForm } from './operational-service-form';
+import { OperationalServiceForm, toCompanyObligationsState } from './operational-service-form';
 import { ServiceCompanyContext } from './service-company-context';
 import {
   deadlineImpactPayload,
@@ -66,6 +67,7 @@ export function ClientServiceEditor({
   const payloadHashRef = useRef('');
   const fingerprintRef = useRef<string | null>(null);
   const errorId = useId();
+  const companyObligations = useCompanyObligations(service.companyId, { serviceId: service.id }, isOpen);
   const update = useUpdateClientService();
   const archive = useArchiveClientService();
   const permanentDelete = useDeleteClientServicePermanently();
@@ -332,6 +334,7 @@ export function ClientServiceEditor({
           serviceHeader={serviceHeader}
           deadlinePreview={deadlinePreview}
           openDeadlineOccurrences={service.openDeadlineOccurrences ?? []}
+          companyObligations={(companyObligations.data?.items.length ?? 0) > 0 || (companyObligations.data?.notices.length ?? 0) > 0 ? toCompanyObligationsState(companyObligations) : undefined}
           openBillingOccurrences={service.openBillingOccurrences ?? []}
         />
         {!readOnly ? (

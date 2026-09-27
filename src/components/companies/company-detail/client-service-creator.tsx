@@ -9,11 +9,12 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import {
   isHttpRequestError,
   previewClientServiceDeadlineDraft,
+  useCompanyObligations,
   useCreateManualClientService,
   useManualClientServiceCatalogOptions,
 } from '@/hooks/use-client-services';
 import type { ClientServiceDto, DuplicateClientServiceMatches, ManualClientServiceCatalogVariantOption } from '@/services/client-service';
-import { OperationalServiceForm } from './operational-service-form';
+import { OperationalServiceForm, toCompanyObligationsState } from './operational-service-form';
 import { ServiceCompanyContext } from './service-company-context';
 import {
   catalogReplacementForVariant,
@@ -83,6 +84,12 @@ export function ClientServiceCreator({
     description: variant.customCadenceLabel ?? (CADENCE_LABEL_MAP[variant.serviceCadence] ?? variant.serviceCadence),
   })), [catalog.data]);
   const dirty = manualFormIsDirty(selectedVariantId, values);
+  const selectedProfiles = selectedVariant?.monitoringProfiles ?? [];
+  const companyObligations = useCompanyObligations(
+    companyId,
+    { profiles: selectedProfiles, start: values.startDate || null, end: values.endDate || null },
+    isOpen && selectedProfiles.length > 0,
+  );
 
   const runDraftPreview = useCallback(async () => {
     if (!selectedVariant) return;
@@ -283,7 +290,8 @@ export function ClientServiceCreator({
           errors={errors}
           disabled={pending}
           sectionsDisabled={!selectedVariant}
-          monitoringProfiles={selectedVariant?.monitoringProfiles ?? []}
+          monitoringProfiles={selectedProfiles}
+          companyObligations={selectedProfiles.length > 0 ? toCompanyObligationsState(companyObligations) : undefined}
           serviceSelector={serviceSelector}
           deadlinePreview={deadlinePreview}
         />
