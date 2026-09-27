@@ -156,4 +156,35 @@ describe('TemplateSourcePage', () => {
     const put = fetchMock.mock.calls.find(([url]) => String(url).endsWith('/oakdoc'))!;
     expect((put[1]!.body as FormData).get('expectedRevision')).toBe('4');
   });
+
+  it('renames a Word partial against its current version', async () => {
+    const user = userEvent.setup();
+    const fetchMock = vi.spyOn(global, 'fetch').mockImplementation((input, init) => (
+      init?.method === 'PATCH'
+        ? respond({ id: 'p-2', name: 'SOW_Corp_Sec', displayName: 'SOW - Corporate Secretarial', version: 5, content: '', contentJson: { oakDoc: wordAsset } })
+        : respond({ id: 'p-2', name: 'SOW_Corp_Tax', displayName: 'Copy of SOW - Corporate Secretarial Services', description: 'Copy of SOW_Corp_Sec', version: 4, content: '', contentJson: { oakDoc: wordAsset } })
+    ));
+    renderPage('type=partial&tab=partials&id=p-2');
+
+    const nameInput = await screen.findByLabelText(/^Name/);
+    expect(screen.getByRole('button', { name: 'Save details' })).toBeDisabled();
+    await user.clear(nameInput);
+    await user.type(nameInput, 'SOW_Corp_Sec');
+    await user.clear(screen.getByLabelText('Display name'));
+    await user.type(screen.getByLabelText('Display name'), 'SOW - Corporate Secretarial');
+    await user.click(screen.getByRole('button', { name: 'Save details' }));
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledWith(
+      '/api/template-partials/p-2',
+      expect.objectContaining({ method: 'PATCH' }),
+    ));
+    const patch = fetchMock.mock.calls.find(([, init]) => init?.method === 'PATCH')!;
+    expect(JSON.parse(String(patch[1]!.body))).toMatchObject({
+      expectedRevision: 4,
+      name: 'SOW_Corp_Sec',
+      displayName: 'SOW - Corporate Secretarial',
+      description: 'Copy of SOW_Corp_Sec',
+    });
+    await waitFor(() => expect(toast.success).toHaveBeenCalledWith('Partial details saved'));
+  });
 });
