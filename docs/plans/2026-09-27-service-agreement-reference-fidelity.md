@@ -431,7 +431,7 @@ Completion means **the normal Oakcloud generation workflow produces the approved
 
 ## 10 Implementation status (27 September 2026)
 
-The attached agreement checked during implementation is byte-identical to this plan's reference (SHA-256 `fee782eb…ef01`, 63,862 bytes), so there is no reference-versus-plan conflict. Nothing was run against tenant data. `npx tsx scripts/seed-service-agreement-template.ts --agreement-only --email <operator email>` replaces the template, creates the Word scopes and points both services at them; it runs only with the firm's approval.
+The attached agreement checked during implementation is byte-identical to this plan's reference (SHA-256 `fee782eb…ef01`, 63,862 bytes), so there is no reference-versus-plan conflict. Nothing was run against tenant data. `npx tsx scripts/seed-service-agreement-template.ts --agreement-only --email <operator email>` replaces only the agreement template; partials and services are left as they are (the firm removed scope seeding from this run on 2026-09-27). It runs only with the firm's approval.
 
 | Gap | State | Where |
 | --- | --- | --- |
