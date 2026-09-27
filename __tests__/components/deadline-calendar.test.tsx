@@ -297,12 +297,12 @@ describe('DeadlineCalendar', () => {
     fireEvent.pointerMove(window, { clientX: 130 });
     fireEvent.pointerUp(window, { clientX: 130 });
 
-    expect(onLiveResize).toHaveBeenCalledWith('dueDate', 180);
-    expect(onResizeEnd).toHaveBeenCalledWith('dueDate', 180);
-    expect(screen.getAllByRole('columnheader')[0]).toHaveAttribute('aria-sort', 'ascending');
+    expect(onLiveResize).toHaveBeenCalledWith('dueDate', 238);
+    expect(onResizeEnd).toHaveBeenCalledWith('dueDate', 238);
+    expect(screen.getByRole('columnheader', { name: 'Operative due date' })).toHaveAttribute('aria-sort', 'ascending');
     fireEvent.keyDown(screen.getByRole('separator', { name: 'Resize Operative due date column' }), { key: 'ArrowRight' });
-    expect(onLiveResize).toHaveBeenLastCalledWith('dueDate', 160);
-    expect(onResizeEnd).toHaveBeenLastCalledWith('dueDate', 160);
+    expect(onLiveResize).toHaveBeenLastCalledWith('dueDate', 218);
+    expect(onResizeEnd).toHaveBeenLastCalledWith('dueDate', 218);
 
     onLiveResize.mockClear();
     onResizeEnd.mockClear();

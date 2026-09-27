@@ -67,6 +67,7 @@ describe('document party service', () => {
       officers: [
         { id: 'officer-director', contactId: 'contact-1', name: 'Alex', role: 'DIRECTOR' },
         { id: 'officer-ceo', contactId: 'contact-1', name: 'Alex', role: 'CEO' },
+        { id: 'officer-md', contactId: 'contact-1', name: 'Alex', role: 'MANAGING_DIRECTOR' },
       ],
       shareholders: [
         {
@@ -78,7 +79,8 @@ describe('document party service', () => {
       ],
       contacts: [
         { contactId: 'contact-1', relationship: 'COO' },
-        { contactId: 'contact-1', relationship: 'Managing Director' },
+        // Positions come from the officer register, not free-text relationships.
+        { contactId: 'contact-1', relationship: 'Company Secretary' },
         { contactId: 'contact-1', relationship: 'Advisor' },
       ],
     } as never);

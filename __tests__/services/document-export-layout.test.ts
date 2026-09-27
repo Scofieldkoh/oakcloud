@@ -34,7 +34,7 @@ describe('document export A4 layout', () => {
     expect(css).not.toContain('font-family: Georgia, serif !important');
   });
 
-  it('builds one print-page section per page with a page number strip like the print frame', () => {
+  it('builds one source print-page section and leaves hard page breaks for the browser paginator', () => {
     const html = buildPDFHtml(
       {
         title: 'Test document',
@@ -47,14 +47,14 @@ describe('document export A4 layout', () => {
       { top: 20, right: 20, bottom: 20, left: 20 },
     );
 
-    expect(html.match(/<section class="print-page">/g)).toHaveLength(2);
+    expect(html.match(/<section class="print-page">/g)).toHaveLength(1);
+    expect(html).toContain('<div id="a4-paginated-sections">');
+    expect(html).toContain('<div class="page-break" data-break-type="hard"></div>');
     expect(html).toContain('<div class="print-page-number">1</div>');
-    expect(html).toContain('<div class="print-page-number">2</div>');
     expect(html).toContain('margin: 20mm 20mm 14mm 20mm');
     expect(html).toContain('height: calc(calc(297mm - 20mm - 20mm) + 6mm);');
     expect(html).toContain('overflow: hidden;');
     expect(html).toContain('.print-page[data-oversized="true"] .content');
-    expect(html).not.toContain('class="page-break"');
   });
 
   it('overlays a fixed DRAFT watermark without shifting page layout', () => {

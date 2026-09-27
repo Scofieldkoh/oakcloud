@@ -93,7 +93,7 @@ describe('TaskList desktop columns', () => {
     expect(rows[1]).toHaveClass('h-[38px]');
 
     const filterCells = rows[0].querySelectorAll('th');
-    const statusFilter = within(rows[0]).getByRole('combobox', { name: 'All statuses' });
+    const statusFilter = within(rows[0]).getByRole('combobox', { name: 'Filter tasks by status' });
     expect(filterCells[1]).not.toContainElement(statusFilter);
     expect(filterCells[2]).toContainElement(statusFilter);
 
