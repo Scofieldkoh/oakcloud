@@ -38,6 +38,7 @@ import { useUpsertUserPreference, useUserPreference } from '@/hooks/use-user-pre
 import type { ReorderEsigningRecipientsPayload } from '@/hooks/use-esigning';
 import { useActiveWorkspaceId } from '@/components/ui/workspace-selector';
 import { CompanyAccentSection } from '@/components/companies/company-accent-section';
+import { CompanySharePointMappingNotice } from '@/components/companies/company-sharepoint-mapping-notice';
 import { cn } from '@/lib/utils';
 import type { EsigningSigningOrder } from '@/generated/prisma';
 import { GeneratedDocumentPicker } from './generated-document-picker';
@@ -1410,6 +1411,9 @@ async function applyMixedGroupChange(
             size="lg"
             containerClassName={envelope.canEdit ? EDITABLE_CONTROL_CLASS_NAME : undefined}
           />
+          {companyId ? (
+            <CompanySharePointMappingNotice companyId={companyId} companyName={linkedCompany?.name} />
+          ) : null}
         </div>
 
         {companyId ? (
