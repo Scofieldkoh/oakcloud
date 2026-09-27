@@ -1,6 +1,6 @@
 # Oakcloud Documentation
 
-> **Last Updated**: 2026-09-26
+> **Last Updated**: 2026-09-27
 > Central navigation for the current Oakcloud documentation set.
 
 ## Quick Start
@@ -51,6 +51,7 @@
 |----------|-------------|
 | [OakDoc Replacement Specification](./oakdoc-a4-retirement-readiness.md) | Approved replacement direction, current capability gaps, native document contracts, migration and acceptance requirements |
 | [OakDoc Parallel Implementation Handover](./plans/2026-09-26-oakdoc-replacement-implementation.md) | Sub-agent packets, exclusive file ownership, dependency waves, validation and cutover/rollback gates |
+| [Service Agreement Reference Fidelity Plan](./plans/2026-09-27-service-agreement-reference-fidelity.md) | Word-reference gap analysis, variables, formatting, structure, pagination and implementation acceptance |
 | [Business Assistant Specification](./features/business-assistant/SPECIFICATION.md) | General assistant architecture; BizFile is a reference use case; repository-grounded v1.4 review |
 | [Business Assistant BizFile Correction Workflow](./features/business-assistant/CORRECTION_WORKFLOW.md) | Implemented P12 deterministic-field correction UI, shared contract, API semantics, safety gates, and remaining correction work |
 | [Business Assistant Implementation Handover](./plans/2026-09-05-business-assistant-implementation.md) | Current implementation checkpoint, completed correction UI review record, active P12-P16 work, validation evidence, and next-session scope |
