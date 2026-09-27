@@ -219,8 +219,10 @@ Editable experiences can use the shared `useUnsavedNavigationGuard` hook for nat
 
 ## Service Catalog And Agreement Template Foundation
 
-The service catalog is tenant-scoped and managed under the Services tab of
-`/template-partials`. `ServiceFamily` groups ordered `ServiceVariant` records.
+The service catalog is tenant-scoped and managed at `/admin/services`.
+Document templates and partials have separate pages, `/template-partials/documents`
+and `/template-partials/partials`, grouped under Document Templates in the
+Administration sidebar; `/template-partials` redirects there. `ServiceFamily` groups ordered `ServiceVariant` records.
 Each variant links to one active, same-tenant `TemplatePartial` containing its
 statement-of-work wording and owns ordered, entity-agnostic
 `ServiceVariantFeeTemplate` defaults. Catalog reads and writes use
