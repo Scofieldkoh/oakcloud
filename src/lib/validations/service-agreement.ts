@@ -3,7 +3,13 @@ import { billingFrequencySchema } from '@/lib/validations/service-catalog';
 
 const uuid = z.string().uuid();
 const clientKey = z.string().trim().min(1).max(100);
-const dateString = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+/** A real calendar date in YYYY-MM-DD form (2026-02-30 is rejected). */
+export const serviceAgreementDateString = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine((value) => {
+  const [year, month, day] = value.split('-').map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
+}, 'Enter a valid date.');
+const dateString = serviceAgreementDateString;
 const nullableDate = dateString.nullable().optional();
 
 const uniqueValues = (

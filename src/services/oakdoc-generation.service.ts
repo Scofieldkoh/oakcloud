@@ -24,6 +24,7 @@ import {
   resolveOakDocFields,
 } from '@/lib/document-editor/oakdoc-fields';
 import {
+  buildOakDocResolutionDates,
   buildOakDocResolutionValues,
   type OakDocAgreementContext,
   type OakDocCompanyDetail,
@@ -47,6 +48,7 @@ import {
 import { resolveDocumentPartySelections } from '@/services/document-party.service';
 import { getServiceAgreementDraftById } from '@/services/service-agreement/draft.service';
 import {
+  finalizeServiceAgreementPageBreaks,
   renderServiceAgreementOakDoc,
   type ServiceAgreementOakDocParty,
 } from '@/services/service-agreement/oakdoc-renderer';
@@ -332,7 +334,9 @@ async function renderOakDocMaster(
   const agreementContext = input.agreement ?? (composition
     ? {
         agreementDate: composition.agreement.agreementDate,
-        effectiveDate: composition.agreement.effectiveDate,
+        // An agreement without its own effective date takes effect on the
+        // agreement date.
+        effectiveDate: composition.agreement.effectiveDate ?? composition.agreement.agreementDate,
         termMonths: composition.agreement.termMonths,
       }
     : undefined);
@@ -363,7 +367,7 @@ async function renderOakDocMaster(
     }),
   ];
 
-  const values = buildOakDocResolutionValues({
+  const resolutionInput = {
     company: companyDetail,
     fieldTags: resolutionTags,
     selectedDirectorId: input.selectedDirectorId,
@@ -372,7 +376,9 @@ async function renderOakDocMaster(
     agreement: agreementContext,
     resolution: { date: input.resolutionDate },
     generatedBy: input.generatedBy,
-  });
+  };
+  const values = buildOakDocResolutionValues(resolutionInput);
+  const dates = buildOakDocResolutionDates(resolutionInput);
 
   const conditioned = resolveOakDocConditions({
     docxBytes: masterBytes,
@@ -420,7 +426,7 @@ async function renderOakDocMaster(
       tenantId: params.tenantId,
     });
     diagnostics.push(...sowPartials.diagnostics);
-    composedBytes = sowPartials.bytes;
+    composedBytes = finalizeServiceAgreementPageBreaks(sowPartials.bytes);
     agreementHash = rendered.agreementMetadata.canonicalHash;
     for (const diagnostic of rendered.diagnostics) {
       if (diagnostic.severity === 'info') continue;
@@ -433,7 +439,7 @@ async function renderOakDocMaster(
     }
   }
 
-  const resolved = resolveOakDocFields(composedBytes, values);
+  const resolved = resolveOakDocFields(composedBytes, values, { dates });
   const bytes = Buffer.from(resolved.bytes);
 
   return {

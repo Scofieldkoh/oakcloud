@@ -1,6 +1,6 @@
 # Service agreement reference fidelity implementation plan
 
-Date: **27 September 2026**. Reviewed code: **`3ec5e6e4d6868f8280ecf88a15a61e890e6e6520`**. Status: **analysis and implementation plan complete; product changes not implemented**.
+Date: **27 September 2026**. Reviewed code: **`3ec5e6e4d6868f8280ecf88a15a61e890e6e6520`**. Status: **first implementation in review (section 10); rendered page comparison, provider binding and the P1 items remain**.
 
 Oakdoc can already generate structured service agreements, but its seeded master cannot closely reproduce the supplied agreement. The main gaps are the master document's formatting and structure, template control over generated fee and entity blocks, several variable bindings, and visual regression coverage. The recommended implementation is a native Word master derived from the reference, coordinated native scope-of-work partials, and small extensions to the existing agreement generation workflow.
 
@@ -428,3 +428,31 @@ Working decisions for implementation are a reference-derived native master, Aria
 The following require evidence during implementation rather than broad redesign: actual tenant template differences; provider configuration ownership; Word-versus-Graph pagination; editor round-trip preservation of the source's unusual section records; and whether source run-spacing cleanup can preserve layout. The complete wording diff must identify every deliberate content deviation before activation. These checks do not authorize new billing rules, legal-policy changes, automatic signing sends or production data migrations.
 
 Completion means **the normal Oakcloud generation workflow produces the approved reference appearance and handles variable-length data safely**. Merely importing the source DOCX, adding placeholders, or producing 13 pages is not completion.
+
+## 10 Implementation status (27 September 2026)
+
+The attached agreement checked during implementation is byte-identical to this plan's reference (SHA-256 `fee782eb…ef01`, 63,862 bytes), so there is no reference-versus-plan conflict. Nothing was run against tenant data; seeding, switching and activation wait for an explicit approval of each run.
+
+| Gap | State | Where |
+| --- | --- | --- |
+| G01, G02, G03 | Done: separate inactive master "Oaktree Local Master Services Agreement (Reference layout)", built as native OOXML with explicit Arial 10 black runs, reference page and margins, no header or footer, borderless 567/8505 terms table | `src/content/service-agreement/oaktree-service-agreement-reference-*.ts`, `oakdoc-reference-ooxml.ts` |
+| G04 | Done: Word scope partials for both services with native lettered lists, nested Wingdings register bullets and per-subsection restarts | `oaktree-service-agreement-reference-sows.ts` |
+| G05 | Done: the fee slot holds a template-owned company group prototype (company heading, 7265/1800 SOW/Amount table with repeating header, one SOW row prototype). Each company with fees gets its own heading and table, including single-company agreements. Masters without the prototype keep the built-in table | `oakdoc-renderer.ts` (`renderFeePrototype`) |
+| G06 | Done: whole amounts print without cents in the prototype layout (`S$1,500 per year`, `S$800.50 per year`); date controls carry a Word date format (`9 July 2026`); `agreement.term` prints `1 year`, `2 years`, `18 months` | `oakdoc-context.ts`, `oakdoc-fields.ts`, `renderer.ts` |
+| G07 | Done: effective date (empty uses the agreement date) and term inputs in agreement setup; schema rejects impossible dates such as `2026-02-30` | `service-agreement-config.tsx`, `validations/service-agreement.ts` |
+| G08 | Not done: provider name, signatory and appointment are static master text matching the reference | Needs a provider configuration decision |
+| G09 | Done: multi-line values write `w:br` line breaks in the field's own run; placeholder breaks are removed; email fields keep a live `mailto:` link, retargeted or removed with the value | `writeOakDocControlValue` |
+| G12 | Done in markup: every signer block is a keep-with-next chain ended explicitly, rows cannot split, and the representative contact prints `email / phone` only when both exist | master, `phoneAfterEmail` |
+| G13 | Done: the service slot's placeholder breaks the page, so every service starts a page; the empty break line is folded into the service title after the scope is merged | `finalizeServiceAgreementPageBreaks` |
+| G16 | Partly done: structural tests for page, typography, keep chains, fee grouping, dates, address, links and merged scopes. Rendered page comparison is not done because this environment has no Word or LibreOffice Writer renderer | `__tests__/services/oaktree-service-agreement-reference.test.ts` |
+| G17 | Wording copied verbatim; apparent slips listed in `REFERENCE_WORDING_QUERIES` for review rather than corrected | wording module |
+| G10, G11, G14, G15, G18 | Not started (P1) | |
+
+Known deviations from the reference, deliberate or for review:
+
+- Condensed character spacing on roughly 1,500 reference characters is not reproduced; line wrapping can therefore differ slightly.
+- The fee row label is the service name (for example "Corporate Secretarial Services"), not "Statement of Work – …".
+- The letter address comes from `formatLetterAddress`: building first, then street and unit, then `Singapore  520828` with two spaces. The reference prints street and unit first, then the building, then `Singapore 520828`.
+- A continued fee table repeats its SOW/Amount header but does not repeat the company name.
+- Re-running the seed no longer resets whether a seeded master is active; that stays with whoever switched it in the app.
+
