@@ -718,6 +718,23 @@ function fillSowRow(
   fees: readonly ServiceAgreementFeeLineDto[],
 ): void {
   const tags = OAKDOC_AGREEMENT_PROTOTYPE_TAGS;
+  const [chargeRowPrototype] = controlsTagged(row, tags.feeChargeRow);
+  if (chargeRowPrototype) {
+    // A charge row prototype lists every charge on its own row, even when
+    // the service has only one.
+    for (const fee of fees) {
+      const chargeRow = chargeRowPrototype.cloneNode(true) as Element;
+      fillPrototypeField(chargeRow, tags.feeChargeDescription, fee.description);
+      fillPrototypeField(chargeRow, tags.feeChargeAmount, feeDisplay(fee, { wholeAmounts: true }));
+      chargeRowPrototype.parentNode?.insertBefore(chargeRow, chargeRowPrototype);
+      unwrapControl(chargeRow);
+    }
+    chargeRowPrototype.parentNode?.removeChild(chargeRowPrototype);
+    fillPrototypeField(row, tags.feeSowName, item.variantNameSnapshot);
+    fillPrototypeField(row, tags.feeSowAmount, '');
+    return;
+  }
+
   const descriptionPrototype = paragraphHolding(row, tags.feeChargeDescription);
   const amountPrototype = paragraphHolding(row, tags.feeChargeAmount);
   const compact = fees.length === 1
@@ -745,11 +762,11 @@ function fillSowRow(
 
 /**
  * Template-owned fee layout: the master's fee slot holds one company group
- * prototype (a company heading and a SOW/Amount table with one SOW row
- * prototype). Each agreement entity with fees gets its own heading and
- * table, even when there is only one entity, with one row per service in
- * agreement order. Returns null when the slot has no prototype, so older
- * masters keep the built-in table.
+ * prototype with one SOW row prototype inside. The group can be a heading
+ * with its own table, or rows within one shared table. Each agreement entity
+ * with fees gets its own copy of the group, even when there is only one
+ * entity, with one SOW row per service in agreement order. Returns null when
+ * the slot has no prototype, so older masters keep the built-in table.
  */
 function renderFeePrototype(input: {
   slot: Element;
@@ -784,7 +801,8 @@ function renderFeePrototype(input: {
     });
   }
 
-  const blocks: Element[] = [];
+  // Expand in place, so a group can be a heading and its own table or rows
+  // inside one shared table.
   for (const entity of entities) {
     const services = items
       .map((item) => ({
@@ -806,11 +824,13 @@ function renderFeePrototype(input: {
     }
     rowPrototype.parentNode?.removeChild(rowPrototype);
     fillPrototypeField(group, tags.feeCompanyName, entity.nameSnapshot);
-    reseedControlIds(group, input.allocator);
-    const content = wordChild(group, 'sdtContent');
-    if (content) blocks.push(...wordChildren(content));
+    groupPrototype.parentNode?.insertBefore(group, groupPrototype);
+    unwrapControl(group);
   }
-  return blocks;
+  groupPrototype.parentNode?.removeChild(groupPrototype);
+  reseedControlIds(input.slot, input.allocator);
+  const content = wordChild(input.slot, 'sdtContent');
+  return content ? wordChildren(content) : [];
 }
 
 /**
