@@ -32,6 +32,12 @@ export type BusinessHolidayMinAggregateOutputType = {
   name: string | null
   description: string | null
   isActive: boolean | null
+  sourceType: $Enums.BusinessHolidaySourceType | null
+  sourceProvider: $Enums.PublicHolidayProvider | null
+  sourceDatasetId: string | null
+  sourceRecordKey: string | null
+  sourceDataAsOf: string | null
+  sourceImportedAt: Date | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -44,6 +50,12 @@ export type BusinessHolidayMaxAggregateOutputType = {
   name: string | null
   description: string | null
   isActive: boolean | null
+  sourceType: $Enums.BusinessHolidaySourceType | null
+  sourceProvider: $Enums.PublicHolidayProvider | null
+  sourceDatasetId: string | null
+  sourceRecordKey: string | null
+  sourceDataAsOf: string | null
+  sourceImportedAt: Date | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -56,6 +68,12 @@ export type BusinessHolidayCountAggregateOutputType = {
   name: number
   description: number
   isActive: number
+  sourceType: number
+  sourceProvider: number
+  sourceDatasetId: number
+  sourceRecordKey: number
+  sourceDataAsOf: number
+  sourceImportedAt: number
   createdAt: number
   updatedAt: number
   _all: number
@@ -70,6 +88,12 @@ export type BusinessHolidayMinAggregateInputType = {
   name?: true
   description?: true
   isActive?: true
+  sourceType?: true
+  sourceProvider?: true
+  sourceDatasetId?: true
+  sourceRecordKey?: true
+  sourceDataAsOf?: true
+  sourceImportedAt?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -82,6 +106,12 @@ export type BusinessHolidayMaxAggregateInputType = {
   name?: true
   description?: true
   isActive?: true
+  sourceType?: true
+  sourceProvider?: true
+  sourceDatasetId?: true
+  sourceRecordKey?: true
+  sourceDataAsOf?: true
+  sourceImportedAt?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -94,6 +124,12 @@ export type BusinessHolidayCountAggregateInputType = {
   name?: true
   description?: true
   isActive?: true
+  sourceType?: true
+  sourceProvider?: true
+  sourceDatasetId?: true
+  sourceRecordKey?: true
+  sourceDataAsOf?: true
+  sourceImportedAt?: true
   createdAt?: true
   updatedAt?: true
   _all?: true
@@ -179,6 +215,12 @@ export type BusinessHolidayGroupByOutputType = {
   name: string
   description: string | null
   isActive: boolean
+  sourceType: $Enums.BusinessHolidaySourceType
+  sourceProvider: $Enums.PublicHolidayProvider | null
+  sourceDatasetId: string | null
+  sourceRecordKey: string | null
+  sourceDataAsOf: string | null
+  sourceImportedAt: Date | null
   createdAt: Date
   updatedAt: Date
   _count: BusinessHolidayCountAggregateOutputType | null
@@ -212,6 +254,12 @@ export type BusinessHolidayWhereInput = {
   name?: Prisma.StringFilter<"BusinessHoliday"> | string
   description?: Prisma.StringNullableFilter<"BusinessHoliday"> | string | null
   isActive?: Prisma.BoolFilter<"BusinessHoliday"> | boolean
+  sourceType?: Prisma.EnumBusinessHolidaySourceTypeFilter<"BusinessHoliday"> | $Enums.BusinessHolidaySourceType
+  sourceProvider?: Prisma.EnumPublicHolidayProviderNullableFilter<"BusinessHoliday"> | $Enums.PublicHolidayProvider | null
+  sourceDatasetId?: Prisma.StringNullableFilter<"BusinessHoliday"> | string | null
+  sourceRecordKey?: Prisma.StringNullableFilter<"BusinessHoliday"> | string | null
+  sourceDataAsOf?: Prisma.StringNullableFilter<"BusinessHoliday"> | string | null
+  sourceImportedAt?: Prisma.DateTimeNullableFilter<"BusinessHoliday"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"BusinessHoliday"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"BusinessHoliday"> | Date | string
   tenant?: Prisma.XOR<Prisma.WorkspaceScalarRelationFilter, Prisma.WorkspaceWhereInput>
@@ -226,6 +274,12 @@ export type BusinessHolidayOrderByWithRelationInput = {
   name?: Prisma.SortOrder
   description?: Prisma.SortOrderInput | Prisma.SortOrder
   isActive?: Prisma.SortOrder
+  sourceType?: Prisma.SortOrder
+  sourceProvider?: Prisma.SortOrderInput | Prisma.SortOrder
+  sourceDatasetId?: Prisma.SortOrderInput | Prisma.SortOrder
+  sourceRecordKey?: Prisma.SortOrderInput | Prisma.SortOrder
+  sourceDataAsOf?: Prisma.SortOrderInput | Prisma.SortOrder
+  sourceImportedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   tenant?: Prisma.WorkspaceOrderByWithRelationInput
@@ -244,6 +298,12 @@ export type BusinessHolidayWhereUniqueInput = Prisma.AtLeast<{
   name?: Prisma.StringFilter<"BusinessHoliday"> | string
   description?: Prisma.StringNullableFilter<"BusinessHoliday"> | string | null
   isActive?: Prisma.BoolFilter<"BusinessHoliday"> | boolean
+  sourceType?: Prisma.EnumBusinessHolidaySourceTypeFilter<"BusinessHoliday"> | $Enums.BusinessHolidaySourceType
+  sourceProvider?: Prisma.EnumPublicHolidayProviderNullableFilter<"BusinessHoliday"> | $Enums.PublicHolidayProvider | null
+  sourceDatasetId?: Prisma.StringNullableFilter<"BusinessHoliday"> | string | null
+  sourceRecordKey?: Prisma.StringNullableFilter<"BusinessHoliday"> | string | null
+  sourceDataAsOf?: Prisma.StringNullableFilter<"BusinessHoliday"> | string | null
+  sourceImportedAt?: Prisma.DateTimeNullableFilter<"BusinessHoliday"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"BusinessHoliday"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"BusinessHoliday"> | Date | string
   tenant?: Prisma.XOR<Prisma.WorkspaceScalarRelationFilter, Prisma.WorkspaceWhereInput>
@@ -258,6 +318,12 @@ export type BusinessHolidayOrderByWithAggregationInput = {
   name?: Prisma.SortOrder
   description?: Prisma.SortOrderInput | Prisma.SortOrder
   isActive?: Prisma.SortOrder
+  sourceType?: Prisma.SortOrder
+  sourceProvider?: Prisma.SortOrderInput | Prisma.SortOrder
+  sourceDatasetId?: Prisma.SortOrderInput | Prisma.SortOrder
+  sourceRecordKey?: Prisma.SortOrderInput | Prisma.SortOrder
+  sourceDataAsOf?: Prisma.SortOrderInput | Prisma.SortOrder
+  sourceImportedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.BusinessHolidayCountOrderByAggregateInput
@@ -276,6 +342,12 @@ export type BusinessHolidayScalarWhereWithAggregatesInput = {
   name?: Prisma.StringWithAggregatesFilter<"BusinessHoliday"> | string
   description?: Prisma.StringNullableWithAggregatesFilter<"BusinessHoliday"> | string | null
   isActive?: Prisma.BoolWithAggregatesFilter<"BusinessHoliday"> | boolean
+  sourceType?: Prisma.EnumBusinessHolidaySourceTypeWithAggregatesFilter<"BusinessHoliday"> | $Enums.BusinessHolidaySourceType
+  sourceProvider?: Prisma.EnumPublicHolidayProviderNullableWithAggregatesFilter<"BusinessHoliday"> | $Enums.PublicHolidayProvider | null
+  sourceDatasetId?: Prisma.StringNullableWithAggregatesFilter<"BusinessHoliday"> | string | null
+  sourceRecordKey?: Prisma.StringNullableWithAggregatesFilter<"BusinessHoliday"> | string | null
+  sourceDataAsOf?: Prisma.StringNullableWithAggregatesFilter<"BusinessHoliday"> | string | null
+  sourceImportedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"BusinessHoliday"> | Date | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"BusinessHoliday"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"BusinessHoliday"> | Date | string
 }
@@ -286,6 +358,12 @@ export type BusinessHolidayCreateInput = {
   name: string
   description?: string | null
   isActive?: boolean
+  sourceType?: $Enums.BusinessHolidaySourceType
+  sourceProvider?: $Enums.PublicHolidayProvider | null
+  sourceDatasetId?: string | null
+  sourceRecordKey?: string | null
+  sourceDataAsOf?: string | null
+  sourceImportedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   tenant: Prisma.WorkspaceCreateNestedOneWithoutBusinessHolidaysInput
@@ -300,6 +378,12 @@ export type BusinessHolidayUncheckedCreateInput = {
   name: string
   description?: string | null
   isActive?: boolean
+  sourceType?: $Enums.BusinessHolidaySourceType
+  sourceProvider?: $Enums.PublicHolidayProvider | null
+  sourceDatasetId?: string | null
+  sourceRecordKey?: string | null
+  sourceDataAsOf?: string | null
+  sourceImportedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -310,6 +394,12 @@ export type BusinessHolidayUpdateInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  sourceType?: Prisma.EnumBusinessHolidaySourceTypeFieldUpdateOperationsInput | $Enums.BusinessHolidaySourceType
+  sourceProvider?: Prisma.NullableEnumPublicHolidayProviderFieldUpdateOperationsInput | $Enums.PublicHolidayProvider | null
+  sourceDatasetId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceRecordKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceDataAsOf?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceImportedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutBusinessHolidaysNestedInput
@@ -324,6 +414,12 @@ export type BusinessHolidayUncheckedUpdateInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  sourceType?: Prisma.EnumBusinessHolidaySourceTypeFieldUpdateOperationsInput | $Enums.BusinessHolidaySourceType
+  sourceProvider?: Prisma.NullableEnumPublicHolidayProviderFieldUpdateOperationsInput | $Enums.PublicHolidayProvider | null
+  sourceDatasetId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceRecordKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceDataAsOf?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceImportedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -336,6 +432,12 @@ export type BusinessHolidayCreateManyInput = {
   name: string
   description?: string | null
   isActive?: boolean
+  sourceType?: $Enums.BusinessHolidaySourceType
+  sourceProvider?: $Enums.PublicHolidayProvider | null
+  sourceDatasetId?: string | null
+  sourceRecordKey?: string | null
+  sourceDataAsOf?: string | null
+  sourceImportedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -346,6 +448,12 @@ export type BusinessHolidayUpdateManyMutationInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  sourceType?: Prisma.EnumBusinessHolidaySourceTypeFieldUpdateOperationsInput | $Enums.BusinessHolidaySourceType
+  sourceProvider?: Prisma.NullableEnumPublicHolidayProviderFieldUpdateOperationsInput | $Enums.PublicHolidayProvider | null
+  sourceDatasetId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceRecordKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceDataAsOf?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceImportedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -358,6 +466,12 @@ export type BusinessHolidayUncheckedUpdateManyInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  sourceType?: Prisma.EnumBusinessHolidaySourceTypeFieldUpdateOperationsInput | $Enums.BusinessHolidaySourceType
+  sourceProvider?: Prisma.NullableEnumPublicHolidayProviderFieldUpdateOperationsInput | $Enums.PublicHolidayProvider | null
+  sourceDatasetId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceRecordKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceDataAsOf?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceImportedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -385,6 +499,12 @@ export type BusinessHolidayCountOrderByAggregateInput = {
   name?: Prisma.SortOrder
   description?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
+  sourceType?: Prisma.SortOrder
+  sourceProvider?: Prisma.SortOrder
+  sourceDatasetId?: Prisma.SortOrder
+  sourceRecordKey?: Prisma.SortOrder
+  sourceDataAsOf?: Prisma.SortOrder
+  sourceImportedAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -397,6 +517,12 @@ export type BusinessHolidayMaxOrderByAggregateInput = {
   name?: Prisma.SortOrder
   description?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
+  sourceType?: Prisma.SortOrder
+  sourceProvider?: Prisma.SortOrder
+  sourceDatasetId?: Prisma.SortOrder
+  sourceRecordKey?: Prisma.SortOrder
+  sourceDataAsOf?: Prisma.SortOrder
+  sourceImportedAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -409,6 +535,12 @@ export type BusinessHolidayMinOrderByAggregateInput = {
   name?: Prisma.SortOrder
   description?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
+  sourceType?: Prisma.SortOrder
+  sourceProvider?: Prisma.SortOrder
+  sourceDatasetId?: Prisma.SortOrder
+  sourceRecordKey?: Prisma.SortOrder
+  sourceDataAsOf?: Prisma.SortOrder
+  sourceImportedAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -497,12 +629,26 @@ export type BusinessHolidayUncheckedUpdateManyWithoutCalendarNestedInput = {
   deleteMany?: Prisma.BusinessHolidayScalarWhereInput | Prisma.BusinessHolidayScalarWhereInput[]
 }
 
+export type EnumBusinessHolidaySourceTypeFieldUpdateOperationsInput = {
+  set?: $Enums.BusinessHolidaySourceType
+}
+
+export type NullableEnumPublicHolidayProviderFieldUpdateOperationsInput = {
+  set?: $Enums.PublicHolidayProvider | null
+}
+
 export type BusinessHolidayCreateWithoutTenantInput = {
   id?: string
   date: Date | string
   name: string
   description?: string | null
   isActive?: boolean
+  sourceType?: $Enums.BusinessHolidaySourceType
+  sourceProvider?: $Enums.PublicHolidayProvider | null
+  sourceDatasetId?: string | null
+  sourceRecordKey?: string | null
+  sourceDataAsOf?: string | null
+  sourceImportedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   calendar: Prisma.BusinessCalendarCreateNestedOneWithoutHolidaysInput
@@ -515,6 +661,12 @@ export type BusinessHolidayUncheckedCreateWithoutTenantInput = {
   name: string
   description?: string | null
   isActive?: boolean
+  sourceType?: $Enums.BusinessHolidaySourceType
+  sourceProvider?: $Enums.PublicHolidayProvider | null
+  sourceDatasetId?: string | null
+  sourceRecordKey?: string | null
+  sourceDataAsOf?: string | null
+  sourceImportedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -556,6 +708,12 @@ export type BusinessHolidayScalarWhereInput = {
   name?: Prisma.StringFilter<"BusinessHoliday"> | string
   description?: Prisma.StringNullableFilter<"BusinessHoliday"> | string | null
   isActive?: Prisma.BoolFilter<"BusinessHoliday"> | boolean
+  sourceType?: Prisma.EnumBusinessHolidaySourceTypeFilter<"BusinessHoliday"> | $Enums.BusinessHolidaySourceType
+  sourceProvider?: Prisma.EnumPublicHolidayProviderNullableFilter<"BusinessHoliday"> | $Enums.PublicHolidayProvider | null
+  sourceDatasetId?: Prisma.StringNullableFilter<"BusinessHoliday"> | string | null
+  sourceRecordKey?: Prisma.StringNullableFilter<"BusinessHoliday"> | string | null
+  sourceDataAsOf?: Prisma.StringNullableFilter<"BusinessHoliday"> | string | null
+  sourceImportedAt?: Prisma.DateTimeNullableFilter<"BusinessHoliday"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"BusinessHoliday"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"BusinessHoliday"> | Date | string
 }
@@ -566,6 +724,12 @@ export type BusinessHolidayCreateWithoutCalendarInput = {
   name: string
   description?: string | null
   isActive?: boolean
+  sourceType?: $Enums.BusinessHolidaySourceType
+  sourceProvider?: $Enums.PublicHolidayProvider | null
+  sourceDatasetId?: string | null
+  sourceRecordKey?: string | null
+  sourceDataAsOf?: string | null
+  sourceImportedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   tenant: Prisma.WorkspaceCreateNestedOneWithoutBusinessHolidaysInput
@@ -578,6 +742,12 @@ export type BusinessHolidayUncheckedCreateWithoutCalendarInput = {
   name: string
   description?: string | null
   isActive?: boolean
+  sourceType?: $Enums.BusinessHolidaySourceType
+  sourceProvider?: $Enums.PublicHolidayProvider | null
+  sourceDatasetId?: string | null
+  sourceRecordKey?: string | null
+  sourceDataAsOf?: string | null
+  sourceImportedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -615,6 +785,12 @@ export type BusinessHolidayCreateManyTenantInput = {
   name: string
   description?: string | null
   isActive?: boolean
+  sourceType?: $Enums.BusinessHolidaySourceType
+  sourceProvider?: $Enums.PublicHolidayProvider | null
+  sourceDatasetId?: string | null
+  sourceRecordKey?: string | null
+  sourceDataAsOf?: string | null
+  sourceImportedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -625,6 +801,12 @@ export type BusinessHolidayUpdateWithoutTenantInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  sourceType?: Prisma.EnumBusinessHolidaySourceTypeFieldUpdateOperationsInput | $Enums.BusinessHolidaySourceType
+  sourceProvider?: Prisma.NullableEnumPublicHolidayProviderFieldUpdateOperationsInput | $Enums.PublicHolidayProvider | null
+  sourceDatasetId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceRecordKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceDataAsOf?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceImportedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   calendar?: Prisma.BusinessCalendarUpdateOneRequiredWithoutHolidaysNestedInput
@@ -637,6 +819,12 @@ export type BusinessHolidayUncheckedUpdateWithoutTenantInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  sourceType?: Prisma.EnumBusinessHolidaySourceTypeFieldUpdateOperationsInput | $Enums.BusinessHolidaySourceType
+  sourceProvider?: Prisma.NullableEnumPublicHolidayProviderFieldUpdateOperationsInput | $Enums.PublicHolidayProvider | null
+  sourceDatasetId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceRecordKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceDataAsOf?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceImportedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -648,6 +836,12 @@ export type BusinessHolidayUncheckedUpdateManyWithoutTenantInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  sourceType?: Prisma.EnumBusinessHolidaySourceTypeFieldUpdateOperationsInput | $Enums.BusinessHolidaySourceType
+  sourceProvider?: Prisma.NullableEnumPublicHolidayProviderFieldUpdateOperationsInput | $Enums.PublicHolidayProvider | null
+  sourceDatasetId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceRecordKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceDataAsOf?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceImportedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -659,6 +853,12 @@ export type BusinessHolidayCreateManyCalendarInput = {
   name: string
   description?: string | null
   isActive?: boolean
+  sourceType?: $Enums.BusinessHolidaySourceType
+  sourceProvider?: $Enums.PublicHolidayProvider | null
+  sourceDatasetId?: string | null
+  sourceRecordKey?: string | null
+  sourceDataAsOf?: string | null
+  sourceImportedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -669,6 +869,12 @@ export type BusinessHolidayUpdateWithoutCalendarInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  sourceType?: Prisma.EnumBusinessHolidaySourceTypeFieldUpdateOperationsInput | $Enums.BusinessHolidaySourceType
+  sourceProvider?: Prisma.NullableEnumPublicHolidayProviderFieldUpdateOperationsInput | $Enums.PublicHolidayProvider | null
+  sourceDatasetId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceRecordKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceDataAsOf?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceImportedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutBusinessHolidaysNestedInput
@@ -681,6 +887,12 @@ export type BusinessHolidayUncheckedUpdateWithoutCalendarInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  sourceType?: Prisma.EnumBusinessHolidaySourceTypeFieldUpdateOperationsInput | $Enums.BusinessHolidaySourceType
+  sourceProvider?: Prisma.NullableEnumPublicHolidayProviderFieldUpdateOperationsInput | $Enums.PublicHolidayProvider | null
+  sourceDatasetId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceRecordKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceDataAsOf?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceImportedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -692,6 +904,12 @@ export type BusinessHolidayUncheckedUpdateManyWithoutCalendarInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  sourceType?: Prisma.EnumBusinessHolidaySourceTypeFieldUpdateOperationsInput | $Enums.BusinessHolidaySourceType
+  sourceProvider?: Prisma.NullableEnumPublicHolidayProviderFieldUpdateOperationsInput | $Enums.PublicHolidayProvider | null
+  sourceDatasetId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceRecordKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceDataAsOf?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceImportedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -706,6 +924,12 @@ export type BusinessHolidaySelect<ExtArgs extends runtime.Types.Extensions.Inter
   name?: boolean
   description?: boolean
   isActive?: boolean
+  sourceType?: boolean
+  sourceProvider?: boolean
+  sourceDatasetId?: boolean
+  sourceRecordKey?: boolean
+  sourceDataAsOf?: boolean
+  sourceImportedAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
@@ -720,6 +944,12 @@ export type BusinessHolidaySelectCreateManyAndReturn<ExtArgs extends runtime.Typ
   name?: boolean
   description?: boolean
   isActive?: boolean
+  sourceType?: boolean
+  sourceProvider?: boolean
+  sourceDatasetId?: boolean
+  sourceRecordKey?: boolean
+  sourceDataAsOf?: boolean
+  sourceImportedAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
@@ -734,6 +964,12 @@ export type BusinessHolidaySelectUpdateManyAndReturn<ExtArgs extends runtime.Typ
   name?: boolean
   description?: boolean
   isActive?: boolean
+  sourceType?: boolean
+  sourceProvider?: boolean
+  sourceDatasetId?: boolean
+  sourceRecordKey?: boolean
+  sourceDataAsOf?: boolean
+  sourceImportedAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
@@ -748,11 +984,17 @@ export type BusinessHolidaySelectScalar = {
   name?: boolean
   description?: boolean
   isActive?: boolean
+  sourceType?: boolean
+  sourceProvider?: boolean
+  sourceDatasetId?: boolean
+  sourceRecordKey?: boolean
+  sourceDataAsOf?: boolean
+  sourceImportedAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type BusinessHolidayOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "calendarId" | "date" | "name" | "description" | "isActive" | "createdAt" | "updatedAt", ExtArgs["result"]["businessHoliday"]>
+export type BusinessHolidayOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "calendarId" | "date" | "name" | "description" | "isActive" | "sourceType" | "sourceProvider" | "sourceDatasetId" | "sourceRecordKey" | "sourceDataAsOf" | "sourceImportedAt" | "createdAt" | "updatedAt", ExtArgs["result"]["businessHoliday"]>
 export type BusinessHolidayInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
   calendar?: boolean | Prisma.BusinessCalendarDefaultArgs<ExtArgs>
@@ -780,6 +1022,17 @@ export type $BusinessHolidayPayload<ExtArgs extends runtime.Types.Extensions.Int
     name: string
     description: string | null
     isActive: boolean
+    /**
+     * MANUAL rows are owned by the calendar's administrators. EXTERNAL rows are
+     * maintained by the public holiday sync. A MANUAL row may keep source fields
+     * as history when it was converted from an EXTERNAL row.
+     */
+    sourceType: $Enums.BusinessHolidaySourceType
+    sourceProvider: $Enums.PublicHolidayProvider | null
+    sourceDatasetId: string | null
+    sourceRecordKey: string | null
+    sourceDataAsOf: string | null
+    sourceImportedAt: Date | null
     createdAt: Date
     updatedAt: Date
   }, ExtArgs["result"]["businessHoliday"]>
@@ -1214,6 +1467,12 @@ export interface BusinessHolidayFieldRefs {
   readonly name: Prisma.FieldRef<"BusinessHoliday", 'String'>
   readonly description: Prisma.FieldRef<"BusinessHoliday", 'String'>
   readonly isActive: Prisma.FieldRef<"BusinessHoliday", 'Boolean'>
+  readonly sourceType: Prisma.FieldRef<"BusinessHoliday", 'BusinessHolidaySourceType'>
+  readonly sourceProvider: Prisma.FieldRef<"BusinessHoliday", 'PublicHolidayProvider'>
+  readonly sourceDatasetId: Prisma.FieldRef<"BusinessHoliday", 'String'>
+  readonly sourceRecordKey: Prisma.FieldRef<"BusinessHoliday", 'String'>
+  readonly sourceDataAsOf: Prisma.FieldRef<"BusinessHoliday", 'String'>
+  readonly sourceImportedAt: Prisma.FieldRef<"BusinessHoliday", 'DateTime'>
   readonly createdAt: Prisma.FieldRef<"BusinessHoliday", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"BusinessHoliday", 'DateTime'>
 }

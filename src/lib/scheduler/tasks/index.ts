@@ -7,6 +7,7 @@
 
 export { backupTask } from './backup.task';
 export { acraSyncTask } from './acra-sync.task';
+export { publicHolidaySyncTask } from './public-holiday-sync.task';
 export { cleanupTask } from './cleanup.task';
 export { esigningExpiryCheckTask } from './esigning-expiry-check.task';
 export { esigningPdfGenerationTask } from './esigning-pdf-generation.task';

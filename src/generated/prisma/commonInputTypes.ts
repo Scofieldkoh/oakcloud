@@ -970,6 +970,57 @@ export type EnumDeadlineApplicabilityStateWithAggregatesFilter<$PrismaModel = ne
   _max?: Prisma.NestedEnumDeadlineApplicabilityStateFilter<$PrismaModel>
 }
 
+export type EnumBusinessHolidaySourceTypeFilter<$PrismaModel = never> = {
+  equals?: $Enums.BusinessHolidaySourceType | Prisma.EnumBusinessHolidaySourceTypeFieldRefInput<$PrismaModel>
+  in?: $Enums.BusinessHolidaySourceType[] | Prisma.ListEnumBusinessHolidaySourceTypeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.BusinessHolidaySourceType[] | Prisma.ListEnumBusinessHolidaySourceTypeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumBusinessHolidaySourceTypeFilter<$PrismaModel> | $Enums.BusinessHolidaySourceType
+}
+
+export type EnumPublicHolidayProviderNullableFilter<$PrismaModel = never> = {
+  equals?: $Enums.PublicHolidayProvider | Prisma.EnumPublicHolidayProviderFieldRefInput<$PrismaModel> | null
+  in?: $Enums.PublicHolidayProvider[] | Prisma.ListEnumPublicHolidayProviderFieldRefInput<$PrismaModel> | null
+  notIn?: $Enums.PublicHolidayProvider[] | Prisma.ListEnumPublicHolidayProviderFieldRefInput<$PrismaModel> | null
+  not?: Prisma.NestedEnumPublicHolidayProviderNullableFilter<$PrismaModel> | $Enums.PublicHolidayProvider | null
+}
+
+export type EnumBusinessHolidaySourceTypeWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.BusinessHolidaySourceType | Prisma.EnumBusinessHolidaySourceTypeFieldRefInput<$PrismaModel>
+  in?: $Enums.BusinessHolidaySourceType[] | Prisma.ListEnumBusinessHolidaySourceTypeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.BusinessHolidaySourceType[] | Prisma.ListEnumBusinessHolidaySourceTypeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumBusinessHolidaySourceTypeWithAggregatesFilter<$PrismaModel> | $Enums.BusinessHolidaySourceType
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumBusinessHolidaySourceTypeFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumBusinessHolidaySourceTypeFilter<$PrismaModel>
+}
+
+export type EnumPublicHolidayProviderNullableWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.PublicHolidayProvider | Prisma.EnumPublicHolidayProviderFieldRefInput<$PrismaModel> | null
+  in?: $Enums.PublicHolidayProvider[] | Prisma.ListEnumPublicHolidayProviderFieldRefInput<$PrismaModel> | null
+  notIn?: $Enums.PublicHolidayProvider[] | Prisma.ListEnumPublicHolidayProviderFieldRefInput<$PrismaModel> | null
+  not?: Prisma.NestedEnumPublicHolidayProviderNullableWithAggregatesFilter<$PrismaModel> | $Enums.PublicHolidayProvider | null
+  _count?: Prisma.NestedIntNullableFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumPublicHolidayProviderNullableFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumPublicHolidayProviderNullableFilter<$PrismaModel>
+}
+
+export type EnumPublicHolidayProviderFilter<$PrismaModel = never> = {
+  equals?: $Enums.PublicHolidayProvider | Prisma.EnumPublicHolidayProviderFieldRefInput<$PrismaModel>
+  in?: $Enums.PublicHolidayProvider[] | Prisma.ListEnumPublicHolidayProviderFieldRefInput<$PrismaModel>
+  notIn?: $Enums.PublicHolidayProvider[] | Prisma.ListEnumPublicHolidayProviderFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumPublicHolidayProviderFilter<$PrismaModel> | $Enums.PublicHolidayProvider
+}
+
+export type EnumPublicHolidayProviderWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.PublicHolidayProvider | Prisma.EnumPublicHolidayProviderFieldRefInput<$PrismaModel>
+  in?: $Enums.PublicHolidayProvider[] | Prisma.ListEnumPublicHolidayProviderFieldRefInput<$PrismaModel>
+  notIn?: $Enums.PublicHolidayProvider[] | Prisma.ListEnumPublicHolidayProviderFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumPublicHolidayProviderWithAggregatesFilter<$PrismaModel> | $Enums.PublicHolidayProvider
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumPublicHolidayProviderFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumPublicHolidayProviderFilter<$PrismaModel>
+}
+
 export type EnumDeadlineOwnershipScopeFilter<$PrismaModel = never> = {
   equals?: $Enums.DeadlineOwnershipScope | Prisma.EnumDeadlineOwnershipScopeFieldRefInput<$PrismaModel>
   in?: $Enums.DeadlineOwnershipScope[] | Prisma.ListEnumDeadlineOwnershipScopeFieldRefInput<$PrismaModel>
@@ -3851,6 +3902,57 @@ export type NestedEnumDeadlineApplicabilityStateWithAggregatesFilter<$PrismaMode
   _count?: Prisma.NestedIntFilter<$PrismaModel>
   _min?: Prisma.NestedEnumDeadlineApplicabilityStateFilter<$PrismaModel>
   _max?: Prisma.NestedEnumDeadlineApplicabilityStateFilter<$PrismaModel>
+}
+
+export type NestedEnumBusinessHolidaySourceTypeFilter<$PrismaModel = never> = {
+  equals?: $Enums.BusinessHolidaySourceType | Prisma.EnumBusinessHolidaySourceTypeFieldRefInput<$PrismaModel>
+  in?: $Enums.BusinessHolidaySourceType[] | Prisma.ListEnumBusinessHolidaySourceTypeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.BusinessHolidaySourceType[] | Prisma.ListEnumBusinessHolidaySourceTypeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumBusinessHolidaySourceTypeFilter<$PrismaModel> | $Enums.BusinessHolidaySourceType
+}
+
+export type NestedEnumPublicHolidayProviderNullableFilter<$PrismaModel = never> = {
+  equals?: $Enums.PublicHolidayProvider | Prisma.EnumPublicHolidayProviderFieldRefInput<$PrismaModel> | null
+  in?: $Enums.PublicHolidayProvider[] | Prisma.ListEnumPublicHolidayProviderFieldRefInput<$PrismaModel> | null
+  notIn?: $Enums.PublicHolidayProvider[] | Prisma.ListEnumPublicHolidayProviderFieldRefInput<$PrismaModel> | null
+  not?: Prisma.NestedEnumPublicHolidayProviderNullableFilter<$PrismaModel> | $Enums.PublicHolidayProvider | null
+}
+
+export type NestedEnumBusinessHolidaySourceTypeWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.BusinessHolidaySourceType | Prisma.EnumBusinessHolidaySourceTypeFieldRefInput<$PrismaModel>
+  in?: $Enums.BusinessHolidaySourceType[] | Prisma.ListEnumBusinessHolidaySourceTypeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.BusinessHolidaySourceType[] | Prisma.ListEnumBusinessHolidaySourceTypeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumBusinessHolidaySourceTypeWithAggregatesFilter<$PrismaModel> | $Enums.BusinessHolidaySourceType
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumBusinessHolidaySourceTypeFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumBusinessHolidaySourceTypeFilter<$PrismaModel>
+}
+
+export type NestedEnumPublicHolidayProviderNullableWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.PublicHolidayProvider | Prisma.EnumPublicHolidayProviderFieldRefInput<$PrismaModel> | null
+  in?: $Enums.PublicHolidayProvider[] | Prisma.ListEnumPublicHolidayProviderFieldRefInput<$PrismaModel> | null
+  notIn?: $Enums.PublicHolidayProvider[] | Prisma.ListEnumPublicHolidayProviderFieldRefInput<$PrismaModel> | null
+  not?: Prisma.NestedEnumPublicHolidayProviderNullableWithAggregatesFilter<$PrismaModel> | $Enums.PublicHolidayProvider | null
+  _count?: Prisma.NestedIntNullableFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumPublicHolidayProviderNullableFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumPublicHolidayProviderNullableFilter<$PrismaModel>
+}
+
+export type NestedEnumPublicHolidayProviderFilter<$PrismaModel = never> = {
+  equals?: $Enums.PublicHolidayProvider | Prisma.EnumPublicHolidayProviderFieldRefInput<$PrismaModel>
+  in?: $Enums.PublicHolidayProvider[] | Prisma.ListEnumPublicHolidayProviderFieldRefInput<$PrismaModel>
+  notIn?: $Enums.PublicHolidayProvider[] | Prisma.ListEnumPublicHolidayProviderFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumPublicHolidayProviderFilter<$PrismaModel> | $Enums.PublicHolidayProvider
+}
+
+export type NestedEnumPublicHolidayProviderWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.PublicHolidayProvider | Prisma.EnumPublicHolidayProviderFieldRefInput<$PrismaModel>
+  in?: $Enums.PublicHolidayProvider[] | Prisma.ListEnumPublicHolidayProviderFieldRefInput<$PrismaModel>
+  notIn?: $Enums.PublicHolidayProvider[] | Prisma.ListEnumPublicHolidayProviderFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumPublicHolidayProviderWithAggregatesFilter<$PrismaModel> | $Enums.PublicHolidayProvider
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumPublicHolidayProviderFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumPublicHolidayProviderFilter<$PrismaModel>
 }
 
 export type NestedEnumDeadlineOwnershipScopeFilter<$PrismaModel = never> = {

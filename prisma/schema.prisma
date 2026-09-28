@@ -1816,6 +1816,15 @@ model BusinessHoliday {
   name        String           @db.VarChar(100)
   description String?          @db.VarChar(500)
   isActive    Boolean          @default(true) @map("is_active")
+  /// MANUAL rows are owned by the calendar's administrators. EXTERNAL rows are
+  /// maintained by the public holiday sync. A MANUAL row may keep source fields
+  /// as history when it was converted from an EXTERNAL row.
+  sourceType       BusinessHolidaySourceType @default(MANUAL) @map("source_type")
+  sourceProvider   PublicHolidayProvider?    @map("source_provider")
+  sourceDatasetId  String?                   @map("source_dataset_id") @db.VarChar(100)
+  sourceRecordKey  String?                   @map("source_record_key") @db.VarChar(100)
+  sourceDataAsOf   String?                   @map("source_data_as_of") @db.VarChar(64)
+  sourceImportedAt DateTime?                 @map("source_imported_at")
   createdAt   DateTime         @default(now()) @map("created_at")
   updatedAt   DateTime         @updatedAt @map("updated_at")
   tenant      Workspace        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
@@ -1824,6 +1833,57 @@ model BusinessHoliday {
   @@unique([calendarId, date])
   @@index([tenantId, calendarId, date])
   @@map("business_holidays")
+}
+
+enum BusinessHolidaySourceType {
+  MANUAL
+  EXTERNAL
+}
+
+enum PublicHolidayProvider {
+  DATA_GOV_SG_MOM
+}
+
+/// Local copy of an official public holiday source. Deadline evaluation never
+/// reads the external source; business calendars are synchronized from here.
+model PublicHolidaySourceRecord {
+  id               String                @id @default(uuid())
+  provider         PublicHolidayProvider
+  jurisdictionCode String                @map("jurisdiction_code") @db.VarChar(10)
+  date             DateTime              @db.Date
+  name             String                @db.VarChar(100)
+  description      String?               @db.VarChar(500)
+  sourceDatasetId  String                @map("source_dataset_id") @db.VarChar(100)
+  sourceRecordKey  String                @map("source_record_key") @db.VarChar(100)
+  dataAsOf         String                @map("data_as_of") @db.VarChar(64)
+  createdAt        DateTime              @default(now()) @map("created_at")
+  updatedAt        DateTime              @updatedAt @map("updated_at")
+
+  @@unique([provider, jurisdictionCode, date])
+  @@index([provider, jurisdictionCode, dataAsOf])
+  @@map("public_holiday_source_records")
+}
+
+model PublicHolidaySyncState {
+  id                  String                @id @default(uuid())
+  provider            PublicHolidayProvider
+  jurisdictionCode    String                @map("jurisdiction_code") @db.VarChar(10)
+  datasetId           String?               @map("dataset_id") @db.VarChar(100)
+  sourceLastUpdatedAt String?               @map("source_last_updated_at") @db.VarChar(64)
+  dataAsOf            String?               @map("data_as_of") @db.VarChar(64)
+  sourceHash          String?               @map("source_hash") @db.VarChar(64)
+  recordCount         Int                   @default(0) @map("record_count")
+  coverageStart       DateTime?             @map("coverage_start") @db.Date
+  coverageEnd         DateTime?             @map("coverage_end") @db.Date
+  lastCheckedAt       DateTime?             @map("last_checked_at")
+  lastStartedAt       DateTime?             @map("last_started_at")
+  lastCompletedAt     DateTime?             @map("last_completed_at")
+  lastError           String?               @map("last_error")
+  createdAt           DateTime              @default(now()) @map("created_at")
+  updatedAt           DateTime              @updatedAt @map("updated_at")
+
+  @@unique([provider, jurisdictionCode])
+  @@map("public_holiday_sync_state")
 }
 
 model ServiceCycle {

@@ -120,6 +120,27 @@ itself unavailable until the first sync has populated the table.
 | `SCHEDULER_ACRA_SYNC_CRON` | `0 3 * * *` | When the daily sync runs (default: 3 AM SGT) |
 | `ACRA_SYNC_SLEEP_MS` | - | Optional fixed request-spacing override in ms (e.g. `0` for faster one-off backfills via `scripts/run-acra-sync.ts`) |
 
+### Singapore Public Holidays (MOM via data.gov.sg)
+
+The daily public holiday sync reads MOM's
+[Singapore Public Holidays (consolidated)](https://data.gov.sg/datasets/d_8ef23381f9417e4d4254ee8b4dcdb176/view)
+dataset. It checks the dataset's last-updated time and downloads the small CSV
+only when it changed (Administration > Services > Business Calendar > Check for
+updates always downloads). The rows are stored in `public_holiday_source_records`,
+and every active Singapore business calendar is then synchronized: official
+holidays are added, renamed or archived (removals only inside the years the
+dataset covers), manual holidays are never changed, and each changed calendar
+gets a new revision, an audit entry and a `BUSINESS_CALENDAR_CHANGED`
+reconciliation. Deadline calculation only reads the local calendars.
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `DATAGOV_PUBLIC_HOLIDAY_DATASET_ID` | `d_8ef23381f9417e4d4254ee8b4dcdb176` | Optional override for the MOM public holiday dataset id |
+| `SCHEDULER_PUBLIC_HOLIDAY_SYNC_ENABLED` | `false` | Enables the daily public holiday check (set `true` in `.env`) |
+| `SCHEDULER_PUBLIC_HOLIDAY_SYNC_CRON` | `0 4 * * *` | When the daily check runs (default: 4 AM SGT) |
+
+`DATAGOV_API_KEY` is sent with these requests too when it is set; the dataset is also available without a key.
+
 ## Storage
 
 | Variable | Default | Description |

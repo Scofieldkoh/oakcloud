@@ -325,6 +325,17 @@ export type BusinessCalendar = Prisma.BusinessCalendarModel
  */
 export type BusinessHoliday = Prisma.BusinessHolidayModel
 /**
+ * Model PublicHolidaySourceRecord
+ * Local copy of an official public holiday source. Deadline evaluation never
+ * reads the external source; business calendars are synchronized from here.
+ */
+export type PublicHolidaySourceRecord = Prisma.PublicHolidaySourceRecordModel
+/**
+ * Model PublicHolidaySyncState
+ *
+ */
+export type PublicHolidaySyncState = Prisma.PublicHolidaySyncStateModel
+/**
  * Model ServiceCycle
  *
  */
