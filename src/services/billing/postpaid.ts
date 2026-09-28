@@ -269,3 +269,42 @@ export async function findPostpaidEngagementStartConflicts(
     engagementStartYearOfAssessment: service.engagementStartYearOfAssessment!,
   }));
 }
+
+/**
+ * For company filings about to be set to Filed, the ones that would raise no
+ * postpaid bill because their YA is before a service's engagement start.
+ */
+export async function findUnbilledFilings(
+  input: { tenantId: string; companyIds?: string[]; occurrenceIds: string[] },
+  db: Db = prisma,
+): Promise<Array<{ occurrenceId: string; services: PostpaidEngagementStartConflict[] }>> {
+  if (input.occurrenceIds.length === 0) return [];
+  const rows = await db.deadlineOccurrence.findMany({
+    where: {
+      id: { in: input.occurrenceIds },
+      tenantId: input.tenantId,
+      ...(input.companyIds === undefined ? {} : { companyId: { in: input.companyIds } }),
+      ownershipScope: 'COMPANY',
+      status: { not: 'COMPLETED' },
+      obligationCode: { not: null },
+      yearOfAssessment: { not: null },
+    },
+    select: { id: true, companyId: true, obligationCode: true, yearOfAssessment: true },
+  });
+  const cache = new Map<string, Promise<PostpaidEngagementStartConflict[]>>();
+  const result: Array<{ occurrenceId: string; services: PostpaidEngagementStartConflict[] }> = [];
+  for (const row of rows) {
+    const key = `${row.companyId}|${row.obligationCode}|${row.yearOfAssessment}`;
+    if (!cache.has(key)) {
+      cache.set(key, findPostpaidEngagementStartConflicts({
+        tenantId: input.tenantId,
+        companyId: row.companyId,
+        obligationCode: row.obligationCode!,
+        yearOfAssessment: row.yearOfAssessment!,
+      }, db));
+    }
+    const services = await cache.get(key)!;
+    if (services.length > 0) result.push({ occurrenceId: row.id, services });
+  }
+  return result;
+}

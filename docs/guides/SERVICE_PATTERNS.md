@@ -368,7 +368,9 @@ external billing and does not assert that an Oakcloud invoice exists.
   start). Setting Filed on a YA before a postpaid service's engagement start
   asks whether to move the start back to that YA (service dialog, and the
   Deadlines page via `postpaidEngagementStartConflicts` on the PATCH
-  response). Moving the YA back from Filed cancels a still-Open entry; filing
+  response). Bulk Mark complete on the Deadlines page lists, before
+  confirming, the selected filings that would not bill
+  (`POST /api/deadlines/unbilled-filings`). Moving the YA back from Filed cancels a still-Open entry; filing
   again reopens it. Billed, waived and staff-cancelled entries are kept.
   Agreement activation takes Postpaid from the variant fee template with the
   same description.

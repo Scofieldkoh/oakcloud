@@ -587,6 +587,11 @@ describePostgres('company compliance monitoring on PostgreSQL', () => {
         feeLines: { create: { tenantId: fixture.tenantId, description: 'Form C', amount: '800.00', currency: 'SGD', billingFrequency: 'ONE_TIME', billingTiming: 'POSTPAID', postpaidTrigger: 'SG_ECI_OR_FORM_C_FILED' } },
       },
     });
+    const { findUnbilledFilings } = await import('@/services/billing/postpaid');
+    expect(await findUnbilledFilings({ tenantId: fixture.tenantId, occurrenceIds: [target.id] })).toEqual([
+      { occurrenceId: target.id, services: [{ clientServiceId: serviceId, serviceName: 'Corporate tax (later start)', engagementStartYearOfAssessment: ya + 1 }] },
+    ]);
+    expect(await findUnbilledFilings({ tenantId: fixture.tenantId, companyIds: [], occurrenceIds: [target.id] })).toEqual([]);
     const current = await prisma.deadlineOccurrence.findUniqueOrThrow({ where: { id: target.id } });
     const filed = await updateDeadlineOccurrence(target.id, { status: 'COMPLETED', expectedUpdatedAt: current.updatedAt.toISOString() }, { tenantId: fixture.tenantId, userId: fixture.userId });
     expect(filed.postpaidEngagementStartConflicts).toEqual([
