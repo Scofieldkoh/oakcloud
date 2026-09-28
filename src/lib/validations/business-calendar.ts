@@ -17,6 +17,11 @@ const holidaySchema = z.object({
   date: dateOnlySchema,
   name: z.string().trim().min(1).max(100),
   description: z.string().trim().max(500).nullable(),
+  /**
+   * Ownership of the row. Omit to keep the current owner; MANUAL converts an
+   * official (EXTERNAL) holiday into a manually maintained one.
+   */
+  sourceType: z.enum(['MANUAL', 'EXTERNAL']).optional(),
 }).strict();
 
 const calendarFieldsSchema = z.object({
