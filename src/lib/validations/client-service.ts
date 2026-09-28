@@ -215,6 +215,13 @@ export const companyObligationStatusEntrySchema = z.object({
   status: z.enum(['TO_BE_CONFIRMED', 'PENDING_FILING', 'FILED', 'MANAGED_EXTERNALLY', 'NOT_REQUIRED']),
 }).strict();
 
+const yearOfAssessmentSchema = z.number().int().min(2000).max(2100);
+
+export const engagementStartYearOfAssessmentSchema = z.object({
+  serviceId: z.string().uuid(),
+  yearOfAssessment: yearOfAssessmentSchema.nullable(),
+}).strict();
+
 export const createManualClientServiceSchema = z.object({
   serviceVariantId: z.string().uuid(),
   status: z.enum(['ACTIVE', 'PAUSED', 'ENDED']).default('ACTIVE'),
@@ -229,6 +236,8 @@ export const createManualClientServiceSchema = z.object({
   deadlineRules: clientServiceDeadlineRulesSchema.optional(),
   /** Filing statuses staff record for company obligations while adding. */
   companyObligationStatuses: z.array(companyObligationStatusEntrySchema).max(60).default([]),
+  /** First Year of Assessment this engagement files. */
+  engagementStartYearOfAssessment: yearOfAssessmentSchema.nullable().optional(),
   confirmDuplicate: z.boolean().default(false),
 }).strict().superRefine((value, ctx) => {
   validateCadenceAndDates(value, ctx);

@@ -290,6 +290,68 @@ describePostgres('company compliance monitoring on PostgreSQL', () => {
     }
   });
 
+  it('projects Pending filing from the engagement start YA and hands staff choices back to it', async () => {
+    const { setEngagementStartYearOfAssessment } = await import('@/services/compliance-monitoring/engagement-start');
+    const { setCompanyObligationStatus } = await import('@/services/compliance-monitoring/obligation-status');
+    const { previewCompanyObligations, reconcileCompanyObligations } = await import('@/services/compliance-monitoring/writer');
+    const openRows = () => prisma.deadlineOccurrence.findMany({
+      where: { tenantId: fixture.tenantId, companyId: fixture.companyId, ownershipScope: 'COMPANY', status: 'OPEN', yearOfAssessment: { not: null } },
+      orderBy: [{ yearOfAssessment: 'asc' }, { obligationCode: 'asc' }],
+    });
+    // The fixture service has ended; the service added by hand is still active.
+    const { clientServiceId: serviceId } = await prisma.companyMonitoringCoverage.findFirstOrThrow({
+      where: { tenantId: fixture.tenantId, companyId: fixture.companyId, monitoringEnd: null },
+      select: { clientServiceId: true },
+    }) as { clientServiceId: string };
+    const rows = await openRows();
+    const years = [...new Set(rows.map((row) => row.yearOfAssessment!))];
+    expect(years.length).toBeGreaterThan(1);
+    const start = years[1]!;
+    const later = rows.find((row) => row.yearOfAssessment === start && row.responsibilitySource !== 'STAFF')!;
+    const external = rows.find((row) => row.filingResponsibility === 'EXTERNAL_PROVIDER');
+
+    // A staff "To be confirmed" on a row from the start YA is handed back.
+    await prisma.$transaction((tx) => setCompanyObligationStatus({
+      tenantId: fixture.tenantId, companyId: fixture.companyId, obligationCode: later.obligationCode!,
+      periodKey: later.obligationPeriodKey!, status: 'TO_BE_CONFIRMED', actorId: fixture.userId,
+    }, tx));
+
+    const serviceBefore = await prisma.clientService.findUniqueOrThrow({ where: { id: serviceId } });
+    await setEngagementStartYearOfAssessment({
+      tenantId: fixture.tenantId, companyId: fixture.companyId, clientServiceId: serviceId,
+      yearOfAssessment: start, actorId: fixture.userId,
+    });
+    const serviceAfter = await prisma.clientService.findUniqueOrThrow({ where: { id: serviceId } });
+    expect(serviceAfter.engagementStartYearOfAssessment).toBe(start);
+    expect(serviceAfter.updatedAt.toISOString()).toBe(serviceBefore.updatedAt.toISOString());
+
+    const preview = await previewCompanyObligations({
+      tenantId: fixture.tenantId, companyId: fixture.companyId, today: TODAY as DateOnly, serviceId: serviceId,
+    }, prisma);
+    expect(preview.engagementStartYearOfAssessment).toBe(start);
+    for (const item of preview.items) {
+      if (item.yearOfAssessment !== null && item.yearOfAssessment >= start) expect(item.projectedStatus).toBe('PENDING_FILING');
+    }
+
+    await prisma.$transaction((tx) => reconcileCompanyObligations({
+      tenantId: fixture.tenantId, companyId: fixture.companyId, today: TODAY, writeMode: 'APPLY',
+    }, tx));
+    const after = new Map((await openRows()).map((row) => [row.id, row]));
+    expect(after.get(later.id)).toMatchObject({ filingResponsibility: 'OAKCLOUD', responsibilitySource: 'PROJECTED' });
+    for (const row of after.values()) {
+      if (row.responsibilitySource === 'STAFF') continue;
+      if (row.yearOfAssessment! >= start) expect(row.filingResponsibility).toBe('OAKCLOUD');
+    }
+    if (external) {
+      expect(after.get(external.id)).toMatchObject({ filingResponsibility: 'EXTERNAL_PROVIDER', responsibilitySource: 'STAFF' });
+    }
+
+    await setEngagementStartYearOfAssessment({
+      tenantId: fixture.tenantId, companyId: fixture.companyId, clientServiceId: serviceId,
+      yearOfAssessment: null, actorId: fixture.userId,
+    });
+  });
+
   it('confirms a first financial period longer than 12 months and replaces the provisional periods', async () => {
     const { confirmFinancialPeriod } = await import('@/services/compliance-monitoring/financial-periods');
     const { previewCompanyObligations } = await import('@/services/compliance-monitoring/writer');

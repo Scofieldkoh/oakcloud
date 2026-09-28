@@ -7,6 +7,7 @@ const hooksMock = vi.hoisted(() => ({
   useCompanyObligations: vi.fn(() => ({ data: { items: [], notices: [] }, isLoading: false, error: null })),
   useSetCompanyObligationStatus: vi.fn(() => ({ mutateAsync: vi.fn(), isPending: false })),
   useConfirmFinancialPeriod: vi.fn(() => ({ mutateAsync: vi.fn(), isPending: false })),
+  useSetEngagementStart: vi.fn(() => ({ mutateAsync: vi.fn(), isPending: false })),
   isHttpRequestError: vi.fn((error: unknown, status?: number) => Boolean(
     error && typeof error === 'object' && 'status' in error
       && (status === undefined || error.status === status)

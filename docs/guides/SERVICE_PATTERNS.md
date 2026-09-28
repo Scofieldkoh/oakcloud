@@ -280,13 +280,22 @@ export function getDocumentExporter(): IDocumentExporter {
   writer projects them, plus setup gaps such as a missing FYE or an unpublished
   rule, from `GET /api/companies/[id]/services/company-obligations`
   (`profiles`, `start`, `end` for a service being added; `serviceId` for an
-  existing one). Each row shows the due date, a `YA` badge (amber with `?`
-  while the period is provisional) and a filing status.
+  existing one). Each row shows a `YA` badge, the due date and a filing
+  status, and is tinted by status (Filed green, Pending filing yellow, To be
+  confirmed light red, Managed externally and Not required grey).
+- **Our engagement starts from** stores `ClientService.engagementStartYearOfAssessment`
+  (`fromYa` on the preview for a service being added; `PUT` on the same route
+  for an existing one). The projection makes Oakcloud the filer for
+  obligations from that YA while the service's coverage lasts; earlier ones
+  stay unconfirmed. Changing it hands open staff Pending filing and To be
+  confirmed choices back to the projection and keeps Filed, Not required and
+  Managed externally.
 - Filing statuses (`compliance-monitoring/obligation-status.ts`) map onto the
   stored occurrence: To be confirmed (open, responsibility unconfirmed),
   Pending filing (open, the firm files), Filed (completed), Managed externally
   (open, external provider) and Not required (waived). Responsibility is
-  recorded as STAFF, so the writer keeps it. Statuses can be set only while
+  recorded as STAFF, so the writer keeps it. A row shows the form's choice,
+  then a staff record, then the projected status. Statuses can be set only while
   company monitoring writes are on: in Add service they are sent with the
   create request, which writes that company's obligations in the same
   transaction; in edit they save at once through
@@ -294,7 +303,8 @@ export function getDocumentExporter(): IDocumentExporter {
 - **Confirm first period** saves a CONFIRMED `CompanyFinancialPeriod`
   (`POST /api/companies/[id]/financial-periods`, up to 18 months, YA the end
   year or the year after) and queues company reconciliation. Confirmed periods
-  replace the provisional derived periods they overlap.
+  replace the provisional derived periods they overlap, which can remove or
+  move the earliest filings. The dialog's YA follows the first year end.
 - Monitoring never sends client reminders and never writes billing records.
 - Pause by turning the flag off: stored company obligations stay readable and
   the worker returns to observe mode. Do not delete company rows to roll back.
