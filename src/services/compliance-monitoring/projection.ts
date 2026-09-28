@@ -379,7 +379,7 @@ export function projectCompanyObligations(input: CompanyMonitoringProjectionInpu
         reasons.push({ kind: 'CONTRACTED_DELIVERY', deliveryScopeId: scope.id, clientServiceId: scope.clientServiceId });
       }
       const inAnyCoverage = relevantCoverages.some((coverage) => withinCoverage(dueDate, coverage));
-      if (!inAnyCoverage) {
+      if (!inAnyCoverage && definition.takeoverReview !== false) {
         // Earlier filings due in the year before monitoring started go to
         // takeover review rather than being described as due during coverage.
         const takeover = relevantCoverages

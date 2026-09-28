@@ -69,10 +69,10 @@ function rows(result: ReturnType<typeof projectCompanyObligations>) {
 
 describe('company obligation projection: the March FYE example', () => {
   it('shows June ECI, the prior-FYE YA 2026 return and the YA 2027 return with correct responsibility', () => {
-    // Filings due in the year before the agreement date enter takeover review.
+    // Tax returns due in the year before the agreement date enter takeover
+    // review; an ECI due then does not.
     const result = projectCompanyObligations(input());
     expect(rows(result)).toEqual([
-      ['2025-06-30', 'SG_ECI', 'FY2025-03-31', 'UNCONFIRMED', 'BEFORE_START'],
       ['2025-11-30', 'SG_FORM_C', 'YA2025', 'UNCONFIRMED', 'BEFORE_START'],
       ['2026-06-30', 'SG_ECI', 'FY2026-03-31', 'OAKCLOUD', 'DURING'],
       ['2026-11-30', 'SG_FORM_C', 'YA2026', 'UNCONFIRMED', 'DURING'],
@@ -110,14 +110,14 @@ describe('company obligation projection: the March FYE example', () => {
 });
 
 describe('company obligation projection: agreement timing', () => {
-  it('a 1 September agreement covers both returns and puts June ECI in takeover review', () => {
+  it('a 1 September agreement covers both returns and keeps the earlier June ECI out of takeover review', () => {
     const result = projectCompanyObligations(input({
       coverages: [taxCoverage('2026-09-01')],
       deliveryScopes: [contracted('SG_ECI', 'FY2026-03-31')],
     }));
     const june = result.obligations.find((obligation) => obligation.periodKey === 'FY2026-03-31')!;
     expect(june.coverageTiming).toBe('BEFORE_START');
-    expect(june.reasons.map((reason) => reason.kind).sort()).toEqual(['CONTRACTED_DELIVERY', 'TAKEOVER_REVIEW']);
+    expect(june.reasons.map((reason) => reason.kind)).toEqual(['CONTRACTED_DELIVERY']);
     expect(june.filingResponsibility).toBe('OAKCLOUD');
     expect(result.obligations.filter((obligation) => obligation.obligationCode === 'SG_FORM_C').map((obligation) => [obligation.periodKey, obligation.coverageTiming])).toEqual([
       ['YA2025', 'BEFORE_START'],
