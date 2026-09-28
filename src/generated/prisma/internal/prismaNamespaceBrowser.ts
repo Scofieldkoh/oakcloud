@@ -108,6 +108,8 @@ export const ModelName = {
   ClientServiceDeadlineRule: 'ClientServiceDeadlineRule',
   BusinessCalendar: 'BusinessCalendar',
   BusinessHoliday: 'BusinessHoliday',
+  PublicHolidaySourceRecord: 'PublicHolidaySourceRecord',
+  PublicHolidaySyncState: 'PublicHolidaySyncState',
   ServiceCycle: 'ServiceCycle',
   DeadlineOccurrence: 'DeadlineOccurrence',
   CompanyFinancialPeriod: 'CompanyFinancialPeriod',
@@ -1354,11 +1356,56 @@ export const BusinessHolidayScalarFieldEnum = {
   name: 'name',
   description: 'description',
   isActive: 'isActive',
+  sourceType: 'sourceType',
+  sourceProvider: 'sourceProvider',
+  sourceDatasetId: 'sourceDatasetId',
+  sourceRecordKey: 'sourceRecordKey',
+  sourceDataAsOf: 'sourceDataAsOf',
+  sourceImportedAt: 'sourceImportedAt',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
 
 export type BusinessHolidayScalarFieldEnum = (typeof BusinessHolidayScalarFieldEnum)[keyof typeof BusinessHolidayScalarFieldEnum]
+
+
+export const PublicHolidaySourceRecordScalarFieldEnum = {
+  id: 'id',
+  provider: 'provider',
+  jurisdictionCode: 'jurisdictionCode',
+  date: 'date',
+  name: 'name',
+  description: 'description',
+  sourceDatasetId: 'sourceDatasetId',
+  sourceRecordKey: 'sourceRecordKey',
+  dataAsOf: 'dataAsOf',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type PublicHolidaySourceRecordScalarFieldEnum = (typeof PublicHolidaySourceRecordScalarFieldEnum)[keyof typeof PublicHolidaySourceRecordScalarFieldEnum]
+
+
+export const PublicHolidaySyncStateScalarFieldEnum = {
+  id: 'id',
+  provider: 'provider',
+  jurisdictionCode: 'jurisdictionCode',
+  datasetId: 'datasetId',
+  sourceLastUpdatedAt: 'sourceLastUpdatedAt',
+  dataAsOf: 'dataAsOf',
+  sourceHash: 'sourceHash',
+  recordCount: 'recordCount',
+  coverageStart: 'coverageStart',
+  coverageEnd: 'coverageEnd',
+  lastCheckedAt: 'lastCheckedAt',
+  lastStartedAt: 'lastStartedAt',
+  lastCompletedAt: 'lastCompletedAt',
+  lastError: 'lastError',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type PublicHolidaySyncStateScalarFieldEnum = (typeof PublicHolidaySyncStateScalarFieldEnum)[keyof typeof PublicHolidaySyncStateScalarFieldEnum]
 
 
 export const ServiceCycleScalarFieldEnum = {

@@ -21,6 +21,8 @@ const mocks = vi.hoisted(() => ({
   createBusinessCalendar: vi.fn(),
   updateBusinessCalendar: vi.fn(),
   previewBusinessCalendarImpact: vi.fn(),
+  syncPublicHolidaysIfUpdated: vi.fn(),
+  getPublicHolidaySourceStatus: vi.fn(),
 }));
 
 vi.mock('@/lib/auth', () => ({ requireAuth: mocks.requireAuth }));
@@ -37,7 +39,16 @@ vi.mock('@/services/business-calendar', () => ({
   previewBusinessCalendarImpact: mocks.previewBusinessCalendarImpact,
 }));
 
+vi.mock('@/services/public-holiday-sync.service', () => ({
+  syncPublicHolidaysIfUpdated: mocks.syncPublicHolidaysIfUpdated,
+  getPublicHolidaySourceStatus: mocks.getPublicHolidaySourceStatus,
+}));
+
 import { GET as listCalendars, POST as createCalendar } from '@/app/api/service-calendars/route';
+import {
+  GET as getPublicHolidaySource,
+  POST as checkPublicHolidays,
+} from '@/app/api/service-calendars/public-holidays/route';
 import {
   GET as getCalendar,
   PATCH as updateCalendar,
@@ -301,5 +312,52 @@ describe('service calendar routes', () => {
     }), { params: Promise.resolve({ id: CALENDAR_ID }) });
     expect(mismatched.status).toBe(400);
     expect(mocks.updateBusinessCalendar).not.toHaveBeenCalled();
+  });
+
+  describe('public holiday source', () => {
+    const status = { provider: 'DATA_GOV_SG_MOM', recordCount: 104, lastError: null };
+
+    beforeEach(() => {
+      mocks.getPublicHolidaySourceStatus.mockResolvedValue(status);
+      mocks.syncPublicHolidaysIfUpdated.mockResolvedValue({
+        synced: true,
+        skipped: false,
+        sourceChanged: true,
+        recordCount: 104,
+        dataAsOf: '2026-07-03T16:04:00+08:00',
+        calendarsChecked: 1,
+        calendarsUpdated: 1,
+        calendarsFailed: 0,
+        holidaysAdded: 3,
+        holidaysUpdated: 0,
+        holidaysArchived: 0,
+        calendarResults: [{ calendarId: CALENDAR_ID, tenantId: session.tenantId }],
+      });
+    });
+
+    it('forces a check and reports only the caller workspace', async () => {
+      const response = await checkPublicHolidays(new NextRequest(`http://localhost/api/service-calendars/public-holidays?tenantId=${session.tenantId}`, { method: 'POST' }));
+      const body = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(mocks.resolveWorkspaceId).toHaveBeenCalledWith(session, session.tenantId);
+      expect(mocks.syncPublicHolidaysIfUpdated).toHaveBeenCalledWith({ force: true, reportTenantId: session.tenantId });
+      expect(body.result).toMatchObject({ calendarsUpdated: 1, holidaysAdded: 3 });
+      expect(body.result.calendarResults).toBeUndefined();
+      expect(body.status).toEqual(status);
+    });
+
+    it('requires Tenant Admin access before touching the source', async () => {
+      const forbid = () => { throw new ForbiddenError('Service administration requires Tenant Admin access'); };
+      mocks.requireServiceAdministrator.mockImplementationOnce(forbid).mockImplementationOnce(forbid);
+
+      const post = await checkPublicHolidays(new NextRequest('http://localhost/api/service-calendars/public-holidays', { method: 'POST' }));
+      const get = await getPublicHolidaySource(new NextRequest('http://localhost/api/service-calendars/public-holidays'));
+
+      expect(post.status).toBe(403);
+      expect(get.status).toBe(403);
+      expect(mocks.syncPublicHolidaysIfUpdated).not.toHaveBeenCalled();
+      expect(mocks.getPublicHolidaySourceStatus).not.toHaveBeenCalled();
+    });
   });
 });

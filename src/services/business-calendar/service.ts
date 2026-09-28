@@ -1,3 +1,4 @@
+import type { Prisma } from '@/generated/prisma';
 import { computeChanges, createAuditLog } from '@/lib/audit';
 import {
   ConflictError,
@@ -38,6 +39,8 @@ type CalendarDb = typeof prisma | {
   clientServiceDeadlineRule: typeof prisma.clientServiceDeadlineRule;
 };
 
+type HolidaySourceType = 'MANUAL' | 'EXTERNAL';
+
 type HolidayRecord = {
   id?: string;
   tenantId: string;
@@ -46,6 +49,8 @@ type HolidayRecord = {
   name: string;
   description: string | null;
   isActive: boolean;
+  sourceType?: HolidaySourceType;
+  sourceProvider?: 'DATA_GOV_SG_MOM' | null;
 };
 
 type CalendarRecord = {
@@ -68,6 +73,7 @@ type CanonicalCalendarInput = Omit<NormalizedBusinessCalendarInput, 'holidays'> 
     date: DateOnly;
     name: string;
     description: string | null;
+    sourceType?: HolidaySourceType;
   }>;
 };
 
@@ -77,6 +83,9 @@ type CalendarHolidayDto = {
   name: string;
   description: string | null;
   isActive: boolean;
+  /** MANUAL rows are edited here; EXTERNAL rows follow the official source. */
+  sourceType: HolidaySourceType;
+  sourceProvider: string | null;
 };
 
 export type BusinessCalendarDto = {
@@ -297,6 +306,8 @@ function toCalendarHolidayDto(holiday: HolidayRecord): CalendarHolidayDto {
     name: holiday.name,
     description: holiday.description ?? null,
     isActive: holiday.isActive,
+    sourceType: holiday.sourceType ?? 'MANUAL',
+    sourceProvider: holiday.sourceProvider ?? null,
   };
 }
 
@@ -344,6 +355,42 @@ function normalizeCalendarInput(input: BusinessCalendarInput | Record<string, un
       date: holiday.date as DateOnly,
     })),
   };
+}
+
+function holidayLabel(name: string, date: DateOnly): string {
+  return `"${name}" on ${date}`;
+}
+
+/**
+ * Official (EXTERNAL) holidays belong to the public holiday sync. A manual
+ * edit may keep them as they are or convert them to manual first, but never
+ * silently rename, remove or claim them.
+ */
+function assertHolidayOwnership(current: CalendarRecord, input: CanonicalCalendarInput): void {
+  const submitted = new Map(input.holidays.map((holiday) => [holiday.date, holiday]));
+  const externalDates = new Set<DateOnly>();
+  for (const holiday of current.holidays ?? []) {
+    if (!holiday.isActive || holiday.sourceType !== 'EXTERNAL') continue;
+    const date = toDateOnly(holiday.date);
+    externalDates.add(date);
+    const next = submitted.get(date);
+    if (!next) {
+      throw new ValidationError(`${holidayLabel(holiday.name, date)} comes from the official public holiday list. Convert it to manual before removing it.`);
+    }
+    if (next.sourceType === 'MANUAL') continue;
+    if (next.name !== holiday.name || (next.description ?? null) !== (holiday.description ?? null)) {
+      throw new ValidationError(`${holidayLabel(holiday.name, date)} comes from the official public holiday list. Convert it to manual before editing it.`);
+    }
+  }
+  for (const holiday of input.holidays) {
+    if (holiday.sourceType === 'EXTERNAL' && !externalDates.has(holiday.date)) {
+      throw new ValidationError(`${holidayLabel(holiday.name, holiday.date)} cannot be marked as official; official holidays are added by the public holiday sync.`);
+    }
+  }
+}
+
+function resolvedSourceType(existing: HolidayRecord, next: { sourceType?: HolidaySourceType }): HolidaySourceType {
+  return existing.isActive && existing.sourceType === 'EXTERNAL' && next.sourceType !== 'MANUAL' ? 'EXTERNAL' : 'MANUAL';
 }
 
 function normalizedHolidayRows(calendarId: string, tenantId: string, input: CanonicalCalendarInput): HolidayRecord[] {
@@ -744,6 +791,27 @@ async function computeImpact(
   };
 }
 
+/**
+ * Queue the downstream deadline reconciliation for a committed calendar
+ * revision. Shared by manual edits and the public holiday sync.
+ */
+async function enqueueCalendarChangedReconciliation(
+  tx: Parameters<typeof enqueueScheduleReconciliation>[0],
+  tenantId: string,
+  calendarId: string,
+  revision: number,
+  requestedById: string | null,
+): Promise<void> {
+  await enqueueScheduleReconciliation(tx, {
+    tenantId,
+    scopeType: 'BUSINESS_CALENDAR',
+    scopeId: calendarId,
+    triggerType: 'BUSINESS_CALENDAR_CHANGED',
+    correlationId: `business-calendar:${calendarId}:revision:${revision}`,
+    requestedById,
+  });
+}
+
 export async function listBusinessCalendars(params: TenantAwareParams): Promise<BusinessCalendarListDto> {
   const records = await prisma.businessCalendar.findMany({
     where: { tenantId: params.tenantId },
@@ -772,6 +840,10 @@ export async function createBusinessCalendar(
   params: TenantAwareParams,
 ): Promise<BusinessCalendarDto> {
   const parsed = normalizeCalendarInput(input as Record<string, unknown>);
+  const official = parsed.holidays.find((holiday) => holiday.sourceType === 'EXTERNAL');
+  if (official) {
+    throw new ValidationError(`${holidayLabel(official.name, official.date)} cannot be marked as official; official holidays are added by the public holiday sync.`);
+  }
   const holidayRows = normalizedHolidayRows('', params.tenantId, parsed);
   try {
     return await runSerializableTransaction(prisma, async (tx) => {
@@ -823,6 +895,7 @@ export async function previewBusinessCalendarImpact(
 ): Promise<BusinessCalendarImpact> {
   const parsed = normalizeCalendarInput(input as Record<string, unknown>);
   const current = await findCalendarRecord(prisma, id, params.tenantId);
+  assertHolidayOwnership(current, parsed);
   return computeImpact(prisma, current, parsed, params.tenantId, options.now);
 }
 
@@ -861,6 +934,7 @@ export async function updateBusinessCalendar(
         { expectedRevision, currentRevision: current.revision },
       );
     }
+    assertHolidayOwnership(current, parsed);
 
     const impact = await computeImpact(tx, current, parsed, params.tenantId, options.now);
     if (proposedHash !== impact.proposedHash || previewFingerprint !== impact.previewFingerprint) {
@@ -907,9 +981,10 @@ export async function updateBusinessCalendar(
             name: holiday.name,
             description: holiday.description,
             isActive: true,
+            sourceType: resolvedSourceType(existing, holiday),
           },
         });
-        persistedRows.push({ ...existing, date: parseDateOnly(holiday.date), name: holiday.name, description: holiday.description, isActive: true });
+        persistedRows.push({ ...existing, date: parseDateOnly(holiday.date), name: holiday.name, description: holiday.description, isActive: true, sourceType: resolvedSourceType(existing, holiday) });
       } else {
         const createdHoliday = typeof tx.businessHoliday.create === 'function'
           ? await tx.businessHoliday.create({
@@ -969,14 +1044,7 @@ export async function updateBusinessCalendar(
       changes: changes ?? undefined,
     }, tx);
 
-    await enqueueScheduleReconciliation(tx, {
-      tenantId: params.tenantId,
-      scopeType: 'BUSINESS_CALENDAR',
-      scopeId: id,
-      triggerType: 'BUSINESS_CALENDAR_CHANGED',
-      correlationId: `business-calendar:${id}:revision:${current.revision + 1}`,
-      requestedById: params.userId,
-    });
+    await enqueueCalendarChangedReconciliation(tx, params.tenantId, id, current.revision + 1, params.userId);
 
     if (updated === null) {
       throw new DeadlineApiError(ErrorCodes.VERSION_CONFLICT, 'Business calendar revision is stale', 409);
@@ -995,4 +1063,264 @@ export async function updateBusinessCalendar(
     }
     throw error;
   });
+}
+
+// ---------------------------------------------------------------------------
+// Official public holiday synchronization
+// ---------------------------------------------------------------------------
+
+export type PublicHolidaySourceSnapshot = {
+  provider: 'DATA_GOV_SG_MOM';
+  jurisdictionCode: string;
+  datasetId: string;
+  dataAsOf: string;
+  /** First and last civil date the snapshot is authoritative for. */
+  coverageStart: DateOnly;
+  coverageEnd: DateOnly;
+  holidays: Array<{ date: DateOnly; name: string; description: string | null; recordKey: string }>;
+};
+
+export type PublicHolidayCalendarSyncResult = {
+  calendarId: string;
+  tenantId: string;
+  changed: boolean;
+  fromRevision: number | null;
+  toRevision: number | null;
+  added: number;
+  updated: number;
+  archived: number;
+  coveredByManual: number;
+};
+
+export type PublicHolidayCalendarSyncOptions = {
+  /** Test seam: runs after the plan is built and before any write. */
+  beforeWrite?: (attempt: number) => Promise<void>;
+  maxAttempts?: number;
+};
+
+type SyncHolidayOp =
+  | { kind: 'create'; date: DateOnly; name: string; description: string | null; recordKey: string }
+  | { kind: 'update'; id: string; date: DateOnly; name: string; description: string | null; recordKey: string; oldName: string; restored: boolean }
+  | { kind: 'archive'; id: string; date: DateOnly; name: string };
+
+class CalendarRevisionMovedError extends Error {}
+
+const SYNC_HOLIDAY_SELECT = {
+  id: true,
+  date: true,
+  name: true,
+  description: true,
+  isActive: true,
+  sourceType: true,
+  sourceProvider: true,
+} as const;
+
+/**
+ * Plan the changes that bring one calendar's official holidays in line with
+ * the source. Manual holidays are never touched:
+ * - an active manual holiday on an official date already covers that date;
+ * - an archived manual holiday (for example an official one converted to
+ *   manual and then removed) records an administrator's decision, so the
+ *   date is left alone;
+ * - only official rows whose date lies inside the source coverage and is
+ *   missing from the source are archived.
+ */
+function planPublicHolidaySync(
+  holidays: Array<HolidayRecord & { id: string }>,
+  source: PublicHolidaySourceSnapshot,
+): { ops: SyncHolidayOp[]; coveredByManual: number } {
+  const ops: SyncHolidayOp[] = [];
+  let coveredByManual = 0;
+  const byDate = new Map(holidays.map((holiday) => [toDateOnly(holiday.date), holiday]));
+  const sourceDates = new Set(source.holidays.map((holiday) => holiday.date));
+  const isOwnOfficialRow = (holiday: HolidayRecord) => holiday.sourceType === 'EXTERNAL' && holiday.sourceProvider === source.provider;
+
+  for (const official of source.holidays) {
+    const existing = byDate.get(official.date);
+    if (!existing) {
+      ops.push({ kind: 'create', ...official });
+      continue;
+    }
+    if (isOwnOfficialRow(existing)) {
+      if (existing.isActive && existing.name === official.name && (existing.description ?? null) === official.description) continue;
+      ops.push({ kind: 'update', id: existing.id, ...official, oldName: existing.name, restored: !existing.isActive });
+      continue;
+    }
+    // A manual row owns its date, active or archived (the unique date key
+    // allows one row per date). Archived means an administrator removed it.
+    if (existing.isActive) coveredByManual += 1;
+  }
+
+  for (const holiday of holidays) {
+    const date = toDateOnly(holiday.date);
+    if (!holiday.isActive || !isOwnOfficialRow(holiday)) continue;
+    if (date < source.coverageStart || date > source.coverageEnd || sourceDates.has(date)) continue;
+    ops.push({ kind: 'archive', id: holiday.id, date, name: holiday.name });
+  }
+
+  ops.sort((left, right) => left.date.localeCompare(right.date));
+  return { ops, coveredByManual };
+}
+
+/** Active calendars the public holiday source applies to, across tenants. */
+export async function listPublicHolidaySyncCalendars(jurisdictionCode: string): Promise<Array<{ id: string; tenantId: string }>> {
+  return prisma.businessCalendar.findMany({
+    where: { jurisdictionCode, timeZone: BUSINESS_CALENDAR_TIME_ZONE, isActive: true, archivedAt: null },
+    select: { id: true, tenantId: true },
+    orderBy: [{ tenantId: 'asc' }, { id: 'asc' }],
+  });
+}
+
+/**
+ * Bring one calendar's official holidays in line with the local source
+ * snapshot. Runs through the same protections as a manual edit: the calendar
+ * row is updated only if its revision is unchanged since the plan was built,
+ * the revision increments, an audit entry is written and the existing
+ * BUSINESS_CALENDAR_CHANGED reconciliation is queued. A calendar whose
+ * effective holidays already match is not written at all.
+ */
+export async function syncBusinessCalendarWithPublicHolidays(
+  calendarId: string,
+  tenantId: string,
+  source: PublicHolidaySourceSnapshot,
+  options: PublicHolidayCalendarSyncOptions = {},
+): Promise<PublicHolidayCalendarSyncResult> {
+  const maxAttempts = options.maxAttempts ?? 3;
+  for (let attempt = 1; ; attempt += 1) {
+    try {
+      return await runSerializableTransaction(prisma, (tx) => applyPublicHolidaySync(tx, calendarId, tenantId, source, options, attempt));
+    } catch (error) {
+      if (!(error instanceof CalendarRevisionMovedError) || attempt >= maxAttempts) {
+        if (error instanceof CalendarRevisionMovedError) {
+          throw new DeadlineApiError(ErrorCodes.VERSION_CONFLICT, 'Business calendar kept changing during the public holiday sync', 409);
+        }
+        throw error;
+      }
+    }
+  }
+}
+
+async function applyPublicHolidaySync(
+  tx: Prisma.TransactionClient,
+  calendarId: string,
+  tenantId: string,
+  source: PublicHolidaySourceSnapshot,
+  options: PublicHolidayCalendarSyncOptions,
+  attempt: number,
+): Promise<PublicHolidayCalendarSyncResult> {
+  const unchanged = (revision: number | null, coveredByManual = 0): PublicHolidayCalendarSyncResult => ({
+    calendarId, tenantId, changed: false, fromRevision: revision, toRevision: revision, added: 0, updated: 0, archived: 0, coveredByManual,
+  });
+  const calendar = await tx.businessCalendar.findFirst({
+    where: { id: calendarId, tenantId },
+    select: {
+      id: true,
+      name: true,
+      revision: true,
+      isActive: true,
+      archivedAt: true,
+      jurisdictionCode: true,
+      timeZone: true,
+      holidays: { where: { tenantId, calendarId }, select: SYNC_HOLIDAY_SELECT, orderBy: [{ date: 'asc' }, { id: 'asc' }] },
+    },
+  });
+  if (!calendar || !calendar.isActive || calendar.archivedAt || calendar.jurisdictionCode !== source.jurisdictionCode
+    || calendar.timeZone !== BUSINESS_CALENDAR_TIME_ZONE) {
+    return unchanged(calendar?.revision ?? null);
+  }
+
+  const holidays = calendar.holidays.map((holiday) => ({ ...holiday, tenantId, calendarId }));
+  const { ops, coveredByManual } = planPublicHolidaySync(holidays, source);
+  if (ops.length === 0) return unchanged(calendar.revision, coveredByManual);
+
+  await options.beforeWrite?.(attempt);
+
+  const bumped = await tx.businessCalendar.updateMany({
+    where: { id: calendarId, tenantId, revision: calendar.revision, isActive: true, archivedAt: null },
+    data: { revision: { increment: 1 } },
+  });
+  if (bumped.count !== 1) throw new CalendarRevisionMovedError();
+  const nextRevision = calendar.revision + 1;
+  const importedAt = new Date();
+  const provenance = (recordKey: string) => ({
+    sourceType: 'EXTERNAL' as const,
+    sourceProvider: source.provider,
+    sourceDatasetId: source.datasetId,
+    sourceRecordKey: recordKey,
+    sourceDataAsOf: source.dataAsOf,
+    sourceImportedAt: importedAt,
+  });
+
+  let added = 0;
+  let updated = 0;
+  let archived = 0;
+  for (const op of ops) {
+    if (op.kind === 'create') {
+      await tx.businessHoliday.create({
+        data: {
+          tenantId,
+          calendarId,
+          date: parseDateOnly(op.date),
+          name: op.name,
+          description: op.description,
+          isActive: true,
+          ...provenance(op.recordKey),
+        },
+      });
+      added += 1;
+    } else if (op.kind === 'update') {
+      await tx.businessHoliday.update({
+        where: { id: op.id, tenantId, calendarId, sourceType: 'EXTERNAL' },
+        data: { name: op.name, description: op.description, isActive: true, ...provenance(op.recordKey) },
+      });
+      if (op.restored) added += 1;
+      else updated += 1;
+    } else {
+      await tx.businessHoliday.update({
+        where: { id: op.id, tenantId, calendarId, sourceType: 'EXTERNAL' },
+        data: { isActive: false },
+      });
+      archived += 1;
+    }
+  }
+
+  await createAuditLog({
+    tenantId,
+    action: 'UPDATE',
+    changeSource: 'SYSTEM',
+    entityType: 'BusinessCalendar',
+    entityId: calendarId,
+    entityName: calendar.name,
+    summary: 'Synchronized Singapore public holidays from MOM',
+    changes: {
+      revision: { old: calendar.revision, new: nextRevision },
+      holidays: {
+        old: ops.filter((op) => op.kind !== 'create').map((op) => ({ date: op.date, name: op.kind === 'update' ? op.oldName : op.name })),
+        new: ops.map((op) => ({ date: op.date, name: op.name, action: op.kind === 'update' && op.restored ? 'add' : op.kind })),
+      },
+    },
+    metadata: {
+      source: 'data.gov.sg',
+      provider: source.provider,
+      datasetId: source.datasetId,
+      dataAsOf: source.dataAsOf,
+      holidaysAdded: added,
+      holidaysUpdated: updated,
+      holidaysArchived: archived,
+      manualHolidaysKept: coveredByManual,
+    },
+  }, tx);
+  await enqueueCalendarChangedReconciliation(tx, tenantId, calendarId, nextRevision, null);
+
+  return {
+    calendarId,
+    tenantId,
+    changed: true,
+    fromRevision: calendar.revision,
+    toRevision: nextRevision,
+    added,
+    updated,
+    archived,
+    coveredByManual,
+  };
 }
