@@ -20,8 +20,18 @@ export type ClientServiceModel = runtime.Types.Result.DefaultSelection<Prisma.$C
 
 export type AggregateClientService = {
   _count: ClientServiceCountAggregateOutputType | null
+  _avg: ClientServiceAvgAggregateOutputType | null
+  _sum: ClientServiceSumAggregateOutputType | null
   _min: ClientServiceMinAggregateOutputType | null
   _max: ClientServiceMaxAggregateOutputType | null
+}
+
+export type ClientServiceAvgAggregateOutputType = {
+  engagementStartYearOfAssessment: number | null
+}
+
+export type ClientServiceSumAggregateOutputType = {
+  engagementStartYearOfAssessment: number | null
 }
 
 export type ClientServiceMinAggregateOutputType = {
@@ -41,6 +51,7 @@ export type ClientServiceMinAggregateOutputType = {
   endDate: Date | null
   billingDisposition: $Enums.BillingDisposition | null
   billingNotRequiredReason: string | null
+  engagementStartYearOfAssessment: number | null
   createdAt: Date | null
   updatedAt: Date | null
   deletedAt: Date | null
@@ -64,6 +75,7 @@ export type ClientServiceMaxAggregateOutputType = {
   endDate: Date | null
   billingDisposition: $Enums.BillingDisposition | null
   billingNotRequiredReason: string | null
+  engagementStartYearOfAssessment: number | null
   createdAt: Date | null
   updatedAt: Date | null
   deletedAt: Date | null
@@ -88,6 +100,7 @@ export type ClientServiceCountAggregateOutputType = {
   fieldValues: number
   billingDisposition: number
   billingNotRequiredReason: number
+  engagementStartYearOfAssessment: number
   createdAt: number
   updatedAt: number
   deletedAt: number
@@ -95,6 +108,14 @@ export type ClientServiceCountAggregateOutputType = {
   _all: number
 }
 
+
+export type ClientServiceAvgAggregateInputType = {
+  engagementStartYearOfAssessment?: true
+}
+
+export type ClientServiceSumAggregateInputType = {
+  engagementStartYearOfAssessment?: true
+}
 
 export type ClientServiceMinAggregateInputType = {
   id?: true
@@ -113,6 +134,7 @@ export type ClientServiceMinAggregateInputType = {
   endDate?: true
   billingDisposition?: true
   billingNotRequiredReason?: true
+  engagementStartYearOfAssessment?: true
   createdAt?: true
   updatedAt?: true
   deletedAt?: true
@@ -136,6 +158,7 @@ export type ClientServiceMaxAggregateInputType = {
   endDate?: true
   billingDisposition?: true
   billingNotRequiredReason?: true
+  engagementStartYearOfAssessment?: true
   createdAt?: true
   updatedAt?: true
   deletedAt?: true
@@ -160,6 +183,7 @@ export type ClientServiceCountAggregateInputType = {
   fieldValues?: true
   billingDisposition?: true
   billingNotRequiredReason?: true
+  engagementStartYearOfAssessment?: true
   createdAt?: true
   updatedAt?: true
   deletedAt?: true
@@ -205,6 +229,18 @@ export type ClientServiceAggregateArgs<ExtArgs extends runtime.Types.Extensions.
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
    *
+   * Select which fields to average
+  **/
+  _avg?: ClientServiceAvgAggregateInputType
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+   *
+   * Select which fields to sum
+  **/
+  _sum?: ClientServiceSumAggregateInputType
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+   *
    * Select which fields to find the minimum value
   **/
   _min?: ClientServiceMinAggregateInputType
@@ -235,6 +271,8 @@ export type ClientServiceGroupByArgs<ExtArgs extends runtime.Types.Extensions.In
   take?: number
   skip?: number
   _count?: ClientServiceCountAggregateInputType | true
+  _avg?: ClientServiceAvgAggregateInputType
+  _sum?: ClientServiceSumAggregateInputType
   _min?: ClientServiceMinAggregateInputType
   _max?: ClientServiceMaxAggregateInputType
 }
@@ -257,11 +295,14 @@ export type ClientServiceGroupByOutputType = {
   fieldValues: runtime.JsonValue
   billingDisposition: $Enums.BillingDisposition
   billingNotRequiredReason: string | null
+  engagementStartYearOfAssessment: number | null
   createdAt: Date
   updatedAt: Date
   deletedAt: Date | null
   deletedReason: string | null
   _count: ClientServiceCountAggregateOutputType | null
+  _avg: ClientServiceAvgAggregateOutputType | null
+  _sum: ClientServiceSumAggregateOutputType | null
   _min: ClientServiceMinAggregateOutputType | null
   _max: ClientServiceMaxAggregateOutputType | null
 }
@@ -302,6 +343,7 @@ export type ClientServiceWhereInput = {
   fieldValues?: Prisma.JsonFilter<"ClientService">
   billingDisposition?: Prisma.EnumBillingDispositionFilter<"ClientService"> | $Enums.BillingDisposition
   billingNotRequiredReason?: Prisma.StringNullableFilter<"ClientService"> | string | null
+  engagementStartYearOfAssessment?: Prisma.IntNullableFilter<"ClientService"> | number | null
   createdAt?: Prisma.DateTimeFilter<"ClientService"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"ClientService"> | Date | string
   deletedAt?: Prisma.DateTimeNullableFilter<"ClientService"> | Date | string | null
@@ -340,6 +382,7 @@ export type ClientServiceOrderByWithRelationInput = {
   fieldValues?: Prisma.SortOrder
   billingDisposition?: Prisma.SortOrder
   billingNotRequiredReason?: Prisma.SortOrderInput | Prisma.SortOrder
+  engagementStartYearOfAssessment?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -383,6 +426,7 @@ export type ClientServiceWhereUniqueInput = Prisma.AtLeast<{
   fieldValues?: Prisma.JsonFilter<"ClientService">
   billingDisposition?: Prisma.EnumBillingDispositionFilter<"ClientService"> | $Enums.BillingDisposition
   billingNotRequiredReason?: Prisma.StringNullableFilter<"ClientService"> | string | null
+  engagementStartYearOfAssessment?: Prisma.IntNullableFilter<"ClientService"> | number | null
   createdAt?: Prisma.DateTimeFilter<"ClientService"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"ClientService"> | Date | string
   deletedAt?: Prisma.DateTimeNullableFilter<"ClientService"> | Date | string | null
@@ -421,13 +465,16 @@ export type ClientServiceOrderByWithAggregationInput = {
   fieldValues?: Prisma.SortOrder
   billingDisposition?: Prisma.SortOrder
   billingNotRequiredReason?: Prisma.SortOrderInput | Prisma.SortOrder
+  engagementStartYearOfAssessment?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   deletedReason?: Prisma.SortOrderInput | Prisma.SortOrder
   _count?: Prisma.ClientServiceCountOrderByAggregateInput
+  _avg?: Prisma.ClientServiceAvgOrderByAggregateInput
   _max?: Prisma.ClientServiceMaxOrderByAggregateInput
   _min?: Prisma.ClientServiceMinOrderByAggregateInput
+  _sum?: Prisma.ClientServiceSumOrderByAggregateInput
 }
 
 export type ClientServiceScalarWhereWithAggregatesInput = {
@@ -451,6 +498,7 @@ export type ClientServiceScalarWhereWithAggregatesInput = {
   fieldValues?: Prisma.JsonWithAggregatesFilter<"ClientService">
   billingDisposition?: Prisma.EnumBillingDispositionWithAggregatesFilter<"ClientService"> | $Enums.BillingDisposition
   billingNotRequiredReason?: Prisma.StringNullableWithAggregatesFilter<"ClientService"> | string | null
+  engagementStartYearOfAssessment?: Prisma.IntNullableWithAggregatesFilter<"ClientService"> | number | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"ClientService"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"ClientService"> | Date | string
   deletedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"ClientService"> | Date | string | null
@@ -470,6 +518,7 @@ export type ClientServiceCreateInput = {
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   billingDisposition?: $Enums.BillingDisposition
   billingNotRequiredReason?: string | null
+  engagementStartYearOfAssessment?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -508,6 +557,7 @@ export type ClientServiceUncheckedCreateInput = {
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   billingDisposition?: $Enums.BillingDisposition
   billingNotRequiredReason?: string | null
+  engagementStartYearOfAssessment?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -536,6 +586,7 @@ export type ClientServiceUpdateInput = {
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   billingDisposition?: Prisma.EnumBillingDispositionFieldUpdateOperationsInput | $Enums.BillingDisposition
   billingNotRequiredReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  engagementStartYearOfAssessment?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -574,6 +625,7 @@ export type ClientServiceUncheckedUpdateInput = {
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   billingDisposition?: Prisma.EnumBillingDispositionFieldUpdateOperationsInput | $Enums.BillingDisposition
   billingNotRequiredReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  engagementStartYearOfAssessment?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -607,6 +659,7 @@ export type ClientServiceCreateManyInput = {
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   billingDisposition?: $Enums.BillingDisposition
   billingNotRequiredReason?: string | null
+  engagementStartYearOfAssessment?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -626,6 +679,7 @@ export type ClientServiceUpdateManyMutationInput = {
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   billingDisposition?: Prisma.EnumBillingDispositionFieldUpdateOperationsInput | $Enums.BillingDisposition
   billingNotRequiredReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  engagementStartYearOfAssessment?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -650,6 +704,7 @@ export type ClientServiceUncheckedUpdateManyInput = {
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   billingDisposition?: Prisma.EnumBillingDispositionFieldUpdateOperationsInput | $Enums.BillingDisposition
   billingNotRequiredReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  engagementStartYearOfAssessment?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -695,10 +750,15 @@ export type ClientServiceCountOrderByAggregateInput = {
   fieldValues?: Prisma.SortOrder
   billingDisposition?: Prisma.SortOrder
   billingNotRequiredReason?: Prisma.SortOrder
+  engagementStartYearOfAssessment?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrder
   deletedReason?: Prisma.SortOrder
+}
+
+export type ClientServiceAvgOrderByAggregateInput = {
+  engagementStartYearOfAssessment?: Prisma.SortOrder
 }
 
 export type ClientServiceMaxOrderByAggregateInput = {
@@ -718,6 +778,7 @@ export type ClientServiceMaxOrderByAggregateInput = {
   endDate?: Prisma.SortOrder
   billingDisposition?: Prisma.SortOrder
   billingNotRequiredReason?: Prisma.SortOrder
+  engagementStartYearOfAssessment?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrder
@@ -741,10 +802,15 @@ export type ClientServiceMinOrderByAggregateInput = {
   endDate?: Prisma.SortOrder
   billingDisposition?: Prisma.SortOrder
   billingNotRequiredReason?: Prisma.SortOrder
+  engagementStartYearOfAssessment?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrder
   deletedReason?: Prisma.SortOrder
+}
+
+export type ClientServiceSumOrderByAggregateInput = {
+  engagementStartYearOfAssessment?: Prisma.SortOrder
 }
 
 export type ClientServiceScalarRelationFilter = {
@@ -1126,6 +1192,7 @@ export type ClientServiceCreateWithoutTenantInput = {
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   billingDisposition?: $Enums.BillingDisposition
   billingNotRequiredReason?: string | null
+  engagementStartYearOfAssessment?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -1162,6 +1229,7 @@ export type ClientServiceUncheckedCreateWithoutTenantInput = {
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   billingDisposition?: $Enums.BillingDisposition
   billingNotRequiredReason?: string | null
+  engagementStartYearOfAssessment?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -1224,6 +1292,7 @@ export type ClientServiceScalarWhereInput = {
   fieldValues?: Prisma.JsonFilter<"ClientService">
   billingDisposition?: Prisma.EnumBillingDispositionFilter<"ClientService"> | $Enums.BillingDisposition
   billingNotRequiredReason?: Prisma.StringNullableFilter<"ClientService"> | string | null
+  engagementStartYearOfAssessment?: Prisma.IntNullableFilter<"ClientService"> | number | null
   createdAt?: Prisma.DateTimeFilter<"ClientService"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"ClientService"> | Date | string
   deletedAt?: Prisma.DateTimeNullableFilter<"ClientService"> | Date | string | null
@@ -1243,6 +1312,7 @@ export type ClientServiceCreateWithoutCompanyInput = {
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   billingDisposition?: $Enums.BillingDisposition
   billingNotRequiredReason?: string | null
+  engagementStartYearOfAssessment?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -1279,6 +1349,7 @@ export type ClientServiceUncheckedCreateWithoutCompanyInput = {
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   billingDisposition?: $Enums.BillingDisposition
   billingNotRequiredReason?: string | null
+  engagementStartYearOfAssessment?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -1333,6 +1404,7 @@ export type ClientServiceCreateWithoutServiceVariantInput = {
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   billingDisposition?: $Enums.BillingDisposition
   billingNotRequiredReason?: string | null
+  engagementStartYearOfAssessment?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -1369,6 +1441,7 @@ export type ClientServiceUncheckedCreateWithoutServiceVariantInput = {
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   billingDisposition?: $Enums.BillingDisposition
   billingNotRequiredReason?: string | null
+  engagementStartYearOfAssessment?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -1423,6 +1496,7 @@ export type ClientServiceCreateWithoutAgreementInput = {
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   billingDisposition?: $Enums.BillingDisposition
   billingNotRequiredReason?: string | null
+  engagementStartYearOfAssessment?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -1459,6 +1533,7 @@ export type ClientServiceUncheckedCreateWithoutAgreementInput = {
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   billingDisposition?: $Enums.BillingDisposition
   billingNotRequiredReason?: string | null
+  engagementStartYearOfAssessment?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -1513,6 +1588,7 @@ export type ClientServiceCreateWithoutAgreementItemInput = {
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   billingDisposition?: $Enums.BillingDisposition
   billingNotRequiredReason?: string | null
+  engagementStartYearOfAssessment?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -1549,6 +1625,7 @@ export type ClientServiceUncheckedCreateWithoutAgreementItemInput = {
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   billingDisposition?: $Enums.BillingDisposition
   billingNotRequiredReason?: string | null
+  engagementStartYearOfAssessment?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -1603,6 +1680,7 @@ export type ClientServiceCreateWithoutFeeLinesInput = {
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   billingDisposition?: $Enums.BillingDisposition
   billingNotRequiredReason?: string | null
+  engagementStartYearOfAssessment?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -1640,6 +1718,7 @@ export type ClientServiceUncheckedCreateWithoutFeeLinesInput = {
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   billingDisposition?: $Enums.BillingDisposition
   billingNotRequiredReason?: string | null
+  engagementStartYearOfAssessment?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -1683,6 +1762,7 @@ export type ClientServiceUpdateWithoutFeeLinesInput = {
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   billingDisposition?: Prisma.EnumBillingDispositionFieldUpdateOperationsInput | $Enums.BillingDisposition
   billingNotRequiredReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  engagementStartYearOfAssessment?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1720,6 +1800,7 @@ export type ClientServiceUncheckedUpdateWithoutFeeLinesInput = {
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   billingDisposition?: Prisma.EnumBillingDispositionFieldUpdateOperationsInput | $Enums.BillingDisposition
   billingNotRequiredReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  engagementStartYearOfAssessment?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1747,6 +1828,7 @@ export type ClientServiceCreateWithoutBillingOccurrencesInput = {
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   billingDisposition?: $Enums.BillingDisposition
   billingNotRequiredReason?: string | null
+  engagementStartYearOfAssessment?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -1784,6 +1866,7 @@ export type ClientServiceUncheckedCreateWithoutBillingOccurrencesInput = {
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   billingDisposition?: $Enums.BillingDisposition
   billingNotRequiredReason?: string | null
+  engagementStartYearOfAssessment?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -1827,6 +1910,7 @@ export type ClientServiceUpdateWithoutBillingOccurrencesInput = {
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   billingDisposition?: Prisma.EnumBillingDispositionFieldUpdateOperationsInput | $Enums.BillingDisposition
   billingNotRequiredReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  engagementStartYearOfAssessment?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1864,6 +1948,7 @@ export type ClientServiceUncheckedUpdateWithoutBillingOccurrencesInput = {
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   billingDisposition?: Prisma.EnumBillingDispositionFieldUpdateOperationsInput | $Enums.BillingDisposition
   billingNotRequiredReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  engagementStartYearOfAssessment?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1891,6 +1976,7 @@ export type ClientServiceCreateWithoutBillingCoverageIssuesInput = {
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   billingDisposition?: $Enums.BillingDisposition
   billingNotRequiredReason?: string | null
+  engagementStartYearOfAssessment?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -1928,6 +2014,7 @@ export type ClientServiceUncheckedCreateWithoutBillingCoverageIssuesInput = {
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   billingDisposition?: $Enums.BillingDisposition
   billingNotRequiredReason?: string | null
+  engagementStartYearOfAssessment?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -1971,6 +2058,7 @@ export type ClientServiceUpdateWithoutBillingCoverageIssuesInput = {
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   billingDisposition?: Prisma.EnumBillingDispositionFieldUpdateOperationsInput | $Enums.BillingDisposition
   billingNotRequiredReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  engagementStartYearOfAssessment?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2008,6 +2096,7 @@ export type ClientServiceUncheckedUpdateWithoutBillingCoverageIssuesInput = {
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   billingDisposition?: Prisma.EnumBillingDispositionFieldUpdateOperationsInput | $Enums.BillingDisposition
   billingNotRequiredReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  engagementStartYearOfAssessment?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2035,6 +2124,7 @@ export type ClientServiceCreateWithoutDeadlineRulesInput = {
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   billingDisposition?: $Enums.BillingDisposition
   billingNotRequiredReason?: string | null
+  engagementStartYearOfAssessment?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -2072,6 +2162,7 @@ export type ClientServiceUncheckedCreateWithoutDeadlineRulesInput = {
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   billingDisposition?: $Enums.BillingDisposition
   billingNotRequiredReason?: string | null
+  engagementStartYearOfAssessment?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -2115,6 +2206,7 @@ export type ClientServiceUpdateWithoutDeadlineRulesInput = {
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   billingDisposition?: Prisma.EnumBillingDispositionFieldUpdateOperationsInput | $Enums.BillingDisposition
   billingNotRequiredReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  engagementStartYearOfAssessment?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2152,6 +2244,7 @@ export type ClientServiceUncheckedUpdateWithoutDeadlineRulesInput = {
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   billingDisposition?: Prisma.EnumBillingDispositionFieldUpdateOperationsInput | $Enums.BillingDisposition
   billingNotRequiredReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  engagementStartYearOfAssessment?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2179,6 +2272,7 @@ export type ClientServiceCreateWithoutServiceCyclesInput = {
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   billingDisposition?: $Enums.BillingDisposition
   billingNotRequiredReason?: string | null
+  engagementStartYearOfAssessment?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -2216,6 +2310,7 @@ export type ClientServiceUncheckedCreateWithoutServiceCyclesInput = {
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   billingDisposition?: $Enums.BillingDisposition
   billingNotRequiredReason?: string | null
+  engagementStartYearOfAssessment?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -2259,6 +2354,7 @@ export type ClientServiceUpdateWithoutServiceCyclesInput = {
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   billingDisposition?: Prisma.EnumBillingDispositionFieldUpdateOperationsInput | $Enums.BillingDisposition
   billingNotRequiredReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  engagementStartYearOfAssessment?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2296,6 +2392,7 @@ export type ClientServiceUncheckedUpdateWithoutServiceCyclesInput = {
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   billingDisposition?: Prisma.EnumBillingDispositionFieldUpdateOperationsInput | $Enums.BillingDisposition
   billingNotRequiredReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  engagementStartYearOfAssessment?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2323,6 +2420,7 @@ export type ClientServiceCreateWithoutDeadlineOccurrencesInput = {
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   billingDisposition?: $Enums.BillingDisposition
   billingNotRequiredReason?: string | null
+  engagementStartYearOfAssessment?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -2360,6 +2458,7 @@ export type ClientServiceUncheckedCreateWithoutDeadlineOccurrencesInput = {
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   billingDisposition?: $Enums.BillingDisposition
   billingNotRequiredReason?: string | null
+  engagementStartYearOfAssessment?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -2392,6 +2491,7 @@ export type ClientServiceCreateWithoutDeliveredDeadlinesInput = {
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   billingDisposition?: $Enums.BillingDisposition
   billingNotRequiredReason?: string | null
+  engagementStartYearOfAssessment?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -2429,6 +2529,7 @@ export type ClientServiceUncheckedCreateWithoutDeliveredDeadlinesInput = {
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   billingDisposition?: $Enums.BillingDisposition
   billingNotRequiredReason?: string | null
+  engagementStartYearOfAssessment?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -2472,6 +2573,7 @@ export type ClientServiceUpdateWithoutDeadlineOccurrencesInput = {
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   billingDisposition?: Prisma.EnumBillingDispositionFieldUpdateOperationsInput | $Enums.BillingDisposition
   billingNotRequiredReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  engagementStartYearOfAssessment?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2509,6 +2611,7 @@ export type ClientServiceUncheckedUpdateWithoutDeadlineOccurrencesInput = {
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   billingDisposition?: Prisma.EnumBillingDispositionFieldUpdateOperationsInput | $Enums.BillingDisposition
   billingNotRequiredReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  engagementStartYearOfAssessment?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2547,6 +2650,7 @@ export type ClientServiceUpdateWithoutDeliveredDeadlinesInput = {
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   billingDisposition?: Prisma.EnumBillingDispositionFieldUpdateOperationsInput | $Enums.BillingDisposition
   billingNotRequiredReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  engagementStartYearOfAssessment?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2584,6 +2688,7 @@ export type ClientServiceUncheckedUpdateWithoutDeliveredDeadlinesInput = {
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   billingDisposition?: Prisma.EnumBillingDispositionFieldUpdateOperationsInput | $Enums.BillingDisposition
   billingNotRequiredReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  engagementStartYearOfAssessment?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2611,6 +2716,7 @@ export type ClientServiceCreateWithoutMonitoringCoveragesInput = {
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   billingDisposition?: $Enums.BillingDisposition
   billingNotRequiredReason?: string | null
+  engagementStartYearOfAssessment?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -2648,6 +2754,7 @@ export type ClientServiceUncheckedCreateWithoutMonitoringCoveragesInput = {
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   billingDisposition?: $Enums.BillingDisposition
   billingNotRequiredReason?: string | null
+  engagementStartYearOfAssessment?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -2691,6 +2798,7 @@ export type ClientServiceUpdateWithoutMonitoringCoveragesInput = {
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   billingDisposition?: Prisma.EnumBillingDispositionFieldUpdateOperationsInput | $Enums.BillingDisposition
   billingNotRequiredReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  engagementStartYearOfAssessment?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2728,6 +2836,7 @@ export type ClientServiceUncheckedUpdateWithoutMonitoringCoveragesInput = {
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   billingDisposition?: Prisma.EnumBillingDispositionFieldUpdateOperationsInput | $Enums.BillingDisposition
   billingNotRequiredReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  engagementStartYearOfAssessment?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2755,6 +2864,7 @@ export type ClientServiceCreateWithoutObligationScopesInput = {
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   billingDisposition?: $Enums.BillingDisposition
   billingNotRequiredReason?: string | null
+  engagementStartYearOfAssessment?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -2792,6 +2902,7 @@ export type ClientServiceUncheckedCreateWithoutObligationScopesInput = {
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   billingDisposition?: $Enums.BillingDisposition
   billingNotRequiredReason?: string | null
+  engagementStartYearOfAssessment?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -2835,6 +2946,7 @@ export type ClientServiceUpdateWithoutObligationScopesInput = {
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   billingDisposition?: Prisma.EnumBillingDispositionFieldUpdateOperationsInput | $Enums.BillingDisposition
   billingNotRequiredReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  engagementStartYearOfAssessment?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2872,6 +2984,7 @@ export type ClientServiceUncheckedUpdateWithoutObligationScopesInput = {
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   billingDisposition?: Prisma.EnumBillingDispositionFieldUpdateOperationsInput | $Enums.BillingDisposition
   billingNotRequiredReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  engagementStartYearOfAssessment?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2903,6 +3016,7 @@ export type ClientServiceCreateManyTenantInput = {
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   billingDisposition?: $Enums.BillingDisposition
   billingNotRequiredReason?: string | null
+  engagementStartYearOfAssessment?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -2922,6 +3036,7 @@ export type ClientServiceUpdateWithoutTenantInput = {
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   billingDisposition?: Prisma.EnumBillingDispositionFieldUpdateOperationsInput | $Enums.BillingDisposition
   billingNotRequiredReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  engagementStartYearOfAssessment?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2958,6 +3073,7 @@ export type ClientServiceUncheckedUpdateWithoutTenantInput = {
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   billingDisposition?: Prisma.EnumBillingDispositionFieldUpdateOperationsInput | $Enums.BillingDisposition
   billingNotRequiredReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  engagementStartYearOfAssessment?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2990,6 +3106,7 @@ export type ClientServiceUncheckedUpdateManyWithoutTenantInput = {
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   billingDisposition?: Prisma.EnumBillingDispositionFieldUpdateOperationsInput | $Enums.BillingDisposition
   billingNotRequiredReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  engagementStartYearOfAssessment?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3013,6 +3130,7 @@ export type ClientServiceCreateManyCompanyInput = {
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   billingDisposition?: $Enums.BillingDisposition
   billingNotRequiredReason?: string | null
+  engagementStartYearOfAssessment?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -3032,6 +3150,7 @@ export type ClientServiceUpdateWithoutCompanyInput = {
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   billingDisposition?: Prisma.EnumBillingDispositionFieldUpdateOperationsInput | $Enums.BillingDisposition
   billingNotRequiredReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  engagementStartYearOfAssessment?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3068,6 +3187,7 @@ export type ClientServiceUncheckedUpdateWithoutCompanyInput = {
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   billingDisposition?: Prisma.EnumBillingDispositionFieldUpdateOperationsInput | $Enums.BillingDisposition
   billingNotRequiredReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  engagementStartYearOfAssessment?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3100,6 +3220,7 @@ export type ClientServiceUncheckedUpdateManyWithoutCompanyInput = {
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   billingDisposition?: Prisma.EnumBillingDispositionFieldUpdateOperationsInput | $Enums.BillingDisposition
   billingNotRequiredReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  engagementStartYearOfAssessment?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3123,6 +3244,7 @@ export type ClientServiceCreateManyServiceVariantInput = {
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   billingDisposition?: $Enums.BillingDisposition
   billingNotRequiredReason?: string | null
+  engagementStartYearOfAssessment?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -3142,6 +3264,7 @@ export type ClientServiceUpdateWithoutServiceVariantInput = {
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   billingDisposition?: Prisma.EnumBillingDispositionFieldUpdateOperationsInput | $Enums.BillingDisposition
   billingNotRequiredReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  engagementStartYearOfAssessment?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3178,6 +3301,7 @@ export type ClientServiceUncheckedUpdateWithoutServiceVariantInput = {
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   billingDisposition?: Prisma.EnumBillingDispositionFieldUpdateOperationsInput | $Enums.BillingDisposition
   billingNotRequiredReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  engagementStartYearOfAssessment?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3210,6 +3334,7 @@ export type ClientServiceUncheckedUpdateManyWithoutServiceVariantInput = {
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   billingDisposition?: Prisma.EnumBillingDispositionFieldUpdateOperationsInput | $Enums.BillingDisposition
   billingNotRequiredReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  engagementStartYearOfAssessment?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3233,6 +3358,7 @@ export type ClientServiceCreateManyAgreementInput = {
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   billingDisposition?: $Enums.BillingDisposition
   billingNotRequiredReason?: string | null
+  engagementStartYearOfAssessment?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -3252,6 +3378,7 @@ export type ClientServiceUpdateWithoutAgreementInput = {
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   billingDisposition?: Prisma.EnumBillingDispositionFieldUpdateOperationsInput | $Enums.BillingDisposition
   billingNotRequiredReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  engagementStartYearOfAssessment?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3288,6 +3415,7 @@ export type ClientServiceUncheckedUpdateWithoutAgreementInput = {
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   billingDisposition?: Prisma.EnumBillingDispositionFieldUpdateOperationsInput | $Enums.BillingDisposition
   billingNotRequiredReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  engagementStartYearOfAssessment?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3320,6 +3448,7 @@ export type ClientServiceUncheckedUpdateManyWithoutAgreementInput = {
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   billingDisposition?: Prisma.EnumBillingDispositionFieldUpdateOperationsInput | $Enums.BillingDisposition
   billingNotRequiredReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  engagementStartYearOfAssessment?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3343,6 +3472,7 @@ export type ClientServiceCreateManyAgreementItemInput = {
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   billingDisposition?: $Enums.BillingDisposition
   billingNotRequiredReason?: string | null
+  engagementStartYearOfAssessment?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -3362,6 +3492,7 @@ export type ClientServiceUpdateWithoutAgreementItemInput = {
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   billingDisposition?: Prisma.EnumBillingDispositionFieldUpdateOperationsInput | $Enums.BillingDisposition
   billingNotRequiredReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  engagementStartYearOfAssessment?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3398,6 +3529,7 @@ export type ClientServiceUncheckedUpdateWithoutAgreementItemInput = {
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   billingDisposition?: Prisma.EnumBillingDispositionFieldUpdateOperationsInput | $Enums.BillingDisposition
   billingNotRequiredReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  engagementStartYearOfAssessment?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3430,6 +3562,7 @@ export type ClientServiceUncheckedUpdateManyWithoutAgreementItemInput = {
   fieldValues?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   billingDisposition?: Prisma.EnumBillingDispositionFieldUpdateOperationsInput | $Enums.BillingDisposition
   billingNotRequiredReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  engagementStartYearOfAssessment?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3557,6 +3690,7 @@ export type ClientServiceSelect<ExtArgs extends runtime.Types.Extensions.Interna
   fieldValues?: boolean
   billingDisposition?: boolean
   billingNotRequiredReason?: boolean
+  engagementStartYearOfAssessment?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   deletedAt?: boolean
@@ -3596,6 +3730,7 @@ export type ClientServiceSelectCreateManyAndReturn<ExtArgs extends runtime.Types
   fieldValues?: boolean
   billingDisposition?: boolean
   billingNotRequiredReason?: boolean
+  engagementStartYearOfAssessment?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   deletedAt?: boolean
@@ -3625,6 +3760,7 @@ export type ClientServiceSelectUpdateManyAndReturn<ExtArgs extends runtime.Types
   fieldValues?: boolean
   billingDisposition?: boolean
   billingNotRequiredReason?: boolean
+  engagementStartYearOfAssessment?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   deletedAt?: boolean
@@ -3654,13 +3790,14 @@ export type ClientServiceSelectScalar = {
   fieldValues?: boolean
   billingDisposition?: boolean
   billingNotRequiredReason?: boolean
+  engagementStartYearOfAssessment?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   deletedAt?: boolean
   deletedReason?: boolean
 }
 
-export type ClientServiceOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "companyId" | "source" | "agreementId" | "agreementItemId" | "serviceVariantId" | "familyName" | "serviceName" | "status" | "serviceCadence" | "customCadenceLabel" | "startDate" | "endDate" | "fieldValues" | "billingDisposition" | "billingNotRequiredReason" | "createdAt" | "updatedAt" | "deletedAt" | "deletedReason", ExtArgs["result"]["clientService"]>
+export type ClientServiceOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "companyId" | "source" | "agreementId" | "agreementItemId" | "serviceVariantId" | "familyName" | "serviceName" | "status" | "serviceCadence" | "customCadenceLabel" | "startDate" | "endDate" | "fieldValues" | "billingDisposition" | "billingNotRequiredReason" | "engagementStartYearOfAssessment" | "createdAt" | "updatedAt" | "deletedAt" | "deletedReason", ExtArgs["result"]["clientService"]>
 export type ClientServiceInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
   company?: boolean | Prisma.CompanyDefaultArgs<ExtArgs>
@@ -3729,6 +3866,11 @@ export type $ClientServicePayload<ExtArgs extends runtime.Types.Extensions.Inter
     fieldValues: runtime.JsonValue
     billingDisposition: $Enums.BillingDisposition
     billingNotRequiredReason: string | null
+    /**
+     * First Year of Assessment the firm files for this engagement. Company
+     * obligations from this YA default to Pending filing.
+     */
+    engagementStartYearOfAssessment: number | null
     createdAt: Date
     updatedAt: Date
     deletedAt: Date | null
@@ -4187,6 +4329,7 @@ export interface ClientServiceFieldRefs {
   readonly fieldValues: Prisma.FieldRef<"ClientService", 'Json'>
   readonly billingDisposition: Prisma.FieldRef<"ClientService", 'BillingDisposition'>
   readonly billingNotRequiredReason: Prisma.FieldRef<"ClientService", 'String'>
+  readonly engagementStartYearOfAssessment: Prisma.FieldRef<"ClientService", 'Int'>
   readonly createdAt: Prisma.FieldRef<"ClientService", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"ClientService", 'DateTime'>
   readonly deletedAt: Prisma.FieldRef<"ClientService", 'DateTime'>

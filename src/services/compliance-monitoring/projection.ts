@@ -39,6 +39,13 @@ export type CoverageInput = {
   monitoringStart: DateOnly;
   /** Inclusive explicit end/handover date; null while monitoring continues. */
   monitoringEnd: DateOnly | null;
+  /** The service that started this coverage. */
+  clientServiceId?: string | null;
+  /**
+   * First Year of Assessment that service files. Obligations from this YA are
+   * projected as filed by Oakcloud; earlier ones stay unconfirmed.
+   */
+  engagementStartYearOfAssessment?: number | null;
 };
 
 export type DeliveryScopeInput = {
@@ -205,6 +212,7 @@ function resolveResponsibility(
   dueDate: DateOnly,
   today: DateOnly,
   issues: CompanyReviewIssue[],
+  engagedCoverage: CoverageInput | null = null,
 ): { responsibility: FilingResponsibility; deliveryClientServiceId: string | null } {
   const active = scopes.filter((scope) => scope.serviceActive);
   const confirmedServices = [...new Set(active
@@ -221,6 +229,9 @@ function resolveResponsibility(
   }
   if (confirmedServices.length === 1) {
     return { responsibility: 'OAKCLOUD', deliveryClientServiceId: confirmedServices[0]! };
+  }
+  if (engagedCoverage) {
+    return { responsibility: 'OAKCLOUD', deliveryClientServiceId: engagedCoverage.clientServiceId ?? null };
   }
   const ended = scopes.filter((scope) => !scope.serviceActive);
   if (ended.length > 0 && active.length === 0 && compareDateOnly(dueDate, today) >= 0) {
@@ -384,6 +395,12 @@ export function projectCompanyObligations(input: CompanyMonitoringProjectionInpu
         : relevantCoverages.some((coverage) => compareDateOnly(dueDate, coverage.monitoringStart) < 0)
           ? 'BEFORE_START'
           : relevantCoverages.length > 0 ? 'AFTER_END' : 'NO_COVERAGE';
+      const yearOfAssessment = period.yearOfAssessment;
+      const engagedCoverage = yearOfAssessment === null ? null : relevantCoverages.find((coverage) => (
+        typeof coverage.engagementStartYearOfAssessment === 'number'
+        && yearOfAssessment >= coverage.engagementStartYearOfAssessment
+        && (coverage.monitoringEnd === null || compareDateOnly(dueDate, coverage.monitoringEnd) <= 0)
+      )) ?? null;
       const { responsibility, deliveryClientServiceId } = resolveResponsibility(
         scopes,
         definition.code,
@@ -391,6 +408,7 @@ export function projectCompanyObligations(input: CompanyMonitoringProjectionInpu
         dueDate,
         input.today,
         issues,
+        engagedCoverage,
       );
 
       if (period.provisional && !reviewedPeriods.has(occurrence.periodKey)) {

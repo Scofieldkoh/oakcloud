@@ -88,10 +88,11 @@ export function ClientServiceCreator({
   const dirty = manualFormIsDirty(selectedVariantId, values);
   const selectedProfiles = selectedVariant?.monitoringProfiles ?? [];
   const [obligationStatuses, setObligationStatuses] = useState<Record<string, CompanyObligationStatus>>({});
+  const [engagementStartYa, setEngagementStartYa] = useState<number | null>(null);
   const [firstPeriodOpen, setFirstPeriodOpen] = useState(false);
   const companyObligations = useCompanyObligations(
     companyId,
-    { profiles: selectedProfiles, start: values.startDate || null, end: values.endDate || null },
+    { profiles: selectedProfiles, start: values.startDate || null, end: values.endDate || null, fromYa: engagementStartYa },
     isOpen && selectedProfiles.length > 0,
   );
 
@@ -157,6 +158,7 @@ export function ClientServiceCreator({
     setReplacement(next);
     setSelectedVariantId(variant.id);
     setObligationStatuses({});
+    setEngagementStartYa(null);
     setErrors({});
     setDuplicates(null);
     setFormError('');
@@ -196,6 +198,7 @@ export function ClientServiceCreator({
     setValues(emptyManualOperationalValues());
     setSelectedVariantId('');
     setObligationStatuses({});
+    setEngagementStartYa(null);
     setReplacement(null);
     abortDraftPreview();
     onClose();
@@ -226,6 +229,7 @@ export function ClientServiceCreator({
             const [obligationCode, periodKey] = key.split('|') as [string, string];
             return { obligationCode, periodKey, status };
           }) : [],
+          engagementStartYearOfAssessment: selectedProfiles.length > 0 ? engagementStartYa : null,
         },
       });
       abortDraftPreview();
@@ -307,6 +311,13 @@ export function ClientServiceCreator({
           companyObligationStatuses={obligationStatuses}
           onCompanyObligationStatusChange={(item, status) => setObligationStatuses((current) => ({ ...current, [companyObligationKey(item)]: status }))}
           onConfirmFirstPeriod={() => setFirstPeriodOpen(true)}
+          engagementStartYearOfAssessment={engagementStartYa}
+          onEngagementStartChange={(yearOfAssessment) => {
+            setEngagementStartYa(yearOfAssessment);
+            // Let the new start decide Pending filing and To be confirmed rows.
+            setObligationStatuses((current) => Object.fromEntries(Object.entries(current)
+              .filter(([, status]) => status !== 'PENDING_FILING' && status !== 'TO_BE_CONFIRMED')));
+          }}
           serviceSelector={serviceSelector}
           deadlinePreview={deadlinePreview}
         />

@@ -14,6 +14,7 @@ import {
   useClientService,
   useCompanyObligations,
   useSetCompanyObligationStatus,
+  useSetEngagementStart,
   useDeleteClientServicePermanently,
   useUpdateClientService,
 } from '@/hooks/use-client-services';
@@ -71,6 +72,7 @@ export function ClientServiceEditor({
   const errorId = useId();
   const companyObligations = useCompanyObligations(service.companyId, { serviceId: service.id }, isOpen);
   const setObligationStatus = useSetCompanyObligationStatus(service.companyId);
+  const setEngagementStart = useSetEngagementStart(service.companyId);
   const [firstPeriodOpen, setFirstPeriodOpen] = useState(false);
   const [obligationError, setObligationError] = useState('');
   const update = useUpdateClientService();
@@ -348,6 +350,12 @@ export function ClientServiceEditor({
               .catch((error: unknown) => setObligationError(error instanceof Error ? error.message : 'Unable to save the filing status.'));
           }}
           onConfirmFirstPeriod={() => setFirstPeriodOpen(true)}
+          engagementStartYearOfAssessment={companyObligations.data?.engagementStartYearOfAssessment ?? null}
+          onEngagementStartChange={(yearOfAssessment) => {
+            setObligationError('');
+            setEngagementStart.mutateAsync({ serviceId: service.id, yearOfAssessment })
+              .catch((error: unknown) => setObligationError(error instanceof Error ? error.message : 'Unable to save the engagement start.'));
+          }}
           openBillingOccurrences={service.openBillingOccurrences ?? []}
         />
         {!readOnly ? (

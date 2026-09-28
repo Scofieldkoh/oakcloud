@@ -1111,6 +1111,7 @@ export const ClientServiceScalarFieldEnum = {
   fieldValues: 'fieldValues',
   billingDisposition: 'billingDisposition',
   billingNotRequiredReason: 'billingNotRequiredReason',
+  engagementStartYearOfAssessment: 'engagementStartYearOfAssessment',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
   deletedAt: 'deletedAt',

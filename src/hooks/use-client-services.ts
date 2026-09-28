@@ -93,7 +93,13 @@ export async function previewClientServiceDeadlineDraft(
 /** The company's statutory obligations, optionally with a new service's coverage. */
 export function useCompanyObligations(
   companyId: string,
-  input: { profiles?: string[]; start?: string | null; end?: string | null; serviceId?: string | null },
+  input: {
+    profiles?: string[];
+    start?: string | null;
+    end?: string | null;
+    serviceId?: string | null;
+    fromYa?: number | null;
+  },
   enabled = true,
 ) {
   const search = new URLSearchParams();
@@ -101,6 +107,7 @@ export function useCompanyObligations(
   if (input.start) search.set('start', input.start);
   if (input.end) search.set('end', input.end);
   if (input.serviceId) search.set('serviceId', input.serviceId);
+  if (input.fromYa) search.set('fromYa', String(input.fromYa));
   const query = search.toString();
   return useQuery({
     queryKey: ['company-obligations', companyId, query],
@@ -115,6 +122,19 @@ export function useSetCompanyObligationStatus(companyId: string) {
     mutationFn: (input: { obligationCode: string; periodKey: string; status: CompanyObligationStatus }) =>
       requestJson<{ changed: number }>(`/api/companies/${companyId}/services/company-obligations`, {
         method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(input),
+      }),
+    onSuccess: () => client.invalidateQueries({ queryKey: ['company-obligations', companyId] }),
+  });
+}
+
+export function useSetEngagementStart(companyId: string) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { serviceId: string; yearOfAssessment: number | null }) =>
+      requestJson<{ engagementStartYearOfAssessment: number | null }>(`/api/companies/${companyId}/services/company-obligations`, {
+        method: 'PUT',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify(input),
       }),

@@ -171,6 +171,7 @@ export async function createManualClientService(
           fieldValues: input.fieldValues as Prisma.InputJsonValue,
           billingDisposition: input.billingDisposition as BillingDisposition,
           billingNotRequiredReason: input.billingDisposition === 'NOT_REQUIRED' ? input.billingNotRequiredReason : null,
+          engagementStartYearOfAssessment: input.engagementStartYearOfAssessment ?? null,
         },
       });
 
