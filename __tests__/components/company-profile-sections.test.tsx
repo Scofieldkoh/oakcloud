@@ -149,6 +149,7 @@ describe('CompanyProfileSections', () => {
   it('shows the first FYE under Compliance', () => {
     const { rerender } = render(<CompanyProfileSections company={company as never} companyId="company-1" />);
     expect(screen.getByText('First FYE')).toBeInTheDocument();
+    expect(screen.getByText('Incorporation date')).toBeInTheDocument();
 
     rerender(<CompanyProfileSections company={{
       ...(company as object),
