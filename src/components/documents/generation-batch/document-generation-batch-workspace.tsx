@@ -39,6 +39,7 @@ import {
   withTaskLaunchContext,
 } from '@/lib/task-launch-context';
 import { extractA4DocumentLayout } from '@/components/documents/a4-pagination/layout';
+import { readOakDocTemplateMetadata } from '@/lib/document-editor/oakdoc-template';
 import {
   BATCH_STAGES,
   STAGE_LABELS,
@@ -301,6 +302,10 @@ export function DocumentGenerationBatchWorkspace({
   const activeTemplate = useMemo(
     () => templates.find((template) => template.id === activeItem?.templateId) ?? null,
     [templates, activeItem?.templateId],
+  );
+  const activeOakDocFieldTags = useMemo(
+    () => readOakDocTemplateMetadata(activeTemplate?.contentJson)?.fieldTags,
+    [activeTemplate],
   );
   const activeLayout = useMemo(
     () => extractA4DocumentLayout(activeTemplate?.contentJson),
@@ -864,6 +869,7 @@ export function DocumentGenerationBatchWorkspace({
                     effectiveMasterValues={effectiveValues}
                     templateFields={activeTemplate?.placeholders ?? []}
                     templateContent={activeTemplate?.content}
+                    templateFieldTags={activeOakDocFieldTags}
                     onPatch={(patch) => dispatch({
                       type: 'item/patch',
                       itemId: activeItem.key,

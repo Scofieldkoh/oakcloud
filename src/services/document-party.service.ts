@@ -195,8 +195,10 @@ export async function getDocumentPartyOptions(
       },
     }),
   );
+  // Every director appointment (managing, alternate, nominee), matching the
+  // Word directors repeater so its checkboxes list everyone it can print.
   const directors = officerParties.filter((_, index) =>
-    company.officers[index].role === 'DIRECTOR');
+    company.officers[index].role.includes('DIRECTOR'));
   const shareholders = company.shareholders.map((shareholder) =>
     toParty({
       id: shareholder.id,

@@ -160,11 +160,21 @@ export function oakDocBatchContext(
   configuration: ReturnType<typeof parseBatchItemConfiguration>,
   effectiveCustomData: Record<string, unknown>,
   serviceAgreementId?: string | null,
-): Pick<OakDocGenerationInput, 'selectedContactId' | 'agreement' | 'resolutionDate' | 'serviceAgreementId'> {
+): Pick<
+  OakDocGenerationInput,
+  | 'selectedContactId'
+  | 'selectedDirectorIds'
+  | 'selectedShareholderIds'
+  | 'agreement'
+  | 'resolutionDate'
+  | 'serviceAgreementId'
+> {
   const resolutionDate = effectiveCustomData.resolution_date;
   const agreement = configuration.serviceAgreement;
   return {
     selectedContactId: configuration.selectedContactId ?? undefined,
+    selectedDirectorIds: configuration.selectedDirectorIds,
+    selectedShareholderIds: configuration.selectedShareholderIds,
     agreement: agreement
       ? {
           agreementDate: agreement.agreementDate,
@@ -245,6 +255,7 @@ export async function buildBatchItemRenderInput(
       selectedDirectorId: configuration.selectedDirectorId,
       selectedDirectorIds: configuration.selectedDirectorIds,
       selectedShareholderId: configuration.selectedShareholderId,
+      selectedShareholderIds: configuration.selectedShareholderIds,
       selectedContactId: configuration.selectedContactId,
       effectiveCustomData,
       itemValues: configuration.itemValues,

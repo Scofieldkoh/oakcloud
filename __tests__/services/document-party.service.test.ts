@@ -96,7 +96,8 @@ describe('document party service', () => {
 
     const result = await getDocumentPartyOptions('company-1', 'tenant-1');
 
-    expect(result.directors.map((party) => party.id)).toEqual(['officer-director']);
+    // Every director appointment is listed, as the Word directors repeater prints them.
+    expect(result.directors.map((party) => party.id)).toEqual(['officer-director', 'officer-md']);
     expect(result.contacts).toHaveLength(1);
     expect(result.contacts[0]).toMatchObject({
       id: 'contact-1',
