@@ -83,6 +83,7 @@ type CoverageFeeLine = {
   customFrequencyLabel?: string | null;
   billingStartDate?: Date | string | null;
   scheduleConfig?: unknown;
+  billingTiming?: string | null;
   isActive?: boolean;
   deletedAt?: Date | string | null;
 };
@@ -668,6 +669,9 @@ export async function reconcileBillingCoverage(
           issues.push(buildIssue(input, 'INVALID_AMOUNT_OR_CURRENCY', line.id, 'fee-line'));
           continue;
         }
+        // Postpaid lines bill when their trigger filing is Filed, so there is
+        // no schedule to cover.
+        if (line.billingTiming === 'POSTPAID') continue;
         const schedule = scheduleConfigFor(line);
         if (schedule.issueType) {
           const scheduleKey = schedule.config?.scheduleEntries?.[0]?.key ?? 'schedule';

@@ -354,6 +354,19 @@ external billing and does not assert that an Oakcloud invoice exists.
   enqueue billing reconciliation or create billing occurrences. The shared
   worker processes only durable schedule-reconciliation requests, so a manual
   cycle can be applied without a billing side effect.
+- Fee lines and variant fee templates are Prepaid (the schedule above) or
+  Postpaid. A postpaid line has no schedule; it names a trigger filing (ECI
+  filed, Form C filed, or whichever of the two is filed first) and bills once
+  per YA when that company obligation is set to Filed
+  (`billing/postpaid.ts`, called from `setCompanyObligationStatus` and from
+  billing reconciliation). The entry is keyed `YA<year>` under a
+  `postpaid-<feeLineId>` generation, dated the Singapore day the status
+  changed, so re-filing never duplicates it. Only YAs from the service's
+  engagement start YA bill (without one, filings on or after the service
+  start). Moving the YA back from Filed cancels a still-Open entry; filing
+  again reopens it. Billed, waived and staff-cancelled entries are kept.
+  Agreement activation takes Postpaid from the variant fee template with the
+  same description.
 - The Billing tab keeps reconciliation collapsed by default. It renders issue
   cards only for unresolved configuration gaps and a single compact healthy
   summary when no issues exist; it does not render a success card per service.

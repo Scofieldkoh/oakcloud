@@ -16,8 +16,31 @@ import { createMonitoringForActivatedService } from '@/services/compliance-monit
 import { processScheduleReconciliationBatch } from '@/services/schedule-reconciliation/worker';
 import { canonicalizeBillingSchedule, isMaterializableBillingSchedule } from '@/services/billing/schedule';
 import { snapshotClientServiceFees } from '@/services/client-service/fee-summary';
+import { isPostpaidTrigger, type PostpaidTrigger } from '@/services/billing/postpaid-triggers';
 
 const log = createLogger('service-agreement-activation');
+
+function feeTemplateKey(description: string): string {
+  return description.trim().toLowerCase();
+}
+
+/** Postpaid triggers of a variant's fee templates, keyed by description. */
+async function postpaidFeeTemplatesFor(
+  tx: Prisma.TransactionClient,
+  tenantId: string,
+  serviceVariantId: string,
+): Promise<Map<string, PostpaidTrigger>> {
+  const result = new Map<string, PostpaidTrigger>();
+  if (!tx.serviceVariantFeeTemplate?.findMany) return result;
+  const templates = await tx.serviceVariantFeeTemplate.findMany({
+    where: { tenantId, variantId: serviceVariantId, billingTiming: 'POSTPAID' },
+    select: { description: true, postpaidTrigger: true },
+  });
+  for (const template of templates ?? []) {
+    if (isPostpaidTrigger(template.postpaidTrigger)) result.set(feeTemplateKey(template.description), template.postpaidTrigger);
+  }
+  return result;
+}
 const activationInclude = {
   generatedDocument: { select: { id: true, status: true, revision: true, metadata: true } },
   entities: { select: { id: true, companyId: true } },
@@ -245,7 +268,12 @@ export async function processServiceAgreementActivation(claim: ActivationClaim):
           let service = await tx.clientService.findUnique({ where: { agreementItemId_companyId: { agreementItemId: item.id, companyId } } });
           const created = !service;
           const fees = item.feeLines.filter((fee) => fee.agreementEntityId === link.agreementEntityId);
+          const postpaidTemplates = await postpaidFeeTemplatesFor(tx, agreement.tenantId, item.serviceVariantId);
           const activationFees = fees.map((fee) => {
+            const postpaidTrigger = postpaidTemplates.get(feeTemplateKey(fee.description));
+            if (postpaidTrigger) {
+              return { ...fee, billingStartDate: null, scheduleConfig: null, billingTiming: 'POSTPAID' as const, postpaidTrigger };
+            }
             const billingStartDate = fee.billingStartDate ?? item.startDate;
             const scheduleConfig = canonicalizeBillingSchedule({
               billingFrequency: fee.billingFrequency,
@@ -256,10 +284,12 @@ export async function processServiceAgreementActivation(claim: ActivationClaim):
               ...fee,
               billingStartDate,
               scheduleConfig,
+              billingTiming: 'PREPAID' as const,
+              postpaidTrigger: null,
             };
           });
           const activationBillingDisposition = fees.length > 0
-            && activationFees.every((fee) => isMaterializableBillingSchedule(fee))
+            && activationFees.every((fee) => fee.billingTiming === 'POSTPAID' || isMaterializableBillingSchedule(fee))
             ? 'CONFIGURED'
             : 'UNREVIEWED';
           if (!service) {
@@ -267,7 +297,7 @@ export async function processServiceAgreementActivation(claim: ActivationClaim):
           }
           clientServiceCount += 1;
           if (created && fees.length > 0) {
-            await tx.clientServiceFeeLine.createMany({ data: activationFees.map((fee) => ({ tenantId: agreement.tenantId, clientServiceId: service!.id, sourceAgreementFeeLineId: fee.id, description: fee.description, amount: fee.amount, currency: fee.currency, billingFrequency: fee.billingFrequency, customFrequencyLabel: fee.customFrequencyLabel, billingStartDate: fee.billingStartDate, scheduleConfig: fee.scheduleConfig ?? Prisma.JsonNull, isActive: true, displayOrder: fee.displayOrder })) });
+            await tx.clientServiceFeeLine.createMany({ data: activationFees.map((fee) => ({ tenantId: agreement.tenantId, clientServiceId: service!.id, sourceAgreementFeeLineId: fee.id, description: fee.description, amount: fee.amount, currency: fee.currency, billingFrequency: fee.billingFrequency, customFrequencyLabel: fee.customFrequencyLabel, billingStartDate: fee.billingStartDate, scheduleConfig: fee.scheduleConfig ?? Prisma.JsonNull, billingTiming: fee.billingTiming, postpaidTrigger: fee.postpaidTrigger, isActive: true, displayOrder: fee.displayOrder })) });
           }
           if (created) {
             const variantRules = tx.serviceVariantDeadlineRule?.findMany

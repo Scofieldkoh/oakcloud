@@ -55,6 +55,8 @@ type BillingFeeProjectionInput = {
   customFrequencyLabel?: string | null;
   billingStartDate?: Date | string | null;
   scheduleConfig?: unknown;
+  billingTiming?: string | null;
+  postpaidTrigger?: string | null;
   displayOrder: number;
   isActive?: boolean;
   deletedAt?: Date | string | null;
@@ -113,6 +115,8 @@ function canonicalBillingFeeProjection(fees: readonly BillingFeeProjectionInput[
       customFrequencyLabel: fee.customFrequencyLabel ?? null,
       billingStartDate: billingFeeStartDate(fee.billingStartDate),
       scheduleConfig: billingScheduleProjection(fee),
+      billingTiming: fee.billingTiming ?? 'PREPAID',
+      postpaidTrigger: fee.postpaidTrigger ?? null,
       displayOrder: fee.displayOrder,
     }))
     .sort((left, right) => String(left.id).localeCompare(String(right.id)));
@@ -122,6 +126,8 @@ function billingScheduleConfigForFee(
   fee: NonNullable<UpdateClientServiceInput['feeLines']>[number],
   requireMaterializable: boolean,
 ) {
+  // Postpaid lines bill on a filing and carry no schedule.
+  if (fee.billingTiming === 'POSTPAID') return null;
   return canonicalizeBillingSchedule({
     billingFrequency: fee.billingFrequency,
     billingStartDate: fee.billingStartDate,
@@ -1344,6 +1350,8 @@ export async function updateClientService(id: string, input: UpdateClientService
           customFrequencyLabel: fee.customFrequencyLabel ?? null,
           billingStartDate: parseDate(fee.billingStartDate) ?? null,
           scheduleConfig: fee.scheduleConfig ?? Prisma.JsonNull,
+          billingTiming: fee.billingTiming ?? 'PREPAID',
+          postpaidTrigger: fee.billingTiming === 'POSTPAID' ? fee.postpaidTrigger ?? null : null,
           displayOrder: fee.displayOrder,
           isActive: true,
           deletedAt: null,

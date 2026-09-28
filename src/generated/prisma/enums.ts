@@ -49,6 +49,14 @@ export const BillingDisposition = {
 export type BillingDisposition = (typeof BillingDisposition)[keyof typeof BillingDisposition]
 
 
+export const BillingTiming = {
+  PREPAID: 'PREPAID',
+  POSTPAID: 'POSTPAID'
+} as const
+
+export type BillingTiming = (typeof BillingTiming)[keyof typeof BillingTiming]
+
+
 export const BillingOccurrenceStatus = {
   OPEN: 'OPEN',
   BILLED: 'BILLED',

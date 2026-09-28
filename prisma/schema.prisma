@@ -1219,6 +1219,9 @@ model ServiceVariantFeeTemplate {
   currency             String           @default("SGD") @db.VarChar(3)
   billingFrequency     BillingFrequency @map("billing_frequency")
   customFrequencyLabel String?          @map("custom_frequency_label") @db.VarChar(100)
+  billingTiming        BillingTiming    @default(PREPAID) @map("billing_timing")
+  /// Postpaid only: the filing that raises the bill (see POSTPAID_TRIGGERS).
+  postpaidTrigger      String?          @map("postpaid_trigger") @db.VarChar(60)
   displayOrder         Int              @default(0) @map("display_order")
   createdAt            DateTime         @default(now()) @map("created_at")
   updatedAt            DateTime         @updatedAt @map("updated_at")
@@ -1420,6 +1423,11 @@ enum BillingDisposition {
   UNREVIEWED
 }
 
+enum BillingTiming {
+  PREPAID
+  POSTPAID
+}
+
 enum BillingOccurrenceStatus {
   OPEN
   BILLED
@@ -1518,6 +1526,10 @@ model ClientServiceFeeLine {
   customFrequencyLabel     String?                  @map("custom_frequency_label") @db.VarChar(100)
   billingStartDate         DateTime?                @map("billing_start_date") @db.Date
   scheduleConfig           Json?                    @map("schedule_config")
+  /// Prepaid follows the schedule; postpaid bills when its trigger filing is Filed.
+  billingTiming            BillingTiming            @default(PREPAID) @map("billing_timing")
+  /// Postpaid only: the filing that raises the bill (see POSTPAID_TRIGGERS).
+  postpaidTrigger          String?                  @map("postpaid_trigger") @db.VarChar(60)
   isActive                 Boolean                  @default(true) @map("is_active")
   deletedAt                DateTime?                @map("deleted_at")
   deletedReason            String?                  @map("deleted_reason") @db.VarChar(1000)

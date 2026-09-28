@@ -370,6 +370,8 @@ describe('ServiceVariantForm', () => {
               currency: 'SGD',
               billingFrequency: 'MONTHLY',
               customFrequencyLabel: null,
+              billingTiming: 'PREPAID',
+              postpaidTrigger: null,
               displayOrder: 0,
             },
             {
@@ -379,6 +381,8 @@ describe('ServiceVariantForm', () => {
               currency: 'SGD',
               billingFrequency: 'MONTHLY',
               customFrequencyLabel: null,
+              billingTiming: 'PREPAID',
+              postpaidTrigger: null,
               displayOrder: 1,
             },
           ],

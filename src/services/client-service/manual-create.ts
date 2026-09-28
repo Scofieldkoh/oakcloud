@@ -28,6 +28,8 @@ function scheduleConfigForFee(
   fee: CreateManualClientServiceInput['feeLines'][number],
   requireMaterializable: boolean,
 ) {
+  // Postpaid lines bill on a filing and carry no schedule.
+  if (fee.billingTiming === 'POSTPAID') return null;
   return canonicalizeBillingSchedule({
     billingFrequency: fee.billingFrequency,
     billingStartDate: fee.billingStartDate,
@@ -57,6 +59,8 @@ export async function createManualClientService(
       ...fee,
       customFrequencyLabel: fee.billingFrequency === 'CUSTOM' ? fee.customFrequencyLabel ?? null : null,
       billingStartDate: fee.billingStartDate ?? fee.scheduleConfig?.startDate ?? null,
+      billingTiming: fee.billingTiming ?? 'PREPAID',
+      postpaidTrigger: fee.billingTiming === 'POSTPAID' ? fee.postpaidTrigger ?? null : null,
     })),
     confirmDuplicate: rawInput.confirmDuplicate ?? false,
   } as CreateManualClientServiceInput;
@@ -189,6 +193,8 @@ export async function createManualClientService(
             customFrequencyLabel: fee.customFrequencyLabel,
             billingStartDate: fee.billingStartDate ? parseDateOnly(fee.billingStartDate) : null,
             scheduleConfig: fee.scheduleConfig ?? Prisma.JsonNull,
+            billingTiming: fee.billingTiming,
+            postpaidTrigger: fee.postpaidTrigger,
             isActive: true,
             displayOrder: fee.displayOrder,
           })),
