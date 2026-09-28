@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { addCalendarDays, compareDateOnly, formatDateOnly, parseDateOnly, type BusinessCalendarSnapshot, type DateOnly } from '@/services/service-schedule';
 import { hashConfiguration } from '@/services/service-schedule/hash';
 import { canonicalizeBillingSchedule, evaluateBillingSchedule } from './schedule';
+import { isPostpaidGenerationKey, syncPostpaidBilling } from './postpaid';
 import type {
   BillingReconciliationPreservedCounts,
   BillingReconciliationResult,
@@ -21,6 +22,7 @@ type BillingFeeLine = {
   customFrequencyLabel?: string | null;
   billingStartDate?: Date | string | null;
   scheduleConfig?: unknown;
+  billingTiming?: string;
   isActive?: boolean;
   deletedAt?: Date | string | null;
 };
@@ -560,6 +562,8 @@ export async function reconcileClientServiceBilling(
     for (const feeLine of feeLines) {
       await input.assertLease?.();
       if (!feeLineIsActive(feeLine)) continue;
+      // Postpaid lines bill when their filing is Filed (synced below).
+      if (feeLine.billingTiming === 'POSTPAID') continue;
       const amount = amountString(feeLine.amount);
       if (!/^\d{1,16}(?:\.\d{1,2})?$/.test(amount) || !/^[A-Z]{3}$/.test(feeLine.currency)) {
         warning(result.warnings, 'INVALID_AMOUNT_OR_CURRENCY', 'Fee line amount or currency is invalid', feeLine.id, true);
@@ -732,6 +736,8 @@ export async function reconcileClientServiceBilling(
   // Preserve protected history; only eligible future Open rows are cancelled.
   for (const occurrence of existingOccurrences) {
     if (processed.has(occurrence.id)) continue;
+    // Postpaid entries follow filing status, not the schedule.
+    if (isPostpaidGenerationKey(occurrence.generationKey)) continue;
     const reason = preserveReason(occurrence, input.today);
     if (skipCleanupFeeLineIds.has(occurrence.feeLineId)
       || isProtected(occurrence, input.today)
@@ -763,6 +769,23 @@ export async function reconcileClientServiceBilling(
     }
     result.preserved += 1;
     result.preservedByReason[reason] += 1;
+  }
+
+  // Bill YAs already Filed, e.g. when a line has just become postpaid.
+  if (input.writeMode === 'APPLY' && !shouldStopGeneration
+    && feeLines.some((feeLine) => feeLineIsActive(feeLine) && feeLine.billingTiming === 'POSTPAID')
+    && (db as unknown as { deadlineOccurrence?: unknown }).deadlineOccurrence) {
+    await input.assertLease?.();
+    const postpaid = await syncPostpaidBilling({
+      tenantId: input.tenantId,
+      companyId: service.companyId,
+      clientServiceId: service.id,
+      cancelledById: input.cancellationActorId ?? null,
+      cancellationReconciliationRequestId: input.reconciliationRequestId,
+    }, db);
+    result.created += postpaid.created + postpaid.reopened;
+    result.cancelled += postpaid.cancelled;
+    result.recalculated += postpaid.updated;
   }
 
   return result;

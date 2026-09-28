@@ -1,5 +1,11 @@
 import { z } from 'zod';
-import { billingFrequencySchema, serviceCadenceSchema } from '@/lib/validations/service-catalog';
+import {
+  billingFrequencySchema,
+  billingTimingSchema,
+  postpaidTriggerSchema,
+  refineBillingTiming,
+  serviceCadenceSchema,
+} from '@/lib/validations/service-catalog';
 import { billingScheduleConfigSchema } from '@/lib/validations/billing';
 import { scheduleEntriesSchema } from '@/lib/validations/service-schedule';
 import { canonicalizeBillingSchedule } from '@/services/billing/schedule';
@@ -29,6 +35,7 @@ type BillingLineLike = {
   billingStartDate?: string | Date | null;
   customFrequencyLabel?: string | null;
   scheduleConfig?: unknown;
+  billingTiming?: string;
 };
 
 function validateBillingConfiguration(
@@ -53,6 +60,8 @@ function validateBillingConfiguration(
   if (value.feeLines) {
     value.feeLines.forEach((fee, index) => {
       if (value.billingDisposition === 'NOT_REQUIRED') return;
+      // Postpaid lines bill on a filing, not on a schedule.
+      if (fee.billingTiming === 'POSTPAID') return;
       try {
         canonicalizeBillingSchedule({
           billingFrequency: fee.billingFrequency ?? '',
@@ -93,9 +102,12 @@ export const clientServiceFeeLineInputSchema = z.object({
   customFrequencyLabel: z.string().trim().min(1).max(100).nullable().optional(),
   billingStartDate: z.string().date().nullable().optional(),
   scheduleConfig: billingScheduleConfigSchema.nullable().optional(),
+  billingTiming: billingTimingSchema.optional(),
+  postpaidTrigger: postpaidTriggerSchema.nullable().optional(),
   isActive: z.boolean().optional(),
   displayOrder: z.number().int().min(0),
 }).superRefine((value, ctx) => {
+  refineBillingTiming(value, ctx);
   if (value.billingFrequency === 'CUSTOM' && !value.customFrequencyLabel?.trim()) {
     ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['customFrequencyLabel'], message: 'Custom frequency label is required' });
   }
@@ -203,7 +215,10 @@ const manualFeeLineSchema = z.object({
   customFrequencyLabel: z.string().trim().min(1).max(100).nullable().optional(),
   billingStartDate: z.string().date().nullable().optional(),
   scheduleConfig: billingScheduleConfigSchema.nullable().optional(),
+  billingTiming: billingTimingSchema.optional(),
+  postpaidTrigger: postpaidTriggerSchema.nullable().optional(),
 }).strict().superRefine((value, ctx) => {
+  refineBillingTiming(value, ctx);
   if (value.billingFrequency === 'CUSTOM' && !value.customFrequencyLabel?.trim()) {
     ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['customFrequencyLabel'], message: 'Custom frequency label is required' });
   }

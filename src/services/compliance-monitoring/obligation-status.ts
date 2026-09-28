@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import type { Prisma } from '@/generated/prisma';
 import { ValidationError } from '@/lib/errors';
+import { syncPostpaidBilling } from '@/services/billing/postpaid';
 import {
   COMPANY_OBLIGATION_STATUS_LABELS,
   companyObligationStatusOf,
@@ -20,7 +21,8 @@ export {
  * Staff-facing filing status for a company obligation period. Each choice maps
  * onto the stored occurrence status and filing responsibility, so the writer
  * keeps it: STAFF responsibility is never replaced by a projection, and
- * completed or waived rows are preserved.
+ * completed or waived rows are preserved. Postpaid billing entries follow
+ * the Filed status (see billing/postpaid).
  */
 
 type Db = Prisma.TransactionClient | typeof prisma;
@@ -119,6 +121,10 @@ export async function setCompanyObligationStatus(
     }
     await db.deadlineOccurrence.update({ where: { id: occurrence.id }, data });
     changed += 1;
+  }
+  // Postpaid fees pegged to this filing bill (or stop billing) with it.
+  if (changed > 0) {
+    await syncPostpaidBilling({ tenantId: input.tenantId, companyId: input.companyId, cancelledById: input.actorId }, db);
   }
   return changed;
 }

@@ -12237,6 +12237,8 @@ export const ServiceVariantFeeTemplateScalarFieldEnum = {
   currency: 'currency',
   billingFrequency: 'billingFrequency',
   customFrequencyLabel: 'customFrequencyLabel',
+  billingTiming: 'billingTiming',
+  postpaidTrigger: 'postpaidTrigger',
   displayOrder: 'displayOrder',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
@@ -12384,6 +12386,8 @@ export const ClientServiceFeeLineScalarFieldEnum = {
   customFrequencyLabel: 'customFrequencyLabel',
   billingStartDate: 'billingStartDate',
   scheduleConfig: 'scheduleConfig',
+  billingTiming: 'billingTiming',
+  postpaidTrigger: 'postpaidTrigger',
   isActive: 'isActive',
   deletedAt: 'deletedAt',
   deletedReason: 'deletedReason',
@@ -14927,6 +14931,20 @@ export type EnumBillingFrequencyFieldRefInput<$PrismaModel> = FieldRefInputType<
  * Reference to a field of type 'BillingFrequency[]'
  */
 export type ListEnumBillingFrequencyFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BillingFrequency[]'>
+
+
+
+/**
+ * Reference to a field of type 'BillingTiming'
+ */
+export type EnumBillingTimingFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BillingTiming'>
+
+
+
+/**
+ * Reference to a field of type 'BillingTiming[]'
+ */
+export type ListEnumBillingTimingFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BillingTiming[]'>
 
 
 

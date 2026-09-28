@@ -45,6 +45,8 @@ export type ServiceVariantFeeTemplateMinAggregateOutputType = {
   currency: string | null
   billingFrequency: $Enums.BillingFrequency | null
   customFrequencyLabel: string | null
+  billingTiming: $Enums.BillingTiming | null
+  postpaidTrigger: string | null
   displayOrder: number | null
   createdAt: Date | null
   updatedAt: Date | null
@@ -59,6 +61,8 @@ export type ServiceVariantFeeTemplateMaxAggregateOutputType = {
   currency: string | null
   billingFrequency: $Enums.BillingFrequency | null
   customFrequencyLabel: string | null
+  billingTiming: $Enums.BillingTiming | null
+  postpaidTrigger: string | null
   displayOrder: number | null
   createdAt: Date | null
   updatedAt: Date | null
@@ -73,6 +77,8 @@ export type ServiceVariantFeeTemplateCountAggregateOutputType = {
   currency: number
   billingFrequency: number
   customFrequencyLabel: number
+  billingTiming: number
+  postpaidTrigger: number
   displayOrder: number
   createdAt: number
   updatedAt: number
@@ -99,6 +105,8 @@ export type ServiceVariantFeeTemplateMinAggregateInputType = {
   currency?: true
   billingFrequency?: true
   customFrequencyLabel?: true
+  billingTiming?: true
+  postpaidTrigger?: true
   displayOrder?: true
   createdAt?: true
   updatedAt?: true
@@ -113,6 +121,8 @@ export type ServiceVariantFeeTemplateMaxAggregateInputType = {
   currency?: true
   billingFrequency?: true
   customFrequencyLabel?: true
+  billingTiming?: true
+  postpaidTrigger?: true
   displayOrder?: true
   createdAt?: true
   updatedAt?: true
@@ -127,6 +137,8 @@ export type ServiceVariantFeeTemplateCountAggregateInputType = {
   currency?: true
   billingFrequency?: true
   customFrequencyLabel?: true
+  billingTiming?: true
+  postpaidTrigger?: true
   displayOrder?: true
   createdAt?: true
   updatedAt?: true
@@ -228,6 +240,8 @@ export type ServiceVariantFeeTemplateGroupByOutputType = {
   currency: string
   billingFrequency: $Enums.BillingFrequency
   customFrequencyLabel: string | null
+  billingTiming: $Enums.BillingTiming
+  postpaidTrigger: string | null
   displayOrder: number
   createdAt: Date
   updatedAt: Date
@@ -265,6 +279,8 @@ export type ServiceVariantFeeTemplateWhereInput = {
   currency?: Prisma.StringFilter<"ServiceVariantFeeTemplate"> | string
   billingFrequency?: Prisma.EnumBillingFrequencyFilter<"ServiceVariantFeeTemplate"> | $Enums.BillingFrequency
   customFrequencyLabel?: Prisma.StringNullableFilter<"ServiceVariantFeeTemplate"> | string | null
+  billingTiming?: Prisma.EnumBillingTimingFilter<"ServiceVariantFeeTemplate"> | $Enums.BillingTiming
+  postpaidTrigger?: Prisma.StringNullableFilter<"ServiceVariantFeeTemplate"> | string | null
   displayOrder?: Prisma.IntFilter<"ServiceVariantFeeTemplate"> | number
   createdAt?: Prisma.DateTimeFilter<"ServiceVariantFeeTemplate"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"ServiceVariantFeeTemplate"> | Date | string
@@ -281,6 +297,8 @@ export type ServiceVariantFeeTemplateOrderByWithRelationInput = {
   currency?: Prisma.SortOrder
   billingFrequency?: Prisma.SortOrder
   customFrequencyLabel?: Prisma.SortOrderInput | Prisma.SortOrder
+  billingTiming?: Prisma.SortOrder
+  postpaidTrigger?: Prisma.SortOrderInput | Prisma.SortOrder
   displayOrder?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -300,6 +318,8 @@ export type ServiceVariantFeeTemplateWhereUniqueInput = Prisma.AtLeast<{
   currency?: Prisma.StringFilter<"ServiceVariantFeeTemplate"> | string
   billingFrequency?: Prisma.EnumBillingFrequencyFilter<"ServiceVariantFeeTemplate"> | $Enums.BillingFrequency
   customFrequencyLabel?: Prisma.StringNullableFilter<"ServiceVariantFeeTemplate"> | string | null
+  billingTiming?: Prisma.EnumBillingTimingFilter<"ServiceVariantFeeTemplate"> | $Enums.BillingTiming
+  postpaidTrigger?: Prisma.StringNullableFilter<"ServiceVariantFeeTemplate"> | string | null
   displayOrder?: Prisma.IntFilter<"ServiceVariantFeeTemplate"> | number
   createdAt?: Prisma.DateTimeFilter<"ServiceVariantFeeTemplate"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"ServiceVariantFeeTemplate"> | Date | string
@@ -316,6 +336,8 @@ export type ServiceVariantFeeTemplateOrderByWithAggregationInput = {
   currency?: Prisma.SortOrder
   billingFrequency?: Prisma.SortOrder
   customFrequencyLabel?: Prisma.SortOrderInput | Prisma.SortOrder
+  billingTiming?: Prisma.SortOrder
+  postpaidTrigger?: Prisma.SortOrderInput | Prisma.SortOrder
   displayOrder?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -338,6 +360,8 @@ export type ServiceVariantFeeTemplateScalarWhereWithAggregatesInput = {
   currency?: Prisma.StringWithAggregatesFilter<"ServiceVariantFeeTemplate"> | string
   billingFrequency?: Prisma.EnumBillingFrequencyWithAggregatesFilter<"ServiceVariantFeeTemplate"> | $Enums.BillingFrequency
   customFrequencyLabel?: Prisma.StringNullableWithAggregatesFilter<"ServiceVariantFeeTemplate"> | string | null
+  billingTiming?: Prisma.EnumBillingTimingWithAggregatesFilter<"ServiceVariantFeeTemplate"> | $Enums.BillingTiming
+  postpaidTrigger?: Prisma.StringNullableWithAggregatesFilter<"ServiceVariantFeeTemplate"> | string | null
   displayOrder?: Prisma.IntWithAggregatesFilter<"ServiceVariantFeeTemplate"> | number
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"ServiceVariantFeeTemplate"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"ServiceVariantFeeTemplate"> | Date | string
@@ -350,6 +374,8 @@ export type ServiceVariantFeeTemplateCreateInput = {
   currency?: string
   billingFrequency: $Enums.BillingFrequency
   customFrequencyLabel?: string | null
+  billingTiming?: $Enums.BillingTiming
+  postpaidTrigger?: string | null
   displayOrder?: number
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -366,6 +392,8 @@ export type ServiceVariantFeeTemplateUncheckedCreateInput = {
   currency?: string
   billingFrequency: $Enums.BillingFrequency
   customFrequencyLabel?: string | null
+  billingTiming?: $Enums.BillingTiming
+  postpaidTrigger?: string | null
   displayOrder?: number
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -378,6 +406,8 @@ export type ServiceVariantFeeTemplateUpdateInput = {
   currency?: Prisma.StringFieldUpdateOperationsInput | string
   billingFrequency?: Prisma.EnumBillingFrequencyFieldUpdateOperationsInput | $Enums.BillingFrequency
   customFrequencyLabel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  billingTiming?: Prisma.EnumBillingTimingFieldUpdateOperationsInput | $Enums.BillingTiming
+  postpaidTrigger?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   displayOrder?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -394,6 +424,8 @@ export type ServiceVariantFeeTemplateUncheckedUpdateInput = {
   currency?: Prisma.StringFieldUpdateOperationsInput | string
   billingFrequency?: Prisma.EnumBillingFrequencyFieldUpdateOperationsInput | $Enums.BillingFrequency
   customFrequencyLabel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  billingTiming?: Prisma.EnumBillingTimingFieldUpdateOperationsInput | $Enums.BillingTiming
+  postpaidTrigger?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   displayOrder?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -408,6 +440,8 @@ export type ServiceVariantFeeTemplateCreateManyInput = {
   currency?: string
   billingFrequency: $Enums.BillingFrequency
   customFrequencyLabel?: string | null
+  billingTiming?: $Enums.BillingTiming
+  postpaidTrigger?: string | null
   displayOrder?: number
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -420,6 +454,8 @@ export type ServiceVariantFeeTemplateUpdateManyMutationInput = {
   currency?: Prisma.StringFieldUpdateOperationsInput | string
   billingFrequency?: Prisma.EnumBillingFrequencyFieldUpdateOperationsInput | $Enums.BillingFrequency
   customFrequencyLabel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  billingTiming?: Prisma.EnumBillingTimingFieldUpdateOperationsInput | $Enums.BillingTiming
+  postpaidTrigger?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   displayOrder?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -434,6 +470,8 @@ export type ServiceVariantFeeTemplateUncheckedUpdateManyInput = {
   currency?: Prisma.StringFieldUpdateOperationsInput | string
   billingFrequency?: Prisma.EnumBillingFrequencyFieldUpdateOperationsInput | $Enums.BillingFrequency
   customFrequencyLabel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  billingTiming?: Prisma.EnumBillingTimingFieldUpdateOperationsInput | $Enums.BillingTiming
+  postpaidTrigger?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   displayOrder?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -458,6 +496,8 @@ export type ServiceVariantFeeTemplateCountOrderByAggregateInput = {
   currency?: Prisma.SortOrder
   billingFrequency?: Prisma.SortOrder
   customFrequencyLabel?: Prisma.SortOrder
+  billingTiming?: Prisma.SortOrder
+  postpaidTrigger?: Prisma.SortOrder
   displayOrder?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -477,6 +517,8 @@ export type ServiceVariantFeeTemplateMaxOrderByAggregateInput = {
   currency?: Prisma.SortOrder
   billingFrequency?: Prisma.SortOrder
   customFrequencyLabel?: Prisma.SortOrder
+  billingTiming?: Prisma.SortOrder
+  postpaidTrigger?: Prisma.SortOrder
   displayOrder?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -491,6 +533,8 @@ export type ServiceVariantFeeTemplateMinOrderByAggregateInput = {
   currency?: Prisma.SortOrder
   billingFrequency?: Prisma.SortOrder
   customFrequencyLabel?: Prisma.SortOrder
+  billingTiming?: Prisma.SortOrder
+  postpaidTrigger?: Prisma.SortOrder
   displayOrder?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -589,6 +633,10 @@ export type EnumBillingFrequencyFieldUpdateOperationsInput = {
   set?: $Enums.BillingFrequency
 }
 
+export type EnumBillingTimingFieldUpdateOperationsInput = {
+  set?: $Enums.BillingTiming
+}
+
 export type ServiceVariantFeeTemplateCreateWithoutTenantInput = {
   id?: string
   description: string
@@ -596,6 +644,8 @@ export type ServiceVariantFeeTemplateCreateWithoutTenantInput = {
   currency?: string
   billingFrequency: $Enums.BillingFrequency
   customFrequencyLabel?: string | null
+  billingTiming?: $Enums.BillingTiming
+  postpaidTrigger?: string | null
   displayOrder?: number
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -610,6 +660,8 @@ export type ServiceVariantFeeTemplateUncheckedCreateWithoutTenantInput = {
   currency?: string
   billingFrequency: $Enums.BillingFrequency
   customFrequencyLabel?: string | null
+  billingTiming?: $Enums.BillingTiming
+  postpaidTrigger?: string | null
   displayOrder?: number
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -653,6 +705,8 @@ export type ServiceVariantFeeTemplateScalarWhereInput = {
   currency?: Prisma.StringFilter<"ServiceVariantFeeTemplate"> | string
   billingFrequency?: Prisma.EnumBillingFrequencyFilter<"ServiceVariantFeeTemplate"> | $Enums.BillingFrequency
   customFrequencyLabel?: Prisma.StringNullableFilter<"ServiceVariantFeeTemplate"> | string | null
+  billingTiming?: Prisma.EnumBillingTimingFilter<"ServiceVariantFeeTemplate"> | $Enums.BillingTiming
+  postpaidTrigger?: Prisma.StringNullableFilter<"ServiceVariantFeeTemplate"> | string | null
   displayOrder?: Prisma.IntFilter<"ServiceVariantFeeTemplate"> | number
   createdAt?: Prisma.DateTimeFilter<"ServiceVariantFeeTemplate"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"ServiceVariantFeeTemplate"> | Date | string
@@ -665,6 +719,8 @@ export type ServiceVariantFeeTemplateCreateWithoutVariantInput = {
   currency?: string
   billingFrequency: $Enums.BillingFrequency
   customFrequencyLabel?: string | null
+  billingTiming?: $Enums.BillingTiming
+  postpaidTrigger?: string | null
   displayOrder?: number
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -679,6 +735,8 @@ export type ServiceVariantFeeTemplateUncheckedCreateWithoutVariantInput = {
   currency?: string
   billingFrequency: $Enums.BillingFrequency
   customFrequencyLabel?: string | null
+  billingTiming?: $Enums.BillingTiming
+  postpaidTrigger?: string | null
   displayOrder?: number
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -718,6 +776,8 @@ export type ServiceVariantFeeTemplateCreateManyTenantInput = {
   currency?: string
   billingFrequency: $Enums.BillingFrequency
   customFrequencyLabel?: string | null
+  billingTiming?: $Enums.BillingTiming
+  postpaidTrigger?: string | null
   displayOrder?: number
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -730,6 +790,8 @@ export type ServiceVariantFeeTemplateUpdateWithoutTenantInput = {
   currency?: Prisma.StringFieldUpdateOperationsInput | string
   billingFrequency?: Prisma.EnumBillingFrequencyFieldUpdateOperationsInput | $Enums.BillingFrequency
   customFrequencyLabel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  billingTiming?: Prisma.EnumBillingTimingFieldUpdateOperationsInput | $Enums.BillingTiming
+  postpaidTrigger?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   displayOrder?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -744,6 +806,8 @@ export type ServiceVariantFeeTemplateUncheckedUpdateWithoutTenantInput = {
   currency?: Prisma.StringFieldUpdateOperationsInput | string
   billingFrequency?: Prisma.EnumBillingFrequencyFieldUpdateOperationsInput | $Enums.BillingFrequency
   customFrequencyLabel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  billingTiming?: Prisma.EnumBillingTimingFieldUpdateOperationsInput | $Enums.BillingTiming
+  postpaidTrigger?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   displayOrder?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -757,6 +821,8 @@ export type ServiceVariantFeeTemplateUncheckedUpdateManyWithoutTenantInput = {
   currency?: Prisma.StringFieldUpdateOperationsInput | string
   billingFrequency?: Prisma.EnumBillingFrequencyFieldUpdateOperationsInput | $Enums.BillingFrequency
   customFrequencyLabel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  billingTiming?: Prisma.EnumBillingTimingFieldUpdateOperationsInput | $Enums.BillingTiming
+  postpaidTrigger?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   displayOrder?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -770,6 +836,8 @@ export type ServiceVariantFeeTemplateCreateManyVariantInput = {
   currency?: string
   billingFrequency: $Enums.BillingFrequency
   customFrequencyLabel?: string | null
+  billingTiming?: $Enums.BillingTiming
+  postpaidTrigger?: string | null
   displayOrder?: number
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -782,6 +850,8 @@ export type ServiceVariantFeeTemplateUpdateWithoutVariantInput = {
   currency?: Prisma.StringFieldUpdateOperationsInput | string
   billingFrequency?: Prisma.EnumBillingFrequencyFieldUpdateOperationsInput | $Enums.BillingFrequency
   customFrequencyLabel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  billingTiming?: Prisma.EnumBillingTimingFieldUpdateOperationsInput | $Enums.BillingTiming
+  postpaidTrigger?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   displayOrder?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -796,6 +866,8 @@ export type ServiceVariantFeeTemplateUncheckedUpdateWithoutVariantInput = {
   currency?: Prisma.StringFieldUpdateOperationsInput | string
   billingFrequency?: Prisma.EnumBillingFrequencyFieldUpdateOperationsInput | $Enums.BillingFrequency
   customFrequencyLabel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  billingTiming?: Prisma.EnumBillingTimingFieldUpdateOperationsInput | $Enums.BillingTiming
+  postpaidTrigger?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   displayOrder?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -809,6 +881,8 @@ export type ServiceVariantFeeTemplateUncheckedUpdateManyWithoutVariantInput = {
   currency?: Prisma.StringFieldUpdateOperationsInput | string
   billingFrequency?: Prisma.EnumBillingFrequencyFieldUpdateOperationsInput | $Enums.BillingFrequency
   customFrequencyLabel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  billingTiming?: Prisma.EnumBillingTimingFieldUpdateOperationsInput | $Enums.BillingTiming
+  postpaidTrigger?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   displayOrder?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -825,6 +899,8 @@ export type ServiceVariantFeeTemplateSelect<ExtArgs extends runtime.Types.Extens
   currency?: boolean
   billingFrequency?: boolean
   customFrequencyLabel?: boolean
+  billingTiming?: boolean
+  postpaidTrigger?: boolean
   displayOrder?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -841,6 +917,8 @@ export type ServiceVariantFeeTemplateSelectCreateManyAndReturn<ExtArgs extends r
   currency?: boolean
   billingFrequency?: boolean
   customFrequencyLabel?: boolean
+  billingTiming?: boolean
+  postpaidTrigger?: boolean
   displayOrder?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -857,6 +935,8 @@ export type ServiceVariantFeeTemplateSelectUpdateManyAndReturn<ExtArgs extends r
   currency?: boolean
   billingFrequency?: boolean
   customFrequencyLabel?: boolean
+  billingTiming?: boolean
+  postpaidTrigger?: boolean
   displayOrder?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -873,12 +953,14 @@ export type ServiceVariantFeeTemplateSelectScalar = {
   currency?: boolean
   billingFrequency?: boolean
   customFrequencyLabel?: boolean
+  billingTiming?: boolean
+  postpaidTrigger?: boolean
   displayOrder?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type ServiceVariantFeeTemplateOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "variantId" | "description" | "defaultAmount" | "currency" | "billingFrequency" | "customFrequencyLabel" | "displayOrder" | "createdAt" | "updatedAt", ExtArgs["result"]["serviceVariantFeeTemplate"]>
+export type ServiceVariantFeeTemplateOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "variantId" | "description" | "defaultAmount" | "currency" | "billingFrequency" | "customFrequencyLabel" | "billingTiming" | "postpaidTrigger" | "displayOrder" | "createdAt" | "updatedAt", ExtArgs["result"]["serviceVariantFeeTemplate"]>
 export type ServiceVariantFeeTemplateInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
   variant?: boolean | Prisma.ServiceVariantDefaultArgs<ExtArgs>
@@ -907,6 +989,11 @@ export type $ServiceVariantFeeTemplatePayload<ExtArgs extends runtime.Types.Exte
     currency: string
     billingFrequency: $Enums.BillingFrequency
     customFrequencyLabel: string | null
+    billingTiming: $Enums.BillingTiming
+    /**
+     * Postpaid only: the filing that raises the bill (see POSTPAID_TRIGGERS).
+     */
+    postpaidTrigger: string | null
     displayOrder: number
     createdAt: Date
     updatedAt: Date
@@ -1343,6 +1430,8 @@ export interface ServiceVariantFeeTemplateFieldRefs {
   readonly currency: Prisma.FieldRef<"ServiceVariantFeeTemplate", 'String'>
   readonly billingFrequency: Prisma.FieldRef<"ServiceVariantFeeTemplate", 'BillingFrequency'>
   readonly customFrequencyLabel: Prisma.FieldRef<"ServiceVariantFeeTemplate", 'String'>
+  readonly billingTiming: Prisma.FieldRef<"ServiceVariantFeeTemplate", 'BillingTiming'>
+  readonly postpaidTrigger: Prisma.FieldRef<"ServiceVariantFeeTemplate", 'String'>
   readonly displayOrder: Prisma.FieldRef<"ServiceVariantFeeTemplate", 'Int'>
   readonly createdAt: Prisma.FieldRef<"ServiceVariantFeeTemplate", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"ServiceVariantFeeTemplate", 'DateTime'>

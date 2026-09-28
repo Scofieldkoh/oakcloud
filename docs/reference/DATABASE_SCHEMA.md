@@ -1997,6 +1997,8 @@ these defaults into entity-specific agreement fee rows.
 | currency | VARCHAR(3) | No | ISO currency code, default SGD |
 | billing_frequency | ENUM | No | BillingFrequency |
 | custom_frequency_label | VARCHAR(100) | Yes | Required only for CUSTOM frequency |
+| billing_timing | ENUM | No | BillingTiming (default: PREPAID); copied to service fee lines |
+| postpaid_trigger | VARCHAR(60) | Yes | Postpaid only: SG_ECI_FILED, SG_FORM_C_FILED or SG_ECI_OR_FORM_C_FILED |
 | display_order | INT | No | Row order |
 | created_at | TIMESTAMP | No | Record creation time |
 | updated_at | TIMESTAMP | No | Last update time |
@@ -2100,6 +2102,12 @@ SEMI_ANNUALLY
 ANNUALLY
 ONE_TIME
 CUSTOM
+```
+
+### BillingTiming (fee lines)
+```sql
+PREPAID   -- billed on the fee line's schedule
+POSTPAID  -- billed once per YA when the trigger filing is set to Filed
 ```
 
 ### GeneratedDocumentStatus
