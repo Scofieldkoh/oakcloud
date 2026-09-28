@@ -281,8 +281,10 @@ export function getDocumentExporter(): IDocumentExporter {
   rule, from `GET /api/companies/[id]/services/company-obligations`
   (`profiles`, `start`, `end` for a service being added; `serviceId` for an
   existing one). Each row shows a `YA` badge, the due date and a filing
-  status, and is tinted by status (Filed green, Pending filing yellow, To be
-  confirmed light red, Managed externally and Not required grey).
+  status, and is tinted by status (Filed green, Pending filing white, To be
+  confirmed light red, Managed externally and Not required dark grey). The
+  Deadlines page shows the same filing status for company rows, read from the
+  same stored occurrence.
 - **Our engagement starts from** stores `ClientService.engagementStartYearOfAssessment`
   (`fromYa` on the preview for a service being added; `PUT` on the same route
   for an existing one). The projection makes Oakcloud the filer for
@@ -304,7 +306,11 @@ export function getDocumentExporter(): IDocumentExporter {
   (`POST /api/companies/[id]/financial-periods`, up to 18 months, YA the end
   year or the year after) and queues company reconciliation. Confirmed periods
   replace the provisional derived periods they overlap, which can remove or
-  move the earliest filings. The dialog's YA follows the first year end.
+  move the earliest filings. The dialog's YA follows the first year end. The
+  first confirmed period also shows on the company Compliance card and can be
+  changed or cleared in Edit > Compliance (`firstPeriodStartDate`,
+  `firstPeriodEndDate`, `firstYearOfAssessment`; BizFile sync omits them and
+  leaves the period alone).
 - Monitoring never sends client reminders and never writes billing records.
 - Pause by turning the flag off: stored company obligations stay readable and
   the worker returns to observe mode. Do not delete company rows to roll back.

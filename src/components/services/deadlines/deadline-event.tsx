@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { getCompanyDisplayLabel } from '@/lib/company-display-label';
 import type { DeadlineOccurrenceDto } from '@/services/deadline';
 import type { UpdateDeadlineOccurrenceInput } from '@/lib/validations/deadline';
+import { COMPANY_OBLIGATION_STATUS_LABELS, companyObligationStatusOf } from '@/services/compliance-monitoring/obligation-status-labels';
 
 export interface DeadlineEventProps {
   occurrence: DeadlineOccurrenceDto;
@@ -36,6 +37,21 @@ function dateLabel(value: string): string {
     ? ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][Number(month) - 1]
     : undefined;
   return year && day && monthName ? `${day} ${monthName} ${year}` : value;
+}
+
+/**
+ * Status shown for a deadline. Company obligations use the filing status set
+ * in the service's Deadline tab (Filed, Pending filing, To be confirmed,
+ * Managed externally, Not required); both read the same stored row.
+ */
+export function deadlineStatusLabel(occurrence: Pick<DeadlineOccurrenceDto, 'status' | 'obligation'>): string {
+  if (occurrence.obligation && occurrence.status !== 'CANCELLED') {
+    return COMPANY_OBLIGATION_STATUS_LABELS[companyObligationStatusOf({
+      status: occurrence.status,
+      filingResponsibility: occurrence.obligation.filingResponsibility,
+    })];
+  }
+  return occurrence.status.charAt(0) + occurrence.status.slice(1).toLowerCase();
 }
 
 /** Service shown for a deadline; company obligations belong to no single service. */
@@ -148,6 +164,8 @@ export function DeadlineEventPanel({
         <div><dt className="text-text-muted">Milestone</dt><dd className="text-text-primary">{milestone}</dd></div>
         <div><dt className="text-text-muted">Type</dt><dd className="text-text-primary">{typeLabels[occurrence.deadlineType]}</dd></div>
         <div><dt className="text-text-muted">Lifecycle</dt><dd className="text-text-primary">{occurrence.status}</dd></div>
+        {occurrence.obligation ? <div><dt className="text-text-muted">Filing status</dt><dd className="text-text-primary">{deadlineStatusLabel(occurrence)}</dd></div> : null}
+        {occurrence.obligation?.yearOfAssessment ? <div><dt className="text-text-muted">Year of Assessment</dt><dd className="text-text-primary">YA {occurrence.obligation.yearOfAssessment}</dd></div> : null}
         <div><dt className="text-text-muted">Calculated date</dt><dd className="text-text-primary">{dateLabel(occurrence.calculatedDueDate)}</dd></div>
         <div><dt className="text-text-muted">Operative date</dt><dd className="text-text-primary">{dateLabel(occurrence.operativeDueDate)}</dd></div>
         <div className="col-span-2"><dt className="text-text-muted">Source</dt><dd className="break-all text-text-primary">{sourceLabel(occurrence)}</dd></div>

@@ -806,6 +806,13 @@ export async function getCompanyById(
   const company = await prisma.company.findFirst({
     where,
     include: {
+      // The first confirmed financial period (it may run over 12 months).
+      financialPeriods: {
+        where: { provenance: 'CONFIRMED' },
+        orderBy: { periodEnd: 'asc' },
+        take: 1,
+        select: { periodStart: true, periodEnd: true, yearsOfAssessment: true },
+      },
       addresses: {
         where: { isCurrent: true },
         select: {

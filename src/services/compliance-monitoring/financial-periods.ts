@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import type { Prisma } from '@/generated/prisma';
 import { NotFoundError, ValidationError } from '@/lib/errors';
 import { createAuditLog } from '@/lib/audit';
 import { compareDateOnly, parseDateOnly } from '@/services/service-schedule/date-only';
@@ -47,10 +48,8 @@ export type ConfirmFinancialPeriodInput = {
   yearOfAssessment: number;
 };
 
-export async function confirmFinancialPeriod(
-  params: { tenantId: string; companyId: string; userId: string | null },
-  input: ConfirmFinancialPeriodInput,
-) {
+/** Dates in order, at most 18 months, and a YA of the end year or the year after. */
+export function validateFinancialPeriodInput(input: ConfirmFinancialPeriodInput): void {
   parseDateOnly(input.periodStart);
   parseDateOnly(input.periodEnd);
   if (compareDateOnly(input.periodEnd, input.periodStart) <= 0) {
@@ -65,6 +64,62 @@ export async function confirmFinancialPeriod(
   if (!Number.isInteger(input.yearOfAssessment) || input.yearOfAssessment < endYear || input.yearOfAssessment > endYear + 1) {
     throw new ValidationError(`The Year of Assessment for a period ending in ${endYear} must be ${endYear} or ${endYear + 1}.`);
   }
+}
+
+/**
+ * Replace (or, with null, remove) the company's first confirmed financial
+ * period from the company Compliance section. Runs inside the caller's
+ * transaction; the caller queues company reconciliation.
+ */
+export async function saveFirstFinancialPeriod(
+  tx: Prisma.TransactionClient,
+  params: { tenantId: string; companyId: string; userId: string | null },
+  input: ConfirmFinancialPeriodInput | null,
+): Promise<void> {
+  const first = await tx.companyFinancialPeriod.findFirst({
+    where: { tenantId: params.tenantId, companyId: params.companyId, provenance: 'CONFIRMED' },
+    orderBy: { periodEnd: 'asc' },
+    select: { id: true },
+  });
+  if (!input) {
+    if (first) await tx.companyFinancialPeriod.delete({ where: { id: first.id } });
+    return;
+  }
+  validateFinancialPeriodInput(input);
+  const start = new Date(`${input.periodStart}T00:00:00.000Z`);
+  const end = new Date(`${input.periodEnd}T00:00:00.000Z`);
+  const overlapping = await tx.companyFinancialPeriod.findFirst({
+    where: {
+      tenantId: params.tenantId,
+      companyId: params.companyId,
+      periodStart: { lte: end },
+      periodEnd: { gte: start },
+      ...(first ? { NOT: { id: first.id } } : {}),
+    },
+    select: { periodStart: true, periodEnd: true },
+  });
+  if (overlapping) {
+    throw new ValidationError(
+      `The first financial period overlaps the confirmed period ${toDateOnly(overlapping.periodStart)} to ${toDateOnly(overlapping.periodEnd)}.`,
+    );
+  }
+  const data = {
+    periodStart: start,
+    periodEnd: end,
+    yearsOfAssessment: [input.yearOfAssessment],
+    provenance: 'CONFIRMED' as const,
+    confirmedAt: new Date(),
+    confirmedById: params.userId,
+  };
+  if (first) await tx.companyFinancialPeriod.update({ where: { id: first.id }, data });
+  else await tx.companyFinancialPeriod.create({ data: { tenantId: params.tenantId, companyId: params.companyId, ...data } });
+}
+
+export async function confirmFinancialPeriod(
+  params: { tenantId: string; companyId: string; userId: string | null },
+  input: ConfirmFinancialPeriodInput,
+) {
+  validateFinancialPeriodInput(input);
 
   return prisma.$transaction(async (tx) => {
     const company = await tx.company.findFirst({
