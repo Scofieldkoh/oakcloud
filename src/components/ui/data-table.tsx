@@ -31,7 +31,9 @@ export const TABLE_INTERACTIVE_TARGET_SELECTOR =
 export type TableSortOrder = 'asc' | 'desc';
 
 export function isTableInteractiveTarget(target: EventTarget | null): boolean {
-  return target instanceof HTMLElement
+  // Element, not HTMLElement: clicks on an icon inside a button land on its
+  // SVG, which must still count as a click on the button.
+  return target instanceof Element
     ? Boolean(target.closest(TABLE_INTERACTIVE_TARGET_SELECTOR))
     : false;
 }
