@@ -12,7 +12,9 @@ import {
 import {
   OAKDOC_GENERIC_REPEATER_BY_TAG,
   formatOakDocRole,
+  type OakDocRepeaterGenerationData,
 } from '@/lib/document-editor/oakdoc-repeater-definitions';
+import type { OakDocCompanyDetail } from '@/lib/document-editor/oakdoc-context';
 
 const WORD_NS = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
 const WORD14_NS = 'http://schemas.microsoft.com/office/word/2010/wordml';
@@ -165,6 +167,29 @@ describe('OakDoc generic repeaters', () => {
     expect(formatOakDocRole('ALTERNATE DIRECTOR')).toBe('Alternate Director');
     expect(formatOakDocRole('Chief Executive Officer')).toBe('Chief Executive Officer');
     expect(formatOakDocRole(null)).toBe('');
+  });
+
+  it('repeats only the directors and shareholders chosen for the document', () => {
+    const company = {
+      officers: [
+        { id: 'o1', name: 'Ann Lim', role: 'DIRECTOR', isCurrent: true },
+        { id: 'o2', name: 'Ben Ong', role: 'NOMINEE_DIRECTOR', isCurrent: true },
+        { id: 'o3', name: 'Cal Ng', role: 'SECRETARY', isCurrent: true },
+      ],
+      shareholders: [
+        { id: 's1', name: 'Dee Tan', isCurrent: true },
+        { id: 's2', name: 'Eve Koh', isCurrent: true },
+      ],
+    } as unknown as OakDocCompanyDetail;
+    const names = (tag: string, data: Omit<OakDocRepeaterGenerationData, 'company'>) =>
+      definition(tag).generationDataAdapter({ company, ...data })
+        .map((row) => row[tag === 'repeat.directors' ? 'director.name' : 'shareholder.name']);
+
+    expect(names('repeat.directors', {})).toEqual(['Ann Lim', 'Ben Ong']);
+    expect(names('repeat.directors', { selectedDirectorIds: ['o2'] })).toEqual(['Ben Ong']);
+    expect(names('repeat.shareholders', {})).toEqual(['Dee Tan', 'Eve Koh']);
+    expect(names('repeat.shareholders', { selectedShareholderIds: ['s1'] })).toEqual(['Dee Tan']);
+    expect(names('repeat.shareholders', { selectedShareholderIds: [] })).toEqual([]);
   });
 
   it('repeats agreement entities in a table row', () => {

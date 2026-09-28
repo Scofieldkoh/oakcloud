@@ -683,3 +683,13 @@
     display: none;
   }
 }
+
+/* Word editor: keep each repeating section (Directors repeater, Shareholders
+   repeater, ...) outlined and named, not only while the caret is inside it. */
+.docx-content-control-chrome[data-tag^="repeat."] .docx-content-control-boundary {
+  opacity: 1;
+}
+
+.docx-content-control-chrome[data-tag^="repeat."] .docx-content-control-label {
+  display: block;
+}

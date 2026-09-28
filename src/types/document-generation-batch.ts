@@ -55,9 +55,11 @@ export interface BatchItemConfiguration {
   title: string;
   contactIds: string[];
   selectedDirectorId: string | null;
-  /** Explicit director subset for `{{#each directors}}`; absent means all. */
+  /** Explicit director subset for `{{#each directors}}` and the Word directors repeater; absent means all. */
   selectedDirectorIds?: string[];
   selectedShareholderId: string | null;
+  /** Explicit shareholder subset for the Word shareholders repeater; absent means all. */
+  selectedShareholderIds?: string[];
   selectedContactId: string | null;
   itemValues: Record<string, BatchItemFieldValue>;
   masterOverrides: Record<string, string>;

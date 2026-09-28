@@ -13,6 +13,10 @@ import {
 import { SingleDateInput } from '@/components/ui/single-date-input';
 import type { DocumentParty } from '@/lib/document-party';
 import {
+  OAKDOC_DIRECTORS_REPEATER_TAG,
+  OAKDOC_SHAREHOLDERS_REPEATER_TAG,
+} from '@/lib/document-editor/oakdoc-repeater-definitions';
+import {
   getRequiredLegacyContactSelection,
   getRequiredPartySelections,
   getTemplatePartyCollections,
@@ -34,6 +38,8 @@ export interface StandardDocumentConfigProps {
   item: EditableBatchItem;
   templateFields: CustomPlaceholderDefinition[];
   templateContent?: string;
+  /** Tags in a Word (OakDoc) template; its repeaters add party pickers. */
+  templateFieldTags?: readonly string[];
   masterFields: MasterFieldCatalogue;
   effectiveMasterValues: Record<string, string>;
   directors: DocumentParty[];
@@ -56,6 +62,13 @@ export interface StandardDocumentConfigProps {
   onApplyToOthers?: (scope: ApplyScope, patch: Partial<BatchItemConfiguration>) => void;
 }
 
+/** Checked parties for a repeater: every party until the user narrows the list. */
+function selectedPartyIds(parties: DocumentParty[], ids: string[] | undefined): string[] {
+  if (ids === undefined) return parties.map((party) => party.id);
+  const availableIds = new Set(parties.map((party) => party.id));
+  return ids.filter((id) => availableIds.has(id));
+}
+
 function missingCount(completeness: ItemCompleteness | undefined, prefix: string): number {
   if (!completeness) return 0;
   return completeness.missing.filter((entry) => entry.id.startsWith(prefix)).length;
@@ -65,6 +78,7 @@ export function StandardDocumentConfig({
   item,
   templateFields,
   templateContent,
+  templateFieldTags,
   masterFields,
   effectiveMasterValues,
   directors,
@@ -92,29 +106,42 @@ export function StandardDocumentConfig({
       : getRequiredPartySelections(templateContent),
     [templateContent],
   );
-  const partyCollections = useMemo(
-    () => templateContent === undefined
+  const partyCollections = useMemo(() => {
+    const legacy = templateContent === undefined
       ? { directors: false, shareholders: false }
-      : getTemplatePartyCollections(templateContent),
-    [templateContent],
-  );
+      : getTemplatePartyCollections(templateContent);
+    const tags = new Set(templateFieldTags ?? []);
+    return {
+      directors: legacy.directors || tags.has(OAKDOC_DIRECTORS_REPEATER_TAG),
+      shareholders: legacy.shareholders || tags.has(OAKDOC_SHAREHOLDERS_REPEATER_TAG),
+    };
+  }, [templateContent, templateFieldTags]);
   const showContacts = templateContent === undefined
     ? true
     : getRequiredLegacyContactSelection(templateContent);
-  const selectedDirectorIds = useMemo(() => {
-    const availableIds = new Set(directors.map((director) => director.id));
-    return configuration.selectedDirectorIds === undefined
-      ? directors.map((director) => director.id)
-      : configuration.selectedDirectorIds.filter((id) => availableIds.has(id));
-  }, [configuration.selectedDirectorIds, directors]);
+  const selectedDirectorIds = useMemo(
+    () => selectedPartyIds(directors, configuration.selectedDirectorIds),
+    [configuration.selectedDirectorIds, directors],
+  );
+  const selectedShareholderIds = useMemo(
+    () => selectedPartyIds(shareholders, configuration.selectedShareholderIds),
+    [configuration.selectedShareholderIds, shareholders],
+  );
   const partyKeys = useMemo<Array<keyof BatchItemConfiguration>>(() => {
     const keys: Array<keyof BatchItemConfiguration> = [];
     if (partySelections.director) keys.push('selectedDirectorId');
     if (partyCollections.directors) keys.push('selectedDirectorIds');
     if (partySelections.shareholder) keys.push('selectedShareholderId');
+    if (partyCollections.shareholders) keys.push('selectedShareholderIds');
     if (partySelections.contact) keys.push('selectedContactId');
     return keys;
-  }, [partyCollections.directors, partySelections.contact, partySelections.director, partySelections.shareholder]);
+  }, [
+    partyCollections.directors,
+    partyCollections.shareholders,
+    partySelections.contact,
+    partySelections.director,
+    partySelections.shareholder,
+  ]);
 
   const selectedContacts = useMemo<DocumentContact[]>(() => {
     const pool = new Map<string, DocumentContact>(contactsById ?? []);
@@ -136,6 +163,7 @@ export function StandardDocumentConfig({
     partySelections.director && !configuration.selectedDirectorId,
     partyCollections.directors && selectedDirectorIds.length === 0,
     partySelections.shareholder && !configuration.selectedShareholderId,
+    partyCollections.shareholders && selectedShareholderIds.length === 0,
     partySelections.contact && !configuration.selectedContactId,
   ].filter(Boolean).length;
 
@@ -246,6 +274,19 @@ export function StandardDocumentConfig({
                 options={shareholders}
                 value={configuration.selectedShareholderId ?? ''}
                 onChange={(value) => onPatch({ selectedShareholderId: value || null })}
+                isLoading={partyLoading}
+                error={partyError}
+                onRetry={onPartyRetry}
+              />
+            )}
+            {partyCollections.shareholders && (
+              <DocumentPartyChoiceList
+                id="selected-shareholders"
+                label="Shareholders"
+                options={shareholders}
+                values={selectedShareholderIds}
+                onChange={(values) => onPatch({ selectedShareholderIds: values })}
+                multiple
                 isLoading={partyLoading}
                 error={partyError}
                 onRetry={onPartyRetry}
