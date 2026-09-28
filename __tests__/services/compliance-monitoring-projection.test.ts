@@ -137,7 +137,7 @@ describe('company obligation projection: agreement timing', () => {
     expect(result.obligations.some((obligation) => obligation.periodKey === 'FY2026-03-31')).toBe(false);
   });
 
-  it('treats filings from the engagement start YA as engaged work, even beyond the lookback', () => {
+  it('treats tax returns from the engagement start YA as engaged work, even beyond the lookback', () => {
     const result = projectCompanyObligations(input({
       coverages: [{ ...taxCoverage('2026-04-01'), engagementStartYearOfAssessment: 2024 }],
       deliveryScopes: [],
@@ -145,9 +145,9 @@ describe('company obligation projection: agreement timing', () => {
     const ya2024 = result.obligations.find((obligation) => obligation.obligationCode === 'SG_FORM_C' && obligation.periodKey === 'YA2024')!;
     expect(ya2024).toMatchObject({ dueDate: '2024-11-30', coverageTiming: 'DURING', filingResponsibility: 'OAKCLOUD' });
     expect(ya2024.reasons).toEqual([{ kind: 'MONITORING_INTERVAL', coverageId: 'coverage-tax' }]);
-    const eci = result.obligations.find((obligation) => obligation.obligationCode === 'SG_ECI' && obligation.obligationPeriod.yearOfAssessment === 2024)!;
-    expect(eci).toMatchObject({ coverageTiming: 'DURING', filingResponsibility: 'OAKCLOUD' });
     expect(result.obligations.some((obligation) => (obligation.obligationPeriod.yearOfAssessment ?? 0) < 2024)).toBe(false);
+    // ECI does not reach back: the June 2025 ECI is nine months before the start.
+    expect(result.obligations.filter((obligation) => obligation.obligationCode === 'SG_ECI' && obligation.dueDate < '2026-04-01')).toEqual([]);
   });
 
   it('a 1 December agreement moves the November 2026 return to earlier-obligation review', () => {

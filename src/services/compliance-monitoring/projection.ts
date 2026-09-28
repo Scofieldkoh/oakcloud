@@ -392,9 +392,12 @@ export function projectCompanyObligations(input: CompanyMonitoringProjectionInpu
         && yearOfAssessment >= coverage.engagementStartYearOfAssessment
         && (coverage.monitoringEnd === null || compareDateOnly(dueDate, coverage.monitoringEnd) <= 0)
       )) ?? null;
-      // A filing from the engagement start YA that fell due before the
-      // service started is engaged work, not takeover review.
-      const engagedBeforeStart = engagedCoverage !== null && compareDateOnly(dueDate, engagedCoverage.monitoringStart) < 0;
+      // A tax return from the engagement start YA that fell due before the
+      // service started is engaged work, not takeover review. ECI does not
+      // reach back; only its takeover window applies.
+      const engagedBeforeStart = definition.engagementReachBack !== false
+        && engagedCoverage !== null
+        && compareDateOnly(dueDate, engagedCoverage.monitoringStart) < 0;
       if (engagedBeforeStart) reasons.push({ kind: 'MONITORING_INTERVAL', coverageId: engagedCoverage.id });
       const inAnyCoverage = engagedBeforeStart || relevantCoverages.some((coverage) => withinCoverage(dueDate, coverage));
       if (!inAnyCoverage) {
