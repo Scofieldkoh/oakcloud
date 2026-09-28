@@ -986,6 +986,8 @@ export const ServiceVariantFeeTemplateScalarFieldEnum = {
   currency: 'currency',
   billingFrequency: 'billingFrequency',
   customFrequencyLabel: 'customFrequencyLabel',
+  billingTiming: 'billingTiming',
+  postpaidTrigger: 'postpaidTrigger',
   displayOrder: 'displayOrder',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
@@ -1133,6 +1135,8 @@ export const ClientServiceFeeLineScalarFieldEnum = {
   customFrequencyLabel: 'customFrequencyLabel',
   billingStartDate: 'billingStartDate',
   scheduleConfig: 'scheduleConfig',
+  billingTiming: 'billingTiming',
+  postpaidTrigger: 'postpaidTrigger',
   isActive: 'isActive',
   deletedAt: 'deletedAt',
   deletedReason: 'deletedReason',

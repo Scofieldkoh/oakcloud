@@ -116,6 +116,17 @@ export function useCompanyObligations(
   });
 }
 
+/** Filing statuses drive postpaid billing, so refresh the service billing views too. */
+function invalidateObligationsAndBilling(client: ReturnType<typeof useQueryClient>, companyId: string) {
+  return Promise.all([
+    client.invalidateQueries({ queryKey: ['company-obligations', companyId] }),
+    client.invalidateQueries({ queryKey: ['client-services', companyId] }),
+    client.invalidateQueries({ queryKey: ['client-service'] }),
+    client.invalidateQueries({ queryKey: ['billing-occurrences'] }),
+    client.invalidateQueries({ queryKey: ['billing-coverage'] }),
+  ]);
+}
+
 export function useSetCompanyObligationStatus(companyId: string) {
   const client = useQueryClient();
   return useMutation({
@@ -125,7 +136,7 @@ export function useSetCompanyObligationStatus(companyId: string) {
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify(input),
       }),
-    onSuccess: () => client.invalidateQueries({ queryKey: ['company-obligations', companyId] }),
+    onSuccess: () => invalidateObligationsAndBilling(client, companyId),
   });
 }
 
@@ -138,7 +149,7 @@ export function useSetEngagementStart(companyId: string) {
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify(input),
       }),
-    onSuccess: () => client.invalidateQueries({ queryKey: ['company-obligations', companyId] }),
+    onSuccess: () => invalidateObligationsAndBilling(client, companyId),
   });
 }
 

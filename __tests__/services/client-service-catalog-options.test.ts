@@ -80,6 +80,8 @@ describe('manual client service catalog options', () => {
           currency: 'SGD',
           billingFrequency: 'ANNUALLY',
           customFrequencyLabel: null,
+          billingTiming: 'PREPAID',
+          postpaidTrigger: null,
           displayOrder: 0,
         }],
         deadlineRules: [],

@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { serviceVariantRuleAssociationsSchema } from './deadline-rule';
+import { BILLING_TIMINGS, POSTPAID_TRIGGERS } from '@/services/billing/postpaid-triggers';
 
 const codeSchema = z
   .string()
@@ -39,6 +40,19 @@ export const billingFrequencySchema = z.enum([
   'CUSTOM',
 ]);
 
+export const billingTimingSchema = z.enum(BILLING_TIMINGS);
+export const postpaidTriggerSchema = z.enum(POSTPAID_TRIGGERS);
+
+/** Postpaid lines need a trigger filing; prepaid lines never carry one. */
+export function refineBillingTiming(
+  value: { billingTiming?: string; postpaidTrigger?: string | null },
+  ctx: z.RefinementCtx,
+): void {
+  if (value.billingTiming === 'POSTPAID' && !value.postpaidTrigger) {
+    ctx.addIssue({ code: 'custom', path: ['postpaidTrigger'], message: 'Choose the filing a postpaid fee bills on' });
+  }
+}
+
 export const serviceFamilyColorSchema = z
   .string()
   .trim()
@@ -57,9 +71,12 @@ export const serviceVariantFeeTemplateSchema = z
     currency: z.string().trim().toUpperCase().regex(/^[A-Z]{3}$/).default('SGD'),
     billingFrequency: billingFrequencySchema,
     customFrequencyLabel: nullableText(100),
+    billingTiming: billingTimingSchema.optional(),
+    postpaidTrigger: postpaidTriggerSchema.nullable().optional(),
     displayOrder: z.number().int().min(0),
   })
   .superRefine((value, context) => {
+    refineBillingTiming(value, context);
     if (value.billingFrequency === 'CUSTOM' && !value.customFrequencyLabel) {
       context.addIssue({
         code: 'custom',

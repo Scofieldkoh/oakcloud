@@ -1,3 +1,4 @@
+import { isPostpaidTrigger } from '@/services/billing/postpaid-triggers';
 import { NotFoundError } from '@/lib/errors';
 import { prisma } from '@/lib/prisma';
 import type { TenantAwareParams } from '@/lib/types';
@@ -159,6 +160,8 @@ export async function getManualClientServiceCatalogOptions(
         currency: fee.currency,
         billingFrequency: fee.billingFrequency,
         customFrequencyLabel: fee.customFrequencyLabel,
+        billingTiming: fee.billingTiming ?? 'PREPAID',
+        postpaidTrigger: isPostpaidTrigger(fee.postpaidTrigger) ? fee.postpaidTrigger : null,
         displayOrder: fee.displayOrder,
       })),
       deadlineRules,

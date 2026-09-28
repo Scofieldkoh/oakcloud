@@ -390,6 +390,125 @@ describePostgres('company compliance monitoring on PostgreSQL', () => {
       await prisma.company.update({ where: { id: fixture.companyId }, data: { incorporationDate: original.incorporationDate } });
     }
   });
+  it('bills a postpaid fee once per YA when ECI or Form C is first set to Filed', async () => {
+    const { setCompanyObligationStatus } = await import('@/services/compliance-monitoring/obligation-status');
+    const { reconcileClientServiceBilling } = await import('@/services/billing/reconciler');
+    const { currentDateInSingapore } = await import('@/services/service-schedule');
+    const rows = await prisma.deadlineOccurrence.findMany({
+      where: { tenantId: fixture.tenantId, companyId: fixture.companyId, ownershipScope: 'COMPANY', status: 'OPEN', yearOfAssessment: { not: null } },
+      orderBy: [{ yearOfAssessment: 'desc' }],
+    });
+    const yearsWithBoth = [...new Set(rows.map((row) => row.yearOfAssessment!))].filter((ya) => (
+      rows.some((row) => row.yearOfAssessment === ya && row.obligationCode === 'SG_ECI')
+      && rows.some((row) => row.yearOfAssessment === ya && row.obligationCode === 'SG_FORM_C')
+    ));
+    const ya = yearsWithBoth[0]!;
+    const earlier = rows.find((row) => row.yearOfAssessment! < ya && row.obligationCode === 'SG_FORM_C');
+    const eci = rows.find((row) => row.yearOfAssessment === ya && row.obligationCode === 'SG_ECI')!;
+    const formC = rows.find((row) => row.yearOfAssessment === ya && row.obligationCode === 'SG_FORM_C')!;
+
+    const serviceId = randomUUID();
+    await prisma.clientService.create({
+      data: {
+        id: serviceId,
+        tenantId: fixture.tenantId,
+        companyId: fixture.companyId,
+        source: 'MANUAL',
+        serviceVariantId: fixture.variantId,
+        familyName: 'Tax',
+        serviceName: 'Corporate tax filing (postpaid)',
+        status: 'ACTIVE',
+        serviceCadence: 'ANNUALLY',
+        startDate: new Date('2026-04-01T00:00:00.000Z'),
+        billingDisposition: 'CONFIGURED',
+        engagementStartYearOfAssessment: ya,
+        feeLines: {
+          create: {
+            tenantId: fixture.tenantId,
+            description: 'Tax filing',
+            amount: '800.00',
+            currency: 'SGD',
+            billingFrequency: 'ONE_TIME',
+            billingTiming: 'POSTPAID',
+            postpaidTrigger: 'SG_ECI_OR_FORM_C_FILED',
+          },
+        },
+      },
+    });
+    const setStatus = (row: typeof eci, status: 'FILED' | 'PENDING_FILING') => prisma.$transaction((tx) => setCompanyObligationStatus({
+      tenantId: fixture.tenantId, companyId: fixture.companyId, obligationCode: row.obligationCode!,
+      periodKey: row.obligationPeriodKey!, status, actorId: fixture.userId,
+    }, tx));
+    const bills = () => prisma.billingOccurrence.findMany({ where: { tenantId: fixture.tenantId, clientServiceId: serviceId } });
+
+    await setStatus(eci, 'FILED');
+    let current = await bills();
+    expect(current).toHaveLength(1);
+    expect(current[0]).toMatchObject({ billingPeriodKey: `YA${ya}`, status: 'OPEN', baseCurrency: 'SGD' });
+    expect(current[0]!.operativeAmount.toFixed(2)).toBe('800.00');
+    expect(current[0]!.operativeExpectedDate.toISOString().slice(0, 10)).toBe(currentDateInSingapore());
+
+    // Filing Form C for the same YA, or filing again, never adds a second bill.
+    await setStatus(formC, 'FILED');
+    await setStatus(eci, 'FILED');
+    expect(await bills()).toHaveLength(1);
+
+    // Still billable while either filing stays Filed; cancelled once neither is.
+    await setStatus(eci, 'PENDING_FILING');
+    expect((await bills())[0]).toMatchObject({ status: 'OPEN' });
+    await setStatus(formC, 'PENDING_FILING');
+    expect((await bills())[0]).toMatchObject({ status: 'CANCELLED' });
+    await setStatus(formC, 'FILED');
+    current = await bills();
+    expect(current).toHaveLength(1);
+    expect(current[0]).toMatchObject({ status: 'OPEN', cancelledAt: null });
+
+    // YAs before the engagement start never bill.
+    if (earlier) {
+      await setStatus(earlier, 'FILED');
+      expect(await bills()).toHaveLength(1);
+    }
+
+    // The schedule reconciler leaves postpaid entries alone.
+    await prisma.$transaction((tx) => reconcileClientServiceBilling({
+      tenantId: fixture.tenantId, clientServiceId: serviceId, today: TODAY, horizonEnd: '2027-09-27',
+      writeMode: 'APPLY', reconciliationRequestId: 'postpaid-test',
+    }, tx));
+    current = await bills();
+    expect(current).toHaveLength(1);
+    expect(current[0]).toMatchObject({ status: 'OPEN' });
+  });
+
+  it('bills a postpaid fee as soon as a service is added by hand with a YA already Filed', async () => {
+    const { createManualClientService } = await import('@/services/client-service/manual-create');
+    const { setCompanyObligationStatus } = await import('@/services/compliance-monitoring/obligation-status');
+    const target = await prisma.deadlineOccurrence.findFirstOrThrow({
+      where: { tenantId: fixture.tenantId, companyId: fixture.companyId, ownershipScope: 'COMPANY', obligationCode: 'SG_FORM_C', status: { not: 'CANCELLED' }, yearOfAssessment: { not: null } },
+      orderBy: { yearOfAssessment: 'desc' },
+    });
+    await prisma.$transaction((tx) => setCompanyObligationStatus({
+      tenantId: fixture.tenantId, companyId: fixture.companyId, obligationCode: 'SG_FORM_C',
+      periodKey: target.obligationPeriodKey!, status: 'PENDING_FILING', actorId: fixture.userId,
+    }, tx));
+    const created = await createManualClientService(fixture.companyId, {
+      serviceVariantId: fixture.variantId,
+      serviceCadence: 'ANNUALLY',
+      startDate: '2026-04-01',
+      billingDisposition: 'CONFIGURED',
+      feeLines: [{
+        description: 'Tax filing', amount: '900.00', currency: 'SGD', billingFrequency: 'ONE_TIME',
+        billingTiming: 'POSTPAID', postpaidTrigger: 'SG_FORM_C_FILED',
+      }],
+      engagementStartYearOfAssessment: target.yearOfAssessment,
+      companyObligationStatuses: [{ obligationCode: 'SG_FORM_C', periodKey: target.obligationPeriodKey!, status: 'FILED' }],
+      confirmDuplicate: true,
+    }, { tenantId: fixture.tenantId, userId: fixture.userId });
+
+    const bills = await prisma.billingOccurrence.findMany({ where: { tenantId: fixture.tenantId, clientServiceId: created.id } });
+    expect(bills).toHaveLength(1);
+    expect(bills[0]).toMatchObject({ billingPeriodKey: `YA${target.yearOfAssessment}`, status: 'OPEN' });
+    expect(bills[0]!.operativeAmount.toFixed(2)).toBe('900.00');
+  });
 });
 
 async function createPresetRule(prisma: PrismaClient, tenantId: string, preset: DeadlineRulePreset): Promise<string> {

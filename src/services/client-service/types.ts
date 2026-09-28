@@ -1,3 +1,4 @@
+import type { BillingTiming, PostpaidTrigger } from '@/services/billing/postpaid-triggers';
 import type { BillingFrequency, ClientServiceSource, ClientServiceStatus, ServiceAgreementActivationStatus, ServiceAgreementStatus, ServiceCadence } from '@/generated/prisma';
 import type { ClientServiceDeadlineRuleInput } from '@/lib/validations/client-service';
 import type { ScheduleEntryInput } from '@/lib/validations/service-schedule';
@@ -71,6 +72,8 @@ export interface ManualClientServiceCatalogFeeTemplate {
   currency: string;
   billingFrequency: BillingFrequency;
   customFrequencyLabel: string | null;
+  billingTiming: BillingTiming;
+  postpaidTrigger: PostpaidTrigger | null;
   displayOrder: number;
 }
 
@@ -134,6 +137,8 @@ export interface ClientServiceFeeLineDto {
   customFrequencyLabel: string | null;
   billingStartDate: string | null;
   scheduleConfig: BillingScheduleConfigV1 | null;
+  billingTiming: BillingTiming;
+  postpaidTrigger: PostpaidTrigger | null;
   displayOrder: number;
 }
 
@@ -145,6 +150,8 @@ export interface ClientServiceOpenBillingOccurrenceDto {
   currency: string;
   billingFrequency: BillingFrequency;
   customFrequencyLabel: string | null;
+  /** Set on postpaid entries: the filing that raised the bill. */
+  postpaidTrigger?: PostpaidTrigger | null;
   billingPeriodKey: string;
   scheduleEntryKey: string;
   calculatedExpectedDate: DateOnly;
