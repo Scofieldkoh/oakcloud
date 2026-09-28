@@ -302,15 +302,16 @@ export function getDocumentExporter(): IDocumentExporter {
   create request, which writes that company's obligations in the same
   transaction; in edit they save at once through
   `PATCH /api/companies/[id]/services/company-obligations`.
-- **Confirm first period** saves a CONFIRMED `CompanyFinancialPeriod`
-  (`POST /api/companies/[id]/financial-periods`, up to 18 months, YA the end
-  year or the year after) and queues company reconciliation. Confirmed periods
-  replace the provisional derived periods they overlap, which can remove or
-  move the earliest filings. The dialog's YA follows the first year end. The
-  first confirmed period also shows on the company Compliance card and can be
-  changed or cleared in Edit > Compliance (`firstPeriodStartDate`,
-  `firstPeriodEndDate`, `firstYearOfAssessment`; BizFile sync omits them and
-  leaves the period alone).
+- **Confirm first FYE** records the company's first financial year end
+  (`POST /api/companies/[id]/financial-periods` with `firstFinancialYearEnd`).
+  It is stored as a CONFIRMED `CompanyFinancialPeriod` from the incorporation
+  date to that FYE (up to 18 months; incorporation date required), with the YA
+  the year after the FYE, and queues company reconciliation. Confirmed periods
+  replace the provisional derived periods they overlap, so incomplete early
+  YAs drop out. The company Compliance card shows it as First FYE, and it can
+  be changed or cleared in Edit > Compliance (`firstFinancialYearEndDate`;
+  BizFile sync omits it and leaves the period alone). Changing the
+  incorporation date moves the first period's start with it.
 - Monitoring never sends client reminders and never writes billing records.
 - Pause by turning the flag off: stored company obligations stay readable and
   the worker returns to observe mode. Do not delete company rows to roll back.

@@ -402,7 +402,7 @@ describe('OperationalServiceForm', () => {
         companyObligations={{
           isLoading: false,
           error: null,
-          notices: ['Confirm the first financial period after incorporation and its Year of Assessment.'],
+          notices: ['Confirm the first financial year end after incorporation.'],
           firstPeriodUnconfirmed: true,
           statusEditable: true,
           items: [{
@@ -424,8 +424,8 @@ describe('OperationalServiceForm', () => {
 
     expect(screen.getByText('YA 2025')).toBeInTheDocument();
     expect(screen.queryByText('YA 2025?')).not.toBeInTheDocument();
-    expect(screen.queryByText('Confirm the first financial period after incorporation and its Year of Assessment.')).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Confirm first period' }));
+    expect(screen.queryByText('Confirm the first financial year end after incorporation.')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm first FYE' }));
     expect(onConfirm).toHaveBeenCalledTimes(1);
 
     const select = screen.getByRole('combobox', { name: /Filing status for Estimated Chargeable Income/ });

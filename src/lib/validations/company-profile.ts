@@ -80,15 +80,11 @@ export const complianceSectionSchema = z.object({
   lastArFiledDate: optionalDate,
   accountsDueDate: optionalDate,
   /**
-   * First confirmed financial period after incorporation (can exceed 12
-   * months). Omitted by BizFile sync, which leaves the stored period alone.
+   * First financial year end after incorporation. The first period runs from
+   * incorporation to this date and its YA is the following year. Omitted by
+   * BizFile sync, which leaves the stored period alone.
    */
-  firstPeriodStartDate: optionalDate,
-  firstPeriodEndDate: optionalDate,
-  firstYearOfAssessment: z.preprocess(
-    (value) => (value === '' || value === undefined ? (value === '' ? null : undefined) : typeof value === 'string' ? Number(value) : value),
-    z.number().int().min(2000).max(2100).nullable().optional(),
-  ),
+  firstFinancialYearEndDate: optionalDate,
 });
 export const capitalSectionSchema = z.object({
   paidUpCapitalCurrency: optionalText,

@@ -53,12 +53,12 @@ export function validateFinancialPeriodInput(input: ConfirmFinancialPeriodInput)
   parseDateOnly(input.periodStart);
   parseDateOnly(input.periodEnd);
   if (compareDateOnly(input.periodEnd, input.periodStart) <= 0) {
-    throw new ValidationError('The period must end after it starts.');
+    throw new ValidationError('The first financial year end must be after the incorporation date.');
   }
   const months = (Number(input.periodEnd.slice(0, 4)) - Number(input.periodStart.slice(0, 4))) * 12
     + Number(input.periodEnd.slice(5, 7)) - Number(input.periodStart.slice(5, 7));
   if (months > 18) {
-    throw new ValidationError('A financial period cannot run longer than 18 months.');
+    throw new ValidationError('The first financial year end must be within 18 months of incorporation.');
   }
   const endYear = Number(input.periodEnd.slice(0, 4));
   if (!Number.isInteger(input.yearOfAssessment) || input.yearOfAssessment < endYear || input.yearOfAssessment > endYear + 1) {
@@ -115,65 +115,39 @@ export async function saveFirstFinancialPeriod(
   else await tx.companyFinancialPeriod.create({ data: { tenantId: params.tenantId, companyId: params.companyId, ...data } });
 }
 
-export async function confirmFinancialPeriod(
+/**
+ * Record the company's first financial year end. The first period runs from
+ * incorporation to that date (it may exceed 12 months) and its YA is the
+ * following year, so incomplete earlier years drop out of the obligations.
+ */
+export async function confirmFirstFinancialYearEnd(
   params: { tenantId: string; companyId: string; userId: string | null },
-  input: ConfirmFinancialPeriodInput,
+  firstFinancialYearEnd: DateOnly,
 ) {
-  validateFinancialPeriodInput(input);
-
+  parseDateOnly(firstFinancialYearEnd);
   return prisma.$transaction(async (tx) => {
     const company = await tx.company.findFirst({
       where: { id: params.companyId, tenantId: params.tenantId, deletedAt: null },
-      select: { id: true, name: true },
+      select: { id: true, name: true, incorporationDate: true },
     });
     if (!company) throw new NotFoundError('Company not found');
+    const incorporation = toDateOnly(company.incorporationDate);
+    if (!incorporation) throw new ValidationError('Record the incorporation date before the first financial year end.');
 
-    const start = new Date(`${input.periodStart}T00:00:00.000Z`);
-    const end = new Date(`${input.periodEnd}T00:00:00.000Z`);
-    const overlapping = await tx.companyFinancialPeriod.findFirst({
-      where: {
-        tenantId: params.tenantId,
-        companyId: params.companyId,
-        periodStart: { lte: end },
-        periodEnd: { gte: start },
-        NOT: { periodEnd: end },
-      },
-      select: { periodStart: true, periodEnd: true },
+    const yearOfAssessment = normalYearOfAssessment(firstFinancialYearEnd);
+    await saveFirstFinancialPeriod(tx, params, {
+      periodStart: incorporation,
+      periodEnd: firstFinancialYearEnd,
+      yearOfAssessment,
     });
-    if (overlapping) {
-      throw new ValidationError(
-        `This overlaps the confirmed period ${toDateOnly(overlapping.periodStart)} to ${toDateOnly(overlapping.periodEnd)}.`,
-      );
-    }
 
     const now = new Date();
-    const period = await tx.companyFinancialPeriod.upsert({
-      where: { tenantId_companyId_periodEnd: { tenantId: params.tenantId, companyId: params.companyId, periodEnd: end } },
-      create: {
-        tenantId: params.tenantId,
-        companyId: params.companyId,
-        periodStart: start,
-        periodEnd: end,
-        yearsOfAssessment: [input.yearOfAssessment],
-        provenance: 'CONFIRMED',
-        confirmedAt: now,
-        confirmedById: params.userId,
-      },
-      update: {
-        periodStart: start,
-        yearsOfAssessment: [input.yearOfAssessment],
-        provenance: 'CONFIRMED',
-        confirmedAt: now,
-        confirmedById: params.userId,
-      },
-    });
-
     await enqueueScheduleReconciliation(tx, {
       tenantId: params.tenantId,
       scopeType: 'COMPANY',
       scopeId: params.companyId,
       triggerType: 'COMPANY_SOURCE_CHANGED',
-      correlationId: `financial-period-${period.id}-${now.getTime()}`,
+      correlationId: `first-fye-${params.companyId}-${now.getTime()}`,
       requestedById: params.userId,
     });
 
@@ -186,19 +160,9 @@ export async function confirmFinancialPeriod(
       entityName: company.name,
       action: 'UPDATE',
       changeSource: 'MANUAL',
-      changes: {
-        financialPeriod: {
-          old: null,
-          new: `${input.periodStart} to ${input.periodEnd} (YA ${input.yearOfAssessment})`,
-        },
-      },
+      changes: { firstFinancialYearEnd: { old: null, new: firstFinancialYearEnd } },
     }, tx);
 
-    return {
-      id: period.id,
-      periodStart: input.periodStart,
-      periodEnd: input.periodEnd,
-      yearOfAssessment: input.yearOfAssessment,
-    };
+    return { firstFinancialYearEnd, yearOfAssessment };
   });
 }
