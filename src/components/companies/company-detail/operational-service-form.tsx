@@ -499,7 +499,15 @@ export type CompanyObligationsState = {
   error: string | null;
   firstPeriodUnconfirmed: boolean;
   statusEditable: boolean;
+  /** The company's first YA, the earliest engagement start offered. */
+  firstYearOfAssessment: number | null;
 };
+
+/** Today's date (YYYY-MM-DD) in the browser's time zone. */
+function todayDateKey(): string {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+}
 
 /** Row tint per filing status. */
 const COMPANY_OBLIGATION_ROW_TONE: Record<CompanyObligationStatus, string> = {
@@ -525,7 +533,7 @@ export function companyObligationKey(item: { obligationCode: string; periodKey: 
 
 /** Adapt a company-obligations query result for the Deadline tab. */
 export function toCompanyObligationsState(query: {
-  data?: { items: CompanyObligationPreviewItem[]; notices: string[]; firstPeriodUnconfirmed?: boolean; statusEditable?: boolean };
+  data?: { items: CompanyObligationPreviewItem[]; notices: string[]; firstPeriodUnconfirmed?: boolean; statusEditable?: boolean; firstYearOfAssessment?: number | null };
   isLoading: boolean;
   error: unknown;
 }): CompanyObligationsState {
@@ -536,6 +544,7 @@ export function toCompanyObligationsState(query: {
     error: query.error ? (query.error instanceof Error ? query.error.message : 'Request failed') : null,
     firstPeriodUnconfirmed: query.data?.firstPeriodUnconfirmed ?? false,
     statusEditable: query.data?.statusEditable ?? false,
+    firstYearOfAssessment: query.data?.firstYearOfAssessment ?? null,
   };
 }
 
@@ -570,12 +579,15 @@ function CompanyObligationsPanel({
   const firstPeriodUnconfirmed = state?.firstPeriodUnconfirmed ?? false;
   const otherNotices = (state?.notices ?? []).filter((notice) => !(firstPeriodUnconfirmed && FIRST_PERIOD_NOTICES.has(notice)));
   const canSetStatus = Boolean(state?.statusEditable && onStatusChange);
+  // Newest first, back to the company's first YA so an earlier engagement can be picked.
   const years = items.flatMap((item) => (item.yearOfAssessment ? [item.yearOfAssessment] : []));
   if (engagementStart) years.push(engagementStart);
+  if (state?.firstYearOfAssessment) years.push(state.firstYearOfAssessment);
   const yearOptions: number[] = [];
   if (years.length > 0) {
-    for (let year = Math.min(...years); year <= Math.max(...years); year += 1) yearOptions.push(year);
+    for (let year = Math.max(...years); year >= Math.min(...years); year -= 1) yearOptions.push(year);
   }
+  const today = todayDateKey();
   return (
     <section aria-labelledby="company-obligations-heading" className="space-y-3">
       <div className="flex items-center justify-between">
@@ -651,8 +663,16 @@ function CompanyObligationsPanel({
                       YA {item.yearOfAssessment}
                     </span>
                   ) : <span aria-hidden className="w-[4.75rem]" />}
-                  <span className="inline-flex w-[7.5rem] items-center justify-center gap-1.5 rounded-lg border border-border-primary bg-background-elevated py-1 text-xs font-semibold text-text-primary">
-                    <Clock className="h-3 w-3 text-text-muted" />
+                  <span
+                    data-upcoming={item.dueDate > today ? 'true' : undefined}
+                    className={cn(
+                      'inline-flex w-[7.5rem] items-center justify-center gap-1.5 rounded-lg border py-1 text-xs font-semibold',
+                      item.dueDate > today
+                        ? 'border-status-success/40 bg-status-success/15 text-status-success'
+                        : 'border-border-primary bg-background-elevated text-text-primary',
+                    )}
+                  >
+                    <Clock className={cn('h-3 w-3', item.dueDate > today ? 'text-status-success' : 'text-text-muted')} />
                     {formatProjectedDate(item.dueDate)}
                   </span>
                   {canSetStatus ? (

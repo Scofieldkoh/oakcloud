@@ -3,7 +3,8 @@ import { prisma } from '@/lib/prisma';
 import type { Prisma } from '@/generated/prisma';
 import { compareDateOnly, parseDateOnly } from '@/services/service-schedule/date-only';
 import { companyPeriodFacts, normalizeCompanyRuleSource } from '@/services/service-schedule';
-import type { DateOnly, FinancialPeriodFact, MilestoneDefinition } from '@/services/service-schedule';
+import type { CompanyPeriodFacts, DateOnly, FinancialPeriodFact, MilestoneDefinition } from '@/services/service-schedule';
+import { normalYearOfAssessment } from '@/services/service-schedule/obligation-periods';
 import {
   classifyDeadlineChange,
   loadActiveBusinessCalendar,
@@ -726,6 +727,8 @@ export type CompanyObligationPreview = {
   statusEditable: boolean;
   /** The service's engagement start YA when previewing an existing service. */
   engagementStartYearOfAssessment: number | null;
+  /** The company's first YA: from the confirmed first FYE, else incorporation and FYE. */
+  firstYearOfAssessment: number | null;
 };
 
 /**
@@ -756,6 +759,7 @@ export async function previewCompanyObligations(
     firstPeriodSuggestion: null,
     statusEditable: false,
     engagementStartYearOfAssessment: null,
+    firstYearOfAssessment: null,
   };
   const loaded = await loadProjectionInput(db, input.tenantId, input.companyId, input.today);
   if (!loaded) return empty;
@@ -827,5 +831,12 @@ export async function previewCompanyObligations(
     firstPeriodSuggestion: firstPeriodUnconfirmed ? suggestFirstFinancialPeriod(loaded.company) : null,
     statusEditable: flags.companyMonitoringWritesEnabled,
     engagementStartYearOfAssessment: service?.engagementStartYearOfAssessment ?? null,
+    firstYearOfAssessment: firstYearOfAssessment(loaded),
   };
+}
+
+function firstYearOfAssessment(loaded: { company: Parameters<typeof suggestFirstFinancialPeriod>[0]; input: { periodFacts: CompanyPeriodFacts } }): number | null {
+  const first = [...(loaded.input.periodFacts.confirmedPeriods ?? [])].sort((left, right) => left.end.localeCompare(right.end))[0];
+  if (first) return first.yearsOfAssessment?.[0] ?? normalYearOfAssessment(first.end);
+  return suggestFirstFinancialPeriod(loaded.company)?.yearOfAssessment ?? null;
 }
