@@ -251,6 +251,44 @@ function resolveItemFields(root: Node, values: Readonly<Record<string, string>>)
   return updated;
 }
 
+// Word rejects paragraph properties out of schema order.
+const KEEP_PROPERTY_ORDER = ['pStyle', 'keepNext', 'keepLines'];
+
+function setParagraphFlag(paragraph: Element, name: 'keepNext' | 'keepLines'): void {
+  const xml = paragraph.ownerDocument;
+  let pPr = wordChild(paragraph, 'pPr');
+  if (!pPr) {
+    pPr = xml.createElementNS(WORD_NS, 'w:pPr');
+    paragraph.insertBefore(pPr, paragraph.firstChild);
+  }
+  const existing = wordChild(pPr, name);
+  if (existing) existing.parentNode?.removeChild(existing);
+  const position = KEEP_PROPERTY_ORDER.indexOf(name);
+  const before = wordChildren(pPr).find((child) => {
+    const index = KEEP_PROPERTY_ORDER.indexOf(child.localName);
+    return index < 0 || index > position;
+  });
+  pPr.insertBefore(xml.createElementNS(WORD_NS, `w:${name}`), before ?? null);
+}
+
+/**
+ * Keep one repeated item (a signing block: line, name, role) on one page.
+ * Items made of table rows or holding tables are left alone, so a long
+ * list table can still break between rows.
+ */
+function keepItemTogether(nodes: readonly Node[]): void {
+  const elements = nodes.filter((node): node is Element => node.nodeType === Node.ELEMENT_NODE);
+  const blockOnly = elements.every((element) => isWordElement(element, 'p') || isWordElement(element, 'sdt'));
+  if (!blockOnly || elements.some((element) => element.getElementsByTagNameNS(WORD_NS, 'tbl').length > 0)) return;
+  const paragraphs = elements.flatMap((element): Element[] => (element.localName === 'p'
+    ? [element]
+    : Array.from(element.getElementsByTagNameNS(WORD_NS, 'p'))));
+  paragraphs.forEach((paragraph, index) => {
+    setParagraphFlag(paragraph, 'keepLines');
+    if (index < paragraphs.length - 1) setParagraphFlag(paragraph, 'keepNext');
+  });
+}
+
 export function resolveOakDocGenericRepeaters(input: {
   docxBytes: Uint8Array;
   data: OakDocRepeaterGenerationData;
@@ -287,13 +325,16 @@ export function resolveOakDocGenericRepeaters(input: {
     if (!itemContent) continue;
 
     for (const values of definition.generationDataAdapter(input.data)) {
+      const clones: Node[] = [];
       for (const templateNode of Array.from(itemContent.childNodes)) {
         const clone = templateNode.cloneNode(true);
         reseedParagraphIds(clone, para, text);
         reseedControls(clone, allocateId);
         fieldsResolved += resolveItemFields(clone, values);
         parent.insertBefore(clone, repeater);
+        clones.push(clone);
       }
+      keepItemTogether(clones);
       itemsCreated += 1;
     }
 
