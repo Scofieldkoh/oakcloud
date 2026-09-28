@@ -101,7 +101,7 @@ describe('OakDoc standard template migration framework', () => {
     expect(xml).toContain('25 Sep 2026');
     expect(xml).toContain('Alex Tan');
     expect(xml).toContain('Jamie Lim');
-    expect(xml).toContain('NOMINEE DIRECTOR');
+    expect(xml).toContain('Nominee Director');
     expect(xml).not.toContain('SAMPLE COMPANY PTE. LTD.');
     expect(xml).not.toContain('repeat.directors');
     expect(xml).not.toMatch(/\{\{[^{}]+\}\}/);

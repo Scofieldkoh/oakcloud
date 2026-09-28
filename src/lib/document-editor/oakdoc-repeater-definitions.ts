@@ -73,7 +73,7 @@ function contactValues(namespace: string, contact: OakDocContact): Record<string
   return {
     [namespace + '.name']: contact.name || '',
     [namespace + '.role']:
-      contact.role || contact.detail || contact.appointments?.[0] || '',
+      formatOakDocRole(contact.role || contact.detail || contact.appointments?.[0]),
     [namespace + '.email']: contact.email || '',
     [namespace + '.phone']: contact.phone || '',
     [namespace + '.phoneAfterEmail']: phoneAfterEmail(contact),
@@ -81,10 +81,33 @@ function contactValues(namespace: string, contact: OakDocContact): Record<string
   };
 }
 
+// Titles that stay in capitals when a role is put into proper case.
+const ROLE_ACRONYMS = new Set(['CEO', 'CFO', 'COO', 'CTO', 'CIO', 'CMO', 'MD', 'GM', 'VP', 'SVP', 'EVP']);
+const ROLE_SMALL_WORDS = new Set(['and', 'of', 'the', 'for', 'to', 'in', 'on', 'or']);
+
+/**
+ * Registry roles arrive in capitals ("MANAGING DIRECTOR"); documents want
+ * "Managing Director". Titles such as CEO or CFO stay as they are, and a
+ * role already typed in mixed case is left untouched.
+ */
+export function formatOakDocRole(value: string | null | undefined): string {
+  const role = (value ?? '').trim();
+  if (!role || role !== role.toUpperCase()) return role;
+  let first = true;
+  return role.replace(/[A-Za-z]+/g, (word) => {
+    const isFirst = first;
+    first = false;
+    if (ROLE_ACRONYMS.has(word)) return word;
+    const lower = word.toLowerCase();
+    if (!isFirst && ROLE_SMALL_WORDS.has(lower)) return lower;
+    return lower.charAt(0).toUpperCase() + lower.slice(1);
+  });
+}
+
 function directorValues(officer: OakDocOfficer): Record<string, string> {
   return {
     'director.name': officer.name || '',
-    'director.role': officer.role || '',
+    'director.role': formatOakDocRole(officer.role),
     'director.identificationNumber': officer.identificationNumber || '',
     'director.nationality': officer.nationality || '',
     'director.appointmentDate': formatDate(officer.appointmentDate),
@@ -95,7 +118,7 @@ function directorValues(officer: OakDocOfficer): Record<string, string> {
 function shareholderValues(shareholder: OakDocShareholder): Record<string, string> {
   return {
     'shareholder.name': shareholder.name || '',
-    'shareholder.shareholderType': shareholder.shareholderType || '',
+    'shareholder.shareholderType': formatOakDocRole(shareholder.shareholderType),
     'shareholder.identificationNumber': shareholder.identificationNumber || '',
     'shareholder.nationality': shareholder.nationality || '',
     'shareholder.address': shareholder.address || '',
@@ -125,7 +148,7 @@ readonly OakDocGenericRepeaterDefinition[] = [
     itemTagNamespace: 'director',
     fields: [
       { tag: 'director.name', label: 'Director Name', category: 'Repeating Director', example: 'John Tan' },
-      { tag: 'director.role', label: 'Director Role', category: 'Repeating Director', example: 'DIRECTOR' },
+      { tag: 'director.role', label: 'Director Role', category: 'Repeating Director', example: 'Director' },
       { tag: 'director.identificationNumber', label: 'Director Identification Number', category: 'Repeating Director', example: 'S1234567A' },
       { tag: 'director.nationality', label: 'Director Nationality', category: 'Repeating Director', example: 'Singaporean' },
       { tag: 'director.appointmentDate', label: 'Director Appointment Date', category: 'Repeating Director', example: '15 Jan 2023' },
