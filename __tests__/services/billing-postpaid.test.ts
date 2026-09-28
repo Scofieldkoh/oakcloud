@@ -94,3 +94,20 @@ describe('Managed externally deadlines', () => {
     expect(JSON.stringify(open.AND)).toContain('"filingResponsibility":{"notIn":["EXTERNAL_PROVIDER","CLIENT"]}');
   });
 });
+
+describe('describeUnbilledFilings', () => {
+  it('names the company, filing, YA and the services whose engagement start is later', async () => {
+    const { describeUnbilledFilings } = await import('@/components/services/deadlines/deadline-bulk-actions');
+    const selected = [{
+      id: 'row-1',
+      company: { id: 'c1', name: 'Acme Pte. Ltd.', displayAlias: null, displayLabel: 'Acme' },
+      obligation: { code: 'SG_FORM_C', yearOfAssessment: 2026 },
+    }] as never;
+    expect(describeUnbilledFilings(selected, {
+      items: [
+        { occurrenceId: 'row-1', services: [{ clientServiceId: 's1', serviceName: 'Corporate tax', engagementStartYearOfAssessment: 2027 }] },
+        { occurrenceId: 'not-selected', services: [{ clientServiceId: 's1', serviceName: 'Corporate tax', engagementStartYearOfAssessment: 2027 }] },
+      ],
+    })).toEqual([{ id: 'row-1', company: 'Acme', filing: 'Form C YA 2026', services: 'Corporate tax starts from YA 2027' }]);
+  });
+});
