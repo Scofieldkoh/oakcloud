@@ -28,6 +28,8 @@ const catalogDataMock = vi.hoisted(() => ({
   }],
 }));
 
+const companyObligationsMock = vi.hoisted(() => vi.fn(() => ({ data: { items: [], notices: [] }, isLoading: false, error: null })));
+
 vi.mock('@/hooks/use-client-services', () => ({
   isHttpRequestError: (error: unknown, status?: number) => {
     const value = error as { status?: number };
@@ -40,6 +42,7 @@ vi.mock('@/hooks/use-client-services', () => ({
     error: null,
   }),
   useCreateManualClientService: () => createMock,
+  useCompanyObligations: companyObligationsMock,
 }));
 
 vi.mock('@/components/ui/searchable-select', () => ({

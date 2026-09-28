@@ -18,6 +18,7 @@ import type { OperationalServiceValues, DeadlinePreviewState } from './client-se
 import type { BillingScheduleConfigV1 } from '@/services/billing/types';
 import { canonicalizeBillingSchedule } from '@/services/billing/schedule';
 import { MONITORING_PROFILE_HINTS, MONITORING_PROFILE_LABELS, type MonitoringProfile } from '@/services/compliance-monitoring/catalog';
+import type { CompanyObligationPreviewItem } from '@/services/compliance-monitoring/writer';
 
 const uuid = () => crypto.randomUUID();
 
@@ -479,6 +480,100 @@ export interface OperationalServiceFormProps {
   openBillingOccurrences?: ClientServiceOpenBillingOccurrenceDto[];
   /** The selected catalog service's company monitoring profiles. */
   monitoringProfiles?: MonitoringProfile[];
+  /** The company's statutory obligations (ECI, Form C) this service monitors. */
+  companyObligations?: CompanyObligationsState;
+}
+
+export type CompanyObligationsState = {
+  items: CompanyObligationPreviewItem[];
+  notices: string[];
+  isLoading: boolean;
+  error: string | null;
+};
+
+const COVERAGE_TIMING_LABELS: Record<CompanyObligationPreviewItem['coverageTiming'], string> = {
+  DURING: 'Monitored',
+  BEFORE_START: 'Takeover review',
+  AFTER_END: 'After monitoring ends',
+  NO_COVERAGE: 'Contracted filing',
+};
+
+/** Adapt a company-obligations query result for the Deadline tab. */
+export function toCompanyObligationsState(query: {
+  data?: { items: CompanyObligationPreviewItem[]; notices: string[] };
+  isLoading: boolean;
+  error: unknown;
+}): CompanyObligationsState {
+  return {
+    items: query.data?.items ?? [],
+    notices: query.data?.notices ?? [],
+    isLoading: query.isLoading,
+    error: query.error ? (query.error instanceof Error ? query.error.message : 'Request failed') : null,
+  };
+}
+
+function CompanyObligationsPanel({
+  state,
+  monitoringProfiles,
+  isNewService,
+}: {
+  state: CompanyObligationsState | undefined;
+  monitoringProfiles: MonitoringProfile[];
+  isNewService: boolean;
+}) {
+  const items = state?.items ?? [];
+  const profileLabel = monitoringProfiles.map((profile) => MONITORING_PROFILE_LABELS[profile]).join(', ');
+  return (
+    <section aria-labelledby="company-obligations-heading" className="space-y-3">
+      <div className="flex items-center justify-between">
+        <div>
+          <h4 id="company-obligations-heading" className="text-sm font-semibold text-text-primary">Company obligations</h4>
+          <p className="text-xs text-text-secondary">
+            {profileLabel ? `${profileLabel}: ` : ''}
+            {monitoringProfiles.length > 0 ? monitoringProfiles.map((profile) => MONITORING_PROFILE_HINTS[profile]).join('; ') : 'Statutory deadlines this company is monitored for'}
+            {isNewService ? ', tracked from the service start date once saved.' : '.'}
+          </p>
+        </div>
+        <span className="text-xs text-text-muted">{items.length} deadline{items.length === 1 ? '' : 's'}</span>
+      </div>
+      {state?.isLoading ? <p role="status" className="text-xs italic text-text-muted">Loading company deadlines…</p> : null}
+      {state?.error ? <Alert variant="error" compact>Company deadlines are unavailable: {state.error}</Alert> : null}
+      {(state?.notices ?? []).map((notice) => (
+        <Alert key={notice} variant="warning" compact><span role="status">{notice}</span></Alert>
+      ))}
+      {!state ? (
+        <Alert variant="info" compact>Once saved, the company&apos;s statutory deadlines are tracked in Deadlines as company obligations.</Alert>
+      ) : items.length === 0 && !state.isLoading && !state.error && state.notices.length === 0 ? (
+        <p className="text-xs italic text-text-muted">No company deadlines fall in the next 24 months.</p>
+      ) : null}
+      {items.length > 0 ? (
+        <div className="divide-y divide-border-primary overflow-hidden rounded-lg border border-border-primary bg-background-primary">
+          {items.map((item) => (
+            <div key={`${item.obligationCode}|${item.periodKey}|${item.milestoneName}`} className="flex flex-wrap items-center justify-between gap-2 px-3.5 py-2.5">
+              <div className="flex min-w-[200px] flex-1 flex-col">
+                <span className="text-xs font-semibold text-text-primary">{item.obligationName}</span>
+                <span className="text-[11px] text-text-muted">{item.periodKey} · {item.explanation[item.explanation.length - 1] ?? item.milestoneName}</span>
+              </div>
+              <div className="flex items-center gap-2.5">
+                <span className="inline-flex items-center gap-1.5 rounded-lg border border-border-primary bg-background-elevated px-2.5 py-1 text-xs font-semibold text-text-primary">
+                  <Clock className="h-3 w-3 text-text-muted" />
+                  {formatProjectedDate(item.dueDate)}
+                </span>
+                <span className={cn(
+                  'inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium',
+                  item.coverageTiming === 'BEFORE_START'
+                    ? 'bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300'
+                    : 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300',
+                )}>
+                  {COVERAGE_TIMING_LABELS[item.coverageTiming]}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : null}
+    </section>
+  );
 }
 
 export function OperationalServiceForm({
@@ -495,12 +590,13 @@ export function OperationalServiceForm({
   openDeadlineOccurrences,
   openBillingOccurrences,
   monitoringProfiles = [],
+  companyObligations,
 }: OperationalServiceFormProps) {
   const [billingHideConfirmationOpen, setBillingHideConfirmationOpen] = useState(false);
   const [userSelectedTab, setUserSelectedTab] = useState<'deadlines' | 'billing' | null>(null);
   const [expandedRuleIds, setExpandedRuleIds] = useState<Set<string>>(new Set());
 
-  const activeTab = userSelectedTab ?? (values.deadlineRules.length > 0 ? 'deadlines' : 'billing');
+  const activeTab = userSelectedTab ?? (values.deadlineRules.length > 0 || monitoringProfiles.length > 0 || (companyObligations?.items.length ?? 0) > 0 ? 'deadlines' : 'billing');
 
   const today = currentDateInSingapore();
   const projectedDeadlines: ClientServiceProjectedDeadlineDto[] = (deadlinePreview?.items ?? [])
@@ -748,7 +844,7 @@ export function OperationalServiceForm({
                 'inline-flex items-center justify-center rounded-full px-2 py-0.5 text-xs font-semibold',
                 activeTab === 'deadlines' ? 'bg-oak-primary text-white' : 'border border-border-primary bg-background-elevated text-text-secondary'
               )}>
-                  {deadlineItems.length}
+                  {deadlineItems.length + (companyObligations?.items.length ?? 0)}
               </span>
             </button>
             <button
@@ -790,14 +886,7 @@ export function OperationalServiceForm({
                   <span className="text-xs text-text-muted">{values.deadlineRules.length} rule{values.deadlineRules.length === 1 ? '' : 's'}</span>
                 </div>
 
-                {monitoringProfiles.length > 0 ? (
-                  <Alert variant="info" compact>
-                    Company monitoring ({monitoringProfiles.map((profile) => MONITORING_PROFILE_LABELS[profile]).join(', ')}): once saved, the company&apos;s statutory deadlines
-                    ({monitoringProfiles.map((profile) => MONITORING_PROFILE_HINTS[profile]).join('; ')}) are tracked in Deadlines as company obligations, not as rules here.
-                  </Alert>
-                ) : null}
-
-                {values.deadlineRules.length === 0 ? (
+                {values.deadlineRules.length === 0 && !companyObligations ? (
                   <div className="rounded-xl border border-dashed border-border-primary p-8 text-center text-text-secondary">
                     <p className="text-sm">No deadline rules are associated with this service.</p>
                   </div>
@@ -939,6 +1028,14 @@ export function OperationalServiceForm({
                   );
                 })}
               </div>
+
+              {companyObligations || monitoringProfiles.length > 0 ? (
+                <CompanyObligationsPanel
+                  state={companyObligations}
+                  monitoringProfiles={monitoringProfiles}
+                  isNewService={mode === 'create'}
+                />
+              ) : null}
 
               {/* Bottom Section: Canonical server-projected deadline preview */}
               {showDeadlinePanel ? (readOnly || deadlinePreview ? (
