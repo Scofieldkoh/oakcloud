@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { NotFoundError, ValidationError } from '@/lib/errors';
 import { createAuditLog } from '@/lib/audit';
 import { enqueueScheduleReconciliation } from '@/services/schedule-reconciliation/queue';
+import { syncPostpaidBilling } from '@/services/billing/postpaid';
 import { isMonitoringProfile, obligationsForProfiles } from './catalog';
 
 /**
@@ -67,6 +68,9 @@ export async function setEngagementStartYearOfAssessment(params: {
       },
       data: { responsibilitySource: 'PROJECTED' },
     });
+
+    // Postpaid fees bill from the engagement start YA, so re-sync them.
+    await syncPostpaidBilling({ tenantId, companyId, clientServiceId: service.id, cancelledById: params.actorId }, tx);
 
     const now = new Date();
     await enqueueScheduleReconciliation(tx, {
