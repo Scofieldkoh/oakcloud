@@ -182,6 +182,21 @@ export const ScheduleReconciliationStatus = {
 export type ScheduleReconciliationStatus = (typeof ScheduleReconciliationStatus)[keyof typeof ScheduleReconciliationStatus]
 
 
+export const BusinessHolidaySourceType = {
+  MANUAL: 'MANUAL',
+  EXTERNAL: 'EXTERNAL'
+} as const
+
+export type BusinessHolidaySourceType = (typeof BusinessHolidaySourceType)[keyof typeof BusinessHolidaySourceType]
+
+
+export const PublicHolidayProvider = {
+  DATA_GOV_SG_MOM: 'DATA_GOV_SG_MOM'
+} as const
+
+export type PublicHolidayProvider = (typeof PublicHolidayProvider)[keyof typeof PublicHolidayProvider]
+
+
 export const DeadlineOwnershipScope = {
   SERVICE: 'SERVICE',
   COMPANY: 'COMPANY'

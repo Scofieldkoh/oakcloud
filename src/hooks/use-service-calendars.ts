@@ -8,6 +8,7 @@ import type {
 import type { AdminRequestError } from './use-deadline-rules';
 import { pendingReconciliationSummaryKeys, serviceAdminAssociationKeys } from './use-deadline-rules';
 import type { BusinessCalendarDto, BusinessCalendarImpact, BusinessCalendarListDto } from '@/services/business-calendar';
+import type { PublicHolidayRefreshResult, PublicHolidaySourceStatus } from '@/services/public-holiday/constants';
 
 export const serviceCalendarKeys = {
   all: ['service-calendars'] as const,
@@ -17,6 +18,12 @@ export const serviceCalendarKeys = {
   detail: (workspaceId: string | undefined, id: string | undefined) => ['service-calendars', 'detail', workspaceId ?? null, id ?? null] as const,
   impacts: (workspaceId: string | undefined) => ['service-calendars', 'impact', workspaceId ?? null] as const,
   impact: (workspaceId: string | undefined, id: string | undefined) => ['service-calendars', 'impact', workspaceId ?? null, id ?? null] as const,
+  publicHolidaySource: (workspaceId: string | undefined) => ['service-calendars', 'public-holiday-source', workspaceId ?? null] as const,
+};
+
+export type PublicHolidayCheckResponse = {
+  result: PublicHolidayRefreshResult;
+  status: PublicHolidaySourceStatus;
 };
 
 async function requestJson<T>(url: string, init: RequestInit = {}): Promise<T> {
@@ -116,5 +123,35 @@ export function usePreviewServiceCalendarImpact(workspaceId: string | undefined)
       },
     ),
     onSuccess: (impact, variables) => queryClient.setQueryData(serviceCalendarKeys.impact(workspaceId, variables.id), impact),
+  });
+}
+
+export function usePublicHolidaySource(workspaceId: string | undefined, enabled = true) {
+  return useQuery<PublicHolidaySourceStatus>({
+    queryKey: serviceCalendarKeys.publicHolidaySource(workspaceId),
+    queryFn: ({ signal }) => requestJson<PublicHolidaySourceStatus>(
+      `/api/service-calendars/public-holidays${tenantQuery(workspaceId!)}`,
+      { signal },
+    ),
+    enabled: Boolean(workspaceId && enabled),
+    retry: false,
+  });
+}
+
+/** Check MOM for updates now; business calendars synchronize on the server. */
+export function useCheckPublicHolidays(workspaceId: string | undefined) {
+  const queryClient = useQueryClient();
+  return useMutation<PublicHolidayCheckResponse, AdminRequestError, void>({
+    mutationFn: () => requestJson<PublicHolidayCheckResponse>(
+      `/api/service-calendars/public-holidays${tenantQuery(workspaceId!)}`,
+      { method: 'POST' },
+    ),
+    onSuccess: (response) => {
+      queryClient.setQueryData(serviceCalendarKeys.publicHolidaySource(workspaceId), response.status);
+      return Promise.all([
+        invalidateCalendarQueries(queryClient, workspaceId),
+        queryClient.invalidateQueries({ queryKey: serviceCalendarKeys.details(workspaceId) }),
+      ]);
+    },
   });
 }

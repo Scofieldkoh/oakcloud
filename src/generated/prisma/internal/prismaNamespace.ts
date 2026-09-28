@@ -441,6 +441,8 @@ export const ModelName = {
   ClientServiceDeadlineRule: 'ClientServiceDeadlineRule',
   BusinessCalendar: 'BusinessCalendar',
   BusinessHoliday: 'BusinessHoliday',
+  PublicHolidaySourceRecord: 'PublicHolidaySourceRecord',
+  PublicHolidaySyncState: 'PublicHolidaySyncState',
   ServiceCycle: 'ServiceCycle',
   DeadlineOccurrence: 'DeadlineOccurrence',
   CompanyFinancialPeriod: 'CompanyFinancialPeriod',
@@ -546,7 +548,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "workspace" | "role" | "permission" | "rolePermission" | "userRoleAssignment" | "user" | "userPreference" | "performanceMeasurement" | "userCompanyAssignment" | "company" | "companySharePointFolder" | "companyFormerName" | "companyAddress" | "contact" | "companyContact" | "contactDetail" | "companyOfficer" | "shareCapital" | "companyAuditor" | "companyShareholder" | "companyCharge" | "document" | "auditLog" | "connector" | "workspaceConnectorAccess" | "connectorUsageLog" | "connectorModelConfig" | "noteTab" | "documentTemplate" | "generatedDocument" | "documentGenerationBatch" | "documentGenerationBatchItem" | "documentSection" | "workspaceLetterhead" | "documentComment" | "documentDraft" | "templatePartial" | "serviceFamily" | "serviceVariant" | "serviceVariantFeeTemplate" | "serviceAgreement" | "serviceAgreementEntity" | "serviceAgreementItem" | "serviceAgreementItemEntity" | "serviceAgreementFeeLine" | "clientService" | "clientServiceFeeLine" | "billingOccurrence" | "billingCoverageIssue" | "deadlineRule" | "deadlineRuleVersion" | "deadlineRuleParameterDefinition" | "deadlineMilestoneTemplate" | "serviceVariantDeadlineRule" | "clientServiceDeadlineRule" | "businessCalendar" | "businessHoliday" | "serviceCycle" | "deadlineOccurrence" | "companyFinancialPeriod" | "companyMonitoringCoverage" | "clientServiceObligationScope" | "deadlineOccurrenceCoverageLink" | "deadlineResponsibilityChange" | "companyComplianceIssue" | "serviceScheduleReconciliationRequest" | "aiConversation" | "esigningEnvelope" | "esigningEnvelopeDocument" | "esigningSharePointFiling" | "esigningEnvelopeRecipient" | "esigningDocumentFieldDefinition" | "esigningDocumentFieldValue" | "esigningEnvelopeEvent" | "esigningEmailDelivery" | "esigningEmailDeliveryAttempt" | "processingDocument" | "documentLink" | "documentTag" | "processingDocumentTag" | "documentPage" | "documentExtraction" | "documentRevision" | "documentRevisionLineItem" | "vendorAlias" | "customerAlias" | "contactDuplicateDecision" | "contactMergeOperation" | "duplicateDecision" | "processingAttempt" | "processingCheckpoint" | "splitPlan" | "documentStateEvent" | "documentDerivedFile" | "idempotencyRecord" | "webhookSubscription" | "exchangeRate" | "bankAccount" | "bankTransaction" | "matchGroup" | "matchGroupItem" | "reconciliationPeriod" | "form" | "formField" | "formOptionPreset" | "formUrlHealth" | "formSubmission" | "formDraft" | "formUpload" | "clientPortalUser" | "clientRequest" | "communication" | "accountingIntegration" | "externalPosting" | "fieldMapping" | "workspaceBackup" | "backupSchedule" | "chartOfAccount" | "chartOfAccountsMapping" | "taskPipeline" | "taskPipelineVersion" | "taskPipelineStage" | "task" | "taskStage" | "taskStageChecklistItem" | "taskStageOutcome" | "taskEsigningPreparation" | "taskCompanyRecoveryContext" | "acraEntity" | "acraSyncState" | "businessAssistantConversation" | "businessAssistantMessage" | "businessAssistantRun" | "businessAssistantRunItem" | "businessAssistantRunStep" | "businessAssistantProposal" | "businessAssistantApproval" | "businessAssistantReview" | "businessAssistantFeedback" | "businessAssistantMemory" | "businessAssistantLearningChange" | "businessAssistantLearningActiveTarget" | "businessAssistantActionRequest" | "businessAssistantCapacitySlot" | "bizFileOperationReceipt" | "bizFileOperationEvidence" | "bizFileOperationEffectIntent"
+    modelProps: "workspace" | "role" | "permission" | "rolePermission" | "userRoleAssignment" | "user" | "userPreference" | "performanceMeasurement" | "userCompanyAssignment" | "company" | "companySharePointFolder" | "companyFormerName" | "companyAddress" | "contact" | "companyContact" | "contactDetail" | "companyOfficer" | "shareCapital" | "companyAuditor" | "companyShareholder" | "companyCharge" | "document" | "auditLog" | "connector" | "workspaceConnectorAccess" | "connectorUsageLog" | "connectorModelConfig" | "noteTab" | "documentTemplate" | "generatedDocument" | "documentGenerationBatch" | "documentGenerationBatchItem" | "documentSection" | "workspaceLetterhead" | "documentComment" | "documentDraft" | "templatePartial" | "serviceFamily" | "serviceVariant" | "serviceVariantFeeTemplate" | "serviceAgreement" | "serviceAgreementEntity" | "serviceAgreementItem" | "serviceAgreementItemEntity" | "serviceAgreementFeeLine" | "clientService" | "clientServiceFeeLine" | "billingOccurrence" | "billingCoverageIssue" | "deadlineRule" | "deadlineRuleVersion" | "deadlineRuleParameterDefinition" | "deadlineMilestoneTemplate" | "serviceVariantDeadlineRule" | "clientServiceDeadlineRule" | "businessCalendar" | "businessHoliday" | "publicHolidaySourceRecord" | "publicHolidaySyncState" | "serviceCycle" | "deadlineOccurrence" | "companyFinancialPeriod" | "companyMonitoringCoverage" | "clientServiceObligationScope" | "deadlineOccurrenceCoverageLink" | "deadlineResponsibilityChange" | "companyComplianceIssue" | "serviceScheduleReconciliationRequest" | "aiConversation" | "esigningEnvelope" | "esigningEnvelopeDocument" | "esigningSharePointFiling" | "esigningEnvelopeRecipient" | "esigningDocumentFieldDefinition" | "esigningDocumentFieldValue" | "esigningEnvelopeEvent" | "esigningEmailDelivery" | "esigningEmailDeliveryAttempt" | "processingDocument" | "documentLink" | "documentTag" | "processingDocumentTag" | "documentPage" | "documentExtraction" | "documentRevision" | "documentRevisionLineItem" | "vendorAlias" | "customerAlias" | "contactDuplicateDecision" | "contactMergeOperation" | "duplicateDecision" | "processingAttempt" | "processingCheckpoint" | "splitPlan" | "documentStateEvent" | "documentDerivedFile" | "idempotencyRecord" | "webhookSubscription" | "exchangeRate" | "bankAccount" | "bankTransaction" | "matchGroup" | "matchGroupItem" | "reconciliationPeriod" | "form" | "formField" | "formOptionPreset" | "formUrlHealth" | "formSubmission" | "formDraft" | "formUpload" | "clientPortalUser" | "clientRequest" | "communication" | "accountingIntegration" | "externalPosting" | "fieldMapping" | "workspaceBackup" | "backupSchedule" | "chartOfAccount" | "chartOfAccountsMapping" | "taskPipeline" | "taskPipelineVersion" | "taskPipelineStage" | "task" | "taskStage" | "taskStageChecklistItem" | "taskStageOutcome" | "taskEsigningPreparation" | "taskCompanyRecoveryContext" | "acraEntity" | "acraSyncState" | "businessAssistantConversation" | "businessAssistantMessage" | "businessAssistantRun" | "businessAssistantRunItem" | "businessAssistantRunStep" | "businessAssistantProposal" | "businessAssistantApproval" | "businessAssistantReview" | "businessAssistantFeedback" | "businessAssistantMemory" | "businessAssistantLearningChange" | "businessAssistantLearningActiveTarget" | "businessAssistantActionRequest" | "businessAssistantCapacitySlot" | "bizFileOperationReceipt" | "bizFileOperationEvidence" | "bizFileOperationEffectIntent"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -4765,6 +4767,154 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.BusinessHolidayCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.BusinessHolidayCountAggregateOutputType> | number
+        }
+      }
+    }
+    PublicHolidaySourceRecord: {
+      payload: Prisma.$PublicHolidaySourceRecordPayload<ExtArgs>
+      fields: Prisma.PublicHolidaySourceRecordFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.PublicHolidaySourceRecordFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PublicHolidaySourceRecordPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.PublicHolidaySourceRecordFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PublicHolidaySourceRecordPayload>
+        }
+        findFirst: {
+          args: Prisma.PublicHolidaySourceRecordFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PublicHolidaySourceRecordPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.PublicHolidaySourceRecordFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PublicHolidaySourceRecordPayload>
+        }
+        findMany: {
+          args: Prisma.PublicHolidaySourceRecordFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PublicHolidaySourceRecordPayload>[]
+        }
+        create: {
+          args: Prisma.PublicHolidaySourceRecordCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PublicHolidaySourceRecordPayload>
+        }
+        createMany: {
+          args: Prisma.PublicHolidaySourceRecordCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.PublicHolidaySourceRecordCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PublicHolidaySourceRecordPayload>[]
+        }
+        delete: {
+          args: Prisma.PublicHolidaySourceRecordDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PublicHolidaySourceRecordPayload>
+        }
+        update: {
+          args: Prisma.PublicHolidaySourceRecordUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PublicHolidaySourceRecordPayload>
+        }
+        deleteMany: {
+          args: Prisma.PublicHolidaySourceRecordDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.PublicHolidaySourceRecordUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.PublicHolidaySourceRecordUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PublicHolidaySourceRecordPayload>[]
+        }
+        upsert: {
+          args: Prisma.PublicHolidaySourceRecordUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PublicHolidaySourceRecordPayload>
+        }
+        aggregate: {
+          args: Prisma.PublicHolidaySourceRecordAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregatePublicHolidaySourceRecord>
+        }
+        groupBy: {
+          args: Prisma.PublicHolidaySourceRecordGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PublicHolidaySourceRecordGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.PublicHolidaySourceRecordCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PublicHolidaySourceRecordCountAggregateOutputType> | number
+        }
+      }
+    }
+    PublicHolidaySyncState: {
+      payload: Prisma.$PublicHolidaySyncStatePayload<ExtArgs>
+      fields: Prisma.PublicHolidaySyncStateFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.PublicHolidaySyncStateFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PublicHolidaySyncStatePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.PublicHolidaySyncStateFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PublicHolidaySyncStatePayload>
+        }
+        findFirst: {
+          args: Prisma.PublicHolidaySyncStateFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PublicHolidaySyncStatePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.PublicHolidaySyncStateFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PublicHolidaySyncStatePayload>
+        }
+        findMany: {
+          args: Prisma.PublicHolidaySyncStateFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PublicHolidaySyncStatePayload>[]
+        }
+        create: {
+          args: Prisma.PublicHolidaySyncStateCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PublicHolidaySyncStatePayload>
+        }
+        createMany: {
+          args: Prisma.PublicHolidaySyncStateCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.PublicHolidaySyncStateCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PublicHolidaySyncStatePayload>[]
+        }
+        delete: {
+          args: Prisma.PublicHolidaySyncStateDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PublicHolidaySyncStatePayload>
+        }
+        update: {
+          args: Prisma.PublicHolidaySyncStateUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PublicHolidaySyncStatePayload>
+        }
+        deleteMany: {
+          args: Prisma.PublicHolidaySyncStateDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.PublicHolidaySyncStateUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.PublicHolidaySyncStateUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PublicHolidaySyncStatePayload>[]
+        }
+        upsert: {
+          args: Prisma.PublicHolidaySyncStateUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PublicHolidaySyncStatePayload>
+        }
+        aggregate: {
+          args: Prisma.PublicHolidaySyncStateAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregatePublicHolidaySyncState>
+        }
+        groupBy: {
+          args: Prisma.PublicHolidaySyncStateGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PublicHolidaySyncStateGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.PublicHolidaySyncStateCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PublicHolidaySyncStateCountAggregateOutputType> | number
         }
       }
     }
@@ -12605,11 +12755,56 @@ export const BusinessHolidayScalarFieldEnum = {
   name: 'name',
   description: 'description',
   isActive: 'isActive',
+  sourceType: 'sourceType',
+  sourceProvider: 'sourceProvider',
+  sourceDatasetId: 'sourceDatasetId',
+  sourceRecordKey: 'sourceRecordKey',
+  sourceDataAsOf: 'sourceDataAsOf',
+  sourceImportedAt: 'sourceImportedAt',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
 
 export type BusinessHolidayScalarFieldEnum = (typeof BusinessHolidayScalarFieldEnum)[keyof typeof BusinessHolidayScalarFieldEnum]
+
+
+export const PublicHolidaySourceRecordScalarFieldEnum = {
+  id: 'id',
+  provider: 'provider',
+  jurisdictionCode: 'jurisdictionCode',
+  date: 'date',
+  name: 'name',
+  description: 'description',
+  sourceDatasetId: 'sourceDatasetId',
+  sourceRecordKey: 'sourceRecordKey',
+  dataAsOf: 'dataAsOf',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type PublicHolidaySourceRecordScalarFieldEnum = (typeof PublicHolidaySourceRecordScalarFieldEnum)[keyof typeof PublicHolidaySourceRecordScalarFieldEnum]
+
+
+export const PublicHolidaySyncStateScalarFieldEnum = {
+  id: 'id',
+  provider: 'provider',
+  jurisdictionCode: 'jurisdictionCode',
+  datasetId: 'datasetId',
+  sourceLastUpdatedAt: 'sourceLastUpdatedAt',
+  dataAsOf: 'dataAsOf',
+  sourceHash: 'sourceHash',
+  recordCount: 'recordCount',
+  coverageStart: 'coverageStart',
+  coverageEnd: 'coverageEnd',
+  lastCheckedAt: 'lastCheckedAt',
+  lastStartedAt: 'lastStartedAt',
+  lastCompletedAt: 'lastCompletedAt',
+  lastError: 'lastError',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type PublicHolidaySyncStateScalarFieldEnum = (typeof PublicHolidaySyncStateScalarFieldEnum)[keyof typeof PublicHolidaySyncStateScalarFieldEnum]
 
 
 export const ServiceCycleScalarFieldEnum = {
@@ -15159,6 +15354,34 @@ export type ListEnumDeadlineApplicabilityStateFieldRefInput<$PrismaModel> = Fiel
 
 
 /**
+ * Reference to a field of type 'BusinessHolidaySourceType'
+ */
+export type EnumBusinessHolidaySourceTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BusinessHolidaySourceType'>
+
+
+
+/**
+ * Reference to a field of type 'BusinessHolidaySourceType[]'
+ */
+export type ListEnumBusinessHolidaySourceTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BusinessHolidaySourceType[]'>
+
+
+
+/**
+ * Reference to a field of type 'PublicHolidayProvider'
+ */
+export type EnumPublicHolidayProviderFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'PublicHolidayProvider'>
+
+
+
+/**
+ * Reference to a field of type 'PublicHolidayProvider[]'
+ */
+export type ListEnumPublicHolidayProviderFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'PublicHolidayProvider[]'>
+
+
+
+/**
  * Reference to a field of type 'DeadlineOwnershipScope'
  */
 export type EnumDeadlineOwnershipScopeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DeadlineOwnershipScope'>
@@ -16835,6 +17058,8 @@ export type GlobalOmitConfig = {
   clientServiceDeadlineRule?: Prisma.ClientServiceDeadlineRuleOmit
   businessCalendar?: Prisma.BusinessCalendarOmit
   businessHoliday?: Prisma.BusinessHolidayOmit
+  publicHolidaySourceRecord?: Prisma.PublicHolidaySourceRecordOmit
+  publicHolidaySyncState?: Prisma.PublicHolidaySyncStateOmit
   serviceCycle?: Prisma.ServiceCycleOmit
   deadlineOccurrence?: Prisma.DeadlineOccurrenceOmit
   companyFinancialPeriod?: Prisma.CompanyFinancialPeriodOmit
