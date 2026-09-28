@@ -29,6 +29,9 @@ vi.mock('next/navigation', () => ({
   useRouter: () => ({ replace: navigation.replace }),
   useSearchParams: () => navigation.searchParams,
 }));
+vi.mock('@/hooks/use-client-services', () => ({
+  useMoveEngagementStart: () => ({ mutateAsync: vi.fn(), isPending: false, error: null }),
+}));
 vi.mock('@/hooks/use-deadlines', () => ({
   useDeadlines: hooks.useDeadlines,
   useUpdateDeadlineOccurrence: hooks.useUpdateDeadlineOccurrence,
