@@ -14,11 +14,22 @@ export type OakDocGenericRepeaterKind =
   | 'authorisedRepresentatives'
   | 'agreementEntities';
 
+export const OAKDOC_DIRECTORS_REPEATER_TAG = 'repeat.directors';
+export const OAKDOC_SHAREHOLDERS_REPEATER_TAG = 'repeat.shareholders';
+
 export interface OakDocRepeaterGenerationData {
   company: OakDocCompanyDetail;
   signers?: readonly OakDocContact[];
   authorisedRepresentatives?: readonly OakDocContact[];
   agreementEntities?: readonly OakDocAgreementEntity[];
+  /** Directors to repeat, by officer id; absent means every current director. */
+  selectedDirectorIds?: readonly string[];
+  /** Shareholders to repeat, by shareholder id; absent means every current shareholder. */
+  selectedShareholderIds?: readonly string[];
+}
+
+function isSelected(ids: readonly string[] | undefined, id: string): boolean {
+  return ids === undefined || ids.includes(id);
 }
 
 export interface OakDocGenericRepeaterDefinition {
@@ -142,7 +153,7 @@ export const OAKDOC_GENERIC_REPEATER_DEFINITIONS:
 readonly OakDocGenericRepeaterDefinition[] = [
   {
     kind: 'directors',
-    tag: 'repeat.directors',
+    tag: OAKDOC_DIRECTORS_REPEATER_TAG,
     label: 'Directors',
     itemLabel: 'Director',
     itemTagNamespace: 'director',
@@ -156,12 +167,13 @@ readonly OakDocGenericRepeaterDefinition[] = [
     ],
     generationDataAdapter: (data) => (data.company.officers ?? [])
       .filter((officer) => officer.isCurrent !== false
-        && String(officer.role || '').toUpperCase().includes('DIRECTOR'))
+        && String(officer.role || '').toUpperCase().includes('DIRECTOR')
+        && isSelected(data.selectedDirectorIds, officer.id))
       .map(directorValues),
   },
   {
     kind: 'shareholders',
-    tag: 'repeat.shareholders',
+    tag: OAKDOC_SHAREHOLDERS_REPEATER_TAG,
     label: 'Shareholders',
     itemLabel: 'Shareholder',
     itemTagNamespace: 'shareholder',
@@ -177,7 +189,8 @@ readonly OakDocGenericRepeaterDefinition[] = [
       { tag: 'shareholder.isNominee', label: 'Nominee Shareholder', category: 'Repeating Shareholder', example: 'No' },
     ],
     generationDataAdapter: (data) => (data.company.shareholders ?? [])
-      .filter((shareholder) => shareholder.isCurrent !== false)
+      .filter((shareholder) => shareholder.isCurrent !== false
+        && isSelected(data.selectedShareholderIds, shareholder.id))
       .map(shareholderValues),
   },
   {

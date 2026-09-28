@@ -36,6 +36,8 @@ export interface BatchItemConfiguratorProps {
   effectiveMasterValues: Record<string, string>;
   templateFields?: CustomPlaceholderDefinition[];
   templateContent?: string;
+  /** Tags in a Word (OakDoc) template, which decide its party pickers. */
+  templateFieldTags?: readonly string[];
   onPatch: (patch: Partial<BatchItemConfiguration>) => void;
   disabled?: boolean;
   completeness?: ItemCompleteness;
@@ -97,6 +99,7 @@ export function BatchItemConfigurator(props: BatchItemConfiguratorProps) {
         item={item}
         templateFields={itemOnlyFields}
         templateContent={props.templateContent}
+        templateFieldTags={props.templateFieldTags}
         masterFields={masterFields}
         effectiveMasterValues={effectiveMasterValues}
         directors={props.directors}
