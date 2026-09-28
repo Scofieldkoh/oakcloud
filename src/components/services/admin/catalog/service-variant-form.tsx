@@ -16,6 +16,7 @@ import type {
 } from '@/lib/validations/deadline-rule';
 import type { ScheduleEntryInput } from '@/lib/validations/service-schedule';
 import { ScheduleEntryEditor } from '@/components/services/shared/schedule-entry-editor';
+import { BillingTimingFields } from '@/components/services/shared/billing-timing-fields';
 import type {
   ServiceVariantDeadlineRuleDto,
   ServiceVariantDto,
@@ -178,6 +179,8 @@ function emptyFee(displayOrder: number): ServiceVariantFeeTemplateInput {
     currency: 'SGD',
     billingFrequency: 'MONTHLY',
     customFrequencyLabel: null,
+    billingTiming: 'PREPAID',
+    postpaidTrigger: null,
     displayOrder,
   };
 }
@@ -359,9 +362,11 @@ export function ServiceVariantForm({
         ...fee,
         defaultAmount: fee.defaultAmount || null,
         customFrequencyLabel:
-          fee.billingFrequency === 'CUSTOM'
+          fee.billingFrequency === 'CUSTOM' && fee.billingTiming !== 'POSTPAID'
             ? fee.customFrequencyLabel
             : null,
+        billingTiming: fee.billingTiming ?? 'PREPAID',
+        postpaidTrigger: fee.billingTiming === 'POSTPAID' ? fee.postpaidTrigger ?? null : null,
         displayOrder: index,
       })),
       deadlineRules: deadlineRules.map(({ parameterTypes: _parameterTypes, ...rule }) => ({
@@ -559,7 +564,7 @@ export function ServiceVariantForm({
                       }
                       required
                     />
-                    <label className="block text-xs font-medium text-text-secondary">
+                    {fee.billingTiming === 'POSTPAID' ? null : <label className="block text-xs font-medium text-text-secondary">
                       Billing frequency
                       <select
                         value={fee.billingFrequency}
@@ -577,9 +582,20 @@ export function ServiceVariantForm({
                           </option>
                         ))}
                       </select>
-                    </label>
+                    </label>}
                   </div>
-                  {fee.billingFrequency === 'CUSTOM' ? (
+                  <div className="mt-3">
+                    <BillingTimingFields
+                      idPrefix={`fee-template-${index}`}
+                      label={`Fee row ${index + 1}`}
+                      value={{
+                        billingTiming: fee.billingTiming ?? 'PREPAID',
+                        postpaidTrigger: fee.postpaidTrigger ?? null,
+                      }}
+                      onChange={(timing) => updateFee(index, timing)}
+                    />
+                  </div>
+                  {fee.billingFrequency === 'CUSTOM' && fee.billingTiming !== 'POSTPAID' ? (
                     <div className="mt-3">
                       <FormInput
                         label="Custom frequency label"

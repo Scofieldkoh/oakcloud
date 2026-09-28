@@ -10,6 +10,8 @@ import { SingleDateInput } from '@/components/ui/single-date-input';
 import { Toggle } from '@/components/ui/toggle';
 import { Tooltip } from '@/components/ui/tooltip';
 import { ScheduleEntryEditor } from '@/components/services/shared/schedule-entry-editor';
+import { BillingTimingFields } from '@/components/services/shared/billing-timing-fields';
+import { POSTPAID_TRIGGER_LABELS } from '@/services/billing/postpaid-triggers';
 import { cn } from '@/lib/utils';
 import type { ScheduleEntryInput } from '@/lib/validations/service-schedule';
 import { currentDateInSingapore } from '@/services/service-schedule';
@@ -153,6 +155,23 @@ export function calculateActualBillingPreview(
     const fYear = !Number.isNaN(feeStart.getFullYear()) ? feeStart.getFullYear() : startYear;
     const fMonth = !Number.isNaN(feeStart.getMonth()) ? feeStart.getMonth() : startMonth;
     const fDay = !Number.isNaN(feeStart.getDate()) ? feeStart.getDate() : startDay;
+
+    if (fee.billingTiming === 'POSTPAID') {
+      results.push({
+        key: `${fee.uiId}-postpaid`,
+        feeUiId: fee.uiId,
+        description: fee.description.trim() || `Fee ${idx + 1}`,
+        amount: fee.amount.trim() || '0.00',
+        currency: fee.currency || 'SGD',
+        frequency: 'Postpaid',
+        billingDate: 'When filed',
+        isoDate: '',
+        timingExplanation: fee.postpaidTrigger
+          ? `Once per YA · ${POSTPAID_TRIGGER_LABELS[fee.postpaidTrigger]}`
+          : 'Choose the filing it bills on',
+      });
+      continue;
+    }
 
     const freq = fee.billingFrequency || 'ONE_TIME';
     const freqLabel = FEE_FREQUENCY_OPTIONS.find((o) => o.value === freq)?.label ?? freq;
@@ -779,10 +798,12 @@ export function OperationalServiceForm({
       description: item.description,
       amount: item.amount,
       currency: item.currency,
-      frequency: billingFrequencyLabel(item.billingFrequency, item.customFrequencyLabel),
+      frequency: item.postpaidTrigger ? 'Postpaid' : billingFrequencyLabel(item.billingFrequency, item.customFrequencyLabel),
       billingDate: formatProjectedDate(item.operativeExpectedDate),
       isoDate: item.operativeExpectedDate,
-      timingExplanation: `Open · ${item.billingPeriodKey}`,
+      timingExplanation: item.postpaidTrigger
+        ? `Open · ${item.billingPeriodKey.replace(/^YA/, 'YA ')} · ${POSTPAID_TRIGGER_LABELS[item.postpaidTrigger]}`
+        : `Open · ${item.billingPeriodKey}`,
     }))
     : values.billingDisposition === 'NOT_REQUIRED'
       ? []
@@ -1288,17 +1309,18 @@ export function OperationalServiceForm({
                         <h4 className="text-sm font-semibold text-text-primary">Fee Schedules</h4>
                         <p className="text-xs text-text-secondary">Define recurring or one-time fees for this client service</p>
                       </div>
-                      <Button size="xs" variant="secondary" disabled={disabled || sectionsDisabled} onClick={() => updateValue('fees', [...values.fees, { uiId: uuid(), id: uuid(), description: '', amount: '0.00', currency: 'SGD', billingFrequency: 'ANNUALLY', customFrequencyLabel: '', billingStartDate: '', scheduleConfig: null, catalogDerived: false }])}>Add fee</Button>
+                      <Button size="xs" variant="secondary" disabled={disabled || sectionsDisabled} onClick={() => updateValue('fees', [...values.fees, { uiId: uuid(), id: uuid(), description: '', amount: '0.00', currency: 'SGD', billingFrequency: 'ANNUALLY', customFrequencyLabel: '', billingStartDate: '', scheduleConfig: null, billingTiming: 'PREPAID', postpaidTrigger: null, catalogDerived: false }])}>Add fee</Button>
                     </div>
                     {values.fees.map((fee, index) => {
                       const prefix = `fee-${fee.uiId}`;
                       const updateFee = (changes: Partial<typeof fee>) => updateValue('fees', values.fees.map((item) => item.uiId === fee.uiId ? { ...item, ...changes } : item));
                       const scheduleConfig = scheduleConfigForFee(fee, values.startDate);
+                      const postpaid = fee.billingTiming === 'POSTPAID';
                       return (
                         <div key={fee.uiId} className="space-y-3 rounded-xl border border-border-primary bg-background-primary p-4 shadow-sm">
                           {/* Row 1: Description (70%) and Billing Start Date (30%) */}
                           <div className="grid grid-cols-1 gap-3 sm:grid-cols-12">
-                            <div className="sm:col-span-8">
+                            <div className={postpaid ? 'sm:col-span-12' : 'sm:col-span-8'}>
                               <FormInput
                                 id={`${prefix}-description`}
                                 label="Description"
@@ -1310,7 +1332,7 @@ export function OperationalServiceForm({
                                 onChange={(event) => updateFee({ description: event.target.value })}
                               />
                             </div>
-                            <div className="sm:col-span-4">
+                            {postpaid ? null : <div className="sm:col-span-4">
                               <SingleDateInput
                                 id={`${prefix}-billing-start-date`}
                                 label="Billing start date"
@@ -1324,8 +1346,17 @@ export function OperationalServiceForm({
                                   updateFee({ billingStartDate, scheduleConfig: { ...nextSchedule, startDate: effectiveStartDate as BillingScheduleConfigV1['startDate'] | null } });
                                 }}
                               />
-                            </div>
+                            </div>}
                           </div>
+
+                          <BillingTimingFields
+                            idPrefix={prefix}
+                            label={`Fee ${index + 1}`}
+                            disabled={disabled || sectionsDisabled}
+                            value={{ billingTiming: fee.billingTiming ?? 'PREPAID', postpaidTrigger: fee.postpaidTrigger ?? null }}
+                            error={errors[`${prefix}-trigger`]}
+                            onChange={(timing) => updateFee(timing)}
+                          />
 
                           {/* Row 2: Currency (smallest), Amount, Frequency (+ Custom interval months if custom), Remove button */}
                           <div className="grid grid-cols-1 gap-3 sm:grid-cols-12 sm:items-end">
@@ -1342,7 +1373,7 @@ export function OperationalServiceForm({
                                 onChange={(event) => updateFee({ currency: event.target.value.toUpperCase() })}
                               />
                             </div>
-                            <div className={fee.billingFrequency === 'CUSTOM' ? 'sm:col-span-3' : 'sm:col-span-4'}>
+                            <div className={postpaid ? 'sm:col-span-8' : fee.billingFrequency === 'CUSTOM' ? 'sm:col-span-3' : 'sm:col-span-4'}>
                               <FormInput
                                 id={`${prefix}-amount`}
                                 label="Amount"
@@ -1354,7 +1385,7 @@ export function OperationalServiceForm({
                                 onChange={(event) => updateFee({ amount: event.target.value })}
                               />
                             </div>
-                            <div className={fee.billingFrequency === 'CUSTOM' ? 'sm:col-span-3' : 'sm:col-span-4'}>
+                            {postpaid ? null : <div className={fee.billingFrequency === 'CUSTOM' ? 'sm:col-span-3' : 'sm:col-span-4'}>
                               <SelectField
                                 id={`${prefix}-frequency`}
                                 label="Frequency"
@@ -1389,8 +1420,8 @@ export function OperationalServiceForm({
                                   </option>
                                 ))}
                               </SelectField>
-                            </div>
-                            {fee.billingFrequency === 'CUSTOM' ? (
+                            </div>}
+                            {!postpaid && fee.billingFrequency === 'CUSTOM' ? (
                               <div className="sm:col-span-2">
                                 <FormInput
                                   id={`${prefix}-custom-interval-months`}

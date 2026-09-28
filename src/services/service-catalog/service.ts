@@ -14,6 +14,7 @@ import type {
 import { Prisma } from '@/generated/prisma';
 import { validateVariantRuleAssociations } from '@/services/deadline-rule/association-validation';
 import { hashConfiguration } from '@/services/service-schedule/hash';
+import { isPostpaidTrigger } from '@/services/billing/postpaid-triggers';
 import type {
   ServiceCatalogDto,
   ServiceFamilyDto,
@@ -145,6 +146,8 @@ function toVariantDto(variant: VariantRecord): ServiceVariantDto {
       currency: fee.currency,
       billingFrequency: fee.billingFrequency,
       customFrequencyLabel: fee.customFrequencyLabel,
+      billingTiming: fee.billingTiming,
+      postpaidTrigger: isPostpaidTrigger(fee.postpaidTrigger) ? fee.postpaidTrigger : null,
       displayOrder: fee.displayOrder,
     })),
     deadlineRules: (variant.deadlineRuleAssociations ?? []).map((association) => ({
@@ -192,6 +195,8 @@ function feeFingerprint(fees: ServiceVariantFeeTemplateInput[]): string {
         currency: fee.currency,
         billingFrequency: fee.billingFrequency,
         customFrequencyLabel: fee.customFrequencyLabel ?? null,
+        billingTiming: fee.billingTiming ?? 'PREPAID',
+        postpaidTrigger: fee.postpaidTrigger ?? null,
         displayOrder: fee.displayOrder,
       }))
       .sort((left, right) => left.displayOrder - right.displayOrder),
@@ -207,6 +212,8 @@ function storedFeeFingerprint(fees: VariantRecord['defaultFeeTemplates']): strin
         currency: fee.currency,
         billingFrequency: fee.billingFrequency,
         customFrequencyLabel: fee.customFrequencyLabel,
+        billingTiming: fee.billingTiming,
+        postpaidTrigger: fee.postpaidTrigger ?? null,
         displayOrder: fee.displayOrder,
       }))
       .sort((left, right) => left.displayOrder - right.displayOrder),
@@ -224,6 +231,8 @@ function feeCreateData(
     currency: fee.currency,
     billingFrequency: fee.billingFrequency,
     customFrequencyLabel: fee.customFrequencyLabel ?? null,
+    billingTiming: fee.billingTiming ?? 'PREPAID',
+    postpaidTrigger: fee.billingTiming === 'POSTPAID' ? fee.postpaidTrigger ?? null : null,
     displayOrder: fee.displayOrder,
   }));
 }

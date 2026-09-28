@@ -356,7 +356,7 @@ export function ClientServiceEditor({
             setEngagementStart.mutateAsync({ serviceId: service.id, yearOfAssessment })
               .catch((error: unknown) => setObligationError(error instanceof Error ? error.message : 'Unable to save the engagement start.'));
           }}
-          openBillingOccurrences={service.openBillingOccurrences ?? []}
+          openBillingOccurrences={latestService.data?.openBillingOccurrences ?? service.openBillingOccurrences ?? []}
         />
         {!readOnly ? (
           <div className="rounded-lg border border-status-error/30 bg-status-error/5 p-3">

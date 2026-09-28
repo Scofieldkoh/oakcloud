@@ -44,6 +44,7 @@ type CanonicalBillingScheduleInput = {
 
 export type BillingScheduleMaterializationInput = CanonicalBillingScheduleInput & {
   isActive?: boolean;
+  billingTiming?: string | null;
 };
 
 /**
@@ -96,6 +97,8 @@ export function assertConfiguredBillingState(input: {
     throw new ValidationError('Configured billing requires at least one fee line');
   }
   for (const fee of activeFeeLines) {
+    // Postpaid lines bill on a filing, not on a schedule.
+    if (fee.billingTiming === 'POSTPAID') continue;
     canonicalizeBillingSchedule(fee, { requireMaterializable: true });
   }
 }
