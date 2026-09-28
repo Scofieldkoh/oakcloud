@@ -14,6 +14,7 @@ import { enqueueScheduleReconciliation } from '@/services/schedule-reconciliatio
 import { saveFirstFinancialPeriod } from '@/services/compliance-monitoring/financial-periods';
 import { ValidationError } from '@/lib/errors';
 import type { DateOnly } from '@/services/service-schedule';
+import { normalYearOfAssessment } from '@/services/service-schedule/obligation-periods';
 
 const profileCompanyArgs = {
   include: {
@@ -89,17 +90,13 @@ function profileScheduleSourceChanged(
   return false;
 }
 
-const FIRST_PERIOD_KEYS = ['firstPeriodStartDate', 'firstPeriodEndDate', 'firstYearOfAssessment'] as const;
-
 function hasFirstPeriodInput(data: Record<string, unknown>): boolean {
-  return FIRST_PERIOD_KEYS.some((key) => data[key] !== undefined);
+  return data.firstFinancialYearEndDate !== undefined;
 }
 
 function firstPeriodChanged(current: Record<string, unknown>, next: Record<string, unknown>): boolean {
   if (!hasFirstPeriodInput(next)) return false;
-  return profileDateKey(next.firstPeriodStartDate) !== profileDateKey(current.firstPeriodStartDate)
-    || profileDateKey(next.firstPeriodEndDate) !== profileDateKey(current.firstPeriodEndDate)
-    || (next.firstYearOfAssessment ?? null) !== (current.firstYearOfAssessment ?? null);
+  return profileDateKey(next.firstFinancialYearEndDate) !== profileDateKey(current.firstFinancialYearEndDate);
 }
 
 function selectSection(company: ProfileCompany, section: CompanyProfileSectionId): CompanyProfileSectionData {
@@ -175,9 +172,7 @@ function selectSection(company: ProfileCompany, section: CompanyProfileSectionId
       lastAgmDate: date(company.lastAgmDate),
       lastArFiledDate: date(company.lastArFiledDate),
       accountsDueDate: date(company.accountsDueDate),
-      firstPeriodStartDate: date(company.financialPeriods[0]?.periodStart),
-      firstPeriodEndDate: date(company.financialPeriods[0]?.periodEnd),
-      firstYearOfAssessment: company.financialPeriods[0]?.yearsOfAssessment[0] ?? null,
+      firstFinancialYearEndDate: date(company.financialPeriods[0]?.periodEnd),
     };
     case 'capital': return {
       paidUpCapitalCurrency: company.paidUpCapitalCurrency,
@@ -312,6 +307,18 @@ export async function mutateCompanyProfileSection(tx: Tx, companyId: string, sec
           ? { displayAlias: normalizeCompanyAlias(data.displayAlias) }
           : {}),
       } });
+      // The first financial period always starts at incorporation.
+      if (data.incorporationDate) {
+        const incorporation = dateOrNull(data.incorporationDate)!;
+        const first = await tx.companyFinancialPeriod.findFirst({
+          where: { companyId, provenance: 'CONFIRMED' },
+          orderBy: { periodEnd: 'asc' },
+          select: { id: true, periodEnd: true },
+        });
+        if (first && first.periodEnd > incorporation) {
+          await tx.companyFinancialPeriod.update({ where: { id: first.id }, data: { periodStart: incorporation } });
+        }
+      }
       break;
     }
     case 'addresses': {
@@ -342,20 +349,20 @@ export async function mutateCompanyProfileSection(tx: Tx, companyId: string, sec
         accountsDueDate: dateOrNull(data.accountsDueDate),
       } });
       if (hasFirstPeriodInput(data)) {
-        const start = data.firstPeriodStartDate ?? null;
-        const end = data.firstPeriodEndDate ?? null;
-        const yearOfAssessment = data.firstYearOfAssessment ?? null;
-        const cleared = !start && !end && yearOfAssessment === null;
-        if (!cleared && (!start || !end)) {
-          throw new ValidationError('Enter both the first period start and end dates, or clear all three first period fields.');
-        }
-        const company = await tx.company.findUniqueOrThrow({ where: { id: companyId }, select: { tenantId: true } });
-        await saveFirstFinancialPeriod(tx, { tenantId: company.tenantId, companyId, userId: null }, cleared ? null : {
-          periodStart: start as DateOnly,
-          periodEnd: end as DateOnly,
-          // The YA follows the first year end unless staff enter another.
-          yearOfAssessment: yearOfAssessment ?? Number(end!.slice(0, 4)) + 1,
+        const firstFye = data.firstFinancialYearEndDate ?? null;
+        const company = await tx.company.findUniqueOrThrow({
+          where: { id: companyId },
+          select: { tenantId: true, incorporationDate: true },
         });
+        const incorporation = date(company.incorporationDate);
+        if (firstFye && !incorporation) {
+          throw new ValidationError('Record the incorporation date before the first financial year end.');
+        }
+        await saveFirstFinancialPeriod(tx, { tenantId: company.tenantId, companyId, userId: null }, firstFye ? {
+          periodStart: incorporation as DateOnly,
+          periodEnd: firstFye as DateOnly,
+          yearOfAssessment: normalYearOfAssessment(firstFye as DateOnly),
+        } : null);
       }
       break;
     }

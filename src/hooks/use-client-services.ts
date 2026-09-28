@@ -145,8 +145,8 @@ export function useSetEngagementStart(companyId: string) {
 export function useConfirmFinancialPeriod(companyId: string) {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (input: { periodStart: string; periodEnd: string; yearOfAssessment: number }) =>
-      requestJson<{ id: string }>(`/api/companies/${companyId}/financial-periods`, {
+    mutationFn: (input: { firstFinancialYearEnd: string }) =>
+      requestJson<{ firstFinancialYearEnd: string; yearOfAssessment: number }>(`/api/companies/${companyId}/financial-periods`, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify(input),
