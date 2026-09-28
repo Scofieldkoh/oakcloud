@@ -487,6 +487,9 @@ export interface OperationalServiceFormProps {
   companyObligationStatuses?: Record<string, CompanyObligationStatus>;
   onCompanyObligationStatusChange?: (item: CompanyObligationPreviewItem, status: CompanyObligationStatus) => void;
   onConfirmFirstPeriod?: () => void;
+  /** First YA the engagement files; later obligations default to Pending filing. */
+  engagementStartYearOfAssessment?: number | null;
+  onEngagementStartChange?: (yearOfAssessment: number | null) => void;
 }
 
 export type CompanyObligationsState = {
@@ -497,6 +500,23 @@ export type CompanyObligationsState = {
   firstPeriodUnconfirmed: boolean;
   statusEditable: boolean;
 };
+
+/** Row tint per filing status. */
+const COMPANY_OBLIGATION_ROW_TONE: Record<CompanyObligationStatus, string> = {
+  FILED: 'bg-status-success/10',
+  PENDING_FILING: 'bg-status-warning/10',
+  TO_BE_CONFIRMED: 'bg-status-error/10',
+  MANAGED_EXTERNALLY: 'bg-background-secondary',
+  NOT_REQUIRED: 'bg-background-secondary text-text-muted',
+};
+
+/** The status a row shows: this form's choice, then a staff record, then the projection. */
+export function displayedCompanyObligationStatus(
+  item: Pick<CompanyObligationPreviewItem, 'recordedStatus' | 'projectedStatus'> & { obligationCode: string; periodKey: string },
+  statuses: Record<string, CompanyObligationStatus>,
+): CompanyObligationStatus {
+  return statuses[companyObligationKey(item)] ?? item.recordedStatus ?? item.projectedStatus ?? 'TO_BE_CONFIRMED';
+}
 
 /** Key of one company obligation period, used for recorded statuses. */
 export function companyObligationKey(item: { obligationCode: string; periodKey: string }): string {
@@ -531,6 +551,8 @@ function CompanyObligationsPanel({
   statuses,
   onStatusChange,
   onConfirmFirstPeriod,
+  engagementStart,
+  onEngagementStartChange,
   disabled,
 }: {
   state: CompanyObligationsState | undefined;
@@ -539,6 +561,8 @@ function CompanyObligationsPanel({
   statuses: Record<string, CompanyObligationStatus>;
   onStatusChange?: (item: CompanyObligationPreviewItem, status: CompanyObligationStatus) => void;
   onConfirmFirstPeriod?: () => void;
+  engagementStart: number | null;
+  onEngagementStartChange?: (yearOfAssessment: number | null) => void;
   disabled: boolean;
 }) {
   const items = state?.items ?? [];
@@ -546,6 +570,12 @@ function CompanyObligationsPanel({
   const firstPeriodUnconfirmed = state?.firstPeriodUnconfirmed ?? false;
   const otherNotices = (state?.notices ?? []).filter((notice) => !(firstPeriodUnconfirmed && FIRST_PERIOD_NOTICES.has(notice)));
   const canSetStatus = Boolean(state?.statusEditable && onStatusChange);
+  const years = items.flatMap((item) => (item.yearOfAssessment ? [item.yearOfAssessment] : []));
+  if (engagementStart) years.push(engagementStart);
+  const yearOptions: number[] = [];
+  if (years.length > 0) {
+    for (let year = Math.min(...years); year <= Math.max(...years); year += 1) yearOptions.push(year);
+  }
   return (
     <section aria-labelledby="company-obligations-heading" className="space-y-3">
       <div className="flex items-center justify-between">
@@ -559,12 +589,28 @@ function CompanyObligationsPanel({
         </div>
         <span className="text-xs text-text-muted">{items.length} deadline{items.length === 1 ? '' : 's'}</span>
       </div>
+      {onEngagementStartChange && yearOptions.length > 0 ? (
+        <div className="flex flex-wrap items-center gap-2">
+          <label htmlFor="engagement-start-ya" className="text-xs font-medium text-text-secondary">Our engagement starts from</label>
+          <select
+            id="engagement-start-ya"
+            className="input input-sm w-auto py-1 text-xs"
+            disabled={disabled}
+            value={engagementStart ?? ''}
+            onChange={(event) => onEngagementStartChange(event.target.value ? Number(event.target.value) : null)}
+          >
+            <option value="">Not set</option>
+            {yearOptions.map((year) => <option key={year} value={year}>YA {year}</option>)}
+          </select>
+          <span className="text-[11px] text-text-muted">From this YA, filings are Pending filing; earlier ones are To be confirmed.</span>
+        </div>
+      ) : null}
       {state?.isLoading ? <p role="status" className="text-xs italic text-text-muted">Loading company deadlines…</p> : null}
       {state?.error ? <Alert variant="error" compact>Company deadlines are unavailable: {state.error}</Alert> : null}
       {firstPeriodUnconfirmed ? (
         <Alert variant="warning" compact>
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <span role="status">The first financial period after incorporation and its Year of Assessment are not confirmed, so the earliest dates may be wrong.</span>
+            <span role="status">The first financial period after incorporation is not confirmed. Confirming it may remove or move the earliest filings.</span>
             {onConfirmFirstPeriod ? (
               <Button type="button" variant="secondary" size="xs" onClick={onConfirmFirstPeriod} disabled={disabled}>Confirm first period</Button>
             ) : null}
@@ -586,9 +632,13 @@ function CompanyObligationsPanel({
         <div className="divide-y divide-border-primary overflow-hidden rounded-lg border border-border-primary bg-background-primary">
           {items.map((item) => {
             const key = companyObligationKey(item);
-            const status = statuses[key] ?? item.recordedStatus ?? 'TO_BE_CONFIRMED';
+            const status = displayedCompanyObligationStatus(item, statuses);
             return (
-              <div key={`${key}|${item.milestoneName}`} className="flex flex-wrap items-center justify-between gap-2 px-3.5 py-2.5">
+              <div
+                key={`${key}|${item.milestoneName}`}
+                data-status={status}
+                className={cn('flex flex-wrap items-center justify-between gap-2 px-3.5 py-2.5', COMPANY_OBLIGATION_ROW_TONE[status])}
+              >
                 <div className="flex min-w-[180px] flex-1 flex-col">
                   <span className="text-xs font-semibold text-text-primary">{item.obligationName}</span>
                   {item.coverageTiming === 'BEFORE_START' ? (
@@ -596,23 +646,15 @@ function CompanyObligationsPanel({
                   ) : null}
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
+                  {item.yearOfAssessment ? (
+                    <span className="inline-flex items-center rounded-lg border border-border-primary bg-background-elevated px-2.5 py-1 text-xs font-semibold text-text-primary">
+                      YA {item.yearOfAssessment}
+                    </span>
+                  ) : null}
                   <span className="inline-flex items-center gap-1.5 rounded-lg border border-border-primary bg-background-elevated px-2.5 py-1 text-xs font-semibold text-text-primary">
                     <Clock className="h-3 w-3 text-text-muted" />
                     {formatProjectedDate(item.dueDate)}
                   </span>
-                  {item.yearOfAssessment ? (
-                    <span
-                      title={item.periodProvisional ? 'Year of Assessment not confirmed yet' : undefined}
-                      className={cn(
-                        'inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold',
-                        item.periodProvisional
-                          ? 'border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-800 dark:bg-amber-950/50 dark:text-amber-300'
-                          : 'border-border-primary bg-background-secondary text-text-secondary',
-                      )}
-                    >
-                      YA {item.yearOfAssessment}{item.periodProvisional ? '?' : ''}
-                    </span>
-                  ) : null}
                   {canSetStatus ? (
                     <select
                       aria-label={`Filing status for ${item.obligationName} YA ${item.yearOfAssessment ?? item.periodKey}`}
@@ -658,6 +700,8 @@ export function OperationalServiceForm({
   companyObligationStatuses = {},
   onCompanyObligationStatusChange,
   onConfirmFirstPeriod,
+  engagementStartYearOfAssessment = null,
+  onEngagementStartChange,
 }: OperationalServiceFormProps) {
   const [billingHideConfirmationOpen, setBillingHideConfirmationOpen] = useState(false);
   const [userSelectedTab, setUserSelectedTab] = useState<'deadlines' | 'billing' | null>(null);
@@ -1104,6 +1148,8 @@ export function OperationalServiceForm({
                   statuses={companyObligationStatuses}
                   onStatusChange={readOnly ? undefined : onCompanyObligationStatusChange}
                   onConfirmFirstPeriod={readOnly ? undefined : onConfirmFirstPeriod}
+                  engagementStart={engagementStartYearOfAssessment ?? null}
+                  onEngagementStartChange={readOnly ? undefined : onEngagementStartChange}
                   disabled={disabled}
                 />
               ) : null}

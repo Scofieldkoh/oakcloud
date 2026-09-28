@@ -39,6 +39,13 @@ export function FirstFinancialPeriodDialog({
     setError('');
   }, [isOpen, suggestion]);
 
+  // The YA follows the first year end (the year after it ends); staff can
+  // still change it for the rare period that maps otherwise.
+  const changePeriodEnd = (value: string) => {
+    setPeriodEnd(value);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(value)) setYearOfAssessment(String(Number(value.slice(0, 4)) + 1));
+  };
+
   const save = async () => {
     setError('');
     const year = Number(yearOfAssessment);
@@ -67,7 +74,7 @@ export function FirstFinancialPeriodDialog({
           {error ? <Alert variant="error" compact>{error}</Alert> : null}
           <div className="grid gap-4 sm:grid-cols-2">
             <SingleDateInput id="first-period-start" label="Period start" required value={periodStart} onChange={setPeriodStart} disabled={confirm.isPending} />
-            <SingleDateInput id="first-period-end" label="First financial year end" required value={periodEnd} onChange={setPeriodEnd} disabled={confirm.isPending} />
+            <SingleDateInput id="first-period-end" label="First financial year end" required value={periodEnd} onChange={changePeriodEnd} disabled={confirm.isPending} />
           </div>
           <FormInput
             id="first-period-ya"
@@ -75,7 +82,7 @@ export function FirstFinancialPeriodDialog({
             inputMode="numeric"
             value={yearOfAssessment}
             onChange={(event) => setYearOfAssessment(event.target.value.replace(/[^0-9]/g, '').slice(0, 4))}
-            hint="Usually the year after the period ends."
+            hint="Set from the first financial year end: the year after it ends."
             disabled={confirm.isPending}
           />
         </div>

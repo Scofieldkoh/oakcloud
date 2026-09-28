@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { OperationalServiceForm } from '@/components/companies/company-detail/operational-service-form';
 import {
@@ -416,12 +416,14 @@ describe('OperationalServiceForm', () => {
             coverageTiming: 'DURING',
             explanation: [],
             recordedStatus: null,
+            projectedStatus: 'TO_BE_CONFIRMED',
           }],
         }}
       />,
     );
 
-    expect(screen.getByText('YA 2025?')).toBeInTheDocument();
+    expect(screen.getByText('YA 2025')).toBeInTheDocument();
+    expect(screen.queryByText('YA 2025?')).not.toBeInTheDocument();
     expect(screen.queryByText('Confirm the first financial period after incorporation and its Year of Assessment.')).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Confirm first period' }));
     expect(onConfirm).toHaveBeenCalledTimes(1);
@@ -433,6 +435,67 @@ describe('OperationalServiceForm', () => {
     ]);
     fireEvent.change(select, { target: { value: 'FILED' } });
     expect(onStatus).toHaveBeenCalledWith(expect.objectContaining({ obligationCode: 'SG_ECI', periodKey: 'FY2024-12-31' }), 'FILED');
+  });
+
+  it('sets the engagement start YA, shows projected statuses and tints rows by status', () => {
+    const onEngagementStart = vi.fn();
+    const item = (periodKey: string, yearOfAssessment: number, dueDate: string, overrides: Record<string, unknown> = {}) => ({
+      obligationCode: 'SG_ECI',
+      obligationName: 'Estimated Chargeable Income (ECI)',
+      periodKey,
+      milestoneName: 'ECI filing',
+      dueDate: dueDate as DateOnly,
+      yearOfAssessment,
+      periodProvisional: false,
+      coverageTiming: 'DURING' as const,
+      explanation: [],
+      recordedStatus: null,
+      projectedStatus: 'TO_BE_CONFIRMED' as const,
+      ...overrides,
+    });
+    render(
+      <OperationalServiceForm
+        mode="create"
+        values={{ ...baseValues(), deadlineRules: [] }}
+        onChange={() => undefined}
+        errors={{}}
+        monitoringProfiles={['CORPORATE_TAX']}
+        companyObligationStatuses={{}}
+        onCompanyObligationStatusChange={() => undefined}
+        engagementStartYearOfAssessment={2027}
+        onEngagementStartChange={onEngagementStart}
+        companyObligations={{
+          isLoading: false,
+          error: null,
+          notices: [],
+          firstPeriodUnconfirmed: false,
+          statusEditable: true,
+          items: [
+            item('FY2025-12-31', 2026, '2026-03-31', { recordedStatus: 'FILED' }),
+            item('FY2026-12-31', 2027, '2027-03-31', { projectedStatus: 'PENDING_FILING' }),
+          ],
+        }}
+      />,
+    );
+
+    const start = screen.getByRole('combobox', { name: 'Our engagement starts from' });
+    expect(start).toHaveValue('2027');
+    expect([...start.querySelectorAll('option')].map((option) => option.textContent)).toEqual(['Not set', 'YA 2026', 'YA 2027']);
+    fireEvent.change(start, { target: { value: '2026' } });
+    expect(onEngagementStart).toHaveBeenCalledWith(2026);
+
+    const filed = screen.getByRole('combobox', { name: /YA 2026$/ });
+    const pending = screen.getByRole('combobox', { name: /YA 2027$/ });
+    expect(filed).toHaveValue('FILED');
+    expect(pending).toHaveValue('PENDING_FILING');
+    expect(filed.closest('[data-status]')).toHaveClass('bg-status-success/10');
+    expect(pending.closest('[data-status]')).toHaveClass('bg-status-warning/10');
+
+    // The YA badge sits before the due date.
+    const row = pending.closest('[data-status]') as HTMLElement;
+    const badge = within(row).getByText('YA 2027');
+    const date = within(row).getByText('31 Mar 2027');
+    expect(badge.compareDocumentPosition(date) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it('lists the company obligations a monitored service tracks and counts them on the Deadline tab', () => {
@@ -461,6 +524,7 @@ describe('OperationalServiceForm', () => {
             coverageTiming: 'DURING',
             explanation: ['Due three months after the financial year ends'],
             recordedStatus: null,
+            projectedStatus: 'TO_BE_CONFIRMED',
           }],
           firstPeriodUnconfirmed: false,
           statusEditable: false,
