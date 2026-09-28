@@ -504,7 +504,7 @@ export type CompanyObligationsState = {
 /** Row tint per filing status. */
 const COMPANY_OBLIGATION_ROW_TONE: Record<CompanyObligationStatus, string> = {
   FILED: 'bg-status-success/10',
-  PENDING_FILING: 'bg-background-primary',
+  PENDING_FILING: 'bg-background-elevated',
   TO_BE_CONFIRMED: 'bg-status-error/10',
   MANAGED_EXTERNALLY: 'bg-gray-200 dark:bg-gray-700/60',
   NOT_REQUIRED: 'bg-gray-200 text-text-muted dark:bg-gray-700/60',
@@ -645,19 +645,20 @@ function CompanyObligationsPanel({
                   ) : null}
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
+                  {/* Fixed widths keep the YA, date and status columns aligned across rows. */}
                   {item.yearOfAssessment ? (
-                    <span className="inline-flex items-center rounded-lg border border-border-primary bg-background-elevated px-2.5 py-1 text-xs font-semibold text-text-primary">
+                    <span className="inline-flex w-[4.75rem] items-center justify-center rounded-lg border border-border-primary bg-background-elevated py-1 text-xs font-semibold text-text-primary">
                       YA {item.yearOfAssessment}
                     </span>
-                  ) : null}
-                  <span className="inline-flex items-center gap-1.5 rounded-lg border border-border-primary bg-background-elevated px-2.5 py-1 text-xs font-semibold text-text-primary">
+                  ) : <span aria-hidden className="w-[4.75rem]" />}
+                  <span className="inline-flex w-[7.5rem] items-center justify-center gap-1.5 rounded-lg border border-border-primary bg-background-elevated py-1 text-xs font-semibold text-text-primary">
                     <Clock className="h-3 w-3 text-text-muted" />
                     {formatProjectedDate(item.dueDate)}
                   </span>
                   {canSetStatus ? (
                     <select
                       aria-label={`Filing status for ${item.obligationName} YA ${item.yearOfAssessment ?? item.periodKey}`}
-                      className="input input-sm w-auto py-1 text-xs"
+                      className="input input-sm w-[9.5rem] py-1 text-xs"
                       disabled={disabled}
                       value={status}
                       onChange={(event) => onStatusChange?.(item, event.target.value as CompanyObligationStatus)}

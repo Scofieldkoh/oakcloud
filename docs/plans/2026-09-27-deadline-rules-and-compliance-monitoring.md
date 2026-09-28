@@ -44,7 +44,7 @@ These three rows are the minimum demonstration, not an exhaustive recurring cale
 
 Additional acceptance examples:
 
-- If the agreement starts **1 September 2026**, the November 2026 and November 2027 returns are covered. June 2026 ECI is shown for takeover review; if expressly contracted, it is also retained as delivery work requiring filing-status confirmation.
+- If the agreement starts **1 September 2026**, the November 2026 and November 2027 returns are covered. June 2026 ECI is not shown for takeover review (2026-09-28: Scofield asked to keep ECI out of takeover review; the 12-month lookback before the service start now covers tax returns only); if expressly contracted, it is still retained as delivery work requiring filing-status confirmation.
 - If an April agreement is only activated in September, June ECI is a covered historical obligation. Activation date must not erase it. Flag missing filing evidence rather than asserting a known failure to file.
 - If the agreement starts **1 December 2026**, the November 2026 return belongs in earlier-obligation review, rather than being described as due during coverage.
 - A company incorporated in 2026 does not automatically get a YA 2026 obligation simply because an engagement references YA 2027. Incorporation, commencement and actual period facts control applicability.
