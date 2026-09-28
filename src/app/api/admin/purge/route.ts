@@ -14,6 +14,7 @@ import { prisma } from '@/lib/prisma';
 import { createAuditLog } from '@/lib/audit';
 import { storage } from '@/lib/storage';
 import { createLogger } from '@/lib/logger';
+import { permanentlyDeleteGeneratedDocument } from '@/services/generated-document-purge.service';
 
 const log = createLogger('admin-purge');
 
@@ -518,7 +519,7 @@ export async function POST(request: NextRequest) {
             id: { in: entityIds },
             deletedAt: { not: null },
           },
-          select: { id: true, title: true },
+          select: { id: true, title: true, tenantId: true },
         });
 
         if (documentsToDelete.length === 0) {
@@ -530,27 +531,14 @@ export async function POST(request: NextRequest) {
 
         for (const doc of documentsToDelete) {
           try {
-            await prisma.$transaction(async (tx) => {
-              // Delete document sections
-              await tx.documentSection.deleteMany({
-                where: { documentId: doc.id },
-              });
-
-              // Delete document comments
-              await tx.documentComment.deleteMany({
-                where: { documentId: doc.id },
-              });
-
-              // Delete document drafts
-              await tx.documentDraft.deleteMany({
-                where: { documentId: doc.id },
-              });
-
-              // Delete the document
-              await tx.generatedDocument.delete({
-                where: { id: doc.id },
-              });
-            });
+            // Shared with the Generated Documents page: refuses documents that
+            // are out for signature or back live service agreements, removes
+            // stored files and writes the audit entry.
+            await permanentlyDeleteGeneratedDocument(
+              doc.id,
+              { tenantId: doc.tenantId, userId: session.id },
+              reason,
+            );
 
             deletedRecords.push({ id: doc.id, name: doc.title });
             deletedCount++;

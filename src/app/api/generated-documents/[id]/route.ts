@@ -8,6 +8,10 @@ import {
   deleteGeneratedDocument,
   archiveDocument,
 } from '@/services/document-generator.service';
+import {
+  assertCanPermanentlyDeleteDocuments,
+  permanentlyDeleteGeneratedDocument,
+} from '@/services/generated-document-purge.service';
 import { createErrorResponse, requireSessionWorkspaceId } from '@/lib/api-helpers';
 import { readGeneratedDocumentEngine } from '@/lib/document-editor/document-engine';
 import {
@@ -184,6 +188,15 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     const reason = searchParams.get('reason');
     if (!reason) {
       return NextResponse.json({ error: 'Reason is required for deletion' }, { status: 400 });
+    }
+    if (searchParams.get('permanent') === 'true') {
+      assertCanPermanentlyDeleteDocuments(session);
+      const result = await permanentlyDeleteGeneratedDocument(
+        id,
+        { tenantId: requireSessionWorkspaceId(session), userId: session.id },
+        reason,
+      );
+      return NextResponse.json({ ...result, permanent: true });
     }
     const expectedRevision = parseExpectedRevision(searchParams.get('expectedRevision'));
     const tenantId = requireSessionWorkspaceId(session);
