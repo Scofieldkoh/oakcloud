@@ -157,6 +157,11 @@ function useInvalidateDeadlineQueries() {
       queryClient.invalidateQueries({ queryKey: deadlineKeys.all }),
       queryClient.invalidateQueries({ queryKey: ['service-roster'] }),
       queryClient.invalidateQueries({ queryKey: deadlineKeys.detail(id) }),
+      // A company filing status can raise or cancel a postpaid bill.
+      queryClient.invalidateQueries({ queryKey: ['billing-occurrences'] }),
+      queryClient.invalidateQueries({ queryKey: ['client-service'] }),
+      queryClient.invalidateQueries({ queryKey: ['client-services'] }),
+      queryClient.invalidateQueries({ queryKey: ['company-obligations'] }),
     ]);
   };
 }

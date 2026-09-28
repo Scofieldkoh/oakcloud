@@ -11,7 +11,7 @@ import { Toggle } from '@/components/ui/toggle';
 import { Tooltip } from '@/components/ui/tooltip';
 import { ScheduleEntryEditor } from '@/components/services/shared/schedule-entry-editor';
 import { BillingTimingFields } from '@/components/services/shared/billing-timing-fields';
-import { POSTPAID_TRIGGER_LABELS } from '@/services/billing/postpaid-triggers';
+import { filingBeforeEngagementStart, POSTPAID_TRIGGER_LABELS } from '@/services/billing/postpaid-triggers';
 import { cn } from '@/lib/utils';
 import type { ScheduleEntryInput } from '@/lib/validations/service-schedule';
 import { currentDateInSingapore } from '@/services/service-schedule';
@@ -504,11 +504,12 @@ export interface OperationalServiceFormProps {
   companyObligations?: CompanyObligationsState;
   /** Filing statuses chosen in this form, keyed by companyObligationKey. */
   companyObligationStatuses?: Record<string, CompanyObligationStatus>;
-  onCompanyObligationStatusChange?: (item: CompanyObligationPreviewItem, status: CompanyObligationStatus) => void;
+  onCompanyObligationStatusChange?: (item: CompanyObligationPreviewItem, status: CompanyObligationStatus) => void | Promise<void>;
   onConfirmFirstPeriod?: () => void;
   /** First YA the engagement files; later obligations default to Pending filing. */
   engagementStartYearOfAssessment?: number | null;
-  onEngagementStartChange?: (yearOfAssessment: number | null) => void;
+  /** May return a promise so a filing saved next sees the new start. */
+  onEngagementStartChange?: (yearOfAssessment: number | null) => void | Promise<void>;
 }
 
 export type CompanyObligationsState = {
@@ -743,6 +744,30 @@ export function OperationalServiceForm({
   onEngagementStartChange,
 }: OperationalServiceFormProps) {
   const [billingHideConfirmationOpen, setBillingHideConfirmationOpen] = useState(false);
+  const [engagementStartPrompt, setEngagementStartPrompt] = useState<{
+    item: CompanyObligationPreviewItem;
+    status: CompanyObligationStatus;
+  } | null>(null);
+
+  // Filing a YA before the engagement start would bill nothing, so offer to
+  // move the engagement start back to that YA first.
+  const handleCompanyObligationStatusChange = onCompanyObligationStatusChange
+    ? (item: CompanyObligationPreviewItem, status: CompanyObligationStatus) => {
+      const postpaidTriggers = values.billingDisposition === 'NOT_REQUIRED'
+        ? []
+        : values.fees.filter((fee) => fee.billingTiming === 'POSTPAID').map((fee) => fee.postpaidTrigger);
+      if (status === 'FILED' && onEngagementStartChange && filingBeforeEngagementStart({
+        obligationCode: item.obligationCode,
+        yearOfAssessment: item.yearOfAssessment,
+        engagementStartYearOfAssessment,
+        postpaidTriggers,
+      })) {
+        setEngagementStartPrompt({ item, status });
+        return;
+      }
+      onCompanyObligationStatusChange(item, status);
+    }
+    : undefined;
   const [userSelectedTab, setUserSelectedTab] = useState<'deadlines' | 'billing' | null>(null);
   const [expandedRuleIds, setExpandedRuleIds] = useState<Set<string>>(new Set());
 
@@ -1187,7 +1212,7 @@ export function OperationalServiceForm({
                   monitoringProfiles={monitoringProfiles}
                   isNewService={mode === 'create'}
                   statuses={companyObligationStatuses}
-                  onStatusChange={readOnly ? undefined : onCompanyObligationStatusChange}
+                  onStatusChange={readOnly ? undefined : handleCompanyObligationStatusChange}
                   onConfirmFirstPeriod={readOnly ? undefined : onConfirmFirstPeriod}
                   engagementStart={engagementStartYearOfAssessment ?? null}
                   onEngagementStartChange={readOnly ? undefined : onEngagementStartChange}
@@ -1470,6 +1495,29 @@ export function OperationalServiceForm({
         description="This will archive the active billing schedules when you save this service. Existing billing history is preserved."
         confirmLabel="Hide schedules"
         variant="danger"
+      />
+      <ConfirmDialog
+        isOpen={engagementStartPrompt !== null}
+        onClose={() => {
+          // Keep the filing either way; only the engagement start is optional.
+          if (engagementStartPrompt) onCompanyObligationStatusChange?.(engagementStartPrompt.item, engagementStartPrompt.status);
+          setEngagementStartPrompt(null);
+        }}
+        onConfirm={async () => {
+          if (!engagementStartPrompt) return;
+          const { item, status } = engagementStartPrompt;
+          setEngagementStartPrompt(null);
+          // Save the new start first so the filing bills against it.
+          await onEngagementStartChange?.(item.yearOfAssessment);
+          await onCompanyObligationStatusChange?.(item, status);
+        }}
+        title={`Start engagement from YA ${engagementStartPrompt?.item.yearOfAssessment ?? ''}?`}
+        description={engagementStartPrompt
+          ? `YA ${engagementStartPrompt.item.yearOfAssessment} is before this service's engagement start (YA ${engagementStartYearOfAssessment}), so filing it won't raise a postpaid bill. Move the engagement start to YA ${engagementStartPrompt.item.yearOfAssessment} so it bills?`
+          : undefined}
+        confirmLabel={`Start from YA ${engagementStartPrompt?.item.yearOfAssessment ?? ''}`}
+        cancelLabel="Keep current start"
+        variant="info"
       />
     </>
   );

@@ -39,6 +39,7 @@ import type {
   ListDeadlinesOptions,
 } from './types';
 import { listDeadlineAwareness } from './awareness';
+import { findPostpaidEngagementStartConflicts, syncPostpaidBilling } from '@/services/billing/postpaid';
 
 const CALENDAR_RESULT_CAP = 5_000;
 const CALENDAR_QUERY_LIMIT = CALENDAR_RESULT_CAP + 1;
@@ -207,6 +208,8 @@ function toDeadlineDto(recordValue: unknown, today: `${number}-${number}-${numbe
   const operativeDueDate = asDateOnly(record.operativeDueDate);
   const cycle = record.cycle;
   const companyOwned = record.ownershipScope === 'COMPANY';
+  // Managed externally reads as Waived: no due timing of ours.
+  const timingStatus = isManagedExternally(record) ? 'WAIVED' : record.status;
 
   return {
     id: record.id,
@@ -228,8 +231,8 @@ function toDeadlineDto(recordValue: unknown, today: `${number}-${number}-${numbe
     dateOverriddenById: record.dateOverriddenById,
     dateOverriddenAt: asInstant(record.dateOverriddenAt),
     status: record.status,
-    timingState: deriveDeadlineTiming(record.status, operativeDueDate, today, record.filingStatusUnconfirmed === true),
-    timingBucket: deriveDeadlineTimingBucket(record.status, operativeDueDate, today, record.filingStatusUnconfirmed === true),
+    timingState: deriveDeadlineTiming(timingStatus, operativeDueDate, today, record.filingStatusUnconfirmed === true),
+    timingBucket: deriveDeadlineTimingBucket(timingStatus, operativeDueDate, today, record.filingStatusUnconfirmed === true),
     completedAt: asInstant(record.completedAt),
     completedById: record.completedById,
     waivedAt: asInstant(record.waivedAt),
@@ -355,12 +358,45 @@ function timingBucketWhere(
   };
 }
 
+/**
+ * Company filings managed by the client or another provider are not ours to
+ * file, so the filters treat them as Waived rather than Open.
+ */
+const EXTERNAL_RESPONSIBILITIES = ['EXTERNAL_PROVIDER', 'CLIENT'] as const;
+
+export function isManagedExternally(record: { ownershipScope?: string | null; filingResponsibility?: string | null }): boolean {
+  return record.ownershipScope === 'COMPANY'
+    && (EXTERNAL_RESPONSIBILITIES as readonly string[]).includes(record.filingResponsibility ?? '');
+}
+
+const OUR_OPEN_WHERE: Prisma.DeadlineOccurrenceWhereInput = {
+  status: 'OPEN',
+  OR: [
+    { ownershipScope: 'SERVICE' },
+    { filingResponsibility: null },
+    { filingResponsibility: { notIn: [...EXTERNAL_RESPONSIBILITIES] } },
+  ],
+};
+
+const MANAGED_EXTERNALLY_WHERE: Prisma.DeadlineOccurrenceWhereInput = {
+  status: 'OPEN',
+  ownershipScope: 'COMPANY',
+  filingResponsibility: { in: [...EXTERNAL_RESPONSIBILITIES] },
+};
+
 function openStatusWhere(input: DeadlineSearch): Prisma.DeadlineOccurrenceWhereInput | null {
   if (!input.openOnly) {
-    return input.statuses.length > 0 ? { status: { in: input.statuses } } : null;
+    if (input.statuses.length === 0) return null;
+    const branches: Prisma.DeadlineOccurrenceWhereInput[] = [];
+    for (const status of input.statuses) {
+      if (status === 'OPEN') branches.push(OUR_OPEN_WHERE);
+      else branches.push({ status });
+      if (status === 'WAIVED') branches.push(MANAGED_EXTERNALLY_WHERE);
+    }
+    return { OR: branches };
   }
   if (input.statuses.length > 0 && !input.statuses.includes('OPEN')) return { id: '__no_open_deadlines__' };
-  return { status: 'OPEN' };
+  return OUR_OPEN_WHERE;
 }
 
 function timingWhere(
@@ -482,9 +518,12 @@ export function deadlineWhereForSearch(
   };
 
   const status = openStatusWhere(input);
-  if (status) Object.assign(where, status);
 
-  for (const predicate of [timingWhere(input, today), timingBucketWhere(input, today)]) {
+  const timingPredicates = [timingWhere(input, today), timingBucketWhere(input, today)];
+  // Timing only applies to deadlines we still have to file.
+  if (timingPredicates.some(Boolean) && status !== OUR_OPEN_WHERE) timingPredicates.push(OUR_OPEN_WHERE);
+  if (status) timingPredicates.push(status);
+  for (const predicate of timingPredicates) {
     if (!predicate) continue;
     where.AND = Array.isArray(where.AND) ? [...where.AND, predicate] : where.AND ? [where.AND, predicate] : [predicate];
   }
@@ -740,6 +779,15 @@ async function updateWithAudit(
     if (updated.count === 0) {
       throw new DeadlineApiError(ErrorCodes.VERSION_CONFLICT, 'Deadline occurrence was changed by another user', 409);
     }
+    // Filing a company obligation here (Filed, or back from Filed) drives
+    // postpaid billing, as it does from the service Deadline tab.
+    if (current.ownershipScope === 'COMPANY' && data.status !== undefined && data.status !== current.status) {
+      await syncPostpaidBilling({
+        tenantId: actor.tenantId,
+        companyId: current.companyId,
+        cancelledById: actor.userId ?? null,
+      }, tx as unknown as Prisma.TransactionClient);
+    }
     await createAuditLog({
       tenantId: actor.tenantId,
       userId: actor.userId,
@@ -805,7 +853,20 @@ export async function updateDeadlineOccurrence(
   const input = updateDeadlineOccurrenceSchema.parse(rawInput);
   const { data, next } = buildMutationData(current, input, actor);
   await updateWithAudit(current, data, next, input, actor, db);
-  return toDeadlineDto(next);
+  const dto = toDeadlineDto(next);
+  // A filing before a service's engagement start bills nothing; say which
+  // services, so staff can move the start back to this YA.
+  if (current.ownershipScope === 'COMPANY' && current.status !== 'COMPLETED' && next.status === 'COMPLETED'
+    && current.obligationCode && current.yearOfAssessment != null) {
+    const conflicts = await findPostpaidEngagementStartConflicts({
+      tenantId: actor.tenantId,
+      companyId: current.companyId,
+      obligationCode: current.obligationCode,
+      yearOfAssessment: current.yearOfAssessment,
+    }, db as unknown as Prisma.TransactionClient);
+    if (conflicts.length > 0) dto.postpaidEngagementStartConflicts = conflicts;
+  }
+  return dto;
 }
 
 export async function resetDeadlineDateOverride(

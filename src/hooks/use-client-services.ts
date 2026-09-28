@@ -153,6 +153,26 @@ export function useSetEngagementStart(companyId: string) {
   });
 }
 
+/** Move several services' engagement start YA, for pages not tied to one company. */
+export function useMoveEngagementStart() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { companyId: string; serviceIds: string[]; yearOfAssessment: number }) => {
+      for (const serviceId of input.serviceIds) {
+        await requestJson<{ engagementStartYearOfAssessment: number | null }>(`/api/companies/${input.companyId}/services/company-obligations`, {
+          method: 'PUT',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ serviceId, yearOfAssessment: input.yearOfAssessment }),
+        });
+      }
+    },
+    onSuccess: (_result, input) => Promise.all([
+      invalidateObligationsAndBilling(client, input.companyId),
+      client.invalidateQueries({ queryKey: ['deadlines'] }),
+    ]),
+  });
+}
+
 export function useConfirmFinancialPeriod(companyId: string) {
   const client = useQueryClient();
   return useMutation({

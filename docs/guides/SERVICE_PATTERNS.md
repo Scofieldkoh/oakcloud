@@ -295,7 +295,9 @@ export function getDocumentExporter(): IDocumentExporter {
 - Filing statuses (`compliance-monitoring/obligation-status.ts`) map onto the
   stored occurrence: To be confirmed (open, responsibility unconfirmed),
   Pending filing (open, the firm files), Filed (completed), Managed externally
-  (open, external provider) and Not required (waived). Responsibility is
+  (open, external provider) and Not required (waived). The Deadlines page
+  filters count Managed externally as Waived, not Open, and give it no
+  timing bucket. Responsibility is
   recorded as STAFF, so the writer keeps it. A row shows the form's choice,
   then a staff record, then the projected status. Statuses can be set only while
   company monitoring writes are on: in Add service they are sent with the
@@ -359,11 +361,16 @@ external billing and does not assert that an Oakcloud invoice exists.
   filed, Form C filed, or whichever of the two is filed first) and bills once
   per YA when that company obligation is set to Filed
   (`billing/postpaid.ts`, called from `setCompanyObligationStatus` and from
-  billing reconciliation). The entry is keyed `YA<year>` under a
+  billing reconciliation, and from the Deadlines page status update). The entry is keyed `YA<year>` under a
   `postpaid-<feeLineId>` generation, dated the Singapore day the status
   changed, so re-filing never duplicates it. Only YAs from the service's
   engagement start YA bill (without one, filings on or after the service
-  start). Moving the YA back from Filed cancels a still-Open entry; filing
+  start). Setting Filed on a YA before a postpaid service's engagement start
+  asks whether to move the start back to that YA (service dialog, and the
+  Deadlines page via `postpaidEngagementStartConflicts` on the PATCH
+  response). Bulk Mark complete on the Deadlines page lists, before
+  confirming, the selected filings that would not bill
+  (`POST /api/deadlines/unbilled-filings`). Moving the YA back from Filed cancels a still-Open entry; filing
   again reopens it. Billed, waived and staff-cancelled entries are kept.
   Agreement activation takes Postpaid from the variant fee template with the
   same description.

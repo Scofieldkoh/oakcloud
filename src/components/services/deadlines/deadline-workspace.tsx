@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Alert } from '@/components/ui/alert';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { useMoveEngagementStart } from '@/hooks/use-client-services';
 import {
   useDeadlines,
   useResetDeadlineDateOverride,
@@ -406,6 +408,12 @@ export function DeadlineWorkspace({ canEdit = false, deadlineWritesEnabled = fal
   };
   const deadlines = useDeadlines(query);
   const updateDeadline = useUpdateDeadlineOccurrence();
+  const moveEngagementStart = useMoveEngagementStart();
+  const [engagementStartPrompt, setEngagementStartPrompt] = useState<{
+    companyId: string;
+    yearOfAssessment: number;
+    services: NonNullable<DeadlineOccurrenceDto['postpaidEngagementStartConflicts']>;
+  } | null>(null);
   const resetDeadline = useResetDeadlineDateOverride();
   const families = familyFacets.data ?? [];
   const allFamiliesSelected = urlState.families.length === 0;
@@ -556,7 +564,17 @@ export function DeadlineWorkspace({ canEdit = false, deadlineWritesEnabled = fal
 
   const markUpdate = useCallback((occurrence: DeadlineOccurrenceDto, data: UpdateDeadlineOccurrenceInput) => {
     if (!canWrite) return;
-    updateDeadline.mutate({ id: occurrence.id, data });
+    updateDeadline.mutate({ id: occurrence.id, data }, {
+      onSuccess: (saved) => {
+        // Filed before a postpaid service's engagement start bills nothing,
+        // so offer to move the start back to this YA.
+        const conflicts = saved.postpaidEngagementStartConflicts ?? [];
+        const yearOfAssessment = saved.obligation?.yearOfAssessment;
+        if (conflicts.length > 0 && yearOfAssessment != null) {
+          setEngagementStartPrompt({ companyId: saved.companyId, yearOfAssessment, services: conflicts });
+        }
+      },
+    });
   }, [canWrite, updateDeadline]);
   const resetOverride = useCallback((occurrence: DeadlineOccurrenceDto, reason: string) => {
     if (!canWrite) return;
@@ -673,6 +691,33 @@ export function DeadlineWorkspace({ canEdit = false, deadlineWritesEnabled = fal
       {deadlines.isLoading && !deadlines.data ? <div role="status" className="rounded-xl border border-border-primary bg-background-secondary p-8 text-center text-sm text-text-secondary">Loading deadlines…</div> : null}
       {(updateDeadline.isPending || resetDeadline.isPending) ? <div role="status" className="rounded-xl border border-border-primary bg-background-secondary p-3 text-sm text-text-secondary">Saving deadline changes…</div> : null}
       {updateDeadline.error || resetDeadline.error ? <Alert variant="error">Unable to save deadline changes. Please retry.</Alert> : null}
+      {moveEngagementStart.error ? <Alert variant="error">Unable to move the engagement start. Please change it on the service.</Alert> : null}
+      <ConfirmDialog
+        isOpen={engagementStartPrompt !== null}
+        onClose={() => setEngagementStartPrompt(null)}
+        onConfirm={async () => {
+          if (!engagementStartPrompt) return;
+          const { companyId, yearOfAssessment, services } = engagementStartPrompt;
+          setEngagementStartPrompt(null);
+          await moveEngagementStart.mutateAsync({
+            companyId,
+            yearOfAssessment,
+            serviceIds: services.map((service) => service.clientServiceId),
+          });
+        }}
+        title={`Start engagement from YA ${engagementStartPrompt?.yearOfAssessment ?? ''}?`}
+        description={engagementStartPrompt ? (
+          <>
+            YA {engagementStartPrompt.yearOfAssessment} is before the engagement start of{' '}
+            {engagementStartPrompt.services.map((service) => `${service.serviceName} (YA ${service.engagementStartYearOfAssessment})`).join(', ')},
+            {' '}so this filing won&apos;t raise a postpaid bill. Move the engagement start to YA {engagementStartPrompt.yearOfAssessment} so it bills?
+          </>
+        ) : undefined}
+        confirmLabel={`Start from YA ${engagementStartPrompt?.yearOfAssessment ?? ''}`}
+        cancelLabel="Keep current start"
+        variant="info"
+        isLoading={moveEngagementStart.isPending}
+      />
 
       {urlState.view === 'TABLE' ? (
         <>
