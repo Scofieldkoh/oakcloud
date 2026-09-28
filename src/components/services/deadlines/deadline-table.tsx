@@ -10,7 +10,8 @@ import { cn } from '@/lib/utils';
 import type { DeadlineOccurrenceDto } from '@/services/deadline';
 import type { UpdateDeadlineOccurrenceInput } from '@/lib/validations/deadline';
 import { DEADLINE_COLUMN_WIDTH_MAX, DEADLINE_COLUMN_WIDTH_MIN } from '@/lib/validations/services-preferences';
-import { DeadlineEventPanel, milestoneLabel, serviceLabel } from './deadline-event';
+import { DeadlineEventPanel, deadlineStatusLabel, milestoneLabel, serviceLabel } from './deadline-event';
+import { companyObligationStatusOf } from '@/services/compliance-monitoring/obligation-status-labels';
 
 export const DEADLINE_TABLE_COLUMNS = [
   'dueDate',
@@ -112,7 +113,15 @@ function timingLabel(value: DeadlineOccurrenceDto['timingState'], status: Deadli
   return 'Upcoming';
 }
 
-function statusClass(value: DeadlineOccurrenceDto['status']): string {
+function statusClass(occurrence: DeadlineOccurrenceDto): string {
+  const value = occurrence.status;
+  if (occurrence.obligation && value !== 'CANCELLED') {
+    const filing = companyObligationStatusOf({ status: value, filingResponsibility: occurrence.obligation.filingResponsibility });
+    if (filing === 'FILED') return 'badge-success';
+    if (filing === 'TO_BE_CONFIRMED') return 'badge-error';
+    if (filing === 'PENDING_FILING') return 'badge-info';
+    return 'badge-neutral';
+  }
   if (value === 'COMPLETED') return 'badge-success';
   if (value === 'WAIVED') return 'badge-warning';
   if (value === 'CANCELLED') return 'badge-neutral';
@@ -286,7 +295,7 @@ function DesktopCell({ occurrence, column, canEdit, isPending, mutationError, on
     case 'service': return <td className="max-w-0 px-3 py-2 align-middle"><ServiceCell occurrence={occurrence} /></td>;
     case 'milestone': return <td className="max-w-0 px-3 py-2 align-middle text-sm text-text-primary"><span className="block truncate" title={milestoneLabel(occurrence)}>{milestoneLabel(occurrence)}</span></td>;
     case 'type': return <td className="px-3 py-2 align-middle"><span className="badge badge-info">{typeLabels[occurrence.deadlineType]}</span></td>;
-    case 'status': return <td className="px-3 py-2 align-middle"><span className={cn('badge', statusClass(occurrence.status))}>{occurrence.status.charAt(0) + occurrence.status.slice(1).toLowerCase()}</span></td>;
+    case 'status': return <td className="px-3 py-2 align-middle"><span className={cn('badge', statusClass(occurrence))}>{deadlineStatusLabel(occurrence)}</span></td>;
     case 'actions': return <td className="px-3 py-2 align-middle"><DeadlineActions occurrence={occurrence} canEdit={canEdit} isPending={isPending} mutationError={mutationError} onUpdate={onUpdate} onResetOverride={onResetOverride} open={actionOpen} openAt={actionAnchor} onOpen={onActionOpen} onClose={onActionClose} /></td>;
   }
 }
@@ -310,7 +319,7 @@ function MobileDeadlineCard({ occurrence, canEdit, isPending, mutationError, onU
           <CardDetailItem label="Family" value={occurrence.family.name || occurrence.service?.familyName || '—'} />
           <CardDetailItem label="Service" value={serviceLabel(occurrence)} />
           <CardDetailItem label="Type" value={typeLabels[occurrence.deadlineType]} />
-          <CardDetailItem label="Status" value={occurrence.status.charAt(0) + occurrence.status.slice(1).toLowerCase()} />
+          <CardDetailItem label="Status" value={deadlineStatusLabel(occurrence)} />
         </CardDetailsGrid>
       )}
     />

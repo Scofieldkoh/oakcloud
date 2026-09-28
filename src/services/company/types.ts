@@ -41,6 +41,12 @@ export interface CompanyWithRelations extends Company {
     folderWebUrl: string;
     lastVerifiedAt: Date | null;
   } | null;
+  /** First confirmed financial period after incorporation, when recorded. */
+  financialPeriods?: Array<{
+    periodStart: Date;
+    periodEnd: Date;
+    yearsOfAssessment: number[];
+  }>;
   /** Optional user-facing alias; null means derive initials for service displays. */
   displayAlias: string | null;
   formerNames?: Array<{
