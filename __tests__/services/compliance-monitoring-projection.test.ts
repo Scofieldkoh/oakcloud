@@ -70,7 +70,7 @@ function rows(result: ReturnType<typeof projectCompanyObligations>) {
 describe('company obligation projection: the March FYE example', () => {
   it('shows June ECI, the prior-FYE YA 2026 return and the YA 2027 return with correct responsibility', () => {
     // Tax returns due in the year before the agreement date enter takeover
-    // review; an ECI due then does not.
+    // review; an ECI only within the three months before it.
     const result = projectCompanyObligations(input());
     expect(rows(result)).toEqual([
       ['2025-11-30', 'SG_FORM_C', 'YA2025', 'UNCONFIRMED', 'BEFORE_START'],
@@ -110,14 +110,14 @@ describe('company obligation projection: the March FYE example', () => {
 });
 
 describe('company obligation projection: agreement timing', () => {
-  it('a 1 September agreement covers both returns and keeps the earlier June ECI out of takeover review', () => {
+  it('a 1 September agreement covers both returns and puts June ECI in takeover review', () => {
     const result = projectCompanyObligations(input({
       coverages: [taxCoverage('2026-09-01')],
       deliveryScopes: [contracted('SG_ECI', 'FY2026-03-31')],
     }));
     const june = result.obligations.find((obligation) => obligation.periodKey === 'FY2026-03-31')!;
     expect(june.coverageTiming).toBe('BEFORE_START');
-    expect(june.reasons.map((reason) => reason.kind)).toEqual(['CONTRACTED_DELIVERY']);
+    expect(june.reasons.map((reason) => reason.kind).sort()).toEqual(['CONTRACTED_DELIVERY', 'TAKEOVER_REVIEW']);
     expect(june.filingResponsibility).toBe('OAKCLOUD');
     expect(result.obligations.filter((obligation) => obligation.obligationCode === 'SG_FORM_C').map((obligation) => [obligation.periodKey, obligation.coverageTiming])).toEqual([
       ['YA2025', 'BEFORE_START'],
@@ -130,6 +130,24 @@ describe('company obligation projection: agreement timing', () => {
     const june = projectCompanyObligations(input({ today: '2026-09-10' })).obligations.find((obligation) => obligation.periodKey === 'FY2026-03-31')!;
     expect(june.coverageTiming).toBe('DURING');
     expect(june.filingStatusUnconfirmed).toBe(true);
+  });
+
+  it('keeps an ECI due more than three months before the start out of takeover review', () => {
+    const result = projectCompanyObligations(input({ coverages: [taxCoverage('2026-10-01')], deliveryScopes: [] }));
+    expect(result.obligations.some((obligation) => obligation.periodKey === 'FY2026-03-31')).toBe(false);
+  });
+
+  it('treats filings from the engagement start YA as engaged work, even beyond the lookback', () => {
+    const result = projectCompanyObligations(input({
+      coverages: [{ ...taxCoverage('2026-04-01'), engagementStartYearOfAssessment: 2024 }],
+      deliveryScopes: [],
+    }));
+    const ya2024 = result.obligations.find((obligation) => obligation.obligationCode === 'SG_FORM_C' && obligation.periodKey === 'YA2024')!;
+    expect(ya2024).toMatchObject({ dueDate: '2024-11-30', coverageTiming: 'DURING', filingResponsibility: 'OAKCLOUD' });
+    expect(ya2024.reasons).toEqual([{ kind: 'MONITORING_INTERVAL', coverageId: 'coverage-tax' }]);
+    const eci = result.obligations.find((obligation) => obligation.obligationCode === 'SG_ECI' && obligation.obligationPeriod.yearOfAssessment === 2024)!;
+    expect(eci).toMatchObject({ coverageTiming: 'DURING', filingResponsibility: 'OAKCLOUD' });
+    expect(result.obligations.some((obligation) => (obligation.obligationPeriod.yearOfAssessment ?? 0) < 2024)).toBe(false);
   });
 
   it('a 1 December agreement moves the November 2026 return to earlier-obligation review', () => {

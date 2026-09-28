@@ -405,6 +405,7 @@ describe('OperationalServiceForm', () => {
           notices: ['Confirm the first financial year end after incorporation.'],
           firstPeriodUnconfirmed: true,
           statusEditable: true,
+          firstYearOfAssessment: null,
           items: [{
             obligationCode: 'SG_ECI',
             obligationName: 'Estimated Chargeable Income (ECI)',
@@ -438,6 +439,8 @@ describe('OperationalServiceForm', () => {
   });
 
   it('sets the engagement start YA, shows projected statuses and tints rows by status', () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-09-28T10:00:00+08:00'));
     const onEngagementStart = vi.fn();
     const item = (periodKey: string, yearOfAssessment: number, dueDate: string, overrides: Record<string, unknown> = {}) => ({
       obligationCode: 'SG_ECI',
@@ -470,6 +473,7 @@ describe('OperationalServiceForm', () => {
           notices: [],
           firstPeriodUnconfirmed: false,
           statusEditable: true,
+          firstYearOfAssessment: 2024,
           items: [
             item('FY2025-12-31', 2026, '2026-03-31', { recordedStatus: 'FILED' }),
             item('FY2026-12-31', 2027, '2027-03-31', { projectedStatus: 'PENDING_FILING' }),
@@ -480,7 +484,7 @@ describe('OperationalServiceForm', () => {
 
     const start = screen.getByRole('combobox', { name: 'Our engagement starts from' });
     expect(start).toHaveValue('2027');
-    expect([...start.querySelectorAll('option')].map((option) => option.textContent)).toEqual(['Not set', 'YA 2026', 'YA 2027']);
+    expect([...start.querySelectorAll('option')].map((option) => option.textContent)).toEqual(['Not set', 'YA 2027', 'YA 2026', 'YA 2025', 'YA 2024']);
     fireEvent.change(start, { target: { value: '2026' } });
     expect(onEngagementStart).toHaveBeenCalledWith(2026);
 
@@ -496,6 +500,11 @@ describe('OperationalServiceForm', () => {
     const badge = within(row).getByText('YA 2027');
     const date = within(row).getByText('31 Mar 2027');
     expect(badge.compareDocumentPosition(date) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+
+    // Due dates after today are green; past ones stay plain.
+    expect(date.closest('[data-upcoming]')).toHaveClass('text-status-success');
+    expect(within(filed.closest('[data-status]') as HTMLElement).getByText('31 Mar 2026').closest('[data-upcoming]')).toBeNull();
+    vi.useRealTimers();
   });
 
   it('lists the company obligations a monitored service tracks and counts them on the Deadline tab', () => {
@@ -528,6 +537,7 @@ describe('OperationalServiceForm', () => {
           }],
           firstPeriodUnconfirmed: false,
           statusEditable: false,
+          firstYearOfAssessment: null,
         }}
       />,
     );
