@@ -1,6 +1,7 @@
 export {
   deadlineWhereForSearch,
   deriveDeadlineTiming,
+  deriveDeadlineTimingBucket,
   getDeadline,
   getDeadlineOccurrence,
   listDeadlines,
@@ -36,6 +37,7 @@ export type {
   DeadlineServiceDto,
   DeadlineTableResult,
   DeadlineTiming,
+  DeadlineTimingBucket,
   ListDeadlinesOptions,
 } from './types';
 

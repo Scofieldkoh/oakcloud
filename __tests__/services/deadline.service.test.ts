@@ -20,6 +20,7 @@ vi.mock('@/lib/audit', () => auditMock);
 
 import {
   deriveDeadlineTiming,
+  deriveDeadlineTimingBucket,
   getDeadlineOccurrence,
   listDeadlines,
   resetDeadlineDateOverride,
@@ -194,12 +195,75 @@ describe('deadline service', () => {
     expect(args.where.ruleVersion).toEqual({ tenantId: actor.tenantId });
   });
 
-  it('excludes company-owned obligations when filtering by service or family', async () => {
+  it('matches company-owned obligations by their covering service when filtering by service or family', async () => {
     await listDeadlines({ ...search, serviceQuery: 'Tax' }, actor);
 
     const [args] = prismaMock.deadlineOccurrence.findMany.mock.calls[0] as [{ where: { OR: Array<Record<string, unknown>> } }];
-    expect(args.where.OR).toHaveLength(1);
-    expect(args.where.OR[0]).toMatchObject({ ownershipScope: 'SERVICE' });
+    const serviceFilter = expect.objectContaining({ serviceName: { contains: 'Tax', mode: 'insensitive' } });
+    expect(args.where.OR).toHaveLength(2);
+    expect(args.where.OR[0]).toMatchObject({
+      ownershipScope: 'COMPANY',
+      OR: [
+        { deliveryClientService: serviceFilter },
+        { deliveryClientServiceId: null, coverageLinks: { some: { releasedAt: null, coverage: { is: { clientService: { is: serviceFilter } } } } } },
+      ],
+    });
+    expect(args.where.OR[1]).toMatchObject({ ownershipScope: 'SERVICE', clientService: serviceFilter });
+  });
+
+  it('filters by a timing bucket without overlapping the next bucket', async () => {
+    await listDeadlines({ ...search, timingBucket: 'WITHIN_3_MONTHS' }, actor, prismaMock, { today: '2026-09-28' });
+
+    const [args] = prismaMock.deadlineOccurrence.findMany.mock.calls[0] as [{ where: { AND: Array<Record<string, unknown>> } }];
+    expect(args.where.AND).toContainEqual({
+      status: 'OPEN',
+      operativeDueDate: { gt: new Date('2026-10-28T00:00:00.000Z'), lte: new Date('2026-12-28T00:00:00.000Z') },
+    });
+  });
+
+  it('buckets open deadlines by how far away they are', () => {
+    const today = '2026-09-28';
+    expect(deriveDeadlineTimingBucket('OPEN', '2026-09-27', today)).toBe('OVERDUE');
+    expect(deriveDeadlineTimingBucket('OPEN', '2026-09-27', today, true)).toBe('TAKEOVER_REVIEW');
+    expect(deriveDeadlineTimingBucket('OPEN', '2026-09-28', today)).toBe('DUE_TODAY');
+    expect(deriveDeadlineTimingBucket('OPEN', '2026-10-28', today)).toBe('WITHIN_1_MONTH');
+    expect(deriveDeadlineTimingBucket('OPEN', '2026-10-29', today)).toBe('WITHIN_3_MONTHS');
+    expect(deriveDeadlineTimingBucket('OPEN', '2027-03-28', today)).toBe('WITHIN_6_MONTHS');
+    expect(deriveDeadlineTimingBucket('OPEN', '2027-09-28', today)).toBe('WITHIN_12_MONTHS');
+    expect(deriveDeadlineTimingBucket('OPEN', '2027-09-29', today)).toBe('OVER_12_MONTHS');
+    expect(deriveDeadlineTimingBucket('COMPLETED', '2027-09-29', today)).toBeNull();
+  });
+
+  it('shows a company-owned obligation under the service that files it, else the service monitoring it', async () => {
+    const taxService = {
+      id: 'tax-service',
+      tenantId: actor.tenantId,
+      serviceName: 'Tax Compliance',
+      familyName: 'Tax',
+      serviceVariant: { id: 'variant-1', tenantId: actor.tenantId, name: 'Standard', family: { id: 'family-tax', tenantId: actor.tenantId, name: 'Tax', displayColor: '#123456' } },
+    };
+    const companyRow = {
+      ...occurrence,
+      ownershipScope: 'COMPANY',
+      clientServiceId: null,
+      clientService: null,
+      milestoneKey: 'eci-due',
+      obligationCode: 'SG_ECI',
+      obligationPeriodKey: 'YA2027',
+    };
+
+    prismaMock.deadlineOccurrence.findFirst.mockResolvedValue({ ...companyRow, deliveryClientServiceId: 'tax-service', deliveryClientService: taxService, coverageLinks: [] });
+    await expect(getDeadlineOccurrence('deadline-1', actor)).resolves.toMatchObject({
+      clientServiceId: null,
+      service: { id: 'tax-service', name: 'Tax Compliance', familyName: 'Tax' },
+      family: { id: 'family-tax', name: 'Tax', displayColor: '#123456' },
+    });
+
+    prismaMock.deadlineOccurrence.findFirst.mockResolvedValue({ ...companyRow, deliveryClientServiceId: null, deliveryClientService: null, coverageLinks: [{ coverage: { clientService: taxService } }] });
+    await expect(getDeadlineOccurrence('deadline-1', actor)).resolves.toMatchObject({
+      service: { id: 'tax-service', name: 'Tax Compliance' },
+      family: { name: 'Tax' },
+    });
   });
 
   it('maps a company-owned obligation without a service and marks earlier filings for review', async () => {
@@ -230,7 +294,8 @@ describe('deadline service', () => {
       clientServiceId: null,
       service: null,
       timingState: 'REVIEW',
-      family: { name: 'Company statutory obligations' },
+      timingBucket: 'TAKEOVER_REVIEW',
+      family: { id: null, name: '' },
       obligation: { code: 'SG_FORM_C', periodKey: 'YA2026', yearOfAssessment: 2026, filingStatusUnconfirmed: true },
     });
   });
