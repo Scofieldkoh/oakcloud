@@ -540,7 +540,7 @@ export function toCompanyObligationsState(query: {
 }
 
 const FIRST_PERIOD_NOTICES = new Set([
-  'Confirm the first financial period after incorporation and its Year of Assessment.',
+  'Confirm the first financial year end after incorporation.',
   'Confirm the Year of Assessment for this period.',
 ]);
 
@@ -609,9 +609,9 @@ function CompanyObligationsPanel({
       {firstPeriodUnconfirmed ? (
         <Alert variant="warning" compact>
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <span role="status">The first financial period after incorporation is not confirmed. Confirming it may remove or move the earliest filings.</span>
+            <span role="status">The first financial year end after incorporation is not confirmed. Confirming it may drop incomplete early YAs.</span>
             {onConfirmFirstPeriod ? (
-              <Button type="button" variant="secondary" size="xs" onClick={onConfirmFirstPeriod} disabled={disabled}>Confirm first period</Button>
+              <Button type="button" variant="secondary" size="xs" onClick={onConfirmFirstPeriod} disabled={disabled}>Confirm first FYE</Button>
             ) : null}
           </div>
         </Alert>

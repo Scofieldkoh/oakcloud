@@ -352,8 +352,8 @@ describePostgres('company compliance monitoring on PostgreSQL', () => {
     });
   });
 
-  it('confirms a first financial period longer than 12 months and replaces the provisional periods', async () => {
-    const { confirmFinancialPeriod } = await import('@/services/compliance-monitoring/financial-periods');
+  it('confirms a first FYE more than 12 months after incorporation and replaces the provisional periods', async () => {
+    const { confirmFirstFinancialYearEnd } = await import('@/services/compliance-monitoring/financial-periods');
     const { previewCompanyObligations } = await import('@/services/compliance-monitoring/writer');
     const original = await prisma.company.findUniqueOrThrow({ where: { id: fixture.companyId }, select: { incorporationDate: true } });
     await prisma.company.update({ where: { id: fixture.companyId }, data: { incorporationDate: new Date('2024-09-01T00:00:00.000Z') } });
@@ -369,14 +369,14 @@ describePostgres('company compliance monitoring on PostgreSQL', () => {
       expect(before.firstPeriodSuggestion).toEqual({ periodStart: '2024-09-01', periodEnd: '2024-12-31', yearOfAssessment: 2025 });
       expect(before.items.some((item) => item.periodKey === 'FY2024-12-31' && item.periodProvisional)).toBe(true);
 
-      await expect(confirmFinancialPeriod(
+      await expect(confirmFirstFinancialYearEnd(
         { tenantId: fixture.tenantId, companyId: fixture.companyId, userId: fixture.userId },
-        { periodStart: '2024-09-01' as DateOnly, periodEnd: '2026-06-30' as DateOnly, yearOfAssessment: 2027 },
+        '2026-06-30' as DateOnly,
       )).rejects.toThrow(/18 months/);
-      await confirmFinancialPeriod(
+      await expect(confirmFirstFinancialYearEnd(
         { tenantId: fixture.tenantId, companyId: fixture.companyId, userId: fixture.userId },
-        { periodStart: '2024-09-01' as DateOnly, periodEnd: '2025-12-31' as DateOnly, yearOfAssessment: 2026 },
-      );
+        '2025-12-31' as DateOnly,
+      )).resolves.toEqual({ firstFinancialYearEnd: '2025-12-31', yearOfAssessment: 2026 });
 
       const after = await preview();
       expect(after.firstPeriodUnconfirmed).toBe(false);

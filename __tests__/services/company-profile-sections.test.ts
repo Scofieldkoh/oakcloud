@@ -32,7 +32,7 @@ describe('company profile section services', () => {
     vi.clearAllMocks();
     tx.company.findFirst.mockResolvedValue(company);
     tx.companyAddress.findFirst.mockResolvedValue(null);
-    tx.company.findUniqueOrThrow.mockResolvedValue({ tenantId: 'tenant-1' });
+    tx.company.findUniqueOrThrow.mockResolvedValue({ tenantId: 'tenant-1', incorporationDate: new Date('2024-09-14T00:00:00.000Z') });
     tx.companyFinancialPeriod.findFirst.mockResolvedValue(null);
     mocks.transaction.mockImplementation((callback) => callback(tx));
   });
@@ -173,12 +173,12 @@ describe('company profile section services', () => {
     expect(enqueueMock).not.toHaveBeenCalled();
   });
 
-  it('saves the first financial period from the Compliance section and queues reconciliation', async () => {
+  it('saves the first FYE from the Compliance section as a period from incorporation and queues reconciliation', async () => {
     const { getCompanyProfileSection, saveCompanyProfileSection } = await import(
       '@/services/company/profile-sections'
     );
     const current = await getCompanyProfileSection('company-1', 'tenant-1', 'compliance');
-    expect(current.data).toMatchObject({ firstPeriodStartDate: null, firstPeriodEndDate: null, firstYearOfAssessment: null });
+    expect(current.data).toMatchObject({ firstFinancialYearEndDate: null });
 
     await saveCompanyProfileSection({
       companyId: 'company-1',
@@ -186,7 +186,7 @@ describe('company profile section services', () => {
       userId: 'user-1',
       section: 'compliance',
       ifMatchVersion: current.version,
-      data: { ...current.data, firstPeriodStartDate: '2024-09-14', firstPeriodEndDate: '2025-12-31', firstYearOfAssessment: '' },
+      data: { ...current.data, firstFinancialYearEndDate: '2025-12-31' },
     });
 
     expect(tx.companyFinancialPeriod.create).toHaveBeenCalledWith({ data: expect.objectContaining({
@@ -200,10 +200,11 @@ describe('company profile section services', () => {
     expect(enqueueMock).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ scopeType: 'COMPANY' }));
   });
 
-  it('rejects a first period with only one date', async () => {
+  it('rejects a first FYE before the incorporation date is known', async () => {
     const { getCompanyProfileSection, saveCompanyProfileSection } = await import(
       '@/services/company/profile-sections'
     );
+    tx.company.findUniqueOrThrow.mockResolvedValue({ tenantId: 'tenant-1', incorporationDate: null });
     const current = await getCompanyProfileSection('company-1', 'tenant-1', 'compliance');
     await expect(saveCompanyProfileSection({
       companyId: 'company-1',
@@ -211,8 +212,8 @@ describe('company profile section services', () => {
       userId: 'user-1',
       section: 'compliance',
       ifMatchVersion: current.version,
-      data: { ...current.data, firstPeriodStartDate: '2024-09-14' },
-    })).rejects.toThrow(/both the first period start and end/);
+      data: { ...current.data, firstFinancialYearEndDate: '2025-12-31' },
+    })).rejects.toThrow(/incorporation date/);
     expect(tx.companyFinancialPeriod.create).not.toHaveBeenCalled();
   });
 });
