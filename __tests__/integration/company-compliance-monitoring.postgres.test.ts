@@ -98,8 +98,10 @@ describePostgres('company compliance monitoring on PostgreSQL', () => {
     expect(byKey.get('SG_FORM_C|YA2027')?.operativeDueDate.toISOString().slice(0, 10)).toBe('2027-11-30');
     expect(byKey.get('SG_ECI|FY2026-12-31')?.operativeDueDate.toISOString().slice(0, 10)).toBe('2027-03-31');
 
-    // Filings due in the year before monitoring started go to takeover review.
-    const takeover = byKey.get('SG_ECI|FY2024-12-31');
+    // Tax returns due in the year before monitoring started go to takeover
+    // review; an earlier ECI does not.
+    expect(byKey.has('SG_ECI|FY2024-12-31')).toBe(false);
+    const takeover = byKey.get('SG_FORM_C|YA2025');
     expect(takeover).toMatchObject({ coverageTiming: 'BEFORE_START', filingStatusUnconfirmed: true, status: 'OPEN' });
     expect(takeover?.coverageLinks.map((link) => link.reason)).toEqual(['TAKEOVER_REVIEW']);
 
