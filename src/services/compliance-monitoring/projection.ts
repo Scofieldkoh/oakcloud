@@ -279,10 +279,18 @@ export function projectCompanyObligations(input: CompanyMonitoringProjectionInpu
     (earliest, coverage) => (earliest === null ? coverage.monitoringStart : minDate(earliest, coverage.monitoringStart)),
     null,
   );
-  const windowStart = addMonthsClamped(
+  // An engagement start YA reaches back past the takeover lookback: every
+  // filing from that YA is ours, so evaluate from two years before it.
+  const engagementYears = coverages.flatMap((coverage) => (
+    typeof coverage.engagementStartYearOfAssessment === 'number' ? [coverage.engagementStartYearOfAssessment] : []
+  ));
+  const lookbackStart = addMonthsClamped(
     minDate(earliestStart ?? input.today, input.today),
     -TAKEOVER_REVIEW_LOOKBACK_MONTHS,
   );
+  const windowStart = engagementYears.length > 0
+    ? minDate(lookbackStart, `${Math.min(...engagementYears) - 2}-01-01` as DateOnly)
+    : lookbackStart;
   let projectionHorizon = forwardHorizon;
   for (const scope of input.deliveryScopes) {
     const contractedEnd = contractedHorizon(scope.periodKey);
@@ -378,13 +386,25 @@ export function projectCompanyObligations(input: CompanyMonitoringProjectionInpu
         matchedScopeIds.add(scope.id);
         reasons.push({ kind: 'CONTRACTED_DELIVERY', deliveryScopeId: scope.id, clientServiceId: scope.clientServiceId });
       }
-      const inAnyCoverage = relevantCoverages.some((coverage) => withinCoverage(dueDate, coverage));
-      if (!inAnyCoverage && definition.takeoverReview !== false) {
-        // Earlier filings due in the year before monitoring started go to
-        // takeover review rather than being described as due during coverage.
+      const yearOfAssessment = period.yearOfAssessment;
+      const engagedCoverage = yearOfAssessment === null ? null : relevantCoverages.find((coverage) => (
+        typeof coverage.engagementStartYearOfAssessment === 'number'
+        && yearOfAssessment >= coverage.engagementStartYearOfAssessment
+        && (coverage.monitoringEnd === null || compareDateOnly(dueDate, coverage.monitoringEnd) <= 0)
+      )) ?? null;
+      // A filing from the engagement start YA that fell due before the
+      // service started is engaged work, not takeover review.
+      const engagedBeforeStart = engagedCoverage !== null && compareDateOnly(dueDate, engagedCoverage.monitoringStart) < 0;
+      if (engagedBeforeStart) reasons.push({ kind: 'MONITORING_INTERVAL', coverageId: engagedCoverage.id });
+      const inAnyCoverage = engagedBeforeStart || relevantCoverages.some((coverage) => withinCoverage(dueDate, coverage));
+      if (!inAnyCoverage) {
+        // Earlier filings due shortly before monitoring started (12 months,
+        // or 3 for ECI) go to takeover review rather than being described as
+        // due during coverage.
+        const lookbackMonths = definition.takeoverReviewMonths ?? TAKEOVER_REVIEW_LOOKBACK_MONTHS;
         const takeover = relevantCoverages
           .filter((coverage) => compareDateOnly(dueDate, coverage.monitoringStart) < 0
-            && compareDateOnly(dueDate, addMonthsClamped(coverage.monitoringStart, -TAKEOVER_REVIEW_LOOKBACK_MONTHS)) >= 0)
+            && compareDateOnly(dueDate, addMonthsClamped(coverage.monitoringStart, -lookbackMonths)) >= 0)
           .sort((left, right) => compareDateOnly(left.monitoringStart, right.monitoringStart))[0];
         if (takeover) reasons.push({ kind: 'TAKEOVER_REVIEW', coverageId: takeover.id });
       }
@@ -395,12 +415,6 @@ export function projectCompanyObligations(input: CompanyMonitoringProjectionInpu
         : relevantCoverages.some((coverage) => compareDateOnly(dueDate, coverage.monitoringStart) < 0)
           ? 'BEFORE_START'
           : relevantCoverages.length > 0 ? 'AFTER_END' : 'NO_COVERAGE';
-      const yearOfAssessment = period.yearOfAssessment;
-      const engagedCoverage = yearOfAssessment === null ? null : relevantCoverages.find((coverage) => (
-        typeof coverage.engagementStartYearOfAssessment === 'number'
-        && yearOfAssessment >= coverage.engagementStartYearOfAssessment
-        && (coverage.monitoringEnd === null || compareDateOnly(dueDate, coverage.monitoringEnd) <= 0)
-      )) ?? null;
       const { responsibility, deliveryClientServiceId } = resolveResponsibility(
         scopes,
         definition.code,
