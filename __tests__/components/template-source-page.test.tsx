@@ -141,6 +141,8 @@ describe('TemplateSourcePage', () => {
 
     expect(await screen.findByText('Audit scope')).toBeInTheDocument();
     expect(screen.getByTestId('word-partial-editor')).toHaveTextContent('p-2@4');
+    expect(screen.queryByLabelText('Replace with a .docx')).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Show details' }));
     expect(screen.getByRole('link', { name: /download current version/i }))
       .toHaveAttribute('href', '/api/template-partials/p-2/oakdoc');
     await user.upload(
@@ -166,7 +168,8 @@ describe('TemplateSourcePage', () => {
     ));
     renderPage('type=partial&tab=partials&id=p-2');
 
-    const nameInput = await screen.findByLabelText(/^Name/);
+    await user.click(await screen.findByRole('button', { name: 'Show details' }));
+    const nameInput = screen.getByLabelText(/^Name/);
     expect(screen.getByRole('button', { name: 'Save details' })).toBeDisabled();
     await user.clear(nameInput);
     await user.type(nameInput, 'SOW_Corp_Sec');
@@ -186,5 +189,7 @@ describe('TemplateSourcePage', () => {
       description: 'Copy of SOW_Corp_Sec',
     });
     await waitFor(() => expect(toast.success).toHaveBeenCalledWith('Partial details saved'));
+    await user.click(screen.getByRole('button', { name: 'Hide details' }));
+    expect(screen.queryByLabelText(/^Name/)).not.toBeInTheDocument();
   });
 });

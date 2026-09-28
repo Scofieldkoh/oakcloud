@@ -4,7 +4,7 @@ import { useEffect, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowLeft, Download, Loader2, Save, Upload } from 'lucide-react';
+import { ArrowLeft, Download, Loader2, PanelRightClose, PanelRightOpen, Save, Upload } from 'lucide-react';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { FormInput } from '@/components/ui/form-input';
@@ -286,8 +286,7 @@ function PartialDetailsForm({
   };
 
   return (
-    <form onSubmit={(event) => void submit(event)} className="max-w-xl space-y-4">
-      <h2 className="text-base font-medium text-text-primary">Details</h2>
+    <form onSubmit={(event) => void submit(event)} className="space-y-4">
       <FormInput
         label="Name"
         value={name}
@@ -313,10 +312,55 @@ function PartialDetailsForm({
   );
 }
 
+/** Collapsible panel beside the Word editor; starts collapsed so the document gets the width. */
+function DetailsPanel({ open, onToggle, children }: {
+  open: boolean;
+  onToggle: () => void;
+  children: React.ReactNode;
+}) {
+  if (!open) {
+    return (
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={false}
+        aria-label="Show details"
+        title="Show details"
+        className="flex w-10 flex-shrink-0 flex-col items-center gap-2 rounded-lg border border-border-primary bg-background-secondary py-3 text-text-secondary transition-colors hover:bg-background-tertiary hover:text-text-primary"
+      >
+        <PanelRightOpen className="h-4 w-4" aria-hidden="true" />
+        <span className="text-xs font-medium [writing-mode:vertical-rl]">Details</span>
+      </button>
+    );
+  }
+  return (
+    <aside
+      aria-label="Partial details"
+      className="flex w-80 flex-shrink-0 flex-col overflow-hidden rounded-lg border border-border-primary bg-background-secondary"
+    >
+      <div className="flex items-center justify-between border-b border-border-primary px-4 py-2.5">
+        <h2 className="text-sm font-medium text-text-primary">Details</h2>
+        <button
+          type="button"
+          onClick={onToggle}
+          aria-expanded
+          aria-label="Hide details"
+          title="Hide details"
+          className="rounded p-1 text-text-muted transition-colors hover:bg-background-tertiary hover:text-text-primary"
+        >
+          <PanelRightClose className="h-4 w-4" aria-hidden="true" />
+        </button>
+      </div>
+      <div className="flex-1 space-y-4 overflow-y-auto p-4">{children}</div>
+    </aside>
+  );
+}
+
 function PartialSource({ id }: { id: string | null }) {
   const { data: partial, error, isLoading } = useTemplatePartial(id);
   const [uploadCount, setUploadCount] = useState(0);
   const [documentDirty, setDocumentDirty] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useState(false);
   const reloadDocument = () => setUploadCount((value) => value + 1);
   if (!id) {
     return (
@@ -333,8 +377,8 @@ function PartialSource({ id }: { id: string | null }) {
   return (
     <PageShell backHref="/template-partials/partials" backLabel="Back to partials" title={title}>
       {readOakDocTemplateMetadata(partial.contentJson) ? (
-        <div className="space-y-6">
-          <div className="h-[calc(100vh-16rem)] min-h-[28rem] overflow-hidden rounded-lg border border-border-primary shadow-sm">
+        <div className="flex h-[calc(100vh-12rem)] min-h-[28rem] gap-3">
+          <div className="min-w-0 flex-1 overflow-hidden rounded-lg border border-border-primary shadow-sm">
             <WordPartialEditor
               partialId={partial.id}
               loadKey={uploadCount}
@@ -345,8 +389,12 @@ function PartialSource({ id }: { id: string | null }) {
               onDirtyChange={setDocumentDirty}
             />
           </div>
-          <PartialDetailsForm partial={partial} documentDirty={documentDirty} onSaved={reloadDocument} />
-          <WordPartialForm partial={partial} onUploaded={reloadDocument} />
+          <DetailsPanel open={detailsOpen} onToggle={() => setDetailsOpen((value) => !value)}>
+            <PartialDetailsForm partial={partial} documentDirty={documentDirty} onSaved={reloadDocument} />
+            <div className="border-t border-border-primary pt-4">
+              <WordPartialForm partial={partial} onUploaded={reloadDocument} />
+            </div>
+          </DetailsPanel>
         </div>
       ) : (
         <RetiredA4Source
