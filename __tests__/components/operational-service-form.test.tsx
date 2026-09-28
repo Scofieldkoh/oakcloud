@@ -489,7 +489,7 @@ describe('OperationalServiceForm', () => {
     expect(filed).toHaveValue('FILED');
     expect(pending).toHaveValue('PENDING_FILING');
     expect(filed.closest('[data-status]')).toHaveClass('bg-status-success/10');
-    expect(pending.closest('[data-status]')).toHaveClass('bg-status-warning/10');
+    expect(pending.closest('[data-status]')).toHaveClass('bg-background-primary');
 
     // The YA badge sits before the due date.
     const row = pending.closest('[data-status]') as HTMLElement;

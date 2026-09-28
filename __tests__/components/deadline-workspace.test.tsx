@@ -33,6 +33,7 @@ vi.mock('@/hooks/use-user-preferences', () => ({
 }));
 
 import { DeadlineViewToggle, DeadlineWorkspace } from '@/components/services/deadlines/deadline-workspace';
+import { deadlineStatusLabel } from '@/components/services/deadlines/deadline-event';
 
 const familyId = '33333333-3333-4333-8333-333333333333';
 
@@ -334,5 +335,19 @@ describe('DeadlineWorkspace', () => {
         reason: 'Client confirmed a revised due date',
       },
     }));
+  });
+
+  it('shows the company obligation filing status set in the service Deadline tab', () => {
+    const obligation = {
+      code: 'SG_ECI', periodKey: 'FY2025-12-31', financialPeriodStart: '2025-01-01', financialPeriodEnd: '2025-12-31',
+      yearOfAssessment: 2026, periodProvisional: false, filingResponsibility: 'OAKCLOUD' as const,
+      deliveryClientServiceId: null, coverageTiming: 'DURING', filingStatusUnconfirmed: false,
+    };
+    expect(deadlineStatusLabel({ status: 'OPEN', obligation } as never)).toBe('Pending filing');
+    expect(deadlineStatusLabel({ status: 'OPEN', obligation: { ...obligation, filingResponsibility: 'EXTERNAL_PROVIDER' } } as never)).toBe('Managed externally');
+    expect(deadlineStatusLabel({ status: 'OPEN', obligation: { ...obligation, filingResponsibility: 'UNCONFIRMED' } } as never)).toBe('To be confirmed');
+    expect(deadlineStatusLabel({ status: 'COMPLETED', obligation } as never)).toBe('Filed');
+    expect(deadlineStatusLabel({ status: 'WAIVED', obligation } as never)).toBe('Not required');
+    expect(deadlineStatusLabel({ status: 'OPEN', obligation: null } as never)).toBe('Open');
   });
 });

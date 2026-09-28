@@ -11,9 +11,11 @@ const company = {
   paidUpCapitalCurrency: 'SGD', paidUpCapitalAmount: 1000,
   issuedCapitalCurrency: 'SGD', issuedCapitalAmount: 1000,
   addresses: [], formerNames: [], officers: [], shareholders: [], shareCapital: [], charges: [], auditor: null,
+  financialPeriods: [] as Array<{ periodStart: Date; periodEnd: Date; yearsOfAssessment: number[] }>,
 };
 const tx = {
-  company: { findFirst: vi.fn(), update: vi.fn() },
+  company: { findFirst: vi.fn(), update: vi.fn(), findUniqueOrThrow: vi.fn() },
+  companyFinancialPeriod: { findFirst: vi.fn(), create: vi.fn(), update: vi.fn(), delete: vi.fn() },
   companyAddress: { findFirst: vi.fn(), update: vi.fn(), create: vi.fn(), deleteMany: vi.fn() },
   auditLog: { create: vi.fn() },
 };
@@ -30,6 +32,8 @@ describe('company profile section services', () => {
     vi.clearAllMocks();
     tx.company.findFirst.mockResolvedValue(company);
     tx.companyAddress.findFirst.mockResolvedValue(null);
+    tx.company.findUniqueOrThrow.mockResolvedValue({ tenantId: 'tenant-1' });
+    tx.companyFinancialPeriod.findFirst.mockResolvedValue(null);
     mocks.transaction.mockImplementation((callback) => callback(tx));
   });
 
@@ -167,5 +171,48 @@ describe('company profile section services', () => {
     });
 
     expect(enqueueMock).not.toHaveBeenCalled();
+  });
+
+  it('saves the first financial period from the Compliance section and queues reconciliation', async () => {
+    const { getCompanyProfileSection, saveCompanyProfileSection } = await import(
+      '@/services/company/profile-sections'
+    );
+    const current = await getCompanyProfileSection('company-1', 'tenant-1', 'compliance');
+    expect(current.data).toMatchObject({ firstPeriodStartDate: null, firstPeriodEndDate: null, firstYearOfAssessment: null });
+
+    await saveCompanyProfileSection({
+      companyId: 'company-1',
+      tenantId: 'tenant-1',
+      userId: 'user-1',
+      section: 'compliance',
+      ifMatchVersion: current.version,
+      data: { ...current.data, firstPeriodStartDate: '2024-09-14', firstPeriodEndDate: '2025-12-31', firstYearOfAssessment: '' },
+    });
+
+    expect(tx.companyFinancialPeriod.create).toHaveBeenCalledWith({ data: expect.objectContaining({
+      tenantId: 'tenant-1',
+      companyId: 'company-1',
+      periodStart: new Date('2024-09-14T00:00:00.000Z'),
+      periodEnd: new Date('2025-12-31T00:00:00.000Z'),
+      yearsOfAssessment: [2026],
+      provenance: 'CONFIRMED',
+    }) });
+    expect(enqueueMock).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ scopeType: 'COMPANY' }));
+  });
+
+  it('rejects a first period with only one date', async () => {
+    const { getCompanyProfileSection, saveCompanyProfileSection } = await import(
+      '@/services/company/profile-sections'
+    );
+    const current = await getCompanyProfileSection('company-1', 'tenant-1', 'compliance');
+    await expect(saveCompanyProfileSection({
+      companyId: 'company-1',
+      tenantId: 'tenant-1',
+      userId: 'user-1',
+      section: 'compliance',
+      ifMatchVersion: current.version,
+      data: { ...current.data, firstPeriodStartDate: '2024-09-14' },
+    })).rejects.toThrow(/both the first period start and end/);
+    expect(tx.companyFinancialPeriod.create).not.toHaveBeenCalled();
   });
 });

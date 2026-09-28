@@ -90,6 +90,7 @@ function FieldLabel({ children }: { children: ReactNode }) {
 }
 
 export function CompanyProfileSections({ company, companyId, canEdit = false, onRetrieveAcra, isRetrievingAcra }: { company: CompanyWithRelations; companyId: string; canEdit?: boolean; onRetrieveAcra?: () => void; isRetrievingAcra?: boolean }) {
+  const firstPeriod = company.financialPeriods?.[0] ?? null;
   const [showCeased, setShowCeased] = useState(false);
   const [showFormer, setShowFormer] = useState(false);
   const [showDischarged, setShowDischarged] = useState(false);
@@ -196,6 +197,7 @@ export function CompanyProfileSections({ company, companyId, canEdit = false, on
           <div><FieldLabel>Accounts due</FieldLabel><p className="flex flex-wrap items-center gap-1.5">{day(company.accountsDueDate)}{acraSourceBadge(company, 'accountDueDate')}</p></div>
           <div><FieldLabel>Last AGM</FieldLabel><p>{day(company.lastAgmDate)}</p></div>
           <div><FieldLabel>FYE as at last AR</FieldLabel><p>{day(company.fyeAsAtLastAr)}</p></div>
+          <div className="col-span-2"><FieldLabel>First financial period</FieldLabel><p>{firstPeriod ? `${day(firstPeriod.periodStart)} to ${day(firstPeriod.periodEnd)}${firstPeriod.yearsOfAssessment.length ? ` (YA ${firstPeriod.yearsOfAssessment.join(', ')})` : ''}` : 'Not confirmed'}</p></div>
         </div>
       </Section>
 

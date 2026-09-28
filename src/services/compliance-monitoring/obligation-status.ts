@@ -3,6 +3,7 @@ import type { Prisma } from '@/generated/prisma';
 import { ValidationError } from '@/lib/errors';
 import {
   COMPANY_OBLIGATION_STATUS_LABELS,
+  companyObligationStatusOf,
   isCompanyObligationStatus,
   type CompanyObligationStatus,
 } from './obligation-status-labels';
@@ -10,6 +11,7 @@ import {
 export {
   COMPANY_OBLIGATION_STATUSES,
   COMPANY_OBLIGATION_STATUS_LABELS,
+  companyObligationStatusOf,
   isCompanyObligationStatus,
   type CompanyObligationStatus,
 } from './obligation-status-labels';
@@ -22,20 +24,6 @@ export {
  */
 
 type Db = Prisma.TransactionClient | typeof prisma;
-
-/** The status a stored company occurrence reads as. */
-export function companyObligationStatusOf(occurrence: {
-  status: string;
-  filingResponsibility: string | null;
-}): CompanyObligationStatus {
-  if (occurrence.status === 'COMPLETED') return 'FILED';
-  if (occurrence.status === 'WAIVED') return 'NOT_REQUIRED';
-  if (occurrence.filingResponsibility === 'EXTERNAL_PROVIDER' || occurrence.filingResponsibility === 'CLIENT') {
-    return 'MANAGED_EXTERNALLY';
-  }
-  if (occurrence.filingResponsibility === 'OAKCLOUD') return 'PENDING_FILING';
-  return 'TO_BE_CONFIRMED';
-}
 
 const RESPONSIBILITY_FOR: Partial<Record<CompanyObligationStatus, 'OAKCLOUD' | 'EXTERNAL_PROVIDER' | 'UNCONFIRMED'>> = {
   TO_BE_CONFIRMED: 'UNCONFIRMED',
