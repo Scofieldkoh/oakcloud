@@ -231,3 +231,80 @@ export async function syncPostpaidBilling(
   }
   return result;
 }
+
+export type PostpaidEngagementStartConflict = {
+  clientServiceId: string;
+  serviceName: string;
+  engagementStartYearOfAssessment: number;
+};
+
+/**
+ * Services with a postpaid fee line billed on this filing whose engagement
+ * start YA is after the filing's YA, so filing it raises no bill for them.
+ */
+export async function findPostpaidEngagementStartConflicts(
+  input: { tenantId: string; companyId: string; obligationCode: string; yearOfAssessment: number },
+  db: Db = prisma,
+): Promise<PostpaidEngagementStartConflict[]> {
+  const triggers = Object.entries(POSTPAID_TRIGGER_OBLIGATIONS)
+    .filter(([, codes]) => codes.includes(input.obligationCode))
+    .map(([trigger]) => trigger);
+  if (triggers.length === 0) return [];
+  const services = await db.clientService.findMany({
+    where: {
+      tenantId: input.tenantId,
+      companyId: input.companyId,
+      status: 'ACTIVE',
+      deletedAt: null,
+      billingDisposition: 'CONFIGURED',
+      engagementStartYearOfAssessment: { gt: input.yearOfAssessment },
+      feeLines: { some: { billingTiming: 'POSTPAID', postpaidTrigger: { in: triggers }, isActive: true, deletedAt: null } },
+    },
+    select: { id: true, serviceName: true, engagementStartYearOfAssessment: true },
+    orderBy: { serviceName: 'asc' },
+  });
+  return services.map((service) => ({
+    clientServiceId: service.id,
+    serviceName: service.serviceName,
+    engagementStartYearOfAssessment: service.engagementStartYearOfAssessment!,
+  }));
+}
+
+/**
+ * For company filings about to be set to Filed, the ones that would raise no
+ * postpaid bill because their YA is before a service's engagement start.
+ */
+export async function findUnbilledFilings(
+  input: { tenantId: string; companyIds?: string[]; occurrenceIds: string[] },
+  db: Db = prisma,
+): Promise<Array<{ occurrenceId: string; services: PostpaidEngagementStartConflict[] }>> {
+  if (input.occurrenceIds.length === 0) return [];
+  const rows = await db.deadlineOccurrence.findMany({
+    where: {
+      id: { in: input.occurrenceIds },
+      tenantId: input.tenantId,
+      ...(input.companyIds === undefined ? {} : { companyId: { in: input.companyIds } }),
+      ownershipScope: 'COMPANY',
+      status: { not: 'COMPLETED' },
+      obligationCode: { not: null },
+      yearOfAssessment: { not: null },
+    },
+    select: { id: true, companyId: true, obligationCode: true, yearOfAssessment: true },
+  });
+  const cache = new Map<string, Promise<PostpaidEngagementStartConflict[]>>();
+  const result: Array<{ occurrenceId: string; services: PostpaidEngagementStartConflict[] }> = [];
+  for (const row of rows) {
+    const key = `${row.companyId}|${row.obligationCode}|${row.yearOfAssessment}`;
+    if (!cache.has(key)) {
+      cache.set(key, findPostpaidEngagementStartConflicts({
+        tenantId: input.tenantId,
+        companyId: row.companyId,
+        obligationCode: row.obligationCode!,
+        yearOfAssessment: row.yearOfAssessment!,
+      }, db));
+    }
+    const services = await cache.get(key)!;
+    if (services.length > 0) result.push({ occurrenceId: row.id, services });
+  }
+  return result;
+}

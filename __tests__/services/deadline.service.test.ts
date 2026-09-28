@@ -504,7 +504,11 @@ describe('deadline service', () => {
     expect(findManyArgs.orderBy).toEqual([{ company: { name: 'desc' } }, { operativeDueDate: 'asc' }, { id: 'asc' }]);
     expect(findManyArgs.where).toEqual(countArgs.where);
     expect(findManyArgs.where).toEqual(expect.objectContaining({
-      AND: [expect.objectContaining({ status: 'OPEN', OR: [{ operativeDueDate: new Date('2026-08-17T00:00:00.000Z') }] })],
+      AND: [
+        expect.objectContaining({ status: 'OPEN', OR: [{ operativeDueDate: new Date('2026-08-17T00:00:00.000Z') }] }),
+        // Open means ours to file: Managed externally company rows count as Waived.
+        expect.objectContaining({ status: 'OPEN', OR: expect.arrayContaining([{ ownershipScope: 'SERVICE' }]) }),
+      ],
     }));
   });
 

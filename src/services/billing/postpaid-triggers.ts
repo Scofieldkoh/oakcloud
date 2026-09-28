@@ -52,3 +52,21 @@ export function postpaidGenerationKey(feeLineId: string): string {
 export function isPostpaidGenerationKey(value: string | null | undefined): boolean {
   return typeof value === 'string' && value.startsWith(POSTPAID_GENERATION_PREFIX);
 }
+
+/**
+ * Whether setting this filing to Filed would leave its YA unbilled because the
+ * YA is before the service's engagement start YA while a postpaid fee line
+ * bills on it. Used to offer moving the engagement start back to that YA.
+ */
+export function filingBeforeEngagementStart(input: {
+  obligationCode: string;
+  yearOfAssessment: number | null;
+  engagementStartYearOfAssessment: number | null;
+  postpaidTriggers: readonly (string | null | undefined)[];
+}): boolean {
+  if (input.yearOfAssessment == null || input.engagementStartYearOfAssessment == null) return false;
+  if (input.yearOfAssessment >= input.engagementStartYearOfAssessment) return false;
+  return input.postpaidTriggers.some((trigger) => (
+    isPostpaidTrigger(trigger) && POSTPAID_TRIGGER_OBLIGATIONS[trigger].includes(input.obligationCode)
+  ));
+}

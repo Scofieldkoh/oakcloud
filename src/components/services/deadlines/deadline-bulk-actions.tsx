@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { CalendarClock, CheckCircle, CircleOff } from 'lucide-react';
 import { BulkActionsToolbar, type BulkAction } from '@/components/ui/bulk-actions-toolbar';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
+import { Alert } from '@/components/ui/alert';
 import type { UpdateDeadlineOccurrenceInput } from '@/lib/validations/deadline';
 import type { DeadlineOccurrenceDto } from '@/services/deadline';
 
@@ -15,6 +16,37 @@ interface DeadlineBulkActionsProps {
   selected: DeadlineOccurrenceDto[];
   onClearSelection: () => void;
   onUpdate: (occurrence: DeadlineOccurrenceDto, data: UpdateDeadlineOccurrenceInput) => Promise<unknown>;
+}
+
+const FILING_LABELS: Record<string, string> = { SG_ECI: 'ECI', SG_FORM_C: 'Form C' };
+
+type UnbilledFilingResponse = {
+  items: Array<{
+    occurrenceId: string;
+    services: Array<{ clientServiceId: string; serviceName: string; engagementStartYearOfAssessment: number }>;
+  }>;
+};
+
+/** A selected filing that would bill nothing when marked Filed. */
+export type UnbilledFiling = { id: string; company: string; filing: string; services: string };
+
+export function describeUnbilledFilings(
+  selected: readonly DeadlineOccurrenceDto[],
+  response: UnbilledFilingResponse,
+): UnbilledFiling[] {
+  const byId = new Map(selected.map((occurrence) => [occurrence.id, occurrence]));
+  return response.items.flatMap(({ occurrenceId, services }) => {
+    const occurrence = byId.get(occurrenceId);
+    if (!occurrence || services.length === 0) return [];
+    const code = occurrence.obligation?.code ?? '';
+    const ya = occurrence.obligation?.yearOfAssessment;
+    return [{
+      id: occurrenceId,
+      company: occurrence.company.displayLabel || occurrence.company.name,
+      filing: `${FILING_LABELS[code] ?? code}${ya != null ? ` YA ${ya}` : ''}`,
+      services: services.map((service) => `${service.serviceName} starts from YA ${service.engagementStartYearOfAssessment}`).join('; '),
+    }];
+  });
 }
 
 function itemLabel(count: number): string {
@@ -28,6 +60,30 @@ export function DeadlineBulkActions({ selected, onClearSelection, onUpdate }: De
   const [overrideError, setOverrideError] = useState('');
   const [bulkPending, setBulkPending] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [unbilled, setUnbilled] = useState<UnbilledFiling[]>([]);
+
+  // Before marking complete, find company filings that would raise no
+  // postpaid bill because their YA is before a service's engagement start.
+  const checkIds = activeAction === 'complete'
+    ? selected.filter((occurrence) => occurrence.ownershipScope === 'COMPANY' && occurrence.obligation?.yearOfAssessment != null).map((occurrence) => occurrence.id)
+    : [];
+  const checkKey = checkIds.join(',');
+  useEffect(() => {
+    setUnbilled([]);
+    if (!checkKey) return;
+    let cancelled = false;
+    fetch('/api/deadlines/unbilled-filings', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ ids: checkKey.split(',') }),
+    })
+      .then((response) => (response.ok ? response.json() as Promise<UnbilledFilingResponse> : null))
+      .then((body) => { if (!cancelled && body) setUnbilled(describeUnbilledFilings(selected, body)); })
+      .catch(() => undefined);
+    return () => { cancelled = true; };
+    // selected is read for labels only; the ids decide when to check.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [checkKey]);
 
   const selectedOpenOnly = selected.length > 0 && selected.every((occurrence) => occurrence.status === 'OPEN');
   const selectedNonCancelled = selected.length > 0 && selected.every((occurrence) => occurrence.status !== 'CANCELLED');
@@ -142,7 +198,18 @@ export function DeadlineBulkActions({ selected, onClearSelection, onUpdate }: De
         confirmLabel="Mark complete"
         variant="info"
         isLoading={bulkPending}
-      />
+      >
+        {unbilled.length > 0 ? (
+          <Alert variant="warning" title={`${unbilled.length} filing${unbilled.length === 1 ? '' : 's'} will not be billed`} compact>
+            <p>These YAs are before the service&apos;s engagement start, so no postpaid bill is created. To bill one, mark it on its own and choose to move the engagement start.</p>
+            <ul className="mt-1 list-disc pl-5">
+              {unbilled.map((item) => (
+                <li key={item.id}>{item.company}: {item.filing} ({item.services})</li>
+              ))}
+            </ul>
+          </Alert>
+        ) : null}
+      </ConfirmDialog>
       <ConfirmDialog
         isOpen={activeAction === 'waive'}
         onClose={() => setActiveAction(null)}

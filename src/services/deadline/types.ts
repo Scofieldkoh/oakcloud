@@ -123,6 +123,15 @@ export interface DeadlineOccurrenceDto {
   dateOverriddenById: string | null;
   dateOverriddenAt: string | null;
   status: 'OPEN' | 'COMPLETED' | 'WAIVED' | 'CANCELLED';
+  /**
+   * Set only in the response to filing a company obligation: services whose
+   * postpaid fee won't bill because the YA is before their engagement start.
+   */
+  postpaidEngagementStartConflicts?: Array<{
+    clientServiceId: string;
+    serviceName: string;
+    engagementStartYearOfAssessment: number;
+  }>;
   timingState: DeadlineTiming | null;
   /** Open deadlines only: overdue, due today, or how many months away. */
   timingBucket: DeadlineTimingBucket | null;
