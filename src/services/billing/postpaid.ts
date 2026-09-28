@@ -231,3 +231,41 @@ export async function syncPostpaidBilling(
   }
   return result;
 }
+
+export type PostpaidEngagementStartConflict = {
+  clientServiceId: string;
+  serviceName: string;
+  engagementStartYearOfAssessment: number;
+};
+
+/**
+ * Services with a postpaid fee line billed on this filing whose engagement
+ * start YA is after the filing's YA, so filing it raises no bill for them.
+ */
+export async function findPostpaidEngagementStartConflicts(
+  input: { tenantId: string; companyId: string; obligationCode: string; yearOfAssessment: number },
+  db: Db = prisma,
+): Promise<PostpaidEngagementStartConflict[]> {
+  const triggers = Object.entries(POSTPAID_TRIGGER_OBLIGATIONS)
+    .filter(([, codes]) => codes.includes(input.obligationCode))
+    .map(([trigger]) => trigger);
+  if (triggers.length === 0) return [];
+  const services = await db.clientService.findMany({
+    where: {
+      tenantId: input.tenantId,
+      companyId: input.companyId,
+      status: 'ACTIVE',
+      deletedAt: null,
+      billingDisposition: 'CONFIGURED',
+      engagementStartYearOfAssessment: { gt: input.yearOfAssessment },
+      feeLines: { some: { billingTiming: 'POSTPAID', postpaidTrigger: { in: triggers }, isActive: true, deletedAt: null } },
+    },
+    select: { id: true, serviceName: true, engagementStartYearOfAssessment: true },
+    orderBy: { serviceName: 'asc' },
+  });
+  return services.map((service) => ({
+    clientServiceId: service.id,
+    serviceName: service.serviceName,
+    engagementStartYearOfAssessment: service.engagementStartYearOfAssessment!,
+  }));
+}

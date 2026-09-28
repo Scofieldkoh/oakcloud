@@ -346,14 +346,16 @@ export function ClientServiceEditor({
             : undefined}
           onCompanyObligationStatusChange={(item, status) => {
             setObligationError('');
-            setObligationStatus.mutateAsync({ obligationCode: item.obligationCode, periodKey: item.periodKey, status })
+            return setObligationStatus.mutateAsync({ obligationCode: item.obligationCode, periodKey: item.periodKey, status })
+              .then(() => undefined)
               .catch((error: unknown) => setObligationError(error instanceof Error ? error.message : 'Unable to save the filing status.'));
           }}
           onConfirmFirstPeriod={() => setFirstPeriodOpen(true)}
           engagementStartYearOfAssessment={companyObligations.data?.engagementStartYearOfAssessment ?? null}
           onEngagementStartChange={(yearOfAssessment) => {
             setObligationError('');
-            setEngagementStart.mutateAsync({ serviceId: service.id, yearOfAssessment })
+            return setEngagementStart.mutateAsync({ serviceId: service.id, yearOfAssessment })
+              .then(() => undefined)
               .catch((error: unknown) => setObligationError(error instanceof Error ? error.message : 'Unable to save the engagement start.'));
           }}
           openBillingOccurrences={latestService.data?.openBillingOccurrences ?? service.openBillingOccurrences ?? []}

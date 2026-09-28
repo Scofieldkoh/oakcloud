@@ -564,6 +564,63 @@ describePostgres('company compliance monitoring on PostgreSQL', () => {
     await updateDeadlineOccurrence(target.id, { status: 'OPEN', reason: 'Not filed yet', expectedUpdatedAt: completed.updatedAt.toISOString() }, actor);
     expect((await bills())[0]).toMatchObject({ status: 'CANCELLED', cancelledById: fixture.userId });
   });
+
+  it('names services whose engagement start is after a YA filed on the Deadlines page', async () => {
+    const { setCompanyObligationStatus } = await import('@/services/compliance-monitoring/obligation-status');
+    const { updateDeadlineOccurrence } = await import('@/services/deadline/service');
+    const target = await prisma.deadlineOccurrence.findFirstOrThrow({
+      where: { tenantId: fixture.tenantId, companyId: fixture.companyId, ownershipScope: 'COMPANY', obligationCode: 'SG_FORM_C', status: { not: 'CANCELLED' }, yearOfAssessment: { not: null } },
+      orderBy: { yearOfAssessment: 'desc' },
+    });
+    const ya = target.yearOfAssessment!;
+    await prisma.$transaction((tx) => setCompanyObligationStatus({
+      tenantId: fixture.tenantId, companyId: fixture.companyId, obligationCode: 'SG_FORM_C',
+      periodKey: target.obligationPeriodKey!, status: 'MANAGED_EXTERNALLY', actorId: fixture.userId,
+    }, tx));
+    const serviceId = randomUUID();
+    await prisma.clientService.create({
+      data: {
+        id: serviceId, tenantId: fixture.tenantId, companyId: fixture.companyId, source: 'MANUAL',
+        serviceVariantId: fixture.variantId, familyName: 'Tax', serviceName: 'Corporate tax (later start)',
+        status: 'ACTIVE', serviceCadence: 'ANNUALLY', startDate: new Date('2026-04-01T00:00:00.000Z'),
+        billingDisposition: 'CONFIGURED', engagementStartYearOfAssessment: ya + 1,
+        feeLines: { create: { tenantId: fixture.tenantId, description: 'Form C', amount: '800.00', currency: 'SGD', billingFrequency: 'ONE_TIME', billingTiming: 'POSTPAID', postpaidTrigger: 'SG_ECI_OR_FORM_C_FILED' } },
+      },
+    });
+    const current = await prisma.deadlineOccurrence.findUniqueOrThrow({ where: { id: target.id } });
+    const filed = await updateDeadlineOccurrence(target.id, { status: 'COMPLETED', expectedUpdatedAt: current.updatedAt.toISOString() }, { tenantId: fixture.tenantId, userId: fixture.userId });
+    expect(filed.postpaidEngagementStartConflicts).toEqual([
+      { clientServiceId: serviceId, serviceName: 'Corporate tax (later start)', engagementStartYearOfAssessment: ya + 1 },
+    ]);
+    expect(await prisma.billingOccurrence.count({ where: { clientServiceId: serviceId } })).toBe(0);
+
+    // Yes on the prompt moves the start back, which bills the filed YA.
+    const { setEngagementStartYearOfAssessment } = await import('@/services/compliance-monitoring/engagement-start');
+    await setEngagementStartYearOfAssessment({ tenantId: fixture.tenantId, companyId: fixture.companyId, clientServiceId: serviceId, yearOfAssessment: ya, actorId: fixture.userId });
+    expect(await prisma.billingOccurrence.findMany({ where: { clientServiceId: serviceId } })).toMatchObject([
+      { billingPeriodKey: `YA${ya}`, status: 'OPEN' },
+    ]);
+  });
+
+  // Listing can start background reconciliation, so this runs last.
+  it('lists Managed externally company filings under Waived, not Open', async () => {
+    const { setCompanyObligationStatus } = await import('@/services/compliance-monitoring/obligation-status');
+    const { listDeadlines } = await import('@/services/deadline/service');
+    const target = await prisma.deadlineOccurrence.findFirstOrThrow({
+      where: { tenantId: fixture.tenantId, companyId: fixture.companyId, ownershipScope: 'COMPANY', obligationCode: 'SG_ECI', status: { not: 'CANCELLED' }, yearOfAssessment: { not: null } },
+      orderBy: { yearOfAssessment: 'desc' },
+    });
+    await prisma.$transaction((tx) => setCompanyObligationStatus({
+      tenantId: fixture.tenantId, companyId: fixture.companyId, obligationCode: 'SG_ECI',
+      periodKey: target.obligationPeriodKey!, status: 'MANAGED_EXTERNALLY', actorId: fixture.userId,
+    }, tx));
+    const scope = { tenantId: fixture.tenantId };
+    const waived = await listDeadlines({ openOnly: false, statuses: ['WAIVED'], limit: 100 }, scope, prisma, { today: TODAY });
+    expect(waived.items.map((item) => item.id)).toContain(target.id);
+    expect(waived.items.find((item) => item.id === target.id)).toMatchObject({ timingState: null, timingBucket: null });
+    const open = await listDeadlines({ limit: 100 }, scope, prisma, { today: TODAY });
+    expect(open.items.map((item) => item.id)).not.toContain(target.id);
+  });
 });
 
 async function createPresetRule(prisma: PrismaClient, tenantId: string, preset: DeadlineRulePreset): Promise<string> {
