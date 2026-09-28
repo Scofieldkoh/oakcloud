@@ -11,6 +11,9 @@ import {
 } from '@/lib/validations/company-profile';
 import { normalizeCompanyAlias } from '@/lib/company-display-label';
 import { enqueueScheduleReconciliation } from '@/services/schedule-reconciliation';
+import { saveFirstFinancialPeriod } from '@/services/compliance-monitoring/financial-periods';
+import { ValidationError } from '@/lib/errors';
+import type { DateOnly } from '@/services/service-schedule';
 
 const profileCompanyArgs = {
   include: {
@@ -21,6 +24,7 @@ const profileCompanyArgs = {
     shareCapital: { orderBy: { createdAt: 'asc' } },
     charges: { orderBy: { registrationDate: 'asc' } },
     auditor: true,
+    financialPeriods: { where: { provenance: 'CONFIRMED' }, orderBy: { periodEnd: 'asc' }, take: 1 },
   },
 } satisfies Prisma.CompanyDefaultArgs;
 type ProfileCompany = Prisma.CompanyGetPayload<typeof profileCompanyArgs>;
@@ -79,9 +83,23 @@ function profileScheduleSourceChanged(
   if (section === 'compliance') {
     return next.financialYearEndDay !== current.financialYearEndDay
       || next.financialYearEndMonth !== current.financialYearEndMonth
-      || profileDateKey(next.accountsDueDate) !== profileDateKey(current.accountsDueDate);
+      || profileDateKey(next.accountsDueDate) !== profileDateKey(current.accountsDueDate)
+      || firstPeriodChanged(current, next);
   }
   return false;
+}
+
+const FIRST_PERIOD_KEYS = ['firstPeriodStartDate', 'firstPeriodEndDate', 'firstYearOfAssessment'] as const;
+
+function hasFirstPeriodInput(data: Record<string, unknown>): boolean {
+  return FIRST_PERIOD_KEYS.some((key) => data[key] !== undefined);
+}
+
+function firstPeriodChanged(current: Record<string, unknown>, next: Record<string, unknown>): boolean {
+  if (!hasFirstPeriodInput(next)) return false;
+  return profileDateKey(next.firstPeriodStartDate) !== profileDateKey(current.firstPeriodStartDate)
+    || profileDateKey(next.firstPeriodEndDate) !== profileDateKey(current.firstPeriodEndDate)
+    || (next.firstYearOfAssessment ?? null) !== (current.firstYearOfAssessment ?? null);
 }
 
 function selectSection(company: ProfileCompany, section: CompanyProfileSectionId): CompanyProfileSectionData {
@@ -157,6 +175,9 @@ function selectSection(company: ProfileCompany, section: CompanyProfileSectionId
       lastAgmDate: date(company.lastAgmDate),
       lastArFiledDate: date(company.lastArFiledDate),
       accountsDueDate: date(company.accountsDueDate),
+      firstPeriodStartDate: date(company.financialPeriods[0]?.periodStart),
+      firstPeriodEndDate: date(company.financialPeriods[0]?.periodEnd),
+      firstYearOfAssessment: company.financialPeriods[0]?.yearsOfAssessment[0] ?? null,
     };
     case 'capital': return {
       paidUpCapitalCurrency: company.paidUpCapitalCurrency,
@@ -320,6 +341,22 @@ export async function mutateCompanyProfileSection(tx: Tx, companyId: string, sec
         lastArFiledDate: dateOrNull(data.lastArFiledDate),
         accountsDueDate: dateOrNull(data.accountsDueDate),
       } });
+      if (hasFirstPeriodInput(data)) {
+        const start = data.firstPeriodStartDate ?? null;
+        const end = data.firstPeriodEndDate ?? null;
+        const yearOfAssessment = data.firstYearOfAssessment ?? null;
+        const cleared = !start && !end && yearOfAssessment === null;
+        if (!cleared && (!start || !end)) {
+          throw new ValidationError('Enter both the first period start and end dates, or clear all three first period fields.');
+        }
+        const company = await tx.company.findUniqueOrThrow({ where: { id: companyId }, select: { tenantId: true } });
+        await saveFirstFinancialPeriod(tx, { tenantId: company.tenantId, companyId, userId: null }, cleared ? null : {
+          periodStart: start as DateOnly,
+          periodEnd: end as DateOnly,
+          // The YA follows the first year end unless staff enter another.
+          yearOfAssessment: yearOfAssessment ?? Number(end!.slice(0, 4)) + 1,
+        });
+      }
       break;
     }
     case 'officers': {

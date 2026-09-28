@@ -504,10 +504,10 @@ export type CompanyObligationsState = {
 /** Row tint per filing status. */
 const COMPANY_OBLIGATION_ROW_TONE: Record<CompanyObligationStatus, string> = {
   FILED: 'bg-status-success/10',
-  PENDING_FILING: 'bg-status-warning/10',
+  PENDING_FILING: 'bg-background-primary',
   TO_BE_CONFIRMED: 'bg-status-error/10',
-  MANAGED_EXTERNALLY: 'bg-background-secondary',
-  NOT_REQUIRED: 'bg-background-secondary text-text-muted',
+  MANAGED_EXTERNALLY: 'bg-gray-200 dark:bg-gray-700/60',
+  NOT_REQUIRED: 'bg-gray-200 text-text-muted dark:bg-gray-700/60',
 };
 
 /** The status a row shows: this form's choice, then a staff record, then the projection. */
@@ -602,7 +602,6 @@ function CompanyObligationsPanel({
             <option value="">Not set</option>
             {yearOptions.map((year) => <option key={year} value={year}>YA {year}</option>)}
           </select>
-          <span className="text-[11px] text-text-muted">From this YA, filings are Pending filing; earlier ones are To be confirmed.</span>
         </div>
       ) : null}
       {state?.isLoading ? <p role="status" className="text-xs italic text-text-muted">Loading company deadlines…</p> : null}

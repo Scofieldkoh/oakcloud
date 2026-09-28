@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { ZodError } from 'zod';
+import { ValidationError } from '@/lib/errors';
 import { requireAuth, canAccessCompany } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
 import {
@@ -38,6 +39,9 @@ function errorResponse(error: unknown) {
       error: 'Please correct the highlighted fields',
       issues: error.issues.map((issue) => ({ path: issue.path.join('.'), message: issue.message })),
     }, { status: 400 });
+  }
+  if (error instanceof ValidationError) {
+    return NextResponse.json({ error: error.message }, { status: 400 });
   }
   const message = error instanceof Error ? error.message : '';
   if (message === 'Unauthorized') return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
