@@ -209,6 +209,12 @@ const manualFeeLineSchema = z.object({
   }
 });
 
+export const companyObligationStatusEntrySchema = z.object({
+  obligationCode: z.string().trim().min(1).max(100),
+  periodKey: z.string().trim().min(1).max(40),
+  status: z.enum(['TO_BE_CONFIRMED', 'PENDING_FILING', 'FILED', 'MANAGED_EXTERNALLY', 'NOT_REQUIRED']),
+}).strict();
+
 export const createManualClientServiceSchema = z.object({
   serviceVariantId: z.string().uuid(),
   status: z.enum(['ACTIVE', 'PAUSED', 'ENDED']).default('ACTIVE'),
@@ -221,6 +227,8 @@ export const createManualClientServiceSchema = z.object({
   billingNotRequiredReason: z.string().trim().min(3).max(500).nullable().optional(),
   feeLines: z.array(manualFeeLineSchema).max(100),
   deadlineRules: clientServiceDeadlineRulesSchema.optional(),
+  /** Filing statuses staff record for company obligations while adding. */
+  companyObligationStatuses: z.array(companyObligationStatusEntrySchema).max(60).default([]),
   confirmDuplicate: z.boolean().default(false),
 }).strict().superRefine((value, ctx) => {
   validateCadenceAndDates(value, ctx);

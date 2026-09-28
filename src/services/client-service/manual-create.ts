@@ -3,6 +3,10 @@ import { createAuditLog } from '@/lib/audit';
 import { NotFoundError, ValidationError } from '@/lib/errors';
 import { prisma } from '@/lib/prisma';
 import { createMonitoringForActivatedService } from '@/services/compliance-monitoring/coverage';
+import { reconcileCompanyObligations } from '@/services/compliance-monitoring/writer';
+import { setCompanyObligationStatus } from '@/services/compliance-monitoring/obligation-status';
+import { getServiceWorkspaceFlagsForTenant } from '@/services/schedule-reconciliation/settings';
+import { currentDateInSingapore } from '@/services/service-schedule/date-only';
 import { isSerializationConflict, runSerializableTransaction } from '@/lib/prisma-transaction';
 import type { TenantAwareParams } from '@/lib/types';
 import type { ClientServiceDeadlineRuleInput, CreateManualClientServiceInput, CreateManualClientServiceRequest } from '@/lib/validations/client-service';
@@ -291,6 +295,32 @@ export async function createManualClientService(
         fieldValues: input.fieldValues,
         actorId: params.userId ?? null,
       });
+
+      // Statuses recorded while adding need the company obligations to exist,
+      // so write this company's obligations now when writes are enabled.
+      const obligationStatuses = input.companyObligationStatuses ?? [];
+      if (obligationStatuses.length > 0) {
+        const flags = await getServiceWorkspaceFlagsForTenant(params.tenantId, tx);
+        if (!flags.companyMonitoringWritesEnabled) {
+          throw new ValidationError('Turn on company monitoring before recording filing statuses.');
+        }
+        await reconcileCompanyObligations({
+          tenantId: params.tenantId,
+          companyId,
+          today: currentDateInSingapore(),
+          writeMode: 'APPLY',
+        }, tx);
+        for (const entry of obligationStatuses) {
+          await setCompanyObligationStatus({
+            tenantId: params.tenantId,
+            companyId,
+            obligationCode: entry.obligationCode,
+            periodKey: entry.periodKey,
+            status: entry.status,
+            actorId: params.userId ?? null,
+          }, tx);
+        }
+      }
 
       const reconciliationCorrelationId = `manual-service-${service.id}-${Date.now()}`;
       await enqueueScheduleReconciliation(tx, {
