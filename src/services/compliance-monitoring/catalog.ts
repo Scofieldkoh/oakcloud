@@ -39,6 +39,8 @@ export type ObligationDefinition = {
   plainRule: string;
   /** Shown on the review item while the family is not automated. */
   reviewAction: string | null;
+  /** False when a filing due before the engagement starts is not worth reviewing (ECI is spent once the tax return is due). */
+  takeoverReview?: boolean;
 };
 
 export const OBLIGATION_CATALOG: readonly ObligationDefinition[] = [
@@ -52,6 +54,7 @@ export const OBLIGATION_CATALOG: readonly ObligationDefinition[] = [
     applicability: 'ALWAYS',
     plainRule: 'Within three months after the financial year ends',
     reviewAction: null,
+    takeoverReview: false,
   },
   {
     code: 'SG_FORM_C',
