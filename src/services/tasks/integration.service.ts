@@ -309,6 +309,24 @@ export async function safelyCaptureEsigningTaskStageIds(
   }
 }
 
+export async function safelyCaptureGeneratedDocumentTaskStageIds(
+  tenantId: string,
+  generatedDocumentId: string,
+) {
+  try {
+    const outcomes = await prisma.taskStageOutcome.findMany({
+      where: { tenantId, generatedDocumentId },
+      select: { taskStageId: true },
+    });
+    return Array.from(new Set(outcomes.map(({ taskStageId }) => taskStageId)));
+  } catch (error) {
+    log.warn('Failed to capture linked task stages before generated document deletion', {
+      error,
+    });
+    return [];
+  }
+}
+
 export function safelyReconcileTaskStageIds(
   tenantId: string,
   taskStageIds: string[],

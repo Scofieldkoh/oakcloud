@@ -127,7 +127,11 @@ export default function DataPurgePage() {
         entityIds: Array.from(selectedIds),
         reason,
       });
-      success(`Permanently deleted ${result.deletedCount} record(s)`);
+      if (result.failedCount > 0) {
+        showError(`Permanently deleted ${result.deletedCount} record(s), but ${result.failedCount} failed. ${result.failedRecords?.[0]?.error ?? ''}`.trim());
+      } else {
+        success(`Permanently deleted ${result.deletedCount} record(s)`);
+      }
       setSelectedIds(new Set());
       setConfirmDialogOpen(false);
     } catch (err) {
