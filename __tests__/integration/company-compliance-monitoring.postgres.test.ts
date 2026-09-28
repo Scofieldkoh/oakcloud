@@ -530,6 +530,40 @@ describePostgres('company compliance monitoring on PostgreSQL', () => {
     expect(bills[0]).toMatchObject({ billingPeriodKey: `YA${target.yearOfAssessment}`, status: 'OPEN' });
     expect(bills[0]!.operativeAmount.toFixed(2)).toBe('900.00');
   });
+
+  it('bills a postpaid fee when a Managed externally YA is marked Filed on the Deadlines page', async () => {
+    const { setCompanyObligationStatus } = await import('@/services/compliance-monitoring/obligation-status');
+    const { updateDeadlineOccurrence } = await import('@/services/deadline/service');
+    const target = await prisma.deadlineOccurrence.findFirstOrThrow({
+      where: { tenantId: fixture.tenantId, companyId: fixture.companyId, ownershipScope: 'COMPANY', obligationCode: 'SG_ECI', status: { not: 'CANCELLED' }, yearOfAssessment: { not: null } },
+      orderBy: { yearOfAssessment: 'desc' },
+    });
+    await prisma.$transaction((tx) => setCompanyObligationStatus({
+      tenantId: fixture.tenantId, companyId: fixture.companyId, obligationCode: 'SG_ECI',
+      periodKey: target.obligationPeriodKey!, status: 'MANAGED_EXTERNALLY', actorId: fixture.userId,
+    }, tx));
+    const serviceId = randomUUID();
+    await prisma.clientService.create({
+      data: {
+        id: serviceId, tenantId: fixture.tenantId, companyId: fixture.companyId, source: 'MANUAL',
+        serviceVariantId: fixture.variantId, familyName: 'Tax', serviceName: 'Corporate tax (Deadlines page)',
+        status: 'ACTIVE', serviceCadence: 'ANNUALLY', startDate: new Date('2026-04-01T00:00:00.000Z'),
+        billingDisposition: 'CONFIGURED', engagementStartYearOfAssessment: target.yearOfAssessment,
+        feeLines: { create: { tenantId: fixture.tenantId, description: 'ECI', amount: '300.00', currency: 'SGD', billingFrequency: 'ONE_TIME', billingTiming: 'POSTPAID', postpaidTrigger: 'SG_ECI_FILED' } },
+      },
+    });
+    const bills = () => prisma.billingOccurrence.findMany({ where: { tenantId: fixture.tenantId, clientServiceId: serviceId } });
+    const actor = { tenantId: fixture.tenantId, userId: fixture.userId };
+
+    const open = await prisma.deadlineOccurrence.findUniqueOrThrow({ where: { id: target.id } });
+    await updateDeadlineOccurrence(target.id, { status: 'COMPLETED', expectedUpdatedAt: open.updatedAt.toISOString() }, actor);
+    expect(await bills()).toHaveLength(1);
+    expect((await bills())[0]).toMatchObject({ billingPeriodKey: `YA${target.yearOfAssessment}`, status: 'OPEN' });
+
+    const completed = await prisma.deadlineOccurrence.findUniqueOrThrow({ where: { id: target.id } });
+    await updateDeadlineOccurrence(target.id, { status: 'OPEN', reason: 'Not filed yet', expectedUpdatedAt: completed.updatedAt.toISOString() }, actor);
+    expect((await bills())[0]).toMatchObject({ status: 'CANCELLED', cancelledById: fixture.userId });
+  });
 });
 
 async function createPresetRule(prisma: PrismaClient, tenantId: string, preset: DeadlineRulePreset): Promise<string> {

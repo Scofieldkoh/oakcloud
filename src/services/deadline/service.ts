@@ -39,6 +39,7 @@ import type {
   ListDeadlinesOptions,
 } from './types';
 import { listDeadlineAwareness } from './awareness';
+import { syncPostpaidBilling } from '@/services/billing/postpaid';
 
 const CALENDAR_RESULT_CAP = 5_000;
 const CALENDAR_QUERY_LIMIT = CALENDAR_RESULT_CAP + 1;
@@ -739,6 +740,15 @@ async function updateWithAudit(
     const updated = await tx.deadlineOccurrence.updateMany({ where, data });
     if (updated.count === 0) {
       throw new DeadlineApiError(ErrorCodes.VERSION_CONFLICT, 'Deadline occurrence was changed by another user', 409);
+    }
+    // Filing a company obligation here (Filed, or back from Filed) drives
+    // postpaid billing, as it does from the service Deadline tab.
+    if (current.ownershipScope === 'COMPANY' && data.status !== undefined && data.status !== current.status) {
+      await syncPostpaidBilling({
+        tenantId: actor.tenantId,
+        companyId: current.companyId,
+        cancelledById: actor.userId ?? null,
+      }, tx as unknown as Prisma.TransactionClient);
     }
     await createAuditLog({
       tenantId: actor.tenantId,
