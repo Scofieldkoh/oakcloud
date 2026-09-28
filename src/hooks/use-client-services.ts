@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { CompanyObligationPreview } from '@/services/compliance-monitoring/writer';
+import type { CompanyObligationStatus } from '@/services/compliance-monitoring/obligation-status';
 import type { ClientServiceDeadlineDraftPreview, ClientServiceDeadlineImpact, ClientServiceDto, CompanyServiceActivationDto, DuplicateClientServiceMatches, ManualClientServiceCatalogOptionsResponse, PermanentDeleteClientServiceResult, ServiceAgreementActivationDto } from '@/services/client-service';
 import type { ClientServiceDeadlineDraftPreviewInput, ClientServiceDeadlineImpactInput, CreateManualClientServiceRequest, SearchClientServicesInput, UpdateClientServiceInput } from '@/lib/validations/client-service';
 
@@ -105,6 +106,32 @@ export function useCompanyObligations(
     queryKey: ['company-obligations', companyId, query],
     queryFn: () => requestJson<CompanyObligationPreview>(`/api/companies/${companyId}/services/company-obligations${query ? `?${query}` : ''}`),
     enabled: enabled && Boolean(companyId),
+  });
+}
+
+export function useSetCompanyObligationStatus(companyId: string) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { obligationCode: string; periodKey: string; status: CompanyObligationStatus }) =>
+      requestJson<{ changed: number }>(`/api/companies/${companyId}/services/company-obligations`, {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(input),
+      }),
+    onSuccess: () => client.invalidateQueries({ queryKey: ['company-obligations', companyId] }),
+  });
+}
+
+export function useConfirmFinancialPeriod(companyId: string) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { periodStart: string; periodEnd: string; yearOfAssessment: number }) =>
+      requestJson<{ id: string }>(`/api/companies/${companyId}/financial-periods`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(input),
+      }),
+    onSuccess: () => client.invalidateQueries({ queryKey: ['company-obligations', companyId] }),
   });
 }
 

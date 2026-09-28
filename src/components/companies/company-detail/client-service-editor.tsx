@@ -13,10 +13,12 @@ import {
   useArchiveClientService,
   useClientService,
   useCompanyObligations,
+  useSetCompanyObligationStatus,
   useDeleteClientServicePermanently,
   useUpdateClientService,
 } from '@/hooks/use-client-services';
 import { OperationalServiceForm, toCompanyObligationsState } from './operational-service-form';
+import { FirstFinancialPeriodDialog } from './first-financial-period-dialog';
 import { ServiceCompanyContext } from './service-company-context';
 import {
   deadlineImpactPayload,
@@ -68,6 +70,9 @@ export function ClientServiceEditor({
   const fingerprintRef = useRef<string | null>(null);
   const errorId = useId();
   const companyObligations = useCompanyObligations(service.companyId, { serviceId: service.id }, isOpen);
+  const setObligationStatus = useSetCompanyObligationStatus(service.companyId);
+  const [firstPeriodOpen, setFirstPeriodOpen] = useState(false);
+  const [obligationError, setObligationError] = useState('');
   const update = useUpdateClientService();
   const archive = useArchiveClientService();
   const permanentDelete = useDeleteClientServicePermanently();
@@ -334,7 +339,15 @@ export function ClientServiceEditor({
           serviceHeader={serviceHeader}
           deadlinePreview={deadlinePreview}
           openDeadlineOccurrences={service.openDeadlineOccurrences ?? []}
-          companyObligations={(companyObligations.data?.items.length ?? 0) > 0 || (companyObligations.data?.notices.length ?? 0) > 0 ? toCompanyObligationsState(companyObligations) : undefined}
+          companyObligations={(companyObligations.data?.items.length ?? 0) > 0 || (companyObligations.data?.notices.length ?? 0) > 0
+            ? { ...toCompanyObligationsState(companyObligations), error: obligationError || toCompanyObligationsState(companyObligations).error }
+            : undefined}
+          onCompanyObligationStatusChange={(item, status) => {
+            setObligationError('');
+            setObligationStatus.mutateAsync({ obligationCode: item.obligationCode, periodKey: item.periodKey, status })
+              .catch((error: unknown) => setObligationError(error instanceof Error ? error.message : 'Unable to save the filing status.'));
+          }}
+          onConfirmFirstPeriod={() => setFirstPeriodOpen(true)}
           openBillingOccurrences={service.openBillingOccurrences ?? []}
         />
         {!readOnly ? (
@@ -353,6 +366,12 @@ export function ClientServiceEditor({
         {!readOnly ? <Button isLoading={busy} disabled={hasConflict || busy} onClick={save}>Save changes</Button> : null}
       </ModalFooter>
     </Modal>
+    <FirstFinancialPeriodDialog
+      companyId={service.companyId}
+      isOpen={firstPeriodOpen}
+      onClose={() => setFirstPeriodOpen(false)}
+      suggestion={companyObligations.data?.firstPeriodSuggestion ?? null}
+    />
     <ConfirmDialog isOpen={deleteOpen} onClose={() => { setDeleteError(''); setDeleteOpen(false); }} onConfirm={deleteService} title="Permanently delete service?" description="This permanently removes the service and all related deadlines, billing records, fee lines, and rule configuration. This cannot be undone." confirmLabel="Delete permanently" requireReason reasonLabel="Deletion reason" reasonPlaceholder="Explain why this service and its history must be deleted" reasonMinLength={10} isLoading={permanentDelete.isPending}>
       {deleteError ? <div role="alert" className="rounded-lg border border-status-error/30 bg-status-error/5 p-2 text-sm text-status-error">{deleteError}</div> : null}
     </ConfirmDialog>

@@ -386,6 +386,55 @@ describe('OperationalServiceForm', () => {
     expect(screen.getByRole('tab', { name: /Billing/ })).toHaveTextContent('Billing2');
   });
 
+  it('lets staff pick a filing status per obligation and confirm the first financial period', () => {
+    const onStatus = vi.fn();
+    const onConfirm = vi.fn();
+    render(
+      <OperationalServiceForm
+        mode="create"
+        values={{ ...baseValues(), deadlineRules: [] }}
+        onChange={() => undefined}
+        errors={{}}
+        monitoringProfiles={['CORPORATE_TAX']}
+        companyObligationStatuses={{}}
+        onCompanyObligationStatusChange={onStatus}
+        onConfirmFirstPeriod={onConfirm}
+        companyObligations={{
+          isLoading: false,
+          error: null,
+          notices: ['Confirm the first financial period after incorporation and its Year of Assessment.'],
+          firstPeriodUnconfirmed: true,
+          statusEditable: true,
+          items: [{
+            obligationCode: 'SG_ECI',
+            obligationName: 'Estimated Chargeable Income (ECI)',
+            periodKey: 'FY2024-12-31',
+            milestoneName: 'ECI filing',
+            dueDate: '2025-03-31' as DateOnly,
+            yearOfAssessment: 2025,
+            periodProvisional: true,
+            coverageTiming: 'DURING',
+            explanation: [],
+            recordedStatus: null,
+          }],
+        }}
+      />,
+    );
+
+    expect(screen.getByText('YA 2025?')).toBeInTheDocument();
+    expect(screen.queryByText('Confirm the first financial period after incorporation and its Year of Assessment.')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm first period' }));
+    expect(onConfirm).toHaveBeenCalledTimes(1);
+
+    const select = screen.getByRole('combobox', { name: /Filing status for Estimated Chargeable Income/ });
+    expect(select).toHaveValue('TO_BE_CONFIRMED');
+    expect([...select.querySelectorAll('option')].map((option) => option.textContent)).toEqual([
+      'To be confirmed', 'Pending filing', 'Filed', 'Managed externally', 'Not required',
+    ]);
+    fireEvent.change(select, { target: { value: 'FILED' } });
+    expect(onStatus).toHaveBeenCalledWith(expect.objectContaining({ obligationCode: 'SG_ECI', periodKey: 'FY2024-12-31' }), 'FILED');
+  });
+
   it('lists the company obligations a monitored service tracks and counts them on the Deadline tab', () => {
     const { rerender } = render(<OperationalServiceForm values={{ ...baseValues(), deadlineRules: [] }} onChange={() => undefined} errors={{}} />);
     expect(screen.queryByRole('heading', { name: 'Company obligations' })).not.toBeInTheDocument();
@@ -407,9 +456,14 @@ describe('OperationalServiceForm', () => {
             periodKey: 'FY2026-12-31',
             milestoneName: 'ECI filing',
             dueDate: '2027-03-31' as DateOnly,
+            yearOfAssessment: 2027,
+            periodProvisional: false,
             coverageTiming: 'DURING',
             explanation: ['Due three months after the financial year ends'],
+            recordedStatus: null,
           }],
+          firstPeriodUnconfirmed: false,
+          statusEditable: false,
         }}
       />,
     );
@@ -418,7 +472,9 @@ describe('OperationalServiceForm', () => {
     expect(screen.getByRole('heading', { name: 'Company obligations' })).toBeInTheDocument();
     expect(screen.getByText('Estimated Chargeable Income (ECI)')).toBeInTheDocument();
     expect(screen.getByText('31 Mar 2027')).toBeInTheDocument();
-    expect(screen.getByText('Monitored')).toBeInTheDocument();
+    expect(screen.getByText('YA 2027')).toBeInTheDocument();
+    expect(screen.getByText('To be confirmed')).toBeInTheDocument();
+    expect(screen.queryByText(/Due three months/)).not.toBeInTheDocument();
     expect(screen.getByText(/SG_FORM_C rule is not published yet/)).toBeInTheDocument();
     expect(screen.queryByText('No deadline rules are associated with this service.')).not.toBeInTheDocument();
   });

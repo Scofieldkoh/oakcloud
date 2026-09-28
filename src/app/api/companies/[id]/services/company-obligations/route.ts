@@ -6,6 +6,9 @@ import { prisma } from '@/lib/prisma';
 import { requirePermission } from '@/lib/rbac';
 import { MONITORING_PROFILES } from '@/services/compliance-monitoring/catalog';
 import { previewCompanyObligations } from '@/services/compliance-monitoring/writer';
+import { setCompanyObligationStatus } from '@/services/compliance-monitoring/obligation-status';
+import { companyObligationStatusEntrySchema } from '@/lib/validations/client-service';
+import { ValidationError } from '@/lib/errors';
 import { currentDateInSingapore } from '@/services/service-schedule';
 import type { DateOnly } from '@/services/service-schedule';
 
@@ -56,6 +59,34 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       } : {}),
     });
     return NextResponse.json(preview);
+  } catch (error) {
+    return createErrorResponse(error);
+  }
+}
+
+/** Record a staff filing status on a stored company obligation period. */
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const session = await requireAuth();
+    const { id } = await params;
+    await requirePermission(session, 'company', 'update', id);
+    const tenantId = requireSessionWorkspaceId(session);
+    const input = companyObligationStatusEntrySchema.parse(await request.json());
+    const changed = await prisma.$transaction((tx) => setCompanyObligationStatus({
+      tenantId,
+      companyId: id,
+      obligationCode: input.obligationCode,
+      periodKey: input.periodKey,
+      status: input.status,
+      actorId: session.id,
+    }, tx));
+    if (changed === 0) {
+      const exists = await prisma.deadlineOccurrence.count({
+        where: { tenantId, companyId: id, ownershipScope: 'COMPANY', obligationCode: input.obligationCode, obligationPeriodKey: input.periodKey },
+      });
+      if (exists === 0) throw new ValidationError('This deadline has not been created yet. Turn on company monitoring, then try again.');
+    }
+    return NextResponse.json({ changed });
   } catch (error) {
     return createErrorResponse(error);
   }
