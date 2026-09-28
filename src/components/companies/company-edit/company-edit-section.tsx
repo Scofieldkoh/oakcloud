@@ -42,6 +42,7 @@ function fieldLabel(path: string[]): string {
   const meaningful = path.filter((part) => !/^\d+$/.test(part));
   const last = meaningful.at(-1) ?? 'value';
   if (last === 'displayAlias') return 'ALIAS';
+  if (last === 'accountsDueDate') return 'Annual return due date';
   const parent = meaningful.at(-2);
   const prefix = parent === 'registered' || parent === 'mailing' ? `${words(parent)} ` : '';
   const label = `${prefix}${words(last)}`;

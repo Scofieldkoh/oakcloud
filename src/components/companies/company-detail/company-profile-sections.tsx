@@ -190,15 +190,15 @@ export function CompanyProfileSections({ company, companyId, canEdit = false, on
         </button>
       ) : undefined}>
         <div className="grid grid-cols-2 gap-4 p-3 text-sm">
-          <div><FieldLabel>Financial year end</FieldLabel><p>{company.financialYearEndDay && company.financialYearEndMonth ? `${company.financialYearEndDay} ${new Date(2000, company.financialYearEndMonth - 1).toLocaleString('en-SG', { month: 'long' })}` : '-'}</p></div>
-          <div><FieldLabel>Home currency</FieldLabel><p>{company.homeCurrency ?? '-'}</p></div>
-          <div><FieldLabel>Next AGM due date</FieldLabel><p>{day(previousMonth(company.accountsDueDate))}</p></div>
-          <div><FieldLabel>Last annual return</FieldLabel><p className="flex flex-wrap items-center gap-1.5">{day(company.lastArFiledDate)}{acraSourceBadge(company, 'annualReturnDate')}</p></div>
-          <div><FieldLabel>Accounts due</FieldLabel><p className="flex flex-wrap items-center gap-1.5">{day(company.accountsDueDate)}{acraSourceBadge(company, 'accountDueDate')}</p></div>
-          <div><FieldLabel>Last AGM</FieldLabel><p>{day(company.lastAgmDate)}</p></div>
-          <div><FieldLabel>FYE as at last AR</FieldLabel><p>{day(company.fyeAsAtLastAr)}</p></div>
           <div><FieldLabel>Incorporation date</FieldLabel><p>{day(company.incorporationDate)}</p></div>
-          <div><FieldLabel>First FYE</FieldLabel><p>{firstPeriod ? day(firstPeriod.periodEnd) : '-'}</p></div>
+          <div><FieldLabel>Home currency</FieldLabel><p>{company.homeCurrency ?? '-'}</p></div>
+          <div><FieldLabel>Financial year end</FieldLabel><p>{company.financialYearEndDay && company.financialYearEndMonth ? `${company.financialYearEndDay} ${new Date(2000, company.financialYearEndMonth - 1).toLocaleString('en-SG', { month: 'long' })}` : '-'}</p></div>
+          <div><FieldLabel>First financial year end</FieldLabel><p>{firstPeriod ? day(firstPeriod.periodEnd) : '-'}</p></div>
+          <div><FieldLabel>Last AGM</FieldLabel><p>{day(company.lastAgmDate)}</p></div>
+          <div><FieldLabel>Last annual return</FieldLabel><p className="flex flex-wrap items-center gap-1.5">{day(company.lastArFiledDate)}{acraSourceBadge(company, 'annualReturnDate')}</p></div>
+          <div><FieldLabel>Next AGM due date</FieldLabel><p>{day(previousMonth(company.accountsDueDate))}</p></div>
+          <div><FieldLabel>Annual return due date</FieldLabel><p className="flex flex-wrap items-center gap-1.5">{day(company.accountsDueDate)}{acraSourceBadge(company, 'accountDueDate')}</p></div>
+          <div><FieldLabel>FYE as at last AR</FieldLabel><p>{day(company.fyeAsAtLastAr)}</p></div>
         </div>
       </Section>
 

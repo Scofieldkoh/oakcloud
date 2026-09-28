@@ -146,9 +146,9 @@ describe('CompanyProfileSections', () => {
     expect(screen.getByText('31 March 2026')).toBeInTheDocument();
   });
 
-  it('shows the first FYE under Compliance', () => {
+  it('shows the first financial year end under Compliance', () => {
     const { rerender } = render(<CompanyProfileSections company={company as never} companyId="company-1" />);
-    expect(screen.getByText('First FYE')).toBeInTheDocument();
+    expect(screen.getByText('First financial year end')).toBeInTheDocument();
     expect(screen.getByText('Incorporation date')).toBeInTheDocument();
 
     rerender(<CompanyProfileSections company={{
