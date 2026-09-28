@@ -43,6 +43,8 @@ vi.mock('@/hooks/use-client-services', () => ({
   }),
   useCreateManualClientService: () => createMock,
   useCompanyObligations: companyObligationsMock,
+  useSetCompanyObligationStatus: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  useConfirmFinancialPeriod: () => ({ mutateAsync: vi.fn(), isPending: false }),
 }));
 
 vi.mock('@/components/ui/searchable-select', () => ({

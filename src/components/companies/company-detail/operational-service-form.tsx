@@ -19,6 +19,7 @@ import type { BillingScheduleConfigV1 } from '@/services/billing/types';
 import { canonicalizeBillingSchedule } from '@/services/billing/schedule';
 import { MONITORING_PROFILE_HINTS, MONITORING_PROFILE_LABELS, type MonitoringProfile } from '@/services/compliance-monitoring/catalog';
 import type { CompanyObligationPreviewItem } from '@/services/compliance-monitoring/writer';
+import { COMPANY_OBLIGATION_STATUSES, COMPANY_OBLIGATION_STATUS_LABELS, type CompanyObligationStatus } from '@/services/compliance-monitoring/obligation-status-labels';
 
 const uuid = () => crypto.randomUUID();
 
@@ -482,6 +483,10 @@ export interface OperationalServiceFormProps {
   monitoringProfiles?: MonitoringProfile[];
   /** The company's statutory obligations (ECI, Form C) this service monitors. */
   companyObligations?: CompanyObligationsState;
+  /** Filing statuses chosen in this form, keyed by companyObligationKey. */
+  companyObligationStatuses?: Record<string, CompanyObligationStatus>;
+  onCompanyObligationStatusChange?: (item: CompanyObligationPreviewItem, status: CompanyObligationStatus) => void;
+  onConfirmFirstPeriod?: () => void;
 }
 
 export type CompanyObligationsState = {
@@ -489,18 +494,18 @@ export type CompanyObligationsState = {
   notices: string[];
   isLoading: boolean;
   error: string | null;
+  firstPeriodUnconfirmed: boolean;
+  statusEditable: boolean;
 };
 
-const COVERAGE_TIMING_LABELS: Record<CompanyObligationPreviewItem['coverageTiming'], string> = {
-  DURING: 'Monitored',
-  BEFORE_START: 'Takeover review',
-  AFTER_END: 'After monitoring ends',
-  NO_COVERAGE: 'Contracted filing',
-};
+/** Key of one company obligation period, used for recorded statuses. */
+export function companyObligationKey(item: { obligationCode: string; periodKey: string }): string {
+  return `${item.obligationCode}|${item.periodKey}`;
+}
 
 /** Adapt a company-obligations query result for the Deadline tab. */
 export function toCompanyObligationsState(query: {
-  data?: { items: CompanyObligationPreviewItem[]; notices: string[] };
+  data?: { items: CompanyObligationPreviewItem[]; notices: string[]; firstPeriodUnconfirmed?: boolean; statusEditable?: boolean };
   isLoading: boolean;
   error: unknown;
 }): CompanyObligationsState {
@@ -509,20 +514,38 @@ export function toCompanyObligationsState(query: {
     notices: query.data?.notices ?? [],
     isLoading: query.isLoading,
     error: query.error ? (query.error instanceof Error ? query.error.message : 'Request failed') : null,
+    firstPeriodUnconfirmed: query.data?.firstPeriodUnconfirmed ?? false,
+    statusEditable: query.data?.statusEditable ?? false,
   };
 }
+
+const FIRST_PERIOD_NOTICES = new Set([
+  'Confirm the first financial period after incorporation and its Year of Assessment.',
+  'Confirm the Year of Assessment for this period.',
+]);
 
 function CompanyObligationsPanel({
   state,
   monitoringProfiles,
   isNewService,
+  statuses,
+  onStatusChange,
+  onConfirmFirstPeriod,
+  disabled,
 }: {
   state: CompanyObligationsState | undefined;
   monitoringProfiles: MonitoringProfile[];
   isNewService: boolean;
+  statuses: Record<string, CompanyObligationStatus>;
+  onStatusChange?: (item: CompanyObligationPreviewItem, status: CompanyObligationStatus) => void;
+  onConfirmFirstPeriod?: () => void;
+  disabled: boolean;
 }) {
   const items = state?.items ?? [];
   const profileLabel = monitoringProfiles.map((profile) => MONITORING_PROFILE_LABELS[profile]).join(', ');
+  const firstPeriodUnconfirmed = state?.firstPeriodUnconfirmed ?? false;
+  const otherNotices = (state?.notices ?? []).filter((notice) => !(firstPeriodUnconfirmed && FIRST_PERIOD_NOTICES.has(notice)));
+  const canSetStatus = Boolean(state?.statusEditable && onStatusChange);
   return (
     <section aria-labelledby="company-obligations-heading" className="space-y-3">
       <div className="flex items-center justify-between">
@@ -538,38 +561,79 @@ function CompanyObligationsPanel({
       </div>
       {state?.isLoading ? <p role="status" className="text-xs italic text-text-muted">Loading company deadlines…</p> : null}
       {state?.error ? <Alert variant="error" compact>Company deadlines are unavailable: {state.error}</Alert> : null}
-      {(state?.notices ?? []).map((notice) => (
+      {firstPeriodUnconfirmed ? (
+        <Alert variant="warning" compact>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <span role="status">The first financial period after incorporation and its Year of Assessment are not confirmed, so the earliest dates may be wrong.</span>
+            {onConfirmFirstPeriod ? (
+              <Button type="button" variant="secondary" size="xs" onClick={onConfirmFirstPeriod} disabled={disabled}>Confirm first period</Button>
+            ) : null}
+          </div>
+        </Alert>
+      ) : null}
+      {otherNotices.map((notice) => (
         <Alert key={notice} variant="warning" compact><span role="status">{notice}</span></Alert>
       ))}
       {!state ? (
         <Alert variant="info" compact>Once saved, the company&apos;s statutory deadlines are tracked in Deadlines as company obligations.</Alert>
-      ) : items.length === 0 && !state.isLoading && !state.error && state.notices.length === 0 ? (
+      ) : items.length === 0 && !state.isLoading && !state.error && state.notices.length === 0 && !firstPeriodUnconfirmed ? (
         <p className="text-xs italic text-text-muted">No company deadlines fall in the next 24 months.</p>
+      ) : null}
+      {state && items.length > 0 && !state.statusEditable ? (
+        <p className="text-xs text-text-muted">Filing statuses can be recorded once company monitoring is switched on.</p>
       ) : null}
       {items.length > 0 ? (
         <div className="divide-y divide-border-primary overflow-hidden rounded-lg border border-border-primary bg-background-primary">
-          {items.map((item) => (
-            <div key={`${item.obligationCode}|${item.periodKey}|${item.milestoneName}`} className="flex flex-wrap items-center justify-between gap-2 px-3.5 py-2.5">
-              <div className="flex min-w-[200px] flex-1 flex-col">
-                <span className="text-xs font-semibold text-text-primary">{item.obligationName}</span>
-                <span className="text-[11px] text-text-muted">{item.periodKey} · {item.explanation[item.explanation.length - 1] ?? item.milestoneName}</span>
+          {items.map((item) => {
+            const key = companyObligationKey(item);
+            const status = statuses[key] ?? item.recordedStatus ?? 'TO_BE_CONFIRMED';
+            return (
+              <div key={`${key}|${item.milestoneName}`} className="flex flex-wrap items-center justify-between gap-2 px-3.5 py-2.5">
+                <div className="flex min-w-[180px] flex-1 flex-col">
+                  <span className="text-xs font-semibold text-text-primary">{item.obligationName}</span>
+                  {item.coverageTiming === 'BEFORE_START' ? (
+                    <span className="text-[11px] text-amber-700 dark:text-amber-300">Before the service start: takeover review</span>
+                  ) : null}
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="inline-flex items-center gap-1.5 rounded-lg border border-border-primary bg-background-elevated px-2.5 py-1 text-xs font-semibold text-text-primary">
+                    <Clock className="h-3 w-3 text-text-muted" />
+                    {formatProjectedDate(item.dueDate)}
+                  </span>
+                  {item.yearOfAssessment ? (
+                    <span
+                      title={item.periodProvisional ? 'Year of Assessment not confirmed yet' : undefined}
+                      className={cn(
+                        'inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold',
+                        item.periodProvisional
+                          ? 'border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-800 dark:bg-amber-950/50 dark:text-amber-300'
+                          : 'border-border-primary bg-background-secondary text-text-secondary',
+                      )}
+                    >
+                      YA {item.yearOfAssessment}{item.periodProvisional ? '?' : ''}
+                    </span>
+                  ) : null}
+                  {canSetStatus ? (
+                    <select
+                      aria-label={`Filing status for ${item.obligationName} YA ${item.yearOfAssessment ?? item.periodKey}`}
+                      className="input input-sm w-auto py-1 text-xs"
+                      disabled={disabled}
+                      value={status}
+                      onChange={(event) => onStatusChange?.(item, event.target.value as CompanyObligationStatus)}
+                    >
+                      {COMPANY_OBLIGATION_STATUSES.map((option) => (
+                        <option key={option} value={option}>{COMPANY_OBLIGATION_STATUS_LABELS[option]}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <span className="inline-flex items-center rounded-full bg-background-secondary px-2 py-0.5 text-[11px] font-medium text-text-secondary">
+                      {COMPANY_OBLIGATION_STATUS_LABELS[status]}
+                    </span>
+                  )}
+                </div>
               </div>
-              <div className="flex items-center gap-2.5">
-                <span className="inline-flex items-center gap-1.5 rounded-lg border border-border-primary bg-background-elevated px-2.5 py-1 text-xs font-semibold text-text-primary">
-                  <Clock className="h-3 w-3 text-text-muted" />
-                  {formatProjectedDate(item.dueDate)}
-                </span>
-                <span className={cn(
-                  'inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium',
-                  item.coverageTiming === 'BEFORE_START'
-                    ? 'bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300'
-                    : 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300',
-                )}>
-                  {COVERAGE_TIMING_LABELS[item.coverageTiming]}
-                </span>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       ) : null}
     </section>
@@ -591,6 +655,9 @@ export function OperationalServiceForm({
   openBillingOccurrences,
   monitoringProfiles = [],
   companyObligations,
+  companyObligationStatuses = {},
+  onCompanyObligationStatusChange,
+  onConfirmFirstPeriod,
 }: OperationalServiceFormProps) {
   const [billingHideConfirmationOpen, setBillingHideConfirmationOpen] = useState(false);
   const [userSelectedTab, setUserSelectedTab] = useState<'deadlines' | 'billing' | null>(null);
@@ -1034,6 +1101,10 @@ export function OperationalServiceForm({
                   state={companyObligations}
                   monitoringProfiles={monitoringProfiles}
                   isNewService={mode === 'create'}
+                  statuses={companyObligationStatuses}
+                  onStatusChange={readOnly ? undefined : onCompanyObligationStatusChange}
+                  onConfirmFirstPeriod={readOnly ? undefined : onConfirmFirstPeriod}
+                  disabled={disabled}
                 />
               ) : null}
 

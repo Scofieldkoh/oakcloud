@@ -280,7 +280,21 @@ export function getDocumentExporter(): IDocumentExporter {
   writer projects them, plus setup gaps such as a missing FYE or an unpublished
   rule, from `GET /api/companies/[id]/services/company-obligations`
   (`profiles`, `start`, `end` for a service being added; `serviceId` for an
-  existing one). It is read-only: the worker still writes the obligations.
+  existing one). Each row shows the due date, a `YA` badge (amber with `?`
+  while the period is provisional) and a filing status.
+- Filing statuses (`compliance-monitoring/obligation-status.ts`) map onto the
+  stored occurrence: To be confirmed (open, responsibility unconfirmed),
+  Pending filing (open, the firm files), Filed (completed), Managed externally
+  (open, external provider) and Not required (waived). Responsibility is
+  recorded as STAFF, so the writer keeps it. Statuses can be set only while
+  company monitoring writes are on: in Add service they are sent with the
+  create request, which writes that company's obligations in the same
+  transaction; in edit they save at once through
+  `PATCH /api/companies/[id]/services/company-obligations`.
+- **Confirm first period** saves a CONFIRMED `CompanyFinancialPeriod`
+  (`POST /api/companies/[id]/financial-periods`, up to 18 months, YA the end
+  year or the year after) and queues company reconciliation. Confirmed periods
+  replace the provisional derived periods they overlap.
 - Monitoring never sends client reminders and never writes billing records.
 - Pause by turning the flag off: stored company obligations stay readable and
   the worker returns to observe mode. Do not delete company rows to roll back.

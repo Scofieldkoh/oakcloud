@@ -229,6 +229,103 @@ describePostgres('company compliance monitoring on PostgreSQL', () => {
     });
     expect(ya2027.coverageLinks.every((link) => link.releasedAt !== null)).toBe(true);
   });
+
+  it('records staff filing statuses that later company reconciliation keeps', async () => {
+    const { setCompanyObligationStatus } = await import('@/services/compliance-monitoring/obligation-status');
+    const { reconcileCompanyObligations } = await import('@/services/compliance-monitoring/writer');
+    const target = await prisma.deadlineOccurrence.findFirstOrThrow({
+      where: { tenantId: fixture.tenantId, companyId: fixture.companyId, ownershipScope: 'COMPANY', obligationCode: 'SG_ECI', status: 'OPEN' },
+      orderBy: { operativeDueDate: 'desc' },
+    });
+    const key = { tenantId: fixture.tenantId, companyId: fixture.companyId, obligationCode: 'SG_ECI', periodKey: target.obligationPeriodKey!, actorId: fixture.userId };
+
+    await prisma.$transaction((tx) => setCompanyObligationStatus({ ...key, status: 'FILED' }, tx));
+    expect(await prisma.deadlineOccurrence.findUniqueOrThrow({ where: { id: target.id } })).toMatchObject({ status: 'COMPLETED', completedById: fixture.userId });
+
+    await prisma.$transaction((tx) => setCompanyObligationStatus({ ...key, status: 'MANAGED_EXTERNALLY' }, tx));
+    await prisma.$transaction((tx) => reconcileCompanyObligations({
+      tenantId: fixture.tenantId, companyId: fixture.companyId, today: TODAY, writeMode: 'APPLY',
+    }, tx));
+    const external = await prisma.deadlineOccurrence.findUniqueOrThrow({ where: { id: target.id } });
+    expect(external).toMatchObject({ status: 'OPEN', filingResponsibility: 'EXTERNAL_PROVIDER', responsibilitySource: 'STAFF', completedAt: null });
+    expect(await prisma.deadlineResponsibilityChange.count({
+      where: { occurrenceId: target.id, newResponsibility: 'EXTERNAL_PROVIDER', source: 'STAFF' },
+    })).toBe(1);
+  });
+
+  it('records filing statuses chosen while adding a service, writing the company obligations on save', async () => {
+    const { createManualClientService } = await import('@/services/client-service/manual-create');
+    const target = await prisma.deadlineOccurrence.findFirstOrThrow({
+      where: { tenantId: fixture.tenantId, companyId: fixture.companyId, ownershipScope: 'COMPANY', obligationCode: 'SG_FORM_C', status: 'OPEN' },
+      orderBy: { operativeDueDate: 'asc' },
+    });
+    const request = {
+      serviceVariantId: fixture.variantId,
+      serviceCadence: 'ANNUALLY' as const,
+      startDate: '2026-04-01',
+      billingDisposition: 'NOT_REQUIRED' as const,
+      billingNotRequiredReason: 'Included in retainer',
+      feeLines: [],
+      confirmDuplicate: true,
+      companyObligationStatuses: [{ obligationCode: 'SG_FORM_C', periodKey: target.obligationPeriodKey!, status: 'NOT_REQUIRED' as const }],
+    };
+    const params = { tenantId: fixture.tenantId, userId: fixture.userId };
+    const setWrites = (companyMonitoringWritesEnabled: boolean) => prisma.workspace.update({
+      where: { id: fixture.tenantId },
+      data: { settings: { servicesWorkspace: { enabled: true, deadlineWritesEnabled: true, companyMonitoringWritesEnabled } } },
+    });
+    const previous = process.env.COMPANY_MONITORING_WRITES_ENABLED;
+    try {
+      delete process.env.COMPANY_MONITORING_WRITES_ENABLED;
+      await setWrites(false);
+      await expect(createManualClientService(fixture.companyId, request, params)).rejects.toThrow(/Turn on company monitoring/);
+      expect(await prisma.deadlineOccurrence.findUniqueOrThrow({ where: { id: target.id } })).toMatchObject({ status: 'OPEN' });
+
+      await setWrites(true);
+      await createManualClientService(fixture.companyId, request, params);
+      expect(await prisma.deadlineOccurrence.findUniqueOrThrow({ where: { id: target.id } })).toMatchObject({ status: 'WAIVED', waivedById: fixture.userId });
+    } finally {
+      await setWrites(true);
+      if (previous !== undefined) process.env.COMPANY_MONITORING_WRITES_ENABLED = previous;
+    }
+  });
+
+  it('confirms a first financial period longer than 12 months and replaces the provisional periods', async () => {
+    const { confirmFinancialPeriod } = await import('@/services/compliance-monitoring/financial-periods');
+    const { previewCompanyObligations } = await import('@/services/compliance-monitoring/writer');
+    const original = await prisma.company.findUniqueOrThrow({ where: { id: fixture.companyId }, select: { incorporationDate: true } });
+    await prisma.company.update({ where: { id: fixture.companyId }, data: { incorporationDate: new Date('2024-09-01T00:00:00.000Z') } });
+    const preview = () => previewCompanyObligations({
+      tenantId: fixture.tenantId,
+      companyId: fixture.companyId,
+      today: TODAY as DateOnly,
+      proposedCoverage: { profiles: ['CORPORATE_TAX'], monitoringStart: '2024-09-01' as DateOnly, monitoringEnd: null },
+    }, prisma);
+    try {
+      const before = await preview();
+      expect(before.firstPeriodUnconfirmed).toBe(true);
+      expect(before.firstPeriodSuggestion).toEqual({ periodStart: '2024-09-01', periodEnd: '2024-12-31', yearOfAssessment: 2025 });
+      expect(before.items.some((item) => item.periodKey === 'FY2024-12-31' && item.periodProvisional)).toBe(true);
+
+      await expect(confirmFinancialPeriod(
+        { tenantId: fixture.tenantId, companyId: fixture.companyId, userId: fixture.userId },
+        { periodStart: '2024-09-01' as DateOnly, periodEnd: '2026-06-30' as DateOnly, yearOfAssessment: 2027 },
+      )).rejects.toThrow(/18 months/);
+      await confirmFinancialPeriod(
+        { tenantId: fixture.tenantId, companyId: fixture.companyId, userId: fixture.userId },
+        { periodStart: '2024-09-01' as DateOnly, periodEnd: '2025-12-31' as DateOnly, yearOfAssessment: 2026 },
+      );
+
+      const after = await preview();
+      expect(after.firstPeriodUnconfirmed).toBe(false);
+      expect(after.items.some((item) => item.periodKey === 'FY2024-12-31')).toBe(false);
+      const firstEci = after.items.find((item) => item.obligationCode === 'SG_ECI' && item.periodKey === 'FY2025-12-31');
+      expect(firstEci).toMatchObject({ yearOfAssessment: 2026, periodProvisional: false });
+    } finally {
+      await prisma.companyFinancialPeriod.deleteMany({ where: { tenantId: fixture.tenantId, companyId: fixture.companyId } });
+      await prisma.company.update({ where: { id: fixture.companyId }, data: { incorporationDate: original.incorporationDate } });
+    }
+  });
 });
 
 async function createPresetRule(prisma: PrismaClient, tenantId: string, preset: DeadlineRulePreset): Promise<string> {

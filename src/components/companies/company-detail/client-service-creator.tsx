@@ -14,7 +14,9 @@ import {
   useManualClientServiceCatalogOptions,
 } from '@/hooks/use-client-services';
 import type { ClientServiceDto, DuplicateClientServiceMatches, ManualClientServiceCatalogVariantOption } from '@/services/client-service';
-import { OperationalServiceForm, toCompanyObligationsState } from './operational-service-form';
+import { OperationalServiceForm, companyObligationKey, toCompanyObligationsState } from './operational-service-form';
+import { FirstFinancialPeriodDialog } from './first-financial-period-dialog';
+import type { CompanyObligationStatus } from '@/services/compliance-monitoring/obligation-status';
 import { ServiceCompanyContext } from './service-company-context';
 import {
   catalogReplacementForVariant,
@@ -85,6 +87,8 @@ export function ClientServiceCreator({
   })), [catalog.data]);
   const dirty = manualFormIsDirty(selectedVariantId, values);
   const selectedProfiles = selectedVariant?.monitoringProfiles ?? [];
+  const [obligationStatuses, setObligationStatuses] = useState<Record<string, CompanyObligationStatus>>({});
+  const [firstPeriodOpen, setFirstPeriodOpen] = useState(false);
   const companyObligations = useCompanyObligations(
     companyId,
     { profiles: selectedProfiles, start: values.startDate || null, end: values.endDate || null },
@@ -152,6 +156,7 @@ export function ClientServiceCreator({
     setValues((current) => ({ ...next, status: current.status, startDate: current.startDate, endDate: current.endDate }));
     setReplacement(next);
     setSelectedVariantId(variant.id);
+    setObligationStatuses({});
     setErrors({});
     setDuplicates(null);
     setFormError('');
@@ -190,6 +195,7 @@ export function ClientServiceCreator({
     setErrors({});
     setValues(emptyManualOperationalValues());
     setSelectedVariantId('');
+    setObligationStatuses({});
     setReplacement(null);
     abortDraftPreview();
     onClose();
@@ -214,7 +220,13 @@ export function ClientServiceCreator({
     try {
       const created = await createService.mutateAsync({
         companyId,
-        data: createManualPayload(selectedVariantId, values, confirmDuplicate),
+        data: {
+          ...createManualPayload(selectedVariantId, values, confirmDuplicate),
+          companyObligationStatuses: selectedProfiles.length > 0 ? Object.entries(obligationStatuses).map(([key, status]) => {
+            const [obligationCode, periodKey] = key.split('|') as [string, string];
+            return { obligationCode, periodKey, status };
+          }) : [],
+        },
       });
       abortDraftPreview();
       onCreated(created);
@@ -292,6 +304,9 @@ export function ClientServiceCreator({
           sectionsDisabled={!selectedVariant}
           monitoringProfiles={selectedProfiles}
           companyObligations={selectedProfiles.length > 0 ? toCompanyObligationsState(companyObligations) : undefined}
+          companyObligationStatuses={obligationStatuses}
+          onCompanyObligationStatusChange={(item, status) => setObligationStatuses((current) => ({ ...current, [companyObligationKey(item)]: status }))}
+          onConfirmFirstPeriod={() => setFirstPeriodOpen(true)}
           serviceSelector={serviceSelector}
           deadlinePreview={deadlinePreview}
         />
@@ -301,6 +316,12 @@ export function ClientServiceCreator({
         <Button isLoading={pending} disabled={!selectedVariant || pending} onClick={() => submit(false)}>Add service</Button>
       </ModalFooter>
     </Modal>
+    <FirstFinancialPeriodDialog
+      companyId={companyId}
+      isOpen={firstPeriodOpen}
+      onClose={() => setFirstPeriodOpen(false)}
+      suggestion={companyObligations.data?.firstPeriodSuggestion ?? null}
+    />
     <ConfirmDialog
       isOpen={Boolean(pendingVariantId)}
       onClose={() => setPendingVariantId(null)}
