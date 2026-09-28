@@ -281,15 +281,15 @@ describe('Task 12 review remediations', () => {
     navigation.searchParams = new URLSearchParams('tab=deadlines');
     render(<DeadlineWorkspace />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Apply complete date range' }));
+    fireEvent.click(screen.getAllByRole('button', { name: 'Apply complete date range' })[0]!);
     expect(navigation.replace).toHaveBeenCalledWith(expect.stringContaining('from=2026-08-10'), { scroll: false });
     expect(navigation.replace).toHaveBeenCalledWith(expect.stringContaining('to=2026-08-20'), { scroll: false });
 
     const callsAfterComplete = navigation.replace.mock.calls.length;
-    fireEvent.click(screen.getByRole('button', { name: 'Apply incomplete date range' }));
+    fireEvent.click(screen.getAllByRole('button', { name: 'Apply incomplete date range' })[0]!);
     expect(navigation.replace).toHaveBeenCalledTimes(callsAfterComplete);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Clear date range' }));
+    fireEvent.click(screen.getAllByRole('button', { name: 'Clear date range' })[0]!);
     expect(navigation.replace.mock.calls).toContainEqual([
       expect.not.stringContaining('from='),
       { scroll: false },

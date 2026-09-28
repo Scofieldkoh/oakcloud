@@ -333,10 +333,13 @@ limit before submission and prevents duplicate keys.
 The deadline table displays one row per deadline occurrence. Columns include:
 
 - Operative due date
-- Derived timing state
+- Timing: Overdue, Due today, Within 1 month, Within 3 months, Within 6
+  months, Within 12 months or Over 12 months (buckets do not overlap), or
+  Takeover review
 - Company
-- Service family and service
-- Milestone
+- Service family and service; a company obligation shows the service that
+  files it, else the service whose monitoring keeps it
+- Milestone (acronyms such as ECI and AGM in capitals)
 - Deadline type
 - Stored lifecycle state
 - Cycle/period
@@ -346,7 +349,8 @@ The deadline table displays one row per deadline occurrence. Columns include:
 The top toolbar places `Statutory`, `Client`, `Internal`, `Open only`, and
 service-family controls together. There is no `Filter families` label. Family
 legend items are clickable filters. The same filters apply to table and
-calendar modes.
+calendar modes. The table header also has an inline filter for each column
+(due date range, timing, company, family, service, milestone, type, status).
 
 ### 9.7 Deadline calendar — mockup view 3
 

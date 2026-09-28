@@ -10,7 +10,7 @@ import { cn } from '@/lib/utils';
 import type { DeadlineOccurrenceDto } from '@/services/deadline';
 import type { UpdateDeadlineOccurrenceInput } from '@/lib/validations/deadline';
 import { DEADLINE_COLUMN_WIDTH_MAX, DEADLINE_COLUMN_WIDTH_MIN } from '@/lib/validations/services-preferences';
-import { DeadlineEventPanel, deadlineStatusLabel, milestoneLabel, serviceLabel } from './deadline-event';
+import { DeadlineEventPanel, deadlineStatusLabel, deadlineTimingClass, deadlineTimingLabel, milestoneLabel, serviceLabel } from './deadline-event';
 import { companyObligationStatusOf } from '@/services/compliance-monitoring/obligation-status-labels';
 
 export const DEADLINE_TABLE_COLUMNS = [
@@ -105,14 +105,6 @@ function dateLabel(value: string | null | undefined): string {
   return year && day && monthName ? `${day} ${monthName} ${year}` : value;
 }
 
-function timingLabel(value: DeadlineOccurrenceDto['timingState'], status: DeadlineOccurrenceDto['status']): string {
-  if (status !== 'OPEN') return status.charAt(0) + status.slice(1).toLowerCase();
-  if (value === 'DUE') return 'Due today';
-  if (value === 'OVERDUE') return 'Overdue';
-  if (value === 'REVIEW') return 'Takeover review';
-  return 'Upcoming';
-}
-
 function statusClass(occurrence: DeadlineOccurrenceDto): string {
   const value = occurrence.status;
   if (occurrence.obligation && value !== 'CANCELLED') {
@@ -125,13 +117,6 @@ function statusClass(occurrence: DeadlineOccurrenceDto): string {
   if (value === 'COMPLETED') return 'badge-success';
   if (value === 'WAIVED') return 'badge-warning';
   if (value === 'CANCELLED') return 'badge-neutral';
-  return 'badge-info';
-}
-
-function timingClass(value: DeadlineOccurrenceDto['timingState'], status: DeadlineOccurrenceDto['status']): string {
-  if (status !== 'OPEN') return 'badge-neutral';
-  if (value === 'OVERDUE') return 'badge-error';
-  if (value === 'DUE' || value === 'REVIEW') return 'badge-warning';
   return 'badge-info';
 }
 
@@ -289,7 +274,7 @@ interface DesktopCellProps {
 function DesktopCell({ occurrence, column, canEdit, isPending, mutationError, onUpdate, onResetOverride, actionOpen, actionAnchor, onActionOpen, onActionClose }: DesktopCellProps) {
   switch (column) {
     case 'dueDate': return <td className="px-3 py-2 align-middle text-sm text-text-primary"><span className="whitespace-nowrap">{dateLabel(occurrence.operativeDueDate)}</span>{occurrence.dateOverridden ? <span className="ml-1 inline-flex rounded-full bg-background-tertiary px-1.5 py-0.5 text-[10px] text-text-secondary">Override</span> : null}</td>;
-    case 'timing': return <td className="px-3 py-2 align-middle"><span className={cn('badge', timingClass(occurrence.timingState, occurrence.status))}>{timingLabel(occurrence.timingState, occurrence.status)}</span></td>;
+    case 'timing': return <td className="px-3 py-2 align-middle"><span className={cn('badge', deadlineTimingClass(occurrence))}>{deadlineTimingLabel(occurrence)}</span></td>;
     case 'company': return <td className="max-w-0 px-3 py-2 align-middle"><CompanyCell occurrence={occurrence} /></td>;
     case 'family': return <td className="max-w-0 px-3 py-2 align-middle"><FamilyCell occurrence={occurrence} /></td>;
     case 'service': return <td className="max-w-0 px-3 py-2 align-middle"><ServiceCell occurrence={occurrence} /></td>;
@@ -310,7 +295,7 @@ function MobileDeadlineCard({ occurrence, canEdit, isPending, mutationError, onU
       selectionLabel={`Select deadline ${occurrence.company.name} ${milestoneLabel(occurrence)}`}
       title={<CompanyCell occurrence={occurrence} />}
       subtitle={<span title={serviceLabel(occurrence)}>{serviceLabel(occurrence)} · {milestoneLabel(occurrence)}</span>}
-      badge={<span className={cn('badge', timingClass(occurrence.timingState, occurrence.status))}>{timingLabel(occurrence.timingState, occurrence.status)}</span>}
+      badge={<span className={cn('badge', deadlineTimingClass(occurrence))}>{deadlineTimingLabel(occurrence)}</span>}
       onCardClick={() => setActionsOpen(true)}
       actions={<DeadlineActions occurrence={occurrence} canEdit={canEdit} isPending={isPending} mutationError={mutationError} onUpdate={onUpdate} onResetOverride={onResetOverride} open={actionsOpen} onOpen={() => setActionsOpen(true)} onClose={() => setActionsOpen(false)} />}
       details={(

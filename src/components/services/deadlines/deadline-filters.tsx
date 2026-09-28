@@ -8,6 +8,8 @@ import { Button } from '@/components/ui/button';
 import { DatePicker, type DatePickerValue } from '@/components/ui/date-picker';
 import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
 import { TableSelectFilter, TableTextFilter } from '@/components/ui/data-table';
+import type { DeadlineTimingBucket } from '@/lib/validations/deadline';
+import { DEADLINE_TIMING_BUCKET_LABELS } from './deadline-event';
 
 export type DeadlineFilterType = 'STATUTORY' | 'CLIENT' | 'INTERNAL';
 export type DeadlineFilterStatus = 'OPEN' | 'COMPLETED' | 'WAIVED' | 'CANCELLED';
@@ -60,6 +62,7 @@ const originLabels: Record<DeadlineFilterOrigin, string> = {
 const typeOptions = (Object.keys(typeLabels) as DeadlineFilterType[]).map((value) => ({ value, label: typeLabels[value] }));
 const statusOptions = (Object.keys(statusLabels) as DeadlineSelectableStatus[]).map((value) => ({ value, label: statusLabels[value] }));
 const originOptions = (Object.keys(originLabels) as DeadlineFilterOrigin[]).map((value) => ({ value, label: originLabels[value] }));
+const timingOptions = (Object.keys(DEADLINE_TIMING_BUCKET_LABELS) as DeadlineTimingBucket[]).map((value) => ({ value, label: DEADLINE_TIMING_BUCKET_LABELS[value] }));
 
 function toLocalDate(value: string): Date | undefined {
   if (!value) return undefined;
@@ -195,6 +198,9 @@ export interface DeadlineInlineFilterValues {
   type: DeadlineFilterType | '';
   status: DeadlineSelectableStatus | '';
   origin: DeadlineFilterOrigin | '';
+  timingBucket: DeadlineTimingBucket | '';
+  dateFrom: string;
+  dateTo: string;
 }
 
 export interface DeadlineInlineFilterColumn {
@@ -252,6 +258,31 @@ function InlineFilterCell({ id, families, values, onChange }: { id: string; fami
       return <InlineSelectFilter label="Deadline type" options={typeOptions} value={values.type} onChange={(value) => onChange({ type: value as DeadlineFilterType | '' })} />;
     case 'status':
       return <InlineSelectFilter label="Status" options={statusOptions} value={values.status} onChange={(value) => onChange({ status: value as DeadlineSelectableStatus | '' })} />;
+    case 'dueDate':
+      return (
+        <div className="min-w-0 px-2 py-2">
+          <DatePicker
+            value={values.dateFrom && values.dateTo ? { mode: 'range', range: { from: toLocalDate(values.dateFrom), to: toLocalDate(values.dateTo) } } : undefined}
+            onChange={(value: DatePickerValue | undefined) => {
+              if (!value) {
+                onChange({ dateFrom: '', dateTo: '' });
+                return;
+              }
+              if (value.mode !== 'range' || !value.range?.from || !value.range.to) return;
+              const from = toLocalDateString(value.range.from);
+              const to = toLocalDateString(value.range.to);
+              if (from && to) onChange({ dateFrom: from, dateTo: to });
+            }}
+            placeholder="All dates"
+            size="sm"
+            defaultTab="range"
+            className="text-xs"
+            variant="table-filter"
+          />
+        </div>
+      );
+    case 'timing':
+      return <InlineSelectFilter label="Timing" options={timingOptions} value={values.timingBucket} onChange={(value) => onChange({ timingBucket: value as DeadlineTimingBucket | '' })} />;
     case 'origin':
       return <InlineSelectFilter label="Source" options={originOptions} value={values.origin} onChange={(value) => onChange({ origin: value as DeadlineFilterOrigin | '' })} />;
     default:

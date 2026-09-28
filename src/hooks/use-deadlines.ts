@@ -85,6 +85,7 @@ export function normalizeDeadlineSearch(input: DeadlineSearchInput = {}): Deadli
     companyIds: uniqueStrings(input.companyIds),
     statuses: uniqueOrdered(input.statuses, statusOrder),
     timing: uniqueOrdered(input.timing, timingOrder),
+    timingBucket: input.timingBucket,
     openOnly: input.openOnly ?? true,
     origin: input.origin,
     companyQuery: input.companyQuery?.trim() ?? '',
@@ -117,6 +118,7 @@ export function deadlineSearchParams(search: DeadlineSearchInput = {}): string {
   params.set('companyIds', normalized.companyIds.join(','));
   params.set('statuses', normalized.statuses.join(','));
   params.set('timing', normalized.timing.join(','));
+  if (normalized.timingBucket) params.set('timingBucket', normalized.timingBucket);
   params.set('openOnly', String(normalized.openOnly));
   if (normalized.origin) params.set('origin', normalized.origin);
   if (normalized.companyQuery) params.set('companyQuery', normalized.companyQuery);
