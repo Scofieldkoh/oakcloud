@@ -478,6 +478,37 @@ describePostgres('company compliance monitoring on PostgreSQL', () => {
     expect(current).toHaveLength(1);
     expect(current[0]).toMatchObject({ status: 'OPEN' });
   });
+
+  it('bills a postpaid fee as soon as a service is added by hand with a YA already Filed', async () => {
+    const { createManualClientService } = await import('@/services/client-service/manual-create');
+    const { setCompanyObligationStatus } = await import('@/services/compliance-monitoring/obligation-status');
+    const target = await prisma.deadlineOccurrence.findFirstOrThrow({
+      where: { tenantId: fixture.tenantId, companyId: fixture.companyId, ownershipScope: 'COMPANY', obligationCode: 'SG_FORM_C', status: { not: 'CANCELLED' }, yearOfAssessment: { not: null } },
+      orderBy: { yearOfAssessment: 'desc' },
+    });
+    await prisma.$transaction((tx) => setCompanyObligationStatus({
+      tenantId: fixture.tenantId, companyId: fixture.companyId, obligationCode: 'SG_FORM_C',
+      periodKey: target.obligationPeriodKey!, status: 'PENDING_FILING', actorId: fixture.userId,
+    }, tx));
+    const created = await createManualClientService(fixture.companyId, {
+      serviceVariantId: fixture.variantId,
+      serviceCadence: 'ANNUALLY',
+      startDate: '2026-04-01',
+      billingDisposition: 'CONFIGURED',
+      feeLines: [{
+        description: 'Tax filing', amount: '900.00', currency: 'SGD', billingFrequency: 'ONE_TIME',
+        billingTiming: 'POSTPAID', postpaidTrigger: 'SG_FORM_C_FILED',
+      }],
+      engagementStartYearOfAssessment: target.yearOfAssessment,
+      companyObligationStatuses: [{ obligationCode: 'SG_FORM_C', periodKey: target.obligationPeriodKey!, status: 'FILED' }],
+      confirmDuplicate: true,
+    }, { tenantId: fixture.tenantId, userId: fixture.userId });
+
+    const bills = await prisma.billingOccurrence.findMany({ where: { tenantId: fixture.tenantId, clientServiceId: created.id } });
+    expect(bills).toHaveLength(1);
+    expect(bills[0]).toMatchObject({ billingPeriodKey: `YA${target.yearOfAssessment}`, status: 'OPEN' });
+    expect(bills[0]!.operativeAmount.toFixed(2)).toBe('900.00');
+  });
 });
 
 async function createPresetRule(prisma: PrismaClient, tenantId: string, preset: DeadlineRulePreset): Promise<string> {
