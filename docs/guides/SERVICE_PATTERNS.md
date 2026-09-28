@@ -274,9 +274,13 @@ export function getDocumentExporter(): IDocumentExporter {
   exists: an activated agreement starts monitoring at the agreement date, and
   a service added by hand starts at its start date with a review item to
   confirm that start. The company also needs a financial year end.
-- The Add service dialog's Deadline tab lists only the variant's own service
-  rules; for a monitored variant it notes that the company's statutory
-  deadlines appear in Deadlines as company obligations after saving.
+- The service dialog's Deadline tab shows a **Company obligations** section
+  for a monitored variant (Add service) or a service that started monitoring
+  (view and edit). It lists the company's ECI and Form C dates as the company
+  writer projects them, plus setup gaps such as a missing FYE or an unpublished
+  rule, from `GET /api/companies/[id]/services/company-obligations`
+  (`profiles`, `start`, `end` for a service being added; `serviceId` for an
+  existing one). It is read-only: the worker still writes the obligations.
 - Monitoring never sends client reminders and never writes billing records.
 - Pause by turning the flag off: stored company obligations stay readable and
   the worker returns to observe mode. Do not delete company rows to roll back.
