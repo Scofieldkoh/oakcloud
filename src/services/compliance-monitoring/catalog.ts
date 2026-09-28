@@ -41,6 +41,11 @@ export type ObligationDefinition = {
   reviewAction: string | null;
   /** Months before the service start a filing still enters takeover review; defaults to the 12-month lookback. */
   takeoverReviewMonths?: number;
+  /**
+   * False when the engagement start YA does not reach back to filings due
+   * before the service started (ECI: only the takeover window applies).
+   */
+  engagementReachBack?: boolean;
 };
 
 export const OBLIGATION_CATALOG: readonly ObligationDefinition[] = [
@@ -55,6 +60,7 @@ export const OBLIGATION_CATALOG: readonly ObligationDefinition[] = [
     plainRule: 'Within three months after the financial year ends',
     reviewAction: null,
     takeoverReviewMonths: 3,
+    engagementReachBack: false,
   },
   {
     code: 'SG_FORM_C',
