@@ -19,7 +19,7 @@ import type { BillingScheduleConfigV1 } from '@/services/billing/types';
 import { canonicalizeBillingSchedule } from '@/services/billing/schedule';
 import { MONITORING_PROFILE_HINTS, MONITORING_PROFILE_LABELS, type MonitoringProfile } from '@/services/compliance-monitoring/catalog';
 import type { CompanyObligationPreviewItem } from '@/services/compliance-monitoring/writer';
-import { COMPANY_OBLIGATION_STATUSES, COMPANY_OBLIGATION_STATUS_LABELS, type CompanyObligationStatus } from '@/services/compliance-monitoring/obligation-status';
+import { COMPANY_OBLIGATION_STATUSES, COMPANY_OBLIGATION_STATUS_LABELS, type CompanyObligationStatus } from '@/services/compliance-monitoring/obligation-status-labels';
 
 const uuid = () => crypto.randomUUID();
 
