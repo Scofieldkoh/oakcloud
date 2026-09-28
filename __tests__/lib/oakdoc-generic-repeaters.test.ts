@@ -11,6 +11,7 @@ import {
 } from '@/lib/document-editor/oakdoc-generic-repeaters';
 import {
   OAKDOC_GENERIC_REPEATER_BY_TAG,
+  formatOakDocRole,
 } from '@/lib/document-editor/oakdoc-repeater-definitions';
 
 const WORD_NS = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
@@ -116,6 +117,56 @@ describe('OakDoc generic repeaters', () => {
     expect(xml(resolved.bytes)).not.toContain(tag);
   });
 
+  it('keeps each director signing block together and puts roles in proper case', () => {
+    const source = docx(
+      '<w:p w14:paraId="D1000001"/>'
+      + '<w:p w14:paraId="D1000002"><w:r><w:t>________________</w:t></w:r></w:p>'
+      + '<w:p w14:paraId="D1000003">' + field('director.name', 40) + '</w:p>'
+      + '<w:p w14:paraId="D1000004"><w:pPr><w:pStyle w:val="Normal"/><w:jc w:val="left"/></w:pPr>' + field('director.role', 41) + '</w:p>',
+    );
+    const created = createOakDocGenericRepeater({
+      docxBytes: source,
+      fromParaId: 'D1000001',
+      toParaId: 'D1000004',
+      definition: definition('repeat.directors'),
+    });
+    const resolved = resolveOakDocGenericRepeaters({
+      docxBytes: created.bytes,
+      data: {
+        company: {
+          id: 'c1',
+          name: 'Example',
+          uen: '202600001A',
+          officers: [
+            { id: 'd1', name: 'Goh Hua Tiong', role: 'DIRECTOR', isCurrent: true },
+            { id: 'd2', name: 'Lee Kwee Eng', role: 'MANAGING DIRECTOR AND CEO', isCurrent: true },
+          ],
+        },
+      },
+    });
+    const document = new DOMParser().parseFromString(xml(resolved.bytes), 'application/xml');
+    const paragraphs = Array.from(document.getElementsByTagNameNS(WORD_NS, 'p'));
+    const flags = paragraphs.map((paragraph) => [
+      paragraph.getElementsByTagNameNS(WORD_NS, 'keepNext').length,
+      paragraph.getElementsByTagNameNS(WORD_NS, 'keepLines').length,
+    ]);
+
+    // Each block of four paragraphs holds together; the last line of a block does not pull in the next.
+    expect(flags).toEqual([[1, 1], [1, 1], [1, 1], [0, 1], [1, 1], [1, 1], [1, 1], [0, 1]]);
+    expect(xml(resolved.bytes)).toContain('<w:pPr><w:pStyle w:val="Normal"/><w:keepLines/><w:jc w:val="left"/></w:pPr>');
+    expect(xml(resolved.bytes)).toContain('>Director<');
+    expect(xml(resolved.bytes)).toContain('>Managing Director and CEO<');
+  });
+
+  it('formats registry roles and leaves typed roles alone', () => {
+    expect(formatOakDocRole('DIRECTOR')).toBe('Director');
+    expect(formatOakDocRole('CEO')).toBe('CEO');
+    expect(formatOakDocRole('DIRECTOR / CFO')).toBe('Director / CFO');
+    expect(formatOakDocRole('ALTERNATE DIRECTOR')).toBe('Alternate Director');
+    expect(formatOakDocRole('Chief Executive Officer')).toBe('Chief Executive Officer');
+    expect(formatOakDocRole(null)).toBe('');
+  });
+
   it('repeats agreement entities in a table row', () => {
     const source = docx(
       '<w:tbl><w:tr><w:tc><w:p w14:paraId="C1D2E3F4">'
@@ -146,6 +197,8 @@ describe('OakDoc generic repeaters', () => {
     expect(output.match(/<w:tr(?:\s|>)/g)).toHaveLength(2);
     expect(output).toContain('Alpha Pte. Ltd.');
     expect(output).toContain('Beta Pte. Ltd.');
+    // Table rows can still break across pages.
+    expect(output).not.toContain('w:keepNext');
   });
 
   it('wraps and safely unwraps a multi-paragraph repeating block', () => {
