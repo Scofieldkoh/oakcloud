@@ -840,8 +840,9 @@ export function usePurgeRecords() {
         body: JSON.stringify(data),
       });
       if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || 'Failed to purge records');
+        const error = await res.json().catch(() => ({}));
+        // A purge where every record was refused carries the reasons in failedRecords.
+        throw new Error(error.error || error.failedRecords?.[0]?.error || error.message || 'Failed to purge records');
       }
       return res.json();
     },

@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { DocumentDeleteDialog } from '@/components/documents/document-delete-dialog';
 import { useToast } from '@/components/ui/toast';
 import { usePermissions } from '@/hooks/use-permissions';
 import { useSelection } from '@/hooks/use-selection';
@@ -104,13 +105,14 @@ function toLocalDateString(date?: Date): string | undefined {
 export default function GeneratedDocumentsPage() {
   const searchParams = useSearchParams();
   const { success, error: toastError } = useToast();
-  const { can } = usePermissions();
+  const { can, isSuperAdmin, isWorkspaceAdmin } = usePermissions();
 
   // Permission checks
   const canCreate = can.createDocument;
   const canUpdate = can.updateDocument;
   const canDelete = can.deleteDocument;
   const canExport = can.exportDocument;
+  const canDeletePermanently = canDelete && (isSuperAdmin || isWorkspaceAdmin);
 
   // Initial URL-derived list state, used both for filters and for restoring the
   // last-known list snapshot when this page is mounted cold (e.g. browser Back).
@@ -331,12 +333,13 @@ export default function GeneratedDocumentsPage() {
   }, [today]);
 
   // Handle delete
-  const handleDelete = async (reason?: string) => {
+  const handleDelete = async (reason: string, permanent: boolean) => {
     if (!documentToDelete || !reason) return;
 
     try {
       const params = new URLSearchParams();
       params.set('reason', reason);
+      if (permanent) params.set('permanent', 'true');
       const url = `/api/generated-documents/${documentToDelete}?${params}`;
 
       const response = await fetch(url, { method: 'DELETE' });
@@ -353,7 +356,7 @@ export default function GeneratedDocumentsPage() {
         throw new Error(errorData.error || 'Failed to delete document');
       }
 
-      success('Document deleted successfully');
+      success(permanent ? 'Document permanently deleted' : 'Document moved to the Recycle Bin');
       setDocuments((prev) => prev.filter((d) => d.id !== documentToDelete));
       setTotal((prev) => prev - 1);
     } catch (err) {
@@ -443,21 +446,26 @@ export default function GeneratedDocumentsPage() {
   };
 
   // Handle bulk delete
-  const handleBulkDeleteConfirm = async (reason?: string) => {
+  const handleBulkDeleteConfirm = async (reason: string, permanent: boolean) => {
     if (!reason || selectedCount === 0) return;
 
     try {
       const response = await fetch('/api/generated-documents/bulk-delete', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ids: Array.from(selectedIds), reason }),
+        body: JSON.stringify({ ids: Array.from(selectedIds), reason, ...(permanent ? { permanent: true } : {}) }),
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) {
         throw new Error(data.error || 'Failed to delete documents');
       }
 
-      success(data.message || `Deleted ${data.deleted} documents`);
+      const firstFailure: string | undefined = data.failed?.[0]?.error;
+      if (firstFailure) {
+        toastError(`${data.message}. ${firstFailure}`);
+      } else {
+        success(data.message || `Deleted ${data.deleted} documents`);
+      }
       setBulkDeleteDialogOpen(false);
       clearSelection();
       void fetchDocuments();
@@ -765,21 +773,14 @@ export default function GeneratedDocumentsPage() {
       )}
 
       {/* Delete confirmation dialog */}
-      <ConfirmDialog
+      <DocumentDeleteDialog
         isOpen={deleteDialogOpen}
         onClose={() => {
           setDeleteDialogOpen(false);
           setDocumentToDelete(null);
         }}
         onConfirm={handleDelete}
-        title="Delete Document"
-        description="This action cannot be undone. The document will be soft-deleted and can be restored by an administrator."
-        confirmLabel="Delete"
-        variant="danger"
-        requireReason
-        reasonLabel="Reason for deletion"
-        reasonPlaceholder="Please provide a reason for deleting this document..."
-        reasonMinLength={10}
+        canDeletePermanently={canDeletePermanently}
       />
 
       <ConfirmDialog
@@ -793,18 +794,12 @@ export default function GeneratedDocumentsPage() {
       />
 
       {/* Bulk Delete Confirmation Dialog */}
-      <ConfirmDialog
+      <DocumentDeleteDialog
         isOpen={bulkDeleteDialogOpen}
         onClose={() => setBulkDeleteDialogOpen(false)}
         onConfirm={handleBulkDeleteConfirm}
-        title={`Delete ${selectedCount} Document${selectedCount > 1 ? 's' : ''}`}
-        description={`You are about to delete ${selectedCount} document${selectedCount > 1 ? 's' : ''}. This action cannot be undone. Deleted documents can be restored by an administrator.`}
-        confirmLabel={`Delete ${selectedCount} Document${selectedCount > 1 ? 's' : ''}`}
-        variant="danger"
-        requireReason
-        reasonLabel="Reason for deletion"
-        reasonPlaceholder="Please provide a reason for deleting these documents..."
-        reasonMinLength={10}
+        count={selectedCount}
+        canDeletePermanently={canDeletePermanently}
       />
 
       {/* Floating Bulk Actions Toolbar */}

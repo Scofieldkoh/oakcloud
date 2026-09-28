@@ -190,6 +190,13 @@ export const StorageKeys = {
   },
 
   /**
+   * Get prefix for all files belonging to a generated document
+   */
+  generatedDocumentPrefix(tenantId: string, documentId: string): string {
+    return `${tenantId}/generated-documents/${documentId}/`;
+  },
+
+  /**
    * Get prefix for pending documents of a tenant
    */
   pendingPrefix(tenantId: string): string {
