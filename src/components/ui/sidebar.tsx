@@ -37,6 +37,9 @@ import {
   Sparkles,
   LayoutTemplate,
   Puzzle,
+  Package,
+  CalendarClock,
+  CalendarDays,
 } from 'lucide-react';
 import { useSession, useLogout } from '@/hooks/use-auth';
 import { useServicesWorkspaceSettings } from '@/hooks/use-services-workspace-settings';
@@ -91,11 +94,20 @@ const ungroupedAdminItems: NavItem[] = [
   { name: 'Connectors', href: '/admin/connectors', icon: Plug, adminOnly: true },
   { name: 'Recycle Bin', href: '/admin/data-purge', icon: Trash2, superAdminOnly: true },
   { name: 'ACRA Records', href: '/admin/acra-data', icon: Database, adminOnly: true },
-  { name: 'Services', href: '/admin/services', icon: BriefcaseBusiness, adminOnly: true },
 ];
 
 // Grouped admin items
 const adminNavGroups: NavGroup[] = [
+  {
+    id: 'services',
+    name: 'Services',
+    icon: BriefcaseBusiness,
+    items: [
+      { name: 'Service Catalog', href: '/admin/services/catalog', icon: Package, adminOnly: true },
+      { name: 'Deadline Rules', href: '/admin/services/deadline-rules', icon: CalendarClock, adminOnly: true },
+      { name: 'Business Calendar', href: '/admin/services/business-calendar', icon: CalendarDays, adminOnly: true },
+    ],
+  },
   {
     id: 'document-templates',
     name: 'Document Templates',

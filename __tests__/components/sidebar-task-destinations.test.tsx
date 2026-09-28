@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import type { AnchorHTMLAttributes, ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -81,14 +81,19 @@ describe('Sidebar task workspace destinations', () => {
     expect(screen.queryByRole('link', { name: 'Services' })).not.toBeInTheDocument();
   });
 
-  it('exposes Services in Administration to workspace administrators', () => {
+  it('exposes the Services pages as an Administration sub-menu to workspace administrators', () => {
     authState.data.isWorkspaceAdmin = true;
 
     render(<Sidebar />);
 
-    const servicesLink = screen.getByRole('link', { name: 'Services' });
-    expect(screen.getByRole('navigation', { name: 'Main menu' })).toContainElement(servicesLink);
-    expect(servicesLink).toHaveAttribute('href', '/admin/services');
+    const servicesGroup = screen.getByRole('button', { name: 'Services' });
+    expect(screen.getByRole('navigation', { name: 'Main menu' })).toContainElement(servicesGroup);
+    expect(servicesGroup).toHaveAttribute('aria-expanded', 'false');
+    fireEvent.click(servicesGroup);
+
+    expect(screen.getByRole('link', { name: 'Service Catalog' })).toHaveAttribute('href', '/admin/services/catalog');
+    expect(screen.getByRole('link', { name: 'Deadline Rules' })).toHaveAttribute('href', '/admin/services/deadline-rules');
+    expect(screen.getByRole('link', { name: 'Business Calendar' })).toHaveAttribute('href', '/admin/services/business-calendar');
   });
 
   it('exposes the operational Services destination only when the workspace enables it', () => {
