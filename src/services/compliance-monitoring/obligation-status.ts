@@ -1,6 +1,18 @@
 import { prisma } from '@/lib/prisma';
 import type { Prisma } from '@/generated/prisma';
 import { ValidationError } from '@/lib/errors';
+import {
+  COMPANY_OBLIGATION_STATUS_LABELS,
+  isCompanyObligationStatus,
+  type CompanyObligationStatus,
+} from './obligation-status-labels';
+
+export {
+  COMPANY_OBLIGATION_STATUSES,
+  COMPANY_OBLIGATION_STATUS_LABELS,
+  isCompanyObligationStatus,
+  type CompanyObligationStatus,
+} from './obligation-status-labels';
 
 /**
  * Staff-facing filing status for a company obligation period. Each choice maps
@@ -10,28 +22,6 @@ import { ValidationError } from '@/lib/errors';
  */
 
 type Db = Prisma.TransactionClient | typeof prisma;
-
-export const COMPANY_OBLIGATION_STATUSES = [
-  'TO_BE_CONFIRMED',
-  'PENDING_FILING',
-  'FILED',
-  'MANAGED_EXTERNALLY',
-  'NOT_REQUIRED',
-] as const;
-
-export type CompanyObligationStatus = typeof COMPANY_OBLIGATION_STATUSES[number];
-
-export const COMPANY_OBLIGATION_STATUS_LABELS: Record<CompanyObligationStatus, string> = {
-  TO_BE_CONFIRMED: 'To be confirmed',
-  PENDING_FILING: 'Pending filing',
-  FILED: 'Filed',
-  MANAGED_EXTERNALLY: 'Managed externally',
-  NOT_REQUIRED: 'Not required',
-};
-
-export function isCompanyObligationStatus(value: unknown): value is CompanyObligationStatus {
-  return typeof value === 'string' && (COMPANY_OBLIGATION_STATUSES as readonly string[]).includes(value);
-}
 
 /** The status a stored company occurrence reads as. */
 export function companyObligationStatusOf(occurrence: {
