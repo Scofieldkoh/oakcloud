@@ -146,15 +146,14 @@ describe('CompanyProfileSections', () => {
     expect(screen.getByText('31 March 2026')).toBeInTheDocument();
   });
 
-  it('shows the confirmed first financial period under Compliance', () => {
+  it('shows the first FYE under Compliance', () => {
     const { rerender } = render(<CompanyProfileSections company={company as never} companyId="company-1" />);
-    expect(screen.getByText('First financial period')).toBeInTheDocument();
-    expect(screen.getByText('Not confirmed')).toBeInTheDocument();
+    expect(screen.getByText('First FYE')).toBeInTheDocument();
 
     rerender(<CompanyProfileSections company={{
       ...(company as object),
       financialPeriods: [{ periodStart: new Date('2024-09-14'), periodEnd: new Date('2025-12-31'), yearsOfAssessment: [2026] }],
     } as never} companyId="company-1" />);
-    expect(screen.getByText('14 September 2024 to 31 December 2025 (YA 2026)')).toBeInTheDocument();
+    expect(screen.getByText('31 December 2025')).toBeInTheDocument();
   });
 });

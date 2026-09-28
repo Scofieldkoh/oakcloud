@@ -189,7 +189,7 @@ function issue(
 }
 
 const PERIOD_REVIEW_MESSAGES: Record<string, string> = {
-  FIRST_FINANCIAL_PERIOD_UNCONFIRMED: 'Confirm the first financial period after incorporation and its Year of Assessment.',
+  FIRST_FINANCIAL_PERIOD_UNCONFIRMED: 'Confirm the first financial year end after incorporation.',
   FINANCIAL_PERIOD_GAP_AFTER_FYE_CHANGE: 'The financial year end changed. Confirm the period between the old and new year ends.',
   YEAR_OF_ASSESSMENT_UNCONFIRMED: 'Confirm the Year of Assessment for this period.',
   MULTIPLE_YEARS_OF_ASSESSMENT: 'This financial period spans more than one Year of Assessment. Confirm the filing dates.',

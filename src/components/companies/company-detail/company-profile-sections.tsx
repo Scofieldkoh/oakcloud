@@ -197,7 +197,7 @@ export function CompanyProfileSections({ company, companyId, canEdit = false, on
           <div><FieldLabel>Accounts due</FieldLabel><p className="flex flex-wrap items-center gap-1.5">{day(company.accountsDueDate)}{acraSourceBadge(company, 'accountDueDate')}</p></div>
           <div><FieldLabel>Last AGM</FieldLabel><p>{day(company.lastAgmDate)}</p></div>
           <div><FieldLabel>FYE as at last AR</FieldLabel><p>{day(company.fyeAsAtLastAr)}</p></div>
-          <div className="col-span-2"><FieldLabel>First financial period</FieldLabel><p>{firstPeriod ? `${day(firstPeriod.periodStart)} to ${day(firstPeriod.periodEnd)}${firstPeriod.yearsOfAssessment.length ? ` (YA ${firstPeriod.yearsOfAssessment.join(', ')})` : ''}` : 'Not confirmed'}</p></div>
+          <div><FieldLabel>First FYE</FieldLabel><p>{firstPeriod ? day(firstPeriod.periodEnd) : '-'}</p></div>
         </div>
       </Section>
 
