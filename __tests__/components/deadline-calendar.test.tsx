@@ -41,6 +41,7 @@ const occurrence: DeadlineOccurrenceDto = {
   dateOverriddenAt: null,
   status: 'OPEN',
   timingState: 'UPCOMING',
+  timingBucket: 'WITHIN_1_MONTH',
   completedAt: null,
   completedById: null,
   waivedAt: null,

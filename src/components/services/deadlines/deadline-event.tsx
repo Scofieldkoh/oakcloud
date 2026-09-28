@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { CalendarClock, Check, CircleAlert, FileText, RotateCcw, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getCompanyDisplayLabel } from '@/lib/company-display-label';
-import type { DeadlineOccurrenceDto } from '@/services/deadline';
+import type { DeadlineOccurrenceDto, DeadlineTimingBucket } from '@/services/deadline';
 import type { UpdateDeadlineOccurrenceInput } from '@/lib/validations/deadline';
 import { COMPANY_OBLIGATION_STATUS_LABELS, companyObligationStatusOf } from '@/services/compliance-monitoring/obligation-status-labels';
 
@@ -24,12 +24,34 @@ const typeLabels: Record<DeadlineOccurrenceDto['deadlineType'], string> = {
   INTERNAL: 'Internal',
 };
 
-const timingLabels: Record<NonNullable<DeadlineOccurrenceDto['timingState']>, string> = {
-  UPCOMING: 'Upcoming',
-  DUE: 'Due today',
+export const DEADLINE_TIMING_BUCKET_LABELS: Record<DeadlineTimingBucket, string> = {
   OVERDUE: 'Overdue',
-  REVIEW: 'Takeover review',
+  DUE_TODAY: 'Due today',
+  WITHIN_1_MONTH: 'Within 1 month',
+  WITHIN_3_MONTHS: 'Within 3 months',
+  WITHIN_6_MONTHS: 'Within 6 months',
+  WITHIN_12_MONTHS: 'Within 12 months',
+  OVER_12_MONTHS: 'Over 12 months',
+  TAKEOVER_REVIEW: 'Takeover review',
 };
+
+/** Timing shown for a deadline: how far away an open one is, else its status. */
+export function deadlineTimingLabel(occurrence: Pick<DeadlineOccurrenceDto, 'status' | 'timingBucket'>): string {
+  if (occurrence.status !== 'OPEN') return occurrence.status.charAt(0) + occurrence.status.slice(1).toLowerCase();
+  return occurrence.timingBucket ? DEADLINE_TIMING_BUCKET_LABELS[occurrence.timingBucket] : 'Open';
+}
+
+export function deadlineTimingClass(occurrence: Pick<DeadlineOccurrenceDto, 'status' | 'timingBucket'>): string {
+  if (occurrence.status !== 'OPEN') return 'badge-neutral';
+  switch (occurrence.timingBucket) {
+    case 'OVERDUE': return 'badge-error';
+    case 'DUE_TODAY':
+    case 'WITHIN_1_MONTH':
+    case 'TAKEOVER_REVIEW': return 'badge-warning';
+    case 'OVER_12_MONTHS': return 'badge-neutral';
+    default: return 'badge-info';
+  }
+}
 
 function dateLabel(value: string): string {
   const [year, month, day] = value.slice(0, 10).split('-');
@@ -54,19 +76,26 @@ export function deadlineStatusLabel(occurrence: Pick<DeadlineOccurrenceDto, 'sta
   return occurrence.status.charAt(0) + occurrence.status.slice(1).toLowerCase();
 }
 
-/** Service shown for a deadline; company obligations belong to no single service. */
+/**
+ * Service shown for a deadline. Company obligations show the service that
+ * files or monitors them; none when no service covers them.
+ */
 export function serviceLabel(occurrence: DeadlineOccurrenceDto): string {
-  if (!occurrence.service) return 'Company monitoring';
+  if (!occurrence.service) return '—';
   return occurrence.service.name || occurrence.service.variantName || '—';
 }
 
-export function milestoneLabel(occurrence: DeadlineOccurrenceDto): string {
-  return occurrence.milestoneKey.replaceAll(/[-_]+/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase());
-}
+/** Words in milestone keys that are acronyms and print in capitals. */
+const MILESTONE_ACRONYMS = new Set(['acra', 'agm', 'cit', 'cpf', 'eci', 'fye', 'gst', 'iras', 'sow', 'uen', 'xbrl', 'ya']);
 
-function stateLabel(occurrence: DeadlineOccurrenceDto): string {
-  if (occurrence.status !== 'OPEN') return occurrence.status.charAt(0) + occurrence.status.slice(1).toLowerCase();
-  return occurrence.timingState ? timingLabels[occurrence.timingState] : 'Open';
+export function milestoneLabel(occurrence: Pick<DeadlineOccurrenceDto, 'milestoneKey'>): string {
+  return occurrence.milestoneKey
+    .split(/[-_\s]+/)
+    .filter(Boolean)
+    .map((word) => (MILESTONE_ACRONYMS.has(word.toLowerCase())
+      ? word.toUpperCase()
+      : word.charAt(0).toUpperCase() + word.slice(1)))
+    .join(' ');
 }
 
 function sourceLabel(occurrence: DeadlineOccurrenceDto): string {
@@ -113,7 +142,7 @@ export function DeadlineEventPanel({
   const milestone = milestoneLabel(occurrence);
   const familyName = occurrence.family.name || occurrence.service?.familyName || 'Unassigned family';
   const familyColor = occurrence.family.displayColor ?? '#58736a';
-  const state = stateLabel(occurrence);
+  const state = deadlineTimingLabel(occurrence);
 
   const closeAction = () => {
     setAction(null);
@@ -212,7 +241,7 @@ export function DeadlineEvent({
   const milestone = milestoneLabel(occurrence);
   const familyName = occurrence.family.name || occurrence.service?.familyName || 'Unassigned family';
   const familyColor = occurrence.family.displayColor ?? '#58736a';
-  const state = stateLabel(occurrence);
+  const state = deadlineTimingLabel(occurrence);
   const label = `${companyLabel} ${milestone}`;
 
   useEffect(() => {

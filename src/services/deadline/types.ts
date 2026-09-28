@@ -1,11 +1,13 @@
 import type {
   DeadlineSearch,
+  DeadlineTimingBucket,
   ResetDeadlineDateOverrideInput,
   UpdateDeadlineOccurrenceInput,
 } from '@/lib/validations/deadline';
 
 export type {
   DeadlineSearch,
+  DeadlineTimingBucket,
   ResetDeadlineDateOverrideInput,
   UpdateDeadlineOccurrenceInput,
 };
@@ -122,6 +124,8 @@ export interface DeadlineOccurrenceDto {
   dateOverriddenAt: string | null;
   status: 'OPEN' | 'COMPLETED' | 'WAIVED' | 'CANCELLED';
   timingState: DeadlineTiming | null;
+  /** Open deadlines only: overdue, due today, or how many months away. */
+  timingBucket: DeadlineTimingBucket | null;
   completedAt: string | null;
   completedById: string | null;
   waivedAt: string | null;
@@ -136,7 +140,10 @@ export interface DeadlineOccurrenceDto {
   updatedAt: string;
   company: DeadlineCompanyDto;
   family: DeadlineFamilyDto;
-  /** Null for company-owned obligations, which belong to no single service. */
+  /**
+   * The service a deadline belongs to. Company obligations show the service
+   * that files or monitors them, or null when no service covers them.
+   */
   service: DeadlineServiceDto | null;
   obligation: DeadlineObligationDto | null;
   cycle: DeadlineCycleDto | null;
