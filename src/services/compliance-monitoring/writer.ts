@@ -15,6 +15,9 @@ import type {
   PreserveReason,
 } from '@/services/schedule-reconciliation/types';
 import { OBLIGATION_CATALOG, isMonitoringProfile } from './catalog';
+import { companyObligationStatusOf, type CompanyObligationStatus } from './obligation-status';
+import { suggestFirstFinancialPeriod, type FirstFinancialPeriodSuggestion } from './financial-periods';
+import { getServiceWorkspaceFlagsForTenant } from '@/services/schedule-reconciliation/settings';
 import {
   projectCompanyObligations,
   type CompanyMonitoringProjection,
@@ -692,14 +695,25 @@ export type CompanyObligationPreviewItem = {
   periodKey: string;
   milestoneName: string;
   dueDate: DateOnly;
+  yearOfAssessment: number | null;
+  /** The period's dates or YA still need confirming. */
+  periodProvisional: boolean;
   coverageTiming: ProjectedCompanyObligation['coverageTiming'];
   explanation: string[];
+  /** Staff status already recorded on the stored obligation; null before it exists. */
+  recordedStatus: CompanyObligationStatus | null;
 };
 
 export type CompanyObligationPreview = {
   items: CompanyObligationPreviewItem[];
   /** Setup gaps that stop or qualify the dates (no FYE, rule not published). */
   notices: string[];
+  /** True when the first financial period after incorporation is unconfirmed. */
+  firstPeriodUnconfirmed: boolean;
+  /** Starting values for confirming that first period. */
+  firstPeriodSuggestion: FirstFinancialPeriodSuggestion | null;
+  /** Company monitoring writes are on, so filing statuses can be recorded. */
+  statusEditable: boolean;
 };
 
 /**
@@ -716,8 +730,9 @@ export async function previewCompanyObligations(
   },
   db: Db = prisma,
 ): Promise<CompanyObligationPreview> {
+  const empty: CompanyObligationPreview = { items: [], notices: [], firstPeriodUnconfirmed: false, firstPeriodSuggestion: null, statusEditable: false };
   const loaded = await loadProjectionInput(db, input.tenantId, input.companyId, input.today);
-  if (!loaded) return { items: [], notices: [] };
+  if (!loaded) return empty;
   const proposed = input.proposedCoverage;
   const proposedCoverages: CoverageInput[] = proposed?.monitoringStart
     ? proposed.profiles.filter(isMonitoringProfile).map((profile) => ({
@@ -731,8 +746,20 @@ export async function previewCompanyObligations(
     ...loaded.input,
     coverages: [...loaded.input.coverages, ...proposedCoverages],
   };
-  if (projectionInput.coverages.length === 0) return { items: [], notices: [] };
+  if (projectionInput.coverages.length === 0) return empty;
   const projection = projectCompanyObligations(projectionInput);
+  const [flags, stored] = await Promise.all([
+    getServiceWorkspaceFlagsForTenant(input.tenantId, db),
+    db.deadlineOccurrence.findMany({
+      where: { tenantId: input.tenantId, companyId: input.companyId, ownershipScope: 'COMPANY', status: { not: 'CANCELLED' } },
+      select: { obligationCode: true, obligationPeriodKey: true, status: true, filingResponsibility: true },
+    }),
+  ]);
+  const recorded = new Map(stored.flatMap((row) => (
+    row.obligationCode && row.obligationPeriodKey
+      ? [[`${row.obligationCode}|${row.obligationPeriodKey}`, companyObligationStatusOf(row)] as const]
+      : []
+  )));
   const milestoneName = (code: string, key: string) => (
     projectionInput.rulesByCode[code]?.milestones.find((milestone) => milestone.key === key)?.name ?? key
   );
@@ -744,10 +771,22 @@ export async function previewCompanyObligations(
       periodKey: obligation.periodKey,
       milestoneName: milestoneName(obligation.obligationCode, obligation.milestoneKey),
       dueDate: obligation.dueDate,
+      yearOfAssessment: obligation.obligationPeriod.yearOfAssessment,
+      periodProvisional: obligation.obligationPeriod.provisional,
       coverageTiming: obligation.coverageTiming,
       explanation: obligation.explanation,
+      recordedStatus: recorded.get(`${obligation.obligationCode}|${obligation.periodKey}`) ?? null,
     }))
     .sort((left, right) => left.dueDate.localeCompare(right.dueDate) || left.obligationCode.localeCompare(right.obligationCode));
   const notices = [...new Set(projection.issues.map((issue) => issue.message))];
-  return { items, notices };
+  const firstPeriodUnconfirmed = projection.obligations.some((obligation) => (
+    obligation.obligationPeriod.reviewReasons.includes('FIRST_FINANCIAL_PERIOD_UNCONFIRMED')
+  ));
+  return {
+    items,
+    notices,
+    firstPeriodUnconfirmed,
+    firstPeriodSuggestion: firstPeriodUnconfirmed ? suggestFirstFinancialPeriod(loaded.company) : null,
+    statusEditable: flags.companyMonitoringWritesEnabled,
+  };
 }
