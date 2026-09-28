@@ -112,6 +112,10 @@ export interface OakDocGenerationInput {
   companyId: string;
   selectedDirectorId?: string;
   selectedShareholderId?: string;
+  /** Directors a directors repeater lists; absent means all current directors. */
+  selectedDirectorIds?: string[];
+  /** Shareholders a shareholders repeater lists; absent means all current shareholders. */
+  selectedShareholderIds?: string[];
   /** Resolved through the canonical party service (must be linked to the company). */
   selectedContactId?: string;
   agreement?: OakDocAgreementContext;
@@ -413,6 +417,8 @@ async function renderOakDocMaster(
   const repeated = resolveOakDocRepeaters({
     docxBytes: conditioned.bytes,
     company: companyDetail,
+    selectedDirectorIds: input.selectedDirectorIds,
+    selectedShareholderIds: input.selectedShareholderIds,
     ...(composition
       ? { signers: composition.signers, authorisedRepresentatives: composition.representatives }
       : {}),
