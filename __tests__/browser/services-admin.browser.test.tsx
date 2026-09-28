@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { page, userEvent } from 'vitest/browser';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { screen } from '@testing-library/react';
-import { ServicesAdminPage } from '@/components/services/admin/services-admin-page';
+import { ServiceCatalogAdminPage } from '@/components/services/admin/services-admin-page';
 import { ToastProvider } from '@/components/ui/toast';
 import '@/app/globals.css';
 
@@ -136,45 +136,26 @@ describe('Services administration browser surface', () => {
       root.render(
         <ToastProvider>
           <QueryClientProvider client={queryClient}>
-            <ServicesAdminPage />
+            <ServiceCatalogAdminPage />
           </QueryClientProvider>
         </ToastProvider>,
       );
     });
-    await waitUntil(() => Boolean(screen.queryByRole('heading', { name: 'Services administration' })));
+    await waitUntil(() => Boolean(screen.queryByRole('heading', { name: 'Service catalog' })));
     await waitUntil(() => Boolean(screen.queryByText('Accounting')));
   }
 
-  it('separates the header, named tab bar, controlled catalog panel, and family color controls', async () => {
+  it('renders the catalog as its own page without section tabs, with family color controls', async () => {
     await page.viewport(1440, 900);
     await mount();
 
-    const heading = screen.getByRole('heading', { name: 'Services administration' });
-    const tabs = screen.getByRole('tablist', { name: 'Services administration sections' });
-    const catalogTab = screen.getByRole('tab', { name: 'Service catalog' });
-    const catalogPanel = screen.getByRole('tabpanel', { name: 'Service catalog' });
     const main = screen.getByRole('main');
-    const header = heading.closest('header');
-    if (!header) throw new Error('Administration header missing');
+    const heading = screen.getByRole('heading', { name: 'Service catalog' });
     await expect.element(heading).toBeVisible();
-    await expect.element(tabs).toBeVisible();
-    await expect.element(catalogTab).toBeVisible();
-    await expect.element(catalogPanel).toBeVisible();
-    await expect.element(screen.getByRole('heading', { name: 'Service catalog' })).toBeVisible();
-    expect(catalogTab).toHaveAttribute('aria-selected', 'true');
-    expect(catalogTab).toHaveAttribute('aria-controls', 'service-catalog-panel');
-    expect(catalogPanel).toHaveAttribute('aria-labelledby', 'service-catalog-tab');
+    expect(screen.queryByRole('tablist')).toBeNull();
+    expect(screen.queryByRole('heading', { name: 'Services administration' })).toBeNull();
     await expect.element(screen.getByText('Accounting')).toBeVisible();
-
-    const mainRect = main.getBoundingClientRect();
-    const headerRect = header.getBoundingClientRect();
-    expect(Math.round(headerRect.left - mainRect.left)).toBe(24);
-    expect(Math.round(tabs.getBoundingClientRect().top - header.getBoundingClientRect().bottom)).toBe(24);
-    for (const tab of screen.getAllByRole('tab')) {
-      expect(tab.getBoundingClientRect().height).toBeGreaterThanOrEqual(32);
-      expect(tab.getBoundingClientRect().height).toBeLessThanOrEqual(40);
-    }
-    expect(Math.abs(catalogPanel.getBoundingClientRect().left - tabs.getBoundingClientRect().left)).toBeLessThanOrEqual(1);
+    expect(Math.round(heading.getBoundingClientRect().left - main.getBoundingClientRect().left)).toBe(24);
 
     await act(async () => {
       await userEvent.click(screen.getByRole('button', { name: 'Add service family' }));
@@ -199,16 +180,6 @@ describe('Services administration browser surface', () => {
     await mount();
 
     const main = screen.getByRole('main');
-    const tablist = screen.getByRole('tablist', { name: 'Services administration sections' });
-    const heading = screen.getByRole('heading', { name: 'Services administration' });
-    const catalogPanel = screen.getByRole('tabpanel', { name: 'Service catalog' });
-    const headingRect = heading.getBoundingClientRect();
-    const tablistRect = tablist.getBoundingClientRect();
-    const catalogPanelRect = catalogPanel.getBoundingClientRect();
-    expect(headingRect.bottom).toBeLessThanOrEqual(tablistRect.top + 1);
-    expect(tablistRect.bottom).toBeLessThanOrEqual(catalogPanelRect.top + 1);
-    expect(headingRect.bottom).toBeLessThanOrEqual(catalogPanelRect.top + 1);
-
     const mainRect = main.getBoundingClientRect();
     const contained = (element: HTMLElement) => {
       const rect = element.getBoundingClientRect();
@@ -216,8 +187,6 @@ describe('Services administration browser surface', () => {
         && rect.right <= mainRect.right + 1
         && rect.top >= mainRect.top - 1;
     };
-    expect(contained(tablist)).toBe(true);
-    expect(contained(catalogPanel)).toBe(true);
     expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(
       document.documentElement.clientWidth,
     );
@@ -235,7 +204,6 @@ describe('Services administration browser surface', () => {
     const controls = visibleInteractiveElements(main);
     expect(controls.map((control) => control.getAttribute('aria-label') || control.textContent?.trim()))
       .toEqual(expect.arrayContaining([
-        'Service catalog',
         'Add service family',
         'Search service catalog',
         'Add variant',

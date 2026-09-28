@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
@@ -53,9 +53,21 @@ vi.mock('@/components/services/admin/business-calendar-panel', () => ({
   ),
 }));
 
-import { ServicesAdminPage } from '@/components/services/admin/services-admin-page';
+import {
+  BusinessCalendarAdminPage,
+  DeadlineRulesAdminPage,
+  ServiceCatalogAdminPage,
+} from '@/components/services/admin/services-admin-page';
 
-describe('ServicesAdminPage', () => {
+const redirect = vi.hoisted(() => vi.fn((url: string) => {
+  throw new Error(`redirect:${url}`);
+}));
+
+vi.mock('next/navigation', () => ({ redirect }));
+
+import ServicesAdminIndexPage from '@/app/(dashboard)/admin/services/page';
+
+describe('Services administration pages', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.useActiveWorkspaceId.mockReturnValue('workspace-1');
@@ -64,13 +76,12 @@ describe('ServicesAdminPage', () => {
       isLoading: false,
       error: null,
     });
-    window.history.replaceState({}, '', '/services/admin');
   });
 
   it('announces a loading state while the session is resolving', () => {
     mocks.useSession.mockReturnValue({ data: undefined, isLoading: true });
 
-    render(<ServicesAdminPage />);
+    render(<ServiceCatalogAdminPage />);
 
     expect(screen.getByRole('status')).toHaveTextContent(
       'Loading services administration…',
@@ -90,7 +101,7 @@ describe('ServicesAdminPage', () => {
       refetch,
     });
 
-    render(<ServicesAdminPage />);
+    render(<ServiceCatalogAdminPage />);
 
     const alert = screen.getByRole('alert');
     const retry = screen.getByRole('button', { name: 'Retry' });
@@ -106,12 +117,12 @@ describe('ServicesAdminPage', () => {
       isLoading: false,
     });
 
-    render(<ServicesAdminPage />);
+    render(<ServiceCatalogAdminPage />);
 
     expect(screen.getByRole('alert')).toHaveTextContent(
       'Tenant Admin access is required',
     );
-    expect(screen.queryByRole('tablist')).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Service Catalog' })).toBeVisible();
     expect(screen.queryByRole('button', { name: 'Add service family' })).not.toBeInTheDocument();
   });
 
@@ -122,80 +133,56 @@ describe('ServicesAdminPage', () => {
     });
     mocks.useActiveWorkspaceId.mockReturnValue(undefined);
 
-    render(<ServicesAdminPage />);
+    render(<DeadlineRulesAdminPage />);
 
     expect(screen.getByRole('alert')).toHaveTextContent(
       'Select a workspace to administer services.',
     );
-    expect(screen.queryByRole('tablist')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('deadline-rules-content')).not.toBeInTheDocument();
   });
 
   it.each([
     { isSuperAdmin: false, isWorkspaceAdmin: true },
     { isSuperAdmin: true, isWorkspaceAdmin: false },
-  ])('renders catalog administration for an authorized session', (roles) => {
+  ])('renders only the catalog on the Service Catalog page', (roles) => {
     mocks.useSession.mockReturnValue({ data: roles, isLoading: false });
 
-    render(<ServicesAdminPage />);
+    render(<ServiceCatalogAdminPage />);
 
-    expect(
-      screen.getByRole('heading', { name: 'Services administration' }),
-    ).toBeVisible();
-    expect(screen.getByRole('tablist', { name: 'Services administration sections' })).toBeVisible();
-    expect(screen.getAllByRole('tab')).toHaveLength(3);
-    const catalogTab = screen.getByRole('tab', { name: 'Service catalog' });
-    expect(catalogTab).toHaveAttribute(
-      'aria-selected',
-      'true',
-    );
-    expect(catalogTab).toHaveAttribute('aria-controls', 'service-catalog-panel');
-    expect(screen.getByRole('tabpanel', { name: 'Service catalog' })).toHaveAttribute(
-      'id',
-      'service-catalog-panel',
-    );
+    expect(screen.queryByRole('tablist')).not.toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Service catalog' })).toBeVisible();
     expect(screen.getByRole('button', { name: 'Add service family' })).toBeVisible();
     expect(screen.getByTestId('catalog-workspace')).toHaveTextContent('workspace-1');
+    expect(screen.queryByTestId('deadline-rules-content')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('business-calendar-content')).not.toBeInTheDocument();
   });
 
-  it('preserves the selected administration section in the URL', async () => {
+  it('renders only its own panel on the Deadline Rules and Business Calendar pages', () => {
     mocks.useSession.mockReturnValue({
       data: { isSuperAdmin: false, isWorkspaceAdmin: true },
       isLoading: false,
     });
 
-    render(<ServicesAdminPage />);
-    const rulesTab = screen.getByRole('tab', { name: 'Deadline rules' });
-    expect(rulesTab).toHaveAttribute('aria-selected', 'false');
-
-    fireEvent.click(rulesTab);
-
-    await waitFor(() => {
-      expect(window.location.search).toContain('tab=rules');
-      expect(rulesTab).toHaveAttribute('aria-selected', 'true');
-    });
+    const { unmount } = render(<DeadlineRulesAdminPage />);
     expect(screen.getByTestId('deadline-rules-content')).toHaveTextContent('workspace-1');
+    expect(screen.queryByTestId('catalog-workspace')).not.toBeInTheDocument();
+    unmount();
+
+    render(<BusinessCalendarAdminPage />);
+    expect(screen.getByTestId('business-calendar-content')).toHaveTextContent('workspace-1');
+    expect(screen.queryByTestId('deadline-rules-content')).not.toBeInTheDocument();
   });
 
-  it('supports roving keyboard tab navigation and keeps all tabpanels mounted', () => {
-    mocks.useSession.mockReturnValue({
-      data: { isSuperAdmin: false, isWorkspaceAdmin: true },
-      isLoading: false,
-    });
-
-    render(<ServicesAdminPage />);
-    const tabs = screen.getAllByRole('tab');
-    expect(screen.getAllByRole('tabpanel', { hidden: true })).toHaveLength(3);
-    expect(document.getElementById('deadline-rules-panel')).toHaveAttribute('hidden');
-
-    fireEvent.keyDown(tabs[0], { key: 'ArrowRight' });
-    expect(tabs[1]).toHaveAttribute('aria-selected', 'true');
-    expect(document.activeElement).toBe(tabs[1]);
-    fireEvent.keyDown(tabs[1], { key: 'End' });
-    expect(tabs[2]).toHaveAttribute('aria-selected', 'true');
-    expect(document.activeElement).toBe(tabs[2]);
-    fireEvent.keyDown(tabs[2], { key: 'Home' });
-    expect(tabs[0]).toHaveAttribute('aria-selected', 'true');
-    expect(document.activeElement).toBe(tabs[0]);
+  it.each([
+    [undefined, '/admin/services/catalog'],
+    ['catalog', '/admin/services/catalog'],
+    ['rules', '/admin/services/deadline-rules'],
+    ['deadline-rules', '/admin/services/deadline-rules'],
+    ['calendar', '/admin/services/business-calendar'],
+    ['business-calendar', '/admin/services/business-calendar'],
+  ])('redirects the old ?tab=%s link to its own page', async (tab, target) => {
+    await expect(
+      ServicesAdminIndexPage({ searchParams: Promise.resolve(tab ? { tab } : {}) }),
+    ).rejects.toThrow(`redirect:${target}`);
   });
 });
