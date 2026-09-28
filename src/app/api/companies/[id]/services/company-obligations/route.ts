@@ -7,7 +7,8 @@ import { requirePermission } from '@/lib/rbac';
 import { MONITORING_PROFILES } from '@/services/compliance-monitoring/catalog';
 import { previewCompanyObligations } from '@/services/compliance-monitoring/writer';
 import { setCompanyObligationStatus } from '@/services/compliance-monitoring/obligation-status';
-import { companyObligationStatusEntrySchema } from '@/lib/validations/client-service';
+import { setEngagementStartYearOfAssessment } from '@/services/compliance-monitoring/engagement-start';
+import { companyObligationStatusEntrySchema, engagementStartYearOfAssessmentSchema } from '@/lib/validations/client-service';
 import { ValidationError } from '@/lib/errors';
 import { currentDateInSingapore } from '@/services/service-schedule';
 import type { DateOnly } from '@/services/service-schedule';
@@ -18,6 +19,7 @@ const querySchema = z.object({
   start: dateOnlySchema.optional(),
   end: dateOnlySchema.optional(),
   serviceId: z.string().uuid().optional(),
+  fromYa: z.coerce.number().int().optional(),
 }).strict();
 
 /**
@@ -38,23 +40,26 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       start: searchParams.get('start') ?? undefined,
       end: searchParams.get('end') ?? undefined,
       serviceId: searchParams.get('serviceId') ?? undefined,
+      fromYa: searchParams.get('fromYa') ?? undefined,
     });
     if (query.serviceId) {
       const coverage = await prisma.companyMonitoringCoverage.findFirst({
         where: { tenantId, companyId: id, clientServiceId: query.serviceId },
         select: { id: true },
       });
-      if (!coverage) return NextResponse.json({ items: [], notices: [] });
+      if (!coverage) return NextResponse.json({ items: [], notices: [], engagementStartYearOfAssessment: null });
     }
     const preview = await previewCompanyObligations({
       tenantId,
       companyId: id,
       today: currentDateInSingapore(),
+      serviceId: query.serviceId,
       ...(query.profiles.length > 0 ? {
         proposedCoverage: {
           profiles: query.profiles,
           monitoringStart: (query.start ?? null) as DateOnly | null,
           monitoringEnd: (query.end ?? null) as DateOnly | null,
+          engagementStartYearOfAssessment: query.fromYa ?? null,
         },
       } : {}),
     });
@@ -87,6 +92,27 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       if (exists === 0) throw new ValidationError('This deadline has not been created yet. Turn on company monitoring, then try again.');
     }
     return NextResponse.json({ changed });
+  } catch (error) {
+    return createErrorResponse(error);
+  }
+}
+
+/** Set the first Year of Assessment an existing service files. */
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const session = await requireAuth();
+    const { id } = await params;
+    await requirePermission(session, 'company', 'update', id);
+    const tenantId = requireSessionWorkspaceId(session);
+    const input = engagementStartYearOfAssessmentSchema.parse(await request.json());
+    const result = await setEngagementStartYearOfAssessment({
+      tenantId,
+      companyId: id,
+      clientServiceId: input.serviceId,
+      yearOfAssessment: input.yearOfAssessment,
+      actorId: session.id,
+    });
+    return NextResponse.json(result);
   } catch (error) {
     return createErrorResponse(error);
   }

@@ -136,6 +136,7 @@ async function loadProjectionInput(db: Db, tenantId: string, companyId: string, 
     }),
     db.companyMonitoringCoverage.findMany({
       where: { tenantId, companyId },
+      include: { clientService: { select: { engagementStartYearOfAssessment: true, deletedAt: true } } },
       orderBy: [{ monitoringStart: 'asc' }, { id: 'asc' }],
     }),
     db.clientServiceObligationScope.findMany({
@@ -171,6 +172,10 @@ async function loadProjectionInput(db: Db, tenantId: string, companyId: string, 
       profile: coverage.profile,
       monitoringStart: start,
       monitoringEnd: toDateOnly(coverage.monitoringEnd),
+      clientServiceId: coverage.clientServiceId,
+      engagementStartYearOfAssessment: coverage.clientService && coverage.clientService.deletedAt === null
+        ? coverage.clientService.engagementStartYearOfAssessment
+        : null,
     }];
   });
 
@@ -700,8 +705,13 @@ export type CompanyObligationPreviewItem = {
   periodProvisional: boolean;
   coverageTiming: ProjectedCompanyObligation['coverageTiming'];
   explanation: string[];
-  /** Staff status already recorded on the stored obligation; null before it exists. */
+  /**
+   * Status staff recorded on the stored obligation (a staff choice, filed or
+   * not required); null when none, so the projected status applies.
+   */
   recordedStatus: CompanyObligationStatus | null;
+  /** Status from the projection: Pending filing from the engagement start YA. */
+  projectedStatus: CompanyObligationStatus;
 };
 
 export type CompanyObligationPreview = {
@@ -714,6 +724,8 @@ export type CompanyObligationPreview = {
   firstPeriodSuggestion: FirstFinancialPeriodSuggestion | null;
   /** Company monitoring writes are on, so filing statuses can be recorded. */
   statusEditable: boolean;
+  /** The service's engagement start YA when previewing an existing service. */
+  engagementStartYearOfAssessment: number | null;
 };
 
 /**
@@ -726,11 +738,25 @@ export async function previewCompanyObligations(
     tenantId: string;
     companyId: string;
     today: DateOnly;
-    proposedCoverage?: { profiles: readonly string[]; monitoringStart: DateOnly | null; monitoringEnd: DateOnly | null };
+    proposedCoverage?: {
+      profiles: readonly string[];
+      monitoringStart: DateOnly | null;
+      monitoringEnd: DateOnly | null;
+      engagementStartYearOfAssessment?: number | null;
+    };
+    /** An existing service whose engagement start YA is returned. */
+    serviceId?: string;
   },
   db: Db = prisma,
 ): Promise<CompanyObligationPreview> {
-  const empty: CompanyObligationPreview = { items: [], notices: [], firstPeriodUnconfirmed: false, firstPeriodSuggestion: null, statusEditable: false };
+  const empty: CompanyObligationPreview = {
+    items: [],
+    notices: [],
+    firstPeriodUnconfirmed: false,
+    firstPeriodSuggestion: null,
+    statusEditable: false,
+    engagementStartYearOfAssessment: null,
+  };
   const loaded = await loadProjectionInput(db, input.tenantId, input.companyId, input.today);
   if (!loaded) return empty;
   const proposed = input.proposedCoverage;
@@ -740,6 +766,8 @@ export async function previewCompanyObligations(
       profile,
       monitoringStart: proposed.monitoringStart!,
       monitoringEnd: proposed.monitoringEnd,
+      clientServiceId: null,
+      engagementStartYearOfAssessment: proposed.engagementStartYearOfAssessment ?? null,
     }))
     : [];
   const projectionInput = {
@@ -748,15 +776,24 @@ export async function previewCompanyObligations(
   };
   if (projectionInput.coverages.length === 0) return empty;
   const projection = projectCompanyObligations(projectionInput);
-  const [flags, stored] = await Promise.all([
+  const [flags, stored, service] = await Promise.all([
     getServiceWorkspaceFlagsForTenant(input.tenantId, db),
     db.deadlineOccurrence.findMany({
       where: { tenantId: input.tenantId, companyId: input.companyId, ownershipScope: 'COMPANY', status: { not: 'CANCELLED' } },
-      select: { obligationCode: true, obligationPeriodKey: true, status: true, filingResponsibility: true },
+      select: { obligationCode: true, obligationPeriodKey: true, status: true, filingResponsibility: true, responsibilitySource: true },
     }),
+    input.serviceId
+      ? db.clientService.findFirst({
+        where: { id: input.serviceId, tenantId: input.tenantId, companyId: input.companyId },
+        select: { engagementStartYearOfAssessment: true },
+      })
+      : Promise.resolve(null),
   ]);
+  // Projected responsibility is recomputed live, so only staff choices and
+  // completed or waived rows count as recorded.
   const recorded = new Map(stored.flatMap((row) => (
     row.obligationCode && row.obligationPeriodKey
+      && (row.responsibilitySource === 'STAFF' || row.status === 'COMPLETED' || row.status === 'WAIVED')
       ? [[`${row.obligationCode}|${row.obligationPeriodKey}`, companyObligationStatusOf(row)] as const]
       : []
   )));
@@ -776,6 +813,7 @@ export async function previewCompanyObligations(
       coverageTiming: obligation.coverageTiming,
       explanation: obligation.explanation,
       recordedStatus: recorded.get(`${obligation.obligationCode}|${obligation.periodKey}`) ?? null,
+      projectedStatus: companyObligationStatusOf({ status: 'OPEN', filingResponsibility: obligation.filingResponsibility }),
     }))
     .sort((left, right) => left.dueDate.localeCompare(right.dueDate) || left.obligationCode.localeCompare(right.obligationCode));
   const notices = [...new Set(projection.issues.map((issue) => issue.message))];
@@ -788,5 +826,6 @@ export async function previewCompanyObligations(
     firstPeriodUnconfirmed,
     firstPeriodSuggestion: firstPeriodUnconfirmed ? suggestFirstFinancialPeriod(loaded.company) : null,
     statusEditable: flags.companyMonitoringWritesEnabled,
+    engagementStartYearOfAssessment: service?.engagementStartYearOfAssessment ?? null,
   };
 }

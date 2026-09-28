@@ -25,6 +25,7 @@ vi.mock('@/hooks/use-client-services', () => ({
   useCompanyObligations: companyObligationsMock,
   useSetCompanyObligationStatus: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useConfirmFinancialPeriod: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  useSetEngagementStart: () => ({ mutateAsync: vi.fn(), isPending: false }),
 }));
 
 const service: ClientServiceDto = {

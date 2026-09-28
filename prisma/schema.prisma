@@ -1378,6 +1378,9 @@ model ClientService {
   fieldValues         Json                        @default("{}") @map("field_values")
   billingDisposition       BillingDisposition          @default(UNREVIEWED) @map("billing_disposition")
   billingNotRequiredReason String?                     @map("billing_not_required_reason") @db.VarChar(500)
+  /// First Year of Assessment the firm files for this engagement. Company
+  /// obligations from this YA default to Pending filing.
+  engagementStartYearOfAssessment Int?               @map("engagement_start_year_of_assessment")
   createdAt           DateTime                    @default(now()) @map("created_at")
   updatedAt           DateTime                    @updatedAt @map("updated_at")
   deletedAt           DateTime?                   @map("deleted_at")
