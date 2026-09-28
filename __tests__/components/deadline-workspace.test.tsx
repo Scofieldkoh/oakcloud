@@ -58,6 +58,7 @@ const occurrence: DeadlineOccurrenceDto = {
   dateOverriddenAt: null,
   status: 'OPEN',
   timingState: 'UPCOMING',
+  timingBucket: 'WITHIN_1_MONTH',
   completedAt: null,
   completedById: null,
   waivedAt: null,
@@ -211,10 +212,19 @@ describe('DeadlineWorkspace', () => {
     render(<DeadlineWorkspace />);
 
     expect(screen.getByRole('button', { name: /Remove Date:/ })).toBeVisible();
-    fireEvent.click(screen.getByRole('button', { name: 'Clear selection' }));
+    fireEvent.click(screen.getAllByRole('button', { name: 'Clear selection' })[0]!);
 
     expect(navigation.replace).toHaveBeenCalledWith(expect.stringContaining('dateFilter=none'), { scroll: false });
     expect(hooks.useDeadlines).toHaveBeenLastCalledWith(expect.objectContaining({ from: undefined, to: undefined, mode: 'TABLE' }));
+  });
+
+  it('filters by timing bucket from the URL and shows it as a removable badge', () => {
+    navigation.searchParams = new URLSearchParams('timingBucket=WITHIN_3_MONTHS');
+    render(<DeadlineWorkspace />);
+
+    expect(hooks.useDeadlines).toHaveBeenLastCalledWith(expect.objectContaining({ timingBucket: 'WITHIN_3_MONTHS' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Remove Timing: Within 3 months' }));
+    expect(navigation.replace).toHaveBeenLastCalledWith(expect.not.stringContaining('timingBucket='), { scroll: false });
   });
 
   it('normalizes legacy multi-type URLs to one removable deadline type badge', () => {

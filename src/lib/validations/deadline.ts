@@ -8,6 +8,18 @@ export const deadlineModeSchema = z.enum(['TABLE', 'CALENDAR']);
 export const deadlineTypeSchema = z.enum(['STATUTORY', 'CLIENT', 'INTERNAL']);
 export const deadlineStatusSchema = z.enum(['OPEN', 'COMPLETED', 'WAIVED', 'CANCELLED']);
 export const deadlineTimingSchema = z.enum(['UPCOMING', 'DUE', 'OVERDUE']);
+/** How far away an open deadline is; buckets do not overlap. */
+export const deadlineTimingBucketSchema = z.enum([
+  'OVERDUE',
+  'DUE_TODAY',
+  'WITHIN_1_MONTH',
+  'WITHIN_3_MONTHS',
+  'WITHIN_6_MONTHS',
+  'WITHIN_12_MONTHS',
+  'OVER_12_MONTHS',
+  'TAKEOVER_REVIEW',
+]);
+export type DeadlineTimingBucket = z.infer<typeof deadlineTimingBucketSchema>;
 export const deadlineOriginSchema = z.enum(['RULE', 'MANUAL_TRIGGER']);
 export const deadlineSortBySchema = z.enum(['dueDate', 'company', 'family', 'service', 'type', 'status']);
 export const deadlineSortOrderSchema = z.enum(['asc', 'desc']);
@@ -27,6 +39,7 @@ export const deadlineSearchSchema = z.object({
   companyIds: z.array(UUID).max(100).default([]),
   statuses: z.array(deadlineStatusSchema).max(4).default([]),
   timing: z.array(deadlineTimingSchema).max(3).default([]),
+  timingBucket: deadlineTimingBucketSchema.optional(),
   openOnly: z.boolean().default(true),
   origin: deadlineOriginSchema.optional(),
   companyQuery: deadlineQueryTextSchema,
@@ -104,7 +117,7 @@ export const resetDateOverrideSchema = resetDeadlineDateOverrideSchema;
 export type ResetDeadlineDateOverrideInput = z.infer<typeof resetDeadlineDateOverrideSchema>;
 
 const allowedQueryKeys = new Set([
-  'from', 'to', 'mode', 'types', 'familyIds', 'companyIds', 'statuses', 'timing',
+  'from', 'to', 'mode', 'types', 'familyIds', 'companyIds', 'statuses', 'timing', 'timingBucket',
   'openOnly', 'origin', 'companyQuery', 'serviceQuery', 'milestoneQuery', 'page', 'limit', 'sortBy', 'sortOrder',
 ]);
 

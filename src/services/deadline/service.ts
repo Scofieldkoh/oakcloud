@@ -14,11 +14,13 @@ import {
   resetDeadlineDateOverrideSchema,
   type DeadlineSearch,
   type DeadlineSearchInput,
+  type DeadlineTimingBucket,
   type ResetDeadlineDateOverrideInput,
   type UpdateDeadlineOccurrenceInput,
   updateDeadlineOccurrenceSchema,
 } from '@/lib/validations/deadline';
 import {
+  addMonthsClamped,
   compareDateOnly,
   currentDateInSingapore,
   formatDateOnly,
@@ -89,18 +91,11 @@ type DeadlineRecord = {
     displayAlias?: string | null;
     uen?: string | null;
   } | null;
-  clientService?: {
-    id?: string;
-    tenantId?: string;
-    serviceName?: string;
-    familyName?: string;
-    serviceVariant?: {
-      id?: string;
-      tenantId?: string;
-      name?: string;
-      family?: { id?: string; tenantId?: string; name?: string; displayColor?: string | null } | null;
-    } | null;
-  } | null;
+  clientService?: DeadlineServiceRecord | null;
+  /** Company obligations: the service contracted to file it. */
+  deliveryClientService?: DeadlineServiceRecord | null;
+  /** Company obligations: the monitoring coverage that keeps it, with its service. */
+  coverageLinks?: Array<{ coverage?: { clientService?: DeadlineServiceRecord | null } | null }>;
   cycle?: {
     id?: string;
     tenantId?: string;
@@ -109,6 +104,19 @@ type DeadlineRecord = {
     periodEnd?: Date | string;
   } | null;
   ruleVersion?: { tenantId?: string } | null;
+};
+
+type DeadlineServiceRecord = {
+  id?: string;
+  tenantId?: string;
+  serviceName?: string;
+  familyName?: string;
+  serviceVariant?: {
+    id?: string;
+    tenantId?: string;
+    name?: string;
+    family?: { id?: string; tenantId?: string; name?: string; displayColor?: string | null } | null;
+  } | null;
 };
 
 type DeadlineDbRecord = DeadlineRecord & Record<string, unknown>;
@@ -139,17 +147,24 @@ function toDateInput(value: `${number}-${number}-${number}`): Date {
   return parseDateOnly(value);
 }
 
-const COMPANY_OBLIGATION_FAMILY = 'Company statutory obligations';
+/**
+ * The service a deadline is shown under. A company obligation belongs to no
+ * service, so it shows the service that files it, else the service whose
+ * monitoring keeps it (the one whose Deadline tab lists it).
+ */
+function serviceForRecord(record: DeadlineDbRecord): DeadlineServiceRecord | null {
+  if (record.ownershipScope !== 'COMPANY') return record.clientService ?? null;
+  return record.deliveryClientService
+    ?? record.coverageLinks?.find((link) => link.coverage?.clientService)?.coverage?.clientService
+    ?? null;
+}
 
 function familyFromRecord(record: DeadlineDbRecord) {
-  if (record.ownershipScope === 'COMPANY') {
-    return { id: null, name: COMPANY_OBLIGATION_FAMILY, displayColor: null };
-  }
-  const variant = record.clientService?.serviceVariant;
-  const family = variant?.family;
+  const service = serviceForRecord(record);
+  const family = service?.serviceVariant?.family;
   return {
     id: family?.id ?? null,
-    name: family?.name ?? record.clientService?.familyName ?? '',
+    name: family?.name ?? service?.familyName ?? '',
     displayColor: family?.displayColor ?? null,
   };
 }
@@ -166,9 +181,12 @@ function tenantMatches(value: unknown, tenantId: string): boolean {
 function hasTenantIntegrity(record: DeadlineDbRecord, tenantId: string): boolean {
   const variant = record.clientService?.serviceVariant;
   const family = variant?.family;
-  // Company-owned obligations have no client service by design.
+  // Company-owned obligations have no client service by design; the service
+  // shown for them must still be in the tenant.
+  const shown = serviceForRecord(record);
   const serviceMatches = record.ownershipScope === 'COMPANY'
     ? record.clientServiceId == null && record.clientService == null
+      && (shown == null || tenantMatches(shown, tenantId))
     : tenantMatches(record.clientService, tenantId)
       && tenantMatches(variant, tenantId)
       && tenantMatches(family, tenantId);
@@ -182,7 +200,8 @@ function hasTenantIntegrity(record: DeadlineDbRecord, tenantId: string): boolean
 function toDeadlineDto(recordValue: unknown, today: `${number}-${number}-${number}` = currentDateInSingapore()): DeadlineOccurrenceDto {
   const record = asRecord(recordValue);
   const company = record.company ?? {};
-  const clientService = record.clientService ?? {};
+  const shownService = serviceForRecord(record);
+  const clientService = shownService ?? {};
   const variant = clientService.serviceVariant ?? {};
   const companyName = company.name ?? '';
   const operativeDueDate = asDateOnly(record.operativeDueDate);
@@ -210,6 +229,7 @@ function toDeadlineDto(recordValue: unknown, today: `${number}-${number}-${numbe
     dateOverriddenAt: asInstant(record.dateOverriddenAt),
     status: record.status,
     timingState: deriveDeadlineTiming(record.status, operativeDueDate, today, record.filingStatusUnconfirmed === true),
+    timingBucket: deriveDeadlineTimingBucket(record.status, operativeDueDate, today, record.filingStatusUnconfirmed === true),
     completedAt: asInstant(record.completedAt),
     completedById: record.completedById,
     waivedAt: asInstant(record.waivedAt),
@@ -230,7 +250,7 @@ function toDeadlineDto(recordValue: unknown, today: `${number}-${number}-${numbe
       uen: company.uen ?? null,
     },
     family: familyFromRecord(record),
-    service: companyOwned
+    service: companyOwned && !shownService
       ? null
       : {
           id: clientService.id ?? record.clientServiceId ?? '',
@@ -280,6 +300,59 @@ export function deriveDeadlineTiming(
   // Taken over after it was due: filing status is unknown, not overdue.
   if (filingStatusUnconfirmed) return 'REVIEW';
   return 'OVERDUE';
+}
+
+/** Month cut-offs for the timing buckets, after today. */
+const TIMING_BUCKET_MONTHS: Array<[DeadlineTimingBucket, number]> = [
+  ['WITHIN_1_MONTH', 1],
+  ['WITHIN_3_MONTHS', 3],
+  ['WITHIN_6_MONTHS', 6],
+  ['WITHIN_12_MONTHS', 12],
+];
+
+/**
+ * How far away an open deadline is, in non-overlapping buckets: Within 3
+ * months means more than 1 month and up to 3 months after today.
+ */
+export function deriveDeadlineTimingBucket(
+  status: string,
+  dueDate: `${number}-${number}-${number}` | Date | string,
+  today: `${number}-${number}-${number}` | Date | string = currentDateInSingapore(),
+  filingStatusUnconfirmed = false,
+): DeadlineTimingBucket | null {
+  const timing = deriveDeadlineTiming(status, dueDate, today, filingStatusUnconfirmed);
+  if (timing === null) return null;
+  if (timing === 'OVERDUE') return 'OVERDUE';
+  if (timing === 'REVIEW') return 'TAKEOVER_REVIEW';
+  if (timing === 'DUE') return 'DUE_TODAY';
+  const due = dueDate instanceof Date ? formatDateOnly(dueDate) : asDateOnly(dueDate);
+  const current = today instanceof Date ? formatDateOnly(today) : asDateOnly(today);
+  for (const [bucket, months] of TIMING_BUCKET_MONTHS) {
+    if (compareDateOnly(due, addMonthsClamped(current, months)) <= 0) return bucket;
+  }
+  return 'OVER_12_MONTHS';
+}
+
+function timingBucketWhere(
+  input: DeadlineSearch,
+  today: `${number}-${number}-${number}`,
+): Prisma.DeadlineOccurrenceWhereInput | null {
+  const bucket = input.timingBucket;
+  if (!bucket) return null;
+  const todayDate = toDateInput(today);
+  if (bucket === 'OVERDUE') return { status: 'OPEN', operativeDueDate: { lt: todayDate }, filingStatusUnconfirmed: false };
+  if (bucket === 'TAKEOVER_REVIEW') return { status: 'OPEN', operativeDueDate: { lt: todayDate }, filingStatusUnconfirmed: true };
+  if (bucket === 'DUE_TODAY') return { status: 'OPEN', operativeDueDate: todayDate };
+  if (bucket === 'OVER_12_MONTHS') {
+    return { status: 'OPEN', operativeDueDate: { gt: toDateInput(addMonthsClamped(today, 12)) } };
+  }
+  const index = TIMING_BUCKET_MONTHS.findIndex(([candidate]) => candidate === bucket);
+  const after = index === 0 ? today : addMonthsClamped(today, TIMING_BUCKET_MONTHS[index - 1]![1]);
+  const until = addMonthsClamped(today, TIMING_BUCKET_MONTHS[index]![1]);
+  return {
+    status: 'OPEN',
+    operativeDueDate: { gt: toDateInput(after), lte: toDateInput(until) },
+  };
 }
 
 function openStatusWhere(input: DeadlineSearch): Prisma.DeadlineOccurrenceWhereInput | null {
@@ -354,6 +427,15 @@ export function deadlineWhereForSearch(
   today: `${number}-${number}-${number}` = currentDateInSingapore(),
 ): Prisma.DeadlineOccurrenceWhereInput {
   const companyIds = requestedDeadlineCompanyIds(input, scope);
+  const serviceFilter: Prisma.ClientServiceWhereInput = {
+    tenantId: scope.tenantId,
+    ...(input.serviceQuery ? { serviceName: { contains: input.serviceQuery, mode: 'insensitive' as const } } : {}),
+    serviceVariant: {
+      tenantId: scope.tenantId,
+      family: { tenantId: scope.tenantId },
+      ...(input.familyIds.length > 0 ? { familyId: { in: input.familyIds } } : {}),
+    },
+  };
   const where: Prisma.DeadlineOccurrenceWhereInput = {
     tenantId: scope.tenantId,
     company: {
@@ -376,22 +458,23 @@ export function deadlineWhereForSearch(
     ...(companyIds === undefined ? {} : { companyId: { in: companyIds } }),
     ...(input.types.length > 0 ? { deadlineType: { in: input.types } } : {}),
     ...(input.milestoneQuery ? { milestoneKey: { contains: normalizeMilestoneQuery(input.milestoneQuery), mode: 'insensitive' } } : {}),
-    // Company-owned obligations belong to no service, so a service or family
-    // filter excludes them; otherwise both ownership scopes are listed.
+    // Company-owned obligations match a service or family filter through the
+    // service shown for them (see serviceForRecord).
     OR: [
-      ...(input.serviceQuery || input.familyIds.length > 0 ? [] : [{ ownershipScope: 'COMPANY' as const, clientServiceId: null }]),
       {
-        ownershipScope: 'SERVICE' as const,
-        clientService: {
-          tenantId: scope.tenantId,
-          ...(input.serviceQuery ? { serviceName: { contains: input.serviceQuery, mode: 'insensitive' as const } } : {}),
-          serviceVariant: {
-            tenantId: scope.tenantId,
-            family: { tenantId: scope.tenantId },
-            ...(input.familyIds.length > 0 ? { familyId: { in: input.familyIds } } : {}),
-          },
-        },
+        ownershipScope: 'COMPANY' as const,
+        clientServiceId: null,
+        ...(input.serviceQuery || input.familyIds.length > 0 ? {
+          OR: [
+            { deliveryClientService: serviceFilter },
+            {
+              deliveryClientServiceId: null,
+              coverageLinks: { some: { releasedAt: null, coverage: { is: { clientService: { is: serviceFilter } } } } },
+            },
+          ],
+        } : {}),
       },
+      { ownershipScope: 'SERVICE' as const, clientService: serviceFilter },
     ],
     cycle: { tenantId: scope.tenantId },
     ruleVersion: { tenantId: scope.tenantId },
@@ -401,31 +484,38 @@ export function deadlineWhereForSearch(
   const status = openStatusWhere(input);
   if (status) Object.assign(where, status);
 
-  const timing = timingWhere(input, today);
-  if (timing) {
-    where.AND = Array.isArray(where.AND) ? [...where.AND, timing] : [timing];
+  for (const predicate of [timingWhere(input, today), timingBucketWhere(input, today)]) {
+    if (!predicate) continue;
+    where.AND = Array.isArray(where.AND) ? [...where.AND, predicate] : where.AND ? [where.AND, predicate] : [predicate];
   }
   return where;
 }
 
+const serviceSelect = {
+  id: true,
+  tenantId: true,
+  serviceName: true,
+  familyName: true,
+  serviceVariant: {
+    select: {
+      id: true,
+      tenantId: true,
+      name: true,
+      family: { select: { id: true, tenantId: true, name: true, displayColor: true } },
+    },
+  },
+} satisfies Prisma.ClientServiceSelect;
+
 function includeForDeadline(): Prisma.DeadlineOccurrenceInclude {
   return {
     company: { select: { id: true, tenantId: true, name: true, displayAlias: true, uen: true } },
-    clientService: {
-      select: {
-        id: true,
-        tenantId: true,
-        serviceName: true,
-        familyName: true,
-        serviceVariant: {
-          select: {
-            id: true,
-            tenantId: true,
-            name: true,
-            family: { select: { id: true, tenantId: true, name: true, displayColor: true } },
-          },
-        },
-      },
+    clientService: { select: serviceSelect },
+    deliveryClientService: { select: serviceSelect },
+    coverageLinks: {
+      where: { releasedAt: null, coverage: { is: { clientServiceId: { not: null } } } },
+      orderBy: { linkedAt: 'asc' },
+      take: 1,
+      select: { coverage: { select: { clientService: { select: serviceSelect } } } },
     },
     cycle: { select: { id: true, tenantId: true, periodKey: true, periodStart: true, periodEnd: true } },
     ruleVersion: { select: { tenantId: true } },

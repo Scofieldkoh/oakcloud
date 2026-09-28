@@ -115,6 +115,27 @@ describePostgres('company compliance monitoring on PostgreSQL', () => {
     expect(await prisma.deadlineResponsibilityChange.count({ where: { tenantId: fixture.tenantId } })).toBe(rows.length);
   });
 
+  it('lists company obligations on the Deadlines page under the tax service that files them', async () => {
+    const { listDeadlines } = await import('@/services/deadline');
+    const scope = { tenantId: fixture.tenantId };
+    const all = await listDeadlines({ openOnly: false, limit: 100 }, scope, prisma, { today: TODAY });
+    const formC = all.items.find((item) => item.obligation?.code === 'SG_FORM_C' && item.obligation.periodKey === 'YA2026');
+    expect(formC).toMatchObject({
+      ownershipScope: 'COMPANY',
+      clientServiceId: null,
+      service: { id: fixture.serviceId, name: 'Corporate tax filing' },
+      family: { name: 'Tax', displayColor: '#2F6F5E' },
+      timingBucket: 'WITHIN_3_MONTHS',
+    });
+
+    const byService = await listDeadlines({ openOnly: false, limit: 100, serviceQuery: 'corporate tax' }, scope, prisma, { today: TODAY });
+    expect(byService.items.some((item) => item.id === formC!.id)).toBe(true);
+    const otherService = await listDeadlines({ openOnly: false, limit: 100, serviceQuery: 'payroll' }, scope, prisma, { today: TODAY });
+    expect(otherService.items.some((item) => item.id === formC!.id)).toBe(false);
+    const byTiming = await listDeadlines({ openOnly: false, limit: 100, timingBucket: 'WITHIN_3_MONTHS' }, scope, prisma, { today: TODAY });
+    expect(byTiming.items.map((item) => item.id)).toContain(formC!.id);
+  });
+
   it('leaves statutory preset rules on a monitored company to the company writer', async () => {
     const { reconcileClientServiceDeadlines } = await import('@/services/schedule-reconciliation/deadline-reconciler');
     const result = await prisma.$transaction((tx) => reconcileClientServiceDeadlines({

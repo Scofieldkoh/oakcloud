@@ -20,7 +20,8 @@ import {
   type DateOnly,
 } from '@/services/service-schedule';
 import type { DeadlineOccurrenceDto } from '@/services/deadline';
-import type { ResetDeadlineDateOverrideInput, UpdateDeadlineOccurrenceInput } from '@/lib/validations/deadline';
+import { deadlineTimingBucketSchema, type DeadlineTimingBucket, type ResetDeadlineDateOverrideInput, type UpdateDeadlineOccurrenceInput } from '@/lib/validations/deadline';
+import { DEADLINE_TIMING_BUCKET_LABELS } from './deadline-event';
 import {
   defaultDeadlineViewPreference,
   parseDeadlineViewPreference,
@@ -68,6 +69,7 @@ export interface DeadlineUrlState {
   statuses: DeadlineFilterStatus[];
   openOnly: boolean;
   origin?: DeadlineFilterOrigin;
+  timingBucket?: DeadlineTimingBucket;
   sortBy: DeadlineSortBy;
   sortOrder: 'asc' | 'desc';
   page: number;
@@ -206,6 +208,7 @@ export function parseDeadlineUrlState(
     statuses: readStatuses(params.get('statuses')),
     openOnly: params.has('openOnly') ? params.get('openOnly') === 'true' : true,
     origin: params.get('origin') === 'RULE' || params.get('origin') === 'MANUAL_TRIGGER' ? params.get('origin') as DeadlineFilterOrigin : undefined,
+    timingBucket: deadlineTimingBucketSchema.safeParse(params.get('timingBucket')).data,
     sortBy: readSortBy(params.get('sortBy'), preference.sortBy),
     sortOrder: readSortOrder(params.get('sortOrder'), preference.sortOrder),
     page: readPage(params.get('page')),
@@ -395,6 +398,7 @@ export function DeadlineWorkspace({ canEdit = false, deadlineWritesEnabled = fal
     statuses: urlState.statuses,
     openOnly: urlState.openOnly,
     origin: urlState.origin,
+    timingBucket: urlState.timingBucket,
     page: urlState.page,
     limit: urlState.limit,
     sortBy: urlState.sortBy,
@@ -509,6 +513,12 @@ export function DeadlineWorkspace({ canEdit = false, deadlineWritesEnabled = fal
     if ('type' in next) updateTypes(next.type || undefined);
     if ('status' in next) updateStatuses(next.status ? [next.status] : []);
     if ('origin' in next) updateInlineOrigin(next.origin || undefined);
+    if ('timingBucket' in next) replaceUrl({ timingBucket: next.timingBucket || undefined, page: '1' });
+    if ('dateFrom' in next || 'dateTo' in next) {
+      const from = next.dateFrom ?? '';
+      const to = next.dateTo ?? '';
+      replaceUrl({ from: from || undefined, to: to || undefined, dateFilter: from && to ? undefined : 'none', page: '1' });
+    }
   };
 
   const inlineFilters: DeadlineInlineFilterValues = {
@@ -519,6 +529,9 @@ export function DeadlineWorkspace({ canEdit = false, deadlineWritesEnabled = fal
     type: urlState.types.length === 1 ? urlState.types[0]! : '',
     status: urlState.statuses.length === 1 ? urlState.statuses[0] as Exclude<DeadlineFilterStatus, 'OPEN'> : '',
     origin: urlState.origin ?? '',
+    timingBucket: urlState.timingBucket ?? '',
+    dateFrom: urlState.from ?? '',
+    dateTo: urlState.to ?? '',
   };
 
   const toggleOpenOnly = () => {
@@ -567,6 +580,7 @@ export function DeadlineWorkspace({ canEdit = false, deadlineWritesEnabled = fal
   if (urlState.companyQuery) activeBadges.push({ key: 'companyQuery', label: `Company: ${urlState.companyQuery}`, onRemove: () => updateTextFilter('companyQuery', '') });
   if (urlState.serviceQuery) activeBadges.push({ key: 'serviceQuery', label: `Service: ${urlState.serviceQuery}`, onRemove: () => updateTextFilter('serviceQuery', '') });
   if (urlState.milestoneQuery) activeBadges.push({ key: 'milestoneQuery', label: `Milestone: ${urlState.milestoneQuery}`, onRemove: () => updateTextFilter('milestoneQuery', '') });
+  if (urlState.timingBucket) activeBadges.push({ key: 'timingBucket', label: `Timing: ${DEADLINE_TIMING_BUCKET_LABELS[urlState.timingBucket]}`, onRemove: () => replaceUrl({ timingBucket: undefined, page: '1' }) });
   if (urlState.origin) activeBadges.push({ key: 'origin', label: `Source: ${formatBadgeValue(urlState.origin)}`, onRemove: () => toggleOrigin(urlState.origin!) });
   if (urlState.companies.length > 0) activeBadges.push({ key: 'companies', label: `Companies: ${urlState.companies.length} selected`, onRemove: () => replaceUrl({ companies: undefined, page: '1' }) });
   if (urlState.view === 'TABLE' && urlState.from && urlState.to) {
