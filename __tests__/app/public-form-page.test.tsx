@@ -1,6 +1,8 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import PublicFormPage from '@/app/(public)/forms/f/[slug]/page';
+import { buildSgCompanyIncorporationFields } from '@/lib/form-templates/sg-company-incorporation';
+import { saveFormFieldsSchema } from '@/lib/validations/form-builder';
 
 // eslint-disable-next-line no-var
 var currentSearchParams = '';
@@ -166,6 +168,35 @@ function reviewStepForm(nameCheckMode: 'strict' | 'advisory' = 'strict') {
       ...companyNameCheckForm().fields[0],
       validation: { nameCheckMode },
     }],
+  };
+}
+
+/** The incorporation template's people page, followed by the capital page. */
+function incorporationPeopleForm() {
+  const all = saveFormFieldsSchema.parse({
+    fields: buildSgCompanyIncorporationFields({ firmName: 'Oaktree', ssicPresetId: '00000000-0000-4000-8000-000000000001' }),
+  }).fields;
+  const start = all.findIndex((field) => field.key === 'page_parties') + 1;
+  const end = all.findIndex((field) => field.key === 'page_capital');
+  const fields = [...all.slice(start, end + 1), { type: 'SHORT_TEXT', key: 'capital_note', label: 'Capital note', isRequired: false }];
+  return {
+    ...publicForm,
+    settings: { ...publicForm.settings, template: { key: 'sg_company_incorporation', version: 2 } },
+    fields: fields.map((field, index) => ({
+      subtext: null,
+      helpText: null,
+      inputType: null,
+      options: [],
+      validation: null,
+      condition: null,
+      hideLabel: false,
+      isReadOnly: false,
+      layoutWidth: 100,
+      placeholder: null,
+      ...field,
+      id: `field-${index}`,
+      position: index,
+    })),
   };
 }
 
@@ -413,6 +444,31 @@ describe('PublicFormPage', () => {
     expect(await screen.findByText('Company details submitted')).toBeVisible();
     expect(screen.getByText(/Your reference is SUB1/)).toBeVisible();
     expect(screen.queryByRole('button', { name: /download/i })).not.toBeInTheDocument();
+  });
+
+  it('shows incorporation roles as buttons and stops the page until the list is complete', async () => {
+    currentPublicForm = incorporationPeopleForm();
+    render(<PublicFormPage />);
+
+    fireEvent.change(await screen.findByRole('textbox', { name: /Full name/ }), { target: { value: 'Tan Mei Ling' } });
+    fireEvent.change(screen.getByRole('textbox', { name: /Email/ }), { target: { value: 'mei@example.com' } });
+    const director = screen.getByRole('checkbox', { name: 'Director' });
+    fireEvent.click(director);
+    expect(director).toHaveAttribute('aria-checked', 'true');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(await screen.findByText('Add at least one shareholder.')).toBeVisible();
+    expect(screen.queryByText('Capital note')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Shareholder' }));
+    expect(screen.queryByText('Add at least one shareholder.')).not.toBeInTheDocument();
+    fireEvent.change(screen.getByRole('spinbutton', { name: /Shareholding/ }), { target: { value: '60' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(await screen.findByText(/They must add up to exactly 100%/)).toBeVisible();
+
+    fireEvent.change(screen.getByRole('spinbutton', { name: /Shareholding/ }), { target: { value: '100' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(await screen.findByText('Capital note')).toBeVisible();
   });
 
   it('lets respondents continue when an advisory name check is unavailable', async () => {

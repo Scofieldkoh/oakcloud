@@ -21,7 +21,7 @@ export const FORM_TEMPLATES: FormTemplateSummary[] = [
     key: SG_COMPANY_INCORPORATION_TEMPLATE_KEY,
     version: SG_COMPANY_INCORPORATION_TEMPLATE_VERSION,
     title: SG_COMPANY_INCORPORATION_TITLE,
-    description: 'Five-step company details form for incorporating a Singapore private company, with ACRA guidance and a staff checklist.',
+    description: 'Company details form for incorporating a Singapore company, with ACRA guidance and a staff checklist.',
   },
 ];
 

@@ -24,21 +24,22 @@ function validAnswers(overrides: Record<string, unknown> = {}): Record<string, u
   return {
     [K.contactName]: 'Tan Mei Ling',
     [K.contactEmail]: 'mei@example.com',
+    [K.companyEmail]: 'hello@harbourlane.sg',
+    [K.companyType]: 'private_limited',
     [K.proposedName]: 'Harbour Lane Pte. Ltd.',
-    [K.nameStatus]: 'not_reserved',
     [K.primarySsic]: '62011',
     [K.businessDescription]: 'Software development for logistics firms',
     [K.partyKind]: ['individual', 'individual'],
     [K.partyName]: ['Tan Mei Ling', 'Lim Wei Jie'],
     [K.partyRoles]: [['shareholder', 'director'], ['shareholder']],
-    [K.ownershipPercent]: ['66.666667', '33.333333'],
-    [K.ownershipUnsure]: [[], []],
+    [K.ownershipPercent]: ['60', '40'],
+    [K.partyResident]: [['yes'], []],
     [K.capitalAmount]: '1000',
     [K.capitalCurrency]: 'SGD',
-    [K.capitalPaidStatus]: 'fully_paid',
+    [K.shareCount]: '1000',
+    [K.capitalFullyPaid]: 'yes',
+    [K.secretaryService]: ['yes'],
     [K.officeChoice]: 'firm_service',
-    [K.secretaryChoice]: 'firm_to_arrange',
-    [K.yearEndChoice]: 'select_date',
     [K.firstFye]: '2027-06-30',
     [K.rulesPreference]: 'acra_model',
     ...overrides,
@@ -55,8 +56,10 @@ const availableCheck = {
   reasonCodes: [],
 };
 
+const nameChecks = { [K.proposedName]: availableCheck };
+
 function errors(answers: Record<string, unknown>, options = {}) {
-  return evaluateCompanyIncorporationAnswers(answers, { today: TODAY, nameCheck: availableCheck, ...options })
+  return evaluateCompanyIncorporationAnswers(answers, { today: TODAY, nameChecks, ...options })
     .issues.filter((issue) => issue.severity === 'error').map((issue) => issue.code);
 }
 
@@ -78,44 +81,90 @@ describe('decimal strings', () => {
 });
 
 describe('company incorporation profile', () => {
-  it('accepts a complete intake with ownership totalling 100%', () => {
-    const result = evaluateCompanyIncorporationAnswers(validAnswers(), { today: TODAY, nameCheck: availableCheck });
+  it('accepts a complete intake and works out each shareholder’s shares', () => {
+    const result = evaluateCompanyIncorporationAnswers(validAnswers(), { today: TODAY, nameChecks });
     expect(result.issues.filter((issue) => issue.severity === 'error')).toEqual([]);
     expect(result.ownershipTotal).toBe('100');
-    expect(result.ownershipFullyDecided).toBe(true);
-    expect(result.parties.map((party) => party.name)).toEqual(['Tan Mei Ling', 'Lim Wei Jie']);
+    expect(result.parties.map((party) => [party.name, party.shares, party.resident])).toEqual([
+      ['Tan Mei Ling', '600', true],
+      ['Lim Wei Jie', '400', false],
+    ]);
   });
 
-  it('blocks a fully decided total that is not 100%', () => {
+  it('blocks shareholdings that do not add up to exactly 100%', () => {
     expect(errors(validAnswers({ [K.ownershipPercent]: ['60', '30'] }))).toContain('ownership_total');
+    expect(errors(validAnswers({ [K.ownershipPercent]: ['60', ''] }))).toContain('ownership_invalid');
   });
 
-  it('lets undecided shareholders through as needing information', () => {
-    const result = evaluateCompanyIncorporationAnswers(validAnswers({
-      [K.ownershipPercent]: ['60', ''],
-      [K.ownershipUnsure]: [[], ['yes']],
-    }), { today: TODAY, nameCheck: availableCheck });
-    expect(result.issues.filter((issue) => issue.severity === 'error')).toEqual([]);
-    expect(result.issues.map((issue) => issue.code)).toContain('ownership_undecided');
-    expect(result.ownershipFullyDecided).toBe(false);
-  });
-
-  it('rejects an organisation as a director', () => {
-    expect(errors(validAnswers({ [K.partyKind]: ['organisation', 'individual'] }))).toContain('organisation_director');
-  });
-
-  it('requires a primary activity unless an exception with a reason is given', () => {
-    expect(errors(validAnswers({ [K.primarySsic]: '' }))).toContain('ssic_primary_missing');
-    expect(errors(validAnswers({ [K.primarySsic]: '', [K.primarySsicException]: 'no_suitable_code' }))).toContain('ssic_exception_reason_missing');
+  it('requires at least one individual director and one shareholder', () => {
+    expect(errors(validAnswers({ [K.partyRoles]: [['shareholder'], ['shareholder']] }))).toContain('no_director');
     expect(errors(validAnswers({
-      [K.primarySsic]: '',
-      [K.primarySsicException]: 'no_suitable_code',
-      [K.primarySsicExceptionReason]: 'Specialised marine research',
+      [K.partyRoles]: [['director'], ['director']],
+      [K.ownershipPercent]: ['', ''],
+    }))).toContain('no_shareholder');
+    expect(errors(validAnswers({ [K.partyName]: [], [K.partyKind]: [], [K.partyRoles]: [], [K.ownershipPercent]: [] }))).toContain('no_parties');
+  });
+
+  it('counts a managing director as a director and accepts the other officer roles', () => {
+    expect(errors(validAnswers({
+      [K.partyRoles]: [['shareholder', 'managing_director', 'ceo'], ['shareholder', 'secretary']],
+      [K.partyResident]: [['yes'], ['yes']],
     }))).toEqual([]);
   });
 
-  it('checks SSIC codes against the catalogue and rejects a duplicate secondary', () => {
+  it('lets a company be a shareholder only', () => {
+    expect(errors(validAnswers({
+      [K.partyKind]: ['individual', 'organisation'],
+      [K.partyRoles]: [['shareholder', 'director'], ['shareholder', 'director']],
+    }))).toContain('organisation_officer');
+    expect(errors(validAnswers({ [K.partyKind]: ['individual', 'organisation'] }))).toEqual([]);
+  });
+
+  it('requires a Singapore-resident director unless our nominee director service is ticked', () => {
+    const noResident = validAnswers({ [K.partyResident]: [[], []] });
+    expect(errors(noResident)).toContain('no_resident_director');
+    expect(errors({ ...noResident, [K.nomineeDirectorService]: ['yes'] })).toEqual([]);
+  });
+
+  it('asks who a nominee acts for', () => {
+    expect(errors(validAnswers({ [K.partyNomineeShareholder]: [[], ['yes']] }))).toContain('nominator_missing');
+    expect(errors(validAnswers({ [K.partyNomineeShareholder]: [[], ['yes']], [K.partyNominator]: ['', 'Chen Holdings'] }))).toEqual([]);
+  });
+
+  it('needs a Singapore-resident company secretary, or our secretary service', () => {
+    expect(errors(validAnswers({ [K.secretaryService]: [] }))).toContain('no_secretary');
+    const withSecretary = validAnswers({ [K.secretaryService]: [], [K.partyRoles]: [['shareholder', 'director'], ['shareholder', 'secretary']] });
+    expect(errors(withSecretary)).toEqual(['secretary_not_resident']);
+    expect(errors({ ...withSecretary, [K.partyResident]: [['yes'], ['yes']] })).toEqual([]);
+  });
+
+  it('stops a secretary who is also the only director', () => {
+    expect(errors(validAnswers({ [K.partyRoles]: [['shareholder', 'director', 'secretary'], ['shareholder']] }))).toContain('secretary_sole_director');
+  });
+
+  it('checks the name ending against the company type, including alternative names', () => {
+    expect(errors(validAnswers({ [K.proposedName]: 'Harbour Lane' }))).toContain('name_suffix');
+    expect(errors(validAnswers({ [K.alternativeName1]: 'Harbour Lane Private Limited' }))).toEqual([]);
+    expect(errors(validAnswers({ [K.alternativeName1]: 'Harbour Lane Holdings' }))).toContain('name_suffix');
+    expect(errors(validAnswers({ [K.companyType]: 'public_limited' }))).toContain('name_suffix');
+    expect(errors(validAnswers({ [K.companyType]: 'public_limited', [K.proposedName]: 'Harbour Lane Limited' }))).toEqual([]);
+    expect(errors(validAnswers({ [K.alternativeName2]: 'harbour lane pte. ltd.' }))).toContain('name_repeated');
+  });
+
+  it('flags unchecked alternative names for staff without blocking', () => {
+    const result = evaluateCompanyIncorporationAnswers(validAnswers({ [K.alternativeName1]: 'Quayside Pte. Ltd.' }), { today: TODAY, nameChecks });
+    expect(result.issues.find((issue) => issue.fieldKey === K.alternativeName1)).toMatchObject({ code: 'name_not_checked', severity: 'staff_review' });
+  });
+
+  it('blocks a number of shares that would split a shareholding', () => {
+    expect(errors(validAnswers({ [K.ownershipPercent]: ['66.666667', '33.333333'] }))).toContain('share_count_fractional');
+    expect(errors(validAnswers({ [K.shareCount]: '0' }))).toContain('share_count_invalid');
+    expect(errors(validAnswers({ [K.shareCount]: '10' }))).toEqual([]);
+  });
+
+  it('requires a primary activity and checks SSIC codes against the catalogue', () => {
     const ssicCodes = new Set(['62011', '62021']);
+    expect(errors(validAnswers({ [K.primarySsic]: '' }))).toContain('ssic_primary_missing');
     expect(errors(validAnswers({ [K.primarySsic]: '99999' }), { ssicCodes })).toContain('ssic_primary_unknown');
     expect(errors(validAnswers({ [K.secondarySsic]: '62011' }), { ssicCodes })).toContain('ssic_secondary_duplicate');
     expect(errors(validAnswers({ [K.secondarySsic]: '62021' }), { ssicCodes })).toEqual([]);
@@ -123,24 +172,15 @@ describe('company incorporation profile', () => {
 
   it('rejects forged option values from a direct API call', () => {
     expect(errors(validAnswers({ [K.officeChoice]: 'somewhere_else' }))).toContain('invalid_option');
-    expect(errors(validAnswers({ [K.partyRoles]: [['shareholder', 'ceo'], ['shareholder']] }))).toContain('invalid_option');
+    expect(errors(validAnswers({ [K.partyRoles]: [['shareholder', 'director', 'coo'], ['shareholder']] }))).toContain('invalid_option');
   });
 
-  it('flags a name that has not been checked for staff without blocking', () => {
-    const result = evaluateCompanyIncorporationAnswers(validAnswers(), { today: TODAY, nameCheck: null });
-    expect(result.issues.find((issue) => issue.code === 'name_not_checked')?.severity).toBe('staff_review');
-  });
-
-  it('validates office hours, paid-up capital and the first FYE', () => {
-    expect(errors(validAnswers({
-      [K.officeChoice]: 'own_address',
-      [K.officePostalCode]: '12345',
-      [K.officeOpenTime]: { time: '09:00' },
-      [K.officeCloseTime]: { time: '11:00' },
-    }))).toEqual(expect.arrayContaining(['office_postal_code_invalid', 'office_hours_too_short']));
-    expect(errors(validAnswers({ [K.capitalPaidStatus]: 'partially_paid', [K.capitalPaidAmount]: '2000' }))).toContain('paid_exceeds_capital');
+  it('validates the postal code, paid-up amount and first FYE', () => {
+    expect(errors(validAnswers({ [K.officeChoice]: 'own_address', [K.officePostalCode]: '12345' }))).toContain('office_postal_code_invalid');
+    expect(errors(validAnswers({ [K.capitalFullyPaid]: 'no', [K.capitalPaidAmount]: '2000' }))).toContain('paid_not_partial');
+    expect(errors(validAnswers({ [K.capitalFullyPaid]: 'no', [K.capitalPaidAmount]: '100' }))).toEqual([]);
     expect(errors(validAnswers({ [K.firstFye]: '2027-02-30' }))).toContain('fye_invalid');
-    const far = evaluateCompanyIncorporationAnswers(validAnswers({ [K.firstFye]: '2028-06-30' }), { today: TODAY, nameCheck: availableCheck });
+    const far = evaluateCompanyIncorporationAnswers(validAnswers({ [K.firstFye]: '2028-06-30' }), { today: TODAY, nameChecks });
     expect(far.issues.find((issue) => issue.code === 'fye_over_18_months')?.severity).toBe('staff_review');
   });
 });
@@ -170,10 +210,20 @@ describe('company incorporation template', () => {
     }
   });
 
+  it('keeps side-by-side fields the same height by moving help into tooltips', () => {
+    const inputs = fields.filter((field) => !['PAGE_BREAK', 'PARAGRAPH', 'HTML'].includes(field.type));
+    expect(inputs.filter((field) => (field.layoutWidth ?? 100) < 100 && field.subtext).map((field) => field.key)).toEqual([]);
+  });
+
+  it('offers no "not sure" or "pending" style options', () => {
+    const labels = fields.flatMap((field) => (field.options ?? []).map((option) => (typeof option === 'string' ? option : String(option.label))));
+    expect(labels.filter((label) => /not (sure|finali[sz]ed)|pending|need advice|being prepared|arrangement/i.test(label))).toEqual([]);
+  });
+
   it('asks for no identity documents, signatures or declarations', () => {
-    expect(fields.some((field) => field.type === 'FILE_UPLOAD' && field.key !== K.customConstitution && field.key !== K.existingShareSchedule)).toBe(false);
+    expect(fields.some((field) => field.type === 'FILE_UPLOAD' && field.key !== K.customConstitution)).toBe(false);
     expect(fields.some((field) => field.type === 'SIGNATURE')).toBe(false);
-    expect(fields.some((field) => /passport|nric|date of birth/i.test(field.label ?? ''))).toBe(false);
+    expect(fields.some((field) => /passport number|nric number|date of birth/i.test(field.label ?? ''))).toBe(false);
   });
 
   it('uses link-only notifications and a review step', () => {

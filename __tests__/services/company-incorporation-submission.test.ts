@@ -153,6 +153,26 @@ describe('advisory name recheck', () => {
     expect(results.proposed_name.reasonCodes).toEqual(['CHECK_UNAVAILABLE']);
   });
 
+  it('checks the proposed and alternative names at the same time', async () => {
+    const started: string[] = [];
+    let release: () => void = () => undefined;
+    const gate = new Promise<void>((resolve) => { release = resolve; });
+    const check = vi.fn(async (name: string) => {
+      started.push(name);
+      await gate;
+      return { assessment: 'AVAILABLE' as const, checkedAt: 'x', dataAsOf: null, records: [], reasonCodes: [] };
+    });
+    const pending = recheckAdvisoryCompanyNames(
+      [field, { ...field, key: 'alternative_name_1' }],
+      { proposed_name: 'Acme', alternative_name_1: 'Acme Two' },
+      { check: check as never }
+    );
+    await Promise.resolve();
+    expect(started).toEqual(['Acme', 'Acme Two']);
+    release();
+    expect(Object.keys(await pending).sort()).toEqual(['alternative_name_1', 'proposed_name']);
+  });
+
   it('rethrows unexpected errors and skips strict fields', async () => {
     const check = vi.fn(async () => { throw new Error('bug'); });
     await expect(recheckAdvisoryCompanyNames([field], { proposed_name: 'Acme' }, { check })).rejects.toThrow('bug');
@@ -183,11 +203,15 @@ describe('company incorporation submission record', () => {
     [K.partyName]: ['Tan Mei Ling'],
     [K.partyRoles]: [['shareholder', 'director']],
     [K.ownershipPercent]: ['100'],
+    [K.partyResident]: [['yes']],
+    [K.shareCount]: '1000',
+    [K.secretaryService]: ['yes'],
   };
 
   it('stores issues, parties with stable ids and SSIC labels', () => {
     const record = evaluateCompanyIncorporationSubmission({ settings, fields, answers, nameChecks: {}, today: '2026-09-29' });
     expect(record?.ssic.primary).toEqual({ code: '62011', label: '62011 Software development' });
+    expect(record?.partyRows[0]).toMatchObject({ resident: true, shares: '1000' });
     expect(record?.partyRows[0].partyRowId).toMatch(/^party_/);
     expect(record?.issues.map((issue) => issue.code)).toContain('name_not_checked');
     expect(record?.definitionHash).toBe(computeFormDefinitionHash(fields));

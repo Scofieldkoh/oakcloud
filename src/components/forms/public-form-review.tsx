@@ -192,7 +192,6 @@ export function buildReviewSections(input: {
 
 const SEVERITY_STYLE: Record<IncorporationIssue['severity'], { label: string; className: string }> = {
   error: { label: 'Must be corrected', className: 'border-status-error/40 bg-status-error/5 text-status-error' },
-  needs_information: { label: 'Information outstanding', className: 'border-status-warning/50 bg-status-warning/10 text-text-primary' },
   staff_review: { label: 'For our review', className: 'border-border-primary bg-background-primary text-text-primary' },
 };
 

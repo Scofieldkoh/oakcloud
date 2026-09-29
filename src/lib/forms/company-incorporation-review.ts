@@ -22,16 +22,16 @@ export interface ChecklistArea {
 
 /** Areas from the handover plan's internal ACRA preparation checklist (section 5). */
 export const INCORPORATION_CHECKLIST_AREAS: ChecklistArea[] = [
-  { key: 'name_type', title: 'Name and company type', detail: 'Approved name, application reference and expiry; reserved entity type matches; private company or exempt private company classification and shareholder count.', allowNotApplicable: false },
+  { key: 'name_type', title: 'Name and company type', detail: 'Name reserved from the proposed or alternative names (application reference and expiry); company type matches the name ending; exempt private company classification and shareholder count.', allowNotApplicable: false },
   { key: 'activities_contact', title: 'Activities and company email', detail: 'Primary and any secondary SSIC code checked against the business description; final company email.', allowNotApplicable: false },
-  { key: 'registered_office', title: 'Registered office', detail: 'Singapore address, at least three hours on each business day, and the accepted office arrangement.', allowNotApplicable: false },
-  { key: 'financial_year', title: 'Financial year', detail: 'Full first FYE and accounting period, checked against the actual incorporation date; Registrar approval if over 18 months.', allowNotApplicable: false },
-  { key: 'capital_schedule', title: 'Share capital schedule', detail: 'Currency, consideration, share class and rights, number of shares, issued and paid-up amounts. Client confirmation of the proposed schedule.', allowNotApplicable: false },
-  { key: 'allotments', title: 'Allotments', detail: 'Each shareholder’s class, currency, number of shares, issued and paid amounts, reconciled to the schedule; trust or joint holdings if any.', allowNotApplicable: false },
+  { key: 'registered_office', title: 'Registered office', detail: 'Singapore address and the accepted office arrangement (own address or our registered office service).', allowNotApplicable: false },
+  { key: 'financial_year', title: 'Financial year', detail: 'First FYE checked against the actual incorporation date (12-month periods assumed); Registrar approval if the first period is over 18 months.', allowNotApplicable: false },
+  { key: 'capital_schedule', title: 'Share capital schedule', detail: 'Currency, number of ordinary shares, issued and paid-up amounts; paid in cash unless agreed otherwise.', allowNotApplicable: false },
+  { key: 'allotments', title: 'Allotments', detail: 'Each shareholder’s number of shares (from their percentage), issued and paid amounts, reconciled to the totals; trust or joint holdings if any.', allowNotApplicable: false },
   { key: 'controllers', title: 'Registrable controllers', detail: 'Exemption decision and basis, or identified controllers with control basis (more than 25%, other control) and effective dates. Ownership percentages alone do not decide this.', allowNotApplicable: false },
-  { key: 'nominees', title: 'Nominee directors and shareholders', detail: 'Separate register decision; nominee-to-nominator links and effective dates. “No nominees” is not an exemption.', allowNotApplicable: false },
-  { key: 'constitution', title: 'Constitution', detail: 'Model or custom; model version and adoption mode; subscribers and execution through the document workflow.', allowNotApplicable: false },
-  { key: 'consents', title: 'Consents and appointments', detail: 'Director consent and non-disqualification, secretary consent when appointed, CEO particulars if appointed, auditor timing, current official forms.', allowNotApplicable: false },
+  { key: 'nominees', title: 'Nominee directors and shareholders', detail: 'People ticked as nominee shareholder or director and who they act for; our nominee director service if requested; effective dates.', allowNotApplicable: false },
+  { key: 'constitution', title: 'Constitution', detail: 'Model constitution adopted as-is, or the custom constitution received; subscribers and execution through the document workflow.', allowNotApplicable: false },
+  { key: 'consents', title: 'Consents and appointments', detail: 'Director consent and non-disqualification, a Singapore-resident director, secretary appointed (ours or the client’s), managing director or CEO particulars if appointed, auditor timing.', allowNotApplicable: false },
   { key: 'professional_readiness', title: 'Professional readiness', detail: 'KYC/CDD completed and reviewed, representative and filing authority verified, exceptions resolved.', allowNotApplicable: false },
   { key: 'intake_items', title: 'Intake items resolved', detail: 'Every item the intake flagged (below) has been followed up and recorded.', allowNotApplicable: true },
 ];

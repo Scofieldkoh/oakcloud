@@ -1,36 +1,28 @@
 /**
  * Intake profile for the Singapore Company Incorporation form template.
  *
- * Browser-safe: the public review step uses it to list items needing clarification,
- * and the submission service uses it as the authoritative check. `error` issues block
- * submission; `needs_information` and `staff_review` issues are stored with the response
- * for the staff checklist and never block the client from submitting.
+ * Browser-safe: the public form uses it to stop a page from continuing while it has
+ * an `error` issue, the review step lists the remaining items, and the submission
+ * service uses it as the authoritative check. `error` issues block; `staff_review`
+ * issues are stored with the response for the staff checklist and never block.
  */
 
 import {
+  COMPANY_TYPE,
   CONSTITUTION,
-  CUSTOM_CONSTITUTION_STATUS,
-  FY_PERIOD,
+  DIRECTOR_ROLES,
   INCORPORATION_KEYS as K,
-  MODEL_ADOPTION,
-  NAME_STATUS,
   OFFICE_CHOICE,
-  PAID_STATUS,
   PARTY_KIND,
   PARTY_ROLE,
-  RESIDENT_DIRECTOR,
-  SECRETARY_CHOICE,
-  SHARE_STRUCTURE,
-  SSIC_EXCEPTION,
   TICK,
-  YEAR_END_CHOICE,
-  YES_NO_CLARIFY,
+  YES_NO,
   CAPITAL_CURRENCIES,
 } from '@/lib/form-templates/sg-company-incorporation';
 import { decimalUnits, formatDecimalUnits, parseDecimalString } from '@/lib/forms/decimal-string';
 import { describeNameCheckAssessment, type NameCheckResultValue } from '@/lib/forms/name-check-result';
 
-export type IncorporationIssueSeverity = 'error' | 'needs_information' | 'staff_review';
+export type IncorporationIssueSeverity = 'error' | 'staff_review';
 export type IncorporationIssueSection = 'company' | 'parties' | 'capital' | 'settings';
 
 export interface IncorporationIssue {
@@ -48,21 +40,27 @@ export interface IncorporationParty {
   name: string;
   roles: string[];
   ownershipPercent: string | null;
-  ownershipUndecided: boolean;
+  /** Whole number of shares from the percentage and total share count, when both are valid. */
+  shares: string | null;
   email: string | null;
   registrationReference: string | null;
+  resident: boolean;
+  nomineeShareholder: boolean;
+  nomineeDirector: boolean;
+  nominator: string | null;
+  otherControl: boolean;
 }
 
 export interface IncorporationEvaluation {
   issues: IncorporationIssue[];
   parties: IncorporationParty[];
-  /** Exact sum of decided percentages, as a decimal string. */
+  /** Exact sum of shareholding percentages, as a decimal string. */
   ownershipTotal: string;
-  ownershipFullyDecided: boolean;
 }
 
 export interface IncorporationEvaluationOptions {
-  nameCheck?: NameCheckResultValue | null;
+  /** Name-check results by field key (proposed and alternative names). */
+  nameChecks?: Record<string, NameCheckResultValue | null | undefined>;
   /** Codes of the pinned SSIC catalogue. When omitted, membership is not checked. */
   ssicCodes?: ReadonlySet<string> | null;
   /** YYYY-MM-DD in Singapore time; defaults to the current date. */
@@ -74,37 +72,42 @@ const PARTY_KEYS = [
   K.partyName,
   K.partyRoles,
   K.ownershipPercent,
-  K.ownershipUnsure,
   K.partyEmail,
   K.partyRegistrationReference,
+  K.partyResident,
+  K.partyNomineeShareholder,
+  K.partyNomineeDirector,
+  K.partyNominator,
+  K.partyOtherControl,
 ];
 
+const NAME_KEYS = [
+  [K.proposedName, 'The proposed name'],
+  [K.alternativeName1, 'Alternative name 1'],
+  [K.alternativeName2, 'Alternative name 2'],
+] as const;
+
 const CHOICE_DOMAINS: Record<string, readonly string[]> = {
-  [K.nameStatus]: Object.values(NAME_STATUS),
-  [K.primarySsicException]: Object.values(SSIC_EXCEPTION),
-  [K.capitalPaidStatus]: Object.values(PAID_STATUS),
+  [K.companyType]: Object.values(COMPANY_TYPE),
   [K.capitalCurrency]: CAPITAL_CURRENCIES,
-  [K.ownershipArrangement]: Object.values(SHARE_STRUCTURE),
-  [K.sharesForOthers]: Object.values(YES_NO_CLARIFY),
-  [K.directorsForOthers]: Object.values(YES_NO_CLARIFY),
-  [K.otherControl]: Object.values(YES_NO_CLARIFY),
+  [K.capitalFullyPaid]: Object.values(YES_NO),
   [K.officeChoice]: Object.values(OFFICE_CHOICE),
-  [K.residentDirectorHelp]: Object.values(RESIDENT_DIRECTOR),
-  [K.secretaryChoice]: Object.values(SECRETARY_CHOICE),
-  [K.yearEndChoice]: Object.values(YEAR_END_CHOICE),
-  [K.financialYearPeriod]: Object.values(FY_PERIOD),
   [K.rulesPreference]: Object.values(CONSTITUTION),
-  [K.modelAdoptionMode]: Object.values(MODEL_ADOPTION),
-  [K.customConstitutionStatus]: Object.values(CUSTOM_CONSTITUTION_STATUS),
 };
+
+const TICK_KEYS = [K.nomineeDirectorService, K.secretaryService];
 
 const ROW_CHOICE_DOMAINS: Record<string, readonly string[]> = {
   [K.partyKind]: Object.values(PARTY_KIND),
   [K.partyRoles]: Object.values(PARTY_ROLE),
-  [K.ownershipUnsure]: [TICK],
+  [K.partyResident]: [TICK],
+  [K.partyNomineeShareholder]: [TICK],
+  [K.partyNomineeDirector]: [TICK],
+  [K.partyOtherControl]: [TICK],
 };
 
-const TICK_KEYS = [K.nameReferenceUnavailable, K.ssicReviewRequested, K.companyEmailUnavailable, K.capitalUnsure, K.officeHoursPending];
+const MAX_PRIVATE_SHAREHOLDERS = 50;
+const PERCENT_SCALE = decimalUnits(100);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === 'object' && !Array.isArray(value);
@@ -125,7 +128,7 @@ function choiceValues(value: unknown): string[] {
 }
 
 function textValue(value: unknown): string {
-  return typeof value === 'string' ? value.trim() : '';
+  return typeof value === 'string' ? value.trim() : typeof value === 'number' && Number.isFinite(value) ? String(value) : '';
 }
 
 function rowValue(answers: Record<string, unknown>, key: string, rowIndex: number): unknown {
@@ -135,6 +138,10 @@ function rowValue(answers: Record<string, unknown>, key: string, rowIndex: numbe
 
 function isTicked(value: unknown): boolean {
   return choiceValues(value).includes(TICK);
+}
+
+function normalizeName(value: string): string {
+  return value.toLowerCase().replace(/\s+/g, ' ').trim();
 }
 
 function isRealIsoDate(value: string): boolean {
@@ -155,18 +162,21 @@ function singaporeToday(): string {
     .format(new Date());
 }
 
-function timeMinutes(value: unknown): number | null {
-  const time = isRecord(value) && typeof value.time === 'string' ? value.time.trim() : typeof value === 'string' ? value.trim() : '';
-  const match = time.match(/^(\d{2}):(\d{2})$/);
-  if (!match) return null;
-  const hours = Number(match[1]);
-  const minutes = Number(match[2]);
-  if (hours > 23 || minutes > 59) return null;
-  return hours * 60 + minutes;
+const PRIVATE_SUFFIX = /\b(pte\.?|private)\s+(ltd\.?|limited)\.?$/i;
+const LIMITED_SUFFIX = /\b(ltd\.?|limited)\.?$/i;
+
+/** The name ending ACRA expects for the company type, or null when the name already fits. */
+export function companyNameSuffixProblem(name: string, companyType: string): string | null {
+  const trimmed = name.trim();
+  if (!trimmed) return null;
+  if (companyType === COMPANY_TYPE.publicLimited) {
+    return LIMITED_SUFFIX.test(trimmed) && !PRIVATE_SUFFIX.test(trimmed) ? null : 'must end with “Limited” or “Ltd.” for a public company';
+  }
+  return PRIVATE_SUFFIX.test(trimmed) ? null : 'must end with “Pte. Ltd.” or “Private Limited”';
 }
 
 function partyLabel(party: Pick<IncorporationParty, 'name' | 'rowIndex'>): string {
-  return party.name || `Party ${party.rowIndex + 1}`;
+  return party.name || `Person ${party.rowIndex + 1}`;
 }
 
 function getPartyRowCount(answers: Record<string, unknown>): number {
@@ -178,20 +188,43 @@ function getPartyRowCount(answers: Record<string, unknown>): number {
   return Math.min(count, 50);
 }
 
+function isDirector(party: Pick<IncorporationParty, 'kind' | 'roles'>): boolean {
+  return party.kind !== PARTY_KIND.organisation && party.roles.some((role) => DIRECTOR_ROLES.includes(role));
+}
+
+/** Shares for a percentage of the total, or null when it is not a whole number. */
+function sharesForPercent(percentUnits: bigint, shareCount: bigint): bigint | null {
+  const scaled = percentUnits * shareCount;
+  return scaled % PERCENT_SCALE === BigInt(0) ? scaled / PERCENT_SCALE : null;
+}
+
+function parseShareCount(answers: Record<string, unknown>): bigint | null {
+  const text = textValue(answers[K.shareCount]);
+  return /^\d{1,15}$/.test(text) && BigInt(text) > BigInt(0) ? BigInt(text) : null;
+}
+
 export function extractIncorporationParties(answers: Record<string, unknown>): IncorporationParty[] {
   const parties: IncorporationParty[] = [];
   const rowCount = getPartyRowCount(answers);
+  const shareCount = parseShareCount(answers);
 
   for (let rowIndex = 0; rowIndex < rowCount; rowIndex += 1) {
     const kind = choiceValue(rowValue(answers, K.partyKind, rowIndex));
     const name = textValue(rowValue(answers, K.partyName, rowIndex));
     const roles = choiceValues(rowValue(answers, K.partyRoles, rowIndex));
-    const percentText = textValue(rowValue(answers, K.ownershipPercent, rowIndex));
-    const undecided = isTicked(rowValue(answers, K.ownershipUnsure, rowIndex));
+    const isShareholder = roles.includes(PARTY_ROLE.shareholder);
+    const percentText = isShareholder ? textValue(rowValue(answers, K.ownershipPercent, rowIndex)) : '';
     const email = textValue(rowValue(answers, K.partyEmail, rowIndex));
     const registrationReference = textValue(rowValue(answers, K.partyRegistrationReference, rowIndex));
 
-    if (!kind && !name && roles.length === 0 && !percentText && !email && !registrationReference) continue;
+    if (!name && roles.length === 0 && !percentText && !email && !registrationReference) continue;
+
+    const percentUnits = parseDecimalString(percentText);
+    const shares = shareCount !== null && percentUnits !== null ? sharesForPercent(percentUnits, shareCount) : null;
+    const nomineeShareholder = isShareholder && isTicked(rowValue(answers, K.partyNomineeShareholder, rowIndex));
+    const directorLike = kind !== PARTY_KIND.organisation && roles.some((role) => DIRECTOR_ROLES.includes(role));
+    const secretaryLike = kind !== PARTY_KIND.organisation && roles.includes(PARTY_ROLE.secretary);
+    const nomineeDirector = directorLike && isTicked(rowValue(answers, K.partyNomineeDirector, rowIndex));
 
     parties.push({
       rowIndex,
@@ -199,9 +232,14 @@ export function extractIncorporationParties(answers: Record<string, unknown>): I
       name,
       roles,
       ownershipPercent: percentText || null,
-      ownershipUndecided: undecided,
+      shares: shares !== null ? shares.toString() : null,
       email: email || null,
       registrationReference: registrationReference || null,
+      resident: (directorLike || secretaryLike) && isTicked(rowValue(answers, K.partyResident, rowIndex)),
+      nomineeShareholder,
+      nomineeDirector,
+      nominator: nomineeShareholder || nomineeDirector ? textValue(rowValue(answers, K.partyNominator, rowIndex)) || null : null,
+      otherControl: isTicked(rowValue(answers, K.partyOtherControl, rowIndex)),
     });
   }
 
@@ -215,6 +253,7 @@ export function evaluateCompanyIncorporationAnswers(
   const issues: IncorporationIssue[] = [];
   const add = (issue: IncorporationIssue) => issues.push(issue);
   const today = options.today ?? singaporeToday();
+  const nameChecks = options.nameChecks ?? {};
 
   // --- Option membership (direct API payloads) ----------------------------
   for (const [key, domain] of Object.entries(CHOICE_DOMAINS)) {
@@ -224,50 +263,41 @@ export function evaluateCompanyIncorporationAnswers(
     }
   }
   for (const key of TICK_KEYS) {
-    const values = choiceValues(answers[key]);
-    if (values.some((value) => value !== TICK)) {
-      add({ code: 'invalid_option', severity: 'error', section: 'company', fieldKey: key, message: `Select a valid option for ${key.replace(/_/g, ' ')}.` });
+    if (choiceValues(answers[key]).some((value) => value !== TICK)) {
+      add({ code: 'invalid_option', severity: 'error', section: 'capital', fieldKey: key, message: `Select a valid option for ${key.replace(/_/g, ' ')}.` });
     }
   }
 
   // --- Company name -------------------------------------------------------
-  const proposedName = textValue(answers[K.proposedName]);
-  const nameCheck = options.nameCheck && options.nameCheck.name === proposedName ? options.nameCheck : null;
-  if (proposedName) {
-    if (!nameCheck) {
-      add({ code: 'name_not_checked', severity: 'staff_review', section: 'company', fieldKey: K.proposedName, message: 'The company name has not been checked yet. Our team will check it.' });
-    } else if (nameCheck.assessment !== 'AVAILABLE') {
-      add({ code: `name_${nameCheck.assessment.toLowerCase()}`, severity: 'staff_review', section: 'company', fieldKey: K.proposedName, message: describeNameCheckAssessment(nameCheck.assessment).title });
-    }
-  }
+  const companyType = choiceValue(answers[K.companyType]) || COMPANY_TYPE.privateLimited;
+  const seenCompanyNames = new Set<string>();
+  for (const [key, label] of NAME_KEYS) {
+    const name = textValue(answers[key]);
+    if (!name) continue;
 
-  const nameStatus = choiceValue(answers[K.nameStatus]);
-  if (nameStatus === NAME_STATUS.toBeConfirmed) {
-    add({ code: 'name_status_unconfirmed', severity: 'needs_information', section: 'company', fieldKey: K.nameStatus, message: 'The name reservation status is to be confirmed.' });
-  }
-  if ((nameStatus === NAME_STATUS.reserved || nameStatus === NAME_STATUS.pending) && !textValue(answers[K.nameReference])) {
-    add({ code: 'name_reference_missing', severity: 'needs_information', section: 'company', fieldKey: K.nameReference, message: 'The ACRA application reference has not been provided.' });
+    const suffixProblem = companyNameSuffixProblem(name, companyType);
+    if (suffixProblem) {
+      add({ code: 'name_suffix', severity: 'error', section: 'company', fieldKey: key, message: `${label} ${suffixProblem}.` });
+    }
+    const normalized = normalizeName(name);
+    if (seenCompanyNames.has(normalized)) {
+      add({ code: 'name_repeated', severity: 'error', section: 'company', fieldKey: key, message: `${label} is the same as another name you entered.` });
+    }
+    seenCompanyNames.add(normalized);
+
+    const check = nameChecks[key];
+    const current = check && check.name === name ? check : null;
+    if (!current) {
+      add({ code: 'name_not_checked', severity: 'staff_review', section: 'company', fieldKey: key, message: `${label} has not been checked yet. Our team will check it.` });
+    } else if (current.assessment !== 'AVAILABLE') {
+      add({ code: `name_${current.assessment.toLowerCase()}`, severity: 'staff_review', section: 'company', fieldKey: key, message: `${label}: ${describeNameCheckAssessment(current.assessment).title}` });
+    }
   }
 
   // --- Business activity --------------------------------------------------
   const primarySsic = choiceValue(answers[K.primarySsic]);
   const secondarySsic = choiceValue(answers[K.secondarySsic]);
-  const ssicException = choiceValue(answers[K.primarySsicException]);
-  if (ssicException) {
-    const reason = textValue(answers[K.primarySsicExceptionReason]);
-    if (!reason) {
-      add({ code: 'ssic_exception_reason_missing', severity: 'error', section: 'company', fieldKey: K.primarySsicExceptionReason, message: 'Explain why no business activity could be selected.' });
-    }
-    add({
-      code: `ssic_${ssicException}`,
-      severity: 'needs_information',
-      section: 'company',
-      fieldKey: K.primarySsicException,
-      message: ssicException === SSIC_EXCEPTION.catalogueUnavailable
-        ? 'The business activity list did not load, so no primary activity was selected.'
-        : 'No suitable primary business activity was found.',
-    });
-  } else if (!primarySsic) {
+  if (!primarySsic) {
     add({ code: 'ssic_primary_missing', severity: 'error', section: 'company', fieldKey: K.primarySsic, message: 'Select a primary business activity.' });
   }
   if (options.ssicCodes) {
@@ -284,24 +314,11 @@ export function evaluateCompanyIncorporationAnswers(
   if (!textValue(answers[K.businessDescription])) {
     add({ code: 'business_description_missing', severity: 'error', section: 'company', fieldKey: K.businessDescription, message: 'Enter a brief business description.' });
   }
-  if (isTicked(answers[K.ssicReviewRequested])) {
-    add({ code: 'ssic_review_requested', severity: 'staff_review', section: 'company', fieldKey: K.primarySsic, message: 'Review of the selected activity code was requested.' });
-  }
-
-  if (isTicked(answers[K.companyEmailUnavailable])) {
-    add({ code: 'company_email_pending', severity: 'needs_information', section: 'company', fieldKey: K.companyEmail, message: 'The company email is not yet established.' });
-  }
-  const targetDate = textValue(answers[K.targetDate]);
-  if (targetDate && !isRealIsoDate(targetDate)) {
-    add({ code: 'target_date_invalid', severity: 'error', section: 'company', fieldKey: K.targetDate, message: 'Enter a valid preferred incorporation date.' });
-  }
 
   // --- Parties ------------------------------------------------------------
   const parties = extractIncorporationParties(answers);
-  let decidedTotal = BigInt(0);
-  const undecidedNames: string[] = [];
+  let total = BigInt(0);
   let shareholderCount = 0;
-  let directorCount = 0;
 
   for (const party of parties) {
     const label = partyLabel(party);
@@ -314,69 +331,78 @@ export function evaluateCompanyIncorporationAnswers(
     if (new Set(party.roles).size !== party.roles.length) {
       add({ code: 'party_roles_duplicate', severity: 'error', section: 'parties', fieldKey: K.partyRoles, rowIndex: party.rowIndex, message: `${label}: each role can be selected once.` });
     }
-
-    const isShareholder = party.roles.includes(PARTY_ROLE.shareholder);
-    const isDirector = party.roles.includes(PARTY_ROLE.director);
-    if (party.kind === PARTY_KIND.organisation && isDirector) {
-      add({ code: 'organisation_director', severity: 'error', section: 'parties', fieldKey: K.partyRoles, rowIndex: party.rowIndex, message: `${label}: an organisation can be a shareholder but not a director.` });
+    if (party.roles.length === 0) {
+      add({ code: 'party_roles_missing', severity: 'error', section: 'parties', fieldKey: K.partyRoles, rowIndex: party.rowIndex, message: `${label}: select at least one role.` });
     }
-    if (isDirector && party.kind !== PARTY_KIND.organisation) directorCount += 1;
-    if (!isShareholder) continue;
+    if (party.kind === PARTY_KIND.organisation && party.roles.some((role) => role !== PARTY_ROLE.shareholder)) {
+      add({ code: 'organisation_officer', severity: 'error', section: 'parties', fieldKey: K.partyRoles, rowIndex: party.rowIndex, message: `${label}: a company can only be a shareholder.` });
+    }
+    if ((party.nomineeShareholder || party.nomineeDirector) && !party.nominator) {
+      add({ code: 'nominator_missing', severity: 'error', section: 'parties', fieldKey: K.partyNominator, rowIndex: party.rowIndex, message: `${label}: enter who they act on behalf of.` });
+    }
 
+    if (!party.roles.includes(PARTY_ROLE.shareholder)) continue;
     shareholderCount += 1;
-    if (party.ownershipUndecided) {
-      undecidedNames.push(label);
-      continue;
-    }
-
     const units = parseDecimalString(party.ownershipPercent);
     if (units === null) {
-      add({ code: 'ownership_invalid', severity: 'error', section: 'parties', fieldKey: K.ownershipPercent, rowIndex: party.rowIndex, message: `${label}: enter the shareholding percentage, or tick “Allocation not finalised”.` });
+      add({ code: 'ownership_invalid', severity: 'error', section: 'parties', fieldKey: K.ownershipPercent, rowIndex: party.rowIndex, message: `${label}: enter the shareholding percentage.` });
       continue;
     }
-    if (units <= BigInt(0) || units > decimalUnits(100)) {
+    if (units <= BigInt(0) || units > PERCENT_SCALE) {
       add({ code: 'ownership_out_of_range', severity: 'error', section: 'parties', fieldKey: K.ownershipPercent, rowIndex: party.rowIndex, message: `${label}: a shareholding must be more than 0% and no more than 100%.` });
       continue;
     }
-    decidedTotal += units;
+    total += units;
   }
 
-  const ownershipFullyDecided = shareholderCount > 0 && undecidedNames.length === 0;
-  const totalText = formatDecimalUnits(decidedTotal);
-  if (ownershipFullyDecided && decidedTotal !== decimalUnits(100)) {
-    add({ code: 'ownership_total', severity: 'error', section: 'parties', fieldKey: K.ownershipPercent, message: `Ownership percentages total ${totalText}%. They must total 100% when fully allocated.` });
-  } else if (!ownershipFullyDecided && decidedTotal > decimalUnits(100)) {
-    add({ code: 'ownership_total', severity: 'error', section: 'parties', fieldKey: K.ownershipPercent, message: `Ownership percentages total ${totalText}%, which is more than 100%.` });
-  }
-  if (undecidedNames.length > 0) {
-    add({ code: 'ownership_undecided', severity: 'needs_information', section: 'parties', fieldKey: K.ownershipUnsure, message: `Ownership allocation not finalised for ${undecidedNames.join(', ')}.` });
-  }
-  if (parties.length > 0 && shareholderCount === 0) {
-    add({ code: 'no_shareholder', severity: 'needs_information', section: 'parties', message: 'No shareholder has been added. A company needs at least one shareholder.' });
-  }
-  if (parties.length > 0 && directorCount === 0) {
-    add({ code: 'no_director', severity: 'needs_information', section: 'parties', message: 'No individual director has been added. A company needs at least one director.' });
-  }
+  const totalText = formatDecimalUnits(total);
   if (parties.length === 0) {
-    add({ code: 'no_parties', severity: 'error', section: 'parties', message: 'Add at least one shareholder or director.' });
+    add({ code: 'no_parties', severity: 'error', section: 'parties', fieldKey: K.partyName, message: 'Add at least one shareholder and one director.' });
+  } else {
+    if (shareholderCount === 0) {
+      add({ code: 'no_shareholder', severity: 'error', section: 'parties', fieldKey: K.partyRoles, message: 'Add at least one shareholder.' });
+    } else if (total !== PERCENT_SCALE) {
+      add({ code: 'ownership_total', severity: 'error', section: 'parties', fieldKey: K.ownershipPercent, message: `Shareholdings total ${totalText}%. They must add up to exactly 100%.` });
+    }
+    if (!parties.some(isDirector)) {
+      add({ code: 'no_director', severity: 'error', section: 'parties', fieldKey: K.partyRoles, message: 'Add at least one director. A director must be an individual.' });
+    }
+    if (companyType === COMPANY_TYPE.privateLimited && shareholderCount > MAX_PRIVATE_SHAREHOLDERS) {
+      add({ code: 'too_many_shareholders', severity: 'error', section: 'parties', fieldKey: K.partyRoles, message: `A private company can have at most ${MAX_PRIVATE_SHAREHOLDERS} shareholders.` });
+    }
   }
 
-  const seenNames = new Map<string, string>();
+  const directors = parties.filter(isDirector);
+  const secretaries = parties.filter((party) => party.roles.includes(PARTY_ROLE.secretary));
+  for (const secretary of secretaries) {
+    if (secretary.kind === PARTY_KIND.organisation || secretary.resident) continue;
+    add({
+      code: 'secretary_not_resident',
+      severity: 'error',
+      section: 'parties',
+      fieldKey: K.partyResident,
+      rowIndex: secretary.rowIndex,
+      message: `${partyLabel(secretary)}: a company secretary must live in Singapore. Tick “Lives in Singapore”, or remove the role and tick our company secretary service on the next page.`,
+    });
+  }
+  if (directors.length === 1 && secretaries.some((party) => party.rowIndex === directors[0].rowIndex)) {
+    add({ code: 'secretary_sole_director', severity: 'error', section: 'parties', fieldKey: K.partyRoles, rowIndex: directors[0].rowIndex, message: `${partyLabel(directors[0])}: the company secretary cannot also be the only director.` });
+  }
+
+  const seenNames = new Set<string>();
   for (const party of parties) {
-    const normalized = party.name.toLowerCase().replace(/\s+/g, ' ');
+    const normalized = normalizeName(party.name);
     if (!normalized) continue;
     if (seenNames.has(normalized)) {
-      add({ code: 'party_duplicate_name', severity: 'staff_review', section: 'parties', rowIndex: party.rowIndex, message: `${party.name} is listed more than once. Add each person or organisation once and select all their roles.` });
+      add({ code: 'party_duplicate_name', severity: 'error', section: 'parties', fieldKey: K.partyName, rowIndex: party.rowIndex, message: `${party.name} is listed more than once. Add each person once and tick all their roles.` });
     }
-    seenNames.set(normalized, party.name);
+    seenNames.add(normalized);
   }
 
-  // --- Capital ------------------------------------------------------------
-  const capitalUnsure = isTicked(answers[K.capitalUnsure]);
-  const capitalUnits = capitalUnsure ? null : parseDecimalString(textValue(answers[K.capitalAmount]));
-  if (capitalUnsure) {
-    add({ code: 'capital_undecided', severity: 'needs_information', section: 'capital', fieldKey: K.capitalUnsure, message: 'Share capital is not finalised.' });
-  } else if (textValue(answers[K.capitalAmount])) {
+  // --- Capital and services -----------------------------------------------
+  const capitalText = textValue(answers[K.capitalAmount]);
+  const capitalUnits = parseDecimalString(capitalText);
+  if (capitalText) {
     if (capitalUnits === null) {
       add({ code: 'capital_invalid', severity: 'error', section: 'capital', fieldKey: K.capitalAmount, message: 'Enter the share capital as an amount, for example 1000.' });
     } else if (capitalUnits <= BigInt(0)) {
@@ -384,122 +410,72 @@ export function evaluateCompanyIncorporationAnswers(
     }
   }
 
-  const paidStatus = choiceValue(answers[K.capitalPaidStatus]);
-  if (paidStatus === PAID_STATUS.notFinalised) {
-    add({ code: 'paid_undecided', severity: 'needs_information', section: 'capital', fieldKey: K.capitalPaidStatus, message: 'Payment of the share capital is not finalised.' });
+  const shareCountText = textValue(answers[K.shareCount]);
+  const shareCount = parseShareCount(answers);
+  if (shareCountText && shareCount === null) {
+    add({ code: 'share_count_invalid', severity: 'error', section: 'capital', fieldKey: K.shareCount, message: 'Enter the number of shares as a whole number of at least 1.' });
   }
-  if (paidStatus === PAID_STATUS.partially) {
+  if (shareCount !== null) {
+    const fractional = parties.filter((party) => party.roles.includes(PARTY_ROLE.shareholder) && party.ownershipPercent && parseDecimalString(party.ownershipPercent) !== null && party.shares === null);
+    if (fractional.length > 0) {
+      add({
+        code: 'share_count_fractional',
+        severity: 'error',
+        section: 'capital',
+        fieldKey: K.shareCount,
+        message: `With ${shareCount.toString()} shares, ${fractional.map(partyLabel).join(', ')} would hold part of a share. Choose a number of shares that divides evenly, for example 100 or 1,000.`,
+      });
+    }
+  }
+
+  if (choiceValue(answers[K.capitalFullyPaid]) === YES_NO.no) {
     const paidText = textValue(answers[K.capitalPaidAmount]);
     const paidUnits = parseDecimalString(paidText);
     if (paidText && paidUnits === null) {
-      add({ code: 'paid_invalid', severity: 'error', section: 'capital', fieldKey: K.capitalPaidAmount, message: 'Enter the paid-up capital as an amount.' });
-    } else if (paidUnits !== null && capitalUnits !== null && capitalUnits > BigInt(0) && paidUnits > capitalUnits) {
-      add({ code: 'paid_exceeds_capital', severity: 'error', section: 'capital', fieldKey: K.capitalPaidAmount, message: 'Paid-up capital cannot exceed the share capital.' });
+      add({ code: 'paid_invalid', severity: 'error', section: 'capital', fieldKey: K.capitalPaidAmount, message: 'Enter the amount paid as a number.' });
+    } else if (paidUnits !== null && capitalUnits !== null && paidUnits >= capitalUnits) {
+      add({ code: 'paid_not_partial', severity: 'error', section: 'capital', fieldKey: K.capitalPaidAmount, message: 'The amount paid must be less than the share capital. Choose Yes if it will be fully paid.' });
     }
   }
 
-  const structure = choiceValue(answers[K.ownershipArrangement]);
-  if (structure === SHARE_STRUCTURE.other) {
-    add({ code: 'share_structure_other', severity: 'staff_review', section: 'capital', fieldKey: K.ownershipArrangement, message: 'A share structure other than ordinary shares with equal rights was requested.' });
-  } else if (structure === SHARE_STRUCTURE.advice) {
-    add({ code: 'share_structure_advice', severity: 'staff_review', section: 'capital', fieldKey: K.ownershipArrangement, message: 'Advice on the share structure was requested.' });
+  if (parties.length > 0 && directors.length > 0 && !directors.some((party) => party.resident) && !isTicked(answers[K.nomineeDirectorService])) {
+    add({
+      code: 'no_resident_director',
+      severity: 'error',
+      section: 'capital',
+      fieldKey: K.nomineeDirectorService,
+      message: 'None of the directors lives in Singapore. Tick the nominee director service, or go back and tick “Lives in Singapore” for a director who does.',
+    });
   }
 
-  const arrangementLabels: Array<[string, string]> = [
-    [K.sharesForOthers, 'Shares held on behalf of another party'],
-    [K.directorsForOthers, 'Director acting on another party’s instructions'],
-    [K.otherControl, 'Other control arrangements'],
-  ];
-  for (const [key, label] of arrangementLabels) {
-    const value = choiceValue(answers[key]);
-    if (value === YES_NO_CLARIFY.yes) {
-      add({ code: `${key}_yes`, severity: 'staff_review', section: 'capital', fieldKey: key, message: `${label}: Yes. Our team will follow up on the details.` });
-    } else if (value === YES_NO_CLARIFY.clarify) {
-      add({ code: `${key}_clarify`, severity: 'needs_information', section: 'capital', fieldKey: key, message: `${label}: clarification required.` });
-    }
+  if (parties.length > 0 && secretaries.length === 0 && !isTicked(answers[K.secretaryService])) {
+    add({
+      code: 'no_secretary',
+      severity: 'error',
+      section: 'capital',
+      fieldKey: K.secretaryService,
+      message: 'No one is listed as company secretary. Tick the company secretary service, or go back and give a person the Company secretary role.',
+    });
   }
 
-  // --- Registered office --------------------------------------------------
-  const officeChoice = choiceValue(answers[K.officeChoice]);
-  if (officeChoice === OFFICE_CHOICE.own) {
+  // --- Registered office and other details --------------------------------
+  if (choiceValue(answers[K.officeChoice]) === OFFICE_CHOICE.own) {
     const postalCode = textValue(answers[K.officePostalCode]);
     if (postalCode && !/^\d{6}$/.test(postalCode)) {
       add({ code: 'office_postal_code_invalid', severity: 'error', section: 'settings', fieldKey: K.officePostalCode, message: 'Enter a 6-digit Singapore postal code.' });
     }
-    if (isTicked(answers[K.officeHoursPending])) {
-      add({ code: 'office_hours_pending', severity: 'staff_review', section: 'settings', fieldKey: K.officeHoursPending, message: 'Registered office hours need confirmation.' });
-    } else {
-      const open = timeMinutes(answers[K.officeOpenTime]);
-      const close = timeMinutes(answers[K.officeCloseTime]);
-      if (open !== null && close !== null && close - open < 180) {
-        add({ code: 'office_hours_too_short', severity: 'error', section: 'settings', fieldKey: K.officeCloseTime, message: 'The registered office must be open for at least three hours on each business day.' });
-      }
-    }
-  } else if (officeChoice === OFFICE_CHOICE.firmService) {
-    add({ code: 'office_firm_service', severity: 'staff_review', section: 'settings', fieldKey: K.officeChoice, message: 'Registered office service requested. The address is pending our acceptance.' });
-  } else if (officeChoice === OFFICE_CHOICE.pending) {
-    add({ code: 'office_pending', severity: 'needs_information', section: 'settings', fieldKey: K.officeChoice, message: 'The registered office arrangement is pending.' });
   }
 
-  // --- Officers -----------------------------------------------------------
-  const residentDirector = choiceValue(answers[K.residentDirectorHelp]);
-  if (residentDirector === RESIDENT_DIRECTOR.assistance) {
-    add({ code: 'resident_director_assistance', severity: 'staff_review', section: 'settings', fieldKey: K.residentDirectorHelp, message: 'Assistance with a Singapore-resident director was requested.' });
-  } else if (residentDirector === RESIDENT_DIRECTOR.pending) {
-    add({ code: 'resident_director_pending', severity: 'needs_information', section: 'settings', fieldKey: K.residentDirectorHelp, message: 'The Singapore-resident director is pending confirmation.' });
-  }
-
-  const secretaryChoice = choiceValue(answers[K.secretaryChoice]);
-  if (secretaryChoice === SECRETARY_CHOICE.firm) {
-    add({ code: 'secretary_firm', severity: 'staff_review', section: 'settings', fieldKey: K.secretaryChoice, message: 'The firm was asked to arrange the company secretary.' });
-  } else if (secretaryChoice === SECRETARY_CHOICE.afterIncorporation) {
-    add({ code: 'secretary_after', severity: 'staff_review', section: 'settings', fieldKey: K.secretaryChoice, message: 'The company secretary will be appointed after incorporation (within six months).' });
-  } else if (secretaryChoice === SECRETARY_CHOICE.advice) {
-    add({ code: 'secretary_advice', severity: 'staff_review', section: 'settings', fieldKey: K.secretaryChoice, message: 'Advice on the company secretary was requested.' });
-  } else if (secretaryChoice === SECRETARY_CHOICE.identified) {
-    const secretaryName = textValue(answers[K.secretaryName]).toLowerCase().replace(/\s+/g, ' ');
-    const directors = parties.filter((party) => party.roles.includes(PARTY_ROLE.director));
-    if (secretaryName && directors.length === 1 && directors[0].name.toLowerCase().replace(/\s+/g, ' ') === secretaryName) {
-      add({ code: 'secretary_sole_director', severity: 'needs_information', section: 'settings', fieldKey: K.secretaryName, message: 'The company secretary cannot also be the company’s sole director.' });
-    }
-  }
-
-  // --- Financial year -----------------------------------------------------
-  if (choiceValue(answers[K.yearEndChoice]) === YEAR_END_CHOICE.advice) {
-    add({ code: 'fye_advice', severity: 'staff_review', section: 'settings', fieldKey: K.yearEndChoice, message: 'Advice on the first financial year end was requested.' });
-  }
   const firstFye = textValue(answers[K.firstFye]);
   if (firstFye) {
     if (!isRealIsoDate(firstFye)) {
       add({ code: 'fye_invalid', severity: 'error', section: 'settings', fieldKey: K.firstFye, message: 'Enter a valid first financial year end date.' });
     } else if (firstFye > addMonthsIso(today, 18)) {
-      add({ code: 'fye_over_18_months', severity: 'staff_review', section: 'settings', fieldKey: K.firstFye, message: 'The first financial year end is more than 18 months away and may need Registrar approval.' });
+      add({ code: 'fye_over_18_months', severity: 'staff_review', section: 'settings', fieldKey: K.firstFye, message: 'The first financial year end is more than 18 months away, so ACRA’s approval may be needed. We will check it with you.' });
     }
   }
-  if (choiceValue(answers[K.financialYearPeriod]) === FY_PERIOD.advice) {
-    add({ code: 'fy_period_advice', severity: 'staff_review', section: 'settings', fieldKey: K.financialYearPeriod, message: 'Advice on the accounting period was requested.' });
-  }
 
-  // --- Constitution -------------------------------------------------------
-  const constitution = choiceValue(answers[K.rulesPreference]);
-  if (constitution === CONSTITUTION.advice) {
-    add({ code: 'constitution_advice', severity: 'staff_review', section: 'settings', fieldKey: K.rulesPreference, message: 'Advice on the company constitution was requested.' });
-  } else if (constitution === CONSTITUTION.model && choiceValue(answers[K.modelAdoptionMode]) === MODEL_ADOPTION.advice) {
-    add({ code: 'model_adoption_advice', severity: 'staff_review', section: 'settings', fieldKey: K.modelAdoptionMode, message: 'Advice on how to adopt the model constitution was requested.' });
-  } else if (constitution === CONSTITUTION.custom && choiceValue(answers[K.customConstitutionStatus]) === CUSTOM_CONSTITUTION_STATUS.beingPrepared) {
-    add({ code: 'custom_constitution_pending', severity: 'needs_information', section: 'settings', fieldKey: K.customConstitution, message: 'The custom constitution is still being prepared.' });
-  }
-
-  if (textValue(answers[K.otherAppointments])) {
-    add({ code: 'other_appointments', severity: 'staff_review', section: 'settings', fieldKey: K.otherAppointments, message: 'Other appointments were noted. Our team will confirm whether they apply.' });
-  }
-
-  return {
-    issues,
-    parties,
-    ownershipTotal: totalText,
-    ownershipFullyDecided,
-  };
+  return { issues, parties, ownershipTotal: totalText };
 }
 
 export function hasBlockingIncorporationIssue(evaluation: Pick<IncorporationEvaluation, 'issues'>): boolean {
