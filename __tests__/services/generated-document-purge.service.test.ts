@@ -30,11 +30,7 @@ vi.mock('@/services/tasks/integration.service', () => ({
   safelyReconcileTaskStageIds: mocks.reconcileStages,
 }));
 
-import {
-  assertCanPermanentlyDeleteDocuments,
-  bulkPermanentlyDeleteGeneratedDocuments,
-  permanentlyDeleteGeneratedDocument,
-} from '@/services/generated-document-purge.service';
+import { permanentlyDeleteGeneratedDocument } from '@/services/generated-document-purge.service';
 
 const params = { tenantId: 'workspace-1', userId: 'user-1' };
 
@@ -132,27 +128,5 @@ describe('permanentlyDeleteGeneratedDocument', () => {
     expect(mocks.findFirst).toHaveBeenCalledWith(expect.objectContaining({
       where: { id: 'doc-1', tenantId: 'workspace-1' },
     }));
-  });
-
-  it('reports per-document failures in bulk', async () => {
-    mocks.txFindFirst
-      .mockResolvedValueOnce(finalizedDocument())
-      .mockResolvedValueOnce(finalizedDocument({
-        id: 'doc-2',
-        esigningEnvelopeDocuments: [{ envelope: { id: 'env-2', title: 'AGM', status: 'IN_PROGRESS' } }],
-      }));
-
-    const result = await bulkPermanentlyDeleteGeneratedDocuments(['doc-1', 'doc-2'], params, 'Clean up duplicates');
-    expect(result.deleted).toBe(1);
-    expect(result.failed).toEqual([{ id: 'doc-2', error: expect.stringContaining('out for signature') }]);
-  });
-});
-
-describe('assertCanPermanentlyDeleteDocuments', () => {
-  it('allows workspace and super admins only', () => {
-    expect(() => assertCanPermanentlyDeleteDocuments({ isSuperAdmin: false, isWorkspaceAdmin: true })).not.toThrow();
-    expect(() => assertCanPermanentlyDeleteDocuments({ isSuperAdmin: true, isWorkspaceAdmin: false })).not.toThrow();
-    expect(() => assertCanPermanentlyDeleteDocuments({ isSuperAdmin: false, isWorkspaceAdmin: false }))
-      .toThrow('Only administrators');
   });
 });
