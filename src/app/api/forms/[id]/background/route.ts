@@ -81,7 +81,9 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     }
 
     const extension = validation.ext === 'jpg' ? '.jpg' : `.${validation.ext}`;
-    const storageKey = StorageKeys.formBackground(tenantId, id, extension);
+    // A new key per upload: the file is served with an immutable cache header, so
+    // reusing one key would keep showing the old image after a replace.
+    const storageKey = StorageKeys.formBackground(tenantId, id, extension, Date.now().toString(36));
     await storage.upload(storageKey, buffer, {
       contentType: validation.mime,
       cacheControl: 'public, max-age=31536000, immutable',
