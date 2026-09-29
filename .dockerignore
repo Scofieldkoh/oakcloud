@@ -9,4 +9,5 @@ docker-data
 tmp
 uploads
 tsconfig.tsbuildinfo
-tsc-output*.txt
+tsc-*.txt
+forms-restore-backup

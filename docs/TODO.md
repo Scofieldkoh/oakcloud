@@ -65,7 +65,7 @@ Key principles:
 
 | ID | Priority | Status | Description | Notes |
 |----|----------|--------|-------------|-------|
-| DEV-001 | P2 | Open | Repository typecheck is blocked by stale renderer verification types | `npx.cmd tsc --noEmit --pretty false` reports pre-existing DTO and date/type mismatches in `tmp/verify-renderer.ts` |
+| DEV-001 | P2 | Done | Repository typecheck is blocked by stale renderer verification types | Removed the scratch file `tmp/verify-renderer.ts`; `tmp/` is now ignored (2026-09-29) |
 
 ### Forms
 

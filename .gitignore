@@ -69,3 +69,10 @@ ralph-claude
 
 # Reviewed source-PDF renders may contain personal and signing information.
 tmp/pdfs/
+
+# Local diagnostic output and scratch files
+/tmp/
+/tsc-*.txt
+
+# Local database and storage backups (may contain client personal data)
+/forms-restore-backup/
