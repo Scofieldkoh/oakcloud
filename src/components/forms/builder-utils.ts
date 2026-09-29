@@ -456,6 +456,8 @@ export function serializeBuilderState(input: {
   hideFooter?: boolean;
   backgroundImageUrl?: string | null;
   backgroundImageOpacity?: number;
+  panelOpacity?: number;
+  headingColor?: string | null;
   aiParsingEnabled?: boolean;
   aiParsingCustomContext?: string;
 }): string {
@@ -485,6 +487,10 @@ export function serializeBuilderState(input: {
     backgroundImageOpacity: typeof input.backgroundImageOpacity === 'number' && Number.isFinite(input.backgroundImageOpacity)
       ? Math.min(100, Math.max(0, Math.round(input.backgroundImageOpacity)))
       : 40,
+    panelOpacity: typeof input.panelOpacity === 'number' && Number.isFinite(input.panelOpacity)
+      ? Math.min(100, Math.max(0, Math.round(input.panelOpacity)))
+      : 100,
+    headingColor: input.headingColor || null,
     aiParsingEnabled: input.aiParsingEnabled === true,
     aiParsingCustomContext: (input.aiParsingCustomContext || '').trim(),
     fields: input.fields.map((field, idx) => ({

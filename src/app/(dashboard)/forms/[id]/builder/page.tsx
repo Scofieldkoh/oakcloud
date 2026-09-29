@@ -36,7 +36,7 @@ import { SortableFieldCard } from '@/components/forms/sortable-field-card';
 import { FormBackgroundUploader } from '@/components/forms/form-background-uploader';
 import { getConditionDependents, getPublishReadiness } from '@/components/forms/builder-analysis';
 import { COUNTRY_PRESET_OPTIONS, NATIONALITY_PRESET_OPTIONS } from '@/lib/constants/form-option-presets';
-import { normalizeFormBackgroundUrl } from '@/lib/form-background-url';
+import { FormPanelAppearanceFields } from '@/components/forms/form-panel-appearance-fields';
 import {
   FIELD_TYPE_LABEL,
   defaultField,
@@ -69,6 +69,8 @@ import {
   sanitizeResponseColumnWidths,
   writeFormNotificationSettings,
   writeFormResponseTableSettings,
+  DEFAULT_FORM_PANEL_OPACITY,
+  parseFormAppearanceSettings,
   type FormI18nLocaleTranslation,
   type FormI18nSettings,
   type FormI18nFieldTranslation,
@@ -442,6 +444,8 @@ export default function FormBuilderPage() {
   const [hideFooter, setHideFooter] = useState(false);
   const [backgroundImageUrl, setBackgroundImageUrl] = useState<string | null>(null);
   const [backgroundImageOpacity, setBackgroundImageOpacity] = useState(40);
+  const [panelOpacity, setPanelOpacity] = useState(DEFAULT_FORM_PANEL_OPACITY);
+  const [headingColor, setHeadingColor] = useState<string | null>(null);
   const [fields, setFields] = useState<BuilderField[]>([]);
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
   const [dragActiveId, setDragActiveId] = useState<string | null>(null);
@@ -521,17 +525,15 @@ export default function FormBuilderPage() {
     const settingsObj = (form.settings && typeof form.settings === 'object' && !Array.isArray(form.settings))
       ? form.settings as Record<string, unknown>
       : {};
-    const normalizedBackgroundImageUrl = normalizeFormBackgroundUrl(
-      typeof settingsObj.backgroundImageUrl === 'string' ? settingsObj.backgroundImageUrl : null
-    );
-    const normalizedBackgroundImageOpacity =
-      typeof settingsObj.backgroundImageOpacity === 'number' && Number.isFinite(settingsObj.backgroundImageOpacity)
-        ? Math.min(100, Math.max(0, Math.round(settingsObj.backgroundImageOpacity)))
-        : 40;
+    const appearance = parseFormAppearanceSettings(form.settings);
+    const normalizedBackgroundImageUrl = appearance.backgroundImageUrl;
+    const normalizedBackgroundImageOpacity = appearance.backgroundImageOpacity;
     setHideLogo(settingsObj.hideLogo === true);
     setHideFooter(settingsObj.hideFooter === true);
     setBackgroundImageUrl(normalizedBackgroundImageUrl);
     setBackgroundImageOpacity(normalizedBackgroundImageOpacity);
+    setPanelOpacity(appearance.panelOpacity);
+    setHeadingColor(appearance.headingColor);
     setFields(mappedFields);
     setSelectedFieldId(null);
 
@@ -557,6 +559,8 @@ export default function FormBuilderPage() {
       hideFooter: settingsObj.hideFooter === true,
       backgroundImageUrl: normalizedBackgroundImageUrl,
       backgroundImageOpacity: normalizedBackgroundImageOpacity,
+      panelOpacity: appearance.panelOpacity,
+      headingColor: appearance.headingColor,
       fields: mappedFields,
     });
     lockedFieldsSnapshot.current = serializeFieldsOnly(mappedFields);
@@ -798,6 +802,8 @@ export default function FormBuilderPage() {
       hideFooter,
       backgroundImageUrl,
       backgroundImageOpacity,
+      panelOpacity,
+      headingColor,
       fields,
     }),
     [
@@ -822,6 +828,8 @@ export default function FormBuilderPage() {
       hideFooter,
       backgroundImageUrl,
       backgroundImageOpacity,
+      panelOpacity,
+      headingColor,
       fields,
     ]
   );
@@ -1554,6 +1562,8 @@ export default function FormBuilderPage() {
         hideFooter: hideFooter === true,
         backgroundImageUrl: backgroundImageUrl || null,
         backgroundImageOpacity,
+        panelOpacity,
+        headingColor,
       };
 
       const saved = await updateForm.mutateAsync({
@@ -1606,6 +1616,8 @@ export default function FormBuilderPage() {
         hideFooter,
         backgroundImageUrl,
         backgroundImageOpacity,
+        panelOpacity,
+        headingColor,
         fields: correctedFields,
       });
 
@@ -2082,11 +2094,16 @@ export default function FormBuilderPage() {
                 title="Appearance & PDF"
                 summary={[
                   ...(backgroundImageUrl ? ['Background image'] : []),
+                  ...(panelOpacity !== DEFAULT_FORM_PANEL_OPACITY ? [`Panels ${panelOpacity}%`] : []),
+                  ...(headingColor ? ['Heading colour'] : []),
                   ...(!hideLogo ? ['Logo'] : []),
                   ...(!hideFooter ? ['Footer'] : []),
                   ...(pdfFileNameTemplate ? ['PDF template'] : []),
                 ].join(' · ') || 'Default appearance'}
-                configured={!!pdfFileNameTemplate || hideLogo || hideFooter || !!backgroundImageUrl}
+                configured={
+                  !!pdfFileNameTemplate || hideLogo || hideFooter || !!backgroundImageUrl
+                  || panelOpacity !== DEFAULT_FORM_PANEL_OPACITY || !!headingColor
+                }
               >
                 <FormBackgroundUploader
                   formId={formId}
@@ -2094,6 +2111,12 @@ export default function FormBuilderPage() {
                   opacity={backgroundImageOpacity}
                   onUrlChange={setBackgroundImageUrl}
                   onOpacityChange={setBackgroundImageOpacity}
+                />
+                <FormPanelAppearanceFields
+                  panelOpacity={panelOpacity}
+                  headingColor={headingColor}
+                  onPanelOpacityChange={setPanelOpacity}
+                  onHeadingColorChange={setHeadingColor}
                 />
                 <FormInput
                   label="PDF filename template"
