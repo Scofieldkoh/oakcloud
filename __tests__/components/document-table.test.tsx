@@ -187,6 +187,26 @@ describe('DocumentTable', () => {
     expect(routerPush).toHaveBeenCalledWith('/generated-documents/doc-1');
   });
 
+  it('opens the delete dialog, not the detail page, when the delete icon is clicked', () => {
+    const onDelete = vi.fn();
+    render(
+      <DocumentTable
+        documents={[documentFixture({ status: 'FINALIZED' })]}
+        filters={{}}
+        onDelete={onDelete}
+      />,
+    );
+
+    const deleteButton = screen.getAllByRole('button', { name: 'Delete Annual minutes' })
+      .find((button) => button.closest('tr'));
+    const icon = deleteButton?.querySelector('svg');
+    expect(icon).toBeTruthy();
+    fireEvent.click(icon!);
+
+    expect(onDelete).toHaveBeenCalledWith('doc-1');
+    expect(routerPush).not.toHaveBeenCalled();
+  });
+
   it('resumes generation sessions from a row click instead of the detail page', () => {
     render(
       <DocumentTable

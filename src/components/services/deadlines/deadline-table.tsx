@@ -336,11 +336,11 @@ function DesktopDeadlineRow({ occurrence, index, visibleColumns, canEdit, isPend
     setActionsOpen(false);
   };
   const handleClick = (event: React.MouseEvent<HTMLTableRowElement>) => {
-    if (isTableInteractiveTarget(event.target)) return;
+    if (isTableInteractiveTarget(event.target, event.currentTarget)) return;
     openActions({ x: event.clientX, y: event.clientY });
   };
   const handleKeyDown = (event: React.KeyboardEvent<HTMLTableRowElement>) => {
-    if (isTableInteractiveTarget(event.target)) return;
+    if (isTableInteractiveTarget(event.target, event.currentTarget)) return;
     if (event.key !== 'Enter' && event.key !== ' ') return;
     event.preventDefault();
     openActions();

@@ -2,6 +2,7 @@
 
 import { ReactNode, type MouseEvent } from 'react';
 import { cn } from '@/lib/utils';
+import { isTableInteractiveTarget, TABLE_INTERACTIVE_TARGET_SELECTOR } from '@/components/ui/data-table';
 import { Square, CheckSquare, MinusSquare } from 'lucide-react';
 
 /**
@@ -179,6 +180,8 @@ interface MobileCardProps {
   selectionLabel?: string;
 }
 
+const CARD_INTERACTIVE_TARGET_SELECTOR = `${TABLE_INTERACTIVE_TARGET_SELECTOR},[data-prevent-card-click="true"]`;
+
 export function MobileCard({
   isSelected = false,
   selectable = false,
@@ -196,8 +199,7 @@ export function MobileCard({
 
   const handleCardClick = (e: MouseEvent<HTMLDivElement>) => {
     if (!onCardClick) return;
-    const target = e.target as HTMLElement | null;
-    if (target?.closest('a,button,input,select,textarea,label,[role="button"],[data-prevent-card-click="true"]')) {
+    if (isTableInteractiveTarget(e.target, e.currentTarget, CARD_INTERACTIVE_TARGET_SELECTOR)) {
       return;
     }
     onCardClick();
