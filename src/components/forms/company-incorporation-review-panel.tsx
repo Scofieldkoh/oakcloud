@@ -57,6 +57,8 @@ function partyDetails(party: PartyRow): string[] {
   if (party.resident) details.push('Lives in Singapore');
   if (party.nomineeShareholder) details.push('Nominee shareholder');
   if (party.nomineeDirector) details.push('Nominee director');
+  if (party.shareholderNominator) details.push(`Shareholder nominator: ${party.shareholderNominator}`);
+  if (party.directorNominator) details.push(`Director nominator: ${party.directorNominator}`);
   if (party.nominator) details.push(`Acts for ${party.nominator}`);
   if (party.otherControl) details.push('Other control');
   return details;

@@ -30,7 +30,7 @@ import { createLogger } from '@/lib/logger';
 const log = createLogger('company-incorporation-intake');
 
 export const NAME_RECHECK_TIMEOUT_MS = 5_000;
-export const COMPANY_INCORPORATION_PROFILE_VERSION = 3;
+export const COMPANY_INCORPORATION_PROFILE_VERSION = 4;
 
 class NameRecheckTimeoutError extends Error {
   constructor() {
@@ -194,6 +194,9 @@ export interface CompanyIncorporationSubmissionRecord {
     resident?: boolean;
     nomineeShareholder?: boolean;
     nomineeDirector?: boolean;
+    shareholderNominator?: string | null;
+    directorNominator?: string | null;
+    /** Profile version 3 and earlier. */
     nominator?: string | null;
     /** Profile version 2 only. */
     otherControl?: boolean;
@@ -282,7 +285,8 @@ export function evaluateCompanyIncorporationSubmission(input: {
       resident: party.resident,
       nomineeShareholder: party.nomineeShareholder,
       nomineeDirector: party.nomineeDirector,
-      nominator: party.nominator,
+      shareholderNominator: party.shareholderNominator,
+      directorNominator: party.directorNominator,
     })),
     ssic: {
       catalogue: presetName,
