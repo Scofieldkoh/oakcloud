@@ -105,14 +105,13 @@ function toLocalDateString(date?: Date): string | undefined {
 export default function GeneratedDocumentsPage() {
   const searchParams = useSearchParams();
   const { success, error: toastError } = useToast();
-  const { can, isSuperAdmin, isWorkspaceAdmin } = usePermissions();
+  const { can } = usePermissions();
 
   // Permission checks
   const canCreate = can.createDocument;
   const canUpdate = can.updateDocument;
   const canDelete = can.deleteDocument;
   const canExport = can.exportDocument;
-  const canDeletePermanently = canDelete && (isSuperAdmin || isWorkspaceAdmin);
 
   // Initial URL-derived list state, used both for filters and for restoring the
   // last-known list snapshot when this page is mounted cold (e.g. browser Back).
@@ -333,13 +332,12 @@ export default function GeneratedDocumentsPage() {
   }, [today]);
 
   // Handle delete
-  const handleDelete = async (reason: string, permanent: boolean) => {
+  const handleDelete = async (reason: string) => {
     if (!documentToDelete || !reason) return;
 
     try {
       const params = new URLSearchParams();
       params.set('reason', reason);
-      if (permanent) params.set('permanent', 'true');
       const url = `/api/generated-documents/${documentToDelete}?${params}`;
 
       const response = await fetch(url, { method: 'DELETE' });
@@ -356,7 +354,7 @@ export default function GeneratedDocumentsPage() {
         throw new Error(errorData.error || 'Failed to delete document');
       }
 
-      success(permanent ? 'Document permanently deleted' : 'Document moved to the Recycle Bin');
+      success('Document moved to the Recycle Bin');
       setDocuments((prev) => prev.filter((d) => d.id !== documentToDelete));
       setTotal((prev) => prev - 1);
     } catch (err) {
@@ -446,14 +444,14 @@ export default function GeneratedDocumentsPage() {
   };
 
   // Handle bulk delete
-  const handleBulkDeleteConfirm = async (reason: string, permanent: boolean) => {
+  const handleBulkDeleteConfirm = async (reason: string) => {
     if (!reason || selectedCount === 0) return;
 
     try {
       const response = await fetch('/api/generated-documents/bulk-delete', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ids: Array.from(selectedIds), reason, ...(permanent ? { permanent: true } : {}) }),
+        body: JSON.stringify({ ids: Array.from(selectedIds), reason }),
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) {
@@ -780,7 +778,6 @@ export default function GeneratedDocumentsPage() {
           setDocumentToDelete(null);
         }}
         onConfirm={handleDelete}
-        canDeletePermanently={canDeletePermanently}
       />
 
       <ConfirmDialog
@@ -799,7 +796,6 @@ export default function GeneratedDocumentsPage() {
         onClose={() => setBulkDeleteDialogOpen(false)}
         onConfirm={handleBulkDeleteConfirm}
         count={selectedCount}
-        canDeletePermanently={canDeletePermanently}
       />
 
       {/* Floating Bulk Actions Toolbar */}

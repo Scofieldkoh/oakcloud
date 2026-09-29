@@ -1754,15 +1754,6 @@ Update a generated document (draft only).
 Soft-delete a generated document. The same operation, with a discard reason,
 is used to discard an incomplete generation session.
 
-With `permanent=true` (workspace or super admins only) the document is deleted
-for good instead, whatever its status, including FINALIZED: the row, its
-sections, comments, drafts and stored OakDoc files. E-signing envelopes keep
-their own copies and are unlinked; a draft or cancelled service agreement is
-removed with it. Returns `409` while the document is out for signature or is a
-service agreement that is in effect or has client services. The same rules
-apply to `POST /api/generated-documents/bulk-delete` with `"permanent": true`
-and to the Recycle Bin purge.
-
 ---
 
 ### POST /api/generated-documents/[id]/finalize
@@ -2006,8 +1997,12 @@ Create a manual rate override. **TENANT_ADMIN or SUPER_ADMIN.**
 
 ### POST /api/admin/purge
 Purge soft-deleted data. **SUPER_ADMIN only.**
-Generated documents are purged through the same service as
-`DELETE /api/generated-documents/[id]?permanent=true`, so its blockers apply.
+Generated documents are purged for good, whatever their status (including
+FINALIZED): the row, its sections, comments, drafts and stored OakDoc files.
+E-signing envelopes keep their own copies and are unlinked; a draft or
+cancelled service agreement is removed with it. A document still out for
+signature, or a service agreement in effect or with client services, is
+refused and listed in `failedRecords` with the reason.
 
 ---
 
