@@ -79,7 +79,7 @@ describe('POST /api/forms/[id]/background', () => {
 
     expect(response.status).toBe(201);
     expect(await response.json()).toEqual({ backgroundImageUrl: publicUrl });
-    expect(mocks.formBackground).toHaveBeenCalledWith('tenant-1', 'form-1', '.png');
+    expect(mocks.formBackground).toHaveBeenCalledWith('tenant-1', 'form-1', '.png', expect.any(String));
     expect(mocks.upload).toHaveBeenCalledWith(
       storageKey,
       expect.any(Buffer),
