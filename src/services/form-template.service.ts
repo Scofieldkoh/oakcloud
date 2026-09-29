@@ -5,7 +5,6 @@ import {
   SG_COMPANY_INCORPORATION_TEMPLATE_KEY,
   SG_COMPANY_INCORPORATION_TEMPLATE_VERSION,
   SG_COMPANY_INCORPORATION_TITLE,
-  buildSgCompanyIncorporationDescription,
   buildSgCompanyIncorporationFields,
   buildSgCompanyIncorporationSettings,
 } from '@/lib/form-templates/sg-company-incorporation';
@@ -30,11 +29,14 @@ export interface SeedFormResult {
  */
 export async function seedCompanyIncorporationForm(params: TenantAwareParams): Promise<SeedFormResult> {
   await ensureBuiltInFormOptionPresets(params.tenantId, params.userId);
-  const [ssicPreset, workspace, candidates] = await Promise.all([
-    prisma.formOptionPreset.findUnique({
-      where: { tenantId_builtInKey: { tenantId: params.tenantId, builtInKey: 'ssic' } },
-      select: { id: true },
-    }),
+  const presetId = (builtInKey: string) => prisma.formOptionPreset.findUnique({
+    where: { tenantId_builtInKey: { tenantId: params.tenantId, builtInKey } },
+    select: { id: true },
+  });
+  const [ssicPreset, nationalityPreset, countryPreset, workspace, candidates] = await Promise.all([
+    presetId('ssic'),
+    presetId('nationalities'),
+    presetId('countries'),
     prisma.workspace.findUnique({ where: { id: params.tenantId }, select: { name: true } }),
     prisma.form.findMany({
       where: { tenantId: params.tenantId, deletedAt: null, status: 'DRAFT' },
@@ -42,15 +44,19 @@ export async function seedCompanyIncorporationForm(params: TenantAwareParams): P
       orderBy: { updatedAt: 'desc' },
     }),
   ]);
-  if (!ssicPreset) {
-    throw new ValidationError('The SSIC 2025 option list is unavailable in this workspace');
+  if (!ssicPreset || !nationalityPreset || !countryPreset) {
+    throw new ValidationError('The SSIC, nationality or country option list is unavailable in this workspace');
   }
 
   const firmName = workspace?.name?.trim() || '';
   const fields = saveFormFieldsSchema.parse({
-    fields: buildSgCompanyIncorporationFields({ firmName, ssicPresetId: ssicPreset.id }),
+    fields: buildSgCompanyIncorporationFields({
+      firmName,
+      ssicPresetId: ssicPreset.id,
+      nationalityPresetId: nationalityPreset.id,
+      countryPresetId: countryPreset.id,
+    }),
   }).fields;
-  const description = buildSgCompanyIncorporationDescription(firmName);
 
   const existing = candidates.find((candidate) => {
     const binding = parseFormTemplateBinding(candidate.settings);
@@ -61,7 +67,6 @@ export async function seedCompanyIncorporationForm(params: TenantAwareParams): P
     ? { id: existing.id }
     : await createForm({
       title: SG_COMPANY_INCORPORATION_TITLE,
-      description,
       tags: ['incorporation'],
       status: 'DRAFT',
     }, params);
@@ -91,7 +96,8 @@ export async function seedCompanyIncorporationForm(params: TenantAwareParams): P
 
   const saved = await prisma.form.update({
     where: { id: form.id },
-    data: { settings, ...(existing ? { description } : {}) },
+    // The form shows no description; the first page's introduction covers it.
+    data: { settings, description: null },
   });
   return { form: saved, action: existing ? 'updated' : 'created' };
 }

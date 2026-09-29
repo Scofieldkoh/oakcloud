@@ -1,5 +1,5 @@
 /**
- * Singapore Company Incorporation form template (version 2).
+ * Singapore Company Incorporation form template (version 3).
  *
  * The manifest compiles to ordinary Oakcloud Forms field definitions. Field keys are
  * stable: the intake profile (src/lib/forms/company-incorporation-profile.ts) and the
@@ -10,7 +10,7 @@
 import type { FieldConditionInput, FormFieldInput } from '@/lib/validations/form-builder';
 
 export const SG_COMPANY_INCORPORATION_TEMPLATE_KEY = 'sg_company_incorporation';
-export const SG_COMPANY_INCORPORATION_TEMPLATE_VERSION = 2;
+export const SG_COMPANY_INCORPORATION_TEMPLATE_VERSION = 3;
 export const SG_COMPANY_INCORPORATION_TITLE = 'Singapore Company Incorporation';
 /** Date the ACRA guidance and links below were last checked against the official pages. */
 export const SG_COMPANY_INCORPORATION_GUIDANCE_REVIEWED_ON = '2026-09-29';
@@ -22,6 +22,8 @@ export const INCORPORATION_KEYS = {
   contactPhone: 'contact_phone',
   companyEmail: 'company_email',
   companyType: 'company_type',
+  nameSuffixPrivate: 'name_suffix_private',
+  nameSuffixPublic: 'name_suffix_public',
   proposedName: 'proposed_name',
   alternativeName1: 'alternative_name_1',
   alternativeName2: 'alternative_name_2',
@@ -32,13 +34,18 @@ export const INCORPORATION_KEYS = {
   partyName: 'party_name',
   partyRoles: 'party_roles',
   ownershipPercent: 'ownership_percent',
-  partyEmail: 'party_email',
+  partyIdNumber: 'party_id_number',
   partyRegistrationReference: 'party_registration_reference',
+  partyNationality: 'party_nationality',
+  partyIncorporationCountry: 'party_incorporation_country',
+  partyAddress: 'party_address',
+  partyRegisteredAddress: 'party_registered_address',
+  partyPhone: 'party_phone',
+  partyEmail: 'party_email',
   partyResident: 'party_resident',
   partyNomineeShareholder: 'party_nominee_shareholder',
   partyNomineeDirector: 'party_nominee_director',
   partyNominator: 'party_nominator',
-  partyOtherControl: 'party_other_control',
   capitalAmount: 'capital_amount',
   capitalCurrency: 'capital_currency',
   shareCount: 'share_count',
@@ -74,6 +81,7 @@ export const ACRA_GUIDANCE_LINKS = {
   financialYearEnd: 'https://www.acra.gov.sg/register/business/registering-different-business-structures/local-company/choosing-a-companys-financial-year-end/',
   companiesActS198: 'https://sso.agc.gov.sg/Act/CoA1967?WholeDoc=1',
   constitution: 'https://www.acra.gov.sg/register/business/registering-different-business-structures/local-company/company-constitution/',
+  modelConstitution: 'https://isomer-user-content.by.gov.sg/277/8bb59a89-7efe-43ac-a438-711a0cb504b3/Model%20Constitution.pdf',
 } as const;
 
 export interface IncorporationGuidanceItem {
@@ -115,8 +123,15 @@ export const SG_COMPANY_INCORPORATION_GUIDANCE: IncorporationGuidanceItem[] = [
       { label: 'Companies Act 1967, section 198', url: ACRA_GUIDANCE_LINKS.companiesActS198 },
     ],
   },
-  { id: 'G12', fieldKey: K.rulesPreference, links: [{ label: 'ACRA: Company constitution', url: ACRA_GUIDANCE_LINKS.constitution }] },
-].map((item) => ({ ...item, reviewedOn: SG_COMPANY_INCORPORATION_GUIDANCE_REVIEWED_ON, textVersion: 2 }));
+  {
+    id: 'G12',
+    fieldKey: K.rulesPreference,
+    links: [
+      { label: 'Model constitution currently in force (PDF)', url: ACRA_GUIDANCE_LINKS.modelConstitution },
+      { label: 'ACRA: Company constitution', url: ACRA_GUIDANCE_LINKS.constitution },
+    ],
+  },
+].map((item) => ({ ...item, reviewedOn: SG_COMPANY_INCORPORATION_GUIDANCE_REVIEWED_ON, textVersion: 3 }));
 
 function guidanceLinks(id: string): string {
   const item = SG_COMPANY_INCORPORATION_GUIDANCE.find((entry) => entry.id === id);
@@ -128,7 +143,17 @@ function guidanceLinks(id: string): string {
 // Options
 // ---------------------------------------------------------------------------
 
-export const COMPANY_TYPE = { privateLimited: 'private_limited', publicLimited: 'public_limited' } as const;
+export const COMPANY_TYPE = {
+  exemptPrivate: 'exempt_private_limited',
+  privateLimited: 'private_limited',
+  publicLimited: 'public_limited',
+  publicGuarantee: 'public_guarantee',
+} as const;
+/** Company types whose name ends with "Pte. Ltd." or "Private Limited". */
+export const PRIVATE_COMPANY_TYPES: readonly string[] = [COMPANY_TYPE.exemptPrivate, COMPANY_TYPE.privateLimited];
+/** Name endings the respondent can choose; the value is the ending itself. */
+export const PRIVATE_NAME_SUFFIXES = ['Pte. Ltd.', 'Private Limited', 'Pte Ltd'] as const;
+export const PUBLIC_NAME_SUFFIXES = ['Limited', 'Ltd.', 'Ltd'] as const;
 export const PARTY_KIND = { individual: 'individual', organisation: 'organisation' } as const;
 export const PARTY_ROLE = {
   shareholder: 'shareholder',
@@ -147,7 +172,11 @@ export const PARTY_ROLE_LABELS: Record<string, string> = {
 /** Roles that make a person a director of the company. */
 export const DIRECTOR_ROLES: readonly string[] = [PARTY_ROLE.director, PARTY_ROLE.managingDirector];
 export const OFFICE_CHOICE = { own: 'own_address', firmService: 'firm_service' } as const;
-export const CONSTITUTION = { model: 'acra_model', custom: 'custom' } as const;
+export const CONSTITUTION = {
+  modelAtAdoption: 'acra_model_at_adoption',
+  modelFromTimeToTime: 'acra_model_time_to_time',
+  custom: 'custom',
+} as const;
 export const YES_NO = { yes: 'yes', no: 'no' } as const;
 export const TICK = 'yes';
 
@@ -217,16 +246,25 @@ export interface SgCompanyIncorporationBuildOptions {
   firmName: string;
   /** Tenant's built-in SSIC 2025 option preset. */
   ssicPresetId: string;
+  /** Tenant's built-in nationalities option preset. */
+  nationalityPresetId: string;
+  /** Tenant's built-in countries option preset. */
+  countryPresetId: string;
 }
 
 function buildFieldDrafts(options: SgCompanyIncorporationBuildOptions): FieldDraft[] {
   const firm = options.firmName.trim() || 'our firm';
   const isShareholder = contains(K.partyRoles, PARTY_ROLE.shareholder);
   const isIndividual = eq(K.partyKind, PARTY_KIND.individual);
+  const isOrganisation = eq(K.partyKind, PARTY_KIND.organisation);
   const isDirector = all(isIndividual, any(contains(K.partyRoles, PARTY_ROLE.director), contains(K.partyRoles, PARTY_ROLE.managingDirector)));
   const isSecretary = all(isIndividual, contains(K.partyRoles, PARTY_ROLE.secretary));
   const isNominee = any(notEmpty(K.partyNomineeShareholder), notEmpty(K.partyNomineeDirector));
+  const isPrivateType = any(...PRIVATE_COMPANY_TYPES.map((type) => eq(K.companyType, type)));
+  const isPublicType = all(...PRIVATE_COMPANY_TYPES.map((type) => ({ fieldKey: K.companyType, operator: 'not_equals' as const, value: type })));
+  const hasShareCapital = { fieldKey: K.companyType, operator: 'not_equals' as const, value: COMPANY_TYPE.publicGuarantee };
   const ownOffice = eq(K.officeChoice, OFFICE_CHOICE.own);
+  const nameWithoutEnding = 'Enter the name without “Pte. Ltd.” or “Limited”. The ending you choose above is added for you, and the name check ignores it.';
 
   return [
     // -----------------------------------------------------------------------
@@ -235,10 +273,10 @@ function buildFieldDrafts(options: SgCompanyIncorporationBuildOptions): FieldDra
     heading('step_company_details', 'Company details'),
     info(
       'intro_notice',
-      '<p>Tell us about the company you want to incorporate in Singapore. Personal particulars and declarations are collected separately through KYC. You can save your progress and come back later.</p>'
+      '<p>Tell us about the company you want to incorporate in Singapore and the people involved. You can save your progress and come back later.</p>'
         + `<p><strong>Submitting this form does not reserve a name or register the company. ${firm} will review it and handle the ACRA filing.</strong></p>`,
     ),
-    { type: 'SHORT_TEXT', inputType: 'text', key: K.contactName, label: 'Your name', placeholder: 'The person we should contact', isRequired: true, layoutWidth: 50, validation: { maxLength: 200 } },
+    { type: 'SHORT_TEXT', inputType: 'text', key: K.contactName, label: 'Your name', placeholder: 'The person we should contact', isRequired: true, validation: { maxLength: 200 } },
     { type: 'SHORT_TEXT', inputType: 'email', key: K.contactEmail, label: 'Your email', isRequired: true, layoutWidth: 50, validation: { maxLength: 320 } },
     { type: 'SHORT_TEXT', inputType: 'phone', key: K.contactPhone, label: 'Your mobile number', isRequired: true, layoutWidth: 50, validation: { splitPhoneCountryCode: true, phoneDefaultCountryCode: '+65' } },
 
@@ -249,28 +287,56 @@ function buildFieldDrafts(options: SgCompanyIncorporationBuildOptions): FieldDra
       label: 'Company type',
       isRequired: true,
       options: choices([
-        [COMPANY_TYPE.privateLimited, 'Private company limited by shares (ends with “Pte. Ltd.”)'],
-        [COMPANY_TYPE.publicLimited, 'Public company limited by shares (ends with “Ltd.”)'],
-      ], COMPANY_TYPE.privateLimited),
-      ...requirements(`<p>Most businesses incorporate as a private company. A private company can have up to 50 shareholders; one with 20 or fewer individual shareholders is also an exempt private company. ${guidanceLinks('G02')}</p>`),
+        [COMPANY_TYPE.exemptPrivate, 'Exempt private company limited by shares'],
+        [COMPANY_TYPE.privateLimited, 'Private company limited by shares'],
+        [COMPANY_TYPE.publicLimited, 'Public company limited by shares'],
+        [COMPANY_TYPE.publicGuarantee, 'Public company limited by guarantee'],
+      ], COMPANY_TYPE.exemptPrivate),
+      ...requirements(
+        '<p><strong>Exempt private company:</strong> up to 20 shareholders, all of them individuals. Most small businesses start as one.</p>'
+          + '<p><strong>Private company:</strong> up to 50 shareholders, which can include companies.</p>'
+          + '<p><strong>Public company limited by shares:</strong> can have more than 50 shareholders and offer shares to the public.</p>'
+          + `<p><strong>Public company limited by guarantee:</strong> has members instead of shareholders and no share capital; usually for non-profit activities. ${guidanceLinks('G02')}</p>`,
+      ),
+    },
+    {
+      type: 'SINGLE_CHOICE',
+      key: K.nameSuffixPrivate,
+      label: 'Name ending',
+      subtext: nameWithoutEnding,
+      isRequired: true,
+      condition: isPrivateType,
+      options: choices(PRIVATE_NAME_SUFFIXES.map((suffix) => [suffix, suffix]), PRIVATE_NAME_SUFFIXES[0]),
+      validation: { choiceLayout: 'chips' },
+    },
+    {
+      type: 'SINGLE_CHOICE',
+      key: K.nameSuffixPublic,
+      label: 'Name ending',
+      subtext: nameWithoutEnding,
+      isRequired: true,
+      condition: isPublicType,
+      options: choices(PUBLIC_NAME_SUFFIXES.map((suffix) => [suffix, suffix]), PUBLIC_NAME_SUFFIXES[0]),
+      validation: { choiceLayout: 'chips' },
     },
     {
       type: 'COMPANY_NAME_CHECK',
       key: K.proposedName,
       label: 'Proposed company name',
-      placeholder: 'e.g. Harbourline Trading Pte. Ltd.',
+      placeholder: 'e.g. Harbourline Trading',
       subtext: `Select Check name to look for similar registered names. This check does not reserve the name. ${guidanceLinks('G01')}`,
       isRequired: true,
       ...withValidation(requirements(
         '<p>Avoid names identical to a registered or reserved name, and undesirable or legally protected names.</p>'
-          + '<p>Adding “Pte Ltd” or “Singapore” alone does not make a name distinct. Words such as “Singapore”, “Holdings” or “Group” are disregarded when names are compared.</p>',
+          + '<p>Words such as “Singapore”, “Holdings” or “Group”, and the name ending, are disregarded when names are compared.</p>',
       ), { nameCheckMode: 'advisory', maxLength: 300 }),
     },
     {
       type: 'COMPANY_NAME_CHECK',
       key: K.alternativeName1,
       label: 'Alternative name 1',
-      placeholder: 'Optional: used if the proposed name is not available',
+      placeholder: 'Used if the proposed name is not available',
+      isRequired: true,
       validation: { nameCheckMode: 'advisory', maxLength: 300 },
     },
     {
@@ -314,19 +380,18 @@ function buildFieldDrafts(options: SgCompanyIncorporationBuildOptions): FieldDra
       label: 'Company email',
       placeholder: 'e.g. admin@yourcompany.com',
       isRequired: true,
-      layoutWidth: 50,
       ...requirements('<p>ACRA records an email address for the company. It can be a shared mailbox or your own email.</p>'),
       validation: { maxLength: 320, tooltipEnabled: true, tooltipMode: 'inline' },
     },
 
     // -----------------------------------------------------------------------
-    // Page 2 — Shareholders and directors
+    // Page 2 — Shareholders and officers
     // -----------------------------------------------------------------------
     pageBreak('page_parties', 'Shareholders and officers'),
     heading('step_parties', 'Shareholders and officers'),
     info(
       'parties_guidance',
-      '<p>Add each person or company once and tick every role they will hold. Shareholdings must total 100%, and the company needs at least one director who is an individual. A company can be a shareholder but cannot hold any other role. A company secretary must live in Singapore.</p>'
+      '<p>Add each person or company once and tick every role they will hold. Shareholdings must total 100%, and the company needs at least one director who is an individual. A company can be a shareholder but cannot hold any other role. A company secretary must live in Singapore. For a company limited by guarantee, tick Shareholder for each member.</p>'
         + `<p>${guidanceLinks('G05')} · ${guidanceLinks('G08')}</p>`,
     ),
     {
@@ -358,22 +423,12 @@ function buildFieldDrafts(options: SgCompanyIncorporationBuildOptions): FieldDra
       validation: { choiceLayout: 'chips' },
     },
     {
-      type: 'SHORT_TEXT',
-      inputType: 'text',
-      key: K.partyName,
-      label: 'Full name',
-      placeholder: 'As in NRIC, passport or company registration',
-      isRequired: true,
-      layoutWidth: 50,
-      validation: { maxLength: 300 },
-    },
-    {
       type: 'MULTIPLE_CHOICE',
       key: K.partyRoles,
       label: 'Roles',
       isRequired: true,
       options: choices(Object.entries(PARTY_ROLE_LABELS)),
-      validation: { choiceLayout: 'chips' },
+      validation: { choiceLayout: 'chips', layoutBreakBefore: true },
     },
     {
       type: 'PARAGRAPH',
@@ -381,7 +436,7 @@ function buildFieldDrafts(options: SgCompanyIncorporationBuildOptions): FieldDra
       key: 'party_organisation_role_notice',
       subtext: 'A company can only be a shareholder. Untick the other roles.',
       condition: all(
-        eq(K.partyKind, PARTY_KIND.organisation),
+        isOrganisation,
         any(
           contains(K.partyRoles, PARTY_ROLE.director),
           contains(K.partyRoles, PARTY_ROLE.managingDirector),
@@ -393,45 +448,113 @@ function buildFieldDrafts(options: SgCompanyIncorporationBuildOptions): FieldDra
     },
     {
       type: 'SHORT_TEXT',
-      inputType: 'number',
-      key: K.ownershipPercent,
-      label: 'Shareholding (%)',
-      placeholder: 'e.g. 60',
+      inputType: 'text',
+      key: K.partyName,
+      label: 'Full name',
+      placeholder: 'As in NRIC, passport or company registration',
       isRequired: true,
       layoutWidth: 50,
-      condition: isShareholder,
-      validation: { min: 0, max: 100 },
+      validation: { maxLength: 300 },
     },
     {
       type: 'SHORT_TEXT',
-      inputType: 'email',
-      key: K.partyEmail,
-      label: 'Email',
-      placeholder: 'We send their KYC form here',
+      inputType: 'text',
+      key: K.partyIdNumber,
+      label: 'Passport/FIN/NRIC number',
       isRequired: true,
       layoutWidth: 50,
-      validation: { maxLength: 320 },
+      condition: isIndividual,
+      validation: { maxLength: 40 },
     },
     {
       type: 'SHORT_TEXT',
       inputType: 'text',
       key: K.partyRegistrationReference,
       label: 'UEN or registration number',
-      placeholder: 'If known',
+      isRequired: true,
       layoutWidth: 50,
-      condition: eq(K.partyKind, PARTY_KIND.organisation),
+      condition: isOrganisation,
       validation: { maxLength: 60 },
+    },
+    {
+      type: 'DROPDOWN',
+      key: K.partyNationality,
+      label: 'Nationality',
+      placeholder: 'Select nationality',
+      isRequired: true,
+      layoutWidth: 50,
+      condition: isIndividual,
+      optionPresetId: options.nationalityPresetId,
+    },
+    {
+      type: 'DROPDOWN',
+      key: K.partyIncorporationCountry,
+      label: 'Place of incorporation',
+      placeholder: 'Select country',
+      isRequired: true,
+      layoutWidth: 50,
+      condition: isOrganisation,
+      optionPresetId: options.countryPresetId,
+    },
+    {
+      type: 'SHORT_TEXT',
+      inputType: 'text',
+      key: K.partyAddress,
+      label: 'Residential address',
+      placeholder: 'Block, street, unit, postal code and country',
+      isRequired: true,
+      condition: isIndividual,
+      validation: { maxLength: 500, layoutBreakBefore: true },
+    },
+    {
+      type: 'SHORT_TEXT',
+      inputType: 'text',
+      key: K.partyRegisteredAddress,
+      label: 'Registered address',
+      placeholder: 'Block, street, unit, postal code and country',
+      isRequired: true,
+      condition: isOrganisation,
+      validation: { maxLength: 500, layoutBreakBefore: true },
+    },
+    {
+      type: 'SHORT_TEXT',
+      inputType: 'phone',
+      key: K.partyPhone,
+      label: 'Contact number',
+      isRequired: true,
+      layoutWidth: 50,
+      validation: { splitPhoneCountryCode: true, phoneDefaultCountryCode: '+65' },
+    },
+    {
+      type: 'SHORT_TEXT',
+      inputType: 'email',
+      key: K.partyEmail,
+      label: 'Email',
+      isRequired: true,
+      layoutWidth: 50,
+      validation: { maxLength: 320 },
+    },
+    {
+      type: 'SHORT_TEXT',
+      inputType: 'number',
+      key: K.ownershipPercent,
+      label: 'Shareholding (%)',
+      placeholder: 'e.g. 60',
+      isRequired: true,
+      layoutWidth: 50,
+      condition: all(isShareholder, hasShareCapital),
+      validation: { min: 0, max: 100 },
     },
     tickBox(K.partyResident, 'Singapore resident', 'Lives in Singapore (citizen, PR, or Employment Pass, EntrePass or Dependant’s Pass holder)', {
       condition: any(isDirector, isSecretary),
+      validation: { layoutBreakBefore: true },
     }),
     tickBox(K.partyNomineeShareholder, 'Nominee shareholder', 'Holds these shares on behalf of someone else', {
       condition: isShareholder,
     }),
-    tickBox(K.partyNomineeDirector, 'Nominee director', 'Will act as director on someone else’s instructions', {
+    tickBox(K.partyNomineeDirector, 'Nominee director', 'Acts as director on someone else’s instructions', {
       condition: isDirector,
     }),
-    tickBox(K.partyOtherControl, 'Other control', 'Has control in another way (for example, can appoint most directors or has special voting rights)'),
     {
       type: 'SHORT_TEXT',
       inputType: 'text',
@@ -448,7 +571,7 @@ function buildFieldDrafts(options: SgCompanyIncorporationBuildOptions): FieldDra
     // Page 3 — Share capital and our services
     // -----------------------------------------------------------------------
     pageBreak('page_capital', 'Share capital and services'),
-    heading('step_capital', 'Share capital'),
+    { ...heading('step_capital', 'Share capital'), condition: hasShareCapital },
     {
       type: 'SHORT_TEXT',
       inputType: 'number',
@@ -457,6 +580,7 @@ function buildFieldDrafts(options: SgCompanyIncorporationBuildOptions): FieldDra
       placeholder: 'e.g. 1000',
       isRequired: true,
       layoutWidth: 50,
+      condition: hasShareCapital,
       ...requirements(`<p>The total amount the shareholders put in for their shares. The minimum is 1. All shares are ordinary shares paid in cash. ${guidanceLinks('G06')}</p>`),
       validation: { min: 0, tooltipEnabled: true, tooltipMode: 'inline' },
     },
@@ -466,6 +590,7 @@ function buildFieldDrafts(options: SgCompanyIncorporationBuildOptions): FieldDra
       label: 'Currency',
       isRequired: true,
       layoutWidth: 25,
+      condition: hasShareCapital,
       options: choices(CAPITAL_CURRENCIES.map((code) => [code, code])),
       validation: { defaultValue: 'SGD' },
     },
@@ -477,6 +602,7 @@ function buildFieldDrafts(options: SgCompanyIncorporationBuildOptions): FieldDra
       placeholder: 'e.g. 1000',
       isRequired: true,
       layoutWidth: 25,
+      condition: hasShareCapital,
       ...requirements('<p>Each shareholder’s percentage must work out to a whole number of shares. For example, with 1,000 shares a 33.3% holding is 333 shares.</p>'),
       validation: { min: 1, tooltipEnabled: true, tooltipMode: 'inline' },
     },
@@ -485,6 +611,7 @@ function buildFieldDrafts(options: SgCompanyIncorporationBuildOptions): FieldDra
       key: K.capitalFullyPaid,
       label: 'Will the share capital be fully paid at incorporation?',
       isRequired: true,
+      condition: hasShareCapital,
       options: choices([[YES_NO.yes, 'Yes'], [YES_NO.no, 'No']], YES_NO.yes),
       validation: { choiceInlineRight: true },
     },
@@ -496,7 +623,7 @@ function buildFieldDrafts(options: SgCompanyIncorporationBuildOptions): FieldDra
       placeholder: 'e.g. 0',
       isRequired: true,
       layoutWidth: 50,
-      condition: eq(K.capitalFullyPaid, YES_NO.no),
+      condition: all(hasShareCapital, eq(K.capitalFullyPaid, YES_NO.no)),
       validation: { min: 0 },
     },
 
@@ -524,10 +651,10 @@ function buildFieldDrafts(options: SgCompanyIncorporationBuildOptions): FieldDra
         [OFFICE_CHOICE.firmService, `Use ${firm}’s registered office service`],
       ]),
     },
-    { type: 'SHORT_TEXT', inputType: 'text', key: K.officePostalCode, label: 'Postal code', placeholder: '6 digits', isRequired: true, layoutWidth: 33, condition: ownOffice, validation: { minLength: 6, maxLength: 6 } },
-    { type: 'SHORT_TEXT', inputType: 'text', key: K.officeBlockStreet, label: 'Block/house number and street', isRequired: true, layoutWidth: 66, condition: ownOffice, validation: { maxLength: 200 } },
-    { type: 'SHORT_TEXT', inputType: 'text', key: K.officeBuilding, label: 'Building', placeholder: 'Optional', layoutWidth: 66, condition: ownOffice, validation: { maxLength: 200 } },
-    { type: 'SHORT_TEXT', inputType: 'text', key: K.officeUnit, label: 'Unit', placeholder: 'e.g. #05-12', layoutWidth: 33, condition: ownOffice, validation: { maxLength: 30 } },
+    { type: 'SHORT_TEXT', inputType: 'text', key: K.officeBlockStreet, label: 'Block/house number and street', isRequired: true, layoutWidth: 75, condition: ownOffice, validation: { maxLength: 200 } },
+    { type: 'SHORT_TEXT', inputType: 'text', key: K.officeUnit, label: 'Unit', placeholder: 'e.g. #05-12', layoutWidth: 25, condition: ownOffice, validation: { maxLength: 30 } },
+    { type: 'SHORT_TEXT', inputType: 'text', key: K.officeBuilding, label: 'Building', placeholder: 'Optional', layoutWidth: 75, condition: ownOffice, validation: { maxLength: 200 } },
+    { type: 'SHORT_TEXT', inputType: 'text', key: K.officePostalCode, label: 'Postal code', placeholder: '6 digits', isRequired: true, layoutWidth: 25, condition: ownOffice, validation: { minLength: 6, maxLength: 6 } },
 
     heading('section_financial_year', 'Financial year end'),
     {
@@ -536,7 +663,6 @@ function buildFieldDrafts(options: SgCompanyIncorporationBuildOptions): FieldDra
       key: K.firstFye,
       label: 'First financial year end',
       isRequired: true,
-      layoutWidth: 50,
       ...requirements(`<p>The date the company’s first financial year ends. Later financial years run for 12 months. The first financial year cannot be longer than 18 months from incorporation without ACRA’s approval.</p><p>If you are unsure, 31 December or the end of the month before the first anniversary of incorporation are common choices. ${guidanceLinks('G11')}</p>`),
       validation: { minDate: 'today', tooltipEnabled: true, tooltipMode: 'inline' },
     },
@@ -546,12 +672,13 @@ function buildFieldDrafts(options: SgCompanyIncorporationBuildOptions): FieldDra
       type: 'SINGLE_CHOICE',
       key: K.rulesPreference,
       label: 'Company constitution',
-      subtext: `The constitution sets the company’s rules. Most companies use ACRA’s model constitution. ${guidanceLinks('G12')}`,
+      subtext: `The constitution sets the company’s rules. Most companies adopt ACRA’s model constitution. ${guidanceLinks('G12')}`,
       isRequired: true,
       options: choices([
-        [CONSTITUTION.model, 'ACRA model constitution'],
+        [CONSTITUTION.modelAtAdoption, 'ACRA model constitution as in force at the time of adoption (later changes to the model do not apply)'],
+        [CONSTITUTION.modelFromTimeToTime, 'ACRA model constitution as may be in force from time to time (later changes apply automatically)'],
         [CONSTITUTION.custom, 'Our own constitution (upload it below)'],
-      ], CONSTITUTION.model),
+      ]),
     },
     {
       type: 'FILE_UPLOAD',
@@ -606,9 +733,4 @@ export function buildSgCompanyIncorporationSettings(input: {
       showPdfActions: true,
     },
   };
-}
-
-export function buildSgCompanyIncorporationDescription(firmName: string): string {
-  const firm = firmName.trim() || 'our firm';
-  return `Company details for incorporating a Singapore company. ${firm} will review your answers and handle the ACRA filing.`;
 }

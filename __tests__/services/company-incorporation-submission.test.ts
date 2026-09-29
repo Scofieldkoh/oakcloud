@@ -183,7 +183,7 @@ describe('advisory name recheck', () => {
 
 describe('company incorporation submission record', () => {
   const fields = saveFormFieldsSchema.parse({
-    fields: buildSgCompanyIncorporationFields({ firmName: 'Oaktree', ssicPresetId: '00000000-0000-4000-8000-000000000001' }),
+    fields: buildSgCompanyIncorporationFields({ firmName: 'Oaktree', ssicPresetId: '00000000-0000-4000-8000-000000000001', nationalityPresetId: '00000000-0000-4000-8000-000000000002', countryPresetId: '00000000-0000-4000-8000-000000000003' }),
   }).fields.map((field, index) => makeField({
     ...field,
     optionPresetId: null,
@@ -196,7 +196,7 @@ describe('company incorporation submission record', () => {
   }));
   const settings = { template: { key: 'sg_company_incorporation', version: 1 } };
   const answers = {
-    [K.proposedName]: 'Harbour Lane Pte. Ltd.',
+    [K.proposedName]: 'Harbour Lane',
     [K.primarySsic]: '62011',
     [K.businessDescription]: 'Software',
     [K.partyKind]: ['individual'],
