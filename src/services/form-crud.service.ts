@@ -22,6 +22,8 @@ import type {
 import { toJsonInput } from './form-builder.helpers';
 import { resolvePresetOptionsForFields } from './form-option-preset.service';
 import { ValidationError } from '@/lib/errors';
+import { parseFormTemplateBinding, preserveFormTemplateBinding } from '@/lib/form-templates';
+import { computeFormDefinitionHash } from './company-incorporation-intake.service';
 
 export interface FormListItem extends Form {
   fieldCount: number;
@@ -280,6 +282,26 @@ export async function updateForm(
   }
 
   const nextStatus = data.status !== undefined ? data.status as FormStatus : existing.status;
+  let nextSettings = data.settings !== undefined
+    ? preserveFormTemplateBinding(data.settings, existing.settings)
+    : undefined;
+
+  // A guided template instance is frozen when it is first published, so answers
+  // keep the meaning of the questions they were given against.
+  const binding = parseFormTemplateBinding(existing.settings);
+  if (binding && !binding.lockedAt && nextStatus === 'PUBLISHED') {
+    const fields = await prisma.formField.findMany({ where: { formId }, orderBy: { position: 'asc' } });
+    const resolvedFields = await resolvePresetOptionsForFields(params.tenantId, fields);
+    const base = (nextSettings ?? existing.settings ?? {}) as Record<string, unknown>;
+    nextSettings = {
+      ...base,
+      template: {
+        ...(base.template as Record<string, unknown>),
+        lockedAt: new Date().toISOString(),
+        definitionHash: computeFormDefinitionHash(resolvedFields),
+      },
+    };
+  }
   const archiveSlug = nextStatus === 'ARCHIVED' ? getArchivedFormSlug(existing.id) : undefined;
 
   if (nextSlug !== undefined && nextSlug !== existing.slug && nextSlug !== archiveSlug) {
@@ -305,7 +327,7 @@ export async function updateForm(
       ...(data.tags !== undefined ? { tags: data.tags } : {}),
       ...(data.status !== undefined ? { status: data.status as FormStatus } : {}),
       ...(archiveSlug ? { slug: archiveSlug, deletedAt: null } : nextSlug !== undefined ? { slug: nextSlug } : {}),
-      ...(data.settings !== undefined ? { settings: toJsonInput(data.settings) } : {}),
+      ...(nextSettings !== undefined ? { settings: toJsonInput(nextSettings) } : {}),
       updatedById: params.userId,
     },
   });
@@ -333,11 +355,17 @@ export async function saveFormFields(
 ): Promise<FormField[]> {
   const existing = await prisma.form.findFirst({
     where: { id: formId, tenantId: params.tenantId, deletedAt: null },
-    select: { id: true, title: true },
+    select: { id: true, title: true, settings: true },
   });
 
   if (!existing) {
     throw new Error('Form not found');
+  }
+
+  if (parseFormTemplateBinding(existing.settings)?.lockedAt) {
+    throw new ValidationError(
+      'This form was created from a template and has been published, so its questions are locked. Duplicate it to make a changed copy.'
+    );
   }
 
   const normalizedFields = normalizeFieldsForPersistence(fields);
@@ -437,7 +465,13 @@ export async function duplicateForm(
         slug,
         status: 'DRAFT',
         tags: source.tags,
-        settings: source.settings ?? Prisma.JsonNull,
+        // A copy is an ordinary editable form, not a template instance.
+        settings: toJsonInput(preserveFormTemplateBinding(
+          source.settings && typeof source.settings === 'object' && !Array.isArray(source.settings)
+            ? source.settings as Record<string, unknown>
+            : null,
+          null
+        ) ?? null),
         createdById: params.userId,
         updatedById: params.userId,
       },

@@ -15,6 +15,7 @@ import {
   WIDTH_CLASS,
   parseObject,
   parseChoiceOptions,
+  parseFormCompletionSettings,
   parseFormDraftSettings,
   parseFormI18nSettings,
   isEmptyValue,
@@ -36,6 +37,18 @@ import { TIMEZONE_OPTIONS } from '@/lib/constants/timezones';
 import { cn } from '@/lib/utils';
 import { extractSignatureDataUrl } from '@/lib/signature-utils';
 import DOMPurify from 'dompurify';
+import {
+  describeNameCheckAssessment,
+  describeNameCheckReason,
+  getNameCheckMode,
+  parseNameCheckResultMap,
+  parseNameCheckResultValue,
+  type NameCheckResultValue,
+} from '@/lib/forms/name-check-result';
+import { parseDecimalString, formatDecimalUnits } from '@/lib/forms/decimal-string';
+import { evaluateCompanyIncorporationAnswers } from '@/lib/forms/company-incorporation-profile';
+import { INCORPORATION_KEYS, SG_COMPANY_INCORPORATION_TEMPLATE_KEY } from '@/lib/form-templates/sg-company-incorporation';
+import { PublicFormReview, buildReviewSections } from '@/components/forms/public-form-review';
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const NAME_HINT_PATTERN = /(full[\s_-]?name|first[\s_-]?name|last[\s_-]?name|name)/i;
@@ -141,6 +154,12 @@ const DEFAULT_UI_LABELS = {
   name_check_similar_found: 'Similar names found — final availability is determined by ACRA at application time.',
   name_check_data_as_of: 'Based on ACRA registry data as of {date}.',
   name_check_unavailable: 'Availability check temporarily unavailable. Please try again.',
+  name_check_button_advisory: 'Check name',
+  review_title: 'Review and submit',
+  review_continue: 'Review answers',
+  response_reference: 'Reference: {reference}',
+  repeat_total: '{label}: {total}{suffix}',
+  repeat_remove_item: 'Remove',
   validation_required: '{field} is required',
   validation_email: '{field} must be a valid email',
   validation_choice_detail: '{field}: please specify for {option}',
@@ -196,19 +215,7 @@ type DraftSession = {
   savedAt: string;
 };
 
-type NameCheckRecord = {
-  uen: string;
-  entityName: string;
-  entityStatus: string;
-};
-
-type NameCheckResult = {
-  name: string;
-  available: boolean;
-  checkedAt: string;
-  dataAsOf: string | null;
-  records: NameCheckRecord[];
-};
+type NameCheckResult = NameCheckResultValue;
 
 type DraftRestorePayload = {
   draft: DraftSession;
@@ -222,6 +229,9 @@ type RepeatSectionConfig = {
   minItems: number;
   maxItems: number | null;
   addLabel: string;
+  /** When set, rows render as numbered cards ("Shareholder or director 1"). */
+  itemLabel: string | null;
+  total: { fieldKey: string; label: string; suffix: string; target: number | null } | null;
 };
 
 type ChoiceAnswerEntry = {
@@ -1058,11 +1068,26 @@ function getRepeatSectionConfig(startField: PublicField): RepeatSectionConfig {
   const maxItems = maxItemsRaw === null ? null : Math.max(minItems, Math.min(50, maxItemsRaw));
   const addLabelRaw = typeof validation?.repeatAddLabel === 'string' ? validation.repeatAddLabel.trim() : '';
 
+  const itemLabelRaw = typeof validation?.repeatItemLabel === 'string' ? validation.repeatItemLabel.trim() : '';
+  const totalFieldKey = typeof validation?.repeatTotalFieldKey === 'string' ? validation.repeatTotalFieldKey.trim() : '';
+  const totalTarget = typeof validation?.repeatTotalTarget === 'number' && Number.isFinite(validation.repeatTotalTarget)
+    ? validation.repeatTotalTarget
+    : null;
+
   return {
     id: startField.id || startField.key,
     minItems,
     maxItems,
     addLabel: addLabelRaw || 'Add row',
+    itemLabel: itemLabelRaw || null,
+    total: totalFieldKey
+      ? {
+        fieldKey: totalFieldKey,
+        label: typeof validation?.repeatTotalLabel === 'string' && validation.repeatTotalLabel.trim() ? validation.repeatTotalLabel.trim() : 'Total',
+        suffix: typeof validation?.repeatTotalSuffix === 'string' ? validation.repeatTotalSuffix : '',
+        target: totalTarget,
+      }
+      : null,
   };
 }
 
@@ -1189,34 +1214,6 @@ const CARD_ELIGIBLE_TYPES = new Set([
   'COMPANY_NAME_CHECK',
 ]);
 
-function parseNameCheckResult(value: unknown): NameCheckResult | null {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
-
-  const raw = value as Record<string, unknown>;
-  if (typeof raw.name !== 'string' || typeof raw.checkedAt !== 'string') return null;
-
-  const records: NameCheckRecord[] = [];
-  if (Array.isArray(raw.records)) {
-    for (const item of raw.records.slice(0, 10)) {
-      if (!item || typeof item !== 'object' || Array.isArray(item)) continue;
-      const record = item as Record<string, unknown>;
-      const uen = typeof record.uen === 'string' ? record.uen.slice(0, 32) : '';
-      const entityName = typeof record.entityName === 'string' ? record.entityName.slice(0, 500) : '';
-      const entityStatus = typeof record.entityStatus === 'string' ? record.entityStatus.slice(0, 200) : '';
-      if (!uen && !entityName) continue;
-      records.push({ uen, entityName, entityStatus });
-    }
-  }
-
-  return {
-    name: raw.name.slice(0, 300),
-    available: raw.available === true,
-    checkedAt: raw.checkedAt.slice(0, 64),
-    dataAsOf: typeof raw.dataAsOf === 'string' ? raw.dataAsOf.slice(0, 64) : null,
-    records,
-  };
-}
-
 function formatDataAsOf(value: string): string {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
@@ -1224,14 +1221,26 @@ function formatDataAsOf(value: string): string {
 }
 
 function parseNameCheckResults(value: unknown): Record<string, NameCheckResult> {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+  return parseNameCheckResultMap(value);
+}
 
-  const results: Record<string, NameCheckResult> = {};
-  for (const [key, entry] of Object.entries(value)) {
-    const parsed = parseNameCheckResult(entry);
-    if (parsed) results[key] = parsed;
+/** Rich-text guidance (links, emphasis) in field hints; links open in a new tab. */
+function sanitizeGuidanceHtml(value: string): string {
+  const html = DOMPurify.sanitize(value, { ADD_ATTR: ['target'] });
+  return html.replace(/<a (?![^>]*target=)/g, '<a target="_blank" rel="noopener noreferrer" ');
+}
+
+function FieldHint({ id, text, className }: { id?: string; text: string; className: string }) {
+  if (hasHtmlMarkup(text)) {
+    return (
+      <div
+        id={id}
+        className={cn(className, 'form-rich-render [&_a]:font-medium [&_a]:text-oak-primary [&_a]:underline [&_a]:underline-offset-2')}
+        dangerouslySetInnerHTML={{ __html: sanitizeGuidanceHtml(text) }}
+      />
+    );
   }
-  return results;
+  return <p id={id} className={className}>{text}</p>;
 }
 
 function isHeadingInfoBlock(field: PublicField): boolean {
@@ -1577,6 +1586,12 @@ export default function PublicFormPage() {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [nameCheckResults, setNameCheckResults] = useState<Record<string, NameCheckResult>>({});
   const [checkingNameCheckField, setCheckingNameCheckField] = useState<string | null>(null);
+  const [isReviewing, setIsReviewing] = useState(false);
+  const nameCheckRequestIds = useRef<Record<string, number>>({});
+  const answersRef = useRef<Record<string, unknown>>({});
+  useEffect(() => {
+    answersRef.current = answers;
+  }, [answers]);
   const [currentPage, setCurrentPage] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionId, setSubmissionId] = useState<string | null>(null);
@@ -1616,6 +1631,16 @@ export default function PublicFormPage() {
     () => parseFormDraftSettings(form?.settings),
     [form?.settings]
   );
+
+  const completionSettings = useMemo(
+    () => parseFormCompletionSettings(form?.settings),
+    [form?.settings]
+  );
+
+  const isIncorporationTemplate = useMemo(() => {
+    const template = parseObject(parseObject(form?.settings)?.template);
+    return template?.key === SG_COMPANY_INCORPORATION_TEMPLATE_KEY;
+  }, [form?.settings]);
 
   const activeLocale = useMemo(() => {
     if (requestedLocale && i18nSettings.enabledLocales.includes(requestedLocale)) {
@@ -2160,6 +2185,17 @@ export default function PublicFormPage() {
     scrollToFormTop();
   }, [currentPage, firstProgressStopPage]);
 
+  useEffect(() => {
+    if (isReviewing && firstProgressStopPage >= 0) {
+      setIsReviewing(false);
+      setCurrentPage(firstProgressStopPage);
+    }
+  }, [isReviewing, firstProgressStopPage]);
+
+  const hasReviewStep = completionSettings.reviewStep && pages.length > 0;
+  const totalSteps = pages.length + (hasReviewStep ? 1 : 0);
+  const currentStep = isReviewing ? pages.length : currentPage;
+
   // Pre-compute which field IDs belong inside repeat sections (should not render as standalone)
   const hiddenFieldIds = useMemo(() => {
     const ids = new Set<string>();
@@ -2506,20 +2542,30 @@ export default function PublicFormPage() {
     });
   }
 
-  async function handleNameCheck(field: PublicField) {
+  async function handleNameCheck(field: PublicField): Promise<NameCheckResult | null> {
     const fieldKey = field.key;
     const name = typeof answers[fieldKey] === 'string' ? (answers[fieldKey] as string).trim() : '';
     const errorKey = getFieldErrorKey(fieldKey);
+    const advisory = getNameCheckMode(field.validation) === 'advisory';
 
     if (!name) {
       setFieldErrors((prev) => ({ ...prev, [errorKey]: uiLabel('name_check_enter_name') }));
-      return;
+      return null;
     }
 
     if (isPreview) {
       setFieldErrors((prev) => ({ ...prev, [errorKey]: uiLabel('preview_submit_notice') }));
-      return;
+      return null;
     }
+
+    const requestId = (nameCheckRequestIds.current[fieldKey] ?? 0) + 1;
+    nameCheckRequestIds.current[fieldKey] = requestId;
+    // Ignore a response when the name was edited, or a newer check started, while it was in flight.
+    const isCurrentRequest = () => (
+      nameCheckRequestIds.current[fieldKey] === requestId &&
+      typeof answersRef.current[fieldKey] === 'string' &&
+      (answersRef.current[fieldKey] as string).trim() === name
+    );
 
     setCheckingNameCheckField(fieldKey);
     try {
@@ -2529,7 +2575,7 @@ export default function PublicFormPage() {
         body: JSON.stringify({ name }),
       });
 
-      let data: { error?: string; available?: boolean; checkedAt?: string; dataAsOf?: string; records?: unknown[] } | null = null;
+      let data: Record<string, unknown> | null = null;
       try {
         data = await response.json();
       } catch {
@@ -2537,29 +2583,17 @@ export default function PublicFormPage() {
       }
 
       if (!response.ok || !data) {
-        throw new Error(data?.error || uiLabel('name_check_unavailable'));
+        throw new Error(typeof data?.error === 'string' ? data.error : uiLabel('name_check_unavailable'));
       }
 
-      const result: NameCheckResult = {
+      const result = parseNameCheckResultValue({
+        ...data,
         name,
-        available: data.available === true,
         checkedAt: typeof data.checkedAt === 'string' ? data.checkedAt : new Date().toISOString(),
-        dataAsOf: typeof data.dataAsOf === 'string' ? data.dataAsOf : null,
-        records: Array.isArray(data.records)
-          ? (data.records as unknown[])
-            .slice(0, 10)
-            .map((record: unknown) => {
-              if (!record || typeof record !== 'object' || Array.isArray(record)) return null;
-              const raw = record as Record<string, unknown>;
-              const uen = typeof raw.uen === 'string' ? raw.uen.slice(0, 32) : '';
-              const entityName = typeof raw.entityName === 'string' ? raw.entityName.slice(0, 500) : '';
-              const entityStatus = typeof raw.entityStatus === 'string' ? raw.entityStatus.slice(0, 200) : '';
-              if (!uen && !entityName) return null;
-              return { uen, entityName, entityStatus };
-            })
-            .filter((record): record is NameCheckRecord => !!record)
-          : [],
-      };
+        source: 'client',
+      });
+      if (!result) throw new Error(uiLabel('name_check_unavailable'));
+      if (!isCurrentRequest()) return null;
 
       setNameCheckResults((prev) => ({ ...prev, [fieldKey]: result }));
       setFieldErrors((prev) => {
@@ -2567,14 +2601,70 @@ export default function PublicFormPage() {
         delete next[errorKey];
         return next;
       });
+      return result;
     } catch (err) {
+      if (!isCurrentRequest()) return null;
+      if (advisory) {
+        // An outage never blocks an advisory check: record it for staff review.
+        const unavailable: NameCheckResult = {
+          name,
+          available: false,
+          assessment: 'UNAVAILABLE',
+          checkedAt: new Date().toISOString(),
+          dataAsOf: null,
+          records: [],
+          reasonCodes: ['CHECK_UNAVAILABLE'],
+          source: 'client',
+        };
+        setNameCheckResults((prev) => ({ ...prev, [fieldKey]: unavailable }));
+        return unavailable;
+      }
       setFieldErrors((prev) => ({
         ...prev,
         [errorKey]: err instanceof Error ? err.message : uiLabel('name_check_unavailable'),
       }));
+      return null;
     } finally {
-      setCheckingNameCheckField(null);
+      if (nameCheckRequestIds.current[fieldKey] === requestId) {
+        setCheckingNameCheckField(null);
+      }
     }
+  }
+
+  function findPageIndexForField(fieldKey: string | undefined): number | null {
+    if (!fieldKey) return null;
+    const index = pages.findIndex((pageFields) => pageFields.some((field) => field.key === fieldKey));
+    return index >= 0 ? index : null;
+  }
+
+  async function checkAdvisoryNamesOnPage(pageIndex: number) {
+    const pageFields = pages[pageIndex] || [];
+    for (const field of pageFields) {
+      if (field.type !== 'COMPANY_NAME_CHECK' || getNameCheckMode(field.validation) !== 'advisory') continue;
+      if (!evaluateCondition(field.condition, answers, conditionEvaluationOptions)) continue;
+      const name = typeof answers[field.key] === 'string' ? (answers[field.key] as string).trim() : '';
+      const current = nameCheckResults[field.key];
+      if (name && (!current || current.name !== name)) {
+        await handleNameCheck(field);
+      }
+    }
+  }
+
+  async function handleContinue() {
+    if (!validateCurrentPage()) return;
+    await checkAdvisoryNamesOnPage(currentPage);
+    if (currentPage < pages.length - 1) {
+      setCurrentPage((prev) => prev + 1);
+    } else if (hasReviewStep) {
+      setIsReviewing(true);
+    }
+    scrollToFormTop();
+  }
+
+  function handleReviewEdit(pageIndex: number) {
+    setIsReviewing(false);
+    setCurrentPage(Math.max(0, Math.min(pages.length - 1, pageIndex)));
+    scrollToFormTop();
   }
 
   function validateCurrentPage(): boolean {
@@ -2636,7 +2726,7 @@ export default function PublicFormPage() {
       const error = validateField(field, value, getLocalizedField(field), effectiveAnswers);
       if (error) {
         nextErrors[errorKey] = error;
-      } else if (field.type === 'COMPANY_NAME_CHECK') {
+      } else if (field.type === 'COMPANY_NAME_CHECK' && getNameCheckMode(field.validation) === 'strict') {
         const name = typeof value === 'string' ? value.trim() : '';
         const result = nameCheckResults[field.key];
         if (!name || !result || result.name !== name || result.checkedAt.length === 0) {
@@ -3213,13 +3303,27 @@ export default function PublicFormPage() {
       const rowCount = repeatSectionCounts[sectionId] || sectionConfig.minItems;
       const canAddRow = sectionConfig.maxItems === null || rowCount < sectionConfig.maxItems;
       const sectionHasVisibleLabels = sectionFields.some((sectionField) => sectionField.type !== 'HIDDEN' && !sectionField.hideLabel);
-      const addRowLabel = localizedUiLabels.add_row || sectionConfig.addLabel;
+      const cardMode = sectionConfig.itemLabel !== null;
+      const addRowLabel = cardMode ? sectionConfig.addLabel : (localizedUiLabels.add_row || sectionConfig.addLabel);
       const removeRowLabel = localizedUiLabels.remove_row || 'Remove row';
+      const sectionTotal = sectionConfig.total
+        ? (() => {
+          let units = BigInt(0);
+          for (let rowIndex = 0; rowIndex < rowCount; rowIndex += 1) {
+            const rowContext = buildAnswerContext(answers, rowIndex);
+            const totalField = sectionFields.find((candidate) => candidate.key === sectionConfig.total!.fieldKey);
+            if (!totalField || !evaluateCondition(totalField.condition, rowContext, { fields: sectionFields })) continue;
+            const parsed = parseDecimalString(rowContext[totalField.key]);
+            if (parsed !== null) units += parsed;
+          }
+          return units;
+        })()
+        : null;
 
       return (
         <div key={field.id} className="col-span-12">
-          <div className="rounded-xl border border-border-primary/60 bg-white p-3 shadow-sm sm:p-4">
-            <div className="space-y-4">
+          <div className={cn(!cardMode && 'rounded-xl border border-border-primary/60 bg-white p-3 shadow-sm sm:p-4')}>
+            <div className={cn(cardMode ? 'space-y-3' : 'space-y-4')}>
               {Array.from({ length: rowCount }).map((_, rowIndex) => {
                 const rowAnswers: Record<string, unknown> = {};
                 for (const [answerKey, answerValue] of Object.entries(answers)) {
@@ -3228,8 +3332,39 @@ export default function PublicFormPage() {
                 const canRemoveRow = rowCount > sectionConfig.minItems;
 
                 return (
-                  <div key={`${sectionId}-row-${rowIndex}`} className={cn(rowIndex > 0 && 'border-t border-border-primary/40 pt-4')}>
-                    <div className="grid grid-cols-[minmax(0,1fr)_1.75rem] items-center gap-2 sm:gap-3">
+                  <div
+                    key={`${sectionId}-row-${rowIndex}`}
+                    className={cn(
+                      cardMode
+                        ? 'rounded-xl border border-border-primary/60 bg-white p-3 shadow-sm sm:p-4'
+                        : rowIndex > 0 && 'border-t border-border-primary/40 pt-4'
+                    )}
+                    role={cardMode ? 'group' : undefined}
+                    aria-label={cardMode ? `${sectionConfig.itemLabel} ${rowIndex + 1}` : undefined}
+                  >
+                    {cardMode && (
+                      <div className="mb-3 flex items-center justify-between gap-3">
+                        <p className="text-sm font-semibold text-text-primary">
+                          {sectionConfig.itemLabel} {rowIndex + 1}
+                          {(() => {
+                            const nameField = sectionFields.find((candidate) => candidate.type === 'SHORT_TEXT' && (candidate.inputType === 'text' || !candidate.inputType));
+                            const nameValue = nameField && typeof rowAnswers[nameField.key] === 'string' ? (rowAnswers[nameField.key] as string).trim() : '';
+                            return nameValue ? <span className="font-normal text-text-secondary"> · {nameValue}</span> : null;
+                          })()}
+                        </p>
+                        {canRemoveRow && (
+                          <button
+                            type="button"
+                            onClick={() => removeRepeatSectionRow(sectionId, rowIndex, sectionFields)}
+                            className="text-xs font-medium text-status-error underline-offset-2 hover:underline"
+                            aria-label={`${uiLabel('repeat_remove_item')} ${sectionConfig.itemLabel} ${rowIndex + 1}`}
+                          >
+                            {uiLabel('repeat_remove_item')}
+                          </button>
+                        )}
+                      </div>
+                    )}
+                    <div className={cn(cardMode ? 'grid grid-cols-1' : 'grid grid-cols-[minmax(0,1fr)_1.75rem] items-center gap-2 sm:gap-3')}>
                       <div className="grid grid-cols-12 gap-3">
                         {sectionFields.map((sectionField) => {
                       if (!evaluateCondition(sectionField.condition, rowAnswers, { fields: sectionFields })) return null;
@@ -3276,7 +3411,7 @@ export default function PublicFormPage() {
                           key={`${sectionField.id}-${rowIndex}`}
                           className={cn(sectionWidthClass, isLayoutBreakBeforeEnabled(sectionField) && 'md:col-start-1')}
                         >
-                          {!sectionField.hideLabel && !sectionChoiceInlineRight && (
+                          {!sectionField.hideLabel && !sectionChoiceInlineRight && sectionField.type !== 'PARAGRAPH' && (
                             <label
                               htmlFor={sectionControlId}
                               id={sectionLabelId}
@@ -3286,8 +3421,21 @@ export default function PublicFormPage() {
                               {sectionField.isRequired && <span className="text-oak-primary"> *</span>}
                             </label>
                           )}
-                          {localizedSectionField.subtext && (
-                            <p id={sectionHintId} className="mb-2 text-xs text-text-muted">{localizedSectionField.subtext}</p>
+                          {localizedSectionField.subtext && sectionField.type !== 'PARAGRAPH' && (
+                            <FieldHint id={sectionHintId} text={localizedSectionField.subtext} className="mb-2 text-xs text-text-muted" />
+                          )}
+                          {sectionField.type === 'PARAGRAPH' && (localizedSectionField.subtext || localizedSectionField.label) && (
+                            <div
+                              role={isProgressStopInfoBlock(sectionField) ? 'alert' : undefined}
+                              className={cn(
+                                'rounded-lg border px-3 py-2 text-sm text-text-primary',
+                                isProgressStopInfoBlock(sectionField)
+                                  ? 'border-status-warning/60 bg-status-warning/10'
+                                  : 'border-border-primary bg-background-primary'
+                              )}
+                            >
+                              {localizedSectionField.subtext || localizedSectionField.label}
+                            </div>
                           )}
 
                           {sectionField.type === 'SHORT_TEXT' && !sectionUseDateSelector && !sectionUseSplitPhoneInput && !sectionUseTimeTimezoneInput && (
@@ -3716,7 +3864,7 @@ export default function PublicFormPage() {
                       );
                         })}
                       </div>
-                      <div className={cn('flex h-full items-start justify-center', sectionHasVisibleLabels ? 'pt-6' : 'pt-0')}>
+                      <div className={cn('flex h-full items-start justify-center', sectionHasVisibleLabels ? 'pt-6' : 'pt-0', cardMode && 'hidden')}>
                         <button
                           type="button"
                           onClick={() => removeRepeatSectionRow(sectionId, rowIndex, sectionFields)}
@@ -3737,17 +3885,47 @@ export default function PublicFormPage() {
                 );
               })}
             </div>
-            <div className="mt-3 flex justify-end">
-              <button
-                type="button"
-                onClick={() => addRepeatSectionRow(sectionId, sectionConfig.maxItems)}
-                disabled={!canAddRow}
-                className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border-primary bg-[#F4F7F6] text-text-secondary transition-colors hover:text-text-primary focus:outline-none focus:ring-2 focus:ring-oak-primary/20 disabled:cursor-not-allowed disabled:opacity-60"
-                aria-label={addRowLabel}
-                title={addRowLabel}
-              >
-                <Plus className="h-4 w-4" />
-              </button>
+            {sectionTotal !== null && sectionConfig.total && (() => {
+              const target = sectionConfig.total.target;
+              const matchesTarget = target === null || sectionTotal === parseDecimalString(String(target));
+              return (
+                <p
+                  className={cn('mt-3 text-sm', matchesTarget ? 'text-text-secondary' : 'text-status-warning')}
+                  aria-live="polite"
+                >
+                  {uiLabel('repeat_total', {
+                    label: sectionConfig.total.label,
+                    total: formatDecimalUnits(sectionTotal),
+                    suffix: sectionConfig.total.suffix,
+                  })}
+                  {target !== null && !matchesTarget && ` (must total ${target}${sectionConfig.total.suffix} when fully allocated)`}
+                </p>
+              );
+            })()}
+            <div className={cn('mt-3 flex', cardMode ? 'justify-start' : 'justify-end')}>
+              {cardMode ? (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  leftIcon={<Plus className="h-4 w-4" />}
+                  onClick={() => addRepeatSectionRow(sectionId, sectionConfig.maxItems)}
+                  disabled={!canAddRow}
+                >
+                  {addRowLabel}
+                </Button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => addRepeatSectionRow(sectionId, sectionConfig.maxItems)}
+                  disabled={!canAddRow}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border-primary bg-[#F4F7F6] text-text-secondary transition-colors hover:text-text-primary focus:outline-none focus:ring-2 focus:ring-oak-primary/20 disabled:cursor-not-allowed disabled:opacity-60"
+                  aria-label={addRowLabel}
+                  title={addRowLabel}
+                >
+                  <Plus className="h-4 w-4" />
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -3809,6 +3987,7 @@ export default function PublicFormPage() {
     const phoneParts = useSplitPhoneInput ? parsePhoneParts(value, phoneDefaultCountryCode) : null;
     const timeTimezoneParts = useTimeTimezoneInput ? parseTimeTimezoneValue(value, getTimezoneDefault(field)) : null;
     const nameCheckResult = nameCheckResults[field.key];
+    const nameCheckAdvisory = field.type === 'COMPANY_NAME_CHECK' && getNameCheckMode(field.validation) === 'advisory';
     const resolvedDateValue = typeof value === 'string' && value.trim().length > 0
       ? value
       : '';
@@ -4031,7 +4210,7 @@ export default function PublicFormPage() {
             )
           )}
 
-          {localizedField.subtext && <p id={hintId} className="mb-2 text-sm text-text-secondary">{localizedField.subtext}</p>}
+          {localizedField.subtext && <FieldHint id={hintId} text={localizedField.subtext} className="mb-2 text-sm text-text-secondary" />}
           {inlineTooltipBlock}
 
           {/* SHORT_TEXT */}
@@ -4097,11 +4276,54 @@ export default function PublicFormPage() {
                 >
                   {checkingNameCheckField === field.key
                     ? uiLabel('name_check_checking')
-                    : uiLabel('name_check_button')}
+                    : uiLabel(nameCheckAdvisory ? 'name_check_button_advisory' : 'name_check_button')}
                 </button>
               </div>
 
-              {nameCheckResult && (
+              {nameCheckAdvisory && nameCheckResult && nameCheckResult.name === (typeof value === 'string' ? value.trim() : '') && (() => {
+                const outcome = describeNameCheckAssessment(nameCheckResult.assessment);
+                const reasons = nameCheckResult.reasonCodes
+                  .map((code) => describeNameCheckReason(code))
+                  .filter((reason): reason is string => !!reason);
+                return (
+                  <div
+                    role="status"
+                    aria-live="polite"
+                    className={cn(
+                      'rounded-lg border px-3 py-2 text-sm',
+                      outcome.tone === 'success'
+                        ? 'border-status-success/40 bg-status-success/10 text-text-primary'
+                        : 'border-status-warning/50 bg-status-warning/10 text-text-primary'
+                    )}
+                  >
+                    <p className="font-medium">{outcome.title}</p>
+                    {reasons.length > 0 && (
+                      <ul className="mt-1 list-disc pl-4 text-xs">
+                        {reasons.map((reason) => <li key={reason}>{reason}</li>)}
+                      </ul>
+                    )}
+                    {nameCheckResult.records.length > 0 && (
+                      <ul className="mt-1.5 space-y-1 text-xs">
+                        {nameCheckResult.records.map((record, index) => (
+                          <li key={`${record.uen || 'record'}-${index}`}>
+                            <span className="font-medium">{record.entityName || '-'}</span>
+                            {record.uen ? ` (${record.uen})` : ''}
+                            {record.entityStatus ? ` — ${record.entityStatus}` : ''}
+                            {record.matchType === 'IDENTICAL' ? ' — identical' : record.matchType === 'SIMILAR_WARNING' ? ' — similar' : ''}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    {nameCheckResult.dataAsOf && (
+                      <p className="mt-1.5 text-xs opacity-80">
+                        {uiLabel('name_check_data_as_of', { date: formatDataAsOf(nameCheckResult.dataAsOf) })}
+                      </p>
+                    )}
+                  </div>
+                );
+              })()}
+
+              {!nameCheckAdvisory && nameCheckResult && (
                 <div
                   className={cn(
                     'rounded-lg border px-3 py-2 text-sm',
@@ -4243,18 +4465,32 @@ export default function PublicFormPage() {
           )}
 
           {/* DROPDOWN */}
-          {field.type === 'DROPDOWN' && (
-            <SearchableSelect
-              options={parseChoiceOptions(localizedField.options).map((opt) => ({ value: opt.value, label: opt.label }))}
-              value={typeof value === 'string' ? value : ''}
-              onChange={(val) => setFieldValue(field.key, val)}
-              placeholder={localizedField.placeholder || uiLabel('select_option_placeholder')}
-              clearable={!field.isReadOnly}
-              showKeyboardHints={false}
-              containerClassName={cn('h-10', errorText && ERROR_FIELD_CLASS)}
-              onBlur={() => handleFieldBlur(field, answers[field.key], getFieldErrorKey(field.key), answers)}
-            />
-          )}
+          {field.type === 'DROPDOWN' && (() => {
+            const dropdownOptions = parseChoiceOptions(localizedField.options).map((opt) => ({ value: opt.value, label: opt.label }));
+            const selectedLabel = typeof value === 'string' && value
+              ? dropdownOptions.find((opt) => opt.value === value)?.label ?? null
+              : null;
+            return (
+              <>
+                <SearchableSelect
+                  options={dropdownOptions}
+                  value={typeof value === 'string' ? value : ''}
+                  onChange={(val) => setFieldValue(field.key, val)}
+                  placeholder={localizedField.placeholder || uiLabel('select_option_placeholder')}
+                  ariaLabel={accessibleLabel}
+                  clearable={!field.isReadOnly}
+                  showKeyboardHints={false}
+                  containerClassName={cn('h-10', errorText && ERROR_FIELD_CLASS)}
+                  onBlur={() => handleFieldBlur(field, answers[field.key], getFieldErrorKey(field.key), answers)}
+                />
+                {selectedLabel && selectedLabel.length > 48 && (
+                  <p className="mt-1.5 break-words text-sm text-text-primary">
+                    <span className="text-text-secondary">Selected: </span>{selectedLabel}
+                  </p>
+                )}
+              </>
+            );
+          })()}
 
           {/* SINGLE_CHOICE */}
           {field.type === 'SINGLE_CHOICE' && (
@@ -4724,6 +4960,7 @@ export default function PublicFormPage() {
   }
 
   if (submissionId) {
+    const submissionReference = submissionId.replace(/-/g, '').slice(0, 8).toUpperCase();
     const downloadHref = pdfDownloadToken
       ? `/api/forms/public/${encodeURIComponent(slug)}/submissions/${encodeURIComponent(submissionId)}/pdf?token=${encodeURIComponent(pdfDownloadToken)}`
       : null;
@@ -4745,11 +4982,16 @@ export default function PublicFormPage() {
           <div className="flex items-center gap-3">
             <CheckCircle2 className="h-6 w-6 text-status-success shrink-0" />
             <div>
-              <h1 className="text-lg font-semibold text-text-primary">{localizedUiLabels.response_submitted_title}</h1>
-              <p className="text-sm text-text-secondary">{localizedUiLabels.response_submitted_description}</p>
+              <h1 className="text-lg font-semibold text-text-primary">{completionSettings.successTitle || localizedUiLabels.response_submitted_title}</h1>
+              <p className="text-sm text-text-secondary">
+                {completionSettings.successMessage
+                  ? completionSettings.successMessage.replace(/\{reference\}/g, submissionReference)
+                  : localizedUiLabels.response_submitted_description}
+              </p>
             </div>
           </div>
 
+          {completionSettings.showPdfActions && (<>
           <div className="mt-6 flex flex-wrap items-center gap-2">
             <Button
               variant="primary"
@@ -4796,12 +5038,34 @@ export default function PublicFormPage() {
               <p className="mt-2 text-xs text-text-secondary">{emailFeedback}</p>
             )}
           </div>
+          </>)}
         </div>
       </div>
     );
   }
 
   const renderItems = buildRenderGroups(visibleFields);
+
+  const reviewAnswers = isReviewing ? pruneHiddenConditionalAnswers(orderedFields, withDefaultAnswers(answers)) : answers;
+  const reviewSections = isReviewing
+    ? buildReviewSections({
+      pages,
+      allFields: orderedFields,
+      answers: reviewAnswers,
+      repeatCounts: repeatSectionCounts,
+      uploadsById: new Map(Object.values(uploadedByFieldKey).flat().map((upload) => [upload.id, upload])),
+      localize: getLocalizedField,
+    })
+    : [];
+  const reviewIssues = isReviewing && isIncorporationTemplate
+    ? evaluateCompanyIncorporationAnswers(reviewAnswers, {
+      nameCheck: nameCheckResults[INCORPORATION_KEYS.proposedName] ?? null,
+    }).issues.map((issue) => ({
+      ...issue,
+      pageIndex: findPageIndexForField(issue.fieldKey ?? (issue.section === 'parties' ? INCORPORATION_KEYS.partyName : undefined)),
+    }))
+    : [];
+  const hasBlockingReviewIssue = reviewIssues.some((issue) => issue.severity === 'error');
 
   return (
     <div className={cn('min-h-screen', isEmbed ? 'bg-transparent p-0' : 'bg-gradient-to-b from-[#FDFCFA] to-[#EDE8E3] p-4 sm:p-8')}>
@@ -4878,22 +5142,32 @@ export default function PublicFormPage() {
           </div>
         )}
 
-        {pages.length > 1 && (
+        {totalSteps > 1 && (
           <div className="mb-6">
             <div className="mb-1.5 flex items-center justify-between">
-              <span className="text-xs font-medium text-text-secondary">{uiLabel('page_progress', { current: currentPage + 1, total: pages.length })}</span>
-              <span className="text-xs text-text-muted">{Math.round(((currentPage + 1) / pages.length) * 100)}%</span>
+              <span className="text-xs font-medium text-text-secondary">{uiLabel('page_progress', { current: currentStep + 1, total: totalSteps })}</span>
+              <span className="text-xs text-text-muted">{Math.round(((currentStep + 1) / totalSteps) * 100)}%</span>
             </div>
             <div className="h-[3px] w-full overflow-hidden rounded-full bg-border-primary/40">
               <div
                 className="h-full rounded-full bg-oak-primary transition-all duration-300 ease-out"
-                style={{ width: `${((currentPage + 1) / pages.length) * 100}%` }}
+                style={{ width: `${((currentStep + 1) / totalSteps) * 100}%` }}
               />
             </div>
           </div>
         )}
 
-        <div className={cn('flex flex-col gap-4', !isEmbed && 'mt-4')}>
+        {isReviewing && (
+          <PublicFormReview
+            title={completionSettings.reviewTitle || uiLabel('review_title')}
+            intro={completionSettings.reviewIntro}
+            sections={reviewSections}
+            issues={reviewIssues}
+            onEdit={handleReviewEdit}
+          />
+        )}
+
+        <div className={cn('flex flex-col gap-4', !isEmbed && 'mt-4', isReviewing && 'hidden')}>
           {renderItems.map((item, itemIndex) => {
             if (item.kind === 'standalone') {
               if (hiddenFieldIds.has(item.field.id)) return null;
@@ -4932,11 +5206,15 @@ export default function PublicFormPage() {
 
         <div className="mt-8 space-y-2">
           <div className="flex items-center justify-between">
-          {currentPage > 0 ? (
+          {currentPage > 0 || isReviewing ? (
             <button
               type="button"
               onClick={() => {
-                setCurrentPage((prev) => prev - 1);
+                if (isReviewing) {
+                  setIsReviewing(false);
+                } else {
+                  setCurrentPage((prev) => prev - 1);
+                }
                 scrollToFormTop();
               }}
               className="flex items-center gap-1.5 text-sm text-text-secondary hover:text-text-primary transition-colors duration-150"
@@ -4947,9 +5225,9 @@ export default function PublicFormPage() {
           ) : <div />}
 
           <div className="flex items-center gap-3">
-            {pages.length > 1 && (
+            {totalSteps > 1 && (
               <span className="text-xs text-text-muted">
-                {uiLabel('page_progress_short', { current: currentPage + 1, total: pages.length })}
+                {uiLabel('page_progress_short', { current: currentStep + 1, total: totalSteps })}
               </span>
             )}
             {draftSettings.enabled && !isPreview && (
@@ -4966,18 +5244,15 @@ export default function PublicFormPage() {
               </Button>
             )}
             {!isCurrentPageProgressStopped && (
-              currentPage < pages.length - 1 ? (
+              !isReviewing && (currentPage < pages.length - 1 || hasReviewStep) ? (
                 <Button
                   variant="primary"
                   size="sm"
                   className="rounded-xl px-6 py-2.5 transition-transform duration-150 hover:scale-[1.02]"
-                  onClick={() => {
-                    if (!validateCurrentPage()) return;
-                    setCurrentPage((prev) => prev + 1);
-                    scrollToFormTop();
-                  }}
+                  onClick={() => void handleContinue()}
+                  isLoading={checkingNameCheckField !== null}
                 >
-                  {localizedUiLabels.continue}
+                  {currentPage < pages.length - 1 ? localizedUiLabels.continue : localizedUiLabels.review_continue}
                 </Button>
               ) : (
                 <Button
@@ -4986,9 +5261,9 @@ export default function PublicFormPage() {
                   className="rounded-xl px-6 py-2.5 transition-transform duration-150 hover:scale-[1.02]"
                   onClick={submitForm}
                   isLoading={isSubmitting}
-                  disabled={isPreview}
+                  disabled={isPreview || hasBlockingReviewIssue}
                 >
-                  {isPreview ? localizedUiLabels.preview_mode : localizedUiLabels.submit}
+                  {isPreview ? localizedUiLabels.preview_mode : (completionSettings.submitLabel || localizedUiLabels.submit)}
                 </Button>
               )
             )}
