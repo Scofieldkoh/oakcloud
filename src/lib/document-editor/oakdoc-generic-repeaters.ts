@@ -136,6 +136,43 @@ function closestRepeater(start: Element): Element | undefined {
   return undefined;
 }
 
+function controlAlias(sdt: Element): string {
+  const pr = properties(sdt);
+  return pr ? getWordVal(wordChild(pr, 'alias')) : '';
+}
+
+/**
+ * Give each unnamed repeater item its repeater's name. The editor names only
+ * the control holding the caret, which inside a repeater is the item, so an
+ * unnamed item hides which repeater it belongs to. Returns the original bytes
+ * when every item already has a name.
+ */
+export function nameOakDocRepeaterItems(docxBytes: Uint8Array): Uint8Array {
+  const files = unzipSync(docxBytes);
+  const part = files[DOCUMENT_PART];
+  if (!part) return docxBytes;
+  const xml = parseXml(part);
+  let named = 0;
+  for (const repeater of Array.from(xml.getElementsByTagNameNS(WORD_NS, 'sdt'))) {
+    const definition = OAKDOC_GENERIC_REPEATER_BY_TAG.get(controlTag(repeater));
+    const content = wordChild(repeater, 'sdtContent');
+    if (!definition || !content || !isRepeatingSection(repeater)) continue;
+    const name = controlAlias(repeater) || definition.label + ' repeater';
+    for (const item of wordChildren(content)) {
+      const pr = isWordElement(item, 'sdt') && isRepeatingItem(item) ? properties(item) : undefined;
+      if (!pr || controlAlias(item)) continue;
+      const alias = xml.createElementNS(WORD_NS, 'w:alias');
+      setWordVal(alias, name);
+      // w:alias comes first in w:sdtPr.
+      pr.insertBefore(alias, pr.firstChild);
+      named += 1;
+    }
+  }
+  if (named === 0) return docxBytes;
+  files[DOCUMENT_PART] = serializeXml(xml);
+  return zipSync(files, { level: 6 });
+}
+
 export function createOakDocGenericRepeater(input: {
   docxBytes: Uint8Array;
   fromParaId: string;
@@ -174,7 +211,10 @@ export function createOakDocGenericRepeater(input: {
   outer.appendChild(outerContent);
 
   const item = xml.createElementNS(WORD_NS, 'w:sdt');
-  item.appendChild(createProperties(xml, String(id++), { repeatingItem: true }));
+  item.appendChild(createProperties(xml, String(id++), {
+    alias: managed.label + ' repeater',
+    repeatingItem: true,
+  }));
   const itemContent = xml.createElementNS(WORD_NS, 'w:sdtContent');
   item.appendChild(itemContent);
   outerContent.appendChild(item);

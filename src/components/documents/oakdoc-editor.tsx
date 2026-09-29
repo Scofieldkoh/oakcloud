@@ -34,6 +34,7 @@ import type { OakDocCompanyDetail } from '@/lib/document-editor/oakdoc-context';
 import {
   createOakDocRepeater,
   inspectOakDocRepeaters,
+  nameOakDocRepeaterItems,
   OAKDOC_REPEATER_DEFINITIONS,
   removeOakDocRepeater,
   type OakDocRepeaterDefinition,
@@ -394,7 +395,7 @@ export function OakDocEditor() {
     setPinnedPartialVersions(pinnedVersionsOf(loaded.template.contentJson));
     setRefreshPartials(false);
     replaceDocument(
-      loaded.bytes,
+      nameOakDocRepeaterItems(loaded.bytes),
       `Loaded OakDoc template "${loaded.template.name}" version ${revision}.`,
     );
     setIsDirty(false);
