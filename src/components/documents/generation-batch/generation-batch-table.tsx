@@ -19,6 +19,7 @@ import {
 import { cn, formatDate } from '@/lib/utils';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { SearchableSelect } from '@/components/ui/searchable-select';
+import { isPlainTableRowClick } from '@/components/ui/data-table';
 import { CompanySelect } from '@/components/ui/company-select';
 import { DatePicker, type DatePickerValue } from '@/components/ui/date-picker';
 import {
@@ -322,12 +323,7 @@ export function GenerationBatchTable({
     event: React.MouseEvent<HTMLTableRowElement>,
     batch: DocumentGenerationBatchListItem,
   ) => {
-    if (event.defaultPrevented) return;
-    if (event.button !== 0) return;
-    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-
-    const target = event.target as HTMLElement | null;
-    if (target?.closest('a,button,input,select,textarea,[role="button"]')) return;
+    if (!isPlainTableRowClick(event)) return;
 
     router.push(resumeBatchHref(batch.id));
   }, [router]);
