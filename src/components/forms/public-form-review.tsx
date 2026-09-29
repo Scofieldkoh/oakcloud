@@ -215,7 +215,7 @@ export function PublicFormReview({ title, intro, sections, issues, onEdit }: Pub
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="rounded-xl border border-border-primary/50 bg-white p-5 shadow-sm">
+      <div className="rounded-xl border border-border-primary/50 bg-[var(--form-panel-bg,#fff)] p-5 shadow-sm">
         <h2 className="text-lg font-semibold text-text-primary">{title}</h2>
         {intro && <p className="mt-1 text-sm text-text-secondary">{intro}</p>}
       </div>
@@ -224,7 +224,7 @@ export function PublicFormReview({ title, intro, sections, issues, onEdit }: Pub
         <section
           aria-labelledby="review-clarification-heading"
           className={cn(
-            'rounded-xl border bg-white p-5 shadow-sm',
+            'rounded-xl border bg-[var(--form-panel-bg,#fff)] p-5 shadow-sm',
             blocking.length > 0 ? 'border-status-error/40' : 'border-status-warning/50'
           )}
         >
@@ -271,7 +271,7 @@ export function PublicFormReview({ title, intro, sections, issues, onEdit }: Pub
       )}
 
       {sections.map((section) => (
-        <section key={section.pageIndex} className="rounded-xl border border-border-primary/50 bg-white p-5 shadow-sm" aria-label={section.title}>
+        <section key={section.pageIndex} className="rounded-xl border border-border-primary/50 bg-[var(--form-panel-bg,#fff)] p-5 shadow-sm" aria-label={section.title}>
           <div className="mb-3 flex items-center justify-between gap-3">
             <h3 className="text-base font-semibold text-text-primary">{section.title}</h3>
             <button

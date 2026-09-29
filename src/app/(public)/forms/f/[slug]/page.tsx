@@ -15,6 +15,7 @@ import {
   WIDTH_CLASS,
   parseObject,
   parseChoiceOptions,
+  parseFormAppearanceSettings,
   parseFormCompletionSettings,
   parseFormDraftSettings,
   parseFormI18nSettings,
@@ -1729,19 +1730,17 @@ export default function PublicFormPage() {
     return settingsObj.hideFooter !== true;
   }, [form?.tenantName, form?.settings]);
 
-  const backgroundSettings = useMemo(() => {
-    const settingsObj = (form?.settings && typeof form.settings === 'object' && !Array.isArray(form.settings))
-      ? form.settings as Record<string, unknown>
-      : {};
-    const url = typeof settingsObj.backgroundImageUrl === 'string' && settingsObj.backgroundImageUrl.trim().length > 0
-      ? settingsObj.backgroundImageUrl.trim()
-      : null;
-    const rawOpacity = settingsObj.backgroundImageOpacity;
-    const opacity = typeof rawOpacity === 'number' && Number.isFinite(rawOpacity)
-      ? Math.min(100, Math.max(0, Math.round(rawOpacity)))
-      : 40;
-    return { url, opacity };
-  }, [form?.settings]);
+  const appearance = useMemo(() => parseFormAppearanceSettings(form?.settings), [form?.settings]);
+  // Panels read their fill from a CSS variable so every card follows the panel opacity setting.
+  const appearanceStyle = useMemo(
+    () => ({ '--form-panel-bg': `rgb(255 255 255 / ${appearance.panelOpacity / 100})` }) as React.CSSProperties,
+    [appearance.panelOpacity]
+  );
+  // Text drawn straight on the background (title, headings, progress, footer).
+  const onBackgroundTextStyle = useMemo<React.CSSProperties | undefined>(
+    () => (appearance.headingColor ? { color: appearance.headingColor } : undefined),
+    [appearance.headingColor]
+  );
 
   const canSwitchLanguage = i18nSettings.allowLocaleSwitch && i18nSettings.enabledLocales.length > 1;
 
@@ -3195,9 +3194,9 @@ export default function PublicFormPage() {
     const Tag = headingType as 'h1' | 'h2' | 'h3';
     return (
       <div key={field.id}>
-        <Tag className={headingClasses[headingType]}>{headingText}</Tag>
+        <Tag className={headingClasses[headingType]} style={onBackgroundTextStyle}>{headingText}</Tag>
         {descriptionText && (
-          <p className="whitespace-pre-wrap text-sm text-text-secondary">{descriptionText}</p>
+          <p className="whitespace-pre-wrap text-sm text-text-secondary" style={onBackgroundTextStyle}>{descriptionText}</p>
         )}
       </div>
     );
@@ -5050,19 +5049,19 @@ export default function PublicFormPage() {
       : null;
 
     return (
-      <div className="min-h-screen bg-gradient-to-b from-[#FDFCFA] to-[#EDE8E3] p-4 sm:p-8 flex items-center justify-center">
-        {!isEmbed && backgroundSettings.url && (
+      <div className="min-h-screen bg-gradient-to-b from-[#FDFCFA] to-[#EDE8E3] p-4 sm:p-8 flex items-center justify-center" style={appearanceStyle}>
+        {!isEmbed && appearance.backgroundImageUrl && (
           <div
             aria-hidden="true"
             className="pointer-events-none fixed inset-0 bg-cover bg-center bg-no-repeat mix-blend-multiply"
             style={{
-              backgroundImage: `url("${backgroundSettings.url}")`,
-              opacity: backgroundSettings.opacity / 100,
+              backgroundImage: `url("${appearance.backgroundImageUrl}")`,
+              opacity: appearance.backgroundImageOpacity / 100,
             }}
           >
           </div>
         )}
-        <div className="w-full max-w-xl rounded-xl bg-white p-6 sm:p-8 shadow-sm">
+        <div className="relative z-10 w-full max-w-xl rounded-xl bg-[var(--form-panel-bg,#fff)] p-6 sm:p-8 shadow-sm">
           <div className="flex items-center gap-3">
             <CheckCircle2 className="h-6 w-6 text-status-success shrink-0" />
             <div>
@@ -5152,19 +5151,20 @@ export default function PublicFormPage() {
   const hasBlockingReviewIssue = reviewIssues.some((issue) => issue.severity === 'error');
 
   return (
-    <div className={cn('min-h-screen', isEmbed ? 'bg-transparent p-0' : 'bg-gradient-to-b from-[#FDFCFA] to-[#EDE8E3] p-4 sm:p-8')}>
-      {!isEmbed && backgroundSettings.url && (
+    <div className={cn('min-h-screen', isEmbed ? 'bg-transparent p-0' : 'bg-gradient-to-b from-[#FDFCFA] to-[#EDE8E3] p-4 sm:p-8')} style={appearanceStyle}>
+      {!isEmbed && appearance.backgroundImageUrl && (
         <div
           aria-hidden="true"
           className="pointer-events-none fixed inset-0 bg-cover bg-center bg-no-repeat mix-blend-multiply"
           style={{
-            backgroundImage: `url("${backgroundSettings.url}")`,
-            opacity: backgroundSettings.opacity / 100,
+            backgroundImage: `url("${appearance.backgroundImageUrl}")`,
+            opacity: appearance.backgroundImageOpacity / 100,
           }}
         >
         </div>
       )}
-      <div ref={formTopRef} className={cn('mx-auto max-w-4xl', isEmbed ? '' : 'py-2')}>
+      {/* relative z-10 keeps the form above the fixed background layer instead of under its blend. */}
+      <div ref={formTopRef} className={cn('relative z-10 mx-auto max-w-4xl', isEmbed ? '' : 'py-2')}>
         {canSwitchLanguage && (
           <div className="mb-4 flex justify-end">
             {i18nSettings.enabledLocales.length <= 4 ? (
@@ -5214,12 +5214,12 @@ export default function PublicFormPage() {
                 />
               )}
               <div className="min-w-0 pt-2 md:pt-5">
-                <h1 className="text-2xl font-bold text-text-primary md:text-4xl">{localizedFormTitle || form.title}</h1>
-                {localizedFormDescription && <p className="mt-2 text-base text-text-secondary leading-relaxed md:text-lg">{localizedFormDescription}</p>}
+                <h1 className="text-2xl font-bold text-text-primary md:text-4xl" style={onBackgroundTextStyle}>{localizedFormTitle || form.title}</h1>
+                {localizedFormDescription && <p className="mt-2 text-base text-text-secondary leading-relaxed md:text-lg" style={onBackgroundTextStyle}>{localizedFormDescription}</p>}
               </div>
             </div>
             {isPreview && (
-              <p className="mt-2 text-xs text-text-muted">
+              <p className="mt-2 text-xs text-text-muted" style={onBackgroundTextStyle}>
                 {uiLabel('preview_notice')}
               </p>
             )}
@@ -5229,8 +5229,8 @@ export default function PublicFormPage() {
         {totalSteps > 1 && (
           <div className="mb-6">
             <div className="mb-1.5 flex items-center justify-between">
-              <span className="text-xs font-medium text-text-secondary">{uiLabel('page_progress', { current: currentStep + 1, total: totalSteps })}</span>
-              <span className="text-xs text-text-muted">{Math.round(((currentStep + 1) / totalSteps) * 100)}%</span>
+              <span className="text-xs font-medium text-text-secondary" style={onBackgroundTextStyle}>{uiLabel('page_progress', { current: currentStep + 1, total: totalSteps })}</span>
+              <span className="text-xs text-text-muted" style={onBackgroundTextStyle}>{Math.round(((currentStep + 1) / totalSteps) * 100)}%</span>
             </div>
             <div className="h-[3px] w-full overflow-hidden rounded-full bg-border-primary/40">
               <div
@@ -5269,7 +5269,7 @@ export default function PublicFormPage() {
                 {item.heading && renderHeadingField(item.heading)}
                 {groupFields.length > 0 && (
                   <div className={cn(
-                    'rounded-xl border bg-white shadow-sm',
+                    'rounded-xl border bg-[var(--form-panel-bg,#fff)] shadow-sm',
                     groupHasError
                       ? 'border-status-error/40 ring-1 ring-status-error/20'
                       : 'border-border-primary/50'
@@ -5310,6 +5310,7 @@ export default function PublicFormPage() {
                 scrollToFormTop();
               }}
               className="flex items-center gap-1.5 text-sm text-text-secondary hover:text-text-primary transition-colors duration-150"
+              style={onBackgroundTextStyle}
             >
               <ArrowLeft className="h-4 w-4" />
               {localizedUiLabels.back}
@@ -5368,7 +5369,7 @@ export default function PublicFormPage() {
         </div>
         </div>
       {!isEmbed && shouldShowFooter && (
-        <div className="mt-6 text-center text-sm text-text-tertiary">
+        <div className="mt-6 text-center text-sm text-text-tertiary" style={onBackgroundTextStyle}>
           © {form.tenantName}
         </div>
       )}
