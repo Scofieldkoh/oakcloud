@@ -1,18 +1,18 @@
 # Singapore Company Incorporation Intake Form
 
-Status: implemented (template version 2). Source: the 2026-09-28 handover spec "ACRA incorporation intake form", treated as reference and checked against the code. Version 2 follows Scofield's 19-point review of version 1 (2026-09-29).
+Status: implemented (template version 3). Source: the 2026-09-28 handover spec "ACRA incorporation intake form", treated as reference and checked against the code. Version 2 follows Scofield's 19-point review of version 1, and version 3 his follow-up review (both 2026-09-29).
 
 ## What staff get
 
 - **Seeding**: `npx tsx scripts/seed-incorporation-form.ts --email <login>` creates the form as a DRAFT in the user's workspace. Running it again updates the unpublished copy in place with the current questions. A published (locked) copy is never changed; a new draft is created beside it. There is no "Start from" choice in the New form dialog.
 - The public form has four question pages plus a review step:
-  1. Company details: contact name, email and mobile number, company type (private or public limited by shares), proposed name and two alternative names (all advisory name-checked), primary SSIC (required) and optional secondary SSIC, business description, company email.
-  2. Shareholders and officers: one card per person or company. Type and roles are buttons (Shareholder, Director, Managing director, CEO, Company secretary). Shareholding %, email (required, used to send the KYC form), UEN for a company, and per-person ticks: lives in Singapore (directors and secretaries), nominee shareholder, nominee director, other control, with "acts on behalf of" when a nominee box is ticked.
-  3. Share capital and services: issued capital, currency, number of shares, fully paid (Yes/No, then amount paid); tick boxes for our nominee director service and company secretary service.
-  4. Registered office and other details: own address or our registered office service, first FYE (12-month periods assumed), model or custom constitution, additional instructions.
+  1. Company details: contact name, email and mobile number; company type (exempt private, private, public limited by shares, public limited by guarantee); the name ending the client prefers (Pte. Ltd., Private Limited or Pte Ltd for private types; Limited, Ltd. or Ltd for public types); proposed name and alternative name 1 (required) and 2, entered without the ending and all advisory name-checked (the checker ignores endings); primary SSIC (required) and optional secondary SSIC; business description; company email.
+  2. Shareholders and officers: one card per person or company. Type and roles are buttons (Shareholder, Director, Managing director, CEO, Company secretary). Each person's particulars, all required: full name, Passport/FIN/NRIC number, nationality (dropdown), residential address, contact number and email. A company gives its UEN or registration number, place of incorporation and registered address instead. Then shareholding % (not asked for a company limited by guarantee) and ticks: lives in Singapore (directors and secretaries), nominee shareholder, nominee director, with "acts on behalf of" when a nominee box is ticked.
+  3. Share capital and services (capital hidden for a company limited by guarantee): issued capital, currency, number of shares, fully paid (Yes/No, then amount paid); tick boxes for our nominee director service and company secretary service.
+  4. Registered office and other details: own address or our registered office service, first FYE (12-month periods assumed), constitution (ACRA model as in force at adoption, ACRA model as in force from time to time, with a link to the model currently in force, or custom upload), additional instructions. The form has no description; page 1's introduction covers it.
   5. Review and submit (every answer by page with Edit links, plus items for our review).
 - ACRA guidance sits on the relevant fields, with links that open in a new tab. Help on half-width fields is a tooltip, so fields side by side keep the same height.
-- The form collects no KYC personal data, ID uploads, declarations or signatures. Those stay in the firm's KYC process.
+- The form collects each person's basic particulars (version 3, at Scofield's request) but no ID uploads, declarations or signatures.
 - Completion emails are link-only (no PDF or uploads). The builder's Notifications section has a **Send link only** switch for any form.
 - Choice fields have a **Show options as buttons** switch in the builder (`validation.choiceLayout: 'chips'`).
 
@@ -21,10 +21,10 @@ Status: implemented (template version 2). Source: the 2026-09-28 handover spec "
 Code: `src/lib/forms/company-incorporation-profile.ts` (browser-safe, used on each page, on the review step and on the server).
 
 - **Blocking (`error`)**, checked when the respondent presses Continue on the page the rule belongs to, and again on submit:
-  - names must end to match the company type (private: "Pte. Ltd." or "Private Limited"; public: "Limited" or "Ltd."), and must differ from each other;
+  - names are entered without an ending and must differ from each other; the chosen ending must suit the company type;
   - primary SSIC required and in the pinned catalogue; secondary different from primary; business description required;
   - every person has a role; a company can only be a shareholder; each person is listed once; nominees name who they act for;
-  - shareholdings total exactly 100%, at least one shareholder and one individual director (director or managing director); at most 50 shareholders for a private company; a company secretary cannot be the only director;
+  - shareholdings total exactly 100%, at least one shareholder and one individual director (director or managing director); at most 50 shareholders for a private company, and at most 20, all individuals, for an exempt private company; a company secretary cannot be the only director;
   - number of shares is a whole number and each shareholding gives whole shares; amount paid is below the capital when not fully paid;
   - at least one director lives in Singapore, or our nominee director service is ticked;
   - someone is company secretary and lives in Singapore, or our company secretary service is ticked;
