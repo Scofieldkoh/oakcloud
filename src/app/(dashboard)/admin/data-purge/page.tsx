@@ -12,6 +12,8 @@ import {
   type PurgeableContact,
   type PurgeableGeneratedDocument,
   type PurgeableProcessingDocument,
+  type PurgeableDocumentTemplate,
+  type PurgeableTemplatePartial,
 } from '@/hooks/use-admin';
 import { Button } from '@/components/ui/button';
 import { Alert } from '@/components/ui/alert';
@@ -30,29 +32,57 @@ import {
   RotateCcw,
   FileText,
   FileStack,
+  LayoutTemplate,
+  Puzzle,
 } from 'lucide-react';
 import { MobileCollapsibleSection } from '@/components/ui/collapsible-section';
 import { MobileCard, CardDetailsGrid, CardDetailItem } from '@/components/ui/responsive-table';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
-type TabType = 'users' | 'companies' | 'contacts' | 'generatedDocuments' | 'processingDocuments';
+type TabType =
+  | 'users'
+  | 'companies'
+  | 'contacts'
+  | 'generatedDocuments'
+  | 'processingDocuments'
+  | 'documentTemplates'
+  | 'templatePartials';
 
-const TABS: { id: TabType; label: string; icon: React.ReactNode; entityType: PurgeableEntity }[] = [
-  { id: 'users', label: 'Users', icon: <Users className="w-4 h-4" />, entityType: 'user' },
-  { id: 'companies', label: 'Companies', icon: <Building2 className="w-4 h-4" />, entityType: 'company' },
-  { id: 'contacts', label: 'Contacts', icon: <Contact className="w-4 h-4" />, entityType: 'contact' },
-  { id: 'generatedDocuments', label: 'Generated Docs', icon: <FileText className="w-4 h-4" />, entityType: 'generatedDocument' },
-  { id: 'processingDocuments', label: 'Processing Docs', icon: <FileStack className="w-4 h-4" />, entityType: 'processingDocument' },
+const TABS: {
+  id: TabType;
+  label: string;
+  /** Plural noun for messages, e.g. "No soft-deleted templates found". */
+  noun: string;
+  icon: React.ReactNode;
+  entityType: PurgeableEntity;
+}[] = [
+  { id: 'users', label: 'Users', noun: 'users', icon: <Users className="w-4 h-4" />, entityType: 'user' },
+  { id: 'companies', label: 'Companies', noun: 'companies', icon: <Building2 className="w-4 h-4" />, entityType: 'company' },
+  { id: 'contacts', label: 'Contacts', noun: 'contacts', icon: <Contact className="w-4 h-4" />, entityType: 'contact' },
+  { id: 'generatedDocuments', label: 'Generated Docs', noun: 'documents', icon: <FileText className="w-4 h-4" />, entityType: 'generatedDocument' },
+  { id: 'processingDocuments', label: 'Processing Docs', noun: 'processing documents', icon: <FileStack className="w-4 h-4" />, entityType: 'processingDocument' },
+  { id: 'documentTemplates', label: 'Templates', noun: 'templates', icon: <LayoutTemplate className="w-4 h-4" />, entityType: 'documentTemplate' },
+  { id: 'templatePartials', label: 'Partials', noun: 'partials', icon: <Puzzle className="w-4 h-4" />, entityType: 'templatePartial' },
 ];
 
 const PURGE_ALL_ORDER: { entityType: PurgeableEntity; key: TabType }[] = [
   { entityType: 'processingDocument', key: 'processingDocuments' },
   { entityType: 'generatedDocument', key: 'generatedDocuments' },
+  { entityType: 'documentTemplate', key: 'documentTemplates' },
+  { entityType: 'templatePartial', key: 'templatePartials' },
   { entityType: 'company', key: 'companies' },
   { entityType: 'contact', key: 'contacts' },
   { entityType: 'user', key: 'users' },
 ];
+
+function EngineBadge({ engine }: { engine: 'A4' | 'OAKDOC' }) {
+  return (
+    <span className="badge bg-background-tertiary text-text-secondary text-xs">
+      {engine === 'OAKDOC' ? 'Word' : 'A4'}
+    </span>
+  );
+}
 
 export default function DataPurgePage() {
   const { data: session } = useSession();
@@ -78,10 +108,11 @@ export default function DataPurgePage() {
     );
   }
 
-  const currentEntityType = TABS.find((t) => t.id === activeTab)?.entityType || 'user';
+  const currentTab = TABS.find((t) => t.id === activeTab) ?? TABS[0];
+  const currentEntityType = currentTab.entityType;
   const allRecords = data?.records?.[activeTab] || [];
   const totalSoftDeleted = data
-    ? data.stats.users + data.stats.companies + data.stats.contacts + data.stats.generatedDocuments + data.stats.processingDocuments
+    ? Object.values(data.stats).reduce((sum, count) => sum + count, 0)
     : 0;
 
   // Client-side pagination
@@ -305,7 +336,7 @@ export default function DataPurgePage() {
 
           {currentRecords.length === 0 ? (
             <div className="card p-8 text-center text-text-secondary">
-              No soft-deleted {activeTab === 'processingDocuments' ? 'processing documents' : activeTab === 'generatedDocuments' ? 'documents' : activeTab} found
+              No soft-deleted {currentTab.noun} found
             </div>
           ) : (
             currentRecords.map((record) => {
@@ -321,6 +352,8 @@ export default function DataPurgePage() {
                     activeTab === 'companies' ? (record as PurgeableCompany).name :
                     activeTab === 'contacts' ? (record as PurgeableContact).fullName :
                     activeTab === 'generatedDocuments' ? (record as PurgeableGeneratedDocument).title :
+                    activeTab === 'documentTemplates' ? (record as PurgeableDocumentTemplate).name :
+                    activeTab === 'templatePartials' ? (record as PurgeableTemplatePartial).displayName || (record as PurgeableTemplatePartial).name :
                     (record as PurgeableProcessingDocument).document?.fileName || 'Unnamed'
                   }
                   subtitle={
@@ -337,6 +370,8 @@ export default function DataPurgePage() {
                       <span className="badge bg-background-tertiary text-text-secondary text-xs">
                         {(record as PurgeableProcessingDocument).pipelineStatus}
                       </span>
+                    ) : activeTab === 'documentTemplates' || activeTab === 'templatePartials' ? (
+                      <EngineBadge engine={(record as PurgeableDocumentTemplate | PurgeableTemplatePartial).documentEngine} />
                     ) : null
                   }
                   details={
@@ -373,6 +408,18 @@ export default function DataPurgePage() {
                             value={`${(record as PurgeableGeneratedDocument).createdBy.firstName} ${(record as PurgeableGeneratedDocument).createdBy.lastName}`}
                           />
                           <CardDetailItem label="Workspace" value={(record as PurgeableGeneratedDocument).tenant?.name || '—'} />
+                        </>
+                      )}
+                      {activeTab === 'documentTemplates' && (
+                        <>
+                          <CardDetailItem label="Documents" value={String((record as PurgeableDocumentTemplate)._count.generatedDocuments)} />
+                          <CardDetailItem label="Workspace" value={(record as PurgeableDocumentTemplate).tenant?.name || '—'} />
+                        </>
+                      )}
+                      {activeTab === 'templatePartials' && (
+                        <>
+                          <CardDetailItem label="Name" value={(record as PurgeableTemplatePartial).name} />
+                          <CardDetailItem label="Workspace" value={(record as PurgeableTemplatePartial).tenant?.name || '—'} />
                         </>
                       )}
                       {activeTab === 'processingDocuments' && (
@@ -461,6 +508,24 @@ export default function DataPurgePage() {
                       <th>Deleted At</th>
                     </>
                   )}
+                  {activeTab === 'documentTemplates' && (
+                    <>
+                      <th>Template</th>
+                      <th>Editor</th>
+                      <th>Generated documents</th>
+                      <th>Workspace</th>
+                      <th>Deleted At</th>
+                    </>
+                  )}
+                  {activeTab === 'templatePartials' && (
+                    <>
+                      <th>Partial</th>
+                      <th>Name</th>
+                      <th>Editor</th>
+                      <th>Workspace</th>
+                      <th>Deleted At</th>
+                    </>
+                  )}
                   {activeTab === 'processingDocuments' && (
                     <>
                       <th>File Name</th>
@@ -477,7 +542,7 @@ export default function DataPurgePage() {
                 {currentRecords.length === 0 ? (
                   <tr>
                     <td colSpan={activeTab === 'generatedDocuments' || activeTab === 'processingDocuments' ? 7 : activeTab === 'contacts' ? 5 : 6} className="text-center py-8 text-text-secondary">
-                      No soft-deleted {activeTab === 'processingDocuments' ? 'processing documents' : activeTab === 'generatedDocuments' ? 'documents' : activeTab} found
+                      No soft-deleted {currentTab.noun} found
                     </td>
                   </tr>
                 ) : (
@@ -580,6 +645,46 @@ export default function DataPurgePage() {
                         </>
                       )}
 
+                      {activeTab === 'documentTemplates' && (
+                        <>
+                          <td className="font-medium text-text-primary">
+                            {(record as PurgeableDocumentTemplate).name}
+                          </td>
+                          <td>
+                            <EngineBadge engine={(record as PurgeableDocumentTemplate).documentEngine} />
+                          </td>
+                          <td className="text-sm text-text-secondary">
+                            {(record as PurgeableDocumentTemplate)._count.generatedDocuments}
+                          </td>
+                          <td className="text-sm text-text-secondary">
+                            {(record as PurgeableDocumentTemplate).tenant?.name || '—'}
+                          </td>
+                          <td className="text-sm text-text-secondary">
+                            {format(new Date(record.deletedAt), 'MMM d, yyyy HH:mm')}
+                          </td>
+                        </>
+                      )}
+
+                      {activeTab === 'templatePartials' && (
+                        <>
+                          <td className="font-medium text-text-primary">
+                            {(record as PurgeableTemplatePartial).displayName || (record as PurgeableTemplatePartial).name}
+                          </td>
+                          <td className="font-mono text-sm text-text-secondary">
+                            {(record as PurgeableTemplatePartial).name}
+                          </td>
+                          <td>
+                            <EngineBadge engine={(record as PurgeableTemplatePartial).documentEngine} />
+                          </td>
+                          <td className="text-sm text-text-secondary">
+                            {(record as PurgeableTemplatePartial).tenant?.name || '—'}
+                          </td>
+                          <td className="text-sm text-text-secondary">
+                            {format(new Date(record.deletedAt), 'MMM d, yyyy HH:mm')}
+                          </td>
+                        </>
+                      )}
+
                       {activeTab === 'processingDocuments' && (
                         <>
                           <td className="font-medium text-text-primary max-w-[200px] truncate">
@@ -670,8 +775,10 @@ export default function DataPurgePage() {
         isOpen={confirmDialogOpen}
         onClose={() => setConfirmDialogOpen(false)}
         onConfirm={handlePurge}
-        title={`Permanently Delete ${selectedIds.size} ${activeTab.slice(0, -1)}${selectedIds.size > 1 ? 's' : ''}?`}
-        description={`This will permanently remove ${selectedIds.size} record(s) and all related data from the database. This action cannot be undone.`}
+        title={`Permanently Delete ${selectedIds.size} ${currentTab.noun}?`}
+        description={activeTab === 'documentTemplates'
+          ? `This will permanently remove ${selectedIds.size} template(s). Documents generated from them are kept but lose their template link. This action cannot be undone.`
+          : `This will permanently remove ${selectedIds.size} record(s) and all related data from the database. This action cannot be undone.`}
         confirmLabel="Permanently Delete"
         variant="danger"
         requireReason

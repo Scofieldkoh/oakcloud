@@ -1999,6 +1999,13 @@ cancelled service agreement is removed with it. A document still out for
 signature, or a service agreement in effect or with client services, is
 refused and listed in `failedRecords` with the reason.
 
+Deleted document templates (`documentTemplate`) and partials
+(`templatePartial`) can be purged or restored (`PATCH`) too. Documents
+generated from a purged template are kept and lose their template link. A
+template still used by a generation batch, or a partial used as a service's
+or agreement's Statement of Work, is refused. Stored Word assets are left in
+object storage because they can be shared.
+
 ---
 
 ### GET /api/permissions

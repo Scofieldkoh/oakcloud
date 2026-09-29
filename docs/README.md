@@ -57,7 +57,7 @@ Oakcloud is built around a few core principles:
 | RBAC And Permissions | Fine-grained access control |
 | User Management | Accounts, invitations, assignments |
 | Password Management | Reset flow and forced password changes |
-| Data Purge | Permanent deletion for SUPER_ADMIN workflows |
+| Data Purge | Recycle Bin for SUPER_ADMIN: restore or permanently delete users, companies, contacts, documents, templates and partials |
 | Backup And Restore | Per-tenant backups |
 | Email Notifications | Graph API or SMTP delivery |
 | Connectors Hub | External service integrations |

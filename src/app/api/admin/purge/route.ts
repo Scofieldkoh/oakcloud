@@ -15,10 +15,29 @@ import { createAuditLog } from '@/lib/audit';
 import { storage } from '@/lib/storage';
 import { createLogger } from '@/lib/logger';
 import { permanentlyDeleteGeneratedDocument } from '@/services/generated-document-purge.service';
+import {
+  permanentlyDeleteDocumentTemplate,
+  permanentlyDeleteTemplatePartial,
+  restoreTemplatePartials,
+} from '@/services/document-library-purge.service';
+import { restoreDocumentTemplate } from '@/services/document-template.service';
+import { getDocumentTemplateDisplayEngine } from '@/lib/document-editor/document-engine';
 
 const log = createLogger('admin-purge');
 
-export type PurgeableEntity = 'user' | 'company' | 'contact' | 'generatedDocument' | 'processingDocument';
+const PURGEABLE_ENTITIES = [
+  'user',
+  'company',
+  'contact',
+  'generatedDocument',
+  'processingDocument',
+  'documentTemplate',
+  'templatePartial',
+] as const;
+
+export type PurgeableEntity = typeof PURGEABLE_ENTITIES[number];
+
+const INVALID_ENTITY_MESSAGE = `Invalid entity type. Must be one of: ${PURGEABLE_ENTITIES.join(', ')}`;
 
 interface PurgeStats {
   users: number;
@@ -26,6 +45,8 @@ interface PurgeStats {
   contacts: number;
   generatedDocuments: number;
   processingDocuments: number;
+  documentTemplates: number;
+  templatePartials: number;
 }
 
 /**
@@ -39,7 +60,15 @@ export async function GET() {
     }
 
     // Get counts of soft-deleted records
-    const [users, companies, contacts, generatedDocuments, processingDocuments] = await Promise.all([
+    const [
+      users,
+      companies,
+      contacts,
+      generatedDocuments,
+      processingDocuments,
+      documentTemplates,
+      templatePartials,
+    ] = await Promise.all([
       prisma.user.findMany({
         where: { deletedAt: { not: null } },
         select: {
@@ -129,6 +158,30 @@ export async function GET() {
         },
         orderBy: { deletedAt: 'desc' },
       }),
+      prisma.documentTemplate.findMany({
+        where: { deletedAt: { not: null } },
+        select: {
+          id: true,
+          name: true,
+          contentJson: true,
+          deletedAt: true,
+          tenant: { select: { name: true } },
+          _count: { select: { generatedDocuments: true } },
+        },
+        orderBy: { deletedAt: 'desc' },
+      }),
+      prisma.templatePartial.findMany({
+        where: { deletedAt: { not: null } },
+        select: {
+          id: true,
+          name: true,
+          displayName: true,
+          contentJson: true,
+          deletedAt: true,
+          tenant: { select: { name: true } },
+        },
+        orderBy: { deletedAt: 'desc' },
+      }),
     ]);
 
     const stats: PurgeStats = {
@@ -137,6 +190,8 @@ export async function GET() {
       contacts: contacts.length,
       generatedDocuments: generatedDocuments.length,
       processingDocuments: processingDocuments.length,
+      documentTemplates: documentTemplates.length,
+      templatePartials: templatePartials.length,
     };
 
     return NextResponse.json({
@@ -147,6 +202,14 @@ export async function GET() {
         contacts,
         generatedDocuments,
         processingDocuments,
+        documentTemplates: documentTemplates.map(({ contentJson, ...template }) => ({
+          ...template,
+          documentEngine: getDocumentTemplateDisplayEngine(contentJson),
+        })),
+        templatePartials: templatePartials.map(({ contentJson, ...partial }) => ({
+          ...partial,
+          documentEngine: getDocumentTemplateDisplayEngine(contentJson),
+        })),
       },
     });
   } catch (error) {
@@ -181,11 +244,8 @@ export async function POST(request: NextRequest) {
     };
 
     // Validate inputs
-    if (!entityType || !['user', 'company', 'contact', 'generatedDocument', 'processingDocument'].includes(entityType)) {
-      return NextResponse.json(
-        { error: 'Invalid entity type. Must be user, company, contact, generatedDocument, or processingDocument' },
-        { status: 400 }
-      );
+    if (!entityType || !PURGEABLE_ENTITIES.includes(entityType)) {
+      return NextResponse.json({ error: INVALID_ENTITY_MESSAGE }, { status: 400 });
     }
 
     if (!entityIds || !Array.isArray(entityIds) || entityIds.length === 0) {
@@ -550,6 +610,25 @@ export async function POST(request: NextRequest) {
         }
         break;
 
+      case 'documentTemplate':
+      case 'templatePartial': {
+        const purgeOne = entityType === 'documentTemplate'
+          ? permanentlyDeleteDocumentTemplate
+          : permanentlyDeleteTemplatePartial;
+        for (const id of entityIds) {
+          try {
+            const removed = await purgeOne(id);
+            deletedRecords.push(removed);
+            deletedCount++;
+          } catch (err) {
+            const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+            log.warn('Failed to purge document library record', { entityType, id, error: errorMessage });
+            failedRecords.push({ id, name: id, error: errorMessage });
+          }
+        }
+        break;
+      }
+
       case 'processingDocument':
         const processingDocsToDelete = await prisma.processingDocument.findMany({
           where: {
@@ -774,11 +853,8 @@ export async function PATCH(request: NextRequest) {
     };
 
     // Validate inputs
-    if (!entityType || !['user', 'company', 'contact', 'generatedDocument', 'processingDocument'].includes(entityType)) {
-      return NextResponse.json(
-        { error: 'Invalid entity type. Must be user, company, contact, generatedDocument, or processingDocument' },
-        { status: 400 }
-      );
+    if (!entityType || !PURGEABLE_ENTITIES.includes(entityType)) {
+      return NextResponse.json({ error: INVALID_ENTITY_MESSAGE }, { status: 400 });
     }
 
     if (!entityIds || !Array.isArray(entityIds) || entityIds.length === 0) {
@@ -973,6 +1049,38 @@ export async function PATCH(request: NextRequest) {
         }
         restoredCount = documentsToRestore.length;
         break;
+
+      case 'documentTemplate': {
+        const templatesToRestore = await prisma.documentTemplate.findMany({
+          where: { id: { in: entityIds }, deletedAt: { not: null } },
+          select: { id: true, name: true, tenantId: true },
+        });
+        if (templatesToRestore.length === 0) {
+          return NextResponse.json(
+            { error: 'No deleted templates found with the provided IDs' },
+            { status: 404 }
+          );
+        }
+        for (const template of templatesToRestore) {
+          await restoreDocumentTemplate(template.id, { tenantId: template.tenantId, userId: session.id });
+          restoredRecords.push({ id: template.id, name: template.name });
+        }
+        restoredCount = templatesToRestore.length;
+        break;
+      }
+
+      case 'templatePartial': {
+        const restored = await restoreTemplatePartials(entityIds);
+        if (restored.length === 0) {
+          return NextResponse.json(
+            { error: 'No deleted partials found with the provided IDs' },
+            { status: 404 }
+          );
+        }
+        restoredRecords.push(...restored);
+        restoredCount = restored.length;
+        break;
+      }
 
       case 'processingDocument':
         const processingDocsToRestore = await prisma.processingDocument.findMany({
