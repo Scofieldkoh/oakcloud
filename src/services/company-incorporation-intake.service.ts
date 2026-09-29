@@ -29,7 +29,7 @@ import { createLogger } from '@/lib/logger';
 const log = createLogger('company-incorporation-intake');
 
 export const NAME_RECHECK_TIMEOUT_MS = 5_000;
-export const COMPANY_INCORPORATION_PROFILE_VERSION = 1;
+export const COMPANY_INCORPORATION_PROFILE_VERSION = 2;
 
 class NameRecheckTimeoutError extends Error {
   constructor() {
@@ -76,13 +76,15 @@ export async function recheckAdvisoryCompanyNames(
   const check = options.check ?? checkCompanyNameAvailability;
   const timeoutMs = options.timeoutMs ?? NAME_RECHECK_TIMEOUT_MS;
   const results: Record<string, NameCheckResultValue> = {};
-
-  for (const field of fields) {
-    if (field.type !== 'COMPANY_NAME_CHECK' || getNameCheckMode(field.validation) !== 'advisory') continue;
+  const targets = fields.flatMap((field) => {
+    if (field.type !== 'COMPANY_NAME_CHECK' || getNameCheckMode(field.validation) !== 'advisory') return [];
     const value = answers[field.key];
     const name = typeof value === 'string' ? value.trim() : '';
-    if (!name) continue;
+    return name ? [{ field, name }] : [];
+  });
 
+  // The proposed and alternative names are checked together so the total wait stays within one deadline.
+  await Promise.all(targets.map(async ({ field, name }) => {
     try {
       const result = await withDeadline(check(name), timeoutMs);
       results[field.key] = {
@@ -104,15 +106,15 @@ export async function recheckAdvisoryCompanyNames(
       if (error instanceof NameRecheckTimeoutError) {
         log.warn('Company name recheck timed out; recording for staff review', { fieldKey: field.key });
         results[field.key] = unresolvedResult(name, 'CHECK_TIMED_OUT');
-        continue;
+        return;
       }
       if (error instanceof CompanyNameCheckUnavailableError) {
         results[field.key] = unresolvedResult(name, 'CHECK_UNAVAILABLE');
-        continue;
+        return;
       }
       throw error;
     }
-  }
+  }));
 
   return results;
 }
@@ -174,14 +176,36 @@ export interface CompanyIncorporationSubmissionRecord {
   evaluatedAt: string;
   issues: IncorporationEvaluation['issues'];
   ownershipTotal: string;
-  ownershipFullyDecided: boolean;
-  partyRows: Array<{ partyRowId: string; rowIndex: number; kind: string; name: string; roles: string[]; ownershipPercent: string | null; ownershipUndecided: boolean }>;
+  companyType?: string | null;
+  shareCount?: string | null;
+  /** Profile version 1 only. */
+  ownershipFullyDecided?: boolean;
+  partyRows: Array<{
+    partyRowId: string;
+    rowIndex: number;
+    kind: string;
+    name: string;
+    roles: string[];
+    ownershipPercent: string | null;
+    shares?: string | null;
+    resident?: boolean;
+    nomineeShareholder?: boolean;
+    nomineeDirector?: boolean;
+    nominator?: string | null;
+    otherControl?: boolean;
+    /** Profile version 1 only. */
+    ownershipUndecided?: boolean;
+  }>;
   ssic: {
     catalogue: string;
     primary: { code: string; label: string } | null;
     secondary: { code: string; label: string } | null;
   };
   definitionSnapshot: ReturnType<typeof buildFormDefinitionSnapshot>;
+}
+
+function textAnswer(value: unknown): string {
+  return typeof value === 'string' ? value.trim() : '';
 }
 
 function findField<T extends { key: string }>(fields: T[], key: string): T | undefined {
@@ -218,7 +242,7 @@ export function evaluateCompanyIncorporationSubmission(input: {
   const ssicCodes = new Set(primaryLabels.keys());
 
   const evaluation = evaluateCompanyIncorporationAnswers(input.answers, {
-    nameCheck: input.nameChecks[INCORPORATION_KEYS.proposedName] ?? null,
+    nameChecks: input.nameChecks,
     ssicCodes: ssicCodes.size > 0 ? ssicCodes : null,
     today: input.today,
   });
@@ -228,12 +252,8 @@ export function evaluateCompanyIncorporationSubmission(input: {
     throw new Error(blocking.message);
   }
 
-  const primaryCode = typeof input.answers[INCORPORATION_KEYS.primarySsic] === 'string'
-    ? (input.answers[INCORPORATION_KEYS.primarySsic] as string).trim()
-    : '';
-  const secondaryCode = typeof input.answers[INCORPORATION_KEYS.secondarySsic] === 'string'
-    ? (input.answers[INCORPORATION_KEYS.secondarySsic] as string).trim()
-    : '';
+  const primaryCode = textAnswer(input.answers[INCORPORATION_KEYS.primarySsic]);
+  const secondaryCode = textAnswer(input.answers[INCORPORATION_KEYS.secondarySsic]);
   const presetName = primaryField?.optionPresetId ? 'SSIC 2025 (tenant preset)' : 'SSIC (form options)';
 
   return {
@@ -244,7 +264,8 @@ export function evaluateCompanyIncorporationSubmission(input: {
     evaluatedAt: new Date().toISOString(),
     issues: evaluation.issues,
     ownershipTotal: evaluation.ownershipTotal,
-    ownershipFullyDecided: evaluation.ownershipFullyDecided,
+    companyType: textAnswer(input.answers[INCORPORATION_KEYS.companyType]) || null,
+    shareCount: textAnswer(input.answers[INCORPORATION_KEYS.shareCount]) || null,
     partyRows: evaluation.parties.map((party) => ({
       partyRowId: `party_${randomUUID()}`,
       rowIndex: party.rowIndex,
@@ -252,7 +273,12 @@ export function evaluateCompanyIncorporationSubmission(input: {
       name: party.name,
       roles: party.roles,
       ownershipPercent: party.ownershipPercent,
-      ownershipUndecided: party.ownershipUndecided,
+      shares: party.shares,
+      resident: party.resident,
+      nomineeShareholder: party.nomineeShareholder,
+      nomineeDirector: party.nomineeDirector,
+      nominator: party.nominator,
+      otherControl: party.otherControl,
     })),
     ssic: {
       catalogue: presetName,

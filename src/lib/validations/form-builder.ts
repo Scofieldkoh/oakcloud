@@ -90,6 +90,7 @@ export const fieldValidationSchema = z
     tooltipInfoPaddingBottomPx: z.number().int().min(0).max(80).optional(),
     tooltipInfoPaddingLeftPx: z.number().int().min(0).max(80).optional(),
     choiceInlineRight: z.boolean().optional(),
+    choiceLayout: z.enum(['list', 'chips']).optional(),
     defaultValue: z.string().max(5000).optional(),
     defaultToday: z.boolean().optional(),
     alwaysDefaultToday: z.boolean().optional(),

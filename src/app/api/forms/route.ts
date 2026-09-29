@@ -8,7 +8,6 @@ import {
   listFormsQuerySchema,
 } from '@/lib/validations/form-builder';
 import { createForm, listForms } from '@/services/form-builder.service';
-import { createFormFromTemplate } from '@/services/form-template.service';
 
 export async function GET(request: NextRequest) {
   try {
@@ -50,17 +49,11 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const tenantId = resolveWorkspaceId(session, body.tenantId);
     const payload = createFormSchema.parse(body);
-    const templateKey = typeof body.templateKey === 'string' ? body.templateKey.trim() : '';
 
-    const form = templateKey
-      ? await createFormFromTemplate({ templateKey, title: payload.title, tags: payload.tags }, {
-        tenantId,
-        userId: session.id,
-      })
-      : await createForm(payload, {
-        tenantId,
-        userId: session.id,
-      });
+    const form = await createForm(payload, {
+      tenantId,
+      userId: session.id,
+    });
 
     return NextResponse.json(form, { status: 201 });
   } catch (error) {
