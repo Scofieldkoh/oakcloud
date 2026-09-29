@@ -1,5 +1,7 @@
 # OakDoc replacement specification and A4 retirement readiness
 
+> **Status (29 September 2026): historical record.** The replacement shipped in PRs #62-#66: OakDoc is the only editor and the A4 editor is retired (A4 content is read-only). Current behaviour is described in [ARCHITECTURE.md](./ARCHITECTURE.md#document-editor-oakdoc). Gap, packet and gate tables below record the plan as written on 26 September and are not a live defect list.
+
 Reviewed: **26 September 2026**. Source baseline: `6aa660a9` (`Show generated OakDoc inline`), reconciled after the initial review of `abaa5589`. Status: **replacement approved; implementation specification; release gates not yet met**.
 
 The user completed the OakDoc POC and selected it to completely replace A4Editor. This document owns target behavior, the gap register, contracts and acceptance requirements. The [parallel implementation handover](plans/2026-09-26-oakdoc-replacement-implementation.md) owns task order, file ownership and sub-agent dispatch.

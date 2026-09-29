@@ -1,5 +1,7 @@
 # OakDoc replacement: implementation and parallel-agent handover
 
+> **Status (29 September 2026): historical record.** The replacement shipped in PRs #62-#66: OakDoc is the only editor and the A4 editor is retired (A4 content is read-only). Current behaviour is described in [ARCHITECTURE.md](../ARCHITECTURE.md#document-editor-oakdoc). Gap, packet and gate tables below record the plan as written on 26 September and are not a live defect list.
+
 Date: **26 September 2026**. Reviewed baseline: **`6aa660a9`**, including the inline generated-document editor added during the review. Status: **planning complete; implementation not started by this task**. No application tests or production migrations were run for this documentation change.
 
 Read the [replacement specification](../oakdoc-a4-retirement-readiness.md) first. It owns decisions D01-D07, gaps G01-G15, contracts C01-C06 and acceptance A01-A08. This plan owns packet scope, dependencies, file leases and evidence. It supersedes the September A4 implementation programme's direction and scheduling; historical A4 regressions remain useful acceptance fixtures.
@@ -20,7 +22,7 @@ For agreement-specific follow-up, see the [27 September service agreement refere
 
 Confirmed: OakDoc replacement; Microsoft 365 conversion reuse. Preserve historical originals and canonical business boundaries. Keep existing manual signing placement; automatic signature-coordinate extraction is not added scope.
 
-D04 was confirmed by the owner on 2026-09-26: existing A4 drafts become reviewed OakDoc copies on next edit, keeping the original. P8/M2 can inventory and design without an answer; do not perform real draft migration or call final rollout ready until policy is resolved. The default plan can be implemented behind the conversion boundary, with U1/L1/I2 coordinating relation transfer. No other user clarification is required to start foundation work.
+D04 was confirmed by the owner on 2026-09-26: existing A4 drafts become reviewed OakDoc copies on next edit, keeping the original. The conversion is implemented behind the conversion boundary, with U1/L1/I2 coordinating relation transfer. Running it against real drafts is an operational step that still needs the owner's approval of each run. No other user clarification is required to start foundation work.
 
 Implementation refinements to resolve in C0: exact native metadata version/schema; partial and clause snapshot persistence; transactional mapping uniqueness; typed error DTOs; limits; reference performance environment. The integrator can settle these from repository constraints without repeatedly asking the user. Record choices here before workers publish incompatible producers.
 
