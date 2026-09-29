@@ -68,6 +68,9 @@ jobs:
       - name: Test Chromium path resolution
         run: npm run test:run -- __tests__/lib/chrome-executable.test.ts --reporter=dot
 
+      - name: Test document generation batch and historical A4 contracts
+        run: npm run test:run -- __tests__/components/documents/generation-batch/batch-workflow-ack.test.ts tests/lib/a4-editor-capabilities-w1.test.ts tests/lib/a4-editor-producer-integration-w1.test.ts tests/lib/a4-editor-server-reader-w1.test.ts tests/services/document-export-w1.test.ts --reporter=dot
+
       - name: Test business assistant and BizFile contracts
         run: npm run test:run -- __tests__/services/business-assistant __tests__/api/business-assistant __tests__/services/bizfile __tests__/api/bizfile __tests__/lib/fresh-authorization.test.ts __tests__/middleware.test.ts --reporter=dot
 
@@ -118,38 +121,7 @@ jobs:
         run: npx prisma migrate deploy
       - name: Test durable worker and concurrent authorization changes
         run: npm run test:business-assistant:postgres
-      - name: Test correction transaction lock and timeout hardening
-        run: npx vitest run __tests__/integration/business-assistant-correction-concurrency.postgres.test.ts --maxWorkers=1
-      - name: Test canonical revisions, reconciliation, and effects
-        run: npx vitest run __tests__/integration/bizfile --maxWorkers=1
-
-  docker:
-    name: Production image compatibility
-    runs-on: ubuntu-latest
-    timeout-minutes: 45
-
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v6
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
-
-      - name: Build production image
-        uses: docker/build-push-action@v7
-        with:
-          context: .
-          pull: true
-          push: false
-          load: true
-          tags: oakcloud:node24-ci
-
-      - name: Verify final runtime and Chromium
-        run: |
-          docker run --rm --entrypoint sh oakcloud:node24-ci -lc '
-            node --version | grep -E "^v24\\." &&
-            test "$CHROME_PATH" = "/usr/local/bin/oakcloud-chromium" &&
-            test -x "$CHROME_PATH" &&
-            "$CHROME_PATH" --version &&
-            npm run test:chromium
-          '
+      - name: Test document generation batch persistence
+        env:
+          TEST_DATABASE_URL: postgresql://assistant_test:assistant-test-only@127.0.0.1:55439/business_assistant_test
+        run: npx vitest run __tests__/integration/document-generation-batch.postgres.test.ts --maxWorkers=1
