@@ -1091,6 +1091,43 @@ export function writeFormI18nSettings(
   return root;
 }
 
+export const DEFAULT_FORM_BACKGROUND_OPACITY = 40;
+export const DEFAULT_FORM_PANEL_OPACITY = 100;
+
+export interface FormAppearanceSettings {
+  backgroundImageUrl: string | null;
+  /** Background image opacity, 0-100. */
+  backgroundImageOpacity: number;
+  /** Opacity of the white panels that hold the fields, 0-100. */
+  panelOpacity: number;
+  /** Hex colour for the title, headings and other text drawn on the background; null keeps the default. */
+  headingColor: string | null;
+}
+
+function clampPercent(value: unknown, fallback: number): number {
+  return typeof value === 'number' && Number.isFinite(value)
+    ? Math.min(100, Math.max(0, Math.round(value)))
+    : fallback;
+}
+
+export function normalizeFormHeadingColor(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  return /^#[0-9a-f]{6}$/i.test(trimmed) ? trimmed.toUpperCase() : null;
+}
+
+export function parseFormAppearanceSettings(settings: unknown): FormAppearanceSettings {
+  const root = parseObject(settings);
+  return {
+    backgroundImageUrl: normalizeFormBackgroundUrl(
+      typeof root?.backgroundImageUrl === 'string' ? root.backgroundImageUrl : null
+    ),
+    backgroundImageOpacity: clampPercent(root?.backgroundImageOpacity, DEFAULT_FORM_BACKGROUND_OPACITY),
+    panelOpacity: clampPercent(root?.panelOpacity, DEFAULT_FORM_PANEL_OPACITY),
+    headingColor: normalizeFormHeadingColor(root?.headingColor),
+  };
+}
+
 export function buildPublicFormSettings(settings: unknown): Record<string, unknown> | null {
   let nextSettings: Record<string, unknown> = {};
 
@@ -1106,18 +1143,17 @@ export function buildPublicFormSettings(settings: unknown): Record<string, unkno
   nextSettings.hideLogo = root?.hideLogo === true;
   nextSettings.hideFooter = root?.hideFooter === true;
 
-  const backgroundImageUrl = normalizeFormBackgroundUrl(
-    typeof root?.backgroundImageUrl === 'string' ? root.backgroundImageUrl : null
-  );
+  const appearance = parseFormAppearanceSettings(settings);
   const rawOpacity = root?.backgroundImageOpacity;
-  const opacityNumber = typeof rawOpacity === 'number' && Number.isFinite(rawOpacity)
-    ? rawOpacity
-    : null;
-  if (backgroundImageUrl || opacityNumber !== null) {
-    nextSettings.backgroundImageUrl = backgroundImageUrl;
-    nextSettings.backgroundImageOpacity = opacityNumber !== null
-      ? Math.min(100, Math.max(0, Math.round(opacityNumber)))
-      : 40;
+  if (appearance.backgroundImageUrl || (typeof rawOpacity === 'number' && Number.isFinite(rawOpacity))) {
+    nextSettings.backgroundImageUrl = appearance.backgroundImageUrl;
+    nextSettings.backgroundImageOpacity = appearance.backgroundImageOpacity;
+  }
+  if (appearance.panelOpacity !== DEFAULT_FORM_PANEL_OPACITY) {
+    nextSettings.panelOpacity = appearance.panelOpacity;
+  }
+  if (appearance.headingColor) {
+    nextSettings.headingColor = appearance.headingColor;
   }
 
   return Object.keys(nextSettings).length > 0 ? nextSettings : null;
