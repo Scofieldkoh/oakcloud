@@ -4559,6 +4559,7 @@ Located in `src/components/ui/`. These components use **Chakra UI** primitives w
 | `Pagination` | `page`, `totalPages`, `total`, `limit`, `onPageChange`, `onLimitChange`, `showJumpToPage` | Table pagination with page size selector and jump-to-page input |
 | `Checkbox` | `indeterminate`, `label`, `description`, `size` | Checkbox with indeterminate state for bulk selection |
 | `DatePicker` | `value`, `onChange`, `placeholder`, `size`, `label`, `disabled` | Date/range picker with presets (see Filter Components) |
+| `SingleDateInput` | `value`, `onChange`, `label`, `minDate`, `maxDate`, `showTodayButton` | Typed single date with calendar popover; `showTodayButton` adds a "Today" quick fill (Singapore date), off by default and on in document generation Configure |
 | `SearchableSelect` | `options`, `value`, `onChange`, `placeholder`, `clearable`, `size` | Searchable dropdown with keyboard navigation |
 | `AmountFilter` | `value`, `onChange`, `placeholder`, `size`, `className` | Numeric filter with single/range modes (see Filter Components) |
 | `FilterPillGroup` | `options`, `value`, `onChange`, `label`, `allowSelectAll`, `allowEmpty` | Multi-select filter pills (see Filter Components) |

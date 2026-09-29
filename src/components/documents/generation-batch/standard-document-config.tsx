@@ -403,6 +403,7 @@ export function StandardDocumentConfig({
                       })}
                       disabled={disabled || !hasOverride}
                       ariaLabel={field.label}
+                      showTodayButton
                       error={missing ? 'Required' : undefined}
                       className="mt-2"
                     />
