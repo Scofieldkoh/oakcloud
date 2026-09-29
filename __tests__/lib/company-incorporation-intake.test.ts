@@ -4,7 +4,7 @@ import {
   formatDecimalUnits,
   parseDecimalString,
 } from '@/lib/forms/decimal-string';
-import { evaluateCompanyIncorporationAnswers } from '@/lib/forms/company-incorporation-profile';
+import { evaluateCompanyIncorporationAnswers, selectedNameSuffix } from '@/lib/forms/company-incorporation-profile';
 import {
   ACRA_GUIDANCE_LINKS,
   INCORPORATION_KEYS as K,
@@ -25,8 +25,10 @@ function validAnswers(overrides: Record<string, unknown> = {}): Record<string, u
     [K.contactName]: 'Tan Mei Ling',
     [K.contactEmail]: 'mei@example.com',
     [K.companyEmail]: 'hello@harbourlane.sg',
-    [K.companyType]: 'private_limited',
-    [K.proposedName]: 'Harbour Lane Pte. Ltd.',
+    [K.companyType]: 'exempt_private_limited',
+    [K.nameSuffixPrivate]: 'Pte. Ltd.',
+    [K.proposedName]: 'Harbour Lane',
+    [K.alternativeName1]: 'Harbourline Trading',
     [K.primarySsic]: '62011',
     [K.businessDescription]: 'Software development for logistics firms',
     [K.partyKind]: ['individual', 'individual'],
@@ -41,13 +43,13 @@ function validAnswers(overrides: Record<string, unknown> = {}): Record<string, u
     [K.secretaryService]: ['yes'],
     [K.officeChoice]: 'firm_service',
     [K.firstFye]: '2027-06-30',
-    [K.rulesPreference]: 'acra_model',
+    [K.rulesPreference]: 'acra_model_at_adoption',
     ...overrides,
   };
 }
 
 const availableCheck = {
-  name: 'Harbour Lane Pte. Ltd.',
+  name: 'Harbour Lane',
   available: true,
   assessment: 'AVAILABLE' as const,
   checkedAt: '2026-09-29T00:00:00.000Z',
@@ -56,7 +58,10 @@ const availableCheck = {
   reasonCodes: [],
 };
 
-const nameChecks = { [K.proposedName]: availableCheck };
+const nameChecks = {
+  [K.proposedName]: availableCheck,
+  [K.alternativeName1]: { ...availableCheck, name: 'Harbourline Trading' },
+};
 
 function errors(answers: Record<string, unknown>, options = {}) {
   return evaluateCompanyIncorporationAnswers(answers, { today: TODAY, nameChecks, ...options })
@@ -117,7 +122,7 @@ describe('company incorporation profile', () => {
       [K.partyKind]: ['individual', 'organisation'],
       [K.partyRoles]: [['shareholder', 'director'], ['shareholder', 'director']],
     }))).toContain('organisation_officer');
-    expect(errors(validAnswers({ [K.partyKind]: ['individual', 'organisation'] }))).toEqual([]);
+    expect(errors(validAnswers({ [K.companyType]: 'private_limited', [K.partyKind]: ['individual', 'organisation'] }))).toEqual([]);
   });
 
   it('requires a Singapore-resident director unless our nominee director service is ticked', () => {
@@ -142,18 +147,35 @@ describe('company incorporation profile', () => {
     expect(errors(validAnswers({ [K.partyRoles]: [['shareholder', 'director', 'secretary'], ['shareholder']] }))).toContain('secretary_sole_director');
   });
 
-  it('checks the name ending against the company type, including alternative names', () => {
-    expect(errors(validAnswers({ [K.proposedName]: 'Harbour Lane' }))).toContain('name_suffix');
-    expect(errors(validAnswers({ [K.alternativeName1]: 'Harbour Lane Private Limited' }))).toEqual([]);
-    expect(errors(validAnswers({ [K.alternativeName1]: 'Harbour Lane Holdings' }))).toContain('name_suffix');
-    expect(errors(validAnswers({ [K.companyType]: 'public_limited' }))).toContain('name_suffix');
-    expect(errors(validAnswers({ [K.companyType]: 'public_limited', [K.proposedName]: 'Harbour Lane Limited' }))).toEqual([]);
-    expect(errors(validAnswers({ [K.alternativeName2]: 'harbour lane pte. ltd.' }))).toContain('name_repeated');
+  it('asks for names without the ending and uses the chosen ending', () => {
+    expect(errors(validAnswers({ [K.proposedName]: 'Harbour Lane Pte. Ltd.' }))).toContain('name_includes_suffix');
+    expect(errors(validAnswers({ [K.alternativeName1]: 'Harbour Lane Private Limited' }))).toContain('name_includes_suffix');
+    expect(errors(validAnswers({ [K.alternativeName2]: 'Harbour Lane Ltd' }))).toContain('name_includes_suffix');
+    expect(errors(validAnswers({ [K.alternativeName2]: 'Limitless Labs' }))).toEqual([]);
+    expect(errors(validAnswers({ [K.alternativeName2]: 'harbour  lane' }))).toContain('name_repeated');
+    expect(selectedNameSuffix(validAnswers({ [K.nameSuffixPrivate]: 'Private Limited' }))).toBe('Private Limited');
+    expect(selectedNameSuffix(validAnswers({ [K.companyType]: 'public_limited', [K.nameSuffixPublic]: 'Ltd.' }))).toBe('Ltd.');
+    expect(errors(validAnswers({ [K.nameSuffixPrivate]: 'Berhad' }))).toContain('invalid_option');
+  });
+
+  it('keeps an exempt private company to 20 individual shareholders', () => {
+    expect(errors(validAnswers({ [K.partyKind]: ['individual', 'organisation'] }))).toContain('exempt_private_corporate_shareholder');
+    expect(errors(validAnswers({ [K.companyType]: 'private_limited', [K.partyKind]: ['individual', 'organisation'] }))).toEqual([]);
+  });
+
+  it('skips share capital rules for a company limited by guarantee', () => {
+    expect(errors(validAnswers({
+      [K.companyType]: 'public_guarantee',
+      [K.nameSuffixPublic]: 'Limited',
+      [K.ownershipPercent]: ['', ''],
+      [K.capitalAmount]: '',
+      [K.shareCount]: '',
+    }))).toEqual([]);
   });
 
   it('flags unchecked alternative names for staff without blocking', () => {
-    const result = evaluateCompanyIncorporationAnswers(validAnswers({ [K.alternativeName1]: 'Quayside Pte. Ltd.' }), { today: TODAY, nameChecks });
-    expect(result.issues.find((issue) => issue.fieldKey === K.alternativeName1)).toMatchObject({ code: 'name_not_checked', severity: 'staff_review' });
+    const result = evaluateCompanyIncorporationAnswers(validAnswers({ [K.alternativeName2]: 'Quayside' }), { today: TODAY, nameChecks });
+    expect(result.issues.find((issue) => issue.fieldKey === K.alternativeName2)).toMatchObject({ code: 'name_not_checked', severity: 'staff_review' });
   });
 
   it('blocks a number of shares that would split a shareholding', () => {
@@ -186,7 +208,7 @@ describe('company incorporation profile', () => {
 });
 
 describe('company incorporation template', () => {
-  const fields = buildSgCompanyIncorporationFields({ firmName: 'Oaktree', ssicPresetId: '00000000-0000-4000-8000-000000000001' });
+  const fields = buildSgCompanyIncorporationFields({ firmName: 'Oaktree', ssicPresetId: '00000000-0000-4000-8000-000000000001', nationalityPresetId: '00000000-0000-4000-8000-000000000002', countryPresetId: '00000000-0000-4000-8000-000000000003' });
 
   it('compiles through the form builder schema with unique keys', () => {
     const parsed = saveFormFieldsSchema.parse({ fields });
@@ -220,10 +242,12 @@ describe('company incorporation template', () => {
     expect(labels.filter((label) => /not (sure|finali[sz]ed)|pending|need advice|being prepared|arrangement/i.test(label))).toEqual([]);
   });
 
-  it('asks for no identity documents, signatures or declarations', () => {
+  it('collects each person’s particulars but no uploads or signatures', () => {
     expect(fields.some((field) => field.type === 'FILE_UPLOAD' && field.key !== K.customConstitution)).toBe(false);
     expect(fields.some((field) => field.type === 'SIGNATURE')).toBe(false);
-    expect(fields.some((field) => /passport number|nric number|date of birth/i.test(field.label ?? ''))).toBe(false);
+    for (const key of [K.partyIdNumber, K.partyNationality, K.partyAddress, K.partyPhone, K.partyEmail]) {
+      expect(fields.find((field) => field.key === key)?.isRequired).toBe(true);
+    }
   });
 
   it('uses link-only notifications and a review step', () => {

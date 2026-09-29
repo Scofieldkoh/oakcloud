@@ -13,6 +13,9 @@ import {
   DIRECTOR_ROLES,
   INCORPORATION_KEYS as K,
   OFFICE_CHOICE,
+  PRIVATE_COMPANY_TYPES,
+  PRIVATE_NAME_SUFFIXES,
+  PUBLIC_NAME_SUFFIXES,
   PARTY_KIND,
   PARTY_ROLE,
   TICK,
@@ -48,7 +51,6 @@ export interface IncorporationParty {
   nomineeShareholder: boolean;
   nomineeDirector: boolean;
   nominator: string | null;
-  otherControl: boolean;
 }
 
 export interface IncorporationEvaluation {
@@ -78,7 +80,12 @@ const PARTY_KEYS = [
   K.partyNomineeShareholder,
   K.partyNomineeDirector,
   K.partyNominator,
-  K.partyOtherControl,
+  K.partyIdNumber,
+  K.partyNationality,
+  K.partyIncorporationCountry,
+  K.partyAddress,
+  K.partyRegisteredAddress,
+  K.partyPhone,
 ];
 
 const NAME_KEYS = [
@@ -89,6 +96,8 @@ const NAME_KEYS = [
 
 const CHOICE_DOMAINS: Record<string, readonly string[]> = {
   [K.companyType]: Object.values(COMPANY_TYPE),
+  [K.nameSuffixPrivate]: PRIVATE_NAME_SUFFIXES,
+  [K.nameSuffixPublic]: PUBLIC_NAME_SUFFIXES,
   [K.capitalCurrency]: CAPITAL_CURRENCIES,
   [K.capitalFullyPaid]: Object.values(YES_NO),
   [K.officeChoice]: Object.values(OFFICE_CHOICE),
@@ -103,10 +112,10 @@ const ROW_CHOICE_DOMAINS: Record<string, readonly string[]> = {
   [K.partyResident]: [TICK],
   [K.partyNomineeShareholder]: [TICK],
   [K.partyNomineeDirector]: [TICK],
-  [K.partyOtherControl]: [TICK],
 };
 
 const MAX_PRIVATE_SHAREHOLDERS = 50;
+const MAX_EXEMPT_PRIVATE_SHAREHOLDERS = 20;
 const PERCENT_SCALE = decimalUnits(100);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -162,17 +171,23 @@ function singaporeToday(): string {
     .format(new Date());
 }
 
-const PRIVATE_SUFFIX = /\b(pte\.?|private)\s+(ltd\.?|limited)\.?$/i;
-const LIMITED_SUFFIX = /\b(ltd\.?|limited)\.?$/i;
+const NAME_ENDING = /(^|\s)(pte\.?\s*ltd\.?|private\s+limited|ltd\.?|limited)$/i;
 
-/** The name ending ACRA expects for the company type, or null when the name already fits. */
-export function companyNameSuffixProblem(name: string, companyType: string): string | null {
-  const trimmed = name.trim();
-  if (!trimmed) return null;
-  if (companyType === COMPANY_TYPE.publicLimited) {
-    return LIMITED_SUFFIX.test(trimmed) && !PRIVATE_SUFFIX.test(trimmed) ? null : 'must end with “Limited” or “Ltd.” for a public company';
-  }
-  return PRIVATE_SUFFIX.test(trimmed) ? null : 'must end with “Pte. Ltd.” or “Private Limited”';
+/** True when the name already carries an ending such as "Pte. Ltd." or "Limited". */
+export function nameIncludesEnding(name: string): boolean {
+  return NAME_ENDING.test(name.trim());
+}
+
+export function hasShareCapital(answers: Record<string, unknown>): boolean {
+  return choiceValue(answers[K.companyType]) !== COMPANY_TYPE.publicGuarantee;
+}
+
+/** The ending chosen for the company type, e.g. "Pte. Ltd.". */
+export function selectedNameSuffix(answers: Record<string, unknown>): string {
+  const companyType = choiceValue(answers[K.companyType]) || COMPANY_TYPE.exemptPrivate;
+  return PRIVATE_COMPANY_TYPES.includes(companyType)
+    ? choiceValue(answers[K.nameSuffixPrivate]) || PRIVATE_NAME_SUFFIXES[0]
+    : choiceValue(answers[K.nameSuffixPublic]) || PUBLIC_NAME_SUFFIXES[0];
 }
 
 function partyLabel(party: Pick<IncorporationParty, 'name' | 'rowIndex'>): string {
@@ -207,13 +222,14 @@ export function extractIncorporationParties(answers: Record<string, unknown>): I
   const parties: IncorporationParty[] = [];
   const rowCount = getPartyRowCount(answers);
   const shareCount = parseShareCount(answers);
+  const withCapital = hasShareCapital(answers);
 
   for (let rowIndex = 0; rowIndex < rowCount; rowIndex += 1) {
     const kind = choiceValue(rowValue(answers, K.partyKind, rowIndex));
     const name = textValue(rowValue(answers, K.partyName, rowIndex));
     const roles = choiceValues(rowValue(answers, K.partyRoles, rowIndex));
     const isShareholder = roles.includes(PARTY_ROLE.shareholder);
-    const percentText = isShareholder ? textValue(rowValue(answers, K.ownershipPercent, rowIndex)) : '';
+    const percentText = isShareholder && withCapital ? textValue(rowValue(answers, K.ownershipPercent, rowIndex)) : '';
     const email = textValue(rowValue(answers, K.partyEmail, rowIndex));
     const registrationReference = textValue(rowValue(answers, K.partyRegistrationReference, rowIndex));
 
@@ -239,7 +255,6 @@ export function extractIncorporationParties(answers: Record<string, unknown>): I
       nomineeShareholder,
       nomineeDirector,
       nominator: nomineeShareholder || nomineeDirector ? textValue(rowValue(answers, K.partyNominator, rowIndex)) || null : null,
-      otherControl: isTicked(rowValue(answers, K.partyOtherControl, rowIndex)),
     });
   }
 
@@ -269,15 +284,15 @@ export function evaluateCompanyIncorporationAnswers(
   }
 
   // --- Company name -------------------------------------------------------
-  const companyType = choiceValue(answers[K.companyType]) || COMPANY_TYPE.privateLimited;
+  const companyType = choiceValue(answers[K.companyType]) || COMPANY_TYPE.exemptPrivate;
+  const withCapital = hasShareCapital(answers);
   const seenCompanyNames = new Set<string>();
   for (const [key, label] of NAME_KEYS) {
     const name = textValue(answers[key]);
     if (!name) continue;
 
-    const suffixProblem = companyNameSuffixProblem(name, companyType);
-    if (suffixProblem) {
-      add({ code: 'name_suffix', severity: 'error', section: 'company', fieldKey: key, message: `${label} ${suffixProblem}.` });
+    if (nameIncludesEnding(name)) {
+      add({ code: 'name_includes_suffix', severity: 'error', section: 'company', fieldKey: key, message: `${label}: leave out the ending such as “Pte. Ltd.” or “Limited”. It is added from Name ending.` });
     }
     const normalized = normalizeName(name);
     if (seenCompanyNames.has(normalized)) {
@@ -343,6 +358,10 @@ export function evaluateCompanyIncorporationAnswers(
 
     if (!party.roles.includes(PARTY_ROLE.shareholder)) continue;
     shareholderCount += 1;
+    if (companyType === COMPANY_TYPE.exemptPrivate && party.kind === PARTY_KIND.organisation) {
+      add({ code: 'exempt_private_corporate_shareholder', severity: 'error', section: 'parties', fieldKey: K.partyKind, rowIndex: party.rowIndex, message: `${label}: an exempt private company can only have individuals as shareholders. Choose Private company limited by shares on page 1 instead.` });
+    }
+    if (!withCapital) continue;
     const units = parseDecimalString(party.ownershipPercent);
     if (units === null) {
       add({ code: 'ownership_invalid', severity: 'error', section: 'parties', fieldKey: K.ownershipPercent, rowIndex: party.rowIndex, message: `${label}: enter the shareholding percentage.` });
@@ -361,14 +380,17 @@ export function evaluateCompanyIncorporationAnswers(
   } else {
     if (shareholderCount === 0) {
       add({ code: 'no_shareholder', severity: 'error', section: 'parties', fieldKey: K.partyRoles, message: 'Add at least one shareholder.' });
-    } else if (total !== PERCENT_SCALE) {
+    } else if (withCapital && total !== PERCENT_SCALE) {
       add({ code: 'ownership_total', severity: 'error', section: 'parties', fieldKey: K.ownershipPercent, message: `Shareholdings total ${totalText}%. They must add up to exactly 100%.` });
     }
     if (!parties.some(isDirector)) {
       add({ code: 'no_director', severity: 'error', section: 'parties', fieldKey: K.partyRoles, message: 'Add at least one director. A director must be an individual.' });
     }
-    if (companyType === COMPANY_TYPE.privateLimited && shareholderCount > MAX_PRIVATE_SHAREHOLDERS) {
-      add({ code: 'too_many_shareholders', severity: 'error', section: 'parties', fieldKey: K.partyRoles, message: `A private company can have at most ${MAX_PRIVATE_SHAREHOLDERS} shareholders.` });
+    const shareholderLimit = companyType === COMPANY_TYPE.exemptPrivate
+      ? MAX_EXEMPT_PRIVATE_SHAREHOLDERS
+      : PRIVATE_COMPANY_TYPES.includes(companyType) ? MAX_PRIVATE_SHAREHOLDERS : null;
+    if (shareholderLimit !== null && shareholderCount > shareholderLimit) {
+      add({ code: 'too_many_shareholders', severity: 'error', section: 'parties', fieldKey: K.partyRoles, message: `${companyType === COMPANY_TYPE.exemptPrivate ? 'An exempt private' : 'A private'} company can have at most ${shareholderLimit} shareholders.` });
     }
   }
 
