@@ -4,7 +4,8 @@ import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { DayPicker, type DropdownProps } from 'react-day-picker';
 import { format, parse, isValid } from 'date-fns';
-import { Calendar, AlertCircle, ChevronDown, Check } from 'lucide-react';
+import { Calendar, CalendarCheck, AlertCircle, ChevronDown, Check } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { TABLE_FILTER_CONTAINER_CLASS, TABLE_FILTER_PLACEHOLDER_CLASS, TABLE_FILTER_TEXT_CLASS } from '@/components/ui/table-filter-styles';
 
@@ -824,84 +825,81 @@ export function SingleDateInput({
       )}
 
       {/* Input container */}
-      <div
-        ref={containerRef}
-        className={cn(
-          'w-full flex items-center',
-          isTableFilter
-            ? TABLE_FILTER_CONTAINER_CLASS
-            : 'h-10 rounded-lg border transition-colors bg-[#F4F7F6] dark:bg-background-secondary border-[#D8E3DF] hover:border-[#294D44]/50 focus-within:ring-2 focus-within:ring-[#294D44]/20 focus-within:border-[#294D44]',
-          disabled && 'opacity-50 cursor-not-allowed',
-          displayError && 'border-status-error hover:border-status-error focus-within:border-status-error focus-within:ring-status-error/30',
-          controlClassName,
-        )}
-      >
-        {/* Text input */}
-        <input
-          ref={inputRef}
-          id={inputId}
-          type="text"
-          value={inputValue}
-          onFocus={handleInputFocus}
-          onChange={handleInputChange}
-          onKeyDown={handleInputKeyDown}
-          onBlur={handleInputBlur}
-          placeholder={placeholder}
-          disabled={disabled}
-          autoComplete="off"
-          aria-label={ariaLabel || label}
-          aria-invalid={displayError ? 'true' : 'false'}
-          aria-describedby={displayError ? `${inputId}-error` : hint ? `${inputId}-hint` : undefined}
+      <div className={cn(showTodayButton && 'flex items-stretch gap-2')}>
+        <div
+          ref={containerRef}
           className={cn(
-            'flex-1 min-w-0 h-full pl-3 bg-transparent text-text-primary',
-            showTodayButton ? 'pr-1' : 'pr-3',
-            isTableFilter ? cn(TABLE_FILTER_TEXT_CLASS, TABLE_FILTER_PLACEHOLDER_CLASS) : 'text-sm placeholder-text-muted',
-            'focus:outline-none',
-            disabled && 'cursor-not-allowed'
+            showTodayButton ? 'flex-1 min-w-0' : 'w-full',
+            'flex items-center',
+            isTableFilter
+              ? TABLE_FILTER_CONTAINER_CLASS
+              : 'h-10 rounded-lg border transition-colors bg-[#F4F7F6] dark:bg-background-secondary border-[#D8E3DF] hover:border-[#294D44]/50 focus-within:ring-2 focus-within:ring-[#294D44]/20 focus-within:border-[#294D44]',
+            disabled && 'opacity-50 cursor-not-allowed',
+            displayError && 'border-status-error hover:border-status-error focus-within:border-status-error focus-within:ring-status-error/30',
+            controlClassName,
           )}
-        />
+        >
+          {/* Text input */}
+          <input
+            ref={inputRef}
+            id={inputId}
+            type="text"
+            value={inputValue}
+            onFocus={handleInputFocus}
+            onChange={handleInputChange}
+            onKeyDown={handleInputKeyDown}
+            onBlur={handleInputBlur}
+            placeholder={placeholder}
+            disabled={disabled}
+            autoComplete="off"
+            aria-label={ariaLabel || label}
+            aria-invalid={displayError ? 'true' : 'false'}
+            aria-describedby={displayError ? `${inputId}-error` : hint ? `${inputId}-hint` : undefined}
+            className={cn(
+              'flex-1 min-w-0 h-full px-3 bg-transparent text-text-primary',
+              isTableFilter ? cn(TABLE_FILTER_TEXT_CLASS, TABLE_FILTER_PLACEHOLDER_CLASS) : 'text-sm placeholder-text-muted',
+              'focus:outline-none',
+              disabled && 'cursor-not-allowed'
+            )}
+          />
+
+          {showCalendar ? (
+            <button
+              type="button"
+              onMouseDown={(e) => {
+                e.preventDefault();
+              }}
+              onClick={handleCalendarClick}
+              disabled={disabled}
+              className={cn(
+                'h-full px-2 flex-shrink-0 flex items-center justify-center',
+                'text-text-muted hover:text-text-secondary transition-colors',
+                'focus:outline-none',
+                disabled && 'cursor-not-allowed'
+              )}
+              aria-label={label ? `Open calendar for ${label}` : 'Open calendar'}
+              tabIndex={-1}
+            >
+              <Calendar className="w-4 h-4" />
+            </button>
+          ) : null}
+        </div>
 
         {showTodayButton ? (
-          <button
-            type="button"
+          <Button
+            variant="secondary"
             onMouseDown={(e) => {
               e.preventDefault();
             }}
             onClick={handleTodayClick}
             disabled={disabled || todayOutOfRange}
-            className={cn(
-              'flex-shrink-0 rounded px-1 py-0.5 text-xs font-medium text-oak-primary transition-colors',
-              'hover:bg-oak-primary/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-oak-primary/30',
-              'disabled:cursor-not-allowed disabled:text-text-muted disabled:hover:bg-transparent',
-              !showCalendar && 'mr-2'
-            )}
+            leftIcon={<CalendarCheck />}
+            className="h-auto flex-shrink-0 px-3 border-[#D8E3DF] text-oak-primary hover:border-[#294D44]/50"
             aria-label={label ? `Set ${label} to today` : ariaLabel ? `Set ${ariaLabel} to today` : 'Set to today'}
             title={todayOutOfRange ? 'Today is outside the allowed dates' : undefined}
           >
             Today
-          </button>
-        ) : null}
-
-        {showCalendar ? (
-          <button
-            type="button"
-            onMouseDown={(e) => {
-              e.preventDefault();
-            }}
-            onClick={handleCalendarClick}
-            disabled={disabled}
-            className={cn(
-              'h-full flex-shrink-0 flex items-center justify-center',
-              showTodayButton ? 'pl-1.5 pr-2' : 'px-2',
-              'text-text-muted hover:text-text-secondary transition-colors',
-              'focus:outline-none',
-              disabled && 'cursor-not-allowed'
-            )}
-            aria-label={label ? `Open calendar for ${label}` : 'Open calendar'}
-            tabIndex={-1}
-          >
-            <Calendar className="w-4 h-4" />
-          </button>
+          </Button>
         ) : null}
       </div>
 
