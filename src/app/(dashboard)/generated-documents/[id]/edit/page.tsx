@@ -32,8 +32,9 @@ interface EngineProbe {
 
 /**
  * Engine-aware edit route: native documents open in the shared OakDoc host,
- * damaged native metadata fails closed, and A4 documents, which can no
- * longer be edited, go to their detail page to be viewed or converted.
+ * damaged native metadata fails closed, and documents that are not OakDoc
+ * (old A4 records, ungenerated drafts) go to their detail page, which says
+ * why they cannot be opened.
  */
 export default function DocumentEditPage() {
   const router = useRouter();

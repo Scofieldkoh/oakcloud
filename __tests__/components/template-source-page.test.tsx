@@ -63,7 +63,7 @@ describe('TemplateSourcePage', () => {
       .toHaveAttribute('href', '/generated-documents/generate?editor=oakdoc&templateId=t-word');
   });
 
-  it('shows an A4 template read-only instead of opening the A4 editor', async () => {
+  it('shows a notice for an A4 template instead of opening it', async () => {
     vi.spyOn(global, 'fetch').mockImplementation(() => respond({
       id: 't-1', name: 'Old engagement letter', content: '<p>Signed terms</p>', contentJson: null,
     }));
@@ -71,7 +71,7 @@ describe('TemplateSourcePage', () => {
 
     expect(await screen.findByText('Old engagement letter')).toBeInTheDocument();
     expect(screen.getByText(/retired A4 editor/i)).toBeInTheDocument();
-    expect(screen.getByRole('article', { name: /read-only/i })).toHaveTextContent('Signed terms');
+    expect(screen.queryByText('Signed terms')).not.toBeInTheDocument();
     expect(container.querySelector('[contenteditable]')).toBeNull();
   });
 

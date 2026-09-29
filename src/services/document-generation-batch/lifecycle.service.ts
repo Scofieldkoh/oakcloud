@@ -17,7 +17,6 @@ import {
 import {
   deriveMasterFieldCatalogue,
 } from '@/lib/document-generation-master-fields';
-import { readA4StoredDocument } from '@/lib/document-editor/a4-editor-format';
 import { rejectRetiredA4Operation } from '@/lib/document-editor/a4-retirement';
 import { getDocumentTemplateEngine } from '@/lib/document-editor/document-engine';
 import { resolveTemplateIdsForNewRun } from '@/services/oakdoc-migration.service';
@@ -151,14 +150,6 @@ export async function loadMasterCatalogueForTemplateIds(
       },
     }),
   ]);
-  for (const template of templates) {
-    if (getDocumentTemplateEngine(template.contentJson) === 'A4') {
-      readA4StoredDocument(template.content, template.contentJson);
-    }
-  }
-  for (const partial of partials) {
-    readA4StoredDocument(partial.content);
-  }
   const sources = templates
     .filter((template) => getDocumentTemplateEngine(template.contentJson) === 'A4')
     .map((template) => ({
@@ -855,7 +846,6 @@ export async function adoptLegacyGenerationSession(
   if (!state) {
     throw new NotFoundError('Document draft not found');
   }
-  readA4StoredDocument(document.content, document.contentJson);
   const observedRevision = await readGeneratedDocumentRevision(
     prisma,
     document.id,
@@ -867,7 +857,6 @@ export async function adoptLegacyGenerationSession(
     where: { id: templateId, tenantId: params.tenantId, deletedAt: null },
   });
   if (!template) throw new NotFoundError('Template not found');
-  readA4StoredDocument(template.content, template.contentJson);
 
   const agreement = state.serviceAgreementId
     ? await prisma.serviceAgreement.findFirst({

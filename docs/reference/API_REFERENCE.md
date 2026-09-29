@@ -1,6 +1,6 @@
 # API Reference
 
-> **Last Updated**: 2026-09-07
+> **Last Updated**: 2026-09-29
 > **Audience**: Developers
 
 This document provides a comprehensive reference for all API endpoints in the Oakcloud application.
@@ -1777,12 +1777,7 @@ Save draft data (auto-save).
 ---
 
 ### GET /api/generated-documents/[id]/export/pdf
-Export document as PDF.
-
----
-
-### GET /api/generated-documents/[id]/export/html
-Export document as HTML.
+Export an OakDoc document as PDF (converted from its Word file by Microsoft 365). Old A4 records and documents not generated yet return 400.
 
 ---
 
@@ -2004,6 +1999,13 @@ cancelled service agreement is removed with it. A document still out for
 signature, or a service agreement in effect or with client services, is
 refused and listed in `failedRecords` with the reason.
 
+Deleted document templates (`documentTemplate`) and partials
+(`templatePartial`) can be purged or restored (`PATCH`) too. Documents
+generated from a purged template are kept and lose their template link. A
+template still used by a generation batch, or a partial used as a service's
+or agreement's Statement of Work, is refused. Stored Word assets are left in
+object storage because they can be shared.
+
 ---
 
 ### GET /api/permissions
@@ -2097,16 +2099,6 @@ Upsert a user preference value.
   "value": "any JSON"
 }
 ```
-
----
-
-### GET /api/letterhead
-Get tenant letterhead configuration.
-
----
-
-### PUT /api/letterhead
-Update tenant letterhead.
 
 ---
 

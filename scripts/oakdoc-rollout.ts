@@ -2,7 +2,6 @@ import 'dotenv/config';
 import { pathToFileURL } from 'node:url';
 import { prisma } from '@/lib/prisma';
 import {
-  applyA4DraftConversionManifest,
   applyA4LibraryRemoval,
   applyTemplateCutover,
   buildA4LibraryRemovalPlan,
@@ -24,9 +23,6 @@ function manifestOption(argv: readonly string[]): string {
  *
  *   Dry run (default, no writes):
  *     tsx scripts/oakdoc-rollout.ts --workspace <id>
- *   Convert the A4 drafts listed in an approved dry-run manifest:
- *     tsx scripts/oakdoc-rollout.ts --workspace <id> --apply-draft-conversions \
- *       --operator <user id> --manifest <hash from the dry run>
  *   Switch validated template pairs to Word, or roll them back to A4, using
  *   the matching plan hash from the dry run:
  *     tsx scripts/oakdoc-rollout.ts --workspace <id> --apply-template-cutover \
@@ -39,15 +35,14 @@ function manifestOption(argv: readonly string[]): string {
  *       --operator <user id> --manifest <hash> --reason "<why>"
  *
  * Every apply run is journaled in the audit log (OakDocRolloutRun).
- * Output is JSON with IDs, revisions, hashes and dispositions only.
+ * Output is JSON with IDs, revisions, hashes and statuses only.
  */
 export async function runOakDocRollout(argv: readonly string[]) {
   const tenantId = uuidOption(argv, 'workspace');
   const cutover = flag(argv, 'apply-template-cutover');
   const rollback = flag(argv, 'apply-template-rollback');
-  const conversions = flag(argv, 'apply-draft-conversions');
   const removeA4 = flag(argv, 'remove-a4-library');
-  if ([cutover, rollback, conversions, removeA4].filter(Boolean).length > 1) {
+  if ([cutover, rollback, removeA4].filter(Boolean).length > 1) {
     throw new Error('Choose one apply step per run');
   }
   if (removeA4) {
@@ -69,22 +64,13 @@ export async function runOakDocRollout(argv: readonly string[]) {
     });
     return { mode: cutover ? 'apply-template-cutover' : 'apply-template-rollback', ...run };
   }
-  if (!conversions) {
-    const [inventory, templateCutover, templateRollback, a4LibraryRemoval] = await Promise.all([
-      buildOakDocRolloutInventory(tenantId),
-      buildTemplateCutoverPlan(tenantId, 'OAKDOC'),
-      buildTemplateCutoverPlan(tenantId, 'LEGACY'),
-      buildA4LibraryRemovalPlan(tenantId),
-    ]);
-    return { mode: 'dry-run', inventory, templateCutover, templateRollback, a4LibraryRemoval };
-  }
-  const manifestHash = manifestOption(argv);
-  const run = await applyA4DraftConversionManifest({
-    tenantId,
-    userId: uuidOption(argv, 'operator'),
-    manifestHash,
-  });
-  return { mode: 'apply-draft-conversions', ...run };
+  const [inventory, templateCutover, templateRollback, a4LibraryRemoval] = await Promise.all([
+    buildOakDocRolloutInventory(tenantId),
+    buildTemplateCutoverPlan(tenantId, 'OAKDOC'),
+    buildTemplateCutoverPlan(tenantId, 'LEGACY'),
+    buildA4LibraryRemovalPlan(tenantId),
+  ]);
+  return { mode: 'dry-run', inventory, templateCutover, templateRollback, a4LibraryRemoval };
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {

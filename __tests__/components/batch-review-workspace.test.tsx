@@ -96,18 +96,17 @@ describe('BatchReviewWorkspace', () => {
     unmount();
   });
 
-  it('shows A4 items read-only with a note that the A4 editor is retired', () => {
+  it('shows a note instead of a preview for items on a retired A4 template', () => {
     const { container, unmount } = render(<BatchReviewWorkspace {...props()} />);
     expect(screen.getByText(/retired A4 editor/i)).toBeInTheDocument();
-    expect(screen.getByRole('article', { name: /read-only/i })).toHaveTextContent('Preview content');
+    expect(screen.queryByText('Preview content')).not.toBeInTheDocument();
     expect(container.querySelector('[contenteditable]')).toBeNull();
     unmount();
   });
 
-  it('renders the active preview and replaces approval with a locked notice', () => {
+  it('replaces approval with a locked notice once approved', () => {
     const p = props();
     const { unmount } = render(<BatchReviewWorkspace {...p} />);
-    expect(screen.getByRole('article', { name: /read-only/i })).toHaveTextContent('Preview content');
     expect(screen.queryByRole('button', { name: /approve for generation/i })).not.toBeInTheDocument();
     expect(screen.getByText(/approved for generation/i)).toBeInTheDocument();
     unmount();

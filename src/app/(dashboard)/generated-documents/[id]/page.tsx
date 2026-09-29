@@ -10,7 +10,6 @@ import {
   AlertCircle,
   FileText,
   Download,
-  Edit,
   Lock,
   Unlock,
   Archive,
@@ -21,29 +20,19 @@ import {
   User,
   MoreVertical,
   Copy,
-  Printer,
-  Eye,
-  EyeOff,
   MessageCircle,
   PenLine,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { ConvertToOakDocButton } from '@/components/documents/oakdoc/convert-to-oakdoc-button';
-import { OakDocConversionReview } from '@/components/documents/oakdoc/oakdoc-conversion-review';
-import { isPendingA4DraftConversion } from '@/lib/document-editor/oakdoc-draft-conversion';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useToast } from '@/components/ui/toast';
 import { cn } from '@/lib/utils';
-import { A4HistoricalViewer } from '@/components/documents/a4-historical-viewer';
-import { extractA4DocumentLayout } from '@/components/documents/a4-pagination/layout';
+import { isUngeneratedDocumentDraft } from '@/lib/document-editor/document-engine';
 import {
   GeneratedDocumentEnvelopeHistory,
   type GeneratedDocumentEnvelopeSummary,
 } from '@/components/documents/generated-document-envelope-history';
-import {
-  readTaskLaunchContext,
-  withTaskLaunchContext,
-} from '@/lib/task-launch-context';
+import { readTaskLaunchContext } from '@/lib/task-launch-context';
 
 const OakDocGeneratedDocumentEditor = dynamic(
   () => import('@/components/documents/oakdoc-generated-document-editor')
@@ -204,7 +193,6 @@ export default function DocumentViewPage() {
   const [comments, setComments] = useState<DocumentComment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [includeLetterhead, setIncludeLetterhead] = useState(true);
 
   // Dialogs
   const [finalizeDialogOpen, setFinalizeDialogOpen] = useState(false);
@@ -235,7 +223,6 @@ export default function DocumentViewPage() {
 
         const data = await docResponse.json();
         setDocData(data);
-        setIncludeLetterhead(data.useLetterhead);
 
         // Load comments if available
         if (commentsResponse.ok) {
@@ -344,17 +331,11 @@ export default function DocumentViewPage() {
     }
   };
 
-  const isOakDocDocument = docData?.metadata?.documentEngine === 'OAKDOC';
-
   // Handle export
   const handleExport = async () => {
     try {
-      const params = new URLSearchParams();
-      // OakDoc letterhead and page layout come from the Word document itself.
-      if (!isOakDocDocument) params.set('letterhead', String(includeLetterhead));
-
       const response = await fetch(
-        `/api/generated-documents/${documentId}/export/pdf?${params}`
+        `/api/generated-documents/${documentId}/export/pdf`
       );
 
       if (!response.ok) {
@@ -373,11 +354,6 @@ export default function DocumentViewPage() {
       console.error('Export error:', err);
       toastError(err instanceof Error ? err.message : 'Failed to export document');
     }
-  };
-
-  // Handle print
-  const handlePrint = () => {
-    window.print();
   };
 
   // Handle clone
@@ -438,7 +414,7 @@ export default function DocumentViewPage() {
 
   const linkedEnvelopes = docData.esigningEnvelopeDocuments?.map(({ envelope }) => envelope) ?? [];
   const isOakDoc = docData.metadata?.documentEngine === 'OAKDOC';
-  const conversionPending = isOakDoc && isPendingA4DraftConversion(docData.metadata);
+  const ungenerated = !isOakDoc && isUngeneratedDocumentDraft(docData.metadata);
 
   return (
     <div className="p-4 sm:p-6">
@@ -473,66 +449,20 @@ export default function DocumentViewPage() {
 
         {/* Actions */}
         <div className="flex items-center gap-2">
-          {/* Letterhead toggle */}
-          {!isOakDoc && <button
-            type="button"
-            onClick={() => setIncludeLetterhead(!includeLetterhead)}
-            className={cn(
-              'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-colors',
-              includeLetterhead
-                ? 'bg-accent-primary/10 text-accent-primary'
-                : 'bg-background-tertiary text-text-muted hover:text-text-primary'
-            )}
-            title={includeLetterhead ? 'Hide letterhead' : 'Show letterhead'}
-          >
-            {includeLetterhead ? (
-              <Eye className="w-4 h-4" />
-            ) : (
-              <EyeOff className="w-4 h-4" />
-            )}
-            Letterhead
-          </button>}
-
-          <div className="w-px h-6 bg-border-secondary" />
-
-          {/* Edit (only for drafts) */}
-          {!isOakDoc && docData.status === 'DRAFT' && (
-            <Link href={withTaskLaunchContext(
-              `/generated-documents/${docData.id}/edit`,
-              taskContext,
-            )}>
-              <Button variant="secondary" size="sm">
-                <Edit className="w-4 h-4 mr-2" />
-                Edit
-              </Button>
-            </Link>
-          )}
-
-          {!isOakDoc && docData.status === 'DRAFT' && !docData.signedAt && (
-            <ConvertToOakDocButton
-              documentId={docData.id}
-              revision={docData.revision}
-              disabled={isProcessing}
-              onError={toastError}
-            />
-          )}
-
           {/* Finalize/Unfinalize */}
-          {docData.status === 'DRAFT' && (
+          {isOakDoc && docData.status === 'DRAFT' && (
             <Button
               variant="secondary"
               size="sm"
               onClick={() => setFinalizeDialogOpen(true)}
-              disabled={(isOakDoc && oakDocDirty) || conversionPending}
-              title={conversionPending
-                ? 'Accept the converted copy before finalizing'
-                : isOakDoc && oakDocDirty ? 'Save your Word edits before finalizing' : undefined}
+              disabled={oakDocDirty}
+              title={oakDocDirty ? 'Save your Word edits before finalizing' : undefined}
             >
               <Lock className="w-4 h-4 mr-2" />
               Finalize
             </Button>
           )}
-          {docData.status === 'FINALIZED' && (
+          {isOakDoc && docData.status === 'FINALIZED' && (
             <Button
               variant="secondary"
               size="sm"
@@ -544,7 +474,7 @@ export default function DocumentViewPage() {
           )}
 
           {/* Export */}
-          {isOakDoc ? (
+          {isOakDoc && (
             <>
               <a href={`/api/generated-documents/${documentId}?format=docx`}>
                 <Button variant="secondary" size="sm">
@@ -563,11 +493,6 @@ export default function DocumentViewPage() {
                 PDF
               </Button>
             </>
-          ) : (
-            <Button variant="secondary" size="sm" onClick={handleExport}>
-              <Download className="w-4 h-4 mr-2" />
-              Export
-            </Button>
           )}
 
           {/* More actions */}
@@ -576,15 +501,7 @@ export default function DocumentViewPage() {
               <MoreVertical className="w-4 h-4" />
             </Button>
             <div className="absolute right-0 top-full mt-1 w-40 py-1 bg-background-elevated border border-border-primary rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-20">
-              {!isOakDoc && <button
-                type="button"
-                onClick={handlePrint}
-                className="w-full px-3 py-1.5 text-left text-sm hover:bg-background-secondary flex items-center gap-2"
-              >
-                <Printer className="w-4 h-4" />
-                Print
-              </button>}
-              {(!isOakDoc || !oakDocDirty) && <button
+              {isOakDoc && !oakDocDirty && <button
                 type="button"
                 onClick={handleClone}
                 className="w-full px-3 py-1.5 text-left text-sm hover:bg-background-secondary flex items-center gap-2"
@@ -609,30 +526,6 @@ export default function DocumentViewPage() {
           </div>
         </div>
       </div>
-
-      {isOakDoc ? (
-        <OakDocConversionReview
-          documentId={docData.id}
-          revision={docData.revision}
-          metadata={docData.metadata}
-          dirty={oakDocDirty}
-          onAccepted={(result) => {
-            setDocData((current) => current
-              ? {
-                  ...current,
-                  revision: result.document.revision ?? current.revision,
-                  metadata: (result.document.metadata as GeneratedDocument['metadata']) ?? current.metadata,
-                }
-              : current);
-            success('Copy accepted');
-          }}
-          onRejected={() => {
-            success('Copy rejected');
-            router.push(returnHref);
-          }}
-          onError={toastError}
-        />
-      ) : null}
 
       {/* Main content */}
       <div className="mt-6">
@@ -771,7 +664,7 @@ export default function DocumentViewPage() {
             </div>
           </div>
 
-          {/* Document content: OakDoc editor, or a static view of A4 content */}
+          {/* Document content: the OakDoc editor, or why there is none */}
           <div className="flex-1 min-w-0">
             <div className="border border-border-primary rounded-lg shadow-sm overflow-hidden h-[calc(100vh-12rem)]">
               {isOakDoc ? (
@@ -794,10 +687,16 @@ export default function DocumentViewPage() {
                   }}
                 />
               ) : (
-                <A4HistoricalViewer
-                  html={docData.content}
-                  layout={extractA4DocumentLayout(docData.contentJson)}
-                />
+                <div className="flex h-full items-center justify-center p-6">
+                  <div className="max-w-md text-center">
+                    <FileText className="mx-auto mb-3 h-10 w-10 text-text-muted" aria-hidden="true" />
+                    <p className="text-sm text-text-secondary">
+                      {ungenerated
+                        ? 'This document has not been generated yet. Generate it from its batch or generation draft to open it here.'
+                        : 'This is an old A4 document. The A4 editor has been removed, so it can no longer be opened or exported. You can archive or delete it.'}
+                    </p>
+                  </div>
+                </div>
               )}
             </div>
           </div>

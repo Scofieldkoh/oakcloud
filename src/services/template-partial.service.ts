@@ -18,7 +18,6 @@ import {
   assertRevisionPrecondition,
   classifyRevisionMiss,
 } from '@/lib/document-editor/revision-concurrency';
-import { readA4StoredDocument } from '@/lib/document-editor/a4-editor-format';
 import { rejectRetiredA4Operation } from '@/lib/document-editor/a4-retirement';
 import {
   normalizeStoredFieldDefinitionInput,
@@ -124,11 +123,6 @@ function preservePartialPlaceholders(value: unknown, partialId: string): Prisma.
     definitions,
     { kind: 'partial', id: partialId },
   ) as Prisma.InputJsonValue;
-}
-
-function assertReadablePartial<T extends { content: string }>(partial: T): T {
-  readA4StoredDocument(partial.content);
-  return partial;
 }
 
 async function classifyPartialRevisionMiss(
@@ -332,7 +326,6 @@ export async function getTemplatePartial(
   });
 
   if (!partial) return null;
-  assertReadablePartial(partial);
   const usageCount = await countPartialUsage(partialId, params);
   return { ...partial, _count: { usedInTemplates: usageCount } };
 }
@@ -344,7 +337,7 @@ export async function getTemplatePartialByName(
   const partial = await prisma.templatePartial.findFirst({
     where: { name, tenantId, deletedAt: null },
   });
-  return partial ? assertReadablePartial(partial) : null;
+  return partial ?? null;
 }
 
 export async function searchTemplatePartials(
@@ -391,7 +384,6 @@ export async function searchTemplatePartials(
 
   const partialsWithCounts = await Promise.all(
     partials.map(async (partial) => {
-      assertReadablePartial(partial);
       const usageCount = await countPartialUsage(partial.id, params);
       return { ...partial, _count: { usedInTemplates: usageCount } };
     }),
@@ -427,7 +419,7 @@ export async function getAllTemplatePartials(
     orderBy: { name: 'asc' },
   });
   return partials.map(({ contentJson, ...partial }) => ({
-    ...assertReadablePartial(partial),
+    ...partial,
     documentEngine: readOakDocTemplateMetadata(contentJson) ? 'OAKDOC' as const : 'A4' as const,
   }));
 }
@@ -502,7 +494,6 @@ export async function getPartialsUsedInTemplate(
     resolvedNames.add(partialName);
     const partial = partialByName.get(partialName);
     if (!partial) return;
-    readA4StoredDocument(partial.content);
     for (const nestedName of extractPartialReferences(partial.content)) visit(nestedName);
   };
 
@@ -536,7 +527,6 @@ export async function resolvePartials(
 
     const partialContent = partialMap.get(partialName);
     if (partialContent) {
-      readA4StoredDocument(partialContent);
       resolvedPartials.add(partialName);
       const resolvedPartialContent = await resolvePartials(
         partialContent,

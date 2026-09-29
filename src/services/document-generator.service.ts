@@ -33,9 +33,6 @@ import {
   RESERVED_GENERATED_METADATA_KEYS,
   mergeUserJsonPreservingReserved,
 } from '@/lib/document-editor/oakdoc-reserved-metadata';
-import {
-  readA4StoredDocument,
-} from '@/lib/document-editor/a4-editor-format';
 import { getPartialsUsedInTemplate } from '@/services/template-partial.service';
 import { getCompanyById } from '@/services/company.service';
 import {
@@ -301,7 +298,6 @@ export async function renderTemplateForGeneration(
 
   let renderContent = template?.content ?? templateContent;
   if (!renderContent) throw new Error('Template content is required for rendering');
-  readA4StoredDocument(renderContent, template?.contentJson);
 
   const fieldScope = {
     kind: 'template' as const,
@@ -1078,9 +1074,6 @@ export async function getGeneratedDocumentById(
     },
   });
   if (!document) return null;
-  if (readGeneratedDocumentEngineState(document.metadata) === 'A4') {
-    readA4StoredDocument(document.content, document.contentJson);
-  }
   const revision = await readGeneratedDocumentRevision(prisma, document.id, tenantId);
   return { ...document, revision } as GeneratedDocumentWithRelations;
 }
@@ -1169,9 +1162,6 @@ export async function searchGeneratedDocuments(
     }),
     prisma.generatedDocument.count({ where }),
   ]);
-  for (const document of documents) {
-    readA4StoredDocument(document.content, document.contentJson);
-  }
   const revisions = await readGeneratedDocumentRevisions(
     prisma,
     documents.map((document) => document.id),

@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import { mergeA4DocumentLayout, DEFAULT_A4_DOCUMENT_LAYOUT } from '@/components/documents/a4-pagination/layout';
 import { resolvePlaceholders } from '@/lib/placeholder-resolver';
 import {
   createDocumentTemplateSchema,
@@ -65,7 +64,7 @@ function expectLosslessDefinition(value: unknown) {
   expect(value).toEqual(completeDefinition);
 }
 
-describe('A4 editor WORKFLOW W1 field server-boundary compatibility', () => {
+describe('template field server-boundary compatibility', () => {
   it('W-FIELD-01A preserves the full F1 definition at placeholderDefinitionSchema', () => {
     expectLosslessDefinition(placeholderDefinitionSchema.parse(completeDefinition));
   });
@@ -134,17 +133,6 @@ describe('A4 editor WORKFLOW W1 field server-boundary compatibility', () => {
   it('W-FIELD-01G preserves omission of required instead of materializing a default', () => {
     const parsed = placeholderDefinitionSchema.parse(omittedRequiredDefinition);
     expect(Object.prototype.hasOwnProperty.call(parsed, 'required')).toBe(false);
-  });
-
-  it('W-FIELD-04 layout merge preserves unrelated stored field metadata already present in contentJson', () => {
-    const contentJson = {
-      version: 1,
-      fields: [{ id: 'f1', scope: 'template:t1', future: { v: 2 } }],
-      unrelated: { keep: true },
-    };
-    const merged = mergeA4DocumentLayout(contentJson, DEFAULT_A4_DOCUMENT_LAYOUT);
-    expect(merged.fields).toEqual(contentJson.fields);
-    expect(merged.unrelated).toEqual(contentJson.unrelated);
   });
 
   it('W-FIELD-05A retains current resolver behavior until F2 escaping is authorized', () => {

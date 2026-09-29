@@ -14,11 +14,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Alert } from '@/components/ui/alert';
-import { A4HistoricalViewer } from '@/components/documents/a4-historical-viewer';
-import {
-  extractA4DocumentLayout,
-  type A4DocumentLayout,
-} from '@/components/documents/a4-pagination/layout';
 import { cn } from '@/lib/utils';
 import type { EditableBatchItem } from './batch-workspace-state';
 import { BatchDocumentQueue, ITEM_STATUS_LABELS } from './batch-document-queue';
@@ -44,7 +39,6 @@ export interface BatchReviewWorkspaceProps {
   onSaveOakDoc: (itemId: string, bytes: Uint8Array) => Promise<void>;
   onOakDocDirtyChange?: (dirty: boolean) => void;
   pending?: boolean;
-  layout?: A4DocumentLayout;
   completeness?: CompletenessMap;
   /** Documents preventing generation, rendered as jump-to links. */
   blockers?: GenerationBlocker[];
@@ -52,7 +46,7 @@ export interface BatchReviewWorkspaceProps {
   previewProgress?: { done: number; total: number } | null;
 }
 
-function A4Skeleton({ label }: { label: string }) {
+function PreviewSkeleton({ label }: { label: string }) {
   return (
     <div
       className="flex h-full flex-col items-center justify-center gap-3 rounded-lg border border-border-primary bg-background-secondary"
@@ -71,12 +65,6 @@ function A4Skeleton({ label }: { label: string }) {
   );
 }
 
-function recordJson(value: unknown): Record<string, unknown> | null {
-  return value && typeof value === 'object' && !Array.isArray(value)
-    ? value as Record<string, unknown>
-    : null;
-}
-
 export function BatchReviewWorkspace({
   items,
   activeItemId,
@@ -86,7 +74,6 @@ export function BatchReviewWorkspace({
   onSaveOakDoc,
   onOakDocDirtyChange,
   pending = false,
-  layout,
   completeness,
   blockers = [],
   previewProgress = null,
@@ -133,9 +120,6 @@ export function BatchReviewWorkspace({
   const diagnosticCount = diagnostics
     ? diagnostics.errors.length + diagnostics.fieldErrors.length
     : 0;
-  const effectiveLayout = recordJson(activeItem?.editedContentJson)
-    ? extractA4DocumentLayout(activeItem?.editedContentJson)
-    : layout;
 
   return (
     <div className="grid min-h-0 flex-1 gap-4 overflow-hidden xl:grid-cols-[300px_minmax(0,1fr)]">
@@ -360,20 +344,13 @@ export function BatchReviewWorkspace({
                     onSave={(bytes) => onSaveOakDoc(activeItem.key, bytes)}
                   />
                 ) : (
-                  <div className="flex h-full flex-col">
-                    <Alert variant="warning" compact className="m-3">
-                      This template uses the retired A4 editor, so this document can&apos;t be edited or generated.
-                      Remove it from the batch and add an OakDoc template instead.
-                    </Alert>
-                    <A4HistoricalViewer
-                      html={activeItem.editedContent ?? activeItem.previewContent ?? ''}
-                      layout={effectiveLayout}
-                      className="min-h-0 flex-1"
-                    />
-                  </div>
+                  <Alert variant="warning" compact className="m-3">
+                    This template uses the retired A4 editor, so this document can&apos;t be previewed, edited or generated.
+                    Remove it from the batch and add an OakDoc template instead.
+                  </Alert>
                 )
               ) : pending || rendering ? (
-                <A4Skeleton label="Rendering this document…" />
+                <PreviewSkeleton label="Rendering this document…" />
               ) : (
                 <div className="flex h-full flex-col items-center justify-center gap-3 p-8 text-center">
                   <FileText className="h-6 w-6 text-text-muted" aria-hidden="true" />
