@@ -7,8 +7,7 @@ const prismaMock = vi.hoisted(() => ({
 }));
 vi.mock('@/lib/prisma', () => ({ prisma: prismaMock }));
 const rollout = vi.hoisted(() => ({
-  buildOakDocRolloutInventory: vi.fn(async () => ({ draftConversionManifest: { hash: 'h' } })),
-  applyA4DraftConversionManifest: vi.fn(async () => ({ manifestHash: 'h', results: [] })),
+  buildOakDocRolloutInventory: vi.fn(async () => ({ templates: { total: 0 } })),
   buildTemplateCutoverPlan: vi.fn(async (_tenantId: string, direction: string) => ({ direction, hash: 'p', items: [] })),
   applyTemplateCutover: vi.fn(async () => ({ direction: 'OAKDOC', manifestHash: 'p', results: [] })),
   buildA4LibraryRemovalPlan: vi.fn(async () => ({ hash: 'r', items: [] })),
@@ -35,25 +34,12 @@ describe('OakDoc rollout CLI', () => {
     const result = await runOakDocRollout(['--workspace', workspace]);
     expect(result.mode).toBe('dry-run');
     expect(rollout.buildOakDocRolloutInventory).toHaveBeenCalledWith(workspace);
-    expect(rollout.applyA4DraftConversionManifest).not.toHaveBeenCalled();
+    expect(rollout.applyTemplateCutover).not.toHaveBeenCalled();
+    expect(rollout.applyA4LibraryRemoval).not.toHaveBeenCalled();
   });
 
-  it('needs an explicit workspace, operator and manifest to apply', async () => {
+  it('needs an explicit workspace', async () => {
     await expect(runOakDocRollout([])).rejects.toThrow('--workspace');
-    await expect(runOakDocRollout(['--workspace', workspace, '--apply-draft-conversions', '--operator', operator]))
-      .rejects.toThrow('--manifest');
-    await expect(runOakDocRollout(['--workspace', workspace, '--apply-draft-conversions', '--manifest', manifest]))
-      .rejects.toThrow('--operator');
-    expect(rollout.applyA4DraftConversionManifest).not.toHaveBeenCalled();
-
-    await runOakDocRollout([
-      '--workspace', workspace, '--apply-draft-conversions', '--operator', operator, '--manifest', manifest,
-    ]);
-    expect(rollout.applyA4DraftConversionManifest).toHaveBeenCalledWith({
-      tenantId: workspace,
-      userId: operator,
-      manifestHash: manifest,
-    });
   });
 });
 

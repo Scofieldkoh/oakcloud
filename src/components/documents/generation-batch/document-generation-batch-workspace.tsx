@@ -38,7 +38,6 @@ import {
   taskLaunchContextSchema,
   withTaskLaunchContext,
 } from '@/lib/task-launch-context';
-import { extractA4DocumentLayout } from '@/components/documents/a4-pagination/layout';
 import { readOakDocTemplateMetadata } from '@/lib/document-editor/oakdoc-template';
 import {
   BATCH_STAGES,
@@ -305,10 +304,6 @@ export function DocumentGenerationBatchWorkspace({
   );
   const activeOakDocFieldTags = useMemo(
     () => readOakDocTemplateMetadata(activeTemplate?.contentJson)?.fieldTags,
-    [activeTemplate],
-  );
-  const activeLayout = useMemo(
-    () => extractA4DocumentLayout(activeTemplate?.contentJson),
     [activeTemplate],
   );
 
@@ -938,7 +933,6 @@ export function DocumentGenerationBatchWorkspace({
               }}
               onOakDocDirtyChange={setOakDocReviewDirty}
               pending={state.pending !== null}
-              layout={activeLayout}
               completeness={completeness}
               blockers={blockers}
               previewProgress={previewProgress}

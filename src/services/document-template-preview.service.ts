@@ -1,6 +1,5 @@
 import type { PlaceholderContext } from '@/lib/placeholder-resolver';
 import type { FieldInputDescriptor } from '@/lib/template-field-contract';
-import { readA4StoredDocument } from '@/lib/document-editor/a4-editor-format';
 import {
   createStoredWorkflowFieldInputDescriptors,
   normalizeStoredFieldDefinitionInput,
@@ -49,8 +48,6 @@ export interface TemplatePreviewSnapshotResult {
 export async function renderUnsavedTemplateSnapshot(
   input: TemplatePreviewSnapshotInput,
 ): Promise<TemplatePreviewSnapshotResult> {
-  readA4StoredDocument(input.content, input.contentJson);
-
   const definitions = normalizeStoredFieldDefinitionInput(input.placeholders);
   const scope = {
     kind: 'template' as const,

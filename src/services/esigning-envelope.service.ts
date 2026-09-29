@@ -1795,7 +1795,6 @@ export async function uploadGeneratedDocumentToEsigningEnvelope(
     documentId: document.id,
     tenantId,
     userId: session.id,
-    includeLetterhead: true,
   });
   const file = new File(
     [new Uint8Array(pdf.buffer)],
@@ -1867,7 +1866,6 @@ export async function attachGeneratedDocumentToDraftEnvelope(input: {
     documentId: generatedDocument.id,
     tenantId: input.tenantId,
     userId: input.actorUserId,
-    includeLetterhead: true,
   });
   assertExportMatchesRevision(exported, generatedDocument.revision);
   const exportedBytes = new Uint8Array(exported.buffer);

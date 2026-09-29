@@ -9,11 +9,9 @@ import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { FormInput } from '@/components/ui/form-input';
 import { useToast } from '@/components/ui/toast';
-import { A4HistoricalViewer } from '@/components/documents/a4-historical-viewer';
 import { WordPartialEditor } from '@/components/documents/oakdoc/word-partial-editor';
 import { buildBlankOakDocBytes } from '@/lib/document-editor/oakdoc-html-import';
 import { OAKDOC_MIME_TYPE } from '@/lib/document-editor/oakdoc-template';
-import { extractA4DocumentLayout } from '@/components/documents/a4-pagination/layout';
 import { readOakDocTemplateMetadata, isOakDocTemplate } from '@/lib/document-editor/oakdoc-template';
 import {
   useSaveWordPartial,
@@ -77,20 +75,9 @@ function Loading() {
   );
 }
 
-/** Read-only view of an A4 template or HTML partial. */
-function RetiredA4Source({ html, contentJson, notice }: {
-  html: string;
-  contentJson?: unknown;
-  notice: string;
-}) {
-  return (
-    <>
-      <Alert variant="info" compact>{notice}</Alert>
-      <div className="min-h-[60vh] flex-1 overflow-hidden rounded-lg border border-border-primary">
-        <A4HistoricalViewer html={html} layout={extractA4DocumentLayout(contentJson)} />
-      </div>
-    </>
-  );
+/** Notice shown in place of an A4 template or HTML partial. */
+function RetiredA4Source({ notice }: { notice: string }) {
+  return <Alert variant="info" compact>{notice}</Alert>;
 }
 
 function TemplateSource({ id }: { id: string | null }) {
@@ -130,9 +117,7 @@ function TemplateSource({ id }: { id: string | null }) {
         </Alert>
       )}
       <RetiredA4Source
-        html={data.content}
-        contentJson={data.contentJson}
-        notice="This template was made with the retired A4 editor and can only be viewed. To keep using it, create a Word template with the same content."
+        notice="This template was made with the retired A4 editor, which has been removed, so it can no longer be opened. Create a Word template with the same content to keep using it."
       />
     </PageShell>
   );
@@ -398,8 +383,7 @@ function PartialSource({ id }: { id: string | null }) {
         </div>
       ) : (
         <RetiredA4Source
-          html={partial.content}
-          notice="This partial was made with the retired A4 editor and can only be viewed. Existing agreements and templates that use it still work. To change the wording, create a Word partial."
+          notice="This partial was made with the retired A4 editor, which has been removed, so it can no longer be opened. Existing agreements and templates that use it still work. To change the wording, create a Word partial."
         />
       )}
     </PageShell>
@@ -408,7 +392,7 @@ function PartialSource({ id }: { id: string | null }) {
 
 /**
  * Template and partial source page. The A4 editor is retired, so A4
- * templates and HTML partials are shown read-only, Word templates open in
+ * templates and HTML partials show a notice, Word templates open in
  * the OakDoc editor and Word partials are edited here, created blank or
  * from a .docx, and can be replaced by upload.
  */

@@ -30,7 +30,6 @@ import {
   assertRevisionPrecondition,
   classifyRevisionMiss,
 } from '@/lib/document-editor/revision-concurrency';
-import { readA4StoredDocument } from '@/lib/document-editor/a4-editor-format';
 import { rejectRetiredA4Operation } from '@/lib/document-editor/a4-retirement';
 import {
   RESERVED_TEMPLATE_CONTENT_JSON_KEYS,
@@ -75,11 +74,6 @@ function preserveTemplatePlaceholders(value: unknown, templateId: string): Prism
     normalizeStoredFieldDefinitionInput(value),
     { kind: 'template', id: templateId },
   ) as Prisma.InputJsonValue;
-}
-
-function assertReadableTemplate<T extends { content: string; contentJson?: unknown }>(template: T): T {
-  readA4StoredDocument(template.content, template.contentJson);
-  return template;
 }
 
 async function classifyTemplateRevisionMiss(
@@ -474,7 +468,7 @@ export async function getDocumentTemplateById(
       _count: { select: { generatedDocuments: true } },
     },
   });
-  return template ? assertReadableTemplate(template) : null;
+  return template ?? null;
 }
 
 export async function searchDocumentTemplates(
@@ -526,7 +520,6 @@ export async function searchDocumentTemplates(
     }),
     prisma.documentTemplate.count({ where }),
   ]);
-  templates.forEach(assertReadableTemplate);
   return { templates, total, page: params.page, limit: params.limit, totalPages: Math.ceil(total / params.limit) };
 }
 
@@ -712,7 +705,6 @@ export async function getTemplatesByCategory(
     where: { tenantId, category, deletedAt: null, ...(activeOnly ? { isActive: true } : {}) },
     orderBy: { name: 'asc' },
   });
-  templates.forEach(assertReadableTemplate);
   return templates;
 }
 

@@ -2,7 +2,6 @@ import { randomUUID } from 'node:crypto';
 import { createAuditLog } from '@/lib/audit';
 import { metadataHasUnresolvedTemplateData } from '@/lib/document-finalization';
 import { readGeneratedDocumentEngineState } from '@/lib/document-editor/document-engine';
-import { isPendingA4DraftConversion } from '@/lib/document-editor/oakdoc-draft-conversion';
 import { ConflictError, NotFoundError, ValidationError } from '@/lib/errors';
 import { createLogger } from '@/lib/logger';
 import { prisma } from '@/lib/prisma';
@@ -207,7 +206,6 @@ function assertDocumentMetadataActivatable(metadata: unknown): void {
   if (
     metadataHasUnresolvedTemplateData(metadata)
     || readGeneratedDocumentEngineState(metadata) === 'INVALID'
-    || isPendingA4DraftConversion(metadata)
   ) {
     throw new ActivationFailure(PUBLIC_DOCUMENT_ERROR, true);
   }

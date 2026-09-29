@@ -1,6 +1,6 @@
 # API Reference
 
-> **Last Updated**: 2026-09-07
+> **Last Updated**: 2026-09-29
 > **Audience**: Developers
 
 This document provides a comprehensive reference for all API endpoints in the Oakcloud application.
@@ -1777,12 +1777,7 @@ Save draft data (auto-save).
 ---
 
 ### GET /api/generated-documents/[id]/export/pdf
-Export document as PDF.
-
----
-
-### GET /api/generated-documents/[id]/export/html
-Export document as HTML.
+Export an OakDoc document as PDF (converted from its Word file by Microsoft 365). Old A4 records and documents not generated yet return 400.
 
 ---
 
@@ -2097,16 +2092,6 @@ Upsert a user preference value.
   "value": "any JSON"
 }
 ```
-
----
-
-### GET /api/letterhead
-Get tenant letterhead configuration.
-
----
-
-### PUT /api/letterhead
-Update tenant letterhead.
 
 ---
 

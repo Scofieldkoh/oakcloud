@@ -1,8 +1,7 @@
 import { ApiError, ErrorCodes, NotFoundError } from '@/lib/errors';
-import {
-  getA4EditorCapabilities,
-  type RevisionPreconditionMode,
-} from '@/lib/document-editor/a4-editor-capabilities';
+
+/** Whether a write must carry the revision it was based on. */
+export type RevisionPreconditionMode = 'optional' | 'required';
 
 export type RevisionResource =
   | 'document-template'
@@ -58,7 +57,7 @@ export class RevisionPreconditionRequiredError extends ApiError {
 export function assertRevisionPrecondition(
   expectedRevision: number | undefined,
   resource: RevisionResource,
-  mode: RevisionPreconditionMode = getA4EditorCapabilities().revisionPrecondition,
+  mode: RevisionPreconditionMode = 'optional',
 ): void {
   if (expectedRevision !== undefined || mode === 'optional') return;
   throw new RevisionPreconditionRequiredError(resource);

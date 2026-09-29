@@ -5,6 +5,7 @@ import {
   getDocumentTemplateDisplayEngine,
   getDocumentTemplateEngine,
   getDocumentTemplateEngineState,
+  isUngeneratedDocumentDraft,
   readGeneratedDocumentEngine,
   readGeneratedDocumentEngineState,
 } from '@/lib/document-editor/document-engine';
@@ -49,6 +50,15 @@ describe('document engine discrimination (C01)', () => {
     expect(getDocumentCapabilities({ engine: 'INVALID' })).toEqual({
       inlineEdit: false, htmlExport: false, pdfExport: false, docxDownload: false,
     });
-    expect(getDocumentCapabilities({ engine: 'A4', status: 'DRAFT' })).toMatchObject({ inlineEdit: true, htmlExport: true });
+    expect(getDocumentCapabilities({ engine: 'A4', status: 'DRAFT' })).toEqual({
+      inlineEdit: false, htmlExport: false, pdfExport: false, docxDownload: false,
+    });
+  });
+
+  it('tells ungenerated drafts apart from old A4 records', () => {
+    expect(isUngeneratedDocumentDraft({ batchItem: true })).toBe(true);
+    expect(isUngeneratedDocumentDraft({ generationSession: { currentStep: 0 } })).toBe(true);
+    expect(isUngeneratedDocumentDraft({ selectedParties: {} })).toBe(false);
+    expect(isUngeneratedDocumentDraft(null)).toBe(false);
   });
 });

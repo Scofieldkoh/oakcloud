@@ -210,11 +210,11 @@ OakDoc is the only document editor. Templates, partials and generated documents 
 - The Fields panel and template validation share one standard-field catalog in `src/components/documents/template-editor/template-field-catalog.ts`.
 - `src/lib/document-editor/document-engine.ts` decides which engine owns a record. Metadata that claims OakDoc but cannot be trusted is `INVALID` and never falls back to A4 handling.
 
-### Historical A4 records
+### Old A4 records
 
-The A4 HTML editor is retired. `src/lib/document-editor/a4-retirement.ts` rejects every operation that would create or change A4 content, from the UI, scripts or direct API calls. A4 drafts move to OakDoc through the reviewed draft conversion, which keeps the original snapshot.
+The A4 HTML editor has been removed, along with its viewer, HTML and PDF export, and draft conversion. `src/lib/document-editor/a4-retirement.ts` rejects every operation that would create, change or export A4 content, from the UI, scripts or direct API calls. Any record that is not OakDoc shows a notice instead of its content: `isUngeneratedDocumentDraft` in `document-engine.ts` tells a batch placeholder or saved generation session (not generated yet) apart from an old A4 record, which can only be archived or deleted. The workspace letterhead table remains in the schema but nothing reads it; OakDoc letterheads live in the Word document.
 
-Finalized and signed A4 documents stay readable and exportable. `src/components/documents/a4-historical-viewer.tsx`, the `a4-pagination/` layout code, `a4-print-styles.ts` and `src/services/a4-output-browser.service.ts` remain only for that read-only view and PDF export. Do not add new features on top of them.
+`a4-server-dom.ts`, `a4-content-policy.ts` and `a4-content-sanitizer.service.ts` keep their names but serve OakDoc: field resolution, the scoped field renderer and `oakdoc-html-import.ts` use them.
 
 Template test previews use the same placeholder resolver as document generation. When structured company address fields are present but `company.address.letter` is absent, the resolver derives the letter-format value through the shared address formatter before resolving placeholders.
 

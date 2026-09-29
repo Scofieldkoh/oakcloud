@@ -131,9 +131,6 @@ export function getDocumentCapabilities(
   context: DocumentCapabilityContext,
 ): DocumentEngineCapabilities {
   const editable = (context.status ?? 'DRAFT') === 'DRAFT' && context.canUpdate !== false;
-  if (context.engine === 'INVALID') {
-    return { inlineEdit: false, htmlExport: false, pdfExport: false, docxDownload: false };
-  }
   if (context.engine === 'OAKDOC') {
     return {
       inlineEdit: editable,
@@ -142,12 +139,8 @@ export function getDocumentCapabilities(
       docxDownload: true,
     };
   }
-  return {
-    inlineEdit: editable,
-    htmlExport: true,
-    pdfExport: true,
-    docxDownload: false,
-  };
+  // Damaged metadata fails closed; A4 records can no longer be opened.
+  return { inlineEdit: false, htmlExport: false, pdfExport: false, docxDownload: false };
 }
 
 export function getDocumentEngineCapabilities(
@@ -315,6 +308,16 @@ export function readGeneratedDocumentEngineState(metadata: unknown): DocumentEng
     return 'INVALID';
   }
   return 'A4';
+}
+
+/**
+ * A non-OakDoc draft that exists before generation: a batch placeholder or a
+ * saved generation session. Anything else that is not OakDoc is an old A4
+ * record.
+ */
+export function isUngeneratedDocumentDraft(metadata: unknown): boolean {
+  return isRecord(metadata)
+    && (metadata.batchItem === true || isRecord(metadata.generationSession));
 }
 
 /** Throws for damaged native metadata instead of treating it as A4. */

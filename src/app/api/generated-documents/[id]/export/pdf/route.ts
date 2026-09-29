@@ -32,9 +32,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     }
 
     // Parse export options from query params
-    const includeLetterhead = searchParams.get('letterhead') !== 'false';
     // Only explicit overrides are forwarded; OakDoc refuses them because its
-    // Word section layout is authoritative, A4 applies its own defaults.
+    // Word section layout is authoritative.
     const format = (searchParams.get('format') || undefined) as 'A4' | 'Letter' | undefined;
     const orientation = (searchParams.get('orientation') || undefined) as 'portrait' | 'landscape' | undefined;
     const filename = searchParams.get('filename') || undefined;
@@ -44,7 +43,6 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       documentId: id,
       tenantId,
       userId: session.id,
-      includeLetterhead,
       format,
       orientation,
       filename,

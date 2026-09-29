@@ -4,8 +4,8 @@ import { OAKDOC_ERROR_REASONS } from '@/types/oakdoc';
 /**
  * I2: the A4 editor is retired. Every service that would create or change
  * A4 content calls this, so old clients, scripts and direct API calls get
- * the same answer. Reading and exporting historical A4 records is still
- * allowed; A4 drafts move to OakDoc through the reviewed draft conversion.
+ * the same answer. The A4 viewer, exports and draft conversion have been
+ * removed too, so an old A4 record can only be deleted.
  */
 export type A4RetiredOperation =
   | 'template-create'
@@ -18,6 +18,7 @@ export type A4RetiredOperation =
   | 'document-create-blank'
   | 'document-edit'
   | 'document-clone'
+  | 'document-export'
   | 'batch-edit';
 
 const MESSAGES: Record<A4RetiredOperation, string> = {
@@ -29,8 +30,9 @@ const MESSAGES: Record<A4RetiredOperation, string> = {
   'partial-duplicate': 'A4 partials can no longer be duplicated. Create a Word partial instead.',
   'document-generate': 'This template uses the retired A4 editor. Generate from an OakDoc template instead.',
   'document-create-blank': 'Blank documents are created in OakDoc.',
-  'document-edit': 'A4 documents can no longer be edited. Convert the draft to OakDoc to keep working on it.',
-  'document-clone': 'A4 documents can no longer be copied. Convert the draft to OakDoc instead.',
+  'document-edit': 'A4 documents can no longer be edited. Generate the document again from an OakDoc template.',
+  'document-clone': 'A4 documents can no longer be copied. Generate the document again from an OakDoc template.',
+  'document-export': 'This is an old A4 document or one that has not been generated yet, so it cannot be exported.',
   'batch-edit': 'A4 batch items can no longer be edited. Use OakDoc templates for batches.',
 };
 
