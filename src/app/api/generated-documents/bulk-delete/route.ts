@@ -2,10 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
 import { bulkDeleteGeneratedDocuments } from '@/services/document-generator.service';
-import {
-  assertCanPermanentlyDeleteDocuments,
-  bulkPermanentlyDeleteGeneratedDocuments,
-} from '@/services/generated-document-purge.service';
 import { createErrorResponse, requireSessionWorkspaceId } from '@/lib/api-helpers';
 
 const MAX_BULK_DELETE_DOCUMENTS = 200;
@@ -33,24 +29,6 @@ export async function POST(request: NextRequest) {
         { error: `Maximum ${MAX_BULK_DELETE_DOCUMENTS} documents per bulk delete` },
         { status: 400 },
       );
-    }
-
-    if (body?.permanent === true) {
-      assertCanPermanentlyDeleteDocuments(session);
-      const result = await bulkPermanentlyDeleteGeneratedDocuments(
-        ids,
-        { tenantId: requireSessionWorkspaceId(session), userId: session.id },
-        reason,
-      );
-      return NextResponse.json({
-        deleted: result.deleted,
-        failed: result.failed,
-        permanent: true,
-        message:
-          result.failed.length > 0
-            ? `Permanently deleted ${result.deleted} of ${ids.length} documents`
-            : `Permanently deleted ${result.deleted} documents`,
-      });
     }
 
     const normalizedRevisions: Record<string, number> = {};
