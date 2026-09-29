@@ -143,6 +143,15 @@ remain subject to administrator review and activation.
 `npm run test:chromium` requires an installed Chrome/Chromium executable. Set
 `CHROME_PATH` when the executable is not in one of Oakcloud's standard paths.
 
+### Continuous integration
+
+GitHub Actions runs two workflows. It does not run the full test suite, so run `npm run test:run` locally before opening a PR.
+
+- `node24-compatibility.yml` runs on every PR and every push to `main`. It covers lint, typecheck, selected test suites, the production Next build, and the Business Assistant, BizFile and document-generation PostgreSQL suites on a disposable database.
+- `production-image.yml` builds and smoke-tests the Docker image on every push to `main`. On PRs it runs only when the Dockerfile, package files, Next config, Prisma or the Chromium helpers change.
+
+Each suite runs once per workflow. When adding a suite to CI, list its file explicitly rather than a directory filter; `vitest run <path>` matches every test file whose path contains that text.
+
 ## Common Issues
 
 ### Port `3000` already in use
