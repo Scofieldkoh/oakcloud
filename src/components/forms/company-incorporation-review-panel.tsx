@@ -24,7 +24,9 @@ import {
   type ReviewSubject,
   type ReviewSubjectKind,
 } from '@/lib/forms/company-incorporation-review';
+import { PARTY_ROLE_LABELS } from '@/lib/form-templates/sg-company-incorporation';
 import type { CompanyIncorporationReviewUpdate } from '@/services/company-incorporation-review.service';
+import type { CompanyIncorporationSubmissionRecord } from '@/services/company-incorporation-intake.service';
 
 type UpdateWithoutRevision = CompanyIncorporationReviewUpdate extends infer U
   ? U extends { expectedRevision: number } ? Omit<U, 'expectedRevision'> : never
@@ -33,16 +35,32 @@ type UpdateWithoutRevision = CompanyIncorporationReviewUpdate extends infer U
 const SELECT_CLASS = 'h-8 rounded-md border border-border-primary bg-background-primary px-2 text-sm text-text-primary';
 
 const ROLE_LABELS: Record<string, string> = {
-  shareholder: 'Shareholder',
-  director: 'Director',
   ...Object.fromEntries(STAFF_SUBJECT_ROLES.map((role) => [role.value, role.label])),
+  ...PARTY_ROLE_LABELS,
 };
 
 const SEVERITY_LABELS: Record<string, { label: string; className: string }> = {
   error: { label: 'Must fix', className: 'bg-red-500/10 text-red-700 dark:text-red-400' },
+  // Profile version 1 responses only.
   needs_information: { label: 'Needs information', className: 'bg-status-warning/10 text-status-warning' },
   staff_review: { label: 'Staff review', className: 'bg-oak-primary/10 text-oak-primary' },
 };
+
+type PartyRow = CompanyIncorporationSubmissionRecord['partyRows'][number];
+
+function partyDetails(party: PartyRow): string[] {
+  const details: string[] = [];
+  if (party.roles.includes('shareholder')) {
+    if (party.ownershipUndecided) details.push('Ownership not decided');
+    else details.push(`${party.ownershipPercent ?? '0'}%${party.shares ? ` (${Number(party.shares).toLocaleString('en-SG')} shares)` : ''}`);
+  }
+  if (party.resident) details.push('Lives in Singapore');
+  if (party.nomineeShareholder) details.push('Nominee shareholder');
+  if (party.nomineeDirector) details.push('Nominee director');
+  if (party.nominator) details.push(`Acts for ${party.nominator}`);
+  if (party.otherControl) details.push('Other control');
+  return details;
+}
 
 const REVIEW_STATE_LABELS: Record<KycLink['reviewState'], string> = {
   received: 'Received, not yet reviewed',
@@ -147,7 +165,8 @@ export function CompanyIncorporationReviewPanel({ formId, submissionId }: Compan
             <div>
               <dt className="text-xs text-text-secondary">Ownership total</dt>
               <dd className="text-text-primary">
-                {intake.ownershipTotal}%{intake.ownershipFullyDecided ? '' : ' (some percentages undecided)'}
+                {intake.ownershipTotal}%{intake.ownershipFullyDecided === false ? ' (some percentages undecided)' : ''}
+                {intake.shareCount ? ` of ${Number(intake.shareCount).toLocaleString('en-SG')} shares` : ''}
               </dd>
             </div>
           </dl>
@@ -191,9 +210,7 @@ export function CompanyIncorporationReviewPanel({ formId, submissionId }: Compan
                     </div>
                     <p className="mt-0.5 text-xs text-text-secondary">
                       {roleText(subject.roles)}
-                      {party?.roles.includes('shareholder') && (
-                        <> · {party.ownershipUndecided ? 'Ownership not decided' : `${party.ownershipPercent ?? '0'}%`}</>
-                      )}
+                      {party && partyDetails(party).map((detail) => <span key={detail}> · {detail}</span>)}
                       {subject.origin === 'staff' && ' · Added by staff'}
                     </p>
                     <p className="mt-0.5 text-xs">

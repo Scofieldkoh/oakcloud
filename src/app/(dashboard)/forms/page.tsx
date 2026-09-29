@@ -40,7 +40,6 @@ import {
 import type { FormStatus } from '@/generated/prisma';
 import { cn } from '@/lib/utils';
 import { PresetListManager } from '@/components/forms/preset-list-manager';
-import { FORM_TEMPLATES } from '@/lib/form-templates';
 import { useFormUrlWarningSummaries } from '@/hooks/use-form-url-health';
 
 const PAGE_SIZE = 20;
@@ -100,7 +99,6 @@ export default function FormsPage() {
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [hardDeleteTargetId, setHardDeleteTargetId] = useState<string | null>(null);
   const [title, setTitle] = useState('');
-  const [templateKey, setTemplateKey] = useState('');
   const [description, setDescription] = useState('');
   const [tagsText, setTagsText] = useState('');
 
@@ -194,7 +192,6 @@ export default function FormsPage() {
         description: description.trim() || undefined,
         tags,
         status: 'DRAFT',
-        ...(templateKey ? { templateKey } : {}),
       });
 
       success('Form created');
@@ -202,7 +199,6 @@ export default function FormsPage() {
       setTitle('');
       setDescription('');
       setTagsText('');
-      setTemplateKey('');
       router.push(`/forms/${created.id}/builder`);
     } catch (err) {
       showError(err instanceof Error ? err.message : 'Failed to create form');
@@ -666,44 +662,10 @@ export default function FormsPage() {
         isOpen={isCreateOpen}
         onClose={() => setIsCreateOpen(false)}
         title="Create form"
-        description="Start with a blank draft or a guided template, then review it in the editor."
+        description="Start with a blank draft and build fields in the editor."
         size="md"
       >
         <ModalBody className="space-y-4">
-          <div>
-            <span className="mb-1.5 block text-xs font-medium text-text-secondary">Start from</span>
-            <div className="grid gap-2 sm:grid-cols-2" role="radiogroup" aria-label="Start from">
-              {[{ key: '', title: 'Blank form', description: 'Build fields yourself.' }, ...FORM_TEMPLATES.map((template) => ({
-                key: template.key,
-                title: template.title,
-                description: template.description,
-              }))].map((option) => (
-                <button
-                  key={option.key || 'blank'}
-                  type="button"
-                  role="radio"
-                  aria-checked={templateKey === option.key}
-                  onClick={() => {
-                    setTemplateKey(option.key);
-                    const template = FORM_TEMPLATES.find((entry) => entry.key === option.key);
-                    if (template && (!title.trim() || FORM_TEMPLATES.some((entry) => entry.title === title.trim()))) {
-                      setTitle(template.title);
-                    }
-                  }}
-                  className={cn(
-                    'rounded-lg border px-3 py-2 text-left transition-colors',
-                    templateKey === option.key
-                      ? 'border-oak-primary bg-oak-primary/5 ring-1 ring-oak-primary/30'
-                      : 'border-border-primary hover:border-oak-primary/50'
-                  )}
-                >
-                  <span className="block text-sm font-medium text-text-primary">{option.title}</span>
-                  <span className="mt-0.5 block text-xs text-text-secondary">{option.description}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
           <FormInput
             label="Title"
             value={title}
