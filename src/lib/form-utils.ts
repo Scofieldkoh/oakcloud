@@ -43,6 +43,8 @@ export interface ChoiceOption {
   requiredSelected: boolean;
   childSelectionMode: 'multiple' | 'single';
   childOptions: ChoiceOption[];
+  /** Show the option only when this condition holds; null means always shown. */
+  condition: unknown | null;
 }
 
 export const WIDTH_CLASS: Record<number, string> = {
@@ -122,6 +124,7 @@ function normalizeChoiceOption(input: unknown, depth: number = 0): ChoiceOption 
       requiredSelected: false,
       childSelectionMode: 'multiple',
       childOptions: [],
+      condition: null,
     };
   }
 
@@ -156,6 +159,7 @@ function normalizeChoiceOption(input: unknown, depth: number = 0): ChoiceOption 
         .map((item) => normalizeChoiceOption(item, depth + 1))
         .filter((option): option is ChoiceOption => !!option)
       : [],
+    condition: parseObject(raw.condition) ?? null,
   };
 }
 

@@ -435,10 +435,12 @@ describe('PublicFormPage', () => {
 
     const input = await screen.findByRole('textbox', { name: 'Proposed company name' });
     fireEvent.change(input, { target: { value: 'Acme Holdings' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Check name' }));
+    await screen.findByRole('status');
     fireEvent.click(screen.getByRole('button', { name: 'Review answers' }));
 
     expect(await screen.findByText('Check your answers')).toBeVisible();
-    expect(screen.getByText('Acme Holdings')).toBeVisible();
+    expect(screen.getAllByText('Acme Holdings')[0]).toBeVisible();
     // Fields stay mounted (hidden) so going back keeps every answer.
     expect(input.closest('.hidden')).not.toBeNull();
 
@@ -446,6 +448,29 @@ describe('PublicFormPage', () => {
     expect(await screen.findByText('Company details submitted')).toBeVisible();
     expect(screen.getByText(/Your reference is SUB1/)).toBeVisible();
     expect(screen.queryByRole('button', { name: /download/i })).not.toBeInTheDocument();
+  });
+
+  it('stops the page until an advisory name has been checked', async () => {
+    currentPublicForm = reviewStepForm('advisory');
+    render(<PublicFormPage />);
+
+    const input = await screen.findByRole('textbox', { name: 'Proposed company name' });
+    fireEvent.change(input, { target: { value: 'Acme Holdings' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Review answers' }));
+    expect(await screen.findByText('Select Check name before continuing')).toBeVisible();
+    expect(screen.queryByText('Check your answers')).not.toBeInTheDocument();
+  });
+
+  it('offers a company the shareholder role only', async () => {
+    currentPublicForm = incorporationPeopleForm();
+    render(<PublicFormPage />);
+
+    expect(await screen.findByRole('checkbox', { name: 'Director' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('radio', { name: 'A company' }));
+    expect(screen.getByRole('checkbox', { name: 'Shareholder' })).toBeInTheDocument();
+    for (const role of ['Director', 'Managing director', 'CEO', 'Company secretary']) {
+      expect(screen.queryByRole('checkbox', { name: role })).not.toBeInTheDocument();
+    }
   });
 
   it('shows incorporation roles as buttons and stops the page until the list is complete', async () => {

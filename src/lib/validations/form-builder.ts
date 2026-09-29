@@ -190,6 +190,8 @@ const choiceOptionSchema: z.ZodType<Record<string, unknown>> = z.lazy(() => z.ob
   requiredSelected: z.boolean().optional(),
   childSelectionMode: z.enum(['multiple', 'single']).optional(),
   childOptions: z.array(choiceOptionSchema).max(MAX_FIELD_OPTIONS).optional(),
+  /** Show the option only when this condition holds (evaluated against the same answers as field conditions). */
+  condition: fieldConditionSchema.optional().nullable(),
 }));
 
 const layoutWidthSchema = z.union([

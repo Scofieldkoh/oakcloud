@@ -1,5 +1,5 @@
 /**
- * Singapore Company Incorporation form template (version 3).
+ * Singapore Company Incorporation form template (version 4).
  *
  * The manifest compiles to ordinary Oakcloud Forms field definitions. Field keys are
  * stable: the intake profile (src/lib/forms/company-incorporation-profile.ts) and the
@@ -10,7 +10,7 @@
 import type { FieldConditionInput, FormFieldInput } from '@/lib/validations/form-builder';
 
 export const SG_COMPANY_INCORPORATION_TEMPLATE_KEY = 'sg_company_incorporation';
-export const SG_COMPANY_INCORPORATION_TEMPLATE_VERSION = 3;
+export const SG_COMPANY_INCORPORATION_TEMPLATE_VERSION = 4;
 export const SG_COMPANY_INCORPORATION_TITLE = 'Singapore Company Incorporation';
 /** Date the ACRA guidance and links below were last checked against the official pages. */
 export const SG_COMPANY_INCORPORATION_GUIDANCE_REVIEWED_ON = '2026-09-29';
@@ -45,7 +45,8 @@ export const INCORPORATION_KEYS = {
   partyResident: 'party_resident',
   partyNomineeShareholder: 'party_nominee_shareholder',
   partyNomineeDirector: 'party_nominee_director',
-  partyNominator: 'party_nominator',
+  partyShareholderNominator: 'party_shareholder_nominator',
+  partyDirectorNominator: 'party_director_nominator',
   capitalAmount: 'capital_amount',
   capitalCurrency: 'capital_currency',
   shareCount: 'share_count',
@@ -152,8 +153,16 @@ export const COMPANY_TYPE = {
 /** Company types whose name ends with "Pte. Ltd." or "Private Limited". */
 export const PRIVATE_COMPANY_TYPES: readonly string[] = [COMPANY_TYPE.exemptPrivate, COMPANY_TYPE.privateLimited];
 /** Name endings the respondent can choose; the value is the ending itself. */
-export const PRIVATE_NAME_SUFFIXES = ['Pte. Ltd.', 'Private Limited', 'Pte Ltd'] as const;
-export const PUBLIC_NAME_SUFFIXES = ['Limited', 'Ltd.', 'Ltd'] as const;
+export const PRIVATE_NAME_SUFFIXES = [
+  'Private Limited', 'Pte. Ltd.', 'Private Ltd.', 'Pte. Limited',
+  'Sendirian Berhad', 'Sdn. Bhd.', 'Sendirian Bhd.', 'Sdn. Berhad',
+  '(Private) Limited', '(Private) Ltd.', '(Pte.) Limited',
+  '(Sendirian) Berhad', '(Sendirian) Bhd.', '(Sdn.) Berhad',
+  '(Pte. Ltd.)', '(Private Limited)', '(Private Ltd.)', '(Pte. Limited)',
+  '(Sendirian Berhad)', '(Sendirian Bhd.)', '(Sdn. Bhd.)', '(Sdn. Berhad)',
+  'LLC', 'Law Corporation', '(LLC)', '(Law Corporation)',
+] as const;
+export const PUBLIC_NAME_SUFFIXES = ['Limited', 'Ltd.', 'Berhad', 'Bhd.'] as const;
 export const PARTY_KIND = { individual: 'individual', organisation: 'organisation' } as const;
 export const PARTY_ROLE = {
   shareholder: 'shareholder',
@@ -211,11 +220,13 @@ function heading(key: string, label: string, subtext?: string): FieldDraft {
   return { type: 'PARAGRAPH', inputType: 'info_heading_2', key, label, subtext: subtext ?? null };
 }
 
-function info(key: string, html: string, extra: Partial<FieldDraft> = {}): FieldDraft {
+/** The label names the block in the builder; respondents see only the subtext. */
+function info(key: string, label: string, html: string, extra: Partial<FieldDraft> = {}): FieldDraft {
   return {
     type: 'PARAGRAPH',
     inputType: 'info_text',
     key,
+    label,
     subtext: html,
     validation: { infoInlineCard: true, infoShowInPdf: false },
     ...extra,
@@ -259,7 +270,6 @@ function buildFieldDrafts(options: SgCompanyIncorporationBuildOptions): FieldDra
   const isOrganisation = eq(K.partyKind, PARTY_KIND.organisation);
   const isDirector = all(isIndividual, any(contains(K.partyRoles, PARTY_ROLE.director), contains(K.partyRoles, PARTY_ROLE.managingDirector)));
   const isSecretary = all(isIndividual, contains(K.partyRoles, PARTY_ROLE.secretary));
-  const isNominee = any(notEmpty(K.partyNomineeShareholder), notEmpty(K.partyNomineeDirector));
   const isPrivateType = any(...PRIVATE_COMPANY_TYPES.map((type) => eq(K.companyType, type)));
   const isPublicType = all(...PRIVATE_COMPANY_TYPES.map((type) => ({ fieldKey: K.companyType, operator: 'not_equals' as const, value: type })));
   const hasShareCapital = { fieldKey: K.companyType, operator: 'not_equals' as const, value: COMPANY_TYPE.publicGuarantee };
@@ -273,6 +283,7 @@ function buildFieldDrafts(options: SgCompanyIncorporationBuildOptions): FieldDra
     heading('step_company_details', 'Company details'),
     info(
       'intro_notice',
+      'Introduction',
       '<p>Tell us about the company you want to incorporate in Singapore and the people involved. You can save your progress and come back later.</p>'
         + `<p><strong>Submitting this form does not reserve a name or register the company. ${firm} will review it and handle the ACRA filing.</strong></p>`,
     ),
@@ -282,7 +293,7 @@ function buildFieldDrafts(options: SgCompanyIncorporationBuildOptions): FieldDra
 
     heading('section_company_name', 'Company name and type'),
     {
-      type: 'SINGLE_CHOICE',
+      type: 'DROPDOWN',
       key: K.companyType,
       label: 'Company type',
       isRequired: true,
@@ -291,33 +302,33 @@ function buildFieldDrafts(options: SgCompanyIncorporationBuildOptions): FieldDra
         [COMPANY_TYPE.privateLimited, 'Private company limited by shares'],
         [COMPANY_TYPE.publicLimited, 'Public company limited by shares'],
         [COMPANY_TYPE.publicGuarantee, 'Public company limited by guarantee'],
-      ], COMPANY_TYPE.exemptPrivate),
-      ...requirements(
+      ]),
+      ...withValidation(requirements(
         '<p><strong>Exempt private company:</strong> up to 20 shareholders, all of them individuals. Most small businesses start as one.</p>'
           + '<p><strong>Private company:</strong> up to 50 shareholders, which can include companies.</p>'
           + '<p><strong>Public company limited by shares:</strong> can have more than 50 shareholders and offer shares to the public.</p>'
           + `<p><strong>Public company limited by guarantee:</strong> has members instead of shareholders and no share capital; usually for non-profit activities. ${guidanceLinks('G02')}</p>`,
-      ),
+      ), { defaultValue: COMPANY_TYPE.exemptPrivate }),
     },
     {
-      type: 'SINGLE_CHOICE',
+      type: 'DROPDOWN',
       key: K.nameSuffixPrivate,
       label: 'Name ending',
       subtext: nameWithoutEnding,
       isRequired: true,
       condition: isPrivateType,
-      options: choices(PRIVATE_NAME_SUFFIXES.map((suffix) => [suffix, suffix]), PRIVATE_NAME_SUFFIXES[0]),
-      validation: { choiceLayout: 'chips' },
+      options: choices(PRIVATE_NAME_SUFFIXES.map((suffix) => [suffix, suffix])),
+      validation: { defaultValue: 'Pte. Ltd.' },
     },
     {
-      type: 'SINGLE_CHOICE',
+      type: 'DROPDOWN',
       key: K.nameSuffixPublic,
       label: 'Name ending',
       subtext: nameWithoutEnding,
       isRequired: true,
       condition: isPublicType,
-      options: choices(PUBLIC_NAME_SUFFIXES.map((suffix) => [suffix, suffix]), PUBLIC_NAME_SUFFIXES[0]),
-      validation: { choiceLayout: 'chips' },
+      options: choices(PUBLIC_NAME_SUFFIXES.map((suffix) => [suffix, suffix])),
+      validation: { defaultValue: 'Limited' },
     },
     {
       type: 'COMPANY_NAME_CHECK',
@@ -391,6 +402,7 @@ function buildFieldDrafts(options: SgCompanyIncorporationBuildOptions): FieldDra
     heading('step_parties', 'Shareholders and officers'),
     info(
       'parties_guidance',
+      'About shareholders and officers',
       '<p>Add each person or company once and tick every role they will hold. Shareholdings must total 100%, and the company needs at least one director who is an individual. A company can be a shareholder but cannot hold any other role. A company secretary must live in Singapore. For a company limited by guarantee, tick Shareholder for each member.</p>'
         + `<p>${guidanceLinks('G05')} · ${guidanceLinks('G08')}</p>`,
     ),
@@ -427,13 +439,17 @@ function buildFieldDrafts(options: SgCompanyIncorporationBuildOptions): FieldDra
       key: K.partyRoles,
       label: 'Roles',
       isRequired: true,
-      options: choices(Object.entries(PARTY_ROLE_LABELS)),
+      // Officer roles are offered to individuals only; a company can only be a shareholder.
+      options: choices(Object.entries(PARTY_ROLE_LABELS)).map((option) => (
+        option.value === PARTY_ROLE.shareholder ? option : { ...option, condition: isIndividual }
+      )),
       validation: { choiceLayout: 'chips', layoutBreakBefore: true },
     },
     {
       type: 'PARAGRAPH',
       inputType: 'info_text',
       key: 'party_organisation_role_notice',
+      label: 'Company role notice',
       subtext: 'A company can only be a shareholder. Untick the other roles.',
       condition: all(
         isOrganisation,
@@ -552,20 +568,30 @@ function buildFieldDrafts(options: SgCompanyIncorporationBuildOptions): FieldDra
     tickBox(K.partyNomineeShareholder, 'Nominee shareholder', 'Holds these shares on behalf of someone else', {
       condition: isShareholder,
     }),
+    {
+      type: 'SHORT_TEXT',
+      inputType: 'text',
+      key: K.partyShareholderNominator,
+      label: 'Shareholder nominator',
+      placeholder: 'Full name of the person or company the shares are held for',
+      isRequired: true,
+      condition: all(isShareholder, notEmpty(K.partyNomineeShareholder)),
+      validation: { maxLength: 300 },
+    },
     tickBox(K.partyNomineeDirector, 'Nominee director', 'Acts as director on someone else’s instructions', {
       condition: isDirector,
     }),
     {
       type: 'SHORT_TEXT',
       inputType: 'text',
-      key: K.partyNominator,
-      label: 'Acts on behalf of',
-      placeholder: 'Name of the person or company they act for',
+      key: K.partyDirectorNominator,
+      label: 'Director nominator',
+      placeholder: 'Full name of the person or company whose instructions they act on',
       isRequired: true,
-      condition: isNominee,
+      condition: all(isDirector, notEmpty(K.partyNomineeDirector)),
       validation: { maxLength: 300 },
     },
-    { type: 'PAGE_BREAK', inputType: 'repeat_end', key: 'parties_section_end' },
+    { type: 'PAGE_BREAK', inputType: 'repeat_end', key: 'parties_section_end', label: 'End of shareholders and officers' },
 
     // -----------------------------------------------------------------------
     // Page 3 — Share capital and our services
@@ -630,6 +656,7 @@ function buildFieldDrafts(options: SgCompanyIncorporationBuildOptions): FieldDra
     heading('section_services', 'Our services'),
     info(
       'services_guidance',
+      'About our services',
       `<p>Every company needs at least one director who lives in Singapore, and a company secretary who lives in Singapore. If none of the people you listed fills a role, tick the service and ${firm} will provide it. ${guidanceLinks('G10')}</p>`,
     ),
     tickBox(K.nomineeDirectorService, 'Nominee director service', `${firm} to provide a Singapore-resident nominee director`),

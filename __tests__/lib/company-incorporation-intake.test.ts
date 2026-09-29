@@ -17,6 +17,9 @@ import { parseFormCompletionSettings, parseFormNotificationSettings } from '@/li
 import { evaluateIncorporationReadiness, INCORPORATION_CHECKLIST_AREAS, emptyIncorporationReview } from '@/lib/forms/company-incorporation-review';
 import { parseNameCheckResultValue } from '@/lib/forms/name-check-result';
 import { saveFormFieldsSchema } from '@/lib/validations/form-builder';
+import { getPublishReadiness } from '@/components/forms/builder-analysis';
+import { fromServerField } from '@/components/forms/builder-utils';
+import { formatReviewValue } from '@/components/forms/public-form-review';
 
 const TODAY = '2026-09-29';
 
@@ -133,7 +136,9 @@ describe('company incorporation profile', () => {
 
   it('asks who a nominee acts for', () => {
     expect(errors(validAnswers({ [K.partyNomineeShareholder]: [[], ['yes']] }))).toContain('nominator_missing');
-    expect(errors(validAnswers({ [K.partyNomineeShareholder]: [[], ['yes']], [K.partyNominator]: ['', 'Chen Holdings'] }))).toEqual([]);
+    expect(errors(validAnswers({ [K.partyNomineeShareholder]: [[], ['yes']], [K.partyShareholderNominator]: ['', 'Chen Holdings'] }))).toEqual([]);
+    expect(errors(validAnswers({ [K.partyNomineeDirector]: [['yes'], []] }))).toContain('nominator_missing');
+    expect(errors(validAnswers({ [K.partyNomineeDirector]: [['yes'], []], [K.partyDirectorNominator]: ['Tan Holdings', ''] }))).toEqual([]);
   });
 
   it('needs a Singapore-resident company secretary, or our secretary service', () => {
@@ -218,6 +223,39 @@ describe('company incorporation template', () => {
       expect(keys).toContain(key);
     }
     expect(parsed.fields.filter((field) => field.type === 'PAGE_BREAK' && !field.inputType?.startsWith('repeat')).length).toBe(3);
+  });
+
+  it('passes the builder publish check without blockers', () => {
+    const parsed = saveFormFieldsSchema.parse({ fields });
+    const builderFields = parsed.fields.map((field, index) => fromServerField({
+      id: `field-${index}`,
+      optionPresetId: field.optionPresetId ?? null,
+      type: field.type,
+      label: field.label ?? null,
+      key: field.key ?? '',
+      placeholder: field.placeholder ?? null,
+      subtext: field.subtext ?? null,
+      helpText: field.helpText ?? null,
+      inputType: field.inputType ?? null,
+      options: field.options ?? null,
+      validation: field.validation ?? null,
+      condition: field.condition ?? null,
+      isRequired: field.isRequired ?? false,
+      hideLabel: field.hideLabel ?? false,
+      isReadOnly: field.isReadOnly ?? false,
+      layoutWidth: field.layoutWidth ?? 100,
+      position: index,
+    }));
+    const readiness = getPublishReadiness({ title: 'Singapore Company Incorporation', slug: 'incorporation', draftSaveEnabled: true, fields: builderFields });
+    expect(readiness.blockers).toEqual([]);
+  });
+
+  it('reads nominee tick boxes as Yes or No on the review page', () => {
+    const tick = saveFormFieldsSchema.parse({ fields }).fields.find((field) => field.key === K.partyNomineeShareholder)!;
+    const field = { ...tick, id: 'tick' } as unknown as Parameters<typeof formatReviewValue>[0];
+    expect(formatReviewValue(field, ['yes'], new Map())).toBe('Yes');
+    expect(formatReviewValue(field, [], new Map())).toBe('No');
+    expect(formatReviewValue(field, undefined, new Map())).toBe('No');
   });
 
   it('publishes every ACRA guidance link on its field', () => {
