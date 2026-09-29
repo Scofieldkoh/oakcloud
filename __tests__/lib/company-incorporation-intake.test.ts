@@ -38,6 +38,7 @@ function validAnswers(overrides: Record<string, unknown> = {}): Record<string, u
     [K.capitalCurrency]: 'SGD',
     [K.shareCount]: '1000',
     [K.capitalFullyPaid]: 'yes',
+    [K.secretaryService]: ['yes'],
     [K.officeChoice]: 'firm_service',
     [K.firstFye]: '2027-06-30',
     [K.rulesPreference]: 'acra_model',
@@ -105,7 +106,10 @@ describe('company incorporation profile', () => {
   });
 
   it('counts a managing director as a director and accepts the other officer roles', () => {
-    expect(errors(validAnswers({ [K.partyRoles]: [['shareholder', 'managing_director', 'ceo'], ['shareholder', 'secretary']] }))).toEqual([]);
+    expect(errors(validAnswers({
+      [K.partyRoles]: [['shareholder', 'managing_director', 'ceo'], ['shareholder', 'secretary']],
+      [K.partyResident]: [['yes'], ['yes']],
+    }))).toEqual([]);
   });
 
   it('lets a company be a shareholder only', () => {
@@ -125,6 +129,13 @@ describe('company incorporation profile', () => {
   it('asks who a nominee acts for', () => {
     expect(errors(validAnswers({ [K.partyNomineeShareholder]: [[], ['yes']] }))).toContain('nominator_missing');
     expect(errors(validAnswers({ [K.partyNomineeShareholder]: [[], ['yes']], [K.partyNominator]: ['', 'Chen Holdings'] }))).toEqual([]);
+  });
+
+  it('needs a Singapore-resident company secretary, or our secretary service', () => {
+    expect(errors(validAnswers({ [K.secretaryService]: [] }))).toContain('no_secretary');
+    const withSecretary = validAnswers({ [K.secretaryService]: [], [K.partyRoles]: [['shareholder', 'director'], ['shareholder', 'secretary']] });
+    expect(errors(withSecretary)).toEqual(['secretary_not_resident']);
+    expect(errors({ ...withSecretary, [K.partyResident]: [['yes'], ['yes']] })).toEqual([]);
   });
 
   it('stops a secretary who is also the only director', () => {

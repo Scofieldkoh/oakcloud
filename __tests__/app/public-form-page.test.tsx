@@ -451,6 +451,7 @@ describe('PublicFormPage', () => {
     render(<PublicFormPage />);
 
     fireEvent.change(await screen.findByRole('textbox', { name: /Full name/ }), { target: { value: 'Tan Mei Ling' } });
+    fireEvent.change(screen.getByRole('textbox', { name: /Email/ }), { target: { value: 'mei@example.com' } });
     const director = screen.getByRole('checkbox', { name: 'Director' });
     fireEvent.click(director);
     expect(director).toHaveAttribute('aria-checked', 'true');

@@ -6,8 +6,8 @@ Status: implemented (template version 2). Source: the 2026-09-28 handover spec "
 
 - **Seeding**: `npx tsx scripts/seed-incorporation-form.ts --email <login>` creates the form as a DRAFT in the user's workspace. Running it again updates the unpublished copy in place with the current questions. A published (locked) copy is never changed; a new draft is created beside it. There is no "Start from" choice in the New form dialog.
 - The public form has four question pages plus a review step:
-  1. Company details: contact name and email, company type (private or public limited by shares), proposed name and two alternative names (all advisory name-checked), primary SSIC (required) and optional secondary SSIC, business description, company email.
-  2. Shareholders and officers: one card per person or company. Type and roles are buttons (Shareholder, Director, Managing director, CEO, Company secretary). Shareholding %, email, UEN for a company, and per-person ticks: lives in Singapore (directors), nominee shareholder, nominee director, other control, with "acts on behalf of" when a nominee box is ticked.
+  1. Company details: contact name, email and mobile number, company type (private or public limited by shares), proposed name and two alternative names (all advisory name-checked), primary SSIC (required) and optional secondary SSIC, business description, company email.
+  2. Shareholders and officers: one card per person or company. Type and roles are buttons (Shareholder, Director, Managing director, CEO, Company secretary). Shareholding %, email (required, used to send the KYC form), UEN for a company, and per-person ticks: lives in Singapore (directors and secretaries), nominee shareholder, nominee director, other control, with "acts on behalf of" when a nominee box is ticked.
   3. Share capital and services: issued capital, currency, number of shares, fully paid (Yes/No, then amount paid); tick boxes for our nominee director service and company secretary service.
   4. Registered office and other details: own address or our registered office service, first FYE (12-month periods assumed), model or custom constitution, additional instructions.
   5. Review and submit (every answer by page with Edit links, plus items for our review).
@@ -27,6 +27,7 @@ Code: `src/lib/forms/company-incorporation-profile.ts` (browser-safe, used on ea
   - shareholdings total exactly 100%, at least one shareholder and one individual director (director or managing director); at most 50 shareholders for a private company; a company secretary cannot be the only director;
   - number of shares is a whole number and each shareholding gives whole shares; amount paid is below the capital when not fully paid;
   - at least one director lives in Singapore, or our nominee director service is ticked;
+  - someone is company secretary and lives in Singapore, or our company secretary service is ticked;
   - 6-digit postal code; a real FYE date; option values from the form only.
 - **Staff review** (stored, never blocking): names not checked or with matches, FYE more than 18 months away.
 - Percentages and amounts are compared as exact decimals (`src/lib/forms/decimal-string.ts`), never floats.
