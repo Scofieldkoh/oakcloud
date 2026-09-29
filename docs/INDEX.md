@@ -49,8 +49,8 @@
 
 | Document | Description |
 |----------|-------------|
-| [OakDoc Replacement Specification](./oakdoc-a4-retirement-readiness.md) | Approved replacement direction, current capability gaps, native document contracts, migration and acceptance requirements |
-| [OakDoc Parallel Implementation Handover](./plans/2026-09-26-oakdoc-replacement-implementation.md) | Sub-agent packets, exclusive file ownership, dependency waves, validation and cutover/rollback gates |
+| [OakDoc Replacement Specification](./oakdoc-a4-retirement-readiness.md) | Historical (shipped in PRs #62-#66): replacement decisions D01-D07, native document contracts, migration rules. Current editor design is in [Architecture](./ARCHITECTURE.md#document-editor-oakdoc) |
+| [OakDoc Parallel Implementation Handover](./plans/2026-09-26-oakdoc-replacement-implementation.md) | Historical: implementation packets and completion evidence for the OakDoc cutover |
 | [Service Agreement Reference Fidelity Plan](./plans/2026-09-27-service-agreement-reference-fidelity.md) | Word-reference gap analysis, variables, formatting, structure, pagination and implementation acceptance |
 | [Business Assistant Specification](./features/business-assistant/SPECIFICATION.md) | General assistant architecture; BizFile is a reference use case; repository-grounded v1.4 review |
 | [Business Assistant BizFile Correction Workflow](./features/business-assistant/CORRECTION_WORKFLOW.md) | Implemented P12 deterministic-field correction UI, shared contract, API semantics, safety gates, and remaining correction work |

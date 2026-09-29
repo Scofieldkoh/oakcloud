@@ -1,6 +1,6 @@
 # Oakcloud - Practice Management System
 
-> **Last Updated**: 2026-09-10
+> **Last Updated**: 2026-09-29
 
 Oakcloud is a modular practice management system for accounting firms. It is local-first, multi-tenant, and includes versioned Tasks and Pipelines alongside the Company, Document Generation, E-signing, and Forms modules.
 
@@ -142,13 +142,13 @@ Use the `S3_ACCESS_KEY` and `S3_SECRET_KEY` values from your local `.env`. Do no
 
 | Layer | Technologies |
 |-------|--------------|
-| Frontend | Next.js 15, React 19, TypeScript, Tailwind CSS, Chakra UI |
+| Frontend | Next.js 15, React 19, TypeScript, Tailwind CSS |
 | State | Zustand, TanStack Query, React Hook Form |
 | Backend | Node.js 24 LTS, PostgreSQL 16, Prisma 7 |
 | Auth | JWT (`jose`), Argon2id (`@noble/hashes`) |
 | AI | OpenAI, Anthropic, Google AI, OpenRouter |
 | Storage | MinIO / S3-compatible object storage |
-| Documents | TipTap, pdf-lib, Puppeteer |
+| Documents | OakDoc (Word editor via `@docx-editor.dev/react`), Microsoft Graph Word-to-PDF, pdf-lib, Puppeteer |
 | Infra | Docker Compose, optional Redis, in-process scheduler |
 
 Current package version: `0.1.0` (from [`package.json`](../package.json)).

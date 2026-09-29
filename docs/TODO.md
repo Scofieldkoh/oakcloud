@@ -1,12 +1,12 @@
 # TODO / Roadmap
 
-> **Last Updated**: 2026-08-11
+> **Last Updated**: 2026-09-29
 
 This document tracks known issues, planned features, and completed work for Oakcloud.
 
 ## Development Guidelines
 
-This web app is still under active development, all datas are dummy. Backward compatibility are not required.
+Oakcloud is in production use and holds real client data. Preserve existing records, stored preferences and public links when changing behaviour, and never delete or rewrite business records as a side effect of a code change.
 
 Key principles:
 
@@ -32,6 +32,7 @@ Key principles:
 | In Progress | Currently being worked on |
 | Blocked | Waiting on dependency |
 | Done | Completed |
+| Superseded | No longer applies; the note says what replaced it |
 
 ## Known Issues
 
@@ -52,7 +53,7 @@ Key principles:
 | GEN-003 | P2 | Open | Letterhead rendering issues | Various formatting problems |
 | GEN-004 | P2 | Open | Share button issues | Format, comment, and notification problems |
 | GEN-005 | P3 | Open | Export details without line items | Option to exclude AI extraction data |
-| GEN-006 | P2 | Open | A4 editor blank-page browser test is flaky | `adds and removes a persistent blank page with one action` intermittently fails at the add or remove step under real Chromium layout; unrelated to list editing, likely tied to in-progress pagination reflow changes |
+| GEN-006 | P2 | Superseded | A4 editor blank-page browser test is flaky | The A4 editor and this test were removed when OakDoc became the only editor (PRs #62-#66) |
 | GEN-007 | P1 | Implemented | Multi-template document generation batches | One unified four-stage workspace (Documents, Shared setup, Configure, Review & generate) replaces the single-template wizard and split steppers; resumable batches, server-derived master fields, per-item overrides, editable review, partial success, and targeted retry are implemented |
 
 ### UI/UX

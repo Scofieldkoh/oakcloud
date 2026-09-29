@@ -1,6 +1,6 @@
 # Architecture
 
-> **Last Updated**: 2026-09-05
+> **Last Updated**: 2026-09-29
 > **Audience**: Developers
 
 System architecture and runtime design overview for Oakcloud.
@@ -32,7 +32,6 @@ Core design principles:
 | React 19 | UI layer |
 | TypeScript | Type safety |
 | Tailwind CSS | Styling |
-| Chakra UI | Shared component primitives |
 | TanStack Query | Server-state fetching and invalidation |
 | Zustand | Lightweight local app state |
 | React Hook Form + Zod | Form state and validation |
@@ -53,8 +52,10 @@ Core design principles:
 
 | Technology | Purpose |
 |------------|---------|
-| TipTap | Rich text editing |
-| pdf-lib | Existing document export paths |
+| `@docx-editor.dev/react` | OakDoc, the Word (DOCX) editor for templates, partials and generated documents |
+| Microsoft Graph | Word-to-PDF conversion for OakDoc documents |
+| TipTap | Rich text inputs outside the document editor (`rich-text-editor.tsx`) |
+| pdf-lib | PDF inspection and assembly in export paths |
 | Puppeteer | Form response PDF rendering |
 | System Chromium | Resolved by `src/lib/chrome-executable.ts`; Docker exposes the stable executable through `CHROME_PATH` |
 | data.gov.sg ACRA datastore | Source for the locally mirrored `acra_entity` table powering company name availability checks for the form "Company name check" element (ACRA Information on Corporate Entities collection, updated monthly; mirrored by the daily ACRA sync task) |
@@ -197,19 +198,23 @@ Examples:
 
 MinIO is used in local development; S3-compatible providers can be used in production.
 
-## A4 Document Editor Pagination
+## Document Editor (OakDoc)
 
-The A4 editor stores one canonical HTML document and derives physical pages at runtime. Soft page boundaries are never persisted; explicit hard boundaries use `<div class="page-break" data-break-type="hard"></div>`. Legacy `<!-- PAGE_BREAK -->` comments are treated as soft layout hints and removed when content is normalized.
+OakDoc is the only document editor. Templates, partials and generated documents are Word (DOCX) packages stored as immutable assets in object storage; database records hold each asset's storage key, size, SHA-256 and revision. The browser edits them with `@docx-editor.dev/react` (`src/components/documents/oakdoc-editor.tsx` for templates, `oakdoc-generated-document-editor.tsx` and `generation-batch/oakdoc-review-editor.tsx` for generated documents).
 
-Pagination runs as one animation-frame transaction over hard-break-delimited sections. The engine reassembles continuation fragments, measures them against the active A4 content box, repacks content forward and backward, commits the full page set atomically, and restores selection through stable flow IDs. Paragraphs and list items may continue across pages, tables split between body rows, and oversized atomic blocks are rendered once instead of being requeued. When a later outer-list item represents a section containing its own nested list, the paginator first tries to place the section heading and a fitting portion of that nested list in the remaining page space; it falls back to the clean outer-item boundary only when no structured child split fits.
+- Shared contracts live in `src/types/oakdoc.ts`. Field, condition, repeater, partial and signature semantics live in `src/lib/document-editor/oakdoc-*.ts`.
+- Every uploaded or saved package passes the bounded inspection in `oakdoc-package-policy.ts` before any transform.
+- Saves carry the base revision they were edited from; `revision-concurrency.ts` rejects stale writes, and the client clears its dirty state only when the server's receipt matches its current local revision.
+- Generation (`src/services/oakdoc-generation.service.ts`, batch generation under `src/services/document-generation-batch/`) fills a copy of the template package and records the template version and hash it used.
+- PDF output (`src/services/oakdoc-output.service.ts`) converts the DOCX through Microsoft Graph and validates the result.
+- The Fields panel and template validation share one standard-field catalog in `src/components/documents/template-editor/template-field-catalog.ts`.
+- `src/lib/document-editor/document-engine.ts` decides which engine owns a record. Metadata that claims OakDoc but cannot be trusted is `INVALID` and never falls back to A4 handling.
 
-When a page split occurs inside a nested text block, such as a paragraph inside a list item, the engine assigns that boundary block a derived flow ID. Reassembly merges only boundary blocks whose tag and flow ID both match, preserving the canonical paragraph structure while leaving intentional adjacent paragraphs separate. For page fragments created before nested blocks carried flow IDs, reassembly also removes an exact word-boundary suffix/prefix overlap only when the parent list item is explicitly marked as the continuation of the same flow item; this repairs stale duplicated tail words without changing independently identified paragraphs.
+### Historical A4 records
 
-The editor renders a single canonical `contenteditable` root. Physical A4 page wrappers are derived children of that root, while page chrome remains non-editable. Native browser selection can therefore span any number of physical pages. Content commands capture a logical selection, update canonical HTML once, increment the reflow generation, schedule one measurement frame, atomically commit only the newest generation, and restore the logical selection. Native browser block splits receive distinct flow IDs before reassembly so an Enter-created paragraph is not mistaken for a continuation fragment. Automatic reflow never creates a history entry or emits a content change.
+The A4 HTML editor is retired. `src/lib/document-editor/a4-retirement.ts` rejects every operation that would create or change A4 content, from the UI, scripts or direct API calls. A4 drafts move to OakDoc through the reviewed draft conversion, which keeps the original snapshot.
 
-Document layout is versioned under `contentJson.layout`. The normalized model owns the global font family, base font size, line height, paragraph spacing, and independent top, right, bottom, and left margins. Missing or invalid metadata falls back to the default A4 layout, and saves merge layout without discarding unrelated JSON keys. Template editing, generated-document editing, read-only preview, print CSS, and PDF export all extract and normalize this same metadata; newly generated documents inherit the template JSON unless the generation workflow supplies an explicit edited JSON value. Resolved partials inherit their parent document's layout, while inline font family, font size, and line-height styles remain authoritative over the global typography defaults.
-
-Preview, read-only, print, and PDF paths share the same hard-versus-soft break contract. The deterministic engine is covered by DOM-independent measurement tests, while Chromium browser tests verify physical overflow, pullback, table integrity, and caret restoration using real layout.
+Finalized and signed A4 documents stay readable and exportable. `src/components/documents/a4-historical-viewer.tsx`, the `a4-pagination/` layout code, `a4-print-styles.ts` and `src/services/a4-output-browser.service.ts` remain only for that read-only view and PDF export. Do not add new features on top of them.
 
 Template test previews use the same placeholder resolver as document generation. When structured company address fields are present but `company.address.letter` is absent, the resolver derives the letter-format value through the shared address formatter before resolving placeholders.
 
@@ -427,51 +432,3 @@ The 2026-07-24 migration is a complete reset of the retired Workflow/Projects da
 | Bank Reconciliation | Transaction matching and review |
 | Client Portal | Client-facing access and requests |
 | Accounting Integration | Xero, QuickBooks, MYOB |
-
-## A4 Editor Reliability Architecture
-
-The A4 editor keeps canonical sanitized continuous HTML as the single
-persisted representation. Physical A4 pages are derived fragments only and are
-never serialized. Every user mutation flows through one pipeline:
-
-1. A native event is captured in the live editing surface.
-2. The caret or selection is converted into a logical `FlowSelectionBookmark`
-   (flow id + text offset) by `a4-pagination/selection.ts`.
-3. A pure document transaction in `a4-pagination/document-actions.ts` or
-   `a4-pagination/formatting.ts` mutates the canonical HTML and returns one
-   `DocumentTransactionResult`.
-4. The editor pushes exactly one history snapshot, updates its canonical page
-   state, and schedules one latest-generation reflow.
-5. After reflow, the logical bookmark is restored into the live DOM.
-
-Hard page breaks are the only persisted definition of an explicit page
-section. `splitHardSections` derives canonical sections from hard breaks, the
-pagination engine splits those sections into soft physical fragments, and page
-deletion always targets an owning hard section (see
-`hardSectionIndexForFragment`). Backspace and forward Delete at soft or hard
-boundaries both use the same logical delete transaction, so they are
-symmetric. Removing a break without deleting content is a separate action:
-`removeHardPageBreak` deletes the break element before a section and merges
-that section into the previous one, and the editor surfaces it as a visible
-"Page break" control on hard-starting pages plus a toolbar action, so authors
-do not have to rely on keyboard position alone.
-
-The Fields panel and template validation share one standard-field catalog in
-`template-editor/template-field-catalog.ts`. Legacy `custom.*` references found
-in loaded template content are inferred into editor custom-placeholder
-definitions on load and persist on the next save.
-
-Layout values are normalized once in `a4-pagination/layout.ts` and formatted
-into a truthful status line by `formatA4LayoutStatus`. Repagination exposes a
-stable `aria-busy`/`Repaginating…` state; only the newest reflow generation may
-publish pages or clear the busy state, so rapid layout changes coalesce.
-
-Editor, preview, browser print, HTML export, and PDF export consume the same
-print stylesheet built by `a4-print-styles.ts`, including identical typography,
-spacing, margins, `<br>` behavior, and page-content height. Empty paragraphs
-and divs collapse consistently across those surfaces; intentional blank lines
-are represented by `<br>`. Oversized
-unsplittable blocks are represented once: the engine marks the fragment
-`oversized`, the editor shows an accessible warning and makes the page content
-scrollable, and print/export render the block a single time with
-`data-oversized="true"`.

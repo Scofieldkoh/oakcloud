@@ -1,6 +1,6 @@
 # Service Layer Patterns
 
-> **Last Updated**: 2025-01-12
+> **Last Updated**: 2026-09-29
 > **Audience**: Developers
 
 This document describes the service layer architecture, patterns, and conventions used in Oakcloud.
@@ -117,33 +117,46 @@ export async function deleteCompany(
 
 ### 4. Error Handling
 
-Services throw errors that are caught by API routes:
+Services throw the typed errors from `@/lib/errors`. Each carries a stable `code` from `ErrorCodes` and an HTTP status:
+
+| Error | Status | Use for |
+|-------|--------|---------|
+| `ValidationError` / `BadRequestError` | 400 | Invalid input |
+| `UnauthorizedError` | 401 | No authenticated user |
+| `ForbiddenError` | 403 | Missing permission or workspace access |
+| `NotFoundError` | 404 | Record absent or outside the caller's workspace |
+| `ConflictError` | 409 | Stale revision, duplicate, or state conflict |
+| `UnprocessableEntityError` | 422 | Well-formed request that breaks a business rule |
+| `DeadlineApiError` | 409 / 422 | Deadline and schedule domain, with its own codes |
 
 ```typescript
-// Service throws descriptive errors
+import { ConflictError, NotFoundError } from '@/lib/errors';
+
 if (!existing) {
-  throw new Error('Company not found');
+  throw new NotFoundError('Company not found');
 }
 
 if (existing.deletedAt) {
-  throw new Error('Company is already deleted');
+  throw new ConflictError('Company is already deleted');
 }
+```
 
-// API route catches and formats response
+API routes pass anything they catch to `handleApiError` from `@/lib/api-error-handler`, which returns `{ success: false, error: { code, message, details } }` with the error's status:
+
+```typescript
+import { handleApiError } from '@/lib/api-error-handler';
+
 try {
   const result = await someService(data, params);
   return NextResponse.json(result);
 } catch (error) {
-  if (error instanceof z.ZodError) {
-    return NextResponse.json({ error: error.errors[0].message }, { status: 400 });
-  }
-  log.error('Operation failed:', safeErrorMessage(error));
-  return NextResponse.json(
-    { error: error instanceof Error ? error.message : 'An error occurred' },
-    { status: 500 }
-  );
+  return handleApiError(error, 'companies:update');
 }
 ```
+
+`handleApiError` also maps Prisma errors (unique constraint, missing record). It does not recognise `ZodError`, so validate with `schema.safeParse()` and throw a `ValidationError` on failure.
+
+`handleApiError` still maps some plain `Error` messages (for example "Unauthorized", "Forbidden" or "not found") for older services. Do not rely on that in new code; throw a typed error instead. Some older routes return `{ error: string }` directly; keep their response shape when you touch them unless every caller is updated in the same change.
 
 ### 5. Safe Logging
 
@@ -554,7 +567,7 @@ export async function getCompanyById(
 
   // Require tenantId unless explicitly skipping
   if (!tenantId && !skipTenantFilter) {
-    throw new Error('tenantId is required for company queries');
+    throw new ValidationError('tenantId is required for company queries');
   }
 
   const where: Prisma.CompanyWhereInput = { id };
