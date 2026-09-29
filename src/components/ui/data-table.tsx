@@ -30,12 +30,22 @@ export const TABLE_INTERACTIVE_TARGET_SELECTOR =
 
 export type TableSortOrder = 'asc' | 'desc';
 
-export function isTableInteractiveTarget(target: EventTarget | null): boolean {
+/**
+ * True when a click or key press on a clickable row or card belongs to a
+ * control inside it rather than to the row itself. Pass the row as
+ * `container` so events from menus and dialogs portalled out of the row
+ * (which React still bubbles through it) never activate the row.
+ */
+export function isTableInteractiveTarget(
+  target: EventTarget | null,
+  container?: Element | null,
+  selector: string = TABLE_INTERACTIVE_TARGET_SELECTOR,
+): boolean {
   // Element, not HTMLElement: clicks on an icon inside a button land on its
   // SVG, which must still count as a click on the button.
-  return target instanceof Element
-    ? Boolean(target.closest(TABLE_INTERACTIVE_TARGET_SELECTOR))
-    : false;
+  if (!(target instanceof Element)) return false;
+  if (container && !container.contains(target)) return true;
+  return Boolean(target.closest(selector));
 }
 
 export function isPlainTableRowClick(event: MouseEvent<HTMLElement>): boolean {
@@ -46,7 +56,7 @@ export function isPlainTableRowClick(event: MouseEvent<HTMLElement>): boolean {
     && !event.ctrlKey
     && !event.shiftKey
     && !event.altKey
-    && !isTableInteractiveTarget(event.target)
+    && !isTableInteractiveTarget(event.target, event.currentTarget)
   );
 }
 
@@ -333,7 +343,7 @@ export function TableRow({
       onActivate
       && !event.defaultPrevented
       && (event.key === 'Enter' || event.key === ' ')
-      && !isTableInteractiveTarget(event.target)
+      && !isTableInteractiveTarget(event.target, event.currentTarget)
     ) {
       event.preventDefault();
       onActivate();
