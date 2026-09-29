@@ -216,7 +216,7 @@ export function ServiceItemEditor({
         </fieldset>
       ) : null}
       <div className="mt-3 grid gap-3 sm:grid-cols-2">
-        <div className="max-w-48 text-xs text-text-secondary">
+        <div className="max-w-[17rem] text-xs text-text-secondary">
           <span>Service start date</span>
           <SingleDateInput
             value={item.startDate}
@@ -227,20 +227,20 @@ export function ServiceItemEditor({
             })}
             ariaLabel="Service start date"
             showTodayButton
-            className="mt-1 w-48 max-w-full"
+            className="mt-1 w-[17rem] max-w-full"
             controlClassName={(item.startDateOverridden ?? item.startDate !== agreementDate)
               ? 'bg-oak-row-selected dark:bg-oak-row-selected'
               : 'bg-background-tertiary dark:bg-background-tertiary'}
           />
         </div>
-        <div className="max-w-48 text-xs text-text-secondary">
+        <div className="max-w-[17rem] text-xs text-text-secondary">
           <span>End date</span>
           <SingleDateInput
             value={item.endDate ?? ''}
             onChange={(next) => onChange({ ...item, endDate: next || null })}
             ariaLabel="End date"
             showTodayButton
-            className="mt-1 w-48 max-w-full"
+            className="mt-1 w-[17rem] max-w-full"
           />
         </div>
       </div>

@@ -405,7 +405,7 @@ export function StandardDocumentConfig({
                       ariaLabel={field.label}
                       showTodayButton
                       error={missing ? 'Required' : undefined}
-                      className="mt-2"
+                      className="mt-2 w-[17rem] max-w-full"
                     />
                   ) : (
                     <input

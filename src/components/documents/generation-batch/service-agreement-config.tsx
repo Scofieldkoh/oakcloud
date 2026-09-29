@@ -178,7 +178,7 @@ export function ServiceAgreementConfig({
       </BatchSection>
 
       <BatchSection title="Agreement details">
-        <div className="grid max-w-full gap-4 sm:grid-cols-[12rem_minmax(22rem,44rem)]">
+        <div className="grid max-w-full gap-4 sm:grid-cols-[17rem_minmax(22rem,44rem)]">
           <div className="block">
             <label htmlFor="agreement-date" className="mb-1.5 block text-sm font-medium text-text-primary">
               Agreement date
@@ -201,7 +201,7 @@ export function ServiceAgreementConfig({
               })}
               disabled={disabled}
               ariaLabel="Agreement date"
-              className="w-48 max-w-full"
+              className="w-[17rem] max-w-full"
               controlClassName="h-11"
             />
           </div>
@@ -227,7 +227,7 @@ export function ServiceAgreementConfig({
             />
           </div>
         </div>
-        <div className="mt-4 grid max-w-full gap-4 sm:grid-cols-[12rem_11rem]">
+        <div className="mt-4 grid max-w-full gap-4 sm:grid-cols-[17rem_11rem]">
           <div className="block">
             <label htmlFor="agreement-effective-date" className="mb-1.5 block text-sm font-medium text-text-primary">
               Effective date
@@ -240,7 +240,7 @@ export function ServiceAgreementConfig({
               placeholder="Agreement date"
               disabled={disabled}
               ariaLabel="Effective date"
-              className="w-48 max-w-full"
+              className="w-[17rem] max-w-full"
               controlClassName="h-11"
             />
             <p className="mt-1 text-xs text-text-muted">Leave empty to use the agreement date.</p>
