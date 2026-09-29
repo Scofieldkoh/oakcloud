@@ -64,12 +64,18 @@ function choiceEntryDetail(entry: unknown): string {
   return '';
 }
 
+/** A single-option multiple choice with a hidden label reads as a tick box. */
+function isTickBox(field: PublicFormField): boolean {
+  return field.type === 'MULTIPLE_CHOICE' && field.hideLabel === true && parseChoiceOptions(field.options).length === 1;
+}
+
 /** Readable value for one answer, using option labels rather than stored values. */
 export function formatReviewValue(
   field: PublicFormField,
   value: unknown,
   uploadsById: Map<string, ReviewUpload>
 ): string | null {
+  if (isTickBox(field)) return isEmptyValue(value) || (Array.isArray(value) && value.length === 0) ? 'No' : 'Yes';
   if (isEmptyValue(value)) return null;
 
   if (field.type === 'SINGLE_CHOICE' || field.type === 'MULTIPLE_CHOICE' || field.type === 'DROPDOWN') {

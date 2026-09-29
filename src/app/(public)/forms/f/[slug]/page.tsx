@@ -156,6 +156,7 @@ const DEFAULT_UI_LABELS = {
   name_check_data_as_of: 'Based on ACRA registry data as of {date}.',
   name_check_unavailable: 'Availability check temporarily unavailable. Please try again.',
   name_check_button_advisory: 'Check name',
+  name_check_required_advisory: 'Select Check name before continuing',
   review_title: 'Review and submit',
   review_continue: 'Review answers',
   response_reference: 'Reference: {reference}',
@@ -966,8 +967,15 @@ function isChoiceChipsEnabled(field: PublicField): boolean {
   return parseObject(field.validation)?.choiceLayout === 'chips';
 }
 
-function toChoiceChipOptions(options: ReturnType<typeof parseChoiceOptions>): ChoiceChipOption[] {
-  return options.map((option) => ({ value: option.value, label: getChoiceOptionDisplayLabel(option), locked: option.requiredSelected === true }));
+/** Chip options whose condition holds; a selected option stays visible so it can be cleared. */
+function toChoiceChipOptions(
+  options: ReturnType<typeof parseChoiceOptions>,
+  answers: Record<string, unknown>,
+  selected: string[],
+): ChoiceChipOption[] {
+  return options
+    .filter((option) => !option.condition || selected.includes(option.value) || evaluateCondition(option.condition, answers))
+    .map((option) => ({ value: option.value, label: getChoiceOptionDisplayLabel(option), locked: option.requiredSelected === true }));
 }
 
 function isLayoutBreakBeforeEnabled(field: PublicField): boolean {
@@ -2653,22 +2661,8 @@ export default function PublicFormPage() {
     return index >= 0 ? index : null;
   }
 
-  async function checkAdvisoryNamesOnPage(pageIndex: number) {
-    const pageFields = pages[pageIndex] || [];
-    for (const field of pageFields) {
-      if (field.type !== 'COMPANY_NAME_CHECK' || getNameCheckMode(field.validation) !== 'advisory') continue;
-      if (!evaluateCondition(field.condition, answers, conditionEvaluationOptions)) continue;
-      const name = typeof answers[field.key] === 'string' ? (answers[field.key] as string).trim() : '';
-      const current = nameCheckResults[field.key];
-      if (name && (!current || current.name !== name)) {
-        await handleNameCheck(field);
-      }
-    }
-  }
-
   async function handleContinue() {
     if (!validateCurrentPage()) return;
-    await checkAdvisoryNamesOnPage(currentPage);
     if (currentPage < pages.length - 1) {
       setCurrentPage((prev) => prev + 1);
     } else if (hasReviewStep) {
@@ -2749,6 +2743,13 @@ export default function PublicFormPage() {
           nextErrors[errorKey] = uiLabel('name_check_required');
         } else if (!result.available) {
           nextErrors[errorKey] = uiLabel('name_check_not_available');
+        }
+      } else if (field.type === 'COMPANY_NAME_CHECK' && !isPreview) {
+        // Advisory: any result counts (an outage records one), but the respondent must run the check.
+        const name = typeof value === 'string' ? value.trim() : '';
+        const result = nameCheckResults[field.key];
+        if (name && (!result || result.name !== name)) {
+          nextErrors[errorKey] = uiLabel('name_check_required_advisory');
         }
       }
     }
@@ -3632,7 +3633,7 @@ export default function PublicFormPage() {
                             <ChoiceChips
                               id={sectionControlId}
                               labelledBy={sectionLabelId}
-                              options={toChoiceChipOptions(sectionChoiceOptions)}
+                              options={toChoiceChipOptions(sectionChoiceOptions, rowAnswers, parseChoiceAnswerEntries(sectionValue).map((entry) => entry.value))}
                               selected={parseChoiceAnswerEntries(sectionValue).map((entry) => entry.value)}
                               multiple={sectionField.type === 'MULTIPLE_CHOICE'}
                               hasError={!!sectionErrorText}
@@ -4568,7 +4569,7 @@ export default function PublicFormPage() {
             <ChoiceChips
               id={controlId}
               labelledBy={labelId}
-              options={toChoiceChipOptions(choiceOptions)}
+              options={toChoiceChipOptions(choiceOptions, answers, parseChoiceAnswerEntries(value).map((entry) => entry.value))}
               selected={parseChoiceAnswerEntries(value).map((entry) => entry.value)}
               multiple={field.type === 'MULTIPLE_CHOICE'}
               hasError={!!errorText}
