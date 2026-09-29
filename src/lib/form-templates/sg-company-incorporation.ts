@@ -19,6 +19,7 @@ export const SG_COMPANY_INCORPORATION_PARTY_SECTION_KEY = 'parties_section';
 export const INCORPORATION_KEYS = {
   contactName: 'contact_name',
   contactEmail: 'contact_email',
+  contactPhone: 'contact_phone',
   companyEmail: 'company_email',
   companyType: 'company_type',
   proposedName: 'proposed_name',
@@ -223,6 +224,7 @@ function buildFieldDrafts(options: SgCompanyIncorporationBuildOptions): FieldDra
   const isShareholder = contains(K.partyRoles, PARTY_ROLE.shareholder);
   const isIndividual = eq(K.partyKind, PARTY_KIND.individual);
   const isDirector = all(isIndividual, any(contains(K.partyRoles, PARTY_ROLE.director), contains(K.partyRoles, PARTY_ROLE.managingDirector)));
+  const isSecretary = all(isIndividual, contains(K.partyRoles, PARTY_ROLE.secretary));
   const isNominee = any(notEmpty(K.partyNomineeShareholder), notEmpty(K.partyNomineeDirector));
   const ownOffice = eq(K.officeChoice, OFFICE_CHOICE.own);
 
@@ -238,6 +240,7 @@ function buildFieldDrafts(options: SgCompanyIncorporationBuildOptions): FieldDra
     ),
     { type: 'SHORT_TEXT', inputType: 'text', key: K.contactName, label: 'Your name', placeholder: 'The person we should contact', isRequired: true, layoutWidth: 50, validation: { maxLength: 200 } },
     { type: 'SHORT_TEXT', inputType: 'email', key: K.contactEmail, label: 'Your email', isRequired: true, layoutWidth: 50, validation: { maxLength: 320 } },
+    { type: 'SHORT_TEXT', inputType: 'phone', key: K.contactPhone, label: 'Your mobile number', isRequired: true, layoutWidth: 50, validation: { splitPhoneCountryCode: true, phoneDefaultCountryCode: '+65' } },
 
     heading('section_company_name', 'Company name and type'),
     {
@@ -323,7 +326,7 @@ function buildFieldDrafts(options: SgCompanyIncorporationBuildOptions): FieldDra
     heading('step_parties', 'Shareholders and officers'),
     info(
       'parties_guidance',
-      '<p>Add each person or company once and tick every role they will hold. Shareholdings must total 100%, and the company needs at least one director who is an individual. A company can be a shareholder but cannot hold any other role.</p>'
+      '<p>Add each person or company once and tick every role they will hold. Shareholdings must total 100%, and the company needs at least one director who is an individual. A company can be a shareholder but cannot hold any other role. A company secretary must live in Singapore.</p>'
         + `<p>${guidanceLinks('G05')} · ${guidanceLinks('G08')}</p>`,
     ),
     {
@@ -404,7 +407,8 @@ function buildFieldDrafts(options: SgCompanyIncorporationBuildOptions): FieldDra
       inputType: 'email',
       key: K.partyEmail,
       label: 'Email',
-      placeholder: 'For sending the KYC form',
+      placeholder: 'We send their KYC form here',
+      isRequired: true,
       layoutWidth: 50,
       validation: { maxLength: 320 },
     },
@@ -419,7 +423,7 @@ function buildFieldDrafts(options: SgCompanyIncorporationBuildOptions): FieldDra
       validation: { maxLength: 60 },
     },
     tickBox(K.partyResident, 'Singapore resident', 'Lives in Singapore (citizen, PR, or Employment Pass, EntrePass or Dependant’s Pass holder)', {
-      condition: isDirector,
+      condition: any(isDirector, isSecretary),
     }),
     tickBox(K.partyNomineeShareholder, 'Nominee shareholder', 'Holds these shares on behalf of someone else', {
       condition: isShareholder,
@@ -499,7 +503,7 @@ function buildFieldDrafts(options: SgCompanyIncorporationBuildOptions): FieldDra
     heading('section_services', 'Our services'),
     info(
       'services_guidance',
-      `<p>Every company needs at least one director who lives in Singapore, and a company secretary within six months of incorporation. Tick the services you would like ${firm} to provide. ${guidanceLinks('G10')}</p>`,
+      `<p>Every company needs at least one director who lives in Singapore, and a company secretary who lives in Singapore. If none of the people you listed fills a role, tick the service and ${firm} will provide it. ${guidanceLinks('G10')}</p>`,
     ),
     tickBox(K.nomineeDirectorService, 'Nominee director service', `${firm} to provide a Singapore-resident nominee director`),
     tickBox(K.secretaryService, 'Company secretary service', `${firm} to act as company secretary`),
@@ -533,7 +537,7 @@ function buildFieldDrafts(options: SgCompanyIncorporationBuildOptions): FieldDra
       label: 'First financial year end',
       isRequired: true,
       layoutWidth: 50,
-      ...requirements(`<p>The date the company’s first financial year ends. Later financial years run for 12 months. The first financial year cannot be longer than 18 months from incorporation without ACRA’s approval. ${guidanceLinks('G11')}</p>`),
+      ...requirements(`<p>The date the company’s first financial year ends. Later financial years run for 12 months. The first financial year cannot be longer than 18 months from incorporation without ACRA’s approval.</p><p>If you are unsure, 31 December or the end of the month before the first anniversary of incorporation are common choices. ${guidanceLinks('G11')}</p>`),
       validation: { minDate: 'today', tooltipEnabled: true, tooltipMode: 'inline' },
     },
 

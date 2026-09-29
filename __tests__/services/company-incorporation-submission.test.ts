@@ -205,6 +205,7 @@ describe('company incorporation submission record', () => {
     [K.ownershipPercent]: ['100'],
     [K.partyResident]: [['yes']],
     [K.shareCount]: '1000',
+    [K.secretaryService]: ['yes'],
   };
 
   it('stores issues, parties with stable ids and SSIC labels', () => {

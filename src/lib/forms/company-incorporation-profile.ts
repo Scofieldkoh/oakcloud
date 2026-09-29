@@ -223,6 +223,7 @@ export function extractIncorporationParties(answers: Record<string, unknown>): I
     const shares = shareCount !== null && percentUnits !== null ? sharesForPercent(percentUnits, shareCount) : null;
     const nomineeShareholder = isShareholder && isTicked(rowValue(answers, K.partyNomineeShareholder, rowIndex));
     const directorLike = kind !== PARTY_KIND.organisation && roles.some((role) => DIRECTOR_ROLES.includes(role));
+    const secretaryLike = kind !== PARTY_KIND.organisation && roles.includes(PARTY_ROLE.secretary);
     const nomineeDirector = directorLike && isTicked(rowValue(answers, K.partyNomineeDirector, rowIndex));
 
     parties.push({
@@ -234,7 +235,7 @@ export function extractIncorporationParties(answers: Record<string, unknown>): I
       shares: shares !== null ? shares.toString() : null,
       email: email || null,
       registrationReference: registrationReference || null,
-      resident: directorLike && isTicked(rowValue(answers, K.partyResident, rowIndex)),
+      resident: (directorLike || secretaryLike) && isTicked(rowValue(answers, K.partyResident, rowIndex)),
       nomineeShareholder,
       nomineeDirector,
       nominator: nomineeShareholder || nomineeDirector ? textValue(rowValue(answers, K.partyNominator, rowIndex)) || null : null,
@@ -373,6 +374,17 @@ export function evaluateCompanyIncorporationAnswers(
 
   const directors = parties.filter(isDirector);
   const secretaries = parties.filter((party) => party.roles.includes(PARTY_ROLE.secretary));
+  for (const secretary of secretaries) {
+    if (secretary.kind === PARTY_KIND.organisation || secretary.resident) continue;
+    add({
+      code: 'secretary_not_resident',
+      severity: 'error',
+      section: 'parties',
+      fieldKey: K.partyResident,
+      rowIndex: secretary.rowIndex,
+      message: `${partyLabel(secretary)}: a company secretary must live in Singapore. Tick “Lives in Singapore”, or remove the role and tick our company secretary service on the next page.`,
+    });
+  }
   if (directors.length === 1 && secretaries.some((party) => party.rowIndex === directors[0].rowIndex)) {
     add({ code: 'secretary_sole_director', severity: 'error', section: 'parties', fieldKey: K.partyRoles, rowIndex: directors[0].rowIndex, message: `${partyLabel(directors[0])}: the company secretary cannot also be the only director.` });
   }
@@ -433,6 +445,16 @@ export function evaluateCompanyIncorporationAnswers(
       section: 'capital',
       fieldKey: K.nomineeDirectorService,
       message: 'None of the directors lives in Singapore. Tick the nominee director service, or go back and tick “Lives in Singapore” for a director who does.',
+    });
+  }
+
+  if (parties.length > 0 && secretaries.length === 0 && !isTicked(answers[K.secretaryService])) {
+    add({
+      code: 'no_secretary',
+      severity: 'error',
+      section: 'capital',
+      fieldKey: K.secretaryService,
+      message: 'No one is listed as company secretary. Tick the company secretary service, or go back and give a person the Company secretary role.',
     });
   }
 
