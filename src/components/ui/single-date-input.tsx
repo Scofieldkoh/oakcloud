@@ -46,6 +46,8 @@ export interface SingleDateInputProps {
   minDate?: string;
   /** Maximum allowed ISO date (YYYY-MM-DD) */
   maxDate?: string;
+  /** Show a quick "Today" button that fills in today's Singapore date */
+  showTodayButton?: boolean;
 }
 
 const CALENDAR_START_MONTH = new Date(1900, 0, 1);
@@ -358,6 +360,16 @@ function CalendarCaptionDropdown({
   );
 }
 
+// Today's date in the firm's time zone, as an ISO string (YYYY-MM-DD)
+function todayISODate(): string {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Singapore',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date());
+}
+
 // Format date for display in input: "11 Jan 2026"
 function formatDisplayDate(date: Date): string {
   return format(date, 'd MMM yyyy');
@@ -482,6 +494,7 @@ export function SingleDateInput({
   onBlur,
   minDate,
   maxDate,
+  showTodayButton = false,
 }: SingleDateInputProps) {
   const [committedValue, setCommittedValue] = useState(value);
   const [isOpen, setIsOpen] = useState(false);
@@ -764,6 +777,25 @@ export function SingleDateInput({
     [inputValue, maxDateValue, minDateValue, onChange]
   );
 
+  const handleTodayClick = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (disabled) return;
+      const today = parseISODate(todayISODate());
+      if (today) {
+        handleSelect(today);
+      }
+    },
+    [disabled, handleSelect]
+  );
+
+  const todayOutOfRange = useMemo(() => {
+    if (!showTodayButton) return false;
+    const today = parseISODate(todayISODate());
+    return !today || !isDateWithinRange(today, minDateValue, maxDateValue);
+  }, [maxDateValue, minDateValue, showTodayButton]);
+
   const handleCalendarClick = useCallback(
     (e: React.MouseEvent) => {
       e.preventDefault();
@@ -821,12 +853,34 @@ export function SingleDateInput({
           aria-invalid={displayError ? 'true' : 'false'}
           aria-describedby={displayError ? `${inputId}-error` : hint ? `${inputId}-hint` : undefined}
           className={cn(
-            'flex-1 min-w-0 h-full px-3 bg-transparent text-text-primary',
+            'flex-1 min-w-0 h-full pl-3 bg-transparent text-text-primary',
+            showTodayButton ? 'pr-1' : 'pr-3',
             isTableFilter ? cn(TABLE_FILTER_TEXT_CLASS, TABLE_FILTER_PLACEHOLDER_CLASS) : 'text-sm placeholder-text-muted',
             'focus:outline-none',
             disabled && 'cursor-not-allowed'
           )}
         />
+
+        {showTodayButton ? (
+          <button
+            type="button"
+            onMouseDown={(e) => {
+              e.preventDefault();
+            }}
+            onClick={handleTodayClick}
+            disabled={disabled || todayOutOfRange}
+            className={cn(
+              'flex-shrink-0 rounded px-1 py-0.5 text-xs font-medium text-oak-primary transition-colors',
+              'hover:bg-oak-primary/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-oak-primary/30',
+              'disabled:cursor-not-allowed disabled:text-text-muted disabled:hover:bg-transparent',
+              !showCalendar && 'mr-2'
+            )}
+            aria-label={label ? `Set ${label} to today` : ariaLabel ? `Set ${ariaLabel} to today` : 'Set to today'}
+            title={todayOutOfRange ? 'Today is outside the allowed dates' : undefined}
+          >
+            Today
+          </button>
+        ) : null}
 
         {showCalendar ? (
           <button
@@ -837,7 +891,8 @@ export function SingleDateInput({
             onClick={handleCalendarClick}
             disabled={disabled}
             className={cn(
-              'h-full px-2 flex-shrink-0 flex items-center justify-center',
+              'h-full flex-shrink-0 flex items-center justify-center',
+              showTodayButton ? 'pl-1.5 pr-2' : 'px-2',
               'text-text-muted hover:text-text-secondary transition-colors',
               'focus:outline-none',
               disabled && 'cursor-not-allowed'

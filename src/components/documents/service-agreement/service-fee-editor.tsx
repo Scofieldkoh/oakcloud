@@ -54,7 +54,7 @@ export function ServiceFeeEditor({
                 <th scope="col" className="w-28 border-b border-border-secondary px-2 pb-2 font-medium">Amount</th>
                 <th scope="col" className="w-24 border-b border-border-secondary px-2 pb-2 font-medium">Currency</th>
                 <th scope="col" className="w-36 border-b border-border-secondary px-2 pb-2 font-medium">Frequency</th>
-                <th scope="col" className="w-40 border-b border-border-secondary px-2 pb-2 font-medium">Billing start date</th>
+                <th scope="col" className="w-52 border-b border-border-secondary px-2 pb-2 font-medium">Billing start date</th>
                 <th scope="col" className="w-24 border-b border-border-secondary px-2 pb-2 font-medium"><span className="sr-only">Actions</span></th>
               </tr>
             </thead>
@@ -153,7 +153,8 @@ export function ServiceFeeEditor({
                         billingStartDateOverridden: Boolean(next),
                       })}
                       ariaLabel="Billing start date"
-                      className="w-44 max-w-full"
+                      showTodayButton
+                      className="w-48 max-w-full"
                       controlClassName={billingStartDateOverridden
                         ? 'bg-oak-row-selected dark:bg-oak-row-selected'
                         : 'bg-background-tertiary dark:bg-background-tertiary'}
