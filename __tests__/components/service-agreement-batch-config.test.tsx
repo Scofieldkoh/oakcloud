@@ -193,17 +193,16 @@ describe('ServiceAgreementConfig', () => {
     render(<ServiceAgreementConfig {...props()} />);
 
     expect(screen.getByLabelText('Agreement date').parentElement).toHaveClass('h-11');
-    expect(screen.getByLabelText('Agreement date').closest('.w-44')).toHaveClass('max-w-full');
+    expect(screen.getByLabelText('Agreement date').closest('.w-\\[17rem\\]')).toHaveClass('max-w-full');
+    expect(screen.getByRole('button', { name: 'Set Agreement date to today' })).toBeInTheDocument();
     expect(screen.getByText('Agreement date')).toHaveClass('mb-1.5');
     expect(screen.getByText('Primary company')).toHaveClass('mb-1.5');
     expect(screen.getByRole('combobox', { name: 'Primary company' }).parentElement)
       .toHaveClass('min-h-11');
     expect(screen.getByRole('combobox', { name: 'Primary company' }).closest('.max-w-none'))
       .toHaveClass('w-full');
-    const agreementGrid = screen.getByLabelText('Agreement date').parentElement?.parentElement
-      ?.parentElement?.parentElement;
-    expect(agreementGrid)
-      .toHaveClass('sm:grid-cols-[11rem_minmax(22rem,44rem)]');
+    expect(screen.getByLabelText('Agreement date').closest('.grid'))
+      .toHaveClass('sm:grid-cols-[17rem_minmax(22rem,44rem)]');
   });
 
   it('shows the primary company separately from additional Appendix 3 entity tiles', () => {
