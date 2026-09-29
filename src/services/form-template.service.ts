@@ -1,6 +1,6 @@
-import type { Form } from '@/generated/prisma';
+import type { Form, Prisma } from '@/generated/prisma';
 import { ValidationError } from '@/lib/errors';
-import { getFormTemplateSummary } from '@/lib/form-templates';
+import { parseFormTemplateBinding } from '@/lib/form-templates';
 import {
   SG_COMPANY_INCORPORATION_TEMPLATE_KEY,
   SG_COMPANY_INCORPORATION_TEMPLATE_VERSION,
@@ -15,32 +15,32 @@ import { saveFormFieldsSchema } from '@/lib/validations/form-builder';
 import { createForm, saveFormFields } from './form-crud.service';
 import { ensureBuiltInFormOptionPresets } from './form-option-preset.service';
 
-export interface CreateFormFromTemplateInput {
-  templateKey: string;
-  title?: string;
-  tags?: string[];
+export interface SeedFormResult {
+  form: Form;
+  action: 'created' | 'updated';
 }
 
 /**
- * Create a DRAFT form from a guided template through the canonical form CRUD.
- * Nothing is published; staff review and publish it in the builder as usual.
+ * Seed the Singapore Company Incorporation form into a workspace.
+ *
+ * An unpublished form already bound to the template is updated in place with the
+ * current questions; otherwise (none yet, or every copy published and locked) a new
+ * DRAFT form is created. Nothing is published; staff review and publish it in the
+ * builder as usual.
  */
-export async function createFormFromTemplate(
-  input: CreateFormFromTemplateInput,
-  params: TenantAwareParams
-): Promise<Form> {
-  const template = getFormTemplateSummary(input.templateKey);
-  if (!template || template.key !== SG_COMPANY_INCORPORATION_TEMPLATE_KEY) {
-    throw new ValidationError('Unknown form template');
-  }
-
+export async function seedCompanyIncorporationForm(params: TenantAwareParams): Promise<SeedFormResult> {
   await ensureBuiltInFormOptionPresets(params.tenantId, params.userId);
-  const [ssicPreset, workspace] = await Promise.all([
+  const [ssicPreset, workspace, candidates] = await Promise.all([
     prisma.formOptionPreset.findUnique({
       where: { tenantId_builtInKey: { tenantId: params.tenantId, builtInKey: 'ssic' } },
       select: { id: true },
     }),
     prisma.workspace.findUnique({ where: { id: params.tenantId }, select: { name: true } }),
+    prisma.form.findMany({
+      where: { tenantId: params.tenantId, deletedAt: null, status: 'DRAFT' },
+      select: { id: true, settings: true },
+      orderBy: { updatedAt: 'desc' },
+    }),
   ]);
   if (!ssicPreset) {
     throw new ValidationError('The SSIC 2025 option list is unavailable in this workspace');
@@ -50,27 +50,48 @@ export async function createFormFromTemplate(
   const fields = saveFormFieldsSchema.parse({
     fields: buildSgCompanyIncorporationFields({ firmName, ssicPresetId: ssicPreset.id }),
   }).fields;
+  const description = buildSgCompanyIncorporationDescription(firmName);
 
-  const form = await createForm({
-    title: input.title?.trim() || SG_COMPANY_INCORPORATION_TITLE,
-    description: buildSgCompanyIncorporationDescription(firmName),
-    tags: input.tags ?? ['incorporation'],
-    status: 'DRAFT',
-  }, params);
+  const existing = candidates.find((candidate) => {
+    const binding = parseFormTemplateBinding(candidate.settings);
+    return binding?.key === SG_COMPANY_INCORPORATION_TEMPLATE_KEY && !binding.lockedAt;
+  });
 
-  await saveFormFields(form.id, fields, params, `Created from template ${template.title}`);
+  const form = existing
+    ? { id: existing.id }
+    : await createForm({
+      title: SG_COMPANY_INCORPORATION_TITLE,
+      description,
+      tags: ['incorporation'],
+      status: 'DRAFT',
+    }, params);
+
+  const reason = existing
+    ? `Updated to template version ${SG_COMPANY_INCORPORATION_TEMPLATE_VERSION}`
+    : `Seeded from template version ${SG_COMPANY_INCORPORATION_TEMPLATE_VERSION}`;
+  await saveFormFields(form.id, fields, params, reason);
 
   // The binding is server-owned: updateForm preserves an existing binding but will
-  // not accept one from a settings payload, so write it directly here.
+  // not accept one from a settings payload, so write it directly here. Settings the
+  // template does not own (notifications, branding) are kept on an update.
+  const previousSettings = existing?.settings && typeof existing.settings === 'object' && !Array.isArray(existing.settings)
+    ? existing.settings as Record<string, unknown>
+    : {};
   const settings = {
+    ...previousSettings,
     ...buildSgCompanyIncorporationSettings({ firmName }),
     template: {
-      key: template.key,
+      key: SG_COMPANY_INCORPORATION_TEMPLATE_KEY,
       version: SG_COMPANY_INCORPORATION_TEMPLATE_VERSION,
       installedAt: new Date().toISOString(),
       definitionHash: null,
       lockedAt: null,
     },
-  };
-  return prisma.form.update({ where: { id: form.id }, data: { settings } });
+  } as Prisma.InputJsonValue;
+
+  const saved = await prisma.form.update({
+    where: { id: form.id },
+    data: { settings, ...(existing ? { description } : {}) },
+  });
+  return { form: saved, action: existing ? 'updated' : 'created' };
 }

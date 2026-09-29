@@ -114,6 +114,8 @@ export type ValidationConfig = {
   repeatTotalSuffix?: string;
   repeatTotalTarget?: number;
   nameCheckMode?: 'strict' | 'advisory';
+  /** 'chips' renders choice options as a wrapped row of toggle pills. */
+  choiceLayout?: 'list' | 'chips';
 };
 
 export type ChoiceOptionConfig = {

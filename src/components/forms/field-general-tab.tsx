@@ -1305,6 +1305,21 @@ export function FieldGeneralTab({
                 description="Show the question label on the left and options side by side on the right."
                 size="sm"
               />
+              <div className="mt-3">
+                <Toggle
+                  checked={field.validation?.choiceLayout === 'chips'}
+                  onChange={(checked) => onChange({
+                    ...field,
+                    validation: {
+                      ...(field.validation || {}),
+                      choiceLayout: checked ? 'chips' : undefined,
+                    },
+                  })}
+                  label="Show options as buttons"
+                  description="Show short option lists as buttons people tap to select."
+                  size="sm"
+                />
+              </div>
             </div>
           )}
         </div>

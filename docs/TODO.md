@@ -106,6 +106,7 @@ Key principles:
 |----|-----------|-------------|
 | TASKS-001 | 2026-07-27 | Replaced the retired Workflow/Projects module with Tasks and Pipelines, including a complete legacy data reset and tenant-aware Client Onboarding seed |
 | GEN-007 | 2026-08-12 | Replaced the one-document-at-a-time wizard and split Service Agreement stepper with the unified batch workspace |
+| FORMS-006 | 2026-09-29 | Incorporation form version 2 from Scofield's review: seeded by script instead of "Start from"; company type with name-ending check; alternative names checked too; no name reservation, SSIC review, contact timing, share structure, office hours, 52-week year or "not sure" answers; roles include managing director, CEO and company secretary as buttons; per-person resident/nominee/control ticks; pages stop until shareholdings total 100%, there is an individual director and a resident director (or our nominee director service); whole-share check; nominee director and secretary services as tick boxes |
 | FORMS-005 | 2026-09-29 | Singapore Company Incorporation intake template with review step, advisory name check, locked published definition, link-only notifications and staff KYC readiness checklist; fixed repeated short-text answers being dropped on submit |
 | FORMS-001 | 2026-03-10 | Implemented the Forms module with builder, public links, draft save/resume/email, uploads, response review, response PDF export, and queued AI review |
 

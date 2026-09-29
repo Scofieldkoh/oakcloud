@@ -47,6 +47,7 @@ import {
 } from '@/lib/forms/name-check-result';
 import { parseDecimalString, formatDecimalUnits } from '@/lib/forms/decimal-string';
 import { evaluateCompanyIncorporationAnswers } from '@/lib/forms/company-incorporation-profile';
+import { ChoiceChips, type ChoiceChipOption } from '@/components/forms/choice-chips';
 import { INCORPORATION_KEYS, SG_COMPANY_INCORPORATION_TEMPLATE_KEY } from '@/lib/form-templates/sg-company-incorporation';
 import { PublicFormReview, buildReviewSections } from '@/components/forms/public-form-review';
 
@@ -960,6 +961,15 @@ function isChoiceInlineRightEnabled(field: PublicField): boolean {
   return validation?.choiceInlineRight === true;
 }
 
+function isChoiceChipsEnabled(field: PublicField): boolean {
+  if (field.type !== 'SINGLE_CHOICE' && field.type !== 'MULTIPLE_CHOICE') return false;
+  return parseObject(field.validation)?.choiceLayout === 'chips';
+}
+
+function toChoiceChipOptions(options: ReturnType<typeof parseChoiceOptions>): ChoiceChipOption[] {
+  return options.map((option) => ({ value: option.value, label: getChoiceOptionDisplayLabel(option), locked: option.requiredSelected === true }));
+}
+
 function isLayoutBreakBeforeEnabled(field: PublicField): boolean {
   const validation = parseObject(field.validation);
   return validation?.layoutBreakBefore === true;
@@ -1584,6 +1594,7 @@ export default function PublicFormPage() {
   const [error, setError] = useState<string | null>(null);
   const [answers, setAnswers] = useState<Record<string, unknown>>({});
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [pageIssueMessages, setPageIssueMessages] = useState<string[]>([]);
   const [nameCheckResults, setNameCheckResults] = useState<Record<string, NameCheckResult>>({});
   const [checkingNameCheckField, setCheckingNameCheckField] = useState<string | null>(null);
   const [isReviewing, setIsReviewing] = useState(false);
@@ -1641,6 +1652,11 @@ export default function PublicFormPage() {
     const template = parseObject(parseObject(form?.settings)?.template);
     return template?.key === SG_COMPANY_INCORPORATION_TEMPLATE_KEY;
   }, [form?.settings]);
+
+  // A page-level message describes the answers at the last Continue; any edit clears it.
+  useEffect(() => {
+    setPageIssueMessages([]);
+  }, [answers, repeatSectionCounts]);
 
   const activeLocale = useMemo(() => {
     if (requestedLocale && i18nSettings.enabledLocales.includes(requestedLocale)) {
@@ -2737,8 +2753,45 @@ export default function PublicFormPage() {
       }
     }
 
+    const pageMessages = Object.keys(nextErrors).length === 0 ? collectIncorporationPageErrors(pageFields, nextErrors) : [];
     setFieldErrors(nextErrors);
-    return Object.keys(nextErrors).length === 0;
+    setPageIssueMessages(pageMessages);
+    return Object.keys(nextErrors).length === 0 && pageMessages.length === 0;
+  }
+
+  /**
+   * Incorporation rules that span fields (shareholdings total 100%, at least one director,
+   * a resident director) stop the page they belong to. Row and field issues are shown on
+   * the field; issues about the whole list are returned for display above Continue.
+   */
+  function collectIncorporationPageErrors(pageFields: PublicField[], nextErrors: Record<string, string>): string[] {
+    if (!isIncorporationTemplate) return [];
+    const pageKeys = new Set(pageFields.map((field) => field.key));
+    const repeatKeys = new Set<string>();
+    let insideRepeat = false;
+    for (const field of pageFields) {
+      if (isRepeatStartMarker(field)) insideRepeat = true;
+      else if (isRepeatEndMarker(field)) insideRepeat = false;
+      else if (insideRepeat) repeatKeys.add(field.key);
+    }
+
+    const messages: string[] = [];
+    const evaluation = evaluateCompanyIncorporationAnswers(
+      pruneHiddenConditionalAnswers(orderedFields, withDefaultAnswers(answers)),
+    );
+    for (const issue of evaluation.issues) {
+      if (issue.severity !== 'error' || !issue.fieldKey || !pageKeys.has(issue.fieldKey)) continue;
+      if (issue.rowIndex !== undefined) {
+        const rowKey = getFieldErrorKey(issue.fieldKey, issue.rowIndex);
+        if (!nextErrors[rowKey]) nextErrors[rowKey] = issue.message;
+      } else if (!repeatKeys.has(issue.fieldKey)) {
+        const key = getFieldErrorKey(issue.fieldKey);
+        if (!nextErrors[key]) nextErrors[key] = issue.message;
+      } else if (!messages.includes(issue.message)) {
+        messages.push(issue.message);
+      }
+    }
+    return messages;
   }
 
   async function uploadFiles(field: PublicField, files: File[]) {
@@ -3387,6 +3440,7 @@ export default function PublicFormPage() {
                       const sectionUseSplitPhoneInput = sectionField.type === 'SHORT_TEXT' && sectionField.inputType === 'phone' && isSplitPhoneCountryCodeEnabled(sectionField);
                       const sectionUseTimeTimezoneInput = sectionField.type === 'SHORT_TEXT' && sectionField.inputType === 'time_timezone';
                       const sectionChoiceInlineRight = isChoiceInlineRightEnabled(sectionField);
+                      const sectionChoiceChips = isChoiceChipsEnabled(sectionField);
                       const sectionChoiceDetailErrorValues = (sectionField.type === 'SINGLE_CHOICE' || sectionField.type === 'MULTIPLE_CHOICE')
                         ? getChoiceDetailErrorValues(sectionChoiceOptions, sectionValue)
                         : new Set<string>();
@@ -3574,7 +3628,23 @@ export default function PublicFormPage() {
                             />
                           )}
 
-                          {sectionField.type === 'SINGLE_CHOICE' && (
+                          {sectionChoiceChips && (
+                            <ChoiceChips
+                              id={sectionControlId}
+                              labelledBy={sectionLabelId}
+                              options={toChoiceChipOptions(sectionChoiceOptions)}
+                              selected={parseChoiceAnswerEntries(sectionValue).map((entry) => entry.value)}
+                              multiple={sectionField.type === 'MULTIPLE_CHOICE'}
+                              hasError={!!sectionErrorText}
+                              onChange={(next) => setRepeatFieldValue(
+                                sectionField.key,
+                                rowIndex,
+                                sectionField.type === 'MULTIPLE_CHOICE' ? next : (next[0] ?? '')
+                              )}
+                            />
+                          )}
+
+                          {sectionField.type === 'SINGLE_CHOICE' && !sectionChoiceChips && (
                             <fieldset className={cn('space-y-1.5 rounded-lg', sectionHighlightChoiceGroup && 'ring-1 ring-status-error/20')} onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node)) handleFieldBlur(sectionField, getRepeatFieldValue(sectionField.key, rowIndex), getFieldErrorKey(sectionField.key, rowIndex), buildAnswerContext(answers, rowIndex)); }}>
                               {sectionChoiceInlineRight ? (
                                 (() => {
@@ -3685,7 +3755,7 @@ export default function PublicFormPage() {
                             </fieldset>
                           )}
 
-                          {sectionField.type === 'MULTIPLE_CHOICE' && (
+                          {sectionField.type === 'MULTIPLE_CHOICE' && !sectionChoiceChips && (
                             <fieldset className={cn('space-y-1.5 rounded-lg', sectionHighlightChoiceGroup && 'ring-1 ring-status-error/20')} onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node)) handleFieldBlur(sectionField, getRepeatFieldValue(sectionField.key, rowIndex), getFieldErrorKey(sectionField.key, rowIndex), buildAnswerContext(answers, rowIndex)); }}>
                               {sectionChoiceInlineRight ? (
                                 (() => {
@@ -3963,6 +4033,7 @@ export default function PublicFormPage() {
     const describedBy = [hintId, errorId].filter(Boolean).join(' ') || undefined;
     const accessibleLabel = localizedField.label || field.key;
     const choiceInlineRight = isChoiceInlineRightEnabled(field);
+    const choiceChips = isChoiceChipsEnabled(field);
     const choiceOptions = parseChoiceOptions(localizedField.options);
     const choiceDetailErrorValues = (field.type === 'SINGLE_CHOICE' || field.type === 'MULTIPLE_CHOICE')
       ? getChoiceDetailErrorValues(choiceOptions, value)
@@ -4493,7 +4564,19 @@ export default function PublicFormPage() {
           })()}
 
           {/* SINGLE_CHOICE */}
-          {field.type === 'SINGLE_CHOICE' && (
+          {choiceChips && (
+            <ChoiceChips
+              id={controlId}
+              labelledBy={labelId}
+              options={toChoiceChipOptions(choiceOptions)}
+              selected={parseChoiceAnswerEntries(value).map((entry) => entry.value)}
+              multiple={field.type === 'MULTIPLE_CHOICE'}
+              hasError={!!errorText}
+              onChange={(next) => setFieldValue(field.key, field.type === 'MULTIPLE_CHOICE' ? next : (next[0] ?? ''))}
+            />
+          )}
+
+          {field.type === 'SINGLE_CHOICE' && !choiceChips && (
             <fieldset
               className={cn('space-y-2 rounded-lg', highlightChoiceGroup && 'ring-1 ring-status-error/20')}
               aria-label={field.hideLabel ? accessibleLabel : undefined}
@@ -4604,7 +4687,7 @@ export default function PublicFormPage() {
           )}
 
           {/* MULTIPLE_CHOICE */}
-          {field.type === 'MULTIPLE_CHOICE' && (
+          {field.type === 'MULTIPLE_CHOICE' && !choiceChips && (
             <fieldset
               className={cn('space-y-2 rounded-lg', highlightChoiceGroup && 'ring-1 ring-status-error/20')}
               aria-label={field.hideLabel ? accessibleLabel : undefined}
@@ -5059,7 +5142,7 @@ export default function PublicFormPage() {
     : [];
   const reviewIssues = isReviewing && isIncorporationTemplate
     ? evaluateCompanyIncorporationAnswers(reviewAnswers, {
-      nameCheck: nameCheckResults[INCORPORATION_KEYS.proposedName] ?? null,
+      nameChecks: nameCheckResults,
     }).issues.map((issue) => ({
       ...issue,
       pageIndex: findPageIndexForField(issue.fieldKey ?? (issue.section === 'parties' ? INCORPORATION_KEYS.partyName : undefined)),
@@ -5205,6 +5288,13 @@ export default function PublicFormPage() {
         </div>
 
         <div className="mt-8 space-y-2">
+          {!isReviewing && pageIssueMessages.length > 0 && (
+            <div role="alert" className="rounded-lg border border-status-error/40 bg-status-error/5 px-4 py-3 text-sm text-status-error">
+              <ul className="space-y-1">
+                {pageIssueMessages.map((message) => <li key={message}>{message}</li>)}
+              </ul>
+            </div>
+          )}
           <div className="flex items-center justify-between">
           {currentPage > 0 || isReviewing ? (
             <button
@@ -5215,6 +5305,7 @@ export default function PublicFormPage() {
                 } else {
                   setCurrentPage((prev) => prev - 1);
                 }
+                setPageIssueMessages([]);
                 scrollToFormTop();
               }}
               className="flex items-center gap-1.5 text-sm text-text-secondary hover:text-text-primary transition-colors duration-150"

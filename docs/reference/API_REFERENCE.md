@@ -558,12 +558,11 @@ Create a blank form draft, or a draft from a guided template.
   "description": "Optional description",
   "tags": ["intake", "client"],
   "status": "DRAFT",
-  "templateKey": "sg_company_incorporation (optional)",
   "tenantId": "uuid (optional for SUPER_ADMIN)"
 }
 ```
 
-With `templateKey`, the form is created as a DRAFT with the template's fields and settings, and the server writes a `settings.template` binding (`key`, `version`, `installedAt`, `definitionHash`, `lockedAt`). Only `sg_company_incorporation` exists today.
+The Singapore Company Incorporation form is not created here; it is seeded with `npx tsx scripts/seed-incorporation-form.ts --email <login>`, which also writes the server-owned `settings.template` binding.
 
 **Response:** `201 Created`
 
