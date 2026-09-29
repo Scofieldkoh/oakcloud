@@ -14,7 +14,7 @@ import {
   toAnswerRecord,
 } from '@/lib/form-utils';
 import { SIGNATURE_DATA_URL_MAX_LENGTH, extractSignatureDataUrl } from '@/lib/signature-utils';
-import { COMPANY_NAME_RECORD_COUNT_CAP } from '@/lib/external/company-name-check';
+import { parseNameCheckResultMap } from '@/lib/forms/name-check-result';
 import { prisma } from '@/lib/prisma';
 import { storage } from '@/lib/storage';
 import { getAppBaseUrl, sendEmail } from '@/lib/email';
@@ -119,52 +119,10 @@ function normalizeDraftMetadata(metadata: unknown): Record<string, unknown> {
     normalized.userAgent = raw.userAgent.trim().slice(0, 500);
   }
 
-  const nameCheckResults = parseObject(raw.nameCheckResults);
-  if (nameCheckResults) {
-    const normalizedResults: Record<string, unknown> = {};
-
-    for (const [fieldKey, entry] of Object.entries(nameCheckResults)) {
-      const parsed = parseObject(entry);
-      if (!parsed) continue;
-
-      const name = typeof parsed.name === 'string' ? parsed.name.trim().slice(0, 300) : '';
-      const checkedAt = typeof parsed.checkedAt === 'string' ? parsed.checkedAt.trim().slice(0, 64) : '';
-      if (!name || !checkedAt) continue;
-      if (typeof parsed.available !== 'boolean') continue;
-
-      const records: unknown[] = [];
-      if (Array.isArray(parsed.records)) {
-        for (const record of parsed.records.slice(0, COMPANY_NAME_RECORD_COUNT_CAP)) {
-          const recordObject = parseObject(record);
-          if (!recordObject) continue;
-
-          const uen = typeof recordObject.uen === 'string' ? recordObject.uen.trim().slice(0, 32) : '';
-          const entityName = typeof recordObject.entityName === 'string'
-            ? recordObject.entityName.trim().slice(0, 500)
-            : '';
-          const entityStatus = typeof recordObject.entityStatus === 'string'
-            ? recordObject.entityStatus.trim().slice(0, 200)
-            : '';
-
-          if (!uen && !entityName) continue;
-          records.push({ uen, entityName, entityStatus });
-        }
-      }
-
-      const dataAsOf = typeof parsed.dataAsOf === 'string' ? parsed.dataAsOf.trim().slice(0, 64) : '';
-
-      normalizedResults[fieldKey] = {
-        name,
-        available: parsed.available,
-        checkedAt,
-        records,
-        ...(dataAsOf ? { dataAsOf } : {}),
-      };
-    }
-
-    if (Object.keys(normalizedResults).length > 0) {
-      normalized.nameCheckResults = normalizedResults;
-    }
+  const nameCheckResults = parseNameCheckResultMap(raw.nameCheckResults);
+  if (Object.keys(nameCheckResults).length > 0) {
+    // Keep the assessment, reasons and match types so a resumed draft shows the same result.
+    normalized.nameCheckResults = nameCheckResults;
   }
 
   const repeatSectionCounts = parseObject(raw.repeatSectionCounts);
@@ -454,6 +412,11 @@ function sanitizePublicAnswers(
           sanitizedAnswers[key] = value
             .slice(0, 100)
             .map((item) => (typeof item === 'string' ? item.slice(0, 10_000) : ''));
+        }
+        break;
+      case 'COMPANY_NAME_CHECK':
+        if (typeof value === 'string') {
+          sanitizedAnswers[key] = value.slice(0, 500);
         }
         break;
       case 'SINGLE_CHOICE':

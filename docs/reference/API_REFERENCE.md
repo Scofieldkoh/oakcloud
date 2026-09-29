@@ -546,7 +546,7 @@ List forms for the active tenant.
 ---
 
 ### POST /api/forms
-Create a blank form draft.
+Create a blank form draft, or a draft from a guided template.
 
 **Auth:** Authenticated with `document:create`
 
@@ -558,9 +558,12 @@ Create a blank form draft.
   "description": "Optional description",
   "tags": ["intake", "client"],
   "status": "DRAFT",
+  "templateKey": "sg_company_incorporation (optional)",
   "tenantId": "uuid (optional for SUPER_ADMIN)"
 }
 ```
+
+With `templateKey`, the form is created as a DRAFT with the template's fields and settings, and the server writes a `settings.template` binding (`key`, `version`, `installedAt`, `definitionHash`, `lockedAt`). Only `sg_company_incorporation` exists today.
 
 **Response:** `201 Created`
 
@@ -585,6 +588,8 @@ Update form metadata, settings, and/or fields.
 - A linked dropdown sends `optionPresetId` and may omit embedded `options`. Form reads resolve the preset's latest `{ value, label }` options, so replacing a preset updates every linked form without rewriting the form.
 - Embedded custom dropdowns support at most 5,000 options.
 - `reason` is optional and is recorded in audit logs
+- `settings.template` is server-owned: a client value is ignored and the stored binding is kept. The first publish of a template form sets `lockedAt` and `definitionHash`; after that, `fields` updates are rejected with `400` (duplicate the form to change questions; the copy has no binding).
+- `settings.notifications.attachmentMode` is `attachments` (default) or `link_only`. Link-only completion emails carry a link to the response and no PDF or uploads.
 
 ---
 
@@ -749,6 +754,37 @@ Get paginated submissions, drafts, and chart data for one form.
 Get one submission and its uploads.
 
 **Auth:** Authenticated with `document:read`
+
+---
+
+### GET /api/forms/[id]/responses/[submissionId]/incorporation-review
+Staff preparation checklist for a Singapore Company Incorporation response: the stored intake record, people (roster rows plus staff-added people), KYC links with staleness, checklist decisions and readiness.
+
+**Auth:** Authenticated with `document:read`
+
+**Query Parameters:**
+
+- `tenantId` (optional for SUPER_ADMIN)
+- `sourceQuery` (optional, 2+ characters): search other responses in the workspace by respondent name, email or form title to link as a KYC source
+
+Returns `400` when the response is not a company incorporation submission.
+
+---
+
+### PATCH /api/forms/[id]/responses/[submissionId]/incorporation-review
+Apply one checklist change. Every request carries `expectedRevision`; a stale revision returns `409`.
+
+**Auth:** Authenticated with `document:update`
+
+**Actions:**
+
+- `set_decision`: `areaKey`, `state` (`pending`, `satisfied`, `not_applicable`), optional `note`. Only "Intake items resolved" may be not applicable.
+- `link_kyc`: `subjectId`, `sourceKind` (`form_submission` with `sourceId`, or `manual` with `manualLocation`), `coverage` (particular keys to true/false), `reviewState` (`received`, `verified`, `needs_follow_up`), optional `notes`. A linked response must be in the same workspace; its `updatedAt` is stored, and a later change marks the link stale.
+- `unlink_kyc`: `subjectId`
+- `add_subject`: `name`, `kind` (`individual`, `organisation`), `roles` (secretary, ceo, controller, nominator, authorised_representative, other)
+- `remove_subject`: `subjectId` (staff-added people only)
+
+Readiness is internal: "Ready for filing preparation" means every area is confirmed and each person has a current, verified KYC source covering every particular. It is not ACRA approval and nothing is filed.
 
 ---
 

@@ -148,12 +148,34 @@ function companyNameCheckForm() {
   };
 }
 
+function reviewStepForm(nameCheckMode: 'strict' | 'advisory' = 'strict') {
+  return {
+    ...publicForm,
+    settings: {
+      ...publicForm.settings,
+      completion: {
+        reviewStep: true,
+        reviewTitle: 'Check your answers',
+        submitLabel: 'Submit company details',
+        successTitle: 'Company details submitted',
+        successMessage: 'Your reference is {reference}.',
+        showPdfActions: false,
+      },
+    },
+    fields: [{
+      ...companyNameCheckForm().fields[0],
+      validation: { nameCheckMode },
+    }],
+  };
+}
+
 describe('PublicFormPage', () => {
   beforeEach(() => {
     currentSearchParams = '';
     currentPublicForm = publicForm;
     currentNameCheckFails = false;
     currentNameCheckHasSimilar = false;
+    Element.prototype.scrollIntoView = vi.fn();
     vi.spyOn(global, 'fetch').mockImplementation(async (input, init) => {
       const url = String(input);
       if (url === '/api/public-bootstrap/forms/annual-return-declaration') {
@@ -372,5 +394,38 @@ describe('PublicFormPage', () => {
         available: true,
       });
     });
+  });
+
+  it('shows a review step before submitting and a reference afterwards', async () => {
+    currentPublicForm = reviewStepForm('advisory');
+    render(<PublicFormPage />);
+
+    const input = await screen.findByRole('textbox', { name: 'Proposed company name' });
+    fireEvent.change(input, { target: { value: 'Acme Holdings' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Review answers' }));
+
+    expect(await screen.findByText('Check your answers')).toBeVisible();
+    expect(screen.getByText('Acme Holdings')).toBeVisible();
+    // Fields stay mounted (hidden) so going back keeps every answer.
+    expect(input.closest('.hidden')).not.toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Submit company details' }));
+    expect(await screen.findByText('Company details submitted')).toBeVisible();
+    expect(screen.getByText(/Your reference is SUB1/)).toBeVisible();
+    expect(screen.queryByRole('button', { name: /download/i })).not.toBeInTheDocument();
+  });
+
+  it('lets respondents continue when an advisory name check is unavailable', async () => {
+    currentPublicForm = reviewStepForm('advisory');
+    currentNameCheckFails = true;
+    render(<PublicFormPage />);
+
+    const input = await screen.findByRole('textbox', { name: 'Proposed company name' });
+    fireEvent.change(input, { target: { value: 'Acme Holdings' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Check name' }));
+    await waitFor(() => expect(screen.queryByText('Availability check temporarily unavailable. Please try again.')).not.toBeInTheDocument());
+
+    fireEvent.click(screen.getByRole('button', { name: 'Review answers' }));
+    expect(await screen.findByText('Check your answers')).toBeVisible();
   });
 });

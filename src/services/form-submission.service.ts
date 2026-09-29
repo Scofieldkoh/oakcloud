@@ -36,6 +36,11 @@ import {
 } from '@/lib/form-utils';
 import { SIGNATURE_DATA_URL_MAX_LENGTH, extractSignatureDataUrl } from '@/lib/signature-utils';
 import { COMPANY_NAME_RECORD_COUNT_CAP } from '@/lib/external/company-name-check';
+import {
+  getNameCheckMode,
+  parseNameCheckResultValue,
+  type NameCheckResultValue,
+} from '@/lib/forms/name-check-result';
 import { prisma } from '@/lib/prisma';
 import { resolvePresetOptionsForFields } from '@/services/form-option-preset.service';
 import { storage, StorageKeys } from '@/lib/storage';
@@ -60,6 +65,10 @@ import {
   resolveSubmissionUploadFileNames,
 } from './form-pdf.service';
 import { loadDraftByAccess, sanitizeDraftMetadataForClient } from './form-draft.service';
+import {
+  evaluateCompanyIncorporationSubmission,
+  recheckAdvisoryCompanyNames,
+} from './company-incorporation-intake.service';
 
 export type { PublicFormField, PublicFormDefinition };
 
@@ -524,7 +533,8 @@ export async function sendCompletionNotificationEmailInternal(input: {
       where: { id: input.form.tenantId },
       select: { logoUrl: true, name: true },
     });
-    const pdfBuffer = await buildSubmissionPdfBuffer({
+    const linkOnly = notificationSettings.attachmentMode === 'link_only';
+    const pdfBuffer = linkOnly ? null : await buildSubmissionPdfBuffer({
       formTitle: input.form.title,
       formDescription: input.form.description,
       submittedAt: input.submission.submittedAt,
@@ -549,11 +559,13 @@ export async function sendCompletionNotificationEmailInternal(input: {
       answers,
     });
 
-    const { attachments, omittedUploads } = await buildSubmissionNotificationAttachments({
-      pdfFileName,
-      pdfBuffer,
-      uploads: input.uploads,
-    });
+    const { attachments, omittedUploads } = pdfBuffer
+      ? await buildSubmissionNotificationAttachments({
+        pdfFileName,
+        pdfBuffer,
+        uploads: input.uploads,
+      })
+      : { attachments: [], omittedUploads: 0 };
 
     const safeFormTitle = escapeHtml(input.form.title);
     const submittedAt = new Date(input.submission.submittedAt).toLocaleString('en-SG');
@@ -614,7 +626,9 @@ export async function sendCompletionNotificationEmailInternal(input: {
       <p><a href="${safeResponseUrl}">Open completed response</a></p>
       ${aiReviewHtml}
       ${omittedMessage}
-      <p>The response PDF and available uploaded files are attached.</p>
+      ${linkOnly
+        ? '<p>Open the response in Oakcloud to view the answers and any uploaded files.</p>'
+        : '<p>The response PDF and available uploaded files are attached.</p>'}
     `;
 
     const result = await sendEmail({
@@ -851,13 +865,19 @@ function getRowAnswerContext(answersRecord: Record<string, unknown>, rowIndex?: 
   return context;
 }
 
+function isRealCalendarDate(value: string): boolean {
+  const [year, month, day] = value.split('-').map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return date.toISOString().slice(0, 10) === value;
+}
+
 function validateDateFieldValue(field: FormField, value: unknown, answersRecord: Record<string, unknown>): void {
   if (field.type !== 'SHORT_TEXT' || field.inputType !== 'date') return;
   if (typeof value !== 'string') return;
 
   const normalizedValue = value.trim();
   if (!normalizedValue) return;
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(normalizedValue)) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(normalizedValue) || !isRealCalendarDate(normalizedValue)) {
     throw new Error(`Enter a valid date for ${field.label || field.key}.`);
   }
 
@@ -1098,23 +1118,25 @@ function hasActiveProgressStopInfoBlock(fields: FormField[], answers: Record<str
 function validateRequiredFieldValue(
   field: FormField,
   answers: Record<string, unknown>,
-  uploadIdSet: Set<string>
+  uploadIdSet: Set<string>,
+  rowIndex?: number
 ): void {
   if (!field.isRequired) return;
 
   const value = answers[field.key];
+  const rowSuffix = rowIndex === undefined ? '' : ` (row ${rowIndex + 1})`;
 
   if (field.type === 'FILE_UPLOAD') {
     const referencedUploadIds = collectUploadIdsFromAnswer(value)
       .filter((id) => UPLOAD_ID_PATTERN.test(id));
 
     if (referencedUploadIds.length === 0) {
-      throw new Error(`${field.label || field.key} is required`);
+      throw new Error(`${field.label || field.key} is required${rowSuffix}`);
     }
 
     const hasMissingUpload = referencedUploadIds.some((id) => !uploadIdSet.has(id));
     if (hasMissingUpload) {
-      throw new Error(`${field.label || field.key} has an invalid upload`);
+      throw new Error(`${field.label || field.key} has an invalid upload${rowSuffix}`);
     }
 
     return;
@@ -1123,13 +1145,38 @@ function validateRequiredFieldValue(
   if (Array.isArray(value)) {
     const hasAllValues = value.length > 0 && value.every((item) => hasRequiredFieldItemValue(field, item));
     if (!hasAllValues) {
-      throw new Error(`${field.label || field.key} is required`);
+      throw new Error(`${field.label || field.key} is required${rowSuffix}`);
     }
     return;
   }
 
   if (!hasRequiredFieldItemValue(field, value)) {
-    throw new Error(`${field.label || field.key} is required`);
+    throw new Error(`${field.label || field.key} is required${rowSuffix}`);
+  }
+}
+
+/**
+ * Required checks for a repeated section run per row, with each row's own
+ * condition context, so a field hidden in one row is not required there.
+ */
+function validateRequiredRepeatRows(
+  startField: FormField,
+  sectionFields: FormField[],
+  answers: Record<string, unknown>,
+  uploadIdSet: Set<string>
+): void {
+  const rowCount = getRepeatRowCount(sectionFields, answers, startField);
+
+  for (let rowIndex = 0; rowIndex < rowCount; rowIndex += 1) {
+    const rowAnswers = getRowAnswerContext(answers, rowIndex);
+    for (const sectionField of sectionFields) {
+      if (!sectionField.isRequired) continue;
+      if (!evaluateCondition(parseObject(sectionField.condition), rowAnswers, { fields: sectionFields })) continue;
+
+      const value = answers[sectionField.key];
+      const rowValue = Array.isArray(value) ? value[rowIndex] : undefined;
+      validateRequiredFieldValue(sectionField, { [sectionField.key]: rowValue }, uploadIdSet, rowIndex);
+    }
   }
 }
 
@@ -1143,21 +1190,24 @@ function validateRequiredPublicAnswers(
 
     if (isRepeatStartMarker(field)) {
       const sectionVisible = evaluateCondition(parseObject(field.condition), answers, { fields });
+      const sectionFields: FormField[] = [];
       let cursor = index + 1;
 
       while (cursor < fields.length && !isRepeatEndMarker(fields[cursor])) {
         const sectionField = fields[cursor];
         if (
-          sectionVisible &&
           sectionField.type !== 'PAGE_BREAK' &&
           sectionField.type !== 'PARAGRAPH' &&
           sectionField.type !== 'HTML' &&
-          sectionField.type !== 'HIDDEN' &&
-          evaluateCondition(parseObject(sectionField.condition), answers, { fields })
+          sectionField.type !== 'HIDDEN'
         ) {
-          validateRequiredFieldValue(sectionField, answers, uploadIdSet);
+          sectionFields.push(sectionField);
         }
         cursor += 1;
+      }
+
+      if (sectionVisible) {
+        validateRequiredRepeatRows(field, sectionFields, answers, uploadIdSet);
       }
 
       index = cursor;
@@ -1210,6 +1260,14 @@ function sanitizePublicAnswers(
           }
           break;
         }
+        if (Array.isArray(value)) {
+          // Repeated rows keep one slot per row so parallel fields stay aligned.
+          sanitizedAnswers[key] = value
+            .slice(0, 100)
+            .map((item) => (typeof item === 'string' ? item.trim().slice(0, 500) : ''));
+          break;
+        }
+        // falls through: single short-text values are trimmed like company names
       case 'COMPANY_NAME_CHECK':
         if (typeof value === 'string') {
           const trimmed = value.trim().slice(0, 500);
@@ -1315,7 +1373,7 @@ function getVisibleCompanyNameCheckFields(fields: FormField[]): FormField[] {
       continue;
     }
 
-    if (field.type === 'COMPANY_NAME_CHECK') {
+    if (field.type === 'COMPANY_NAME_CHECK' && getNameCheckMode(field.validation) === 'strict') {
       visible.push(field);
     }
   }
@@ -1371,7 +1429,8 @@ export function validateCompanyNameCheckResults(
 export function sanitizeSubmissionMetadata(
   metadata: unknown,
   fields: FormField[],
-  answers: Record<string, unknown>
+  answers: Record<string, unknown>,
+  serverNameChecks: Record<string, NameCheckResultValue> = {}
 ): Record<string, unknown> {
   const root = parseObject(metadata) ? { ...(metadata as Record<string, unknown>) } : {};
   const rawResults = parseObject(root.nameCheckResults);
@@ -1382,50 +1441,40 @@ export function sanitizeSubmissionMetadata(
     for (const [fieldKey, entry] of Object.entries(rawResults)) {
       const field = fieldByKey.get(fieldKey);
       if (!field || field.type !== 'COMPANY_NAME_CHECK') continue;
+      // Advisory fields are rechecked on the server; the client claim is never kept.
+      if (getNameCheckMode(field.validation) === 'advisory') continue;
 
-      const parsed = parseObject(entry);
+      const parsed = parseNameCheckResultValue(entry);
       if (!parsed) continue;
 
       const answerName = typeof answers[fieldKey] === 'string' ? answers[fieldKey].trim() : '';
-      const resultName = typeof parsed.name === 'string' ? parsed.name.trim() : '';
-      if (!answerName || resultName !== answerName) continue;
-      if (typeof parsed.available !== 'boolean') continue;
-
-      const checkedAt = typeof parsed.checkedAt === 'string' ? parsed.checkedAt.trim().slice(0, 64) : '';
-      if (!checkedAt) continue;
-
-      const records: unknown[] = [];
-      if (Array.isArray(parsed.records)) {
-        for (const record of parsed.records.slice(0, COMPANY_NAME_RECORD_COUNT_CAP)) {
-          const recordObject = parseObject(record);
-          if (!recordObject) continue;
-
-          const uen = typeof recordObject.uen === 'string' ? recordObject.uen.trim().slice(0, 32) : '';
-          const entityName = typeof recordObject.entityName === 'string'
-            ? recordObject.entityName.trim().slice(0, 500)
-            : '';
-          const entityStatus = typeof recordObject.entityStatus === 'string'
-            ? recordObject.entityStatus.trim().slice(0, 200)
-            : '';
-
-          if (!uen && !entityName) continue;
-          records.push({ uen, entityName, entityStatus });
-        }
-      }
-
-      const dataAsOf = typeof parsed.dataAsOf === 'string' ? parsed.dataAsOf.trim().slice(0, 64) : '';
+      if (!answerName || parsed.name !== answerName) continue;
 
       sanitizedResults[fieldKey] = {
-        name: resultName,
+        name: parsed.name,
         available: parsed.available,
-        checkedAt,
-        records,
-        ...(dataAsOf ? { dataAsOf } : {}),
+        ...(parseObject(entry)?.assessment ? { assessment: parsed.assessment } : {}),
+        checkedAt: parsed.checkedAt,
+        records: parsed.records.slice(0, COMPANY_NAME_RECORD_COUNT_CAP),
+        ...(parsed.dataAsOf ? { dataAsOf: parsed.dataAsOf } : {}),
+        ...(parsed.reasonCodes.length > 0 ? { reasonCodes: parsed.reasonCodes } : {}),
       };
     }
   }
 
+  for (const [fieldKey, result] of Object.entries(serverNameChecks)) {
+    const field = fieldByKey.get(fieldKey);
+    if (!field || field.type !== 'COMPANY_NAME_CHECK') continue;
+    sanitizedResults[fieldKey] = { ...result, source: 'server' };
+  }
+
   const nextMetadata = { ...root };
+  // Server-owned keys can never come from the public payload.
+  delete nextMetadata.companyIncorporation;
+  delete nextMetadata.companyIncorporationReview;
+  delete nextMetadata.responseReviewStatus;
+  delete nextMetadata.aiReview;
+  delete nextMetadata.responseTags;
   if (Object.keys(sanitizedResults).length > 0) {
     nextMetadata.nameCheckResults = sanitizedResults;
   } else {
@@ -2443,7 +2492,18 @@ export async function createPublicSubmission(
   validateCompanyNameCheckResults(form.fields, answers, input.metadata);
 
   const sanitizedAnswers = sanitizePublicAnswers(form.fields, answers, uploadIdSet);
-  const sanitizedMetadata = sanitizeSubmissionMetadata(input.metadata, form.fields, sanitizedAnswers);
+  // Bounded server recheck for advisory name checks, before any transaction opens.
+  const serverNameChecks = await recheckAdvisoryCompanyNames(form.fields, sanitizedAnswers);
+  const companyIncorporation = evaluateCompanyIncorporationSubmission({
+    settings: form.settings,
+    fields: form.fields,
+    answers: sanitizedAnswers,
+    nameChecks: serverNameChecks,
+  });
+  const sanitizedMetadata = sanitizeSubmissionMetadata(input.metadata, form.fields, sanitizedAnswers, serverNameChecks);
+  if (companyIncorporation) {
+    sanitizedMetadata.companyIncorporation = companyIncorporation;
+  }
   const fieldById = new Map(form.fields.map((field) => [field.id, { key: field.key, validation: field.validation }]));
   const renamedUploadsById = new Map<string, string>();
 
@@ -3118,3 +3178,6 @@ export async function cleanupOrphanedUploads(maxAgeHours: number = 24): Promise<
 
   return orphans.length;
 }
+
+/** Exported for unit tests. */
+export { sanitizePublicAnswers as sanitizeSubmissionAnswers, validateRequiredPublicAnswers };

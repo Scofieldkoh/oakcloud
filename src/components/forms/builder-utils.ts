@@ -108,6 +108,12 @@ export type ValidationConfig = {
   repeatMinItems?: number;
   repeatMaxItems?: number;
   repeatAddLabel?: string;
+  repeatItemLabel?: string;
+  repeatTotalFieldKey?: string;
+  repeatTotalLabel?: string;
+  repeatTotalSuffix?: string;
+  repeatTotalTarget?: number;
+  nameCheckMode?: 'strict' | 'advisory';
 };
 
 export type ChoiceOptionConfig = {
@@ -431,6 +437,7 @@ export function serializeBuilderState(input: {
   fields: BuilderField[];
   notificationRecipientEmails?: string[];
   notificationRecipientText?: string;
+  notificationLinkOnly?: boolean;
   draftSaveEnabled?: boolean;
   draftAutoDeleteDays?: number;
   pdfFileNameTemplate?: string;
@@ -453,6 +460,7 @@ export function serializeBuilderState(input: {
     tags: input.tags,
     notificationRecipientEmails: (input.notificationRecipientEmails || []).map((email) => email.trim().toLowerCase()).filter(Boolean),
     notificationRecipientText: (input.notificationRecipientText || '').trim(),
+    notificationLinkOnly: input.notificationLinkOnly === true,
     draftSaveEnabled: input.draftSaveEnabled === true,
     draftAutoDeleteDays: typeof input.draftAutoDeleteDays === 'number' && Number.isFinite(input.draftAutoDeleteDays)
       ? Math.max(1, Math.min(365, Math.trunc(input.draftAutoDeleteDays)))

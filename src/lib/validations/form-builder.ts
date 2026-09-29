@@ -113,6 +113,12 @@ export const fieldValidationSchema = z
     repeatMinItems: z.number().int().min(1).max(50).optional(),
     repeatMaxItems: z.number().int().min(1).max(50).optional(),
     repeatAddLabel: z.string().min(1).max(80).optional(),
+    repeatItemLabel: z.string().min(1).max(80).optional(),
+    repeatTotalFieldKey: z.string().min(1).max(FORM_FIELD_KEY_MAX_LENGTH).optional(),
+    repeatTotalLabel: z.string().min(1).max(80).optional(),
+    repeatTotalSuffix: z.string().max(10).optional(),
+    repeatTotalTarget: z.number().positive().optional(),
+    nameCheckMode: z.enum(['strict', 'advisory']).optional(),
   })
   .superRefine((value, ctx) => {
     if (value.minLength !== undefined && value.maxLength !== undefined) {

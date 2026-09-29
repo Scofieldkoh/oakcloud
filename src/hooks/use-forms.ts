@@ -386,7 +386,7 @@ async function fetchFormsWithWarnings(
   return Array.isArray(data.forms) ? data.forms : [];
 }
 
-async function createFormRequest(data: CreateFormInput & { tenantId?: string | null }): Promise<Form> {
+async function createFormRequest(data: CreateFormInput & { tenantId?: string | null; templateKey?: string }): Promise<Form> {
   const response = await fetch('/api/forms', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -631,7 +631,7 @@ export function useCreateForm() {
   const activeTenantId = useActiveWorkspaceId(session?.isSuperAdmin ?? false, session?.tenantId);
 
   return useMutation({
-    mutationFn: (data: CreateFormInput) =>
+    mutationFn: (data: CreateFormInput & { templateKey?: string }) =>
       createFormRequest({
         ...data,
         tenantId: activeTenantId,
