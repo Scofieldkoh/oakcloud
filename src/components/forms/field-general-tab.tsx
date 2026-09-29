@@ -368,10 +368,25 @@ export function FieldGeneralTab({
       {field.type === 'COMPANY_NAME_CHECK' && (
         <div className="space-y-3">
           <SectionHeader title="Company name check" />
+          <div>
+            <label className="mb-1.5 block text-xs font-medium text-text-secondary">Check mode</label>
+            <select
+              value={field.validation?.nameCheckMode === 'advisory' ? 'advisory' : 'strict'}
+              onChange={(e) => onChange({
+                ...field,
+                validation: { ...(field.validation || {}), nameCheckMode: e.target.value === 'advisory' ? 'advisory' : 'strict' },
+              })}
+              className="w-full rounded-lg border border-border-primary bg-background-secondary px-3 py-2 text-sm text-text-primary"
+            >
+              <option value="strict">Must pass before submitting</option>
+              <option value="advisory">Advisory (respondent can continue; our team rechecks)</option>
+            </select>
+          </div>
           <div className="rounded-lg border border-border-primary bg-background-elevated p-3 text-xs text-text-secondary">
-            Respondents enter a proposed company name and must pass a live
-            availability check before submitting. Results are sourced from
-            GoBusiness / ACRA data and are indicative only; final availability
+            {field.validation?.nameCheckMode === 'advisory'
+              ? 'Respondents can check the name and see possible conflicts, but can still continue. The name is checked again when the form is submitted, and anything unclear is flagged for staff review.'
+              : 'Respondents enter a proposed company name and must pass a live availability check before submitting.'}
+            {' '}Results are sourced from GoBusiness / ACRA data and are indicative only; final availability
             is determined by ACRA at application time.
           </div>
         </div>

@@ -20,6 +20,7 @@ import {
 import { arrayMove, rectSortingStrategy, SortableContext } from '@dnd-kit/sortable';
 import { AlertTriangle, Bell, ChevronDown, ChevronLeft, ChevronRight, CircleHelp, ClipboardCopy, Copy, FileText, Globe, Paintbrush, Plus, Save, Sparkles, Users } from 'lucide-react';
 import { Alert } from '@/components/ui/alert';
+import { parseFormTemplateBinding } from '@/lib/form-templates';
 import { Button } from '@/components/ui/button';
 import { FormInput } from '@/components/ui/form-input';
 import { AIModelSelector } from '@/components/ui/ai-model-selector';
@@ -103,6 +104,21 @@ function normalizeSlugSegment(value: string): string {
     .replace(/-+/g, '-')
     .replace(/^-|-$/g, '')
     .slice(0, 80);
+}
+
+/**
+ * Field-only snapshot used to detect question edits on a locked template form.
+ * Response-table columns (showOnSummary) live in settings, so they stay editable.
+ */
+function serializeFieldsOnly(fields: BuilderField[]): string {
+  return serializeBuilderState({
+    title: '',
+    description: '',
+    slug: '',
+    status: 'DRAFT',
+    tags: [],
+    fields: fields.map((field) => ({ ...field, showOnSummary: false })),
+  });
 }
 
 function parseNotificationEmailInput(value: string): { emails: string[]; invalidEntries: string[] } {
@@ -411,6 +427,8 @@ export default function FormBuilderPage() {
   const [tagsText, setTagsText] = useState('');
   const [notificationRecipientsText, setNotificationRecipientsText] = useState('');
   const [draftSaveEnabled, setDraftSaveEnabled] = useState(false);
+  const [notificationLinkOnly, setNotificationLinkOnly] = useState(false);
+  const lockedFieldsSnapshot = useRef<string | null>(null);
   const [draftAutoDeleteDays, setDraftAutoDeleteDays] = useState(DEFAULT_FORM_DRAFT_AUTO_DELETE_DAYS);
   const [aiParsingEnabled, setAiParsingEnabled] = useState(false);
   const [aiParsingCustomContext, setAiParsingCustomContext] = useState('');
@@ -489,6 +507,7 @@ export default function FormBuilderPage() {
     setStatus(form.status as 'DRAFT' | 'PUBLISHED' | 'ARCHIVED');
     setTagsText(form.tags.join(', '));
     setNotificationRecipientsText(notificationSettings.completionRecipientEmails.join('\n'));
+    setNotificationLinkOnly(notificationSettings.attachmentMode === 'link_only');
     setDraftSaveEnabled(draftSettings.enabled);
     setDraftAutoDeleteDays(draftSettings.autoDeleteDays);
     setAiParsingEnabled(aiSettings.enabled);
@@ -524,6 +543,7 @@ export default function FormBuilderPage() {
       tags: form.tags,
       notificationRecipientEmails: notificationSettings.completionRecipientEmails,
       notificationRecipientText: notificationSettings.completionRecipientEmails.join('\n'),
+      notificationLinkOnly: notificationSettings.attachmentMode === 'link_only',
       draftSaveEnabled: draftSettings.enabled,
       draftAutoDeleteDays: draftSettings.autoDeleteDays,
       aiParsingEnabled: aiSettings.enabled,
@@ -539,7 +559,11 @@ export default function FormBuilderPage() {
       backgroundImageOpacity: normalizedBackgroundImageOpacity,
       fields: mappedFields,
     });
+    lockedFieldsSnapshot.current = serializeFieldsOnly(mappedFields);
   }, [form]);
+
+  const templateBinding = useMemo(() => parseFormTemplateBinding(form?.settings), [form?.settings]);
+  const isFieldsLocked = !!templateBinding?.lockedAt;
 
   const tags = useMemo(
     () => tagsText.split(',').map((tag) => tag.trim()).filter(Boolean),
@@ -760,6 +784,7 @@ export default function FormBuilderPage() {
       tags,
       notificationRecipientEmails: notificationEmailParse.emails,
       notificationRecipientText: notificationRecipientsText,
+      notificationLinkOnly,
       draftSaveEnabled,
       draftAutoDeleteDays,
       aiParsingEnabled,
@@ -783,6 +808,7 @@ export default function FormBuilderPage() {
         tags,
         notificationEmailParse.emails,
         notificationRecipientsText,
+        notificationLinkOnly,
         draftSaveEnabled,
         draftAutoDeleteDays,
         aiParsingEnabled,
@@ -1390,6 +1416,11 @@ export default function FormBuilderPage() {
         return;
       }
 
+      if (isFieldsLocked && serializeFieldsOnly(fields) !== lockedFieldsSnapshot.current) {
+        showError('The questions on this published template form are locked. Duplicate the form to change them.');
+        return;
+      }
+
       const normalizedDraftAutoDeleteDays = Math.min(
         MAX_FORM_DRAFT_AUTO_DELETE_DAYS,
         Math.max(MIN_FORM_DRAFT_AUTO_DELETE_DAYS, Math.trunc(draftAutoDeleteDays || DEFAULT_FORM_DRAFT_AUTO_DELETE_DAYS))
@@ -1493,6 +1524,7 @@ export default function FormBuilderPage() {
       });
       const notificationSettingsPayload = writeFormNotificationSettings(responseTableSettingsPayload, {
         completionRecipientEmails: notificationEmailParse.emails,
+        attachmentMode: notificationLinkOnly ? 'link_only' : 'attachments',
       });
       const draftSettingsPayload = writeFormDraftSettings(notificationSettingsPayload, {
         enabled: draftSaveEnabled,
@@ -1531,7 +1563,7 @@ export default function FormBuilderPage() {
         status: nextStatus,
         tags,
         settings: nextSettings,
-        fields: toPayloadFields(correctedFields),
+        ...(isFieldsLocked ? {} : { fields: toPayloadFields(correctedFields) }),
         reason: 'Manual form builder save',
       });
 
@@ -1560,6 +1592,7 @@ export default function FormBuilderPage() {
         tags: saved.tags,
         notificationRecipientEmails: notificationEmailParse.emails,
         notificationRecipientText: notificationRecipientsText,
+        notificationLinkOnly,
         draftSaveEnabled: savedDraftSettings.enabled,
         draftAutoDeleteDays: savedDraftSettings.autoDeleteDays,
         aiParsingEnabled: savedAiSettings.enabled,
@@ -1780,6 +1813,11 @@ export default function FormBuilderPage() {
 
       <div className="overflow-hidden rounded-2xl border border-border-primary bg-background-secondary shadow-sm sm:rounded-3xl">
         <div className="p-4 sm:p-6">
+        {isFieldsLocked && (
+          <Alert variant="info" title="Questions are locked" className="mb-4">
+            This form was published from the {templateBinding?.key === 'sg_company_incorporation' ? 'Singapore Company Incorporation' : 'guided'} template, so its questions can no longer change and every response matches the same definition. You can still edit the title, settings and translations. To change questions, duplicate the form; the copy is an ordinary form without the template checks.
+          </Alert>
+        )}
         {(publishReadiness.blockers.length > 0 || publishReadiness.warnings.length > 0) && (
           <div className="mb-4 rounded-lg border border-status-warning/30 bg-status-warning/5 p-3">
             <div className="flex items-start gap-2">
@@ -1896,13 +1934,37 @@ export default function FormBuilderPage() {
                     placeholder={'ops@example.com\nowner@example.com'}
                   />
                   <p className="mt-1 text-2xs text-text-muted">
-                    One email per line (or comma-separated). Each recipient gets a completion email with response PDF and uploaded files.
+                    {notificationLinkOnly
+                      ? 'One email per line (or comma-separated). Each recipient gets a short email with a link to the response in Oakcloud.'
+                      : 'One email per line (or comma-separated). Each recipient gets a completion email with response PDF and uploaded files.'}
                   </p>
                   {notificationEmailParse.invalidEntries.length > 0 && (
                     <p className="mt-1 text-2xs text-status-error">
                       Invalid emails: {notificationEmailParse.invalidEntries.join(', ')}
                     </p>
                   )}
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-medium text-text-secondary">Send link only</p>
+                    <p className="text-2xs text-text-muted">Leave out the PDF and uploaded files so client details stay in Oakcloud. Recommended for forms with personal or company data.</p>
+                  </div>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={notificationLinkOnly}
+                    aria-label="Send link only"
+                    onClick={() => setNotificationLinkOnly((value) => !value)}
+                    className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                      notificationLinkOnly ? 'bg-oak-primary' : 'bg-border-primary'
+                    }`}
+                  >
+                    <span
+                      className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                        notificationLinkOnly ? 'translate-x-4' : 'translate-x-0'
+                      }`}
+                    />
+                  </button>
                 </div>
               </SettingsSection>
 

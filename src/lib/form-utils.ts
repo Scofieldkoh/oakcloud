@@ -259,8 +259,24 @@ export interface FormResponseTableSettings {
   columnWidths: Record<string, number>;
 }
 
+export type FormNotificationAttachmentMode = 'attachments' | 'link_only';
+
 export interface FormNotificationSettings {
   completionRecipientEmails: string[];
+  /** 'link_only' sends a link to the response without the PDF or uploaded files. */
+  attachmentMode?: FormNotificationAttachmentMode;
+}
+
+export interface FormCompletionSettings {
+  /** Show a review-all-answers step before the submit button. */
+  reviewStep: boolean;
+  reviewTitle: string | null;
+  reviewIntro: string | null;
+  submitLabel: string | null;
+  successTitle: string | null;
+  /** May contain {reference}, replaced with the short submission reference. */
+  successMessage: string | null;
+  showPdfActions: boolean;
 }
 
 export const DEFAULT_FORM_DRAFT_AUTO_DELETE_DAYS = 14;
@@ -839,6 +855,7 @@ export function parseFormNotificationSettings(settings: unknown): FormNotificati
 
   return {
     completionRecipientEmails: Array.from(recipientSet),
+    attachmentMode: notifications?.attachmentMode === 'link_only' ? 'link_only' : 'attachments',
   };
 }
 
@@ -852,8 +869,60 @@ export function writeFormNotificationSettings(
   root.notifications = {
     ...existingNotifications,
     completionRecipientEmails: [...notifications.completionRecipientEmails],
+    ...(notifications.attachmentMode ? { attachmentMode: notifications.attachmentMode } : {}),
   };
 
+  return root;
+}
+
+function normalizeCompletionText(value: unknown, maxLength: number): string | null {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  return trimmed ? trimmed.slice(0, maxLength) : null;
+}
+
+export function parseFormCompletionSettings(settings: unknown): FormCompletionSettings {
+  const root = parseObject(settings);
+  const completion = parseObject(root?.completion);
+
+  return {
+    reviewStep: completion?.reviewStep === true,
+    reviewTitle: normalizeCompletionText(completion?.reviewTitle, 120),
+    reviewIntro: normalizeCompletionText(completion?.reviewIntro, 1000),
+    submitLabel: normalizeCompletionText(completion?.submitLabel, 60),
+    successTitle: normalizeCompletionText(completion?.successTitle, 120),
+    successMessage: normalizeCompletionText(completion?.successMessage, 1000),
+    showPdfActions: completion?.showPdfActions !== false,
+  };
+}
+
+export function writeFormCompletionSettings(
+  settings: unknown,
+  completion: FormCompletionSettings
+): Record<string, unknown> {
+  const root = parseObject(settings) ? { ...(settings as Record<string, unknown>) } : {};
+  const next: Record<string, unknown> = {
+    reviewStep: completion.reviewStep === true,
+    showPdfActions: completion.showPdfActions !== false,
+  };
+  const texts: Array<[keyof FormCompletionSettings, number]> = [
+    ['reviewTitle', 120],
+    ['reviewIntro', 1000],
+    ['submitLabel', 60],
+    ['successTitle', 120],
+    ['successMessage', 1000],
+  ];
+  for (const [key, maxLength] of texts) {
+    const value = normalizeCompletionText(completion[key], maxLength);
+    if (value) next[key] = value;
+  }
+
+  const isDefault = next.reviewStep === false && next.showPdfActions === true && Object.keys(next).length === 2;
+  if (isDefault) {
+    delete root.completion;
+  } else {
+    root.completion = next;
+  }
   return root;
 }
 
@@ -1023,8 +1092,13 @@ export function buildPublicFormSettings(settings: unknown): Record<string, unkno
 
   nextSettings = writeFormDraftSettings(nextSettings, parseFormDraftSettings(settings));
   nextSettings = writeFormI18nSettings(nextSettings, parseFormI18nSettings(settings));
+  nextSettings = writeFormCompletionSettings(nextSettings, parseFormCompletionSettings(settings));
 
   const root = parseObject(settings);
+  const template = parseObject(root?.template);
+  if (template && typeof template.key === 'string' && typeof template.version === 'number') {
+    nextSettings.template = { key: template.key, version: template.version };
+  }
   nextSettings.hideLogo = root?.hideLogo === true;
   nextSettings.hideFooter = root?.hideFooter === true;
 
