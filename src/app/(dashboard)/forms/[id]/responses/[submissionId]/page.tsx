@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { AlertTriangle, CalendarDays, Check, ChevronDown, ChevronLeft, ChevronUp, Copy, Download, FileText, Paperclip, RefreshCw, Trash2, User } from 'lucide-react';
 import type { FormField, FormUpload } from '@/generated/prisma';
+import { CompanyIncorporationReviewPanel } from '@/components/forms/company-incorporation-review-panel';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
@@ -32,6 +33,13 @@ import {
 } from '@/lib/form-utils';
 import { formatResponseFieldValue, isResponseAnswerField } from '@/lib/form-response-display';
 import { extractSignatureDataUrl } from '@/lib/signature-utils';
+import {
+  describeNameCheckAssessment,
+  describeNameCheckReason,
+  parseNameCheckResultValue,
+  type NameCheckResultValue,
+} from '@/lib/forms/name-check-result';
+import { SG_COMPANY_INCORPORATION_TEMPLATE_KEY } from '@/lib/form-templates/sg-company-incorporation';
 
 type RepeatSectionConfig = {
   id: string;
@@ -98,44 +106,10 @@ function toAnswerRecord(value: unknown): Record<string, unknown> {
   return value as Record<string, unknown>;
 }
 
-type SubmissionNameCheckResult = {
-  name: string;
-  available: boolean;
-  checkedAt: string;
-  records: Array<{ uen: string; entityName: string; entityStatus: string }>;
-};
-
-function getSubmissionNameCheckResult(metadata: unknown, fieldKey: string): SubmissionNameCheckResult | null {
+function getSubmissionNameCheckResult(metadata: unknown, fieldKey: string): NameCheckResultValue | null {
   const root = parseObject(metadata);
   const results = root ? parseObject(root.nameCheckResults) : null;
-  if (!results) return null;
-
-  const entry = parseObject(results[fieldKey]);
-  if (!entry) return null;
-
-  const name = typeof entry.name === 'string' ? entry.name : '';
-  const checkedAt = typeof entry.checkedAt === 'string' ? entry.checkedAt : '';
-  if (!name || !checkedAt) return null;
-
-  const records: SubmissionNameCheckResult['records'] = [];
-  if (Array.isArray(entry.records)) {
-    for (const item of entry.records.slice(0, 10)) {
-      const record = parseObject(item);
-      if (!record) continue;
-      const uen = typeof record.uen === 'string' ? record.uen : '';
-      const entityName = typeof record.entityName === 'string' ? record.entityName : '';
-      const entityStatus = typeof record.entityStatus === 'string' ? record.entityStatus : '';
-      if (!uen && !entityName) continue;
-      records.push({ uen, entityName, entityStatus });
-    }
-  }
-
-  return {
-    name,
-    available: entry.available === true,
-    checkedAt,
-    records,
-  };
+  return results ? parseNameCheckResultValue(results[fieldKey]) : null;
 }
 
 function toCopyValue(field: FormField, value: unknown): string | null {
@@ -370,6 +344,7 @@ export default function FormResponseDetailPage() {
   const submission = responseDetail?.submission ?? null;
   const uploadCount = responseDetail?.uploads.length ?? 0;
   const reviewStatus = parseFormResponseReviewStatus(submission?.metadata);
+  const isCompanyIncorporationResponse = parseObject(parseObject(submission?.metadata)?.companyIncorporation)?.templateKey === SG_COMPANY_INCORPORATION_TEMPLATE_KEY;
 
   const submissionAnswers = useMemo(
     () => toAnswerRecord(submission?.answers),
@@ -855,35 +830,44 @@ export default function FormResponseDetailPage() {
               <div className="rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary">
                 {formatResponseFieldValue(field, value) || <span className="text-text-muted">-</span>}
               </div>
-              {checkResult && (
-                <div
-                  className={
-                    checkResult.available
-                      ? 'rounded-lg border border-status-success/40 bg-status-success/10 px-3 py-2 text-xs text-status-success'
-                      : 'rounded-lg border border-status-warning/50 bg-status-warning/10 px-3 py-2 text-xs text-status-warning'
-                  }
-                >
-                  <p className="font-medium">
-                    {checkResult.available
-                      ? 'Available — no similar names found'
-                      : 'Similar names found — confirm with ACRA'}
-                  </p>
-                  {checkResult.records.length > 0 && (
-                    <ul className="mt-1 space-y-0.5">
-                      {checkResult.records.map((record, index) => (
-                        <li key={`${record.uen || 'record'}-${index}`}>
-                          {record.entityName || '-'}
-                          {record.uen ? ` (${record.uen})` : ''}
-                          {record.entityStatus ? ` — ${record.entityStatus}` : ''}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                  <p className="mt-1 text-2xs text-text-muted">
-                    Checked {new Date(checkResult.checkedAt).toLocaleString('en-SG')}
-                  </p>
-                </div>
-              )}
+              {checkResult && (() => {
+                const described = describeNameCheckAssessment(checkResult.assessment);
+                const reasons = checkResult.reasonCodes
+                  .map((code) => describeNameCheckReason(code))
+                  .filter((reason): reason is string => !!reason);
+                return (
+                  <div
+                    className={
+                      described.tone === 'success'
+                        ? 'rounded-lg border border-status-success/40 bg-status-success/10 px-3 py-2 text-xs text-status-success'
+                        : 'rounded-lg border border-status-warning/50 bg-status-warning/10 px-3 py-2 text-xs text-status-warning'
+                    }
+                  >
+                    <p className="font-medium">{described.title}</p>
+                    {reasons.length > 0 && (
+                      <ul className="mt-1 list-disc space-y-0.5 pl-4">
+                        {reasons.map((reason) => <li key={reason}>{reason}</li>)}
+                      </ul>
+                    )}
+                    {checkResult.records.length > 0 && (
+                      <ul className="mt-1 space-y-0.5">
+                        {checkResult.records.map((record, index) => (
+                          <li key={`${record.uen || 'record'}-${index}`}>
+                            {record.entityName || '-'}
+                            {record.uen ? ` (${record.uen})` : ''}
+                            {record.entityStatus ? ` — ${record.entityStatus}` : ''}
+                            {record.matchType === 'IDENTICAL' ? ' · identical' : record.matchType === 'SIMILAR_WARNING' ? ' · similar' : ''}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    <p className="mt-1 text-2xs text-text-muted">
+                      {checkResult.source === 'server' ? 'Rechecked on submission' : 'Checked'} {new Date(checkResult.checkedAt).toLocaleString('en-SG')}
+                      {checkResult.dataAsOf ? ` · data as of ${checkResult.dataAsOf}` : ''}
+                    </p>
+                  </div>
+                );
+              })()}
             </div>
           );
         })()}
@@ -1192,6 +1176,10 @@ export default function FormResponseDetailPage() {
             </>
           )}
         </div>
+      )}
+
+      {isCompanyIncorporationResponse && (
+        <CompanyIncorporationReviewPanel formId={form.id} submissionId={submission.id} />
       )}
 
       <div className="space-y-4">

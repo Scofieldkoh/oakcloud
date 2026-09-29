@@ -68,6 +68,7 @@ The Forms module does not yet have a single stable spec file under `docs/feature
 | [Form Submission PDF Redesign](./plans/2026-03-09-form-submission-pdf-redesign.md) | HTML-to-PDF export for form responses |
 | [Resume Draft UI Implementation](./plans/2026-03-09-resume-draft-ui-implementation.md) | Public draft resume and email flow |
 | [Forms Implementation Review](./plans/2026-03-10-forms-implementation-review.md) | Security, performance, and logic review |
+| [Singapore Company Incorporation Intake Form](./plans/2026-09-29-acra-incorporation-intake-form.md) | Guided template, advisory name check, review step, template lock, staff KYC checklist and readiness |
 | [Forms API: option presets](./reference/API_REFERENCE.md#get-apiformspresets) | Managed CSV dropdown lists, protected built-ins, limits, and live form linkage |
 | [Forms design: option presets](./guides/DESIGN_GUIDELINE.md#form-option-presets) | Preset manager and respondent dropdown interaction rules |
 | [Forms API: URL health](./reference/API_REFERENCE.md#get-apiformsurl-health) | Tenant-scoped broken-link warning APIs, classifications, and safety bounds |
