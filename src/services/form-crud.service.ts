@@ -24,6 +24,7 @@ import { resolvePresetOptionsForFields } from './form-option-preset.service';
 import { ValidationError } from '@/lib/errors';
 import { parseFormTemplateBinding, preserveFormTemplateBinding } from '@/lib/form-templates';
 import { computeFormDefinitionHash } from './company-incorporation-intake.service';
+import { deleteUnusedFormBackgroundsSafely } from './form-background.service';
 
 export interface FormListItem extends Form {
   fieldCount: number;
@@ -344,6 +345,10 @@ export async function updateForm(
     changeSource: 'MANUAL',
   });
 
+  if (nextSettings !== undefined) {
+    await deleteUnusedFormBackgroundsSafely(params.tenantId, formId);
+  }
+
   return updated;
 }
 
@@ -622,6 +627,7 @@ export async function hardDeleteArchivedForm(
   const deleted = await prisma.form.delete({
     where: { id: formId },
   });
+  await deleteUnusedFormBackgroundsSafely(params.tenantId, formId, { graceMs: 0 });
 
   await createAuditLog({
     tenantId: params.tenantId,

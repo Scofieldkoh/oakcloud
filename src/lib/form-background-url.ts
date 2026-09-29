@@ -1,6 +1,6 @@
 import { getStorageConfig } from '@/lib/storage/config';
 
-const FORM_BACKGROUND_KEY_PATTERN = /^[^/]+\/forms\/[^/]+\/branding\/background\.(png|jpg|jpeg|webp|gif)$/i;
+const FORM_BACKGROUND_KEY_PATTERN = /^[^/]+\/forms\/[^/]+\/branding\/background(-[a-z0-9]+)?\.(png|jpg|jpeg|webp|gif)$/i;
 
 export function isFormBackgroundStorageKey(value: string): boolean {
   return FORM_BACKGROUND_KEY_PATTERN.test(value);
@@ -36,19 +36,27 @@ function storageKeyFromS3Url(pathname: string): string | null {
   }
 }
 
+export function getFormBackgroundStorageKey(value: string | null | undefined): string | null {
+  const trimmed = value?.trim();
+  if (!trimmed) return null;
+  if (isFormBackgroundStorageKey(trimmed)) return trimmed;
+
+  try {
+    const parsed = new URL(trimmed, 'http://app.local');
+    return storageKeyFromAppStorageUrl(parsed.pathname) ?? storageKeyFromS3Url(parsed.pathname);
+  } catch {
+    return null;
+  }
+}
+
+export function getFormBackgroundFolder(tenantId: string, formId: string): string {
+  return `${tenantId}/forms/${formId}/branding`;
+}
+
 export function normalizeFormBackgroundUrl(value: string | null | undefined): string | null {
   const trimmed = value?.trim();
   if (!trimmed) return null;
 
-  if (isFormBackgroundStorageKey(trimmed)) {
-    return getFormBackgroundPublicUrl(trimmed);
-  }
-
-  try {
-    const parsed = new URL(trimmed, 'http://app.local');
-    const storageKey = storageKeyFromAppStorageUrl(parsed.pathname) ?? storageKeyFromS3Url(parsed.pathname);
-    return storageKey ? getFormBackgroundPublicUrl(storageKey) : trimmed;
-  } catch {
-    return trimmed;
-  }
+  const storageKey = getFormBackgroundStorageKey(trimmed);
+  return storageKey ? getFormBackgroundPublicUrl(storageKey) : trimmed;
 }
