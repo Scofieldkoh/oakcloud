@@ -221,6 +221,7 @@ export function BatchSharedSetup({
                       onChange={(next) => onMasterValueChange(field.id, next)}
                       disabled={disabled}
                       ariaLabel={field.label}
+                      showTodayButton
                       error={missing ? 'Required' : undefined}
                       className="mt-2"
                     />

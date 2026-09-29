@@ -108,6 +108,7 @@ export function BatchCustomFieldForm({
                   onChange={(next) => patchValue(field.key, next)}
                   disabled={inputDisabled}
                   ariaLabel={field.label}
+                  showTodayButton
                   error={missing ? 'Required' : undefined}
                   className="mt-1"
                 />
