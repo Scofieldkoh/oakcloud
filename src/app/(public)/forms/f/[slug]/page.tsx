@@ -5061,7 +5061,7 @@ export default function PublicFormPage() {
           >
           </div>
         )}
-        <div className="w-full max-w-xl rounded-xl bg-[var(--form-panel-bg,#fff)] p-6 sm:p-8 shadow-sm">
+        <div className="relative z-10 w-full max-w-xl rounded-xl bg-[var(--form-panel-bg,#fff)] p-6 sm:p-8 shadow-sm">
           <div className="flex items-center gap-3">
             <CheckCircle2 className="h-6 w-6 text-status-success shrink-0" />
             <div>
@@ -5163,7 +5163,8 @@ export default function PublicFormPage() {
         >
         </div>
       )}
-      <div ref={formTopRef} className={cn('mx-auto max-w-4xl', isEmbed ? '' : 'py-2')}>
+      {/* relative z-10 keeps the form above the fixed background layer instead of under its blend. */}
+      <div ref={formTopRef} className={cn('relative z-10 mx-auto max-w-4xl', isEmbed ? '' : 'py-2')}>
         {canSwitchLanguage && (
           <div className="mb-4 flex justify-end">
             {i18nSettings.enabledLocales.length <= 4 ? (
