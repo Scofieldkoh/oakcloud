@@ -12,6 +12,7 @@ import {
 } from '@/lib/external/company-name-check';
 import {
   evaluateCompanyIncorporationAnswers,
+  selectedNameSuffix,
   type IncorporationEvaluation,
 } from '@/lib/forms/company-incorporation-profile';
 import {
@@ -29,7 +30,7 @@ import { createLogger } from '@/lib/logger';
 const log = createLogger('company-incorporation-intake');
 
 export const NAME_RECHECK_TIMEOUT_MS = 5_000;
-export const COMPANY_INCORPORATION_PROFILE_VERSION = 2;
+export const COMPANY_INCORPORATION_PROFILE_VERSION = 3;
 
 class NameRecheckTimeoutError extends Error {
   constructor() {
@@ -177,6 +178,8 @@ export interface CompanyIncorporationSubmissionRecord {
   issues: IncorporationEvaluation['issues'];
   ownershipTotal: string;
   companyType?: string | null;
+  /** Name ending chosen by the respondent (profile version 3). */
+  nameSuffix?: string | null;
   shareCount?: string | null;
   /** Profile version 1 only. */
   ownershipFullyDecided?: boolean;
@@ -192,6 +195,7 @@ export interface CompanyIncorporationSubmissionRecord {
     nomineeShareholder?: boolean;
     nomineeDirector?: boolean;
     nominator?: string | null;
+    /** Profile version 2 only. */
     otherControl?: boolean;
     /** Profile version 1 only. */
     ownershipUndecided?: boolean;
@@ -265,6 +269,7 @@ export function evaluateCompanyIncorporationSubmission(input: {
     issues: evaluation.issues,
     ownershipTotal: evaluation.ownershipTotal,
     companyType: textAnswer(input.answers[INCORPORATION_KEYS.companyType]) || null,
+    nameSuffix: selectedNameSuffix(input.answers),
     shareCount: textAnswer(input.answers[INCORPORATION_KEYS.shareCount]) || null,
     partyRows: evaluation.parties.map((party) => ({
       partyRowId: `party_${randomUUID()}`,
@@ -278,7 +283,6 @@ export function evaluateCompanyIncorporationSubmission(input: {
       nomineeShareholder: party.nomineeShareholder,
       nomineeDirector: party.nomineeDirector,
       nominator: party.nominator,
-      otherControl: party.otherControl,
     })),
     ssic: {
       catalogue: presetName,

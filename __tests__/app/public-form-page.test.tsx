@@ -174,11 +174,12 @@ function reviewStepForm(nameCheckMode: 'strict' | 'advisory' = 'strict') {
 /** The incorporation template's people page, followed by the capital page. */
 function incorporationPeopleForm() {
   const all = saveFormFieldsSchema.parse({
-    fields: buildSgCompanyIncorporationFields({ firmName: 'Oaktree', ssicPresetId: '00000000-0000-4000-8000-000000000001' }),
+    fields: buildSgCompanyIncorporationFields({ firmName: 'Oaktree', ssicPresetId: '00000000-0000-4000-8000-000000000001', nationalityPresetId: '00000000-0000-4000-8000-000000000002', countryPresetId: '00000000-0000-4000-8000-000000000003' }),
   }).fields;
   const start = all.findIndex((field) => field.key === 'page_parties') + 1;
   const end = all.findIndex((field) => field.key === 'page_capital');
-  const fields = [...all.slice(start, end + 1), { type: 'SHORT_TEXT', key: 'capital_note', label: 'Capital note', isRequired: false }];
+  const companyType = all.find((field) => field.key === 'company_type')!;
+  const fields = [companyType, ...all.slice(start, end + 1), { type: 'SHORT_TEXT', key: 'capital_note', label: 'Capital note', isRequired: false }];
   return {
     ...publicForm,
     settings: { ...publicForm.settings, template: { key: 'sg_company_incorporation', version: 2 } },
@@ -194,6 +195,7 @@ function incorporationPeopleForm() {
       layoutWidth: 100,
       placeholder: null,
       ...field,
+      ...(field.key === 'party_nationality' ? { optionPresetId: null, options: [{ value: 'Singaporean', label: 'Singaporean' }] } : {}),
       id: `field-${index}`,
       position: index,
     })),
@@ -452,6 +454,10 @@ describe('PublicFormPage', () => {
 
     fireEvent.change(await screen.findByRole('textbox', { name: /Full name/ }), { target: { value: 'Tan Mei Ling' } });
     fireEvent.change(screen.getByRole('textbox', { name: /Email/ }), { target: { value: 'mei@example.com' } });
+    fireEvent.change(screen.getByRole('textbox', { name: /Passport\/FIN\/NRIC/ }), { target: { value: 'S1234567D' } });
+    fireEvent.change(screen.getByRole('combobox', { name: 'Select nationality' }), { target: { value: 'Singaporean' } });
+    fireEvent.change(screen.getByRole('textbox', { name: /Residential address/ }), { target: { value: '1 Harbour Road, Singapore 123456' } });
+    fireEvent.change(screen.getByRole('textbox', { name: /Contact number/ }), { target: { value: '91234567' } });
     const director = screen.getByRole('checkbox', { name: 'Director' });
     fireEvent.click(director);
     expect(director).toHaveAttribute('aria-checked', 'true');
