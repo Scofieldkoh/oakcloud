@@ -185,8 +185,9 @@ export const StorageKeys = {
   /**
    * Generate storage key for a form background image
    */
-  formBackground(tenantId: string, formId: string, extension: string): string {
-    return `${tenantId}/forms/${formId}/branding/background${extension}`;
+  formBackground(tenantId: string, formId: string, extension: string, version?: string): string {
+    const suffix = version ? `-${version}` : '';
+    return `${tenantId}/forms/${formId}/branding/background${suffix}${extension}`;
   },
 
   /**

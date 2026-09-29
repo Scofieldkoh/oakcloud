@@ -1,6 +1,6 @@
 import { getStorageConfig } from '@/lib/storage/config';
 
-const FORM_BACKGROUND_KEY_PATTERN = /^[^/]+\/forms\/[^/]+\/branding\/background\.(png|jpg|jpeg|webp|gif)$/i;
+const FORM_BACKGROUND_KEY_PATTERN = /^[^/]+\/forms\/[^/]+\/branding\/background(-[a-z0-9]+)?\.(png|jpg|jpeg|webp|gif)$/i;
 
 export function isFormBackgroundStorageKey(value: string): boolean {
   return FORM_BACKGROUND_KEY_PATTERN.test(value);
