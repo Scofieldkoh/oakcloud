@@ -1508,6 +1508,7 @@ export interface PermanentDeleteClientServiceResult {
     billingOccurrences: number;
     billingCoverageIssues: number;
     deadlineOccurrences: number;
+    companyObligations: number;
     serviceCycles: number;
     deadlineRules: number;
     feeLines: number;
@@ -1531,8 +1532,9 @@ export async function deleteClientServicePermanently(
       data: { deletedAt: new Date(), deletedReason: input.reason },
     });
     if (markedForDeletion.count !== 1) throw new ConflictError('Client service changed while deleting');
-    await detachMonitoringFromDeletedService(tx, {
+    const companyObligations = await detachMonitoringFromDeletedService(tx, {
       tenantId: params.tenantId,
+      companyId: current.companyId,
       clientServiceId: id,
       actorId: params.userId,
       reason: input.reason,
@@ -1581,6 +1583,7 @@ export async function deleteClientServicePermanently(
           billingOccurrences: billingOccurrences.count,
           billingCoverageIssues: billingCoverageIssues.count,
           deadlineOccurrences: deadlineOccurrences.count,
+          companyObligations,
           serviceCycles: serviceCycles.count,
           deadlineRules: deadlineRules.count,
           feeLines: feeLines.count,
@@ -1600,6 +1603,7 @@ export async function deleteClientServicePermanently(
         billingOccurrences: billingOccurrences.count,
         billingCoverageIssues: billingCoverageIssues.count,
         deadlineOccurrences: deadlineOccurrences.count,
+        companyObligations,
         serviceCycles: serviceCycles.count,
         deadlineRules: deadlineRules.count,
         feeLines: feeLines.count,

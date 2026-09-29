@@ -683,6 +683,88 @@ export async function reconcileCompanyObligations(
   };
 }
 
+/**
+ * Remove what permanently deleted services left behind on a company. Coverage
+ * is only ever created for a client service, so coverage without one, and
+ * contracted-filing links whose scope is gone, belong to deleted services.
+ * The detached coverage is removed so reconciliation cannot project it again,
+ * and each company obligation it or a removed scope was linked to is deleted
+ * (with any filing status staff set on it) unless another service still
+ * covers it: a live link, or the projection without the deleted coverage
+ * still producing it. Empty cycles go with them. Returns the number of
+ * company obligations removed.
+ */
+export async function purgeDeletedServiceObligations(
+  db: Prisma.TransactionClient,
+  input: { tenantId: string; companyId: string; today: DateOnly },
+): Promise<number> {
+  const { tenantId, companyId } = input;
+  const detached = await db.companyMonitoringCoverage.findMany({
+    where: { tenantId, companyId, clientServiceId: null },
+    select: { id: true },
+  });
+  const detachedIds = detached.map((coverage) => coverage.id);
+  const candidates = await db.deadlineOccurrence.findMany({
+    where: {
+      tenantId,
+      companyId,
+      ownershipScope: 'COMPANY',
+      coverageLinks: {
+        some: {
+          OR: [
+            ...(detachedIds.length > 0 ? [{ coverageId: { in: detachedIds } }] : []),
+            { reason: 'CONTRACTED_DELIVERY', coverageId: null, deliveryScopeId: null },
+          ],
+        },
+      },
+    },
+    select: {
+      id: true,
+      cycleId: true,
+      milestoneKey: true,
+      scheduleEntryKey: true,
+      obligationCode: true,
+      obligationPeriodKey: true,
+      coverageLinks: { select: { coverageId: true, deliveryScopeId: true, releasedAt: true } },
+    },
+  });
+  if (detachedIds.length > 0) {
+    // Kept obligations may still carry released history links to this coverage.
+    await db.deadlineOccurrenceCoverageLink.deleteMany({ where: { tenantId, coverageId: { in: detachedIds } } });
+    await db.companyComplianceIssue.deleteMany({ where: { tenantId, companyId, coverageId: { in: detachedIds } } });
+    await db.companyMonitoringCoverage.deleteMany({ where: { tenantId, companyId, id: { in: detachedIds } } });
+  }
+  if (candidates.length === 0) return 0;
+
+  const detachedSet = new Set(detachedIds);
+  const loaded = await loadProjectionInput(db, tenantId, companyId, input.today);
+  const projected = new Set((loaded ? projectCompanyObligations(loaded.input).obligations : []).map((obligation) => (
+    [obligation.obligationCode, obligation.periodKey, obligation.milestoneKey, obligation.scheduleEntryKey].join('|')
+  )));
+  const orphaned = candidates.filter((occurrence) => (
+    !projected.has([occurrence.obligationCode, occurrence.obligationPeriodKey, occurrence.milestoneKey, occurrence.scheduleEntryKey].join('|'))
+    && !occurrence.coverageLinks.some((link) => (
+      link.releasedAt === null
+      && ((link.coverageId !== null && !detachedSet.has(link.coverageId)) || link.deliveryScopeId !== null)
+    ))
+  ));
+  if (orphaned.length === 0) return 0;
+
+  await db.deadlineOccurrence.deleteMany({
+    where: { tenantId, companyId, ownershipScope: 'COMPANY', id: { in: orphaned.map((occurrence) => occurrence.id) } },
+  });
+  await db.serviceCycle.deleteMany({
+    where: {
+      tenantId,
+      companyId,
+      ownershipScope: 'COMPANY',
+      id: { in: [...new Set(orphaned.map((occurrence) => occurrence.cycleId))] },
+      occurrences: { none: {} },
+    },
+  });
+  return orphaned.length;
+}
+
 /** Companies with any monitoring coverage or contracted filing scope. */
 export async function monitoredCompanyIds(
   db: Db,

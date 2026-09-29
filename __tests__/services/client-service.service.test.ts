@@ -649,6 +649,7 @@ describe('client service service', () => {
         billingOccurrences: 3,
         billingCoverageIssues: 2,
         deadlineOccurrences: 4,
+        companyObligations: 0,
         serviceCycles: 2,
         deadlineRules: 1,
         feeLines: 1,

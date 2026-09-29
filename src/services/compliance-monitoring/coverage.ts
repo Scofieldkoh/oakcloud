@@ -1,6 +1,8 @@
 import type { Prisma } from '@/generated/prisma';
+import { currentDateInSingapore } from '@/services/service-schedule/date-only';
 import { financialYearEndInYear } from '@/services/service-schedule/obligation-periods';
 import { obligationDefinition, isMonitoringProfile, type MonitoringProfile } from './catalog';
+import { purgeDeletedServiceObligations } from './writer';
 
 /**
  * Coverage and delivery-scope setup for a newly activated client service.
@@ -229,16 +231,19 @@ export async function syncMonitoringEndForService(
 }
 
 /**
- * Before a client service is permanently deleted, keep its monitoring history
- * without the service reference: coverage ends and is detached, contracted
- * scopes are released from their obligations and removed, and obligations it
- * was filing return to projected responsibility. Company obligations remain.
+ * Before a client service is permanently deleted, detach its monitoring:
+ * coverage ends and loses the service reference, contracted scopes are
+ * released from their obligations and removed, and obligations it was filing
+ * return to projected responsibility. The company obligations that only this
+ * service was monitoring or filing are then removed with it (see
+ * purgeDeletedServiceObligations); ones another service covers remain.
+ * Returns the number of company obligations removed.
  */
 export async function detachMonitoringFromDeletedService(
   tx: Tx,
-  input: { tenantId: string; clientServiceId: string; actorId: string | null; reason: string },
-): Promise<void> {
-  if (!tx.companyMonitoringCoverage?.updateMany) return;
+  input: { tenantId: string; companyId: string; clientServiceId: string; actorId: string | null; reason: string },
+): Promise<number> {
+  if (!tx.companyMonitoringCoverage?.updateMany) return 0;
   const now = new Date();
   await tx.companyMonitoringCoverage.updateMany({
     where: { tenantId: input.tenantId, clientServiceId: input.clientServiceId, status: 'ACTIVE' },
@@ -271,4 +276,6 @@ export async function detachMonitoringFromDeletedService(
     where: { tenantId: input.tenantId, deliveryClientServiceId: input.clientServiceId },
     data: { deliveryClientServiceId: null, filingResponsibility: 'UNCONFIRMED', responsibilitySource: 'PROJECTED' },
   });
+  return purgeDeletedServiceObligations(tx, { tenantId: input.tenantId, companyId: input.companyId, today: currentDateInSingapore() });
 }
+

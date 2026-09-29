@@ -607,6 +607,117 @@ describePostgres('company compliance monitoring on PostgreSQL', () => {
     ]);
   });
 
+  it('permanently deleting a service removes the company filings only it covered', async () => {
+    const { createMonitoringForActivatedService } = await import('@/services/compliance-monitoring/coverage');
+    const { reconcileCompanyObligations } = await import('@/services/compliance-monitoring/writer');
+    const { setCompanyObligationStatus } = await import('@/services/compliance-monitoring/obligation-status');
+    const { deleteClientServicePermanently } = await import('@/services/client-service');
+    const { tenantId, userId, variantId } = fixture;
+    const companyId = randomUUID();
+    await prisma.company.create({
+      data: {
+        id: companyId, tenantId, uen: `D${companyId.replaceAll('-', '').slice(0, 9).toUpperCase()}`, name: 'Deleted service company',
+        entityType: 'PRIVATE_LIMITED', status: 'LIVE', incorporationDate: new Date('2018-02-01T00:00:00.000Z'),
+        financialYearEndMonth: 12, financialYearEndDay: 31,
+      },
+    });
+    const addService = async (agreementDate: Date, fieldValues: unknown) => {
+      const id = randomUUID();
+      await prisma.clientService.create({
+        data: {
+          id, tenantId, companyId, source: 'MANUAL', serviceVariantId: variantId, familyName: 'Tax', serviceName: 'Corporate tax filing',
+          status: 'ACTIVE', serviceCadence: 'ANNUALLY', startDate: agreementDate, billingDisposition: 'UNREVIEWED',
+        },
+      });
+      await prisma.$transaction((tx) => createMonitoringForActivatedService(tx, {
+        tenantId, companyId, clientServiceId: id, serviceVariantId: variantId, agreementId: null, agreementDate,
+        serviceStartDate: agreementDate, serviceEndDate: null, fieldValues, actorId: userId,
+      }));
+      return id;
+    };
+    const reconcile = () => prisma.$transaction((tx) => reconcileCompanyObligations({ tenantId, companyId, today: TODAY, writeMode: 'APPLY' }, tx));
+
+    const removed = await addService(AGREEMENT_DATE, { filingScope: [{ obligationCode: 'SG_FORM_C', periodKey: 'YA2026' }] });
+    const kept = await addService(new Date('2028-06-01T00:00:00.000Z'), { filingScope: [{ obligationCode: 'SG_FORM_C', periodKey: 'YA2029' }] });
+    await reconcile();
+    await prisma.$transaction((tx) => setCompanyObligationStatus({
+      tenantId, companyId, obligationCode: 'SG_FORM_C', periodKey: 'YA2026', status: 'FILED', actorId: userId,
+    }, tx));
+    const keys = async () => (await prisma.deadlineOccurrence.findMany({ where: { tenantId, companyId } }))
+      .map((row) => `${row.obligationCode}|${row.obligationPeriodKey}|${row.milestoneKey}|${row.id}`).sort();
+    const before = await keys();
+    expect(before.some((key) => key.startsWith('SG_FORM_C|YA2026|'))).toBe(true);
+    expect(before.some((key) => key.startsWith('SG_ECI|FY2026-12-31|'))).toBe(true);
+    expect(before.some((key) => key.startsWith('SG_FORM_C|YA2029|'))).toBe(true);
+
+    const service = await prisma.clientService.findUniqueOrThrow({ where: { id: removed } });
+    const result = await deleteClientServicePermanently(removed, {
+      expectedUpdatedAt: service.updatedAt.toISOString(), reason: 'Added against the wrong company',
+    }, { tenantId, userId });
+
+    const after = await keys();
+    // Filings only the deleted service covered are gone, the Filed one included.
+    expect(after.some((key) => key.startsWith('SG_FORM_C|YA2026|'))).toBe(false);
+    expect(after.some((key) => key.startsWith('SG_ECI|FY2026-12-31|'))).toBe(false);
+    // The other service's filings, including its takeover review of YA2027, stay as they were.
+    expect(after.some((key) => key.startsWith('SG_FORM_C|YA2029|'))).toBe(true);
+    expect(after.some((key) => key.startsWith('SG_FORM_C|YA2027|'))).toBe(true);
+    expect(after.every((key) => before.includes(key))).toBe(true);
+    expect(result.deletedCounts.companyObligations).toBe(before.length - after.length);
+    expect(await prisma.companyMonitoringCoverage.count({ where: { tenantId, companyId } })).toBe(1);
+    expect(await prisma.serviceCycle.count({ where: { tenantId, companyId, occurrences: { none: {} } } })).toBe(0);
+
+    // Reconciling again neither brings the deleted service's filings back nor drops the rest.
+    await reconcile();
+    expect(await keys()).toEqual(after);
+    expect(await prisma.clientServiceObligationScope.count({ where: { tenantId, clientServiceId: kept } })).toBe(1);
+  });
+
+  it('cleans up company filings left behind by services deleted before the fix', async () => {
+    const { createMonitoringForActivatedService } = await import('@/services/compliance-monitoring/coverage');
+    const { reconcileCompanyObligations } = await import('@/services/compliance-monitoring/writer');
+    const { main: purgeDeletedServiceDeadlines } = await import('../../scripts/purge-deleted-service-deadlines');
+    const { tenantId, userId, variantId } = fixture;
+    const companyId = randomUUID();
+    const serviceId = randomUUID();
+    await prisma.company.create({
+      data: {
+        id: companyId, tenantId, uen: `L${companyId.replaceAll('-', '').slice(0, 9).toUpperCase()}`, name: 'Legacy deleted service company',
+        entityType: 'PRIVATE_LIMITED', status: 'LIVE', incorporationDate: new Date('2018-02-01T00:00:00.000Z'),
+        financialYearEndMonth: 12, financialYearEndDay: 31,
+      },
+    });
+    await prisma.clientService.create({
+      data: {
+        id: serviceId, tenantId, companyId, source: 'MANUAL', serviceVariantId: variantId, familyName: 'Tax', serviceName: 'Corporate tax filing',
+        status: 'ACTIVE', serviceCadence: 'ANNUALLY', startDate: AGREEMENT_DATE, billingDisposition: 'UNREVIEWED',
+      },
+    });
+    await prisma.$transaction((tx) => createMonitoringForActivatedService(tx, {
+      tenantId, companyId, clientServiceId: serviceId, serviceVariantId: variantId, agreementId: null, agreementDate: AGREEMENT_DATE,
+      serviceStartDate: AGREEMENT_DATE, serviceEndDate: null, fieldValues: { filingScope: [{ obligationCode: 'SG_FORM_C', periodKey: 'YA2026' }] }, actorId: userId,
+    }));
+    await prisma.$transaction((tx) => reconcileCompanyObligations({ tenantId, companyId, today: TODAY, writeMode: 'APPLY' }, tx));
+    // What a permanent delete used to leave: detached coverage, released scope links, the rows themselves.
+    const scopeIds = (await prisma.clientServiceObligationScope.findMany({ where: { tenantId, clientServiceId: serviceId } })).map((row) => row.id);
+    await prisma.deadlineOccurrenceCoverageLink.updateMany({ where: { tenantId, deliveryScopeId: { in: scopeIds } }, data: { deliveryScopeId: null, releasedAt: new Date() } });
+    await prisma.clientServiceObligationScope.deleteMany({ where: { tenantId, clientServiceId: serviceId } });
+    await prisma.companyMonitoringCoverage.updateMany({ where: { tenantId, clientServiceId: serviceId }, data: { status: 'ENDED', clientServiceId: null } });
+    await prisma.deadlineOccurrence.updateMany({ where: { tenantId, deliveryClientServiceId: serviceId }, data: { deliveryClientServiceId: null } });
+    await prisma.clientService.delete({ where: { id: serviceId } });
+    const leftovers = await prisma.deadlineOccurrence.count({ where: { tenantId, companyId } });
+    expect(leftovers).toBeGreaterThan(0);
+
+    const { email } = await prisma.user.findUniqueOrThrow({ where: { id: userId } });
+    await purgeDeletedServiceDeadlines(['--email', email]);
+    expect(await prisma.deadlineOccurrence.count({ where: { tenantId, companyId } })).toBe(leftovers);
+    await purgeDeletedServiceDeadlines(['--email', email, '--apply']);
+    expect(await prisma.deadlineOccurrence.count({ where: { tenantId, companyId } })).toBe(0);
+    expect(await prisma.companyMonitoringCoverage.count({ where: { tenantId, companyId } })).toBe(0);
+    // The main fixture company, whose service still exists, is untouched.
+    expect(await prisma.deadlineOccurrence.count({ where: { tenantId, companyId: fixture.companyId } })).toBeGreaterThan(0);
+  });
+
   // Listing can start background reconciliation, so this runs last.
   it('lists Managed externally company filings under Waived, not Open', async () => {
     const { setCompanyObligationStatus } = await import('@/services/compliance-monitoring/obligation-status');
