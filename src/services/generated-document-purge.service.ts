@@ -1,8 +1,8 @@
 /**
  * Permanent (hard) deletion of generated documents.
  *
- * Soft delete (`deleteGeneratedDocument`) sends a document to the Recycle Bin.
- * This service removes it for good: the database row, its sections, comments,
+ * Soft delete (`deleteGeneratedDocument`) sends a document to the Recycle Bin;
+ * purging it there (`/api/admin/purge`) calls this service to remove it for good: the database row, its sections, comments,
  * drafts and batch item (cascades), and its stored OakDoc files. Records that
  * outlive the document are unlinked rather than deleted: e-signing envelopes
  * keep their own PDF copies and task outcomes lose the link.
@@ -15,11 +15,10 @@
 
 import { prisma } from '@/lib/prisma';
 import { createAuditLog } from '@/lib/audit';
-import { ConflictError, ForbiddenError, NotFoundError } from '@/lib/errors';
+import { ConflictError, NotFoundError } from '@/lib/errors';
 import { createLogger } from '@/lib/logger';
 import { storage, StorageKeys } from '@/lib/storage';
 import { Prisma } from '@/generated/prisma';
-import type { SessionUser } from '@/lib/auth';
 import type { TenantAwareParams } from '@/lib/types';
 import {
   safelyCaptureGeneratedDocumentTaskStageIds,
@@ -57,13 +56,6 @@ const purgeSelect = {
     select: { envelope: { select: { id: true, title: true, status: true } } },
   },
 } satisfies Prisma.GeneratedDocumentSelect;
-
-/** Permanent deletion is limited to workspace and super admins. */
-export function assertCanPermanentlyDeleteDocuments(session: Pick<SessionUser, 'isSuperAdmin' | 'isWorkspaceAdmin'>): void {
-  if (!session.isSuperAdmin && !session.isWorkspaceAdmin) {
-    throw new ForbiddenError('Only administrators can permanently delete documents');
-  }
-}
 
 type PurgeCandidate = Prisma.GeneratedDocumentGetPayload<{ select: typeof purgeSelect }>;
 
@@ -170,27 +162,4 @@ export async function permanentlyDeleteGeneratedDocument(
   await safelyReconcileTaskStageIds(tenantId, linkedTaskStageIds, userId);
 
   return { id: document.id, title: document.title, removedServiceAgreementId, unlinkedEnvelopeIds };
-}
-
-export interface BulkPermanentDeleteGeneratedDocumentsResult {
-  deleted: number;
-  failed: Array<{ id: string; error: string }>;
-}
-
-export async function bulkPermanentlyDeleteGeneratedDocuments(
-  ids: string[],
-  params: TenantAwareParams,
-  reason: string,
-): Promise<BulkPermanentDeleteGeneratedDocumentsResult> {
-  const failed: Array<{ id: string; error: string }> = [];
-  let deleted = 0;
-  for (const id of ids) {
-    try {
-      await permanentlyDeleteGeneratedDocument(id, params, reason);
-      deleted += 1;
-    } catch (error) {
-      failed.push({ id, error: error instanceof Error ? error.message : 'Delete failed' });
-    }
-  }
-  return { deleted, failed };
 }
