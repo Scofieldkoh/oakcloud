@@ -6,6 +6,7 @@ import { strFromU8, unzipSync } from 'fflate';
 import { createDocxFixture } from '../helpers/docx-fixture';
 import {
   createOakDocGenericRepeater,
+  nameOakDocRepeaterItems,
   removeOakDocGenericRepeater,
   resolveOakDocGenericRepeaters,
 } from '@/lib/document-editor/oakdoc-generic-repeaters';
@@ -248,6 +249,27 @@ describe('OakDoc generic repeaters', () => {
     expect(output).toContain('D1E2F3A5');
     expect(output).toContain('Second line');
     expect(output).not.toContain('repeat.signers');
+  });
+
+  it('names repeater items so the editor shows which repeater the caret is in', () => {
+    const created = createOakDocGenericRepeater({
+      docxBytes: docx('<w:p w14:paraId="C1D2E3F4">' + field('director.name', 30) + '</w:p>'),
+      fromParaId: 'C1D2E3F4',
+      definition: definition('repeat.directors'),
+    });
+    expect(xml(created.bytes).match(/w:alias w:val="Directors repeater"/g)).toHaveLength(2);
+
+    const unnamed = docx(
+      '<w:sdt><w:sdtPr><w:alias w:val="Directors"/><w:tag w:val="repeat.directors"/><w:id w:val="1"/>'
+      + '<w15:repeatingSection xmlns:w15="http://schemas.microsoft.com/office/word/2012/wordml"/>'
+      + '</w:sdtPr><w:sdtContent><w:sdt><w:sdtPr><w:id w:val="2"/>'
+      + '<w15:repeatingSectionItem xmlns:w15="http://schemas.microsoft.com/office/word/2012/wordml"/>'
+      + '</w:sdtPr><w:sdtContent><w:p w14:paraId="C1D2E3F5">' + field('director.name', 3)
+      + '</w:p></w:sdtContent></w:sdt></w:sdtContent></w:sdt>',
+    );
+    const named = nameOakDocRepeaterItems(unnamed);
+    expect(xml(named)).toContain('<w:sdtPr><w:alias w:val="Directors"/><w:id w:val="2"/>');
+    expect(nameOakDocRepeaterItems(named)).toBe(named);
   });
 
   it('rejects malformed repeating structures instead of deleting content', () => {

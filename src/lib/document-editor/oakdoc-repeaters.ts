@@ -6,6 +6,7 @@ import type {
 import {
   createOakDocGenericRepeater,
   inspectOakDocGenericRepeaters,
+  nameOakDocRepeaterItems,
   removeOakDocGenericRepeater,
   resolveOakDocGenericRepeaters,
 } from '@/lib/document-editor/oakdoc-generic-repeaters';
@@ -34,6 +35,7 @@ export const OAKDOC_REPEATER_ITEM_TAGS = OAKDOC_GENERIC_REPEATER_ITEM_TAGS;
 export const createOakDocRepeater = createOakDocGenericRepeater;
 export const removeOakDocRepeater = removeOakDocGenericRepeater;
 export const inspectOakDocRepeaters = inspectOakDocGenericRepeaters;
+export { nameOakDocRepeaterItems };
 
 export function resolveOakDocRepeaters(input: {
   docxBytes: Uint8Array;

@@ -684,12 +684,9 @@
   }
 }
 
-/* Word editor: keep each repeating section (Directors repeater, Shareholders
-   repeater, ...) outlined and named, not only while the caret is inside it. */
-.docx-content-control-chrome[data-tag^="repeat."] .docx-content-control-boundary {
-  opacity: 1;
-}
-
-.docx-content-control-chrome[data-tag^="repeat."] .docx-content-control-label {
+/* Word editor: name each repeating section (Directors repeater, ...) while it
+   is hovered, as the editor already does for the control holding the caret. */
+.docx-content-control-chrome[data-tag^="repeat."][data-hover] .docx-content-control-label,
+.docx-content-control-chrome[data-alias$=" repeater"][data-hover] .docx-content-control-label {
   display: block;
 }
