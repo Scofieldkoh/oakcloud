@@ -130,6 +130,8 @@ export type ChoiceOptionConfig = {
   requiredSelected?: boolean;
   childSelectionMode?: 'multiple' | 'single';
   childOptions?: ChoiceOptionConfig[];
+  /** Carried through unchanged; set by guided templates, not edited in the builder. */
+  condition?: Record<string, unknown> | null;
 };
 
 type SerializedChoiceOption = {
@@ -144,6 +146,7 @@ type SerializedChoiceOption = {
   requiredSelected?: true;
   childSelectionMode?: 'multiple' | 'single';
   childOptions?: SerializedChoiceOption[];
+  condition?: Record<string, unknown>;
 };
 
 export type ConditionConfig = {
@@ -263,6 +266,7 @@ function parseFieldOptions(value: unknown, depth: number = 0): ChoiceOptionConfi
       requiredSelected: optionRecord.requiredSelected === true,
       childSelectionMode: optionRecord.childSelectionMode === 'single' ? 'single' : 'multiple',
       childOptions: depth < 1 ? parseFieldOptions(optionRecord.childOptions, depth + 1) : [],
+      condition: isRecord(optionRecord.condition) ? optionRecord.condition : null,
     });
   }
 
@@ -390,6 +394,7 @@ export function toPayloadFields(fields: BuilderField[]): FormFieldInput[] {
       ...(option.requiredSelected && fieldType === 'MULTIPLE_CHOICE' ? { requiredSelected: true, defaultSelected: true } : {}),
       ...(fieldType === 'MULTIPLE_CHOICE' && depth === 0 && option.childSelectionMode === 'single' ? { childSelectionMode: 'single' as const } : {}),
       ...(childOptions.length > 0 ? { childOptions } : {}),
+      ...(option.condition ? { condition: option.condition } : {}),
     };
   };
 

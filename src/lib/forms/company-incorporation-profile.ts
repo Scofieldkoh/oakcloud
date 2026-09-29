@@ -50,7 +50,8 @@ export interface IncorporationParty {
   resident: boolean;
   nomineeShareholder: boolean;
   nomineeDirector: boolean;
-  nominator: string | null;
+  shareholderNominator: string | null;
+  directorNominator: string | null;
 }
 
 export interface IncorporationEvaluation {
@@ -79,7 +80,8 @@ const PARTY_KEYS = [
   K.partyResident,
   K.partyNomineeShareholder,
   K.partyNomineeDirector,
-  K.partyNominator,
+  K.partyShareholderNominator,
+  K.partyDirectorNominator,
   K.partyIdNumber,
   K.partyNationality,
   K.partyIncorporationCountry,
@@ -171,7 +173,7 @@ function singaporeToday(): string {
     .format(new Date());
 }
 
-const NAME_ENDING = /(^|\s)(pte\.?\s*ltd\.?|private\s+limited|ltd\.?|limited)$/i;
+const NAME_ENDING = /(^|[\s(])\(?(pte\.?|private|sdn\.?|sendirian)?\)?\s*(ltd\.?|limited|bhd\.?|berhad)\)?$|(^|[\s(])\(?(llc|law corporation)\)?$/i;
 
 /** True when the name already carries an ending such as "Pte. Ltd." or "Limited". */
 export function nameIncludesEnding(name: string): boolean {
@@ -254,7 +256,8 @@ export function extractIncorporationParties(answers: Record<string, unknown>): I
       resident: (directorLike || secretaryLike) && isTicked(rowValue(answers, K.partyResident, rowIndex)),
       nomineeShareholder,
       nomineeDirector,
-      nominator: nomineeShareholder || nomineeDirector ? textValue(rowValue(answers, K.partyNominator, rowIndex)) || null : null,
+      shareholderNominator: nomineeShareholder ? textValue(rowValue(answers, K.partyShareholderNominator, rowIndex)) || null : null,
+      directorNominator: nomineeDirector ? textValue(rowValue(answers, K.partyDirectorNominator, rowIndex)) || null : null,
     });
   }
 
@@ -352,8 +355,11 @@ export function evaluateCompanyIncorporationAnswers(
     if (party.kind === PARTY_KIND.organisation && party.roles.some((role) => role !== PARTY_ROLE.shareholder)) {
       add({ code: 'organisation_officer', severity: 'error', section: 'parties', fieldKey: K.partyRoles, rowIndex: party.rowIndex, message: `${label}: a company can only be a shareholder.` });
     }
-    if ((party.nomineeShareholder || party.nomineeDirector) && !party.nominator) {
-      add({ code: 'nominator_missing', severity: 'error', section: 'parties', fieldKey: K.partyNominator, rowIndex: party.rowIndex, message: `${label}: enter who they act on behalf of.` });
+    if (party.nomineeShareholder && !party.shareholderNominator) {
+      add({ code: 'nominator_missing', severity: 'error', section: 'parties', fieldKey: K.partyShareholderNominator, rowIndex: party.rowIndex, message: `${label}: enter the shareholder nominator’s full name.` });
+    }
+    if (party.nomineeDirector && !party.directorNominator) {
+      add({ code: 'nominator_missing', severity: 'error', section: 'parties', fieldKey: K.partyDirectorNominator, rowIndex: party.rowIndex, message: `${label}: enter the director nominator’s full name.` });
     }
 
     if (!party.roles.includes(PARTY_ROLE.shareholder)) continue;
