@@ -7,6 +7,7 @@ import { useState, useEffect } from 'react';
 import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { SelectPopoverMessage } from '@/components/ui/select-popover';
 
 /**
  * Hook to get the active company ID from the centralized store.
@@ -39,6 +40,8 @@ export function CompanySelectorModal({ isOpen, onClose }: CompanySelectorModalPr
     setSearchQuery,
     options: companyOptions,
     isLoading,
+    error,
+    retry,
   } = useCompanySearch({
     enabled: isOpen,
     minChars: 0,
@@ -95,7 +98,8 @@ export function CompanySelectorModal({ isOpen, onClose }: CompanySelectorModalPr
         {/* Search */}
         <div className="mb-4">
           <input
-            type="text"
+            type="search"
+            aria-label="Search companies"
             placeholder="Search companies..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -134,11 +138,13 @@ export function CompanySelectorModal({ isOpen, onClose }: CompanySelectorModalPr
           </button>
 
           {isLoading ? (
-            <div className="p-4 text-center text-text-muted">Loading companies...</div>
+            <SelectPopoverMessage kind="loading">Loading companies…</SelectPopoverMessage>
+          ) : error ? (
+            <SelectPopoverMessage kind="error" onRetry={() => void retry()}>Couldn&apos;t load companies.</SelectPopoverMessage>
           ) : companyOptions.length === 0 ? (
-            <div className="p-4 text-center text-text-muted">
+            <SelectPopoverMessage kind="empty">
               {searchQuery ? 'No companies match your search' : 'No companies available'}
-            </div>
+            </SelectPopoverMessage>
           ) : (
             companyOptions.map((company) => (
               <button

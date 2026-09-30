@@ -32,7 +32,7 @@ export function CompanySearchableSelect({
   companies,
   value,
   onChange,
-  placeholder = 'Search company...',
+  placeholder = 'Search companies...',
   label,
   disabled = false,
   loading = false,

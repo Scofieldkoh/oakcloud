@@ -48,7 +48,7 @@ export function CompanySelect({
   renderOption,
   renderSelected,
   emptySearchText = 'No companies available',
-  noResultsText = 'No companies match that search',
+  noResultsText = 'No companies match your search',
   variant = 'default',
 }: CompanySelectProps) {
   const {
@@ -60,6 +60,8 @@ export function CompanySelect({
     setPage,
     hasMore,
     hasPreviousPage,
+    error,
+    retry,
   } = useCompanySearch({ minChars: 0, limit: 50, paginated: true, excludeIds, pinned, enabled });
 
   const selectedRenderer = renderSelected ?? ((item: CompanySearchOption) => (
@@ -93,6 +95,8 @@ export function CompanySelect({
       inputClassName={variant === 'table-filter' ? undefined : 'text-xs text-text-primary placeholder:text-text-muted'}
       emptySearchText={emptySearchText}
       noResultsText={noResultsText}
+      error={error ? "Couldn't load companies." : undefined}
+      onRetry={() => void retry()}
       pagination={{
         page,
         hasPreviousPage,

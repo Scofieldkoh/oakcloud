@@ -49,7 +49,7 @@ export function AccountSearchSelect({
   }, [searchQuery]);
 
   // Fetch accounts with server-side search
-  const { data: accountsData, isLoading } = useChartOfAccounts({
+  const { data: accountsData, isLoading, error, refetch } = useChartOfAccounts({
     search: debouncedQuery || undefined,
     tenantId: tenantId ?? undefined,
     companyId: companyId ?? undefined,
@@ -88,7 +88,9 @@ export function AccountSearchSelect({
       onSearchChange={setSearchQuery}
       icon={<Hash className="w-4 h-4" />}
       emptySearchText="Type to search accounts"
-      noResultsText="No accounts found"
+      noResultsText="No accounts match your search"
+      error={error ? "Couldn't load accounts." : undefined}
+      onRetry={() => void refetch()}
     />
   );
 }

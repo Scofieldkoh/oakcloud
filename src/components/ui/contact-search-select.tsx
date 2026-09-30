@@ -46,7 +46,7 @@ export function ContactSearchSelect({
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  const { data: contactsData, isLoading } = useContacts({
+  const { data: contactsData, isLoading, error, refetch } = useContacts({
     query: debouncedQuery || undefined,
     limit: 50,
     sortBy: 'fullName',
@@ -93,7 +93,9 @@ export function ContactSearchSelect({
       onSearchChange={setSearchQuery}
       icon={<User className="w-4 h-4" />}
       emptySearchText="Type to search contacts"
-      noResultsText="No contacts found"
+      noResultsText="No contacts match your search"
+      error={error ? "Couldn't load contacts." : undefined}
+      onRetry={() => void refetch()}
     />
   );
 }

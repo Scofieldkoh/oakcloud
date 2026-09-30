@@ -1,5 +1,6 @@
 'use client';
 
+import { SEARCH_DEBOUNCE_MS } from '@/hooks/use-debounced-search';
 import { useEffect, useId, useMemo, useState } from 'react';
 import { Check, ContactRound, LoaderCircle, UserPlus } from 'lucide-react';
 import { useDebounce } from 'use-debounce';
@@ -105,7 +106,7 @@ export function CompanyPersonContactLinker({ kind, label, value, onChange }: Com
   const existingContactId = text(value.contactId) || null;
   const listboxId = useId();
   const [query, setQuery] = useState('');
-  const [debouncedQuery] = useDebounce(query, 250);
+  const [debouncedQuery] = useDebounce(query, SEARCH_DEBOUNCE_MS);
   const [open, setOpen] = useState(false);
   const [selectedContactId, setSelectedContactId] = useState<string | null>(existingContactId);
   const [selectedContactName, setSelectedContactName] = useState<string | null>(existingContactId ? text(value.name) : null);

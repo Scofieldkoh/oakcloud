@@ -4878,6 +4878,15 @@ type DatePickerValue =
 
 Searchable dropdown with keyboard navigation and optional descriptions.
 
+`SearchableSelect` (options already loaded) and `AsyncSearchSelect` (server search, used by `CompanySelect`, `ContactSearchSelect` and `AccountSearchSelect`) share `src/components/ui/select-popover.tsx`, so every picker behaves the same:
+
+- The list stays attached to the control on scroll and resize, and opens above it when there is no room below.
+- Up/Down, Home, End, Enter, Tab and Esc work the same way; the hint footer is shared.
+- Loading shows a spinner with `role="status"`. A failed search shows "Couldn't load …" with Try again (`error` and `onRetry` on `AsyncSearchSelect`), never an empty list.
+- Empty results read "No {noun} match your search"; nothing to choose reads "No {noun} available".
+- The clear button is labelled "Clear {label}" when the picker has a label, otherwise "Clear selection".
+- Search boxes debounce by `SEARCH_DEBOUNCE_MS` (300 ms).
+
 ```tsx
 import { SearchableSelect } from '@/components/ui/searchable-select';
 
