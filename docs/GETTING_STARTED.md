@@ -196,6 +196,8 @@ npm run db:push
 
 If the old machine copied its backups to SharePoint (Full backups > SharePoint copy), step 1 is not needed: on the new machine add the SharePoint connector on the Connectors page, choose the same folder under SharePoint copy, click Restore from SharePoint, Copy here, then Restore on the copied backup.
 
+To put back only part of a backup (for example Companies after a bad import), click Restore on the backup, check it with the password, choose **Choose modules**, tick the modules and click Preview changes. The preview shows what is added back, replaced and removed, and asks you to add a module when restoring without it would leave records pointing at nothing.
+
 The new machine must run the same or a newer version of Oakcloud than the one that made the backup.
 
 ## Next Steps

@@ -110,10 +110,11 @@ export class BackupArchiveWriter {
 /** Splits the decompressed byte stream back into entries and writes each one under `targetDir`. */
 class EntryExtractor extends Transform {
   private pending: Buffer = Buffer.alloc(0);
-  private current: { fd: number; remaining: bigint } | null = null;
+  /** fd is null for an entry that is read past without being written. */
+  private current: { fd: number | null; remaining: bigint } | null = null;
   readonly entries: string[] = [];
 
-  constructor(private readonly targetDir: string) {
+  constructor(private readonly targetDir: string, private readonly include?: (name: string) => boolean) {
     super();
   }
 
@@ -127,14 +128,18 @@ class EntryExtractor extends Transform {
 
   private openEntry(name: string, size: bigint): void {
     const target = this.resolveTarget(name);
-    fs.mkdirSync(path.dirname(target), { recursive: true });
-    this.current = { fd: fs.openSync(target, 'w'), remaining: size };
-    this.entries.push(name);
+    if (this.include && !this.include(name)) {
+      this.current = { fd: null, remaining: size };
+    } else {
+      fs.mkdirSync(path.dirname(target), { recursive: true });
+      this.current = { fd: fs.openSync(target, 'w'), remaining: size };
+      this.entries.push(name);
+    }
     if (size === BigInt(0)) this.closeEntry();
   }
 
   private closeEntry(): void {
-    if (this.current) fs.closeSync(this.current.fd);
+    if (this.current?.fd != null) fs.closeSync(this.current.fd);
     this.current = null;
   }
 
@@ -144,7 +149,7 @@ class EntryExtractor extends Transform {
       while (this.pending.length > 0) {
         if (this.current) {
           const take = Number(this.current.remaining < BigInt(this.pending.length) ? this.current.remaining : BigInt(this.pending.length));
-          fs.writeSync(this.current.fd, this.pending, 0, take);
+          if (this.current.fd !== null) fs.writeSync(this.current.fd, this.pending, 0, take);
           this.current.remaining -= BigInt(take);
           this.pending = this.pending.subarray(take);
           if (this.current.remaining === BigInt(0)) this.closeEntry();
@@ -178,9 +183,16 @@ class EntryExtractor extends Transform {
 
 /**
  * Decrypts and unpacks an archive into `targetDir`, verifying the password and
- * the integrity tag. Returns the names of the extracted entries.
+ * the integrity tag. Returns the names of the extracted entries. With
+ * `include`, other entries are still read (the tag covers the whole file) but
+ * not written.
  */
-export async function extractArchive(filePath: string, password: string, targetDir: string): Promise<string[]> {
+export async function extractArchive(
+  filePath: string,
+  password: string,
+  targetDir: string,
+  include?: (name: string) => boolean,
+): Promise<string[]> {
   const handle = await fs.promises.open(filePath, 'r');
   let fileSize: number;
   let header: Buffer;
@@ -208,7 +220,7 @@ export async function extractArchive(filePath: string, password: string, targetD
   decipher.setAuthTag(tag);
 
   await fs.promises.mkdir(targetDir, { recursive: true });
-  const extractor = new EntryExtractor(targetDir);
+  const extractor = new EntryExtractor(targetDir, include);
   try {
     await pipeline(
       fs.createReadStream(filePath, { start: HEADER_LENGTH, end: fileSize - TAG_LENGTH - 1 }),
