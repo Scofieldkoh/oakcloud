@@ -25,7 +25,9 @@ interface CompanySearchableSelectProps {
 }
 
 /**
- * Reusable searchable select for choosing a company.
+ * Picks from a fixed list the caller already has, such as the companies that
+ * have e-signing envelopes. To choose any company in the workspace, use
+ * `CompanySelect`, which searches the server and is not capped at one page.
  * Displays company name as label and UEN as description when available.
  */
 export function CompanySearchableSelect({

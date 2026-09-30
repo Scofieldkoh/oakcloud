@@ -29,7 +29,8 @@ import { Dropdown, DropdownItem, DropdownMenu, DropdownTrigger } from '@/compone
 import { Alert } from '@/components/ui/alert';
 import { FormInput } from '@/components/ui/form-input';
 import { SingleDateInput } from '@/components/ui/single-date-input';
-import { CompanySearchableSelect } from '@/components/ui/company-searchable-select';
+import { CompanySelect } from '@/components/ui/company-select';
+import { toCompanySearchOption } from '@/hooks/use-company-search';
 import { ContactSearchSelect, type SearchableContact } from '@/components/ui/contact-search-select';
 import { useToast } from '@/components/ui/toast';
 import { useSession } from '@/hooks/use-auth';
@@ -74,8 +75,6 @@ interface EsigningStepUploadProps {
   isReorderingRecipients: boolean;
   onEditRecipient: (recipientId: string) => void;
   onRemoveRecipient: (recipientId: string) => void;
-  companies: Array<{ id: string; name: string; uen: string }>;
-  companiesLoading: boolean;
   onNext: () => void;
   onBack: () => void;
 }
@@ -540,8 +539,6 @@ export function EsigningStepUpload({
   isReorderingRecipients,
   onEditRecipient,
   onRemoveRecipient,
-  companies,
-  companiesLoading,
   onNext,
   onBack,
 }: EsigningStepUploadProps) {
@@ -608,9 +605,12 @@ export function EsigningStepUpload({
   const hasSelectedContactEmailChanges = Boolean(
     selectedContact && normalizeEmail(newRecipient.email) !== normalizeEmail(selectedContact.defaultEmail ?? '')
   );
-  const linkedCompany = useMemo(
-    () => companies.find((company) => company.id === companyId) ?? null,
-    [companies, companyId]
+  const [linkedCompanyName, setLinkedCompanyName] = useState<string | null>(envelope.companyName);
+  const linkedCompanyOptions = useMemo(
+    () => (envelope.companyId && envelope.companyName
+      ? [toCompanySearchOption({ id: envelope.companyId, name: envelope.companyName })]
+      : undefined),
+    [envelope.companyId, envelope.companyName],
   );
 
   // Initialize from envelope
@@ -627,6 +627,7 @@ export function EsigningStepUpload({
     setSigningOrder(envelope.signingOrder);
     setExpiresAt(toDateInputValue(envelope.expiresAt));
     setCompanyId(envelope.companyId ?? '');
+    setLinkedCompanyName(envelope.companyName);
     setReminderFrequencyDays(envelope.reminderFrequencyDays?.toString() ?? '');
     setReminderStartDays(envelope.reminderStartDays?.toString() ?? '');
     setExpiryWarningDays(envelope.expiryWarningDays?.toString() ?? '');
@@ -1355,8 +1356,6 @@ async function applyMixedGroupChange(
         isOpen={isGeneratedDocumentPickerOpen}
         onClose={() => setIsGeneratedDocumentPickerOpen(false)}
         onConfirm={handleAttachGeneratedDocuments}
-        companies={companies}
-        companiesLoading={companiesLoading}
         tenantId={activeTenantId}
         attachedDocumentIds={envelope.documents
           .map((document) => document.generatedDocumentId)
@@ -1398,28 +1397,28 @@ async function applyMixedGroupChange(
               Select a company to surface its linked contacts for one-click signer selection.
             </p>
           </div>
-          <CompanySearchableSelect
-            companies={companies}
+          <CompanySelect
             value={companyId}
-            onChange={(nextCompanyId) => {
+            onChange={(nextCompanyId, company) => {
               setCompanyId(nextCompanyId);
+              setLinkedCompanyName(company?.name ?? null);
               setIsSettingsDirty(true);
             }}
-            loading={companiesLoading}
+            pinned={linkedCompanyOptions}
+            allowReselect
             disabled={!envelope.canEdit}
             placeholder="Optional company link"
-            size="lg"
-            containerClassName={envelope.canEdit ? EDITABLE_CONTROL_CLASS_NAME : undefined}
+            controlClassName={envelope.canEdit ? EDITABLE_CONTROL_CLASS_NAME : undefined}
           />
           {companyId ? (
-            <CompanySharePointMappingNotice companyId={companyId} companyName={linkedCompany?.name} />
+            <CompanySharePointMappingNotice companyId={companyId} companyName={linkedCompanyName ?? undefined} />
           ) : null}
         </div>
 
         {companyId ? (
           <LinkedCompanySignerQuickAdd
             companyId={companyId}
-            companyName={linkedCompany?.name}
+            companyName={linkedCompanyName ?? undefined}
             recipients={envelope.recipients}
             canEdit={envelope.canEdit}
             onAddRecipient={onAddRecipient}

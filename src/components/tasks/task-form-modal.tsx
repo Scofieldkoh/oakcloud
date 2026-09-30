@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { Alert } from '@/components/ui/alert';
+import { CompanySelect } from '@/components/ui/company-select';
+import { toCompanySearchOption } from '@/hooks/use-company-search';
 import { Button } from '@/components/ui/button';
 import { FormInput } from '@/components/ui/form-input';
 import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
@@ -11,11 +13,6 @@ import type {
   TaskListItem,
   TaskUpdatePayload,
 } from '@/services/tasks/types';
-
-interface CompanyOption {
-  id: string;
-  name: string;
-}
 
 interface OwnerOption {
   id: string;
@@ -28,7 +25,6 @@ interface TaskFormModalProps {
   isOpen: boolean;
   mode: 'create' | 'edit';
   pipelines: TaskPipeline[];
-  companies: CompanyOption[];
   owners: OwnerOption[];
   initialTask?: TaskListItem | null;
   onClose: () => void;
@@ -45,7 +41,6 @@ export function TaskFormModal({
   isOpen,
   mode,
   pipelines,
-  companies,
   owners,
   initialTask,
   onClose,
@@ -57,6 +52,10 @@ export function TaskFormModal({
   const [pipelineVersionId, setPipelineVersionId] = useState('');
   const [description, setDescription] = useState('');
   const [companyId, setCompanyId] = useState('');
+  const initialCompany = useMemo(
+    () => (initialTask?.company ? [toCompanySearchOption(initialTask.company)] : undefined),
+    [initialTask?.company],
+  );
   const [ownerId, setOwnerId] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [errors, setErrors] = useState<{ title?: string; pipeline?: string }>({});
@@ -169,11 +168,15 @@ export function TaskFormModal({
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <label htmlFor="task-company" className="mb-2 block text-xs font-medium text-text-secondary">Company <span className="font-normal text-text-muted">(optional)</span></label>
-              <select id="task-company" value={companyId} onChange={(event) => setCompanyId(event.target.value)} className="input input-sm w-full">
-                <option value="">Not linked</option>
-                {companies.map((company) => <option key={company.id} value={company.id}>{company.name}</option>)}
-              </select>
+              <CompanySelect
+                label="Company (optional)"
+                labelClassName="mb-2 text-xs font-medium text-text-secondary"
+                value={companyId}
+                onChange={(nextCompanyId) => setCompanyId(nextCompanyId)}
+                placeholder="Not linked"
+                pinned={initialCompany}
+                enabled={isOpen}
+              />
             </div>
             <div>
               <label htmlFor="task-owner" className="mb-2 block text-xs font-medium text-text-secondary">Owner <span className="font-normal text-text-muted">(optional)</span></label>
