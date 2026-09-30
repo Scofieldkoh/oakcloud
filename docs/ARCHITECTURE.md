@@ -398,6 +398,18 @@ which re-checks every link. Stored files are written after the commit and
 checked against their SHA-256. Uploads arrive in 8 MB chunks to stay under the
 API middleware's request limit.
 
+Restore can also be limited to modules (`modules.ts` groups every table;
+a test fails if a table lands in "Other", and `backup_settings` is never
+touched). `module-restore.ts` loads the chosen modules' backup rows into
+temporary tables, counts rows added back, replaced, removed and unchanged by
+primary key, and follows every foreign key crossing the edge of the selection.
+A link that would break (restored rows pointing at records this machine no
+longer has, or live rows pointing at records the restore would remove) blocks
+the restore and names the module to add. The restore re-runs that check in the
+same transaction, then drops only the foreign keys touching those tables,
+truncates and reloads them, and re-creates the keys. Stored files missing from
+this machine can be put back; files already here are never overwritten.
+
 `sharepoint-target.ts` keeps a cloud copy. The Backup page picks a folder
 through a workspace-owned SharePoint connector (the folder picker browses via
 `/api/admin/backup/sharepoint/folders`, scoped to the connector's workspace).

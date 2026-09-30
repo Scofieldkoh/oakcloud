@@ -159,3 +159,15 @@ export const sharePointBackupFolderSchema = z.object({
   parentItemId: z.string().min(1).max(200),
   name: z.string().trim().min(1).max(255),
 });
+
+const backupModulesSchema = z.array(z.string().min(1).max(40)).min(1, 'Choose at least one module to restore').max(40);
+
+export const moduleRestorePreviewSchema = z.object({
+  password: z.string().min(1, 'Enter the backup password').max(200),
+  modules: backupModulesSchema,
+});
+
+export const moduleRestoreSchema = moduleRestorePreviewSchema.extend({
+  restoreMissingFiles: z.boolean().default(true),
+  confirmation: z.string().optional().default(''),
+});

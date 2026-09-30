@@ -23,9 +23,9 @@ export const EXCLUDED_TABLES = new Set(['_prisma_migrations', 'system_backups', 
 const EXPORT_BATCH_ROWS = 2000;
 const IMPORT_BATCH_ROWS = 500;
 
-type RawClient = Pick<Prisma.TransactionClient, '$queryRawUnsafe' | '$executeRawUnsafe'>;
+export type RawClient = Pick<Prisma.TransactionClient, '$queryRawUnsafe' | '$executeRawUnsafe'>;
 
-function quoteIdent(name: string): string {
+export function quoteIdent(name: string): string {
   return `"${name.replace(/"/g, '""')}"`;
 }
 
@@ -104,13 +104,13 @@ export async function exportTable(
   return { rows, lockedSecrets };
 }
 
-interface ForeignKey {
+export interface ForeignKey {
   table: string;
   name: string;
   definition: string;
 }
 
-async function listForeignKeys(db: RawClient): Promise<ForeignKey[]> {
+export async function listForeignKeys(db: RawClient): Promise<ForeignKey[]> {
   return db.$queryRawUnsafe<ForeignKey[]>(
     `SELECT cl.relname AS "table", con.conname AS name, pg_get_constraintdef(con.oid) AS definition
        FROM pg_constraint con
@@ -120,7 +120,8 @@ async function listForeignKeys(db: RawClient): Promise<ForeignKey[]> {
   );
 }
 
-async function loadTableRows(
+/** Inserts the rows of one extracted table file; `table` may be a temporary copy of the real table. */
+export async function loadTableRows(
   db: RawClient,
   table: string,
   columns: string[],

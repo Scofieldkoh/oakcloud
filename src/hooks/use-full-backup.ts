@@ -72,6 +72,35 @@ export interface FullBackupPreview {
   lockedSecrets: number;
   blockers: string[];
   warnings: string[];
+  modules: BackupModuleSummary[];
+}
+
+export interface BackupModuleSummary {
+  key: string;
+  label: string;
+  description: string;
+  backupRows: number;
+  liveRows: number;
+}
+
+export interface ModuleChange {
+  module: string;
+  label: string;
+  added: number;
+  replaced: number;
+  removed: number;
+  unchanged: number;
+}
+
+export interface ModuleRestorePreview {
+  backupId: string;
+  modules: string[];
+  changes: ModuleChange[];
+  links: Array<{ fromModule: string; toModule: string; addModule: string; rows: number; message: string }>;
+  suggestedModules: string[];
+  missingFiles: number;
+  blockers: string[];
+  warnings: string[];
 }
 
 export interface BackupSettings {
@@ -173,6 +202,32 @@ export function useStartFullRestore() {
   return useInvalidatingMutation((input: { backupId: string; password: string; confirmation: string }) =>
     requestJson<{ started: boolean }>(`/api/admin/backup/full/${input.backupId}/restore`, jsonInit('POST', {
       password: input.password,
+      confirmation: input.confirmation,
+    })));
+}
+
+export function usePreviewModuleRestore() {
+  return useMutation({
+    mutationFn: (input: { backupId: string; password: string; modules: string[] }) =>
+      requestJson<ModuleRestorePreview>(`/api/admin/backup/full/${input.backupId}/modules/preview`, jsonInit('POST', {
+        password: input.password,
+        modules: input.modules,
+      })),
+  });
+}
+
+export function useStartModuleRestore() {
+  return useInvalidatingMutation((input: {
+    backupId: string;
+    password: string;
+    modules: string[];
+    restoreMissingFiles: boolean;
+    confirmation: string;
+  }) =>
+    requestJson<{ started: boolean }>(`/api/admin/backup/full/${input.backupId}/modules/restore`, jsonInit('POST', {
+      password: input.password,
+      modules: input.modules,
+      restoreMissingFiles: input.restoreMissingFiles,
       confirmation: input.confirmation,
     })));
 }

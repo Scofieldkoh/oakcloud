@@ -58,6 +58,59 @@ export interface FullBackupPreview {
   blockers: string[];
   /** Non-blocking notes the person should read. */
   warnings: string[];
+  /** What each module holds in the backup and here, for choosing a module restore. */
+  modules: FullBackupModuleSummary[];
+}
+
+export interface FullBackupModuleSummary {
+  key: string;
+  label: string;
+  description: string;
+  backupRows: number;
+  liveRows: number;
+}
+
+export interface ModuleTableChange {
+  table: string;
+  added: number;
+  replaced: number;
+  removed: number;
+  unchanged: number;
+}
+
+export interface ModuleChange {
+  module: string;
+  label: string;
+  added: number;
+  replaced: number;
+  removed: number;
+  unchanged: number;
+  tables: ModuleTableChange[];
+}
+
+export interface ModuleLinkProblem {
+  /** The module whose rows hold the link. */
+  fromModule: string;
+  /** The module the link points into. */
+  toModule: string;
+  /** Module that, added to the selection, resolves this problem. */
+  addModule: string;
+  rows: number;
+  message: string;
+}
+
+/** What restoring the chosen modules would do. */
+export interface ModuleRestorePreview {
+  backupId: string;
+  modules: string[];
+  changes: ModuleChange[];
+  links: ModuleLinkProblem[];
+  /** Modules to add so no link breaks. */
+  suggestedModules: string[];
+  /** Stored files in the backup that this machine does not have. */
+  missingFiles: number;
+  blockers: string[];
+  warnings: string[];
 }
 
 export const FULL_RESTORE_CONFIRMATION = 'RESTORE';

@@ -14,6 +14,8 @@ import {
   type FullBackupPreview,
   type SystemBackup,
 } from '@/hooks/use-full-backup';
+import { cn } from '@/lib/utils';
+import { ModuleRestoreStep } from './module-restore-step';
 
 const CONFIRMATION = 'RESTORE';
 
@@ -22,9 +24,16 @@ interface FullRestoreModalProps {
   onClose: () => void;
 }
 
+type RestoreMode = 'everything' | 'modules';
+
+const MODES: Array<{ value: RestoreMode; label: string }> = [
+  { value: 'everything', label: 'Everything' },
+  { value: 'modules', label: 'Choose modules' },
+];
+
 /**
- * Two steps: unlock and check the file (changes nothing), then type RESTORE to
- * replace everything in this install.
+ * Two steps: unlock and check the file (changes nothing), then either type
+ * RESTORE to replace everything in this install, or choose modules to put back.
  */
 export function FullRestoreModal({ backup, onClose }: FullRestoreModalProps) {
   const { success, error: showError } = useToast();
@@ -33,8 +42,10 @@ export function FullRestoreModal({ backup, onClose }: FullRestoreModalProps) {
   const [password, setPassword] = useState('');
   const [confirmation, setConfirmation] = useState('');
   const [preview, setPreview] = useState<FullBackupPreview | null>(null);
+  const [mode, setMode] = useState<RestoreMode>('everything');
 
   const close = () => {
+    setMode('everything');
     setPassword('');
     setConfirmation('');
     setPreview(null);
@@ -65,7 +76,7 @@ export function FullRestoreModal({ backup, onClose }: FullRestoreModalProps) {
   const blocked = (preview?.blockers.length ?? 0) > 0;
 
   return (
-    <Modal isOpen={backup !== null} onClose={close} title="Restore full backup" size="lg">
+    <Modal isOpen={backup !== null} onClose={close} title="Restore from full backup" size="lg">
       <ModalBody>
         <div className="space-y-4">
           {!preview ? (
@@ -88,46 +99,27 @@ export function FullRestoreModal({ backup, onClose }: FullRestoreModalProps) {
             </>
           ) : (
             <>
-              <div className="text-sm text-text-secondary">
-                Made on {format(new Date(preview.createdAt), 'dd MMM yyyy HH:mm')} with{' '}
-                {preview.workspaces.map((workspace) => workspace.name).join(', ') || 'no workspaces'}.
-              </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {[
-                  ['Users', preview.counts.users],
-                  ['Companies', preview.counts.companies],
-                  ['Contacts', preview.counts.contacts],
-                  ['Documents', preview.counts.documents],
-                  ['Templates and partials', preview.counts.templates],
-                  ['Connectors', preview.counts.connectors],
-                ].map(([label, value]) => (
-                  <div key={label} className="bg-background-tertiary rounded-md p-2">
-                    <div className="text-xs text-text-secondary">{label}</div>
-                    <div className="text-base font-semibold text-text-primary">{Number(value).toLocaleString()}</div>
-                  </div>
+              <div className="inline-flex gap-1 p-0.5 bg-background-tertiary rounded-lg" role="tablist" aria-label="What to restore">
+                {MODES.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    role="tab"
+                    aria-selected={mode === option.value}
+                    onClick={() => setMode(option.value)}
+                    className={cn(
+                      'px-3 py-1.5 text-sm font-medium rounded-md transition-colors',
+                      mode === option.value ? 'bg-background-elevated text-text-primary shadow-sm' : 'text-text-secondary hover:text-text-primary',
+                    )}
+                  >
+                    {option.label}
+                  </button>
                 ))}
               </div>
-              <div className="text-xs text-text-tertiary">
-                {preview.totals.rows.toLocaleString()} records and {preview.totals.files.toLocaleString()} files (
-                {formatBytes(preview.totals.fileBytes)}) in total.
-              </div>
-              {preview.blockers.map((blocker) => (
-                <Alert key={blocker} variant="error" compact>{blocker}</Alert>
-              ))}
-              {!blocked && (
-                <>
-                  <Alert variant="warning" title="This replaces everything" compact>
-                    <ul className="list-disc pl-4 space-y-1">
-                      {preview.warnings.map((warning) => <li key={warning}>{warning}</li>)}
-                    </ul>
-                  </Alert>
-                  <FormInput
-                    label={`Type ${CONFIRMATION} to confirm`}
-                    value={confirmation}
-                    onChange={(event) => setConfirmation(event.target.value)}
-                    autoComplete="off"
-                  />
-                </>
+              {mode === 'modules' && backup ? (
+                <ModuleRestoreStep backupId={backup.id} password={password} modules={preview.modules} onStarted={close} />
+              ) : (
+                <EverythingSummary preview={preview} confirmation={confirmation} onConfirmationChange={setConfirmation} />
               )}
             </>
           )}
@@ -139,7 +131,7 @@ export function FullRestoreModal({ backup, onClose }: FullRestoreModalProps) {
           <Button variant="primary" size="sm" onClick={check} disabled={!password} isLoading={previewRestore.isPending}>
             Check backup
           </Button>
-        ) : (
+        ) : mode === 'modules' ? null : (
           <Button
             variant="danger"
             size="sm"
@@ -152,5 +144,62 @@ export function FullRestoreModal({ backup, onClose }: FullRestoreModalProps) {
         )}
       </ModalFooter>
     </Modal>
+  );
+}
+
+function EverythingSummary({
+  preview,
+  confirmation,
+  onConfirmationChange,
+}: {
+  preview: FullBackupPreview;
+  confirmation: string;
+  onConfirmationChange: (value: string) => void;
+}) {
+  const blocked = preview.blockers.length > 0;
+  return (
+    <>
+      <div className="text-sm text-text-secondary">
+        Made on {format(new Date(preview.createdAt), 'dd MMM yyyy HH:mm')} with{' '}
+        {preview.workspaces.map((workspace) => workspace.name).join(', ') || 'no workspaces'}.
+      </div>
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        {[
+          ['Users', preview.counts.users],
+          ['Companies', preview.counts.companies],
+          ['Contacts', preview.counts.contacts],
+          ['Documents', preview.counts.documents],
+          ['Templates and partials', preview.counts.templates],
+          ['Connectors', preview.counts.connectors],
+        ].map(([label, value]) => (
+          <div key={label} className="bg-background-tertiary rounded-md p-2">
+            <div className="text-xs text-text-secondary">{label}</div>
+            <div className="text-base font-semibold text-text-primary">{Number(value).toLocaleString()}</div>
+          </div>
+        ))}
+      </div>
+      <div className="text-xs text-text-tertiary">
+        {preview.totals.rows.toLocaleString()} records and {preview.totals.files.toLocaleString()} files (
+        {formatBytes(preview.totals.fileBytes)}) in total.
+      </div>
+      {preview.blockers.map((blocker) => (
+        <Alert key={blocker} variant="error" compact>{blocker}</Alert>
+      ))}
+      {!blocked && (
+        <>
+          <Alert variant="warning" title="This replaces everything" compact>
+            <ul className="list-disc pl-4 space-y-1">
+              {preview.warnings.map((warning) => <li key={warning}>{warning}</li>)}
+            </ul>
+          </Alert>
+          <FormInput
+            label={`Type ${CONFIRMATION} to confirm`}
+            value={confirmation}
+            onChange={(event) => onConfirmationChange(event.target.value)}
+            autoComplete="off"
+          />
+        </>
+      )}
+    </>
   );
 }

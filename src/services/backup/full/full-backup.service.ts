@@ -18,7 +18,9 @@ import { acquireBusinessOperationBarrier } from '@/lib/business-operation-backup
 import { acquireContactMergeBackupBarrier } from '@/lib/contact-merge-backup-barrier';
 import { invalidateRestoredAssistantDispatch } from '@/services/business-assistant-backup.service';
 import { BackupArchiveWriter, extractArchive } from './archive';
-import { exportTable, listAppliedMigrations, listTables, replaceDatabase } from './database-snapshot';
+import { exportTable, listAppliedMigrations, listTables, quoteIdent, replaceDatabase } from './database-snapshot';
+import { BACKUP_MODULES, isBackupModuleKey, MODULE_RESTORE_SKIPPED_TABLES, moduleForTable, moduleLabel } from './modules';
+import { previewModules, restoreModules } from './module-restore';
 import { getBackupPassword, getScheduledMaxBackups, claimDueScheduledRun, recordScheduledRun } from './backup-settings';
 import { cleanupStaleSharePointCopies, copyBackupToSharePoint, downloadSharePointBackupFile } from './sharepoint-target';
 import {
@@ -28,7 +30,9 @@ import {
   FULL_RESTORE_CONFIRMATION,
   type FullBackupFile,
   type FullBackupManifest,
+  type FullBackupModuleSummary,
   type FullBackupPreview,
+  type ModuleRestorePreview,
 } from './types';
 
 const log = createLogger('full-backup');
@@ -478,13 +482,22 @@ export async function importSharePointBackup(itemId: string, userId: string): Pr
 // Checking and restoring
 // ============================================================================
 
-async function extractBackup(backupId: string, password: string, dir: string): Promise<FullBackupManifest> {
+/**
+ * Unlocks the backup into `dir/staging`. The whole file is always read (that
+ * is what checks the password and integrity); `include` limits what is written.
+ */
+async function extractBackup(
+  backupId: string,
+  password: string,
+  dir: string,
+  include?: (entry: string) => boolean,
+): Promise<FullBackupManifest> {
   const backup = await getFullBackup(backupId);
   if (!backup.archiveKey) throw new Error('This backup has no file to restore from');
   const archivePath = path.join(dir, 'backup.oakbackup');
   await fs.promises.writeFile(archivePath, await storage.download(backup.archiveKey));
   const stagingDir = path.join(dir, 'staging');
-  await extractArchive(archivePath, password, stagingDir);
+  await extractArchive(archivePath, password, stagingDir, include && ((entry) => entry === MANIFEST_ENTRY || include(entry)));
   await fs.promises.rm(archivePath, { force: true });
 
   const manifestPath = path.join(stagingDir, MANIFEST_ENTRY);
@@ -561,12 +574,32 @@ async function buildPreview(backupId: string, manifest: FullBackupManifest): Pro
     lockedSecrets: manifest.lockedSecrets,
     blockers,
     warnings,
+    modules: await summarizeModules(manifest),
   };
+}
+
+/** Rows per module in the backup and on this machine. */
+async function summarizeModules(manifest: FullBackupManifest): Promise<FullBackupModuleSummary[]> {
+  const summaries = new Map<string, FullBackupModuleSummary>(BACKUP_MODULES.map((module) => [
+    module.key,
+    { ...module, backupRows: 0, liveRows: 0 },
+  ]));
+  for (const table of manifest.tables) {
+    if (MODULE_RESTORE_SKIPPED_TABLES.has(table.name)) continue;
+    summaries.get(moduleForTable(table.name))!.backupRows += table.rows;
+  }
+  for (const table of (await listTables(prisma)).keys()) {
+    if (MODULE_RESTORE_SKIPPED_TABLES.has(table)) continue;
+    const [row] = await prisma.$queryRawUnsafe<Array<{ n: bigint }>>(`SELECT count(*) AS n FROM ${quoteIdent(table)}`);
+    summaries.get(moduleForTable(table))!.liveRows += Number(row.n);
+  }
+  return [...summaries.values()].filter((module) => module.backupRows > 0 || module.liveRows > 0);
 }
 
 /** Unlocks and checks the backup file, then says what a restore would do. Changes nothing. */
 export async function previewFullRestore(backupId: string, password: string): Promise<FullBackupPreview> {
-  return withWorkDir(`check-${backupId}`, async (dir) => buildPreview(backupId, await extractBackup(backupId, password, dir)));
+  return withWorkDir(`check-${backupId}`, async (dir) =>
+    buildPreview(backupId, await extractBackup(backupId, password, dir, () => false)));
 }
 
 /** Starts a full restore in the background. The caller must pass the typed confirmation. */
@@ -667,6 +700,207 @@ async function runFullRestore(
       entityType: 'SystemBackup',
       entityId: backupId,
       summary: `Full restore failed: ${errorText(error)}`,
+      changeSource: 'SYSTEM',
+    });
+    throw error;
+  }
+}
+
+// ============================================================================
+// Restoring chosen modules
+// ============================================================================
+
+function assertModules(modules: string[]): string[] {
+  const unique = [...new Set(modules)];
+  if (unique.length === 0) throw new Error('Choose at least one module to restore');
+  const unknown = unique.filter((module) => !isBackupModuleKey(module));
+  if (unknown.length > 0) throw new Error(`Unknown module: ${unknown.join(', ')}`);
+  return unique;
+}
+
+/** Only the chosen modules' table files (and the manifest) are written out. */
+function moduleEntryFilter(modules: string[], extraFiles: Set<string> = new Set()): (entry: string) => boolean {
+  const wanted = new Set(modules);
+  return (entry) => {
+    const table = entry.match(/^db\/(.+)\.jsonl$/)?.[1];
+    if (table) return wanted.has(moduleForTable(table));
+    return extraFiles.has(entry);
+  };
+}
+
+async function missingStoredFiles(manifest: FullBackupManifest): Promise<FullBackupFile[]> {
+  const present = new Set((await storage.list('', MAX_STORED_FILES)).map((file) => file.key));
+  return manifest.files.filter((file) => !present.has(file.key));
+}
+
+async function buildModulePreview(
+  backupId: string,
+  manifest: FullBackupManifest,
+  modules: string[],
+  staging: string,
+  db: Prisma.TransactionClient,
+): Promise<ModuleRestorePreview> {
+  const full = await buildPreview(backupId, manifest);
+  const blockers = [...full.blockers];
+  const { changes, links } = await previewModules(db, {
+    tables: manifest.tables,
+    modules,
+    tableFile: (table) => path.join(staging, tableEntry(table)),
+  });
+  const suggestedModules = [...new Set(links.map((link) => link.addModule))].filter((module) => !modules.includes(module));
+  if (links.length > 0) {
+    blockers.push(`Restoring only these modules would break links between records. Also restore: ${suggestedModules.map(moduleLabel).join(', ')}.`);
+  }
+  const warnings: string[] = [];
+  if (modules.includes('users')) {
+    warnings.push('Accounts, passwords and roles go back to the backup. Your own sign-in may change.');
+  }
+  if (modules.includes('connectors')) {
+    warnings.push('Connector keys go back to the ones in the backup.');
+  }
+  if (full.lockedSecrets > 0 && modules.includes('connectors')) {
+    warnings.push(`${full.lockedSecrets} connector secret(s) could not be unlocked when this backup was made. Re-enter those keys after restoring.`);
+  }
+  warnings.push('Records in other modules are not changed. This machine\'s backup password, schedule and SharePoint folder are kept.');
+  return {
+    backupId,
+    modules,
+    changes,
+    links,
+    suggestedModules,
+    missingFiles: (await missingStoredFiles(manifest)).length,
+    blockers,
+    warnings,
+  };
+}
+
+/** Says what restoring the chosen modules would change. Changes nothing. */
+export async function previewModuleRestore(backupId: string, password: string, modules: string[]): Promise<ModuleRestorePreview> {
+  const selected = assertModules(modules);
+  return withWorkDir(`check-${backupId}`, async (dir) => {
+    const manifest = await extractBackup(backupId, password, dir, moduleEntryFilter(selected));
+    const staging = path.join(dir, 'staging');
+    // Temporary tables only; they are dropped when this transaction ends.
+    return prisma.$transaction(
+      (tx) => buildModulePreview(backupId, manifest, selected, staging, tx),
+      { timeout: RESTORE_TIMEOUT_MS, maxWait: 60_000 },
+    );
+  });
+}
+
+/** Starts restoring the chosen modules in the background. The caller must pass the typed confirmation. */
+export async function startModuleRestore(input: {
+  backupId: string;
+  password: string;
+  modules: string[];
+  restoreMissingFiles: boolean;
+  confirmation: string;
+  userId: string;
+}): Promise<void> {
+  if (input.confirmation !== FULL_RESTORE_CONFIRMATION) {
+    throw new Error(`Type ${FULL_RESTORE_CONFIRMATION} to confirm the restore`);
+  }
+  const modules = assertModules(input.modules);
+  const backup = await getFullBackup(input.backupId);
+  if (!['COMPLETED', 'RESTORED'].includes(backup.status)) throw new Error('This backup is not ready to restore');
+  await assertNothingRunning();
+
+  await prisma.systemBackup.update({
+    where: { id: input.backupId },
+    data: { status: 'RESTORING', progress: 0, currentStep: 'Unlocking the backup file', errorMessage: null },
+  });
+  runModuleRestore({ ...input, modules }, backup.status).catch((error) =>
+    log.error(`Module restore of ${input.backupId} failed:`, error));
+}
+
+async function runModuleRestore(
+  input: { backupId: string; password: string; modules: string[]; restoreMissingFiles: boolean; userId: string },
+  previousStatus: string,
+): Promise<void> {
+  const { backupId, modules, userId } = input;
+  const labels = modules.map(moduleLabel).join(', ');
+  let databaseReplaced = false;
+  try {
+    await withWorkDir(`restore-${backupId}`, async (dir) => {
+      // The manifest says which files exist; read it first so only missing files are written out.
+      const manifest = await extractBackup(backupId, input.password, dir, () => false);
+      const missing = input.restoreMissingFiles ? await missingStoredFiles(manifest) : [];
+      await fs.promises.rm(path.join(dir, 'staging'), { recursive: true, force: true });
+      await setProgress(backupId, 5, 'Unlocking the chosen modules');
+      await extractBackup(backupId, input.password, dir, moduleEntryFilter(modules, new Set(missing.map((file) => fileEntry(file.key)))));
+      const staging = path.join(dir, 'staging');
+
+      await setProgress(backupId, 20, `Restoring ${labels}`);
+      await prisma.$transaction(async (tx) => {
+        const current = await tx.workspace.findMany({ select: { id: true }, orderBy: { id: 'asc' } });
+        for (const workspace of current) {
+          await acquireBusinessOperationBarrier(tx, workspace.id, 'exclusive');
+          await acquireContactMergeBackupBarrier(tx, workspace.id);
+        }
+        // Checked again inside the same transaction, so nothing can change in between.
+        const preview = await buildModulePreview(backupId, manifest, modules, staging, tx);
+        if (preview.blockers.length > 0) throw new Error(preview.blockers.join(' '));
+        await restoreModules(tx, { tables: manifest.tables, modules, tableFile: (table) => path.join(staging, tableEntry(table)) });
+        if (modules.includes('assistant')) {
+          for (const workspace of manifest.workspaces) await invalidateRestoredAssistantDispatch(tx, workspace.id);
+        }
+      }, { timeout: RESTORE_TIMEOUT_MS, maxWait: 60_000 });
+      databaseReplaced = true;
+
+      let failures = 0;
+      for (let index = 0; index < missing.length; index++) {
+        const file = missing[index];
+        try {
+          const filePath = path.join(staging, fileEntry(file.key));
+          if ((await sha256File(filePath)) !== file.sha256) throw new Error('checksum mismatch');
+          await storage.upload(file.key, await fs.promises.readFile(filePath), { contentType: file.contentType });
+        } catch (error) {
+          failures += 1;
+          log.warn(`Could not restore stored file ${file.key}: ${errorText(error)}`);
+        }
+        if (index % 25 === 0 || index === missing.length - 1) {
+          await setProgress(backupId, 60 + Math.floor(((index + 1) / missing.length) * 38), `Putting back missing files (${index + 1} of ${missing.length})`);
+        }
+      }
+      if (failures > 0) throw new Error(`${labels} were restored, but ${failures} file(s) could not be written. Run the restore again to retry.`);
+
+      await prisma.systemBackup.update({
+        where: { id: backupId },
+        data: {
+          status: 'RESTORED',
+          progress: 100,
+          currentStep: `Restored ${labels}`,
+          restoredAt: new Date(),
+          restoredById: userId,
+          errorMessage: null,
+        },
+      });
+      await audit({
+        userId: await existingUserId(userId),
+        action: 'BACKUP_RESTORE_COMPLETED',
+        entityType: 'SystemBackup',
+        entityId: backupId,
+        entityName: manifest.name,
+        summary: `Restored ${labels} from full backup "${manifest.name}"${missing.length ? ` and ${missing.length} missing file(s)` : ''}`,
+        changeSource: 'MANUAL',
+        metadata: { modules },
+      });
+    });
+  } catch (error) {
+    await prisma.systemBackup.update({
+      where: { id: backupId },
+      data: {
+        status: previousStatus === 'RESTORED' ? 'RESTORED' : 'COMPLETED',
+        currentStep: databaseReplaced ? 'Restore incomplete' : 'Restore failed; nothing was changed',
+        errorMessage: errorText(error),
+      },
+    }).catch(() => undefined);
+    await audit({
+      userId: await existingUserId(userId),
+      action: 'BACKUP_RESTORE_FAILED',
+      entityType: 'SystemBackup',
+      entityId: backupId,
+      summary: `Restoring ${labels} failed: ${errorText(error)}`,
       changeSource: 'SYSTEM',
     });
     throw error;
