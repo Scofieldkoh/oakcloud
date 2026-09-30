@@ -34,6 +34,7 @@ import {
   PenSquare,
   Signature,
   Database,
+  Palette,
   Sparkles,
   LayoutTemplate,
   Puzzle,
@@ -94,6 +95,7 @@ const ungroupedAdminItems: NavItem[] = [
   { name: 'Connectors', href: '/admin/connectors', icon: Plug, adminOnly: true },
   { name: 'Recycle Bin', href: '/admin/data-purge', icon: Trash2, superAdminOnly: true },
   { name: 'ACRA Records', href: '/admin/acra-data', icon: Database, adminOnly: true },
+  { name: 'UI Components', href: '/admin/components', icon: Palette, superAdminOnly: true },
 ];
 
 // Grouped admin items
