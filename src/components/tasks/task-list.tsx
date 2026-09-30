@@ -23,6 +23,7 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { MobileCard, CardDetailsGrid, CardDetailItem } from '@/components/ui/responsive-table';
 import { TableBody, TableEmptyState, TableFilterCell, TableFilterRow, TableHead, TableHeaderCell, TableHeaderRow, TableRoot, TableRow, TableSelectFilter, TableShell, TableTextFilter, TableViewport } from '@/components/ui/data-table';
 import { CompanySelect } from '@/components/ui/company-select';
+import { useColumnResize } from '@/hooks/use-column-resize';
 import { useUpsertUserPreference, useUserPreferences } from '@/hooks/use-user-preferences';
 import { cn } from '@/lib/utils';
 import type { TaskPipeline } from '@/hooks/use-task-pipelines';
@@ -283,7 +284,6 @@ export function TaskList({
     taskId: string;
     field: TaskEditableField;
   } | null>(null);
-  const isResizingRef = useRef(false);
   const rowClickTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const preferenceValue = preferenceMap?.[TASK_COLUMN_PREF_KEY]?.value;
   const preferenceValueKey = JSON.stringify(preferenceValue ?? null);
@@ -363,70 +363,13 @@ export function TaskList({
     });
   }, [saveColumnPreference]);
 
-  const startResize = useCallback((event: React.PointerEvent, columnId: TaskColumnId) => {
-    event.preventDefault();
-    event.stopPropagation();
-
-    const handle = event.currentTarget as HTMLElement;
-    const header = handle.closest('th');
-    const measuredWidth = header?.getBoundingClientRect().width ?? 0;
-    const startWidth = columnWidths[columnId]
-      ?? (measuredWidth >= minimumColumnWidths[columnId]
-        ? measuredWidth
-        : defaultColumnWidths[columnId]);
-    const startX = event.clientX;
-    const pointerId = event.pointerId;
-    let latestWidth = startWidth;
-
-    isResizingRef.current = true;
-    document.body.style.userSelect = 'none';
-    document.body.style.cursor = 'col-resize';
-
-    try {
-      handle.setPointerCapture(pointerId);
-    } catch {
-      // Pointer capture is unavailable in some browsers and test environments.
-    }
-
-    const onMove = (moveEvent: globalThis.PointerEvent) => {
-      latestWidth = Math.max(
-        minimumColumnWidths[columnId],
-        startWidth + (moveEvent.clientX - startX),
-      );
-      setColumnWidths((current) => ({ ...current, [columnId]: latestWidth }));
-    };
-
-    const onUp = () => {
-      window.removeEventListener('pointermove', onMove);
-      window.removeEventListener('pointerup', onUp);
-      try {
-        handle.releasePointerCapture(pointerId);
-      } catch {
-        // Pointer capture is unavailable in some browsers and test environments.
-      }
-      document.body.style.userSelect = '';
-      document.body.style.cursor = '';
-      isResizingRef.current = false;
-      persistWidth(columnId, latestWidth);
-    };
-
-    window.addEventListener('pointermove', onMove);
-    window.addEventListener('pointerup', onUp);
-  }, [columnWidths, persistWidth]);
-
-  const resizeWithKeyboard = useCallback((
-    event: React.KeyboardEvent,
-    columnId: TaskColumnId,
-  ) => {
-    if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
-    event.preventDefault();
-    const currentWidth = columnWidths[columnId] ?? defaultColumnWidths[columnId];
-    const direction = event.key === 'ArrowRight' ? 1 : -1;
-    persistWidth(
-      columnId,
-      Math.max(minimumColumnWidths[columnId], currentWidth + (direction * 10)),
-    );
-  }, [columnWidths, persistWidth]);
+  const { startResize, resizeWithKeyboard } = useColumnResize<TaskColumnId>({
+    getWidth: (columnId) => columnWidths[columnId],
+    getDefaultWidth: (columnId) => defaultColumnWidths[columnId],
+    clampWidth: (width, columnId) => Math.max(minimumColumnWidths[columnId], width),
+    onResize: (columnId, width) => setColumnWidths((current) => ({ ...current, [columnId]: width })),
+    onResizeEnd: persistWidth,
+  });
 
   return (
     <div data-testid="task-list">

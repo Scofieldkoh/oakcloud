@@ -3,6 +3,7 @@
 import { useState, useCallback, useMemo, type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import { Pagination } from '@/components/ui/pagination';
+import { useColumnResize } from '@/hooks/use-column-resize';
 import {
   TableBody,
   TableCell,
@@ -185,84 +186,22 @@ export function DataGrid<T>({
     onSelectionChange(nextSelection);
   }, [selectedKeys, onSelectionChange]);
 
-  const getColumnWidth = useCallback((column: DataGridColumn<T>) => {
-    return column.fixedWidth ?? columnWidths[column.id] ?? column.defaultWidth;
-  }, [columnWidths]);
+  const columnsById = useMemo(
+    () => new Map(columns.map((column) => [column.id, column])),
+    [columns],
+  );
+  const { liveWidths, startResize, resizeWithKeyboard } = useColumnResize<string>({
+    getWidth: (columnId) => {
+      const column = columnsById.get(columnId);
+      return column?.fixedWidth ?? columnWidths[columnId] ?? column?.defaultWidth;
+    },
+    getDefaultWidth: (columnId) => columnsById.get(columnId)?.minWidth ?? 120,
+    clampWidth: (width, columnId) => Math.max(columnsById.get(columnId)?.minWidth ?? 50, Math.round(width)),
+    onResizeEnd: (columnId, width) => onColumnWidthChange?.(columnId, width),
+  });
 
-  const resizeColumn = useCallback((
-    column: DataGridColumn<T>,
-    nextWidth: number,
-  ) => {
-    if (!onColumnWidthChange || column.fixedWidth) return;
-    const minimumWidth = column.minWidth ?? 50;
-    onColumnWidthChange(column.id, Math.max(minimumWidth, Math.round(nextWidth)));
-  }, [onColumnWidthChange]);
-
-  const handleColumnResize = useCallback((
-    event: React.PointerEvent<HTMLSpanElement>,
-    column: DataGridColumn<T>,
-  ) => {
-    if (!onColumnWidthChange || column.fixedWidth) return;
-
-    event.preventDefault();
-    event.stopPropagation();
-
-    const handle = event.currentTarget;
-    const header = handle.closest('th');
-    if (!header) return;
-
-    const startWidth = getColumnWidth(column) ?? header.getBoundingClientRect().width;
-    const startX = event.clientX;
-    const pointerId = event.pointerId;
-    let latestWidth = startWidth;
-
-    document.body.style.userSelect = 'none';
-    document.body.style.cursor = 'col-resize';
-
-    try {
-      handle.setPointerCapture(pointerId);
-    } catch {
-      // Pointer capture is best-effort; window listeners still handle resizing.
-    }
-
-    const onMove = (moveEvent: PointerEvent) => {
-      const minimumWidth = column.minWidth ?? 50;
-      latestWidth = Math.max(minimumWidth, startWidth + (moveEvent.clientX - startX));
-      header.style.width = `${latestWidth}px`;
-    };
-
-    const cleanup = () => {
-      window.removeEventListener('pointermove', onMove);
-      window.removeEventListener('pointerup', onUp);
-      window.removeEventListener('pointercancel', cleanup);
-      try {
-        handle.releasePointerCapture(pointerId);
-      } catch {
-        // Ignore browsers that already released pointer capture.
-      }
-      document.body.style.userSelect = '';
-      document.body.style.cursor = '';
-    };
-
-    const onUp = () => {
-      cleanup();
-      resizeColumn(column, latestWidth);
-    };
-
-    window.addEventListener('pointermove', onMove);
-    window.addEventListener('pointerup', onUp);
-    window.addEventListener('pointercancel', cleanup);
-  }, [getColumnWidth, onColumnWidthChange, resizeColumn]);
-
-  const handleColumnResizeKeyboard = useCallback((
-    event: React.KeyboardEvent<HTMLSpanElement>,
-    column: DataGridColumn<T>,
-  ) => {
-    if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
-    event.preventDefault();
-    const currentWidth = getColumnWidth(column) ?? column.minWidth ?? 120;
-    resizeColumn(column, currentWidth + (event.key === 'ArrowRight' ? 10 : -10));
-  }, [getColumnWidth, resizeColumn]);
+  const getColumnWidth = (column: DataGridColumn<T>) =>
+    column.fixedWidth ?? liveWidths[column.id] ?? columnWidths[column.id] ?? column.defaultWidth;
 
   const tableVisibilityClass = mobileCardsOnly
     ? 'hidden'
@@ -381,8 +320,8 @@ export function DataGrid<T>({
                       onSort={sortable ? () => onSort?.(sortField!) : undefined}
                       sortAriaLabel={sortable ? `Sort by ${column.label}` : undefined}
                       resizable={resizable}
-                      onResizePointerDown={resizable ? (event) => handleColumnResize(event, column) : undefined}
-                      onResizeKeyDown={resizable ? (event) => handleColumnResizeKeyboard(event, column) : undefined}
+                      onResizePointerDown={resizable ? (event) => startResize(event, column.id) : undefined}
+                      onResizeKeyDown={resizable ? (event) => resizeWithKeyboard(event, column.id) : undefined}
                       resizeAriaLabel={`Resize ${column.label} column`}
                       className={headerDensityClass}
                     >

@@ -1,8 +1,9 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, type ReactNode } from 'react';
+import { useMemo, type ReactNode } from 'react';
 import Link from 'next/link';
 import { MoreHorizontal, Pencil, ExternalLink, AlertTriangle, History, Briefcase } from 'lucide-react';
+import { useColumnResize } from '@/hooks/use-column-resize';
 import { EmptyState } from '@/components/ui/empty-state';
 import { MobileCard, CardDetailItem, CardDetailsGrid } from '@/components/ui/responsive-table';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -325,67 +326,13 @@ export function ServiceRosterTable({
 }: ServiceRosterTableProps) {
   const emptyContent = emptyState ?? <EmptyState icon={Briefcase} title="No services found" />;
   const visibleColumns = useMemo(() => columnOrder.filter((column) => columnVisibility[column]), [columnOrder, columnVisibility]);
-  const resizeCleanupRef = useRef<(() => void) | null>(null);
-  useEffect(() => () => resizeCleanupRef.current?.(), []);
-
-  const clampColumnWidth = (width: number) => Math.min(800, Math.max(96, Math.round(width)));
-  const startResize = useCallback((columnId: ServiceRosterColumnId, event: React.PointerEvent<HTMLSpanElement>) => {
-    if (columnId === 'actions') return;
-    event.preventDefault();
-    event.stopPropagation();
-    resizeCleanupRef.current?.();
-
-    const handle = event.currentTarget;
-    const header = handle.closest('th');
-    const measuredWidth = header?.getBoundingClientRect().width ?? 0;
-    const initial = columnWidths[columnId] ?? (measuredWidth >= 96 ? measuredWidth : defaultWidths[columnId]);
-    const startX = event.clientX;
-    const pointerId = event.pointerId;
-    let latestWidth = clampColumnWidth(initial);
-
-    const pointerMove = (moveEvent: PointerEvent) => {
-      latestWidth = clampColumnWidth(initial + moveEvent.clientX - startX);
-      onColumnWidthChange(columnId, latestWidth);
-    };
-    const cleanup = () => {
-      window.removeEventListener('pointermove', pointerMove);
-      window.removeEventListener('pointerup', pointerUp);
-      window.removeEventListener('pointercancel', pointerCancel);
-      try {
-        handle.releasePointerCapture(pointerId);
-      } catch {
-        // Pointer capture is unavailable in some browsers and test environments.
-      }
-      document.body.style.userSelect = '';
-      document.body.style.cursor = '';
-      if (resizeCleanupRef.current === cleanup) resizeCleanupRef.current = null;
-    };
-    const pointerUp = () => {
-      cleanup();
-      onColumnResizeEnd(columnId, latestWidth);
-    };
-    const pointerCancel = () => cleanup();
-
-    resizeCleanupRef.current = cleanup;
-    document.body.style.userSelect = 'none';
-    document.body.style.cursor = 'col-resize';
-    try {
-      handle.setPointerCapture(pointerId);
-    } catch {
-      // Pointer capture is unavailable in some browsers and test environments.
-    }
-    window.addEventListener('pointermove', pointerMove);
-    window.addEventListener('pointerup', pointerUp);
-    window.addEventListener('pointercancel', pointerCancel);
-  }, [columnWidths, onColumnResizeEnd, onColumnWidthChange]);
-
-  const resizeColumnByKeyboard = useCallback((columnId: ServiceRosterColumnId, delta: number) => {
-    if (columnId === 'actions') return;
-    const initial = clampColumnWidth(columnWidths[columnId] ?? defaultWidths[columnId]);
-    const next = clampColumnWidth(initial + delta);
-    onColumnWidthChange(columnId, next);
-    onColumnResizeEnd(columnId, next);
-  }, [columnWidths, onColumnResizeEnd, onColumnWidthChange]);
+  const { startResize, resizeWithKeyboard } = useColumnResize<ServiceRosterColumnId>({
+    getWidth: (columnId) => columnWidths[columnId],
+    getDefaultWidth: (columnId) => defaultWidths[columnId],
+    clampWidth: (width) => Math.min(800, Math.max(96, Math.round(width))),
+    onResize: (columnId, width) => onColumnWidthChange(columnId, width),
+    onResizeEnd: (columnId, width) => onColumnResizeEnd(columnId, width),
+  });
 
   return (
     <>
@@ -437,12 +384,8 @@ export function ServiceRosterTable({
                     onSort={field ? () => onSort(field) : undefined}
                     sortAriaLabel={field ? (active ? `Sort by ${columnLabels[columnId]}, currently ${sortOrder === 'asc' ? 'ascending' : 'descending'}` : `Sort by ${columnLabels[columnId]}`) : undefined}
                     resizable={columnId !== 'actions'}
-                    onResizePointerDown={columnId !== 'actions' ? (event) => startResize(columnId, event) : undefined}
-                    onResizeKeyDown={columnId !== 'actions' ? (event) => {
-                      if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
-                      event.preventDefault();
-                      resizeColumnByKeyboard(columnId, event.key === 'ArrowRight' ? 10 : -10);
-                    } : undefined}
+                    onResizePointerDown={columnId !== 'actions' ? (event) => startResize(event, columnId) : undefined}
+                    onResizeKeyDown={columnId !== 'actions' ? (event) => resizeWithKeyboard(event, columnId) : undefined}
                     resizeAriaLabel={`Resize ${columnLabels[columnId]} column`}
                   />
                 );

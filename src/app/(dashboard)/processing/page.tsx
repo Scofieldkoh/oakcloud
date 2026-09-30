@@ -45,6 +45,7 @@ import { ListEmptyState } from '@/components/ui/empty-state';
 import { useAvailableTags } from '@/hooks/use-document-tags';
 import { useActiveCompanyId } from '@/components/ui/company-selector';
 import { useUserPreferences, useUpsertUserPreference } from '@/hooks/use-user-preferences';
+import { useColumnResize } from '@/hooks/use-column-resize';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -450,7 +451,6 @@ export default function ProcessingDocumentsPage() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [selectedDocumentMap, setSelectedDocumentMap] = useState<Record<string, ProcessingDocumentListItem>>({});
   const [expandedMobileCardIds, setExpandedMobileCardIds] = useState<string[]>([]);
-  const isResizingRef = useRef(false);
   const [isColumnModalOpen, setIsColumnModalOpen] = useState(false);
 
   // Determine effective company ID: URL filter takes priority, then sidebar selector
@@ -723,64 +723,17 @@ export default function ProcessingDocumentsPage() {
     }
   };
 
-  const startResize = useCallback((e: React.PointerEvent, columnId: ColumnId) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    const handle = e.currentTarget as HTMLElement | null;
-    const th = handle?.closest('th') as HTMLTableCellElement | null;
-    const startWidth = columnWidths[columnId] ?? DEFAULT_COLUMN_WIDTHS[columnId] ?? th?.getBoundingClientRect().width ?? 120;
-    const startX = e.clientX;
-    const pointerId = e.pointerId;
-
-    isResizingRef.current = true;
-    document.body.style.userSelect = 'none';
-    document.body.style.cursor = 'col-resize';
-
-    let latestWidth = startWidth;
-
-    try {
-      handle?.setPointerCapture(pointerId);
-    } catch {
-      // ignore
-    }
-
-    const onMove = (ev: globalThis.PointerEvent) => {
-      const nextWidth = Math.max(30, startWidth + (ev.clientX - startX));
-      latestWidth = nextWidth;
-      setColumnWidths((prev) => ({ ...prev, [columnId]: nextWidth }));
-    };
-
-    const onUp = () => {
-      window.removeEventListener('pointermove', onMove);
-      window.removeEventListener('pointerup', onUp);
-      try {
-        handle?.releasePointerCapture(pointerId);
-      } catch {
-        // ignore
-      }
-      document.body.style.userSelect = '';
-      document.body.style.cursor = '';
-      isResizingRef.current = false;
-
-      const nextWidths = { ...columnWidths, [columnId]: latestWidth };
+  const { startResize, resizeWithKeyboard: resizeColumnByKeyboard } = useColumnResize<ColumnId>({
+    getWidth: (columnId) => columnWidths[columnId] ?? DEFAULT_COLUMN_WIDTHS[columnId],
+    getDefaultWidth: () => 120,
+    clampWidth: (width) => Math.max(30, width),
+    onResize: (columnId, width) => setColumnWidths((prev) => ({ ...prev, [columnId]: width })),
+    onResizeEnd: (columnId, width) => {
+      const nextWidths = { ...columnWidths, [columnId]: width };
       setColumnWidths(nextWidths);
       saveColumnPref.mutate({ key: COLUMN_PREF_KEY, value: nextWidths });
-    };
-
-    window.addEventListener('pointermove', onMove);
-    window.addEventListener('pointerup', onUp);
-  }, [columnWidths, saveColumnPref]);
-
-  const resizeColumnByKeyboard = useCallback((event: React.KeyboardEvent<HTMLSpanElement>, columnId: ColumnId) => {
-    if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
-    event.preventDefault();
-    const currentWidth = columnWidths[columnId] ?? DEFAULT_COLUMN_WIDTHS[columnId] ?? 120;
-    const nextWidth = Math.max(30, currentWidth + (event.key === 'ArrowRight' ? 10 : -10));
-    const nextWidths = { ...columnWidths, [columnId]: nextWidth };
-    setColumnWidths(nextWidths);
-    saveColumnPref.mutate({ key: COLUMN_PREF_KEY, value: nextWidths });
-  }, [columnWidths, saveColumnPref]);
+    },
+  });
 
   const resetColumns = useCallback(() => {
     setColumnWidths({});

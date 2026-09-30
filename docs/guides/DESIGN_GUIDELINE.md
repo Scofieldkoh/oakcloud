@@ -24,6 +24,7 @@ This guide is long; most UI changes only need this section. Open `/admin/compone
 | Empty lists | `ListEmptyState`, `EmptyState` | See [Empty State Patterns](#empty-state-patterns). |
 | Active filters | `ActiveFilterBar`, `FilterChip` | Clear all must reset every filter, search included. |
 | Tables | `TableShell`, `TableRoot`, `TableHeaderCell`, `TableRow`, `TableEmptyState`, `Pagination` | From `data-table.tsx`. |
+| Resizable columns | `useColumnResize` | Wire `startResize` and `resizeWithKeyboard` to `TableHeaderCell`; drag or arrow keys, saved once on release. |
 | Dialogs | `Modal`, `ConfirmDialog`, `useConfirmDialog` | Never `window.confirm` or `alert`. |
 | Leaving with unsaved edits | `useUnsavedNavigationGuard` | Same dialog for links, back and in-page actions. |
 | Search boxes | `useDebouncedSearch` (`SEARCH_DEBOUNCE_MS`, 300 ms) | Follows outside changes such as Clear all. |

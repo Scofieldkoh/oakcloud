@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
@@ -28,6 +28,7 @@ import {
   CardDetailItem,
 } from '@/components/ui/responsive-table';
 import { useUserPreferences, useUpsertUserPreference } from '@/hooks/use-user-preferences';
+import { useColumnResize } from '@/hooks/use-column-resize';
 import type { DocumentGenerationBatchListItem } from '@/types/document-generation-batch';
 
 type BatchStatus = DocumentGenerationBatchListItem['status'];
@@ -209,7 +210,6 @@ export function GenerationBatchTable({
   const router = useRouter();
 
   const [columnWidths, setColumnWidths] = useState<Partial<Record<ColumnId, number>>>({});
-  const isResizingRef = useRef(false);
   const { data: preferenceMap } = useUserPreferences([COLUMN_PREF_KEY]);
   const saveColumnPreference = useUpsertUserPreference<Record<ColumnId, number>>();
   const preferenceValue = preferenceMap?.[COLUMN_PREF_KEY]?.value;
@@ -240,73 +240,13 @@ export function GenerationBatchTable({
     });
   }, [saveColumnPreference]);
 
-  const startResize = useCallback((
-    event: React.PointerEvent,
-    columnId: ColumnId,
-  ) => {
-    event.preventDefault();
-    event.stopPropagation();
-
-    const handle = event.currentTarget as HTMLElement;
-    const header = handle.closest('th');
-    const measuredWidth = header?.getBoundingClientRect().width ?? 0;
-    const startWidth = columnWidths[columnId]
-      ?? (measuredWidth >= MINIMUM_COLUMN_WIDTHS[columnId]
-        ? measuredWidth
-        : DEFAULT_COLUMN_WIDTHS[columnId]);
-    const startX = event.clientX;
-    const pointerId = event.pointerId;
-    let latestWidth = startWidth;
-
-    isResizingRef.current = true;
-    document.body.style.userSelect = 'none';
-    document.body.style.cursor = 'col-resize';
-
-    try {
-      handle.setPointerCapture(pointerId);
-    } catch {
-      // Pointer capture is unavailable in some browsers and test environments.
-    }
-
-    const onMove = (moveEvent: globalThis.PointerEvent) => {
-      latestWidth = Math.max(
-        MINIMUM_COLUMN_WIDTHS[columnId],
-        startWidth + (moveEvent.clientX - startX),
-      );
-      setColumnWidths((current) => ({ ...current, [columnId]: latestWidth }));
-    };
-
-    const onUp = () => {
-      window.removeEventListener('pointermove', onMove);
-      window.removeEventListener('pointerup', onUp);
-      try {
-        handle.releasePointerCapture(pointerId);
-      } catch {
-        // Pointer capture is unavailable in some browsers and test environments.
-      }
-      document.body.style.userSelect = '';
-      document.body.style.cursor = '';
-      isResizingRef.current = false;
-      persistWidth(columnId, latestWidth);
-    };
-
-    window.addEventListener('pointermove', onMove);
-    window.addEventListener('pointerup', onUp);
-  }, [columnWidths, persistWidth]);
-
-  const resizeWithKeyboard = useCallback((
-    event: React.KeyboardEvent,
-    columnId: ColumnId,
-  ) => {
-    if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
-    event.preventDefault();
-    const direction = event.key === 'ArrowRight' ? 1 : -1;
-    const currentWidth = columnWidths[columnId] ?? DEFAULT_COLUMN_WIDTHS[columnId];
-    persistWidth(
-      columnId,
-      Math.max(MINIMUM_COLUMN_WIDTHS[columnId], currentWidth + (direction * 10)),
-    );
-  }, [columnWidths, persistWidth]);
+  const { startResize, resizeWithKeyboard } = useColumnResize<ColumnId>({
+    getWidth: (columnId) => columnWidths[columnId],
+    getDefaultWidth: (columnId) => DEFAULT_COLUMN_WIDTHS[columnId],
+    clampWidth: (width, columnId) => Math.max(MINIMUM_COLUMN_WIDTHS[columnId], width),
+    onResize: (columnId, width) => setColumnWidths((current) => ({ ...current, [columnId]: width })),
+    onResizeEnd: persistWidth,
+  });
 
   const handleSort = useCallback((field: SortField) => {
     setSortField((current) => {

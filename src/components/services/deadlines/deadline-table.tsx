@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from 'react';
 import { CalendarClock, MoreHorizontal } from 'lucide-react';
+import { useColumnResize } from '@/hooks/use-column-resize';
 import { EmptyState } from '@/components/ui/empty-state';
 import { MobileCard, CardDetailItem, CardDetailsGrid } from '@/components/ui/responsive-table';
 import { Pagination } from '@/components/ui/pagination';
@@ -408,60 +409,13 @@ export function DeadlineTable({
   const selectionEnabled = Boolean(selectedIds && onToggleSelection && onToggleSelectAll);
   const allVisibleSelected = selectionEnabled && items.length > 0 && items.every((occurrence) => selectedIds?.has(occurrence.id) ?? false);
   const someVisibleSelected = selectionEnabled && items.some((occurrence) => selectedIds?.has(occurrence.id) ?? false);
-  const resizeCleanupRef = useRef<(() => void) | null>(null);
-  useEffect(() => () => {
-    resizeCleanupRef.current?.();
-  }, []);
-
-  const clampColumnWidth = (width: number) => Math.min(DEADLINE_COLUMN_WIDTH_MAX, Math.max(DEADLINE_COLUMN_WIDTH_MIN, Math.round(width)));
-  const startResize = (columnId: DeadlineTableColumnId, event: React.PointerEvent<HTMLSpanElement>) => {
-    event.preventDefault();
-    resizeCleanupRef.current?.();
-    const handle = event.currentTarget;
-    const startX = event.clientX;
-    const pointerId = event.pointerId;
-    const initial = clampColumnWidth(columnWidths[columnId] ?? defaultDeadlineColumnWidths[columnId]);
-    let latestWidth = initial;
-    const pointerMove = (moveEvent: PointerEvent) => {
-      latestWidth = clampColumnWidth(initial + moveEvent.clientX - startX);
-      onColumnWidthChange?.(columnId, latestWidth);
-    };
-    const cleanup = () => {
-      window.removeEventListener('pointermove', pointerMove);
-      window.removeEventListener('pointerup', pointerUp);
-      window.removeEventListener('pointercancel', pointerCancel);
-      try {
-        handle.releasePointerCapture(pointerId);
-      } catch {
-        // Pointer capture is unavailable in some browsers and test environments.
-      }
-      document.body.style.userSelect = '';
-      document.body.style.cursor = '';
-      if (resizeCleanupRef.current === cleanup) resizeCleanupRef.current = null;
-    };
-    const pointerUp = () => {
-      cleanup();
-      onColumnResizeEnd?.(columnId, latestWidth);
-    };
-    const pointerCancel = () => cleanup();
-    resizeCleanupRef.current = cleanup;
-    document.body.style.userSelect = 'none';
-    document.body.style.cursor = 'col-resize';
-    try {
-      handle.setPointerCapture(pointerId);
-    } catch {
-      // Pointer capture is unavailable in some browsers and test environments.
-    }
-    window.addEventListener('pointermove', pointerMove);
-    window.addEventListener('pointerup', pointerUp);
-    window.addEventListener('pointercancel', pointerCancel);
-  };
-  const resizeColumnByKeyboard = (columnId: DeadlineTableColumnId, delta: number) => {
-    const initial = clampColumnWidth(columnWidths[columnId] ?? defaultDeadlineColumnWidths[columnId]);
-    const next = clampColumnWidth(initial + delta);
-    onColumnWidthChange?.(columnId, next);
-    onColumnResizeEnd?.(columnId, next);
-  };
+  const { startResize, resizeWithKeyboard } = useColumnResize<DeadlineTableColumnId>({
+    getWidth: (columnId) => columnWidths[columnId],
+    getDefaultWidth: (columnId) => defaultDeadlineColumnWidths[columnId],
+    clampWidth: (width) => Math.min(DEADLINE_COLUMN_WIDTH_MAX, Math.max(DEADLINE_COLUMN_WIDTH_MIN, Math.round(width))),
+    onResize: (columnId, width) => onColumnWidthChange?.(columnId, width),
+    onResizeEnd: (columnId, width) => onColumnResizeEnd?.(columnId, width),
+  });
 
   return (
     <>
@@ -504,12 +458,8 @@ export function DeadlineTable({
                     onSort={field && onSort ? () => onSort(field) : undefined}
                     sortAriaLabel={field ? (active ? `Sort by ${deadlineColumnLabels[column]}, currently ${sortOrder === 'asc' ? 'ascending' : 'descending'}` : `Sort by ${deadlineColumnLabels[column]}`) : undefined}
                     resizable={column !== 'actions'}
-                    onResizePointerDown={column !== 'actions' ? (event) => startResize(column, event) : undefined}
-                    onResizeKeyDown={column !== 'actions' ? (event) => {
-                      if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
-                      event.preventDefault();
-                      resizeColumnByKeyboard(column, event.key === 'ArrowRight' ? 10 : -10);
-                    } : undefined}
+                    onResizePointerDown={column !== 'actions' ? (event) => startResize(event, column) : undefined}
+                    onResizeKeyDown={column !== 'actions' ? (event) => resizeWithKeyboard(event, column) : undefined}
                     resizeAriaLabel={`Resize ${deadlineColumnLabels[column]} column`}
                   />
                 );
