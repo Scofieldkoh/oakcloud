@@ -1,9 +1,10 @@
 'use client';
 
-import { memo, useState, useCallback, useRef, type MouseEvent, type ReactNode } from 'react';
+import { memo, useState, useCallback, type MouseEvent, type ReactNode } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { formatDateShort, formatCurrency, cn } from '@/lib/utils';
+import { useColumnResize } from '@/hooks/use-column-resize';
 import { getEntityTypeLabel, ENTITY_TYPES, COMPANY_STATUSES } from '@/lib/constants';
 import { SUPPORTED_CURRENCIES } from '@/lib/validations/exchange-rate';
 import { Building2, MoreHorizontal, ExternalLink, Pencil, Trash2, ArrowUpRight, AlertTriangle, Square, CheckSquare, MinusSquare } from 'lucide-react';
@@ -194,6 +195,7 @@ function SortableHeader({
   onSort,
   width,
   onResize,
+  onResizeKeyDown,
   columnId,
 }: {
   label: string;
@@ -202,7 +204,8 @@ function SortableHeader({
   sortOrder?: 'asc' | 'desc';
   onSort?: (field: string) => void;
   width?: number;
-  onResize?: (e: React.PointerEvent, columnId: ColumnId) => void;
+  onResize?: (e: React.PointerEvent<HTMLElement>, columnId: ColumnId) => void;
+  onResizeKeyDown?: (e: React.KeyboardEvent<HTMLElement>, columnId: ColumnId) => void;
   columnId: ColumnId;
 }) {
   const isActive = Boolean(field && sortBy === field);
@@ -221,6 +224,7 @@ function SortableHeader({
       sortAriaLabel={sortLabel}
       resizable={Boolean(onResize)}
       onResizePointerDown={onResize ? (event) => onResize(event, columnId) : undefined}
+      onResizeKeyDown={onResizeKeyDown ? (event) => onResizeKeyDown(event, columnId) : undefined}
       resizeAriaLabel={`Resize ${label || columnId} column`}
       className={columnId === 'actions' ? 'px-2' : undefined}
     />
@@ -352,53 +356,20 @@ export function CompanyTable({
 
   // Internal column widths state (used if external not provided)
   const [internalColumnWidths, setInternalColumnWidths] = useState<Partial<Record<ColumnId, number>>>({});
-  const columnWidths = externalColumnWidths ?? internalColumnWidths;
-  const isResizingRef = useRef(false);
-
-  // Column resize handler
-  const startResize = useCallback((e: React.PointerEvent, columnId: ColumnId) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    const handle = e.currentTarget as HTMLElement | null;
-    const th = handle?.closest('th') as HTMLTableCellElement | null;
-    const startWidth = columnWidths[columnId] ?? th?.getBoundingClientRect().width ?? DEFAULT_COLUMN_WIDTHS[columnId] ?? 120;
-    const startX = e.clientX;
-    const pointerId = e.pointerId;
-
-    isResizingRef.current = true;
-    document.body.style.userSelect = 'none';
-    document.body.style.cursor = 'col-resize';
-
-    let latestWidth = startWidth;
-
-    const onMove = (moveEvent: PointerEvent) => {
-      const delta = moveEvent.clientX - startX;
-      latestWidth = Math.max(30, startWidth + delta);
-      if (th) {
-        th.style.width = `${latestWidth}px`;
-      }
-    };
-
-    const onUp = () => {
-      (handle as HTMLElement | null)?.releasePointerCapture(pointerId);
-      document.body.style.userSelect = '';
-      document.body.style.cursor = '';
-      isResizingRef.current = false;
-
+  const savedColumnWidths: Partial<Record<ColumnId, number>> = externalColumnWidths ?? internalColumnWidths;
+  const { liveWidths, startResize, resizeWithKeyboard } = useColumnResize<ColumnId>({
+    getWidth: (columnId) => savedColumnWidths[columnId],
+    getDefaultWidth: (columnId) => DEFAULT_COLUMN_WIDTHS[columnId] ?? 120,
+    clampWidth: (width) => Math.max(30, width),
+    onResizeEnd: (columnId, width) => {
       if (onColumnWidthChange) {
-        onColumnWidthChange(columnId, latestWidth);
+        onColumnWidthChange(columnId, width);
       } else {
-        setInternalColumnWidths(prev => ({ ...prev, [columnId]: latestWidth }));
+        setInternalColumnWidths((prev) => ({ ...prev, [columnId]: width }));
       }
-
-      window.removeEventListener('pointermove', onMove);
-      window.removeEventListener('pointerup', onUp);
-    };
-
-    window.addEventListener('pointermove', onMove);
-    window.addEventListener('pointerup', onUp);
-  }, [columnWidths, onColumnWidthChange]);
+    },
+  });
+  const columnWidths = { ...savedColumnWidths, ...liveWidths };
 
   // Helper to check permission - supports both boolean and function
   const checkCanEdit = (companyId: string): boolean => {
@@ -857,6 +828,7 @@ export function CompanyTable({
                       onSort={onSort}
                       width={columnWidths[columnId]}
                       onResize={columnId !== 'actions' ? startResize : undefined}
+                      onResizeKeyDown={columnId !== 'actions' ? resizeWithKeyboard : undefined}
                       columnId={columnId}
                     />
                   )

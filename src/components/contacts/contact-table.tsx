@@ -1,12 +1,13 @@
 'use client';
 
-import { memo, useState, useCallback, useRef, type MouseEvent, type ReactNode } from 'react';
+import { memo, useState, useCallback, type MouseEvent, type ReactNode } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Users, MoreHorizontal, ExternalLink, Pencil, Trash2, Building2, ArrowUpRight, Square, CheckSquare, MinusSquare } from 'lucide-react';
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, DropdownSeparator } from '@/components/ui/dropdown';
 import { PrefetchLink } from '@/components/ui/prefetch-link';
 import { EmptyState } from '@/components/ui/empty-state';
+import { useColumnResize } from '@/hooks/use-column-resize';
 import { MobileCard, CardDetailsGrid, CardDetailItem } from '@/components/ui/responsive-table';
 import { CountFilter, type CountFilterValue } from '@/components/ui/count-filter';
 import { TableBody, TableCell, TableEmptyState, TableFilterCell, TableFilterRow, TableHead, TableHeaderCell, TableHeaderRow, TableRoot, TableRow, TableSelectFilter, TableSelectionButton, TableShell, TableTextFilter, TableViewport } from '@/components/ui/data-table';
@@ -254,53 +255,20 @@ export function ContactTable({
 
   // Internal column widths state (used if external not provided)
   const [internalColumnWidths, setInternalColumnWidths] = useState<Partial<Record<ColumnId, number>>>({});
-  const columnWidths = externalColumnWidths ?? internalColumnWidths;
-  const isResizingRef = useRef(false);
-
-  // Column resize handler (matches company-table pattern)
-  const startResize = useCallback((e: React.PointerEvent, columnId: ColumnId) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    const handle = e.currentTarget as HTMLElement | null;
-    const th = handle?.closest('th') as HTMLTableCellElement | null;
-    const startWidth = columnWidths[columnId] ?? th?.getBoundingClientRect().width ?? DEFAULT_COLUMN_WIDTHS[columnId] ?? 120;
-    const startX = e.clientX;
-    const pointerId = e.pointerId;
-
-    isResizingRef.current = true;
-    document.body.style.userSelect = 'none';
-    document.body.style.cursor = 'col-resize';
-
-    let latestWidth = startWidth;
-
-    const onMove = (moveEvent: PointerEvent) => {
-      const delta = moveEvent.clientX - startX;
-      latestWidth = Math.max(30, startWidth + delta);
-      if (th) {
-        th.style.width = `${latestWidth}px`;
-      }
-    };
-
-    const onUp = () => {
-      (handle as HTMLElement | null)?.releasePointerCapture(pointerId);
-      document.body.style.userSelect = '';
-      document.body.style.cursor = '';
-      isResizingRef.current = false;
-
+  const savedColumnWidths: Partial<Record<ColumnId, number>> = externalColumnWidths ?? internalColumnWidths;
+  const { liveWidths, startResize, resizeWithKeyboard } = useColumnResize<ColumnId>({
+    getWidth: (columnId) => savedColumnWidths[columnId],
+    getDefaultWidth: (columnId) => DEFAULT_COLUMN_WIDTHS[columnId] ?? 120,
+    clampWidth: (width) => Math.max(30, width),
+    onResizeEnd: (columnId, width) => {
       if (onColumnWidthChange) {
-        onColumnWidthChange(columnId, latestWidth);
+        onColumnWidthChange(columnId, width);
       } else {
-        setInternalColumnWidths(prev => ({ ...prev, [columnId]: latestWidth }));
+        setInternalColumnWidths((prev) => ({ ...prev, [columnId]: width }));
       }
-
-      window.removeEventListener('pointermove', onMove);
-      window.removeEventListener('pointerup', onUp);
-    };
-
-    window.addEventListener('pointermove', onMove);
-    window.addEventListener('pointerup', onUp);
-  }, [columnWidths, onColumnWidthChange]);
+    },
+  });
+  const columnWidths = { ...savedColumnWidths, ...liveWidths };
 
   // Helper function to get ID display
   const getIdDisplay = (contact: ContactWithCount) => {
@@ -337,6 +305,7 @@ export function ContactTable({
         sortAriaLabel={sortLabel}
         resizable={isResizable}
         onResizePointerDown={isResizable ? (event) => startResize(event, columnId) : undefined}
+        onResizeKeyDown={isResizable ? (event) => resizeWithKeyboard(event, columnId) : undefined}
         resizeAriaLabel={`Resize ${label || columnId} column`}
         className={columnId === 'actions' ? 'px-2' : undefined}
       />

@@ -1,8 +1,9 @@
 'use client';
 
 import { CheckSquare, MinusSquare, MoreHorizontal, Receipt, Square } from 'lucide-react';
+import { useColumnResize } from '@/hooks/use-column-resize';
 import { EmptyState } from '@/components/ui/empty-state';
-import { useCallback, useEffect, useMemo, useRef, type ReactNode } from 'react';
+import { useMemo, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { CardDetailItem, CardDetailsGrid, MobileCard } from '@/components/ui/responsive-table';
 import type { SelectOption } from '@/components/ui/searchable-select';
@@ -256,58 +257,13 @@ export function BillingTable({ items, families = [], isFetching = false, canEdit
     for (const item of items) options.set(item.company.id, { value: item.company.id, label: item.company.name, description: item.company.uen ?? undefined });
     return [...options.values()];
   }, [items]);
-  const resizeCleanupRef = useRef<(() => void) | null>(null);
-  useEffect(() => () => resizeCleanupRef.current?.(), []);
-
-  const clampColumnWidth = (width: number) => Math.min(BILLING_COLUMN_WIDTH_MAX, Math.max(BILLING_COLUMN_WIDTH_MIN, Math.round(width)));
-  const startResize = useCallback((columnId: BillingColumnId, event: React.PointerEvent<HTMLSpanElement>) => {
-    event.preventDefault();
-    event.stopPropagation();
-    resizeCleanupRef.current?.();
-
-    const handle = event.currentTarget;
-    const header = handle.closest('th');
-    const measuredWidth = header?.getBoundingClientRect().width ?? 0;
-    const initial = columnWidths[columnId] ?? (measuredWidth >= BILLING_COLUMN_WIDTH_MIN ? measuredWidth : defaultBillingColumnWidths[columnId]);
-    const startX = event.clientX;
-    const pointerId = event.pointerId;
-    let latestWidth = initial;
-    const pointerMove = (moveEvent: PointerEvent) => { latestWidth = clampColumnWidth(initial + moveEvent.clientX - startX); onColumnWidthChange?.(columnId, latestWidth); };
-    const cleanup = () => {
-      window.removeEventListener('pointermove', pointerMove);
-      window.removeEventListener('pointerup', pointerUp);
-      window.removeEventListener('pointercancel', pointerCancel);
-      try {
-        handle.releasePointerCapture(pointerId);
-      } catch {
-        // Pointer capture is unavailable in some browsers and test environments.
-      }
-      document.body.style.userSelect = '';
-      document.body.style.cursor = '';
-      if (resizeCleanupRef.current === cleanup) resizeCleanupRef.current = null;
-    };
-    const pointerUp = () => { cleanup(); onColumnResizeEnd?.(columnId, latestWidth); };
-    const pointerCancel = () => cleanup();
-
-    resizeCleanupRef.current = cleanup;
-    document.body.style.userSelect = 'none';
-    document.body.style.cursor = 'col-resize';
-    try {
-      handle.setPointerCapture(pointerId);
-    } catch {
-      // Pointer capture is unavailable in some browsers and test environments.
-    }
-    window.addEventListener('pointermove', pointerMove);
-    window.addEventListener('pointerup', pointerUp);
-    window.addEventListener('pointercancel', pointerCancel);
-  }, [columnWidths, onColumnResizeEnd, onColumnWidthChange]);
-
-  const resizeColumnByKeyboard = useCallback((columnId: BillingColumnId, delta: number) => {
-    const initial = clampColumnWidth(columnWidths[columnId] ?? defaultBillingColumnWidths[columnId]);
-    const next = clampColumnWidth(initial + delta);
-    onColumnWidthChange?.(columnId, next);
-    onColumnResizeEnd?.(columnId, next);
-  }, [columnWidths, onColumnResizeEnd, onColumnWidthChange]);
+  const { startResize, resizeWithKeyboard } = useColumnResize<BillingColumnId>({
+    getWidth: (columnId) => columnWidths[columnId],
+    getDefaultWidth: (columnId) => defaultBillingColumnWidths[columnId],
+    clampWidth: (width) => Math.min(BILLING_COLUMN_WIDTH_MAX, Math.max(BILLING_COLUMN_WIDTH_MIN, Math.round(width))),
+    onResize: (columnId, width) => onColumnWidthChange?.(columnId, width),
+    onResizeEnd: (columnId, width) => onColumnResizeEnd?.(columnId, width),
+  });
 
   return (
     <>
@@ -344,12 +300,8 @@ export function BillingTable({ items, families = [], isFetching = false, canEdit
                       onSort={field && onSort ? () => onSort(field) : undefined}
                       sortAriaLabel={field ? (active ? `Sort by ${billingColumnLabels[column]}, currently ${sortOrder === 'asc' ? 'ascending' : 'descending'}` : `Sort by ${billingColumnLabels[column]}`) : undefined}
                       resizable={column !== 'actions'}
-                      onResizePointerDown={column !== 'actions' ? (event) => startResize(column, event) : undefined}
-                      onResizeKeyDown={column !== 'actions' ? (event) => {
-                        if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
-                        event.preventDefault();
-                        resizeColumnByKeyboard(column, event.key === 'ArrowRight' ? 10 : -10);
-                      } : undefined}
+                      onResizePointerDown={column !== 'actions' ? (event) => startResize(event, column) : undefined}
+                      onResizeKeyDown={column !== 'actions' ? (event) => resizeWithKeyboard(event, column) : undefined}
                       resizeAriaLabel={`Resize ${billingColumnLabels[column]} column`}
                     />
                   );
