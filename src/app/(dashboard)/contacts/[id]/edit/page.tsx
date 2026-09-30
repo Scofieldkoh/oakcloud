@@ -9,7 +9,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { updateContactSchema, type UpdateContactInput } from '@/lib/validations/contact';
 import { useContact, useUpdateContact } from '@/hooks/use-contacts';
 import { usePermissions } from '@/hooks/use-permissions';
-import { useUnsavedChangesWarning } from '@/hooks/use-unsaved-changes';
+import { useUnsavedNavigationGuard } from '@/hooks/use-unsaved-navigation-guard';
 import { useToast } from '@/components/ui/toast';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 
@@ -80,7 +80,7 @@ export default function EditContactPage({
   }, [contact, isDirty, reset]);
 
   // Warn about unsaved changes when leaving the page
-  useUnsavedChangesWarning(isDirty, !isSubmitting);
+  const navigationGuard = useUnsavedNavigationGuard((isDirty) && !isSubmitting);
 
   const contactType = watch('contactType');
 
@@ -102,7 +102,7 @@ export default function EditContactPage({
   };
 
   const handleCancel = () => {
-    router.push(`/contacts/${id}`);
+    navigationGuard.requestNavigation(`/contacts/${id}`);
   };
 
   const onSubmit = async (data: UpdateContactInput) => {
@@ -131,7 +131,7 @@ export default function EditContactPage({
     },
     ...(can.createContact ? [{
       key: 'F1',
-      handler: () => router.push('/contacts/new'),
+      handler: () => navigationGuard.requestNavigation('/contacts/new'),
       description: 'Create contact',
     }] : []),
   ], !isSubmitting);
@@ -396,6 +396,7 @@ export default function EditContactPage({
           </button>
         </div>
       </form>
+      {navigationGuard.dialog}
     </div>
   );
 }

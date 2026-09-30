@@ -61,6 +61,7 @@ import {
   inspectOakDocPartialReferences,
   readOakDocPartialPins,
 } from '@/lib/document-editor/oakdoc-partials';
+import { useUnsavedNavigationGuard } from '@/hooks/use-unsaved-navigation-guard';
 
 const DOCX_MIME =
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
@@ -411,17 +412,9 @@ export function OakDocEditor() {
     setStatusKind('error');
   }, [templateQuery.error]);
 
-  useEffect(() => {
-    if (!isDirty) return;
-
-    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
-      event.preventDefault();
-      event.returnValue = '';
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [isDirty]);
+  const navigationGuard = useUnsavedNavigationGuard(isDirty, {
+    description: 'You have unsaved OakDoc changes. Leave without saving them?',
+  });
 
   const handleEditorKeyDownCapture = useOakDocSectionDeleteGuard({
     editorRef,
@@ -980,12 +973,7 @@ export function OakDocEditor() {
             size="sm"
             leftIcon={<ArrowLeft className="h-4 w-4" />}
             disabled={busy}
-            onClick={() => {
-              if (isDirty && !window.confirm('You have unsaved OakDoc changes. Leave without saving them?')) {
-                return;
-              }
-              router.push('/template-partials/documents');
-            }}
+            onClick={() => navigationGuard.requestNavigation('/template-partials/documents')}
           >
             Templates
           </Button>
@@ -1591,6 +1579,7 @@ export function OakDocEditor() {
           />
         </main>
       </div>
+      {navigationGuard.dialog}
     </div>
   );
 }

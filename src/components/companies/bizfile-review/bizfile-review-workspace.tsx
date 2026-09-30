@@ -15,6 +15,14 @@ import { mapIdentificationType, type ExtractedBizFileData } from "@/services/biz
 import type { ContactIdentityCandidate, ContactMatchPreview } from "@/types/contact-identity";
 import { fetchBizFileContactMatchPreviews, isExactIdentifierContactMatch } from "@/services/bizfile/contact-match-preview.client";
 import { BizFileReviewSections } from "./bizfile-review-sections";
+import { useUnsavedNavigationGuard } from "@/hooks/use-unsaved-navigation-guard";
+
+const BIZFILE_DISCARD_DIALOG = {
+  title: "Discard changes?",
+  description: "Discard your unsaved BizFile review changes?",
+  confirmLabel: "Discard changes",
+  cancelLabel: "Keep editing",
+} as const;
 
 export interface BizFileReviewWorkspaceProps {
   initialData: ExtractedBizFileData;
@@ -165,79 +173,6 @@ function isEditableTarget(target: EventTarget | null) {
   return target instanceof HTMLElement && (target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName));
 }
 
-function useDirtyHistoryGuard(isDirty: boolean) {
-  const lifecycle = useRef({ exiting: false, suppressNextPopState: false });
-  const disarm = useCallback(() => { lifecycle.current.exiting = true; }, []);
-  const rearm = useCallback(() => { lifecycle.current.exiting = false; }, []);
-
-  useEffect(() => {
-    if (!isDirty) return;
-    const current = lifecycle.current;
-    let mounted = true;
-    let exitReset: ReturnType<typeof setTimeout> | null = null;
-    current.exiting = false;
-    current.suppressNextPopState = false;
-    const resetExitingNextTask = () => {
-      if (exitReset) clearTimeout(exitReset);
-      exitReset = setTimeout(() => {
-        if (mounted) current.exiting = false;
-        exitReset = null;
-      }, 0);
-    };
-    const handlePopState = () => {
-      if (current.exiting) return;
-      if (current.suppressNextPopState) {
-        current.suppressNextPopState = false;
-        return;
-      }
-      if (window.confirm("Discard your unsaved BizFile review changes?")) {
-        current.exiting = true;
-        resetExitingNextTask();
-        return;
-      }
-      current.suppressNextPopState = true;
-      window.history.forward();
-    };
-    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
-      if (current.exiting) return;
-      event.preventDefault();
-      event.returnValue = "";
-    };
-    const handleNavigationClick = (event: MouseEvent) => {
-      if (current.exiting || event.defaultPrevented || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
-      const target = event.target;
-      const anchor = target instanceof Element ? target.closest<HTMLAnchorElement>("a[href]") : null;
-      if (!anchor || anchor.hasAttribute("download") || (anchor.target && anchor.target.toLowerCase() !== "_self")) return;
-
-      const destination = new URL(anchor.href, window.location.href);
-      if (destination.origin !== window.location.origin) return;
-      const currentUrl = new URL(window.location.href);
-      if (destination.pathname === currentUrl.pathname && destination.search === currentUrl.search) return;
-
-      if (window.confirm("Discard your unsaved BizFile review changes?")) {
-        current.exiting = true;
-        resetExitingNextTask();
-        return;
-      }
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      event.stopPropagation();
-    };
-    document.addEventListener("click", handleNavigationClick, true);
-    window.addEventListener("popstate", handlePopState);
-    window.addEventListener("beforeunload", handleBeforeUnload);
-    return () => {
-      mounted = false;
-      if (exitReset) clearTimeout(exitReset);
-      document.removeEventListener("click", handleNavigationClick, true);
-      window.removeEventListener("popstate", handlePopState);
-      window.removeEventListener("beforeunload", handleBeforeUnload);
-      current.suppressNextPopState = false;
-    };
-  }, [isDirty]);
-  return useMemo(() => ({ disarm, rearm }), [disarm, rearm]);
-}
-
 export function BizFileReviewWorkspace({ initialData, sourcePanel, isSaving = false,
   serverIssues = EMPTY_SERVER_ISSUES, confirmationStage = 'SAVE', tenantId, extractionMetadata, sharePointSetup, onConfirm, onCancel, onReset }: BizFileReviewWorkspaceProps) {
   const workspaceRef = useRef<HTMLElement>(null);
@@ -269,11 +204,11 @@ export function BizFileReviewWorkspace({ initialData, sourcePanel, isSaving = fa
   useEffect(() => setDismissedServerPaths(new Set()), [serverIssues]);
   const initialSnapshot = useState(() => JSON.stringify(normalizeBizFileReviewDraft(clone(initialData))))[0];
   const isDirty = JSON.stringify(normalizeBizFileReviewDraft(draft)) !== initialSnapshot;
-  const historyGuard = useDirtyHistoryGuard(isDirty);
+  const historyGuard = useUnsavedNavigationGuard(isDirty, BIZFILE_DISCARD_DIALOG);
   const busy = isSaving || locallySaving;
   const exit = useCallback((action: () => void) => {
-    if (!isDirty || window.confirm("Discard your unsaved BizFile review changes?")) { historyGuard.disarm(); action(); }
-  }, [historyGuard, isDirty]);
+    historyGuard.requestAction(() => { historyGuard.disarm(); action(); });
+  }, [historyGuard]);
 
   useEffect(() => () => {
     if (focusTimeoutRef.current) clearTimeout(focusTimeoutRef.current);
@@ -490,5 +425,6 @@ export function BizFileReviewWorkspace({ initialData, sourcePanel, isSaving = fa
       {mobilePanel === "document" ? <div className="h-full overflow-hidden">{sourcePanel}</div>
         : <div className="flex h-full min-h-0 flex-col"><div className="min-h-0 flex-1">{editorContent}</div>{actionFooter}</div>}
     </div>}
+    {historyGuard.dialog}
   </section>;
 }

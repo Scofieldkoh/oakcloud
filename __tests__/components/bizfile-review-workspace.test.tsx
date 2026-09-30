@@ -4,6 +4,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { applyAutomaticContactResolutions, BizFileReviewWorkspace } from "@/components/companies/bizfile-review/bizfile-review-workspace";
 import type { ExtractedBizFileData } from "@/services/bizfile";
 
+vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }));
+
 const fixture: ExtractedBizFileData = {
   entityDetails: { uen: "202400001A", name: "Example Pte. Ltd.", entityType: "PRIVATE_LIMITED", status: "LIVE" },
 };
@@ -318,27 +320,27 @@ describe("BizFileReviewWorkspace", () => {
     expect(onCancel).toHaveBeenCalledOnce();
   });
 
-  it.each(["Cancel", "Upload Different File"])("guards dirty %s and honors reject/accept", (name) => {
+  it.each(["Cancel", "Upload Different File"])("guards dirty %s and honors keep/discard", async (name) => {
     const onCancel = vi.fn(); const onReset = vi.fn();
-    const confirm = vi.spyOn(window, "confirm").mockReturnValueOnce(false).mockReturnValueOnce(true);
     setup(vi.fn(), { onCancel, onReset });
     fireEvent.change(screen.getByLabelText("Company name"), { target: { value: "Changed" } });
     fireEvent.click(screen.getByRole("button", { name }));
+    fireEvent.click(await screen.findByRole("button", { name: "Keep editing" }));
+    await waitFor(() => expect(screen.queryByRole("button", { name: "Discard changes" })).not.toBeInTheDocument());
     expect(onCancel).not.toHaveBeenCalled(); expect(onReset).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole("button", { name }));
-    expect(name === "Cancel" ? onCancel : onReset).toHaveBeenCalledOnce();
-    confirm.mockRestore();
+    fireEvent.click(await screen.findByRole("button", { name: "Discard changes" }));
+    await waitFor(() => expect(name === "Cancel" ? onCancel : onReset).toHaveBeenCalledOnce());
   });
 
-  it("does not prompt on clean exit and guards the dirty cancel keyboard shortcut", () => {
-    const onCancel = vi.fn(); const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
+  it("does not prompt on clean exit and guards the dirty cancel keyboard shortcut", async () => {
+    const onCancel = vi.fn();
     setup(vi.fn(), { onCancel });
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
-    expect(confirm).not.toHaveBeenCalled(); expect(onCancel).toHaveBeenCalledOnce();
+    expect(screen.queryByRole("button", { name: "Discard changes" })).not.toBeInTheDocument(); expect(onCancel).toHaveBeenCalledOnce();
     fireEvent.change(screen.getByLabelText("Company name"), { target: { value: "Changed" } });
     fireEvent.keyDown(window, { key: "Backspace", ctrlKey: true });
-    expect(confirm).toHaveBeenCalledOnce(); expect(onCancel).toHaveBeenCalledOnce();
-    confirm.mockRestore();
+    expect(await screen.findByRole("button", { name: "Discard changes" })).toBeVisible(); expect(onCancel).toHaveBeenCalledOnce();
   });
 
   it("awaits save, blocks duplicate saves, and reports rejection for retry", async () => {
@@ -357,8 +359,7 @@ describe("BizFileReviewWorkspace", () => {
     expect(onConfirm).toHaveBeenCalledTimes(2);
   });
 
-  it("guards dirty browser back navigation without adding history entries", () => {
-    const confirm = vi.spyOn(window, "confirm").mockReturnValueOnce(false).mockReturnValueOnce(true);
+  it("guards dirty browser back navigation without adding history entries", async () => {
     const push = vi.spyOn(window.history, "pushState");
     const back = vi.spyOn(window.history, "back").mockImplementation(() => undefined);
     const forward = vi.spyOn(window.history, "forward").mockImplementation(() => undefined);
@@ -366,15 +367,13 @@ describe("BizFileReviewWorkspace", () => {
     fireEvent.change(screen.getByLabelText("Company name"), { target: { value: "Changed" } });
     expect(push).not.toHaveBeenCalled();
     fireEvent.popState(window, { state: { page: "previous" } });
-    expect(confirm).toHaveBeenCalledOnce(); expect(forward).toHaveBeenCalledOnce();
-    fireEvent.popState(window, { state: { page: "current" } });
-    expect(confirm).toHaveBeenCalledOnce();
-    fireEvent.popState(window, { state: { page: "previous" } });
-    expect(confirm).toHaveBeenCalledTimes(2); expect(back).not.toHaveBeenCalled(); expect(forward).toHaveBeenCalledOnce();
+    expect(forward).toHaveBeenCalledOnce();
+    fireEvent.click(await screen.findByRole("button", { name: "Discard changes" }));
+    expect(back).toHaveBeenCalledOnce(); expect(push).not.toHaveBeenCalled();
     const unload = new Event("beforeunload", { cancelable: true });
     window.dispatchEvent(unload);
     expect(unload.defaultPrevented).toBe(false);
-    confirm.mockRestore(); push.mockRestore(); back.mockRestore(); forward.mockRestore();
+    push.mockRestore(); back.mockRestore(); forward.mockRestore();
   });
 
   it("never mutates history across repeated dirty and clean cycles", () => {
@@ -392,57 +391,60 @@ describe("BizFileReviewWorkspace", () => {
     expect(back).not.toHaveBeenCalled(); expect(forward).not.toHaveBeenCalled();
   });
 
-  it.each(["Cancel", "Upload Different File"])("disarms history before accepted %s navigation and ordinary unmount", (label) => {
+  it.each(["Cancel", "Upload Different File"])("disarms history before accepted %s navigation and ordinary unmount", async (label) => {
     const callback = vi.fn();
     const back = vi.spyOn(window.history, "back").mockImplementation(() => undefined);
     const forward = vi.spyOn(window.history, "forward").mockImplementation(() => undefined);
     const push = vi.spyOn(window.history, "pushState");
     const replace = vi.spyOn(window.history, "replaceState");
-    const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
     const rendered = setup(vi.fn(), label === "Cancel" ? { onCancel: callback } : { onReset: callback });
     fireEvent.change(screen.getByLabelText("Company name"), { target: { value: "Changed" } });
     fireEvent.click(screen.getByRole("button", { name: label }));
-    expect(callback).toHaveBeenCalledOnce();
+    fireEvent.click(await screen.findByRole("button", { name: "Discard changes" }));
+    await waitFor(() => expect(callback).toHaveBeenCalledOnce());
     rendered.unmount();
     expect(back).not.toHaveBeenCalled(); expect(forward).not.toHaveBeenCalled();
     expect(push).not.toHaveBeenCalled(); expect(replace).not.toHaveBeenCalled();
-    confirm.mockRestore(); back.mockRestore();
+    back.mockRestore(); forward.mockRestore(); push.mockRestore(); replace.mockRestore();
   });
 
   it("disarms the Back guard after save", async () => {
     const onConfirm = vi.fn();
-    const confirm = vi.spyOn(window, "confirm");
+    const forward = vi.spyOn(window.history, "forward").mockImplementation(() => undefined);
     setup(onConfirm);
     fireEvent.change(screen.getByLabelText("Company name"), { target: { value: "Changed" } });
     fireEvent.click(screen.getByRole("button", { name: "Confirm & Save" }));
     await screen.findByText("Save completed.");
     fireEvent.popState(window, { state: { original: "previous" } });
-    expect(confirm).not.toHaveBeenCalled();
-    confirm.mockRestore();
+    expect(forward).not.toHaveBeenCalled();
+    expect(screen.queryByRole("button", { name: "Discard changes" })).not.toBeInTheDocument();
+    forward.mockRestore();
   });
 
-  it("restores a declined Back once and suppresses only its restoration popstate", () => {
+  it("restores a declined Back once and suppresses only its restoration popstate", async () => {
     const push = vi.spyOn(window.history, "pushState");
     const forward = vi.spyOn(window.history, "forward").mockImplementation(() => undefined);
-    const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
     setup();
-    const name = screen.getByLabelText("Company name");
-    fireEvent.change(name, { target: { value: "Changed" } });
+    fireEvent.change(screen.getByLabelText("Company name"), { target: { value: "Changed" } });
     fireEvent.popState(window, { state: { page: "previous" } });
-    expect(forward).toHaveBeenCalledOnce(); expect(confirm).toHaveBeenCalledOnce(); expect(push).not.toHaveBeenCalled();
+    expect(forward).toHaveBeenCalledOnce(); expect(push).not.toHaveBeenCalled();
+    fireEvent.click(await screen.findByRole("button", { name: "Keep editing" }));
+    await waitFor(() => expect(screen.queryByRole("button", { name: "Discard changes" })).not.toBeInTheDocument());
     fireEvent.popState(window, { state: { page: "current" } });
-    expect(confirm).toHaveBeenCalledOnce();
+    expect(forward).toHaveBeenCalledOnce();
     fireEvent.popState(window, { state: { page: "previous" } });
-    expect(confirm).toHaveBeenCalledTimes(2); expect(forward).toHaveBeenCalledTimes(2);
-    confirm.mockRestore(); forward.mockRestore();
+    expect(forward).toHaveBeenCalledTimes(2);
+    expect(await screen.findByRole("button", { name: "Discard changes" })).toBeVisible();
+    push.mockRestore(); forward.mockRestore();
   });
 
   it("allows clean browser history navigation without prompting", () => {
-    const confirm = vi.spyOn(window, "confirm");
+    const forward = vi.spyOn(window.history, "forward").mockImplementation(() => undefined);
     setup();
     fireEvent.popState(window, { state: { __bizFileReviewGuard: true } });
-    expect(confirm).not.toHaveBeenCalled();
-    confirm.mockRestore();
+    expect(forward).not.toHaveBeenCalled();
+    expect(screen.queryByRole("button", { name: "Discard changes" })).not.toBeInTheDocument();
+    forward.mockRestore();
   });
 
   it("deduplicates server issues, gives client messages precedence, and clears an edited field issue", async () => {

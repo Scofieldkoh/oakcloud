@@ -9,7 +9,7 @@ import { useSession } from '@/hooks/use-auth';
 import { useCreateCompany } from '@/hooks/use-companies';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import { usePermissions } from '@/hooks/use-permissions';
-import { useUnsavedChangesWarning } from '@/hooks/use-unsaved-changes';
+import { useUnsavedNavigationGuard } from '@/hooks/use-unsaved-navigation-guard';
 import { useActiveWorkspaceId } from '@/components/ui/workspace-selector';
 import { createCompanyRequestSchema, type CreateCompanyRequestInput } from '@/lib/validations/company';
 import { readTaskLaunchContext, withTaskLaunchContext } from '@/lib/task-launch-context';
@@ -63,9 +63,9 @@ export default function NewCompanyPage() {
   const activeTenantId = useActiveWorkspaceId(isSuperAdmin, session?.tenantId);
   const isSubmitting = createCompany.isPending;
 
-  useUnsavedChangesWarning(isDirty, !isSubmitting);
+  const navigationGuard = useUnsavedNavigationGuard(isDirty && !isSubmitting);
 
-  const handleCancel = () => router.push(returnHref);
+  const handleCancel = () => navigationGuard.requestNavigation(returnHref);
   const submitForm = () => {
     const form = document.getElementById(formId);
     if (form instanceof HTMLFormElement) form.requestSubmit();
@@ -116,7 +116,7 @@ export default function NewCompanyPage() {
   useKeyboardShortcuts([
     { key: 'Backspace', ctrl: true, handler: handleCancel, description: 'Cancel and go back' },
     { key: 's', ctrl: true, handler: submitForm, description: 'Create company' },
-    { key: 'F2', handler: () => router.push(withTaskLaunchContext('/companies/upload', taskContext)), description: 'Upload BizFile' },
+    { key: 'F2', handler: () => navigationGuard.requestNavigation(withTaskLaunchContext('/companies/upload', taskContext)), description: 'Upload BizFile' },
   ], !isSubmitting);
 
   if (permissionsLoading) return <div className="flex min-h-[400px] items-center justify-center p-6"><Loader2 className="h-8 w-8 animate-spin text-oak-primary" /></div>;
@@ -132,5 +132,6 @@ export default function NewCompanyPage() {
     {isSuperAdmin && !activeTenantId ? <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3 dark:border-amber-800 dark:bg-amber-900/20"><p className="text-sm text-amber-800 dark:text-amber-200">Please select a tenant from the sidebar to create a company.</p></div> : null}
 
     <CompanyCreateWorkspace formId={formId} onSubmit={onSubmit} onSharePointSelectionChange={setSharePointSelection} onDirtyChange={setIsDirty} actions={<div className="flex items-center justify-end gap-3 pt-2"><Link href={returnHref} className="btn-secondary btn-sm" title="Cancel (Ctrl+Backspace)">Cancel (Ctrl+Backspace)</Link><button type="submit" disabled={isSubmitting} className="btn-primary btn-sm flex items-center gap-2" title="Create Company (Ctrl+S)"><Save className="h-4 w-4" />{isSubmitting ? 'Creating...' : 'Create Company (Ctrl+S)'}</button></div>} />
+    {navigationGuard.dialog}
   </main>;
 }

@@ -50,6 +50,7 @@ export function FileMergeModal({
 }: FileMergeModalProps) {
   const [files, setFiles] = useState<MergeFile[]>([]);
   const [isMerging, setIsMerging] = useState(false);
+  const [mergeError, setMergeError] = useState<string | null>(null);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -220,13 +221,14 @@ export function FileMergeModal({
     if (files.length < 2) return;
 
     setIsMerging(true);
+    setMergeError(null);
     try {
       const mergedFile = await mergeFilesToPdf(files.map((f) => f.file));
       onMergeComplete(mergedFile);
       onClose();
     } catch (err) {
       console.error('Merge failed:', err);
-      alert('Failed to merge files. Please try again.');
+      setMergeError('Failed to merge files. Please try again.');
     } finally {
       setIsMerging(false);
     }
@@ -405,6 +407,9 @@ export function FileMergeModal({
         </div>
 
         {/* Footer */}
+        {mergeError ? (
+          <p role="alert" className="border-t border-border-primary px-4 py-2 text-sm text-status-error sm:px-6">{mergeError}</p>
+        ) : null}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 px-4 sm:px-6 py-3 sm:py-4 border-t border-border-primary bg-background-secondary">
           <p className="text-xs text-text-muted text-center sm:text-left">
             Files will be merged in the order shown above

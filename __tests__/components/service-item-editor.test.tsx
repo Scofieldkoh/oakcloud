@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { ServiceItemEditor } from '@/components/documents/service-agreement/service-item-editor';
 import type { ServiceVariantDto } from '@/services/service-catalog/types';
 import type { ServiceAgreementItemInput } from '@/services/service-agreement';
@@ -84,6 +84,36 @@ describe('ServiceItemEditor', () => {
       .toHaveClass('bg-red-600');
     expect(screen.queryByRole('button', { name: 'Remove fee' })).not.toBeInTheDocument();
     expect(screen.getByText('Fees').closest('details')).toHaveAttribute('open');
+  });
+
+  it('asks in the app dialog before removing a company that has fee lines', async () => {
+    const onChange = vi.fn();
+    render(
+      <ServiceItemEditor
+        item={item}
+        agreementDate="2026-08-29"
+        variant={variant}
+        entities={[company]}
+        onChange={onChange}
+        onRemove={vi.fn()}
+        onCopy={vi.fn()}
+        onMoveUp={vi.fn()}
+        onMoveDown={vi.fn()}
+        canMoveUp={false}
+        canMoveDown={false}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Applies to Acme Pte. Ltd.' }));
+    const dialog = await screen.findByRole('dialog');
+    expect(dialog).toHaveTextContent('Remove Acme Pte. Ltd.?');
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(onChange).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Applies to Acme Pte. Ltd.' }));
+    fireEvent.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Remove' }));
+    await waitFor(() => expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ entityIds: [], feeLines: [] })));
   });
 
   it('pegs service and billing dates until each field is explicitly overridden', () => {
