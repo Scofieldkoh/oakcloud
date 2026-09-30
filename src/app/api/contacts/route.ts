@@ -5,6 +5,7 @@ import { createContactWithDetailsSchema, contactSearchSchema } from '@/lib/valid
 import { searchContactsWithCounts } from '@/services/contact.service';
 import { previewContactIdentity, resolveOrCreateContact } from '@/services/contact-identity.service';
 import { prisma } from '@/lib/prisma';
+import { routeErrorResponse } from '@/lib/api-route-errors';
 
 export async function GET(request: NextRequest) {
   try {
@@ -47,16 +48,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(result);
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      if (error.message === 'Forbidden' || error.message.startsWith('Permission denied')) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-      }
-      return NextResponse.json({ error: error.message }, { status: 400 });
-    }
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return routeErrorResponse(error, { fallback: 'bad-request' });
   }
 }
 
@@ -121,15 +113,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(contact, { status: 201 });
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      if (error.message === 'Forbidden' || error.message.startsWith('Permission denied')) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-      }
-      return NextResponse.json({ error: error.message }, { status: 400 });
-    }
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return routeErrorResponse(error, { fallback: 'bad-request' });
   }
 }

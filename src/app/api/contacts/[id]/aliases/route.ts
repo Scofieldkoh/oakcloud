@@ -3,6 +3,7 @@ import { requireAuth } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
+import { routeErrorResponse } from '@/lib/api-route-errors';
 
 // Schema for creating an alias
 // companyId is optional - if not provided, creates a workspace-wide alias
@@ -160,15 +161,7 @@ export async function GET(
       totalCount: formattedVendorAliases.length + formattedCustomerAliases.length,
     });
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      if (error.message === 'Forbidden' || error.message.startsWith('Permission denied')) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-      }
-    }
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return routeErrorResponse(error);
   }
 }
 
@@ -299,15 +292,7 @@ export async function POST(
 
     return NextResponse.json({ message: 'Alias created successfully' });
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      if (error.message === 'Forbidden' || error.message.startsWith('Permission denied')) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-      }
-    }
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return routeErrorResponse(error);
   }
 }
 
@@ -387,14 +372,6 @@ export async function DELETE(
 
     return NextResponse.json({ message: 'Alias deleted successfully' });
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      if (error.message === 'Forbidden' || error.message.startsWith('Permission denied')) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-      }
-    }
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return routeErrorResponse(error);
   }
 }

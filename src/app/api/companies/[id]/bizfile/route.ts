@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, canAccessCompany } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { routeErrorResponse } from '@/lib/api-route-errors';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -76,15 +77,6 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   } catch (error) {
     console.error('Company BizFile API error:', error);
 
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      if (error.message === 'Forbidden') {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-      }
-    }
-
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return routeErrorResponse(error);
   }
 }

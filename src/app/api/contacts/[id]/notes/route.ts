@@ -10,6 +10,7 @@ import {
   createNoteTab,
 } from '@/services/notes.service';
 import { z } from 'zod';
+import { routeErrorResponse } from '@/lib/api-route-errors';
 
 const createNoteTabSchema = z.object({
   title: z.string().min(1).max(100).optional(),
@@ -49,15 +50,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json(tabs);
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      if (error.message === 'Forbidden' || error.message.startsWith('Permission denied')) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-      }
-    }
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return routeErrorResponse(error);
   }
 }
 

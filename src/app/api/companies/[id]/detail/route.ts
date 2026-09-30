@@ -5,6 +5,7 @@ import { requireWorkspaceContext } from '@/lib/api-helpers';
 import { parseIdParams } from '@/lib/validations/params';
 import { getCompanyById, getCompanyFullDetails } from '@/services/company.service';
 import { jsonWithServerTiming } from '@/lib/api/company-query';
+import { routeErrorResponse } from '@/lib/api-route-errors';
 
 export async function GET(
   request: NextRequest,
@@ -36,15 +37,6 @@ export async function GET(
 
     return jsonWithServerTiming(company, startedAt);
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      if (error.message === 'Forbidden' || error.message.startsWith('Permission denied')) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-      }
-    }
-
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return routeErrorResponse(error);
   }
 }

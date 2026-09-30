@@ -3,6 +3,7 @@ import { requireAuth, canAccessCompany } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
 import { prisma } from '@/lib/prisma';
 import { createAuditLog } from '@/lib/audit';
+import { routeErrorResponse } from '@/lib/api-route-errors';
 
 /**
  * DELETE /api/companies/bulk
@@ -147,15 +148,6 @@ export async function DELETE(request: NextRequest) {
     });
   } catch (error) {
     console.error('Bulk delete companies error:', error);
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      if (error.message === 'Forbidden') {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-      }
-      return NextResponse.json({ error: error.message }, { status: 400 });
-    }
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return routeErrorResponse(error, { fallback: 'bad-request' });
   }
 }

@@ -13,6 +13,7 @@ import {
   restoreCompany,
   permanentDeleteCompany,
 } from '@/services/company.service';
+import { routeErrorResponse } from '@/lib/api-route-errors';
 
 export async function GET(
   request: NextRequest,
@@ -47,15 +48,7 @@ export async function GET(
 
     return NextResponse.json(company);
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      if (error.message === 'Forbidden' || error.message.startsWith('Permission denied')) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-      }
-    }
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return routeErrorResponse(error);
   }
 }
 
@@ -104,19 +97,7 @@ export async function PATCH(
 
     return NextResponse.json(company);
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      if (error.message === 'Forbidden' || error.message.startsWith('Permission denied')) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-      }
-      if (error.message === 'Company not found') {
-        return NextResponse.json({ error: 'Company not found' }, { status: 404 });
-      }
-      return NextResponse.json({ error: error.message }, { status: 400 });
-    }
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return routeErrorResponse(error, { notFound: ['Company not found'], fallback: 'bad-request' });
   }
 }
 
@@ -228,18 +209,6 @@ export async function PUT(
 
     return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      if (error.message === 'Forbidden' || error.message.startsWith('Permission denied')) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-      }
-      if (error.message === 'Company not found') {
-        return NextResponse.json({ error: 'Company not found' }, { status: 404 });
-      }
-      return NextResponse.json({ error: error.message }, { status: 400 });
-    }
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return routeErrorResponse(error, { notFound: ['Company not found'], fallback: 'bad-request' });
   }
 }

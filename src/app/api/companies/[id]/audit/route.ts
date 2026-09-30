@@ -3,6 +3,7 @@ import { requireAuth, canAccessCompany } from '@/lib/auth';
 import { getCompanyAuditHistory } from '@/lib/audit';
 import { clampLimit, parseIntegerParam, parseNumericParam } from '@/lib/api-helpers';
 import type { AuditAction } from '@/generated/prisma';
+import { routeErrorResponse } from '@/lib/api-route-errors';
 
 export async function GET(
   request: NextRequest,
@@ -29,14 +30,6 @@ export async function GET(
 
     return NextResponse.json(auditLogs);
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      if (error.message === 'Forbidden') {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-      }
-    }
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return routeErrorResponse(error);
   }
 }
