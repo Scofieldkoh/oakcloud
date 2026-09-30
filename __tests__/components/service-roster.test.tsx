@@ -241,7 +241,7 @@ describe('ServiceRoster', () => {
     expect(screen.queryByText('1 services')).not.toBeInTheDocument();
   });
 
-  it('keeps spaces while typing, shows one clear control, and waits 500ms before searching', () => {
+  it('keeps spaces while typing, shows one clear control, and waits 300ms before searching', () => {
     vi.useFakeTimers();
     try {
       setup();
@@ -255,7 +255,7 @@ describe('ServiceRoster', () => {
       expect(screen.getAllByRole('button', { name: 'Clear search' })).toHaveLength(1);
       expect(navigation.replace).not.toHaveBeenCalled();
 
-      act(() => vi.advanceTimersByTime(499));
+      act(() => vi.advanceTimersByTime(299));
       expect(navigation.replace).not.toHaveBeenCalled();
 
       act(() => vi.advanceTimersByTime(1));

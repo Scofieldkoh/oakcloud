@@ -622,7 +622,7 @@ describe('TaskStagePipeline', () => {
 });
 
 describe('TaskFilters', () => {
-  it('uses the Vault toolbar with task quick filters', () => {
+  it('uses the Vault toolbar with task quick filters', async () => {
     const onChange = vi.fn();
     render(
       <TaskFilters
@@ -638,7 +638,7 @@ describe('TaskFilters', () => {
     fireEvent.click(screen.getByRole('button', { name: 'In Progress' }));
 
     expect(screen.queryAllByRole('combobox')).toHaveLength(0);
-    expect(onChange).toHaveBeenCalledWith({ limit: 50, page: 1, query: 'annual' });
+    await waitFor(() => expect(onChange).toHaveBeenCalledWith({ limit: 50, page: 1, query: 'annual' }));
     expect(onChange).toHaveBeenCalledWith({ limit: 50, page: 1, ownerId: 'user-1' });
     expect(onChange).toHaveBeenCalledWith({
       limit: 50,

@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Search, X } from 'lucide-react';
-import { FilterChip } from '@/components/ui/filter-chip';
 import { Pagination } from '@/components/ui/pagination';
 import { Alert } from '@/components/ui/alert';
 import { useClientService } from '@/hooks/use-client-services';
@@ -28,6 +27,8 @@ import {
 import { ClientServiceEditor } from '@/components/companies/company-detail/client-service-editor';
 import { ManualCycleDialog } from '@/components/services/deadlines/manual-cycle-dialog';
 import { ServiceBulkActionsToolbar, type ServiceBulkNotice } from './service-bulk-actions-toolbar';
+import { SEARCH_DEBOUNCE_MS } from '@/hooks/use-debounced-search';
+import { ActiveFilterBar, type ActiveFilter } from '@/components/ui/active-filter-bar';
 
 const TABLE_PREFERENCE_KEY = 'services.roster.table.v1';
 const STATUS_VALUES = ['ACTIVE', 'PAUSED', 'ENDED'] as const;
@@ -467,7 +468,7 @@ export function ServiceRoster({ workspaceId, canEdit = true, families: providedF
 
   useEffect(() => {
     if (queryDraft.trim() === query) return undefined;
-    const timer = window.setTimeout(() => updateQuery(queryDraft), 500);
+    const timer = window.setTimeout(() => updateQuery(queryDraft), SEARCH_DEBOUNCE_MS);
     return () => window.clearTimeout(timer);
   }, [query, queryDraft, updateQuery]);
 
@@ -519,7 +520,7 @@ export function ServiceRoster({ workspaceId, canEdit = true, families: providedF
     persistPreference({ columnOrder: nextOrder });
   };
 
-  const filterBadges: Array<{ key: string; label: string; value: string; onRemove: () => void }> = [];
+  const filterBadges: ActiveFilter[] = [];
   if (statuses.length > 0) filterBadges.push({ key: 'status', label: 'Status', value: statuses.map((status) => status.charAt(0) + status.slice(1).toLowerCase()).join(', '), onRemove: () => replaceUrl({ statuses: undefined, page: '1' }) });
   for (const family of families.filter((item) => familyIds.includes(item.id))) filterBadges.push({ key: `family-${family.id}`, label: 'Family', value: family.name, onRemove: () => toggleFamily(family.id) });
   if (archived) filterBadges.push({ key: 'archived', label: 'Archive', value: 'Included', onRemove: () => replaceUrl({ archived: undefined, page: '1' }) });
@@ -539,6 +540,25 @@ export function ServiceRoster({ workspaceId, canEdit = true, families: providedF
     const value = inlineFilters[key];
     if (value) filterBadges.push({ key: `inline-${key}`, label, value, onRemove: () => updateInlineFilter({ [key]: '' }) });
   }
+  const clearAllFilters = () => {
+    setQueryDraft('');
+    replaceUrl({
+      statuses: undefined,
+      familyIds: undefined,
+      archived: undefined,
+      query: undefined,
+      companyQuery: undefined,
+      familyQuery: undefined,
+      serviceQuery: undefined,
+      statusQuery: undefined,
+      cadenceQuery: undefined,
+      nextDeadlineQuery: undefined,
+      startEndQuery: undefined,
+      warningQuery: undefined,
+      billingQuery: undefined,
+      page: '1',
+    });
+  };
   const hiddenColumnCount = SERVICE_ROSTER_COLUMNS.filter((column) => column !== 'actions' && !columnVisibility[column]).length;
   const total = roster.data?.total ?? 0;
   const totalPages = roster.data?.totalPages ?? 0;
@@ -609,11 +629,7 @@ export function ServiceRoster({ workspaceId, canEdit = true, families: providedF
         }}
       />
 
-      {filterBadges.length > 0 ? (
-        <div aria-label="Active filters" className="flex flex-wrap items-center gap-2">
-          {filterBadges.map((badge) => <FilterChip key={badge.key} label={badge.label} value={badge.value} onRemove={badge.onRemove} />)}
-        </div>
-      ) : null}
+      <ActiveFilterBar filters={filterBadges} onClearAll={clearAllFilters} />
 
       {bulkNotice ? (
         <Alert variant={bulkNotice.variant} title={bulkNotice.title} onClose={() => setBulkNotice(null)}>

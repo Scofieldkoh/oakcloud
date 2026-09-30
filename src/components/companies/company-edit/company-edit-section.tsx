@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { AlertTriangle, Plus, Trash2 } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Plus, Trash2 } from 'lucide-react';
 import { CompanyAccentSection } from '@/components/companies/company-accent-section';
 import { Button } from '@/components/ui/button';
 import { SearchableSelect } from '@/components/ui/searchable-select';
@@ -105,7 +105,12 @@ export function CompanyEditSection({ companyId, section, title, initialData, onS
   const [baseline, setBaseline] = useState<unknown>(initialData?.data);
   const [error, setError] = useState<string | null>(null);
   const [latest, setLatest] = useState<CompanyProfileSectionDto | null>(null);
+  const [justSaved, setJustSaved] = useState(false);
   const dirty = JSON.stringify(draft) !== JSON.stringify(baseline);
+
+  useEffect(() => {
+    if (dirty) setJustSaved(false);
+  }, [dirty]);
 
   useEffect(() => {
     if (!query.data || dirty) return;
@@ -122,6 +127,7 @@ export function CompanyEditSection({ companyId, section, title, initialData, onS
       setDraft(saved.data);
       setBaseline(saved.data);
       setVersion(saved.version);
+      setJustSaved(true);
     } catch (caught) {
       const conflictLatest = caught instanceof CompanyProfileConflictError ? caught.latest : caught && typeof caught === 'object' && 'latest' in caught ? (caught as { latest: CompanyProfileSectionDto }).latest : null;
       if (conflictLatest) setLatest(conflictLatest);
@@ -130,7 +136,7 @@ export function CompanyEditSection({ companyId, section, title, initialData, onS
   };
 
   if (query.isLoading || draft === undefined) return <div className="card p-4 text-sm text-text-secondary">Loading {title}…</div>;
-  return <CompanyAccentSection title={title} actions={<div className="flex items-center gap-2"><Button size="xs" variant="secondary" disabled={!dirty} onClick={() => { setDraft(baseline); setError(null); setLatest(null); }}>Cancel</Button><Button size="xs" onClick={save} isLoading={mutation.isPending} disabled={!dirty} aria-label={`Save ${title}`}>Save section</Button></div>}>
+  return <CompanyAccentSection title={title} actions={<div className="flex items-center gap-2">{justSaved ? <span role="status" className="flex items-center gap-1 text-xs text-status-success"><CheckCircle2 className="h-3.5 w-3.5" />Saved</span> : null}<Button size="xs" variant="secondary" disabled={!dirty} onClick={() => { setDraft(baseline); setError(null); setLatest(null); }}>Cancel</Button><Button size="xs" onClick={save} isLoading={mutation.isPending} disabled={!dirty} aria-label={`Save ${title}`}>Save section</Button></div>}>
     {error ? <div className="border-b border-status-error/30 bg-status-error/5 px-4 py-3 text-sm text-status-error"><div className="flex items-center gap-2"><AlertTriangle className="h-4 w-4" />{error}</div>{latest ? <Button className="mt-2" size="xs" variant="secondary" onClick={() => { setDraft(latest.data); setBaseline(latest.data); setVersion(latest.version); setLatest(null); setError(null); }}>Reload latest section</Button> : null}</div> : null}
     <div className="grid grid-cols-1 gap-4 p-4 sm:grid-cols-2"><CompanyProfileValueEditor value={draft} path={[section]} onChange={setDraft} /></div>
   </CompanyAccentSection>;

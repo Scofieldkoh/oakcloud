@@ -274,7 +274,7 @@ describe('TaskWorkspace', () => {
     });
 
     expect(screen.getByText('Active filters:')).toBeInTheDocument();
-    expect(screen.getByText('Search:')).toBeInTheDocument();
+    expect(await screen.findByText('Search:')).toBeInTheDocument();
     expect(screen.getByText('annual')).toBeInTheDocument();
     expect(screen.getByText('Pipeline:')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Remove Pipeline filter' }).parentElement)

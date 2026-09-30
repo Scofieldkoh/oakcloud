@@ -128,6 +128,7 @@ export function DocumentGenerationBatchWorkspace({
   const [showPreflight, setShowPreflight] = useState(false);
   const [isDownloadingAll, setIsDownloadingAll] = useState(false);
   const [oakDocReviewDirty, setOakDocReviewDirty] = useState(false);
+  const [pendingStage, setPendingStage] = useState<BatchStage | null>(null);
 
   const partyOptions = useDocumentPartyOptions(state.batch.primaryCompanyId);
   const activeItem = state.batch.items.find(
@@ -395,12 +396,9 @@ export function DocumentGenerationBatchWorkspace({
     }
   }, [saveDraft, toastError]);
 
-  const navigate = (stage: BatchStage) => {
-    if (
-      oakDocReviewDirty
-      && stage !== state.stage
-      && !window.confirm('This Word draft has unsaved edits. Leave this review stage and discard them?')
-    ) {
+  const navigate = (stage: BatchStage, discardConfirmed = false) => {
+    if (oakDocReviewDirty && stage !== state.stage && !discardConfirmed) {
+      setPendingStage(stage);
       return;
     }
     if (stage !== state.stage) setOakDocReviewDirty(false);
@@ -1008,6 +1006,19 @@ export function DocumentGenerationBatchWorkspace({
           </div>
         </dl>
       </ConfirmDialog>
+
+      <ConfirmDialog
+        isOpen={pendingStage !== null}
+        onClose={() => setPendingStage(null)}
+        onConfirm={() => {
+          if (pendingStage) navigate(pendingStage, true);
+          setPendingStage(null);
+        }}
+        title="Discard unsaved edits?"
+        description="This Word draft has unsaved edits. Leave this review stage and discard them?"
+        confirmLabel="Discard edits"
+        variant="warning"
+      />
 
       {dialog}
     </div>

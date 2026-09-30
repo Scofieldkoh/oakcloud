@@ -2,7 +2,7 @@
 
 import { Search } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import { FilterChip } from '@/components/ui/filter-chip';
+import { ActiveFilterBar } from '@/components/ui/active-filter-bar';
 import { DatePicker, type DatePickerValue } from '@/components/ui/date-picker';
 import { FamilyFilterChips, type ServiceFamilyFilter } from '@/components/services/shared/family-filter-chips';
 import { ServiceFilterToolbar, quickFilterClass } from '@/components/services/shared/service-filter-toolbar';
@@ -140,7 +140,13 @@ export function BillingFilters({ value, families, onChange, dateRangeActive, onA
           />
       </ServiceFilterToolbar>
 
-      {activeFilters.length > 0 ? <div aria-label="Active filters" className="flex flex-wrap gap-2">{activeFilters.map((filter) => <FilterChip key={filter.key} label={filter.label} value={filter.value} onRemove={filter.onRemove} />)}</div> : null}
+      <ActiveFilterBar
+        filters={activeFilters}
+        onClearAll={() => {
+          setQueryDraft('');
+          onChange({ ...value, query: '', statuses: [], timing: [], familyIds: [], ...(dateRangeActive ? { from: '', to: '' } : {}) });
+        }}
+      />
     </section>
   );
 }
