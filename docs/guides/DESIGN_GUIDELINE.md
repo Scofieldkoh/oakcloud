@@ -12,7 +12,7 @@ This document outlines the design system, UI components, and styling standards f
 
 ## Start Here
 
-This guide is long; most UI changes only need this section. Open **Administration > UI Components** (`/admin/components`, super admins) to see every shared component below in its common states, rendered from the production code.
+This guide is long; most UI changes only need this section. Open `/admin/components` (super admins; it is not in the sidebar) to see every shared component below in its common states, rendered from the production code.
 
 | Need | Use | Notes |
 |---|---|---|

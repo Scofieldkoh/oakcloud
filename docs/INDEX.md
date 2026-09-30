@@ -24,7 +24,7 @@
 | Guide | Description |
 |-------|-------------|
 | [RBAC Guideline](./guides/RBAC_GUIDELINE.md) | Authentication, roles, permissions, multi-tenancy |
-| [Design Guideline](./guides/DESIGN_GUIDELINE.md) | UI components, styling, responsive patterns. Read [Start Here](./guides/DESIGN_GUIDELINE.md#start-here) first; the live showcase is Administration > UI Components (`/admin/components`) |
+| [Design Guideline](./guides/DESIGN_GUIDELINE.md) | UI components, styling, responsive patterns. Read [Start Here](./guides/DESIGN_GUIDELINE.md#start-here) first; the live showcase is at `/admin/components` (super admins, not in the sidebar) |
 | [Keyboard Shortcuts](./guides/KEYBOARD_SHORTCUTS.md) | Shared shortcut mappings across modules |
 | [Service Patterns](./guides/SERVICE_PATTERNS.md) | Service-layer architecture and conventions |
 | [Staging & Deployment](./guides/STAGING_DEPLOYMENT.md) | Two-environment workflow for self-hosted Docker deployments |
