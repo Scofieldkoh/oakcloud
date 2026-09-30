@@ -10,8 +10,29 @@ This document outlines the design system, UI components, and styling standards f
 - [Architecture](../ARCHITECTURE.md) - System design overview
 - [RBAC Guideline](./RBAC_GUIDELINE.md) - Permission patterns
 
+## Start Here
+
+This guide is long; most UI changes only need this section. Open `/admin/components` (super admins; it is not in the sidebar) to see every shared component below in its common states, rendered from the production code.
+
+| Need | Use | Notes |
+|---|---|---|
+| Buttons | `Button` | One `primary` per page; `danger` only for destructive acts. |
+| Text, date and toggle fields | `FormInput`, `SingleDateInput`, `Checkbox`, `Toggle` | Label above, hint or error below. |
+| Pick from a loaded list | `SearchableSelect` (`TableSelectFilter` in table filter rows) | See [SearchableSelect](#searchableselect). |
+| Pick from server search | `CompanySelect`, `ContactSearchSelect`, `AccountSearchSelect` (all on `AsyncSearchSelect`) | Pass the current value as `pinned` so it shows before any search. |
+| Messages | `Alert`, `useToast`, `LoadingState`, `ErrorState`, `StatusBadge` | Inline for local fixes, alerts for lasting issues, toasts for passing outcomes. |
+| Empty lists | `ListEmptyState`, `EmptyState` | See [Empty State Patterns](#empty-state-patterns). |
+| Active filters | `ActiveFilterBar`, `FilterChip` | Clear all must reset every filter, search included. |
+| Tables | `TableShell`, `TableRoot`, `TableHeaderCell`, `TableRow`, `TableEmptyState`, `Pagination` | From `data-table.tsx`. |
+| Dialogs | `Modal`, `ConfirmDialog`, `useConfirmDialog` | Never `window.confirm` or `alert`. |
+| Leaving with unsaved edits | `useUnsavedNavigationGuard` | Same dialog for links, back and in-page actions. |
+| Search boxes | `useDebouncedSearch` (`SEARCH_DEBOUNCE_MS`, 300 ms) | Follows outside changes such as Clear all. |
+
+When you add a shared component to `src/components/ui`, add it to the showcase (`src/components/admin/component-showcase.tsx`) and to this table.
+
 ## Table of Contents
 
+- [Start Here](#start-here)
 - [Design Philosophy](#design-philosophy)
 - [Design Principles](#design-principles)
 - [Typography](#typography)
