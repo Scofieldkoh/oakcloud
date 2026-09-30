@@ -16,7 +16,10 @@ export default defineConfig({
     browser: {
       enabled: true,
       headless: true,
-      provider: playwright(),
+      // BROWSER_TEST_CHROMIUM points at a preinstalled Chromium when the pinned Playwright build is missing.
+      provider: playwright(process.env.BROWSER_TEST_CHROMIUM
+        ? { launchOptions: { executablePath: process.env.BROWSER_TEST_CHROMIUM } }
+        : undefined),
       instances: [{ browser: 'chromium' }],
     },
   },

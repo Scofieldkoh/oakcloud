@@ -83,6 +83,8 @@ vi.mock('@/hooks/use-esigning', () => {
     useUpdateEsigningRecipient: () => mutation(),
     useRemoveEsigningRecipient: () => mutation(),
     useDeleteEsigningDocument: () => mutation(),
+    useUpdateEsigningDocument: () => mutation(),
+    useResendEsigningEnvelope: () => mutation(),
     useResendEsigningRecipient: () => mutation(),
     useEsigningRecipientManualLink: () => mutation(),
   };

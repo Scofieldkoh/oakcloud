@@ -17,7 +17,7 @@ vi.mock('@/hooks/use-user-preferences', () => ({
 }));
 
 import { DeadlineCalendar } from '@/components/services/deadlines/deadline-calendar';
-import { DeadlineTable } from '@/components/services/deadlines/deadline-table';
+import { DeadlineTable, defaultDeadlineColumnWidths } from '@/components/services/deadlines/deadline-table';
 
 const occurrence: DeadlineOccurrenceDto = {
   id: '44444444-4444-4444-8444-444444444444',
@@ -97,7 +97,8 @@ describe('Services deadlines responsive browser surface', () => {
   it('keeps the desktop calendar readable with two months and visible event identity', async () => {
     setup();
     await page.viewport(2200, 900);
-    render(<DeadlineCalendar />);
+    // Pin the month so the fixture's due date stays on screen whatever today is.
+    render(<DeadlineCalendar focusMonth={new Date(2026, 7, 1)} />);
 
     await expect.element(screen.getByRole('region', { name: /selected day agenda/i })).toBeVisible();
     expect(screen.getAllByRole('grid', { name: /calendar/i })).toHaveLength(2);
@@ -116,7 +117,8 @@ describe('Services deadlines responsive browser surface', () => {
   });
 
   it('renders the empty state inside the desktop deadline table body', async () => {
-    await page.viewport(1440, 900);
+    // Wide enough for the default column widths, so Actions takes the spare space.
+    await page.viewport(2200, 900);
     render(<DeadlineTable items={[]} inlineFilters={<div>Deadline filters</div>} />);
 
     const table = screen.getByRole('table', { name: 'Deadline occurrences table' });
@@ -129,7 +131,7 @@ describe('Services deadlines responsive browser surface', () => {
     expect(getComputedStyle(table).tableLayout).toBe('auto');
     const companyHeader = within(table).getByRole('columnheader', { name: /Company/ });
     const actionsHeader = within(table).getByRole('columnheader', { name: 'Actions' });
-    expect(Math.abs(companyHeader.getBoundingClientRect().width - 220)).toBeLessThanOrEqual(1);
+    expect(Math.abs(companyHeader.getBoundingClientRect().width - defaultDeadlineColumnWidths.company)).toBeLessThanOrEqual(1);
     expect(actionsHeader.getBoundingClientRect().width).toBeGreaterThan(90);
     expect(Math.abs(table.getBoundingClientRect().width - scrollContainer.getBoundingClientRect().width))
       .toBeLessThanOrEqual(1);

@@ -47,6 +47,7 @@ vi.mock('@/hooks/use-service-roster-families', () => ({ useServiceRosterFamilies
 vi.mock('@/components/services/roster/add-client-service-dialog', () => ({ AddClientServiceDialog: () => null }));
 
 import { ServicesWorkspace } from '@/components/services/services-workspace';
+import { defaultBillingColumnWidths } from '@/components/services/billing/billing-table';
 
 const occurrence: BillingOccurrenceDto = {
   id: '44444444-4444-4444-8444-444444444444',
@@ -169,12 +170,12 @@ describe('Services billing responsive browser surface', () => {
       within(billingTable).getByRole('searchbox', { name: 'Filter Service' }),
       within(billingTable).getByRole('searchbox', { name: 'Filter Fee line' }),
       within(billingTable).getByRole('searchbox', { name: 'Filter Period' }),
-      within(billingTable).getByRole('combobox', { name: 'Filter Status' }),
       within(billingTable).getByRole('spinbutton', { name: 'Filter Minimum amount' }),
       within(billingTable).getByRole('spinbutton', { name: 'Filter Maximum amount' }),
       within(billingTable).getByRole('textbox', { name: 'Filter Billed date' }),
-      within(billingTable).getByRole('searchbox', { name: 'Filter Reference' }),
     ];
+    // Status and Reference are hidden by default (reference table layout).
+    expect(within(billingTable).queryByRole('combobox', { name: 'Filter Status' })).toBeNull();
     const placeholderColors = inlineFilterInputs.map((input) => getComputedStyle(input, '::placeholder').color);
     expect(new Set(placeholderColors)).toEqual(new Set([placeholderColors[0]!]));
     for (const cell of billingTable.querySelectorAll('tbody td')) expect(getComputedStyle(cell).verticalAlign).toBe('middle');
@@ -261,7 +262,7 @@ describe('Services billing responsive browser surface', () => {
     expect(getComputedStyle(table).tableLayout).toBe('auto');
     const companyHeader = within(table).getByRole('columnheader', { name: /^Company$/ });
     const actionsHeader = within(table).getByRole('columnheader', { name: 'Actions' });
-    expect(Math.abs(companyHeader.getBoundingClientRect().width - 200)).toBeLessThanOrEqual(1);
+    expect(Math.abs(companyHeader.getBoundingClientRect().width - defaultBillingColumnWidths.company)).toBeLessThanOrEqual(1);
     expect(actionsHeader.getBoundingClientRect().width).toBeGreaterThan(500);
     expect(Math.abs(table.getBoundingClientRect().width - scrollContainer.getBoundingClientRect().width))
       .toBeLessThanOrEqual(1);

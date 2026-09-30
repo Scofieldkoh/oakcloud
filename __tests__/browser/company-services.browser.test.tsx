@@ -6,7 +6,7 @@ import { CompanyServicesTab } from '@/components/companies/company-detail/compan
 import '@/app/globals.css';
 
 const service = {
-  id: 'service-1', companyId: 'company-1', agreementId: 'agreement-1', agreementItemId: 'item-1', serviceVariantId: 'variant-1', familyName: 'Corporate Services', serviceName: 'Corporate Secretarial Services', status: 'ACTIVE', serviceCadence: 'ANNUALLY', customCadenceLabel: null, startDate: '2026-07-30', endDate: null, fieldValues: { filingMonth: 'July' }, createdAt: '2026-07-30T00:00:00Z', updatedAt: '2026-07-30T00:00:00Z', feeLines: [{ id: 'fee-1', description: 'Annual fee', amount: '500.00', currency: 'SGD', billingFrequency: 'ANNUALLY', customFrequencyLabel: null, billingStartDate: '2026-07-30', displayOrder: 0 }], agreement: { title: 'Service Agreement', status: 'EFFECTIVE', activationStatus: 'COMPLETED', generatedDocumentId: 'document-1', href: '/generated-documents/document-1' },
+  id: 'service-1', companyId: 'company-1', agreementId: 'agreement-1', agreementItemId: 'item-1', serviceVariantId: 'variant-1', familyName: 'Corporate Services', serviceName: 'Corporate Secretarial Services', status: 'ACTIVE', billingDisposition: 'CONFIGURED', serviceCadence: 'ANNUALLY', customCadenceLabel: null, startDate: '2026-07-30', endDate: null, fieldValues: { filingMonth: 'July' }, createdAt: '2026-07-30T00:00:00Z', updatedAt: '2026-07-30T00:00:00Z', feeLines: [{ id: 'fee-1', description: 'Annual fee', amount: '500.00', currency: 'SGD', billingFrequency: 'ANNUALLY', customFrequencyLabel: null, billingStartDate: '2026-07-30', displayOrder: 0 }], agreement: { title: 'Service Agreement', status: 'EFFECTIVE', activationStatus: 'COMPLETED', generatedDocumentId: 'document-1', href: '/generated-documents/document-1' },
 };
 const manualService = {
   ...service,
@@ -75,6 +75,9 @@ describe('company Services browser workflow', () => {
       requests.push({ url, method, body });
       if (method === 'GET' && url.includes('/api/client-services/service-1')) return json(refreshedService);
       if (method === 'GET' && url.includes('/services/catalog-options')) return json(catalogOptions);
+      if (method === 'GET' && url.includes('/services/company-obligations')) {
+        return json({ items: [], notices: [], firstPeriodUnconfirmed: false, firstPeriodSuggestion: null, statusEditable: false, engagementStartYearOfAssessment: null, firstYearOfAssessment: null });
+      }
       if (method === 'GET') return json(fixture);
       if (method === 'PATCH') {
         if ((body as { expectedUpdatedAt?: string } | undefined)?.expectedUpdatedAt === service.updatedAt) {
@@ -115,9 +118,9 @@ describe('company Services browser workflow', () => {
       setControlValue(billingDate, '2026-08-01', 'change');
       setControlValue(frequency, 'CUSTOM', 'change');
     });
-    const custom = document.querySelector<HTMLInputElement>('input[aria-label="Fee 1 custom frequency"]');
-    if (!custom) throw new Error('Custom frequency control missing');
-    await act(async () => setControlValue(custom, 'Every 18 months'));
+    const custom = document.querySelector<HTMLInputElement>('input[aria-label="Fee 1 custom interval months"]');
+    if (!custom) throw new Error('Custom interval control missing');
+    await act(async () => setControlValue(custom, '18'));
 
     const save = [...document.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.includes('Save changes'));
     if (!save) throw new Error('Save button missing');
