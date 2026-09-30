@@ -6,6 +6,7 @@ import { getContactDetailsForExport } from '@/services/contact-detail.service';
 import { exportContactDetailsSchema } from '@/lib/validations/contact-detail';
 import { ZodError } from 'zod';
 import ExcelJS from 'exceljs';
+import { routeErrorResponse } from '@/lib/api-route-errors';
 
 /**
  * POST /api/companies/export-contacts
@@ -251,16 +252,7 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      if (error.message === 'Forbidden' || error.message.startsWith('Permission denied')) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-      }
-    }
-    console.error('Error exporting contact details:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return routeErrorResponse(error, { logLabel: 'Error exporting contact details:' });
   }
 }
 

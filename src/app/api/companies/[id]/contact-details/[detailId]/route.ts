@@ -9,6 +9,7 @@ import {
 } from '@/services/contact-detail.service';
 import { updateContactDetailSchema } from '@/lib/validations/contact-detail';
 import { ZodError } from 'zod';
+import { routeErrorResponse } from '@/lib/api-route-errors';
 
 type RouteParams = {
   params: Promise<{ id: string; detailId: string }>;
@@ -51,16 +52,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json(contactDetail);
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      if (error.message === 'Forbidden' || error.message.startsWith('Permission denied')) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-      }
-    }
-    console.error('Error fetching contact detail:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return routeErrorResponse(error, { logLabel: 'Error fetching contact detail:' });
   }
 }
 
@@ -119,19 +111,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         { status: 400 }
       );
     }
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      if (error.message === 'Forbidden' || error.message.startsWith('Permission denied')) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-      }
-      if (error.message === 'Contact detail not found') {
-        return NextResponse.json({ error: error.message }, { status: 404 });
-      }
-    }
-    console.error('Error updating contact detail:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return routeErrorResponse(error, { notFound: ['Contact detail not found'], logLabel: 'Error updating contact detail:' });
   }
 }
 
@@ -177,18 +157,6 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      if (error.message === 'Forbidden' || error.message.startsWith('Permission denied')) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-      }
-      if (error.message === 'Contact detail not found') {
-        return NextResponse.json({ error: error.message }, { status: 404 });
-      }
-    }
-    console.error('Error deleting contact detail:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return routeErrorResponse(error, { notFound: ['Contact detail not found'], logLabel: 'Error deleting contact detail:' });
   }
 }

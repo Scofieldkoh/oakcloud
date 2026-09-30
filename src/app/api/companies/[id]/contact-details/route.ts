@@ -8,6 +8,7 @@ import {
 } from '@/services/contact-detail.service';
 import { createContactDetailSchema } from '@/lib/validations/contact-detail';
 import { ZodError } from 'zod';
+import { routeErrorResponse } from '@/lib/api-route-errors';
 
 type RouteParams = {
   params: Promise<{ id: string }>;
@@ -41,19 +42,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json(result);
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      if (error.message === 'Forbidden' || error.message.startsWith('Permission denied')) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-      }
-      if (error.message === 'Company not found') {
-        return NextResponse.json({ error: 'Company not found' }, { status: 404 });
-      }
-    }
-    console.error('Error fetching company contact details:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return routeErrorResponse(error, { notFound: ['Company not found'], logLabel: 'Error fetching company contact details:' });
   }
 }
 
@@ -109,18 +98,6 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         { status: 400 }
       );
     }
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      if (error.message === 'Forbidden' || error.message.startsWith('Permission denied')) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-      }
-      if (error.message === 'Company not found' || error.message === 'Contact not found') {
-        return NextResponse.json({ error: error.message }, { status: 404 });
-      }
-    }
-    console.error('Error creating contact detail:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return routeErrorResponse(error, { notFound: ['Company not found', 'Contact not found'], logLabel: 'Error creating contact detail:' });
   }
 }

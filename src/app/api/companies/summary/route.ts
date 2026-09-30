@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { getCompanyStats } from '@/services/company.service';
 import { jsonWithServerTiming } from '@/lib/api/company-query';
+import { routeErrorResponse } from '@/lib/api-route-errors';
 
 export async function GET(request: NextRequest) {
   const startedAt = performance.now();
@@ -25,14 +26,6 @@ export async function GET(request: NextRequest) {
 
     return jsonWithServerTiming(summary, startedAt);
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      if (error.message === 'Forbidden') {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-      }
-    }
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return routeErrorResponse(error);
   }
 }

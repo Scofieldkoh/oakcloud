@@ -17,6 +17,7 @@ import {
 } from '@/services/document-tag.service';
 import { createTagSchema } from '@/lib/validations/document-tag';
 import { createAuditLog } from '@/lib/audit';
+import { routeErrorResponse } from '@/lib/api-route-errors';
 
 type RouteParams = { params: Promise<{ id: string }> };
 
@@ -60,16 +61,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json({ tags });
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      if (error.message === 'Forbidden') {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-      }
-    }
-    console.error('Error fetching company tags:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return routeErrorResponse(error, { logLabel: 'Error fetching company tags:' });
   }
 }
 

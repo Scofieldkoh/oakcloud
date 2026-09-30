@@ -11,6 +11,7 @@ import {
   verifyNoteTabOwnership,
 } from '@/services/notes.service';
 import { z } from 'zod';
+import { routeErrorResponse } from '@/lib/api-route-errors';
 
 const updateNoteTabSchema = z.object({
   title: z.string().min(1).max(100).optional(),
@@ -71,21 +72,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         { status: 400 }
       );
     }
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      if (error.message === 'Forbidden' || error.message.startsWith('Permission denied')) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-      }
-      if (error.message === 'Contact not found') {
-        return NextResponse.json({ error: error.message }, { status: 404 });
-      }
-      if (error.message === 'Note tab not found') {
-        return NextResponse.json({ error: error.message }, { status: 404 });
-      }
-    }
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return routeErrorResponse(error, { notFound: ['Contact not found', 'Note tab not found'] });
   }
 }
 
@@ -132,20 +119,6 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      if (error.message === 'Forbidden' || error.message.startsWith('Permission denied')) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-      }
-      if (error.message === 'Contact not found') {
-        return NextResponse.json({ error: error.message }, { status: 404 });
-      }
-      if (error.message === 'Note tab not found') {
-        return NextResponse.json({ error: error.message }, { status: 404 });
-      }
-    }
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return routeErrorResponse(error, { notFound: ['Contact not found', 'Note tab not found'] });
   }
 }

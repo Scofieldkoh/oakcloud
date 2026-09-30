@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma';
 import { requirePermission } from '@/lib/rbac';
 import { previewContactIdentity } from '@/services/contact-identity.service';
 import { contactDetailTypeEnum, contactPurposeEnum } from '@/lib/validations/contact-detail';
+import { routeErrorResponse } from '@/lib/api-route-errors';
 
 const candidateSchema = z.object({
   source: z.enum(['MANUAL', 'COMPANY_QUICK_CREATE', 'BIZFILE', 'DOCUMENT_VAULT']),
@@ -109,12 +110,6 @@ export async function POST(request: NextRequest) {
     if (error instanceof ZodError) {
       return NextResponse.json({ error: 'Invalid contact candidates', issues: error.issues }, { status: 400 });
     }
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      if (error.message === 'Forbidden' || error.message.startsWith('Permission denied')) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-      }
-    }
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return routeErrorResponse(error);
   }
 }
