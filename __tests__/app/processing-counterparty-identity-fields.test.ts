@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 
 describe('processing counterparty identity fields', () => {
   const source = readFileSync(
-    resolve(process.cwd(), 'src/app/(dashboard)/processing/[id]/page.tsx'),
+    resolve(process.cwd(), 'src/app/(dashboard)/processing/[id]/_components/extracted-header-fields.tsx'),
     'utf8',
   );
 
