@@ -42,8 +42,8 @@ vi.mock('@/hooks/use-permissions', () => ({
   }),
 }));
 
-vi.mock('@/hooks/use-unsaved-changes', () => ({
-  useUnsavedChangesWarning: vi.fn(),
+vi.mock('@/hooks/use-unsaved-navigation-guard', () => ({
+  useUnsavedNavigationGuard: () => ({ requestNavigation: vi.fn(), requestAction: vi.fn(), disarm: vi.fn(), rearm: vi.fn(), dialog: null }),
 }));
 
 vi.mock('@/hooks/use-keyboard-shortcuts', () => ({

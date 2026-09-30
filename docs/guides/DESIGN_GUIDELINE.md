@@ -4565,24 +4565,34 @@ Located in `src/components/ui/`. These components use **Chakra UI** primitives w
 | `FilterPillGroup` | `options`, `value`, `onChange`, `label`, `allowSelectAll`, `allowEmpty` | Multi-select filter pills (see Filter Components) |
 | `FilterPillToggle` | `label`, `active`, `onChange`, `icon` | Single toggleable filter pill |
 | `FilterChip` | `label`, `value`, `onRemove` | Active filter indicator with remove button |
+| `ActiveFilterBar` | `filters`, `onClearAll` | Row of `FilterChip`s with a Clear all link; renders nothing when no filter is set |
 
 ### Form Utilities
 
 | Hook | Props | Description |
 |------|-------|-------------|
-| `useUnsavedChangesWarning` | `isDirty`, `enabled` | Browser warning when leaving page with unsaved form changes |
+| `useUnsavedNavigationGuard` | `isDirty`, dialog copy | Warns in the app's dialog before in-app links, Back, or `requestNavigation`/`requestAction` leave a page with unsaved changes; closing the tab still uses the browser's own warning |
+| `useConfirmDialog` | - | `await confirm({ title, description, confirmLabel, variant })` in place of `window.confirm`; render the returned `dialog` once |
+| `useDebouncedSearch` | `value`, `onCommit`, `delayMs` | Search box draft that applies after typing pauses (300 ms, `SEARCH_DEBOUNCE_MS`) |
+
+Never use `window.confirm` or `alert`; use `ConfirmDialog`, `useConfirmDialog`, or the unsaved-changes guard.
 
 **Usage:**
 ```tsx
-import { useUnsavedChangesWarning } from '@/hooks/use-unsaved-changes';
+import { useUnsavedNavigationGuard } from '@/hooks/use-unsaved-navigation-guard';
 
 function EditForm() {
   const { formState: { isDirty, isSubmitting } } = useForm();
+  // Disabled while submitting so the success redirect is not blocked
+  const navigationGuard = useUnsavedNavigationGuard(isDirty && !isSubmitting);
 
-  // Warn when form has unsaved changes (disabled during submit)
-  useUnsavedChangesWarning(isDirty, !isSubmitting);
-
-  return <form>...</form>;
+  return (
+    <form>
+      ...
+      <Button onClick={() => navigationGuard.requestNavigation('/contacts')}>Cancel</Button>
+      {navigationGuard.dialog}
+    </form>
+  );
 }
 ```
 
@@ -5801,6 +5811,6 @@ src/stores/
 └── tenant-store.ts        # SUPER_ADMIN tenant selection (persisted)
 
 src/hooks/
-├── use-unsaved-changes.ts # Browser warning for unsaved form changes
+├── use-unsaved-navigation-guard.tsx # App dialog before leaving with unsaved changes
 └── ...                    # Other application hooks
 ```

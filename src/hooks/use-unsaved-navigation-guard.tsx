@@ -6,7 +6,8 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
 type PendingNavigation =
   | { type: 'route'; destination: string }
-  | { type: 'back' };
+  | { type: 'back' }
+  | { type: 'action'; run: () => void };
 
 export interface UnsavedNavigationGuardOptions {
   title?: string;
@@ -136,6 +137,8 @@ export function useUnsavedNavigationGuard(
     setPendingNavigation(null);
     if (pending.type === 'route') {
       router.push(pending.destination);
+    } else if (pending.type === 'action') {
+      pending.run();
     } else {
       window.history.back();
     }
@@ -148,6 +151,15 @@ export function useUnsavedNavigationGuard(
     }
     setPendingNavigation({ type: 'route', destination });
   }, [router]);
+
+  /** Runs `run` at once when clean, otherwise after the user agrees to discard (for Cancel buttons and shortcuts). */
+  const requestAction = useCallback((run: () => void) => {
+    if (!armedRef.current) {
+      run();
+      return;
+    }
+    setPendingNavigation({ type: 'action', run });
+  }, []);
 
   const dialog = useMemo(() => (
     <ConfirmDialog
@@ -162,5 +174,5 @@ export function useUnsavedNavigationGuard(
     />
   ), [cancelNavigation, confirmNavigation, options, pendingNavigation]);
 
-  return { disarm, rearm, requestNavigation, dialog };
+  return { disarm, rearm, requestNavigation, requestAction, dialog };
 }

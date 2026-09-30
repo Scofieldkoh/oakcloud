@@ -9,6 +9,8 @@ import '@/app/globals.css';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { CompanyCreateSharePointField } from '@/components/companies/company-create-sharepoint-field';
 
+const router = vi.hoisted(() => ({ push: vi.fn() }));
+vi.mock('next/navigation', () => ({ useRouter: () => router }));
 vi.mock('@/hooks/use-connectors', () => ({ useConnectors: () => ({ data: { connectors: [{ id: 'connector-1', workspaceId: 'workspace-1' }] } }) }));
 vi.mock('@/hooks/use-sharepoint-folders', () => ({ useSharePointFilingSettings: () => ({ data: { clientDocumentsRoot: { id: 'root', name: 'Client Documents' } } }) }));
 vi.mock('@/components/connectors/sharepoint/sharepoint-folder-picker', () => ({ SharePointFolderPicker: () => null }));
@@ -39,6 +41,7 @@ describe('BizFileReviewWorkspace responsive workflow', () => {
   let root: Root;
 
   beforeEach(() => {
+    router.push.mockClear();
     host = document.createElement('div');
     host.style.height = '100vh';
     host.style.width = '100%';
@@ -178,37 +181,26 @@ describe('BizFileReviewWorkspace responsive workflow', () => {
   it('guards ordinary same-origin application links while dirty', async () => {
     await mount();
     await makeDirty();
-    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
     const anchor = applicationLink();
     const bubble = vi.fn();
     anchor.addEventListener('click', bubble);
 
-    const declined = new MouseEvent('click', { bubbles: true, cancelable: true, button: 0 });
-    anchor.dispatchEvent(declined);
-    expect(confirm).toHaveBeenCalledOnce();
-    expect(declined.defaultPrevented).toBe(true);
+    const blocked = new MouseEvent('click', { bubbles: true, cancelable: true, button: 0 });
+    await act(async () => { anchor.dispatchEvent(blocked); });
+    expect(blocked.defaultPrevented).toBe(true);
     expect(bubble).not.toHaveBeenCalled();
 
-    confirm.mockReturnValue(true);
-    anchor.addEventListener('click', (event) => event.preventDefault());
-    const accepted = new MouseEvent('click', { bubbles: true, cancelable: true, button: 0 });
-    anchor.dispatchEvent(accepted);
-    expect(confirm).toHaveBeenCalledTimes(2);
-    expect(bubble).toHaveBeenCalledOnce();
+    await click(await screen.findByRole('button', { name: 'Keep editing' }));
+    expect(router.push).not.toHaveBeenCalled();
+
+    const secondClick = new MouseEvent('click', { bubbles: true, cancelable: true, button: 0 });
+    await act(async () => { anchor.dispatchEvent(secondClick); });
+    expect(secondClick.defaultPrevented).toBe(true);
+    await click(await screen.findByRole('button', { name: 'Discard changes' }));
+    expect(router.push).toHaveBeenCalledWith('/companies');
     const unload = new Event('beforeunload', { cancelable: true });
     window.dispatchEvent(unload);
     expect(unload.defaultPrevented).toBe(false);
-
-    await new Promise((resolve) => setTimeout(resolve, 0));
-    confirm.mockReturnValue(false);
-    const secondLink = applicationLink({ href: '/contacts' });
-    const secondClick = new MouseEvent('click', { bubbles: true, cancelable: true, button: 0 });
-    secondLink.dispatchEvent(secondClick);
-    expect(confirm).toHaveBeenCalledTimes(3);
-    expect(secondClick.defaultPrevented).toBe(true);
-    const laterUnload = new Event('beforeunload', { cancelable: true });
-    window.dispatchEvent(laterUnload);
-    expect(laterUnload.defaultPrevented).toBe(true);
   });
 
   it.each([
@@ -219,37 +211,41 @@ describe('BizFileReviewWorkspace responsive workflow', () => {
   ])('does not guard %s links', async (_kind, attributes, init) => {
     await mount();
     await makeDirty();
-    const confirm = vi.spyOn(window, 'confirm');
     const anchor = applicationLink(attributes);
-    anchor.addEventListener('click', (event) => event.preventDefault());
-    anchor.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, button: 0, ...init }));
-    expect(confirm).not.toHaveBeenCalled();
+    const bubble = vi.fn((event: Event) => event.preventDefault());
+    anchor.addEventListener('click', bubble);
+    await act(async () => { anchor.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, button: 0, ...init })); });
+    expect(bubble).toHaveBeenCalledOnce();
+    expect(screen.queryByRole('button', { name: 'Discard changes' })).toBeNull();
   });
 
   it('lets clean application links pass without prompting', async () => {
     await mount();
-    const confirm = vi.spyOn(window, 'confirm');
     const anchor = applicationLink();
-    anchor.addEventListener('click', (event) => event.preventDefault());
-    anchor.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, button: 0 }));
-    expect(confirm).not.toHaveBeenCalled();
+    const bubble = vi.fn((event: Event) => event.preventDefault());
+    anchor.addEventListener('click', bubble);
+    await act(async () => { anchor.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, button: 0 })); });
+    expect(bubble).toHaveBeenCalledOnce();
+    expect(screen.queryByRole('button', { name: 'Discard changes' })).toBeNull();
   });
 
-  it('rearms an accepted popstate on the next task while suppressing same-task unload', async () => {
+  it('restores a dirty Back and leaves only after Discard changes', async () => {
     await mount();
     await makeDirty();
-    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true);
+    const forward = vi.spyOn(window.history, 'forward').mockImplementation(() => undefined);
+    const back = vi.spyOn(window.history, 'back').mockImplementation(() => undefined);
 
-    window.dispatchEvent(new PopStateEvent('popstate'));
-    const sameTaskUnload = new Event('beforeunload', { cancelable: true });
-    window.dispatchEvent(sameTaskUnload);
-    expect(sameTaskUnload.defaultPrevented).toBe(false);
+    await act(async () => { window.dispatchEvent(new PopStateEvent('popstate')); });
+    expect(forward).toHaveBeenCalledOnce();
+    const unload = new Event('beforeunload', { cancelable: true });
+    window.dispatchEvent(unload);
+    expect(unload.defaultPrevented).toBe(true);
 
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await click(await screen.findByRole('button', { name: 'Discard changes' }));
+    expect(back).toHaveBeenCalledOnce();
     const laterUnload = new Event('beforeunload', { cancelable: true });
     window.dispatchEvent(laterUnload);
-    expect(laterUnload.defaultPrevented).toBe(true);
-    expect(confirm).toHaveBeenCalledOnce();
+    expect(laterUnload.defaultPrevented).toBe(false);
   });
 });
   beforeAll(() => {

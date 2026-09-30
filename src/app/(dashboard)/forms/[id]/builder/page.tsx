@@ -2,7 +2,7 @@
 
 import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import {
   closestCenter,
   DndContext,
@@ -29,7 +29,8 @@ import { Tooltip } from '@/components/ui/tooltip';
 import { useToast } from '@/components/ui/toast';
 import { useForm, useUpdateForm } from '@/hooks/use-forms';
 import { useFormUrlHealthDetails } from '@/hooks/use-form-url-health';
-import { useUnsavedChangesWarning } from '@/hooks/use-unsaved-changes';
+import { useUnsavedNavigationGuard } from '@/hooks/use-unsaved-navigation-guard';
+import { useConfirmDialog } from '@/hooks/use-confirm-dialog';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import { FieldEditorDrawer } from '@/components/forms/field-editor-drawer';
 import { SortableFieldCard } from '@/components/forms/sortable-field-card';
@@ -414,7 +415,6 @@ type TranslationSourceItem = {
 
 export default function FormBuilderPage() {
   const params = useParams<{ id: string }>();
-  const router = useRouter();
   const { success, error: showError } = useToast();
   const formId = params.id;
 
@@ -835,7 +835,8 @@ export default function FormBuilderPage() {
   );
 
   const isDirty = isHydrated && !!baselineSnapshot.current && stateSnapshot !== baselineSnapshot.current;
-  useUnsavedChangesWarning(isDirty, true);
+  const navigationGuard = useUnsavedNavigationGuard(isDirty);
+  const { confirm, dialog: confirmDialog } = useConfirmDialog();
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
   const collisionDetection: CollisionDetection = (args) => {
@@ -1043,18 +1044,20 @@ export default function FormBuilderPage() {
     });
   }
 
-  function deleteField(clientId: string) {
+  async function deleteField(clientId: string) {
     const target = fields.find((field) => field.clientId === clientId);
     const isDynamicMarker = target?.type === 'PAGE_BREAK' && (target.inputType === 'repeat_start' || target.inputType === 'repeat_end');
     const dependents = target ? getConditionDependents(fields, target.key) : [];
     const dependencyMessage = dependents.length > 0
-      ? `\n\n${dependents.length} field${dependents.length === 1 ? '' : 's'} use this key in conditions: ${dependents.map((field) => field.label || field.key).join(', ')}. Deleting it will create publish blockers until those conditions are updated.`
+      ? ` ${dependents.length} field${dependents.length === 1 ? '' : 's'} use this key in conditions: ${dependents.map((field) => field.label || field.key).join(', ')}. Deleting it will create publish blockers until those conditions are updated.`
       : '';
-    const confirmMessage = (isDynamicMarker
-      ? 'Delete this dynamic section? This will remove the start/end markers and enclosed fields.'
-      : 'Delete this field?') + dependencyMessage;
-
-    if (!window.confirm(confirmMessage)) return;
+    const confirmed = await confirm({
+      title: isDynamicMarker ? 'Delete this dynamic section?' : 'Delete this field?',
+      description: ((isDynamicMarker ? 'This will remove the start/end markers and enclosed fields.' : '') + dependencyMessage).trim() || undefined,
+      confirmLabel: 'Delete',
+      variant: 'danger',
+    });
+    if (!confirmed) return;
 
     setFields((prev) => {
       const index = prev.findIndex((field) => field.clientId === clientId);
@@ -1780,7 +1783,7 @@ export default function FormBuilderPage() {
                 Copy link
               </Button>
             )}
-            <Button variant="secondary" size="sm" onClick={() => router.push(`/forms/${form.id}/responses`)}>
+            <Button variant="secondary" size="sm" onClick={() => navigationGuard.requestNavigation(`/forms/${form.id}/responses`)}>
               Responses
             </Button>
             {!isPublished && (
@@ -2825,6 +2828,8 @@ export default function FormBuilderPage() {
       )}
 
       {activeTab === 'form' && selectedField && <div className="fixed inset-0 z-30 bg-black/20" onClick={() => setSelectedFieldId(null)} aria-hidden="true" />}
+      {navigationGuard.dialog}
+      {confirmDialog}
       </div>
     </div>
   );

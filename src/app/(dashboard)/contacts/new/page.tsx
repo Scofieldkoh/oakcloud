@@ -10,7 +10,7 @@ import { createContactSchema, type CreateContactInput, type CreateContactWithDet
 import { ContactMatchReviewRequiredError, useCreateContact } from '@/hooks/use-contacts';
 import { usePermissions } from '@/hooks/use-permissions';
 import { useSession } from '@/hooks/use-auth';
-import { useUnsavedChangesWarning } from '@/hooks/use-unsaved-changes';
+import { useUnsavedNavigationGuard } from '@/hooks/use-unsaved-navigation-guard';
 import { useActiveWorkspaceId } from '@/components/ui/workspace-selector';
 import { useToast } from '@/components/ui/toast';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
@@ -121,7 +121,7 @@ export default function NewContactPage() {
   const hasContactDetailChanges = hasDefaultContactDetailChanges || hasCompanyContactDetailChanges;
 
   // Warn about unsaved changes when leaving the page
-  useUnsavedChangesWarning(isDirty || hasContactDetailChanges, !isSubmitting);
+  const navigationGuard = useUnsavedNavigationGuard((isDirty || hasContactDetailChanges) && !isSubmitting);
 
   const contactType = watch('contactType');
 
@@ -143,7 +143,7 @@ export default function NewContactPage() {
   };
 
   const handleCancel = () => {
-    router.push('/contacts');
+    navigationGuard.requestNavigation('/contacts');
   };
 
   const onSubmit = async (data: CreateContactInput) => {
@@ -699,6 +699,7 @@ export default function NewContactPage() {
           </button>
         </div>
       </form>
+      {navigationGuard.dialog}
     </div>
   );
 }

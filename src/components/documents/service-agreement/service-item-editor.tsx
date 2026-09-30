@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { SingleDateInput } from '@/components/ui/single-date-input';
 import { ServiceFeeEditor } from './service-fee-editor';
 import { createServiceAgreementClientKey } from './client-key';
+import { useConfirmDialog } from '@/hooks/use-confirm-dialog';
 
 interface ServiceItemEditorProps {
   item: ServiceAgreementItemInput;
@@ -43,6 +44,7 @@ export function ServiceItemEditor({
   canMoveUp,
   canMoveDown,
 }: ServiceItemEditorProps) {
+  const { confirm, dialog: confirmDialog } = useConfirmDialog();
   const variant = currentVariant ?? {
     id: item.variantId,
     familyId: '',
@@ -130,20 +132,23 @@ export function ServiceItemEditor({
                 aria-label={`Applies to ${entity.name}`}
                 type="checkbox"
                 checked={item.entityIds.includes(entity.id)}
-                onChange={(event) => {
+                onChange={async (event) => {
+                  const checked = event.target.checked;
                   if (
-                    !event.target.checked
+                    !checked
                     && item.feeLines.some((fee) => fee.companyId === entity.id)
-                    && !window.confirm(
-                      `Remove ${entity.name} and all of its fee lines from this service?`,
-                    )
+                    && !(await confirm({
+                      title: `Remove ${entity.name}?`,
+                      description: `${entity.name} and all of its fee lines will be removed from this service.`,
+                      confirmLabel: 'Remove',
+                    }))
                   ) {
                     return;
                   }
-                  const entityIds = event.target.checked
+                  const entityIds = checked
                     ? [...item.entityIds, entity.id]
                     : item.entityIds.filter((id) => id !== entity.id);
-                  const feeLines = event.target.checked
+                  const feeLines = checked
                     ? [
                         ...item.feeLines,
                         ...(variant.feeTemplates.length > 0
@@ -258,6 +263,7 @@ export function ServiceItemEditor({
         />
         </div>
       </details>
+      {confirmDialog}
     </article>
   );
 }
