@@ -134,7 +134,7 @@ export function useCompanySearch(options: UseCompanySearchOptions = {}) {
   // Only search if query meets minimum length
   const shouldSearch = debouncedSearchQuery.length >= minChars;
 
-  const { data, isLoading, error: queryError } = useQuery({
+  const { data, isLoading, error: queryError, refetch } = useQuery({
     queryKey: ['company-search', debouncedSearchQuery, activeTenantId, limit, paginated ? page : undefined],
     queryFn: async (): Promise<CompanySearchResult> => {
       const params = new URLSearchParams({
@@ -213,6 +213,7 @@ export function useCompanySearch(options: UseCompanySearchOptions = {}) {
     hasPreviousPage: page > 0,
     known,
     error: queryError instanceof Error ? queryError.message : null,
+    retry: refetch,
   };
 }
 

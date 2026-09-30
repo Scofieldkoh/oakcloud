@@ -1179,7 +1179,7 @@ describe('TaskStageModal', () => {
         onTransition={onTransition}
       />,
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Clear selection' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Clear Existing company' }));
     expect(screen.getByRole('link', { name: 'Enter company manually' })).toHaveAttribute(
       'href',
       '/companies/new?taskId=task-1&taskStageId=stage-company&returnTo=%2Ftasks',

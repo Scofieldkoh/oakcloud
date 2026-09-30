@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useRef, useCallback, useId, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import { Search, Loader2, Check, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Check, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { SelectKeyboardHints, SelectPopoverMessage, nextHighlightedIndex, selectPopoverVerticalStyle, useSelectPopoverPosition } from '@/components/ui/select-popover';
 import { TABLE_FILTER_CONTAINER_CLASS, TABLE_FILTER_PLACEHOLDER_CLASS, TABLE_FILTER_TEXT_CLASS } from '@/components/ui/table-filter-styles';
 
 export interface AsyncSearchSelectOption {
@@ -60,6 +61,10 @@ export interface AsyncSearchSelectProps<T extends AsyncSearchSelectOption> {
   emptySearchText?: string;
   /** Text to show when search returns no results */
   noResultsText?: string;
+  /** Message shown in place of results when the search request failed. */
+  error?: ReactNode;
+  /** Retries a failed search; shows a Try again button beside `error`. */
+  onRetry?: () => void;
   /** Optional server-side pagination controls for the results list. */
   pagination?: AsyncSearchSelectPagination;
   /** Allow users to click the selected value and search for a replacement. */
@@ -87,7 +92,9 @@ export function AsyncSearchSelect<T extends AsyncSearchSelectOption>({
   controlClassName,
   labelClassName = 'mb-1.5',
   emptySearchText = 'Type to search',
-  noResultsText = 'No results found',
+  noResultsText = 'No matches found',
+  error,
+  onRetry,
   pagination,
   allowReselect = false,
   variant = 'default',
@@ -97,7 +104,6 @@ export function AsyncSearchSelect<T extends AsyncSearchSelectOption>({
   const [selectedItem, setSelectedItem] = useState<T | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const [position, setPosition] = useState({ top: 0, left: 0, width: 0 });
   const inputId = useId();
   const labelId = `${inputId}-label`;
   const listboxId = `${inputId}-listbox`;
@@ -109,6 +115,7 @@ export function AsyncSearchSelect<T extends AsyncSearchSelectOption>({
   const popoverRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const focusTargetRef = useRef<'selected' | 'input' | null>(null);
+  const { position, openAbove } = useSelectPopoverPosition(containerRef, isOpen, 320);
 
   // Mount check for portal
   useEffect(() => {
@@ -150,18 +157,6 @@ export function AsyncSearchSelect<T extends AsyncSearchSelectOption>({
       focusTargetRef.current = null;
     }
   }, [selectedItem]);
-
-  // Update position when opening
-  useEffect(() => {
-    if (isOpen && containerRef.current) {
-      const rect = containerRef.current.getBoundingClientRect();
-      setPosition({
-        top: rect.bottom + 4,
-        left: rect.left,
-        width: rect.width,
-      });
-    }
-  }, [isOpen]);
 
   // Handle click outside
   useEffect(() => {
@@ -241,21 +236,23 @@ export function AsyncSearchSelect<T extends AsyncSearchSelectOption>({
     (e: React.KeyboardEvent<HTMLInputElement>) => {
       switch (e.key) {
         case 'ArrowDown':
-          e.preventDefault();
-          if (!isOpen) {
-            setIsOpen(true);
-          } else {
-            setHighlightedIndex((prev) =>
-              prev < options.length - 1 ? prev + 1 : prev
-            );
-          }
-          break;
         case 'ArrowUp':
-          e.preventDefault();
-          if (isOpen) {
-            setHighlightedIndex((prev) => (prev > 0 ? prev - 1 : 0));
+        case 'Home':
+        case 'End': {
+          if (!isOpen) {
+            if (e.key === 'ArrowDown') {
+              e.preventDefault();
+              setIsOpen(true);
+            }
+            break;
+          }
+          const next = nextHighlightedIndex(e.key, highlightedIndex, options.length);
+          if (next !== null) {
+            e.preventDefault();
+            setHighlightedIndex(next);
           }
           break;
+        }
         case 'Enter':
           e.preventDefault();
           if (isOpen && options[highlightedIndex]) {
@@ -426,9 +423,12 @@ export function AsyncSearchSelect<T extends AsyncSearchSelectOption>({
         createPortal(
           <div
             ref={popoverRef}
-            className="fixed z-[100] bg-background-elevated rounded-xl border border-border-primary shadow-elevation-2 animate-fade-in"
+            className={cn(
+              'fixed z-[100] flex bg-background-elevated rounded-xl border border-border-primary shadow-elevation-2 animate-fade-in',
+              openAbove ? 'flex-col-reverse' : 'flex-col',
+            )}
             style={{
-              top: position.top,
+              ...selectPopoverVerticalStyle(position, openAbove),
               left: position.left,
               width: position.width,
               maxHeight: 320,
@@ -443,14 +443,11 @@ export function AsyncSearchSelect<T extends AsyncSearchSelectOption>({
               className="max-h-64 overflow-y-auto py-1"
             >
               {isLoading ? (
-                <div className="px-3 py-6 text-center">
-                  <Loader2 className="w-5 h-5 animate-spin mx-auto text-text-muted" />
-                  <p className="text-sm text-text-muted mt-2">Searching...</p>
-                </div>
+                <SelectPopoverMessage kind="loading">Searching…</SelectPopoverMessage>
+              ) : error ? (
+                <SelectPopoverMessage kind="error" onRetry={onRetry}>{error}</SelectPopoverMessage>
               ) : options.length === 0 ? (
-                <div className="px-3 py-6 text-center text-sm text-text-muted">
-                  {searchQuery ? noResultsText : emptySearchText}
-                </div>
+                <SelectPopoverMessage kind="empty">{searchQuery ? noResultsText : emptySearchText}</SelectPopoverMessage>
               ) : (
                 options.map((item, index) => (
                   <div
@@ -499,28 +496,7 @@ export function AsyncSearchSelect<T extends AsyncSearchSelectOption>({
             )}
 
             {/* Footer hint */}
-            <div className="px-3 py-2 bg-background-secondary border-t border-border-primary rounded-b-xl">
-              <div className="flex items-center gap-3 text-xs text-text-muted">
-                <span>
-                  <kbd className="px-1.5 py-0.5 bg-background-tertiary rounded text-[10px]">
-                    ↑↓
-                  </kbd>{' '}
-                  Navigate
-                </span>
-                <span>
-                  <kbd className="px-1.5 py-0.5 bg-background-tertiary rounded text-[10px]">
-                    Enter
-                  </kbd>{' '}
-                  Select
-                </span>
-                <span>
-                  <kbd className="px-1.5 py-0.5 bg-background-tertiary rounded text-[10px]">
-                    Esc
-                  </kbd>{' '}
-                  Close
-                </span>
-              </div>
-            </div>
+            <SelectKeyboardHints openAbove={openAbove} />
           </div>,
           document.body
         )}

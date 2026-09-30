@@ -210,4 +210,52 @@ describe('AsyncSearchSelect', () => {
     fireEvent.keyDown(selectedCombobox, { key: 'Delete' });
     expect(onChange).not.toHaveBeenCalled();
   });
+
+  it('moves with Home and End and shows a failed search with Try again', () => {
+    const getBoundingClientRect = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({
+      top: 10, bottom: 54, left: 20, right: 340, width: 320, height: 44, x: 20, y: 10, toJSON: () => ({}),
+    });
+    const restoreScrollIntoView = mockScrollIntoView();
+    const onRetry = vi.fn();
+
+    try {
+      const { rerender } = render(
+        <AsyncSearchSelect label="Company" value="" options={options} isLoading={false} searchQuery="" onSearchChange={vi.fn()} onChange={vi.fn()} />,
+      );
+      const input = screen.getByRole('combobox', { name: 'Company' });
+      fireEvent.focus(input);
+      fireEvent.keyDown(input, { key: 'End' });
+      expect(input).toHaveAttribute('aria-activedescendant', screen.getByRole('option', { name: /Beta Services/ }).id);
+      fireEvent.keyDown(input, { key: 'Home' });
+      expect(input).toHaveAttribute('aria-activedescendant', screen.getByRole('option', { name: /Acme Holdings/ }).id);
+
+      rerender(
+        <AsyncSearchSelect label="Company" value="" options={[]} isLoading={false} searchQuery="acme" onSearchChange={vi.fn()} onChange={vi.fn()} error="Couldn't load companies." onRetry={onRetry} />,
+      );
+      expect(screen.getByRole('alert')).toHaveTextContent("Couldn't load companies.");
+      fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+      expect(onRetry).toHaveBeenCalledTimes(1);
+    } finally {
+      getBoundingClientRect.mockRestore();
+      restoreScrollIntoView();
+    }
+  });
+
+  it('opens above the control when there is no room below', () => {
+    const getBoundingClientRect = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({
+      top: window.innerHeight - 60, bottom: window.innerHeight - 16, left: 20, right: 340, width: 320, height: 44, x: 20, y: window.innerHeight - 60, toJSON: () => ({}),
+    });
+    const restoreScrollIntoView = mockScrollIntoView();
+
+    try {
+      render(<AsyncSearchSelect label="Company" value="" options={options} isLoading={false} searchQuery="" onSearchChange={vi.fn()} onChange={vi.fn()} />);
+      fireEvent.focus(screen.getByRole('combobox', { name: 'Company' }));
+      const popover = screen.getByRole('listbox').parentElement!;
+      expect(popover.style.bottom).not.toBe('');
+      expect(popover.style.top).toBe('');
+    } finally {
+      getBoundingClientRect.mockRestore();
+      restoreScrollIntoView();
+    }
+  });
 });

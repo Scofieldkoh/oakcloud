@@ -4,7 +4,6 @@ import {
   useState,
   useRef,
   useEffect,
-  useLayoutEffect,
   useCallback,
   useMemo,
   useId,
@@ -14,6 +13,7 @@ import {
 import { createPortal } from 'react-dom';
 import { ChevronDown, Check, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { SelectKeyboardHints, SelectPopoverMessage, nextHighlightedIndex, selectPopoverVerticalStyle, useSelectPopoverPosition } from '@/components/ui/select-popover';
 import { TABLE_FILTER_CONTAINER_CLASS, TABLE_FILTER_TEXT_CLASS, TABLE_FILTER_PLACEHOLDER_CLASS, TABLE_FILTER_PLACEHOLDER_TEXT_CLASS } from '@/components/ui/table-filter-styles';
 
 export interface SelectOption {
@@ -93,8 +93,7 @@ export function SearchableSelect({
   const inputRef = useRef<HTMLInputElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
-  const [position, setPosition] = useState({ top: 0, left: 0, width: 0, inputTop: 0 });
-  const [openAbove, setOpenAbove] = useState(false);
+  const { position, openAbove } = useSelectPopoverPosition(containerRef, isOpen, 280);
   const [mounted, setMounted] = useState(false);
   const [isTouchDevice, setIsTouchDevice] = useState(false);
 
@@ -159,62 +158,6 @@ export function SearchableSelect({
       setHighlightedIndex(-1);
     }
   }, [isOpen]);
-
-  // Calculate position using RAF for smooth updates
-  const updatePosition = useCallback(() => {
-    if (!containerRef.current) return;
-
-    requestAnimationFrame(() => {
-      if (!containerRef.current) return;
-
-      const rect = containerRef.current.getBoundingClientRect();
-      const popoverHeight = 280; // Max height
-
-      const top = rect.bottom + 4;
-      const left = rect.left;
-      const width = rect.width;
-      const inputTop = rect.top;
-      const above = top + popoverHeight > window.innerHeight - 16;
-
-      setPosition({ top, left, width, inputTop });
-      setOpenAbove(above);
-    });
-  }, []);
-
-  // Update position immediately when opening (useLayoutEffect for sync update before paint)
-  useLayoutEffect(() => {
-    if (isOpen && containerRef.current) {
-      const rect = containerRef.current.getBoundingClientRect();
-      const popoverHeight = 280;
-
-      const top = rect.bottom + 4;
-      const left = rect.left;
-      const width = rect.width;
-      const inputTop = rect.top;
-      const above = top + popoverHeight > window.innerHeight - 16;
-
-      setPosition({ top, left, width, inputTop });
-      setOpenAbove(above);
-    }
-  }, [isOpen]);
-
-  // Update position on scroll and resize
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const handleScrollOrResize = () => {
-      updatePosition();
-    };
-
-    // Listen to scroll on all ancestors
-    window.addEventListener('scroll', handleScrollOrResize, true);
-    window.addEventListener('resize', handleScrollOrResize);
-
-    return () => {
-      window.removeEventListener('scroll', handleScrollOrResize, true);
-      window.removeEventListener('resize', handleScrollOrResize);
-    };
-  }, [isOpen, updatePosition]);
 
   // Handle click outside
   useEffect(() => {
@@ -294,21 +237,23 @@ export function SearchableSelect({
     (e: KeyboardEvent<HTMLInputElement>) => {
       switch (e.key) {
         case 'ArrowDown':
-          e.preventDefault();
-          if (!isOpen) {
-            setIsOpen(true);
-          } else {
-            setHighlightedIndex((prev) =>
-              prev < filteredOptions.length - 1 ? prev + 1 : prev
-            );
-          }
-          break;
         case 'ArrowUp':
-          e.preventDefault();
-          if (isOpen) {
-            setHighlightedIndex((prev) => (prev > 0 ? prev - 1 : -1));
+        case 'Home':
+        case 'End': {
+          if (!isOpen) {
+            if (e.key === 'ArrowDown') {
+              e.preventDefault();
+              setIsOpen(true);
+            }
+            break;
+          }
+          const next = nextHighlightedIndex(e.key, highlightedIndex, filteredOptions.length, -1);
+          if (next !== null) {
+            e.preventDefault();
+            setHighlightedIndex(next);
           }
           break;
+        }
         case 'Enter':
           e.preventDefault();
           if (isOpen && filteredOptions[highlightedIndex]) {
@@ -423,7 +368,7 @@ export function SearchableSelect({
           <button
             type="button"
             onClick={handleClear}
-            aria-label="Clear selection"
+            aria-label={label ? `Clear ${label}` : 'Clear selection'}
             className="p-0.5 hover:bg-background-tertiary rounded transition-colors mr-1"
           >
             <X className="w-3.5 h-3.5 text-text-muted" aria-hidden="true" />
@@ -463,10 +408,7 @@ export function SearchableSelect({
               openAbove ? 'flex-col-reverse' : 'flex-col'
             )}
             style={{
-              ...(openAbove
-                ? { bottom: window.innerHeight - position.inputTop + 4 }
-                : { top: position.top }
-              ),
+              ...selectPopoverVerticalStyle(position, openAbove),
               left: popoverLeft,
               width: popoverWidth,
               maxHeight: 280,
@@ -481,17 +423,11 @@ export function SearchableSelect({
               className="flex-1 overflow-y-auto py-1"
             >
               {loading ? (
-                <div className="px-3 py-6 text-center text-sm text-text-muted" role="status">
-                  Loading...
-                </div>
+                <SelectPopoverMessage kind="loading">Loading…</SelectPopoverMessage>
               ) : options.length === 0 ? (
-                <div className="px-3 py-6 text-center text-sm text-text-muted">
-                  No options available
-                </div>
+                <SelectPopoverMessage kind="empty">No options available</SelectPopoverMessage>
               ) : filteredOptions.length === 0 ? (
-                <div className="px-3 py-6 text-center text-sm text-text-muted">
-                  No matches found
-                </div>
+                <SelectPopoverMessage kind="empty">No matches found</SelectPopoverMessage>
               ) : (
                 (() => {
                   // Group options if groupBy is specified
@@ -586,37 +522,7 @@ export function SearchableSelect({
             </div>
 
             {/* Footer hint */}
-            {showKeyboardHints && (
-              <div
-                className={cn(
-                  'px-3 py-2 bg-background-secondary',
-                  openAbove
-                    ? 'border-b border-border-primary rounded-t-xl'
-                    : 'border-t border-border-primary rounded-b-xl'
-                )}
-              >
-                <div className="flex items-center gap-3 text-xs text-text-muted">
-                  <span>
-                    <kbd className="px-1.5 py-0.5 bg-background-tertiary rounded text-[10px]">
-                      Up/Down
-                    </kbd>{' '}
-                    Navigate
-                  </span>
-                  <span>
-                    <kbd className="px-1.5 py-0.5 bg-background-tertiary rounded text-[10px]">
-                      Enter
-                    </kbd>{' '}
-                    Select
-                  </span>
-                  <span>
-                    <kbd className="px-1.5 py-0.5 bg-background-tertiary rounded text-[10px]">
-                      Esc
-                    </kbd>{' '}
-                    Close
-                  </span>
-                </div>
-              </div>
-            )}
+            {showKeyboardHints && <SelectKeyboardHints openAbove={openAbove} />}
           </div>,
           document.body
         )}
