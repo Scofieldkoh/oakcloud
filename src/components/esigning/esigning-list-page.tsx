@@ -1,42 +1,27 @@
 'use client';
 
-import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  AlertTriangle,
-  CheckCircle2,
-  Circle,
-  Clock,
-  Copy,
-  Download,
-  ExternalLink,
   Bookmark,
   ChevronDown,
-  FileText,
   FileSignature,
   Grid2X2,
   LayoutList,
-  MoreHorizontal,
   Plus,
   RefreshCw,
   Search,
-  Send,
   SlidersHorizontal,
-  Trash2,
   X,
-  XCircle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { FormInput } from '@/components/ui/form-input';
 import { CompanySearchableSelect } from '@/components/ui/company-searchable-select';
-import { FilterChip } from '@/components/ui/filter-chip';
 import { Alert } from '@/components/ui/alert';
 import { Pagination } from '@/components/ui/pagination';
-import { TableBody, TableHead, TableHeaderCell, TableHeaderRow, TableRoot, TableRow, TableViewport } from '@/components/ui/data-table';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
-import { Dropdown, DropdownItem, DropdownMenu, DropdownSeparator, DropdownTrigger } from '@/components/ui/dropdown';
+import { Dropdown, DropdownItem, DropdownMenu, DropdownTrigger } from '@/components/ui/dropdown';
 import { useToast } from '@/components/ui/toast';
 import { useActiveWorkspaceId } from '@/components/ui/workspace-selector';
 import {
@@ -45,7 +30,7 @@ import {
 } from '@/components/esigning/esigning-upload-files';
 import { useSession } from '@/hooks/use-auth';
 import { usePermissions } from '@/hooks/use-permissions';
-import { useUpsertUserPreference, useUserPreference } from '@/hooks/use-user-preferences';
+import { useUserPreference } from '@/hooks/use-user-preferences';
 import {
   useCreateEsigningEnvelope,
   useDeleteEsigningEnvelope,
@@ -57,11 +42,6 @@ import {
   useVoidEsigningEnvelope,
 } from '@/hooks/use-esigning';
 import type { EsigningEnvelopeListItem, EsigningManualLinkDto } from '@/types/esigning';
-import {
-  EnvelopeStatusBadge,
-  ESIGNING_SIGNING_ORDER_LABELS,
-  formatEsigningDateTime,
-} from '@/components/esigning/esigning-shared';
 import { cn } from '@/lib/utils';
 import {
   ESIGNING_COMPLETION_BCC_PREFERENCE_KEY,
@@ -77,368 +57,28 @@ import {
   useRetryTaskEsigningPreparation,
   useTaskEsigningPreparation,
 } from '@/hooks/use-tasks';
+import {
+  EMPTY_ADVANCED_FILTERS,
+  STATUS_TO_TAB,
+  TAB_LABELS,
+  TAB_LABELS_SHORT,
+  TAB_STATUSES,
+  getEnvelopeTitleFromFile,
+  isStatusDuplicatedByTab,
+  toDateInputValue,
+  type EnvelopeAdvancedFilters,
+  type EnvelopeSortBy,
+  type TabKey,
+  type ViewMode,
+} from './list/esigning-list-config';
+import { type EnvelopeActionHandlers } from './list/esigning-envelope-actions';
+import { EnvelopeCardGrid } from './list/esigning-envelope-cards';
+import { EnvelopeTableView } from './list/esigning-envelope-table';
+import { EnvelopeFilterChips } from './list/esigning-list-filter-chips';
+import { EnvelopeFilterPanel } from './list/esigning-list-filter-panel';
+import { useEsigningColumnWidths } from './list/use-esigning-column-widths';
 
-type StatusFilter =
-  | 'DRAFT'
-  | 'SENT'
-  | 'IN_PROGRESS'
-  | 'COMPLETED'
-  | 'VOIDED'
-  | 'DECLINED'
-  | 'EXPIRED';
-
-type TabKey = 'all' | 'attention' | 'waiting' | 'completed' | 'voided';
-
-const TAB_LABELS: Record<TabKey, string> = {
-  all: 'All',
-  attention: 'Needs Attention',
-  waiting: 'Waiting',
-  completed: 'Completed',
-  voided: 'Voided / Expired',
-};
-
-const TAB_LABELS_SHORT: Record<TabKey, string> = {
-  all: 'All',
-  attention: 'Attention',
-  waiting: 'Waiting',
-  completed: 'Done',
-  voided: 'Voided',
-};
-
-function getEnvelopeTitleFromFile(file: File): string {
-  return file.name.replace(/\.(pdf|docx?|doc)$/i, '') || 'New Envelope';
-}
-
-const TAB_STATUSES: Record<TabKey, StatusFilter[]> = {
-  all: [],
-  attention: ['DRAFT', 'DECLINED'],
-  waiting: ['SENT', 'IN_PROGRESS'],
-  completed: ['COMPLETED'],
-  voided: ['VOIDED', 'EXPIRED'],
-};
-
-type ViewMode = 'table' | 'card';
-type RecipientStatusFilter = 'QUEUED' | 'NOTIFIED' | 'VIEWED' | 'SIGNED' | 'DECLINED';
-type SigningOrderFilter = 'PARALLEL' | 'SEQUENTIAL' | 'MIXED';
-type EnvelopeSortBy =
-  | 'status'
-  | 'title'
-  | 'companyName'
-  | 'details'
-  | 'updatedAt';
-
-const CARD_STATUS_BORDER_CLASS: Record<StatusFilter, string> = {
-  DRAFT: 'border-t-slate-400',
-  SENT: 'border-t-blue-400',
-  IN_PROGRESS: 'border-t-amber-400',
-  COMPLETED: 'border-t-emerald-400',
-  VOIDED: 'border-t-slate-400',
-  DECLINED: 'border-t-rose-400',
-  EXPIRED: 'border-t-orange-400',
-};
-
-const ESIGNING_COLUMN_WIDTH_PREF_KEY = 'esigning:list:columns:v1';
-const ESIGNING_TABLE_COLUMNS = [
-  'status',
-  'envelope',
-  'company',
-  'details',
-  'updated',
-] as const;
-type EsigningTableColumnId = (typeof ESIGNING_TABLE_COLUMNS)[number];
-
-const DEFAULT_ESIGNING_COLUMN_WIDTHS: Record<EsigningTableColumnId, number> = {
-  status: 160,
-  envelope: 578,
-  company: 411,
-  details: 224,
-  updated: 188,
-};
-
-const ESIGNING_TABLE_COLUMN_LABELS: Record<EsigningTableColumnId, string> = {
-  status: 'Status',
-  envelope: 'Envelope name',
-  company: 'Company',
-  details: 'Details',
-  updated: 'Last updated',
-};
-
-const ESIGNING_TABLE_SORT_FIELDS: Record<EsigningTableColumnId, EnvelopeSortBy> = {
-  status: 'status',
-  envelope: 'title',
-  company: 'companyName',
-  details: 'details',
-  updated: 'updatedAt',
-};
-
-interface EnvelopeAdvancedFilters {
-  status: StatusFilter | '';
-  documentName: string;
-  recipientQuery: string;
-  recipientStatus: RecipientStatusFilter | '';
-  signingOrder: SigningOrderFilter | '';
-  createdFrom: string;
-  createdTo: string;
-  sentFrom: string;
-  sentTo: string;
-  completedFrom: string;
-  completedTo: string;
-  createdBy: 'all' | 'me';
-}
-
-const EMPTY_ADVANCED_FILTERS: EnvelopeAdvancedFilters = {
-  status: '',
-  documentName: '',
-  recipientQuery: '',
-  recipientStatus: '',
-  signingOrder: '',
-  createdFrom: '',
-  createdTo: '',
-  sentFrom: '',
-  sentTo: '',
-  completedFrom: '',
-  completedTo: '',
-  createdBy: 'all',
-};
-
-const STATUS_TO_TAB: Record<StatusFilter, TabKey> = {
-  DRAFT: 'attention',
-  SENT: 'waiting',
-  IN_PROGRESS: 'waiting',
-  COMPLETED: 'completed',
-  VOIDED: 'voided',
-  DECLINED: 'attention',
-  EXPIRED: 'voided',
-};
-
-const ENVELOPE_STATUS_LABELS: Record<StatusFilter, string> = {
-  DRAFT: 'Draft',
-  SENT: 'Sent',
-  IN_PROGRESS: 'In progress',
-  COMPLETED: 'Completed',
-  VOIDED: 'Voided',
-  DECLINED: 'Declined',
-  EXPIRED: 'Expired',
-};
-
-const RECIPIENT_STATUS_LABELS: Record<RecipientStatusFilter, string> = {
-  QUEUED: 'Pending',
-  NOTIFIED: 'Sent',
-  VIEWED: 'Viewed',
-  SIGNED: 'Signed',
-  DECLINED: 'Declined',
-};
-
-const SIGNING_ORDER_FILTER_LABELS: Record<SigningOrderFilter, string> = {
-  PARALLEL: 'Parallel signing',
-  SEQUENTIAL: 'Sequential signing',
-  MIXED: 'Mixed signing',
-};
-
-function formatFilterDateRange(from: string, to: string): string {
-  if (from && to) return `${from} – ${to}`;
-  if (from) return `From ${from}`;
-  if (to) return `Until ${to}`;
-  return '';
-}
-
-function toDateInputValue(date: Date): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
-
-function getEnvelopeSearchMatchContext(
-  envelope: EsigningEnvelopeListItem,
-  query: string
-): string | null {
-  const needle = query.trim().toLocaleLowerCase();
-  if (!needle) return null;
-
-  if (envelope.title.toLocaleLowerCase().includes(needle)) {
-    return `Matched envelope: ${envelope.title}`;
-  }
-
-  if (envelope.companyName?.toLocaleLowerCase().includes(needle)) {
-    return `Matched company: ${envelope.companyName}`;
-  }
-
-  const matchedDocument = envelope.documents.find(
-    (document) =>
-      document.fileName.toLocaleLowerCase().includes(needle)
-      || document.originalFileName?.toLocaleLowerCase().includes(needle)
-  );
-  if (matchedDocument) {
-    const matchedName =
-      matchedDocument.originalFileName?.toLocaleLowerCase().includes(needle)
-        ? matchedDocument.originalFileName
-        : matchedDocument.fileName;
-    return `Matched document: ${matchedName}`;
-  }
-
-  const matchedRecipient = envelope.recipients.find((recipient) =>
-    recipient.name.toLocaleLowerCase().includes(needle)
-  );
-  if (matchedRecipient) {
-    return `Matched recipient: ${matchedRecipient.name}`;
-  }
-
-  const matchedEmail = envelope.recipients.find((recipient) =>
-    recipient.email?.toLocaleLowerCase().includes(needle)
-  );
-  if (matchedEmail?.email) {
-    return `Matched email: ${matchedEmail.email}`;
-  }
-
-  return 'Matched search';
-}
-
-function isStatusDuplicatedByTab(status: StatusFilter, tab: TabKey): boolean {
-  const tabStatuses = TAB_STATUSES[tab];
-  return tabStatuses.length === 1 && tabStatuses[0] === status;
-}
-
-export function EmailDeliveryWarningBadge({ envelope }: { envelope: EsigningEnvelopeListItem }) {
-  if (envelope.emailDelivery.status !== 'failed') {
-    return null;
-  }
-
-  return (
-    <span
-      className="inline-flex shrink-0 items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-800"
-      title="Some e-signing emails failed to send"
-    >
-      <AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" />
-      Email failed
-    </span>
-  );
-}
-
-interface EnvelopeActionsDropdownProps {
-  envelope: EsigningEnvelopeListItem;
-  onDuplicate: (envelope: EsigningEnvelopeListItem) => void;
-  onResend: (envelope: EsigningEnvelopeListItem) => void;
-  onDelete: (envelope: EsigningEnvelopeListItem) => void;
-  onVoid: (envelope: EsigningEnvelopeListItem) => void;
-  onRetryPdf: (envelopeId: string) => void;
-  onDownload: (
-    envelopeId: string,
-    tenantId: string,
-    variant: 'documents' | 'documents_with_certificates' | 'certificates'
-  ) => void;
-}
-
-export function EnvelopeActionsDropdown({
-  envelope,
-  onDuplicate,
-  onResend,
-  onDelete,
-  onVoid,
-  onRetryPdf,
-  onDownload,
-}: EnvelopeActionsDropdownProps) {
-  const hasActions =
-    envelope.canResend ||
-    envelope.canDelete ||
-    envelope.canDuplicate ||
-    envelope.canVoid ||
-    envelope.canRetryCompletionProcessing ||
-    envelope.status === 'COMPLETED';
-
-  if (!hasActions) {
-    return null;
-  }
-
-  return (
-    <Dropdown>
-      <DropdownTrigger asChild aria-label={`Actions for ${envelope.title}`}>
-        <button className="rounded-lg p-2 text-text-tertiary transition-colors hover:bg-background-tertiary hover:text-text-primary">
-          <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
-        </button>
-      </DropdownTrigger>
-      <DropdownMenu>
-        <Link href={`/esigning/${envelope.id}`}>
-          <DropdownItem icon={<ExternalLink className="h-4 w-4" />}>Open envelope</DropdownItem>
-        </Link>
-
-        {envelope.status === 'COMPLETED' ? (
-          <>
-            <DropdownItem
-              icon={<Download className="h-4 w-4" />}
-              onClick={() => onDownload(envelope.id, envelope.tenantId, 'documents')}
-            >
-              Document only
-            </DropdownItem>
-            <DropdownItem
-              icon={<Download className="h-4 w-4" />}
-              onClick={() => onDownload(envelope.id, envelope.tenantId, 'documents_with_certificates')}
-            >
-              Document + Certificate
-            </DropdownItem>
-            <DropdownItem
-              icon={<Download className="h-4 w-4" />}
-              onClick={() => onDownload(envelope.id, envelope.tenantId, 'certificates')}
-            >
-              Certificate only
-            </DropdownItem>
-          </>
-        ) : null}
-
-        {envelope.canResend ? (
-          <DropdownItem
-            icon={<Send className="h-4 w-4" />}
-            onClick={() => onResend(envelope)}
-          >
-            Resend active requests
-          </DropdownItem>
-        ) : null}
-
-        {envelope.canDuplicate ? (
-          <DropdownItem
-            icon={<Copy className="h-4 w-4" />}
-            onClick={() => onDuplicate(envelope)}
-          >
-            Duplicate envelope
-          </DropdownItem>
-        ) : null}
-
-        {envelope.canRetryCompletionProcessing ? (
-          <DropdownItem
-            icon={<RefreshCw className="h-4 w-4" />}
-            onClick={() => onRetryPdf(envelope.id)}
-          >
-            {envelope.pdfGenerationStatus === 'FAILED'
-              ? 'Retry processing'
-              : 'Resume processing'}
-          </DropdownItem>
-        ) : null}
-
-        {envelope.canVoid || envelope.canDelete ? <DropdownSeparator /> : null}
-
-        {envelope.canVoid ? (
-          <DropdownItem
-            destructive
-            icon={<XCircle className="h-4 w-4" />}
-            onClick={() => onVoid(envelope)}
-          >
-            Void envelope
-          </DropdownItem>
-        ) : null}
-
-        {envelope.canDelete ? (
-          <DropdownItem
-            destructive
-            icon={<Trash2 className="h-4 w-4" />}
-            onClick={() => onDelete(envelope)}
-          >
-            {envelope.status === 'COMPLETED' ? 'Delete envelope' : 'Delete draft'}
-          </DropdownItem>
-        ) : null}
-      </DropdownMenu>
-    </Dropdown>
-  );
-}
+export { EmailDeliveryWarningBadge, EnvelopeActionsDropdown } from './list/esigning-envelope-actions';
 
 export function EsigningListPage() {
   const searchParams = useSearchParams();
@@ -466,10 +106,7 @@ export function EsigningListPage() {
   const completionBccPreference = useUserPreference<EsigningCompletionBccPreference>(
     ESIGNING_COMPLETION_BCC_PREFERENCE_KEY,
   );
-  const columnWidthPreference = useUserPreference<Partial<Record<EsigningTableColumnId, number>>>(
-    ESIGNING_COLUMN_WIDTH_PREF_KEY,
-  );
-  const saveColumnWidthPreference = useUpsertUserPreference<Record<string, number>>();
+  const { columnWidths, startColumnResize, resizeColumnByKeyboard } = useEsigningColumnWidths();
   const defaultCompletionBccEmails = useMemo(
     () => parseEsigningCompletionBccPreference(completionBccPreference.data?.value).emails,
     [completionBccPreference.data?.value],
@@ -500,97 +137,6 @@ export function EsigningListPage() {
   const openedPreparedEnvelopeRef = useRef<string | null>(null);
   const uploadInputRef = useRef<HTMLInputElement>(null);
   const filterPanelRef = useRef<HTMLDivElement>(null);
-  const isResizingColumnRef = useRef(false);
-  const [columnWidths, setColumnWidths] = useState<Partial<Record<EsigningTableColumnId, number>>>({});
-
-  useEffect(() => {
-    const value = columnWidthPreference.data?.value;
-    if (!value || typeof value !== 'object' || Array.isArray(value)) return;
-
-    const sanitized = Object.fromEntries(
-      ESIGNING_TABLE_COLUMNS.flatMap((columnId) => {
-        const width = value[columnId];
-        return typeof width === 'number' && Number.isFinite(width)
-          ? [[columnId, Math.max(30, width)]]
-          : [];
-      })
-    ) as Partial<Record<EsigningTableColumnId, number>>;
-    setColumnWidths(sanitized);
-  }, [columnWidthPreference.data?.value]);
-
-  const startColumnResize = useCallback((
-    event: React.PointerEvent<HTMLElement>,
-    columnId: EsigningTableColumnId,
-  ) => {
-    event.preventDefault();
-    event.stopPropagation();
-
-    const handle = event.currentTarget;
-    const header = handle.closest('th') as HTMLTableCellElement | null;
-    // A header that has not been laid out measures 0px; fall back to the default width.
-    const startWidth =
-      columnWidths[columnId]
-      ?? (header?.getBoundingClientRect().width || DEFAULT_ESIGNING_COLUMN_WIDTHS[columnId]);
-    const startX = event.clientX;
-    const pointerId = event.pointerId;
-    let latestWidth = startWidth;
-
-    isResizingColumnRef.current = true;
-    document.body.style.userSelect = 'none';
-    document.body.style.cursor = 'col-resize';
-
-    try {
-      handle.setPointerCapture(pointerId);
-    } catch {
-      // Pointer capture is best-effort; window listeners still handle resizing.
-    }
-
-    const onMove = (pointerEvent: globalThis.PointerEvent) => {
-      const nextWidth = Math.max(30, startWidth + (pointerEvent.clientX - startX));
-      latestWidth = nextWidth;
-      setColumnWidths((current) => ({ ...current, [columnId]: nextWidth }));
-    };
-
-    const onUp = () => {
-      window.removeEventListener('pointermove', onMove);
-      window.removeEventListener('pointerup', onUp);
-      try {
-        handle.releasePointerCapture(pointerId);
-      } catch {
-        // Ignore browsers that already released pointer capture.
-      }
-      document.body.style.userSelect = '';
-      document.body.style.cursor = '';
-      isResizingColumnRef.current = false;
-
-      const nextWidths = { ...columnWidths, [columnId]: latestWidth };
-      setColumnWidths(nextWidths);
-      saveColumnWidthPreference.mutate({
-        key: ESIGNING_COLUMN_WIDTH_PREF_KEY,
-        value: nextWidths,
-      });
-    };
-
-    window.addEventListener('pointermove', onMove);
-    window.addEventListener('pointerup', onUp);
-  }, [columnWidths, saveColumnWidthPreference]);
-
-  const resizeColumnByKeyboard = useCallback((
-    event: React.KeyboardEvent<HTMLSpanElement>,
-    columnId: EsigningTableColumnId,
-  ) => {
-    if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
-    event.preventDefault();
-
-    const currentWidth = columnWidths[columnId] ?? DEFAULT_ESIGNING_COLUMN_WIDTHS[columnId];
-    const nextWidth = Math.max(30, currentWidth + (event.key === 'ArrowRight' ? 10 : -10));
-    const nextWidths = { ...columnWidths, [columnId]: nextWidth };
-    setColumnWidths(nextWidths);
-    saveColumnWidthPreference.mutate({
-      key: ESIGNING_COLUMN_WIDTH_PREF_KEY,
-      value: nextWidths,
-    });
-  }, [columnWidths, saveColumnWidthPreference]);
 
   const activeStatuses = TAB_STATUSES[activeTab];
   const envelopesQuery = useEsigningEnvelopes({
@@ -980,6 +526,15 @@ export function EsigningListPage() {
     }
   }
 
+  const envelopeActions: EnvelopeActionHandlers = {
+    onDuplicate: (target) => void handleDuplicateEnvelope(target),
+    onResend: (target) => void handleResendEnvelope(target),
+    onDelete: setDeleteTarget,
+    onVoid: setVoidTarget,
+    onRetryPdf: (envelopeId) => void handleRetryPdf(envelopeId),
+    onDownload: handleDownload,
+  };
+
   if (!can.readEsigning) {
     return (
       <div className="p-6">
@@ -1226,169 +781,18 @@ export function EsigningListPage() {
                 </button>
 
                 {isFilterPanelOpen ? (
-                  <div
-                    role="dialog"
-                    aria-label="Envelope filters"
-                    className="absolute left-0 top-[calc(100%+8px)] z-40 w-[min(420px,calc(100vw-2rem))] rounded-xl border border-border-primary bg-background-secondary shadow-elevation-2 sm:left-auto sm:right-0"
-                  >
-                    <div className="border-b border-border-primary px-5 py-4">
-                      <div className="text-sm font-semibold text-text-primary">Filter envelopes</div>
-                      <div className="mt-0.5 text-xs text-text-muted">
-                        Filters combine with the selected status tab and search.
-                      </div>
-                    </div>
-                    <div className="max-h-[60vh] space-y-4 overflow-y-auto p-5">
-                      <CompanySearchableSelect
-                        companies={companyOptions}
-                        value={draftCompanyId}
-                        onChange={setDraftCompanyId}
-                        placeholder="All companies"
-                        label="Company"
-                        clearable
-                        size="lg"
-                        containerClassName="h-10"
-                      />
-
-                      <div className="grid gap-4 sm:grid-cols-2">
-                        <label className="block">
-                          <span className="mb-1.5 block text-xs font-medium text-text-secondary">Status</span>
-                          <select
-                            aria-label="Filter by envelope status"
-                            value={draftFilters.status}
-                            onChange={(event) => setDraftFilters((current) => ({
-                              ...current,
-                              status: event.target.value as StatusFilter | '',
-                            }))}
-                            className="h-10 w-full rounded-lg border border-border-primary bg-background-primary px-3 text-sm text-text-primary focus:border-oak-primary focus:outline-none focus:ring-2 focus:ring-oak-primary/30"
-                          >
-                            <option value="">Use status tab</option>
-                            {(Object.keys(ENVELOPE_STATUS_LABELS) as StatusFilter[]).map((status) => (
-                              <option key={status} value={status}>{ENVELOPE_STATUS_LABELS[status]}</option>
-                            ))}
-                          </select>
-                        </label>
-                        <label className="block">
-                          <span className="mb-1.5 block text-xs font-medium text-text-secondary">Signing mode</span>
-                          <select
-                            aria-label="Filter by signing mode"
-                            value={draftFilters.signingOrder}
-                            onChange={(event) => setDraftFilters((current) => ({
-                              ...current,
-                              signingOrder: event.target.value as SigningOrderFilter | '',
-                            }))}
-                            className="h-10 w-full rounded-lg border border-border-primary bg-background-primary px-3 text-sm text-text-primary focus:border-oak-primary focus:outline-none focus:ring-2 focus:ring-oak-primary/30"
-                          >
-                            <option value="">Any mode</option>
-                            {(Object.keys(SIGNING_ORDER_FILTER_LABELS) as SigningOrderFilter[]).map((mode) => (
-                              <option key={mode} value={mode}>{SIGNING_ORDER_FILTER_LABELS[mode]}</option>
-                            ))}
-                          </select>
-                        </label>
-                      </div>
-
-                      <FormInput
-                        inputSize="md"
-                        label="Document name"
-                        placeholder="Filename contains..."
-                        value={draftFilters.documentName}
-                        onChange={(event) => setDraftFilters((current) => ({
-                          ...current,
-                          documentName: event.target.value,
-                        }))}
-                      />
-
-                      <div className="grid gap-4 sm:grid-cols-2">
-                        <FormInput
-                          inputSize="md"
-                          label="Recipient"
-                          placeholder="Name or email..."
-                          value={draftFilters.recipientQuery}
-                          onChange={(event) => setDraftFilters((current) => ({
-                            ...current,
-                            recipientQuery: event.target.value,
-                          }))}
-                        />
-                        <label className="block">
-                          <span className="mb-1.5 block text-xs font-medium text-text-secondary">Recipient status</span>
-                          <select
-                            aria-label="Filter by recipient signing status"
-                            value={draftFilters.recipientStatus}
-                            onChange={(event) => setDraftFilters((current) => ({
-                              ...current,
-                              recipientStatus: event.target.value as RecipientStatusFilter | '',
-                            }))}
-                            className="h-9 w-full rounded-lg border border-border-primary bg-background-primary px-3 text-sm text-text-primary focus:border-oak-primary focus:outline-none focus:ring-2 focus:ring-oak-primary/30"
-                          >
-                            <option value="">Any status</option>
-                            {(Object.keys(RECIPIENT_STATUS_LABELS) as RecipientStatusFilter[]).map((status) => (
-                              <option key={status} value={status}>{RECIPIENT_STATUS_LABELS[status]}</option>
-                            ))}
-                          </select>
-                        </label>
-                      </div>
-
-                      <label className="block">
-                        <span className="mb-1.5 block text-xs font-medium text-text-secondary">Created by</span>
-                        <select
-                          aria-label="Filter by envelope creator"
-                          value={draftFilters.createdBy}
-                          onChange={(event) => setDraftFilters((current) => ({
-                            ...current,
-                            createdBy: event.target.value as 'all' | 'me',
-                          }))}
-                          className="h-10 w-full rounded-lg border border-border-primary bg-background-primary px-3 text-sm text-text-primary focus:border-oak-primary focus:outline-none focus:ring-2 focus:ring-oak-primary/30"
-                        >
-                          <option value="all">All senders</option>
-                          <option value="me">Created by me</option>
-                        </select>
-                      </label>
-
-                      {([
-                        ['Created date', 'createdFrom', 'createdTo'],
-                        ['Sent date', 'sentFrom', 'sentTo'],
-                        ['Completed date', 'completedFrom', 'completedTo'],
-                      ] as const).map(([label, fromKey, toKey]) => (
-                        <fieldset key={label}>
-                          <legend className="mb-1.5 text-xs font-medium text-text-secondary">{label}</legend>
-                          <div className="grid grid-cols-2 gap-2">
-                            <input
-                              type="date"
-                              aria-label={`${label} from`}
-                              value={draftFilters[fromKey]}
-                              onChange={(event) => setDraftFilters((current) => ({
-                                ...current,
-                                [fromKey]: event.target.value,
-                              }))}
-                              className="h-10 min-w-0 rounded-lg border border-border-primary bg-background-primary px-2.5 text-sm text-text-primary focus:border-oak-primary focus:outline-none focus:ring-2 focus:ring-oak-primary/30"
-                            />
-                            <input
-                              type="date"
-                              aria-label={`${label} to`}
-                              value={draftFilters[toKey]}
-                              onChange={(event) => setDraftFilters((current) => ({
-                                ...current,
-                                [toKey]: event.target.value,
-                              }))}
-                              className="h-10 min-w-0 rounded-lg border border-border-primary bg-background-primary px-2.5 text-sm text-text-primary focus:border-oak-primary focus:outline-none focus:ring-2 focus:ring-oak-primary/30"
-                            />
-                          </div>
-                        </fieldset>
-                      ))}
-                    </div>
-                    <div className="flex items-center justify-between gap-3 border-t border-border-primary px-5 py-3">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setDraftFilters({ ...EMPTY_ADVANCED_FILTERS });
-                          setDraftCompanyId('');
-                        }}
-                      >
-                        Reset
-                      </Button>
-                      <Button size="sm" onClick={applyFilterPanel}>Apply</Button>
-                    </div>
-                  </div>
+                  <EnvelopeFilterPanel
+                    companyOptions={companyOptions}
+                    draftCompanyId={draftCompanyId}
+                    onDraftCompanyChange={setDraftCompanyId}
+                    draftFilters={draftFilters}
+                    setDraftFilters={setDraftFilters}
+                    onReset={() => {
+                      setDraftFilters({ ...EMPTY_ADVANCED_FILTERS });
+                      setDraftCompanyId('');
+                    }}
+                    onApply={applyFilterPanel}
+                  />
                 ) : null}
               </div>
 
@@ -1454,108 +858,18 @@ export function EsigningListPage() {
           </div>
 
           {hasAppliedFilters ? (
-            <div className="flex flex-wrap items-center gap-2 px-3 pb-3 sm:px-4 sm:pb-4">
-              {companyId && selectedCompanyName ? (
-                <FilterChip label="Company" value={selectedCompanyName} onRemove={() => handleCompanyChange('')} />
-              ) : null}
-              {appliedFilters.status && !isStatusDuplicatedByTab(appliedFilters.status, activeTab) ? (
-                <FilterChip
-                  label="Status"
-                  value={ENVELOPE_STATUS_LABELS[appliedFilters.status]}
-                  onRemove={() => {
-                    setAppliedFilters((current) => ({ ...current, status: '' }));
-                    setPage(1);
-                  }}
-                />
-              ) : null}
-              {appliedFilters.documentName ? (
-                <FilterChip
-                  label="Document"
-                  value={appliedFilters.documentName}
-                  onRemove={() => {
-                    setAppliedFilters((current) => ({ ...current, documentName: '' }));
-                    setPage(1);
-                  }}
-                />
-              ) : null}
-              {appliedFilters.recipientQuery ? (
-                <FilterChip
-                  label="Recipient"
-                  value={appliedFilters.recipientQuery}
-                  onRemove={() => {
-                    setAppliedFilters((current) => ({ ...current, recipientQuery: '' }));
-                    setPage(1);
-                  }}
-                />
-              ) : null}
-              {appliedFilters.recipientStatus ? (
-                <FilterChip
-                  label="Recipient status"
-                  value={RECIPIENT_STATUS_LABELS[appliedFilters.recipientStatus]}
-                  onRemove={() => {
-                    setAppliedFilters((current) => ({ ...current, recipientStatus: '' }));
-                    setPage(1);
-                  }}
-                />
-              ) : null}
-              {appliedFilters.signingOrder ? (
-                <FilterChip
-                  label="Signing mode"
-                  value={SIGNING_ORDER_FILTER_LABELS[appliedFilters.signingOrder]}
-                  onRemove={() => {
-                    setAppliedFilters((current) => ({ ...current, signingOrder: '' }));
-                    setPage(1);
-                  }}
-                />
-              ) : null}
-              {appliedFilters.createdFrom || appliedFilters.createdTo ? (
-                <FilterChip
-                  label="Created"
-                  value={formatFilterDateRange(appliedFilters.createdFrom, appliedFilters.createdTo)}
-                  onRemove={() => {
-                    setAppliedFilters((current) => ({ ...current, createdFrom: '', createdTo: '' }));
-                    setPage(1);
-                  }}
-                />
-              ) : null}
-              {appliedFilters.sentFrom || appliedFilters.sentTo ? (
-                <FilterChip
-                  label="Sent"
-                  value={formatFilterDateRange(appliedFilters.sentFrom, appliedFilters.sentTo)}
-                  onRemove={() => {
-                    setAppliedFilters((current) => ({ ...current, sentFrom: '', sentTo: '' }));
-                    setPage(1);
-                  }}
-                />
-              ) : null}
-              {appliedFilters.completedFrom || appliedFilters.completedTo ? (
-                <FilterChip
-                  label="Completed"
-                  value={formatFilterDateRange(appliedFilters.completedFrom, appliedFilters.completedTo)}
-                  onRemove={() => {
-                    setAppliedFilters((current) => ({ ...current, completedFrom: '', completedTo: '' }));
-                    setPage(1);
-                  }}
-                />
-              ) : null}
-              {appliedFilters.createdBy === 'me' ? (
-                <FilterChip
-                  label="Created by"
-                  value="Me"
-                  onRemove={() => {
-                    setAppliedFilters((current) => ({ ...current, createdBy: 'all' }));
-                    setPage(1);
-                  }}
-                />
-              ) : null}
-              <button
-                type="button"
-                onClick={clearAllFilters}
-                className="px-1 text-xs font-medium text-text-muted transition-colors hover:text-oak-primary"
-              >
-                Clear all
-              </button>
-            </div>
+            <EnvelopeFilterChips
+              companyId={companyId}
+              selectedCompanyName={selectedCompanyName}
+              onClearCompany={() => handleCompanyChange('')}
+              appliedFilters={appliedFilters}
+              activeTab={activeTab}
+              onRemove={(patch) => {
+                setAppliedFilters((current) => ({ ...current, ...patch }));
+                setPage(1);
+              }}
+              onClearAll={clearAllFilters}
+            />
           ) : null}
 
           <div
@@ -1625,351 +939,19 @@ export function EsigningListPage() {
                 ) : null}
               </div>
             ) : viewMode === 'table' ? (
-              <>
-                <TableViewport className="hidden md:block">
-                  <TableRoot>
-                    <colgroup>
-                      {ESIGNING_TABLE_COLUMNS.map((columnId) => (
-                        <col
-                          key={columnId}
-                          style={{
-                            width: `${columnWidths[columnId] ?? DEFAULT_ESIGNING_COLUMN_WIDTHS[columnId]}px`,
-                          }}
-                        />
-                      ))}
-                      <col />
-                    </colgroup>
-                    <TableHead>
-                      <TableHeaderRow hasFilters={false}>
-                        {ESIGNING_TABLE_COLUMNS.map((columnId) => {
-                          const sortField = ESIGNING_TABLE_SORT_FIELDS[columnId];
-                          const active = sortBy === sortField;
-                          return (
-                            <TableHeaderCell
-                              key={columnId}
-                              label={ESIGNING_TABLE_COLUMN_LABELS[columnId]}
-                              sorted={active}
-                              sortOrder={sortOrder}
-                              onSort={() => handleSort(sortField)}
-                              resizable
-                              onResizePointerDown={(event) => startColumnResize(event, columnId)}
-                              onResizeKeyDown={(event) => resizeColumnByKeyboard(event, columnId)}
-                              resizeAriaLabel={`Resize ${ESIGNING_TABLE_COLUMN_LABELS[columnId]} column`}
-                              resizeTestId={`esigning-resize-${columnId}`}
-                            />
-                          );
-                        })}
-                        <TableHeaderCell className="w-12 px-2">
-                          <span className="sr-only">Actions</span>
-                        </TableHeaderCell>
-                      </TableHeaderRow>
-                    </TableHead>
-                    <TableBody>
-                      {envelopes.map((envelope, index) => {
-                        const matchContext = getEnvelopeSearchMatchContext(envelope, debouncedQuery);
-                        const active = envelope.status === 'SENT' || envelope.status === 'IN_PROGRESS';
-                        const progress = envelope.signerCount > 0
-                          ? Math.round((envelope.completedSignerCount / envelope.signerCount) * 100)
-                          : 0;
-                        return (
-                          <TableRow
-                            key={envelope.id}
-                            index={index}
-                            interactive
-                            onActivate={() => window.location.assign(`/esigning/${envelope.id}`)}
-                            aria-label={`Open ${envelope.title}`}
-                            className="h-[58px] focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-oak-primary/30"
-                          >
-                            <td className="px-3 py-2 align-middle">
-                              <div className="flex flex-wrap items-center gap-1.5">
-                                <EnvelopeStatusBadge status={envelope.status} />
-                                <EmailDeliveryWarningBadge envelope={envelope} />
-                              </div>
-                            </td>
-                            <td className="px-3 py-2 align-middle">
-                              <div className="min-w-0">
-                                <div className="truncate text-[13px] font-semibold text-text-primary" title={envelope.title}>
-                                  {envelope.title}
-                                </div>
-                                {matchContext ? (
-                                  <div className="mt-0.5 truncate text-[11px] text-text-muted" title={matchContext}>
-                                    {matchContext}
-                                  </div>
-                                ) : null}
-                              </div>
-                            </td>
-                            <td className="px-3 py-2 align-middle">
-                              <div className="truncate text-xs text-text-secondary" title={envelope.companyName ?? 'No company'}>
-                                {envelope.companyName ?? 'No company'}
-                              </div>
-                            </td>
-                            <td className="px-3 py-2 align-middle">
-                              {active ? (
-                                <div>
-                                  <div className="text-xs font-medium text-text-secondary">
-                                    {envelope.completedSignerCount} / {envelope.signerCount} signed
-                                  </div>
-                                  <div className="mt-1 h-1 w-20 overflow-hidden rounded-full bg-background-tertiary">
-                                    <div className="h-full rounded-full bg-oak-primary" style={{ width: `${progress}%` }} />
-                                  </div>
-                                </div>
-                              ) : (
-                                <span className="text-xs text-text-secondary">
-                                  {envelope.documentCount} docs · {envelope.signerCount} signers
-                                </span>
-                              )}
-                            </td>
-                            <td className="px-3 py-2 align-middle text-xs text-text-muted">
-                              {formatEsigningDateTime(envelope.updatedAt)}
-                            </td>
-                            <td
-                              className="px-2 py-2 text-left align-middle"
-                              onClick={(event) => event.stopPropagation()}
-                              onKeyDown={(event) => event.stopPropagation()}
-                            >
-                              <EnvelopeActionsDropdown
-                                envelope={envelope}
-                                onDuplicate={(target) => void handleDuplicateEnvelope(target)}
-                                onResend={(target) => void handleResendEnvelope(target)}
-                                onDelete={setDeleteTarget}
-                                onVoid={setVoidTarget}
-                                onRetryPdf={(envelopeId) => void handleRetryPdf(envelopeId)}
-                                onDownload={handleDownload}
-                              />
-                            </td>
-                          </TableRow>
-                        );
-                      })}
-                    </TableBody>
-                  </TableRoot>
-                </TableViewport>
-
-                <div className="divide-y divide-border-primary md:hidden">
-                  {envelopes.map((envelope, index) => {
-                    const matchContext = getEnvelopeSearchMatchContext(envelope, debouncedQuery);
-                    const isAlternate = index % 2 === 1;
-                    const active = envelope.status === 'SENT' || envelope.status === 'IN_PROGRESS';
-                    return (
-                      <article
-                        key={envelope.id}
-                        tabIndex={0}
-                        role="link"
-                        aria-label={`Open ${envelope.title}`}
-                        onClick={() => window.location.assign(`/esigning/${envelope.id}`)}
-                        onKeyDown={(event) => {
-                          if (event.key === 'Enter' || event.key === ' ') {
-                            event.preventDefault();
-                            window.location.assign(`/esigning/${envelope.id}`);
-                          }
-                        }}
-                        className={cn(
-                          'cursor-pointer px-4 py-3 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-oak-primary/30',
-                          isAlternate
-                            ? 'bg-oak-row-alt hover:bg-oak-row-alt-hover'
-                            : 'bg-background-secondary hover:bg-background-tertiary/50'
-                        )}
-                      >
-                        <div className="flex items-start gap-3">
-                          <div className="min-w-0 flex-1">
-                            <div className="flex flex-wrap items-center gap-1.5">
-                              <EnvelopeStatusBadge status={envelope.status} />
-                              <EmailDeliveryWarningBadge envelope={envelope} />
-                            </div>
-                            <h2 className="mt-2 line-clamp-2 text-sm font-semibold text-text-primary">
-                              {envelope.title}
-                            </h2>
-                            {matchContext ? (
-                              <p className="mt-0.5 truncate text-[11px] text-text-muted">{matchContext}</p>
-                            ) : null}
-                            <p className="mt-1 truncate text-xs text-text-secondary">
-                              {envelope.companyName ?? 'No company'}
-                            </p>
-                            <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-text-muted">
-                              <span>{active ? `${envelope.completedSignerCount} / ${envelope.signerCount} signed` : `${envelope.documentCount} docs · ${envelope.signerCount} signers`}</span>
-                              <span>{formatEsigningDateTime(envelope.updatedAt)}</span>
-                            </div>
-                          </div>
-                          <div
-                            className="-mr-1 shrink-0"
-                            onClick={(event) => event.stopPropagation()}
-                            onKeyDown={(event) => event.stopPropagation()}
-                          >
-                            <EnvelopeActionsDropdown
-                              envelope={envelope}
-                              onDuplicate={(target) => void handleDuplicateEnvelope(target)}
-                              onResend={(target) => void handleResendEnvelope(target)}
-                              onDelete={setDeleteTarget}
-                              onVoid={setVoidTarget}
-                              onRetryPdf={(envelopeId) => void handleRetryPdf(envelopeId)}
-                              onDownload={handleDownload}
-                            />
-                          </div>
-                        </div>
-                      </article>
-                    );
-                  })}
-                </div>
-              </>
+              <EnvelopeTableView
+                envelopes={envelopes}
+                searchQuery={debouncedQuery}
+                sortBy={sortBy}
+                sortOrder={sortOrder}
+                onSort={handleSort}
+                columnWidths={columnWidths}
+                onResizePointerDown={startColumnResize}
+                onResizeKeyDown={resizeColumnByKeyboard}
+                actions={envelopeActions}
+              />
             ) : (
-              <div className="grid grid-cols-1 items-stretch gap-3 p-3 sm:p-4 lg:grid-cols-2">
-                {envelopes.map((envelope) => {
-                  const signers = envelope.recipients.filter((recipient) => recipient.type === 'SIGNER');
-                  const active = envelope.status === 'SENT' || envelope.status === 'IN_PROGRESS';
-                  const progress = envelope.signerCount > 0
-                    ? Math.round((envelope.completedSignerCount / envelope.signerCount) * 100)
-                    : 0;
-                  const matchContext = getEnvelopeSearchMatchContext(envelope, debouncedQuery);
-                  return (
-                    <article
-                      key={envelope.id}
-                      role="link"
-                      tabIndex={0}
-                      aria-label={`Open ${envelope.title}`}
-                      onClick={() => window.location.assign(`/esigning/${envelope.id}`)}
-                      onKeyDown={(event) => {
-                        if (event.key === 'Enter' || event.key === ' ') {
-                          event.preventDefault();
-                          window.location.assign(`/esigning/${envelope.id}`);
-                        }
-                      }}
-                      className="flex h-full cursor-pointer flex-col overflow-hidden rounded-xl border border-border-primary bg-background-secondary transition-colors hover:border-oak-primary/40 hover:bg-background-primary/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-oak-primary/30"
-                    >
-                      <div className={cn(
-                        'border-t-4 px-4 pb-2.5 pt-3',
-                        CARD_STATUS_BORDER_CLASS[envelope.status]
-                      )}>
-                        <div className="flex items-start gap-3">
-                          <div className="min-w-0 flex-1">
-                            <span className="sr-only">
-                              {ENVELOPE_STATUS_LABELS[envelope.status as StatusFilter]}
-                            </span>
-                            <h2 className="line-clamp-2 text-[15px] font-semibold leading-5 text-text-primary">
-                              {envelope.title}
-                            </h2>
-                            <p className="mt-0.5 truncate text-xs text-text-secondary" title={envelope.companyName ?? 'No company'}>
-                              {envelope.companyName ?? 'No company'}
-                            </p>
-                            {matchContext ? (
-                              <p className="mt-0.5 truncate text-[11px] text-text-muted" title={matchContext}>
-                                {matchContext}
-                              </p>
-                            ) : null}
-                            {envelope.emailDelivery.status === 'failed' ? (
-                              <div className="mt-1.5">
-                                <EmailDeliveryWarningBadge envelope={envelope} />
-                              </div>
-                            ) : null}
-                          </div>
-                          <div
-                            className="-mr-1 -mt-1 shrink-0"
-                            onClick={(event) => event.stopPropagation()}
-                            onKeyDown={(event) => event.stopPropagation()}
-                          >
-                            <EnvelopeActionsDropdown
-                              envelope={envelope}
-                              onDuplicate={(target) => void handleDuplicateEnvelope(target)}
-                              onResend={(target) => void handleResendEnvelope(target)}
-                              onDelete={setDeleteTarget}
-                              onVoid={setVoidTarget}
-                              onRetryPdf={(envelopeId) => void handleRetryPdf(envelopeId)}
-                              onDownload={handleDownload}
-                            />
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="flex flex-1 flex-col px-4 pb-3">
-                        {active ? (
-                          <div className="flex items-center gap-3 border-t border-border-primary pt-2.5">
-                            <div className="text-xs font-medium text-text-secondary">
-                              {envelope.completedSignerCount} / {envelope.signerCount} signed
-                            </div>
-                            <div className="h-1 flex-1 overflow-hidden rounded-full bg-background-tertiary">
-                              <div className="h-full rounded-full bg-oak-primary" style={{ width: `${progress}%` }} />
-                            </div>
-                          </div>
-                        ) : null}
-
-                        <div className={cn(
-                          'grid gap-3 pt-2.5 sm:grid-cols-2',
-                          active ? '' : 'border-t border-border-primary'
-                        )}>
-                          <div className="min-w-0">
-                            <div className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-text-muted">
-                              Signers ({signers.length})
-                            </div>
-                            <div className="space-y-1.5">
-                              {signers.length === 0 ? (
-                                <div className="text-xs text-text-muted">No signers assigned</div>
-                              ) : signers.slice(0, 3).map((recipient) => {
-                                const StatusIcon = recipient.status === 'SIGNED'
-                                  ? CheckCircle2
-                                  : recipient.status === 'DECLINED'
-                                    ? XCircle
-                                    : recipient.status === 'VIEWED' || recipient.status === 'NOTIFIED'
-                                      ? Clock
-                                      : Circle;
-                                const statusClass = recipient.status === 'SIGNED'
-                                  ? 'text-green-600'
-                                  : recipient.status === 'DECLINED'
-                                    ? 'text-rose-600'
-                                    : recipient.status === 'VIEWED'
-                                      ? 'text-blue-600'
-                                      : recipient.status === 'NOTIFIED'
-                                        ? 'text-amber-600'
-                                        : 'text-text-muted';
-                                const recipientStatusLabel =
-                                  RECIPIENT_STATUS_LABELS[recipient.status as RecipientStatusFilter]
-                                  ?? recipient.status;
-                                return (
-                                  <div key={recipient.id} className="flex min-w-0 items-center gap-2">
-                                    <StatusIcon
-                                      className={cn('h-3.5 w-3.5 shrink-0', statusClass)}
-                                      aria-label={recipientStatusLabel}
-                                    />
-                                    <div className="min-w-0 truncate text-xs font-medium text-text-primary" title={recipient.name}>
-                                      {recipient.name}
-                                    </div>
-                                  </div>
-                                );
-                              })}
-                              {signers.length > 3 ? (
-                                <div className="text-[11px] font-medium text-text-muted">+{signers.length - 3} more</div>
-                              ) : null}
-                            </div>
-                          </div>
-
-                          <div className="min-w-0 border-t border-border-primary pt-3 sm:border-l sm:border-t-0 sm:pl-3 sm:pt-0">
-                            <div className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-text-muted">
-                              Documents ({envelope.documents.length})
-                            </div>
-                            <div className="space-y-1.5">
-                              {envelope.documents.length === 0 ? (
-                                <div className="text-xs text-text-muted">No documents added</div>
-                              ) : envelope.documents.slice(0, 3).map((document) => (
-                                <div key={document.id} className="flex min-w-0 items-center gap-2">
-                                  <FileText className="h-3.5 w-3.5 shrink-0 text-text-muted" />
-                                  <span className="truncate text-xs text-text-secondary" title={document.fileName}>
-                                    {document.fileName}
-                                  </span>
-                                </div>
-                              ))}
-                              {envelope.documents.length > 3 ? (
-                                <div className="text-[11px] font-medium text-text-muted">+{envelope.documents.length - 3} more</div>
-                              ) : null}
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="mt-auto flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-t border-border-primary pt-2.5 text-[11px] text-text-muted">
-                          <span>{envelope.documentCount} docs · {envelope.signerCount} signers · {ESIGNING_SIGNING_ORDER_LABELS[envelope.signingOrder]}</span>
-                          <span>Updated {formatEsigningDateTime(envelope.updatedAt)}</span>
-                        </div>
-                      </div>
-                    </article>
-                  );
-                })}
-              </div>
+              <EnvelopeCardGrid envelopes={envelopes} searchQuery={debouncedQuery} actions={envelopeActions} />
             )}
 
             {!envelopesQuery.isLoading && totalResults > 0 ? (
