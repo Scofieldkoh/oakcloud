@@ -27,15 +27,3 @@ export async function acquireBusinessOperationBarrier(
     );
   }
 }
-
-/** A receipt newer than the snapshot would be erased by a destructive restore. */
-export function assertBusinessOperationRestoreSafety(
-  snapshotCutoff: string | undefined,
-  laterReceipt: { id: string } | null,
-): void {
-  if (!laterReceipt) return;
-  if (!snapshotCutoff) {
-    throw new Error('This backup has no business-operation cutoff. Create a new backup before restoring this workspace.');
-  }
-  throw new Error('This backup predates a committed business operation. Restore a backup taken after the latest operation to preserve its recorded outcome.');
-}

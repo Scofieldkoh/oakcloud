@@ -23,8 +23,9 @@ import {
 } from '@/components/ui/data-table';
 import { MobileCard, CardDetailsGrid, CardDetailItem } from '@/components/ui/responsive-table';
 import { useToast } from '@/components/ui/toast';
-import { formatBytes, getBackupStatusLabel } from '@/hooks/use-backup';
 import {
+  formatBytes,
+  getBackupStatusLabel,
   fullBackupDownloadUrl,
   isRunning,
   useBackupSettings,

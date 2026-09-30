@@ -123,6 +123,7 @@ export function SharePointBackupCard() {
               onSelect={() => setPickerOpen(true)}
               onClear={target ? () => setConfirmClear(true) : undefined}
               disabled={!connectorId}
+              size="sm"
             />
             <FormInput
               label="Keep the newest"

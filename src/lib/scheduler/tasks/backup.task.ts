@@ -1,8 +1,8 @@
 /**
  * Backup Scheduled Task
  *
- * Handles scheduled backup execution: the full-backup schedule (Backup page >
- * Full backups) and the older per-workspace schedules.
+ * Runs the full-backup schedule (Backup page) and marks backups left running
+ * by a restart as failed.
  *
  * Configuration:
  * - SCHEDULER_BACKUP_ENABLED=true (enable backup scheduling)
@@ -10,7 +10,6 @@
  */
 
 import { createLogger } from '@/lib/logger';
-import { backupService } from '@/services/backup.service';
 import { cleanupStaleFullBackups, processScheduledFullBackup } from '@/services/backup/full/full-backup.service';
 import type { TaskRegistration, TaskResult } from '../types';
 
@@ -27,28 +26,13 @@ async function executeBackupTask(): Promise<TaskResult> {
   try {
     await cleanupStaleFullBackups();
     const full = await processScheduledFullBackup();
-    const result = await backupService.processScheduledBackups();
-
-    if (result.processed === 0 && !full) {
-      return {
-        success: true,
-        message: 'No scheduled backups due at this time',
-        data: { processed: 0 },
-      };
+    if (!full) {
+      return { success: true, message: 'No scheduled backups due at this time', data: { processed: 0 } };
     }
-
-    const fullFailed = Boolean(full?.error);
     return {
-      success: result.failed === 0 && !fullFailed,
-      message: `Processed ${result.processed} workspace backups (${result.succeeded} succeeded, ${result.failed} failed)` +
-        (full ? `; full backup ${fullFailed ? `failed: ${full.error}` : 'started'}` : ''),
-      data: {
-        processed: result.processed,
-        succeeded: result.succeeded,
-        failed: result.failed,
-        results: result.results,
-        fullBackup: full,
-      },
+      success: !full.error,
+      message: full.error ? `Full backup failed: ${full.error}` : 'Full backup started',
+      data: { fullBackup: full },
     };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -69,7 +53,7 @@ async function executeBackupTask(): Promise<TaskResult> {
 export const backupTask: TaskRegistration = {
   id: 'backup',
   name: 'Scheduled Backups',
-  description: 'Processes due backup schedules and creates backups for tenants',
+  description: 'Starts the scheduled full backup when it is due',
   defaultCronPattern: '0,15,30,45 * * * *', // Every 15 minutes
   execute: executeBackupTask,
 };

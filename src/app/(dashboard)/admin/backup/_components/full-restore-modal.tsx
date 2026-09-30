@@ -7,8 +7,8 @@ import { Button } from '@/components/ui/button';
 import { FormInput } from '@/components/ui/form-input';
 import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
 import { useToast } from '@/components/ui/toast';
-import { formatBytes } from '@/hooks/use-backup';
 import {
+  formatBytes,
   usePreviewFullRestore,
   useStartFullRestore,
   type FullBackupPreview,
@@ -76,7 +76,7 @@ export function FullRestoreModal({ backup, onClose }: FullRestoreModalProps) {
   const blocked = (preview?.blockers.length ?? 0) > 0;
 
   return (
-    <Modal isOpen={backup !== null} onClose={close} title="Restore from full backup" size="lg">
+    <Modal isOpen={backup !== null} onClose={close} title="Restore from full backup" size="5xl">
       <ModalBody>
         <div className="space-y-4">
           {!preview ? (

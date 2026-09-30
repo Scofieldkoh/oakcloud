@@ -1,7 +1,7 @@
 /**
  * Cleanup Scheduled Task
  *
- * Handles periodic cleanup of expired and stale backups.
+ * Removes expired form drafts, orphaned form uploads and orphaned e-signing storage.
  *
  * Configuration:
  * - SCHEDULER_CLEANUP_ENABLED=true (enable cleanup scheduling)
@@ -13,30 +13,8 @@ import type { TaskRegistration, TaskResult } from '../types';
 
 const log = createLogger('cleanup-task');
 
-// Lazy-loaded backup service reference
-let backupServiceInstance: typeof import('@/services/backup.service').backupService | null = null;
 let formBuilderServiceInstance: typeof import('@/services/form-builder.service') | null = null;
 let esigningEnvelopeServiceInstance: typeof import('@/services/esigning-envelope.service') | null = null;
-
-/**
- * Get backup service (lazy-loaded to avoid chunking issues in instrumentation context)
- */
-async function getBackupService(): Promise<typeof import('@/services/backup.service').backupService> {
-  if (!backupServiceInstance) {
-    // Use relative path - path aliases don't work in instrumentation context with Turbopack
-    const backupModule = await import('../../../services/backup.service');
-    backupServiceInstance = backupModule.backupService;
-
-    // Validate the service was loaded correctly
-    if (!backupServiceInstance || typeof backupServiceInstance.runCleanup !== 'function') {
-      throw new Error(
-        'Failed to load backup service: runCleanup method not found. ' +
-        `Module exports: ${Object.keys(backupModule).join(', ')}`
-      );
-    }
-  }
-  return backupServiceInstance;
-}
 
 async function getFormBuilderService(): Promise<typeof import('@/services/form-builder.service')> {
   if (!formBuilderServiceInstance) {
@@ -55,45 +33,34 @@ async function getEsigningEnvelopeService(): Promise<typeof import('@/services/e
 /**
  * Execute cleanup task
  *
- * Cleans up expired backups and marks stale in-progress backups as failed.
+ * Stale full backups are handled by the backup task.
  */
 async function executeCleanupTask(): Promise<TaskResult> {
-  log.info('Running backup cleanup...');
+  log.info('Running platform cleanup...');
 
   try {
-    const [backupService, formBuilderService, esigningEnvelopeService] = await Promise.all([
-      getBackupService(),
+    const [formBuilderService, esigningEnvelopeService] = await Promise.all([
       getFormBuilderService(),
       getEsigningEnvelopeService(),
     ]);
-    const [result, deletedExpiredDrafts, deletedOrphanedUploads, esigningCleanup] = await Promise.all([
-      backupService.runCleanup(),
+    const [deletedExpiredDrafts, deletedOrphanedUploads, esigningCleanup] = await Promise.all([
       formBuilderService.cleanupExpiredFormDrafts(),
       formBuilderService.cleanupOrphanedUploads(),
       esigningEnvelopeService.cleanupEsigningOrphanedStorage(),
     ]);
 
     const message = [
-      `Stale: ${result.staleBackups.markedFailedCount}/${result.staleBackups.staleCount} marked failed`,
-      `Expired: ${result.expiredBackups.deletedCount}/${result.expiredBackups.expiredCount} deleted`,
       `Form drafts: ${deletedExpiredDrafts} deleted`,
       `Orphan uploads: ${deletedOrphanedUploads} deleted`,
       `E-signing storage: ${esigningCleanup.deletedPrefixes}/${esigningCleanup.orphanedPrefixes} prefixes deleted`,
     ].join('; ');
 
-    const hasErrors =
-      result.expiredBackups.failedCount > 0 || esigningCleanup.failedPrefixes.length > 0;
+    const hasErrors = esigningCleanup.failedPrefixes.length > 0;
 
     return {
       success: !hasErrors,
       message,
       data: {
-        staleBackups: result.staleBackups,
-        expiredBackups: {
-          scanned: result.expiredBackups.scannedCount,
-          deleted: result.expiredBackups.deletedCount,
-          failed: result.expiredBackups.failedCount,
-        },
         forms: {
           deletedExpiredDrafts,
           deletedOrphanedUploads,
@@ -101,7 +68,7 @@ async function executeCleanupTask(): Promise<TaskResult> {
         esigning: esigningCleanup,
       },
       error: hasErrors
-        ? `${result.expiredBackups.failedCount + esigningCleanup.failedPrefixes.length} cleanup errors`
+        ? `${esigningCleanup.failedPrefixes.length} cleanup errors`
         : undefined,
     };
   } catch (error) {
@@ -123,7 +90,7 @@ async function executeCleanupTask(): Promise<TaskResult> {
 export const cleanupTask: TaskRegistration = {
   id: 'cleanup',
   name: 'Platform Cleanup',
-  description: 'Cleans up expired backups, stale records, and orphaned uploads',
+  description: 'Cleans up expired form drafts and orphaned uploads',
   defaultCronPattern: '0 2 * * *', // Daily at 2 AM
   execute: executeCleanupTask,
 };

@@ -7,8 +7,7 @@ import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
 import { useToast } from '@/components/ui/toast';
-import { formatBytes } from '@/hooks/use-backup';
-import { useImportSharePointBackup, useSharePointBackupFiles } from '@/hooks/use-full-backup';
+import { formatBytes, useImportSharePointBackup, useSharePointBackupFiles } from '@/hooks/use-full-backup';
 
 /** Lists the backup files in the SharePoint folder and copies one onto this machine to restore. */
 export function SharePointBackupFilesModal({
