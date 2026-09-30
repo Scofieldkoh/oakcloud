@@ -76,8 +76,32 @@ async function sha256File(filePath: string): Promise<string> {
   return hash.digest('hex');
 }
 
+/** Thrown inside a running backup once someone has pressed Stop. */
+class BackupStoppedError extends Error {
+  constructor() {
+    super('Stopped');
+  }
+}
+
+const STOPPED_STEP = 'Stopped';
+
+/** Throws BackupStoppedError when the backup is no longer running (Stop was pressed). */
+async function assertStillRunning(backupId: string): Promise<void> {
+  const current = await prisma.systemBackup.findUnique({ where: { id: backupId }, select: { status: true } });
+  if (current?.status !== 'IN_PROGRESS') throw new BackupStoppedError();
+}
+
 async function setProgress(backupId: string, progress: number, currentStep: string): Promise<void> {
   await prisma.systemBackup.update({ where: { id: backupId }, data: { progress, currentStep } });
+}
+
+/** Records progress on a backup being made; throws BackupStoppedError once it has been stopped. */
+async function setBackupProgress(backupId: string, progress: number, currentStep: string): Promise<void> {
+  const { count } = await prisma.systemBackup.updateMany({
+    where: { id: backupId, status: 'IN_PROGRESS' },
+    data: { progress, currentStep },
+  });
+  if (count === 0) throw new BackupStoppedError();
 }
 
 function errorText(error: unknown): string {
@@ -149,7 +173,11 @@ export async function createFullBackup(input: {
 }
 
 /** Exports every table from one consistent snapshot into `dir/db`. */
-async function exportDatabase(dir: string, onProgress: (done: number, total: number) => Promise<void>) {
+async function exportDatabase(
+  dir: string,
+  onProgress: (done: number, total: number) => Promise<void>,
+  checkpoint: () => Promise<void>,
+) {
   return prisma.$transaction(async (tx) => {
     // Hold every workspace's barriers so no business operation is half-recorded in the snapshot.
     const workspaces = await tx.workspace.findMany({ select: { id: true, name: true }, orderBy: { id: 'asc' } });
@@ -164,7 +192,7 @@ async function exportDatabase(dir: string, onProgress: (done: number, total: num
     let done = 0;
     await fs.promises.mkdir(path.join(dir, 'db'), { recursive: true });
     for (const [name, columns] of tables) {
-      const result = await exportTable(tx, name, path.join(dir, tableEntry(name)));
+      const result = await exportTable(tx, name, path.join(dir, tableEntry(name)), checkpoint);
       exported.push({ name, columns, rows: result.rows });
       lockedSecrets += result.lockedSecrets;
       done += 1;
@@ -204,14 +232,19 @@ async function exportFiles(dir: string, onProgress: (done: number, total: number
 
 async function runFullBackup(backupId: string, password: string): Promise<void> {
   try {
-    await prisma.systemBackup.update({ where: { id: backupId }, data: { status: 'IN_PROGRESS', progress: 1, currentStep: 'Exporting database' } });
+    const started = await prisma.systemBackup.updateMany({
+      where: { id: backupId, status: 'PENDING' },
+      data: { status: 'IN_PROGRESS', progress: 1, currentStep: 'Exporting database' },
+    });
+    if (started.count === 0) throw new BackupStoppedError();
     const backup = await prisma.systemBackup.findUniqueOrThrow({ where: { id: backupId } });
+    const checkpoint = () => assertStillRunning(backupId);
 
     await withWorkDir(`backup-${backupId}`, async (dir) => {
       const database = await exportDatabase(dir, (done, total) =>
-        setProgress(backupId, 1 + Math.floor((done / total) * 29), `Exporting database (${done} of ${total} tables)`));
+        setBackupProgress(backupId, 1 + Math.floor((done / total) * 29), `Exporting database (${done} of ${total} tables)`), checkpoint);
       const { files, skippedFiles } = await exportFiles(dir, (done, total) =>
-        setProgress(backupId, 30 + Math.floor((done / Math.max(total, 1)) * 40), `Copying files (${done} of ${total})`));
+        setBackupProgress(backupId, 30 + Math.floor((done / Math.max(total, 1)) * 40), `Copying files (${done} of ${total})`));
 
       const manifest: FullBackupManifest = {
         format: FULL_BACKUP_FORMAT,
@@ -232,21 +265,24 @@ async function runFullBackup(backupId: string, password: string): Promise<void> 
         },
       };
 
-      await setProgress(backupId, 72, 'Locking the backup file');
+      await setBackupProgress(backupId, 72, 'Locking the backup file');
       const archivePath = path.join(dir, 'backup.oakbackup');
       const writer = BackupArchiveWriter.create(archivePath, password);
       for (const table of manifest.tables) await writer.addFile(tableEntry(table.name), path.join(dir, tableEntry(table.name)));
-      for (const file of manifest.files) await writer.addFile(fileEntry(file.key), path.join(dir, fileEntry(file.key)));
+      for (const [index, file] of manifest.files.entries()) {
+        if (index % 100 === 99) await checkpoint();
+        await writer.addFile(fileEntry(file.key), path.join(dir, fileEntry(file.key)));
+      }
       await writer.addBuffer(MANIFEST_ENTRY, Buffer.from(JSON.stringify(manifest), 'utf-8'));
       await writer.finish();
 
-      await setProgress(backupId, 90, 'Saving the backup file');
+      await setBackupProgress(backupId, 90, 'Saving the backup file');
       const key = archiveKey(backupId, backup.createdAt);
       const archive = await fs.promises.readFile(archivePath);
       await storage.upload(key, archive, { contentType: 'application/octet-stream' });
 
-      await prisma.systemBackup.update({
-        where: { id: backupId },
+      const finished = await prisma.systemBackup.updateMany({
+        where: { id: backupId, status: 'IN_PROGRESS' },
         data: {
           status: 'COMPLETED',
           progress: 100,
@@ -259,6 +295,10 @@ async function runFullBackup(backupId: string, password: string): Promise<void> 
           completedAt: new Date(),
         },
       });
+      if (finished.count === 0) {
+        await storage.delete(key).catch(() => undefined);
+        throw new BackupStoppedError();
+      }
       await audit({
         userId: backup.createdById ?? undefined,
         action: 'BACKUP_COMPLETED',
@@ -273,6 +313,11 @@ async function runFullBackup(backupId: string, password: string): Promise<void> 
       await copyBackupToSharePoint(backupId, archive);
     });
   } catch (error) {
+    // Stop already recorded the outcome; the rolled-back export and removed work folder are all that was left.
+    if (error instanceof BackupStoppedError) {
+      log.info(`Full backup ${backupId} stopped`);
+      return;
+    }
     await prisma.systemBackup.update({
       where: { id: backupId },
       data: { status: 'FAILED', currentStep: 'Failed', errorMessage: errorText(error) },
@@ -325,6 +370,32 @@ export async function downloadFullBackup(backupId: string): Promise<{ fileName: 
     throw new Error('This backup is not ready to download');
   }
   return { fileName: path.posix.basename(backup.archiveKey), content: await storage.download(backup.archiveKey) };
+}
+
+/**
+ * Stops a backup that is being made. The running job notices at its next
+ * checkpoint, abandons its snapshot and removes its work files; nothing in
+ * the live data changes. Also clears a backup left running by a restart.
+ */
+export async function stopFullBackup(backupId: string, userId?: string): Promise<void> {
+  const backup = await getFullBackup(backupId);
+  if (backup.source === 'UPLOADED' || !['PENDING', 'IN_PROGRESS'].includes(backup.status)) {
+    throw new Error('Only a backup that is being made can be stopped');
+  }
+  const { count } = await prisma.systemBackup.updateMany({
+    where: { id: backupId, status: { in: ['PENDING', 'IN_PROGRESS'] } },
+    data: { status: 'FAILED', currentStep: STOPPED_STEP, errorMessage: 'Stopped before it finished; no backup file was kept' },
+  });
+  if (count === 0) throw new Error('The backup has already finished');
+  await audit({
+    userId,
+    action: 'BACKUP_FAILED',
+    entityType: 'SystemBackup',
+    entityId: backupId,
+    entityName: backup.name,
+    summary: `Stopped full backup "${backup.name}"`,
+    changeSource: userId ? 'MANUAL' : 'SYSTEM',
+  });
 }
 
 export async function deleteFullBackup(backupId: string, userId?: string): Promise<void> {

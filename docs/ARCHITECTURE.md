@@ -378,10 +378,18 @@ cleanup reverses those dependencies.
 `src/services/backup/full/` backs up the whole install, not one workspace.
 The table list comes from the live database catalog, so a new table is covered
 without code changes; only `_prisma_migrations`, `system_backups` and
-`tenant_backups` (records about this machine) are left out. Rows are exported
-with `row_to_json` inside one repeatable-read transaction that holds every
-workspace's business-operation and contact-merge barriers, and every stored
-file except `backups/` and `system-backups/` is copied.
+`tenant_backups` (records about this machine) and the ACRA register
+(`acra_entity`, `acra_sync_state`, re-downloaded by the ACRA sync) are left out,
+and a restore leaves them as they are. Rows are exported with `row_to_json`
+through one cursor per table inside one repeatable-read transaction that holds
+every workspace's business-operation and contact-merge barriers, and every
+stored file except `backups/` and `system-backups/` is copied.
+
+A backup being made can be stopped (`stopFullBackup`): it is marked `FAILED`
+with step `Stopped` at once, and the job, which re-checks its status between
+tables, every 50,000 rows and every 100 archived files, rolls back its snapshot,
+removes its work folder and keeps no file. Stop also clears a backup left
+running by an app restart.
 
 The result is one `.oakbackup` file: gzip inside AES-256-GCM, keyed by scrypt
 from the backup password (Backup page; stored locked with `ENCRYPTION_KEY` so

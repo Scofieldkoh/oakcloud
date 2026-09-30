@@ -37,8 +37,8 @@ const RULES: ModuleRule[] = [
   {
     key: 'companies',
     label: 'Companies',
-    description: 'Companies, officers, shareholders, addresses, notes and ACRA data',
-    tables: ['companies', 'share_capital', 'acra_entity', 'acra_sync_state', 'note_tabs'],
+    description: 'Companies, officers, shareholders, addresses, notes and BizFile records',
+    tables: ['companies', 'share_capital', 'note_tabs'],
     prefixes: ['company_', 'bizfile_'],
   },
   {

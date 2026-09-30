@@ -171,4 +171,21 @@ describePostgres('restoring a full backup module by module', () => {
     expect(await prisma.user.count({ where: { id: lateUser.id } })).toBe(1);
     expect((await storage.download(`${workspaceId}/branding/seal.png`)).toString()).toBe('seal-bytes');
   }, 240_000);
+
+  it('stops a backup being made, keeps no file and lets a new one start', async () => {
+    const { prisma } = await import('@/lib/prisma');
+    const service = await import('@/services/backup/full/full-backup.service');
+
+    const { backupId: stoppedId } = await service.createFullBackup({ userId, name: 'To stop' });
+    await service.stopFullBackup(stoppedId, userId);
+    await expect(service.stopFullBackup(stoppedId, userId)).rejects.toThrow(/being made/);
+
+    // The next backup can start straight away, and the stopped job never overwrites its outcome.
+    const { backupId: nextId } = await service.createFullBackup({ userId, name: 'After stop' });
+    expect((await waitFor(nextId, (status) => !['PENDING', 'IN_PROGRESS'].includes(status))).status).toBe('COMPLETED');
+    const stopped = await prisma.systemBackup.findUniqueOrThrow({ where: { id: stoppedId } });
+    expect(stopped).toMatchObject({ status: 'FAILED', currentStep: 'Stopped', archiveKey: null });
+    expect(fs.readdirSync(path.join(workDir, 'work')).filter((name) => name.startsWith(`backup-${stoppedId}`))).toEqual([]);
+    await expect(service.stopFullBackup(nextId, userId)).rejects.toThrow(/being made/);
+  }, 240_000);
 });

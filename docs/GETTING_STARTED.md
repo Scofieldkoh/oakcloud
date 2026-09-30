@@ -192,7 +192,7 @@ npm run db:push
 1. On the old machine, open Administration > Backup > Full backups, set a backup password (keep it in your password manager), click Back up now, and download the `.oakbackup` file when it completes. Also copy your `.env` file.
 2. On the new machine, clone the repository, put the `.env` in place (a new `ENCRYPTION_KEY` also works; connectors are re-locked during the restore), start the stack, then run `docker compose exec app npx prisma migrate deploy` and `docker compose exec app npx tsx prisma/seed.ts` so you can sign in with the default admin.
 3. Open Administration > Backup > Full backups, click Upload backup file, then Restore. Enter the backup password, read the check, and type `RESTORE`.
-4. When the restore finishes, sign in with your own account from the backup and run `docker compose restart app`.
+4. When the restore finishes, sign in with your own account from the backup and run `docker compose restart app`. Backups leave out the ACRA register, so open Administration > ACRA Records and click Sync now to download it again.
 
 If the old machine copied its backups to SharePoint (Full backups > SharePoint copy), step 1 is not needed: on the new machine add the SharePoint connector on the Connectors page, choose the same folder under SharePoint copy, click Restore from SharePoint, Copy here, then Restore on the copied backup.
 

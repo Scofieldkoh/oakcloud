@@ -69,7 +69,7 @@ async function fingerprint(name: string): Promise<Record<string, string>> {
       `SELECT table_name FROM information_schema.tables
         -- Audit entries are written after the snapshot (backup completed, restore completed).
         WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
-          AND table_name NOT IN ('_prisma_migrations', 'system_backups', 'tenant_backups', 'audit_logs')
+          AND table_name NOT IN ('_prisma_migrations', 'system_backups', 'tenant_backups', 'audit_logs', 'acra_entity', 'acra_sync_state')
         ORDER BY table_name`,
     );
     const result: Record<string, string> = {};
@@ -151,6 +151,10 @@ describePostgres('full backup and restore on PostgreSQL', () => {
       },
     });
     await storage.upload(`${workspace.id}/branding/logo.png`, Buffer.from('logo-bytes'), { contentType: 'image/png' });
+    // The public ACRA register is downloaded again by its sync, never backed up.
+    await prisma.acraEntity.create({
+      data: { uen: `ACRA${suffix}`, entityName: 'REGISTER ONLY PTE. LTD.', entityStatus: 'Live', entityType: 'LC', dataAsOf: '2026-09-01' },
+    });
 
     await setBackupPassword(PASSWORD, superAdmin.id);
     const { backupId } = await createFullBackup({ userId: superAdmin.id, name: 'Round trip' });
@@ -160,6 +164,9 @@ describePostgres('full backup and restore on PostgreSQL', () => {
 
     archive = (await downloadFullBackup(backupId)).content;
     expect(archive.includes(Buffer.from('client-secret-value'))).toBe(false);
+    expect((await prisma.systemBackup.findUniqueOrThrow({ where: { id: backupId } })).manifestJson).not.toMatchObject({
+      tables: expect.arrayContaining([expect.objectContaining({ name: 'acra_entity' })]),
+    });
     sourceFingerprint = await fingerprint(sourceDb);
     expect(Number(sourceFingerprint.deadline_rules.split(':')[0])).toBeGreaterThan(0);
   }, 180_000);
@@ -171,6 +178,9 @@ describePostgres('full backup and restore on PostgreSQL', () => {
     const { decrypt } = await import('@/lib/encryption');
     const service = await import('@/services/backup/full/full-backup.service');
     // The default admin a fresh install is set up with; the restore replaces it.
+    await prisma.acraEntity.create({
+      data: { uen: `KEEP${suffix}`, entityName: 'KEPT ON THIS MACHINE PTE. LTD.', entityStatus: 'Live', entityType: 'LC', dataAsOf: '2026-09-01' },
+    });
     const { id: uploader } = await prisma.user.create({
       data: { email: `setup-${suffix}@example.com`, passwordHash: 'x', firstName: 'Setup', lastName: 'Admin' },
     });
@@ -198,6 +208,8 @@ describePostgres('full backup and restore on PostgreSQL', () => {
     expect(restored.status).toBe('RESTORED');
 
     expect(await fingerprint(targetDb)).toEqual(sourceFingerprint);
+    // A restore leaves this machine's ACRA register alone.
+    expect(await prisma.acraEntity.count({ where: { uen: `KEEP${suffix}` } })).toBe(1);
     const connector = await prisma.connector.findFirstOrThrow();
     expect(JSON.parse(decrypt(connector.credentials))).toEqual({ clientSecret: 'client-secret-value' });
     expect((await storage.download(`${workspaceId}/branding/logo.png`)).toString()).toBe('logo-bytes');

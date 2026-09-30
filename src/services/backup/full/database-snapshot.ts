@@ -16,9 +16,17 @@ import type { FullBackupTable } from './types';
 /**
  * Tables that describe this install rather than its data. Migration history
  * belongs to the running code, and backup records point at files on this
- * machine only.
+ * machine only. The ACRA register (hundreds of thousands of public records)
+ * and its sync state are downloaded again by the ACRA sync, so they are
+ * neither backed up nor replaced by a restore.
  */
-export const EXCLUDED_TABLES = new Set(['_prisma_migrations', 'system_backups', 'tenant_backups']);
+export const EXCLUDED_TABLES = new Set([
+  '_prisma_migrations',
+  'system_backups',
+  'tenant_backups',
+  'acra_entity',
+  'acra_sync_state',
+]);
 
 const EXPORT_BATCH_ROWS = 2000;
 const IMPORT_BATCH_ROWS = 500;
@@ -66,22 +74,19 @@ export async function exportTable(
   db: RawClient,
   table: string,
   filePath: string,
+  /** Called every few batches; throw to stop the export (a stopped backup). */
+  checkpoint?: () => Promise<void>,
 ): Promise<{ rows: number; lockedSecrets: number }> {
   const secrets = secretColumnsFor(table);
   const output = fs.createWriteStream(filePath);
   let rows = 0;
   let lockedSecrets = 0;
-  let lastCtid = '(0,0)';
+  const cursor = 'full_backup_export';
+  // One cursor reads the table in a single pass; paging with ORDER BY re-sorted the whole table per page.
+  await db.$executeRawUnsafe(`DECLARE ${cursor} NO SCROLL CURSOR FOR SELECT row_to_json(t)::text AS row FROM ${quoteIdent(table)} t`);
   try {
     for (;;) {
-      const batch = await db.$queryRawUnsafe<Array<{ ctid: string; row: string }>>(
-        `SELECT t.ctid::text AS ctid, row_to_json(t)::text AS row
-           FROM ${quoteIdent(table)} t
-          WHERE t.ctid > $1::tid
-          ORDER BY t.ctid
-          LIMIT ${EXPORT_BATCH_ROWS}`,
-        lastCtid,
-      );
+      const batch = await db.$queryRawUnsafe<Array<{ row: string }>>(`FETCH ${EXPORT_BATCH_ROWS} FROM ${cursor}`);
       if (batch.length === 0) break;
       const lines = batch.map(({ row }) => {
         if (secrets.length === 0) return row;
@@ -95,10 +100,11 @@ export async function exportTable(
       });
       if (!output.write(lines.join('\n') + '\n')) await new Promise<void>((resolve) => output.once('drain', () => resolve()));
       rows += batch.length;
-      lastCtid = batch[batch.length - 1].ctid;
       if (batch.length < EXPORT_BATCH_ROWS) break;
+      if (checkpoint && rows % (EXPORT_BATCH_ROWS * 25) === 0) await checkpoint();
     }
   } finally {
+    await db.$executeRawUnsafe(`CLOSE ${cursor}`).catch(() => undefined);
     await new Promise<void>((resolve, reject) => output.end((error?: Error | null) => (error ? reject(error) : resolve())));
   }
   return { rows, lockedSecrets };
