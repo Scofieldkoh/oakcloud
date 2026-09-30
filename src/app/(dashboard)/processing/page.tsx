@@ -41,6 +41,7 @@ import { AmountFilter, type AmountFilterValue } from '@/components/ui/amount-fil
 import { Pagination } from '@/components/ui/pagination';
 import { TableBody, TableEmptyState, TableFilterCell, TableFilterRow, TableHead, TableHeaderCell, TableHeaderRow, TableRoot, TableRow, TableSelectionButton, TableShell, TableTextFilter, TableViewport } from '@/components/ui/data-table';
 import { FilterChip } from '@/components/ui/filter-chip';
+import { ListEmptyState } from '@/components/ui/empty-state';
 import { useAvailableTags } from '@/hooks/use-document-tags';
 import { useActiveCompanyId } from '@/components/ui/company-selector';
 import { useUserPreferences, useUpsertUserPreference } from '@/hooks/use-user-preferences';
@@ -1561,6 +1562,25 @@ export default function ProcessingDocumentsPage() {
     });
   }, [params.limit, params.sortBy, params.sortOrder, params.search]);
 
+  const emptyState = (
+    <ListEmptyState
+      icon={FileText}
+      noun="documents"
+      filtered={activeFilterChips.length > 0 || Boolean(params.search)}
+      onClearFilters={() => {
+        handleClearAllFilters();
+        handleSearchChange('');
+      }}
+      emptyDescription="Upload invoices, receipts or statements to start processing."
+      createAction={can.createDocument ? (
+        <Link href="/processing/upload" className="btn-primary btn-sm inline-flex items-center gap-2">
+          <Upload className="h-4 w-4" />
+          Upload documents
+        </Link>
+      ) : undefined}
+    />
+  );
+
   return (
     <div {...getRootProps()} className="p-4 sm:p-6 relative">
       <input {...getInputProps()} />
@@ -1800,9 +1820,7 @@ export default function ProcessingDocumentsPage() {
       {!error && data && (
         <div className={cn('lg:hidden space-y-3 mb-6 relative', isFetching && 'opacity-60')}>
           {data.documents.length === 0 ? (
-            <div className="card p-8 text-center">
-              <p className="text-sm text-text-secondary">No documents found</p>
-            </div>
+            <div className="card">{emptyState}</div>
           ) : (
             data.documents.map((doc, index) => {
               const isSelected = selectedIds.includes(doc.id);
@@ -2389,7 +2407,7 @@ export default function ProcessingDocumentsPage() {
               </TableHead>
               <TableBody>
                 {data.documents.length === 0 ? (
-                  <TableEmptyState colSpan={visibleColumnIds.length + 1} message="No documents found" />
+                  <TableEmptyState colSpan={visibleColumnIds.length + 1} message={emptyState} />
                 ) : (
                   data.documents.map((doc, index) => {
                     const isSelected = selectedIds.includes(doc.id);

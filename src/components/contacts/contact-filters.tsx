@@ -1,7 +1,7 @@
 'use client';
 
 import { Search, Filter, X, ChevronDown } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { ContactType, IdentificationType } from '@/generated/prisma';
 
 interface ContactFiltersProps {
@@ -46,6 +46,9 @@ export function ContactFilters({
   searchInputId,
 }: ContactFiltersProps) {
   const [searchQuery, setSearchQuery] = useState(initialQuery);
+
+  // Follow outside changes, such as Clear filters or a restored URL.
+  useEffect(() => setSearchQuery(initialQuery), [initialQuery]);
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState<FilterValues>(initialFilters || {});
 

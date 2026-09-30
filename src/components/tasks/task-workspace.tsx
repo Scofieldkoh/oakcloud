@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { ListChecks, Plus } from 'lucide-react';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { ListEmptyState } from '@/components/ui/empty-state';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { FilterChip } from '@/components/ui/filter-chip';
 import { Pagination } from '@/components/ui/pagination';
@@ -361,6 +362,28 @@ export function TaskWorkspace() {
       ) : (
         <TaskList
           tasks={tasks}
+          emptyState={(
+            <ListEmptyState
+              icon={ListChecks}
+              noun="tasks"
+              filtered={activeFilterChips.length > 0}
+              onClearFilters={() => setFilters({ page: 1, limit: filters.limit ?? 20 })}
+              emptyDescription="Create a task to track work for a client."
+              createAction={(
+                <Button
+                  size="sm"
+                  leftIcon={<Plus />}
+                  onClick={() => {
+                    createTask.reset();
+                    setEditingTask(null);
+                    setFormMode('create');
+                  }}
+                >
+                  Create task
+                </Button>
+              )}
+            />
+          )}
           filters={filters}
           pipelines={pipelines}
           companies={companies}

@@ -2,9 +2,10 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { CheckCircle } from 'lucide-react';
+import { CheckCircle, Receipt } from 'lucide-react';
 import { Pagination } from '@/components/ui/pagination';
 import { Alert } from '@/components/ui/alert';
+import { ListEmptyState } from '@/components/ui/empty-state';
 import { BulkActionsToolbar } from '@/components/ui/bulk-actions-toolbar';
 import { useBillingOccurrences, useMarkBillingOccurrencesAsBilled, useResetBillingOverride, useUpdateBillingOccurrence } from '@/hooks/use-billing-occurrences';
 import { useServiceRosterFamilies } from '@/hooks/use-service-roster-families';
@@ -279,6 +280,42 @@ export function BillingWorkspace({ workspaceId: _workspaceId, canEdit = true }: 
     });
   };
 
+  const hasActiveFilters = Boolean(
+    filters.query.trim()
+    || filters.statuses.length > 0
+    || filters.timing.length > 0
+    || filters.familyIds.length > 0
+    || (urlState.dateRangeActive && filters.from && filters.to)
+    || Object.values(inlineFilters).some(Boolean)
+    || Object.values(legacySearchFilters).some(Boolean),
+  );
+
+  const clearAllFilters = () => {
+    replaceUrl({
+      query: undefined,
+      statuses: undefined,
+      timing: undefined,
+      familyIds: undefined,
+      expectedDate: undefined,
+      billedDate: undefined,
+      timingFilter: undefined,
+      statusFilter: undefined,
+      companyId: undefined,
+      familyId: undefined,
+      serviceNameQuery: undefined,
+      feeLineQuery: undefined,
+      periodQuery: undefined,
+      amountMin: undefined,
+      amountMax: undefined,
+      referenceQuery: undefined,
+      companyQuery: undefined,
+      serviceQuery: undefined,
+      feeQuery: undefined,
+      ...(urlState.dateRangeActive ? { from: undefined, to: undefined, dateRange: 'none' } : {}),
+      page: '1',
+    });
+  };
+
   const toggleBillingSelection = (id: string) => {
     setSelectedIds((current) => {
       const next = new Set(current);
@@ -376,6 +413,15 @@ export function BillingWorkspace({ workspaceId: _workspaceId, canEdit = true }: 
             onToggleOne={toggleBillingSelection}
             onToggleAll={toggleAllBillingSelection}
             onEdit={openOccurrence}
+            emptyState={(
+              <ListEmptyState
+                icon={Receipt}
+                noun="billing occurrences"
+                filtered={hasActiveFilters}
+                onClearFilters={clearAllFilters}
+                emptyDescription="Billing occurrences appear here when a client service has fee lines."
+              />
+            )}
           />
         )}
         {occurrenceQuery.data ? <Pagination page={occurrenceQuery.data.page} totalPages={occurrenceQuery.data.totalPages} total={occurrenceQuery.data.total} limit={occurrenceQuery.data.limit} onPageChange={(nextPage) => replaceUrl({ page: String(nextPage) })} onLimitChange={(limit) => { updatePreference({ pageSize: limit as BillingTablePreference['pageSize'] }); replaceUrl({ page: '1' }); }} pageSizeOptions={[10, 20, 50, 100]} /> : null}

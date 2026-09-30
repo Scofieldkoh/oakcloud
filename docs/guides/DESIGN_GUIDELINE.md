@@ -1705,6 +1705,27 @@ Display validation errors clearly with consistent styling:
 
 Consistent patterns for displaying empty states when no data is available.
 
+### Shared Components
+
+Use `ListEmptyState` from `@/components/ui/empty-state` for every list or table. It shows "No matching {noun}" with a Clear filters button when a search or filter is set, and "No {noun} yet" with your create action otherwise. `EmptyState` is the plain version (icon, title, description, actions) for anything else. Tables take the node through their `emptyState` prop, and `TableEmptyState` accepts it as `message`, so the message stays inside the table body under the column headers. The Clear filters handler must reset everything the page counts as a filter, including inline column filters and the search box.
+
+```tsx
+<CompanyTable
+  emptyState={(
+    <ListEmptyState
+      icon={Building2}
+      noun="companies"
+      filtered={activeFilterChips.length > 0}
+      onClearFilters={clearAllFilters}
+      emptyDescription="Add a company or upload a BizFile to get started."
+      createAction={<Link href="/companies/new" className="btn-primary btn-sm">Add Company</Link>}
+    />
+  )}
+/>
+```
+
+The markup below describes the anatomy these components follow.
+
 ### Empty State Anatomy
 
 All empty states should follow this structure:

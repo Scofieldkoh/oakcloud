@@ -1,11 +1,12 @@
 'use client';
 
-import { memo, useState, useCallback, useRef, type MouseEvent } from 'react';
+import { memo, useState, useCallback, useRef, type MouseEvent, type ReactNode } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Users, MoreHorizontal, ExternalLink, Pencil, Trash2, Building2, ArrowUpRight, Square, CheckSquare, MinusSquare } from 'lucide-react';
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, DropdownSeparator } from '@/components/ui/dropdown';
 import { PrefetchLink } from '@/components/ui/prefetch-link';
+import { EmptyState } from '@/components/ui/empty-state';
 import { MobileCard, CardDetailsGrid, CardDetailItem } from '@/components/ui/responsive-table';
 import { CountFilter, type CountFilterValue } from '@/components/ui/count-filter';
 import { TableBody, TableCell, TableEmptyState, TableFilterCell, TableFilterRow, TableHead, TableHeaderCell, TableHeaderRow, TableRoot, TableRow, TableSelectFilter, TableSelectionButton, TableShell, TableTextFilter, TableViewport } from '@/components/ui/data-table';
@@ -64,6 +65,8 @@ interface ContactTableProps {
   onSort?: (field: string) => void;
   /** Inline filter values */
   inlineFilters?: ContactInlineFilters;
+  /** Shown when there are no contacts; defaults to a plain empty message with Add Contact. */
+  emptyState?: ReactNode;
   /** Handler for inline filter changes */
   onInlineFilterChange?: (filters: Partial<ContactInlineFilters>) => void;
   /** Persisted column widths */
@@ -214,8 +217,16 @@ export function ContactTable({
   onInlineFilterChange,
   columnWidths: externalColumnWidths,
   onColumnWidthChange,
+  emptyState,
 }: ContactTableProps) {
   const router = useRouter();
+  const emptyContent = emptyState ?? (
+    <EmptyState
+      icon={Users}
+      title="No contacts found"
+      actions={canCreate ? <Link href="/contacts/new" className="btn-primary btn-sm inline-flex">Add Contact</Link> : undefined}
+    />
+  );
 
   const handleRowClick = useCallback((
     event: MouseEvent<HTMLTableRowElement>,
@@ -482,20 +493,7 @@ export function ContactTable({
           </div>
         )}
         {contacts.length === 0 ? (
-          <div className="card p-6 sm:p-12 text-center">
-            <Users className="w-12 h-12 text-text-muted mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-text-primary mb-2">No contacts found</h3>
-            <p className="text-text-secondary mb-4">
-              {canCreate
-                ? 'Get started by creating your first contact or adjusting your filters.'
-                : 'No contacts available. Try adjusting your filters.'}
-            </p>
-            {canCreate && (
-              <Link href="/contacts/new" className="btn-primary btn-sm inline-flex">
-                Add Contact
-              </Link>
-            )}
-          </div>
+          <div className="card">{emptyContent}</div>
         ) : (
           contacts.map((contact) => {
           const isSelected = selectedIds.has(contact.id);
@@ -631,7 +629,7 @@ export function ContactTable({
               {contacts.length === 0 ? (
                 <TableEmptyState
                   colSpan={COLUMN_IDS.length + (selectable ? 1 : 0)}
-                  message="No contacts found"
+                  message={emptyContent}
                 />
               ) : (
                 contacts.map((contact, index) => {

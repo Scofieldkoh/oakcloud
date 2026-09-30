@@ -169,7 +169,8 @@ describe('DeadlineWorkspace', () => {
 
     const table = screen.getByRole('table', { name: 'Deadline occurrences table' });
     expect(within(table).getByRole('columnheader', { name: /Company/ })).toBeVisible();
-    const emptyMessage = within(table).getByText('No deadlines found');
+    const emptyMessage = within(table).getByText('No matching deadlines');
+    expect(within(table).getByRole('button', { name: 'Clear filters' })).toBeVisible();
     expect(emptyMessage.closest('tbody')).not.toBeNull();
     expect(emptyMessage.closest('td')).toHaveAttribute('colspan', '10');
     expect(screen.queryByText(/No deadlines match the selected filters\./)).not.toBeInTheDocument();

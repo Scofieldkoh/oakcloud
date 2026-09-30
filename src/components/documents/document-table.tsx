@@ -5,6 +5,7 @@ import {
   useEffect,
   useRef,
   useState,
+  type ReactNode,
 } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -27,8 +28,9 @@ import {
 } from 'lucide-react';
 import type { GeneratedDocumentStatus } from '@/generated/prisma';
 import { PrefetchLink } from '@/components/ui/prefetch-link';
+import { EmptyState } from '@/components/ui/empty-state';
 import { MobileCard, CardDetailsGrid, CardDetailItem } from '@/components/ui/responsive-table';
-import { TableBody, TableCell, TableFilterCell, TableFilterRow, TableHead, TableHeaderCell, TableHeaderRow, TableRoot, TableRow, TableSelectFilter, TableSelectionButton, TableShell, TableTextFilter, TableViewport } from '@/components/ui/data-table';
+import { TableBody, TableCell, TableEmptyState, TableFilterCell, TableFilterRow, TableHead, TableHeaderCell, TableHeaderRow, TableRoot, TableRow, TableSelectFilter, TableSelectionButton, TableShell, TableTextFilter, TableViewport } from '@/components/ui/data-table';
 import { CompanySelect } from '@/components/ui/company-select';
 import { DatePicker, type DatePickerValue } from '@/components/ui/date-picker';
 import { useUserPreferences, useUpsertUserPreference } from '@/hooks/use-user-preferences';
@@ -99,6 +101,8 @@ export interface GeneratedDocument {
 
 interface DocumentTableProps {
   documents: GeneratedDocument[];
+  /** Shown when there are no documents; defaults to a plain empty message with Generate Document. */
+  emptyState?: ReactNode;
   onDelete?: (id: string) => void;
   onExport?: (id: string) => void;
   onDiscardDraft?: (id: string) => void;
@@ -342,8 +346,16 @@ export function DocumentTable({
   onToggleAll,
   isAllSelected = false,
   isIndeterminate = false,
+  emptyState,
 }: DocumentTableProps) {
   const router = useRouter();
+  const emptyContent = emptyState ?? (
+    <EmptyState
+      icon={FileText}
+      title="No documents found"
+      actions={canCreate ? <Link href="/generated-documents/generate" className="btn-primary btn-sm inline-flex">Generate Document</Link> : undefined}
+    />
+  );
   const isResizingRef = useRef(false);
   const [columnWidths, setColumnWidths] = useState<Partial<Record<ColumnId, number>>>({});
   const { data: preferenceMap } = useUserPreferences([COLUMN_PREF_KEY]);
@@ -487,15 +499,7 @@ export function DocumentTable({
       {/* Mobile Card View */}
       <div className="md:hidden space-y-3">
         {documents.length === 0 ? (
-          <div className="card p-8 text-center">
-            <FileText className="w-10 h-10 text-text-muted mx-auto mb-3" />
-            <p className="text-sm text-text-secondary mb-3">No documents found</p>
-            {canCreate && (
-              <Link href="/generated-documents/generate" className="btn-primary btn-sm inline-flex">
-                Generate Document
-              </Link>
-            )}
-          </div>
+          <div className="card">{emptyContent}</div>
         ) : (
           <>
             {selectable && (
@@ -775,19 +779,7 @@ export function DocumentTable({
           </TableHead>
           <TableBody>
             {documents.length === 0 ? (
-              <tr>
-                <td colSpan={COLUMN_IDS.length + (selectable ? 1 : 0)} className="px-4 py-12 text-center">
-                  <FileText className="w-8 h-8 text-text-muted mx-auto mb-2" />
-                  <p className="text-sm text-text-secondary mb-3">
-                    No documents found. Try adjusting your filters.
-                  </p>
-                  {canCreate && (
-                    <Link href="/generated-documents/generate" className="btn-primary btn-sm inline-flex">
-                      Generate Document
-                    </Link>
-                  )}
-                </td>
-              </tr>
+              <TableEmptyState colSpan={COLUMN_IDS.length + (selectable ? 1 : 0)} message={emptyContent} />
             ) : documents.map((doc, index) => {
                 const status = statusConfig[doc.status] || statusConfig.DRAFT;
                 const StatusIcon = status.icon;

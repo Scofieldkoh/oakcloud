@@ -2,9 +2,10 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { Search, X } from 'lucide-react';
+import { Briefcase, Search, X } from 'lucide-react';
 import { Pagination } from '@/components/ui/pagination';
 import { Alert } from '@/components/ui/alert';
+import { ListEmptyState } from '@/components/ui/empty-state';
 import { useClientService } from '@/hooks/use-client-services';
 import { useServicesWorkspaceSettings } from '@/hooks/use-services-workspace-settings';
 import { useServiceRoster, type ServiceRosterSearchInput } from '@/hooks/use-service-roster';
@@ -642,6 +643,15 @@ export function ServiceRoster({ workspaceId, canEdit = true, families: providedF
       {roster.data && !roster.error ? (
         <ServiceRosterTable
           items={items}
+          emptyState={(
+            <ListEmptyState
+              icon={Briefcase}
+              noun="services"
+              filtered={filterBadges.length > 0}
+              onClearFilters={clearAllFilters}
+              emptyDescription="Services appear here when they are added on a company's Services tab or activated from a service agreement."
+            />
+          )}
           canEdit={canEdit}
           canSelect={canEdit}
           selectedIds={selectedIdSet}

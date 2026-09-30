@@ -325,7 +325,7 @@ describe('ServiceRoster', () => {
 
     const table = screen.getByRole('table', { name: 'Services roster table' });
     expect(within(table).getByRole('columnheader', { name: 'Company' })).toBeVisible();
-    const emptyMessage = within(table).getByText('No services found');
+    const emptyMessage = within(table).getByText('No services yet');
     expect(emptyMessage.closest('tbody')).not.toBeNull();
     expect(emptyMessage.closest('td')).toHaveAttribute('colspan', '11');
     expect(screen.queryByText('No services match the selected filters.')).not.toBeInTheDocument();

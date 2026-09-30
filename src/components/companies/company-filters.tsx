@@ -1,7 +1,7 @@
 'use client';
 
 import { Search, Filter, X, ChevronDown } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { CompanyStatus, EntityType } from '@/generated/prisma';
 import { ENTITY_TYPES } from '@/lib/constants';
 import { SUPPORTED_CURRENCIES } from '@/lib/validations/exchange-rate';
@@ -67,6 +67,9 @@ export function CompanyFilters({
   searchInputId,
 }: CompanyFiltersProps) {
   const [searchQuery, setSearchQuery] = useState(initialQuery);
+
+  // Follow outside changes, such as Clear filters or a restored URL.
+  useEffect(() => setSearchQuery(initialQuery), [initialQuery]);
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState<FilterValues>(initialFilters || {});
 
