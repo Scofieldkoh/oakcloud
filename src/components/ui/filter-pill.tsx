@@ -39,6 +39,9 @@ export function FilterPillGroup({
   className,
 }: FilterPillGroupProps) {
   const allSelected = options.every((opt) => value.includes(opt.value));
+  // With every option selected the only action left is "Deselect all", which
+  // is offered only when an empty selection is allowed.
+  const showSelectAll = allowSelectAll && options.length > 2 && (!allSelected || allowEmpty);
 
   const handleToggle = (optionValue: string) => {
     const isSelected = value.includes(optionValue);
@@ -58,15 +61,7 @@ export function FilterPillGroup({
   };
 
   const handleSelectAll = () => {
-    if (allSelected) {
-      // If all selected and we allow empty, deselect all
-      if (allowEmpty) {
-        onChange([]);
-      }
-    } else {
-      // Select all
-      onChange(options.map((opt) => opt.value));
-    }
+    onChange(allSelected ? [] : options.map((opt) => opt.value));
   };
 
   return (
@@ -74,7 +69,7 @@ export function FilterPillGroup({
       {label && (
         <div className="flex items-center justify-between">
           <label className="text-sm font-medium text-text-primary">{label}</label>
-          {allowSelectAll && options.length > 2 && (
+          {showSelectAll && (
             <button
               type="button"
               onClick={handleSelectAll}
@@ -93,6 +88,7 @@ export function FilterPillGroup({
               key={option.value}
               type="button"
               onClick={() => handleToggle(option.value)}
+              aria-pressed={isSelected}
               className={cn(
                 'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all',
                 'border focus:outline-none focus:ring-2 focus:ring-oak-primary/30',
