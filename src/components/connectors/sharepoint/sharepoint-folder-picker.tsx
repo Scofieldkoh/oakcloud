@@ -27,6 +27,8 @@ export interface SharePointFolderPickerProps {
   companyName?: string;
   allowRelativePath?: boolean;
   suggestedFolderName?: string;
+  /** Folder API to browse through; defaults to the signed-in workspace's. */
+  foldersEndpoint?: string;
   onConfirm: (folder: SharePointFolderPickerValue, relativePath?: string) => void;
   onCancel?: () => void;
 }
@@ -35,7 +37,7 @@ function toValue(folder: SharePointFolderOption | SharePointFolderPickerValue): 
   return { driveId: folder.driveId, itemId: 'id' in folder ? folder.id : folder.itemId, name: folder.name, webUrl: folder.webUrl };
 }
 
-export function SharePointFolderPicker({ isOpen, onClose, connectorId, mode = 'browse', initialSearch = '', currentValue, fixedRoot, allowCreate = false, companyName, allowRelativePath = false, suggestedFolderName = '', onConfirm, onCancel }: SharePointFolderPickerProps) {
+export function SharePointFolderPicker({ isOpen, onClose, connectorId, mode = 'browse', initialSearch = '', currentValue, fixedRoot, allowCreate = false, companyName, allowRelativePath = false, suggestedFolderName = '', foldersEndpoint, onConfirm, onCancel }: SharePointFolderPickerProps) {
   const libraryRoot = useMemo<SharePointFolderPickerValue>(() => ({ driveId: fixedRoot?.driveId ?? '', itemId: 'root', name: 'Document library', webUrl: '#' }), [fixedRoot?.driveId]);
   const [parent, setParent] = useState<SharePointFolderPickerValue>(fixedRoot ?? libraryRoot);
   const [trail, setTrail] = useState<SharePointFolderPickerValue[]>([fixedRoot ?? libraryRoot]);
@@ -47,8 +49,8 @@ export function SharePointFolderPicker({ isOpen, onClose, connectorId, mode = 'b
   const [message, setMessage] = useState<string | null>(null);
   const [visibleFolders, setVisibleFolders] = useState<SharePointFolderOption[]>([]);
   const [cursor, setCursor] = useState<string | undefined>();
-  const foldersQuery = useSharePointFolders({ connectorId, parentItemId: parent?.itemId, mode, query: debouncedSearch, cursor, rootItemId: fixedRoot?.itemId, enabled: isOpen });
-  const createFolder = useCreateSharePointFolder();
+  const foldersQuery = useSharePointFolders({ connectorId, parentItemId: parent?.itemId, mode, query: debouncedSearch, cursor, rootItemId: fixedRoot?.itemId, enabled: isOpen, endpoint: foldersEndpoint });
+  const createFolder = useCreateSharePointFolder(foldersEndpoint);
 
   useEffect(() => {
     const timer = window.setTimeout(() => setDebouncedSearch(search.trim()), 250);
@@ -110,7 +112,7 @@ export function SharePointFolderPicker({ isOpen, onClose, connectorId, mode = 'b
   return (
     <Modal isOpen={isOpen} onClose={close} title="Choose SharePoint folder" description="Select a verified folder. Oakcloud stores the remote identity, not your credentials." size="lg">
       <ModalBody className="space-y-4">
-        {fixedRoot && (
+        {(fixedRoot || trail.length > 1) && (
           <div className="flex flex-wrap items-center gap-1 text-xs text-text-secondary" aria-label="Folder path">
             {trail.map((item, index) => <span key={item.itemId} className="inline-flex items-center gap-1"><button type="button" className="rounded px-1 py-1 hover:bg-background-tertiary focus:outline-none focus-visible:ring-2 focus-visible:ring-oak-primary/30" onClick={() => goTo(index)}>{item.name}</button>{index < trail.length - 1 && <ChevronRight className="h-3 w-3" aria-hidden="true" />}</span>)}
           </div>

@@ -143,3 +143,19 @@ export const fullBackupScheduleSchema = z.object({
   timezone: z.string().min(1).max(50),
   maxBackups: z.coerce.number().int().min(1).max(100),
 });
+
+export const sharePointBackupTargetSchema = z.object({
+  connectorId: z.string().uuid('Choose a SharePoint connector'),
+  folderId: z.string().min(1, 'Choose a SharePoint folder').max(200),
+  maxBackups: z.coerce.number().int().min(1).max(365),
+});
+
+export const sharePointBackupImportSchema = z.object({
+  itemId: z.string().min(1).max(200),
+});
+
+export const sharePointBackupFolderSchema = z.object({
+  connectorId: z.string().uuid(),
+  parentItemId: z.string().min(1).max(200),
+  name: z.string().trim().min(1).max(255),
+});

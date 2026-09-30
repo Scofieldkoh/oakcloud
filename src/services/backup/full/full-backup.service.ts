@@ -20,6 +20,7 @@ import { invalidateRestoredAssistantDispatch } from '@/services/business-assista
 import { BackupArchiveWriter, extractArchive } from './archive';
 import { exportTable, listAppliedMigrations, listTables, replaceDatabase } from './database-snapshot';
 import { getBackupPassword, getScheduledMaxBackups, claimDueScheduledRun, recordScheduledRun } from './backup-settings';
+import { cleanupStaleSharePointCopies, copyBackupToSharePoint, downloadSharePointBackupFile } from './sharepoint-target';
 import {
   FULL_BACKUP_FILE_EXTENSION,
   FULL_BACKUP_FORMAT,
@@ -265,6 +266,7 @@ async function runFullBackup(backupId: string, password: string): Promise<void> 
         metadata: { skippedFiles: skippedFiles.length, lockedSecrets: manifest.lockedSecrets },
       });
       log.info(`Full backup ${backupId} completed (${archive.length} bytes)`);
+      await copyBackupToSharePoint(backupId, archive);
     });
   } catch (error) {
     await prisma.systemBackup.update({
@@ -410,6 +412,66 @@ export async function completeBackupUpload(backupId: string, userId: string): Pr
     summary: `Uploaded full backup "${backup.name}"`,
     changeSource: 'MANUAL',
   });
+}
+
+/**
+ * Copies a backup file from the SharePoint backup folder onto this install so
+ * it can be checked and restored, for example on a new machine.
+ */
+export async function importSharePointBackup(itemId: string, userId: string): Promise<{ backupId: string }> {
+  const existing = await prisma.systemBackup.findFirst({
+    where: { sharePointItemId: itemId, deletedAt: null, archiveKey: { not: null }, status: { in: ['COMPLETED', 'RESTORED'] } },
+    select: { id: true },
+  });
+  if (existing) return { backupId: existing.id };
+
+  const backup = await prisma.systemBackup.create({
+    data: {
+      name: 'Copy from SharePoint',
+      source: 'UPLOADED',
+      status: 'PENDING',
+      currentStep: 'Downloading from SharePoint',
+      createdById: userId,
+      sharePointStatus: 'UPLOADED',
+      sharePointItemId: itemId,
+    },
+  });
+  void (async () => {
+    try {
+      const file = await downloadSharePointBackupFile(itemId);
+      const key = `system-backups/${backup.id}/${file.name}`;
+      await storage.upload(key, file.content, { contentType: 'application/octet-stream' });
+      await prisma.systemBackup.update({
+        where: { id: backup.id },
+        data: {
+          name: file.name.replace(/\.oakbackup$/i, ''),
+          status: 'COMPLETED',
+          progress: 100,
+          currentStep: 'Copied from SharePoint; enter the backup password to check it',
+          archiveKey: key,
+          sizeBytes: BigInt(file.content.length),
+          completedAt: new Date(),
+          sharePointWebUrl: file.webUrl,
+        },
+      });
+      await audit({
+        userId,
+        action: 'BACKUP_CREATED',
+        entityType: 'SystemBackup',
+        entityId: backup.id,
+        entityName: file.name,
+        summary: `Copied full backup "${file.name}" from SharePoint`,
+        changeSource: 'MANUAL',
+      });
+    } catch (error) {
+      log.error(`Copying backup ${itemId} from SharePoint failed: ${errorText(error)}`);
+      await prisma.systemBackup.update({
+        where: { id: backup.id },
+        data: { status: 'FAILED', currentStep: 'Failed', errorMessage: `Could not copy from SharePoint: ${errorText(error)}` },
+      }).catch(() => undefined);
+    }
+  })();
+  return { backupId: backup.id };
 }
 
 // ============================================================================
@@ -649,6 +711,7 @@ async function pruneScheduledBackups(maxBackups: number): Promise<void> {
 /** Marks backups and restores left running by a restart as failed. */
 export async function cleanupStaleFullBackups(staleMinutes = 120): Promise<number> {
   const threshold = new Date(Date.now() - staleMinutes * 60 * 1000);
+  await cleanupStaleSharePointCopies(threshold);
   const stale = await prisma.systemBackup.findMany({
     where: { status: { in: ['PENDING', 'IN_PROGRESS', 'RESTORING'] }, updatedAt: { lte: threshold }, deletedAt: null },
     select: { id: true, status: true, source: true },

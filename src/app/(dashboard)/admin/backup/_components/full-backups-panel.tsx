@@ -2,7 +2,7 @@
 
 import { useRef, useState, type ReactNode } from 'react';
 import { format } from 'date-fns';
-import { Download, FileArchive, Plus, RefreshCw, RotateCcw, Trash2, Upload } from 'lucide-react';
+import { CloudUpload, Download, ExternalLink, FileArchive, Plus, RefreshCw, RotateCcw, Trash2, Upload } from 'lucide-react';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
@@ -28,9 +28,11 @@ import {
   fullBackupDownloadUrl,
   isRunning,
   useBackupSettings,
+  useCopyBackupToSharePoint,
   useCreateFullBackup,
   useDeleteFullBackup,
   useFullBackups,
+  useSharePointBackupTarget,
   useUploadFullBackup,
   type SystemBackup,
 } from '@/hooks/use-full-backup';
@@ -38,6 +40,7 @@ import { cn } from '@/lib/utils';
 import { BackupPasswordCard } from './backup-password-card';
 import { FullBackupScheduleCard } from './full-backup-schedule-card';
 import { FullRestoreModal } from './full-restore-modal';
+import { SharePointBackupCard } from './sharepoint-backup-card';
 
 const SOURCE_LABELS: Record<SystemBackup['source'], string> = {
   MANUAL: 'Manual',
@@ -72,6 +75,29 @@ function Progress({ backup }: { backup: SystemBackup }) {
   );
 }
 
+function SharePointCopy({ backup }: { backup: SystemBackup }) {
+  if (backup.sharePointStatus === 'UPLOADED') {
+    return backup.sharePointWebUrl ? (
+      <a
+        href={backup.sharePointWebUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-flex items-center gap-1 text-xs text-oak-primary hover:underline"
+      >
+        Copied
+        <ExternalLink className="h-3 w-3" aria-hidden="true" />
+      </a>
+    ) : (
+      <span className="text-xs text-text-secondary">Copied</span>
+    );
+  }
+  if (backup.sharePointStatus === 'UPLOADING') return <span className="text-xs text-text-secondary">Copying…</span>;
+  if (backup.sharePointStatus === 'FAILED') {
+    return <span className="text-xs text-status-error line-clamp-2" title={backup.sharePointError ?? undefined}>{backup.sharePointError || 'Copy failed'}</span>;
+  }
+  return <span className="text-xs text-text-tertiary">-</span>;
+}
+
 export function FullBackupsPanel() {
   const { success, error: showError } = useToast();
   const [page, setPage] = useState(1);
@@ -85,6 +111,9 @@ export function FullBackupsPanel() {
   const createBackup = useCreateFullBackup();
   const deleteBackup = useDeleteFullBackup();
   const uploadBackup = useUploadFullBackup(setUploadProgress);
+  const copyToSharePoint = useCopyBackupToSharePoint();
+  const { data: sharePoint } = useSharePointBackupTarget();
+  const hasSharePointTarget = Boolean(sharePoint?.target);
 
   const backups = data?.backups ?? [];
   const anyRunning = backups.some((backup) => isRunning(backup.status) && backup.source !== 'UPLOADED');
@@ -123,6 +152,15 @@ export function FullBackupsPanel() {
     }
   };
 
+  const copy = async (backup: SystemBackup) => {
+    try {
+      await copyToSharePoint.mutateAsync(backup.id);
+      success('Copying the backup to SharePoint');
+    } catch (err) {
+      showError(err instanceof Error ? err.message : 'Failed to copy the backup to SharePoint');
+    }
+  };
+
   const rowActions = (backup: SystemBackup): ReactNode => (
     <div className="flex items-center justify-end gap-1">
       {canUse(backup) && (
@@ -133,6 +171,18 @@ export function FullBackupsPanel() {
           <Button variant="ghost" size="sm" onClick={() => setRestoreTarget(backup)} aria-label="Restore backup" title="Restore">
             <RotateCcw className="w-4 h-4" />
           </Button>
+          {hasSharePointTarget && backup.sharePointStatus !== 'UPLOADED' && backup.sharePointStatus !== 'UPLOADING' && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => copy(backup)}
+              disabled={copyToSharePoint.isPending}
+              aria-label="Copy backup to SharePoint"
+              title="Copy to SharePoint"
+            >
+              <CloudUpload className="w-4 h-4" />
+            </Button>
+          )}
         </>
       )}
       {!isRunning(backup.status) && (
@@ -169,6 +219,7 @@ export function FullBackupsPanel() {
         <BackupPasswordCard settings={settings} />
         <FullBackupScheduleCard settings={settings} />
       </div>
+      <SharePointBackupCard />
 
       <div className="flex flex-wrap items-center justify-end gap-2">
         <Button variant="ghost" size="sm" onClick={() => refetch()} disabled={isFetching}>
@@ -227,6 +278,7 @@ export function FullBackupsPanel() {
                     <CardDetailItem label="Records" value={info.records} />
                     <CardDetailItem label="Files" value={info.files} />
                     <CardDetailItem label="Created" value={info.created} />
+                    <CardDetailItem label="SharePoint" value={<SharePointCopy backup={backup} />} />
                   </CardDetailsGrid>
                 </>
               }
@@ -246,13 +298,14 @@ export function FullBackupsPanel() {
                 <TableHeaderCell label="Records" />
                 <TableHeaderCell label="Files" />
                 <TableHeaderCell label="Created" />
+                <TableHeaderCell label="SharePoint" />
                 <TableHeaderCell label="Actions" align="right" />
               </TableHeaderRow>
             </TableHead>
             <TableBody>
               {!isLoading && backups.length === 0 && (
                 <TableEmptyState
-                  colSpan={7}
+                  colSpan={8}
                   message={<EmptyState icon={FileArchive} title="No full backups yet" description="Set a backup password, then back up now." />}
                 />
               )}
@@ -272,6 +325,7 @@ export function FullBackupsPanel() {
                     <TableCell>{info.records}</TableCell>
                     <TableCell>{info.files}</TableCell>
                     <TableCell>{info.created}</TableCell>
+                    <TableCell className="max-w-[12rem]"><SharePointCopy backup={backup} /></TableCell>
                     <TableCell>{rowActions(backup)}</TableCell>
                   </TableRow>
                 );
@@ -291,7 +345,7 @@ export function FullBackupsPanel() {
         onClose={() => setDeleteTarget(null)}
         onConfirm={confirmDelete}
         title="Delete full backup"
-        description={`Delete "${deleteTarget?.name}"? Its backup file is removed from this machine. Copies you downloaded are not affected.`}
+        description={`Delete "${deleteTarget?.name}"? Its backup file is removed from this machine. Copies you downloaded or copied to SharePoint are not affected.`}
         confirmLabel="Delete"
         variant="danger"
         isLoading={deleteBackup.isPending}

@@ -14267,7 +14267,12 @@ export const SystemBackupScalarFieldEnum = {
   createdAt: 'createdAt',
   completedAt: 'completedAt',
   updatedAt: 'updatedAt',
-  deletedAt: 'deletedAt'
+  deletedAt: 'deletedAt',
+  sharePointStatus: 'sharePointStatus',
+  sharePointItemId: 'sharePointItemId',
+  sharePointWebUrl: 'sharePointWebUrl',
+  sharePointError: 'sharePointError',
+  sharePointUploadedAt: 'sharePointUploadedAt'
 } as const
 
 export type SystemBackupScalarFieldEnum = (typeof SystemBackupScalarFieldEnum)[keyof typeof SystemBackupScalarFieldEnum]
@@ -14287,7 +14292,13 @@ export const BackupSettingsScalarFieldEnum = {
   lastError: 'lastError',
   consecutiveFailures: 'consecutiveFailures',
   updatedAt: 'updatedAt',
-  updatedById: 'updatedById'
+  updatedById: 'updatedById',
+  sharePointConnectorId: 'sharePointConnectorId',
+  sharePointDriveId: 'sharePointDriveId',
+  sharePointFolderId: 'sharePointFolderId',
+  sharePointFolderName: 'sharePointFolderName',
+  sharePointFolderUrl: 'sharePointFolderUrl',
+  sharePointMaxBackups: 'sharePointMaxBackups'
 } as const
 
 export type BackupSettingsScalarFieldEnum = (typeof BackupSettingsScalarFieldEnum)[keyof typeof BackupSettingsScalarFieldEnum]

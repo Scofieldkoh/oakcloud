@@ -3576,6 +3576,12 @@ model SystemBackup {
   completedAt  DateTime?          @map("completed_at")
   updatedAt    DateTime           @default(now()) @updatedAt @map("updated_at")
   deletedAt    DateTime?          @map("deleted_at")
+  /// Copy in the SharePoint backup folder: UPLOADING, UPLOADED or FAILED (null when none was made).
+  sharePointStatus     String?   @map("sharepoint_status")
+  sharePointItemId     String?   @map("sharepoint_item_id")
+  sharePointWebUrl     String?   @map("sharepoint_web_url")
+  sharePointError      String?   @map("sharepoint_error")
+  sharePointUploadedAt DateTime? @map("sharepoint_uploaded_at")
 
   @@index([status])
   @@index([createdAt])
@@ -3598,6 +3604,13 @@ model BackupSettings {
   consecutiveFailures Int       @default(0) @map("consecutive_failures")
   updatedAt           DateTime  @updatedAt @map("updated_at")
   updatedById         String?   @map("updated_by_id")
+  /// SharePoint folder that receives a copy of every full backup.
+  sharePointConnectorId  String?  @map("sharepoint_connector_id")
+  sharePointDriveId      String?  @map("sharepoint_drive_id")
+  sharePointFolderId     String?  @map("sharepoint_folder_id")
+  sharePointFolderName   String?  @map("sharepoint_folder_name")
+  sharePointFolderUrl    String?  @map("sharepoint_folder_url")
+  sharePointMaxBackups   Int      @default(30) @map("sharepoint_max_backups")
 
   @@map("backup_settings")
 }

@@ -194,6 +194,8 @@ npm run db:push
 3. Open Administration > Backup > Full backups, click Upload backup file, then Restore. Enter the backup password, read the check, and type `RESTORE`.
 4. When the restore finishes, sign in with your own account from the backup and run `docker compose restart app`.
 
+If the old machine copied its backups to SharePoint (Full backups > SharePoint copy), step 1 is not needed: on the new machine add the SharePoint connector on the Connectors page, choose the same folder under SharePoint copy, click Restore from SharePoint, Copy here, then Restore on the copied backup.
+
 The new machine must run the same or a newer version of Oakcloud than the one that made the backup.
 
 ## Next Steps
