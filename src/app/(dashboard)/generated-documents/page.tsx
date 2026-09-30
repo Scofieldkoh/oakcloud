@@ -38,6 +38,7 @@ import {
 import { GenerationBatchTable } from '@/components/documents/generation-batch';
 import { Pagination } from '@/components/ui/pagination';
 import type { DocumentGenerationBatchListItem } from '@/types/document-generation-batch';
+import { useDebouncedSearch } from '@/hooks/use-debounced-search';
 
 // ============================================================================
 // Types
@@ -297,6 +298,7 @@ export default function GeneratedDocumentsPage() {
     setSearchQuery(value);
     setPage(1);
   }, []);
+  const search = useDebouncedSearch(searchQuery, handleSearchChange);
 
   const handleSortChange = useCallback((field: GeneratedDocumentSortField) => {
     setFilters((previous) => ({
@@ -594,15 +596,15 @@ export default function GeneratedDocumentsPage() {
             <input
               type="search"
               aria-label="Search documents"
-              value={searchQuery}
-              onChange={(event) => handleSearchChange(event.target.value)}
+              value={search.draft}
+              onChange={(event) => search.setDraft(event.target.value)}
               placeholder="Search by title, company, or template..."
               className="h-10 w-full rounded-lg border border-border-primary bg-background-primary pl-10 pr-9 text-sm text-text-primary transition-colors placeholder:text-text-muted hover:border-oak-primary/50 focus:border-oak-primary focus:outline-none focus:ring-2 focus:ring-oak-primary/30"
             />
-            {searchQuery && (
+            {search.draft && (
               <button
                 type="button"
-                onClick={() => handleSearchChange('')}
+                onClick={() => search.commitNow('')}
                 aria-label="Clear search"
                 className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded p-1 text-text-muted transition-colors hover:bg-background-tertiary hover:text-text-primary"
               >

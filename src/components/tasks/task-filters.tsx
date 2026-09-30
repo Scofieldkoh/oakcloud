@@ -3,6 +3,7 @@
 import { CalendarDays, CircleDot, Search, UserRound } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { TaskListParams } from '@/hooks/use-tasks';
+import { useDebouncedSearch } from '@/hooks/use-debounced-search';
 
 interface TaskFiltersProps {
   value: TaskListParams;
@@ -20,6 +21,7 @@ export function TaskFilters({
   const toggle = (patch: Partial<TaskListParams>) => {
     onChange({ ...value, ...patch, page: 1 });
   };
+  const search = useDebouncedSearch(value.query ?? '', (query) => toggle({ query: query || undefined }));
   const quickFilterClassName = (
     active: boolean,
     disabled = false,
@@ -48,8 +50,8 @@ export function TaskFilters({
         <input
           type="search"
           aria-label="Search tasks"
-          value={value.query ?? ''}
-          onChange={(event) => toggle({ query: event.target.value || undefined })}
+          value={search.draft}
+          onChange={(event) => search.setDraft(event.target.value)}
           placeholder="Search tasks"
           className="h-10 w-full rounded-lg border border-border-primary bg-background-primary pl-10 pr-3 text-sm text-text-primary transition-colors placeholder:text-text-muted hover:border-oak-primary/50 focus:border-oak-primary focus:outline-none focus:ring-2 focus:ring-oak-primary/30"
         />

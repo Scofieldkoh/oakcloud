@@ -80,6 +80,7 @@ export function BatchReviewWorkspace({
 }: BatchReviewWorkspaceProps) {
   const [replaceDialogItemId, setReplaceDialogItemId] = useState<string | null>(null);
   const [oakDocDirty, setOakDocDirty] = useState(false);
+  const [discardPrompt, setDiscardPrompt] = useState<{ message: string; action: () => void } | null>(null);
   const setOakDocDirtyState = useCallback((dirty: boolean) => {
     setOakDocDirty(dirty);
     onOakDocDirtyChange?.(dirty);
@@ -87,18 +88,26 @@ export function BatchReviewWorkspace({
   const activeItem = items.find((item) => item.key === activeItemId) ?? items[0] ?? null;
   const rendering = previewProgress !== null && previewProgress.done < previewProgress.total;
 
-  const requestRefresh = (item: EditableBatchItem) => {
-    if (oakDocDirty && item.key === activeItem?.key) {
-      if (!window.confirm('This Word draft has unsaved edits. Refresh and discard those edits?')) {
-        return;
-      }
-      setOakDocDirtyState(false);
-    }
+  const refreshItem = (item: EditableBatchItem) => {
     if (hasManualEdits(item)) {
       setReplaceDialogItemId(item.key);
       return;
     }
     void onPreview(item.key);
+  };
+
+  const requestRefresh = (item: EditableBatchItem) => {
+    if (oakDocDirty && item.key === activeItem?.key) {
+      setDiscardPrompt({
+        message: 'This Word draft has unsaved edits. Refresh and discard those edits?',
+        action: () => {
+          setOakDocDirtyState(false);
+          refreshItem(item);
+        },
+      });
+      return;
+    }
+    refreshItem(item);
   };
 
   const selectNextUnapproved = () => {
@@ -128,11 +137,14 @@ export function BatchReviewWorkspace({
           items={items}
           activeItemId={activeItem?.key ?? null}
           onSelect={(itemId) => {
-            if (
-              oakDocDirty
-              && itemId !== activeItem?.key
-              && !window.confirm('This Word draft has unsaved edits. Switch documents and discard those edits?')
-            ) {
+            if (oakDocDirty && itemId !== activeItem?.key) {
+              setDiscardPrompt({
+                message: 'This Word draft has unsaved edits. Switch documents and discard those edits?',
+                action: () => {
+                  setOakDocDirtyState(false);
+                  onSelect(itemId);
+                },
+              });
               return;
             }
             setOakDocDirtyState(false);
@@ -388,6 +400,18 @@ export function BatchReviewWorkspace({
         title="Replace manual edits?"
         description="Refreshing this preview will replace the manual edits you made to this document. Continue?"
         confirmLabel="Replace edits"
+        variant="warning"
+      />
+      <ConfirmDialog
+        isOpen={discardPrompt !== null}
+        onClose={() => setDiscardPrompt(null)}
+        onConfirm={() => {
+          discardPrompt?.action();
+          setDiscardPrompt(null);
+        }}
+        title="Discard unsaved edits?"
+        description={discardPrompt?.message}
+        confirmLabel="Discard edits"
         variant="warning"
       />
     </div>

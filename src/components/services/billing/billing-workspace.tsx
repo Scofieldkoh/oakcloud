@@ -352,28 +352,32 @@ export function BillingWorkspace({ workspaceId: _workspaceId, canEdit = true }: 
 
         {occurrenceQuery.error ? <Alert variant="error">Unable to load billing tracking rows.</Alert> : null}
         {bulkBilledMutation.error ? <Alert variant="error">Unable to mark the selected billing occurrences as billed. Your selection is still available to retry.</Alert> : null}
-        <BillingTable
-          items={items}
-          families={families}
-          isFetching={occurrenceQuery.isFetching}
-          canEdit={canEdit}
-          selectedIds={selectedIds}
-          isAllSelected={isAllSelected}
-          isIndeterminate={isIndeterminate}
-          columnWidths={tablePreference.columnWidths}
-          columnOrder={tablePreference.columnOrder}
-          columnVisibility={tablePreference.columnVisibility as Record<BillingColumnId, boolean>}
-          sortBy={urlState.sortBy}
-          sortOrder={urlState.sortOrder}
-          inlineFilters={inlineFilters}
-          onInlineFilterChange={handleInlineFilterChange}
-          onSort={handleSort}
-          onColumnWidthChange={handleColumnWidthChange}
-          onColumnResizeEnd={handleColumnResizeEnd}
-          onToggleOne={toggleBillingSelection}
-          onToggleAll={toggleAllBillingSelection}
-          onEdit={openOccurrence}
-        />
+        {occurrenceQuery.isLoading && !occurrenceQuery.data ? (
+          <div role="status" className="rounded-xl border border-border-primary bg-background-secondary p-8 text-center text-sm text-text-secondary">Loading billing occurrences…</div>
+        ) : (
+          <BillingTable
+            items={items}
+            families={families}
+            isFetching={occurrenceQuery.isFetching}
+            canEdit={canEdit}
+            selectedIds={selectedIds}
+            isAllSelected={isAllSelected}
+            isIndeterminate={isIndeterminate}
+            columnWidths={tablePreference.columnWidths}
+            columnOrder={tablePreference.columnOrder}
+            columnVisibility={tablePreference.columnVisibility as Record<BillingColumnId, boolean>}
+            sortBy={urlState.sortBy}
+            sortOrder={urlState.sortOrder}
+            inlineFilters={inlineFilters}
+            onInlineFilterChange={handleInlineFilterChange}
+            onSort={handleSort}
+            onColumnWidthChange={handleColumnWidthChange}
+            onColumnResizeEnd={handleColumnResizeEnd}
+            onToggleOne={toggleBillingSelection}
+            onToggleAll={toggleAllBillingSelection}
+            onEdit={openOccurrence}
+          />
+        )}
         {occurrenceQuery.data ? <Pagination page={occurrenceQuery.data.page} totalPages={occurrenceQuery.data.totalPages} total={occurrenceQuery.data.total} limit={occurrenceQuery.data.limit} onPageChange={(nextPage) => replaceUrl({ page: String(nextPage) })} onLimitChange={(limit) => { updatePreference({ pageSize: limit as BillingTablePreference['pageSize'] }); replaceUrl({ page: '1' }); }} pageSizeOptions={[10, 20, 50, 100]} /> : null}
       </div>
 

@@ -605,6 +605,26 @@ export function DeadlineWorkspace({ canEdit = false, deadlineWritesEnabled = fal
     activeBadges.push({ key: 'dueRange', label: `Date: ${urlState.from} – ${urlState.to}`, onRemove: () => replaceUrl({ from: undefined, to: undefined, dateFilter: 'none', page: '1' }) });
   }
 
+  const clearAllFilters = () => {
+    setSavedTypes([]);
+    setSavedFamilies([]);
+    persistPreference({ visibleTypes: [], familyIds: [] });
+    replaceUrl({
+      types: undefined,
+      families: undefined,
+      statuses: undefined,
+      openOnly: 'false',
+      companyQuery: undefined,
+      serviceQuery: undefined,
+      milestoneQuery: undefined,
+      timingBucket: undefined,
+      origin: undefined,
+      companies: undefined,
+      ...(urlState.view === 'TABLE' ? { from: undefined, to: undefined, dateFilter: 'none' } : {}),
+      page: '1',
+    });
+  };
+
   const total = deadlines.data?.mode === 'TABLE' ? deadlines.data.total : 0;
   const totalPages = deadlines.data?.mode === 'TABLE' ? deadlines.data.totalPages : 0;
   const visibleColumns = useMemo(() => {
@@ -659,6 +679,7 @@ export function DeadlineWorkspace({ canEdit = false, deadlineWritesEnabled = fal
       {activeBadges.length > 0 ? (
         <div aria-label="Active deadline filters" className="flex flex-wrap items-center gap-2">
           {activeBadges.map((badge) => <button key={badge.key} type="button" onClick={badge.onRemove} className="inline-flex min-h-11 items-center rounded-full bg-oak-primary/10 px-3 text-xs text-oak-light hover:bg-oak-primary/20 sm:min-h-8" aria-label={`Remove ${badge.label}`}>{badge.label}<span aria-hidden="true" className="ml-1">×</span></button>)}
+          <button type="button" onClick={clearAllFilters} className="ml-2 text-sm font-medium text-oak-primary transition-colors hover:text-oak-primary/80">Clear all</button>
         </div>
       ) : null}
 

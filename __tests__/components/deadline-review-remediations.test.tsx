@@ -384,6 +384,22 @@ describe('Task 12 review remediations', () => {
     expect(screen.queryByRole('button', { name: /Remove Date:/ })).not.toBeInTheDocument();
   });
 
+  it('clears every active filter at once', () => {
+    navigation.searchParams = new URLSearchParams('companies=22222222-2222-4222-8222-222222222222&companyQuery=Oaktree&origin=RULE&from=2026-09-01&to=2026-09-30');
+    render(<DeadlineWorkspace />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Clear all' }));
+
+    const url = navigation.replace.mock.calls.at(-1)![0] as string;
+    const params = new URLSearchParams(url.split('?')[1]);
+    expect(params.get('companies')).toBeNull();
+    expect(params.get('companyQuery')).toBeNull();
+    expect(params.get('origin')).toBeNull();
+    expect(params.get('from')).toBeNull();
+    expect(params.get('dateFilter')).toBe('none');
+    expect(params.get('openOnly')).toBe('false');
+  });
+
   it('exposes a saved table column chooser', () => {
     render(<DeadlineWorkspace />);
     fireEvent.click(screen.getByRole('button', { name: 'Columns' }));

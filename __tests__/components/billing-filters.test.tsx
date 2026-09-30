@@ -90,6 +90,22 @@ describe('BillingFilters', () => {
     expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ from: '', to: '' }));
   });
 
+  it('clears every filter at once from the active filter row', () => {
+    const onChange = vi.fn();
+    render(
+      <BillingFilters
+        value={{ ...filteredValue, query: 'acme', statuses: ['OPEN'], familyIds: ['family-1'] }}
+        families={[{ id: 'family-1', name: 'Accounting', displayColor: '#3F6DA8' }]}
+        onChange={onChange}
+        dateRangeActive
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Clear all' }));
+
+    expect(onChange).toHaveBeenLastCalledWith({ query: '', statuses: [], timing: [], from: '', to: '', familyIds: [] });
+  });
+
   it('matches the Vault toolbar and keeps zero selected statuses unfiltered', () => {
     render(<BillingFilters value={{ ...filteredValue, from: '', to: '' }} families={[]} onChange={vi.fn()} dateRangeActive={false} />);
 
