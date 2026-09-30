@@ -211,7 +211,7 @@ The in-process scheduler is started by the app and can be configured per task.
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `SCHEDULER_ENABLED` | `true` | Master switch for the scheduler |
-| `SCHEDULER_BACKUP_ENABLED` | `true` | Enable backup processing |
+| `SCHEDULER_BACKUP_ENABLED` | `true` | Enable the scheduled full backup |
 | `SCHEDULER_BACKUP_CRON` | `0,15,30,45 * * * *` | Backup polling cadence |
 | `SCHEDULER_CLEANUP_ENABLED` | `true` | Enable cleanup processing |
 | `SCHEDULER_CLEANUP_CRON` | `0 2 * * *` | Cleanup schedule |
@@ -230,18 +230,9 @@ Backup-related settings:
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `BACKUP_DEFAULT_RETENTION_DAYS` | `30` | Default retention period |
-| `BACKUP_DEFAULT_MAX_BACKUPS` | `10` | Default max scheduled backups per tenant |
-| `BACKUP_STALE_THRESHOLD_MINUTES` | `60` | Threshold for marking an in-progress backup as stale |
 | `BACKUP_WORK_DIR` | OS temp folder + `/oakcloud-backups` | Scratch space for building, uploading and unpacking full backups. Needs room for about twice the size of the stored files. |
 
 Full backups need no environment variables of their own: the backup password and schedule are set on the Backup page. Keep a copy of `.env` anyway; a full backup carries everything in the database and storage, but not these variables.
-
-Optional external cron auth:
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `CRON_SECRET` | - | Shared secret for externally triggered cron endpoints when used |
 
 ## Tunnel / Docker
 

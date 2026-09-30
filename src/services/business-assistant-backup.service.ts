@@ -1,28 +1,4 @@
 import { Prisma } from '@/generated/prisma';
-import { assertBusinessOperationRestoreSafety } from '@/lib/business-operation-backup-barrier';
-
-/** Receipts and assistant history survive an overwrite restore. Inserts from a
- * disaster-recovery backup use skipDuplicates, preserving newer tombstones. */
-export function preserveBusinessAssistantHistory(delegate: string): boolean {
-  return delegate.startsWith('businessAssistant') || delegate.startsWith('bizFileOperation');
-}
-
-export async function assertAssistantRestoreSafety(
-  db: Pick<Prisma.TransactionClient, 'bizFileOperationReceipt'>,
-  tenantId: string,
-  snapshotCutoff: string | undefined,
-): Promise<void> {
-  const laterReceipt = await db.bizFileOperationReceipt.findFirst({
-    where: {
-      tenantId,
-      status: 'COMMITTED',
-      ...(snapshotCutoff ? { committedAt: { gte: new Date(snapshotCutoff) } } : {}),
-    },
-    select: { id: true },
-    orderBy: { committedAt: 'asc' },
-  });
-  assertBusinessOperationRestoreSafety(snapshotCutoff, laterReceipt);
-}
 
 /** Run while the exclusive workspace barrier is held. Restored claims are never
  * executable authority; unknown writes retain their operation id for reconcile. */

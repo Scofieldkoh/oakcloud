@@ -342,7 +342,7 @@ The Services tab exposes permission-gated **Add service** actions, a shared
 controlled operational form used by both create and edit, a duplicate warning
 with an explicit override, and a success notice whose **View service** action
 opens the returned DTO directly without waiting for a list refetch. List,
-detail, update, archive, backup, restore, and cleanup stay common through one
+detail, update, archive and cleanup stay common through one
 nullable-agreement DTO mapper with no per-service agreement lookups.
 
 Envelope completion queues activation without depending on the post-commit
@@ -369,16 +369,13 @@ creation, and DTO reload inside one bounded serializable transaction; exhausted
 serialization retries map to a retriable conflict, and simultaneous unconfirmed
 creates cannot both silently succeed.
 
-Backup export, restore, and tenant cleanup explicitly include every catalog,
-agreement, and Client Service table. Restore orders parents before fee children;
-cleanup reverses those dependencies.
-
 ### Full Backups
 
 `src/services/backup/full/` backs up the whole install, not one workspace.
 The table list comes from the live database catalog, so a new table is covered
 without code changes; only `_prisma_migrations`, `system_backups` and
-`tenant_backups` (records about this machine) and the ACRA register
+`tenant_backups` (records about this machine; `tenant_backups` and
+`backup_schedules` hold the retired per-workspace backups, whose code is gone) and the ACRA register
 (`acra_entity`, `acra_sync_state`, re-downloaded by the ACRA sync) are left out,
 and a restore leaves them as they are. Rows are exported with `row_to_json`
 through one cursor per table inside one repeatable-read transaction that holds

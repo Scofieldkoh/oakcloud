@@ -4,7 +4,30 @@
  */
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { BackupStatus } from '@/hooks/use-backup';
+
+export type BackupStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED' | 'RESTORING' | 'RESTORED' | 'DELETED';
+
+const STATUS_LABELS: Record<BackupStatus, string> = {
+  PENDING: 'Pending',
+  IN_PROGRESS: 'In Progress',
+  COMPLETED: 'Completed',
+  FAILED: 'Failed',
+  RESTORING: 'Restoring',
+  RESTORED: 'Restored',
+  DELETED: 'Deleted',
+};
+
+export function getBackupStatusLabel(status: BackupStatus): string {
+  return STATUS_LABELS[status] ?? status;
+}
+
+export function formatBytes(bytes: number): string {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
 
 export type SystemBackupSource = 'MANUAL' | 'SCHEDULED' | 'UPLOADED';
 
