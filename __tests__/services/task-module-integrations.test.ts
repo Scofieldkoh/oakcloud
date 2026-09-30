@@ -350,6 +350,9 @@ describe('authoritative module callback contracts', () => {
     path.join(process.cwd(), relativePath),
     'utf8',
   );
+  const envelopeModules = () => ['lifecycle', 'recipients', 'documents', 'delivery']
+    .map((name) => source(`src/services/esigning-envelope/${name}.ts`))
+    .join('\n');
 
   it('preserves task context through manual company and BizFile creation', () => {
     const companyRoute = source('src/app/api/companies/route.ts');
@@ -378,7 +381,7 @@ describe('authoritative module callback contracts', () => {
 
   it('links envelopes and reconciles every terminal signing lifecycle', () => {
     const envelopeRoute = source('src/app/api/esigning/envelopes/route.ts');
-    const envelopeService = source('src/services/esigning-envelope.service.ts');
+    const envelopeService = envelopeModules();
     const signingService = source('src/services/esigning-signing.service.ts');
 
     expect(envelopeRoute).toContain('safelyLinkEsigningEnvelopeTaskOutcome');
@@ -395,7 +398,7 @@ describe('authoritative module callback contracts', () => {
     const schema = source('prisma/schema.prisma');
     const company = source('src/services/company.service.ts');
     const generationSession = source('src/services/document-generation-session.service.ts');
-    const envelope = source('src/services/esigning-envelope.service.ts');
+    const envelope = envelopeModules();
     const stage = source('src/services/tasks/stage.service.ts');
     const bizfile = source('src/services/bizfile/processor.ts');
     const bizfileRoute = source('src/app/api/documents/[documentId]/confirm/route.ts');

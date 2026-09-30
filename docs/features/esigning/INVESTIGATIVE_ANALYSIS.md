@@ -203,7 +203,7 @@ Keep placeholder and default/prefill as separate concepts. Permit deliberate pre
 **Root cause**
 
 - [The client converts a cleared message to `undefined`](../../../src/components/esigning/prepare/esigning-step-upload.tsx#L596). JSON serialization omits the property.
-- [The update service passes `input.message` directly to Prisma](../../../src/services/esigning-envelope.service.ts#L632); an omitted/undefined property leaves the existing database value unchanged.
+- [The update service passes `input.message` directly to Prisma](../../../src/services/esigning-envelope/lifecycle.ts); an omitted/undefined property leaves the existing database value unchanged.
 
 **Impact**
 
@@ -339,7 +339,7 @@ Handle nudge keys only when the canvas owns focus and at least one visible field
 **Evidence**
 
 - The completed envelope `F45B - Foundation Jewellers` displayed its CC recipient as `QUEUED` while the signer and envelope were complete.
-- [When an envelope is sent, every non-active/non-signer recipient is assigned `QUEUED`](../../../src/services/esigning-envelope.service.ts#L2064).
+- [When an envelope is sent, every non-active/non-signer recipient is assigned `QUEUED`](../../../src/services/esigning-envelope/delivery.ts).
 - [Completion generation emails every recipient](../../../src/services/esigning-pdf.service.ts#L936), but it does not update a CC-specific delivery status.
 
 **Impact**
