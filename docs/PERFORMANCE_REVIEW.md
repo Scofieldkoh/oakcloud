@@ -658,7 +658,6 @@ The most useful first metric is request count on a cold visit to `/companies` an
 ## Files Most Worth Editing First
 
 - `src/app/(dashboard)/layout.tsx`
-- `src/components/auth/auth-guard.tsx`
 - `src/hooks/use-auth.ts`
 - `src/hooks/use-permissions.ts`
 - `src/components/ui/company-selector.tsx`
