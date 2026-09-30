@@ -4,7 +4,8 @@ import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
-import { Plus, AlertCircle, Trash2, X, RefreshCw, UserRoundSearch } from 'lucide-react';
+import { Plus, AlertCircle, Trash2, X, RefreshCw, UserRoundSearch, Users } from 'lucide-react';
+import { ListEmptyState } from '@/components/ui/empty-state';
 import { useContacts, useDeleteContact, useBulkDeleteContacts, useContactDuplicateGroups } from '@/hooks/use-contacts';
 import { usePermissions } from '@/hooks/use-permissions';
 import { useSession } from '@/hooks/use-auth';
@@ -539,6 +540,16 @@ export default function ContactsPage() {
           onInlineFilterChange={handleInlineFilterChange}
           columnWidths={columnWidths}
           onColumnWidthChange={handleColumnWidthChange}
+          emptyState={(
+            <ListEmptyState
+              icon={Users}
+              noun="contacts"
+              filtered={activeFilterChips.length > 0 || Boolean(params.query)}
+              onClearFilters={() => { clearAllFilters(); if (params.query) handleSearch(''); }}
+              createAction={can.createContact ? <Link href="/contacts/new" className="btn-primary btn-sm inline-flex">Add Contact</Link> : undefined}
+              emptyDescription="Contacts are added here or from a company's BizFile."
+            />
+          )}
         />
       </div>
 

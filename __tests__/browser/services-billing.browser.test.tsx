@@ -253,7 +253,7 @@ describe('Services billing responsive browser surface', () => {
     render(<ServicesWorkspace />);
 
     const table = screen.getByRole('table', { name: 'Billing occurrences table' });
-    const emptyMessage = within(table).getByText('No billing occurrences found');
+    const emptyMessage = within(table).getByText('No matching billing occurrences');
     const scrollContainer = table.parentElement;
     if (!scrollContainer) throw new Error('Billing table scroll container missing');
     await expect.element(within(table).getByRole('columnheader', { name: /^Company$/ })).toBeVisible();

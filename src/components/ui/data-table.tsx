@@ -389,16 +389,18 @@ export function TableCell({
 
 interface TableEmptyStateProps {
   colSpan: number;
+  /** A plain message, or an `EmptyState` with a title and next step. */
   message: ReactNode;
   className?: string;
 }
 
 export function TableEmptyState({ colSpan, message, className }: TableEmptyStateProps) {
+  const plain = typeof message === 'string';
   return (
     <tr>
       <td
         colSpan={colSpan}
-        className={cn('px-3 py-12 text-center text-sm text-text-secondary', className)}
+        className={cn(plain ? 'px-3 py-12 text-center text-sm text-text-secondary' : 'p-0 text-center', className)}
       >
         {message}
       </td>

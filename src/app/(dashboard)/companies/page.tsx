@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Plus, AlertCircle, FileUp, Trash2, Download, RefreshCw } from 'lucide-react';
+import { Plus, AlertCircle, FileUp, Trash2, Download, RefreshCw, Building2 } from 'lucide-react';
 import { useCompaniesPageBootstrap, useDeleteCompany, useBulkDeleteCompanies } from '@/hooks/use-companies';
 import { useExportContactDetails } from '@/hooks/use-contact-details';
 import { usePermissions, useCompanyPermissions } from '@/hooks/use-permissions';
@@ -16,6 +16,7 @@ import { Pagination } from '@/components/ui/pagination';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { BulkActionsToolbar } from '@/components/ui/bulk-actions-toolbar';
 import { FilterChip } from '@/components/ui/filter-chip';
+import { ListEmptyState } from '@/components/ui/empty-state';
 import { useToast } from '@/components/ui/toast';
 import { useUpsertUserPreference } from '@/hooks/use-user-preferences';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
@@ -500,9 +501,24 @@ export default function CompaniesPage() {
       ...prev,
       query: '',
       companyId: undefined,
+      uen: undefined,
+      address: undefined,
       entityType: undefined,
       status: undefined,
       hasCharges: undefined,
+      hasWarnings: undefined,
+      incorporationDateFrom: undefined,
+      incorporationDateTo: undefined,
+      officersMin: undefined,
+      officersMax: undefined,
+      shareholdersMin: undefined,
+      shareholdersMax: undefined,
+      homeCurrency: undefined,
+      financialYearEndMonth: undefined,
+      paidUpCapitalMin: undefined,
+      paidUpCapitalMax: undefined,
+      issuedCapitalMin: undefined,
+      issuedCapitalMax: undefined,
       page: 1,
     }));
   }, []);
@@ -737,6 +753,16 @@ export default function CompaniesPage() {
           onInlineFilterChange={handleInlineFilterChange}
           columnWidths={columnWidths}
           onColumnWidthChange={handleColumnWidthChange}
+          emptyState={(
+            <ListEmptyState
+              icon={Building2}
+              noun="companies"
+              filtered={activeFilterChips.length > 0}
+              onClearFilters={clearAllFilters}
+              createAction={can.createCompany ? <Link href="/companies/new" className="btn-primary btn-sm inline-flex">Add Company</Link> : undefined}
+              emptyDescription="Add a company or upload a BizFile to get started."
+            />
+          )}
         />
       )}
 

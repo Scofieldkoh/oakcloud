@@ -1,7 +1,8 @@
 'use client';
 
-import { CheckSquare, MinusSquare, MoreHorizontal, Square } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { CheckSquare, MinusSquare, MoreHorizontal, Receipt, Square } from 'lucide-react';
+import { EmptyState } from '@/components/ui/empty-state';
+import { useCallback, useEffect, useMemo, useRef, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { CardDetailItem, CardDetailsGrid, MobileCard } from '@/components/ui/responsive-table';
 import type { SelectOption } from '@/components/ui/searchable-select';
@@ -33,6 +34,8 @@ export interface BillingInlineFilters {
 
 export interface BillingTableProps {
   items: BillingOccurrenceDto[];
+  /** Replaces the default empty message, such as a ListEmptyState with Clear filters. */
+  emptyState?: ReactNode;
   families?: ServiceFamilyFilter[];
   isFetching?: boolean;
   canEdit?: boolean;
@@ -244,7 +247,8 @@ function MobileBillingCard({ item, canEdit, selected, onToggle, onEdit }: { item
   );
 }
 
-export function BillingTable({ items, families = [], isFetching = false, canEdit = true, selectedIds = new Set(), isAllSelected = false, isIndeterminate = false, columnWidths, columnOrder, columnVisibility, sortBy, sortOrder, inlineFilters = {}, onInlineFilterChange, onSort, onColumnWidthChange, onColumnResizeEnd, onToggleOne, onToggleAll, onEdit }: BillingTableProps) {
+export function BillingTable({ items, families = [], isFetching = false, canEdit = true, selectedIds = new Set(), isAllSelected = false, isIndeterminate = false, columnWidths, columnOrder, columnVisibility, sortBy, sortOrder, inlineFilters = {}, onInlineFilterChange, onSort, onColumnWidthChange, onColumnResizeEnd, onToggleOne, onToggleAll, onEdit, emptyState }: BillingTableProps) {
+  const emptyContent = emptyState ?? <EmptyState icon={Receipt} title="No billing occurrences found" />;
   const visibleColumns = useMemo(() => columnOrder.filter((column) => columnVisibility[column]), [columnOrder, columnVisibility]);
   const selectable = canEdit && Boolean(onToggleOne && onToggleAll);
   const companyOptions = useMemo(() => {
@@ -309,7 +313,7 @@ export function BillingTable({ items, families = [], isFetching = false, canEdit
     <>
       <div role="region" className="space-y-3 md:hidden" aria-label="Billing occurrence cards">
         {selectable ? <button type="button" onClick={onToggleAll} aria-label="Select all billing occurrences" aria-pressed={isAllSelected} className="flex min-h-11 items-center gap-2 px-1 text-sm text-text-secondary"><SelectionIcon selected={isAllSelected} indeterminate={isIndeterminate} /><span>{isAllSelected ? 'Deselect all' : 'Select all'}</span></button> : null}
-        {items.length === 0 ? <div className="rounded-xl border border-border-primary bg-background-secondary p-6 text-center text-sm text-text-secondary">No billing occurrences found</div> : items.map((item) => <MobileBillingCard key={item.id} item={item} canEdit={canEdit} selected={selectedIds.has(item.id)} onToggle={onToggleOne} onEdit={onEdit} />)}
+        {items.length === 0 ? <div className="rounded-xl border border-border-primary bg-background-secondary">{emptyContent}</div> : items.map((item) => <MobileBillingCard key={item.id} item={item} canEdit={canEdit} selected={selectedIds.has(item.id)} onToggle={onToggleOne} onEdit={onEdit} />)}
       </div>
       <TableShell className="hidden md:block" isFetching={isFetching} style={{ contain: 'inline-size paint' }}>
         <TableViewport className="max-w-full">
@@ -354,7 +358,7 @@ export function BillingTable({ items, families = [], isFetching = false, canEdit
             </TableHead>
             <TableBody>
               {items.length === 0 ? (
-                <TableEmptyState colSpan={visibleColumns.length + (selectable ? 1 : 0)} message="No billing occurrences found" />
+                <TableEmptyState colSpan={visibleColumns.length + (selectable ? 1 : 0)} message={emptyContent} />
               ) : items.map((item, index) => {
                 const rowSelectable = selectable && item.status === 'OPEN';
                 const selected = selectedIds.has(item.id);

@@ -2,7 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { CalendarClock } from 'lucide-react';
 import { Alert } from '@/components/ui/alert';
+import { ListEmptyState } from '@/components/ui/empty-state';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useMoveEngagementStart } from '@/hooks/use-client-services';
 import {
@@ -755,6 +757,15 @@ export function DeadlineWorkspace({ canEdit = false, deadlineWritesEnabled = fal
           {showTableSurface ? (
               <DeadlineTable
               items={items}
+              emptyState={(
+                <ListEmptyState
+                  icon={CalendarClock}
+                  noun="deadlines"
+                  filtered={activeBadges.length > 0}
+                  onClearFilters={clearAllFilters}
+                  emptyDescription="Deadlines appear here when a published deadline rule covers a client service."
+                />
+              )}
               isFetching={deadlines.isFetching}
               page={deadlines.data?.mode === 'TABLE' ? deadlines.data.page : urlState.page}
               total={total}

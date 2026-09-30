@@ -1,6 +1,6 @@
 'use client';
 
-import { memo, useState, useCallback, useRef, type MouseEvent } from 'react';
+import { memo, useState, useCallback, useRef, type MouseEvent, type ReactNode } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { formatDateShort, formatCurrency, cn } from '@/lib/utils';
@@ -9,6 +9,7 @@ import { SUPPORTED_CURRENCIES } from '@/lib/validations/exchange-rate';
 import { Building2, MoreHorizontal, ExternalLink, Pencil, Trash2, ArrowUpRight, AlertTriangle, Square, CheckSquare, MinusSquare } from 'lucide-react';
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, DropdownSeparator } from '@/components/ui/dropdown';
 import { PrefetchLink } from '@/components/ui/prefetch-link';
+import { EmptyState } from '@/components/ui/empty-state';
 import { MobileCard, CardDetailsGrid, CardDetailItem } from '@/components/ui/responsive-table';
 import { CompanySelect } from '@/components/ui/company-select';
 import { DatePicker, type DatePickerValue } from '@/components/ui/date-picker';
@@ -174,6 +175,8 @@ interface CompanyTableProps {
   onSort?: (field: string) => void;
   /** Current inline filter values */
   inlineFilters?: CompanyInlineFilters;
+  /** Shown when there are no companies; defaults to a plain empty message with Add Company. */
+  emptyState?: ReactNode;
   /** Handler for inline filter changes */
   onInlineFilterChange?: (filters: Partial<CompanyInlineFilters>) => void;
   /** Column widths for resizable columns */
@@ -322,8 +325,16 @@ export function CompanyTable({
   onInlineFilterChange,
   columnWidths: externalColumnWidths,
   onColumnWidthChange,
+  emptyState,
 }: CompanyTableProps) {
   const router = useRouter();
+  const emptyContent = emptyState ?? (
+    <EmptyState
+      icon={Building2}
+      title="No companies found"
+      actions={canCreate ? <Link href="/companies/new" className="btn-primary btn-sm inline-flex">Add Company</Link> : undefined}
+    />
+  );
 
   const handleRowClick = useCallback((
     event: MouseEvent<HTMLTableRowElement>,
@@ -713,20 +724,7 @@ export function CompanyTable({
           </div>
         )}
         {companies.length === 0 ? (
-          <div className="card p-6 sm:p-12 text-center">
-            <Building2 className="w-12 h-12 text-text-muted mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-text-primary mb-2">No companies found</h3>
-            <p className="text-text-secondary mb-4">
-              {canCreate
-                ? 'Get started by creating your first company or adjusting your filters.'
-                : 'No companies available. Try adjusting your filters.'}
-            </p>
-            {canCreate && (
-              <Link href="/companies/new" className="btn-primary btn-sm inline-flex">
-                Add Company
-              </Link>
-            )}
-          </div>
+          <div className="card">{emptyContent}</div>
         ) : (
           companies.map((company) => {
             const isSelected = selectedIds.has(company.id);
@@ -869,7 +867,7 @@ export function CompanyTable({
               {companies.length === 0 ? (
                 <TableEmptyState
                   colSpan={COLUMN_IDS.length + (selectable ? 1 : 0)}
-                  message="No companies found"
+                  message={emptyContent}
                 />
               ) : (
                 companies.map((company, index) => {

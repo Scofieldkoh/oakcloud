@@ -1,7 +1,8 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from 'react';
-import { MoreHorizontal } from 'lucide-react';
+import { CalendarClock, MoreHorizontal } from 'lucide-react';
+import { EmptyState } from '@/components/ui/empty-state';
 import { MobileCard, CardDetailItem, CardDetailsGrid } from '@/components/ui/responsive-table';
 import { Pagination } from '@/components/ui/pagination';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -31,6 +32,8 @@ export type DeadlineColumnWidths = Record<string, number>;
 
 export interface DeadlineTableProps {
   items?: DeadlineOccurrenceDto[];
+  /** Replaces the default empty message, such as a ListEmptyState with Clear filters. */
+  emptyState?: ReactNode;
   isFetching?: boolean;
   page?: number;
   total?: number;
@@ -398,7 +401,9 @@ export function DeadlineTable({
   selectedIds,
   onToggleSelection,
   onToggleSelectAll,
+  emptyState,
 }: DeadlineTableProps) {
+  const emptyContent = emptyState ?? <EmptyState icon={CalendarClock} title="No deadlines found" />;
   const visibleColumns = useMemo(() => columnOrder.filter((column) => columnVisibility[column]), [columnOrder, columnVisibility]);
   const selectionEnabled = Boolean(selectedIds && onToggleSelection && onToggleSelectAll);
   const allVisibleSelected = selectionEnabled && items.length > 0 && items.every((occurrence) => selectedIds?.has(occurrence.id) ?? false);
@@ -461,7 +466,7 @@ export function DeadlineTable({
   return (
     <>
       <div className="space-y-3 md:hidden" aria-label="Deadline cards">
-        {items.length === 0 ? <div className="rounded-xl border border-border-primary bg-background-secondary p-6 text-center text-sm text-text-secondary">No deadlines found</div> : items.map((occurrence) => <MobileDeadlineCard key={occurrence.id} occurrence={occurrence} canEdit={canEdit} isPending={isPending} mutationError={mutationError} onUpdate={onUpdate} onResetOverride={onResetOverride} isSelected={selectedIds?.has(occurrence.id) ?? false} onToggleSelection={selectionEnabled ? onToggleSelection : undefined} />)}
+        {items.length === 0 ? <div className="rounded-xl border border-border-primary bg-background-secondary">{emptyContent}</div> : items.map((occurrence) => <MobileDeadlineCard key={occurrence.id} occurrence={occurrence} canEdit={canEdit} isPending={isPending} mutationError={mutationError} onUpdate={onUpdate} onResetOverride={onResetOverride} isSelected={selectedIds?.has(occurrence.id) ?? false} onToggleSelection={selectionEnabled ? onToggleSelection : undefined} />)}
       </div>
       <TableShell className="hidden md:block" isFetching={isFetching}>
         <TableViewport>
@@ -513,7 +518,7 @@ export function DeadlineTable({
           </TableHead>
           <TableBody>
             {items.length === 0 ? (
-              <TableEmptyState colSpan={visibleColumns.length + (selectionEnabled ? 1 : 0)} message="No deadlines found" />
+              <TableEmptyState colSpan={visibleColumns.length + (selectionEnabled ? 1 : 0)} message={emptyContent} />
             ) : items.map((occurrence, index) => <DesktopDeadlineRow key={occurrence.id} occurrence={occurrence} index={index} visibleColumns={visibleColumns} canEdit={canEdit} isPending={isPending} mutationError={mutationError} onUpdate={onUpdate} onResetOverride={onResetOverride} isSelected={selectedIds?.has(occurrence.id) ?? false} onToggleSelection={selectionEnabled ? onToggleSelection : undefined} />)}
           </TableBody>
           </TableRoot>

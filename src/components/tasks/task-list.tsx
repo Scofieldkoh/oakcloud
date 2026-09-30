@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import {
   CalendarDays,
   Edit3,
@@ -9,6 +9,7 @@ import {
   Play,
   Trash2,
   XCircle,
+  ListChecks,
 } from 'lucide-react';
 import { DatePicker } from '@/components/ui/date-picker';
 import {
@@ -18,6 +19,7 @@ import {
   DropdownSeparator,
   DropdownTrigger,
 } from '@/components/ui/dropdown';
+import { EmptyState } from '@/components/ui/empty-state';
 import { MobileCard, CardDetailsGrid, CardDetailItem } from '@/components/ui/responsive-table';
 import { TableBody, TableEmptyState, TableFilterCell, TableFilterRow, TableHead, TableHeaderCell, TableHeaderRow, TableRoot, TableRow, TableSelectFilter, TableShell, TableTextFilter, TableViewport } from '@/components/ui/data-table';
 import { CompanySelect } from '@/components/ui/company-select';
@@ -61,6 +63,8 @@ interface TaskListProps {
   onStatusAction: (task: TaskListItem, action: TaskStatusAction) => void;
   onArchive: (task: TaskListItem) => void;
   busyTaskId?: string | null;
+  /** Replaces the default empty message, such as a ListEmptyState with Clear filters. */
+  emptyState?: ReactNode;
 }
 
 const TASK_COLUMN_PREF_KEY = 'tasks:list:columns:v1';
@@ -269,7 +273,9 @@ export function TaskList({
   onStatusAction,
   onArchive,
   busyTaskId,
+  emptyState,
 }: TaskListProps) {
+  const emptyContent = emptyState ?? <EmptyState icon={ListChecks} title="No tasks found" />;
   const { data: preferenceMap } = useUserPreferences([TASK_COLUMN_PREF_KEY]);
   const saveColumnPreference = useUpsertUserPreference<Record<string, number>>();
   const [columnWidths, setColumnWidths] = useState<Partial<Record<TaskColumnId, number>>>({});
@@ -426,9 +432,7 @@ export function TaskList({
     <div data-testid="task-list">
       <div className="space-y-4 md:hidden">
         {tasks.length === 0 ? (
-          <div className="card p-8 text-center">
-            <p className="text-sm text-text-secondary">No tasks found</p>
-          </div>
+          <div className="card">{emptyContent}</div>
         ) : tasks.map((task) => {
           const due = dueDateLabel(task.dueDate);
           return (
@@ -564,7 +568,7 @@ export function TaskList({
           </TableHead>
           <TableBody>
             {tasks.length === 0 ? (
-              <TableEmptyState colSpan={TASK_COLUMN_IDS.length} message="No tasks found" />
+              <TableEmptyState colSpan={TASK_COLUMN_IDS.length} message={emptyContent} />
             ) : tasks.map((task, index) => {
               const due = dueDateLabel(task.dueDate);
               return (

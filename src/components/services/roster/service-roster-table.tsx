@@ -1,8 +1,9 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, type ReactNode } from 'react';
 import Link from 'next/link';
-import { MoreHorizontal, Pencil, ExternalLink, AlertTriangle, History } from 'lucide-react';
+import { MoreHorizontal, Pencil, ExternalLink, AlertTriangle, History, Briefcase } from 'lucide-react';
+import { EmptyState } from '@/components/ui/empty-state';
 import { MobileCard, CardDetailItem, CardDetailsGrid } from '@/components/ui/responsive-table';
 import { Checkbox } from '@/components/ui/checkbox';
 import { TableBody, TableEmptyState, TableFilterCell, TableFilterRow, TableHead, TableHeaderCell, TableHeaderRow, TableRoot, TableRow, TableShell, TableTextFilter, TableViewport } from '@/components/ui/data-table';
@@ -44,6 +45,8 @@ export interface ServiceRosterInlineFilters {
 
 interface ServiceRosterTableProps {
   items: ServiceRosterItem[];
+  /** Replaces the default empty message, such as a ListEmptyState with Clear filters. */
+  emptyState?: ReactNode;
   canEdit: boolean;
   canSelect: boolean;
   selectedIds: ReadonlySet<string>;
@@ -318,7 +321,9 @@ export function ServiceRosterTable({
   onEdit,
   onOpen,
   onTrigger,
+  emptyState,
 }: ServiceRosterTableProps) {
+  const emptyContent = emptyState ?? <EmptyState icon={Briefcase} title="No services found" />;
   const visibleColumns = useMemo(() => columnOrder.filter((column) => columnVisibility[column]), [columnOrder, columnVisibility]);
   const resizeCleanupRef = useRef<(() => void) | null>(null);
   useEffect(() => () => resizeCleanupRef.current?.(), []);
@@ -397,7 +402,7 @@ export function ServiceRosterTable({
             <span>Select all visible services</span>
           </div>
         ) : null}
-        {items.length === 0 ? <div className="rounded-xl border border-border-primary bg-background-secondary p-6 text-center text-sm text-text-secondary">No services found</div> : items.map((item) => <MobileRosterCard key={item.id} item={item} canEdit={canEdit} canSelect={canSelect} isSelected={selectedIds.has(item.id)} onToggleSelect={onToggleSelect} onEdit={onEdit} onOpen={onOpen} onTrigger={onTrigger} />)}
+        {items.length === 0 ? <div className="rounded-xl border border-border-primary bg-background-secondary">{emptyContent}</div> : items.map((item) => <MobileRosterCard key={item.id} item={item} canEdit={canEdit} canSelect={canSelect} isSelected={selectedIds.has(item.id)} onToggleSelect={onToggleSelect} onEdit={onEdit} onOpen={onOpen} onTrigger={onTrigger} />)}
       </div>
       <TableShell className="hidden md:block" isFetching={isFetching}>
         <TableViewport>
@@ -446,7 +451,7 @@ export function ServiceRosterTable({
           </TableHead>
           <TableBody>
             {items.length === 0 ? (
-              <TableEmptyState colSpan={visibleColumns.length + (canSelect ? 1 : 0)} message="No services found" />
+              <TableEmptyState colSpan={visibleColumns.length + (canSelect ? 1 : 0)} message={emptyContent} />
             ) : items.map((item, index) => <DesktopRow key={item.id} item={item} index={index} columns={visibleColumns} canEdit={canEdit} canSelect={canSelect} isSelected={selectedIds.has(item.id)} onToggleSelect={onToggleSelect} onEdit={onEdit} onOpen={onOpen} onTrigger={onTrigger} />)}
           </TableBody>
           </TableRoot>

@@ -1,8 +1,8 @@
 'use client';
 
 import { Search, Calendar, Eye, Copy, SlidersHorizontal, X } from 'lucide-react';
-import { useState } from 'react';
 import type { DuplicateStatus } from '@/generated/prisma';
+import { useDebouncedSearch } from '@/hooks/use-debounced-search';
 
 export interface ProcessingToolbarProps {
   search: string;
@@ -29,16 +29,7 @@ export function ProcessingToolbar({
   onAdjustColumns,
   hiddenColumnCount,
 }: ProcessingToolbarProps) {
-  const [searchValue, setSearchValue] = useState(search);
-
-  const handleSearchChange = (value: string) => {
-    setSearchValue(value);
-    // Debounce search
-    const timeoutId = setTimeout(() => {
-      onSearchChange(value);
-    }, 300);
-    return () => clearTimeout(timeoutId);
-  };
+  const { draft: searchValue, setDraft: handleSearchChange, commitNow } = useDebouncedSearch(search, onSearchChange);
 
   const toggleQuickFilter = (key: 'needsReview' | 'uploadDatePreset' | 'duplicateStatus', value: boolean | 'TODAY' | DuplicateStatus) => {
     const currentValue = quickFilters[key];
@@ -61,10 +52,7 @@ export function ProcessingToolbar({
         />
         {searchValue && (
           <button
-            onClick={() => {
-              setSearchValue('');
-              onSearchChange('');
-            }}
+            onClick={() => commitNow('')}
             className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 hover:bg-background-tertiary rounded"
           >
             <X className="w-4 h-4 text-text-muted" />

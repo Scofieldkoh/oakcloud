@@ -14,6 +14,7 @@ import {
   CalendarDays,
   Download,
   Trash2,
+  FileText,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
@@ -22,6 +23,7 @@ import { useToast } from '@/components/ui/toast';
 import { usePermissions } from '@/hooks/use-permissions';
 import { useSelection } from '@/hooks/use-selection';
 import { FilterChip } from '@/components/ui/filter-chip';
+import { ListEmptyState } from '@/components/ui/empty-state';
 import { BulkActionsToolbar } from '@/components/ui/bulk-actions-toolbar';
 import { cn } from '@/lib/utils';
 import {
@@ -315,8 +317,9 @@ export default function GeneratedDocumentsPage() {
       sortBy: previous.sortBy,
       sortOrder: previous.sortOrder,
     }));
+    search.commitNow('');
     setPage(1);
-  }, []);
+  }, [search]);
 
   const today = toLocalDateString(new Date());
   const isUpdatedToday = Boolean(
@@ -751,6 +754,16 @@ export default function GeneratedDocumentsPage() {
           onToggleAll={toggleAll}
           isAllSelected={isAllSelected}
           isIndeterminate={isIndeterminate}
+          emptyState={(
+            <ListEmptyState
+              icon={FileText}
+              noun="documents"
+              filtered={activeFilterChips.length > 0}
+              onClearFilters={clearAllFilters}
+              createAction={canCreate ? <Link href="/generated-documents/generate" className="btn-primary btn-sm inline-flex">Generate Document</Link> : undefined}
+              emptyDescription="Generate a document from a template to get started."
+            />
+          )}
         />
       </div>
 

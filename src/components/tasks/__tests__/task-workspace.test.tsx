@@ -252,7 +252,9 @@ describe('TaskWorkspace', () => {
     expect(screen.getByRole('combobox', { name: 'All companies' })).toBeInTheDocument();
     expect(screen.getByRole('combobox', { name: 'Filter tasks by pipeline' })).toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: /Company/ })).toBeInTheDocument();
-    expect(screen.getByRole('cell', { name: 'No tasks found' })).toHaveAttribute('colspan', '8');
+    const emptyTable = screen.getByRole('table');
+    expect(within(emptyTable).getByText('No tasks yet').closest('td')).toHaveAttribute('colspan', '8');
+    expect(within(emptyTable).getByRole('button', { name: 'Create task' })).toBeInTheDocument();
   });
 
   it('shows removable badges for active filters and clears them together', async () => {
