@@ -6,6 +6,11 @@ import { AsyncSearchSelect } from '@/components/ui/async-search-select';
 import { useCompanySearch, type CompanySearchOption } from '@/hooks/use-company-search';
 
 export interface CompanySelectProps {
+  /** Visible label above the field. */
+  label?: string;
+  labelClassName?: string;
+  /** Extra classes for the field itself, such as an "editable" tint. */
+  controlClassName?: string;
   /** Currently selected company ID ('' for none). */
   value: string;
   /** Called with the selected company ID and the full option (or null on clear). */
@@ -28,6 +33,8 @@ export interface CompanySelectProps {
   noResultsText?: string;
   /** Canonical inline-table visual treatment. */
   variant?: 'default' | 'table-filter';
+  /** Lets users click the selected company to search for a replacement. */
+  allowReselect?: boolean;
 }
 
 /**
@@ -36,6 +43,9 @@ export interface CompanySelectProps {
  * without typing and pages through the rest on the server.
  */
 export function CompanySelect({
+  label,
+  labelClassName,
+  controlClassName,
   value,
   onChange,
   placeholder = 'Search companies...',
@@ -50,6 +60,7 @@ export function CompanySelect({
   emptySearchText = 'No companies available',
   noResultsText = 'No companies match your search',
   variant = 'default',
+  allowReselect = false,
 }: CompanySelectProps) {
   const {
     searchQuery,
@@ -78,6 +89,9 @@ export function CompanySelect({
 
   return (
     <AsyncSearchSelect<CompanySearchOption>
+      label={label}
+      labelClassName={labelClassName}
+      controlClassName={controlClassName}
       value={value}
       onChange={onChange}
       options={options}
@@ -92,6 +106,7 @@ export function CompanySelect({
       renderSelected={selectedRenderer}
       showSearchIcon={false}
       variant={variant}
+      allowReselect={allowReselect}
       inputClassName={variant === 'table-filter' ? undefined : 'text-xs text-text-primary placeholder:text-text-muted'}
       emptySearchText={emptySearchText}
       noResultsText={noResultsText}

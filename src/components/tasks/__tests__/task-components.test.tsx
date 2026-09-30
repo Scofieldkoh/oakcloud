@@ -48,11 +48,55 @@ vi.mock('@/hooks/use-esigning', () => ({
   }),
 }));
 
-vi.mock('@/components/ui/company-select', () => ({
-  CompanySelect: ({ placeholder }: { placeholder?: string }) => (
-    <input aria-label="All companies" placeholder={placeholder} readOnly />
-  ),
-}));
+vi.mock('@/components/ui/company-select', async () => {
+  const { useState } = await import('react');
+  const { AsyncSearchSelect } = await import('@/components/ui/async-search-select');
+  type Option = { id: string; name: string; label: string; description: string; uen: string | null };
+  function LabelledCompanySelect({ label, value, onChange, placeholder, disabled, pinned = [], allowReselect }: {
+    label: string;
+    value: string;
+    onChange: (id: string, company: Option | null) => void;
+    placeholder?: string;
+    disabled?: boolean;
+    pinned?: Option[];
+    allowReselect?: boolean;
+  }) {
+    const [query, setQuery] = useState('');
+    const options = pinned.filter((option) => option.label.toLowerCase().includes(query.toLowerCase()));
+    return (
+      <AsyncSearchSelect<Option>
+        label={label}
+        value={value}
+        onChange={onChange}
+        options={options}
+        isLoading={false}
+        searchQuery={query}
+        onSearchChange={setQuery}
+        placeholder={placeholder}
+        disabled={disabled}
+        allowReselect={allowReselect}
+      />
+    );
+  }
+  return {
+    // Filters with a label search the companies passed as `pinned`, standing in for the server.
+    CompanySelect: (props: { label?: string; placeholder?: string } & Record<string, unknown>) => (props.label
+      ? <LabelledCompanySelect {...(props as unknown as Parameters<typeof LabelledCompanySelect>[0])} />
+      : <input aria-label="All companies" placeholder={props.placeholder} readOnly />),
+  };
+});
+
+/** Types into the Existing company picker, reopening it first when a company is already selected. */
+function searchExistingCompany(name: string) {
+  let select = screen.getByRole('combobox', { name: 'Existing company' });
+  if (select.tagName !== 'INPUT') {
+    fireEvent.click(select);
+    select = screen.getByRole('combobox', { name: 'Existing company' });
+  }
+  fireEvent.focus(select);
+  fireEvent.change(select, { target: { value: name } });
+  fireEvent.keyDown(select, { key: 'Enter' });
+}
 
 const stages: TaskStageSummary[] = [
   { id: 'stage-1', name: 'Profile', position: 0, actionType: 'COMPANY_PROFILE', icon: 'Building2', isRequired: true, status: 'NOT_STARTED' },
@@ -659,7 +703,6 @@ describe('TaskFormModal', () => {
         isOpen
         mode="create"
         pipelines={[pipeline]}
-        companies={[task.company!]}
         owners={[task.owner!]}
         onClose={vi.fn()}
         onSubmit={onSubmit}
@@ -685,7 +728,6 @@ describe('TaskFormModal', () => {
         isOpen
         mode="create"
         pipelines={[pipeline]}
-        companies={[task.company!]}
         owners={[task.owner!]}
         onClose={vi.fn()}
         onSubmit={vi.fn()}
@@ -903,12 +945,8 @@ describe('TaskStageModal', () => {
     expect(screen.getByText('Search by company name or UEN')).toBeVisible();
     expect(screen.getByTestId('company-profile-existing-option')).toHaveAttribute('data-selection-state', 'unchanged');
 
-    const companySelect = screen.getByRole('combobox', { name: 'Existing company' });
-    fireEvent.focus(companySelect);
-    fireEvent.change(companySelect, { target: { value: 'Acme' } });
-    fireEvent.keyDown(companySelect, { key: 'ArrowDown' });
-    fireEvent.keyDown(companySelect, { key: 'Enter' });
-    expect(companySelect).toHaveValue('Acme Pte Ltd');
+    searchExistingCompany('Acme');
+    expect(screen.getByRole('combobox', { name: 'Existing company' })).toHaveTextContent('Acme Pte Ltd');
 
     const fileInput = screen.getByLabelText('Upload BizFile file');
     const firstFile = new File(['pdf'], 'first-bizfile.pdf', { type: 'application/pdf' });
@@ -955,13 +993,7 @@ describe('TaskStageModal', () => {
       outcomeSummary: `Linked company: ${linkedCompany.name}`,
     };
     const onTransition = vi.fn();
-    const selectCompany = (name: string) => {
-      const select = screen.getByRole('combobox', { name: 'Existing company' });
-      fireEvent.focus(select);
-      fireEvent.change(select, { target: { value: name } });
-      fireEvent.keyDown(select, { key: 'ArrowDown' });
-      fireEvent.keyDown(select, { key: 'Enter' });
-    };
+    const selectCompany = searchExistingCompany;
 
     const { unmount } = render(
       <TaskStageModal
@@ -1157,12 +1189,7 @@ describe('TaskStageModal', () => {
 
     expect(screen.queryByRole('link', { name: 'Create company' })).not.toBeInTheDocument();
     expect(screen.queryByRole('option', { name: 'Create a new company' })).not.toBeInTheDocument();
-    fireEvent.focus(screen.getByRole('combobox', { name: 'Existing company' }));
-    fireEvent.change(screen.getByRole('combobox', { name: 'Existing company' }), {
-      target: { value: task.company!.name },
-    });
-    fireEvent.keyDown(screen.getByRole('combobox', { name: 'Existing company' }), { key: 'ArrowDown' });
-    fireEvent.keyDown(screen.getByRole('combobox', { name: 'Existing company' }), { key: 'Enter' });
+    searchExistingCompany(task.company!.name);
     fireEvent.click(screen.getByRole('button', { name: 'Link selected company' }));
     expect(onTransition).toHaveBeenCalledWith({
       action: 'linkOutcome',

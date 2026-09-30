@@ -36,37 +36,45 @@ vi.mock('@/components/ui/single-date-input', () => ({
   ),
 }));
 
-vi.mock('@/components/ui/company-searchable-select', () => ({
-  CompanySearchableSelect: ({
-    companies,
+const mockCompanyOptions = [
+  { id: 'company-1', name: 'Acme Pte Ltd', uen: '201900001A' },
+  { id: 'company-2', name: 'Beta Pte Ltd', uen: '201900002B' },
+];
+
+vi.mock('@/components/ui/company-select', () => ({
+  CompanySelect: ({
+    pinned,
     value,
     onChange,
     label,
     placeholder,
     disabled,
   }: {
-    companies?: Array<{ id: string; name: string }>;
+    pinned?: Array<{ id: string; name: string }>;
     value?: string;
-    onChange?: (value: string) => void;
+    onChange?: (value: string, company: { id: string; name: string } | null) => void;
     label?: string;
     placeholder?: string;
     disabled?: boolean;
-  }) => (
-    <label>
-      {label}
-      <select
-        aria-label={label ?? placeholder}
-        value={value ?? ''}
-        onChange={(event) => onChange?.(event.target.value)}
-        disabled={disabled}
-      >
-        <option value="">{placeholder ?? 'Select company'}</option>
-        {(companies ?? []).map((company) => (
-          <option key={company.id} value={company.id}>{company.name}</option>
-        ))}
-      </select>
-    </label>
-  ),
+  }) => {
+    const options = [...(pinned ?? []), ...mockCompanyOptions.filter((company) => !pinned?.some((item) => item.id === company.id))];
+    return (
+      <label>
+        {label}
+        <select
+          aria-label={label ?? placeholder}
+          value={value ?? ''}
+          onChange={(event) => onChange?.(event.target.value, options.find((company) => company.id === event.target.value) ?? null)}
+          disabled={disabled}
+        >
+          <option value="">{placeholder ?? 'Select company'}</option>
+          {options.map((company) => (
+            <option key={company.id} value={company.id}>{company.name}</option>
+          ))}
+        </select>
+      </label>
+    );
+  },
 }));
 
 vi.mock('@/components/ui/contact-search-select', () => ({
@@ -233,8 +241,6 @@ describe('EsigningStepUpload', () => {
         isReorderingRecipients={false}
         onEditRecipient={vi.fn()}
         onRemoveRecipient={vi.fn()}
-        companies={[]}
-        companiesLoading={false}
         onNext={vi.fn()}
         onBack={vi.fn()}
       />
@@ -259,8 +265,6 @@ describe('EsigningStepUpload', () => {
         isReorderingRecipients={false}
         onEditRecipient={vi.fn()}
         onRemoveRecipient={vi.fn()}
-        companies={[]}
-        companiesLoading={false}
         onNext={vi.fn()}
         onBack={vi.fn()}
       />
@@ -288,8 +292,6 @@ describe('EsigningStepUpload', () => {
         isReorderingRecipients={false}
         onEditRecipient={vi.fn()}
         onRemoveRecipient={vi.fn()}
-        companies={[]}
-        companiesLoading={false}
         onNext={vi.fn()}
         onBack={vi.fn()}
       />
@@ -314,7 +316,6 @@ describe('EsigningStepUpload', () => {
       currentUser?: { firstName: string; lastName: string; email: string } | null;
       onNext?: () => void;
       isUploading?: boolean;
-      companies?: Array<{ id: string; name: string; uen: string }>;
     } = {}
   ) {
     const onUpdateSettings = propOverrides.onUpdateSettings ?? vi.fn().mockResolvedValue(undefined);
@@ -339,8 +340,6 @@ describe('EsigningStepUpload', () => {
         isReorderingRecipients={false}
         onEditRecipient={vi.fn()}
         onRemoveRecipient={vi.fn()}
-        companies={propOverrides.companies ?? []}
-        companiesLoading={false}
         onNext={onNext}
         onBack={vi.fn()}
       />
@@ -643,10 +642,6 @@ describe('EsigningStepUpload', () => {
       { documents: [], documentCount: 0 },
       {
         onAttachGeneratedDocuments,
-        companies: [
-          { id: 'company-1', name: 'Acme Pte Ltd', uen: '201900001A' },
-          { id: 'company-2', name: 'Beta Pte Ltd', uen: '201900002B' },
-        ],
       },
     );
 

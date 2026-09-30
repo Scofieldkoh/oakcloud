@@ -19,7 +19,6 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Alert } from '@/components/ui/alert';
 import { Toggle } from '@/components/ui/toggle';
 import { useToast } from '@/components/ui/toast';
-import { useCompanies } from '@/hooks/use-companies';
 import { usePermissions } from '@/hooks/use-permissions';
 import { useSession } from '@/hooks/use-auth';
 import {
@@ -153,7 +152,6 @@ export function EsigningDetailPage({ envelopeId }: Props) {
   const sessionQuery = useSession();
   const envelopeQuery = useEsigningEnvelope(envelopeId);
   const envelope = envelopeQuery.data;
-  const companiesQuery = useCompanies({ page: 1, limit: 100, sortBy: 'name', sortOrder: 'asc' });
 
   // Mutations
   const updateEnvelope = useUpdateEsigningEnvelope(envelopeId);
@@ -1001,12 +999,6 @@ export function EsigningDetailPage({ envelopeId }: Props) {
                   setRecipientActionId(id);
                   setIsDeleteRecipientOpen(true);
                 }}
-                companies={(companiesQuery.data?.companies ?? []).map((c) => ({
-                  id: c.id,
-                  name: c.name,
-                  uen: c.uen,
-                }))}
-                companiesLoading={companiesQuery.isLoading}
                 onNext={() => goToDraftStep(2)}
                 onBack={() => router.push(returnHref)}
               />

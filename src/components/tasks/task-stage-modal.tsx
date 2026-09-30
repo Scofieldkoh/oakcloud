@@ -13,7 +13,8 @@ import {
 import { useDropzone } from 'react-dropzone';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { CompanySearchableSelect } from '@/components/ui/company-searchable-select';
+import { CompanySelect } from '@/components/ui/company-select';
+import { toCompanySearchOption } from '@/hooks/use-company-search';
 import { attachGeneratedDocumentsRequest } from '@/hooks/use-esigning';
 import { cn } from '@/lib/utils';
 import { withTaskLaunchContext } from '@/lib/task-launch-context';
@@ -45,6 +46,7 @@ interface TaskStageModalProps {
   onTransition: (transition: TaskStageTransition) => void | Promise<void>;
   onStartBizFileReview?: (file: File) => void | Promise<void>;
   isMutating?: boolean;
+  /** Companies already known here, such as the task's company, so its name shows before any search. */
   companies?: Array<{ id: string; name: string; uen?: string | null }>;
   taskCompanyId?: string | null;
   taskDueDate?: string | null;
@@ -246,6 +248,7 @@ export function TaskStageModal({
   const selectionStageIdRef = useRef<string | null>(null);
   const persistedStageId = stage?.id;
   const persistedStageNotes = stage?.notes ?? '';
+  const knownCompanyOptions = useMemo(() => companies.map(toCompanySearchOption), [companies]);
   const isLinkedCompanySelected = Boolean(
     taskCompanyId
     && selectedCompanyId
@@ -775,14 +778,15 @@ export function TaskStageModal({
                     data-testid="company-profile-existing-option"
                     data-selection-state={companySelectionState}
                   >
-                    <CompanySearchableSelect
-                      companies={companies}
+                    <CompanySelect
                       value={selectedCompanyId}
-                      onChange={setSelectedCompanyId}
+                      onChange={(companyId) => setSelectedCompanyId(companyId)}
                       label="Existing company"
                       placeholder="Search by company name or UEN"
                       disabled={isMutating}
-                      size="md"
+                      pinned={knownCompanyOptions}
+                      allowReselect
+                      enabled={isOpen}
                       className={cn(
                         isLinkedCompanySelected
                           && '[&>div]:border-emerald-300 [&>div]:bg-emerald-50/60 dark:[&>div]:border-emerald-800 dark:[&>div]:bg-emerald-950/30',

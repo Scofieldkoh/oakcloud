@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Check, FileText, Loader2, Search } from 'lucide-react';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
-import { CompanySearchableSelect } from '@/components/ui/company-searchable-select';
+import { CompanySelect } from '@/components/ui/company-select';
 import { formatDate } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 
@@ -28,8 +28,6 @@ interface GeneratedDocumentPickerProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: (documentIds: string[]) => Promise<void>;
-  companies: Array<{ id: string; name: string; uen?: string | null }>;
-  companiesLoading?: boolean;
   attachedDocumentIds?: string[];
   tenantId?: string | null;
   isConfirming?: boolean;
@@ -52,8 +50,6 @@ export function GeneratedDocumentPicker({
   isOpen,
   onClose,
   onConfirm,
-  companies,
-  companiesLoading = false,
   attachedDocumentIds = [],
   tenantId,
   isConfirming = false,
@@ -200,15 +196,13 @@ export function GeneratedDocumentPicker({
               </span>
             </label>
 
-            <CompanySearchableSelect
-              companies={companies}
+            <CompanySelect
               value={companyId}
-              onChange={setCompanyId}
+              onChange={(nextCompanyId) => setCompanyId(nextCompanyId)}
               label="Filter by company"
               placeholder="All companies"
-              loading={companiesLoading}
-              disabled={companiesLoading || isConfirming}
-              size="lg"
+              disabled={isConfirming}
+              enabled={isOpen}
             />
 
             <label className="block">

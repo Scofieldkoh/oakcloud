@@ -28,6 +28,15 @@ export interface CompanySearchOption extends AsyncSearchSelectOption {
   homeCurrency?: string | null;
 }
 
+/**
+ * Builds a picker option for a company the caller already knows, such as the
+ * current selection, so `CompanySelect` can show it via `pinned` before any
+ * search returns it.
+ */
+export function toCompanySearchOption(company: { id: string; name: string; uen?: string | null }): CompanySearchOption {
+  return { id: company.id, name: company.name, label: company.name, description: company.uen ?? '', uen: company.uen ?? null };
+}
+
 interface CompanySearchResult {
   options: Array<{
     id: string;

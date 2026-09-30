@@ -4887,6 +4887,8 @@ Searchable dropdown with keyboard navigation and optional descriptions.
 - The clear button is labelled "Clear {label}" when the picker has a label, otherwise "Clear selection".
 - Search boxes debounce by `SEARCH_DEBOUNCE_MS` (300 ms).
 
+Company pickers: use `CompanySelect` to choose any company in the workspace. It searches the server, so it is never capped at the first page of companies. Pass the current company as `pinned` (built with `toCompanySearchOption`) so its name shows before any search. Use `CompanySearchableSelect` only to pick from a list the page already has, such as the companies with e-signing envelopes. `CompanySelectorModal` is the sidebar's company scope chooser.
+
 ```tsx
 import { SearchableSelect } from '@/components/ui/searchable-select';
 

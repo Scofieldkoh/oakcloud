@@ -123,6 +123,11 @@ export function TaskWorkspace() {
     || updateStage.error
     || transitionStage.error
   );
+  const selectedStageCompany = selectedStage?.task.company ?? null;
+  const selectedStageCompanies = useMemo(
+    () => (selectedStageCompany ? [selectedStageCompany] : []),
+    [selectedStageCompany],
+  );
   const activeFilterChips = useMemo(() => {
     const chips: Array<{
       key: string;
@@ -432,7 +437,6 @@ export function TaskWorkspace() {
         isOpen={Boolean(formMode)}
         mode={formMode ?? 'create'}
         pipelines={pipelines}
-        companies={companies}
         owners={owners}
         initialTask={editingTask}
         onClose={closeForm}
@@ -530,7 +534,7 @@ export function TaskWorkspace() {
           router.push(reviewHref);
         }}
         isMutating={updateStage.isPending || transitionStage.isPending}
-        companies={companies}
+        companies={selectedStageCompanies}
         taskCompanyId={selectedStage?.task.company?.id ?? null}
         taskDueDate={selectedStage?.task.dueDate ?? null}
       />
