@@ -27,7 +27,11 @@ interface UseSharePointFoldersInput {
   cursor?: string;
   rootItemId?: string;
   enabled?: boolean;
+  /** Folder API to use; the Backup page browses through its own admin route. */
+  endpoint?: string;
 }
+
+const DEFAULT_FOLDERS_ENDPOINT = '/api/sharepoint/folders';
 
 async function readJson<T>(response: Response): Promise<T> {
   const body = await response.json().catch(() => ({}));
@@ -45,17 +49,17 @@ export function useSharePointFolders(input: UseSharePointFoldersInput) {
   if (input.rootItemId) params.set('rootItemId', input.rootItemId);
   params.set('pageSize', '100');
   return useQuery<SharePointFolderPage>({
-    queryKey: ['sharepoint-folders', input.connectorId, input.parentItemId, input.mode ?? 'browse', input.query ?? '', input.cursor ?? '', input.rootItemId ?? ''],
-    queryFn: async () => readJson<SharePointFolderPage>(await fetch(`/api/sharepoint/folders?${params.toString()}`)),
+    queryKey: ['sharepoint-folders', input.connectorId, input.parentItemId, input.mode ?? 'browse', input.query ?? '', input.cursor ?? '', input.rootItemId ?? '', input.endpoint ?? ''],
+    queryFn: async () => readJson<SharePointFolderPage>(await fetch(`${input.endpoint ?? DEFAULT_FOLDERS_ENDPOINT}?${params.toString()}`)),
     enabled: Boolean(input.enabled !== false && input.connectorId && input.parentItemId),
     staleTime: 30_000,
   });
 }
 
-export function useCreateSharePointFolder() {
+export function useCreateSharePointFolder(endpoint = DEFAULT_FOLDERS_ENDPOINT) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (input: { connectorId: string; parentItemId: string; name: string; mode?: SharePointPickerMode; rootItemId?: string }) => readJson<SharePointFolderOption>(await fetch('/api/sharepoint/folders', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(input) })),
+    mutationFn: async (input: { connectorId: string; parentItemId: string; name: string; mode?: SharePointPickerMode; rootItemId?: string }) => readJson<SharePointFolderOption>(await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(input) })),
     onSuccess: (_folder, input) => {
       queryClient.invalidateQueries({ queryKey: ['sharepoint-folders', input.connectorId, input.parentItemId] });
     },

@@ -29,11 +29,13 @@ export type AggregateBackupSettings = {
 export type BackupSettingsAvgAggregateOutputType = {
   maxBackups: number | null
   consecutiveFailures: number | null
+  sharePointMaxBackups: number | null
 }
 
 export type BackupSettingsSumAggregateOutputType = {
   maxBackups: number | null
   consecutiveFailures: number | null
+  sharePointMaxBackups: number | null
 }
 
 export type BackupSettingsMinAggregateOutputType = {
@@ -51,6 +53,12 @@ export type BackupSettingsMinAggregateOutputType = {
   consecutiveFailures: number | null
   updatedAt: Date | null
   updatedById: string | null
+  sharePointConnectorId: string | null
+  sharePointDriveId: string | null
+  sharePointFolderId: string | null
+  sharePointFolderName: string | null
+  sharePointFolderUrl: string | null
+  sharePointMaxBackups: number | null
 }
 
 export type BackupSettingsMaxAggregateOutputType = {
@@ -68,6 +76,12 @@ export type BackupSettingsMaxAggregateOutputType = {
   consecutiveFailures: number | null
   updatedAt: Date | null
   updatedById: string | null
+  sharePointConnectorId: string | null
+  sharePointDriveId: string | null
+  sharePointFolderId: string | null
+  sharePointFolderName: string | null
+  sharePointFolderUrl: string | null
+  sharePointMaxBackups: number | null
 }
 
 export type BackupSettingsCountAggregateOutputType = {
@@ -85,6 +99,12 @@ export type BackupSettingsCountAggregateOutputType = {
   consecutiveFailures: number
   updatedAt: number
   updatedById: number
+  sharePointConnectorId: number
+  sharePointDriveId: number
+  sharePointFolderId: number
+  sharePointFolderName: number
+  sharePointFolderUrl: number
+  sharePointMaxBackups: number
   _all: number
 }
 
@@ -92,11 +112,13 @@ export type BackupSettingsCountAggregateOutputType = {
 export type BackupSettingsAvgAggregateInputType = {
   maxBackups?: true
   consecutiveFailures?: true
+  sharePointMaxBackups?: true
 }
 
 export type BackupSettingsSumAggregateInputType = {
   maxBackups?: true
   consecutiveFailures?: true
+  sharePointMaxBackups?: true
 }
 
 export type BackupSettingsMinAggregateInputType = {
@@ -114,6 +136,12 @@ export type BackupSettingsMinAggregateInputType = {
   consecutiveFailures?: true
   updatedAt?: true
   updatedById?: true
+  sharePointConnectorId?: true
+  sharePointDriveId?: true
+  sharePointFolderId?: true
+  sharePointFolderName?: true
+  sharePointFolderUrl?: true
+  sharePointMaxBackups?: true
 }
 
 export type BackupSettingsMaxAggregateInputType = {
@@ -131,6 +159,12 @@ export type BackupSettingsMaxAggregateInputType = {
   consecutiveFailures?: true
   updatedAt?: true
   updatedById?: true
+  sharePointConnectorId?: true
+  sharePointDriveId?: true
+  sharePointFolderId?: true
+  sharePointFolderName?: true
+  sharePointFolderUrl?: true
+  sharePointMaxBackups?: true
 }
 
 export type BackupSettingsCountAggregateInputType = {
@@ -148,6 +182,12 @@ export type BackupSettingsCountAggregateInputType = {
   consecutiveFailures?: true
   updatedAt?: true
   updatedById?: true
+  sharePointConnectorId?: true
+  sharePointDriveId?: true
+  sharePointFolderId?: true
+  sharePointFolderName?: true
+  sharePointFolderUrl?: true
+  sharePointMaxBackups?: true
   _all?: true
 }
 
@@ -252,6 +292,12 @@ export type BackupSettingsGroupByOutputType = {
   consecutiveFailures: number
   updatedAt: Date
   updatedById: string | null
+  sharePointConnectorId: string | null
+  sharePointDriveId: string | null
+  sharePointFolderId: string | null
+  sharePointFolderName: string | null
+  sharePointFolderUrl: string | null
+  sharePointMaxBackups: number
   _count: BackupSettingsCountAggregateOutputType | null
   _avg: BackupSettingsAvgAggregateOutputType | null
   _sum: BackupSettingsSumAggregateOutputType | null
@@ -292,6 +338,12 @@ export type BackupSettingsWhereInput = {
   consecutiveFailures?: Prisma.IntFilter<"BackupSettings"> | number
   updatedAt?: Prisma.DateTimeFilter<"BackupSettings"> | Date | string
   updatedById?: Prisma.StringNullableFilter<"BackupSettings"> | string | null
+  sharePointConnectorId?: Prisma.StringNullableFilter<"BackupSettings"> | string | null
+  sharePointDriveId?: Prisma.StringNullableFilter<"BackupSettings"> | string | null
+  sharePointFolderId?: Prisma.StringNullableFilter<"BackupSettings"> | string | null
+  sharePointFolderName?: Prisma.StringNullableFilter<"BackupSettings"> | string | null
+  sharePointFolderUrl?: Prisma.StringNullableFilter<"BackupSettings"> | string | null
+  sharePointMaxBackups?: Prisma.IntFilter<"BackupSettings"> | number
 }
 
 export type BackupSettingsOrderByWithRelationInput = {
@@ -309,6 +361,12 @@ export type BackupSettingsOrderByWithRelationInput = {
   consecutiveFailures?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   updatedById?: Prisma.SortOrderInput | Prisma.SortOrder
+  sharePointConnectorId?: Prisma.SortOrderInput | Prisma.SortOrder
+  sharePointDriveId?: Prisma.SortOrderInput | Prisma.SortOrder
+  sharePointFolderId?: Prisma.SortOrderInput | Prisma.SortOrder
+  sharePointFolderName?: Prisma.SortOrderInput | Prisma.SortOrder
+  sharePointFolderUrl?: Prisma.SortOrderInput | Prisma.SortOrder
+  sharePointMaxBackups?: Prisma.SortOrder
 }
 
 export type BackupSettingsWhereUniqueInput = Prisma.AtLeast<{
@@ -329,6 +387,12 @@ export type BackupSettingsWhereUniqueInput = Prisma.AtLeast<{
   consecutiveFailures?: Prisma.IntFilter<"BackupSettings"> | number
   updatedAt?: Prisma.DateTimeFilter<"BackupSettings"> | Date | string
   updatedById?: Prisma.StringNullableFilter<"BackupSettings"> | string | null
+  sharePointConnectorId?: Prisma.StringNullableFilter<"BackupSettings"> | string | null
+  sharePointDriveId?: Prisma.StringNullableFilter<"BackupSettings"> | string | null
+  sharePointFolderId?: Prisma.StringNullableFilter<"BackupSettings"> | string | null
+  sharePointFolderName?: Prisma.StringNullableFilter<"BackupSettings"> | string | null
+  sharePointFolderUrl?: Prisma.StringNullableFilter<"BackupSettings"> | string | null
+  sharePointMaxBackups?: Prisma.IntFilter<"BackupSettings"> | number
 }, "id">
 
 export type BackupSettingsOrderByWithAggregationInput = {
@@ -346,6 +410,12 @@ export type BackupSettingsOrderByWithAggregationInput = {
   consecutiveFailures?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   updatedById?: Prisma.SortOrderInput | Prisma.SortOrder
+  sharePointConnectorId?: Prisma.SortOrderInput | Prisma.SortOrder
+  sharePointDriveId?: Prisma.SortOrderInput | Prisma.SortOrder
+  sharePointFolderId?: Prisma.SortOrderInput | Prisma.SortOrder
+  sharePointFolderName?: Prisma.SortOrderInput | Prisma.SortOrder
+  sharePointFolderUrl?: Prisma.SortOrderInput | Prisma.SortOrder
+  sharePointMaxBackups?: Prisma.SortOrder
   _count?: Prisma.BackupSettingsCountOrderByAggregateInput
   _avg?: Prisma.BackupSettingsAvgOrderByAggregateInput
   _max?: Prisma.BackupSettingsMaxOrderByAggregateInput
@@ -371,6 +441,12 @@ export type BackupSettingsScalarWhereWithAggregatesInput = {
   consecutiveFailures?: Prisma.IntWithAggregatesFilter<"BackupSettings"> | number
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"BackupSettings"> | Date | string
   updatedById?: Prisma.StringNullableWithAggregatesFilter<"BackupSettings"> | string | null
+  sharePointConnectorId?: Prisma.StringNullableWithAggregatesFilter<"BackupSettings"> | string | null
+  sharePointDriveId?: Prisma.StringNullableWithAggregatesFilter<"BackupSettings"> | string | null
+  sharePointFolderId?: Prisma.StringNullableWithAggregatesFilter<"BackupSettings"> | string | null
+  sharePointFolderName?: Prisma.StringNullableWithAggregatesFilter<"BackupSettings"> | string | null
+  sharePointFolderUrl?: Prisma.StringNullableWithAggregatesFilter<"BackupSettings"> | string | null
+  sharePointMaxBackups?: Prisma.IntWithAggregatesFilter<"BackupSettings"> | number
 }
 
 export type BackupSettingsCreateInput = {
@@ -388,6 +464,12 @@ export type BackupSettingsCreateInput = {
   consecutiveFailures?: number
   updatedAt?: Date | string
   updatedById?: string | null
+  sharePointConnectorId?: string | null
+  sharePointDriveId?: string | null
+  sharePointFolderId?: string | null
+  sharePointFolderName?: string | null
+  sharePointFolderUrl?: string | null
+  sharePointMaxBackups?: number
 }
 
 export type BackupSettingsUncheckedCreateInput = {
@@ -405,6 +487,12 @@ export type BackupSettingsUncheckedCreateInput = {
   consecutiveFailures?: number
   updatedAt?: Date | string
   updatedById?: string | null
+  sharePointConnectorId?: string | null
+  sharePointDriveId?: string | null
+  sharePointFolderId?: string | null
+  sharePointFolderName?: string | null
+  sharePointFolderUrl?: string | null
+  sharePointMaxBackups?: number
 }
 
 export type BackupSettingsUpdateInput = {
@@ -422,6 +510,12 @@ export type BackupSettingsUpdateInput = {
   consecutiveFailures?: Prisma.IntFieldUpdateOperationsInput | number
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sharePointConnectorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sharePointDriveId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sharePointFolderId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sharePointFolderName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sharePointFolderUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sharePointMaxBackups?: Prisma.IntFieldUpdateOperationsInput | number
 }
 
 export type BackupSettingsUncheckedUpdateInput = {
@@ -439,6 +533,12 @@ export type BackupSettingsUncheckedUpdateInput = {
   consecutiveFailures?: Prisma.IntFieldUpdateOperationsInput | number
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sharePointConnectorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sharePointDriveId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sharePointFolderId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sharePointFolderName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sharePointFolderUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sharePointMaxBackups?: Prisma.IntFieldUpdateOperationsInput | number
 }
 
 export type BackupSettingsCreateManyInput = {
@@ -456,6 +556,12 @@ export type BackupSettingsCreateManyInput = {
   consecutiveFailures?: number
   updatedAt?: Date | string
   updatedById?: string | null
+  sharePointConnectorId?: string | null
+  sharePointDriveId?: string | null
+  sharePointFolderId?: string | null
+  sharePointFolderName?: string | null
+  sharePointFolderUrl?: string | null
+  sharePointMaxBackups?: number
 }
 
 export type BackupSettingsUpdateManyMutationInput = {
@@ -473,6 +579,12 @@ export type BackupSettingsUpdateManyMutationInput = {
   consecutiveFailures?: Prisma.IntFieldUpdateOperationsInput | number
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sharePointConnectorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sharePointDriveId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sharePointFolderId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sharePointFolderName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sharePointFolderUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sharePointMaxBackups?: Prisma.IntFieldUpdateOperationsInput | number
 }
 
 export type BackupSettingsUncheckedUpdateManyInput = {
@@ -490,6 +602,12 @@ export type BackupSettingsUncheckedUpdateManyInput = {
   consecutiveFailures?: Prisma.IntFieldUpdateOperationsInput | number
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sharePointConnectorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sharePointDriveId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sharePointFolderId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sharePointFolderName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sharePointFolderUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sharePointMaxBackups?: Prisma.IntFieldUpdateOperationsInput | number
 }
 
 export type BackupSettingsCountOrderByAggregateInput = {
@@ -507,11 +625,18 @@ export type BackupSettingsCountOrderByAggregateInput = {
   consecutiveFailures?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   updatedById?: Prisma.SortOrder
+  sharePointConnectorId?: Prisma.SortOrder
+  sharePointDriveId?: Prisma.SortOrder
+  sharePointFolderId?: Prisma.SortOrder
+  sharePointFolderName?: Prisma.SortOrder
+  sharePointFolderUrl?: Prisma.SortOrder
+  sharePointMaxBackups?: Prisma.SortOrder
 }
 
 export type BackupSettingsAvgOrderByAggregateInput = {
   maxBackups?: Prisma.SortOrder
   consecutiveFailures?: Prisma.SortOrder
+  sharePointMaxBackups?: Prisma.SortOrder
 }
 
 export type BackupSettingsMaxOrderByAggregateInput = {
@@ -529,6 +654,12 @@ export type BackupSettingsMaxOrderByAggregateInput = {
   consecutiveFailures?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   updatedById?: Prisma.SortOrder
+  sharePointConnectorId?: Prisma.SortOrder
+  sharePointDriveId?: Prisma.SortOrder
+  sharePointFolderId?: Prisma.SortOrder
+  sharePointFolderName?: Prisma.SortOrder
+  sharePointFolderUrl?: Prisma.SortOrder
+  sharePointMaxBackups?: Prisma.SortOrder
 }
 
 export type BackupSettingsMinOrderByAggregateInput = {
@@ -546,11 +677,18 @@ export type BackupSettingsMinOrderByAggregateInput = {
   consecutiveFailures?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   updatedById?: Prisma.SortOrder
+  sharePointConnectorId?: Prisma.SortOrder
+  sharePointDriveId?: Prisma.SortOrder
+  sharePointFolderId?: Prisma.SortOrder
+  sharePointFolderName?: Prisma.SortOrder
+  sharePointFolderUrl?: Prisma.SortOrder
+  sharePointMaxBackups?: Prisma.SortOrder
 }
 
 export type BackupSettingsSumOrderByAggregateInput = {
   maxBackups?: Prisma.SortOrder
   consecutiveFailures?: Prisma.SortOrder
+  sharePointMaxBackups?: Prisma.SortOrder
 }
 
 
@@ -570,6 +708,12 @@ export type BackupSettingsSelect<ExtArgs extends runtime.Types.Extensions.Intern
   consecutiveFailures?: boolean
   updatedAt?: boolean
   updatedById?: boolean
+  sharePointConnectorId?: boolean
+  sharePointDriveId?: boolean
+  sharePointFolderId?: boolean
+  sharePointFolderName?: boolean
+  sharePointFolderUrl?: boolean
+  sharePointMaxBackups?: boolean
 }, ExtArgs["result"]["backupSettings"]>
 
 export type BackupSettingsSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -587,6 +731,12 @@ export type BackupSettingsSelectCreateManyAndReturn<ExtArgs extends runtime.Type
   consecutiveFailures?: boolean
   updatedAt?: boolean
   updatedById?: boolean
+  sharePointConnectorId?: boolean
+  sharePointDriveId?: boolean
+  sharePointFolderId?: boolean
+  sharePointFolderName?: boolean
+  sharePointFolderUrl?: boolean
+  sharePointMaxBackups?: boolean
 }, ExtArgs["result"]["backupSettings"]>
 
 export type BackupSettingsSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -604,6 +754,12 @@ export type BackupSettingsSelectUpdateManyAndReturn<ExtArgs extends runtime.Type
   consecutiveFailures?: boolean
   updatedAt?: boolean
   updatedById?: boolean
+  sharePointConnectorId?: boolean
+  sharePointDriveId?: boolean
+  sharePointFolderId?: boolean
+  sharePointFolderName?: boolean
+  sharePointFolderUrl?: boolean
+  sharePointMaxBackups?: boolean
 }, ExtArgs["result"]["backupSettings"]>
 
 export type BackupSettingsSelectScalar = {
@@ -621,9 +777,15 @@ export type BackupSettingsSelectScalar = {
   consecutiveFailures?: boolean
   updatedAt?: boolean
   updatedById?: boolean
+  sharePointConnectorId?: boolean
+  sharePointDriveId?: boolean
+  sharePointFolderId?: boolean
+  sharePointFolderName?: boolean
+  sharePointFolderUrl?: boolean
+  sharePointMaxBackups?: boolean
 }
 
-export type BackupSettingsOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "passwordCiphertext" | "passwordUpdatedAt" | "scheduleEnabled" | "cronPattern" | "timezone" | "maxBackups" | "nextRunAt" | "lastRunAt" | "lastBackupId" | "lastError" | "consecutiveFailures" | "updatedAt" | "updatedById", ExtArgs["result"]["backupSettings"]>
+export type BackupSettingsOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "passwordCiphertext" | "passwordUpdatedAt" | "scheduleEnabled" | "cronPattern" | "timezone" | "maxBackups" | "nextRunAt" | "lastRunAt" | "lastBackupId" | "lastError" | "consecutiveFailures" | "updatedAt" | "updatedById" | "sharePointConnectorId" | "sharePointDriveId" | "sharePointFolderId" | "sharePointFolderName" | "sharePointFolderUrl" | "sharePointMaxBackups", ExtArgs["result"]["backupSettings"]>
 
 export type $BackupSettingsPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "BackupSettings"
@@ -643,6 +805,15 @@ export type $BackupSettingsPayload<ExtArgs extends runtime.Types.Extensions.Inte
     consecutiveFailures: number
     updatedAt: Date
     updatedById: string | null
+    /**
+     * SharePoint folder that receives a copy of every full backup.
+     */
+    sharePointConnectorId: string | null
+    sharePointDriveId: string | null
+    sharePointFolderId: string | null
+    sharePointFolderName: string | null
+    sharePointFolderUrl: string | null
+    sharePointMaxBackups: number
   }, ExtArgs["result"]["backupSettings"]>
   composites: {}
 }
@@ -1080,6 +1251,12 @@ export interface BackupSettingsFieldRefs {
   readonly consecutiveFailures: Prisma.FieldRef<"BackupSettings", 'Int'>
   readonly updatedAt: Prisma.FieldRef<"BackupSettings", 'DateTime'>
   readonly updatedById: Prisma.FieldRef<"BackupSettings", 'String'>
+  readonly sharePointConnectorId: Prisma.FieldRef<"BackupSettings", 'String'>
+  readonly sharePointDriveId: Prisma.FieldRef<"BackupSettings", 'String'>
+  readonly sharePointFolderId: Prisma.FieldRef<"BackupSettings", 'String'>
+  readonly sharePointFolderName: Prisma.FieldRef<"BackupSettings", 'String'>
+  readonly sharePointFolderUrl: Prisma.FieldRef<"BackupSettings", 'String'>
+  readonly sharePointMaxBackups: Prisma.FieldRef<"BackupSettings", 'Int'>
 }
 
 

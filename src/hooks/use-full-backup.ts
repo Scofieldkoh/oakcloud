@@ -28,6 +28,37 @@ export interface SystemBackup {
   createdAt: string;
   completedAt: string | null;
   restoredAt: string | null;
+  sharePointStatus: 'UPLOADING' | 'UPLOADED' | 'FAILED' | null;
+  sharePointWebUrl: string | null;
+  sharePointError: string | null;
+  sharePointUploadedAt: string | null;
+}
+
+export interface SharePointBackupTarget {
+  connectorId: string;
+  connectorName: string | null;
+  workspaceName: string | null;
+  driveId: string;
+  folderId: string;
+  folderName: string;
+  folderUrl: string;
+  maxBackups: number;
+}
+
+export interface SharePointBackupConnector {
+  id: string;
+  name: string;
+  workspaceId: string;
+  workspaceName: string;
+}
+
+export interface SharePointBackupFile {
+  itemId: string;
+  name: string;
+  size: number;
+  webUrl: string;
+  createdAt: string | null;
+  backupId: string | null;
 }
 
 export interface FullBackupPreview {
@@ -80,6 +111,8 @@ export const fullBackupKeys = {
   all: ['full-backups'] as const,
   list: (page: number) => ['full-backups', 'list', page] as const,
   settings: ['full-backups', 'settings'] as const,
+  sharePoint: ['full-backups', 'sharepoint'] as const,
+  sharePointFiles: ['full-backups', 'sharepoint', 'files'] as const,
 };
 
 export function useFullBackups(page: number) {
@@ -88,7 +121,9 @@ export function useFullBackups(page: number) {
     queryFn: () => requestJson<FullBackupsResponse>(`/api/admin/backup/full?page=${page}&limit=20`),
     // Poll while anything is running so progress bars move.
     refetchInterval: (query) =>
-      query.state.data?.backups.some((backup) => RUNNING.includes(backup.status)) ? 2000 : false,
+      query.state.data?.backups.some((backup) => RUNNING.includes(backup.status) || backup.sharePointStatus === 'UPLOADING')
+        ? 2000
+        : false,
   });
 }
 
@@ -169,4 +204,40 @@ export function fullBackupDownloadUrl(backupId: string): string {
 
 export function isRunning(status: BackupStatus): boolean {
   return RUNNING.includes(status);
+}
+
+export function useSharePointBackupTarget() {
+  return useQuery({
+    queryKey: fullBackupKeys.sharePoint,
+    queryFn: () =>
+      requestJson<{ target: SharePointBackupTarget | null; connectors: SharePointBackupConnector[] }>('/api/admin/backup/sharepoint'),
+  });
+}
+
+export function useSaveSharePointBackupTarget() {
+  return useInvalidatingMutation((input: { connectorId: string; folderId: string; maxBackups: number }) =>
+    requestJson<{ target: SharePointBackupTarget }>('/api/admin/backup/sharepoint', jsonInit('PUT', input)));
+}
+
+export function useClearSharePointBackupTarget() {
+  return useInvalidatingMutation((_input: void) =>
+    requestJson<{ success: boolean }>('/api/admin/backup/sharepoint', { method: 'DELETE' }));
+}
+
+export function useSharePointBackupFiles(enabled: boolean) {
+  return useQuery({
+    queryKey: fullBackupKeys.sharePointFiles,
+    queryFn: () => requestJson<{ files: SharePointBackupFile[] }>('/api/admin/backup/sharepoint/files'),
+    enabled,
+  });
+}
+
+export function useImportSharePointBackup() {
+  return useInvalidatingMutation((itemId: string) =>
+    requestJson<{ backupId: string }>('/api/admin/backup/sharepoint/files', jsonInit('POST', { itemId })));
+}
+
+export function useCopyBackupToSharePoint() {
+  return useInvalidatingMutation((backupId: string) =>
+    requestJson<{ success: boolean }>(`/api/admin/backup/full/${backupId}/sharepoint`, { method: 'POST' }));
 }

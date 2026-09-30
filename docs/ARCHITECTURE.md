@@ -398,6 +398,16 @@ which re-checks every link. Stored files are written after the commit and
 checked against their SHA-256. Uploads arrive in 8 MB chunks to stay under the
 API middleware's request limit.
 
+`sharepoint-target.ts` keeps a cloud copy. The Backup page picks a folder
+through a workspace-owned SharePoint connector (the folder picker browses via
+`/api/admin/backup/sharepoint/folders`, scoped to the connector's workspace).
+Each finished full backup is uploaded there; the result is recorded on the
+backup (`sharepoint_status`) and can be retried. After each upload only files
+Oakcloud named (`oakcloud-YYYYMMDD-HHMM.oakbackup`) beyond the newest N are
+deleted. Restore from SharePoint lists the folder's `.oakbackup` files and
+copies one down as an uploaded backup, which is then checked and restored as
+usual. Deleting a local backup leaves its SharePoint copy.
+
 ## Tasks And Pipelines Architecture
 
 `/pipelines` manages tenant-scoped templates and `/tasks` runs work from them. Creating or editing a pipeline publishes a new immutable pipeline version. Creating a task copies that version's ordered stage definitions and checklist items into a locked live-task snapshot. Later template edits therefore affect future tasks only; an existing task never changes its stage structure or pipeline version.

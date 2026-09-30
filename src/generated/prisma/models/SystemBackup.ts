@@ -61,6 +61,11 @@ export type SystemBackupMinAggregateOutputType = {
   completedAt: Date | null
   updatedAt: Date | null
   deletedAt: Date | null
+  sharePointStatus: string | null
+  sharePointItemId: string | null
+  sharePointWebUrl: string | null
+  sharePointError: string | null
+  sharePointUploadedAt: Date | null
 }
 
 export type SystemBackupMaxAggregateOutputType = {
@@ -82,6 +87,11 @@ export type SystemBackupMaxAggregateOutputType = {
   completedAt: Date | null
   updatedAt: Date | null
   deletedAt: Date | null
+  sharePointStatus: string | null
+  sharePointItemId: string | null
+  sharePointWebUrl: string | null
+  sharePointError: string | null
+  sharePointUploadedAt: Date | null
 }
 
 export type SystemBackupCountAggregateOutputType = {
@@ -104,6 +114,11 @@ export type SystemBackupCountAggregateOutputType = {
   completedAt: number
   updatedAt: number
   deletedAt: number
+  sharePointStatus: number
+  sharePointItemId: number
+  sharePointWebUrl: number
+  sharePointError: number
+  sharePointUploadedAt: number
   _all: number
 }
 
@@ -141,6 +156,11 @@ export type SystemBackupMinAggregateInputType = {
   completedAt?: true
   updatedAt?: true
   deletedAt?: true
+  sharePointStatus?: true
+  sharePointItemId?: true
+  sharePointWebUrl?: true
+  sharePointError?: true
+  sharePointUploadedAt?: true
 }
 
 export type SystemBackupMaxAggregateInputType = {
@@ -162,6 +182,11 @@ export type SystemBackupMaxAggregateInputType = {
   completedAt?: true
   updatedAt?: true
   deletedAt?: true
+  sharePointStatus?: true
+  sharePointItemId?: true
+  sharePointWebUrl?: true
+  sharePointError?: true
+  sharePointUploadedAt?: true
 }
 
 export type SystemBackupCountAggregateInputType = {
@@ -184,6 +209,11 @@ export type SystemBackupCountAggregateInputType = {
   completedAt?: true
   updatedAt?: true
   deletedAt?: true
+  sharePointStatus?: true
+  sharePointItemId?: true
+  sharePointWebUrl?: true
+  sharePointError?: true
+  sharePointUploadedAt?: true
   _all?: true
 }
 
@@ -293,6 +323,11 @@ export type SystemBackupGroupByOutputType = {
   completedAt: Date | null
   updatedAt: Date
   deletedAt: Date | null
+  sharePointStatus: string | null
+  sharePointItemId: string | null
+  sharePointWebUrl: string | null
+  sharePointError: string | null
+  sharePointUploadedAt: Date | null
   _count: SystemBackupCountAggregateOutputType | null
   _avg: SystemBackupAvgAggregateOutputType | null
   _sum: SystemBackupSumAggregateOutputType | null
@@ -338,6 +373,11 @@ export type SystemBackupWhereInput = {
   completedAt?: Prisma.DateTimeNullableFilter<"SystemBackup"> | Date | string | null
   updatedAt?: Prisma.DateTimeFilter<"SystemBackup"> | Date | string
   deletedAt?: Prisma.DateTimeNullableFilter<"SystemBackup"> | Date | string | null
+  sharePointStatus?: Prisma.StringNullableFilter<"SystemBackup"> | string | null
+  sharePointItemId?: Prisma.StringNullableFilter<"SystemBackup"> | string | null
+  sharePointWebUrl?: Prisma.StringNullableFilter<"SystemBackup"> | string | null
+  sharePointError?: Prisma.StringNullableFilter<"SystemBackup"> | string | null
+  sharePointUploadedAt?: Prisma.DateTimeNullableFilter<"SystemBackup"> | Date | string | null
 }
 
 export type SystemBackupOrderByWithRelationInput = {
@@ -360,6 +400,11 @@ export type SystemBackupOrderByWithRelationInput = {
   completedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  sharePointStatus?: Prisma.SortOrderInput | Prisma.SortOrder
+  sharePointItemId?: Prisma.SortOrderInput | Prisma.SortOrder
+  sharePointWebUrl?: Prisma.SortOrderInput | Prisma.SortOrder
+  sharePointError?: Prisma.SortOrderInput | Prisma.SortOrder
+  sharePointUploadedAt?: Prisma.SortOrderInput | Prisma.SortOrder
 }
 
 export type SystemBackupWhereUniqueInput = Prisma.AtLeast<{
@@ -385,6 +430,11 @@ export type SystemBackupWhereUniqueInput = Prisma.AtLeast<{
   completedAt?: Prisma.DateTimeNullableFilter<"SystemBackup"> | Date | string | null
   updatedAt?: Prisma.DateTimeFilter<"SystemBackup"> | Date | string
   deletedAt?: Prisma.DateTimeNullableFilter<"SystemBackup"> | Date | string | null
+  sharePointStatus?: Prisma.StringNullableFilter<"SystemBackup"> | string | null
+  sharePointItemId?: Prisma.StringNullableFilter<"SystemBackup"> | string | null
+  sharePointWebUrl?: Prisma.StringNullableFilter<"SystemBackup"> | string | null
+  sharePointError?: Prisma.StringNullableFilter<"SystemBackup"> | string | null
+  sharePointUploadedAt?: Prisma.DateTimeNullableFilter<"SystemBackup"> | Date | string | null
 }, "id">
 
 export type SystemBackupOrderByWithAggregationInput = {
@@ -407,6 +457,11 @@ export type SystemBackupOrderByWithAggregationInput = {
   completedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  sharePointStatus?: Prisma.SortOrderInput | Prisma.SortOrder
+  sharePointItemId?: Prisma.SortOrderInput | Prisma.SortOrder
+  sharePointWebUrl?: Prisma.SortOrderInput | Prisma.SortOrder
+  sharePointError?: Prisma.SortOrderInput | Prisma.SortOrder
+  sharePointUploadedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   _count?: Prisma.SystemBackupCountOrderByAggregateInput
   _avg?: Prisma.SystemBackupAvgOrderByAggregateInput
   _max?: Prisma.SystemBackupMaxOrderByAggregateInput
@@ -437,6 +492,11 @@ export type SystemBackupScalarWhereWithAggregatesInput = {
   completedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"SystemBackup"> | Date | string | null
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"SystemBackup"> | Date | string
   deletedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"SystemBackup"> | Date | string | null
+  sharePointStatus?: Prisma.StringNullableWithAggregatesFilter<"SystemBackup"> | string | null
+  sharePointItemId?: Prisma.StringNullableWithAggregatesFilter<"SystemBackup"> | string | null
+  sharePointWebUrl?: Prisma.StringNullableWithAggregatesFilter<"SystemBackup"> | string | null
+  sharePointError?: Prisma.StringNullableWithAggregatesFilter<"SystemBackup"> | string | null
+  sharePointUploadedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"SystemBackup"> | Date | string | null
 }
 
 export type SystemBackupCreateInput = {
@@ -459,6 +519,11 @@ export type SystemBackupCreateInput = {
   completedAt?: Date | string | null
   updatedAt?: Date | string
   deletedAt?: Date | string | null
+  sharePointStatus?: string | null
+  sharePointItemId?: string | null
+  sharePointWebUrl?: string | null
+  sharePointError?: string | null
+  sharePointUploadedAt?: Date | string | null
 }
 
 export type SystemBackupUncheckedCreateInput = {
@@ -481,6 +546,11 @@ export type SystemBackupUncheckedCreateInput = {
   completedAt?: Date | string | null
   updatedAt?: Date | string
   deletedAt?: Date | string | null
+  sharePointStatus?: string | null
+  sharePointItemId?: string | null
+  sharePointWebUrl?: string | null
+  sharePointError?: string | null
+  sharePointUploadedAt?: Date | string | null
 }
 
 export type SystemBackupUpdateInput = {
@@ -503,6 +573,11 @@ export type SystemBackupUpdateInput = {
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  sharePointStatus?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sharePointItemId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sharePointWebUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sharePointError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sharePointUploadedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
 }
 
 export type SystemBackupUncheckedUpdateInput = {
@@ -525,6 +600,11 @@ export type SystemBackupUncheckedUpdateInput = {
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  sharePointStatus?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sharePointItemId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sharePointWebUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sharePointError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sharePointUploadedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
 }
 
 export type SystemBackupCreateManyInput = {
@@ -547,6 +627,11 @@ export type SystemBackupCreateManyInput = {
   completedAt?: Date | string | null
   updatedAt?: Date | string
   deletedAt?: Date | string | null
+  sharePointStatus?: string | null
+  sharePointItemId?: string | null
+  sharePointWebUrl?: string | null
+  sharePointError?: string | null
+  sharePointUploadedAt?: Date | string | null
 }
 
 export type SystemBackupUpdateManyMutationInput = {
@@ -569,6 +654,11 @@ export type SystemBackupUpdateManyMutationInput = {
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  sharePointStatus?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sharePointItemId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sharePointWebUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sharePointError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sharePointUploadedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
 }
 
 export type SystemBackupUncheckedUpdateManyInput = {
@@ -591,6 +681,11 @@ export type SystemBackupUncheckedUpdateManyInput = {
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  sharePointStatus?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sharePointItemId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sharePointWebUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sharePointError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sharePointUploadedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
 }
 
 export type SystemBackupCountOrderByAggregateInput = {
@@ -613,6 +708,11 @@ export type SystemBackupCountOrderByAggregateInput = {
   completedAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrder
+  sharePointStatus?: Prisma.SortOrder
+  sharePointItemId?: Prisma.SortOrder
+  sharePointWebUrl?: Prisma.SortOrder
+  sharePointError?: Prisma.SortOrder
+  sharePointUploadedAt?: Prisma.SortOrder
 }
 
 export type SystemBackupAvgOrderByAggregateInput = {
@@ -641,6 +741,11 @@ export type SystemBackupMaxOrderByAggregateInput = {
   completedAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrder
+  sharePointStatus?: Prisma.SortOrder
+  sharePointItemId?: Prisma.SortOrder
+  sharePointWebUrl?: Prisma.SortOrder
+  sharePointError?: Prisma.SortOrder
+  sharePointUploadedAt?: Prisma.SortOrder
 }
 
 export type SystemBackupMinOrderByAggregateInput = {
@@ -662,6 +767,11 @@ export type SystemBackupMinOrderByAggregateInput = {
   completedAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrder
+  sharePointStatus?: Prisma.SortOrder
+  sharePointItemId?: Prisma.SortOrder
+  sharePointWebUrl?: Prisma.SortOrder
+  sharePointError?: Prisma.SortOrder
+  sharePointUploadedAt?: Prisma.SortOrder
 }
 
 export type SystemBackupSumOrderByAggregateInput = {
@@ -697,6 +807,11 @@ export type SystemBackupSelect<ExtArgs extends runtime.Types.Extensions.Internal
   completedAt?: boolean
   updatedAt?: boolean
   deletedAt?: boolean
+  sharePointStatus?: boolean
+  sharePointItemId?: boolean
+  sharePointWebUrl?: boolean
+  sharePointError?: boolean
+  sharePointUploadedAt?: boolean
 }, ExtArgs["result"]["systemBackup"]>
 
 export type SystemBackupSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -719,6 +834,11 @@ export type SystemBackupSelectCreateManyAndReturn<ExtArgs extends runtime.Types.
   completedAt?: boolean
   updatedAt?: boolean
   deletedAt?: boolean
+  sharePointStatus?: boolean
+  sharePointItemId?: boolean
+  sharePointWebUrl?: boolean
+  sharePointError?: boolean
+  sharePointUploadedAt?: boolean
 }, ExtArgs["result"]["systemBackup"]>
 
 export type SystemBackupSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -741,6 +861,11 @@ export type SystemBackupSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.
   completedAt?: boolean
   updatedAt?: boolean
   deletedAt?: boolean
+  sharePointStatus?: boolean
+  sharePointItemId?: boolean
+  sharePointWebUrl?: boolean
+  sharePointError?: boolean
+  sharePointUploadedAt?: boolean
 }, ExtArgs["result"]["systemBackup"]>
 
 export type SystemBackupSelectScalar = {
@@ -763,9 +888,14 @@ export type SystemBackupSelectScalar = {
   completedAt?: boolean
   updatedAt?: boolean
   deletedAt?: boolean
+  sharePointStatus?: boolean
+  sharePointItemId?: boolean
+  sharePointWebUrl?: boolean
+  sharePointError?: boolean
+  sharePointUploadedAt?: boolean
 }
 
-export type SystemBackupOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "source" | "status" | "archiveKey" | "sizeBytes" | "rowsCount" | "filesCount" | "manifestJson" | "progress" | "currentStep" | "errorMessage" | "createdById" | "restoredAt" | "restoredById" | "createdAt" | "completedAt" | "updatedAt" | "deletedAt", ExtArgs["result"]["systemBackup"]>
+export type SystemBackupOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "source" | "status" | "archiveKey" | "sizeBytes" | "rowsCount" | "filesCount" | "manifestJson" | "progress" | "currentStep" | "errorMessage" | "createdById" | "restoredAt" | "restoredById" | "createdAt" | "completedAt" | "updatedAt" | "deletedAt" | "sharePointStatus" | "sharePointItemId" | "sharePointWebUrl" | "sharePointError" | "sharePointUploadedAt", ExtArgs["result"]["systemBackup"]>
 
 export type $SystemBackupPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "SystemBackup"
@@ -790,6 +920,14 @@ export type $SystemBackupPayload<ExtArgs extends runtime.Types.Extensions.Intern
     completedAt: Date | null
     updatedAt: Date
     deletedAt: Date | null
+    /**
+     * Copy in the SharePoint backup folder: UPLOADING, UPLOADED or FAILED (null when none was made).
+     */
+    sharePointStatus: string | null
+    sharePointItemId: string | null
+    sharePointWebUrl: string | null
+    sharePointError: string | null
+    sharePointUploadedAt: Date | null
   }, ExtArgs["result"]["systemBackup"]>
   composites: {}
 }
@@ -1232,6 +1370,11 @@ export interface SystemBackupFieldRefs {
   readonly completedAt: Prisma.FieldRef<"SystemBackup", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"SystemBackup", 'DateTime'>
   readonly deletedAt: Prisma.FieldRef<"SystemBackup", 'DateTime'>
+  readonly sharePointStatus: Prisma.FieldRef<"SystemBackup", 'String'>
+  readonly sharePointItemId: Prisma.FieldRef<"SystemBackup", 'String'>
+  readonly sharePointWebUrl: Prisma.FieldRef<"SystemBackup", 'String'>
+  readonly sharePointError: Prisma.FieldRef<"SystemBackup", 'String'>
+  readonly sharePointUploadedAt: Prisma.FieldRef<"SystemBackup", 'DateTime'>
 }
 
 
