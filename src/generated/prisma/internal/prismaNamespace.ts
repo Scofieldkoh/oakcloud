@@ -503,6 +503,8 @@ export const ModelName = {
   FieldMapping: 'FieldMapping',
   WorkspaceBackup: 'WorkspaceBackup',
   BackupSchedule: 'BackupSchedule',
+  SystemBackup: 'SystemBackup',
+  BackupSettings: 'BackupSettings',
   ChartOfAccount: 'ChartOfAccount',
   ChartOfAccountsMapping: 'ChartOfAccountsMapping',
   TaskPipeline: 'TaskPipeline',
@@ -548,7 +550,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "workspace" | "role" | "permission" | "rolePermission" | "userRoleAssignment" | "user" | "userPreference" | "performanceMeasurement" | "userCompanyAssignment" | "company" | "companySharePointFolder" | "companyFormerName" | "companyAddress" | "contact" | "companyContact" | "contactDetail" | "companyOfficer" | "shareCapital" | "companyAuditor" | "companyShareholder" | "companyCharge" | "document" | "auditLog" | "connector" | "workspaceConnectorAccess" | "connectorUsageLog" | "connectorModelConfig" | "noteTab" | "documentTemplate" | "generatedDocument" | "documentGenerationBatch" | "documentGenerationBatchItem" | "documentSection" | "workspaceLetterhead" | "documentComment" | "documentDraft" | "templatePartial" | "serviceFamily" | "serviceVariant" | "serviceVariantFeeTemplate" | "serviceAgreement" | "serviceAgreementEntity" | "serviceAgreementItem" | "serviceAgreementItemEntity" | "serviceAgreementFeeLine" | "clientService" | "clientServiceFeeLine" | "billingOccurrence" | "billingCoverageIssue" | "deadlineRule" | "deadlineRuleVersion" | "deadlineRuleParameterDefinition" | "deadlineMilestoneTemplate" | "serviceVariantDeadlineRule" | "clientServiceDeadlineRule" | "businessCalendar" | "businessHoliday" | "publicHolidaySourceRecord" | "publicHolidaySyncState" | "serviceCycle" | "deadlineOccurrence" | "companyFinancialPeriod" | "companyMonitoringCoverage" | "clientServiceObligationScope" | "deadlineOccurrenceCoverageLink" | "deadlineResponsibilityChange" | "companyComplianceIssue" | "serviceScheduleReconciliationRequest" | "aiConversation" | "esigningEnvelope" | "esigningEnvelopeDocument" | "esigningSharePointFiling" | "esigningEnvelopeRecipient" | "esigningDocumentFieldDefinition" | "esigningDocumentFieldValue" | "esigningEnvelopeEvent" | "esigningEmailDelivery" | "esigningEmailDeliveryAttempt" | "processingDocument" | "documentLink" | "documentTag" | "processingDocumentTag" | "documentPage" | "documentExtraction" | "documentRevision" | "documentRevisionLineItem" | "vendorAlias" | "customerAlias" | "contactDuplicateDecision" | "contactMergeOperation" | "duplicateDecision" | "processingAttempt" | "processingCheckpoint" | "splitPlan" | "documentStateEvent" | "documentDerivedFile" | "idempotencyRecord" | "webhookSubscription" | "exchangeRate" | "bankAccount" | "bankTransaction" | "matchGroup" | "matchGroupItem" | "reconciliationPeriod" | "form" | "formField" | "formOptionPreset" | "formUrlHealth" | "formSubmission" | "formDraft" | "formUpload" | "clientPortalUser" | "clientRequest" | "communication" | "accountingIntegration" | "externalPosting" | "fieldMapping" | "workspaceBackup" | "backupSchedule" | "chartOfAccount" | "chartOfAccountsMapping" | "taskPipeline" | "taskPipelineVersion" | "taskPipelineStage" | "task" | "taskStage" | "taskStageChecklistItem" | "taskStageOutcome" | "taskEsigningPreparation" | "taskCompanyRecoveryContext" | "acraEntity" | "acraSyncState" | "businessAssistantConversation" | "businessAssistantMessage" | "businessAssistantRun" | "businessAssistantRunItem" | "businessAssistantRunStep" | "businessAssistantProposal" | "businessAssistantApproval" | "businessAssistantReview" | "businessAssistantFeedback" | "businessAssistantMemory" | "businessAssistantLearningChange" | "businessAssistantLearningActiveTarget" | "businessAssistantActionRequest" | "businessAssistantCapacitySlot" | "bizFileOperationReceipt" | "bizFileOperationEvidence" | "bizFileOperationEffectIntent"
+    modelProps: "workspace" | "role" | "permission" | "rolePermission" | "userRoleAssignment" | "user" | "userPreference" | "performanceMeasurement" | "userCompanyAssignment" | "company" | "companySharePointFolder" | "companyFormerName" | "companyAddress" | "contact" | "companyContact" | "contactDetail" | "companyOfficer" | "shareCapital" | "companyAuditor" | "companyShareholder" | "companyCharge" | "document" | "auditLog" | "connector" | "workspaceConnectorAccess" | "connectorUsageLog" | "connectorModelConfig" | "noteTab" | "documentTemplate" | "generatedDocument" | "documentGenerationBatch" | "documentGenerationBatchItem" | "documentSection" | "workspaceLetterhead" | "documentComment" | "documentDraft" | "templatePartial" | "serviceFamily" | "serviceVariant" | "serviceVariantFeeTemplate" | "serviceAgreement" | "serviceAgreementEntity" | "serviceAgreementItem" | "serviceAgreementItemEntity" | "serviceAgreementFeeLine" | "clientService" | "clientServiceFeeLine" | "billingOccurrence" | "billingCoverageIssue" | "deadlineRule" | "deadlineRuleVersion" | "deadlineRuleParameterDefinition" | "deadlineMilestoneTemplate" | "serviceVariantDeadlineRule" | "clientServiceDeadlineRule" | "businessCalendar" | "businessHoliday" | "publicHolidaySourceRecord" | "publicHolidaySyncState" | "serviceCycle" | "deadlineOccurrence" | "companyFinancialPeriod" | "companyMonitoringCoverage" | "clientServiceObligationScope" | "deadlineOccurrenceCoverageLink" | "deadlineResponsibilityChange" | "companyComplianceIssue" | "serviceScheduleReconciliationRequest" | "aiConversation" | "esigningEnvelope" | "esigningEnvelopeDocument" | "esigningSharePointFiling" | "esigningEnvelopeRecipient" | "esigningDocumentFieldDefinition" | "esigningDocumentFieldValue" | "esigningEnvelopeEvent" | "esigningEmailDelivery" | "esigningEmailDeliveryAttempt" | "processingDocument" | "documentLink" | "documentTag" | "processingDocumentTag" | "documentPage" | "documentExtraction" | "documentRevision" | "documentRevisionLineItem" | "vendorAlias" | "customerAlias" | "contactDuplicateDecision" | "contactMergeOperation" | "duplicateDecision" | "processingAttempt" | "processingCheckpoint" | "splitPlan" | "documentStateEvent" | "documentDerivedFile" | "idempotencyRecord" | "webhookSubscription" | "exchangeRate" | "bankAccount" | "bankTransaction" | "matchGroup" | "matchGroupItem" | "reconciliationPeriod" | "form" | "formField" | "formOptionPreset" | "formUrlHealth" | "formSubmission" | "formDraft" | "formUpload" | "clientPortalUser" | "clientRequest" | "communication" | "accountingIntegration" | "externalPosting" | "fieldMapping" | "workspaceBackup" | "backupSchedule" | "systemBackup" | "backupSettings" | "chartOfAccount" | "chartOfAccountsMapping" | "taskPipeline" | "taskPipelineVersion" | "taskPipelineStage" | "task" | "taskStage" | "taskStageChecklistItem" | "taskStageOutcome" | "taskEsigningPreparation" | "taskCompanyRecoveryContext" | "acraEntity" | "acraSyncState" | "businessAssistantConversation" | "businessAssistantMessage" | "businessAssistantRun" | "businessAssistantRunItem" | "businessAssistantRunStep" | "businessAssistantProposal" | "businessAssistantApproval" | "businessAssistantReview" | "businessAssistantFeedback" | "businessAssistantMemory" | "businessAssistantLearningChange" | "businessAssistantLearningActiveTarget" | "businessAssistantActionRequest" | "businessAssistantCapacitySlot" | "bizFileOperationReceipt" | "bizFileOperationEvidence" | "bizFileOperationEffectIntent"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -9358,6 +9360,154 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    SystemBackup: {
+      payload: Prisma.$SystemBackupPayload<ExtArgs>
+      fields: Prisma.SystemBackupFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.SystemBackupFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SystemBackupPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.SystemBackupFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SystemBackupPayload>
+        }
+        findFirst: {
+          args: Prisma.SystemBackupFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SystemBackupPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.SystemBackupFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SystemBackupPayload>
+        }
+        findMany: {
+          args: Prisma.SystemBackupFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SystemBackupPayload>[]
+        }
+        create: {
+          args: Prisma.SystemBackupCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SystemBackupPayload>
+        }
+        createMany: {
+          args: Prisma.SystemBackupCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.SystemBackupCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SystemBackupPayload>[]
+        }
+        delete: {
+          args: Prisma.SystemBackupDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SystemBackupPayload>
+        }
+        update: {
+          args: Prisma.SystemBackupUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SystemBackupPayload>
+        }
+        deleteMany: {
+          args: Prisma.SystemBackupDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.SystemBackupUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.SystemBackupUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SystemBackupPayload>[]
+        }
+        upsert: {
+          args: Prisma.SystemBackupUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SystemBackupPayload>
+        }
+        aggregate: {
+          args: Prisma.SystemBackupAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateSystemBackup>
+        }
+        groupBy: {
+          args: Prisma.SystemBackupGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.SystemBackupGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.SystemBackupCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.SystemBackupCountAggregateOutputType> | number
+        }
+      }
+    }
+    BackupSettings: {
+      payload: Prisma.$BackupSettingsPayload<ExtArgs>
+      fields: Prisma.BackupSettingsFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.BackupSettingsFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BackupSettingsPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.BackupSettingsFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BackupSettingsPayload>
+        }
+        findFirst: {
+          args: Prisma.BackupSettingsFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BackupSettingsPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.BackupSettingsFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BackupSettingsPayload>
+        }
+        findMany: {
+          args: Prisma.BackupSettingsFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BackupSettingsPayload>[]
+        }
+        create: {
+          args: Prisma.BackupSettingsCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BackupSettingsPayload>
+        }
+        createMany: {
+          args: Prisma.BackupSettingsCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.BackupSettingsCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BackupSettingsPayload>[]
+        }
+        delete: {
+          args: Prisma.BackupSettingsDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BackupSettingsPayload>
+        }
+        update: {
+          args: Prisma.BackupSettingsUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BackupSettingsPayload>
+        }
+        deleteMany: {
+          args: Prisma.BackupSettingsDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.BackupSettingsUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.BackupSettingsUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BackupSettingsPayload>[]
+        }
+        upsert: {
+          args: Prisma.BackupSettingsUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$BackupSettingsPayload>
+        }
+        aggregate: {
+          args: Prisma.BackupSettingsAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateBackupSettings>
+        }
+        groupBy: {
+          args: Prisma.BackupSettingsGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.BackupSettingsGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.BackupSettingsCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.BackupSettingsCountAggregateOutputType> | number
+        }
+      }
+    }
     ChartOfAccount: {
       payload: Prisma.$ChartOfAccountPayload<ExtArgs>
       fields: Prisma.ChartOfAccountFieldRefs
@@ -14098,6 +14248,51 @@ export const BackupScheduleScalarFieldEnum = {
 export type BackupScheduleScalarFieldEnum = (typeof BackupScheduleScalarFieldEnum)[keyof typeof BackupScheduleScalarFieldEnum]
 
 
+export const SystemBackupScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  source: 'source',
+  status: 'status',
+  archiveKey: 'archiveKey',
+  sizeBytes: 'sizeBytes',
+  rowsCount: 'rowsCount',
+  filesCount: 'filesCount',
+  manifestJson: 'manifestJson',
+  progress: 'progress',
+  currentStep: 'currentStep',
+  errorMessage: 'errorMessage',
+  createdById: 'createdById',
+  restoredAt: 'restoredAt',
+  restoredById: 'restoredById',
+  createdAt: 'createdAt',
+  completedAt: 'completedAt',
+  updatedAt: 'updatedAt',
+  deletedAt: 'deletedAt'
+} as const
+
+export type SystemBackupScalarFieldEnum = (typeof SystemBackupScalarFieldEnum)[keyof typeof SystemBackupScalarFieldEnum]
+
+
+export const BackupSettingsScalarFieldEnum = {
+  id: 'id',
+  passwordCiphertext: 'passwordCiphertext',
+  passwordUpdatedAt: 'passwordUpdatedAt',
+  scheduleEnabled: 'scheduleEnabled',
+  cronPattern: 'cronPattern',
+  timezone: 'timezone',
+  maxBackups: 'maxBackups',
+  nextRunAt: 'nextRunAt',
+  lastRunAt: 'lastRunAt',
+  lastBackupId: 'lastBackupId',
+  lastError: 'lastError',
+  consecutiveFailures: 'consecutiveFailures',
+  updatedAt: 'updatedAt',
+  updatedById: 'updatedById'
+} as const
+
+export type BackupSettingsScalarFieldEnum = (typeof BackupSettingsScalarFieldEnum)[keyof typeof BackupSettingsScalarFieldEnum]
+
+
 export const ChartOfAccountScalarFieldEnum = {
   id: 'id',
   tenantId: 'tenantId',
@@ -16376,6 +16571,20 @@ export type ListBigIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaMod
 
 
 /**
+ * Reference to a field of type 'SystemBackupSource'
+ */
+export type EnumSystemBackupSourceFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'SystemBackupSource'>
+
+
+
+/**
+ * Reference to a field of type 'SystemBackupSource[]'
+ */
+export type ListEnumSystemBackupSourceFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'SystemBackupSource[]'>
+
+
+
+/**
  * Reference to a field of type 'AccountType'
  */
 export type EnumAccountTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'AccountType'>
@@ -17120,6 +17329,8 @@ export type GlobalOmitConfig = {
   fieldMapping?: Prisma.FieldMappingOmit
   workspaceBackup?: Prisma.WorkspaceBackupOmit
   backupSchedule?: Prisma.BackupScheduleOmit
+  systemBackup?: Prisma.SystemBackupOmit
+  backupSettings?: Prisma.BackupSettingsOmit
   chartOfAccount?: Prisma.ChartOfAccountOmit
   chartOfAccountsMapping?: Prisma.ChartOfAccountsMappingOmit
   taskPipeline?: Prisma.TaskPipelineOmit

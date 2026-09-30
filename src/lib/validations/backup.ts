@@ -110,3 +110,36 @@ export const listBackupSchedulesSchema = z.object({
 });
 
 export type ListBackupSchedulesInput = z.infer<typeof listBackupSchedulesSchema>;
+
+// ============================================================================
+// Full (whole-install) backups
+// ============================================================================
+
+export const createFullBackupSchema = z.object({
+  name: z.string().trim().max(100).optional(),
+});
+
+export const backupPasswordSchema = z.object({
+  password: z.string().min(12, 'The backup password must be at least 12 characters').max(200),
+});
+
+export const fullRestoreSchema = z.object({
+  password: z.string().min(1, 'Enter the backup password').max(200),
+  confirmation: z.string().optional().default(''),
+});
+
+export const startBackupUploadSchema = z.object({
+  fileName: z.string().min(1).max(200),
+  size: z.number().int().positive(),
+});
+
+export const fullBackupScheduleSchema = z.object({
+  scheduleEnabled: z.boolean(),
+  cronPattern: z
+    .string()
+    .min(9, 'Cron pattern too short')
+    .max(100, 'Cron pattern too long')
+    .regex(cronPatternRegex, 'Invalid cron pattern format (expected: minute hour day month weekday)'),
+  timezone: z.string().min(1).max(50),
+  maxBackups: z.coerce.number().int().min(1).max(100),
+});

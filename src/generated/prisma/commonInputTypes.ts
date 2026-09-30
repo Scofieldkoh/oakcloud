@@ -2326,6 +2326,23 @@ export type BigIntWithAggregatesFilter<$PrismaModel = never> = {
   _max?: Prisma.NestedBigIntFilter<$PrismaModel>
 }
 
+export type EnumSystemBackupSourceFilter<$PrismaModel = never> = {
+  equals?: $Enums.SystemBackupSource | Prisma.EnumSystemBackupSourceFieldRefInput<$PrismaModel>
+  in?: $Enums.SystemBackupSource[] | Prisma.ListEnumSystemBackupSourceFieldRefInput<$PrismaModel>
+  notIn?: $Enums.SystemBackupSource[] | Prisma.ListEnumSystemBackupSourceFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumSystemBackupSourceFilter<$PrismaModel> | $Enums.SystemBackupSource
+}
+
+export type EnumSystemBackupSourceWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.SystemBackupSource | Prisma.EnumSystemBackupSourceFieldRefInput<$PrismaModel>
+  in?: $Enums.SystemBackupSource[] | Prisma.ListEnumSystemBackupSourceFieldRefInput<$PrismaModel>
+  notIn?: $Enums.SystemBackupSource[] | Prisma.ListEnumSystemBackupSourceFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumSystemBackupSourceWithAggregatesFilter<$PrismaModel> | $Enums.SystemBackupSource
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumSystemBackupSourceFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumSystemBackupSourceFilter<$PrismaModel>
+}
+
 export type EnumAccountTypeFilter<$PrismaModel = never> = {
   equals?: $Enums.AccountType | Prisma.EnumAccountTypeFieldRefInput<$PrismaModel>
   in?: $Enums.AccountType[] | Prisma.ListEnumAccountTypeFieldRefInput<$PrismaModel>
@@ -5236,6 +5253,23 @@ export type NestedBigIntWithAggregatesFilter<$PrismaModel = never> = {
   _sum?: Prisma.NestedBigIntFilter<$PrismaModel>
   _min?: Prisma.NestedBigIntFilter<$PrismaModel>
   _max?: Prisma.NestedBigIntFilter<$PrismaModel>
+}
+
+export type NestedEnumSystemBackupSourceFilter<$PrismaModel = never> = {
+  equals?: $Enums.SystemBackupSource | Prisma.EnumSystemBackupSourceFieldRefInput<$PrismaModel>
+  in?: $Enums.SystemBackupSource[] | Prisma.ListEnumSystemBackupSourceFieldRefInput<$PrismaModel>
+  notIn?: $Enums.SystemBackupSource[] | Prisma.ListEnumSystemBackupSourceFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumSystemBackupSourceFilter<$PrismaModel> | $Enums.SystemBackupSource
+}
+
+export type NestedEnumSystemBackupSourceWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.SystemBackupSource | Prisma.EnumSystemBackupSourceFieldRefInput<$PrismaModel>
+  in?: $Enums.SystemBackupSource[] | Prisma.ListEnumSystemBackupSourceFieldRefInput<$PrismaModel>
+  notIn?: $Enums.SystemBackupSource[] | Prisma.ListEnumSystemBackupSourceFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumSystemBackupSourceWithAggregatesFilter<$PrismaModel> | $Enums.SystemBackupSource
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumSystemBackupSourceFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumSystemBackupSourceFilter<$PrismaModel>
 }
 
 export type NestedEnumAccountTypeFilter<$PrismaModel = never> = {

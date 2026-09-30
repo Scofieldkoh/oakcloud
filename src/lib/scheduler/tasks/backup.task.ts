@@ -1,8 +1,8 @@
 /**
  * Backup Scheduled Task
  *
- * Handles scheduled backup execution. Checks for due backup schedules
- * and processes them.
+ * Handles scheduled backup execution: the full-backup schedule (Backup page >
+ * Full backups) and the older per-workspace schedules.
  *
  * Configuration:
  * - SCHEDULER_BACKUP_ENABLED=true (enable backup scheduling)
@@ -11,6 +11,7 @@
 
 import { createLogger } from '@/lib/logger';
 import { backupService } from '@/services/backup.service';
+import { cleanupStaleFullBackups, processScheduledFullBackup } from '@/services/backup/full/full-backup.service';
 import type { TaskRegistration, TaskResult } from '../types';
 
 const log = createLogger('backup-task');
@@ -24,9 +25,11 @@ async function executeBackupTask(): Promise<TaskResult> {
   log.info('Checking for due scheduled backups...');
 
   try {
+    await cleanupStaleFullBackups();
+    const full = await processScheduledFullBackup();
     const result = await backupService.processScheduledBackups();
 
-    if (result.processed === 0) {
+    if (result.processed === 0 && !full) {
       return {
         success: true,
         message: 'No scheduled backups due at this time',
@@ -34,14 +37,17 @@ async function executeBackupTask(): Promise<TaskResult> {
       };
     }
 
+    const fullFailed = Boolean(full?.error);
     return {
-      success: result.failed === 0,
-      message: `Processed ${result.processed} scheduled backups: ${result.succeeded} succeeded, ${result.failed} failed`,
+      success: result.failed === 0 && !fullFailed,
+      message: `Processed ${result.processed} workspace backups (${result.succeeded} succeeded, ${result.failed} failed)` +
+        (full ? `; full backup ${fullFailed ? `failed: ${full.error}` : 'started'}` : ''),
       data: {
         processed: result.processed,
         succeeded: result.succeeded,
         failed: result.failed,
         results: result.results,
+        fullBackup: full,
       },
     };
   } catch (error) {

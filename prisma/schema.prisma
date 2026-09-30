@@ -3553,6 +3553,55 @@ model BackupSchedule {
   @@map("backup_schedules")
 }
 
+/// Whole-install backups: every workspace, every table and every stored file,
+/// locked with the backup password. Not tied to a workspace, so a restore on a
+/// new install can list them before any workspace exists.
+model SystemBackup {
+  id           String             @id @default(uuid())
+  name         String
+  source       SystemBackupSource @default(MANUAL)
+  status       BackupStatus       @default(PENDING)
+  archiveKey   String?            @map("archive_key")
+  sizeBytes    BigInt             @default(0) @map("size_bytes")
+  rowsCount    Int                @default(0) @map("rows_count")
+  filesCount   Int                @default(0) @map("files_count")
+  manifestJson Json?              @map("manifest_json")
+  progress     Int                @default(0)
+  currentStep  String?            @map("current_step")
+  errorMessage String?            @map("error_message")
+  createdById  String?            @map("created_by_id")
+  restoredAt   DateTime?          @map("restored_at")
+  restoredById String?            @map("restored_by_id")
+  createdAt    DateTime           @default(now()) @map("created_at")
+  completedAt  DateTime?          @map("completed_at")
+  updatedAt    DateTime           @default(now()) @updatedAt @map("updated_at")
+  deletedAt    DateTime?          @map("deleted_at")
+
+  @@index([status])
+  @@index([createdAt])
+  @@map("system_backups")
+}
+
+/// Single row (id "default") holding the backup password and the full-backup schedule.
+model BackupSettings {
+  id                  String    @id @default("default")
+  passwordCiphertext  String?   @map("password_ciphertext")
+  passwordUpdatedAt   DateTime? @map("password_updated_at")
+  scheduleEnabled     Boolean   @default(false) @map("schedule_enabled")
+  cronPattern         String    @default("0 2 * * *") @map("cron_pattern")
+  timezone            String    @default("Asia/Singapore")
+  maxBackups          Int       @default(14) @map("max_backups")
+  nextRunAt           DateTime? @map("next_run_at")
+  lastRunAt           DateTime? @map("last_run_at")
+  lastBackupId        String?   @map("last_backup_id")
+  lastError           String?   @map("last_error")
+  consecutiveFailures Int       @default(0) @map("consecutive_failures")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+  updatedById         String?   @map("updated_by_id")
+
+  @@map("backup_settings")
+}
+
 model ChartOfAccount {
   id               String                   @id @default(uuid())
   tenantId         String?                  @map("tenant_id")
@@ -4079,6 +4128,12 @@ enum BackupStatus {
 enum BackupType {
   MANUAL
   SCHEDULED
+}
+
+enum SystemBackupSource {
+  MANUAL
+  SCHEDULED
+  UPLOADED
 }
 
 enum ConnectorType {

@@ -233,6 +233,9 @@ Backup-related settings:
 | `BACKUP_DEFAULT_RETENTION_DAYS` | `30` | Default retention period |
 | `BACKUP_DEFAULT_MAX_BACKUPS` | `10` | Default max scheduled backups per tenant |
 | `BACKUP_STALE_THRESHOLD_MINUTES` | `60` | Threshold for marking an in-progress backup as stale |
+| `BACKUP_WORK_DIR` | OS temp folder + `/oakcloud-backups` | Scratch space for building, uploading and unpacking full backups. Needs room for about twice the size of the stored files. |
+
+Full backups need no environment variables of their own: the backup password and schedule are set on the Backup page. Keep a copy of `.env` anyway; a full backup carries everything in the database and storage, but not these variables.
 
 Optional external cron auth:
 
