@@ -52,7 +52,7 @@ export function BizFilePlanReview({ plan, busy, error, onClose, onRevise, onAppr
           <p className="text-xs text-text-secondary">Your selection must be checked before approval.</p></div>
           : <><label className="flex items-start gap-2"><input type="checkbox" className="mt-1 h-4 w-4 accent-oak-primary" checked={acknowledged} disabled={busy}
             onChange={(event) => setAcknowledged(event.target.checked)} />I have reviewed these changes and contact decisions.</label>
-            <Button onClick={onApprove} isLoading={busy} disabled={!acknowledged}>{plan.mode === 'CREATE' ? 'Confirm & Save Company' : plan.selectedChangeIds.length === 0 ? 'Confirm & Save Document' : `Confirm & Save ${plan.selectedChangeIds.length} Changes`}</Button></>}
+            <Button onClick={onApprove} isLoading={busy} disabled={!acknowledged}>{plan.mode === 'CREATE' ? 'Confirm & Save Company' : plan.selectedChangeIds.length === 0 ? 'Confirm & Save Document' : `Confirm & Save ${plan.selectedChangeIds.length} ${plan.selectedChangeIds.length === 1 ? 'Change' : 'Changes'}`}</Button></>}
         <Button variant="ghost" onClick={onClose} disabled={busy}>Back to review</Button>
       </div>
     </div>

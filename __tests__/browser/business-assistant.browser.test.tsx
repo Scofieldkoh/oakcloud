@@ -144,11 +144,11 @@ describe('Business Assistant workspace', () => {
     const approve = vi.fn(); const revise = vi.fn();
     await page.viewport(1440, 900);
     await act(async () => root.render(<BizFilePlanReview plan={plan} busy={false} onClose={() => {}} onApprove={approve} onRevise={revise} />));
-    await expect.element(screen.getByRole('button', { name: 'Approve 1 selected changes' })).toBeDisabled();
+    await expect.element(screen.getByRole('button', { name: 'Confirm & Save 1 Change' })).toBeDisabled();
     await click(screen.getByLabelText('I have reviewed these changes and contact decisions.'));
-    await expect.element(screen.getByRole('button', { name: 'Approve 1 selected changes' })).toBeEnabled();
+    await expect.element(screen.getByRole('button', { name: 'Confirm & Save 1 Change' })).toBeEnabled();
     await click(screen.getByRole('checkbox', { name: /Name Set/i }));
-    expect(screen.queryByRole('button', { name: /Approve/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /Confirm & Save/ })).toBeNull();
     await click(screen.getByRole('button', { name: 'Update proposal' }));
     expect(revise).toHaveBeenCalledWith([]); expect(approve).not.toHaveBeenCalled();
     await page.screenshot();
