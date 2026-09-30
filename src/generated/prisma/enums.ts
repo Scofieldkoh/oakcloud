@@ -549,6 +549,15 @@ export const BackupType = {
 export type BackupType = (typeof BackupType)[keyof typeof BackupType]
 
 
+export const SystemBackupSource = {
+  MANUAL: 'MANUAL',
+  SCHEDULED: 'SCHEDULED',
+  UPLOADED: 'UPLOADED'
+} as const
+
+export type SystemBackupSource = (typeof SystemBackupSource)[keyof typeof SystemBackupSource]
+
+
 export const ConnectorType = {
   AI_PROVIDER: 'AI_PROVIDER',
   STORAGE: 'STORAGE'

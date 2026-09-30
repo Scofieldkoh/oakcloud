@@ -373,6 +373,31 @@ Backup export, restore, and tenant cleanup explicitly include every catalog,
 agreement, and Client Service table. Restore orders parents before fee children;
 cleanup reverses those dependencies.
 
+### Full Backups
+
+`src/services/backup/full/` backs up the whole install, not one workspace.
+The table list comes from the live database catalog, so a new table is covered
+without code changes; only `_prisma_migrations`, `system_backups` and
+`tenant_backups` (records about this machine) are left out. Rows are exported
+with `row_to_json` inside one repeatable-read transaction that holds every
+workspace's business-operation and contact-merge barriers, and every stored
+file except `backups/` and `system-backups/` is copied.
+
+The result is one `.oakbackup` file: gzip inside AES-256-GCM, keyed by scrypt
+from the backup password (Backup page; stored locked with `ENCRYPTION_KEY` so
+schedules run unattended). Columns locked with `ENCRYPTION_KEY`
+(`secret-columns.ts`: connector credentials, the stored backup password) are
+unlocked into the archive and locked again with the restoring install's key,
+so a restore on a new machine does not need the old key.
+
+A full restore unpacks and verifies the whole file before touching anything,
+refuses backups that carry migrations this install lacks, then, in one
+transaction, drops every foreign key, pauses user triggers, truncates and loads
+all tables with `json_populate_recordset`, and re-creates the foreign keys,
+which re-checks every link. Stored files are written after the commit and
+checked against their SHA-256. Uploads arrive in 8 MB chunks to stay under the
+API middleware's request limit.
+
 ## Tasks And Pipelines Architecture
 
 `/pipelines` manages tenant-scoped templates and `/tasks` runs work from them. Creating or editing a pipeline publishes a new immutable pipeline version. Creating a task copies that version's ordered stage definitions and checklist items into a locked live-task snapshot. Later template edits therefore affect future tasks only; an existing task never changes its stage structure or pipeline version.

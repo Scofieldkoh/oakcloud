@@ -187,6 +187,15 @@ npm run db:generate
 npm run db:push
 ```
 
+## Moving Oakcloud To Another Machine
+
+1. On the old machine, open Administration > Backup > Full backups, set a backup password (keep it in your password manager), click Back up now, and download the `.oakbackup` file when it completes. Also copy your `.env` file.
+2. On the new machine, clone the repository, put the `.env` in place (a new `ENCRYPTION_KEY` also works; connectors are re-locked during the restore), start the stack, then run `docker compose exec app npx prisma migrate deploy` and `docker compose exec app npx tsx prisma/seed.ts` so you can sign in with the default admin.
+3. Open Administration > Backup > Full backups, click Upload backup file, then Restore. Enter the backup password, read the check, and type `RESTORE`.
+4. When the restore finishes, sign in with your own account from the backup and run `docker compose restart app`.
+
+The new machine must run the same or a newer version of Oakcloud than the one that made the backup.
+
 ## Next Steps
 
 1. Create or select a tenant.

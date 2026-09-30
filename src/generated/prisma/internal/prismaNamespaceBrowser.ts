@@ -170,6 +170,8 @@ export const ModelName = {
   FieldMapping: 'FieldMapping',
   WorkspaceBackup: 'WorkspaceBackup',
   BackupSchedule: 'BackupSchedule',
+  SystemBackup: 'SystemBackup',
+  BackupSettings: 'BackupSettings',
   ChartOfAccount: 'ChartOfAccount',
   ChartOfAccountsMapping: 'ChartOfAccountsMapping',
   TaskPipeline: 'TaskPipeline',
@@ -2697,6 +2699,51 @@ export const BackupScheduleScalarFieldEnum = {
 } as const
 
 export type BackupScheduleScalarFieldEnum = (typeof BackupScheduleScalarFieldEnum)[keyof typeof BackupScheduleScalarFieldEnum]
+
+
+export const SystemBackupScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  source: 'source',
+  status: 'status',
+  archiveKey: 'archiveKey',
+  sizeBytes: 'sizeBytes',
+  rowsCount: 'rowsCount',
+  filesCount: 'filesCount',
+  manifestJson: 'manifestJson',
+  progress: 'progress',
+  currentStep: 'currentStep',
+  errorMessage: 'errorMessage',
+  createdById: 'createdById',
+  restoredAt: 'restoredAt',
+  restoredById: 'restoredById',
+  createdAt: 'createdAt',
+  completedAt: 'completedAt',
+  updatedAt: 'updatedAt',
+  deletedAt: 'deletedAt'
+} as const
+
+export type SystemBackupScalarFieldEnum = (typeof SystemBackupScalarFieldEnum)[keyof typeof SystemBackupScalarFieldEnum]
+
+
+export const BackupSettingsScalarFieldEnum = {
+  id: 'id',
+  passwordCiphertext: 'passwordCiphertext',
+  passwordUpdatedAt: 'passwordUpdatedAt',
+  scheduleEnabled: 'scheduleEnabled',
+  cronPattern: 'cronPattern',
+  timezone: 'timezone',
+  maxBackups: 'maxBackups',
+  nextRunAt: 'nextRunAt',
+  lastRunAt: 'lastRunAt',
+  lastBackupId: 'lastBackupId',
+  lastError: 'lastError',
+  consecutiveFailures: 'consecutiveFailures',
+  updatedAt: 'updatedAt',
+  updatedById: 'updatedById'
+} as const
+
+export type BackupSettingsScalarFieldEnum = (typeof BackupSettingsScalarFieldEnum)[keyof typeof BackupSettingsScalarFieldEnum]
 
 
 export const ChartOfAccountScalarFieldEnum = {

@@ -617,6 +617,18 @@ export type WorkspaceBackup = Prisma.WorkspaceBackupModel
  */
 export type BackupSchedule = Prisma.BackupScheduleModel
 /**
+ * Model SystemBackup
+ * Whole-install backups: every workspace, every table and every stored file,
+ * locked with the backup password. Not tied to a workspace, so a restore on a
+ * new install can list them before any workspace exists.
+ */
+export type SystemBackup = Prisma.SystemBackupModel
+/**
+ * Model BackupSettings
+ * Single row (id "default") holding the backup password and the full-backup schedule.
+ */
+export type BackupSettings = Prisma.BackupSettingsModel
+/**
  * Model ChartOfAccount
  *
  */

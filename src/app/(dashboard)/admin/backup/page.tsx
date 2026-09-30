@@ -49,15 +49,16 @@ import { MobileCollapsibleSection } from '@/components/ui/collapsible-section';
 import { MobileCard, CardDetailsGrid, CardDetailItem } from '@/components/ui/responsive-table';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { FullBackupsPanel } from './_components/full-backups-panel';
 
-type TabType = 'backups' | 'schedules';
+type TabType = 'full' | 'backups' | 'schedules';
 
 export default function BackupPage() {
   const { data: session } = useSession();
   const { success, error: showError } = useToast();
 
   // Tab state
-  const [activeTab, setActiveTab] = useState<TabType>('backups');
+  const [activeTab, setActiveTab] = useState<TabType>('full');
 
   // Backup list state
   const [page, setPage] = useState(1);
@@ -377,7 +378,7 @@ export default function BackupPage() {
             Backup & Restore
           </h1>
           <p className="text-sm text-text-secondary mt-1">
-            Create and manage workspace backups for disaster recovery
+            Back up everything, move Oakcloud to another machine, and restore
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -437,30 +438,42 @@ export default function BackupPage() {
       </div>
 
       {/* Tab Navigation */}
-      <div className="flex gap-1 mb-6 border-b border-border-primary">
+      <div className="flex gap-1 mb-6 border-b border-border-primary overflow-x-auto">
+        <button
+          onClick={() => setActiveTab('full')}
+          className={cn(
+            'px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px whitespace-nowrap',
+            activeTab === 'full'
+              ? 'text-accent-primary border-accent-primary'
+              : 'text-text-secondary border-transparent hover:text-text-primary hover:border-border-secondary'
+          )}
+        >
+          <FileArchive className="w-4 h-4 inline-block mr-1.5 -mt-0.5" />
+          Full backups
+        </button>
         <button
           onClick={() => setActiveTab('backups')}
           className={cn(
-            'px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px',
+            'px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px whitespace-nowrap',
             activeTab === 'backups'
               ? 'text-accent-primary border-accent-primary'
               : 'text-text-secondary border-transparent hover:text-text-primary hover:border-border-secondary'
           )}
         >
           <Archive className="w-4 h-4 inline-block mr-1.5 -mt-0.5" />
-          Backups
+          Workspace backups (old)
         </button>
         <button
           onClick={() => setActiveTab('schedules')}
           className={cn(
-            'px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px',
+            'px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px whitespace-nowrap',
             activeTab === 'schedules'
               ? 'text-accent-primary border-accent-primary'
               : 'text-text-secondary border-transparent hover:text-text-primary hover:border-border-secondary'
           )}
         >
           <Calendar className="w-4 h-4 inline-block mr-1.5 -mt-0.5" />
-          Schedules
+          Workspace schedules (old)
           {schedules.filter((s) => s.isEnabled).length > 0 && (
             <span className="ml-1.5 px-1.5 py-0.5 text-xs rounded-full bg-status-success/10 text-status-success">
               {schedules.filter((s) => s.isEnabled).length}
@@ -469,9 +482,14 @@ export default function BackupPage() {
         </button>
       </div>
 
+      {activeTab === 'full' && <FullBackupsPanel />}
+
       {/* Backups Tab */}
       {activeTab === 'backups' && (
         <>
+          <Alert variant="warning" className="mb-4">
+            These older backups cover one workspace only and cannot be moved to another machine. Use Full backups instead.
+          </Alert>
           {/* Stats Cards */}
           <MobileCollapsibleSection title="Statistics" count={4} className="mb-6">
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
