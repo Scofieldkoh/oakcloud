@@ -2,7 +2,7 @@
 
 import { useRef, useState, type ReactNode } from 'react';
 import { format } from 'date-fns';
-import { CloudUpload, Download, ExternalLink, FileArchive, Plus, RefreshCw, RotateCcw, Trash2, Upload } from 'lucide-react';
+import { CloudUpload, Download, ExternalLink, FileArchive, Plus, RefreshCw, RotateCcw, Square, Trash2, Upload } from 'lucide-react';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
@@ -33,6 +33,7 @@ import {
   useDeleteFullBackup,
   useFullBackups,
   useSharePointBackupTarget,
+  useStopFullBackup,
   useUploadFullBackup,
   type SystemBackup,
 } from '@/hooks/use-full-backup';
@@ -48,7 +49,17 @@ const SOURCE_LABELS: Record<SystemBackup['source'], string> = {
   UPLOADED: 'Uploaded',
 };
 
+/** Stop marks a backup FAILED with this step; it is shown as stopped, not as an error. */
+function isStopped(backup: SystemBackup): boolean {
+  return backup.status === 'FAILED' && backup.currentStep === 'Stopped';
+}
+
+function statusLabel(backup: SystemBackup): string {
+  return isStopped(backup) ? 'Stopped' : getBackupStatusLabel(backup.status);
+}
+
 function statusBadge(backup: SystemBackup): StatusType {
+  if (isStopped(backup)) return 'inactive';
   if (backup.status === 'FAILED') return 'failed';
   if (isRunning(backup.status)) return 'pending';
   return 'success';
@@ -62,7 +73,7 @@ function Progress({ backup }: { backup: SystemBackup }) {
   if (!isRunning(backup.status)) {
     const note = backup.errorMessage || (backup.currentStep && !['Completed', 'Restored'].includes(backup.currentStep) ? backup.currentStep : null);
     return note ? (
-      <div className={cn('text-xs mt-1 line-clamp-2', backup.errorMessage ? 'text-status-error' : 'text-text-tertiary')}>{note}</div>
+      <div className={cn('text-xs mt-1 line-clamp-2', backup.errorMessage && !isStopped(backup) ? 'text-status-error' : 'text-text-tertiary')}>{note}</div>
     ) : null;
   }
   return (
@@ -104,12 +115,14 @@ export function FullBackupsPanel() {
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [restoreTarget, setRestoreTarget] = useState<SystemBackup | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<SystemBackup | null>(null);
+  const [stopTarget, setStopTarget] = useState<SystemBackup | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
 
   const { data, isLoading, isFetching, error, refetch } = useFullBackups(page);
   const { data: settings } = useBackupSettings();
   const createBackup = useCreateFullBackup();
   const deleteBackup = useDeleteFullBackup();
+  const stopBackup = useStopFullBackup();
   const uploadBackup = useUploadFullBackup(setUploadProgress);
   const copyToSharePoint = useCopyBackupToSharePoint();
   const { data: sharePoint } = useSharePointBackupTarget();
@@ -152,6 +165,17 @@ export function FullBackupsPanel() {
     }
   };
 
+  const confirmStop = async () => {
+    if (!stopTarget) return;
+    try {
+      await stopBackup.mutateAsync(stopTarget.id);
+      success('Backup stopped');
+      setStopTarget(null);
+    } catch (err) {
+      showError(err instanceof Error ? err.message : 'Failed to stop the backup');
+    }
+  };
+
   const copy = async (backup: SystemBackup) => {
     try {
       await copyToSharePoint.mutateAsync(backup.id);
@@ -184,6 +208,18 @@ export function FullBackupsPanel() {
             </Button>
           )}
         </>
+      )}
+      {backup.source !== 'UPLOADED' && (backup.status === 'PENDING' || backup.status === 'IN_PROGRESS') && (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setStopTarget(backup)}
+          aria-label="Stop backup"
+          title="Stop"
+          className="text-status-error hover:text-status-error"
+        >
+          <Square className="w-4 h-4" />
+        </Button>
       )}
       {!isRunning(backup.status) && (
         <Button
@@ -268,7 +304,7 @@ export function FullBackupsPanel() {
               key={backup.id}
               title={<span className="font-medium text-text-primary">{backup.name}</span>}
               subtitle={<span className="text-xs text-text-tertiary">{SOURCE_LABELS[backup.source]}</span>}
-              badge={<StatusBadge status={statusBadge(backup)} label={getBackupStatusLabel(backup.status)} size="xs" />}
+              badge={<StatusBadge status={statusBadge(backup)} label={statusLabel(backup)} size="xs" />}
               actions={rowActions(backup)}
               details={
                 <>
@@ -318,7 +354,7 @@ export function FullBackupsPanel() {
                       <div className="text-xs text-text-tertiary">{SOURCE_LABELS[backup.source]}</div>
                     </TableCell>
                     <TableCell className="min-w-[14rem]">
-                      <StatusBadge status={statusBadge(backup)} label={getBackupStatusLabel(backup.status)} size="xs" />
+                      <StatusBadge status={statusBadge(backup)} label={statusLabel(backup)} size="xs" />
                       <Progress backup={backup} />
                     </TableCell>
                     <TableCell>{info.size}</TableCell>
@@ -349,6 +385,16 @@ export function FullBackupsPanel() {
         confirmLabel="Delete"
         variant="danger"
         isLoading={deleteBackup.isPending}
+      />
+      <ConfirmDialog
+        isOpen={stopTarget !== null}
+        onClose={() => setStopTarget(null)}
+        onConfirm={confirmStop}
+        title="Stop backup"
+        description={`Stop "${stopTarget?.name}"? The half-made backup is thrown away and nothing in Oakcloud changes. You can start a new backup straight after.`}
+        confirmLabel="Stop backup"
+        variant="danger"
+        isLoading={stopBackup.isPending}
       />
     </div>
   );

@@ -181,6 +181,11 @@ export function useDeleteFullBackup() {
     requestJson<{ success: boolean }>(`/api/admin/backup/full/${backupId}`, { method: 'DELETE' }));
 }
 
+export function useStopFullBackup() {
+  return useInvalidatingMutation((backupId: string) =>
+    requestJson<{ stopped: boolean }>(`/api/admin/backup/full/${backupId}/stop`, { method: 'POST' }));
+}
+
 export function useSetBackupPassword() {
   return useInvalidatingMutation((password: string) =>
     requestJson<{ success: boolean }>('/api/admin/backup/settings/password', jsonInit('PUT', { password })));
