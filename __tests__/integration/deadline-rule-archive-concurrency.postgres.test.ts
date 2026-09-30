@@ -41,7 +41,6 @@ describePostgres('deadline-rule archive draft concurrency PostgreSQL integration
         tenantId,
         code: `ARCHIVE_${tenantId.slice(0, 8)}`,
         name: 'Archive race rule',
-        currentVersionId: publishedVersionId,
         versions: {
           create: {
             id: publishedVersionId,
@@ -57,6 +56,7 @@ describePostgres('deadline-rule archive draft concurrency PostgreSQL integration
         },
       },
     });
+    await prisma.deadlineRule.update({ where: { id: ruleId }, data: { currentVersionId: publishedVersionId } });
     await prisma.deadlineRuleVersion.create({
       data: {
         id: draftVersionId,

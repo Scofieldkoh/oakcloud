@@ -11,8 +11,6 @@ import { reconcileClientServiceThroughWorkerTransaction } from '@/services/sched
 
 const testDatabaseUrl = process.env.TEST_DATABASE_URL;
 const migrationRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../../prisma/migrations');
-const billingTrackingMigration = '20260817110000_billing_tracking';
-const deadlineOccurrenceNotesMigration = '20260819010000_deadline_occurrence_notes';
 const billingProvenanceMigration = '20260824100000_billing_reconciliation_provenance';
 const describePostgres = testDatabaseUrl ? describe : describe.skip;
 
@@ -53,14 +51,13 @@ async function applyMigration(client: PoolClient, schemaName: string, migrationD
   }
 }
 
-async function applyMigrationsBefore(client: PoolClient, schemaName: string, target: string): Promise<void> {
+async function applyAllMigrations(client: PoolClient, schemaName: string): Promise<void> {
   const directories = readdirSync(migrationRoot, { withFileTypes: true })
     .filter((entry) => entry.isDirectory())
     .map((entry) => entry.name)
     .sort();
-  const targetIndex = directories.indexOf(target);
-  if (targetIndex < 1) throw new Error(`Missing migration ${target}`);
-  for (const directory of directories.slice(0, targetIndex)) {
+  if (!directories.includes(billingProvenanceMigration)) throw new Error(`Missing migration ${billingProvenanceMigration}`);
+  for (const directory of directories) {
     await applyMigration(client, schemaName, directory);
   }
 }
@@ -89,10 +86,8 @@ describePostgres('billing reconciliation PostgreSQL integration', () => {
 
     try {
       await setupClient.query(`CREATE SCHEMA ${schema}`);
-      await applyMigrationsBefore(setupClient, schemaName, billingTrackingMigration);
-      await applyMigration(setupClient, schemaName, billingTrackingMigration);
-      await applyMigration(setupClient, schemaName, deadlineOccurrenceNotesMigration);
-      await applyMigration(setupClient, schemaName, billingProvenanceMigration);
+      // The current Prisma client reads every column, so the isolated schema needs every migration.
+      await applyAllMigrations(setupClient, schemaName);
       await setupClient.query(`
         INSERT INTO ${table('tenants')} ("id", "name", "slug", "status", "updatedAt")
         VALUES ('tenant-reconcile', 'Reconcile Tenant', 'billing-reconcile-${schemaName}', 'ACTIVE', TIMESTAMP '2026-08-18 00:00:00');

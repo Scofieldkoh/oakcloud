@@ -19,6 +19,15 @@ describePostgres('schedule reconciliation PostgreSQL concurrency', () => {
   });
 
   afterAll(async () => {
+    await prisma.deadlineOccurrenceCoverageLink.deleteMany({ where: { tenantId } });
+    await prisma.deadlineResponsibilityChange.deleteMany({ where: { tenantId } });
+    await prisma.companyComplianceIssue.deleteMany({ where: { tenantId } });
+    await prisma.clientServiceObligationScope.deleteMany({ where: { tenantId } });
+    await prisma.companyMonitoringCoverage.deleteMany({ where: { tenantId } });
+    await prisma.companyFinancialPeriod.deleteMany({ where: { tenantId } });
+    await prisma.auditLog.deleteMany({ where: { tenantId } });
+    await prisma.billingCoverageIssue.deleteMany({ where: { tenantId } });
+    await prisma.billingOccurrence.deleteMany({ where: { tenantId } });
     await prisma.deadlineOccurrence.deleteMany({ where: { tenantId } });
     await prisma.serviceCycle.deleteMany({ where: { tenantId } });
     await prisma.clientServiceDeadlineRule.deleteMany({ where: { tenantId } });
@@ -146,7 +155,6 @@ describePostgres('schedule reconciliation PostgreSQL concurrency', () => {
           tenantId,
           code: milestone.code,
           name: milestone.code,
-          currentVersionId: versionId,
           versions: {
             create: {
               id: versionId,
@@ -174,12 +182,14 @@ describePostgres('schedule reconciliation PostgreSQL concurrency', () => {
           },
         },
       });
+      await prisma.deadlineRule.update({ where: { id: ruleId }, data: { currentVersionId: versionId } });
     }
     await prisma.clientService.create({
       data: {
         id: clientServiceId,
         tenantId,
         companyId,
+        source: 'MANUAL',
         serviceVariantId: variantId,
         familyName: 'Queue Family',
         serviceName: 'Queue Fixture Service',
@@ -203,7 +213,10 @@ describePostgres('schedule reconciliation PostgreSQL concurrency', () => {
     const second = await prisma.$transaction((tx) => reconcileClientServiceDeadlines({ ...input, reconciliationRequestId: randomUUID() }, tx));
 
     expect(first.counts.created).toBe(8);
-    expect(second.counts).toMatchObject({ created: 0, noChange: 8 });
+    // The company's accounts are due 2024-07-31, so six of the eight cycles are already past due.
+    // A repeat run leaves past-due occurrences as history and changes nothing else.
+    expect(second.counts).toEqual({ created: 0, recalculated: 0, cancelled: 0, preserved: 6, noChange: 2 });
+    expect(second.preservedByReason.HISTORICAL).toBe(6);
 
     const cycles = await prisma.serviceCycle.findMany({ where: { tenantId, clientServiceId } });
     expect(cycles).toHaveLength(8);

@@ -110,7 +110,6 @@ describePostgres('deadline reconciliation PostgreSQL integration', () => {
         tenantId,
         code: `RULE_${tenantId.slice(0, 6)}`,
         name: 'AGM and Annual Return',
-        currentVersionId: versionId,
         versions: {
           create: {
             id: versionId,
@@ -145,6 +144,7 @@ describePostgres('deadline reconciliation PostgreSQL integration', () => {
         },
       },
     });
+    await prisma.deadlineRule.update({ where: { id: ruleId }, data: { currentVersionId: versionId } });
 
     await prisma.deadlineRuleVersion.create({
       data: {
@@ -184,6 +184,7 @@ describePostgres('deadline reconciliation PostgreSQL integration', () => {
         id: clientServiceId,
         tenantId,
         companyId,
+        source: 'MANUAL',
         serviceVariantId: variantId,
         familyName: 'Corporate Secretarial',
         serviceName: 'Annual Compliance',
@@ -202,10 +203,20 @@ describePostgres('deadline reconciliation PostgreSQL integration', () => {
   });
 
   afterAll(async () => {
+    await prisma.deadlineOccurrenceCoverageLink.deleteMany({ where: { tenantId } });
+    await prisma.deadlineResponsibilityChange.deleteMany({ where: { tenantId } });
+    await prisma.companyComplianceIssue.deleteMany({ where: { tenantId } });
+    await prisma.clientServiceObligationScope.deleteMany({ where: { tenantId } });
+    await prisma.companyMonitoringCoverage.deleteMany({ where: { tenantId } });
+    await prisma.companyFinancialPeriod.deleteMany({ where: { tenantId } });
+    await prisma.auditLog.deleteMany({ where: { tenantId } });
+    await prisma.billingCoverageIssue.deleteMany({ where: { tenantId } });
+    await prisma.billingOccurrence.deleteMany({ where: { tenantId } });
     await prisma.deadlineOccurrence.deleteMany({ where: { tenantId } });
     await prisma.serviceCycle.deleteMany({ where: { tenantId } });
     await prisma.clientServiceDeadlineRule.deleteMany({ where: { tenantId } });
     await prisma.clientService.deleteMany({ where: { tenantId } });
+    await prisma.serviceVariantDeadlineRule.deleteMany({ where: { tenantId } });
     await prisma.deadlineMilestoneTemplate.deleteMany({ where: { ruleVersion: { rule: { tenantId } } } });
     await prisma.deadlineRule.updateMany({ where: { tenantId }, data: { currentVersionId: null } });
     await prisma.deadlineRuleVersion.deleteMany({ where: { rule: { tenantId } } });
@@ -336,13 +347,14 @@ describePostgres('deadline reconciliation PostgreSQL integration', () => {
   async function seedRuleFixture(code: string, milestones: Array<{ key: string; name: string; expression: Record<string, unknown> }>) {
     const ruleId = randomUUID();
     const versionId = randomUUID();
+    // Rule codes are unique per workspace and the tests below reuse real codes, so retire the earlier test's rule code.
+    await prisma.deadlineRule.updateMany({ where: { tenantId, code }, data: { code: `${code}_${ruleId.slice(0, 8)}` } });
     await prisma.deadlineRule.create({
       data: {
         id: ruleId,
         tenantId,
         code,
         name: code,
-        currentVersionId: versionId,
         versions: {
           create: {
             id: versionId,
@@ -370,6 +382,7 @@ describePostgres('deadline reconciliation PostgreSQL integration', () => {
         },
       } as never,
     });
+    await prisma.deadlineRule.update({ where: { id: ruleId }, data: { currentVersionId: versionId } });
     await prisma.serviceVariantDeadlineRule.create({
       data: { tenantId, serviceVariantId: variantId, ruleId },
     });
@@ -398,6 +411,7 @@ describePostgres('deadline reconciliation PostgreSQL integration', () => {
         id: fixtureServiceId,
         tenantId,
         companyId: fixtureCompanyId,
+        source: 'MANUAL',
         serviceVariantId: variantId,
         familyName: 'Corporate Secretarial',
         serviceName: `Fixture Service ${fixtureServiceId}`,

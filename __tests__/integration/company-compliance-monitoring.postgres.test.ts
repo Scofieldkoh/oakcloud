@@ -15,6 +15,18 @@ describePostgres('company compliance monitoring on PostgreSQL', () => {
   let prisma: PrismaClient;
   let fixture: Awaited<ReturnType<typeof seedFixture>>;
 
+  // Creating a service starts a reconciliation batch in the background, which touches the company's
+  // deadline rows. Wait for it, so a later test's expectedUpdatedAt is not beaten by that batch.
+  async function waitForReconciliationIdle(): Promise<void> {
+    const deadline = Date.now() + 10_000;
+    while (await prisma.serviceScheduleReconciliationRequest.count({
+      where: { tenantId: fixture.tenantId, status: { in: ['PENDING', 'PROCESSING'] } },
+    }) > 0) {
+      if (Date.now() > deadline) throw new Error('Background schedule reconciliation did not finish');
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+  }
+
   beforeAll(async () => {
     process.env.DATABASE_URL = testDatabaseUrl;
     prisma = (await import('@/lib/prisma')).getPrisma();
@@ -306,6 +318,7 @@ describePostgres('company compliance monitoring on PostgreSQL', () => {
 
       await setWrites(true);
       await createManualClientService(fixture.companyId, request, params);
+      await waitForReconciliationIdle();
       expect(await prisma.deadlineOccurrence.findUniqueOrThrow({ where: { id: target.id } })).toMatchObject({ status: 'WAIVED', waivedById: fixture.userId });
     } finally {
       await setWrites(true);
@@ -524,6 +537,7 @@ describePostgres('company compliance monitoring on PostgreSQL', () => {
       companyObligationStatuses: [{ obligationCode: 'SG_FORM_C', periodKey: target.obligationPeriodKey!, status: 'FILED' }],
       confirmDuplicate: true,
     }, { tenantId: fixture.tenantId, userId: fixture.userId });
+    await waitForReconciliationIdle();
 
     const bills = await prisma.billingOccurrence.findMany({ where: { tenantId: fixture.tenantId, clientServiceId: created.id } });
     expect(bills).toHaveLength(1);
