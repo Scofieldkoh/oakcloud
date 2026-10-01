@@ -8,6 +8,8 @@ import {
 import { checkRateLimit, getClientIp, getRateLimitKey, RATE_LIMIT_CONFIGS } from '@/lib/rate-limit';
 import { publicSubmissionSchema } from '@/lib/validations/form-builder';
 import { createPublicSubmission } from '@/services/form-builder.service';
+import { createErrorResponse } from '@/lib/api-helpers';
+import { isInternalError } from '@/lib/api-route-errors';
 
 interface RouteParams {
   params: Promise<{ slug: string }>;
@@ -62,13 +64,10 @@ export async function POST(request: Request, { params }: RouteParams) {
       return NextResponse.json({ error: 'Invalid submission payload', details: error.errors }, { status: 400 });
     }
 
-    if (error instanceof Error) {
-      if (error.message.includes('required')) {
-        return NextResponse.json({ error: error.message }, { status: 422 });
-      }
-      return NextResponse.json({ error: error.message }, { status: 400 });
+    if (error instanceof Error && !isInternalError(error) && error.message.includes('required')) {
+      return NextResponse.json({ error: error.message }, { status: 422 });
     }
 
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return createErrorResponse(error);
   }
 }

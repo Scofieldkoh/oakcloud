@@ -9,6 +9,7 @@ import {
 } from '@/lib/placeholder-resolver';
 import { resolvePartials } from '@/services/template-partial.service';
 import { renderTemplateForGeneration } from '@/services/document-generator.service';
+import { createErrorResponse } from '@/lib/api-helpers';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -395,15 +396,6 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      if (error.message === 'Forbidden' || error.message.startsWith('Permission denied')) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-      }
-      return NextResponse.json({ error: error.message }, { status: 400 });
-    }
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return createErrorResponse(error);
   }
 }

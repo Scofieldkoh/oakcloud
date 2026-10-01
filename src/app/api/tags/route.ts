@@ -10,6 +10,7 @@ import { requireAuth } from '@/lib/auth';
 import { getWorkspaceTags, createWorkspaceTag } from '@/services/document-tag.service';
 import { createTagSchema } from '@/lib/validations/document-tag';
 import { createAuditLog } from '@/lib/audit';
+import { routeErrorResponse } from '@/lib/api-route-errors';
 
 export async function GET(request: NextRequest) {
   try {
@@ -33,13 +34,8 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ tags });
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-    }
     console.error('Error fetching tenant tags:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return routeErrorResponse(error);
   }
 }
 
@@ -89,19 +85,11 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ tag }, { status: 201 });
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      if (error.message === 'A shared tag with this name already exists') {
-        return NextResponse.json({ error: error.message }, { status: 409 });
-      }
-      // Zod validation error
-      if (error.name === 'ZodError') {
-        return NextResponse.json({ error: 'Invalid input', details: error }, { status: 400 });
-      }
+    // Zod validation error
+    if (error instanceof Error && error.name === 'ZodError') {
+      return NextResponse.json({ error: 'Invalid input', details: error }, { status: 400 });
     }
     console.error('Error creating tenant tag:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return routeErrorResponse(error, { conflict: ['A shared tag with this name already exists'] });
   }
 }

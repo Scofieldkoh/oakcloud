@@ -5,6 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { handleApiError } from '@/lib/api-error-handler';
 import { requireAuth, canAccessCompany } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { storage } from '@/lib/storage';
@@ -118,24 +119,6 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   } catch (error) {
     console.error('PDF streaming API error:', error);
 
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') {
-        return NextResponse.json(
-          {
-            success: false,
-            error: { code: 'AUTHENTICATION_REQUIRED', message: 'Unauthorized' },
-          },
-          { status: 401 }
-        );
-      }
-    }
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: { code: 'INTERNAL_ERROR', message: 'Internal server error' },
-      },
-      { status: 500 }
-    );
+    return handleApiError(error, 'document-pdf');
   }
 }

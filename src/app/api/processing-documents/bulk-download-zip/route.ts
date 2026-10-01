@@ -5,6 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { handleApiError } from '@/lib/api-error-handler';
 import archiver from 'archiver';
 import { PassThrough } from 'stream';
 import { requireAuth, canAccessCompany } from '@/lib/auth';
@@ -177,24 +178,6 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     log.error('Bulk ZIP download API error:', error);
 
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') {
-        return NextResponse.json(
-          {
-            success: false,
-            error: { code: 'AUTHENTICATION_REQUIRED', message: 'Unauthorized' },
-          },
-          { status: 401 }
-        );
-      }
-    }
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: { code: 'INTERNAL_ERROR', message: 'Internal server error' },
-      },
-      { status: 500 }
-    );
+    return handleApiError(error, 'bulk-download-zip');
   }
 }

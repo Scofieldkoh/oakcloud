@@ -65,27 +65,15 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     if (error instanceof ApiError) return createErrorResponse(error);
     console.error('PDF export error:', error);
 
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      if (error.message === 'Forbidden' || error.message.startsWith('Permission denied')) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-      }
-      if (error.message === 'Document not found') {
-        return NextResponse.json({ error: error.message }, { status: 404 });
-      }
-      if (error.message.includes('Chrome') || error.message.includes('Chromium')) {
-        return NextResponse.json(
-          {
-            error: 'PDF generation unavailable',
-            details: 'Chrome/Chromium is not installed on the server',
-          },
-          { status: 503 }
-        );
-      }
-      return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error instanceof Error && (error.message.includes('Chrome') || error.message.includes('Chromium'))) {
+      return NextResponse.json(
+        {
+          error: 'PDF generation unavailable',
+          details: 'Chrome/Chromium is not installed on the server',
+        },
+        { status: 503 }
+      );
     }
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return createErrorResponse(error);
   }
 }

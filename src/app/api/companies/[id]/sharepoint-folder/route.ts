@@ -5,6 +5,7 @@ import { SharePointServiceError } from '@/services/sharepoint.service';
 import { getCompanySharePointFolder, removeCompanySharePointFolder, setCompanySharePointFolder } from '@/services/company-sharepoint-folder.service';
 import { z } from 'zod';
 import { ApiError } from '@/lib/errors';
+import { createErrorResponse } from '@/lib/api-helpers';
 
 interface Params { params: Promise<{ id: string }> }
 
@@ -12,7 +13,7 @@ function errorResponse(error: unknown) {
   if (error instanceof SharePointServiceError) return NextResponse.json({ errorCode: error.code, error: error.message }, { status: error.statusCode ?? 400 });
   if (error instanceof ApiError) return NextResponse.json({ errorCode: error.code, error: error.message }, { status: error.statusCode });
   if (error instanceof z.ZodError) return NextResponse.json({ error: 'Invalid request', details: error.flatten() }, { status: 400 });
-  return NextResponse.json({ error: error instanceof Error ? error.message : 'SharePoint mapping failed' }, { status: 400 });
+  return createErrorResponse(error, 'SharePoint mapping failed');
 }
 
 export async function GET(_request: NextRequest, { params }: Params) {

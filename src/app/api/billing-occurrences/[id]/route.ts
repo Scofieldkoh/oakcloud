@@ -5,6 +5,7 @@ import { getCompanyReadScope } from '@/lib/api/company-query';
 import { createErrorResponse, requireSessionWorkspaceId } from '@/lib/api-helpers';
 import { ApiError, ErrorCodes, NotFoundError } from '@/lib/errors';
 import { requirePermission } from '@/lib/rbac';
+import { routeErrorResponse } from '@/lib/api-route-errors';
 import { requireServicesWorkspaceEnabled } from '@/services/schedule-reconciliation';
 import { updateBillingOccurrenceSchema } from '@/lib/validations/billing';
 import {
@@ -16,17 +17,11 @@ const billingOccurrenceIdSchema = z.string().uuid();
 type Context = { params: Promise<{ id: string }> };
 
 function safeErrorResponse(error: unknown): NextResponse {
-  if (error instanceof ApiError) return createErrorResponse(error);
   if (error instanceof z.ZodError) {
     return createErrorResponse(new ApiError(ErrorCodes.VALIDATION_ERROR, 'Invalid billing occurrence request', 400, { issues: error.issues }));
   }
   if (error instanceof SyntaxError) return createErrorResponse(new ApiError(ErrorCodes.VALIDATION_ERROR, 'Invalid JSON request', 400));
-  if (error instanceof Error && (
-    error.message === 'Unauthorized'
-    || error.message === 'Forbidden'
-    || error.message.startsWith('Permission denied')
-  )) return createErrorResponse(error);
-  return createErrorResponse(new ApiError(ErrorCodes.INTERNAL_ERROR, 'An unexpected error occurred', 500));
+  return routeErrorResponse(error);
 }
 
 function companyIdsForSession(session: Awaited<ReturnType<typeof requireAuth>>): string[] | undefined {

@@ -8,6 +8,7 @@
 import { NextResponse } from 'next/server';
 import { Prisma } from '@/generated/prisma';
 import { createLogger } from './logger';
+import { isInternalError } from './api-route-errors';
 import { ApiError, ErrorCodes } from './errors';
 import type { ErrorCode } from './errors';
 
@@ -62,7 +63,7 @@ export function handleApiError(
   }
 
   // Handle standard Error instances with specific messages
-  if (error instanceof Error) {
+  if (error instanceof Error && !isInternalError(error)) {
     // Authentication errors
     if (error.message === 'Unauthorized' || error.message.includes('Authentication required')) {
       log.warn(`${contextPrefix} Unauthorized access attempt`);

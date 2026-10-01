@@ -14,6 +14,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { createErrorResponse } from '@/lib/api-helpers';
 import { getSession } from '@/lib/auth';
 import * as exchangeRateService from '@/services/exchange-rate.service';
 import { exchangeRateSyncSchema } from '@/lib/validations/exchange-rate';
@@ -66,9 +67,6 @@ export async function POST(request: NextRequest) {
     }
 
     console.error('Failed to sync exchange rates:', error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Internal server error' },
-      { status: 500 }
-    );
+    return createErrorResponse(error);
   }
 }

@@ -7,6 +7,7 @@
 import { NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { getPermissionsGroupedByResource } from '@/services/role.service';
+import { createErrorResponse } from '@/lib/api-helpers';
 
 export async function GET() {
   try {
@@ -21,12 +22,6 @@ export async function GET() {
 
     return NextResponse.json(permissions);
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      return NextResponse.json({ error: error.message }, { status: 400 });
-    }
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return createErrorResponse(error);
   }
 }

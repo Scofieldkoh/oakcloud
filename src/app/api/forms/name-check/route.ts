@@ -6,6 +6,7 @@ import {
   checkCompanyNameAvailability,
 } from '@/lib/external/company-name-check';
 import { checkRateLimit, getClientIp, getRateLimitKey, RATE_LIMIT_CONFIGS } from '@/lib/rate-limit';
+import { routeErrorResponse } from '@/lib/api-route-errors';
 
 const nameCheckRequestSchema = z.object({
   name: z.string().trim().min(1).max(COMPANY_NAME_MAX_LENGTH),
@@ -40,10 +41,6 @@ export async function POST(request: Request) {
       );
     }
 
-    if (error instanceof SyntaxError) {
-      return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
-    }
-
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return routeErrorResponse(error);
   }
 }

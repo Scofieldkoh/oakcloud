@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { canManageWorkspace, requireAuth } from '@/lib/auth';
+import { routeErrorResponse } from '@/lib/api-route-errors';
 import {
   DOCUMENT_EXTRACTION_PROMPT_VARIABLES,
   getDocumentExtractionPromptSettings,
@@ -44,10 +45,7 @@ export async function GET() {
     const settings = await getDocumentExtractionPromptSettings(workspaceId);
     return settingsResponse(settings);
   } catch (error) {
-    if (error instanceof Error && error.message === 'Unauthorized') {
-      return jsonError(401, 'Unauthorized');
-    }
-    return jsonError(500, 'Internal server error');
+    return routeErrorResponse(error);
   }
 }
 
@@ -72,9 +70,6 @@ export async function PATCH(request: Request) {
     if (error instanceof z.ZodError) {
       return jsonError(400, error.issues[0]?.message || 'Invalid request');
     }
-    if (error instanceof Error && error.message === 'Unauthorized') {
-      return jsonError(401, 'Unauthorized');
-    }
-    return jsonError(500, 'Internal server error');
+    return routeErrorResponse(error);
   }
 }

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
-import { ApiError } from '@/lib/errors';
+import { createErrorResponse } from '@/lib/api-helpers';
 import {
   createDocumentTemplateSchema,
   documentTemplateCategoryEnum,
@@ -16,25 +16,6 @@ import { getOakDocMigrationInventory } from '@/services/oakdoc-migration.service
 
 function withRevision<T extends { version: number }>(value: T) {
   return { ...value, revision: value.version };
-}
-
-function apiError(error: unknown) {
-  if (error instanceof ApiError) {
-    return NextResponse.json(
-      { error: error.message, code: error.code, ...(error.details === undefined ? {} : { details: error.details }) },
-      { status: error.statusCode },
-    );
-  }
-  if (error instanceof Error) {
-    if (error.message === 'Unauthorized') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    if (error.message === 'Forbidden' || error.message.startsWith('Permission denied')) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
-    return NextResponse.json({ error: error.message }, { status: 400 });
-  }
-  return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
 }
 
 export async function GET(request: NextRequest) {
@@ -75,7 +56,7 @@ export async function GET(request: NextRequest) {
       templates: result.templates.map(withRevision),
     });
   } catch (error) {
-    return apiError(error);
+    return createErrorResponse(error);
   }
 }
 
@@ -145,6 +126,6 @@ export async function POST(request: NextRequest) {
     const template = await createDocumentTemplate(data, { tenantId, userId: session.id });
     return NextResponse.json(withRevision(template), { status: 201 });
   } catch (error) {
-    return apiError(error);
+    return createErrorResponse(error);
   }
 }

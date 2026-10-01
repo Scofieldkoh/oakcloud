@@ -97,9 +97,6 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json({ backgroundImageUrl: getFormBackgroundPublicUrl(storageKey) }, { status: 201 });
   } catch (error) {
-    if (error instanceof Error && error.message === 'Unauthorized') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
     return createErrorResponse(error);
   }
 }

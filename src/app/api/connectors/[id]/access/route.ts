@@ -6,6 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { createErrorResponse } from '@/lib/api-helpers';
 import { requireAuth } from '@/lib/auth';
 import { updateWorkspaceAccessSchema } from '@/lib/validations/connector';
 import { getWorkspaceAccess, updateWorkspaceAccess } from '@/services/connector.service';
@@ -31,19 +32,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json({ workspaceAccess });
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      if (error.message.includes('only applies to system')) {
-        return NextResponse.json({ error: error.message }, { status: 400 });
-      }
-      if (error.message === 'Connector not found') {
-        return NextResponse.json({ error: 'Connector not found' }, { status: 404 });
-      }
-      return NextResponse.json({ error: error.message }, { status: 400 });
-    }
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return createErrorResponse(error);
   }
 }
 
@@ -77,18 +66,6 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      if (error.message.includes('only applies to system')) {
-        return NextResponse.json({ error: error.message }, { status: 400 });
-      }
-      if (error.message === 'Connector not found') {
-        return NextResponse.json({ error: 'Connector not found' }, { status: 404 });
-      }
-      return NextResponse.json({ error: error.message }, { status: 400 });
-    }
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return createErrorResponse(error);
   }
 }

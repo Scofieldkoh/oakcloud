@@ -5,6 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { handleApiError } from '@/lib/api-error-handler';
 import { v4 as uuidv4 } from 'uuid';
 import { requireAuth, canAccessCompany } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
@@ -14,9 +15,6 @@ import {
   releaseDocumentLock,
 } from '@/services/document-processing.service';
 import { createAuditLog } from '@/lib/audit';
-import { createLogger } from '@/lib/logger';
-
-const log = createLogger('document-unlock');
 
 type Params = { documentId: string };
 
@@ -157,39 +155,6 @@ export async function POST(
 
     return NextResponse.json(response);
   } catch (error) {
-    return handleError(error);
+    return handleApiError(error, 'processing-document-unlock');
   }
-}
-
-function handleError(error: unknown): NextResponse {
-  log.error('Unlock API error', error);
-
-  if (error instanceof Error) {
-    if (error.message === 'Unauthorized') {
-      return NextResponse.json(
-        {
-          success: false,
-          error: { code: 'AUTHENTICATION_REQUIRED', message: 'Unauthorized' },
-        },
-        { status: 401 }
-      );
-    }
-    if (error.message === 'Forbidden') {
-      return NextResponse.json(
-        {
-          success: false,
-          error: { code: 'PERMISSION_DENIED', message: 'Forbidden' },
-        },
-        { status: 403 }
-      );
-    }
-  }
-
-  return NextResponse.json(
-    {
-      success: false,
-      error: { code: 'INTERNAL_ERROR', message: 'Internal server error' },
-    },
-    { status: 500 }
-  );
 }

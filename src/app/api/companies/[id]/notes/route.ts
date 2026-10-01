@@ -94,17 +94,9 @@ export async function POST(
         { status: 400 }
       );
     }
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      if (error.message === 'Forbidden' || error.message.startsWith('Permission denied')) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-      }
-      if (error.message === 'Parent entity not found') {
-        return NextResponse.json({ error: 'Company not found' }, { status: 404 });
-      }
+    if (error instanceof Error && error.message === 'Parent entity not found') {
+      return NextResponse.json({ error: 'Company not found' }, { status: 404 });
     }
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return routeErrorResponse(error);
   }
 }

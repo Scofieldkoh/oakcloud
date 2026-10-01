@@ -14,6 +14,7 @@ import { Prisma } from '@/generated/prisma';
 import { requireAuth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { getUserPreferenceMap } from '@/lib/api/preferences';
+import { handleApiError } from '@/lib/api-error-handler';
 
 function jsonError(status: number, code: string, message: string) {
   return NextResponse.json({ success: false, error: { code, message } }, { status });
@@ -67,10 +68,7 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error('User preferences GET error:', error);
-    if (error instanceof Error && error.message === 'Unauthorized') {
-      return jsonError(401, 'AUTHENTICATION_REQUIRED', 'Unauthorized');
-    }
-    return jsonError(500, 'INTERNAL_ERROR', 'Internal server error');
+    return handleApiError(error, 'user-preferences');
   }
 }
 
@@ -105,9 +103,6 @@ export async function PUT(request: NextRequest) {
     });
   } catch (error) {
     console.error('User preferences PUT error:', error);
-    if (error instanceof Error && error.message === 'Unauthorized') {
-      return jsonError(401, 'AUTHENTICATION_REQUIRED', 'Unauthorized');
-    }
-    return jsonError(500, 'INTERNAL_ERROR', 'Internal server error');
+    return handleApiError(error, 'user-preferences');
   }
 }

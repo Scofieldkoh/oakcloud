@@ -6,6 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { handleApiError } from '@/lib/api-error-handler';
 import { v4 as uuidv4 } from 'uuid';
 import { requireAuth, canAccessCompany } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
@@ -230,24 +231,6 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
   } catch (error) {
     log.error('Failed to delete pages', error);
 
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') {
-        return NextResponse.json(
-          { success: false, error: { code: 'UNAUTHORIZED', message: 'Authentication required' } },
-          { status: 401 }
-        );
-      }
-      if (error.message === 'Forbidden') {
-        return NextResponse.json(
-          { success: false, error: { code: 'FORBIDDEN', message: 'Permission denied' } },
-          { status: 403 }
-        );
-      }
-    }
-
-    return NextResponse.json(
-      { success: false, error: { code: 'INTERNAL_ERROR', message: 'Failed to delete pages' } },
-      { status: 500 }
-    );
+    return handleApiError(error, 'delete-pages');
   }
 }

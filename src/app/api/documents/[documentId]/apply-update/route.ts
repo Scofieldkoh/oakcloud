@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
+import { routeErrorResponse } from '@/lib/api-route-errors';
 import { prisma } from '@/lib/prisma';
 import { verifyPreparedBizFileRequest } from '@/services/bizfile/application/verify-prepared-request';
 import { BizFilePreparationTokenError } from '@/services/bizfile/application/preparation-token';
@@ -212,14 +213,6 @@ export async function POST(
   } catch (error) {
     if (error instanceof BizFilePreparationTokenError) return NextResponse.json({ error: error.message, code: error.code }, { status: 409 });
     console.error('BizFile apply-update error:', error);
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      if (error.message === 'Forbidden') {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-      }
-    }
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return routeErrorResponse(error);
   }
 }

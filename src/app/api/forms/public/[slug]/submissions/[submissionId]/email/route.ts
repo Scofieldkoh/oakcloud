@@ -7,6 +7,7 @@ import {
 } from '@/lib/form-response-token';
 import { checkRateLimit, getClientIp, getRateLimitKey, RATE_LIMIT_CONFIGS } from '@/lib/rate-limit';
 import { emailPublicFormResponsePdfLink } from '@/services/form-builder.service';
+import { createErrorResponse } from '@/lib/api-helpers';
 
 const emailPayloadSchema = z.object({
   email: z.string().email().max(320),
@@ -58,13 +59,6 @@ export async function POST(request: Request, { params }: RouteParams) {
       return NextResponse.json({ error: 'Invalid email payload', details: error.errors }, { status: 400 });
     }
 
-    if (error instanceof Error) {
-      if (error.message === 'Form not found' || error.message === 'Submission not found') {
-        return NextResponse.json({ error: error.message }, { status: 404 });
-      }
-      return NextResponse.json({ error: error.message }, { status: 400 });
-    }
-
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return createErrorResponse(error);
   }
 }

@@ -5,6 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { handleApiError } from '@/lib/api-error-handler';
 import { v4 as uuidv4 } from 'uuid';
 import { requireAuth, canAccessCompany } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
@@ -12,10 +13,7 @@ import { prisma } from '@/lib/prisma';
 import { getProcessingDocument } from '@/services/document-processing.service';
 import { approveRevision, getRevision } from '@/services/document-revision.service';
 import { canApproveDocument } from '@/services/duplicate-detection.service';
-import { createLogger } from '@/lib/logger';
 import type { ExchangeRateSource } from '@/generated/prisma';
-
-const log = createLogger('revision-approve');
 
 type Params = { documentId: string; revisionId: string };
 
@@ -206,33 +204,7 @@ export async function POST(
 
     return NextResponse.json(response);
   } catch (error) {
-    return handleError(error);
-  }
-}
-
-function handleError(error: unknown): NextResponse {
-  log.error('Approve revision API error', error);
-
-  if (error instanceof Error) {
-    if (error.message === 'Unauthorized') {
-      return NextResponse.json(
-        {
-          success: false,
-          error: { code: 'AUTHENTICATION_REQUIRED', message: 'Unauthorized' },
-        },
-        { status: 401 }
-      );
-    }
-    if (error.message === 'Forbidden') {
-      return NextResponse.json(
-        {
-          success: false,
-          error: { code: 'PERMISSION_DENIED', message: 'Forbidden' },
-        },
-        { status: 403 }
-      );
-    }
-    if (error.message.includes('Cannot approve')) {
+    if (error instanceof Error && error.message.includes('Cannot approve')) {
       return NextResponse.json(
         {
           success: false,
@@ -241,13 +213,6 @@ function handleError(error: unknown): NextResponse {
         { status: 400 }
       );
     }
+    return handleApiError(error, 'revision-approve');
   }
-
-  return NextResponse.json(
-    {
-      success: false,
-      error: { code: 'INTERNAL_ERROR', message: 'Internal server error' },
-    },
-    { status: 500 }
-  );
 }

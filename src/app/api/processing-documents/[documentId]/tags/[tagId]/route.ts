@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, canAccessCompany } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
+import { routeErrorResponse } from '@/lib/api-route-errors';
 import { prisma } from '@/lib/prisma';
 import { getProcessingDocument } from '@/services/document-processing.service';
 import { removeTagFromDocument, getTag } from '@/services/document-tag.service';
@@ -82,24 +83,12 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      if (error.message === 'Forbidden' || error.message.startsWith('Permission denied')) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-      }
-      if (error.message === 'Tag not found') {
-        return NextResponse.json({ error: error.message }, { status: 404 });
-      }
-      if (error.message === 'Document does not have this tag') {
-        return NextResponse.json({ error: error.message }, { status: 404 });
-      }
-    }
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: 'Invalid parameters' }, { status: 400 });
     }
-    console.error('Error removing tag from document:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return routeErrorResponse(error, {
+      notFound: ['Tag not found', 'Document does not have this tag'],
+      logLabel: 'Error removing tag from document',
+    });
   }
 }

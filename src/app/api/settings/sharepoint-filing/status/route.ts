@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
 import { ApiError } from '@/lib/errors';
+import { createErrorResponse } from '@/lib/api-helpers';
 import { prisma } from '@/lib/prisma';
 import { getSharePointFilingSettings } from '@/services/sharepoint-filing-settings.service';
 import { isSharePointSignedFilingDeploymentEnabled } from '@/services/sharepoint-filing-settings.service';
@@ -54,6 +55,6 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     if (error instanceof SharePointServiceError) return NextResponse.json({ errorCode: error.code, error: error.message }, { status: error.statusCode ?? 400 });
     if (error instanceof ApiError) return NextResponse.json({ errorCode: error.code, error: error.message }, { status: error.statusCode });
-    return NextResponse.json({ error: error instanceof Error ? error.message : 'SharePoint filing status failed' }, { status: 400 });
+    return createErrorResponse(error, 'SharePoint filing status failed');
   }
 }

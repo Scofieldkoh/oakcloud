@@ -125,7 +125,7 @@ describe('GET /api/client-services', () => {
     const body = await response.json();
 
     expect(response.status).toBe(500);
-    expect(body).toMatchObject({ error: 'An unexpected error occurred', code: 'INTERNAL_ERROR' });
+    expect(body).toEqual({ error: 'Internal server error' });
     expect(JSON.stringify(body)).not.toContain('database password leaked');
   });
 });

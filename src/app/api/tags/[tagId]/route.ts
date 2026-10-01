@@ -16,6 +16,7 @@ import {
 import { updateTagSchema } from '@/lib/validations/document-tag';
 import { createAuditLog } from '@/lib/audit';
 import { z } from 'zod';
+import { routeErrorResponse } from '@/lib/api-route-errors';
 
 type RouteParams = { params: Promise<{ tagId: string }> };
 
@@ -40,16 +41,11 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json({ tag });
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-    }
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: 'Invalid tag ID' }, { status: 400 });
     }
     console.error('Error fetching tenant tag:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return routeErrorResponse(error);
   }
 }
 
@@ -89,22 +85,14 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json({ tag });
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      if (error.message === 'Shared tag not found') {
-        return NextResponse.json({ error: 'Tag not found' }, { status: 404 });
-      }
-      if (error.message === 'A shared tag with this name already exists') {
-        return NextResponse.json({ error: error.message }, { status: 409 });
-      }
+    if (error instanceof Error && error.message === 'Shared tag not found') {
+      return NextResponse.json({ error: 'Tag not found' }, { status: 404 });
     }
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: 'Invalid input', details: error.errors }, { status: 400 });
     }
     console.error('Error updating tenant tag:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return routeErrorResponse(error, { conflict: ['A shared tag with this name already exists'] });
   }
 }
 
@@ -147,18 +135,13 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      if (error.message === 'Shared tag not found') {
-        return NextResponse.json({ error: 'Tag not found' }, { status: 404 });
-      }
+    if (error instanceof Error && error.message === 'Shared tag not found') {
+      return NextResponse.json({ error: 'Tag not found' }, { status: 404 });
     }
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: 'Invalid tag ID' }, { status: 400 });
     }
     console.error('Error deleting tenant tag:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return routeErrorResponse(error);
   }
 }

@@ -6,6 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { handleApiError } from '@/lib/api-error-handler';
 import { v4 as uuidv4 } from 'uuid';
 import { requireAuth, canAccessCompany } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
@@ -457,8 +458,6 @@ export async function PATCH(
 }
 
 function handleError(error: unknown): NextResponse {
-  console.error('Revision API error:', error);
-
   if (error instanceof CounterpartyIdentityValidationError) {
     return NextResponse.json(
       {
@@ -473,32 +472,5 @@ function handleError(error: unknown): NextResponse {
     );
   }
 
-  if (error instanceof Error) {
-    if (error.message === 'Unauthorized') {
-      return NextResponse.json(
-        {
-          success: false,
-          error: { code: 'AUTHENTICATION_REQUIRED', message: 'Unauthorized' },
-        },
-        { status: 401 }
-      );
-    }
-    if (error.message === 'Forbidden') {
-      return NextResponse.json(
-        {
-          success: false,
-          error: { code: 'PERMISSION_DENIED', message: 'Forbidden' },
-        },
-        { status: 403 }
-      );
-    }
-  }
-
-  return NextResponse.json(
-    {
-      success: false,
-      error: { code: 'INTERNAL_ERROR', message: 'Internal server error' },
-    },
-    { status: 500 }
-  );
+  return handleApiError(error, 'document-revision');
 }

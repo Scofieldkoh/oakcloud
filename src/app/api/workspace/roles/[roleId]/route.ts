@@ -8,6 +8,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
+import { createErrorResponse } from '@/lib/api-helpers';
 import { requirePermission } from '@/lib/rbac';
 import { createAuditContext, logUpdate, logDelete } from '@/lib/audit';
 import {
@@ -45,16 +46,7 @@ export async function GET(
 
     return NextResponse.json(role);
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      if (error.message === 'Forbidden' || error.message.startsWith('Permission denied')) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-      }
-      return NextResponse.json({ error: error.message }, { status: 400 });
-    }
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return createErrorResponse(error);
   }
 }
 
@@ -154,20 +146,14 @@ export async function PATCH(
 
     return NextResponse.json(updatedRole);
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      if (error.message === 'Forbidden' || error.message.startsWith('Permission denied') || error.message === 'System roles cannot be modified') {
-        return NextResponse.json({ error: error.message === 'System roles cannot be modified' ? error.message : 'Forbidden' }, { status: 403 });
-      }
-      if (error.message === 'A role with this name already exists') {
-        return NextResponse.json({ error: error.message }, { status: 409 });
-      }
-      return NextResponse.json({ error: error.message }, { status: 400 });
+    if (error instanceof Error && error.message === 'System roles cannot be modified') {
+      return NextResponse.json({ error: error.message }, { status: 403 });
+    }
+    if (error instanceof Error && error.message === 'A role with this name already exists') {
+      return NextResponse.json({ error: error.message }, { status: 409 });
     }
     console.error('Failed to update role:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return createErrorResponse(error);
   }
 }
 
@@ -210,19 +196,10 @@ export async function DELETE(
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      if (error.message === 'Forbidden' || error.message.startsWith('Permission denied') || error.message === 'System roles cannot be deleted') {
-        return NextResponse.json({ error: error.message === 'System roles cannot be deleted' ? error.message : 'Forbidden' }, { status: 403 });
-      }
-      if (error.message.includes('Cannot delete role')) {
-        return NextResponse.json({ error: error.message }, { status: 400 });
-      }
-      return NextResponse.json({ error: error.message }, { status: 400 });
+    if (error instanceof Error && error.message === 'System roles cannot be deleted') {
+      return NextResponse.json({ error: error.message }, { status: 403 });
     }
     console.error('Failed to delete role:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return createErrorResponse(error);
   }
 }

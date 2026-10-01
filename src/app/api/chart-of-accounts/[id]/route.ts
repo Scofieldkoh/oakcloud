@@ -9,6 +9,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { createErrorResponse } from '@/lib/api-helpers';
 import { getSession } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
 import * as chartOfAccountsService from '@/services/chart-of-accounts.service';
@@ -48,10 +49,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     return NextResponse.json(account);
   } catch (error) {
     console.error('Failed to get account:', error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Internal server error' },
-      { status: 500 }
-    );
+    return createErrorResponse(error);
   }
 }
 
@@ -109,10 +107,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     }
 
     console.error('Failed to update account:', error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Internal server error' },
-      { status: 500 }
-    );
+    return createErrorResponse(error);
   }
 }
 
@@ -179,9 +174,6 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Failed to delete account:', error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Internal server error' },
-      { status: 500 }
-    );
+    return createErrorResponse(error);
   }
 }

@@ -8,6 +8,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { handleApiError } from '@/lib/api-error-handler';
 import { requireAuth, canAccessCompany } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
 import { prisma } from '@/lib/prisma';
@@ -126,10 +127,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<P
     });
   } catch (error) {
     console.error('Resolve alias API error:', error);
-    return NextResponse.json(
-      { success: false, error: { code: 'INTERNAL_ERROR', message: 'Internal server error' } },
-      { status: 500 }
-    );
+    return handleApiError(error, 'resolve-alias');
   }
 }
 

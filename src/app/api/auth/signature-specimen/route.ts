@@ -6,10 +6,7 @@ import {
   parseSignatureSpecimen,
 } from '@/lib/esigning-signature-specimen';
 import { prisma } from '@/lib/prisma';
-
-function errorResponse(status: number, message: string) {
-  return NextResponse.json({ error: message }, { status });
-}
+import { routeErrorResponse } from '@/lib/api-route-errors';
 
 export async function GET() {
   try {
@@ -29,10 +26,7 @@ export async function GET() {
       updatedAt: preference?.updatedAt.toISOString() ?? null,
     });
   } catch (error) {
-    if (error instanceof Error && error.message === 'Unauthorized') {
-      return errorResponse(401, 'Unauthorized');
-    }
-    return errorResponse(500, 'Failed to load signature specimen');
+    return routeErrorResponse(error, { serverErrorMessage: 'Failed to load signature specimen' });
   }
 }
 
@@ -42,7 +36,7 @@ export async function PUT(request: NextRequest) {
     const body = (await request.json().catch(() => null)) as { dataUrl?: unknown } | null;
     const dataUrl = parseSignatureSpecimen(body?.dataUrl);
     if (!dataUrl) {
-      return errorResponse(400, 'Provide a valid signature image under 1 MB');
+      return NextResponse.json({ error: 'Provide a valid signature image under 1 MB' }, { status: 400 });
     }
 
     const preference = await prisma.userPreference.upsert({
@@ -65,10 +59,7 @@ export async function PUT(request: NextRequest) {
 
     return NextResponse.json({ dataUrl, updatedAt: preference.updatedAt.toISOString() });
   } catch (error) {
-    if (error instanceof Error && error.message === 'Unauthorized') {
-      return errorResponse(401, 'Unauthorized');
-    }
-    return errorResponse(500, 'Failed to save signature specimen');
+    return routeErrorResponse(error, { serverErrorMessage: 'Failed to save signature specimen' });
   }
 }
 
@@ -83,9 +74,6 @@ export async function DELETE() {
     });
     return NextResponse.json({ success: true });
   } catch (error) {
-    if (error instanceof Error && error.message === 'Unauthorized') {
-      return errorResponse(401, 'Unauthorized');
-    }
-    return errorResponse(500, 'Failed to remove signature specimen');
+    return routeErrorResponse(error, { serverErrorMessage: 'Failed to remove signature specimen' });
   }
 }

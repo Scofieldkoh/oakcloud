@@ -8,6 +8,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { createErrorResponse } from '@/lib/api-helpers';
 import { getSession } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
 import * as chartOfAccountsService from '@/services/chart-of-accounts.service';
@@ -64,10 +65,7 @@ export async function GET(request: NextRequest) {
     }
 
     console.error('Failed to list chart of accounts:', error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Internal server error' },
-      { status: 500 }
-    );
+    return createErrorResponse(error);
   }
 }
 
@@ -110,9 +108,6 @@ export async function POST(request: NextRequest) {
     }
 
     console.error('Failed to create chart of account:', error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Internal server error' },
-      { status: 500 }
-    );
+    return createErrorResponse(error);
   }
 }

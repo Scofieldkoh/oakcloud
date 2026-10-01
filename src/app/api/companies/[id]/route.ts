@@ -150,25 +150,13 @@ export async function DELETE(
 
     return NextResponse.json(company);
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      if (error.message === 'Forbidden' || error.message.startsWith('Permission denied')) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-      }
-      if (error.message === 'Company not found') {
-        return NextResponse.json({ error: 'Company not found' }, { status: 404 });
-      }
-      if (error.message === 'Company must be soft-deleted before permanent deletion') {
-        return NextResponse.json(
-          { error: 'Company must be in the recycle bin before it can be permanently deleted' },
-          { status: 422 }
-        );
-      }
-      return NextResponse.json({ error: error.message }, { status: 400 });
+    if (error instanceof Error && error.message === 'Company must be soft-deleted before permanent deletion') {
+      return NextResponse.json(
+        { error: 'Company must be in the recycle bin before it can be permanently deleted' },
+        { status: 422 }
+      );
     }
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return routeErrorResponse(error, { notFound: ['Company not found'], fallback: 'bad-request' });
   }
 }
 

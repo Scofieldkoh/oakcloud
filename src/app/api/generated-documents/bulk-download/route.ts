@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
-import { requireSessionWorkspaceId } from '@/lib/api-helpers';
+import { createErrorResponse, requireSessionWorkspaceId } from '@/lib/api-helpers';
 import { exportDocumentsToZip } from '@/services/document-export.service';
 
 const MAX_BULK_DOWNLOAD_DOCUMENTS = 50;
@@ -51,9 +51,6 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('Bulk document download error:', error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Internal server error' },
-      { status: 500 }
-    );
+    return createErrorResponse(error);
   }
 }

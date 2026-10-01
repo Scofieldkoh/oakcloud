@@ -5,6 +5,7 @@ import { getCompanyReadScope, jsonWithServerTiming, withServerTiming } from '@/l
 import { createErrorResponse, requireSessionWorkspaceId } from '@/lib/api-helpers';
 import { ApiError, ErrorCodes } from '@/lib/errors';
 import { requirePermission } from '@/lib/rbac';
+import { routeErrorResponse } from '@/lib/api-route-errors';
 import {
   emptyDeadlineResult,
   parseDeadlineSearchParams,
@@ -13,7 +14,6 @@ import { requireServicesWorkspaceEnabled } from '@/services/schedule-reconciliat
 import { listDeadlines } from '@/services/deadline';
 
 function safeErrorResponse(error: unknown): NextResponse {
-  if (error instanceof ApiError) return createErrorResponse(error);
   if (error instanceof z.ZodError) {
     return createErrorResponse(new ApiError(
       ErrorCodes.VALIDATION_ERROR,
@@ -22,16 +22,7 @@ function safeErrorResponse(error: unknown): NextResponse {
       { issues: error.issues },
     ));
   }
-  if (error instanceof Error && (
-    error.message === 'Unauthorized'
-    || error.message === 'Forbidden'
-    || error.message.startsWith('Permission denied')
-  )) return createErrorResponse(error);
-  return createErrorResponse(new ApiError(
-    ErrorCodes.INTERNAL_ERROR,
-    'An unexpected error occurred',
-    500,
-  ));
+  return routeErrorResponse(error);
 }
 
 export async function GET(request: NextRequest): Promise<NextResponse> {

@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { verifyPublicFormResponseToken } from '@/lib/form-response-token';
 import { checkRateLimit, getClientIp, getRateLimitKey, RATE_LIMIT_CONFIGS } from '@/lib/rate-limit';
 import { exportPublicFormResponsePdf } from '@/services/form-builder.service';
-import { buildContentDispositionHeader } from '@/lib/api-helpers';
+import { buildContentDispositionHeader, createErrorResponse } from '@/lib/api-helpers';
 
 interface RouteParams {
   params: Promise<{
@@ -46,12 +46,6 @@ export async function GET(request: Request, { params }: RouteParams) {
       },
     });
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message === 'Form not found' || error.message === 'Submission not found') {
-        return NextResponse.json({ error: error.message }, { status: 404 });
-      }
-      return NextResponse.json({ error: error.message }, { status: 400 });
-    }
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return createErrorResponse(error);
   }
 }

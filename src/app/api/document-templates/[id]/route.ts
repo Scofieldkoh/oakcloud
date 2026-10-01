@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
 import { prisma } from '@/lib/prisma';
-import { ApiError } from '@/lib/errors';
+import { createErrorResponse } from '@/lib/api-helpers';
 import {
   documentTemplateCategoryEnum,
   updateDocumentTemplateSchema,
@@ -29,28 +29,6 @@ interface RouteParams {
 
 function withRevision<T extends { version: number }>(value: T) {
   return { ...value, revision: value.version };
-}
-
-function apiError(error: unknown) {
-  if (error instanceof ApiError) {
-    return NextResponse.json(
-      { error: error.message, code: error.code, ...(error.details === undefined ? {} : { details: error.details }) },
-      { status: error.statusCode },
-    );
-  }
-  if (error instanceof Error) {
-    if (error.message === 'Unauthorized') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    if (error.message === 'Forbidden' || error.message.startsWith('Permission denied')) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
-    if (error.message === 'Template not found') {
-      return NextResponse.json({ error: error.message }, { status: 404 });
-    }
-    return NextResponse.json({ error: error.message }, { status: 400 });
-  }
-  return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
 }
 
 /** GET /api/document-templates/[id] */
@@ -92,7 +70,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json(withRevision(template));
   } catch (error) {
-    return apiError(error);
+    return createErrorResponse(error);
   }
 }
 
@@ -200,7 +178,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json(withRevision(template));
   } catch (error) {
-    return apiError(error);
+    return createErrorResponse(error);
   }
 }
 
@@ -255,7 +233,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json(withRevision(template));
   } catch (error) {
-    return apiError(error);
+    return createErrorResponse(error);
   }
 }
 
@@ -371,6 +349,6 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
   } catch (error) {
-    return apiError(error);
+    return createErrorResponse(error);
   }
 }

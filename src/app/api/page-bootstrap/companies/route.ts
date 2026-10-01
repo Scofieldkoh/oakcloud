@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
 import {
@@ -9,9 +9,7 @@ import {
 } from '@/lib/api/company-query';
 import { getUserPreferenceMap } from '@/lib/api/preferences';
 import { searchCompanies, getCompanyStats } from '@/services/company.service';
-import { createLogger, sanitizeError } from '@/lib/logger';
-
-const log = createLogger('api:page-bootstrap:companies');
+import { routeErrorResponse } from '@/lib/api-route-errors';
 
 function parsePreferenceKeys(request: NextRequest) {
   const keys = new URL(request.url).searchParams.get('preferenceKeys');
@@ -53,21 +51,10 @@ export async function GET(request: NextRequest) {
 
     return jsonWithServerTiming({ companies, stats, preferences }, startedAt);
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      if (error.message === 'Forbidden' || error.message.startsWith('Permission denied')) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-      }
-      if ('code' in error) {
-        log.error('GET /page-bootstrap/companies database error:', sanitizeError(error));
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-      }
-      return NextResponse.json({ error: error.message }, { status: 400 });
-    }
-
-    log.error('GET /page-bootstrap/companies failed with unexpected error:', sanitizeError(error));
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return routeErrorResponse(error, {
+      notFound: 'any',
+      fallback: 'bad-request',
+      logLabel: 'GET /page-bootstrap/companies failed',
+    });
   }
 }

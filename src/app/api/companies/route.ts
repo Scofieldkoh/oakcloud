@@ -5,6 +5,7 @@ import { createCompanyRequestSchema, companySearchSchema } from '@/lib/validatio
 import { createCompany, searchCompanies, getCompanyByUen } from '@/services/company.service';
 import { migrateBizFileToProcessing } from '@/services/document-processing.service';
 import { createLogger, sanitizeError } from '@/lib/logger';
+import { createErrorResponse } from '@/lib/api-helpers';
 import {
   parseTaskLaunchContext,
   preflightTaskLaunchContext,
@@ -109,23 +110,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(result);
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      if (error.message === 'Forbidden' || error.message.startsWith('Permission denied')) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-      }
-      // Check for Prisma/database errors (they have a 'code' property)
-      if ('code' in error) {
-        log.error('GET /companies database error:', sanitizeError(error));
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-      }
-      // Validation and business logic errors
-      return NextResponse.json({ error: error.message }, { status: 400 });
-    }
-    log.error('GET /companies failed with unexpected error:', sanitizeError(error));
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return createErrorResponse(error);
   }
 }
 
@@ -195,22 +180,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(company, { status: 201 });
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      if (error.message === 'Forbidden' || error.message.startsWith('Permission denied')) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-      }
-      // Check for Prisma/database errors (they have a 'code' property)
-      if ('code' in error) {
-        log.error('POST /companies database error:', sanitizeError(error));
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-      }
-      // Validation and business logic errors
-      return NextResponse.json({ error: error.message }, { status: 400 });
-    }
-    log.error('POST /companies failed with unexpected error:', sanitizeError(error));
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return createErrorResponse(error);
   }
 }

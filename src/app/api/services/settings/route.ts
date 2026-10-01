@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { getServiceWorkspaceFlagsForTenant } from '@/services/schedule-reconciliation';
+import { routeErrorResponse } from '@/lib/api-route-errors';
 
 /**
  * Return feature flags for the authenticated workspace. The workspace is
@@ -16,9 +17,6 @@ export async function GET(_request: Request) {
 
     return NextResponse.json(await getServiceWorkspaceFlagsForTenant(session.tenantId));
   } catch (error) {
-    if (error instanceof Error && error.message === 'Unauthorized') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return routeErrorResponse(error);
   }
 }

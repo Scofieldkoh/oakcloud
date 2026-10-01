@@ -13,6 +13,7 @@ import { getTag, updateTag, deleteTag } from '@/services/document-tag.service';
 import { updateTagSchema } from '@/lib/validations/document-tag';
 import { createAuditLog } from '@/lib/audit';
 import { z } from 'zod';
+import { routeErrorResponse } from '@/lib/api-route-errors';
 
 type RouteParams = { params: Promise<{ id: string; tagId: string }> };
 
@@ -53,19 +54,11 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json({ tag });
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      if (error.message === 'Forbidden') {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-      }
-    }
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: 'Invalid parameters' }, { status: 400 });
     }
     console.error('Error fetching tag:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return routeErrorResponse(error);
   }
 }
 
@@ -137,25 +130,14 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json({ tag });
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      if (error.message === 'Forbidden') {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-      }
-      if (error.message === 'Tag not found') {
-        return NextResponse.json({ error: error.message }, { status: 404 });
-      }
-      if (error.message === 'A tag with this name already exists') {
-        return NextResponse.json({ error: error.message }, { status: 409 });
-      }
-    }
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: 'Invalid input', details: error.errors }, { status: 400 });
     }
     console.error('Error updating tag:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return routeErrorResponse(error, {
+      notFound: ['Tag not found'],
+      conflict: ['A tag with this name already exists'],
+    });
   }
 }
 
@@ -209,21 +191,10 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      if (error.message === 'Forbidden') {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-      }
-      if (error.message === 'Tag not found') {
-        return NextResponse.json({ error: error.message }, { status: 404 });
-      }
-    }
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: 'Invalid parameters' }, { status: 400 });
     }
     console.error('Error deleting tag:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return routeErrorResponse(error, { notFound: ['Tag not found'] });
   }
 }

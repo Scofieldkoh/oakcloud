@@ -3,6 +3,7 @@ import { requireAuth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { storage } from '@/lib/storage';
 import { buildContentDispositionHeader } from '@/lib/api-helpers';
+import { routeErrorResponse } from '@/lib/api-route-errors';
 
 const CANCELLABLE_STATUSES = ['PENDING', 'PROCESSING', 'EXTRACTED', 'FAILED'];
 
@@ -55,10 +56,7 @@ export async function GET(
     });
   } catch (error) {
     console.error('Document read error:', error);
-    if (error instanceof Error && error.message === 'Unauthorized') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return routeErrorResponse(error);
   }
 }
 
@@ -122,11 +120,6 @@ export async function DELETE(
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Document delete error:', error);
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-    }
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return routeErrorResponse(error);
   }
 }

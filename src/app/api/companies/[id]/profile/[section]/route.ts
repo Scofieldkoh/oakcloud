@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { ZodError } from 'zod';
 import { ValidationError } from '@/lib/errors';
+import { routeErrorResponse } from '@/lib/api-route-errors';
 import { requireAuth, canAccessCompany } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
 import {
@@ -43,10 +44,7 @@ function errorResponse(error: unknown) {
   if (error instanceof ValidationError) {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
-  const message = error instanceof Error ? error.message : '';
-  if (message === 'Unauthorized') return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  if (message.startsWith('Permission denied')) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  return routeErrorResponse(error);
 }
 
 export async function GET(_request: Request, context: RouteContext) {
