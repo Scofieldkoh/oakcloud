@@ -7,8 +7,13 @@ import {
   wordChild,
   wordChildren,
 } from '@/lib/document-editor/oakdoc-blocks';
-import { OAKDOC_RESOLUTION_ITEMS_TAG } from '@/lib/document-editor/oakdoc-field-registry';
+import {
+  OAKDOC_RESOLUTION_ITEMS_TAG,
+  OAKDOC_SCALAR_FIELDS,
+  type OakDocRegisteredField,
+} from '@/lib/document-editor/oakdoc-field-registry';
 import { oakDocPartialTag } from '@/lib/document-editor/oakdoc-partials';
+import { buildOakDocFromHtml } from '@/lib/document-editor/oakdoc-html-import';
 import type { OakDocDiagnostic } from '@/types/oakdoc';
 import {
   customResolutionParagraphs,
@@ -178,19 +183,71 @@ function appendText(xml: XMLDocument, run: Element, value: string): void {
   run.appendChild(text);
 }
 
+/**
+ * Fields custom resolution text can use as `{tag}`: ones that resolve from
+ * the company, the resolution date or the system alone, so no extra party
+ * has to be chosen on Configure.
+ */
+export const RESOLUTION_TEXT_FIELDS: readonly OakDocRegisteredField[] = OAKDOC_SCALAR_FIELDS
+  .filter((field) => field.context === 'company' || field.context === 'resolution' || field.context === 'system');
+
+const RESOLUTION_TEXT_FIELD_BY_TAG = new Map(RESOLUTION_TEXT_FIELDS.map((field) => [field.tag, field]));
+const FIELD_TOKEN = /\{([a-zA-Z][\w.]*)\}/g;
+
+/** Split a line into text and known `{tag}` field tokens; unknown tokens stay as text. */
+export function splitResolutionTextFields(line: string): Array<{ text: string } | { field: OakDocRegisteredField }> {
+  const parts: Array<{ text: string } | { field: OakDocRegisteredField }> = [];
+  let cursor = 0;
+  for (const match of line.matchAll(FIELD_TOKEN)) {
+    const field = RESOLUTION_TEXT_FIELD_BY_TAG.get(match[1]);
+    if (!field) continue;
+    if (match.index > cursor) parts.push({ text: line.slice(cursor, match.index) });
+    parts.push({ field });
+    cursor = match.index + match[0].length;
+  }
+  if (cursor < line.length) parts.push({ text: line.slice(cursor) });
+  return parts;
+}
+
+/** An inline field control that generation fills like any template field. */
+function fieldControl(xml: XMLDocument, prototype: Prototype, ids: IdAllocator, field: OakDocRegisteredField): Element {
+  const sdt = element(xml, 'sdt');
+  const properties = element(xml, 'sdtPr');
+  properties.appendChild(element(xml, 'alias', { val: field.label }));
+  properties.appendChild(element(xml, 'tag', { val: field.tag }));
+  properties.appendChild(element(xml, 'id', { val: String(ids.take()) }));
+  properties.appendChild(element(xml, 'text'));
+  sdt.appendChild(properties);
+  const content = element(xml, 'sdtContent');
+  const run = runFrom(xml, prototype);
+  appendText(xml, run, field.label);
+  content.appendChild(run);
+  sdt.appendChild(content);
+  return sdt;
+}
+
 function textParagraph(
   xml: XMLDocument,
   prototype: Prototype,
   lines: string[],
-  options: { bold?: boolean; keepNext?: boolean } = {},
+  options: { bold?: boolean; keepNext?: boolean; ids?: IdAllocator } = {},
 ): Element {
   const paragraph = paragraphFrom(xml, prototype, { keepNext: options.keepNext });
-  const run = runFrom(xml, prototype, { bold: options.bold });
+  let run = runFrom(xml, prototype, { bold: options.bold });
+  paragraph.appendChild(run);
   lines.forEach((line, index) => {
     if (index > 0) run.appendChild(element(xml, 'br'));
-    appendText(xml, run, line);
+    const parts = options.ids ? splitResolutionTextFields(line) : [{ text: line }];
+    for (const part of parts) {
+      if ('text' in part) {
+        appendText(xml, run, part.text);
+        continue;
+      }
+      paragraph.appendChild(fieldControl(xml, prototype, options.ids!, part.field));
+      run = runFrom(xml, prototype, { bold: options.bold });
+      paragraph.appendChild(run);
+    }
   });
-  paragraph.appendChild(run);
   return paragraph;
 }
 
@@ -289,7 +346,7 @@ export function composeOakDocResolutions(
       return;
     }
     for (const lines of customResolutionParagraphs(text ?? '')) {
-      blocks.push(textParagraph(xml, prototype, lines));
+      blocks.push(textParagraph(xml, prototype, lines, { ids }));
     }
   });
 
@@ -377,7 +434,8 @@ export function insertOakDocResolutionSlot(input: {
 
 /**
  * A partial's wording as plain text for the Configure step: paragraphs
- * separated by a blank line, line breaks kept. Fields show their sample text.
+ * separated by a blank line, line breaks kept. Fields custom text supports
+ * read as `{tag}`; other fields show their sample text.
  */
 export function readOakDocPlainText(docxBytes: Uint8Array): string {
   const files = unzipSync(docxBytes, { filter: (entry) => entry.name === DOCUMENT_PART });
@@ -394,6 +452,15 @@ export function readOakDocPlainText(docxBytes: Uint8Array): string {
         if (el.namespaceURI !== WORD_NS) continue;
         // Nested paragraphs (text boxes) are read on their own.
         if (el.localName === 'p' || el.localName === 'pPr' || el.localName === 'rPr') continue;
+        if (el.localName === 'sdt') {
+          // A field custom text can use reads back as its {tag} token.
+          const sdtPr = wordChild(el, 'sdtPr');
+          const tag = sdtPr ? getWordVal(wordChild(sdtPr, 'tag')) : '';
+          if (tag && RESOLUTION_TEXT_FIELD_BY_TAG.has(tag)) {
+            text += `{${tag}}`;
+            continue;
+          }
+        }
         if (el.localName === 't') text += el.textContent ?? '';
         else if (el.localName === 'tab') text += '\t';
         else if (el.localName === 'br' || el.localName === 'cr') text += '\n';
@@ -404,4 +471,30 @@ export function readOakDocPlainText(docxBytes: Uint8Array): string {
     if (text.trim()) paragraphs.push(text.trimEnd());
   }
   return paragraphs.join('\n\n');
+}
+
+/**
+ * A Word partial built from plain resolution text: justified paragraphs with
+ * no explicit font, so it takes the resolution template's font, and `{tag}`
+ * tokens turned into fields.
+ */
+export function buildResolutionTextPartial(text: string): Uint8Array {
+  const files = unzipSync(buildOakDocFromHtml('<p style="text-align: justify">x</p>').bytes);
+  const xml = parseXml(files[DOCUMENT_PART]);
+  const body = xml.getElementsByTagNameNS(WORD_NS, 'body')[0];
+  const first = wordChildren(body).find((child) => child.localName === 'p');
+  const prototype: Prototype = {
+    paragraphProperties: first ? (wordChild(first, 'pPr')?.cloneNode(true) as Element | undefined) ?? null : null,
+    runProperties: null,
+  };
+  for (const child of wordChildren(body)) {
+    if (child.localName !== 'sectPr') body.removeChild(child);
+  }
+  const sectPr = wordChild(body, 'sectPr') ?? null;
+  const ids = new IdAllocator(xml);
+  for (const lines of customResolutionParagraphs(text)) {
+    body.insertBefore(textParagraph(xml, prototype, lines, { ids }), sectPr);
+  }
+  files[DOCUMENT_PART] = serialize(xml);
+  return zipSync(files, { level: 6 });
 }

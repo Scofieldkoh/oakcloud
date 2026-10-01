@@ -10,6 +10,7 @@ import {
   XCircle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { SendForEsigningButton } from '@/components/esigning/send-for-esigning-button';
 import { cn } from '@/lib/utils';
 import type { EditableBatchItem } from './batch-workspace-state';
 import { ITEM_STATUS_LABELS } from './batch-document-queue';
@@ -40,6 +41,9 @@ export function BatchGenerationResults({
   const failedItems = items.filter((item) => item.status === 'FAILED');
   const skipped = items.length - generated - failedItems.length;
   const completed = items.length > 0 && generated === items.length;
+  const generatedIds = items
+    .filter((item) => item.status === 'GENERATED' && item.generatedDocumentId)
+    .map((item) => item.generatedDocumentId!);
 
   return (
     <div className="space-y-4">
@@ -104,6 +108,14 @@ export function BatchGenerationResults({
               >
                 Download all ({generated})
               </Button>
+            )}
+            {generatedIds.length > 0 && (
+              <SendForEsigningButton
+                generatedDocumentIds={generatedIds}
+                includesDrafts
+                label={generatedIds.length === 1 ? 'Send for e-signing' : `Send all for e-signing (${generatedIds.length})`}
+                disabled={pending}
+              />
             )}
             <Link href="/generated-documents">
               <Button variant={completed ? 'primary' : 'secondary'} size="sm">

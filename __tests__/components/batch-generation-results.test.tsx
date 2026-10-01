@@ -7,6 +7,10 @@ import {
 } from '@/components/documents/generation-batch/batch-generation-results';
 import type { EditableBatchItem } from '@/components/documents/generation-batch/batch-workspace-state';
 
+const push = vi.hoisted(() => vi.fn());
+vi.mock('next/navigation', () => ({ useRouter: () => ({ push }) }));
+vi.mock('@/components/ui/toast', () => ({ useToast: () => ({ success: vi.fn(), error: vi.fn() }) }));
+
 function item(overrides: Partial<EditableBatchItem> = {}): EditableBatchItem {
   return {
     key: 'item-1',
@@ -124,5 +128,26 @@ describe('BatchGenerationResults', () => {
     })} />);
     expect(screen.getByText(/did not run because it was not ready/i)).toBeInTheDocument();
     unmount();
+  });
+
+  it('sends every generated document for e-signing in one envelope after confirming', async () => {
+    const user = userEvent.setup();
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ id: 'envelope-1', signersAdded: 2, signersWithoutEmail: 0 }) });
+    vi.stubGlobal('fetch', fetchMock);
+    render(<BatchGenerationResults
+      items={[
+        item({ generatedDocumentId: 'doc-1' }),
+        item({ key: 'item-2', id: 'item-2', generatedDocumentId: 'doc-2' }),
+        item({ key: 'item-3', id: 'item-3', status: 'FAILED', generatedDocumentId: 'doc-3' }),
+      ]}
+      onRetry={vi.fn()}
+    />);
+    await user.click(screen.getByRole('button', { name: 'Send all for e-signing (2)' }));
+    await user.click(screen.getByRole('button', { name: 'Finalize and continue' }));
+
+    expect(fetchMock).toHaveBeenCalledWith('/api/esigning/envelopes/from-documents', expect.objectContaining({ method: 'POST' }));
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({ generatedDocumentIds: ['doc-1', 'doc-2'], finalizeDrafts: true });
+    expect(push).toHaveBeenCalledWith('/esigning/envelope-1');
+    vi.unstubAllGlobals();
   });
 });

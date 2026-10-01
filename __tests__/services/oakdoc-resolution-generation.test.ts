@@ -2,7 +2,7 @@
 import { createHash } from 'node:crypto';
 import { strFromU8, unzipSync, zipSync } from 'fflate';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { buildBoardResolutionOakDocMaster } from '@/content/resolution/board-resolution-oakdoc';
+import { buildBoardResolutionOakDocMaster, buildMembersResolutionOakDocMaster } from '@/content/resolution/board-resolution-oakdoc';
 import { deriveOakDocTemplateFieldTags } from '@/lib/document-editor/oakdoc-field-manifest';
 import { OAKDOC_MIME_TYPE } from '@/lib/document-editor/oakdoc-template';
 import { ensureA4ServerDomGlobals } from '@/lib/document-editor/a4-server-dom';
@@ -110,6 +110,52 @@ describe('Resolution template generation', () => {
     expect(text).toContain('Dated this 9 day of July, 2026');
     expect(text).not.toContain('Numbered resolutions');
     expect(result.resolutionPartialPins).toEqual([expect.objectContaining({ partialId, version: 3 })]);
+  });
+
+  it('fills {field} tokens in custom resolution text', async () => {
+    const result = await generateOakDocBytes({
+      templateId: stored.id,
+      ...context,
+      resolution: {
+        subject: '',
+        sections: [{
+          id: 'a',
+          kind: 'CUSTOM',
+          heading: 'REGISTERED OFFICE',
+          body: 'RESOLVED that {company.name} (UEN {company.uen}) keep its {unknown.tag} office.',
+        }],
+      },
+    }, { tenantId });
+    expect(result.diagnostics.filter((diagnostic) => diagnostic.severity === 'error')).toEqual([]);
+    expect(documentText(result.bytes)).toContain('RESOLVED that 96 Fruit Avenue Pte. Ltd. (UEN 202425961Z) keep its {unknown.tag} office.');
+  });
+
+  it('generates the members resolution signed by every shareholder', async () => {
+    const members = buildMembersResolutionOakDocMaster();
+    const membersAsset = { ...asset, sha256: sha(members), fileSize: members.byteLength, fieldTags: deriveOakDocTemplateFieldTags(members) };
+    prismaMock.documentTemplate.findFirst.mockResolvedValue({ ...stored, contentJson: { oakDoc: membersAsset } });
+    templateMock.downloadOakDocTemplate.mockResolvedValue({ buffer: Buffer.from(members), metadata: membersAsset });
+    companyMock.getCompanyById.mockResolvedValue({
+      id: 'company-1',
+      name: '96 Fruit Avenue Pte. Ltd.',
+      uen: '202425961Z',
+      addresses: [],
+      officers: [],
+      shareholders: [
+        { id: 'sh-1', name: 'Mary Lee', shareholderType: 'INDIVIDUAL', isCurrent: true },
+        { id: 'sh-2', name: 'Oak Holdings Pte. Ltd.', shareholderType: 'CORPORATE', isCurrent: true },
+      ],
+    });
+    const result = await generateOakDocBytes({
+      templateId: stored.id,
+      ...context,
+      resolution: { subject: '', sections: [{ id: 'a', kind: 'CUSTOM', heading: 'APPROVAL OF ACCOUNTS', body: 'RESOLVED that the accounts be approved.' }] },
+    }, { tenantId });
+    expect(result.diagnostics.filter((diagnostic) => diagnostic.severity === 'error')).toEqual([]);
+    const text = documentText(result.bytes);
+    expect(text).toContain('MEMBERS’ RESOLUTIONS IN WRITING PURSUANT TO SECTION 184A OF THE COMPANIES ACT 1967');
+    expect(text).toContain('1.\tAPPROVAL OF ACCOUNTS');
+    expect(text).toMatch(/Mary Lee[^]*Member[^]*Oak Holdings Pte\. Ltd\.[^]*Member/);
   });
 
   it('reports a resolution template generated without its resolutions', async () => {

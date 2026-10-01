@@ -7,14 +7,10 @@ import { FormInput } from '@/components/ui/form-input';
 import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
 import { useToast } from '@/components/ui/toast';
 import { partialKeys, saveWordPartial } from '@/hooks/use-template-partials';
-import { buildOakDocFromHtml } from '@/lib/document-editor/oakdoc-html-import';
+import { buildResolutionTextPartial } from '@/lib/document-editor/oakdoc-resolutions';
 import { OAKDOC_MIME_TYPE } from '@/lib/document-editor/oakdoc-template';
 import { customResolutionParagraphs } from '@/lib/resolution-composition';
 import { cn } from '@/lib/utils';
-
-function escapeHtml(value: string): string {
-  return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-}
 
 /** A partial name from its display name: letters, digits and hyphens, starting with a letter. */
 export function partialNameFromDisplayName(displayName: string): string {
@@ -26,16 +22,8 @@ export function partialNameFromDisplayName(displayName: string): string {
   return /^[a-z]/.test(slug) ? slug : `resolution-${slug || 'partial'}`;
 }
 
-/** Plain resolution text as Word partial bytes: a blank line starts a new paragraph. */
-export function resolutionPartialBytes(text: string): Uint8Array {
-  const html = customResolutionParagraphs(text)
-    .map((lines) => `<p style="text-align: justify">${lines.map(escapeHtml).join('<br>')}</p>`)
-    .join('');
-  return buildOakDocFromHtml(html).bytes;
-}
-
 function resolutionPartialFile(name: string, text: string): File {
-  const bytes = resolutionPartialBytes(text);
+  const bytes = buildResolutionTextPartial(text);
   const copy = new Uint8Array(bytes.byteLength);
   copy.set(bytes);
   return new File([copy.buffer], `${name}.docx`, { type: OAKDOC_MIME_TYPE });
@@ -115,14 +103,14 @@ export function QuickResolutionPartialModal({ isOpen, onClose, onCreated }: Quic
               rows={8}
               onChange={(event) => setText(event.target.value)}
               maxLength={20000}
-              placeholder="RESOLVED that ..."
+              placeholder="RESOLVED that {company.name} ..."
               aria-label="New partial text"
               className={cn(
                 'mt-1 w-full rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary',
                 'focus:border-oak-primary focus:outline-none focus:ring-2 focus:ring-oak-primary/30',
               )}
             />
-            <span className="mt-1 block text-xs text-text-muted">A blank line starts a new paragraph.</span>
+            <span className="mt-1 block text-xs text-text-muted">A blank line starts a new paragraph. Fields such as {'{company.name}'} or {'{resolution.date}'} become Word fields.</span>
           </label>
         </div>
       </ModalBody>

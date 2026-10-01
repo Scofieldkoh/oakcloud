@@ -266,7 +266,12 @@ Service Agreement composition templates:
   Partials page or the partial's details. A batch can hold the same template
   more than once, so several resolutions can be generated together; saved
   items are matched by id, and new copies by the next unclaimed item of the
-  same template. A resolution template can carry preset resolutions
+  same template. Custom and edited text can use `{tag}` tokens for fields
+  that resolve from the company, the resolution date or the system (for
+  example `{company.name}`); generation turns them into field controls, and a
+  partial's text reads its fields back as tokens. `scripts/seed-resolution-template.ts`
+  also creates "Members Resolution (Numbered)" (Section 184A written
+  resolution signed by every shareholder). A resolution template can carry preset resolutions
   (`document_templates.resolution_preset`), which new batch items start with
   (fresh section ids) and can still change. Presets are edited from the
   OakDoc editor ("Preset resolutions") or saved from Configure ("Save as
@@ -478,6 +483,8 @@ New e-signing recipients, including the current user added through “Add myself
 Completion delivery is independent of the request access mode: any signer or CC recipient with a stored email address receives a completion copy, including `MANUAL_LINK` signers. The completion worker reads the tenant-scoped signed artifact and its certificate, appends the certificate to each attached PDF, and falls back to the signed-document and certificate links when the combined attachments exceed the 20 MB email limit. Delivery rows remain idempotent and retryable per recipient.
 
 Public signing sessions keep the editable field definitions scoped to the active signer. They separately expose `signedSignatures`, a read-only projection of finalized signature and initials placements from other signed signer recipients in the same tenant and envelope, with short-lived storage preview URLs for rendering earlier marks.
+
+Outside tasks, "Send for e-signing" on a generated document (and "Send all for e-signing" on batch results) calls `POST /api/esigning/envelopes/from-documents`. After a confirmation it finalizes any drafts, creates one draft envelope for the documents' company, attaches them, and adds signers: everyone a directors or shareholders repeater prints (the ones ticked on Configure, or all), otherwise the selected director, shareholder and contacts. Signers with an email get `EMAIL_LINK`, others `MANUAL_LINK`. The user then places the signature fields and sends from the envelope page. Documents for different companies cannot share an envelope.
 
 When E-signing is launched from a task, the stage modal can explicitly select any preceding finalized task-generated documents. The selected documents are attached to the new draft envelope as separate envelope documents; automatic preparation continues to use the nearest preceding finalized document.
 

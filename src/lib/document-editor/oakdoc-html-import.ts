@@ -205,7 +205,8 @@ function paragraphPropertiesFromHtml(
     const styles = styleMap(element);
     const alignment = styles.get('text-align')?.toLowerCase();
     if (alignment && ['left', 'right', 'center', 'justify'].includes(alignment)) {
-      properties.appendChild(wordElement(document, 'jc', { val: alignment }));
+      // Word's value for justified text is "both"; "justify" is not valid OOXML.
+      properties.appendChild(wordElement(document, 'jc', { val: alignment === 'justify' ? 'both' : alignment }));
       used = true;
     }
 
