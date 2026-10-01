@@ -91,11 +91,11 @@ describe('BatchTemplatePicker', () => {
 
     const catalogue = screen.getByRole('region', { name: 'Template catalogue' });
     const layout = catalogue.parentElement;
-    const catalogueList = within(catalogue).getByRole('list');
 
     expect(layout).toHaveClass('lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]');
-    expect(catalogueList).toHaveClass('grid', 'gap-2');
-    expect(catalogueList).not.toHaveClass('sm:grid-cols-2', 'xl:grid-cols-2');
+    for (const list of within(catalogue).getAllByRole('list')) {
+      expect(list).not.toHaveClass('sm:grid-cols-2', 'xl:grid-cols-2');
+    }
     expect(screen.getAllByText('Service Agreement')).toHaveLength(2);
     expect(screen.queryByText('Service Agreement Template')).not.toBeInTheDocument();
     expect(screen.queryByText('Service Agreement · 0 fields · v33')).not.toBeInTheDocument();
@@ -210,6 +210,50 @@ describe('BatchTemplatePicker', () => {
     expect(screen.getByRole('button', { name: /remove document/i })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /remove document/i }));
     expect(props.onRemove).toHaveBeenCalledWith('template-a');
+  });
+
+  it('groups templates under collapsible category headers, expanded, without category subtext', async () => {
+    const user = userEvent.setup();
+    render(<BatchTemplatePicker {...pickerProps()} />);
+
+    const catalogue = screen.getByRole('region', { name: 'Template catalogue' });
+    const headers = within(catalogue).getAllByRole('button', { expanded: true });
+    expect(headers.map((header) => header.textContent)).toEqual([
+      expect.stringContaining('CONTRACT'),
+      expect.stringContaining('LETTER'),
+      expect.stringContaining('OTHER'),
+    ]);
+    const letters = within(catalogue).getByRole('region', { name: 'LETTER' });
+    expect(within(letters).getByRole('button', { name: /^Engagement Letter/ })).toBeInTheDocument();
+    expect(within(letters).queryByText('LETTER')).not.toBeInTheDocument();
+
+    await user.click(headers[1]);
+    expect(headers[1]).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.getByText(/left-click a template to add it, right-click to remove one/i)).toBeInTheDocument();
+  });
+
+  it('shows minus, quantity and plus once added, and removes with minus or right-click', async () => {
+    const user = userEvent.setup();
+    const first = item(engagement);
+    const second = { ...item(engagement), key: 'template-a~1' };
+    const props = pickerProps({ selected: [first, second] });
+    render(<BatchTemplatePicker {...props} />);
+
+    const quantity = screen.getByRole('group', { name: 'Engagement Letter quantity' });
+    expect(quantity).toHaveTextContent('2');
+    expect(screen.queryByText(/add again/i)).not.toBeInTheDocument();
+
+    await user.click(within(quantity).getByRole('button', { name: 'Add another Engagement Letter' }));
+    expect(props.onAdd).toHaveBeenCalledWith(engagement);
+
+    await user.click(within(quantity).getByRole('button', { name: 'Remove one Engagement Letter' }));
+    expect(props.onRemove).toHaveBeenLastCalledWith('template-a~1');
+
+    await user.pointer({ keys: '[MouseRight]', target: catalogueCard('Engagement Letter') });
+    expect(props.onRemove).toHaveBeenCalledTimes(2);
+    // Right-click on a template that isn't added does nothing.
+    await user.pointer({ keys: '[MouseRight]', target: catalogueCard('KYC Checklist') });
+    expect(props.onRemove).toHaveBeenCalledTimes(2);
   });
 
   it('shows a no-match state and an empty batch state', () => {

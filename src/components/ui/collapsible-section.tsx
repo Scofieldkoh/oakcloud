@@ -78,12 +78,14 @@ export function CollapsibleSection({
         role="region"
         aria-label={title}
         className={cn(
-          'transition-all duration-200 overflow-hidden',
-          isCollapsed ? 'max-h-0 opacity-0' : 'max-h-[1000px] opacity-100',
-          contentClassName
+          // Grid rows animate to the content's own height, so long content isn't clipped.
+          'grid transition-all duration-200',
+          isCollapsed ? 'grid-rows-[0fr] opacity-0' : 'grid-rows-[1fr] opacity-100',
         )}
       >
-        {children}
+        <div className={cn('min-h-0 overflow-hidden', contentClassName)}>
+          {children}
+        </div>
       </div>
     </div>
   );
