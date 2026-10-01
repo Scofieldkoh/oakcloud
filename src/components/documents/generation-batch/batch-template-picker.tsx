@@ -9,11 +9,14 @@ import {
   FileText,
   GripVertical,
   Inbox,
+  Minus,
   MoreVertical,
+  Plus,
   Search,
   X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { CollapsibleSection } from '@/components/ui/collapsible-section';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Dropdown, DropdownItem, DropdownMenu, DropdownTrigger } from '@/components/ui/dropdown';
 import type {
@@ -90,6 +93,14 @@ export function BatchTemplatePicker({
     });
   }, [templates, category, query]);
 
+  const groups = useMemo(() => {
+    const byCategory = new Map<string, DocumentTemplateSummary[]>();
+    for (const template of visible) {
+      byCategory.set(template.category, [...(byCategory.get(template.category) ?? []), template]);
+    }
+    return [...byCategory.entries()].sort(([a], [b]) => a.localeCompare(b));
+  }, [visible]);
+
   // A template can be added more than once (for example several resolutions);
   // copies are removed from the selected list.
   const add = (template: DocumentTemplateSummary) => {
@@ -104,6 +115,12 @@ export function BatchTemplatePicker({
       return;
     }
     onRemove(item.key);
+  };
+
+  // Minus or right-click takes off the most recently added copy.
+  const removeOne = (template: DocumentTemplateSummary) => {
+    const last = [...selected].reverse().find((item) => item.templateId === template.id);
+    if (last) requestRemoval(last);
   };
 
   const handleDrop = (toIndex: number) => {
@@ -184,93 +201,138 @@ export function BatchTemplatePicker({
           )}
         </div>
 
-        <ul className="grid gap-2">
-          {visible.length === 0 && (
-            <li className="rounded-lg border border-dashed border-border-primary p-6 text-center text-sm text-text-muted">
-              No templates match your search.
-            </li>
-          )}
-          {visible.map((template) => {
-            const selectedCount = selectedCountByTemplateId.get(template.id) ?? 0;
-            const isSelected = selectedCount > 0;
-            const blocked = atLimit;
-            return (
-              <li key={template.id}>
-                <div
-                  className={cn(
-                    'flex w-full items-center gap-2 rounded-lg border p-3 transition-colors',
-                    isSelected
-                      ? 'border-oak-primary bg-oak-primary/5'
-                      : 'border-border-primary bg-background-primary hover:border-oak-primary/40 hover:bg-background-tertiary',
-                  )}
-                >
-                  <button
-                    type="button"
-                    onClick={() => add(template)}
-                    disabled={disabled || blocked}
-                    aria-pressed={isSelected}
-                    title={blocked ? `Maximum of ${maxDocuments} documents reached` : undefined}
-                    className={cn(
-                      'flex min-w-0 flex-1 items-center gap-3 text-left',
-                      (disabled || blocked) && 'cursor-not-allowed opacity-50',
-                    )}
-                  >
-                    <span
-                      aria-hidden="true"
-                      className={cn(
-                        'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg',
-                        isSelected
-                          ? 'bg-oak-primary text-white'
-                          : 'bg-oak-primary/10 text-oak-primary',
-                      )}
-                    >
-                      {isSelected
-                        ? <Check className="h-4 w-4" />
-                        : <FileText className="h-4 w-4" />}
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-sm font-medium text-text-primary">
-                        {template.name}
-                      </span>
-                      <span className="mt-0.5 block text-xs text-text-muted">
-                        {template.category}
-                      </span>
-                    </span>
-                    <span
-                      className={cn(
-                        'shrink-0 text-xs font-medium',
-                        isSelected ? 'text-oak-primary' : 'text-text-muted',
-                      )}
-                    >
-                      {isSelected
-                        ? `${selectedCount > 1 ? `Added ×${selectedCount}` : 'Added'} · Add again`
-                        : 'Add'}
-                    </span>
-                  </button>
+        {visible.length > 0 && (
+          <p className="text-xs text-text-muted">
+            Left-click a template to add it, right-click to remove one.
+          </p>
+        )}
 
-                  <Dropdown className="shrink-0">
-                    <DropdownTrigger asChild aria-label={`Actions for ${template.name}`}>
+        {visible.length === 0 && (
+          <p className="rounded-lg border border-dashed border-border-primary p-6 text-center text-sm text-text-muted">
+            No templates match your search.
+          </p>
+        )}
+
+        {groups.map(([groupName, groupTemplates]) => (
+          <CollapsibleSection
+            key={groupName}
+            title={groupName}
+            count={groupTemplates.length}
+            defaultCollapsedMobile={false}
+            defaultCollapsedDesktop={false}
+            className="mb-0"
+          >
+            <ul className="grid gap-1.5">
+              {groupTemplates.map((template) => {
+                const selectedCount = selectedCountByTemplateId.get(template.id) ?? 0;
+                const isSelected = selectedCount > 0;
+                const blocked = atLimit;
+                return (
+                  <li key={template.id}>
+                    <div
+                      onContextMenu={(event) => {
+                        event.preventDefault();
+                        if (!disabled) removeOne(template);
+                      }}
+                      title="Left-click to add, right-click to remove"
+                      className={cn(
+                        'flex w-full items-center gap-2 rounded-lg border px-3 py-1.5 transition-colors',
+                        isSelected
+                          ? 'border-oak-primary bg-oak-primary/5'
+                          : 'border-border-primary bg-background-primary hover:border-oak-primary/40 hover:bg-background-tertiary',
+                      )}
+                    >
                       <button
                         type="button"
-                        className="flex h-9 w-9 items-center justify-center rounded-lg text-text-muted transition-colors hover:bg-background-tertiary hover:text-text-primary"
+                        onClick={() => add(template)}
+                        disabled={disabled || blocked}
+                        aria-pressed={isSelected}
+                        title={blocked ? `Maximum of ${maxDocuments} documents reached` : undefined}
+                        className={cn(
+                          'flex min-h-9 min-w-0 flex-1 items-center gap-3 text-left',
+                          (disabled || blocked) && 'cursor-not-allowed opacity-50',
+                        )}
                       >
-                        <MoreVertical className="h-4 w-4" aria-hidden="true" />
+                        <span
+                          aria-hidden="true"
+                          className={cn(
+                            'flex h-7 w-7 shrink-0 items-center justify-center rounded-md',
+                            isSelected
+                              ? 'bg-oak-primary text-white'
+                              : 'bg-oak-primary/10 text-oak-primary',
+                          )}
+                        >
+                          {isSelected
+                            ? <Check className="h-4 w-4" />
+                            : <FileText className="h-4 w-4" />}
+                        </span>
+                        <span className="min-w-0 flex-1 truncate text-sm font-medium text-text-primary">
+                          {template.name}
+                        </span>
+                        {!isSelected && (
+                          <span className="shrink-0 text-xs font-medium text-text-muted">Add</span>
+                        )}
                       </button>
-                    </DropdownTrigger>
-                    <DropdownMenu>
-                      <DropdownItem
-                        icon={<ExternalLink className="h-4 w-4" />}
-                        onClick={() => openTemplate(template.id)}
-                      >
-                        Open template
-                      </DropdownItem>
-                    </DropdownMenu>
-                  </Dropdown>
-                </div>
-              </li>
-            );
-          })}
-        </ul>
+
+                      {isSelected && (
+                        <span
+                          className="flex shrink-0 items-center rounded-lg border border-oak-primary/30 bg-background-primary"
+                          role="group"
+                          aria-label={`${template.name} quantity`}
+                        >
+                          <button
+                            type="button"
+                            onClick={() => removeOne(template)}
+                            disabled={disabled}
+                            aria-label={`Remove one ${template.name}`}
+                            className="flex h-8 w-8 items-center justify-center rounded-l-lg text-text-secondary transition-colors hover:bg-background-tertiary hover:text-text-primary disabled:opacity-30"
+                          >
+                            <Minus className="h-3.5 w-3.5" aria-hidden="true" />
+                          </button>
+                          <span
+                            className="min-w-6 px-1 text-center text-sm font-medium tabular-nums text-text-primary"
+                            aria-live="polite"
+                          >
+                            {selectedCount}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => add(template)}
+                            disabled={disabled || blocked}
+                            aria-label={`Add another ${template.name}`}
+                            title={blocked ? `Maximum of ${maxDocuments} documents reached` : undefined}
+                            className="flex h-8 w-8 items-center justify-center rounded-r-lg text-text-secondary transition-colors hover:bg-background-tertiary hover:text-text-primary disabled:opacity-30"
+                          >
+                            <Plus className="h-3.5 w-3.5" aria-hidden="true" />
+                          </button>
+                        </span>
+                      )}
+
+                      <Dropdown className="shrink-0">
+                        <DropdownTrigger asChild aria-label={`Actions for ${template.name}`}>
+                          <button
+                            type="button"
+                            className="flex h-8 w-8 items-center justify-center rounded-lg text-text-muted transition-colors hover:bg-background-tertiary hover:text-text-primary"
+                          >
+                            <MoreVertical className="h-4 w-4" aria-hidden="true" />
+                          </button>
+                        </DropdownTrigger>
+                        <DropdownMenu>
+                          <DropdownItem
+                            icon={<ExternalLink className="h-4 w-4" />}
+                            onClick={() => openTemplate(template.id)}
+                          >
+                            Open template
+                          </DropdownItem>
+                        </DropdownMenu>
+                      </Dropdown>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </CollapsibleSection>
+        ))}
       </section>
 
       {/* Batch */}
