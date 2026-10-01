@@ -5,6 +5,7 @@ import type { TemplatePartial } from '@/generated/prisma';
 import type {
   UpdateTemplatePartialInput,
   SearchTemplatePartialsInput,
+  TemplatePartialCategoryValue,
 } from '@/lib/validations/template-partial';
 
 // ============================================================================
@@ -77,6 +78,7 @@ async function fetchPartials(
   if (params.sortBy) searchParams.set('sortBy', params.sortBy);
   if (params.sortOrder) searchParams.set('sortOrder', params.sortOrder);
   if (params.editor) searchParams.set('editor', params.editor);
+  if (params.category) searchParams.set('category', params.category);
   if (tenantId) searchParams.set('tenantId', tenantId);
 
   const response = await fetch(`/api/template-partials?${searchParams}`);
@@ -88,7 +90,7 @@ async function fetchPartials(
 }
 
 export type TemplatePartialSummary =
-  Pick<TemplatePartial, 'id' | 'name' | 'displayName' | 'description' | 'placeholders' | 'version'>
+  Pick<TemplatePartial, 'id' | 'name' | 'displayName' | 'description' | 'placeholders' | 'version' | 'category'>
   & { documentEngine: 'A4' | 'OAKDOC' };
 
 async function fetchAllPartials(tenantId?: string): Promise<{ partials: TemplatePartialSummary[] }> {
@@ -132,6 +134,7 @@ export interface WordPartialInput {
   name?: string;
   displayName?: string;
   description?: string;
+  category?: TemplatePartialCategoryValue;
   file: File;
 }
 
@@ -144,6 +147,7 @@ export async function saveWordPartial(input: WordPartialInput): Promise<Template
     form.set('name', input.name ?? '');
     if (input.displayName) form.set('displayName', input.displayName);
     if (input.description) form.set('description', input.description);
+    if (input.category) form.set('category', input.category);
   }
   const response = await fetch(
     input.id ? `/api/template-partials/${input.id}/oakdoc` : '/api/template-partials/oakdoc',
@@ -216,6 +220,7 @@ export function useTemplatePartials(options: UseTemplatePartialsOptions = {}) {
     sortOrder: params.sortOrder ?? 'asc',
     search: params.search,
     editor: params.editor,
+    category: params.category,
   };
 
   return useQuery({
@@ -231,6 +236,28 @@ export function useAllTemplatePartials(tenantId?: string, enabled = true) {
     queryFn: () => fetchAllPartials(tenantId),
     staleTime: 1000 * 60 * 5, // 5 minutes
     enabled: enabled && (tenantId !== undefined ? !!tenantId : true),
+  });
+}
+
+export interface PartialTextResult {
+  text: string;
+  revision: number;
+}
+
+/** A Word partial's current wording as plain text, loaded on demand. */
+export function usePartialText(id: string | null, enabled = true) {
+  return useQuery({
+    queryKey: [...partialKeys.detail(id || ''), 'text'],
+    queryFn: async (): Promise<PartialTextResult> => {
+      const response = await fetch(`/api/template-partials/${id}/text`);
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.error || 'Failed to load the partial text');
+      }
+      return response.json();
+    },
+    staleTime: 1000 * 60,
+    enabled: enabled && !!id,
   });
 }
 

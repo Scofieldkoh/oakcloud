@@ -6,6 +6,11 @@ import type { ResolutionWorkspaceState } from '@/types/document-generation-batch
 const partialsQuery = vi.hoisted(() => ({ value: {} as Record<string, unknown> }));
 vi.mock('@/hooks/use-template-partials', () => ({
   useAllTemplatePartials: () => partialsQuery.value,
+  usePartialText: (id: string | null) => ({
+    data: id ? { text: 'RESOLVED that Jane Tan be appointed as secretary.', revision: 2 } : undefined,
+    isLoading: false,
+    error: null,
+  }),
 }));
 vi.mock('@/hooks/use-auth', () => ({ useSession: () => ({ data: { tenantId: 'tenant-1', isSuperAdmin: false } }) }));
 vi.mock('@/components/ui/workspace-selector', () => ({ useActiveWorkspaceId: () => 'tenant-1' }));
@@ -19,6 +24,7 @@ const partial = {
   description: null,
   placeholders: [],
   version: 2,
+  category: 'RESOLUTION' as const,
   documentEngine: 'OAKDOC' as const,
 };
 
@@ -63,16 +69,43 @@ describe('ResolutionSectionsConfig', () => {
     expect(latest?.sections.map((section) => section.heading)).toEqual(['LODGEMENT', 'APPOINTMENT OF SECRETARY']);
   });
 
-  it('lists a saved partial with its name as the default heading', () => {
+  it('shows a saved partial collapsed, with its text when expanded, and removes it', () => {
     render(<Harness
       initial={{
         subject: 'CHANGE IN COMPANY SECRETARY',
         sections: [{ id: 'a', kind: 'PARTIAL', heading: 'APPOINTMENT OF SECRETARY', partialId: partial.id }],
       }}
     />);
-    expect(screen.getByText(/Partial: Appointment of Secretary/)).toBeTruthy();
+    expect(screen.getByText('Appointment of Secretary')).toBeTruthy();
     expect(screen.getByDisplayValue('CHANGE IN COMPANY SECRETARY')).toBeTruthy();
+    expect(screen.queryByLabelText('Heading')).toBeNull();
+    // Move and remove buttons render their icons.
+    expect(screen.getByRole('button', { name: 'Remove resolution 1' }).querySelector('svg')).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Expand resolution 1' }));
+    expect(screen.getByLabelText('Heading')).toBeTruthy();
+    expect(screen.getByText('RESOLVED that Jane Tan be appointed as secretary.')).toBeTruthy();
+
     fireEvent.click(screen.getByRole('button', { name: 'Remove resolution 1' }));
     expect(latest?.sections).toEqual([]);
+  });
+
+  it('edits a partial resolution text and can go back to the saved partial', () => {
+    render(<Harness
+      initial={{
+        subject: '',
+        sections: [{ id: 'a', kind: 'PARTIAL', heading: 'APPOINTMENT OF SECRETARY', partialId: partial.id }],
+      }}
+    />);
+    fireEvent.click(screen.getByRole('button', { name: 'Expand resolution 1' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Edit resolution 1 text' }));
+    expect(latest?.sections[0]).toMatchObject({ body: 'RESOLVED that Jane Tan be appointed as secretary.' });
+
+    fireEvent.change(screen.getByLabelText('Resolution 1 text'), { target: { value: 'RESOLVED that John Lim be appointed.' } });
+    expect(latest?.sections[0]).toMatchObject({ kind: 'PARTIAL', body: 'RESOLVED that John Lim be appointed.' });
+    expect(screen.getByText(/\(edited\)/)).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Use saved partial' }));
+    expect(latest?.sections[0]).toMatchObject({ body: null });
   });
 });

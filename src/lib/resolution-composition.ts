@@ -5,7 +5,14 @@
  */
 
 export type ResolutionSection =
-  | { id: string; kind: 'PARTIAL'; heading: string; partialId: string }
+  | {
+    id: string;
+    kind: 'PARTIAL';
+    heading: string;
+    partialId: string;
+    /** Text edited on Configure; when set it prints instead of the partial. */
+    body?: string | null;
+  }
   | { id: string; kind: 'CUSTOM'; heading: string; body: string };
 
 export interface ResolutionComposition {
@@ -42,6 +49,17 @@ export function customResolutionParagraphs(body: string): string[][] {
     .filter((lines) => lines.some((line) => line.trim().length > 0));
 }
 
+/** True when a partial's text was edited on Configure and prints as plain text. */
+export function isEditedPartial(section: ResolutionSection): boolean {
+  return section.kind === 'PARTIAL' && typeof section.body === 'string';
+}
+
+/** The plain text a section prints, or null when it prints the saved partial. */
+export function resolutionSectionText(section: ResolutionSection): string | null {
+  if (section.kind === 'CUSTOM') return section.body;
+  return typeof section.body === 'string' ? section.body : null;
+}
+
 /** Validation shared by generation and the Configure step. */
 export function resolutionCompositionIssues(composition: ResolutionComposition | null | undefined): string[] {
   if (!composition || composition.sections.length === 0) return ['Add at least one resolution.'];
@@ -49,7 +67,8 @@ export function resolutionCompositionIssues(composition: ResolutionComposition |
   composition.sections.forEach((section, index) => {
     const label = `Resolution ${index + 1}`;
     if (!section.heading.trim()) issues.push(`${label} needs a heading.`);
-    if (section.kind === 'CUSTOM' && customResolutionParagraphs(section.body).length === 0) {
+    const text = resolutionSectionText(section);
+    if (text !== null && customResolutionParagraphs(text).length === 0) {
       issues.push(`${label} needs its text.`);
     }
   });

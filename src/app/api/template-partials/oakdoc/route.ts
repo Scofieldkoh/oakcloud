@@ -4,6 +4,7 @@ import { requireAuth } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
 import { createErrorResponse, requireSessionWorkspaceId } from '@/lib/api-helpers';
 import { createOakDocPartial } from '@/services/oakdoc-partial.service';
+import { templatePartialCategoryEnum } from '@/lib/validations/template-partial';
 
 function optionalText(value: FormDataEntryValue | null): string | null {
   return typeof value === 'string' && value.trim() ? value.trim() : null;
@@ -33,6 +34,7 @@ export async function POST(request: NextRequest) {
       name,
       displayName: optionalText(formData.get('displayName')),
       description: optionalText(formData.get('description')),
+      category: templatePartialCategoryEnum.optional().parse(optionalText(formData.get('category')) ?? undefined),
       fileName: file.name,
       buffer: Buffer.from(await file.arrayBuffer()),
     }, { tenantId, userId: session.id });

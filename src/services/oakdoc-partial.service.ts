@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { Prisma } from '@/generated/prisma';
+import { Prisma, type TemplatePartialCategory } from '@/generated/prisma';
 import { prisma } from '@/lib/prisma';
 import { createAuditLog } from '@/lib/audit';
 import { ValidationError } from '@/lib/errors';
@@ -221,6 +221,7 @@ export async function createOakDocPartial(
     name: string;
     displayName?: string | null;
     description?: string | null;
+    category?: TemplatePartialCategory;
     fileName: string;
     buffer: Buffer;
   },
@@ -248,6 +249,7 @@ export async function createOakDocPartial(
       name: input.name,
       displayName: input.displayName ?? null,
       description: input.description ?? null,
+      ...(input.category ? { category: input.category } : {}),
       content: OAKDOC_PARTIAL_CONTENT,
       contentJson: partialContentJson(asset, pins),
       placeholders: [],

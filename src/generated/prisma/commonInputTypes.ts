@@ -664,6 +664,23 @@ export type EnumDocumentCommentStatusWithAggregatesFilter<$PrismaModel = never> 
   _max?: Prisma.NestedEnumDocumentCommentStatusFilter<$PrismaModel>
 }
 
+export type EnumTemplatePartialCategoryFilter<$PrismaModel = never> = {
+  equals?: $Enums.TemplatePartialCategory | Prisma.EnumTemplatePartialCategoryFieldRefInput<$PrismaModel>
+  in?: $Enums.TemplatePartialCategory[] | Prisma.ListEnumTemplatePartialCategoryFieldRefInput<$PrismaModel>
+  notIn?: $Enums.TemplatePartialCategory[] | Prisma.ListEnumTemplatePartialCategoryFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumTemplatePartialCategoryFilter<$PrismaModel> | $Enums.TemplatePartialCategory
+}
+
+export type EnumTemplatePartialCategoryWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.TemplatePartialCategory | Prisma.EnumTemplatePartialCategoryFieldRefInput<$PrismaModel>
+  in?: $Enums.TemplatePartialCategory[] | Prisma.ListEnumTemplatePartialCategoryFieldRefInput<$PrismaModel>
+  notIn?: $Enums.TemplatePartialCategory[] | Prisma.ListEnumTemplatePartialCategoryFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumTemplatePartialCategoryWithAggregatesFilter<$PrismaModel> | $Enums.TemplatePartialCategory
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumTemplatePartialCategoryFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumTemplatePartialCategoryFilter<$PrismaModel>
+}
+
 export type EnumServiceCadenceFilter<$PrismaModel = never> = {
   equals?: $Enums.ServiceCadence | Prisma.EnumServiceCadenceFieldRefInput<$PrismaModel>
   in?: $Enums.ServiceCadence[] | Prisma.ListEnumServiceCadenceFieldRefInput<$PrismaModel>
@@ -3613,6 +3630,23 @@ export type NestedEnumDocumentCommentStatusWithAggregatesFilter<$PrismaModel = n
   _count?: Prisma.NestedIntFilter<$PrismaModel>
   _min?: Prisma.NestedEnumDocumentCommentStatusFilter<$PrismaModel>
   _max?: Prisma.NestedEnumDocumentCommentStatusFilter<$PrismaModel>
+}
+
+export type NestedEnumTemplatePartialCategoryFilter<$PrismaModel = never> = {
+  equals?: $Enums.TemplatePartialCategory | Prisma.EnumTemplatePartialCategoryFieldRefInput<$PrismaModel>
+  in?: $Enums.TemplatePartialCategory[] | Prisma.ListEnumTemplatePartialCategoryFieldRefInput<$PrismaModel>
+  notIn?: $Enums.TemplatePartialCategory[] | Prisma.ListEnumTemplatePartialCategoryFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumTemplatePartialCategoryFilter<$PrismaModel> | $Enums.TemplatePartialCategory
+}
+
+export type NestedEnumTemplatePartialCategoryWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.TemplatePartialCategory | Prisma.EnumTemplatePartialCategoryFieldRefInput<$PrismaModel>
+  in?: $Enums.TemplatePartialCategory[] | Prisma.ListEnumTemplatePartialCategoryFieldRefInput<$PrismaModel>
+  notIn?: $Enums.TemplatePartialCategory[] | Prisma.ListEnumTemplatePartialCategoryFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumTemplatePartialCategoryWithAggregatesFilter<$PrismaModel> | $Enums.TemplatePartialCategory
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumTemplatePartialCategoryFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumTemplatePartialCategoryFilter<$PrismaModel>
 }
 
 export type NestedEnumServiceCadenceFilter<$PrismaModel = never> = {

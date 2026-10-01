@@ -78,6 +78,7 @@ export const resolutionWorkspaceSchema = z.object({
       kind: z.literal('PARTIAL'),
       heading: resolutionHeading,
       partialId: uuid,
+      body: z.string().max(20000).nullable().optional(),
     }).strict(),
     z.object({
       id: z.string().min(1).max(100),
@@ -110,14 +111,6 @@ export const createDocumentGenerationBatchSchema = z.object({
   }).strict()).min(1).max(20),
   legacyDraftId: uuid.optional(),
 }).strict().superRefine((value, context) => {
-  const templateIds = value.items.map((item) => item.templateId);
-  if (new Set(templateIds).size !== templateIds.length) {
-    context.addIssue({
-      code: 'custom',
-      path: ['items'],
-      message: 'Templates must be distinct within one batch',
-    });
-  }
   if (value.legacyDraftId && value.items.length !== 1) {
     context.addIssue({
       code: 'custom',
@@ -145,14 +138,6 @@ export const updateDocumentGenerationBatchSchema = z.object({
   items: z.array(updateDocumentGenerationBatchItemSchema).min(1).max(20),
   taskContext: z.unknown().optional(),
 }).strict().superRefine((value, context) => {
-  const templateIds = value.items.map((item) => item.templateId);
-  if (new Set(templateIds).size !== templateIds.length) {
-    context.addIssue({
-      code: 'custom',
-      path: ['items'],
-      message: 'Templates must be distinct within one batch',
-    });
-  }
   const orders = value.items
     .map((item, index) => item.displayOrder ?? index);
   if (new Set(orders).size !== orders.length) {

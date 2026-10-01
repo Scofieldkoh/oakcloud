@@ -1585,9 +1585,10 @@ One ordered item per selected template, owning one hidden generated document.
 | generation_attempt_id | VARCHAR(36) | Yes | Claim token |
 | generation_claimed_at | TIMESTAMP | Yes | Claim time (15-minute staleness) |
 
-Unique constraints: `(batch_id, template_id)`, `(batch_id, display_order)`, and
-`generated_document_id`. Indexes cover `(tenant_id, batch_id, display_order)`
-and `(tenant_id, status, generation_claimed_at)`.
+Unique constraints: `(batch_id, display_order)` and `generated_document_id`. A
+template can appear more than once in a batch; `(batch_id, template_id)` is a
+plain index. Indexes also cover `(tenant_id, batch_id, display_order)` and
+`(tenant_id, status, generation_claimed_at)`.
 
 ### DocumentGenerationBatchStatus
 ```sql
@@ -1924,6 +1925,7 @@ Reusable template blocks (Phase 7 feature).
 | description | TEXT | Yes | Partial description |
 | content | TEXT | No | HTML content |
 | placeholders | JSONB | No | Placeholder definitions (default: []) |
+| category | ENUM | No | `AGREEMENT`, `RESOLUTION` or `OTHER` (default `OTHER`); groups partial pickers. Partials used as a service variant's SOW were set to `AGREEMENT` by the migration |
 | version | INT | No | Material version, incremented only for content or placeholder changes |
 | created_by_id | UUID | No | FK to users |
 | created_at | TIMESTAMP | No | Record creation time |

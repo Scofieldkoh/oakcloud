@@ -502,12 +502,29 @@ export async function updateDocumentGenerationBatch(
       await requireTenantCompany(tx, input.primaryCompanyId, params.tenantId);
     }
 
-    const existingByTemplate = new Map(
-      current.items.map((item) => [item.templateId, item]),
-    );
+    // A template may appear more than once, so submitted items pair with
+    // stored ones by id; items without a known id pair with an unclaimed
+    // stored item of the same template, in order.
+    const existingById = new Map(current.items.map((item) => [item.id, item]));
+    const claimedIds = new Set<string>();
+    const matchedIds: Array<string | undefined> = input.items.map((submitted) => {
+      const byId = submitted.id ? existingById.get(submitted.id) : undefined;
+      if (!byId || byId.templateId !== submitted.templateId || claimedIds.has(byId.id)) return undefined;
+      claimedIds.add(byId.id);
+      return byId.id;
+    });
+    input.items.forEach((submitted, index) => {
+      if (matchedIds[index]) return;
+      const sameTemplate = current.items.find(
+        (item) => item.templateId === submitted.templateId && !claimedIds.has(item.id),
+      );
+      if (!sameTemplate) return;
+      claimedIds.add(sameTemplate.id);
+      matchedIds[index] = sameTemplate.id;
+    });
 
     for (const item of current.items) {
-      if (submittedTemplateIds.includes(item.templateId)) continue;
+      if (claimedIds.has(item.id)) continue;
       if (hasDurableGeneratedOutput(item)) {
         throw new ValidationError(
           'Generated documents cannot be removed from the batch',
@@ -529,11 +546,10 @@ export async function updateDocumentGenerationBatch(
       await tx.documentGenerationBatchItem.delete({ where: { id: item.id } });
     }
 
-    for (const [index, submitted] of input.items.entries()) {
-      const existingItem = existingByTemplate.get(submitted.templateId);
-      if (!existingItem) continue;
+    for (const [index, existingId] of matchedIds.entries()) {
+      if (!existingId) continue;
       await tx.documentGenerationBatchItem.update({
-        where: { id: existingItem.id },
+        where: { id: existingId },
         data: { displayOrder: 100 + index },
       });
     }
@@ -542,13 +558,14 @@ export async function updateDocumentGenerationBatch(
       where: { batchId: id },
       include: batchItemInclude,
     });
-    const refreshedByTemplate = new Map(
-      refreshedExisting.map((item) => [item.templateId, item]),
+    const refreshedById = new Map(
+      refreshedExisting.map((item) => [item.id, item]),
     );
 
     for (const [index, submitted] of input.items.entries()) {
       const displayOrder = submitted.displayOrder ?? index;
-      const existingItem = refreshedByTemplate.get(submitted.templateId);
+      const existingId = matchedIds[index];
+      const existingItem = existingId ? refreshedById.get(existingId) : undefined;
       if (existingItem) {
         if (existingItem.status === 'GENERATED') {
           if (submitted.configuration) {

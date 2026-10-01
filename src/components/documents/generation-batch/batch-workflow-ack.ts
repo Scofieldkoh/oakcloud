@@ -68,13 +68,26 @@ export function acknowledgeBatchWithNewerLocalState(
       .filter((item) => item.id)
       .map((item) => [item.id!, item]),
   );
-  const serverByTemplate = new Map(
-    normalized.items.map((item) => [item.templateId, item]),
-  );
+  // Pair by id first; unsaved locals take the next unclaimed server item of
+  // the same template, since a template can appear more than once.
+  const claimed = new Set<string>();
+  const pairs = state.batch.items.map((local) => {
+    const byId = local.id ? serverById.get(local.id) : undefined;
+    if (byId) claimed.add(byId.key);
+    return byId;
+  });
+  state.batch.items.forEach((local, index) => {
+    if (pairs[index]) return;
+    const sameTemplate = normalized.items.find(
+      (item) => item.templateId === local.templateId && !claimed.has(item.key),
+    );
+    if (!sameTemplate) return;
+    claimed.add(sameTemplate.key);
+    pairs[index] = sameTemplate;
+  });
 
-  const items = state.batch.items.map((local) => {
-    const server = (local.id ? serverById.get(local.id) : undefined)
-      ?? serverByTemplate.get(local.templateId);
+  const items = state.batch.items.map((local, index) => {
+    const server = pairs[index];
     if (!server) return local;
     return {
       ...local,
@@ -85,14 +98,12 @@ export function acknowledgeBatchWithNewerLocalState(
     };
   });
 
-  const activeLocal = state.batch.items.find((item) =>
+  const activeIndex = state.batch.items.findIndex((item) =>
     item.key === state.activeItemId
     || item.id === state.activeItemId
     || item.templateId === state.activeItemId,
   );
-  const activeMerged = activeLocal
-    ? items.find((item) => item.templateId === activeLocal.templateId)
-    : undefined;
+  const activeMerged = activeIndex >= 0 ? items[activeIndex] : undefined;
   const activeItemId = activeMerged?.key ?? state.activeItemId;
   const batch: EditableDocumentGenerationBatch = {
     ...state.batch,

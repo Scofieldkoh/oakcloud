@@ -1022,8 +1022,8 @@ model DocumentGenerationBatchItem {
   generatedDocument     GeneratedDocument                 @relation(fields: [generatedDocumentId], references: [id], onDelete: Cascade)
   activeForBatches      DocumentGenerationBatch[]         @relation("ActiveDocumentGenerationBatchItem")
 
-  @@unique([batchId, templateId])
   @@unique([batchId, displayOrder])
+  @@index([batchId, templateId], map: "document_generation_batch_items_batch_template_idx")
   @@index([tenantId, batchId, displayOrder])
   @@index([tenantId, status, generationClaimedAt])
   @@map("document_generation_batch_items")
@@ -1141,6 +1141,8 @@ model TemplatePartial {
   /// C06 native partial asset (`oakDoc`) and its pinned nested partials; server-managed.
   contentJson           Json?                  @map("content_json")
   placeholders          Json                   @default("[]")
+  /// Groups partials in pickers: agreement scopes of work, resolutions, others.
+  category              TemplatePartialCategory @default(OTHER)
   version               Int                    @default(1)
   createdById           String                 @map("created_by_id")
   createdAt             DateTime               @default(now()) @map("created_at")
@@ -4172,6 +4174,12 @@ enum DocumentTemplateCategory {
   MINUTES
   NOTICE
   CERTIFICATE
+  OTHER
+}
+
+enum TemplatePartialCategory {
+  AGREEMENT
+  RESOLUTION
   OTHER
 }
 

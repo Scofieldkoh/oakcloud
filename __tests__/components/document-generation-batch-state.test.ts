@@ -9,6 +9,7 @@ import {
   type EditableBatchItem,
   type EditableDocumentGenerationBatch,
 } from '@/components/documents/generation-batch/batch-workspace-state';
+import type { DocumentTemplateSummary } from '@/types/document-generation';
 import { DEFAULT_DOCUMENT_GENERATION_TITLE_PATTERN } from '@/lib/document-generation-title';
 
 function item(
@@ -324,5 +325,36 @@ describe('document generation batch workspace state', () => {
     });
     expect(removed.batch.items.map((entry) => entry.key)).toEqual(['c', 'b']);
     expect(removed.activeItemId).toBe('c');
+  });
+
+  it('adds the same template more than once with distinct keys', () => {
+    const template = {
+      id: 'template-r',
+      name: 'Board Resolution',
+      category: 'RESOLUTION',
+      compositionType: 'RESOLUTION',
+      version: 1,
+      isActive: true,
+      engine: 'OAKDOC',
+      content: '',
+      placeholders: [],
+      createdAt: '',
+      updatedAt: '',
+    } as unknown as DocumentTemplateSummary;
+    const state = createInitialBatchWorkspaceState([template]);
+    const twice = documentGenerationBatchReducer(state, { type: 'template/add', template });
+    const thrice = documentGenerationBatchReducer(twice, { type: 'template/add', template });
+    expect(thrice.batch.items.map((entry) => entry.templateId)).toEqual(['template-r', 'template-r', 'template-r']);
+    expect(new Set(thrice.batch.items.map((entry) => entry.key)).size).toBe(3);
+    expect(thrice.batch.items[0].key).toBe('template-r');
+
+    const removed = documentGenerationBatchReducer(thrice, {
+      type: 'template/remove',
+      itemId: thrice.batch.items[1].key,
+    });
+    expect(removed.batch.items.map((entry) => entry.key)).toEqual([
+      thrice.batch.items[0].key,
+      thrice.batch.items[2].key,
+    ]);
   });
 });

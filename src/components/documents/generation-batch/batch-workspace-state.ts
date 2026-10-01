@@ -137,9 +137,12 @@ export function defaultItemConfiguration(
   };
 }
 
-export function itemFromTemplate(template: DocumentTemplateSummary): EditableBatchItem {
+export function itemFromTemplate(
+  template: DocumentTemplateSummary,
+  key: string = template.id,
+): EditableBatchItem {
   return {
-    key: template.id,
+    key,
     templateId: template.id,
     templateName: template.name,
     templateKind: template.compositionType,
@@ -167,7 +170,10 @@ export function createInitialBatchWorkspaceState(
         status: 'DRAFT',
         masterFieldValues: {},
         masterFields: { fields: [], conflicts: [] },
-        items: batchOrItems.slice(0, 20).map(itemFromTemplate),
+        items: batchOrItems.slice(0, 20).map((template, index, all) => itemFromTemplate(
+          template,
+          all.findIndex((other) => other.id === template.id) === index ? template.id : `${template.id}~${index}`,
+        )),
       }
     : batchOrItems;
   const batch = applyAutomaticTitleDefaults(initialBatch);
@@ -369,11 +375,13 @@ function reduceBatchState(
   switch (action.type) {
     case 'template/add': {
       if (!state.capabilities.canEditComposition) return state;
-      const exists = state.batch.items.some(
-        (item) => item.templateId === action.template.id,
-      );
-      if (exists || state.batch.items.length >= 20) return state;
-      const items = [...state.batch.items, itemFromTemplate(action.template)];
+      if (state.batch.items.length >= 20) return state;
+      // Repeat copies of a template need their own local key until saved.
+      const keyTaken = state.batch.items.some((item) => item.key === action.template.id);
+      const key = keyTaken
+        ? `${action.template.id}~${globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`}`
+        : action.template.id;
+      const items = [...state.batch.items, itemFromTemplate(action.template, key)];
       const batch = replaceBatchItems(state.batch, items);
       return {
         ...state,

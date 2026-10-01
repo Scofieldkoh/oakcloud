@@ -257,8 +257,16 @@ Service Agreement composition templates:
   list order, each followed by its partial reference or custom paragraphs,
   using the slot paragraph's formatting; the partials are pinned at their
   current version and expanded with the master's own partials before fields
-  resolve (`src/lib/document-editor/oakdoc-resolutions.ts`). The editor preview
-  uses sample resolutions. `scripts/seed-resolution-template.ts --email
+  resolve (`src/lib/document-editor/oakdoc-resolutions.ts`). Partial items
+  start collapsed and show the partial's wording as plain text
+  (`GET /api/template-partials/[id]/text`); "Edit text" copies that wording
+  into the section's `body`, which then prints as plain paragraphs instead of
+  the partial ("Use saved partial" clears it). The partial picker groups
+  partials by their category (Resolutions, Agreement, Others), set on the
+  Partials page or the partial's details. A batch can hold the same template
+  more than once, so several resolutions can be generated together; saved
+  items are matched by id, and new copies by the next unclaimed item of the
+  same template. The editor preview uses sample resolutions. `scripts/seed-resolution-template.ts --email
   <login> [--replace]` creates the starter "Board Resolution (Numbered)"
   template from the firm's reference directors' resolution.
 

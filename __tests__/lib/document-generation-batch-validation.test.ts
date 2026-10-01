@@ -32,12 +32,12 @@ function validItemConfiguration() {
 }
 
 describe('document generation batch validation', () => {
-  it('accepts 1 to 20 distinct ordered templates and rejects duplicates', () => {
+  it('accepts 1 to 20 ordered templates, including repeat copies of one template', () => {
     expect(createDocumentGenerationBatchSchema.safeParse(validBatchInput()).success).toBe(true);
     expect(createDocumentGenerationBatchSchema.safeParse({
       ...validBatchInput(),
       items: [validBatchInput().items[0], validBatchInput().items[0]],
-    }).success).toBe(false);
+    }).success).toBe(true);
     expect(createDocumentGenerationBatchSchema.safeParse({ items: [] }).success).toBe(false);
     expect(createDocumentGenerationBatchSchema.safeParse({
       items: Array.from({ length: 21 }, (_, index) => ({

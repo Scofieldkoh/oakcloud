@@ -49,6 +49,7 @@ export async function GET(request: NextRequest) {
       sortBy: searchParams.get('sortBy') || 'name',
       sortOrder: searchParams.get('sortOrder') || 'asc',
       editor: searchParams.get('editor') || undefined,
+      category: searchParams.get('category') || undefined,
     });
 
     const result = await searchTemplatePartials(input, {
