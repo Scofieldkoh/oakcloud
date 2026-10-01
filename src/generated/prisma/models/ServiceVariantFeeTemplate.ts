@@ -252,7 +252,7 @@ export type ServiceVariantFeeTemplateGroupByOutputType = {
   _max: ServiceVariantFeeTemplateMaxAggregateOutputType | null
 }
 
-type GetServiceVariantFeeTemplateGroupByPayload<T extends ServiceVariantFeeTemplateGroupByArgs> = Prisma.PrismaPromise<
+export type GetServiceVariantFeeTemplateGroupByPayload<T extends ServiceVariantFeeTemplateGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<ServiceVariantFeeTemplateGroupByOutputType, T['by']> &
       {
@@ -1631,6 +1631,11 @@ export type ServiceVariantFeeTemplateFindManyArgs<ExtArgs extends runtime.Types.
    * Skip the first `n` ServiceVariantFeeTemplates.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of ServiceVariantFeeTemplates.
+   */
   distinct?: Prisma.ServiceVariantFeeTemplateScalarFieldEnum | Prisma.ServiceVariantFeeTemplateScalarFieldEnum[]
 }
 

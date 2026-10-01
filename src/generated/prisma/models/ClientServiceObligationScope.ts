@@ -207,7 +207,7 @@ export type ClientServiceObligationScopeGroupByOutputType = {
   _max: ClientServiceObligationScopeMaxAggregateOutputType | null
 }
 
-type GetClientServiceObligationScopeGroupByPayload<T extends ClientServiceObligationScopeGroupByArgs> = Prisma.PrismaPromise<
+export type GetClientServiceObligationScopeGroupByPayload<T extends ClientServiceObligationScopeGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<ClientServiceObligationScopeGroupByOutputType, T['by']> &
       {
@@ -1842,6 +1842,11 @@ export type ClientServiceObligationScopeFindManyArgs<ExtArgs extends runtime.Typ
    * Skip the first `n` ClientServiceObligationScopes.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of ClientServiceObligationScopes.
+   */
   distinct?: Prisma.ClientServiceObligationScopeScalarFieldEnum | Prisma.ClientServiceObligationScopeScalarFieldEnum[]
 }
 

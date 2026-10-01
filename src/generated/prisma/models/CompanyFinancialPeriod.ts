@@ -238,7 +238,7 @@ export type CompanyFinancialPeriodGroupByOutputType = {
   _max: CompanyFinancialPeriodMaxAggregateOutputType | null
 }
 
-type GetCompanyFinancialPeriodGroupByPayload<T extends CompanyFinancialPeriodGroupByArgs> = Prisma.PrismaPromise<
+export type GetCompanyFinancialPeriodGroupByPayload<T extends CompanyFinancialPeriodGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<CompanyFinancialPeriodGroupByOutputType, T['by']> &
       {
@@ -1587,6 +1587,11 @@ export type CompanyFinancialPeriodFindManyArgs<ExtArgs extends runtime.Types.Ext
    * Skip the first `n` CompanyFinancialPeriods.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of CompanyFinancialPeriods.
+   */
   distinct?: Prisma.CompanyFinancialPeriodScalarFieldEnum | Prisma.CompanyFinancialPeriodScalarFieldEnum[]
 }
 

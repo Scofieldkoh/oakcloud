@@ -192,7 +192,7 @@ export type FormDraftGroupByOutputType = {
   _max: FormDraftMaxAggregateOutputType | null
 }
 
-type GetFormDraftGroupByPayload<T extends FormDraftGroupByArgs> = Prisma.PrismaPromise<
+export type GetFormDraftGroupByPayload<T extends FormDraftGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<FormDraftGroupByOutputType, T['by']> &
       {
@@ -1619,6 +1619,11 @@ export type FormDraftFindManyArgs<ExtArgs extends runtime.Types.Extensions.Inter
    * Skip the first `n` FormDrafts.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of FormDrafts.
+   */
   distinct?: Prisma.FormDraftScalarFieldEnum | Prisma.FormDraftScalarFieldEnum[]
 }
 

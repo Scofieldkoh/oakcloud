@@ -196,7 +196,7 @@ export type WorkspaceLetterheadGroupByOutputType = {
   _max: WorkspaceLetterheadMaxAggregateOutputType | null
 }
 
-type GetWorkspaceLetterheadGroupByPayload<T extends WorkspaceLetterheadGroupByArgs> = Prisma.PrismaPromise<
+export type GetWorkspaceLetterheadGroupByPayload<T extends WorkspaceLetterheadGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<WorkspaceLetterheadGroupByOutputType, T['by']> &
       {
@@ -1258,6 +1258,11 @@ export type WorkspaceLetterheadFindManyArgs<ExtArgs extends runtime.Types.Extens
    * Skip the first `n` WorkspaceLetterheads.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of WorkspaceLetterheads.
+   */
   distinct?: Prisma.WorkspaceLetterheadScalarFieldEnum | Prisma.WorkspaceLetterheadScalarFieldEnum[]
 }
 

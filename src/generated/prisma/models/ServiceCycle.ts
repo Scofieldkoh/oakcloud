@@ -303,7 +303,7 @@ export type ServiceCycleGroupByOutputType = {
   _max: ServiceCycleMaxAggregateOutputType | null
 }
 
-type GetServiceCycleGroupByPayload<T extends ServiceCycleGroupByArgs> = Prisma.PrismaPromise<
+export type GetServiceCycleGroupByPayload<T extends ServiceCycleGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<ServiceCycleGroupByOutputType, T['by']> &
       {
@@ -3307,6 +3307,11 @@ export type ServiceCycleFindManyArgs<ExtArgs extends runtime.Types.Extensions.In
    * Skip the first `n` ServiceCycles.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of ServiceCycles.
+   */
   distinct?: Prisma.ServiceCycleScalarFieldEnum | Prisma.ServiceCycleScalarFieldEnum[]
 }
 

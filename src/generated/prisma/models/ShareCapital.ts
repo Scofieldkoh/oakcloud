@@ -256,7 +256,7 @@ export type ShareCapitalGroupByOutputType = {
   _max: ShareCapitalMaxAggregateOutputType | null
 }
 
-type GetShareCapitalGroupByPayload<T extends ShareCapitalGroupByArgs> = Prisma.PrismaPromise<
+export type GetShareCapitalGroupByPayload<T extends ShareCapitalGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<ShareCapitalGroupByOutputType, T['by']> &
       {
@@ -1626,6 +1626,11 @@ export type ShareCapitalFindManyArgs<ExtArgs extends runtime.Types.Extensions.In
    * Skip the first `n` ShareCapitals.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of ShareCapitals.
+   */
   distinct?: Prisma.ShareCapitalScalarFieldEnum | Prisma.ShareCapitalScalarFieldEnum[]
 }
 

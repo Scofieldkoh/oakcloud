@@ -243,7 +243,7 @@ export type BusinessAssistantReviewGroupByOutputType = {
   _max: BusinessAssistantReviewMaxAggregateOutputType | null
 }
 
-type GetBusinessAssistantReviewGroupByPayload<T extends BusinessAssistantReviewGroupByArgs> = Prisma.PrismaPromise<
+export type GetBusinessAssistantReviewGroupByPayload<T extends BusinessAssistantReviewGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<BusinessAssistantReviewGroupByOutputType, T['by']> &
       {
@@ -1652,6 +1652,11 @@ export type BusinessAssistantReviewFindManyArgs<ExtArgs extends runtime.Types.Ex
    * Skip the first `n` BusinessAssistantReviews.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of BusinessAssistantReviews.
+   */
   distinct?: Prisma.BusinessAssistantReviewScalarFieldEnum | Prisma.BusinessAssistantReviewScalarFieldEnum[]
 }
 

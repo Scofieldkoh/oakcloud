@@ -186,7 +186,7 @@ export type DocumentLinkGroupByOutputType = {
   _max: DocumentLinkMaxAggregateOutputType | null
 }
 
-type GetDocumentLinkGroupByPayload<T extends DocumentLinkGroupByArgs> = Prisma.PrismaPromise<
+export type GetDocumentLinkGroupByPayload<T extends DocumentLinkGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<DocumentLinkGroupByOutputType, T['by']> &
       {
@@ -1417,6 +1417,11 @@ export type DocumentLinkFindManyArgs<ExtArgs extends runtime.Types.Extensions.In
    * Skip the first `n` DocumentLinks.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of DocumentLinks.
+   */
   distinct?: Prisma.DocumentLinkScalarFieldEnum | Prisma.DocumentLinkScalarFieldEnum[]
 }
 

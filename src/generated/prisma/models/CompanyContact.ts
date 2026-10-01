@@ -179,7 +179,7 @@ export type CompanyContactGroupByOutputType = {
   _max: CompanyContactMaxAggregateOutputType | null
 }
 
-type GetCompanyContactGroupByPayload<T extends CompanyContactGroupByArgs> = Prisma.PrismaPromise<
+export type GetCompanyContactGroupByPayload<T extends CompanyContactGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<CompanyContactGroupByOutputType, T['by']> &
       {
@@ -1372,6 +1372,11 @@ export type CompanyContactFindManyArgs<ExtArgs extends runtime.Types.Extensions.
    * Skip the first `n` CompanyContacts.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of CompanyContacts.
+   */
   distinct?: Prisma.CompanyContactScalarFieldEnum | Prisma.CompanyContactScalarFieldEnum[]
 }
 

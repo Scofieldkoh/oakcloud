@@ -305,7 +305,7 @@ export type AcraEntityGroupByOutputType = {
   _max: AcraEntityMaxAggregateOutputType | null
 }
 
-type GetAcraEntityGroupByPayload<T extends AcraEntityGroupByArgs> = Prisma.PrismaPromise<
+export type GetAcraEntityGroupByPayload<T extends AcraEntityGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<AcraEntityGroupByOutputType, T['by']> &
       {
@@ -1542,6 +1542,11 @@ export type AcraEntityFindManyArgs<ExtArgs extends runtime.Types.Extensions.Inte
    * Skip the first `n` AcraEntities.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of AcraEntities.
+   */
   distinct?: Prisma.AcraEntityScalarFieldEnum | Prisma.AcraEntityScalarFieldEnum[]
 }
 

@@ -138,7 +138,7 @@ export async function generatePDF(
     throwIfAborted(options.signal);
 
     await page.setContent(html, {
-      waitUntil: 'networkidle0',
+      waitUntil: 'load',
       timeout: PDF_PAGE_TIMEOUT_MS,
     });
     await page.evaluate(async () => {

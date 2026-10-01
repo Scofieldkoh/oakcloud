@@ -222,7 +222,7 @@ export type CompanyComplianceIssueGroupByOutputType = {
   _max: CompanyComplianceIssueMaxAggregateOutputType | null
 }
 
-type GetCompanyComplianceIssueGroupByPayload<T extends CompanyComplianceIssueGroupByArgs> = Prisma.PrismaPromise<
+export type GetCompanyComplianceIssueGroupByPayload<T extends CompanyComplianceIssueGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<CompanyComplianceIssueGroupByOutputType, T['by']> &
       {
@@ -1793,6 +1793,11 @@ export type CompanyComplianceIssueFindManyArgs<ExtArgs extends runtime.Types.Ext
    * Skip the first `n` CompanyComplianceIssues.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of CompanyComplianceIssues.
+   */
   distinct?: Prisma.CompanyComplianceIssueScalarFieldEnum | Prisma.CompanyComplianceIssueScalarFieldEnum[]
 }
 

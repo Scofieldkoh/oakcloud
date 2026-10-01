@@ -269,7 +269,7 @@ export type PublicHolidaySyncStateGroupByOutputType = {
   _max: PublicHolidaySyncStateMaxAggregateOutputType | null
 }
 
-type GetPublicHolidaySyncStateGroupByPayload<T extends PublicHolidaySyncStateGroupByArgs> = Prisma.PrismaPromise<
+export type GetPublicHolidaySyncStateGroupByPayload<T extends PublicHolidaySyncStateGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<PublicHolidaySyncStateGroupByOutputType, T['by']> &
       {
@@ -1312,6 +1312,11 @@ export type PublicHolidaySyncStateFindManyArgs<ExtArgs extends runtime.Types.Ext
    * Skip the first `n` PublicHolidaySyncStates.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of PublicHolidaySyncStates.
+   */
   distinct?: Prisma.PublicHolidaySyncStateScalarFieldEnum | Prisma.PublicHolidaySyncStateScalarFieldEnum[]
 }
 

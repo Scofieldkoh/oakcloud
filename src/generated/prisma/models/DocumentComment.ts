@@ -301,7 +301,7 @@ export type DocumentCommentGroupByOutputType = {
   _max: DocumentCommentMaxAggregateOutputType | null
 }
 
-type GetDocumentCommentGroupByPayload<T extends DocumentCommentGroupByArgs> = Prisma.PrismaPromise<
+export type GetDocumentCommentGroupByPayload<T extends DocumentCommentGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<DocumentCommentGroupByOutputType, T['by']> &
       {
@@ -2732,6 +2732,11 @@ export type DocumentCommentFindManyArgs<ExtArgs extends runtime.Types.Extensions
    * Skip the first `n` DocumentComments.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of DocumentComments.
+   */
   distinct?: Prisma.DocumentCommentScalarFieldEnum | Prisma.DocumentCommentScalarFieldEnum[]
 }
 

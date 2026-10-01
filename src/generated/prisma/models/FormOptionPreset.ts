@@ -244,7 +244,7 @@ export type FormOptionPresetGroupByOutputType = {
   _max: FormOptionPresetMaxAggregateOutputType | null
 }
 
-type GetFormOptionPresetGroupByPayload<T extends FormOptionPresetGroupByArgs> = Prisma.PrismaPromise<
+export type GetFormOptionPresetGroupByPayload<T extends FormOptionPresetGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<FormOptionPresetGroupByOutputType, T['by']> &
       {
@@ -1599,6 +1599,11 @@ export type FormOptionPresetFindManyArgs<ExtArgs extends runtime.Types.Extension
    * Skip the first `n` FormOptionPresets.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of FormOptionPresets.
+   */
   distinct?: Prisma.FormOptionPresetScalarFieldEnum | Prisma.FormOptionPresetScalarFieldEnum[]
 }
 

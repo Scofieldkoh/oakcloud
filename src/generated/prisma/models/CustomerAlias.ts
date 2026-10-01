@@ -220,7 +220,7 @@ export type CustomerAliasGroupByOutputType = {
   _max: CustomerAliasMaxAggregateOutputType | null
 }
 
-type GetCustomerAliasGroupByPayload<T extends CustomerAliasGroupByArgs> = Prisma.PrismaPromise<
+export type GetCustomerAliasGroupByPayload<T extends CustomerAliasGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<CustomerAliasGroupByOutputType, T['by']> &
       {
@@ -1110,6 +1110,11 @@ export type CustomerAliasFindManyArgs<ExtArgs extends runtime.Types.Extensions.I
    * Skip the first `n` CustomerAliases.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of CustomerAliases.
+   */
   distinct?: Prisma.CustomerAliasScalarFieldEnum | Prisma.CustomerAliasScalarFieldEnum[]
 }
 

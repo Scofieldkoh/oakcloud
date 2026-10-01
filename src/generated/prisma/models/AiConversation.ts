@@ -175,7 +175,7 @@ export type AiConversationGroupByOutputType = {
   _max: AiConversationMaxAggregateOutputType | null
 }
 
-type GetAiConversationGroupByPayload<T extends AiConversationGroupByArgs> = Prisma.PrismaPromise<
+export type GetAiConversationGroupByPayload<T extends AiConversationGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<AiConversationGroupByOutputType, T['by']> &
       {
@@ -1359,6 +1359,11 @@ export type AiConversationFindManyArgs<ExtArgs extends runtime.Types.Extensions.
    * Skip the first `n` AiConversations.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of AiConversations.
+   */
   distinct?: Prisma.AiConversationScalarFieldEnum | Prisma.AiConversationScalarFieldEnum[]
 }
 

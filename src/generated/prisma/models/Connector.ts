@@ -265,7 +265,7 @@ export type ConnectorGroupByOutputType = {
   _max: ConnectorMaxAggregateOutputType | null
 }
 
-type GetConnectorGroupByPayload<T extends ConnectorGroupByArgs> = Prisma.PrismaPromise<
+export type GetConnectorGroupByPayload<T extends ConnectorGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<ConnectorGroupByOutputType, T['by']> &
       {
@@ -2317,6 +2317,11 @@ export type ConnectorFindManyArgs<ExtArgs extends runtime.Types.Extensions.Inter
    * Skip the first `n` Connectors.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of Connectors.
+   */
   distinct?: Prisma.ConnectorScalarFieldEnum | Prisma.ConnectorScalarFieldEnum[]
 }
 

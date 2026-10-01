@@ -293,7 +293,7 @@ export type BusinessAssistantMessageGroupByOutputType = {
   _max: BusinessAssistantMessageMaxAggregateOutputType | null
 }
 
-type GetBusinessAssistantMessageGroupByPayload<T extends BusinessAssistantMessageGroupByArgs> = Prisma.PrismaPromise<
+export type GetBusinessAssistantMessageGroupByPayload<T extends BusinessAssistantMessageGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<BusinessAssistantMessageGroupByOutputType, T['by']> &
       {
@@ -1918,6 +1918,11 @@ export type BusinessAssistantMessageFindManyArgs<ExtArgs extends runtime.Types.E
    * Skip the first `n` BusinessAssistantMessages.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of BusinessAssistantMessages.
+   */
   distinct?: Prisma.BusinessAssistantMessageScalarFieldEnum | Prisma.BusinessAssistantMessageScalarFieldEnum[]
 }
 

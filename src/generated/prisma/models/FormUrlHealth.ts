@@ -273,7 +273,7 @@ export type FormUrlHealthGroupByOutputType = {
   _max: FormUrlHealthMaxAggregateOutputType | null
 }
 
-type GetFormUrlHealthGroupByPayload<T extends FormUrlHealthGroupByArgs> = Prisma.PrismaPromise<
+export type GetFormUrlHealthGroupByPayload<T extends FormUrlHealthGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<FormUrlHealthGroupByOutputType, T['by']> &
       {
@@ -1750,6 +1750,11 @@ export type FormUrlHealthFindManyArgs<ExtArgs extends runtime.Types.Extensions.I
    * Skip the first `n` FormUrlHealths.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of FormUrlHealths.
+   */
   distinct?: Prisma.FormUrlHealthScalarFieldEnum | Prisma.FormUrlHealthScalarFieldEnum[]
 }
 

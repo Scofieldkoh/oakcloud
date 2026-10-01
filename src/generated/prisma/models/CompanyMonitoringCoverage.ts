@@ -257,7 +257,7 @@ export type CompanyMonitoringCoverageGroupByOutputType = {
   _max: CompanyMonitoringCoverageMaxAggregateOutputType | null
 }
 
-type GetCompanyMonitoringCoverageGroupByPayload<T extends CompanyMonitoringCoverageGroupByArgs> = Prisma.PrismaPromise<
+export type GetCompanyMonitoringCoverageGroupByPayload<T extends CompanyMonitoringCoverageGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<CompanyMonitoringCoverageGroupByOutputType, T['by']> &
       {
@@ -2367,6 +2367,11 @@ export type CompanyMonitoringCoverageFindManyArgs<ExtArgs extends runtime.Types.
    * Skip the first `n` CompanyMonitoringCoverages.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of CompanyMonitoringCoverages.
+   */
   distinct?: Prisma.CompanyMonitoringCoverageScalarFieldEnum | Prisma.CompanyMonitoringCoverageScalarFieldEnum[]
 }
 

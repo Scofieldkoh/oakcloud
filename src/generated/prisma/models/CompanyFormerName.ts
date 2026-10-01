@@ -172,7 +172,7 @@ export type CompanyFormerNameGroupByOutputType = {
   _max: CompanyFormerNameMaxAggregateOutputType | null
 }
 
-type GetCompanyFormerNameGroupByPayload<T extends CompanyFormerNameGroupByArgs> = Prisma.PrismaPromise<
+export type GetCompanyFormerNameGroupByPayload<T extends CompanyFormerNameGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<CompanyFormerNameGroupByOutputType, T['by']> &
       {
@@ -1324,6 +1324,11 @@ export type CompanyFormerNameFindManyArgs<ExtArgs extends runtime.Types.Extensio
    * Skip the first `n` CompanyFormerNames.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of CompanyFormerNames.
+   */
   distinct?: Prisma.CompanyFormerNameScalarFieldEnum | Prisma.CompanyFormerNameScalarFieldEnum[]
 }
 

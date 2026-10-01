@@ -207,7 +207,7 @@ export type BankAccountGroupByOutputType = {
   _max: BankAccountMaxAggregateOutputType | null
 }
 
-type GetBankAccountGroupByPayload<T extends BankAccountGroupByArgs> = Prisma.PrismaPromise<
+export type GetBankAccountGroupByPayload<T extends BankAccountGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<BankAccountGroupByOutputType, T['by']> &
       {
@@ -1437,6 +1437,11 @@ export type BankAccountFindManyArgs<ExtArgs extends runtime.Types.Extensions.Int
    * Skip the first `n` BankAccounts.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of BankAccounts.
+   */
   distinct?: Prisma.BankAccountScalarFieldEnum | Prisma.BankAccountScalarFieldEnum[]
 }
 

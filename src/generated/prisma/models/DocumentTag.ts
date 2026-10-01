@@ -241,7 +241,7 @@ export type DocumentTagGroupByOutputType = {
   _max: DocumentTagMaxAggregateOutputType | null
 }
 
-type GetDocumentTagGroupByPayload<T extends DocumentTagGroupByArgs> = Prisma.PrismaPromise<
+export type GetDocumentTagGroupByPayload<T extends DocumentTagGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<DocumentTagGroupByOutputType, T['by']> &
       {
@@ -1564,6 +1564,11 @@ export type DocumentTagFindManyArgs<ExtArgs extends runtime.Types.Extensions.Int
    * Skip the first `n` DocumentTags.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of DocumentTags.
+   */
   distinct?: Prisma.DocumentTagScalarFieldEnum | Prisma.DocumentTagScalarFieldEnum[]
 }
 

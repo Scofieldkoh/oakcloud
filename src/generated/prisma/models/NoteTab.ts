@@ -213,7 +213,7 @@ export type NoteTabGroupByOutputType = {
   _max: NoteTabMaxAggregateOutputType | null
 }
 
-type GetNoteTabGroupByPayload<T extends NoteTabGroupByArgs> = Prisma.PrismaPromise<
+export type GetNoteTabGroupByPayload<T extends NoteTabGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<NoteTabGroupByOutputType, T['by']> &
       {
@@ -1409,6 +1409,11 @@ export type NoteTabFindManyArgs<ExtArgs extends runtime.Types.Extensions.Interna
    * Skip the first `n` NoteTabs.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of NoteTabs.
+   */
   distinct?: Prisma.NoteTabScalarFieldEnum | Prisma.NoteTabScalarFieldEnum[]
 }
 

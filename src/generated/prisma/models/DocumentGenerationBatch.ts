@@ -244,7 +244,7 @@ export type DocumentGenerationBatchGroupByOutputType = {
   _max: DocumentGenerationBatchMaxAggregateOutputType | null
 }
 
-type GetDocumentGenerationBatchGroupByPayload<T extends DocumentGenerationBatchGroupByArgs> = Prisma.PrismaPromise<
+export type GetDocumentGenerationBatchGroupByPayload<T extends DocumentGenerationBatchGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<DocumentGenerationBatchGroupByOutputType, T['by']> &
       {
@@ -2105,6 +2105,11 @@ export type DocumentGenerationBatchFindManyArgs<ExtArgs extends runtime.Types.Ex
    * Skip the first `n` DocumentGenerationBatches.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of DocumentGenerationBatches.
+   */
   distinct?: Prisma.DocumentGenerationBatchScalarFieldEnum | Prisma.DocumentGenerationBatchScalarFieldEnum[]
 }
 

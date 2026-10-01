@@ -261,7 +261,7 @@ export type DocumentTemplateGroupByOutputType = {
   _max: DocumentTemplateMaxAggregateOutputType | null
 }
 
-type GetDocumentTemplateGroupByPayload<T extends DocumentTemplateGroupByArgs> = Prisma.PrismaPromise<
+export type GetDocumentTemplateGroupByPayload<T extends DocumentTemplateGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<DocumentTemplateGroupByOutputType, T['by']> &
       {
@@ -2195,6 +2195,11 @@ export type DocumentTemplateFindManyArgs<ExtArgs extends runtime.Types.Extension
    * Skip the first `n` DocumentTemplates.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of DocumentTemplates.
+   */
   distinct?: Prisma.DocumentTemplateScalarFieldEnum | Prisma.DocumentTemplateScalarFieldEnum[]
 }
 

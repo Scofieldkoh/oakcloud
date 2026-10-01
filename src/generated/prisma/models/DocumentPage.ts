@@ -263,7 +263,7 @@ export type DocumentPageGroupByOutputType = {
   _max: DocumentPageMaxAggregateOutputType | null
 }
 
-type GetDocumentPageGroupByPayload<T extends DocumentPageGroupByArgs> = Prisma.PrismaPromise<
+export type GetDocumentPageGroupByPayload<T extends DocumentPageGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<DocumentPageGroupByOutputType, T['by']> &
       {
@@ -1499,6 +1499,11 @@ export type DocumentPageFindManyArgs<ExtArgs extends runtime.Types.Extensions.In
    * Skip the first `n` DocumentPages.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of DocumentPages.
+   */
   distinct?: Prisma.DocumentPageScalarFieldEnum | Prisma.DocumentPageScalarFieldEnum[]
 }
 

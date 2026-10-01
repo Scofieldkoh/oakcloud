@@ -213,7 +213,7 @@ export type FormSubmissionGroupByOutputType = {
   _max: FormSubmissionMaxAggregateOutputType | null
 }
 
-type GetFormSubmissionGroupByPayload<T extends FormSubmissionGroupByArgs> = Prisma.PrismaPromise<
+export type GetFormSubmissionGroupByPayload<T extends FormSubmissionGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<FormSubmissionGroupByOutputType, T['by']> &
       {
@@ -1758,6 +1758,11 @@ export type FormSubmissionFindManyArgs<ExtArgs extends runtime.Types.Extensions.
    * Skip the first `n` FormSubmissions.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of FormSubmissions.
+   */
   distinct?: Prisma.FormSubmissionScalarFieldEnum | Prisma.FormSubmissionScalarFieldEnum[]
 }
 

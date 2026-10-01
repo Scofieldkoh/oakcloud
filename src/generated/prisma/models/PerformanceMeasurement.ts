@@ -209,7 +209,7 @@ export type PerformanceMeasurementGroupByOutputType = {
   _max: PerformanceMeasurementMaxAggregateOutputType | null
 }
 
-type GetPerformanceMeasurementGroupByPayload<T extends PerformanceMeasurementGroupByArgs> = Prisma.PrismaPromise<
+export type GetPerformanceMeasurementGroupByPayload<T extends PerformanceMeasurementGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<PerformanceMeasurementGroupByOutputType, T['by']> &
       {
@@ -1084,6 +1084,11 @@ export type PerformanceMeasurementFindManyArgs<ExtArgs extends runtime.Types.Ext
    * Skip the first `n` PerformanceMeasurements.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of PerformanceMeasurements.
+   */
   distinct?: Prisma.PerformanceMeasurementScalarFieldEnum | Prisma.PerformanceMeasurementScalarFieldEnum[]
 }
 

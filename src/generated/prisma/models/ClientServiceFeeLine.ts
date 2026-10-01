@@ -290,7 +290,7 @@ export type ClientServiceFeeLineGroupByOutputType = {
   _max: ClientServiceFeeLineMaxAggregateOutputType | null
 }
 
-type GetClientServiceFeeLineGroupByPayload<T extends ClientServiceFeeLineGroupByArgs> = Prisma.PrismaPromise<
+export type GetClientServiceFeeLineGroupByPayload<T extends ClientServiceFeeLineGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<ClientServiceFeeLineGroupByOutputType, T['by']> &
       {
@@ -2425,6 +2425,11 @@ export type ClientServiceFeeLineFindManyArgs<ExtArgs extends runtime.Types.Exten
    * Skip the first `n` ClientServiceFeeLines.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of ClientServiceFeeLines.
+   */
   distinct?: Prisma.ClientServiceFeeLineScalarFieldEnum | Prisma.ClientServiceFeeLineScalarFieldEnum[]
 }
 

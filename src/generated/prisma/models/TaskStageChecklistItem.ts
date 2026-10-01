@@ -220,7 +220,7 @@ export type TaskStageChecklistItemGroupByOutputType = {
   _max: TaskStageChecklistItemMaxAggregateOutputType | null
 }
 
-type GetTaskStageChecklistItemGroupByPayload<T extends TaskStageChecklistItemGroupByArgs> = Prisma.PrismaPromise<
+export type GetTaskStageChecklistItemGroupByPayload<T extends TaskStageChecklistItemGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<TaskStageChecklistItemGroupByOutputType, T['by']> &
       {
@@ -1456,6 +1456,11 @@ export type TaskStageChecklistItemFindManyArgs<ExtArgs extends runtime.Types.Ext
    * Skip the first `n` TaskStageChecklistItems.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of TaskStageChecklistItems.
+   */
   distinct?: Prisma.TaskStageChecklistItemScalarFieldEnum | Prisma.TaskStageChecklistItemScalarFieldEnum[]
 }
 

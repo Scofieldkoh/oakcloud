@@ -234,7 +234,7 @@ export type EsigningDocumentFieldValueGroupByOutputType = {
   _max: EsigningDocumentFieldValueMaxAggregateOutputType | null
 }
 
-type GetEsigningDocumentFieldValueGroupByPayload<T extends EsigningDocumentFieldValueGroupByArgs> = Prisma.PrismaPromise<
+export type GetEsigningDocumentFieldValueGroupByPayload<T extends EsigningDocumentFieldValueGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<EsigningDocumentFieldValueGroupByOutputType, T['by']> &
       {
@@ -1538,6 +1538,11 @@ export type EsigningDocumentFieldValueFindManyArgs<ExtArgs extends runtime.Types
    * Skip the first `n` EsigningDocumentFieldValues.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of EsigningDocumentFieldValues.
+   */
   distinct?: Prisma.EsigningDocumentFieldValueScalarFieldEnum | Prisma.EsigningDocumentFieldValueScalarFieldEnum[]
 }
 

@@ -262,7 +262,7 @@ export type DeadlineRuleVersionGroupByOutputType = {
   _max: DeadlineRuleVersionMaxAggregateOutputType | null
 }
 
-type GetDeadlineRuleVersionGroupByPayload<T extends DeadlineRuleVersionGroupByArgs> = Prisma.PrismaPromise<
+export type GetDeadlineRuleVersionGroupByPayload<T extends DeadlineRuleVersionGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<DeadlineRuleVersionGroupByOutputType, T['by']> &
       {
@@ -3041,6 +3041,11 @@ export type DeadlineRuleVersionFindManyArgs<ExtArgs extends runtime.Types.Extens
    * Skip the first `n` DeadlineRuleVersions.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of DeadlineRuleVersions.
+   */
   distinct?: Prisma.DeadlineRuleVersionScalarFieldEnum | Prisma.DeadlineRuleVersionScalarFieldEnum[]
 }
 

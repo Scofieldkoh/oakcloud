@@ -207,7 +207,7 @@ export type ClientRequestGroupByOutputType = {
   _max: ClientRequestMaxAggregateOutputType | null
 }
 
-type GetClientRequestGroupByPayload<T extends ClientRequestGroupByArgs> = Prisma.PrismaPromise<
+export type GetClientRequestGroupByPayload<T extends ClientRequestGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<ClientRequestGroupByOutputType, T['by']> &
       {
@@ -1322,6 +1322,11 @@ export type ClientRequestFindManyArgs<ExtArgs extends runtime.Types.Extensions.I
    * Skip the first `n` ClientRequests.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of ClientRequests.
+   */
   distinct?: Prisma.ClientRequestScalarFieldEnum | Prisma.ClientRequestScalarFieldEnum[]
 }
 

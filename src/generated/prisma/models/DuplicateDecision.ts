@@ -172,7 +172,7 @@ export type DuplicateDecisionGroupByOutputType = {
   _max: DuplicateDecisionMaxAggregateOutputType | null
 }
 
-type GetDuplicateDecisionGroupByPayload<T extends DuplicateDecisionGroupByArgs> = Prisma.PrismaPromise<
+export type GetDuplicateDecisionGroupByPayload<T extends DuplicateDecisionGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<DuplicateDecisionGroupByOutputType, T['by']> &
       {
@@ -1196,6 +1196,11 @@ export type DuplicateDecisionFindManyArgs<ExtArgs extends runtime.Types.Extensio
    * Skip the first `n` DuplicateDecisions.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of DuplicateDecisions.
+   */
   distinct?: Prisma.DuplicateDecisionScalarFieldEnum | Prisma.DuplicateDecisionScalarFieldEnum[]
 }
 

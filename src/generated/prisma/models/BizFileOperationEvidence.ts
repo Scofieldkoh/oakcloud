@@ -171,7 +171,7 @@ export type BizFileOperationEvidenceGroupByOutputType = {
   _max: BizFileOperationEvidenceMaxAggregateOutputType | null
 }
 
-type GetBizFileOperationEvidenceGroupByPayload<T extends BizFileOperationEvidenceGroupByArgs> = Prisma.PrismaPromise<
+export type GetBizFileOperationEvidenceGroupByPayload<T extends BizFileOperationEvidenceGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<BizFileOperationEvidenceGroupByOutputType, T['by']> &
       {
@@ -1360,6 +1360,11 @@ export type BizFileOperationEvidenceFindManyArgs<ExtArgs extends runtime.Types.E
    * Skip the first `n` BizFileOperationEvidences.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of BizFileOperationEvidences.
+   */
   distinct?: Prisma.BizFileOperationEvidenceScalarFieldEnum | Prisma.BizFileOperationEvidenceScalarFieldEnum[]
 }
 

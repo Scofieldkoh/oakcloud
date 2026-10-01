@@ -303,7 +303,7 @@ export type GeneratedDocumentGroupByOutputType = {
   _max: GeneratedDocumentMaxAggregateOutputType | null
 }
 
-type GetGeneratedDocumentGroupByPayload<T extends GeneratedDocumentGroupByArgs> = Prisma.PrismaPromise<
+export type GetGeneratedDocumentGroupByPayload<T extends GeneratedDocumentGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<GeneratedDocumentGroupByOutputType, T['by']> &
       {
@@ -4245,6 +4245,11 @@ export type GeneratedDocumentFindManyArgs<ExtArgs extends runtime.Types.Extensio
    * Skip the first `n` GeneratedDocuments.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of GeneratedDocuments.
+   */
   distinct?: Prisma.GeneratedDocumentScalarFieldEnum | Prisma.GeneratedDocumentScalarFieldEnum[]
 }
 

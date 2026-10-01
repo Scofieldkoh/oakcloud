@@ -263,7 +263,7 @@ export type BackupScheduleGroupByOutputType = {
   _max: BackupScheduleMaxAggregateOutputType | null
 }
 
-type GetBackupScheduleGroupByPayload<T extends BackupScheduleGroupByArgs> = Prisma.PrismaPromise<
+export type GetBackupScheduleGroupByPayload<T extends BackupScheduleGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<BackupScheduleGroupByOutputType, T['by']> &
       {
@@ -1416,6 +1416,11 @@ export type BackupScheduleFindManyArgs<ExtArgs extends runtime.Types.Extensions.
    * Skip the first `n` BackupSchedules.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of BackupSchedules.
+   */
   distinct?: Prisma.BackupScheduleScalarFieldEnum | Prisma.BackupScheduleScalarFieldEnum[]
 }
 

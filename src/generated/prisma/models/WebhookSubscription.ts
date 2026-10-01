@@ -230,7 +230,7 @@ export type WebhookSubscriptionGroupByOutputType = {
   _max: WebhookSubscriptionMaxAggregateOutputType | null
 }
 
-type GetWebhookSubscriptionGroupByPayload<T extends WebhookSubscriptionGroupByArgs> = Prisma.PrismaPromise<
+export type GetWebhookSubscriptionGroupByPayload<T extends WebhookSubscriptionGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<WebhookSubscriptionGroupByOutputType, T['by']> &
       {
@@ -1169,6 +1169,11 @@ export type WebhookSubscriptionFindManyArgs<ExtArgs extends runtime.Types.Extens
    * Skip the first `n` WebhookSubscriptions.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of WebhookSubscriptions.
+   */
   distinct?: Prisma.WebhookSubscriptionScalarFieldEnum | Prisma.WebhookSubscriptionScalarFieldEnum[]
 }
 

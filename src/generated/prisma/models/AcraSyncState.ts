@@ -206,7 +206,7 @@ export type AcraSyncStateGroupByOutputType = {
   _max: AcraSyncStateMaxAggregateOutputType | null
 }
 
-type GetAcraSyncStateGroupByPayload<T extends AcraSyncStateGroupByArgs> = Prisma.PrismaPromise<
+export type GetAcraSyncStateGroupByPayload<T extends AcraSyncStateGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<AcraSyncStateGroupByOutputType, T['by']> &
       {
@@ -1054,6 +1054,11 @@ export type AcraSyncStateFindManyArgs<ExtArgs extends runtime.Types.Extensions.I
    * Skip the first `n` AcraSyncStates.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of AcraSyncStates.
+   */
   distinct?: Prisma.AcraSyncStateScalarFieldEnum | Prisma.AcraSyncStateScalarFieldEnum[]
 }
 
