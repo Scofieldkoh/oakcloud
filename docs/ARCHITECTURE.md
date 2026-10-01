@@ -266,7 +266,16 @@ Service Agreement composition templates:
   Partials page or the partial's details. A batch can hold the same template
   more than once, so several resolutions can be generated together; saved
   items are matched by id, and new copies by the next unclaimed item of the
-  same template. The editor preview uses sample resolutions. `scripts/seed-resolution-template.ts --email
+  same template. A resolution template can carry preset resolutions
+  (`document_templates.resolution_preset`), which new batch items start with
+  (fresh section ids) and can still change. Presets are edited from the
+  OakDoc editor ("Preset resolutions") or saved from Configure ("Save as
+  preset for this template", or "Save as new template", which duplicates the
+  template with that preset) through `PUT
+  /api/document-templates/[id]/resolution-preset`; saving a preset does not
+  bump the template version. "New partial" on Configure creates a Resolutions
+  Word partial from plain text and adds it, and each partial item links to
+  the partial editor. The editor preview uses sample resolutions. `scripts/seed-resolution-template.ts --email
   <login> [--replace]` creates the starter "Board Resolution (Numbered)"
   template from the firm's reference directors' resolution.
 

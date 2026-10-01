@@ -14,7 +14,8 @@ import {
   readOakDocPlainText,
 } from '@/lib/document-editor/oakdoc-resolutions';
 import { buildBoardResolutionOakDocMaster } from '@/content/resolution/board-resolution-oakdoc';
-import { resolutionCompositionIssues } from '@/lib/resolution-composition';
+import { readResolutionPreset, resolutionCompositionIssues } from '@/lib/resolution-composition';
+import { resolutionPartialBytes } from '@/components/documents/generation-batch/quick-resolution-partial-modal';
 import { inspectOakDocPackage } from '@/lib/document-editor/oakdoc-package-policy';
 
 const PARTIAL = '44444444-4444-4444-8444-444444444444';
@@ -82,6 +83,21 @@ describe('OakDoc numbered resolutions', () => {
     const text = readOakDocPlainText(composed.bytes);
     expect(text).toContain('1.\tLODGEMENT\n\nRESOLVED that A\nbe appointed.\n\nRESOLVED further.');
     expect(text).toContain('SAMPLE COMPANY PTE. LTD.');
+  });
+
+  it('reads stored presets and ignores malformed or empty ones', () => {
+    const preset = { subject: '', sections: [{ id: 'a', kind: 'PARTIAL', heading: 'X', partialId: PARTIAL }] };
+    expect(readResolutionPreset(preset)).toEqual(preset);
+    expect(readResolutionPreset({ subject: '', sections: [] })).toBeNull();
+    expect(readResolutionPreset({ sections: 'nope' })).toBeNull();
+    expect(readResolutionPreset(null)).toBeNull();
+  });
+
+  it('builds a quick resolution partial whose text takes the resolution template font', () => {
+    const bytes = resolutionPartialBytes('RESOLVED that A\nbe removed.\n\nRESOLVED further.');
+    expect(() => inspectOakDocPackage(bytes, 'master')).not.toThrow();
+    expect(readOakDocPlainText(bytes)).toBe('RESOLVED that A\nbe removed.\n\nRESOLVED further.');
+    expect(documentXml(bytes)).not.toContain('w:rFonts');
   });
 
   it('reports a master without the slot', () => {

@@ -900,6 +900,8 @@ model DocumentTemplate {
   contentJson          Json?                           @map("content_json")
   placeholders         Json                            @default("[]")
   sharePointRelativeFolderPath String?                  @map("sharepoint_relative_folder_path")
+  /// RESOLUTION templates: resolutions pre-filled on Configure ({ subject, sections }).
+  resolutionPreset     Json?                           @map("resolution_preset")
   isActive             Boolean                         @default(true) @map("is_active")
   version              Int                             @default(1)
   createdById          String                          @map("created_by_id")

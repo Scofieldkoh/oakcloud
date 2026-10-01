@@ -123,6 +123,8 @@ export function BatchItemConfigurator(props: BatchItemConfiguratorProps) {
         />
         {item.templateKind === 'RESOLUTION' ? (
           <ResolutionSectionsConfig
+            templateId={item.templateId}
+            templateName={item.templateName}
             value={item.configuration.resolution}
             onChange={(resolution) => onPatch({ resolution })}
             disabled={disabled}

@@ -6,6 +6,8 @@ import {
   ArrowUp,
   ChevronDown,
   ChevronRight,
+  ExternalLink,
+  FilePlus2,
   FileText,
   Loader2,
   Pencil,
@@ -32,6 +34,8 @@ import { TEMPLATE_PARTIAL_CATEGORY_OPTIONS } from '@/lib/validations/template-pa
 import type { ResolutionWorkspaceState } from '@/types/document-generation-batch';
 import { createServiceAgreementClientKey as createClientKey } from '@/components/documents/service-agreement/client-key';
 import { BatchSection } from './batch-section';
+import { QuickResolutionPartialModal } from './quick-resolution-partial-modal';
+import { ResolutionPresetActions } from './resolution-preset-actions';
 
 export const EMPTY_RESOLUTION_WORKSPACE: ResolutionWorkspaceState = { subject: '', sections: [] };
 
@@ -138,6 +142,9 @@ function PartialResolutionText({
 }
 
 export interface ResolutionSectionsConfigProps {
+  /** The resolution template, for saving this list as its preset or a new template. */
+  templateId?: string;
+  templateName?: string;
   value: ResolutionWorkspaceState | null | undefined;
   onChange: (next: ResolutionWorkspaceState) => void;
   disabled?: boolean;
@@ -149,6 +156,8 @@ export interface ResolutionSectionsConfigProps {
  * order listed.
  */
 export function ResolutionSectionsConfig({
+  templateId,
+  templateName,
   value,
   onChange,
   disabled = false,
@@ -196,17 +205,20 @@ export function ResolutionSectionsConfig({
     [sections[index], sections[target]] = [sections[target], sections[index]];
     setSections(sections);
   };
-  const addPartial = (partialId: string) => {
-    const partial = partialById.get(partialId);
-    if (!partial) return;
+  const addPartialSection = (partial: { id: string; name: string; displayName?: string | null }) => {
     setSections([...workspace.sections, {
       id: createClientKey(),
       kind: 'PARTIAL',
-      partialId,
+      partialId: partial.id,
       heading: defaultResolutionHeading(partial),
     }]);
     setPickedPartialId('');
   };
+  const addPartial = (partialId: string) => {
+    const partial = partialById.get(partialId);
+    if (partial) addPartialSection(partial);
+  };
+  const [quickPartialOpen, setQuickPartialOpen] = useState(false);
   const addCustom = () => setSections([...workspace.sections, {
     id: createClientKey(),
     kind: 'CUSTOM',
@@ -330,6 +342,17 @@ export function ResolutionSectionsConfig({
                           This partial is no longer available. Remove it or pick another.
                         </p>
                       ) : null}
+                      {section.kind === 'PARTIAL' && partial ? (
+                        <a
+                          href={`/template-partials/editor?type=partial&tab=partials&id=${encodeURIComponent(section.partialId)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-xs text-oak-primary hover:underline"
+                        >
+                          <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+                          Edit the saved partial in a new tab
+                        </a>
+                      ) : null}
                       {section.kind === 'PARTIAL' && text === null ? (
                         <PartialResolutionText
                           partialId={section.partialId}
@@ -404,8 +427,32 @@ export function ResolutionSectionsConfig({
           >
             Add custom resolution
           </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="md"
+            leftIcon={<FilePlus2 className="h-4 w-4" />}
+            onClick={() => setQuickPartialOpen(true)}
+            disabled={disabled || workspace.sections.length >= 50}
+          >
+            New partial
+          </Button>
         </div>
+
+        {templateId && templateName ? (
+          <ResolutionPresetActions
+            templateId={templateId}
+            templateName={templateName}
+            value={workspace}
+            disabled={disabled || issues.length > 0}
+          />
+        ) : null}
       </div>
+      <QuickResolutionPartialModal
+        isOpen={quickPartialOpen}
+        onClose={() => setQuickPartialOpen(false)}
+        onCreated={addPartialSection}
+      />
     </BatchSection>
   );
 }

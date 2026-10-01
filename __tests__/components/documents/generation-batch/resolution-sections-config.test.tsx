@@ -1,10 +1,16 @@
 import { useState } from 'react';
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ResolutionWorkspaceState } from '@/types/document-generation-batch';
 
 const partialsQuery = vi.hoisted(() => ({ value: {} as Record<string, unknown> }));
+const saveWordPartial = vi.hoisted(() => vi.fn());
+const toast = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn() }));
+vi.mock('@/components/ui/toast', () => ({ useToast: () => toast }));
 vi.mock('@/hooks/use-template-partials', () => ({
+  partialKeys: { all: ['template-partials'] },
+  saveWordPartial,
   useAllTemplatePartials: () => partialsQuery.value,
   usePartialText: (id: string | null) => ({
     data: id ? { text: 'RESOLVED that Jane Tan be appointed as secretary.', revision: 2 } : undefined,
@@ -29,21 +35,28 @@ const partial = {
 };
 
 let latest: ResolutionWorkspaceState | null = null;
-function Harness({ initial }: { initial: ResolutionWorkspaceState }) {
+function Harness({ initial, templateId }: { initial: ResolutionWorkspaceState; templateId?: string }) {
   const [value, setValue] = useState(initial);
+  const [client] = useState(() => new QueryClient());
   return (
-    <ResolutionSectionsConfig
-      value={value}
-      onChange={(next) => {
-        latest = next;
-        setValue(next);
-      }}
-    />
+    <QueryClientProvider client={client}>
+      <ResolutionSectionsConfig
+        templateId={templateId}
+        templateName={templateId ? 'Board Resolution' : undefined}
+        value={value}
+        onChange={(next) => {
+          latest = next;
+          setValue(next);
+        }}
+      />
+    </QueryClientProvider>
   );
 }
 
 beforeEach(() => {
   latest = null;
+  saveWordPartial.mockReset();
+  vi.unstubAllGlobals();
   partialsQuery.value = { data: { partials: [partial] }, isLoading: false, error: null };
 });
 
@@ -107,5 +120,44 @@ describe('ResolutionSectionsConfig', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Use saved partial' }));
     expect(latest?.sections[0]).toMatchObject({ body: null });
+  });
+
+  it('creates a resolution partial from text and adds it to the list', async () => {
+    saveWordPartial.mockResolvedValue({ id: '22222222-2222-4222-8222-222222222222', name: 'removal-of-auditor', displayName: 'Removal of Auditor' });
+    render(<Harness initial={{ subject: '', sections: [] }} />);
+    fireEvent.click(screen.getByRole('button', { name: 'New partial' }));
+    fireEvent.change(screen.getByLabelText(/^Name/), { target: { value: 'Removal of Auditor' } });
+    fireEvent.change(screen.getByLabelText('New partial text'), { target: { value: 'RESOLVED that the auditor be removed.' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Create partial' }));
+
+    await waitFor(() => expect(latest?.sections).toHaveLength(1));
+    expect(saveWordPartial).toHaveBeenCalledWith(expect.objectContaining({
+      name: 'removal-of-auditor',
+      displayName: 'Removal of Auditor',
+      category: 'RESOLUTION',
+    }));
+    expect(latest?.sections[0]).toMatchObject({
+      kind: 'PARTIAL',
+      partialId: '22222222-2222-4222-8222-222222222222',
+      heading: 'REMOVAL OF AUDITOR',
+    });
+  });
+
+  it('saves the list as the template preset', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({}) });
+    vi.stubGlobal('fetch', fetchMock);
+    const initial: ResolutionWorkspaceState = {
+      subject: 'CHANGE IN COMPANY SECRETARY',
+      sections: [{ id: 'a', kind: 'PARTIAL', heading: 'APPOINTMENT OF SECRETARY', partialId: partial.id }],
+    };
+    render(<Harness templateId="33333333-3333-4333-8333-333333333333" initial={initial} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Save as preset for this template' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save preset' }));
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalled());
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe('/api/document-templates/33333333-3333-4333-8333-333333333333/resolution-preset');
+    expect(init.method).toBe('PUT');
+    expect(JSON.parse(init.body)).toEqual({ resolutionPreset: initial });
   });
 });

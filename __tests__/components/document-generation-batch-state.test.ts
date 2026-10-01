@@ -357,4 +357,30 @@ describe('document generation batch workspace state', () => {
       thrice.batch.items[2].key,
     ]);
   });
+
+  it('starts a resolution item from its template preset with fresh section ids', () => {
+    const template = {
+      id: 'template-p',
+      name: 'Cosec Appointment',
+      category: 'RESOLUTION',
+      compositionType: 'RESOLUTION',
+      version: 1,
+      isActive: true,
+      engine: 'OAKDOC',
+      content: '',
+      placeholders: [],
+      resolutionPreset: {
+        subject: 'CHANGE IN COMPANY SECRETARY',
+        sections: [{ id: 'preset-1', kind: 'CUSTOM', heading: 'APPOINTMENT OF SECRETARY', body: 'RESOLVED that ...' }],
+      },
+      createdAt: '',
+      updatedAt: '',
+    } as unknown as DocumentTemplateSummary;
+    const state = createInitialBatchWorkspaceState([template]);
+    const twice = documentGenerationBatchReducer(state, { type: 'template/add', template });
+    const [first, second] = twice.batch.items.map((entry) => entry.configuration.resolution);
+    expect(first).toMatchObject({ subject: 'CHANGE IN COMPANY SECRETARY', sections: [{ heading: 'APPOINTMENT OF SECRETARY' }] });
+    expect(first?.sections[0].id).not.toBe('preset-1');
+    expect(second?.sections[0].id).not.toBe(first?.sections[0].id);
+  });
 });

@@ -16,6 +16,8 @@ import {
   mapGenerationTemplateSummaries,
 } from '@/lib/document-generation-option-mappers';
 import { readTaskLaunchContext } from '@/lib/task-launch-context';
+import { instantiateResolutionPreset } from '@/lib/resolution-composition';
+import { createServiceAgreementClientKey } from '@/components/documents/service-agreement/client-key';
 import type {
   DocumentGenerationBatchDto,
 } from '@/types/document-generation-batch';
@@ -314,6 +316,9 @@ function GenerateDocumentContent() {
                 masterOverrides: {},
                 useLetterhead: false,
                 serviceAgreement: null,
+                ...(template.compositionType === 'RESOLUTION' && template.resolutionPreset
+                  ? { resolution: instantiateResolutionPreset(template.resolutionPreset, createServiceAgreementClientKey) }
+                  : {}),
               },
               previewContent: null,
               editedContent: null,

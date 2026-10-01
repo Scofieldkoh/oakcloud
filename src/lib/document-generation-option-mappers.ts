@@ -9,6 +9,7 @@ import {
   normalizeStoredPlaceholders,
   storageFormatToCustomPlaceholders,
 } from '@/lib/template-analysis';
+import { readResolutionPreset } from '@/lib/resolution-composition';
 import type {
   Company,
   DocumentContact,
@@ -64,6 +65,7 @@ export function mapTemplateSummary(raw: Record<string, unknown>): DocumentTempla
     placeholders: storageFormatToCustomPlaceholders(
       normalizeStoredPlaceholders(raw.placeholders),
     ),
+    resolutionPreset: raw.compositionType === 'RESOLUTION' ? readResolutionPreset(raw.resolutionPreset) : null,
     createdAt: String(raw.createdAt ?? ''),
     updatedAt: String(raw.updatedAt ?? ''),
   };
