@@ -345,8 +345,12 @@ document search and direct document access.
 Rendering, preview fingerprints, review approval, and generation remain
 server-authoritative. The server derives shared master fields from the
 normalized custom placeholder keys and canonical types of all selected
-templates; item overrides win over batch master values, which win over template
-defaults. Service Agreement services, fees, terms, representative, and entities
+templates (Word templates use their stored placeholders); a field is shared
+once at least two documents use it, including two copies of one template.
+Item overrides win over batch master values, which win over template
+defaults. Shared setup also offers each party choice (directors, shareholders,
+single director, shareholder or contact) used by two or more documents; a
+change there is written onto each of those documents' configuration. Service Agreement services, fees, terms, representative, and entities
 stay item-specific and persist transactionally through the existing
 `ServiceAgreement` lifecycle.
 

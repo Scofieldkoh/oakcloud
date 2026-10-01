@@ -12,15 +12,6 @@ import {
 } from '@/components/documents/document-party-choice-list';
 import { SingleDateInput } from '@/components/ui/single-date-input';
 import type { DocumentParty } from '@/lib/document-party';
-import {
-  OAKDOC_DIRECTORS_REPEATER_TAG,
-  OAKDOC_SHAREHOLDERS_REPEATER_TAG,
-} from '@/lib/document-editor/oakdoc-repeater-definitions';
-import {
-  getRequiredLegacyContactSelection,
-  getRequiredPartySelections,
-  getTemplatePartyCollections,
-} from '@/lib/template-analysis';
 import type {
   BatchItemConfiguration,
   MasterFieldCatalogue,
@@ -33,6 +24,7 @@ import { BatchCustomFieldForm } from './batch-custom-field-form';
 import { BatchSection } from './batch-section';
 import { ApplyToOthersMenu, type ApplyScope } from './apply-to-others-menu';
 import type { ItemCompleteness } from './batch-completeness';
+import { partyConfigurationKeys, templatePartyNeeds } from './template-party-needs';
 
 export interface StandardDocumentConfigProps {
   item: EditableBatchItem;
@@ -100,25 +92,13 @@ export function StandardDocumentConfig({
 }: StandardDocumentConfigProps) {
   const configuration = item.configuration;
 
-  const partySelections = useMemo(
-    () => templateContent === undefined
-      ? { director: true, shareholder: true, contact: true }
-      : getRequiredPartySelections(templateContent),
-    [templateContent],
+  const needs = useMemo(
+    () => templatePartyNeeds(templateContent, templateFieldTags),
+    [templateContent, templateFieldTags],
   );
-  const partyCollections = useMemo(() => {
-    const legacy = templateContent === undefined
-      ? { directors: false, shareholders: false }
-      : getTemplatePartyCollections(templateContent);
-    const tags = new Set(templateFieldTags ?? []);
-    return {
-      directors: legacy.directors || tags.has(OAKDOC_DIRECTORS_REPEATER_TAG),
-      shareholders: legacy.shareholders || tags.has(OAKDOC_SHAREHOLDERS_REPEATER_TAG),
-    };
-  }, [templateContent, templateFieldTags]);
-  const showContacts = templateContent === undefined
-    ? true
-    : getRequiredLegacyContactSelection(templateContent);
+  const partySelections = { director: needs.director, shareholder: needs.shareholder, contact: needs.contact };
+  const partyCollections = { directors: needs.directors, shareholders: needs.shareholders };
+  const showContacts = needs.contacts;
   const selectedDirectorIds = useMemo(
     () => selectedPartyIds(directors, configuration.selectedDirectorIds),
     [configuration.selectedDirectorIds, directors],
@@ -127,21 +107,7 @@ export function StandardDocumentConfig({
     () => selectedPartyIds(shareholders, configuration.selectedShareholderIds),
     [configuration.selectedShareholderIds, shareholders],
   );
-  const partyKeys = useMemo<Array<keyof BatchItemConfiguration>>(() => {
-    const keys: Array<keyof BatchItemConfiguration> = [];
-    if (partySelections.director) keys.push('selectedDirectorId');
-    if (partyCollections.directors) keys.push('selectedDirectorIds');
-    if (partySelections.shareholder) keys.push('selectedShareholderId');
-    if (partyCollections.shareholders) keys.push('selectedShareholderIds');
-    if (partySelections.contact) keys.push('selectedContactId');
-    return keys;
-  }, [
-    partyCollections.directors,
-    partyCollections.shareholders,
-    partySelections.contact,
-    partySelections.director,
-    partySelections.shareholder,
-  ]);
+  const partyKeys = useMemo(() => partyConfigurationKeys(needs), [needs]);
 
   const selectedContacts = useMemo<DocumentContact[]>(() => {
     const pool = new Map<string, DocumentContact>(contactsById ?? []);

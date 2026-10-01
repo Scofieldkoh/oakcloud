@@ -2,7 +2,8 @@
  * Server-derived master fields and effective-value resolution.
  *
  * A custom field becomes a master field when the same canonical key and
- * canonical type appears in at least two selected templates. Built-in
+ * canonical type appears in at least two documents of the batch, which can
+ * be two copies of the same template. Built-in
  * company/contact context and structured Service Agreement fields never
  * become master fields.
  */
@@ -75,20 +76,26 @@ export function deriveMasterFieldCatalogue(
     type: PlaceholderValueType;
     label: string;
     templateIds: Set<string>;
+    /** Documents (sources) using the field; copies of one template count separately. */
+    uses: number;
     requiredTemplateIds: Set<string>;
     defaultsByTemplateId: Record<string, string>;
   }>();
   const conflicts = new Map<string, Set<PlaceholderValueType>>();
 
   for (const source of sources) {
+    const seenInSource = new Set<string>();
     for (const rawField of source.fields) {
       if (!isEligibleCustomField(rawField)) continue;
       const key = normalizePlaceholderKey(rawField.key);
       const type = canonicalPlaceholderType(rawField.type);
       const id = masterFieldId(key, type);
+      const firstInSource = !seenInSource.has(id);
+      seenInSource.add(id);
       const existing = groups.get(id);
       if (existing) {
         existing.templateIds.add(source.templateId);
+        if (firstInSource) existing.uses += 1;
         if (rawField.required) existing.requiredTemplateIds.add(source.templateId);
         if (rawField.defaultValue !== undefined) {
           existing.defaultsByTemplateId[source.templateId] = rawField.defaultValue;
@@ -99,6 +106,7 @@ export function deriveMasterFieldCatalogue(
           type,
           label: rawField.label || key,
           templateIds: new Set([source.templateId]),
+          uses: 1,
           requiredTemplateIds: rawField.required
             ? new Set([source.templateId])
             : new Set(),
@@ -113,7 +121,7 @@ export function deriveMasterFieldCatalogue(
   }
 
   const fields: MasterFieldDefinition[] = Array.from(groups.values())
-    .filter((group) => group.templateIds.size >= 2)
+    .filter((group) => group.uses >= 2)
     .sort((a, b) => a.key.localeCompare(b.key) || a.type.localeCompare(b.type))
     .map((group) => ({
       id: masterFieldId(group.key, group.type),

@@ -150,19 +150,27 @@ export async function loadMasterCatalogueForTemplateIds(
       },
     }),
   ]);
-  const sources = templates
-    .filter((template) => getDocumentTemplateEngine(template.contentJson) === 'A4')
-    .map((template) => ({
-      templateId: template.id,
-      fields: mergeTemplateAndPartialPlaceholders({
-        templatePlaceholders: storageFormatToCustomPlaceholders(
-          normalizeStoredPlaceholders(template.placeholders),
-          { scope: { kind: 'template', id: template.id } },
-        ),
-        templateContent: template.content,
-        partials,
-      }),
-    }));
+  const fieldsByTemplateId = new Map(templates.map((template) => {
+    const templatePlaceholders = storageFormatToCustomPlaceholders(
+      normalizeStoredPlaceholders(template.placeholders),
+      { scope: { kind: 'template', id: template.id } },
+    );
+    // Word templates keep their custom fields in stored placeholders; only
+    // legacy text templates pull extra fields from referenced partials.
+    const fields = getDocumentTemplateEngine(template.contentJson) === 'A4'
+      ? mergeTemplateAndPartialPlaceholders({
+          templatePlaceholders,
+          templateContent: template.content,
+          partials,
+        })
+      : templatePlaceholders;
+    return [template.id, fields] as const;
+  }));
+  // One source per document, so two copies of a template share fields too.
+  const sources = templateIds.flatMap((templateId) => {
+    const fields = fieldsByTemplateId.get(templateId);
+    return fields ? [{ templateId, fields }] : [];
+  });
   return deriveMasterFieldCatalogue(sources);
 }
 
