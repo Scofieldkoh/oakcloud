@@ -4178,6 +4178,7 @@ enum DocumentTemplateCategory {
 enum DocumentTemplateCompositionType {
   STANDARD
   SERVICE_AGREEMENT
+  RESOLUTION
 }
 
 enum ServiceCadence {

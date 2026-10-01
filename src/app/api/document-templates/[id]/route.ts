@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma';
 import { createErrorResponse } from '@/lib/api-helpers';
 import {
   documentTemplateCategoryEnum,
+  oakDocEditorCompositionTypeEnum,
   updateDocumentTemplateSchema,
 } from '@/lib/validations/document-template';
 import {
@@ -127,6 +128,14 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         return NextResponse.json({ error: 'Invalid template category' }, { status: 400 });
       }
 
+      const compositionValue = formData.get('compositionType');
+      const compositionResult = compositionValue === null
+        ? null
+        : oakDocEditorCompositionTypeEnum.safeParse(compositionValue);
+      if (compositionResult && !compositionResult.success) {
+        return NextResponse.json({ error: 'Invalid template type' }, { status: 400 });
+      }
+
       const nameValue = formData.get('name');
       const descriptionValue = formData.get('description');
       const isActiveValue = formData.get('isActive');
@@ -138,6 +147,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
           ? (descriptionValue.trim() || null)
           : undefined,
         category: categoryResult?.success ? categoryResult.data : undefined,
+        compositionType: compositionResult?.success ? compositionResult.data : undefined,
         isActive: typeof isActiveValue === 'string' ? isActiveValue !== 'false' : undefined,
         fileName: file.name,
         buffer: Buffer.from(await file.arrayBuffer()),

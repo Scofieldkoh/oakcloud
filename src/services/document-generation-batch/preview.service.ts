@@ -168,6 +168,7 @@ export function oakDocBatchContext(
   | 'agreement'
   | 'resolutionDate'
   | 'serviceAgreementId'
+  | 'resolution'
 > {
   const resolutionDate = effectiveCustomData.resolution_date;
   const agreement = configuration.serviceAgreement;
@@ -186,6 +187,7 @@ export function oakDocBatchContext(
       ? resolutionDate
       : undefined,
     ...(serviceAgreementId ? { serviceAgreementId } : {}),
+    ...(configuration.resolution ? { resolution: configuration.resolution } : {}),
   };
 }
 
@@ -209,13 +211,13 @@ export async function buildBatchItemRenderInput(
   const titleValues = stringValues(effectiveCustomData);
   const titleDate = selectDocumentGenerationTitleDate({
     values: titleValues,
-    selectedFieldKey: item.template.compositionType === 'STANDARD'
+    selectedFieldKey: item.template.compositionType !== 'SERVICE_AGREEMENT'
       ? templateFieldConfig.titleDateFieldKey
       : null,
     serviceAgreementDate: configuration.serviceAgreement?.agreementDate
       ?? agreement?.agreementDate.toISOString().slice(0, 10),
   });
-  const selectedTitleDateMissing = item.template.compositionType === 'STANDARD'
+  const selectedTitleDateMissing = item.template.compositionType !== 'SERVICE_AGREEMENT'
     && configuration.title.includes('{{date}}')
     && Boolean(templateFieldConfig.titleDateFieldKey)
     && !isWorkflowFieldValuePresent(
@@ -249,7 +251,10 @@ export async function buildBatchItemRenderInput(
       // Source identity, not just the version number.
       templateSha256: oakdoc.template.sha256,
       agreementHash: oakdoc.agreementHash,
-      partials: [],
+      partials: (oakdoc.resolutionPartialPins ?? []).map((pin) => ({
+        name: pin.partialId,
+        version: pin.version,
+      })),
       primaryCompanyId: batch.primaryCompanyId,
       contactIds: configuration.contactIds,
       selectedDirectorId: configuration.selectedDirectorId,
@@ -261,6 +266,7 @@ export async function buildBatchItemRenderInput(
       itemValues: configuration.itemValues,
       useLetterhead: false,
       agreementData: configuration.serviceAgreement ?? undefined,
+      resolutionData: configuration.resolution ?? undefined,
     });
     return {
       content: OAKDOC_GENERATED_CONTENT,

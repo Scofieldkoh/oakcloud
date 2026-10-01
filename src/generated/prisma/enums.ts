@@ -595,7 +595,8 @@ export type DocumentTemplateCategory = (typeof DocumentTemplateCategory)[keyof t
 
 export const DocumentTemplateCompositionType = {
   STANDARD: 'STANDARD',
-  SERVICE_AGREEMENT: 'SERVICE_AGREEMENT'
+  SERVICE_AGREEMENT: 'SERVICE_AGREEMENT',
+  RESOLUTION: 'RESOLUTION'
 } as const
 
 export type DocumentTemplateCompositionType = (typeof DocumentTemplateCompositionType)[keyof typeof DocumentTemplateCompositionType]

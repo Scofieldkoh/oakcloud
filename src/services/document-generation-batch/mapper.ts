@@ -82,9 +82,7 @@ export function mapBatchItemToDto(
     id: item.id,
     templateId: item.templateId,
     templateName: item.template.name,
-    templateKind: item.template.compositionType === 'SERVICE_AGREEMENT'
-      ? 'SERVICE_AGREEMENT'
-      : 'STANDARD',
+    templateKind: item.template.compositionType,
     templateVersion: item.templateVersion,
     templateEngine: getDocumentTemplateDisplayEngine(item.template.contentJson),
     displayOrder: item.displayOrder,

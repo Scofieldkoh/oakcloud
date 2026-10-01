@@ -68,6 +68,26 @@ export const serviceAgreementWorkspaceSchema = z.object({
   }
 });
 
+const resolutionHeading = z.string().max(300);
+
+export const resolutionWorkspaceSchema = z.object({
+  subject: z.string().max(300),
+  sections: z.array(z.discriminatedUnion('kind', [
+    z.object({
+      id: z.string().min(1).max(100),
+      kind: z.literal('PARTIAL'),
+      heading: resolutionHeading,
+      partialId: uuid,
+    }).strict(),
+    z.object({
+      id: z.string().min(1).max(100),
+      kind: z.literal('CUSTOM'),
+      heading: resolutionHeading,
+      body: z.string().max(20000),
+    }).strict(),
+  ])).max(50),
+}).strict();
+
 export const batchItemConfigurationSchema = z.object({
   version: z.literal(1),
   title: z.string().max(300),
@@ -81,6 +101,7 @@ export const batchItemConfigurationSchema = z.object({
   masterOverrides: stringFieldValues,
   useLetterhead: z.boolean(),
   serviceAgreement: serviceAgreementWorkspaceSchema.nullable(),
+  resolution: resolutionWorkspaceSchema.nullable().optional(),
 }).strict();
 
 export const createDocumentGenerationBatchSchema = z.object({

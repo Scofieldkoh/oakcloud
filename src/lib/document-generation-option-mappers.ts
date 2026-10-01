@@ -53,8 +53,8 @@ export function mapTemplateSummary(raw: Record<string, unknown>): DocumentTempla
     name: String(raw.name),
     description: raw.description ? String(raw.description) : null,
     category: String(raw.category ?? 'OTHER'),
-    compositionType: raw.compositionType === 'SERVICE_AGREEMENT'
-      ? 'SERVICE_AGREEMENT'
+    compositionType: raw.compositionType === 'SERVICE_AGREEMENT' || raw.compositionType === 'RESOLUTION'
+      ? raw.compositionType
       : 'STANDARD',
     version: Number(raw.version ?? 1),
     isActive: raw.isActive !== false,

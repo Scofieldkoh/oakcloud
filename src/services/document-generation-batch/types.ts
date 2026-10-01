@@ -51,7 +51,7 @@ export interface BatchRenderItem {
   templateId: string;
   templateName: string;
   templateVersion: number;
-  templateKind: 'STANDARD' | 'SERVICE_AGREEMENT';
+  templateKind: 'STANDARD' | 'SERVICE_AGREEMENT' | 'RESOLUTION';
   generatedDocumentId: string;
   serviceAgreementId: string | null;
   configuration: BatchItemConfiguration;

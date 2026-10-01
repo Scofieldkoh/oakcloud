@@ -17,7 +17,11 @@ export function deriveOakDocTemplateFieldTags(bytes: Uint8Array): string[] {
   const controls = inspectOakDocFields(bytes).tags
     .filter((tag) => {
       const kind = classifyOakDocTag(tag);
-      return kind !== 'unknown' && kind !== 'condition' && kind !== 'agreement-slot' && kind !== 'partial';
+      return kind !== 'unknown'
+        && kind !== 'condition'
+        && kind !== 'agreement-slot'
+        && kind !== 'resolution-slot'
+        && kind !== 'partial';
     });
   const conditionFields = inspectOakDocConditions(bytes).fieldTags
     .filter((tag) => OAKDOC_CONDITION_FIELD_TAGS.has(tag));

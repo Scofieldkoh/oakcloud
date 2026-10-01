@@ -42,7 +42,7 @@ export interface TemplatePartial {
   placeholders?: unknown;
 }
 
-export type DocumentTemplateCompositionType = 'STANDARD' | 'SERVICE_AGREEMENT';
+export type DocumentTemplateCompositionType = 'STANDARD' | 'SERVICE_AGREEMENT' | 'RESOLUTION';
 
 export interface DocumentTemplateSummary {
   id: string;

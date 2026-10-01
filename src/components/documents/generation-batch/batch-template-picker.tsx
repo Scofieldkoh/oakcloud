@@ -40,6 +40,7 @@ function hasDraftData(item: EditableBatchItem): boolean {
     item.previewContent
     || item.editedContent
     || item.configuration.serviceAgreement
+    || item.configuration.resolution?.sections.length
     || Object.keys(item.configuration.itemValues).length > 0,
   );
 }

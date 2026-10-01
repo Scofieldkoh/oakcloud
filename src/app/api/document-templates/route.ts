@@ -5,6 +5,7 @@ import { createErrorResponse } from '@/lib/api-helpers';
 import {
   createDocumentTemplateSchema,
   documentTemplateCategoryEnum,
+  oakDocEditorCompositionTypeEnum,
   searchDocumentTemplatesSchema,
 } from '@/lib/validations/document-template';
 import {
@@ -95,6 +96,14 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Invalid template category' }, { status: 400 });
       }
 
+      const compositionValue = formData.get('compositionType');
+      const compositionResult = compositionValue === null
+        ? null
+        : oakDocEditorCompositionTypeEnum.safeParse(compositionValue);
+      if (compositionResult && !compositionResult.success) {
+        return NextResponse.json({ error: 'Invalid template type' }, { status: 400 });
+      }
+
       const descriptionValue = formData.get('description');
       const isActiveValue = formData.get('isActive');
       const buffer = Buffer.from(await file.arrayBuffer());
@@ -105,6 +114,7 @@ export async function POST(request: NextRequest) {
           : null,
         category: categoryResult.data,
         isActive: isActiveValue !== 'false',
+        compositionType: compositionResult?.success ? compositionResult.data : undefined,
         fileName: file.name,
         buffer,
       }, { tenantId, userId: session.id });

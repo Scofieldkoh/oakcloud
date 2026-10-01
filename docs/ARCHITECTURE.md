@@ -247,6 +247,20 @@ Service Agreement composition templates:
   editor blocks, not editable custom placeholder definitions. The editor blocks
   invalid saves, and document-template service writes validate the merged
   persisted composition on create, update, and duplication.
+- `RESOLUTION` (Word templates only) holds exactly one block content control
+  tagged `resolution.items`, inserted from the OakDoc editor's "Numbered
+  resolutions" panel once the template type is set to Resolution; saving a
+  resolution template without it is refused. On Configure each batch item
+  lists its resolutions (`configuration.resolution`: an optional bold subject
+  heading plus sections, each a Word partial or custom text with its own
+  heading). Generation replaces the slot with "1.<tab>HEADING" paragraphs in
+  list order, each followed by its partial reference or custom paragraphs,
+  using the slot paragraph's formatting; the partials are pinned at their
+  current version and expanded with the master's own partials before fields
+  resolve (`src/lib/document-editor/oakdoc-resolutions.ts`). The editor preview
+  uses sample resolutions. `scripts/seed-resolution-template.ts --email
+  <login> [--replace]` creates the starter "Board Resolution (Numbered)"
+  template from the firm's reference directors' resolution.
 
 Service-specific input definitions use the `service` placeholder source, for
 example `service.fields.software`, and may use the `textarea` type. The editor

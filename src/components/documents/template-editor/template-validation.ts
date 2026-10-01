@@ -54,7 +54,7 @@ export function validateServiceAgreementSlots(content: string): TemplateValidati
 }
 
 export interface ValidateTemplateInput {
-  compositionType: 'STANDARD' | 'SERVICE_AGREEMENT';
+  compositionType: 'STANDARD' | 'SERVICE_AGREEMENT' | 'RESOLUTION';
   content: string;
   placeholders: Array<{ key: string }>;
 }
