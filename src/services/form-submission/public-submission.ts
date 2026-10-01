@@ -10,7 +10,7 @@ import {
   type FormSubmission,
   type FormUpload,
 } from '@/generated/prisma';
-import { fromBuffer } from 'file-type';
+import { fileTypeFromBuffer } from 'file-type';
 import { createAuditLog } from '@/lib/audit';
 import {
   buildPublicFormSettings,
@@ -127,7 +127,7 @@ export async function createPublicUpload(
   const storageKey = `${form.tenantId}/forms/${form.id}/uploads/${uploadId}${extension}`;
   const content = Buffer.from(await file.arrayBuffer());
 
-  const detected = await fromBuffer(content);
+  const detected = await fileTypeFromBuffer(content);
   const actualMime = detected?.mime || file.type || 'application/octet-stream';
 
   if (allowedMimeTypes.length > 0 && !allowedMimeTypes.includes(actualMime)) {

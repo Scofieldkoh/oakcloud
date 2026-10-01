@@ -227,7 +227,7 @@ export type DocumentDerivedFileGroupByOutputType = {
   _max: DocumentDerivedFileMaxAggregateOutputType | null
 }
 
-type GetDocumentDerivedFileGroupByPayload<T extends DocumentDerivedFileGroupByArgs> = Prisma.PrismaPromise<
+export type GetDocumentDerivedFileGroupByPayload<T extends DocumentDerivedFileGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<DocumentDerivedFileGroupByOutputType, T['by']> &
       {
@@ -1345,6 +1345,11 @@ export type DocumentDerivedFileFindManyArgs<ExtArgs extends runtime.Types.Extens
    * Skip the first `n` DocumentDerivedFiles.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of DocumentDerivedFiles.
+   */
   distinct?: Prisma.DocumentDerivedFileScalarFieldEnum | Prisma.DocumentDerivedFileScalarFieldEnum[]
 }
 

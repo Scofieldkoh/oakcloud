@@ -294,7 +294,7 @@ export type BizFileOperationReceiptGroupByOutputType = {
   _max: BizFileOperationReceiptMaxAggregateOutputType | null
 }
 
-type GetBizFileOperationReceiptGroupByPayload<T extends BizFileOperationReceiptGroupByArgs> = Prisma.PrismaPromise<
+export type GetBizFileOperationReceiptGroupByPayload<T extends BizFileOperationReceiptGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<BizFileOperationReceiptGroupByOutputType, T['by']> &
       {
@@ -2005,6 +2005,11 @@ export type BizFileOperationReceiptFindManyArgs<ExtArgs extends runtime.Types.Ex
    * Skip the first `n` BizFileOperationReceipts.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of BizFileOperationReceipts.
+   */
   distinct?: Prisma.BizFileOperationReceiptScalarFieldEnum | Prisma.BizFileOperationReceiptScalarFieldEnum[]
 }
 

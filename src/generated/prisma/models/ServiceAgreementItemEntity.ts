@@ -151,7 +151,7 @@ export type ServiceAgreementItemEntityGroupByOutputType = {
   _max: ServiceAgreementItemEntityMaxAggregateOutputType | null
 }
 
-type GetServiceAgreementItemEntityGroupByPayload<T extends ServiceAgreementItemEntityGroupByArgs> = Prisma.PrismaPromise<
+export type GetServiceAgreementItemEntityGroupByPayload<T extends ServiceAgreementItemEntityGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<ServiceAgreementItemEntityGroupByOutputType, T['by']> &
       {
@@ -1321,6 +1321,11 @@ export type ServiceAgreementItemEntityFindManyArgs<ExtArgs extends runtime.Types
    * Skip the first `n` ServiceAgreementItemEntities.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of ServiceAgreementItemEntities.
+   */
   distinct?: Prisma.ServiceAgreementItemEntityScalarFieldEnum | Prisma.ServiceAgreementItemEntityScalarFieldEnum[]
 }
 

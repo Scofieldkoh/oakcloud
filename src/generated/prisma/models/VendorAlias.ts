@@ -220,7 +220,7 @@ export type VendorAliasGroupByOutputType = {
   _max: VendorAliasMaxAggregateOutputType | null
 }
 
-type GetVendorAliasGroupByPayload<T extends VendorAliasGroupByArgs> = Prisma.PrismaPromise<
+export type GetVendorAliasGroupByPayload<T extends VendorAliasGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<VendorAliasGroupByOutputType, T['by']> &
       {
@@ -1110,6 +1110,11 @@ export type VendorAliasFindManyArgs<ExtArgs extends runtime.Types.Extensions.Int
    * Skip the first `n` VendorAliases.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of VendorAliases.
+   */
   distinct?: Prisma.VendorAliasScalarFieldEnum | Prisma.VendorAliasScalarFieldEnum[]
 }
 

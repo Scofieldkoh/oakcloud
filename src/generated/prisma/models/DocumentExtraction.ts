@@ -318,7 +318,7 @@ export type DocumentExtractionGroupByOutputType = {
   _max: DocumentExtractionMaxAggregateOutputType | null
 }
 
-type GetDocumentExtractionGroupByPayload<T extends DocumentExtractionGroupByArgs> = Prisma.PrismaPromise<
+export type GetDocumentExtractionGroupByPayload<T extends DocumentExtractionGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<DocumentExtractionGroupByOutputType, T['by']> &
       {
@@ -1987,6 +1987,11 @@ export type DocumentExtractionFindManyArgs<ExtArgs extends runtime.Types.Extensi
    * Skip the first `n` DocumentExtractions.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of DocumentExtractions.
+   */
   distinct?: Prisma.DocumentExtractionScalarFieldEnum | Prisma.DocumentExtractionScalarFieldEnum[]
 }
 

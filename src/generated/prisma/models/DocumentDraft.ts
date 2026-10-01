@@ -164,7 +164,7 @@ export type DocumentDraftGroupByOutputType = {
   _max: DocumentDraftMaxAggregateOutputType | null
 }
 
-type GetDocumentDraftGroupByPayload<T extends DocumentDraftGroupByArgs> = Prisma.PrismaPromise<
+export type GetDocumentDraftGroupByPayload<T extends DocumentDraftGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<DocumentDraftGroupByOutputType, T['by']> &
       {
@@ -1312,6 +1312,11 @@ export type DocumentDraftFindManyArgs<ExtArgs extends runtime.Types.Extensions.I
    * Skip the first `n` DocumentDrafts.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of DocumentDrafts.
+   */
   distinct?: Prisma.DocumentDraftScalarFieldEnum | Prisma.DocumentDraftScalarFieldEnum[]
 }
 

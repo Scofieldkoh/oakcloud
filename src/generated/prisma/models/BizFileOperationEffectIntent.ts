@@ -265,7 +265,7 @@ export type BizFileOperationEffectIntentGroupByOutputType = {
   _max: BizFileOperationEffectIntentMaxAggregateOutputType | null
 }
 
-type GetBizFileOperationEffectIntentGroupByPayload<T extends BizFileOperationEffectIntentGroupByArgs> = Prisma.PrismaPromise<
+export type GetBizFileOperationEffectIntentGroupByPayload<T extends BizFileOperationEffectIntentGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<BizFileOperationEffectIntentGroupByOutputType, T['by']> &
       {
@@ -1739,6 +1739,11 @@ export type BizFileOperationEffectIntentFindManyArgs<ExtArgs extends runtime.Typ
    * Skip the first `n` BizFileOperationEffectIntents.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of BizFileOperationEffectIntents.
+   */
   distinct?: Prisma.BizFileOperationEffectIntentScalarFieldEnum | Prisma.BizFileOperationEffectIntentScalarFieldEnum[]
 }
 

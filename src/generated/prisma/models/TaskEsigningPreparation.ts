@@ -276,7 +276,7 @@ export type TaskEsigningPreparationGroupByOutputType = {
   _max: TaskEsigningPreparationMaxAggregateOutputType | null
 }
 
-type GetTaskEsigningPreparationGroupByPayload<T extends TaskEsigningPreparationGroupByArgs> = Prisma.PrismaPromise<
+export type GetTaskEsigningPreparationGroupByPayload<T extends TaskEsigningPreparationGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<TaskEsigningPreparationGroupByOutputType, T['by']> &
       {
@@ -2881,6 +2881,11 @@ export type TaskEsigningPreparationFindManyArgs<ExtArgs extends runtime.Types.Ex
    * Skip the first `n` TaskEsigningPreparations.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of TaskEsigningPreparations.
+   */
   distinct?: Prisma.TaskEsigningPreparationScalarFieldEnum | Prisma.TaskEsigningPreparationScalarFieldEnum[]
 }
 

@@ -2,7 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { createAuditLog } from '@/lib/audit';
 import type { CreateContactInput, UpdateContactInput, ContactSearchInput } from '@/lib/validations/contact';
 import { Prisma } from '@/generated/prisma';
-import type { Contact, ContactType, PrismaClient } from '@/generated/prisma';
+import type { Contact, ContactType } from '@/generated/prisma';
 import type { ContactIdentityCandidate } from '@/types/contact-identity';
 import { canonicalizeContactAlias, canonicalizeContactName } from '@/lib/contact-identity-normalization';
 
@@ -10,10 +10,7 @@ import { canonicalizeContactAlias, canonicalizeContactName } from '@/lib/contact
  * Type for Prisma transaction client (interactive transaction)
  * Used to pass transaction context to service functions for data consistency
  */
-export type PrismaTransactionClient = Omit<
-  PrismaClient,
-  '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'
->;
+export type PrismaTransactionClient = Prisma.TransactionClient;
 
 export interface TenantAwareParams {
   tenantId: string;

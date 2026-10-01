@@ -207,7 +207,7 @@ export type DeadlineResponsibilityChangeGroupByOutputType = {
   _max: DeadlineResponsibilityChangeMaxAggregateOutputType | null
 }
 
-type GetDeadlineResponsibilityChangeGroupByPayload<T extends DeadlineResponsibilityChangeGroupByArgs> = Prisma.PrismaPromise<
+export type GetDeadlineResponsibilityChangeGroupByPayload<T extends DeadlineResponsibilityChangeGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<DeadlineResponsibilityChangeGroupByOutputType, T['by']> &
       {
@@ -1537,6 +1537,11 @@ export type DeadlineResponsibilityChangeFindManyArgs<ExtArgs extends runtime.Typ
    * Skip the first `n` DeadlineResponsibilityChanges.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of DeadlineResponsibilityChanges.
+   */
   distinct?: Prisma.DeadlineResponsibilityChangeScalarFieldEnum | Prisma.DeadlineResponsibilityChangeScalarFieldEnum[]
 }
 

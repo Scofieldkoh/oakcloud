@@ -456,7 +456,7 @@ export type EsigningSharePointFilingGroupByOutputType = {
   _max: EsigningSharePointFilingMaxAggregateOutputType | null
 }
 
-type GetEsigningSharePointFilingGroupByPayload<T extends EsigningSharePointFilingGroupByArgs> = Prisma.PrismaPromise<
+export type GetEsigningSharePointFilingGroupByPayload<T extends EsigningSharePointFilingGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<EsigningSharePointFilingGroupByOutputType, T['by']> &
       {
@@ -4386,6 +4386,11 @@ export type EsigningSharePointFilingFindManyArgs<ExtArgs extends runtime.Types.E
    * Skip the first `n` EsigningSharePointFilings.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of EsigningSharePointFilings.
+   */
   distinct?: Prisma.EsigningSharePointFilingScalarFieldEnum | Prisma.EsigningSharePointFilingScalarFieldEnum[]
 }
 

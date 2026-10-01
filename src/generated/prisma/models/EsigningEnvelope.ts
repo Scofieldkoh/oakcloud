@@ -406,7 +406,7 @@ export type EsigningEnvelopeGroupByOutputType = {
   _max: EsigningEnvelopeMaxAggregateOutputType | null
 }
 
-type GetEsigningEnvelopeGroupByPayload<T extends EsigningEnvelopeGroupByArgs> = Prisma.PrismaPromise<
+export type GetEsigningEnvelopeGroupByPayload<T extends EsigningEnvelopeGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<EsigningEnvelopeGroupByOutputType, T['by']> &
       {
@@ -4819,6 +4819,11 @@ export type EsigningEnvelopeFindManyArgs<ExtArgs extends runtime.Types.Extension
    * Skip the first `n` EsigningEnvelopes.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of EsigningEnvelopes.
+   */
   distinct?: Prisma.EsigningEnvelopeScalarFieldEnum | Prisma.EsigningEnvelopeScalarFieldEnum[]
 }
 

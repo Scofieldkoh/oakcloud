@@ -207,7 +207,7 @@ export type ChartOfAccountsMappingGroupByOutputType = {
   _max: ChartOfAccountsMappingMaxAggregateOutputType | null
 }
 
-type GetChartOfAccountsMappingGroupByPayload<T extends ChartOfAccountsMappingGroupByArgs> = Prisma.PrismaPromise<
+export type GetChartOfAccountsMappingGroupByPayload<T extends ChartOfAccountsMappingGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<ChartOfAccountsMappingGroupByOutputType, T['by']> &
       {
@@ -1536,6 +1536,11 @@ export type ChartOfAccountsMappingFindManyArgs<ExtArgs extends runtime.Types.Ext
    * Skip the first `n` ChartOfAccountsMappings.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of ChartOfAccountsMappings.
+   */
   distinct?: Prisma.ChartOfAccountsMappingScalarFieldEnum | Prisma.ChartOfAccountsMappingScalarFieldEnum[]
 }
 

@@ -216,7 +216,7 @@ export type IdempotencyRecordGroupByOutputType = {
   _max: IdempotencyRecordMaxAggregateOutputType | null
 }
 
-type GetIdempotencyRecordGroupByPayload<T extends IdempotencyRecordGroupByArgs> = Prisma.PrismaPromise<
+export type GetIdempotencyRecordGroupByPayload<T extends IdempotencyRecordGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<IdempotencyRecordGroupByOutputType, T['by']> &
       {
@@ -1104,6 +1104,11 @@ export type IdempotencyRecordFindManyArgs<ExtArgs extends runtime.Types.Extensio
    * Skip the first `n` IdempotencyRecords.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of IdempotencyRecords.
+   */
   distinct?: Prisma.IdempotencyRecordScalarFieldEnum | Prisma.IdempotencyRecordScalarFieldEnum[]
 }
 

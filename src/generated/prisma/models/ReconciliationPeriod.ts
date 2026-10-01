@@ -200,7 +200,7 @@ export type ReconciliationPeriodGroupByOutputType = {
   _max: ReconciliationPeriodMaxAggregateOutputType | null
 }
 
-type GetReconciliationPeriodGroupByPayload<T extends ReconciliationPeriodGroupByArgs> = Prisma.PrismaPromise<
+export type GetReconciliationPeriodGroupByPayload<T extends ReconciliationPeriodGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<ReconciliationPeriodGroupByOutputType, T['by']> &
       {
@@ -1344,6 +1344,11 @@ export type ReconciliationPeriodFindManyArgs<ExtArgs extends runtime.Types.Exten
    * Skip the first `n` ReconciliationPeriods.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of ReconciliationPeriods.
+   */
   distinct?: Prisma.ReconciliationPeriodScalarFieldEnum | Prisma.ReconciliationPeriodScalarFieldEnum[]
 }
 

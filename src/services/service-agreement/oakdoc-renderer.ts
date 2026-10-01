@@ -209,7 +209,7 @@ function getWordVal(element: Element | undefined): string {
     : '';
 }
 
-function serializeXml(xml: XMLDocument): Uint8Array {
+function serializeXml(xml: XMLDocument): Uint8Array<ArrayBuffer> {
   return encodeOakDocZipText(new XMLSerializer().serializeToString(xml));
 }
 

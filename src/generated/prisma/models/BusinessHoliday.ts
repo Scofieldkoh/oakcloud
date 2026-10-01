@@ -228,7 +228,7 @@ export type BusinessHolidayGroupByOutputType = {
   _max: BusinessHolidayMaxAggregateOutputType | null
 }
 
-type GetBusinessHolidayGroupByPayload<T extends BusinessHolidayGroupByArgs> = Prisma.PrismaPromise<
+export type GetBusinessHolidayGroupByPayload<T extends BusinessHolidayGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<BusinessHolidayGroupByOutputType, T['by']> &
       {
@@ -1671,6 +1671,11 @@ export type BusinessHolidayFindManyArgs<ExtArgs extends runtime.Types.Extensions
    * Skip the first `n` BusinessHolidays.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of BusinessHolidays.
+   */
   distinct?: Prisma.BusinessHolidayScalarFieldEnum | Prisma.BusinessHolidayScalarFieldEnum[]
 }
 

@@ -293,7 +293,7 @@ export type BusinessAssistantMemoryGroupByOutputType = {
   _max: BusinessAssistantMemoryMaxAggregateOutputType | null
 }
 
-type GetBusinessAssistantMemoryGroupByPayload<T extends BusinessAssistantMemoryGroupByArgs> = Prisma.PrismaPromise<
+export type GetBusinessAssistantMemoryGroupByPayload<T extends BusinessAssistantMemoryGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<BusinessAssistantMemoryGroupByOutputType, T['by']> &
       {
@@ -1707,6 +1707,11 @@ export type BusinessAssistantMemoryFindManyArgs<ExtArgs extends runtime.Types.Ex
    * Skip the first `n` BusinessAssistantMemories.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of BusinessAssistantMemories.
+   */
   distinct?: Prisma.BusinessAssistantMemoryScalarFieldEnum | Prisma.BusinessAssistantMemoryScalarFieldEnum[]
 }
 

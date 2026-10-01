@@ -207,7 +207,7 @@ export type CompanySharePointFolderGroupByOutputType = {
   _max: CompanySharePointFolderMaxAggregateOutputType | null
 }
 
-type GetCompanySharePointFolderGroupByPayload<T extends CompanySharePointFolderGroupByArgs> = Prisma.PrismaPromise<
+export type GetCompanySharePointFolderGroupByPayload<T extends CompanySharePointFolderGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<CompanySharePointFolderGroupByOutputType, T['by']> &
       {
@@ -1818,6 +1818,11 @@ export type CompanySharePointFolderFindManyArgs<ExtArgs extends runtime.Types.Ex
    * Skip the first `n` CompanySharePointFolders.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of CompanySharePointFolders.
+   */
   distinct?: Prisma.CompanySharePointFolderScalarFieldEnum | Prisma.CompanySharePointFolderScalarFieldEnum[]
 }
 

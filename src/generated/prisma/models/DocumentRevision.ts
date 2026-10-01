@@ -520,7 +520,7 @@ export type DocumentRevisionGroupByOutputType = {
   _max: DocumentRevisionMaxAggregateOutputType | null
 }
 
-type GetDocumentRevisionGroupByPayload<T extends DocumentRevisionGroupByArgs> = Prisma.PrismaPromise<
+export type GetDocumentRevisionGroupByPayload<T extends DocumentRevisionGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<DocumentRevisionGroupByOutputType, T['by']> &
       {
@@ -5009,6 +5009,11 @@ export type DocumentRevisionFindManyArgs<ExtArgs extends runtime.Types.Extension
    * Skip the first `n` DocumentRevisions.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of DocumentRevisions.
+   */
   distinct?: Prisma.DocumentRevisionScalarFieldEnum | Prisma.DocumentRevisionScalarFieldEnum[]
 }
 

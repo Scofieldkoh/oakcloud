@@ -203,7 +203,7 @@ export type DocumentStateEventGroupByOutputType = {
   _max: DocumentStateEventMaxAggregateOutputType | null
 }
 
-type GetDocumentStateEventGroupByPayload<T extends DocumentStateEventGroupByArgs> = Prisma.PrismaPromise<
+export type GetDocumentStateEventGroupByPayload<T extends DocumentStateEventGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<DocumentStateEventGroupByOutputType, T['by']> &
       {
@@ -1361,6 +1361,11 @@ export type DocumentStateEventFindManyArgs<ExtArgs extends runtime.Types.Extensi
    * Skip the first `n` DocumentStateEvents.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of DocumentStateEvents.
+   */
   distinct?: Prisma.DocumentStateEventScalarFieldEnum | Prisma.DocumentStateEventScalarFieldEnum[]
 }
 

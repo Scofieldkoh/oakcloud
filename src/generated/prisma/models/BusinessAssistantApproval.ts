@@ -247,7 +247,7 @@ export type BusinessAssistantApprovalGroupByOutputType = {
   _max: BusinessAssistantApprovalMaxAggregateOutputType | null
 }
 
-type GetBusinessAssistantApprovalGroupByPayload<T extends BusinessAssistantApprovalGroupByArgs> = Prisma.PrismaPromise<
+export type GetBusinessAssistantApprovalGroupByPayload<T extends BusinessAssistantApprovalGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<BusinessAssistantApprovalGroupByOutputType, T['by']> &
       {
@@ -1825,6 +1825,11 @@ export type BusinessAssistantApprovalFindManyArgs<ExtArgs extends runtime.Types.
    * Skip the first `n` BusinessAssistantApprovals.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of BusinessAssistantApprovals.
+   */
   distinct?: Prisma.BusinessAssistantApprovalScalarFieldEnum | Prisma.BusinessAssistantApprovalScalarFieldEnum[]
 }
 

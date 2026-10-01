@@ -1,15 +1,12 @@
 import { prisma } from '@/lib/prisma';
 import { createAuditLog } from '@/lib/audit';
 import { normalizeContactDetailValue } from '@/lib/contact-identity-normalization';
-import type { ContactDetail, ContactDetailType, Prisma, PrismaClient } from '@/generated/prisma';
+import type { ContactDetail, ContactDetailType, Prisma } from '@/generated/prisma';
 
 /**
  * Type for Prisma transaction client (interactive transaction)
  */
-export type PrismaTransactionClient = Omit<
-  PrismaClient,
-  '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'
->;
+export type PrismaTransactionClient = Prisma.TransactionClient;
 
 export interface TenantAwareParams {
   tenantId: string;

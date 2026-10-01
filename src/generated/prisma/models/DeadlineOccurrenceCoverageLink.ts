@@ -186,7 +186,7 @@ export type DeadlineOccurrenceCoverageLinkGroupByOutputType = {
   _max: DeadlineOccurrenceCoverageLinkMaxAggregateOutputType | null
 }
 
-type GetDeadlineOccurrenceCoverageLinkGroupByPayload<T extends DeadlineOccurrenceCoverageLinkGroupByArgs> = Prisma.PrismaPromise<
+export type GetDeadlineOccurrenceCoverageLinkGroupByPayload<T extends DeadlineOccurrenceCoverageLinkGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<DeadlineOccurrenceCoverageLinkGroupByOutputType, T['by']> &
       {
@@ -1704,6 +1704,11 @@ export type DeadlineOccurrenceCoverageLinkFindManyArgs<ExtArgs extends runtime.T
    * Skip the first `n` DeadlineOccurrenceCoverageLinks.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of DeadlineOccurrenceCoverageLinks.
+   */
   distinct?: Prisma.DeadlineOccurrenceCoverageLinkScalarFieldEnum | Prisma.DeadlineOccurrenceCoverageLinkScalarFieldEnum[]
 }
 

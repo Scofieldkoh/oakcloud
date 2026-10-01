@@ -179,7 +179,7 @@ export type EsigningEmailDeliveryAttemptGroupByOutputType = {
   _max: EsigningEmailDeliveryAttemptMaxAggregateOutputType | null
 }
 
-type GetEsigningEmailDeliveryAttemptGroupByPayload<T extends EsigningEmailDeliveryAttemptGroupByArgs> = Prisma.PrismaPromise<
+export type GetEsigningEmailDeliveryAttemptGroupByPayload<T extends EsigningEmailDeliveryAttemptGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<EsigningEmailDeliveryAttemptGroupByOutputType, T['by']> &
       {
@@ -1227,6 +1227,11 @@ export type EsigningEmailDeliveryAttemptFindManyArgs<ExtArgs extends runtime.Typ
    * Skip the first `n` EsigningEmailDeliveryAttempts.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of EsigningEmailDeliveryAttempts.
+   */
   distinct?: Prisma.EsigningEmailDeliveryAttemptScalarFieldEnum | Prisma.EsigningEmailDeliveryAttemptScalarFieldEnum[]
 }
 

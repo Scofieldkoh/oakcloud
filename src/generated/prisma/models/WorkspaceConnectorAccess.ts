@@ -165,7 +165,7 @@ export type WorkspaceConnectorAccessGroupByOutputType = {
   _max: WorkspaceConnectorAccessMaxAggregateOutputType | null
 }
 
-type GetWorkspaceConnectorAccessGroupByPayload<T extends WorkspaceConnectorAccessGroupByArgs> = Prisma.PrismaPromise<
+export type GetWorkspaceConnectorAccessGroupByPayload<T extends WorkspaceConnectorAccessGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<WorkspaceConnectorAccessGroupByOutputType, T['by']> &
       {
@@ -1289,6 +1289,11 @@ export type WorkspaceConnectorAccessFindManyArgs<ExtArgs extends runtime.Types.E
    * Skip the first `n` WorkspaceConnectorAccesses.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of WorkspaceConnectorAccesses.
+   */
   distinct?: Prisma.WorkspaceConnectorAccessScalarFieldEnum | Prisma.WorkspaceConnectorAccessScalarFieldEnum[]
 }
 

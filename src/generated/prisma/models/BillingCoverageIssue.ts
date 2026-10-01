@@ -217,7 +217,7 @@ export type BillingCoverageIssueGroupByOutputType = {
   _max: BillingCoverageIssueMaxAggregateOutputType | null
 }
 
-type GetBillingCoverageIssueGroupByPayload<T extends BillingCoverageIssueGroupByArgs> = Prisma.PrismaPromise<
+export type GetBillingCoverageIssueGroupByPayload<T extends BillingCoverageIssueGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<BillingCoverageIssueGroupByOutputType, T['by']> &
       {
@@ -1941,6 +1941,11 @@ export type BillingCoverageIssueFindManyArgs<ExtArgs extends runtime.Types.Exten
    * Skip the first `n` BillingCoverageIssues.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of BillingCoverageIssues.
+   */
   distinct?: Prisma.BillingCoverageIssueScalarFieldEnum | Prisma.BillingCoverageIssueScalarFieldEnum[]
 }
 

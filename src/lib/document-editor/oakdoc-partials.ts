@@ -150,7 +150,7 @@ function parseXml(bytes: Uint8Array, part: string): XMLDocument {
   return xml;
 }
 
-function serialize(xml: XMLDocument): Uint8Array {
+function serialize(xml: XMLDocument): Uint8Array<ArrayBuffer> {
   return encodeOakDocZipText(new XMLSerializer().serializeToString(xml));
 }
 

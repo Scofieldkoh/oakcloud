@@ -186,7 +186,7 @@ export type ContactMergeOperationGroupByOutputType = {
   _max: ContactMergeOperationMaxAggregateOutputType | null
 }
 
-type GetContactMergeOperationGroupByPayload<T extends ContactMergeOperationGroupByArgs> = Prisma.PrismaPromise<
+export type GetContactMergeOperationGroupByPayload<T extends ContactMergeOperationGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<ContactMergeOperationGroupByOutputType, T['by']> &
       {
@@ -1151,6 +1151,11 @@ export type ContactMergeOperationFindManyArgs<ExtArgs extends runtime.Types.Exte
    * Skip the first `n` ContactMergeOperations.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of ContactMergeOperations.
+   */
   distinct?: Prisma.ContactMergeOperationScalarFieldEnum | Prisma.ContactMergeOperationScalarFieldEnum[]
 }
 

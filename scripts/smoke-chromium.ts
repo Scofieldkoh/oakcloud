@@ -20,7 +20,7 @@ async function main(): Promise<void> {
     const page = await browser.newPage();
     await page.setContent(
       '<!doctype html><html><body><h1>Oakcloud Chromium smoke test</h1><p>Node 24 compatibility</p></body></html>',
-      { waitUntil: 'networkidle0' },
+      { waitUntil: 'load' },
     );
 
     const pdfBuffer = Buffer.from(

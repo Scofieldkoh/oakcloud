@@ -281,7 +281,7 @@ export type ConnectorUsageLogGroupByOutputType = {
   _max: ConnectorUsageLogMaxAggregateOutputType | null
 }
 
-type GetConnectorUsageLogGroupByPayload<T extends ConnectorUsageLogGroupByArgs> = Prisma.PrismaPromise<
+export type GetConnectorUsageLogGroupByPayload<T extends ConnectorUsageLogGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<ConnectorUsageLogGroupByOutputType, T['by']> &
       {
@@ -1941,6 +1941,11 @@ export type ConnectorUsageLogFindManyArgs<ExtArgs extends runtime.Types.Extensio
    * Skip the first `n` ConnectorUsageLogs.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of ConnectorUsageLogs.
+   */
   distinct?: Prisma.ConnectorUsageLogScalarFieldEnum | Prisma.ConnectorUsageLogScalarFieldEnum[]
 }
 

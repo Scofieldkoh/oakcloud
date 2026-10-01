@@ -231,7 +231,7 @@ export type CommunicationGroupByOutputType = {
   _max: CommunicationMaxAggregateOutputType | null
 }
 
-type GetCommunicationGroupByPayload<T extends CommunicationGroupByArgs> = Prisma.PrismaPromise<
+export type GetCommunicationGroupByPayload<T extends CommunicationGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<CommunicationGroupByOutputType, T['by']> &
       {
@@ -1704,6 +1704,11 @@ export type CommunicationFindManyArgs<ExtArgs extends runtime.Types.Extensions.I
    * Skip the first `n` Communications.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of Communications.
+   */
   distinct?: Prisma.CommunicationScalarFieldEnum | Prisma.CommunicationScalarFieldEnum[]
 }
 

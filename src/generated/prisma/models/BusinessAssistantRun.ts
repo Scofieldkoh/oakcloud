@@ -248,7 +248,7 @@ export type BusinessAssistantRunGroupByOutputType = {
   _max: BusinessAssistantRunMaxAggregateOutputType | null
 }
 
-type GetBusinessAssistantRunGroupByPayload<T extends BusinessAssistantRunGroupByArgs> = Prisma.PrismaPromise<
+export type GetBusinessAssistantRunGroupByPayload<T extends BusinessAssistantRunGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<BusinessAssistantRunGroupByOutputType, T['by']> &
       {
@@ -2286,6 +2286,11 @@ export type BusinessAssistantRunFindManyArgs<ExtArgs extends runtime.Types.Exten
    * Skip the first `n` BusinessAssistantRuns.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of BusinessAssistantRuns.
+   */
   distinct?: Prisma.BusinessAssistantRunScalarFieldEnum | Prisma.BusinessAssistantRunScalarFieldEnum[]
 }
 

@@ -235,7 +235,7 @@ export type BusinessAssistantLearningActiveTargetGroupByOutputType = {
   _max: BusinessAssistantLearningActiveTargetMaxAggregateOutputType | null
 }
 
-type GetBusinessAssistantLearningActiveTargetGroupByPayload<T extends BusinessAssistantLearningActiveTargetGroupByArgs> = Prisma.PrismaPromise<
+export type GetBusinessAssistantLearningActiveTargetGroupByPayload<T extends BusinessAssistantLearningActiveTargetGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<BusinessAssistantLearningActiveTargetGroupByOutputType, T['by']> &
       {
@@ -1407,6 +1407,11 @@ export type BusinessAssistantLearningActiveTargetFindManyArgs<ExtArgs extends ru
    * Skip the first `n` BusinessAssistantLearningActiveTargets.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of BusinessAssistantLearningActiveTargets.
+   */
   distinct?: Prisma.BusinessAssistantLearningActiveTargetScalarFieldEnum | Prisma.BusinessAssistantLearningActiveTargetScalarFieldEnum[]
 }
 

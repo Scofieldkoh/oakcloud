@@ -335,7 +335,7 @@ export type SystemBackupGroupByOutputType = {
   _max: SystemBackupMaxAggregateOutputType | null
 }
 
-type GetSystemBackupGroupByPayload<T extends SystemBackupGroupByArgs> = Prisma.PrismaPromise<
+export type GetSystemBackupGroupByPayload<T extends SystemBackupGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<SystemBackupGroupByOutputType, T['by']> &
       {
@@ -1551,6 +1551,11 @@ export type SystemBackupFindManyArgs<ExtArgs extends runtime.Types.Extensions.In
    * Skip the first `n` SystemBackups.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of SystemBackups.
+   */
   distinct?: Prisma.SystemBackupScalarFieldEnum | Prisma.SystemBackupScalarFieldEnum[]
 }
 

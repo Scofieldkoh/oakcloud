@@ -179,7 +179,7 @@ export type CompanyAuditorGroupByOutputType = {
   _max: CompanyAuditorMaxAggregateOutputType | null
 }
 
-type GetCompanyAuditorGroupByPayload<T extends CompanyAuditorGroupByArgs> = Prisma.PrismaPromise<
+export type GetCompanyAuditorGroupByPayload<T extends CompanyAuditorGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<CompanyAuditorGroupByOutputType, T['by']> &
       {
@@ -1330,6 +1330,11 @@ export type CompanyAuditorFindManyArgs<ExtArgs extends runtime.Types.Extensions.
    * Skip the first `n` CompanyAuditors.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of CompanyAuditors.
+   */
   distinct?: Prisma.CompanyAuditorScalarFieldEnum | Prisma.CompanyAuditorScalarFieldEnum[]
 }
 

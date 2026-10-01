@@ -241,7 +241,7 @@ export type FormUploadGroupByOutputType = {
   _max: FormUploadMaxAggregateOutputType | null
 }
 
-type GetFormUploadGroupByPayload<T extends FormUploadGroupByArgs> = Prisma.PrismaPromise<
+export type GetFormUploadGroupByPayload<T extends FormUploadGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<FormUploadGroupByOutputType, T['by']> &
       {
@@ -1897,6 +1897,11 @@ export type FormUploadFindManyArgs<ExtArgs extends runtime.Types.Extensions.Inte
    * Skip the first `n` FormUploads.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of FormUploads.
+   */
   distinct?: Prisma.FormUploadScalarFieldEnum | Prisma.FormUploadScalarFieldEnum[]
 }
 

@@ -201,7 +201,7 @@ export type PublicHolidaySourceRecordGroupByOutputType = {
   _max: PublicHolidaySourceRecordMaxAggregateOutputType | null
 }
 
-type GetPublicHolidaySourceRecordGroupByPayload<T extends PublicHolidaySourceRecordGroupByArgs> = Prisma.PrismaPromise<
+export type GetPublicHolidaySourceRecordGroupByPayload<T extends PublicHolidaySourceRecordGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<PublicHolidaySourceRecordGroupByOutputType, T['by']> &
       {
@@ -1134,6 +1134,11 @@ export type PublicHolidaySourceRecordFindManyArgs<ExtArgs extends runtime.Types.
    * Skip the first `n` PublicHolidaySourceRecords.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of PublicHolidaySourceRecords.
+   */
   distinct?: Prisma.PublicHolidaySourceRecordScalarFieldEnum | Prisma.PublicHolidaySourceRecordScalarFieldEnum[]
 }
 

@@ -200,7 +200,7 @@ export type ContactDuplicateDecisionGroupByOutputType = {
   _max: ContactDuplicateDecisionMaxAggregateOutputType | null
 }
 
-type GetContactDuplicateDecisionGroupByPayload<T extends ContactDuplicateDecisionGroupByArgs> = Prisma.PrismaPromise<
+export type GetContactDuplicateDecisionGroupByPayload<T extends ContactDuplicateDecisionGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<ContactDuplicateDecisionGroupByOutputType, T['by']> &
       {
@@ -1129,6 +1129,11 @@ export type ContactDuplicateDecisionFindManyArgs<ExtArgs extends runtime.Types.E
    * Skip the first `n` ContactDuplicateDecisions.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of ContactDuplicateDecisions.
+   */
   distinct?: Prisma.ContactDuplicateDecisionScalarFieldEnum | Prisma.ContactDuplicateDecisionScalarFieldEnum[]
 }
 

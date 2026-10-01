@@ -293,7 +293,7 @@ export type ServiceScheduleReconciliationRequestGroupByOutputType = {
   _max: ServiceScheduleReconciliationRequestMaxAggregateOutputType | null
 }
 
-type GetServiceScheduleReconciliationRequestGroupByPayload<T extends ServiceScheduleReconciliationRequestGroupByArgs> = Prisma.PrismaPromise<
+export type GetServiceScheduleReconciliationRequestGroupByPayload<T extends ServiceScheduleReconciliationRequestGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<ServiceScheduleReconciliationRequestGroupByOutputType, T['by']> &
       {
@@ -2088,6 +2088,11 @@ export type ServiceScheduleReconciliationRequestFindManyArgs<ExtArgs extends run
    * Skip the first `n` ServiceScheduleReconciliationRequests.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of ServiceScheduleReconciliationRequests.
+   */
   distinct?: Prisma.ServiceScheduleReconciliationRequestScalarFieldEnum | Prisma.ServiceScheduleReconciliationRequestScalarFieldEnum[]
 }
 

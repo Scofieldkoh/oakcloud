@@ -217,7 +217,7 @@ export type DocumentSectionGroupByOutputType = {
   _max: DocumentSectionMaxAggregateOutputType | null
 }
 
-type GetDocumentSectionGroupByPayload<T extends DocumentSectionGroupByArgs> = Prisma.PrismaPromise<
+export type GetDocumentSectionGroupByPayload<T extends DocumentSectionGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<DocumentSectionGroupByOutputType, T['by']> &
       {
@@ -1277,6 +1277,11 @@ export type DocumentSectionFindManyArgs<ExtArgs extends runtime.Types.Extensions
    * Skip the first `n` DocumentSections.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of DocumentSections.
+   */
   distinct?: Prisma.DocumentSectionScalarFieldEnum | Prisma.DocumentSectionScalarFieldEnum[]
 }
 

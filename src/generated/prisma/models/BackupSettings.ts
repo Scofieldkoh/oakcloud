@@ -305,7 +305,7 @@ export type BackupSettingsGroupByOutputType = {
   _max: BackupSettingsMaxAggregateOutputType | null
 }
 
-type GetBackupSettingsGroupByPayload<T extends BackupSettingsGroupByArgs> = Prisma.PrismaPromise<
+export type GetBackupSettingsGroupByPayload<T extends BackupSettingsGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<BackupSettingsGroupByOutputType, T['by']> &
       {
@@ -1433,6 +1433,11 @@ export type BackupSettingsFindManyArgs<ExtArgs extends runtime.Types.Extensions.
    * Skip the first `n` BackupSettings.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of BackupSettings.
+   */
   distinct?: Prisma.BackupSettingsScalarFieldEnum | Prisma.BackupSettingsScalarFieldEnum[]
 }
 

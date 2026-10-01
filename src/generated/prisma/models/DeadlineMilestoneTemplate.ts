@@ -251,7 +251,7 @@ export type DeadlineMilestoneTemplateGroupByOutputType = {
   _max: DeadlineMilestoneTemplateMaxAggregateOutputType | null
 }
 
-type GetDeadlineMilestoneTemplateGroupByPayload<T extends DeadlineMilestoneTemplateGroupByArgs> = Prisma.PrismaPromise<
+export type GetDeadlineMilestoneTemplateGroupByPayload<T extends DeadlineMilestoneTemplateGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<DeadlineMilestoneTemplateGroupByOutputType, T['by']> &
       {
@@ -1667,6 +1667,11 @@ export type DeadlineMilestoneTemplateFindManyArgs<ExtArgs extends runtime.Types.
    * Skip the first `n` DeadlineMilestoneTemplates.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of DeadlineMilestoneTemplates.
+   */
   distinct?: Prisma.DeadlineMilestoneTemplateScalarFieldEnum | Prisma.DeadlineMilestoneTemplateScalarFieldEnum[]
 }
 

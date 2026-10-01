@@ -210,7 +210,7 @@ export type AccountingIntegrationGroupByOutputType = {
   _max: AccountingIntegrationMaxAggregateOutputType | null
 }
 
-type GetAccountingIntegrationGroupByPayload<T extends AccountingIntegrationGroupByArgs> = Prisma.PrismaPromise<
+export type GetAccountingIntegrationGroupByPayload<T extends AccountingIntegrationGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<AccountingIntegrationGroupByOutputType, T['by']> &
       {
@@ -1470,6 +1470,11 @@ export type AccountingIntegrationFindManyArgs<ExtArgs extends runtime.Types.Exte
    * Skip the first `n` AccountingIntegrations.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of AccountingIntegrations.
+   */
   distinct?: Prisma.AccountingIntegrationScalarFieldEnum | Prisma.AccountingIntegrationScalarFieldEnum[]
 }
 

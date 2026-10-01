@@ -457,7 +457,7 @@ export type ProcessingDocumentGroupByOutputType = {
   _max: ProcessingDocumentMaxAggregateOutputType | null
 }
 
-type GetProcessingDocumentGroupByPayload<T extends ProcessingDocumentGroupByArgs> = Prisma.PrismaPromise<
+export type GetProcessingDocumentGroupByPayload<T extends ProcessingDocumentGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<ProcessingDocumentGroupByOutputType, T['by']> &
       {
@@ -8065,6 +8065,11 @@ export type ProcessingDocumentFindManyArgs<ExtArgs extends runtime.Types.Extensi
    * Skip the first `n` ProcessingDocuments.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of ProcessingDocuments.
+   */
   distinct?: Prisma.ProcessingDocumentScalarFieldEnum | Prisma.ProcessingDocumentScalarFieldEnum[]
 }
 

@@ -226,7 +226,7 @@ export type ServiceVariantDeadlineRuleGroupByOutputType = {
   _max: ServiceVariantDeadlineRuleMaxAggregateOutputType | null
 }
 
-type GetServiceVariantDeadlineRuleGroupByPayload<T extends ServiceVariantDeadlineRuleGroupByArgs> = Prisma.PrismaPromise<
+export type GetServiceVariantDeadlineRuleGroupByPayload<T extends ServiceVariantDeadlineRuleGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<ServiceVariantDeadlineRuleGroupByOutputType, T['by']> &
       {
@@ -1682,6 +1682,11 @@ export type ServiceVariantDeadlineRuleFindManyArgs<ExtArgs extends runtime.Types
    * Skip the first `n` ServiceVariantDeadlineRules.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of ServiceVariantDeadlineRules.
+   */
   distinct?: Prisma.ServiceVariantDeadlineRuleScalarFieldEnum | Prisma.ServiceVariantDeadlineRuleScalarFieldEnum[]
 }
 

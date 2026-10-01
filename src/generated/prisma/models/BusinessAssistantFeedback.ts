@@ -210,7 +210,7 @@ export type BusinessAssistantFeedbackGroupByOutputType = {
   _max: BusinessAssistantFeedbackMaxAggregateOutputType | null
 }
 
-type GetBusinessAssistantFeedbackGroupByPayload<T extends BusinessAssistantFeedbackGroupByArgs> = Prisma.PrismaPromise<
+export type GetBusinessAssistantFeedbackGroupByPayload<T extends BusinessAssistantFeedbackGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<BusinessAssistantFeedbackGroupByOutputType, T['by']> &
       {
@@ -1415,6 +1415,11 @@ export type BusinessAssistantFeedbackFindManyArgs<ExtArgs extends runtime.Types.
    * Skip the first `n` BusinessAssistantFeedbacks.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of BusinessAssistantFeedbacks.
+   */
   distinct?: Prisma.BusinessAssistantFeedbackScalarFieldEnum | Prisma.BusinessAssistantFeedbackScalarFieldEnum[]
 }
 

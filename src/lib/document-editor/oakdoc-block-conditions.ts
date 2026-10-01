@@ -27,7 +27,7 @@ function parseXml(bytes: Uint8Array): XMLDocument {
   return xml;
 }
 
-function serializeXml(xml: XMLDocument): Uint8Array {
+function serializeXml(xml: XMLDocument): Uint8Array<ArrayBuffer> {
   return encodeOakDocZipText(new XMLSerializer().serializeToString(xml));
 }
 

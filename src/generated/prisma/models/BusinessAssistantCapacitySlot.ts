@@ -241,7 +241,7 @@ export type BusinessAssistantCapacitySlotGroupByOutputType = {
   _max: BusinessAssistantCapacitySlotMaxAggregateOutputType | null
 }
 
-type GetBusinessAssistantCapacitySlotGroupByPayload<T extends BusinessAssistantCapacitySlotGroupByArgs> = Prisma.PrismaPromise<
+export type GetBusinessAssistantCapacitySlotGroupByPayload<T extends BusinessAssistantCapacitySlotGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<BusinessAssistantCapacitySlotGroupByOutputType, T['by']> &
       {
@@ -1194,6 +1194,11 @@ export type BusinessAssistantCapacitySlotFindManyArgs<ExtArgs extends runtime.Ty
    * Skip the first `n` BusinessAssistantCapacitySlots.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of BusinessAssistantCapacitySlots.
+   */
   distinct?: Prisma.BusinessAssistantCapacitySlotScalarFieldEnum | Prisma.BusinessAssistantCapacitySlotScalarFieldEnum[]
 }
 

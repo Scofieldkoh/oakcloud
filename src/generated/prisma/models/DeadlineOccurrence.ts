@@ -472,7 +472,7 @@ export type DeadlineOccurrenceGroupByOutputType = {
   _max: DeadlineOccurrenceMaxAggregateOutputType | null
 }
 
-type GetDeadlineOccurrenceGroupByPayload<T extends DeadlineOccurrenceGroupByArgs> = Prisma.PrismaPromise<
+export type GetDeadlineOccurrenceGroupByPayload<T extends DeadlineOccurrenceGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<DeadlineOccurrenceGroupByOutputType, T['by']> &
       {
@@ -6431,6 +6431,11 @@ export type DeadlineOccurrenceFindManyArgs<ExtArgs extends runtime.Types.Extensi
    * Skip the first `n` DeadlineOccurrences.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of DeadlineOccurrences.
+   */
   distinct?: Prisma.DeadlineOccurrenceScalarFieldEnum | Prisma.DeadlineOccurrenceScalarFieldEnum[]
 }
 

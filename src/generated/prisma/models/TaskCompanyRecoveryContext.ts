@@ -179,7 +179,7 @@ export type TaskCompanyRecoveryContextGroupByOutputType = {
   _max: TaskCompanyRecoveryContextMaxAggregateOutputType | null
 }
 
-type GetTaskCompanyRecoveryContextGroupByPayload<T extends TaskCompanyRecoveryContextGroupByArgs> = Prisma.PrismaPromise<
+export type GetTaskCompanyRecoveryContextGroupByPayload<T extends TaskCompanyRecoveryContextGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<TaskCompanyRecoveryContextGroupByOutputType, T['by']> &
       {
@@ -1647,6 +1647,11 @@ export type TaskCompanyRecoveryContextFindManyArgs<ExtArgs extends runtime.Types
    * Skip the first `n` TaskCompanyRecoveryContexts.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of TaskCompanyRecoveryContexts.
+   */
   distinct?: Prisma.TaskCompanyRecoveryContextScalarFieldEnum | Prisma.TaskCompanyRecoveryContextScalarFieldEnum[]
 }
 

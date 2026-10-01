@@ -175,7 +175,7 @@ export type FieldMappingGroupByOutputType = {
   _max: FieldMappingMaxAggregateOutputType | null
 }
 
-type GetFieldMappingGroupByPayload<T extends FieldMappingGroupByArgs> = Prisma.PrismaPromise<
+export type GetFieldMappingGroupByPayload<T extends FieldMappingGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<FieldMappingGroupByOutputType, T['by']> &
       {
@@ -1228,6 +1228,11 @@ export type FieldMappingFindManyArgs<ExtArgs extends runtime.Types.Extensions.In
    * Skip the first `n` FieldMappings.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of FieldMappings.
+   */
   distinct?: Prisma.FieldMappingScalarFieldEnum | Prisma.FieldMappingScalarFieldEnum[]
 }
 

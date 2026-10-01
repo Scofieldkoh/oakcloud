@@ -330,7 +330,7 @@ export type WorkspaceBackupGroupByOutputType = {
   _max: WorkspaceBackupMaxAggregateOutputType | null
 }
 
-type GetWorkspaceBackupGroupByPayload<T extends WorkspaceBackupGroupByArgs> = Prisma.PrismaPromise<
+export type GetWorkspaceBackupGroupByPayload<T extends WorkspaceBackupGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<WorkspaceBackupGroupByOutputType, T['by']> &
       {
@@ -1830,6 +1830,11 @@ export type WorkspaceBackupFindManyArgs<ExtArgs extends runtime.Types.Extensions
    * Skip the first `n` WorkspaceBackups.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of WorkspaceBackups.
+   */
   distinct?: Prisma.WorkspaceBackupScalarFieldEnum | Prisma.WorkspaceBackupScalarFieldEnum[]
 }
 

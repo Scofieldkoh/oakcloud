@@ -161,7 +161,7 @@ export type ProcessingCheckpointGroupByOutputType = {
   _max: ProcessingCheckpointMaxAggregateOutputType | null
 }
 
-type GetProcessingCheckpointGroupByPayload<T extends ProcessingCheckpointGroupByArgs> = Prisma.PrismaPromise<
+export type GetProcessingCheckpointGroupByPayload<T extends ProcessingCheckpointGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<ProcessingCheckpointGroupByOutputType, T['by']> &
       {
@@ -1161,6 +1161,11 @@ export type ProcessingCheckpointFindManyArgs<ExtArgs extends runtime.Types.Exten
    * Skip the first `n` ProcessingCheckpoints.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   *
+   * Filter by unique combinations of ProcessingCheckpoints.
+   */
   distinct?: Prisma.ProcessingCheckpointScalarFieldEnum | Prisma.ProcessingCheckpointScalarFieldEnum[]
 }
 
