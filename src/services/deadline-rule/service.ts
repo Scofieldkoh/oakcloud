@@ -565,7 +565,7 @@ export async function replaceVariantRuleAssociations(
 }
 
 /**
- * Stage the reviewed preset for an existing SG_ECI / SG_FORM_C rule as its
+ * Stage the reviewed preset for an existing rule with a preset code as its
  * draft. Nothing is published here: staff still preview the impact and
  * publish through the normal fingerprinted flow, and published history stays.
  */

@@ -13,7 +13,7 @@ import {
   type DateOnly,
   type DeadlineRuleEvaluationInput,
 } from '@/services/service-schedule';
-import { SG_ECI_PRESET, SG_FORM_C_PRESET } from '@/services/deadline-rule/presets';
+import { SG_AGM_PRESET, SG_ANNUAL_RETURN_PRESET, SG_ECI_PRESET, SG_FORM_C_PRESET } from '@/services/deadline-rule/presets';
 import { projectDeadlineRule } from '@/services/schedule-reconciliation/projection';
 import type { DeadlineRuleProjectionInput } from '@/services/schedule-reconciliation/types';
 
@@ -105,7 +105,7 @@ describe('month-end ECI arithmetic', () => {
 
 describe('reviewed tax presets', () => {
   it('validate under the shared expression schema with no months-after-FYE question', () => {
-    for (const preset of [SG_ECI_PRESET, SG_FORM_C_PRESET]) {
+    for (const preset of [SG_ECI_PRESET, SG_FORM_C_PRESET, SG_AGM_PRESET, SG_ANNUAL_RETURN_PRESET]) {
       expect(preset.definition.parameters).toEqual([]);
       for (const milestone of preset.definition.milestones) {
         expect(milestoneExpressionSchema.safeParse(milestone.expression).success).toBe(true);
@@ -130,6 +130,32 @@ describe('reviewed tax presets', () => {
     }));
     expect(result.occurrences[0]?.calculatedDueDate).toBe(example.dueDate);
     expect(result.occurrences[0]?.explanation.join(' ')).toContain(`YA ${example.yearOfAssessment}`);
+  });
+
+  it.each([
+    ...SG_AGM_PRESET.examples.map((example) => ['AGM', SG_AGM_PRESET, example] as const),
+    ...SG_ANNUAL_RETURN_PRESET.examples.map((example) => ['Annual return', SG_ANNUAL_RETURN_PRESET, example] as const),
+  ])('%s example FYE %o is due on its example date', (_label, preset, example) => {
+    const result = evaluateDeadlineRule(presetInput(preset, {
+      start: addMonthsClamped(example.financialYearEnd, -12),
+      end: example.financialYearEnd,
+      yearOfAssessment: example.yearOfAssessment,
+    }));
+    expect(result.occurrences.map((occurrence) => occurrence.calculatedDueDate)).toEqual([example.dueDate]);
+  });
+
+  it('projects ACRA presets per financial period even under the old backlog rule codes', () => {
+    for (const [preset, dueDates] of [
+      [SG_AGM_PRESET, ['2026-09-30', '2027-09-30']],
+      [SG_ANNUAL_RETURN_PRESET, ['2026-10-31', '2027-10-31']],
+    ] as const) {
+      const result = projectDeadlineRule(projectionInput(preset, { company: { accountsDueDate: '2026-07-31' }, horizonEnd: '2027-12-31' }));
+      expect(result.materializationPolicy).toBe('OBLIGATION_PERIOD');
+      expect(result.occurrences.map((occurrence) => [occurrence.periodKey, occurrence.calculatedDueDate])).toEqual([
+        ['FY2026-03-31', dueDates[0]],
+        ['FY2027-03-31', dueDates[1]],
+      ]);
+    }
   });
 
   it('reports a typed missing input when no explicit period or YA is supplied', () => {

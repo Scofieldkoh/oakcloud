@@ -20,7 +20,7 @@ import {
 } from '@/hooks/use-deadline-rules';
 import type { DeadlineRuleDraftInput } from '@/lib/validations/deadline-rule';
 import type { DeadlineRuleArchiveInput, DeadlineRuleImpactInput, DeadlineRulePublishInput } from '@/services/deadline-rule';
-import type { DeadlineRuleDto, DeadlineRuleImpact } from '@/services/deadline-rule';
+import type { DeadlineRuleDto, DeadlineRuleImpact, DeadlineRulePresetCode } from '@/services/deadline-rule';
 import { DeadlineRuleForm, describeBusinessDayAdjustment, describeDeadlineExpression, describeRuleRecurrence } from './deadline-rule-form';
 import { RuleImpactDialog } from './rule-impact-dialog';
 
@@ -32,6 +32,28 @@ interface DeadlineRulesPanelProps {
 }
 
 type StatusFilter = 'all' | 'active' | 'inactive';
+
+/** Reviewed statutory presets, grouped by the authority each filing goes to. */
+const PRESET_GROUPS: Array<{ authority: 'IRAS' | 'ACRA'; presets: Array<{ code: DeadlineRulePresetCode; label: string }> }> = [
+  {
+    authority: 'IRAS',
+    presets: [
+      { code: 'SG_ECI', label: 'Estimated Chargeable Income (ECI)' },
+      { code: 'SG_FORM_C', label: 'Corporate income tax return (Form C)' },
+    ],
+  },
+  {
+    authority: 'ACRA',
+    presets: [
+      { code: 'SG_AGM_DUE', label: 'Annual general meeting (AGM)' },
+      { code: 'SG_ANNUAL_RETURN', label: 'Annual return (AR)' },
+    ],
+  },
+];
+
+const PRESET_AUTHORITY = Object.fromEntries(
+  PRESET_GROUPS.flatMap((group) => group.presets.map((preset) => [preset.code, group.authority])),
+) as Record<DeadlineRulePresetCode, 'IRAS' | 'ACRA'>;
 
 function ruleDraftIdentity(rule: DeadlineRuleDto, operation: 'PUBLISH' | 'ARCHIVE'): DeadlineRuleImpactInput {
   const draft = rule.draft ?? rule.currentVersion;
@@ -181,7 +203,7 @@ export function DeadlineRulesPanel({
     }
   };
 
-  const handleApplyPreset = async (code: 'SG_ECI' | 'SG_FORM_C') => {
+  const handleApplyPreset = async (code: DeadlineRulePresetCode) => {
     setActionError(null);
     try {
       const staged = await applyPreset.mutateAsync({ code });
@@ -193,7 +215,7 @@ export function DeadlineRulesPanel({
       setSelectedId(staged.id);
       setSelectedOverride(staged);
     } catch (error) {
-      setActionError(error instanceof Error ? error.message : 'Unable to apply the IRAS rule.');
+      setActionError(error instanceof Error ? error.message : 'Unable to apply the ' + PRESET_AUTHORITY[code] + ' rule.');
     }
   };
 
@@ -289,16 +311,21 @@ export function DeadlineRulesPanel({
           <p className="mt-1 text-sm text-text-secondary">Define who each rule applies to, how deadlines are calculated, and preview the future impact before publishing.</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Dropdown>
-            <DropdownTrigger className="min-h-11 sm:min-h-8">
-              {applyPreset.isPending ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : null}
-              Add IRAS rule
-            </DropdownTrigger>
-            <DropdownMenu align="right">
-              <DropdownItem disabled={applyPreset.isPending} onClick={() => void handleApplyPreset('SG_ECI')}>Estimated Chargeable Income (ECI)</DropdownItem>
-              <DropdownItem disabled={applyPreset.isPending} onClick={() => void handleApplyPreset('SG_FORM_C')}>Corporate income tax return (Form C)</DropdownItem>
-            </DropdownMenu>
-          </Dropdown>
+          {PRESET_GROUPS.map((group) => (
+            <Dropdown key={group.authority}>
+              <DropdownTrigger className="min-h-11 sm:min-h-8">
+                {applyPreset.isPending && applyPreset.variables && PRESET_AUTHORITY[applyPreset.variables.code] === group.authority
+                  ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                  : null}
+                Add {group.authority} rule
+              </DropdownTrigger>
+              <DropdownMenu align="right">
+                {group.presets.map((preset) => (
+                  <DropdownItem key={preset.code} disabled={applyPreset.isPending} onClick={() => void handleApplyPreset(preset.code)}>{preset.label}</DropdownItem>
+                ))}
+              </DropdownMenu>
+            </Dropdown>
+          ))}
           <Button type="button" size="sm" className="min-h-11 sm:min-h-8" leftIcon={<Plus className="h-4 w-4" />} onClick={() => { setCreating(true); setDraftDirty(false); setPreview(null); }}>
             Add deadline rule
           </Button>

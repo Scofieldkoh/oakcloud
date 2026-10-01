@@ -84,7 +84,7 @@ export interface ManualClientServiceCatalogVariantOption {
   serviceCadence: ServiceCadence;
   customCadenceLabel: string | null;
   /** Company statutory monitoring this service starts once saved. */
-  monitoringProfiles?: Array<'CORPORATE_TAX' | 'NOMINEE_DIRECTOR'>;
+  monitoringProfiles?: Array<'CORPORATE_TAX' | 'CORPORATE_SECRETARIAL' | 'NOMINEE_DIRECTOR'>;
   fields: ManualClientServiceCatalogField[];
   feeTemplates: ManualClientServiceCatalogFeeTemplate[];
   deadlineRules: ManualClientServiceCatalogDeadlineRule[];

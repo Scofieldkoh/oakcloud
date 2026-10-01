@@ -18,7 +18,7 @@ interface DeadlineBulkActionsProps {
   onUpdate: (occurrence: DeadlineOccurrenceDto, data: UpdateDeadlineOccurrenceInput) => Promise<unknown>;
 }
 
-const FILING_LABELS: Record<string, string> = { SG_ECI: 'ECI', SG_FORM_C: 'Form C' };
+const FILING_LABELS: Record<string, string> = { SG_ECI: 'ECI', SG_FORM_C: 'Form C', SG_AGM_DUE: 'AGM', SG_ANNUAL_RETURN: 'Annual return' };
 
 type UnbilledFilingResponse = {
   items: Array<{

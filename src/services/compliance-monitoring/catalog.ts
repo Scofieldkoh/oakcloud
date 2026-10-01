@@ -6,9 +6,9 @@
  * service names are never parsed to decide what Oakcloud monitors.
  */
 
-export type MonitoringProfile = 'CORPORATE_TAX' | 'NOMINEE_DIRECTOR';
+export type MonitoringProfile = 'CORPORATE_TAX' | 'CORPORATE_SECRETARIAL' | 'NOMINEE_DIRECTOR';
 
-export const MONITORING_PROFILES: readonly MonitoringProfile[] = ['CORPORATE_TAX', 'NOMINEE_DIRECTOR'];
+export const MONITORING_PROFILES: readonly MonitoringProfile[] = ['CORPORATE_TAX', 'CORPORATE_SECRETARIAL', 'NOMINEE_DIRECTOR'];
 
 export type ObligationFamily =
   | 'CORPORATE_TAX'
@@ -74,15 +74,26 @@ export const OBLIGATION_CATALOG: readonly ObligationDefinition[] = [
     reviewAction: null,
   },
   {
-    code: 'SG_ANNUAL_RETURN_AGM',
+    code: 'SG_AGM_DUE',
     family: 'ANNUAL_RETURN_AGM',
-    displayName: 'Annual return, AGM and financial statements',
+    displayName: 'Annual general meeting (AGM)',
     authority: 'ACRA',
-    automation: 'REVIEW_UNTIL_TEMPLATE',
-    ruleCode: null,
+    automation: 'PRESET_RULE',
+    ruleCode: 'SG_AGM_DUE',
     applicability: 'ALWAYS',
-    plainRule: 'Depends on entity type, financial period and any AGM exemption',
-    reviewAction: 'Confirm the annual return and AGM dates for the current financial period, including any exemption or extension.',
+    plainRule: 'Within six months after the financial year ends',
+    reviewAction: null,
+  },
+  {
+    code: 'SG_ANNUAL_RETURN',
+    family: 'ANNUAL_RETURN_AGM',
+    displayName: 'Annual return (AR)',
+    authority: 'ACRA',
+    automation: 'PRESET_RULE',
+    ruleCode: 'SG_ANNUAL_RETURN',
+    applicability: 'ALWAYS',
+    plainRule: 'Within seven months after the financial year ends',
+    reviewAction: null,
   },
   {
     code: 'SG_GST_RETURN',
@@ -133,6 +144,7 @@ export const OBLIGATION_CATALOG: readonly ObligationDefinition[] = [
 /** Families each coverage profile makes Oakcloud responsible for monitoring. */
 export const PROFILE_FAMILIES: Record<MonitoringProfile, readonly ObligationFamily[]> = {
   CORPORATE_TAX: ['CORPORATE_TAX'],
+  CORPORATE_SECRETARIAL: ['ANNUAL_RETURN_AGM'],
   NOMINEE_DIRECTOR: [
     'CORPORATE_TAX',
     'ANNUAL_RETURN_AGM',
@@ -145,11 +157,13 @@ export const PROFILE_FAMILIES: Record<MonitoringProfile, readonly ObligationFami
 
 export const MONITORING_PROFILE_LABELS: Record<MonitoringProfile, string> = {
   CORPORATE_TAX: 'Tax engagement',
+  CORPORATE_SECRETARIAL: 'Corporate secretarial',
   NOMINEE_DIRECTOR: 'Nominee director',
 };
 
 export const MONITORING_PROFILE_HINTS: Record<MonitoringProfile, string> = {
   CORPORATE_TAX: 'ECI and the corporate income tax return',
+  CORPORATE_SECRETARIAL: 'AGM and annual return',
   NOMINEE_DIRECTOR: 'All statutory obligations of the company',
 };
 
@@ -176,4 +190,23 @@ export function obligationsForProfiles(profiles: Iterable<MonitoringProfile>): O
 
 export function isMonitoringProfile(value: unknown): value is MonitoringProfile {
   return typeof value === 'string' && (MONITORING_PROFILES as readonly string[]).includes(value);
+}
+
+/** True for ACRA obligations, which are labelled by financial year rather than YA. */
+export function isAcraObligation(code: string): boolean {
+  return obligationDefinition(code)?.authority === 'ACRA';
+}
+
+/**
+ * The period badge for a company obligation: "FY 2026" (year of the FYE) for
+ * ACRA filings, "YA 2027" for tax filings, or null when neither is known.
+ */
+export function obligationPeriodLabel(item: {
+  obligationCode?: string | null;
+  periodKey?: string | null;
+  yearOfAssessment?: number | null;
+}): string | null {
+  const financialYear = /^FY(\d{4})-\d{2}-\d{2}$/.exec(item.periodKey ?? '');
+  if (item.obligationCode && isAcraObligation(item.obligationCode) && financialYear) return `FY ${financialYear[1]}`;
+  return item.yearOfAssessment ? `YA ${item.yearOfAssessment}` : null;
 }

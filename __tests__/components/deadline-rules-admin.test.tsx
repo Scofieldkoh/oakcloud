@@ -162,6 +162,18 @@ describe('DeadlineRulesPanel', () => {
     await waitFor(() => expect(applyPreset.mutateAsync).toHaveBeenCalledWith({ code: 'SG_ECI' }));
   });
 
+  it('adds a reviewed ACRA rule as a draft from its own header action', async () => {
+    const applyPreset = { ...mutation(), mutateAsync: vi.fn().mockResolvedValue({ ...rule, code: 'SG_AGM_DUE', name: 'Annual general meeting (AGM)' }) };
+    hooks.useApplyDeadlineRulePreset.mockReturnValue(applyPreset);
+    render(<DeadlineRulesPanel workspaceId="22222222-2222-4222-8222-222222222222" />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add ACRA rule' }));
+    expect(screen.getByRole('menuitem', { name: 'Annual return (AR)' })).toBeVisible();
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Annual general meeting (AGM)' }));
+
+    await waitFor(() => expect(applyPreset.mutateAsync).toHaveBeenCalledWith({ code: 'SG_AGM_DUE' }));
+  });
+
   it('requires a current impact preview before publishing', async () => {
     render(<DeadlineRulesPanel workspaceId="22222222-2222-4222-8222-222222222222" />);
 

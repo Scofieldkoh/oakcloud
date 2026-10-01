@@ -4,6 +4,7 @@ import { requireAuth } from '@/lib/auth';
 import { resolveWorkspaceId } from '@/lib/api-helpers';
 import { requireServiceAdministrator } from '@/lib/service-administration-auth';
 import { applyDeadlineRulePreset } from '@/services/deadline-rule';
+import { DEADLINE_RULE_PRESET_CODES } from '@/services/deadline-rule/presets';
 import {
   parseRequestTenantId,
   parseStrictTenantQuery,
@@ -13,10 +14,10 @@ import {
 } from '../../route-utils';
 
 const applyPresetSchema = z.object({
-  code: z.enum(['SG_ECI', 'SG_FORM_C']),
+  code: z.enum(DEADLINE_RULE_PRESET_CODES),
 }).strict();
 
-/** Create or re-stage the workspace's rule for a reviewed IRAS preset as a draft. */
+/** Create or re-stage the workspace's rule for a reviewed IRAS or ACRA preset as a draft. */
 export async function POST(request: NextRequest) {
   try {
     const session = await requireAuth();

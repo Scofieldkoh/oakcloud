@@ -207,6 +207,7 @@ export type DeadlineOwnershipScope = (typeof DeadlineOwnershipScope)[keyof typeo
 
 export const MonitoringProfile = {
   CORPORATE_TAX: 'CORPORATE_TAX',
+  CORPORATE_SECRETARIAL: 'CORPORATE_SECRETARIAL',
   NOMINEE_DIRECTOR: 'NOMINEE_DIRECTOR'
 } as const
 

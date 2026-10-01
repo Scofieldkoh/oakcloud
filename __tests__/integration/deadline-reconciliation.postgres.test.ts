@@ -542,7 +542,7 @@ describePostgres('deadline reconciliation PostgreSQL integration', () => {
     });
     const reconciledTuples = occurrences
       .map((occurrence) => [occurrence.milestoneKey, occurrence.operativeDueDate.toISOString().slice(0, 10)])
-      .sort((left, right) => String(left[1]).localeCompare(String(right[1])));
+      .sort((left, right) => String(left[1]).localeCompare(String(right[1])) || String(left[0]).localeCompare(String(right[0])));
     expect(reconciledTuples).toEqual([
       ['agm-due', '2024-06-30'],
       ['annual-return-due', '2024-07-31'],
@@ -556,7 +556,7 @@ describePostgres('deadline reconciliation PostgreSQL integration', () => {
     ]);
     const previewTuples = impact.projectedDeadlines
       .map((deadline) => [deadline.milestoneKey, deadline.calculatedDueDate])
-      .sort((left, right) => String(left[1]).localeCompare(String(right[1])));
+      .sort((left, right) => String(left[1]).localeCompare(String(right[1])) || String(left[0]).localeCompare(String(right[0])));
     expect(previewTuples).toEqual(reconciledTuples);
     expect(reconciledTuples.filter(([milestone]) => milestone === 'eci-due'))
       .toEqual([['eci-due', '2027-07-31']]);

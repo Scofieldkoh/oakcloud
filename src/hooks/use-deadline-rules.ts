@@ -8,6 +8,7 @@ import type {
 import type {
   DeadlineRuleArchiveInput,
   DeadlineRuleImpactInput,
+  DeadlineRulePresetCode,
   DeadlineRulePublishInput,
 } from '@/services/deadline-rule';
 import type {
@@ -229,7 +230,7 @@ export function usePublishDeadlineRule(workspaceId: string | undefined) {
 
 export function useApplyDeadlineRulePreset(workspaceId: string | undefined) {
   const queryClient = useQueryClient();
-  return useMutation<DeadlineRuleDto, AdminRequestError, { code: 'SG_ECI' | 'SG_FORM_C' }>({
+  return useMutation<DeadlineRuleDto, AdminRequestError, { code: DeadlineRulePresetCode }>({
     mutationFn: ({ code }) => requestJson<DeadlineRuleDto>(
       `/api/service-catalog/deadline-rules/presets${queryString(workspaceId!)}`,
       {
