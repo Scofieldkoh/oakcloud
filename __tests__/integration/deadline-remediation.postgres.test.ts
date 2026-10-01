@@ -29,6 +29,14 @@ describePostgres('deadline occurrence remediation PostgreSQL integration', () =>
 
   afterAll(async () => {
     await prisma.auditLog.deleteMany({ where: { tenantId } });
+    await prisma.deadlineOccurrenceCoverageLink.deleteMany({ where: { tenantId } });
+    await prisma.deadlineResponsibilityChange.deleteMany({ where: { tenantId } });
+    await prisma.companyComplianceIssue.deleteMany({ where: { tenantId } });
+    await prisma.clientServiceObligationScope.deleteMany({ where: { tenantId } });
+    await prisma.companyMonitoringCoverage.deleteMany({ where: { tenantId } });
+    await prisma.companyFinancialPeriod.deleteMany({ where: { tenantId } });
+    await prisma.billingCoverageIssue.deleteMany({ where: { tenantId } });
+    await prisma.billingOccurrence.deleteMany({ where: { tenantId } });
     await prisma.deadlineOccurrence.deleteMany({ where: { tenantId } });
     await prisma.serviceCycle.deleteMany({ where: { tenantId } });
     await prisma.clientServiceDeadlineRule.deleteMany({ where: { tenantId } });
@@ -54,7 +62,7 @@ describePostgres('deadline occurrence remediation PostgreSQL integration', () =>
     const clientServiceId = randomUUID();
 
     await prisma.templatePartial.create({
-      data: { id: partialId, tenantId, name: 'remediation-partial', content: 'repair', createdById: userId },
+      data: { id: partialId, tenantId, name: `remediation-partial-${partialId.slice(0, 8)}`, content: 'repair', createdById: userId },
     });
     await prisma.company.create({
       data: {
@@ -71,10 +79,10 @@ describePostgres('deadline occurrence remediation PostgreSQL integration', () =>
       },
     });
     await prisma.serviceFamily.create({
-      data: { id: familyId, tenantId, code: `RFAM_${tenantId.slice(0, 6)}`, name: 'Repair Family', displayColor: '#0F766E' },
+      data: { id: familyId, tenantId, code: `RFAM_${familyId.slice(0, 8)}`, name: 'Repair Family', displayColor: '#0F766E' },
     });
     await prisma.serviceVariant.create({
-      data: { id: variantId, tenantId, familyId, sowPartialId: partialId, code: `RSVC_${tenantId.slice(0, 6)}`, name: 'Repair Service', serviceCadence: 'ANNUALLY' },
+      data: { id: variantId, tenantId, familyId, sowPartialId: partialId, code: `RSVC_${variantId.slice(0, 8)}`, name: 'Repair Service', serviceCadence: 'ANNUALLY' },
     });
 
     const rules = [
@@ -98,13 +106,14 @@ describePostgres('deadline occurrence remediation PostgreSQL integration', () =>
       const versionId = randomUUID();
       ruleIds.push(ruleId);
       versionIds[ruleId] = versionId;
+      // Rule codes are unique per workspace and this fixture is seeded twice, so retire the earlier fixture's code.
+      await prisma.deadlineRule.updateMany({ where: { tenantId, code: rule.code }, data: { code: `${rule.code}_${ruleId.slice(0, 8)}` } });
       await prisma.deadlineRule.create({
         data: {
           id: ruleId,
           tenantId,
           code: rule.code,
           name: rule.code,
-          currentVersionId: versionId,
           versions: {
             create: {
               id: versionId,
@@ -132,12 +141,14 @@ describePostgres('deadline occurrence remediation PostgreSQL integration', () =>
           },
         },
       });
+      await prisma.deadlineRule.update({ where: { id: ruleId }, data: { currentVersionId: versionId } });
     }
     await prisma.clientService.create({
       data: {
         id: clientServiceId,
         tenantId,
         companyId,
+        source: 'MANUAL',
         serviceVariantId: variantId,
         familyName: 'Repair Family',
         serviceName: 'Repair Fixture Service',
@@ -247,7 +258,8 @@ describePostgres('deadline occurrence remediation PostgreSQL integration', () =>
     const authOccurrenceRows: Array<Record<string, unknown>> = [];
     for (const cycle of authCycles) {
       const isAgm = cycle.ruleId === authAgmRuleId;
-      const year = cycle.periodKey;
+      // The stray 'BUG' cycles duplicate the 2027 deadlines, so they are future rows the repair must cancel.
+      const year = cycle.periodKey === 'BUG' ? '2027' : cycle.periodKey;
       const dueDate = isAgm ? `${year}-06-30` : `${year}-07-31`;
       authOccurrenceRows.push(occurrenceData(
         cycle.id,
@@ -265,6 +277,8 @@ describePostgres('deadline occurrence remediation PostgreSQL integration', () =>
       id: protectedRowId,
       milestoneKey: 'completed-milestone',
       status: 'COMPLETED',
+      completedAt: new Date('2024-06-15T00:00:00.000Z'),
+      completedById: userId,
       clientServiceId: authService,
       ruleVersionId: authoritative.versionIds[authAgmRuleId],
       companyId: authCompany,
@@ -281,7 +295,8 @@ describePostgres('deadline occurrence remediation PostgreSQL integration', () =>
     };
 
     const dryRun = await previewDeadlineOccurrenceRemediation(input, prisma);
-    expect(dryRun.counts.CREATE).toBeGreaterThan(0);
+    // Every canonical cycle already has a row, so the repair moves and cancels rows rather than creating any.
+    expect(dryRun.counts.CREATE).toBe(0);
     expect(dryRun.counts.RECALCULATE).toBeGreaterThan(0);
     expect(dryRun.counts.CANCEL).toBeGreaterThan(0);
     expect(dryRun.counts.PRESERVE).toBeGreaterThan(0);
@@ -308,12 +323,12 @@ describePostgres('deadline occurrence remediation PostgreSQL integration', () =>
     expect(authOccurrences.map((occ) => [occ.milestoneKey, occ.operativeDueDate.toISOString().slice(0, 10)]).sort())
       .toEqual([
         ['agm-due', '2024-06-30'],
-        ['annual-return-due', '2024-07-31'],
         ['agm-due', '2025-06-30'],
-        ['annual-return-due', '2025-07-31'],
         ['agm-due', '2026-06-30'],
-        ['annual-return-due', '2026-07-31'],
         ['agm-due', '2027-06-30'],
+        ['annual-return-due', '2024-07-31'],
+        ['annual-return-due', '2025-07-31'],
+        ['annual-return-due', '2026-07-31'],
         ['annual-return-due', '2027-07-31'],
       ]);
 

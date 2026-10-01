@@ -232,7 +232,7 @@ describePostgres('service agreement activation PostgreSQL concurrency', () => {
     for (const [index, lineage] of invalid.entries()) {
       await expect(prisma.clientService.create({
         data: { ...base, ...lineage, serviceName: `Invalid lineage ${index}` },
-      })).rejects.toMatchObject({ code: 'P2004' });
+      })).rejects.toThrow(/client_services_source_reference_consistency/);
     }
 
     expect(await prisma.clientService.count({ where: { tenantId: seeded.workspace.id } })).toBe(0);
