@@ -26,6 +26,12 @@ export interface DocumentContactChoiceListProps {
    * client does not (identification number, UEN) stay visible.
    */
   serverFiltered?: boolean;
+  /** Pick one contact (radio buttons) instead of several. */
+  single?: boolean;
+  /** Heading; defaults to "Contacts". */
+  label?: string;
+  /** Unique id prefix when several lists share a page. */
+  id?: string;
 }
 
 function contactMeta(contact: DocumentContact): string[] {
@@ -41,6 +47,9 @@ export function DocumentContactChoiceList({
   onSearch,
   isLoading = false,
   serverFiltered = false,
+  single = false,
+  label = 'Contacts',
+  id = 'document-contacts',
 }: DocumentContactChoiceListProps) {
   const [query, setQuery] = useState('');
   const selectedIds = useMemo(() => new Set(selected.map((contact) => contact.id)), [selected]);
@@ -59,22 +68,29 @@ export function DocumentContactChoiceList({
   }, [contacts, normalizedQuery, selected, serverFiltered]);
 
   const toggleContact = (contact: DocumentContact) => {
+    if (single) {
+      onChange(selectedIds.has(contact.id) ? [] : [contact]);
+      return;
+    }
     onChange(
       selectedIds.has(contact.id)
         ? selected.filter((item) => item.id !== contact.id)
         : [...selected, contact],
     );
   };
+  const headingId = `${id}-label`;
 
   return (
-    <section className="space-y-2" aria-labelledby="document-contacts-label">
+    <section className="space-y-2" aria-labelledby={headingId}>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h3 id="document-contacts-label" className="text-xs font-medium text-text-secondary">
-            Contacts
+          <h3 id={headingId} className="text-xs font-medium text-text-secondary">
+            {label}
           </h3>
           <p className="text-xs text-text-muted">
-            {selected.length === 0 ? 'No contacts selected' : `${selected.length} selected`}
+            {selected.length === 0
+              ? single ? 'No contact selected' : 'No contacts selected'
+              : single ? selected[0].fullName : `${selected.length} selected`}
           </p>
         </div>
         {selected.length > 0 ? (
@@ -82,9 +98,9 @@ export function DocumentContactChoiceList({
             variant="ghost"
             size="sm"
             onClick={() => onChange([])}
-            aria-label="Clear all contacts"
+            aria-label={single ? 'Clear the contact' : 'Clear all contacts'}
           >
-            Clear all
+            {single ? 'Clear' : 'Clear all'}
           </Button>
         ) : null}
       </div>
@@ -99,7 +115,7 @@ export function DocumentContactChoiceList({
             setQuery(value);
             void onSearch?.(value);
           }}
-          aria-label="Search contacts"
+          aria-label={`Search ${label.toLocaleLowerCase()}`}
           placeholder="Search contacts..."
           className="min-h-11 w-full rounded-lg border border-border-primary bg-background-elevated py-2 pl-9 pr-4 text-sm text-text-primary placeholder:text-text-muted focus:border-oak-primary focus:outline-none focus:ring-2 focus:ring-oak-primary/30"
         />
@@ -129,7 +145,8 @@ export function DocumentContactChoiceList({
                 )}
               >
                 <input
-                  type="checkbox"
+                  type={single ? 'radio' : 'checkbox'}
+                  name={single ? `${id}-choice` : undefined}
                   checked={isSelected}
                   onChange={() => toggleContact(contact)}
                   aria-label={`Select ${contact.fullName}`}

@@ -1,4 +1,5 @@
 import {
+  OAKDOC_CONTACTS_REPEATER_TAG,
   OAKDOC_DIRECTORS_REPEATER_TAG,
   OAKDOC_SHAREHOLDERS_REPEATER_TAG,
 } from '@/lib/document-editor/oakdoc-repeater-definitions';
@@ -16,13 +17,18 @@ export interface TemplatePartyNeeds {
   shareholder: boolean;
   shareholders: boolean;
   contact: boolean;
-  /** Legacy contact placeholders, chosen as a contact list. */
+  /** A contact list: the Word contacts repeater or legacy contact placeholders. */
   contacts: boolean;
 }
 
+function usesField(tags: ReadonlySet<string>, root: string): boolean {
+  for (const tag of tags) if (tag.startsWith(`${root}.`)) return true;
+  return false;
+}
+
 /**
- * A template without known content asks for every single party; Word
- * repeaters add the director and shareholder lists.
+ * A template without known content asks for every single party. A Word
+ * template asks for the parties its fields and repeaters use.
  */
 export function templatePartyNeeds(
   templateContent: string | undefined,
@@ -36,12 +42,14 @@ export function templatePartyNeeds(
     : getTemplatePartyCollections(templateContent);
   const tags = new Set(templateFieldTags ?? []);
   return {
-    director: selections.director,
+    director: selections.director || usesField(tags, 'selectedDirector'),
     directors: legacy.directors || tags.has(OAKDOC_DIRECTORS_REPEATER_TAG),
-    shareholder: selections.shareholder,
+    shareholder: selections.shareholder || usesField(tags, 'selectedShareholder'),
     shareholders: legacy.shareholders || tags.has(OAKDOC_SHAREHOLDERS_REPEATER_TAG),
-    contact: selections.contact,
-    contacts: templateContent === undefined ? true : getRequiredLegacyContactSelection(templateContent),
+    contact: selections.contact || usesField(tags, 'selectedContact'),
+    contacts: templateContent === undefined
+      || tags.has(OAKDOC_CONTACTS_REPEATER_TAG)
+      || getRequiredLegacyContactSelection(templateContent),
   };
 }
 

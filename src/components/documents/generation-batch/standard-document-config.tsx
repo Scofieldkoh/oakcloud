@@ -11,6 +11,7 @@ import {
   DocumentPartyChoiceList,
 } from '@/components/documents/document-party-choice-list';
 import { SingleDateInput } from '@/components/ui/single-date-input';
+import { SearchableSelect } from '@/components/ui/searchable-select';
 import type { DocumentParty } from '@/lib/document-party';
 import type {
   BatchItemConfiguration,
@@ -109,6 +110,15 @@ export function StandardDocumentConfig({
   );
   const partyKeys = useMemo(() => partyConfigurationKeys(needs), [needs]);
 
+  const selectedContact = useMemo<DocumentContact | null>(() => {
+    const id = configuration.selectedContactId;
+    if (!id) return null;
+    return contacts.find((contact) => contact.id === id)
+      ?? contactsById?.get(id)
+      ?? companyContacts.find((contact) => contact.id === id)
+      ?? { id, fullName: 'Contact unavailable' };
+  }, [companyContacts, configuration.selectedContactId, contacts, contactsById]);
+
   const selectedContacts = useMemo<DocumentContact[]>(() => {
     const pool = new Map<string, DocumentContact>(contactsById ?? []);
     for (const contact of contacts) pool.set(contact.id, contact);
@@ -200,7 +210,7 @@ export function StandardDocumentConfig({
       {partyKeys.length > 0 && (
         <BatchSection
           title="Parties"
-          description="Officers and the contact addressed by this document."
+          description="Officers and the contact this document addresses."
           status={{
             complete: partyMissingCount === 0,
             label: partyMissingCount === 0 ? 'Complete' : `${partyMissingCount} required`,
@@ -259,24 +269,16 @@ export function StandardDocumentConfig({
               />
             )}
             {partySelections.contact && (
-              <DocumentPartyChoiceList
+              <DocumentContactChoiceList
                 id="selected-contact"
-                label="Company contact"
-                options={companyContacts.map((contact) => ({
-                  id: contact.id,
-                  contactId: contact.id,
-                  name: contact.fullName,
-                  detail: contact.designation ?? null,
-                  email: contact.email ?? null,
-                  phone: contact.phone ?? null,
-                  address: { letter: null, full: null },
-                  contactType: 'INDIVIDUAL',
-                }))}
-                value={configuration.selectedContactId ?? ''}
-                onChange={(value) => onPatch({ selectedContactId: value || null })}
-                isLoading={partyLoading}
-                error={partyError}
-                onRetry={onPartyRetry}
+                label="Contact"
+                single
+                contacts={contacts}
+                selected={selectedContact ? [selectedContact] : []}
+                onChange={(selected) => onPatch({ selectedContactId: selected[0]?.id ?? null })}
+                onSearch={onContactSearch}
+                isLoading={contactsLoading}
+                serverFiltered={Boolean(onContactSearch)}
               />
             )}
           </div>
@@ -286,7 +288,7 @@ export function StandardDocumentConfig({
       {showContacts && (
         <BatchSection
           title="Contacts"
-          description="Recipients merged into contact placeholders."
+          description="Contacts listed in the document's Contacts section, in the order picked."
           status={{
             complete: true,
             label: `${configuration.contactIds.length} selected`,
@@ -372,6 +374,24 @@ export function StandardDocumentConfig({
                       showTodayButton
                       error={missing ? 'Required' : undefined}
                       className="mt-2 w-[17rem] max-w-full"
+                    />
+                  ) : field.options?.length ? (
+                    <SearchableSelect
+                      options={field.options.map((option) => ({ value: option, label: option }))}
+                      value={value}
+                      onChange={(next) => onPatch({
+                        masterOverrides: {
+                          ...configuration.masterOverrides,
+                          [field.id]: next,
+                        },
+                      })}
+                      disabled={disabled || !hasOverride}
+                      ariaLabel={field.label}
+                      placeholder="Choose..."
+                      clearable={!isRequired}
+                      error={missing ? 'Required' : undefined}
+                      size="md"
+                      className="mt-2"
                     />
                   ) : (
                     <input

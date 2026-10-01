@@ -421,6 +421,7 @@ function PartialSource({ id }: { id: string | null }) {
               fileName={readOakDocTemplateMetadata(partial.contentJson)?.fileName ?? `${partial.name}.docx`}
               version={partial.version}
               readOnly={false}
+              placeholders={partial.placeholders}
               onDirtyChange={setDocumentDirty}
             />
           </div>

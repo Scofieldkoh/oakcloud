@@ -6,6 +6,7 @@ import { createErrorResponse } from '@/lib/api-helpers';
 import {
   documentTemplateCategoryEnum,
   oakDocEditorCompositionTypeEnum,
+  parsePlaceholdersFormField,
   updateDocumentTemplateSchema,
 } from '@/lib/validations/document-template';
 import {
@@ -152,6 +153,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         fileName: file.name,
         buffer: Buffer.from(await file.arrayBuffer()),
         refreshPartialPins: formData.get('refreshPartialPins') === 'all' ? 'all' : undefined,
+        placeholders: parsePlaceholdersFormField(formData.get('placeholders')),
       }, { tenantId, userId: session.id });
 
       return NextResponse.json(withRevision(template));

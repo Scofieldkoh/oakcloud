@@ -89,6 +89,14 @@ describe('OakDoc generic repeaters', () => {
       },
     },
     {
+      tag: 'repeat.contacts',
+      itemTag: 'contact.identificationNumber',
+      expected: 'S1234567A',
+      data: {
+        contacts: [{ id: 'k1', name: 'Contact One', identificationNumber: 'S1234567A' }],
+      },
+    },
+    {
       tag: 'repeat.authorisedRepresentatives',
       itemTag: 'authorisedRepresentative.name',
       expected: 'Representative One',

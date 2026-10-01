@@ -10,15 +10,19 @@ import type {
 export type OakDocGenericRepeaterKind =
   | 'directors'
   | 'shareholders'
+  | 'contacts'
   | 'signers'
   | 'authorisedRepresentatives'
   | 'agreementEntities';
 
 export const OAKDOC_DIRECTORS_REPEATER_TAG = 'repeat.directors';
 export const OAKDOC_SHAREHOLDERS_REPEATER_TAG = 'repeat.shareholders';
+export const OAKDOC_CONTACTS_REPEATER_TAG = 'repeat.contacts';
 
 export interface OakDocRepeaterGenerationData {
   company: OakDocCompanyDetail;
+  /** Contacts chosen on Configure, in the order they were picked. */
+  contacts?: readonly OakDocContact[];
   signers?: readonly OakDocContact[];
   authorisedRepresentatives?: readonly OakDocContact[];
   agreementEntities?: readonly OakDocAgreementEntity[];
@@ -89,6 +93,8 @@ function contactValues(namespace: string, contact: OakDocContact): Record<string
     [namespace + '.phone']: contact.phone || '',
     [namespace + '.phoneAfterEmail']: phoneAfterEmail(contact),
     [namespace + '.address']: contactAddress(contact),
+    [namespace + '.identificationNumber']: contact.identificationNumber || '',
+    [namespace + '.nationality']: contact.nationality || '',
   };
 }
 
@@ -192,6 +198,25 @@ readonly OakDocGenericRepeaterDefinition[] = [
       .filter((shareholder) => shareholder.isCurrent !== false
         && isSelected(data.selectedShareholderIds, shareholder.id))
       .map(shareholderValues),
+  },
+  {
+    kind: 'contacts',
+    tag: OAKDOC_CONTACTS_REPEATER_TAG,
+    label: 'Contacts',
+    itemLabel: 'Contact',
+    itemTagNamespace: 'contact',
+    fields: [
+      { tag: 'contact.name', label: 'Contact Name', category: 'Repeating Contact', example: 'Alex Lim' },
+      { tag: 'contact.role', label: 'Contact Role', category: 'Repeating Contact', example: 'Director' },
+      { tag: 'contact.email', label: 'Contact Email', category: 'Repeating Contact', example: 'alex@example.com' },
+      { tag: 'contact.phone', label: 'Contact Phone', category: 'Repeating Contact', example: '+65 6123 4567' },
+      { tag: 'contact.phoneAfterEmail', label: 'Contact Phone (after email)', category: 'Repeating Contact', example: ' / +65 6123 4567' },
+      { tag: 'contact.address', label: 'Contact Address', category: 'Repeating Contact', example: '123 Sample Street' },
+      { tag: 'contact.identificationNumber', label: 'Contact Identification Number', category: 'Repeating Contact', example: 'S1234567A' },
+      { tag: 'contact.nationality', label: 'Contact Nationality', category: 'Repeating Contact', example: 'Singaporean' },
+    ],
+    generationDataAdapter: (data) => (data.contacts ?? [])
+      .map((contact) => contactValues('contact', contact)),
   },
   {
     kind: 'signers',

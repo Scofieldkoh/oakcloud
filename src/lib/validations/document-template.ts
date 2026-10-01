@@ -74,6 +74,21 @@ export const placeholderDefinitionSchema = z.object({
 
 export type PlaceholderDefinition = z.infer<typeof placeholderDefinitionSchema>;
 
+const placeholderListJsonSchema = z.string().transform((value, context) => {
+  try {
+    return JSON.parse(value) as unknown;
+  } catch {
+    context.addIssue({ code: 'custom', message: 'Placeholders must be valid JSON' });
+    return z.NEVER;
+  }
+}).pipe(z.array(placeholderDefinitionSchema).max(200));
+
+/** The `placeholders` field of a Word template upload: absent keeps the stored ones. */
+export function parsePlaceholdersFormField(value: unknown): PlaceholderDefinition[] | undefined {
+  if (value === null || value === undefined) return undefined;
+  return placeholderListJsonSchema.parse(value);
+}
+
 const a4LayoutSchema = z.object({
   version: z.literal(1),
   lineHeight: z.number().min(1).max(3),

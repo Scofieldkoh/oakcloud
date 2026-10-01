@@ -21,6 +21,12 @@ import type {
   MasterFieldCatalogue,
   MasterFieldDefinition,
 } from '@/types/document-generation-batch';
+import { readPlaceholderOptions } from '@/lib/document-editor/oakdoc-custom-fields';
+
+/** Dropdown choices stored on a custom field definition. */
+export function customFieldOptions(field: CustomPlaceholderDefinition): string[] {
+  return readPlaceholderOptions(field.storageDefinition?.options);
+}
 
 const BUILTIN_CONTEXT_ROOTS = new Set([
   'company',
@@ -80,6 +86,7 @@ export function deriveMasterFieldCatalogue(
     uses: number;
     requiredTemplateIds: Set<string>;
     defaultsByTemplateId: Record<string, string>;
+    options: string[];
   }>();
   const conflicts = new Map<string, Set<PlaceholderValueType>>();
 
@@ -100,6 +107,7 @@ export function deriveMasterFieldCatalogue(
         if (rawField.defaultValue !== undefined) {
           existing.defaultsByTemplateId[source.templateId] = rawField.defaultValue;
         }
+        if (existing.options.length === 0) existing.options = customFieldOptions(rawField);
       } else {
         groups.set(id, {
           key,
@@ -113,6 +121,7 @@ export function deriveMasterFieldCatalogue(
           defaultsByTemplateId: rawField.defaultValue !== undefined
             ? { [source.templateId]: rawField.defaultValue }
             : {},
+          options: customFieldOptions(rawField),
         });
       }
       if (!conflicts.has(key)) conflicts.set(key, new Set());
@@ -131,6 +140,7 @@ export function deriveMasterFieldCatalogue(
       templateIds: Array.from(group.templateIds).sort(),
       requiredTemplateIds: Array.from(group.requiredTemplateIds).sort(),
       defaultsByTemplateId: group.defaultsByTemplateId,
+      ...(group.options.length > 0 ? { options: group.options } : {}),
     }));
 
   const conflictEntries = Array.from(conflicts.entries())

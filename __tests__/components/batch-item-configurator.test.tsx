@@ -81,7 +81,7 @@ describe('BatchItemConfigurator', () => {
       .toHaveClass('bg-oak-primary');
     expect(screen.getByRole('heading', { name: /^Parties/ }).closest('header'))
       .toHaveClass('bg-[#9b6348]');
-    expect(screen.getByRole('heading', { name: /^ContactsRecipients/ }).closest('header'))
+    expect(screen.getByRole('heading', { name: /^ContactsContacts listed/ }).closest('header'))
       .toHaveClass('bg-oak-primary');
   });
 

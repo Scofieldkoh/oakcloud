@@ -1,16 +1,30 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { DocxEditor, type DocxEditorRef } from '@docx-editor.dev/react';
 import { CheckCircle2, Loader2, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { OakDocSnapshotIdentity } from '@/types/oakdoc';
+import { OAKDOC_FIELD_TAGS } from '@/lib/document-editor/oakdoc-field-registry';
+import { inspectOakDocFields, type OakDocFieldDefinition } from '@/lib/document-editor/oakdoc-fields';
 import { OakDocEditorSession } from './oakdoc-editor-session';
+import { insertOakDocField } from './insert-oakdoc-field';
 import { useOakDocSectionDeleteGuard } from './use-oakdoc-section-delete-guard';
 
 export interface OakDocPersistResult {
   revision: number;
+}
+
+/** What a host sidebar can do with the open document. */
+export interface OakDocHostSidebarApi {
+  /** Wrap the selection in, or insert at the caret, an Oakcloud field. */
+  insertField: (field: OakDocFieldDefinition) => Promise<void>;
+  /** Mark the document unsaved for a change made outside the Word body. */
+  markChanged: () => void;
+  /** Field tags currently in the document. */
+  fieldTags: readonly string[];
+  disabled: boolean;
 }
 
 export interface OakDocDocumentHostProps {
@@ -36,6 +50,8 @@ export interface OakDocDocumentHostProps {
   ) => Promise<OakDocPersistResult>;
   onDirtyChange?: (dirty: boolean) => void;
   onSaved?: (result: OakDocPersistResult) => void;
+  /** Optional panel beside an editable document, e.g. a field picker. */
+  renderSidebar?: (api: OakDocHostSidebarApi) => ReactNode;
 }
 
 function newOperationId(): string {
@@ -64,6 +80,7 @@ export function OakDocDocumentHost({
   persist,
   onDirtyChange,
   onSaved,
+  renderSidebar,
 }: OakDocDocumentHostProps) {
   const editorRef = useRef<DocxEditorRef>(null);
   const readyRef = useRef(false);
@@ -80,6 +97,7 @@ export function OakDocDocumentHost({
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState(loadingLabel);
   const [error, setError] = useState<string | null>(null);
+  const [fieldTags, setFieldTags] = useState<string[]>([]);
 
   loadRef.current = load;
   onDirtyChangeRef.current = onDirtyChange;
@@ -144,6 +162,38 @@ export function OakDocDocumentHost({
     setVersion((current) => current + 1);
     setStatus(message);
   }, []);
+
+  const hasSidebar = Boolean(renderSidebar);
+  useEffect(() => {
+    if (!hasSidebar || !documentBytes) return;
+    try {
+      setFieldTags(inspectOakDocFields(documentBytes, OAKDOC_FIELD_TAGS).tags);
+    } catch {
+      setFieldTags([]);
+    }
+  }, [documentBytes, hasSidebar]);
+
+  const insertField = useCallback(async (field: OakDocFieldDefinition) => {
+    if (readOnly || disabled) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const inserted = await insertOakDocField(editorRef.current, field);
+      markChanged();
+      if (inserted.bytes) {
+        replaceMountedDocument(inserted.bytes, inserted.message);
+      } else {
+        setFieldTags(inspectOakDocFields(inserted.afterBytes, OAKDOC_FIELD_TAGS).tags);
+        setStatus(inserted.message);
+      }
+    } catch (caught) {
+      const message = caught instanceof Error ? caught.message : 'Could not create the Word field.';
+      setError(message);
+      setStatus(message);
+    } finally {
+      setBusy(false);
+    }
+  }, [disabled, markChanged, readOnly, replaceMountedDocument]);
 
   const handleKeyDownCapture = useOakDocSectionDeleteGuard({
     editorRef,
@@ -259,34 +309,49 @@ export function OakDocDocumentHost({
         )}
       </div>
 
-      <div
-        className="relative min-h-0 flex-1 overflow-hidden bg-[#eef0f2]"
-        onKeyDownCapture={handleKeyDownCapture}
-      >
-        {documentBytes && (
-          <DocxEditor
-            key={version}
-            ref={editorRef}
-            document={documentBytes}
-            title={title}
-            mode={readOnly ? 'view' : 'edit'}
-            zoomMode="auto"
-            locale="en-SG"
-            colorMode="light"
-            menu={{ reportIssue: false }}
-            onSave={() => void save()}
-            onReady={() => {
-              readyRef.current = true;
-              if (!sessionRef.current.dirty) {
-                setStatus(readOnly ? 'Final Word document loaded.' : 'Word document ready to edit.');
-              }
-            }}
-            onChange={() => {
-              if (!readOnly && readyRef.current) markChanged();
-            }}
-            className="h-full min-h-0"
-          />
-        )}
+      <div className="flex min-h-0 flex-1">
+        <div
+          className="relative min-h-0 min-w-0 flex-1 overflow-hidden bg-[#eef0f2]"
+          onKeyDownCapture={handleKeyDownCapture}
+        >
+          {documentBytes && (
+            <DocxEditor
+              key={version}
+              ref={editorRef}
+              document={documentBytes}
+              title={title}
+              mode={readOnly ? 'view' : 'edit'}
+              zoomMode="auto"
+              locale="en-SG"
+              colorMode="light"
+              menu={{ reportIssue: false }}
+              onSave={() => void save()}
+              onReady={() => {
+                readyRef.current = true;
+                if (!sessionRef.current.dirty) {
+                  setStatus(readOnly ? 'Final Word document loaded.' : 'Word document ready to edit.');
+                }
+              }}
+              onChange={() => {
+                if (!readOnly && readyRef.current) markChanged();
+              }}
+              className="h-full min-h-0"
+            />
+          )}
+        </div>
+        {renderSidebar && !readOnly ? (
+          <aside
+            aria-label="Fields"
+            className="w-72 flex-shrink-0 space-y-4 overflow-y-auto border-l border-border-primary bg-background-secondary p-3"
+          >
+            {renderSidebar({
+              insertField,
+              markChanged,
+              fieldTags,
+              disabled: disabled || busy || saving || !documentBytes,
+            })}
+          </aside>
+        ) : null}
       </div>
     </div>
   );

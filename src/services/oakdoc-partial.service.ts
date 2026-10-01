@@ -27,6 +27,8 @@ import {
 import { deriveOakDocTemplateFieldTags } from '@/lib/document-editor/oakdoc-field-manifest';
 import type { OakDocDiagnostic } from '@/types/oakdoc';
 import type { TenantAwareParams } from '@/lib/types';
+import { mergeOakDocPartialCustomFields } from '@/lib/document-editor/oakdoc-custom-fields';
+import type { PlaceholderDefinition } from '@/lib/validations/document-template';
 
 export { readOakDocPartialPins, type OakDocPartialPin };
 
@@ -287,6 +289,8 @@ export async function updateOakDocPartial(
     displayName?: string | null;
     description?: string | null;
     refreshPins?: 'all' | string[];
+    /** Replaces the partial's custom fields; absent keeps them. */
+    placeholders?: PlaceholderDefinition[];
   },
   params: TenantAwareParams,
 ) {
@@ -305,12 +309,19 @@ export async function updateOakDocPartial(
     selfPartialId: input.id,
   });
   const asset = await persistPartialAsset({ ...params, partialId: input.id, fileName: input.fileName, buffer: input.buffer });
+  const inherited = await collectPinnedPartialFields(
+    input.placeholders ?? existing.placeholders,
+    pins,
+    params.tenantId,
+  );
+  asset.fieldTags = Array.from(new Set([...asset.fieldTags, ...inherited.fieldTags])).sort();
 
   return runSerializableTransaction(prisma, async (tx) => {
     const result = await tx.templatePartial.updateMany({
       where: { id: input.id, tenantId: params.tenantId, deletedAt: null, version: input.expectedRevision },
       data: {
         contentJson: partialContentJson(asset, pins),
+        placeholders: inherited.placeholders as Prisma.InputJsonValue,
         version: { increment: 1 },
         ...(input.displayName !== undefined ? { displayName: input.displayName } : {}),
         ...(input.description !== undefined ? { description: input.description } : {}),
@@ -345,6 +356,33 @@ export async function updateOakDocPartial(
     }, tx);
     return partial;
   });
+}
+
+/**
+ * What a template (or partial) takes over from the partials it inserts:
+ * their custom fields, copied into its placeholders so Configure prompts for
+ * them, and their field tags, so Configure offers the parties they use.
+ */
+export async function collectPinnedPartialFields(
+  placeholders: unknown,
+  pins: readonly OakDocPartialPin[],
+  tenantId: string,
+): Promise<{ placeholders: PlaceholderDefinition[]; fieldTags: string[] }> {
+  const ids = Array.from(new Set(pins.map((pin) => pin.partialId)));
+  const partials = ids.length === 0
+    ? []
+    : await prisma.templatePartial.findMany({
+        where: { id: { in: ids }, tenantId, deletedAt: null },
+        select: { id: true, placeholders: true, contentJson: true },
+      });
+  const byId = new Map(partials.map((partial) => [partial.id, partial]));
+  const ordered = ids.flatMap((id) => byId.get(id) ?? []);
+  return {
+    placeholders: mergeOakDocPartialCustomFields(placeholders, ordered) as PlaceholderDefinition[],
+    fieldTags: Array.from(new Set(
+      ordered.flatMap((partial) => readOakDocPartialMetadata(partial.contentJson)?.fieldTags ?? []),
+    )).sort(),
+  };
 }
 
 /** Download the current bytes of a native partial for editing. */

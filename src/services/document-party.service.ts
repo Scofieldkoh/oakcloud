@@ -317,3 +317,60 @@ export async function resolveDocumentPartySelections(input: {
     selectedContact,
   };
 }
+
+/**
+ * Contacts picked for a document from the Contacts list, in the order given.
+ * Any active contact in the workspace qualifies, not only the company's own;
+ * a contact linked to the company shows its role there and its
+ * company-specific email and phone.
+ */
+export async function getDocumentContactParties(input: {
+  contactIds: readonly string[];
+  tenantId: string;
+  companyId?: string | null;
+}): Promise<DocumentParty[]> {
+  const ids = Array.from(new Set(input.contactIds.filter(Boolean)));
+  if (ids.length === 0) return [];
+  const companyId = input.companyId ?? null;
+  const rows = await prisma.contact.findMany({
+    where: { id: { in: ids }, tenantId: input.tenantId, deletedAt: null },
+    select: {
+      ...contactSelect(input.tenantId),
+      identificationNumber: true,
+      nationality: true,
+      companyRelations: {
+        where: { companyId: companyId ?? '', deletedAt: null },
+        select: { relationship: true },
+      },
+      officerPositions: {
+        where: { companyId: companyId ?? '', isCurrent: true, cessationDate: null },
+        select: { role: true },
+      },
+    },
+  });
+  const byId = new Map(rows.map((row) => [row.id, row]));
+  return ids.flatMap((id) => {
+    const contact = byId.get(id);
+    if (!contact) return [];
+    const appointments = rankAppointments([
+      ...contact.companyRelations.map((relation) => relation.relationship),
+      ...contact.officerPositions.map((position) => position.role),
+    ]);
+    return [{
+      id: contact.id,
+      contactId: contact.id,
+      name: contact.fullName,
+      detail: appointments[0] ?? null,
+      appointments,
+      role: appointments[0] ?? null,
+      contactType: contact.contactType,
+      identificationNumber: contact.identificationNumber,
+      nationality: contact.nationality,
+      ...buildPartyContactFields({
+        companyId: companyId ?? '',
+        contactAddress: contact.fullAddress,
+        contactDetails: contact.contactDetails,
+      }),
+    }];
+  });
+}

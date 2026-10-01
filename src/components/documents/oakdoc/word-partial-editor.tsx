@@ -1,8 +1,16 @@
 'use client';
 
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { OakDocDocumentHost } from '@/components/documents/oakdoc/oakdoc-document-host';
+import { OakDocCustomFieldsPanel } from '@/components/documents/oakdoc/oakdoc-custom-fields-panel';
+import { OakDocFieldList } from '@/components/documents/oakdoc/oakdoc-field-list';
+import {
+  readOakDocCustomFields,
+  readOakDocPartialCustomFields,
+  writeOakDocCustomFields,
+  type OakDocCustomField,
+} from '@/lib/document-editor/oakdoc-custom-fields';
 import { partialKeys, saveWordPartial } from '@/hooks/use-template-partials';
 import { OAKDOC_MIME_TYPE } from '@/lib/document-editor/oakdoc-template';
 import type { OakDocSnapshotIdentity } from '@/types/oakdoc';
@@ -15,6 +23,8 @@ export interface WordPartialEditorProps {
   fileName: string;
   version: number;
   readOnly: boolean;
+  /** The partial's stored placeholders, holding its custom fields. */
+  placeholders?: unknown;
   onDirtyChange?: (dirty: boolean) => void;
 }
 
@@ -39,9 +49,14 @@ export function WordPartialEditor({
   fileName,
   version,
   readOnly,
+  placeholders,
   onDirtyChange,
 }: WordPartialEditorProps) {
   const queryClient = useQueryClient();
+  const [storedPlaceholders, setStoredPlaceholders] = useState<unknown>(placeholders ?? []);
+  const [customFields, setCustomFields] = useState<OakDocCustomField[]>(
+    () => readOakDocCustomFields(placeholders),
+  );
   const load = useCallback(
     (signal: AbortSignal) => loadPartialDocx(partialId, signal),
     [partialId],
@@ -54,10 +69,12 @@ export function WordPartialEditor({
       id: partialId,
       expectedRevision: snapshot.baseRevision,
       file: new File([copy.buffer], fileName, { type: OAKDOC_MIME_TYPE }),
+      placeholders: writeOakDocCustomFields(storedPlaceholders, customFields),
     });
+    setStoredPlaceholders(saved.placeholders ?? []);
     await queryClient.invalidateQueries({ queryKey: partialKeys.all });
     return { revision: saved.version };
-  }, [fileName, partialId, queryClient]);
+  }, [customFields, fileName, partialId, queryClient, storedPlaceholders]);
 
   return (
     <OakDocDocumentHost
@@ -70,6 +87,28 @@ export function WordPartialEditor({
       load={load}
       persist={persist}
       onDirtyChange={onDirtyChange}
+      renderSidebar={({ insertField, markChanged, fieldTags, disabled }) => (
+        <>
+          <OakDocCustomFieldsPanel
+            fields={customFields}
+            partialFields={readOakDocPartialCustomFields(storedPlaceholders)}
+            onChange={(next) => {
+              setCustomFields(next);
+              markChanged();
+            }}
+            onInsert={(field) => void insertField(field)}
+            presentTags={fieldTags}
+            disabled={disabled}
+            ownerLabel="partial"
+          />
+          <div className="border-t border-border-secondary" />
+          <OakDocFieldList
+            presentTags={fieldTags}
+            onInsert={(field) => void insertField(field)}
+            disabled={disabled}
+          />
+        </>
+      )}
     />
   );
 }

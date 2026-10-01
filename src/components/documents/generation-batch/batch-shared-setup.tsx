@@ -8,6 +8,7 @@ import {
   type AsyncSearchSelectOption,
 } from '@/components/ui/async-search-select';
 import { SingleDateInput } from '@/components/ui/single-date-input';
+import { SearchableSelect } from '@/components/ui/searchable-select';
 import type {
   MasterFieldCatalogue,
 } from '@/types/document-generation-batch';
@@ -229,6 +230,19 @@ export function BatchSharedSetup({
                       showTodayButton
                       error={missing ? 'Required' : undefined}
                       className="mt-2 w-[17rem] max-w-full"
+                    />
+                  ) : field.options?.length ? (
+                    <SearchableSelect
+                      options={field.options.map((option) => ({ value: option, label: option }))}
+                      value={value}
+                      onChange={(next) => onMasterValueChange(field.id, next)}
+                      disabled={disabled}
+                      ariaLabel={field.label}
+                      placeholder="Choose..."
+                      clearable={!isRequired}
+                      error={missing ? 'Required' : undefined}
+                      size="md"
+                      className="mt-2"
                     />
                   ) : (
                     <input

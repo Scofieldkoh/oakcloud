@@ -28,7 +28,7 @@ const LABELS: Record<PartyKey, string> = {
   selectedDirectorIds: 'Directors',
   selectedShareholderId: 'Shareholder',
   selectedShareholderIds: 'Shareholders',
-  selectedContactId: 'Company contact',
+  selectedContactId: 'Contact',
 };
 
 /** Checked parties for a repeater: every party until the user narrows the list. */
