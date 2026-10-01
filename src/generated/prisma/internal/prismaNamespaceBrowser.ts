@@ -932,6 +932,7 @@ export const TemplatePartialScalarFieldEnum = {
   content: 'content',
   contentJson: 'contentJson',
   placeholders: 'placeholders',
+  category: 'category',
   version: 'version',
   createdById: 'createdById',
   createdAt: 'createdAt',

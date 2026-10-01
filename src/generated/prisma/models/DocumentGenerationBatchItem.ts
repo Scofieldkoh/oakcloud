@@ -362,7 +362,6 @@ export type DocumentGenerationBatchItemOrderByWithRelationInput = {
 export type DocumentGenerationBatchItemWhereUniqueInput = Prisma.AtLeast<{
   id?: string
   generatedDocumentId?: string
-  batchId_templateId?: Prisma.DocumentGenerationBatchItemBatchIdTemplateIdCompoundUniqueInput
   batchId_displayOrder?: Prisma.DocumentGenerationBatchItemBatchIdDisplayOrderCompoundUniqueInput
   AND?: Prisma.DocumentGenerationBatchItemWhereInput | Prisma.DocumentGenerationBatchItemWhereInput[]
   OR?: Prisma.DocumentGenerationBatchItemWhereInput[]
@@ -390,7 +389,7 @@ export type DocumentGenerationBatchItemWhereUniqueInput = Prisma.AtLeast<{
   template?: Prisma.XOR<Prisma.DocumentTemplateScalarRelationFilter, Prisma.DocumentTemplateWhereInput>
   generatedDocument?: Prisma.XOR<Prisma.GeneratedDocumentScalarRelationFilter, Prisma.GeneratedDocumentWhereInput>
   activeForBatches?: Prisma.DocumentGenerationBatchListRelationFilter
-}, "id" | "generatedDocumentId" | "batchId_templateId" | "batchId_displayOrder">
+}, "id" | "generatedDocumentId" | "batchId_displayOrder">
 
 export type DocumentGenerationBatchItemOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
@@ -620,11 +619,6 @@ export type DocumentGenerationBatchItemOrderByRelationAggregateInput = {
 export type DocumentGenerationBatchItemNullableScalarRelationFilter = {
   is?: Prisma.DocumentGenerationBatchItemWhereInput | null
   isNot?: Prisma.DocumentGenerationBatchItemWhereInput | null
-}
-
-export type DocumentGenerationBatchItemBatchIdTemplateIdCompoundUniqueInput = {
-  batchId: string
-  templateId: string
 }
 
 export type DocumentGenerationBatchItemBatchIdDisplayOrderCompoundUniqueInput = {

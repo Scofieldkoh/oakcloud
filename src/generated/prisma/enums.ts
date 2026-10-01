@@ -593,6 +593,15 @@ export const DocumentTemplateCategory = {
 export type DocumentTemplateCategory = (typeof DocumentTemplateCategory)[keyof typeof DocumentTemplateCategory]
 
 
+export const TemplatePartialCategory = {
+  AGREEMENT: 'AGREEMENT',
+  RESOLUTION: 'RESOLUTION',
+  OTHER: 'OTHER'
+} as const
+
+export type TemplatePartialCategory = (typeof TemplatePartialCategory)[keyof typeof TemplatePartialCategory]
+
+
 export const DocumentTemplateCompositionType = {
   STANDARD: 'STANDARD',
   SERVICE_AGREEMENT: 'SERVICE_AGREEMENT',

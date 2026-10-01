@@ -8,8 +8,13 @@ import { ArrowLeft, Download, Loader2, PanelRightClose, PanelRightOpen, Save, Up
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { FormInput } from '@/components/ui/form-input';
+import { SearchableSelect } from '@/components/ui/searchable-select';
 import { useToast } from '@/components/ui/toast';
 import { WordPartialEditor } from '@/components/documents/oakdoc/word-partial-editor';
+import {
+  TEMPLATE_PARTIAL_CATEGORY_OPTIONS,
+  type TemplatePartialCategoryValue,
+} from '@/lib/validations/template-partial';
 import { buildBlankOakDocBytes } from '@/lib/document-editor/oakdoc-html-import';
 import { OAKDOC_MIME_TYPE } from '@/lib/document-editor/oakdoc-template';
 import { readOakDocTemplateMetadata, isOakDocTemplate } from '@/lib/document-editor/oakdoc-template';
@@ -123,6 +128,28 @@ function TemplateSource({ id }: { id: string | null }) {
   );
 }
 
+function PartialCategorySelect({
+  value,
+  onChange,
+}: {
+  value: TemplatePartialCategoryValue;
+  onChange: (value: TemplatePartialCategoryValue) => void;
+}) {
+  return (
+    <SearchableSelect
+      label="Category"
+      options={TEMPLATE_PARTIAL_CATEGORY_OPTIONS}
+      value={value}
+      onChange={(next) => {
+        const option = TEMPLATE_PARTIAL_CATEGORY_OPTIONS.find((item) => item.value === next);
+        if (option) onChange(option.value);
+      }}
+      clearable={false}
+      size="md"
+    />
+  );
+}
+
 function blankPartialFile(name: string): File {
   const bytes = buildBlankOakDocBytes();
   const copy = new Uint8Array(bytes.byteLength);
@@ -143,6 +170,7 @@ function WordPartialForm({
   const [name, setName] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [description, setDescription] = useState('');
+  const [category, setCategory] = useState<TemplatePartialCategoryValue>('OTHER');
   const [file, setFile] = useState<File | null>(null);
   const asset = partial ? readOakDocTemplateMetadata(partial.contentJson) : null;
 
@@ -156,6 +184,7 @@ function WordPartialForm({
             name: name.trim(),
             displayName: displayName.trim(),
             description: description.trim(),
+            category,
             file: file ?? blankPartialFile(name.trim()),
           });
       success(partial ? 'New version uploaded' : 'Word partial created');
@@ -197,6 +226,7 @@ function WordPartialForm({
           />
           <FormInput label="Display name" value={displayName} onChange={(event) => setDisplayName(event.target.value)} />
           <FormInput label="Description" value={description} onChange={(event) => setDescription(event.target.value)} />
+          <PartialCategorySelect value={category} onChange={setCategory} />
         </>
       )}
       <FormInput
@@ -234,12 +264,14 @@ function PartialDetailsForm({
   const [name, setName] = useState(partial.name);
   const [displayName, setDisplayName] = useState(partial.displayName ?? '');
   const [description, setDescription] = useState(partial.description ?? '');
+  const [category, setCategory] = useState<TemplatePartialCategoryValue>(partial.category ?? 'OTHER');
 
   useEffect(() => {
     setName(partial.name);
     setDisplayName(partial.displayName ?? '');
     setDescription(partial.description ?? '');
-  }, [partial.name, partial.displayName, partial.description]);
+    setCategory(partial.category ?? 'OTHER');
+  }, [partial.name, partial.displayName, partial.description, partial.category]);
 
   const trimmed = {
     name: name.trim(),
@@ -248,7 +280,8 @@ function PartialDetailsForm({
   };
   const changed = trimmed.name !== partial.name
     || trimmed.displayName !== (partial.displayName ?? '')
-    || trimmed.description !== (partial.description ?? '');
+    || trimmed.description !== (partial.description ?? '')
+    || category !== (partial.category ?? 'OTHER');
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
@@ -261,6 +294,7 @@ function PartialDetailsForm({
         // An empty display name falls back to the name.
         displayName: trimmed.displayName || trimmed.name,
         description: trimmed.description || null,
+        category,
         reason: 'Updated partial details',
       });
       success('Partial details saved');
@@ -281,6 +315,7 @@ function PartialDetailsForm({
       />
       <FormInput label="Display name" value={displayName} onChange={(event) => setDisplayName(event.target.value)} />
       <FormInput label="Description" value={description} onChange={(event) => setDescription(event.target.value)} />
+      <PartialCategorySelect value={category} onChange={setCategory} />
       {documentDirty && changed && (
         <p className="text-sm text-text-secondary">Save your changes to the document first, then save the details.</p>
       )}

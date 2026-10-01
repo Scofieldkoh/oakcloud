@@ -62,10 +62,11 @@ export function BatchTemplatePicker({
   const [dropIndex, setDropIndex] = useState<number | null>(null);
   const dragKeyRef = useRef<string | null>(null);
 
-  const selectedByTemplateId = useMemo(
-    () => new Map(selected.map((item) => [item.templateId, item])),
-    [selected],
-  );
+  const selectedCountByTemplateId = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const item of selected) counts.set(item.templateId, (counts.get(item.templateId) ?? 0) + 1);
+    return counts;
+  }, [selected]);
   const atLimit = selected.length >= maxDocuments;
 
   const categoryCounts = useMemo(() => {
@@ -89,14 +90,10 @@ export function BatchTemplatePicker({
     });
   }, [templates, category, query]);
 
-  const toggle = (template: DocumentTemplateSummary) => {
-    if (disabled) return;
-    const existing = selectedByTemplateId.get(template.id);
-    if (existing) {
-      requestRemoval(existing);
-      return;
-    }
-    if (atLimit) return;
+  // A template can be added more than once (for example several resolutions);
+  // copies are removed from the selected list.
+  const add = (template: DocumentTemplateSummary) => {
+    if (disabled || atLimit) return;
     onAdd(template);
   };
 
@@ -194,8 +191,9 @@ export function BatchTemplatePicker({
             </li>
           )}
           {visible.map((template) => {
-            const isSelected = selectedByTemplateId.has(template.id);
-            const blocked = !isSelected && atLimit;
+            const selectedCount = selectedCountByTemplateId.get(template.id) ?? 0;
+            const isSelected = selectedCount > 0;
+            const blocked = atLimit;
             return (
               <li key={template.id}>
                 <div
@@ -208,7 +206,7 @@ export function BatchTemplatePicker({
                 >
                   <button
                     type="button"
-                    onClick={() => toggle(template)}
+                    onClick={() => add(template)}
                     disabled={disabled || blocked}
                     aria-pressed={isSelected}
                     title={blocked ? `Maximum of ${maxDocuments} documents reached` : undefined}
@@ -244,7 +242,9 @@ export function BatchTemplatePicker({
                         isSelected ? 'text-oak-primary' : 'text-text-muted',
                       )}
                     >
-                      {isSelected ? 'Added' : 'Add'}
+                      {isSelected
+                        ? `${selectedCount > 1 ? `Added ×${selectedCount}` : 'Added'} · Add again`
+                        : 'Add'}
                     </span>
                   </button>
 

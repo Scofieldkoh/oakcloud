@@ -41,6 +41,7 @@ export type TemplatePartialMinAggregateOutputType = {
   displayName: string | null
   description: string | null
   content: string | null
+  category: $Enums.TemplatePartialCategory | null
   version: number | null
   createdById: string | null
   createdAt: Date | null
@@ -55,6 +56,7 @@ export type TemplatePartialMaxAggregateOutputType = {
   displayName: string | null
   description: string | null
   content: string | null
+  category: $Enums.TemplatePartialCategory | null
   version: number | null
   createdById: string | null
   createdAt: Date | null
@@ -71,6 +73,7 @@ export type TemplatePartialCountAggregateOutputType = {
   content: number
   contentJson: number
   placeholders: number
+  category: number
   version: number
   createdById: number
   createdAt: number
@@ -95,6 +98,7 @@ export type TemplatePartialMinAggregateInputType = {
   displayName?: true
   description?: true
   content?: true
+  category?: true
   version?: true
   createdById?: true
   createdAt?: true
@@ -109,6 +113,7 @@ export type TemplatePartialMaxAggregateInputType = {
   displayName?: true
   description?: true
   content?: true
+  category?: true
   version?: true
   createdById?: true
   createdAt?: true
@@ -125,6 +130,7 @@ export type TemplatePartialCountAggregateInputType = {
   content?: true
   contentJson?: true
   placeholders?: true
+  category?: true
   version?: true
   createdById?: true
   createdAt?: true
@@ -228,6 +234,7 @@ export type TemplatePartialGroupByOutputType = {
   content: string
   contentJson: runtime.JsonValue | null
   placeholders: runtime.JsonValue
+  category: $Enums.TemplatePartialCategory
   version: number
   createdById: string
   createdAt: Date
@@ -267,6 +274,7 @@ export type TemplatePartialWhereInput = {
   content?: Prisma.StringFilter<"TemplatePartial"> | string
   contentJson?: Prisma.JsonNullableFilter<"TemplatePartial">
   placeholders?: Prisma.JsonFilter<"TemplatePartial">
+  category?: Prisma.EnumTemplatePartialCategoryFilter<"TemplatePartial"> | $Enums.TemplatePartialCategory
   version?: Prisma.IntFilter<"TemplatePartial"> | number
   createdById?: Prisma.StringFilter<"TemplatePartial"> | string
   createdAt?: Prisma.DateTimeFilter<"TemplatePartial"> | Date | string
@@ -287,6 +295,7 @@ export type TemplatePartialOrderByWithRelationInput = {
   content?: Prisma.SortOrder
   contentJson?: Prisma.SortOrderInput | Prisma.SortOrder
   placeholders?: Prisma.SortOrder
+  category?: Prisma.SortOrder
   version?: Prisma.SortOrder
   createdById?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -311,6 +320,7 @@ export type TemplatePartialWhereUniqueInput = Prisma.AtLeast<{
   content?: Prisma.StringFilter<"TemplatePartial"> | string
   contentJson?: Prisma.JsonNullableFilter<"TemplatePartial">
   placeholders?: Prisma.JsonFilter<"TemplatePartial">
+  category?: Prisma.EnumTemplatePartialCategoryFilter<"TemplatePartial"> | $Enums.TemplatePartialCategory
   version?: Prisma.IntFilter<"TemplatePartial"> | number
   createdById?: Prisma.StringFilter<"TemplatePartial"> | string
   createdAt?: Prisma.DateTimeFilter<"TemplatePartial"> | Date | string
@@ -331,6 +341,7 @@ export type TemplatePartialOrderByWithAggregationInput = {
   content?: Prisma.SortOrder
   contentJson?: Prisma.SortOrderInput | Prisma.SortOrder
   placeholders?: Prisma.SortOrder
+  category?: Prisma.SortOrder
   version?: Prisma.SortOrder
   createdById?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -355,6 +366,7 @@ export type TemplatePartialScalarWhereWithAggregatesInput = {
   content?: Prisma.StringWithAggregatesFilter<"TemplatePartial"> | string
   contentJson?: Prisma.JsonNullableWithAggregatesFilter<"TemplatePartial">
   placeholders?: Prisma.JsonWithAggregatesFilter<"TemplatePartial">
+  category?: Prisma.EnumTemplatePartialCategoryWithAggregatesFilter<"TemplatePartial"> | $Enums.TemplatePartialCategory
   version?: Prisma.IntWithAggregatesFilter<"TemplatePartial"> | number
   createdById?: Prisma.StringWithAggregatesFilter<"TemplatePartial"> | string
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"TemplatePartial"> | Date | string
@@ -370,6 +382,7 @@ export type TemplatePartialCreateInput = {
   content: string
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  category?: $Enums.TemplatePartialCategory
   version?: number
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -389,6 +402,7 @@ export type TemplatePartialUncheckedCreateInput = {
   content: string
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  category?: $Enums.TemplatePartialCategory
   version?: number
   createdById: string
   createdAt?: Date | string
@@ -406,6 +420,7 @@ export type TemplatePartialUpdateInput = {
   content?: Prisma.StringFieldUpdateOperationsInput | string
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  category?: Prisma.EnumTemplatePartialCategoryFieldUpdateOperationsInput | $Enums.TemplatePartialCategory
   version?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -425,6 +440,7 @@ export type TemplatePartialUncheckedUpdateInput = {
   content?: Prisma.StringFieldUpdateOperationsInput | string
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  category?: Prisma.EnumTemplatePartialCategoryFieldUpdateOperationsInput | $Enums.TemplatePartialCategory
   version?: Prisma.IntFieldUpdateOperationsInput | number
   createdById?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -443,6 +459,7 @@ export type TemplatePartialCreateManyInput = {
   content: string
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  category?: $Enums.TemplatePartialCategory
   version?: number
   createdById: string
   createdAt?: Date | string
@@ -458,6 +475,7 @@ export type TemplatePartialUpdateManyMutationInput = {
   content?: Prisma.StringFieldUpdateOperationsInput | string
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  category?: Prisma.EnumTemplatePartialCategoryFieldUpdateOperationsInput | $Enums.TemplatePartialCategory
   version?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -473,6 +491,7 @@ export type TemplatePartialUncheckedUpdateManyInput = {
   content?: Prisma.StringFieldUpdateOperationsInput | string
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  category?: Prisma.EnumTemplatePartialCategoryFieldUpdateOperationsInput | $Enums.TemplatePartialCategory
   version?: Prisma.IntFieldUpdateOperationsInput | number
   createdById?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -504,6 +523,7 @@ export type TemplatePartialCountOrderByAggregateInput = {
   content?: Prisma.SortOrder
   contentJson?: Prisma.SortOrder
   placeholders?: Prisma.SortOrder
+  category?: Prisma.SortOrder
   version?: Prisma.SortOrder
   createdById?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -522,6 +542,7 @@ export type TemplatePartialMaxOrderByAggregateInput = {
   displayName?: Prisma.SortOrder
   description?: Prisma.SortOrder
   content?: Prisma.SortOrder
+  category?: Prisma.SortOrder
   version?: Prisma.SortOrder
   createdById?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -536,6 +557,7 @@ export type TemplatePartialMinOrderByAggregateInput = {
   displayName?: Prisma.SortOrder
   description?: Prisma.SortOrder
   content?: Prisma.SortOrder
+  category?: Prisma.SortOrder
   version?: Prisma.SortOrder
   createdById?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -636,6 +658,10 @@ export type TemplatePartialUncheckedUpdateManyWithoutCreatedByNestedInput = {
   deleteMany?: Prisma.TemplatePartialScalarWhereInput | Prisma.TemplatePartialScalarWhereInput[]
 }
 
+export type EnumTemplatePartialCategoryFieldUpdateOperationsInput = {
+  set?: $Enums.TemplatePartialCategory
+}
+
 export type TemplatePartialCreateNestedOneWithoutServiceVariantsInput = {
   create?: Prisma.XOR<Prisma.TemplatePartialCreateWithoutServiceVariantsInput, Prisma.TemplatePartialUncheckedCreateWithoutServiceVariantsInput>
   connectOrCreate?: Prisma.TemplatePartialCreateOrConnectWithoutServiceVariantsInput
@@ -672,6 +698,7 @@ export type TemplatePartialCreateWithoutTenantInput = {
   content: string
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  category?: $Enums.TemplatePartialCategory
   version?: number
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -689,6 +716,7 @@ export type TemplatePartialUncheckedCreateWithoutTenantInput = {
   content: string
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  category?: $Enums.TemplatePartialCategory
   version?: number
   createdById: string
   createdAt?: Date | string
@@ -736,6 +764,7 @@ export type TemplatePartialScalarWhereInput = {
   content?: Prisma.StringFilter<"TemplatePartial"> | string
   contentJson?: Prisma.JsonNullableFilter<"TemplatePartial">
   placeholders?: Prisma.JsonFilter<"TemplatePartial">
+  category?: Prisma.EnumTemplatePartialCategoryFilter<"TemplatePartial"> | $Enums.TemplatePartialCategory
   version?: Prisma.IntFilter<"TemplatePartial"> | number
   createdById?: Prisma.StringFilter<"TemplatePartial"> | string
   createdAt?: Prisma.DateTimeFilter<"TemplatePartial"> | Date | string
@@ -751,6 +780,7 @@ export type TemplatePartialCreateWithoutCreatedByInput = {
   content: string
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  category?: $Enums.TemplatePartialCategory
   version?: number
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -769,6 +799,7 @@ export type TemplatePartialUncheckedCreateWithoutCreatedByInput = {
   content: string
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  category?: $Enums.TemplatePartialCategory
   version?: number
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -811,6 +842,7 @@ export type TemplatePartialCreateWithoutServiceVariantsInput = {
   content: string
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  category?: $Enums.TemplatePartialCategory
   version?: number
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -829,6 +861,7 @@ export type TemplatePartialUncheckedCreateWithoutServiceVariantsInput = {
   content: string
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  category?: $Enums.TemplatePartialCategory
   version?: number
   createdById: string
   createdAt?: Date | string
@@ -861,6 +894,7 @@ export type TemplatePartialUpdateWithoutServiceVariantsInput = {
   content?: Prisma.StringFieldUpdateOperationsInput | string
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  category?: Prisma.EnumTemplatePartialCategoryFieldUpdateOperationsInput | $Enums.TemplatePartialCategory
   version?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -879,6 +913,7 @@ export type TemplatePartialUncheckedUpdateWithoutServiceVariantsInput = {
   content?: Prisma.StringFieldUpdateOperationsInput | string
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  category?: Prisma.EnumTemplatePartialCategoryFieldUpdateOperationsInput | $Enums.TemplatePartialCategory
   version?: Prisma.IntFieldUpdateOperationsInput | number
   createdById?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -895,6 +930,7 @@ export type TemplatePartialCreateWithoutServiceAgreementItemsInput = {
   content: string
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  category?: $Enums.TemplatePartialCategory
   version?: number
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -913,6 +949,7 @@ export type TemplatePartialUncheckedCreateWithoutServiceAgreementItemsInput = {
   content: string
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  category?: $Enums.TemplatePartialCategory
   version?: number
   createdById: string
   createdAt?: Date | string
@@ -945,6 +982,7 @@ export type TemplatePartialUpdateWithoutServiceAgreementItemsInput = {
   content?: Prisma.StringFieldUpdateOperationsInput | string
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  category?: Prisma.EnumTemplatePartialCategoryFieldUpdateOperationsInput | $Enums.TemplatePartialCategory
   version?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -963,6 +1001,7 @@ export type TemplatePartialUncheckedUpdateWithoutServiceAgreementItemsInput = {
   content?: Prisma.StringFieldUpdateOperationsInput | string
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  category?: Prisma.EnumTemplatePartialCategoryFieldUpdateOperationsInput | $Enums.TemplatePartialCategory
   version?: Prisma.IntFieldUpdateOperationsInput | number
   createdById?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -979,6 +1018,7 @@ export type TemplatePartialCreateManyTenantInput = {
   content: string
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  category?: $Enums.TemplatePartialCategory
   version?: number
   createdById: string
   createdAt?: Date | string
@@ -994,6 +1034,7 @@ export type TemplatePartialUpdateWithoutTenantInput = {
   content?: Prisma.StringFieldUpdateOperationsInput | string
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  category?: Prisma.EnumTemplatePartialCategoryFieldUpdateOperationsInput | $Enums.TemplatePartialCategory
   version?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1011,6 +1052,7 @@ export type TemplatePartialUncheckedUpdateWithoutTenantInput = {
   content?: Prisma.StringFieldUpdateOperationsInput | string
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  category?: Prisma.EnumTemplatePartialCategoryFieldUpdateOperationsInput | $Enums.TemplatePartialCategory
   version?: Prisma.IntFieldUpdateOperationsInput | number
   createdById?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1028,6 +1070,7 @@ export type TemplatePartialUncheckedUpdateManyWithoutTenantInput = {
   content?: Prisma.StringFieldUpdateOperationsInput | string
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  category?: Prisma.EnumTemplatePartialCategoryFieldUpdateOperationsInput | $Enums.TemplatePartialCategory
   version?: Prisma.IntFieldUpdateOperationsInput | number
   createdById?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1044,6 +1087,7 @@ export type TemplatePartialCreateManyCreatedByInput = {
   content: string
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  category?: $Enums.TemplatePartialCategory
   version?: number
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -1058,6 +1102,7 @@ export type TemplatePartialUpdateWithoutCreatedByInput = {
   content?: Prisma.StringFieldUpdateOperationsInput | string
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  category?: Prisma.EnumTemplatePartialCategoryFieldUpdateOperationsInput | $Enums.TemplatePartialCategory
   version?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1076,6 +1121,7 @@ export type TemplatePartialUncheckedUpdateWithoutCreatedByInput = {
   content?: Prisma.StringFieldUpdateOperationsInput | string
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  category?: Prisma.EnumTemplatePartialCategoryFieldUpdateOperationsInput | $Enums.TemplatePartialCategory
   version?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1093,6 +1139,7 @@ export type TemplatePartialUncheckedUpdateManyWithoutCreatedByInput = {
   content?: Prisma.StringFieldUpdateOperationsInput | string
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   placeholders?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  category?: Prisma.EnumTemplatePartialCategoryFieldUpdateOperationsInput | $Enums.TemplatePartialCategory
   version?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1148,6 +1195,7 @@ export type TemplatePartialSelect<ExtArgs extends runtime.Types.Extensions.Inter
   content?: boolean
   contentJson?: boolean
   placeholders?: boolean
+  category?: boolean
   version?: boolean
   createdById?: boolean
   createdAt?: boolean
@@ -1169,6 +1217,7 @@ export type TemplatePartialSelectCreateManyAndReturn<ExtArgs extends runtime.Typ
   content?: boolean
   contentJson?: boolean
   placeholders?: boolean
+  category?: boolean
   version?: boolean
   createdById?: boolean
   createdAt?: boolean
@@ -1187,6 +1236,7 @@ export type TemplatePartialSelectUpdateManyAndReturn<ExtArgs extends runtime.Typ
   content?: boolean
   contentJson?: boolean
   placeholders?: boolean
+  category?: boolean
   version?: boolean
   createdById?: boolean
   createdAt?: boolean
@@ -1205,6 +1255,7 @@ export type TemplatePartialSelectScalar = {
   content?: boolean
   contentJson?: boolean
   placeholders?: boolean
+  category?: boolean
   version?: boolean
   createdById?: boolean
   createdAt?: boolean
@@ -1212,7 +1263,7 @@ export type TemplatePartialSelectScalar = {
   deletedAt?: boolean
 }
 
-export type TemplatePartialOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "name" | "displayName" | "description" | "content" | "contentJson" | "placeholders" | "version" | "createdById" | "createdAt" | "updatedAt" | "deletedAt", ExtArgs["result"]["templatePartial"]>
+export type TemplatePartialOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "name" | "displayName" | "description" | "content" | "contentJson" | "placeholders" | "category" | "version" | "createdById" | "createdAt" | "updatedAt" | "deletedAt", ExtArgs["result"]["templatePartial"]>
 export type TemplatePartialInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   createdBy?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
@@ -1249,6 +1300,10 @@ export type $TemplatePartialPayload<ExtArgs extends runtime.Types.Extensions.Int
      */
     contentJson: runtime.JsonValue | null
     placeholders: runtime.JsonValue
+    /**
+     * Groups partials in pickers: agreement scopes of work, resolutions, others.
+     */
+    category: $Enums.TemplatePartialCategory
     version: number
     createdById: string
     createdAt: Date
@@ -1689,6 +1744,7 @@ export interface TemplatePartialFieldRefs {
   readonly content: Prisma.FieldRef<"TemplatePartial", 'String'>
   readonly contentJson: Prisma.FieldRef<"TemplatePartial", 'Json'>
   readonly placeholders: Prisma.FieldRef<"TemplatePartial", 'Json'>
+  readonly category: Prisma.FieldRef<"TemplatePartial", 'TemplatePartialCategory'>
   readonly version: Prisma.FieldRef<"TemplatePartial", 'Int'>
   readonly createdById: Prisma.FieldRef<"TemplatePartial", 'String'>
   readonly createdAt: Prisma.FieldRef<"TemplatePartial", 'DateTime'>

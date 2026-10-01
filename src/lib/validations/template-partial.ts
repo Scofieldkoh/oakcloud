@@ -21,6 +21,24 @@ const partialNameSchema = z
   );
 
 // ============================================================================
+// Category
+// ============================================================================
+
+/** Grouping shown in partial pickers: agreement wording, resolutions, or anything else. */
+export const templatePartialCategoryEnum = z.enum(['AGREEMENT', 'RESOLUTION', 'OTHER']);
+export type TemplatePartialCategoryValue = z.infer<typeof templatePartialCategoryEnum>;
+
+export const TEMPLATE_PARTIAL_CATEGORY_OPTIONS: Array<{ value: TemplatePartialCategoryValue; label: string }> = [
+  { value: 'AGREEMENT', label: 'Agreement' },
+  { value: 'RESOLUTION', label: 'Resolutions' },
+  { value: 'OTHER', label: 'Others' },
+];
+
+export function templatePartialCategoryLabel(category: string | null | undefined): string {
+  return TEMPLATE_PARTIAL_CATEGORY_OPTIONS.find((option) => option.value === category)?.label ?? 'Others';
+}
+
+// ============================================================================
 // Create Partial
 // ============================================================================
 
@@ -30,6 +48,7 @@ export const createTemplatePartialSchema = z.object({
   description: z.string().max(1000).optional().nullable(),
   content: z.string().min(1, 'Content is required').max(500000, 'Content is too large'),
   placeholders: z.array(placeholderDefinitionSchema).default([]),
+  category: templatePartialCategoryEnum.optional(),
 });
 
 export type CreateTemplatePartialInput = z.infer<typeof createTemplatePartialSchema>;
@@ -46,6 +65,7 @@ export const updateTemplatePartialSchema = z.object({
   description: z.string().max(1000).optional().nullable(),
   content: z.string().min(1).max(500000).optional(),
   placeholders: z.array(placeholderDefinitionSchema).optional(),
+  category: templatePartialCategoryEnum.optional(),
 });
 
 export type UpdateTemplatePartialInput = z.infer<typeof updateTemplatePartialSchema>;
@@ -61,6 +81,7 @@ export const searchTemplatePartialsSchema = z.object({
   sortBy: z.enum(['name', 'createdAt', 'updatedAt']).default('name'),
   sortOrder: z.enum(['asc', 'desc']).default('asc'),
   editor: z.enum(['oakdoc', 'a4']).optional(),
+  category: templatePartialCategoryEnum.optional(),
 });
 
 export type SearchTemplatePartialsInput = z.infer<typeof searchTemplatePartialsSchema>;

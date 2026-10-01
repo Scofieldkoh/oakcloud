@@ -11,7 +11,9 @@ describe('document generation batch schema', () => {
   it('defines aggregate, item, status, ordering, and unique output ownership', () => {
     expect(schema).toContain('model DocumentGenerationBatch {');
     expect(schema).toContain('model DocumentGenerationBatchItem {');
-    expect(schema).toContain('@@unique([batchId, templateId])');
+    // One template can appear more than once in a batch (for example two resolutions).
+    expect(schema).not.toContain('@@unique([batchId, templateId])');
+    expect(schema).toContain('@@index([batchId, templateId]');
     expect(schema).toContain('generatedDocumentId String');
     expect(schema).toContain('@unique @map("generated_document_id")');
     expect(schema).toContain('enum DocumentGenerationBatchItemStatus');

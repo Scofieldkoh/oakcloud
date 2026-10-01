@@ -9,6 +9,12 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from '@/components/ui/dropdown';
 import { useToast } from '@/components/ui/toast';
 import { Pagination } from '@/components/ui/pagination';
+import { SearchableSelect } from '@/components/ui/searchable-select';
+import {
+  TEMPLATE_PARTIAL_CATEGORY_OPTIONS,
+  templatePartialCategoryLabel,
+  type TemplatePartialCategoryValue,
+} from '@/lib/validations/template-partial';
 import {
   useTemplatePartials,
   useDeletePartial,
@@ -90,6 +96,7 @@ function TemplatePartialsTab({
   // Search state
   const [view, setView] = useState<LibraryView>('word');
   const [search, setSearch] = useState('');
+  const [category, setCategory] = useState<TemplatePartialCategoryValue | ''>('');
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
 
@@ -106,6 +113,7 @@ function TemplatePartialsTab({
   const { data, isLoading, error } = useTemplatePartials({
     search: search || undefined,
     editor: view === 'word' ? 'oakdoc' : 'a4',
+    category: category || undefined,
     page,
     limit,
     tenantId: isSuperAdmin ? activeTenantId : undefined,
@@ -195,6 +203,19 @@ function TemplatePartialsTab({
             className="w-full h-9 pl-9 pr-4 border border-border-primary rounded-md bg-background-primary text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-primary/50 text-sm"
           />
         </div>
+        <div className="w-full sm:w-44">
+          <SearchableSelect
+            ariaLabel="Category"
+            options={[{ value: '', label: 'All categories' }, ...TEMPLATE_PARTIAL_CATEGORY_OPTIONS]}
+            value={category}
+            onChange={(next) => {
+              setCategory(TEMPLATE_PARTIAL_CATEGORY_OPTIONS.find((option) => option.value === next)?.value ?? '');
+              setPage(1);
+            }}
+            clearable={false}
+            size="sm"
+          />
+        </div>
         <LibraryViewSelect
           value={view}
           noun="partials"
@@ -260,6 +281,9 @@ function TemplatePartialsTab({
                       >
                         {partial.displayName || partial.name}
                       </button>
+                      <span className="inline-flex items-center rounded-full bg-background-tertiary px-2 py-0.5 text-xs text-text-secondary">
+                        {templatePartialCategoryLabel(partial.category)}
+                      </span>
                       <PartialSyntax name={partial.name} />
                       <UsageCount count={partial._count?.usedInTemplates || 0} />
                     </div>

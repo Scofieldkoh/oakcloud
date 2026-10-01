@@ -129,7 +129,7 @@ describe('BatchTemplatePicker', () => {
     openSpy.mockRestore();
   });
 
-  it('toggles a template from its whole card and marks the selection', async () => {
+  it('adds a template from its whole card, marks the selection and adds it again on a second click', async () => {
     const user = userEvent.setup();
     const props = pickerProps();
     const first = render(<BatchTemplatePicker {...props} />);
@@ -138,12 +138,15 @@ describe('BatchTemplatePicker', () => {
     expect(props.onAdd).toHaveBeenCalledWith(engagement);
     first.unmount();
 
-    const { unmount } = render(<BatchTemplatePicker {...pickerProps({
-      selected: [item(engagement)],
-    })} />);
+    const selectedProps = pickerProps({ selected: [item(engagement)] });
+    const { unmount } = render(<BatchTemplatePicker {...selectedProps} />);
     // Selected templates stay in the catalogue so the mapping is obvious.
     expect(catalogueCard('Engagement Letter')).toHaveAttribute('aria-pressed', 'true');
     expect(catalogueCard('Service Agreement')).toHaveAttribute('aria-pressed', 'false');
+    // A selected template can be added again, for example a second resolution.
+    await user.click(catalogueCard('Engagement Letter'));
+    expect(selectedProps.onAdd).toHaveBeenCalledWith(engagement);
+    expect(selectedProps.onRemove).not.toHaveBeenCalled();
     unmount();
   });
 

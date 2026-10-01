@@ -13,6 +13,7 @@ import type { OakDocDiagnostic } from '@/types/oakdoc';
 import {
   customResolutionParagraphs,
   resolutionCompositionIssues,
+  resolutionSectionText,
   SAMPLE_RESOLUTION_COMPOSITION,
   type ResolutionComposition,
   type ResolutionSection,
@@ -35,6 +36,7 @@ export { OAKDOC_RESOLUTION_ITEMS_TAG };
 export {
   customResolutionParagraphs,
   resolutionCompositionIssues,
+  resolutionSectionText,
   SAMPLE_RESOLUTION_COMPOSITION,
   type ResolutionComposition,
   type ResolutionSection,
@@ -280,12 +282,13 @@ export function composeOakDocResolutions(
   }
   composition.sections.forEach((section, index) => {
     blocks.push(headingParagraph(xml, prototype, index + 1, section.heading));
-    if (section.kind === 'PARTIAL') {
+    const text = resolutionSectionText(section);
+    if (section.kind === 'PARTIAL' && text === null) {
       partialIds.push(section.partialId);
       blocks.push(partialReference(xml, ids, section.partialId, section.heading.trim() || 'Resolution'));
       return;
     }
-    for (const lines of customResolutionParagraphs(section.body)) {
+    for (const lines of customResolutionParagraphs(text ?? '')) {
       blocks.push(textParagraph(xml, prototype, lines));
     }
   });
@@ -370,4 +373,35 @@ export function insertOakDocResolutionSlot(input: {
 
   files[DOCUMENT_PART] = serialize(xml);
   return zipSync(files, { level: 6 });
+}
+
+/**
+ * A partial's wording as plain text for the Configure step: paragraphs
+ * separated by a blank line, line breaks kept. Fields show their sample text.
+ */
+export function readOakDocPlainText(docxBytes: Uint8Array): string {
+  const files = unzipSync(docxBytes, { filter: (entry) => entry.name === DOCUMENT_PART });
+  const part = files[DOCUMENT_PART];
+  if (!part) return '';
+  const xml = parseXml(part);
+  const paragraphs: string[] = [];
+  for (const paragraph of Array.from(xml.getElementsByTagNameNS(WORD_NS, 'p'))) {
+    let text = '';
+    const walk = (node: Element) => {
+      for (const child of Array.from(node.childNodes)) {
+        if (child.nodeType !== 1) continue;
+        const el = child as Element;
+        if (el.namespaceURI !== WORD_NS) continue;
+        // Nested paragraphs (text boxes) are read on their own.
+        if (el.localName === 'p' || el.localName === 'pPr' || el.localName === 'rPr') continue;
+        if (el.localName === 't') text += el.textContent ?? '';
+        else if (el.localName === 'tab') text += '\t';
+        else if (el.localName === 'br' || el.localName === 'cr') text += '\n';
+        else walk(el);
+      }
+    };
+    walk(paragraph);
+    if (text.trim()) paragraphs.push(text.trimEnd());
+  }
+  return paragraphs.join('\n\n');
 }

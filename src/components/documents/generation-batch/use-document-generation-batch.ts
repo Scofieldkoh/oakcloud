@@ -67,11 +67,14 @@ export interface DocumentGenerationBatchCommands {
 }
 
 function buildUpdateInput(state: BatchWorkspaceState): UpdateDocumentGenerationBatchInput {
+  // The server knows saved items by id and new ones by template id.
+  const activeItem = state.batch.items.find((item) => item.key === state.activeItemId
+    || item.id === state.activeItemId);
   return {
     expectedRevision: state.batch.revision ?? 0,
     currentStage: BATCH_STAGES.indexOf(state.stage),
     primaryCompanyId: state.batch.primaryCompanyId,
-    activeItemId: state.activeItemId,
+    activeItemId: activeItem ? (activeItem.id ?? activeItem.templateId) : state.activeItemId,
     masterFieldValues: state.batch.masterFieldValues,
     items: state.batch.items.map((item, index) => ({
       id: item.id,
@@ -247,12 +250,11 @@ export function useDocumentGenerationBatch(
           batchId = created.id;
           revision = created.revision;
           activeItemId = created.activeItemId ?? null;
-          const serverItemByTemplate = new Map(
-            created.items.map((item) => [item.templateId, item]),
-          );
-          items = current.batch.items.map((item) => {
-            const server = serverItemByTemplate.get(item.templateId);
-            return server ? { ...item, id: server.id } : item;
+          // Created items come back in the order they were sent.
+          const createdItems = [...created.items].sort((a, b) => a.displayOrder - b.displayOrder);
+          items = current.batch.items.map((item, index) => {
+            const server = createdItems[index];
+            return server && server.templateId === item.templateId ? { ...item, id: server.id } : item;
           });
         }
 

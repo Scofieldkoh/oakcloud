@@ -10,7 +10,7 @@ import { randomUUID } from 'node:crypto';
 import { prisma } from '@/lib/prisma';
 import { createAuditLog, computeChanges } from '@/lib/audit';
 import { Prisma } from '@/generated/prisma';
-import type { TemplatePartial } from '@/generated/prisma';
+import type { TemplatePartial, TemplatePartialCategory } from '@/generated/prisma';
 import type { TenantAwareParams } from '@/lib/types';
 import { PARTIAL_REFERENCE_REGEX, extractPartialReferences } from '@/lib/template-analysis';
 import { runSerializableTransaction } from '@/lib/prisma-transaction';
@@ -46,6 +46,7 @@ export interface CreatePartialInput {
   description?: string | null;
   content: string;
   placeholders?: Prisma.InputJsonValue;
+  category?: TemplatePartialCategory;
 }
 
 export interface UpdatePartialInput {
@@ -56,10 +57,12 @@ export interface UpdatePartialInput {
   description?: string | null;
   content?: string;
   placeholders?: Prisma.InputJsonValue;
+  category?: TemplatePartialCategory;
 }
 
 export interface SearchPartialsInput {
   search?: string;
+  category?: TemplatePartialCategory;
   /** `oakdoc` lists Word partials, `a4` the archived HTML partials. */
   editor?: 'oakdoc' | 'a4';
   page?: number;
@@ -99,6 +102,7 @@ const TRACKED_FIELDS: (keyof TemplatePartial)[] = [
   'description',
   'content',
   'placeholders',
+  'category',
 ];
 
 export function normalizeMaterialContent(content: string): string {
@@ -194,6 +198,7 @@ export async function updateTemplatePartial(
     if (data.name !== undefined) updateData.name = data.name;
     if (data.displayName !== undefined) updateData.displayName = data.displayName;
     if (data.description !== undefined) updateData.description = data.description;
+    if (data.category !== undefined) updateData.category = data.category;
     if (data.content !== undefined) updateData.content = data.content;
     if (data.placeholders !== undefined) {
       updateData.placeholders = preservePartialPlaceholders(data.placeholders, data.id);
@@ -352,9 +357,11 @@ export async function searchTemplatePartials(
     sortBy = 'name',
     sortOrder = 'asc',
     editor,
+    category,
   } = input;
 
   const where: Prisma.TemplatePartialWhereInput = { tenantId, deletedAt: null };
+  if (category) where.category = category;
   if (search) {
     where.OR = [
       { name: { contains: search, mode: 'insensitive' } },
@@ -401,7 +408,7 @@ export async function searchTemplatePartials(
 export async function getAllTemplatePartials(
   tenantId: string,
 ): Promise<Array<
-  Pick<TemplatePartial, 'id' | 'name' | 'displayName' | 'description' | 'content' | 'placeholders' | 'version'>
+  Pick<TemplatePartial, 'id' | 'name' | 'displayName' | 'description' | 'content' | 'placeholders' | 'version' | 'category'>
   & { documentEngine: 'A4' | 'OAKDOC' }
 >> {
   const partials = await prisma.templatePartial.findMany({
@@ -414,6 +421,7 @@ export async function getAllTemplatePartials(
       content: true,
       placeholders: true,
       version: true,
+      category: true,
       contentJson: true,
     },
     orderBy: { name: 'asc' },
@@ -595,6 +603,7 @@ export async function duplicateTemplatePartial(
         ? `Copy of: ${source.description}`
         : `Copy of ${source.name}`,
       content: source.content,
+      category: source.category,
       placeholders: preservePartialPlaceholders(source.placeholders, id),
       createdById: userId,
       version: 1,

@@ -12492,6 +12492,7 @@ export const TemplatePartialScalarFieldEnum = {
   content: 'content',
   contentJson: 'contentJson',
   placeholders: 'placeholders',
+  category: 'category',
   version: 'version',
   createdById: 'createdById',
   createdAt: 'createdAt',
@@ -15303,6 +15304,20 @@ export type EnumDocumentCommentStatusFieldRefInput<$PrismaModel> = FieldRefInput
  * Reference to a field of type 'DocumentCommentStatus[]'
  */
 export type ListEnumDocumentCommentStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DocumentCommentStatus[]'>
+
+
+
+/**
+ * Reference to a field of type 'TemplatePartialCategory'
+ */
+export type EnumTemplatePartialCategoryFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'TemplatePartialCategory'>
+
+
+
+/**
+ * Reference to a field of type 'TemplatePartialCategory[]'
+ */
+export type ListEnumTemplatePartialCategoryFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'TemplatePartialCategory[]'>
 
 
 

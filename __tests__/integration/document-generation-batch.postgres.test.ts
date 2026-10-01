@@ -270,6 +270,47 @@ describePostgres('document generation batch postgres integration', () => {
     expect(agreementCount).toBe(0);
   });
 
+  it('keeps repeat copies of one template as separate items through updates', async () => {
+    const { actor, templates } = await seed();
+    const created = await createDocumentGenerationBatch(
+      { items: [{ templateId: templates[0].id }, { templateId: templates[0].id }] },
+      actor,
+    );
+    expect(created.items).toHaveLength(2);
+    expect(new Set(created.items.map((item) => item.generatedDocumentId)).size).toBe(2);
+    const [first, second] = created.items;
+
+    const added = await updateDocumentGenerationBatch(
+      created.id,
+      {
+        expectedRevision: created.revision,
+        items: [
+          { id: first.id, templateId: templates[0].id, configuration: { ...first.configuration, title: 'First copy' } },
+          { id: second.id, templateId: templates[0].id, configuration: { ...second.configuration, title: 'Second copy' } },
+          { templateId: templates[0].id },
+        ],
+      },
+      actor,
+    );
+    expect(added.items).toHaveLength(3);
+    expect(added.items.slice(0, 2).map((item) => item.id)).toEqual([first.id, second.id]);
+    expect(added.items.map((item) => item.configuration.title).slice(0, 2)).toEqual(['First copy', 'Second copy']);
+
+    const removed = await updateDocumentGenerationBatch(
+      created.id,
+      {
+        expectedRevision: added.revision,
+        items: [
+          { id: added.items[2].id, templateId: templates[0].id },
+          { id: first.id, templateId: templates[0].id },
+        ],
+      },
+      actor,
+    );
+    expect(removed.items.map((item) => item.id)).toEqual([added.items[2].id, first.id]);
+    expect(removed.items[1].configuration.title).toBe('First copy');
+  });
+
   it('resolves the active item to the new item when a local item is saved by template id', async () => {
     const { actor, templates } = await seed();
     const created = await createDocumentGenerationBatch(

@@ -11,6 +11,7 @@ import {
   composeOakDocResolutions,
   hasOakDocResolutionSlot,
   insertOakDocResolutionSlot,
+  readOakDocPlainText,
 } from '@/lib/document-editor/oakdoc-resolutions';
 import { buildBoardResolutionOakDocMaster } from '@/content/resolution/board-resolution-oakdoc';
 import { resolutionCompositionIssues } from '@/lib/resolution-composition';
@@ -53,6 +54,34 @@ describe('OakDoc numbered resolutions', () => {
     expect(xml).toContain('RESOLVED that A &amp; B</w:t><w:br/><w:t xml:space="preserve">be appointed.');
     expect(xml).toContain('Times New Roman');
     expect(xml).toContain('<w:tab w:val="left" w:pos="567"/>');
+  });
+
+  it('prints edited partial text as plain paragraphs instead of the partial', () => {
+    const result = composeOakDocResolutions(buildBoardResolutionOakDocMaster(), {
+      subject: '',
+      sections: [
+        { id: 'a', kind: 'PARTIAL', heading: 'APPOINTMENT OF SECRETARY', partialId: PARTIAL, body: 'RESOLVED that John Lim be appointed.' },
+      ],
+    });
+    expect(result.diagnostics).toEqual([]);
+    expect(result.partialIds).toEqual([]);
+    expect(inspectOakDocPartialReferences(result.bytes)).toEqual([]);
+    expect(documentXml(result.bytes)).toContain('RESOLVED that John Lim be appointed.');
+
+    expect(resolutionCompositionIssues({
+      subject: '',
+      sections: [{ id: 'a', kind: 'PARTIAL', heading: 'X', partialId: PARTIAL, body: '  ' }],
+    })).toEqual(['Resolution 1 needs its text.']);
+  });
+
+  it('reads a document as plain paragraphs with line breaks', () => {
+    const composed = composeOakDocResolutions(buildBoardResolutionOakDocMaster(), {
+      subject: '',
+      sections: [{ id: 'b', kind: 'CUSTOM', heading: 'LODGEMENT', body: 'RESOLVED that A\nbe appointed.\n\nRESOLVED further.' }],
+    });
+    const text = readOakDocPlainText(composed.bytes);
+    expect(text).toContain('1.\tLODGEMENT\n\nRESOLVED that A\nbe appointed.\n\nRESOLVED further.');
+    expect(text).toContain('SAMPLE COMPANY PTE. LTD.');
   });
 
   it('reports a master without the slot', () => {
