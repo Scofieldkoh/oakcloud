@@ -369,6 +369,30 @@ export function hasOakDocResolutionSlot(docxBytes: Uint8Array): boolean {
 }
 
 /**
+ * Slots saved before the placeholder could be restyled locked their content
+ * too. Downgrade them to a wrapper-only lock so the font can be changed.
+ * Returns the input bytes untouched when nothing needs changing.
+ */
+export function unlockOakDocResolutionSlotContent(docxBytes: Uint8Array): Uint8Array {
+  const files = unzipSync(docxBytes);
+  const documentBytes = files[DOCUMENT_PART];
+  if (!documentBytes) return docxBytes;
+  const xml = parseXml(documentBytes);
+  let changed = false;
+  for (const slot of findResolutionSlots(xml)) {
+    const properties = wordChild(slot, 'sdtPr');
+    const lock = properties ? wordChild(properties, 'lock') : undefined;
+    if (lock && getWordVal(lock) === 'sdtContentLocked') {
+      lock.setAttributeNS(WORD_NS, 'w:val', 'sdtLocked');
+      changed = true;
+    }
+  }
+  if (!changed) return docxBytes;
+  files[DOCUMENT_PART] = serialize(xml);
+  return zipSync(files, { level: 6 });
+}
+
+/**
  * Editor action: add the numbered resolutions slot after the paragraph
  * holding the caret. The slot keeps that paragraph's formatting, which the
  * generated resolutions then follow.
@@ -406,7 +430,9 @@ export function insertOakDocResolutionSlot(input: {
   properties.appendChild(element(xml, 'alias', { val: 'Numbered resolutions' }));
   properties.appendChild(element(xml, 'tag', { val: OAKDOC_RESOLUTION_ITEMS_TAG }));
   properties.appendChild(element(xml, 'id', { val: String(new IdAllocator(xml).take()) }));
-  properties.appendChild(element(xml, 'lock', { val: 'sdtContentLocked' }));
+  // The slot can't be deleted, but its placeholder can be restyled: the
+  // generated resolutions take its paragraph and font formatting.
+  properties.appendChild(element(xml, 'lock', { val: 'sdtLocked' }));
   sdt.appendChild(properties);
   const content = element(xml, 'sdtContent');
   const body = element(xml, 'p');

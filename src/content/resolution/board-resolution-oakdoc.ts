@@ -201,7 +201,7 @@ function buildResolutionMaster(variant: ResolutionVariant): Uint8Array {
     [
       '<w:sdt><w:sdtPr>',
       `<w:alias w:val="Numbered resolutions"/><w:tag w:val="${OAKDOC_RESOLUTION_ITEMS_TAG}"/><w:id w:val="${ids.take()}"/>`,
-      '<w:lock w:val="sdtContentLocked"/>',
+      '<w:lock w:val="sdtLocked"/>',
       '</w:sdtPr><w:sdtContent>',
       paragraph(run('[Numbered resolutions: chosen when the document is generated]'), { align: 'both' }),
       '</w:sdtContent></w:sdt>',

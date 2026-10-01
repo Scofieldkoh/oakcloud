@@ -255,7 +255,9 @@ Service Agreement composition templates:
   heading plus sections, each a Word partial or custom text with its own
   heading). Generation replaces the slot with "1.<tab>HEADING" paragraphs in
   list order, each followed by its partial reference or custom paragraphs,
-  using the slot paragraph's formatting; the partials are pinned at their
+  using the slot paragraph's formatting (the slot is locked against deletion
+  only, so its placeholder can be restyled; older content-locked slots are
+  unlocked when the editor opens them); the partials are pinned at their
   current version and expanded with the master's own partials before fields
   resolve (`src/lib/document-editor/oakdoc-resolutions.ts`). Partial items
   start collapsed and show the partial's wording as plain text

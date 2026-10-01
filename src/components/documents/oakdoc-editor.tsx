@@ -66,6 +66,7 @@ import { useUnsavedNavigationGuard } from '@/hooks/use-unsaved-navigation-guard'
 import {
   hasOakDocResolutionSlot,
   insertOakDocResolutionSlot,
+  unlockOakDocResolutionSlotContent,
 } from '@/lib/document-editor/oakdoc-resolutions';
 
 const DOCX_MIME =
@@ -421,7 +422,7 @@ export function OakDocEditor() {
     setPinnedPartialVersions(pinnedVersionsOf(loaded.template.contentJson));
     setRefreshPartials(false);
     replaceDocument(
-      nameOakDocRepeaterItems(loaded.bytes),
+      unlockOakDocResolutionSlotContent(nameOakDocRepeaterItems(loaded.bytes)),
       `Loaded OakDoc template "${loaded.template.name}" version ${revision}.`,
     );
     setIsDirty(false);
