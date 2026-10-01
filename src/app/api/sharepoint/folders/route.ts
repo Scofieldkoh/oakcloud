@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
 import { ApiError } from '@/lib/errors';
+import { authErrorResponse } from '@/lib/api-route-errors';
 import { createAuditLog } from '@/lib/audit';
 import { createLogger, sanitizeError } from '@/lib/logger';
 import { z } from 'zod';
@@ -16,6 +17,8 @@ function errorResponse(error: unknown) {
   if (error instanceof SharePointServiceError) return NextResponse.json({ errorCode: error.code, error: error.message }, { status: error.statusCode ?? 400 });
   if (error instanceof ApiError) return NextResponse.json({ errorCode: error.code, error: error.message }, { status: error.statusCode });
   if (error instanceof z.ZodError) return NextResponse.json({ error: 'Invalid request', details: error.flatten() }, { status: 400 });
+  const authResponse = authErrorResponse(error);
+  if (authResponse) return authResponse;
   log.error('SharePoint folder operation failed', sanitizeError(error));
   return NextResponse.json({
     errorCode: 'SHAREPOINT_FOLDER_OPERATION_FAILED',

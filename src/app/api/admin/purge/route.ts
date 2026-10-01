@@ -10,6 +10,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createErrorResponse } from '@/lib/api-helpers';
+import { clientErrorMessage } from '@/lib/api-route-errors';
 import { requireAuth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { createAuditLog } from '@/lib/audit';
@@ -298,7 +299,7 @@ export async function POST(request: NextRequest) {
             deletedRecords.push({ id: user.id, name: userName });
             deletedCount++;
           } catch (err) {
-            const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+            const errorMessage = clientErrorMessage(err, 'Could not purge this record');
             console.error(`Failed to purge user ${user.id}:`, err);
             failedRecords.push({ id: user.id, name: userName, error: errorMessage });
           }
@@ -500,7 +501,7 @@ export async function POST(request: NextRequest) {
             deletedRecords.push({ id: company.id, name: company.name });
             deletedCount++;
           } catch (err) {
-            const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+            const errorMessage = clientErrorMessage(err, 'Could not purge this record');
             console.error(`Failed to purge company ${company.id}:`, err);
             failedRecords.push({ id: company.id, name: company.name, error: errorMessage });
           }
@@ -558,7 +559,7 @@ export async function POST(request: NextRequest) {
             deletedRecords.push({ id: contact.id, name: contact.fullName });
             deletedCount++;
           } catch (err) {
-            const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+            const errorMessage = clientErrorMessage(err, 'Could not purge this record');
             console.error(`Failed to purge contact ${contact.id}:`, err);
             failedRecords.push({ id: contact.id, name: contact.fullName, error: errorMessage });
           }
@@ -595,7 +596,7 @@ export async function POST(request: NextRequest) {
             deletedRecords.push({ id: doc.id, name: doc.title });
             deletedCount++;
           } catch (err) {
-            const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+            const errorMessage = clientErrorMessage(err, 'Could not purge this record');
             console.error(`Failed to purge generated document ${doc.id}:`, err);
             failedRecords.push({ id: doc.id, name: doc.title, error: errorMessage });
           }
@@ -613,8 +614,8 @@ export async function POST(request: NextRequest) {
             deletedRecords.push(removed);
             deletedCount++;
           } catch (err) {
-            const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-            log.warn('Failed to purge document library record', { entityType, id, error: errorMessage });
+            const errorMessage = clientErrorMessage(err, 'Could not purge this record');
+            log.warn('Failed to purge document library record', { entityType, id, error: err instanceof Error ? err.message : String(err) });
             failedRecords.push({ id, name: id, error: errorMessage });
           }
         }
@@ -755,7 +756,7 @@ export async function POST(request: NextRequest) {
             deletedRecords.push({ id: procDoc.id, name: docName });
             deletedCount++;
           } catch (err) {
-            const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+            const errorMessage = clientErrorMessage(err, 'Could not purge this record');
             console.error(`Failed to purge processing document ${procDoc.id}:`, err);
             failedRecords.push({ id: procDoc.id, name: docName, error: errorMessage });
           }

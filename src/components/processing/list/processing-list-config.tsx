@@ -10,7 +10,6 @@ import {
   Copy,
   FileStack,
 } from 'lucide-react';
-import { type AmountFilterValue } from '@/components/ui/amount-filter';
 import type { PipelineStatus, DuplicateStatus, RevisionStatus } from '@/generated/prisma';
 import { cn } from '@/lib/utils';
 import type { ProcessingDocumentSearchResult } from '@/hooks/use-processing-documents';
@@ -227,40 +226,6 @@ export function formatCategory(value: string | null | undefined): string {
     .split('_')
     .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
     .join(' ');
-}
-
-// Parse URL params to AmountFilterValue
-export function parseAmountFilter(
-  searchParams: URLSearchParams,
-  prefix: string
-): AmountFilterValue | undefined {
-  const exact = searchParams.get(prefix);
-  const from = searchParams.get(`${prefix}From`);
-  const to = searchParams.get(`${prefix}To`);
-
-  if (exact) {
-    const num = parseFloat(exact);
-    if (!isNaN(num)) {
-      return { mode: 'single', single: num };
-    }
-  }
-
-  if (from || to) {
-    const fromNum = from ? parseFloat(from) : undefined;
-    const toNum = to ? parseFloat(to) : undefined;
-
-    if (fromNum !== undefined || toNum !== undefined) {
-      return {
-        mode: 'range',
-        range: {
-          from: !isNaN(fromNum!) ? fromNum : undefined,
-          to: !isNaN(toNum!) ? toNum : undefined,
-        },
-      };
-    }
-  }
-
-  return undefined;
 }
 
 /** Counts shown in the Statistics cards, for the page of documents on screen. */

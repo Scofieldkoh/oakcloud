@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect, useMemo } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { Plus, AlertCircle, Trash2, X, RefreshCw, UserRoundSearch, Users } from 'lucide-react';
@@ -14,6 +14,8 @@ import { useSelection } from '@/hooks/use-selection';
 import { useUserPreference, useUpsertUserPreference } from '@/hooks/use-user-preferences';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import { useWorkspaceListReset } from '@/hooks/use-workspace-list-reset';
+import { useUrlListParams } from '@/hooks/use-url-list-params';
+import { urlParam, type UrlParamSpec } from '@/lib/url-list-params';
 import { ContactTable, type ContactInlineFilters } from '@/components/contacts/contact-table';
 import { ContactFilters, type FilterValues } from '@/components/contacts/contact-filters';
 import { Pagination } from '@/components/ui/pagination';
@@ -48,6 +50,24 @@ interface ContactPageParams {
   companiesMax?: number;
 }
 
+/** Search, filters, sort and paging kept in the /contacts URL. */
+const CONTACT_LIST_PARAMS: UrlParamSpec<ContactPageParams> = {
+  query: urlParam.string('', { key: 'q' }),
+  page: urlParam.int(1),
+  limit: urlParam.int(20),
+  sortBy: urlParam.choice<SortByField>('fullName'),
+  sortOrder: urlParam.choice<'asc' | 'desc'>('asc'),
+  contactType: urlParam.optional<ContactType>(),
+  fullName: urlParam.optional(),
+  identificationType: urlParam.optional<IdentificationType>(),
+  identificationNumber: urlParam.optional(),
+  nationality: urlParam.optional(),
+  email: urlParam.optional(),
+  phone: urlParam.optional(),
+  companiesMin: urlParam.optionalInt(),
+  companiesMax: urlParam.optionalInt(),
+};
+
 // Filter chip type for active filters display
 interface ActiveFilterChip {
   key: string;
@@ -59,7 +79,6 @@ const CONTACT_SEARCH_INPUT_ID = 'contacts-search-input';
 
 export default function ContactsPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { success, error: showError } = useToast();
   const { can, isWorkspaceAdmin } = usePermissions();
   const { data: session } = useSession();
@@ -89,28 +108,7 @@ export default function ContactsPage() {
     setColumnWidths(value as Record<string, number>);
   }, [columnPref?.value]);
 
-  // Parse URL params
-  const getParamsFromUrl = useCallback((): ContactPageParams => {
-    return {
-      query: searchParams.get('q') || '',
-      page: parseInt(searchParams.get('page') || '1', 10),
-      limit: parseInt(searchParams.get('limit') || '20', 10),
-      sortBy: (searchParams.get('sortBy') || 'fullName') as SortByField,
-      sortOrder: (searchParams.get('sortOrder') || 'asc') as 'asc' | 'desc',
-      contactType: (searchParams.get('contactType') || undefined) as ContactType | undefined,
-      // Inline filters
-      fullName: searchParams.get('fullName') || undefined,
-      identificationType: (searchParams.get('identificationType') || undefined) as IdentificationType | undefined,
-      identificationNumber: searchParams.get('identificationNumber') || undefined,
-      nationality: searchParams.get('nationality') || undefined,
-      email: searchParams.get('email') || undefined,
-      phone: searchParams.get('phone') || undefined,
-      companiesMin: searchParams.get('companiesMin') ? parseInt(searchParams.get('companiesMin')!, 10) : undefined,
-      companiesMax: searchParams.get('companiesMax') ? parseInt(searchParams.get('companiesMax')!, 10) : undefined,
-    };
-  }, [searchParams]);
-
-  const [params, setParams] = useState(getParamsFromUrl);
+  const { params, setParams, updateParams, targetUrl } = useUrlListParams('/contacts', CONTACT_LIST_PARAMS);
 
   // Delete dialog state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -139,70 +137,32 @@ export default function ContactsPage() {
     clear: clearSelection,
   } = useSelection(data?.contacts || []);
 
-  // Memoize URL construction
-  const targetUrl = useMemo(() => {
-    const urlParams = new URLSearchParams();
-
-    if (params.query) urlParams.set('q', params.query);
-    if (params.page > 1) urlParams.set('page', params.page.toString());
-    if (params.limit !== 20) urlParams.set('limit', params.limit.toString());
-    if (params.sortBy !== 'fullName') urlParams.set('sortBy', params.sortBy);
-    if (params.sortOrder !== 'asc') urlParams.set('sortOrder', params.sortOrder);
-    if (params.contactType) urlParams.set('contactType', params.contactType);
-    // Inline filters
-    if (params.fullName) urlParams.set('fullName', params.fullName);
-    if (params.identificationType) urlParams.set('identificationType', params.identificationType);
-    if (params.identificationNumber) urlParams.set('identificationNumber', params.identificationNumber);
-    if (params.nationality) urlParams.set('nationality', params.nationality);
-    if (params.email) urlParams.set('email', params.email);
-    if (params.phone) urlParams.set('phone', params.phone);
-    if (params.companiesMin !== undefined) urlParams.set('companiesMin', params.companiesMin.toString());
-    if (params.companiesMax !== undefined) urlParams.set('companiesMax', params.companiesMax.toString());
-
-    const queryString = urlParams.toString();
-    return queryString ? `/contacts?${queryString}` : '/contacts';
-  }, [params]);
 
   const resetForWorkspaceChange = useCallback(() => {
     setParams((prev) => ({ ...prev, page: 1 }));
     clearSelection();
-  }, [clearSelection]);
+  }, [clearSelection, setParams]);
 
   useWorkspaceListReset(activeTenantId, resetForWorkspaceChange);
 
-  // Sync URL when params change
-  useEffect(() => {
-    if (window.location.pathname + window.location.search !== targetUrl) {
-      router.replace(targetUrl, { scroll: false });
-    }
-  }, [targetUrl, router]);
-
   const handleSearch = (query: string) => {
-    setParams((prev) => ({ ...prev, query, page: 1 }));
+    updateParams({ query });
   };
 
   const handleFilterChange = (newFilters: FilterValues) => {
-    setParams((prev) => ({
-      ...prev,
-      ...newFilters,
-      page: 1,
-    }));
+    updateParams(newFilters);
   };
 
   const handleInlineFilterChange = useCallback((filters: Partial<ContactInlineFilters>) => {
-    setParams((prev) => ({
-      ...prev,
-      ...filters,
-      page: 1,
-    }));
-  }, []);
+    updateParams(filters);
+  }, [updateParams]);
 
   const handlePageChange = (page: number) => {
-    setParams((prev) => ({ ...prev, page }));
+    updateParams({ page });
   };
 
   const handleLimitChange = (limit: number) => {
-    setParams((prev) => ({ ...prev, limit, page: 1 }));
+    updateParams({ limit });
   };
 
   const handleSort = (field: string) => {
@@ -312,14 +272,14 @@ export default function ContactsPage() {
       chips.push({
         key: 'fullName',
         label: `Name: ${params.fullName}`,
-        onClear: () => setParams((p) => ({ ...p, fullName: undefined, page: 1 })),
+        onClear: () => updateParams({ fullName: undefined }),
       });
     }
     if (params.contactType) {
       chips.push({
         key: 'contactType',
         label: `Type: ${params.contactType === 'INDIVIDUAL' ? 'Individual' : 'Corporate'}`,
-        onClear: () => setParams((p) => ({ ...p, contactType: undefined, page: 1 })),
+        onClear: () => updateParams({ contactType: undefined }),
       });
     }
     if (params.identificationType) {
@@ -329,35 +289,35 @@ export default function ContactsPage() {
       chips.push({
         key: 'identificationType',
         label: `ID Type: ${labels[params.identificationType]}`,
-        onClear: () => setParams((p) => ({ ...p, identificationType: undefined, page: 1 })),
+        onClear: () => updateParams({ identificationType: undefined }),
       });
     }
     if (params.identificationNumber) {
       chips.push({
         key: 'identificationNumber',
         label: `ID: ${params.identificationNumber}`,
-        onClear: () => setParams((p) => ({ ...p, identificationNumber: undefined, page: 1 })),
+        onClear: () => updateParams({ identificationNumber: undefined }),
       });
     }
     if (params.nationality) {
       chips.push({
         key: 'nationality',
         label: `Nationality: ${params.nationality}`,
-        onClear: () => setParams((p) => ({ ...p, nationality: undefined, page: 1 })),
+        onClear: () => updateParams({ nationality: undefined }),
       });
     }
     if (params.email) {
       chips.push({
         key: 'email',
         label: `Email: ${params.email}`,
-        onClear: () => setParams((p) => ({ ...p, email: undefined, page: 1 })),
+        onClear: () => updateParams({ email: undefined }),
       });
     }
     if (params.phone) {
       chips.push({
         key: 'phone',
         label: `Phone: ${params.phone}`,
-        onClear: () => setParams((p) => ({ ...p, phone: undefined, page: 1 })),
+        onClear: () => updateParams({ phone: undefined }),
       });
     }
     if (params.companiesMin !== undefined || params.companiesMax !== undefined) {
@@ -374,16 +334,15 @@ export default function ContactsPage() {
       chips.push({
         key: 'companies',
         label,
-        onClear: () => setParams((p) => ({ ...p, companiesMin: undefined, companiesMax: undefined, page: 1 })),
+        onClear: () => updateParams({ companiesMin: undefined, companiesMax: undefined }),
       });
     }
 
     return chips;
-  }, [params]);
+  }, [params, updateParams]);
 
   const clearAllFilters = () => {
-    setParams((p) => ({
-      ...p,
+    updateParams({
       fullName: undefined,
       contactType: undefined,
       identificationType: undefined,
@@ -393,8 +352,7 @@ export default function ContactsPage() {
       phone: undefined,
       companiesMin: undefined,
       companiesMax: undefined,
-      page: 1,
-    }));
+    });
   };
 
   // Map params to inline filters

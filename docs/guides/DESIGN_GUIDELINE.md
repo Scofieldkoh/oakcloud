@@ -28,6 +28,7 @@ This guide is long; most UI changes only need this section. Open `/admin/compone
 | Dialogs | `Modal`, `ConfirmDialog`, `useConfirmDialog` | Never `window.confirm` or `alert`. |
 | Leaving with unsaved edits | `useUnsavedNavigationGuard` | Same dialog for links, back and in-page actions. |
 | Search boxes | `useDebouncedSearch` (`SEARCH_DEBOUNCE_MS`, 300 ms) | Follows outside changes such as Clear all. |
+| List search, filters, sort and paging in the URL | `useUrlListParams` with a `urlParam` spec (`@/lib/url-list-params`) | Every filter in the spec survives reload, shared links and Back; defaults stay out of the URL. |
 
 When you add a shared component to `src/components/ui`, add it to the showcase (`src/components/admin/component-showcase.tsx`) and to this table.
 
@@ -4617,6 +4618,7 @@ Located in `src/components/ui/`. These components use **Chakra UI** primitives w
 | `useUnsavedNavigationGuard` | `isDirty`, dialog copy | Warns in the app's dialog before in-app links, Back, or `requestNavigation`/`requestAction` leave a page with unsaved changes; closing the tab still uses the browser's own warning |
 | `useConfirmDialog` | - | `await confirm({ title, description, confirmLabel, variant })` in place of `window.confirm`; render the returned `dialog` once |
 | `useDebouncedSearch` | `value`, `onCommit`, `delayMs` | Search box draft that applies after typing pauses (300 ms, `SEARCH_DEBOUNCE_MS`) |
+| `useUrlListParams` | `basePath`, module-level `UrlParamSpec`, optional `parse` | List state read from and written to the URL; `updateParams(patch)` goes back to page 1 unless the patch sets `page` |
 
 Never use `window.confirm` or `alert`; use `ConfirmDialog`, `useConfirmDialog`, or the unsaved-changes guard.
 

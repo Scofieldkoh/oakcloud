@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it, vi } from 'vitest';
 import { Prisma } from '@/generated/prisma';
-import { isInternalError, routeErrorResponse } from '@/lib/api-route-errors';
+import { authErrorResponse, clientErrorMessage, isInternalError, routeErrorResponse } from '@/lib/api-route-errors';
 import { ApiError, ConflictError, ErrorCodes, NotFoundError } from '@/lib/errors';
 
 async function read(response: Response) {
@@ -88,5 +88,14 @@ describe('routeErrorResponse', () => {
     await expect(read(routeErrorResponse(new SyntaxError('Unexpected token < in JSON at position 0')))).resolves.toEqual({
       status: 400, body: { error: 'Invalid request body' },
     });
+  });
+
+  it('gives routes with their own payloads the auth statuses and safe messages', async () => {
+    await expect(read(authErrorResponse(new Error('Permission denied: connector:read'))!)).resolves.toEqual({
+      status: 403, body: { error: 'Forbidden' },
+    });
+    expect(authErrorResponse(new Error('SharePoint is offline'))).toBeNull();
+    expect(clientErrorMessage(new Error('Company has active agreements'), 'Could not purge')).toBe('Company has active agreements');
+    expect(clientErrorMessage(new TypeError('x is undefined'), 'Could not purge')).toBe('Could not purge');
   });
 });
