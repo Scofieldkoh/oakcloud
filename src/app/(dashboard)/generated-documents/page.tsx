@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
-import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
   Plus,
@@ -41,6 +40,8 @@ import { GenerationBatchTable } from '@/components/documents/generation-batch';
 import { Pagination } from '@/components/ui/pagination';
 import type { DocumentGenerationBatchListItem } from '@/types/document-generation-batch';
 import { useDebouncedSearch } from '@/hooks/use-debounced-search';
+import { useUrlListParams } from '@/hooks/use-url-list-params';
+import { parseUrlParams, urlParam, type UrlParamSpec } from '@/lib/url-list-params';
 
 // ============================================================================
 // Types
@@ -101,12 +102,57 @@ function toLocalDateString(date?: Date): string | undefined {
   return `${year}-${month}-${day}`;
 }
 
+interface DocumentListParams extends Omit<GeneratedDocumentFilters, 'sortBy' | 'sortOrder'> {
+  query: string;
+  page: number;
+  sortBy: GeneratedDocumentSortField;
+  sortOrder: GeneratedDocumentSortOrder;
+}
+
+/** Search, filters, sort and page kept in the /generated-documents URL. */
+const DOCUMENT_LIST_PARAMS: UrlParamSpec<DocumentListParams> = {
+  query: urlParam.string('', { key: 'q' }),
+  title: urlParam.optional(),
+  companyId: urlParam.optional(),
+  companyName: urlParam.optional(),
+  templateName: urlParam.optional(),
+  status: urlParam.optional<GeneratedDocument['status']>(),
+  createdBy: urlParam.optional(),
+  signedFrom: urlParam.optional(),
+  signedTo: urlParam.optional(),
+  updatedFrom: urlParam.optional(),
+  updatedTo: urlParam.optional(),
+  sortBy: urlParam.choice<GeneratedDocumentSortField>('updatedAt'),
+  sortOrder: urlParam.choice<GeneratedDocumentSortOrder>('desc'),
+  page: urlParam.int(1),
+};
+
+/** Older links use `company` for the company name, and any sort order other than asc means desc. */
+function documentListParamsFromUrl(searchParams: URLSearchParams): DocumentListParams {
+  const params = parseUrlParams(DOCUMENT_LIST_PARAMS, searchParams);
+  return {
+    ...params,
+    companyName: params.companyName ?? (searchParams.get('company') || undefined),
+    sortOrder: params.sortOrder === 'asc' ? 'asc' : 'desc',
+  };
+}
+
 // ============================================================================
 // Main Page Component
 // ============================================================================
 
 export default function GeneratedDocumentsPage() {
-  const searchParams = useSearchParams();
+  const { params: listParams, setParams: setListParams, updateParams } = useUrlListParams(
+    '/generated-documents',
+    DOCUMENT_LIST_PARAMS,
+    documentListParamsFromUrl,
+  );
+  const { query: searchQuery, page } = listParams;
+  // A stable object, so the fetch only reruns when a filter changes.
+  const filters = useMemo<GeneratedDocumentFilters>(() => {
+    const { query: _query, page: _page, ...rest } = listParams;
+    return rest;
+  }, [listParams]);
   const { success, error: toastError } = useToast();
   const { can } = usePermissions();
 
@@ -116,40 +162,11 @@ export default function GeneratedDocumentsPage() {
   const canDelete = can.deleteDocument;
   const canExport = can.exportDocument;
 
-  // Initial URL-derived list state, used both for filters and for restoring the
-  // last-known list snapshot when this page is mounted cold (e.g. browser Back).
-  const initialSearchQuery = searchParams.get('q') || '';
-  const initialTitleFilter = searchParams.get('title') || '';
-  const initialCompanyIdFilter = searchParams.get('companyId') || '';
-  const initialCompanyFilter = searchParams.get('company') || searchParams.get('companyName') || '';
-  const initialTemplateFilter = searchParams.get('templateName') || '';
-  const initialStatusFilter = searchParams.get('status') || '';
-  const initialCreatedByFilter = searchParams.get('createdBy') || '';
-  const initialSignedFrom = searchParams.get('signedFrom') || '';
-  const initialSignedTo = searchParams.get('signedTo') || '';
-  const initialUpdatedFrom = searchParams.get('updatedFrom') || '';
-  const initialUpdatedTo = searchParams.get('updatedTo') || '';
-  const initialSortBy = (searchParams.get('sortBy') as GeneratedDocumentSortField | null) || 'updatedAt';
-  const initialSortOrder: GeneratedDocumentSortOrder =
-    searchParams.get('sortOrder') === 'asc' ? 'asc' : 'desc';
-  const initialPage = parseInt(searchParams.get('page') || '1', 10);
-
+  // The list snapshot for the URL's list state, restored when this page is
+  // mounted cold (e.g. browser Back).
   const [initialListSnapshot] = useState<DocumentListResponse | undefined>(() => {
     const snapshot = readSessionListSnapshot<DocumentListResponse>(
-      generatedDocumentsListKey(initialPage, initialSearchQuery, {
-        title: initialTitleFilter || undefined,
-        companyId: initialCompanyIdFilter || undefined,
-        companyName: initialCompanyFilter || undefined,
-        templateName: initialTemplateFilter || undefined,
-        status: (initialStatusFilter || undefined) as GeneratedDocument['status'] | undefined,
-        createdBy: initialCreatedByFilter || undefined,
-        signedFrom: initialSignedFrom || undefined,
-        signedTo: initialSignedTo || undefined,
-        updatedFrom: initialUpdatedFrom || undefined,
-        updatedTo: initialUpdatedTo || undefined,
-        sortBy: initialSortBy,
-        sortOrder: initialSortOrder,
-      }),
+      generatedDocumentsListKey(page, searchQuery, filters),
     );
     return isDocumentListResponse(snapshot) ? snapshot : undefined;
   });
@@ -181,23 +198,6 @@ export default function GeneratedDocumentsPage() {
     clear: clearSelection,
   } = useSelection(documents);
 
-  // Filters
-  const [searchQuery, setSearchQuery] = useState(initialSearchQuery);
-  const [filters, setFilters] = useState<GeneratedDocumentFilters>({
-    title: initialTitleFilter || undefined,
-    companyId: initialCompanyIdFilter || undefined,
-    companyName: initialCompanyFilter || undefined,
-    templateName: initialTemplateFilter || undefined,
-    status: (initialStatusFilter || undefined) as GeneratedDocument['status'] | undefined,
-    createdBy: initialCreatedByFilter || undefined,
-    signedFrom: initialSignedFrom || undefined,
-    signedTo: initialSignedTo || undefined,
-    updatedFrom: initialUpdatedFrom || undefined,
-    updatedTo: initialUpdatedTo || undefined,
-    sortBy: initialSortBy,
-    sortOrder: initialSortOrder,
-  });
-  const [page, setPage] = useState(initialPage);
   const limit = 20; // More items per page for list view
   const firstFetchRef = useRef(true);
 
@@ -292,34 +292,32 @@ export default function GeneratedDocumentsPage() {
 
   // Filter handlers
   const handleFilterChange = useCallback((patch: Partial<GeneratedDocumentFilters>) => {
-    setFilters((previous) => ({ ...previous, ...patch }));
-    setPage(1);
-  }, []);
+    updateParams(patch as Partial<DocumentListParams>);
+  }, [updateParams]);
 
   const handleSearchChange = useCallback((value: string) => {
-    setSearchQuery(value);
-    setPage(1);
-  }, []);
+    updateParams({ query: value });
+  }, [updateParams]);
   const search = useDebouncedSearch(searchQuery, handleSearchChange);
 
   const handleSortChange = useCallback((field: GeneratedDocumentSortField) => {
-    setFilters((previous) => ({
+    setListParams((previous) => ({
       ...previous,
       sortBy: field,
       sortOrder:
         previous.sortBy === field && previous.sortOrder === 'asc' ? 'desc' : 'asc',
+      page: 1,
     }));
-    setPage(1);
-  }, []);
+  }, [setListParams]);
 
   const clearAllFilters = useCallback(() => {
-    setFilters((previous) => ({
+    setListParams((previous) => ({
+      ...parseUrlParams(DOCUMENT_LIST_PARAMS, new URLSearchParams()),
       sortBy: previous.sortBy,
       sortOrder: previous.sortOrder,
     }));
     search.commitNow('');
-    setPage(1);
-  }, [search]);
+  }, [search, setListParams]);
 
   const today = toLocalDateString(new Date());
   const isUpdatedToday = Boolean(
@@ -327,14 +325,13 @@ export default function GeneratedDocumentsPage() {
   );
 
   const toggleUpdatedToday = useCallback(() => {
-    setFilters((previous) => {
+    setListParams((previous) => {
       const active = previous.updatedFrom === today && previous.updatedTo === today;
       return active
-        ? { ...previous, updatedFrom: undefined, updatedTo: undefined }
-        : { ...previous, updatedFrom: today, updatedTo: today };
+        ? { ...previous, updatedFrom: undefined, updatedTo: undefined, page: 1 }
+        : { ...previous, updatedFrom: today, updatedTo: today, page: 1 };
     });
-    setPage(1);
-  }, [today]);
+  }, [today, setListParams]);
 
   // Handle delete
   const handleDelete = async (reason: string) => {
@@ -775,9 +772,9 @@ export default function GeneratedDocumentsPage() {
             totalPages={totalPages}
             total={total}
             limit={limit}
-            onPageChange={setPage}
+            onPageChange={(nextPage) => updateParams({ page: nextPage })}
             onLimitChange={() => {
-              setPage(1);
+              updateParams({ page: 1 });
               // Note: limit is a const, so we need to refetch with new limit
               // For now, we'll keep the current behavior
             }}
