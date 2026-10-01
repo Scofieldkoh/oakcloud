@@ -13,6 +13,7 @@ import {
   insertOakDocResolutionSlot,
   readOakDocPlainText,
   buildResolutionTextPartial,
+  unlockOakDocResolutionSlotContent,
 } from '@/lib/document-editor/oakdoc-resolutions';
 import { buildBoardResolutionOakDocMaster } from '@/content/resolution/board-resolution-oakdoc';
 import { readResolutionPreset, resolutionCompositionIssues } from '@/lib/resolution-composition';
@@ -127,8 +128,31 @@ describe('OakDoc numbered resolutions', () => {
     expect(xml.indexOf('Intro')).toBeLessThan(xml.indexOf('Numbered resolutions'));
     expect(xml.indexOf('Numbered resolutions')).toBeLessThan(xml.indexOf('Closing'));
     expect(xml.split('<w:jc w:val="both"/>').length - 1).toBe(2);
+    expect(xml).toContain('<w:lock w:val="sdtLocked"/>');
     expect(() => insertOakDocResolutionSlot({ docxBytes: inserted, paraId: '0a1b2c3d' }))
       .toThrow('already has the numbered resolutions');
+  });
+
+  it('lets the placeholder be restyled, and the resolutions follow its font', () => {
+    const master = buildBoardResolutionOakDocMaster();
+    expect(documentXml(master)).toContain('<w:lock w:val="sdtLocked"/>');
+    expect(unlockOakDocResolutionSlotContent(master)).toBe(master);
+
+    // A slot saved before this change locked its content too.
+    const files = unzipSync(master);
+    files['word/document.xml'] = encodeOakDocZipText(documentXml(master)
+      .replace('<w:lock w:val="sdtLocked"/>', '<w:lock w:val="sdtContentLocked"/>')
+      .replace(/(<w:sdtContent><w:p>(?:<w:pPr>.*?<\/w:pPr>)?<w:r>)(?:<w:rPr>.*?<\/w:rPr>)?/, '$1<w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial"/></w:rPr>'));
+    const legacy = zipSync(files);
+    const unlocked = documentXml(unlockOakDocResolutionSlotContent(legacy));
+    expect(unlocked).toContain('<w:lock w:val="sdtLocked"/>');
+    expect(unlocked).not.toContain('sdtContentLocked');
+
+    const result = composeOakDocResolutions(legacy, {
+      subject: '',
+      sections: [{ id: 'a', kind: 'CUSTOM', heading: 'BANK ACCOUNT', body: 'RESOLVED that an account be opened.' }],
+    });
+    expect(documentXml(result.bytes)).toMatch(/w:ascii="Arial"[^]*?RESOLVED that an account be opened\./);
   });
 
   it('lists what Configure still needs', () => {

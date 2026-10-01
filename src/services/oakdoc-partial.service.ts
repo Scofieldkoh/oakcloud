@@ -7,6 +7,7 @@ import { storage, StorageKeys } from '@/lib/storage';
 import { runSerializableTransaction } from '@/lib/prisma-transaction';
 import { classifyRevisionMiss } from '@/lib/document-editor/revision-concurrency';
 import { ensureA4ServerDomGlobals } from '@/lib/document-editor/a4-server-dom';
+import { readOakDocPlainText } from '@/lib/document-editor/oakdoc-resolutions';
 import { inspectOakDocPackage } from '@/lib/document-editor/oakdoc-package-policy';
 import {
   OAKDOC_MIME_TYPE,
@@ -360,4 +361,11 @@ export async function downloadOakDocPartial(partialId: string, tenantId: string)
     nested: [],
   }, tenantId);
   return { buffer: Buffer.from(bytes), metadata: asset, version: partial.version };
+}
+
+/** The partial's current wording as plain text, with resolution fields as `{tag}`. */
+export async function readOakDocPartialText(partialId: string, tenantId: string) {
+  const { buffer, version } = await downloadOakDocPartial(partialId, tenantId);
+  ensureA4ServerDomGlobals();
+  return { text: readOakDocPlainText(new Uint8Array(buffer)), revision: version };
 }

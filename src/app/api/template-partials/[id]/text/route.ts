@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
 import { createErrorResponse, requireSessionWorkspaceId } from '@/lib/api-helpers';
-import { readOakDocPlainText } from '@/lib/document-editor/oakdoc-resolutions';
-import { downloadOakDocPartial } from '@/services/oakdoc-partial.service';
+import { readOakDocPartialText } from '@/services/oakdoc-partial.service';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -17,9 +16,8 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
     const tenantId = requireSessionWorkspaceId(session);
     const { id } = await params;
 
-    const { buffer, version } = await downloadOakDocPartial(id, tenantId);
     return NextResponse.json(
-      { text: readOakDocPlainText(new Uint8Array(buffer)), revision: version },
+      await readOakDocPartialText(id, tenantId),
       { headers: { 'Cache-Control': 'private, no-store' } },
     );
   } catch (error) {
