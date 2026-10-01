@@ -8,6 +8,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { handleApiError } from '@/lib/api-error-handler';
 import { requireAuth, canAccessCompany } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { storage, StorageKeys } from '@/lib/storage';
@@ -253,9 +254,6 @@ export async function POST(request: NextRequest) {
         });
     } catch (error) {
         log.error('Failed to merge documents', error);
-        return NextResponse.json(
-            { error: { message: error instanceof Error ? error.message : 'Internal server error' } },
-            { status: 500 }
-        );
+        return handleApiError(error, 'bulk-merge');
     }
 }

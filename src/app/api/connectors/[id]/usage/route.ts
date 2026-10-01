@@ -6,6 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { routeErrorResponse } from '@/lib/api-route-errors';
 import { requireAuth } from '@/lib/auth';
 import { searchUsageLogs, getUsageStats, exportUsageLogs } from '@/services/connector-usage.service';
 import { prisma } from '@/lib/prisma';
@@ -120,10 +121,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
       },
     });
   } catch (error) {
-    if (error instanceof Error && error.message === 'Unauthorized') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
     console.error('[Connector Usage API] Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return routeErrorResponse(error);
   }
 }

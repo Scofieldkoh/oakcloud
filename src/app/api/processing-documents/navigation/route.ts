@@ -6,6 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { handleApiError } from '@/lib/api-error-handler';
 import { v4 as uuidv4 } from 'uuid';
 import { Prisma } from '@/generated/prisma';
 import { requireAuth, canAccessCompany } from '@/lib/auth';
@@ -191,9 +192,6 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error('Processing document navigation API error:', error);
-    if (error instanceof Error && error.message === 'Unauthorized') {
-      return jsonError(401, 'AUTHENTICATION_REQUIRED', 'Unauthorized');
-    }
-    return jsonError(500, 'INTERNAL_ERROR', 'Internal server error');
+    return handleApiError(error, 'processing-document-navigation');
   }
 }

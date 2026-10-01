@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { checkRateLimit, getClientIp, getRateLimitKey, RATE_LIMIT_CONFIGS } from '@/lib/rate-limit';
 import { getPublicDraftByCode } from '@/services/form-builder.service';
+import { createErrorResponse } from '@/lib/api-helpers';
 
 interface RouteParams {
   params: Promise<{ slug: string; draftCode: string }>;
@@ -28,10 +29,6 @@ export async function GET(request: Request, { params }: RouteParams) {
 
     return NextResponse.json(draft);
   } catch (error) {
-    if (error instanceof Error) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
-    }
-
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return createErrorResponse(error);
   }
 }

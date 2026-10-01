@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
+import { handleApiError } from '@/lib/api-error-handler';
 import { getAvailableProvidersForWorkspace } from '@/lib/ai';
 import { AI_MODELS, PROVIDER_NAMES } from '@/lib/ai/models';
 import type { AIProvider } from '@/lib/ai/types';
@@ -44,16 +45,7 @@ export async function GET() {
       },
     });
   } catch (error) {
-    if (error instanceof Error && error.message === 'Unauthorized') {
-      return NextResponse.json(
-        { success: false, error: { message: 'Unauthorized' } },
-        { status: 401 }
-      );
-    }
     console.error('Error fetching AI models:', error);
-    return NextResponse.json(
-      { success: false, error: { message: 'Failed to fetch AI models' } },
-      { status: 500 }
-    );
+    return handleApiError(error, 'ai-models');
   }
 }

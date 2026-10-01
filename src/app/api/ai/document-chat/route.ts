@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { routeErrorResponse } from '@/lib/api-route-errors';
+import { createErrorResponse } from '@/lib/api-helpers';
 import { requireAuth } from '@/lib/auth';
 import { z } from 'zod';
 import {
@@ -197,14 +199,8 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(response);
   } catch (error) {
-    if (error instanceof Error && error.message === 'Unauthorized') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
     console.error('Document AI chat error:', error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Internal server error' },
-      { status: 500 }
-    );
+    return createErrorResponse(error);
   }
 }
 
@@ -224,9 +220,6 @@ export async function GET(_request: NextRequest) {
       })),
     });
   } catch (error) {
-    if (error instanceof Error && error.message === 'Unauthorized') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return routeErrorResponse(error);
   }
 }

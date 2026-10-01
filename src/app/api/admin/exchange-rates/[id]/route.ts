@@ -9,6 +9,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { createErrorResponse } from '@/lib/api-helpers';
 import { getSession } from '@/lib/auth';
 import * as exchangeRateService from '@/services/exchange-rate.service';
 import { updateRateSchema } from '@/lib/validations/exchange-rate';
@@ -48,10 +49,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     return NextResponse.json(rate);
   } catch (error) {
     console.error('Failed to get exchange rate:', error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Internal server error' },
-      { status: 500 }
-    );
+    return createErrorResponse(error);
   }
 }
 
@@ -90,10 +88,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     }
 
     console.error('Failed to update exchange rate:', error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Internal server error' },
-      { status: 500 }
-    );
+    return createErrorResponse(error);
   }
 }
 
@@ -143,9 +138,6 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Failed to delete exchange rate:', error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Internal server error' },
-      { status: 500 }
-    );
+    return createErrorResponse(error);
   }
 }

@@ -6,11 +6,11 @@
  */
 
 import { NextResponse } from 'next/server';
-import { Prisma } from '@/generated/prisma';
+import { routeErrorResponse } from './api-route-errors';
 import type { SessionUser } from './auth';
 import { prisma } from './prisma';
 import { HTTP_STATUS } from './constants/application';
-import { ApiError, BadRequestError } from './errors';
+import { BadRequestError } from './errors';
 
 // ============================================================================
 // Tenant Context Helpers
@@ -135,60 +135,19 @@ export function requireSessionWorkspaceId(session: SessionUser): string {
 // ============================================================================
 
 /**
- * Standard error response codes
+ * Default error response for staff routes: auth → 401/403, "... not found" →
+ * 404, other application errors → 400 with their message, and database or
+ * runtime errors → 500 without their message. See `routeErrorResponse`.
  */
 export function createErrorResponse(
   error: unknown,
   defaultMessage: string = 'Internal server error'
 ): NextResponse {
-  if (error instanceof ApiError) {
-    return NextResponse.json({
-      error: error.message,
-      code: error.code,
-      ...(error.details === undefined ? {} : { details: error.details }),
-    }, { status: error.statusCode });
-  }
-
-  if (error instanceof Prisma.PrismaClientKnownRequestError) {
-    if (error.code === 'P2021' || error.code === 'P2022') {
-      return NextResponse.json(
-        {
-          error: 'Database schema is out of date. Apply the latest Prisma schema updates for e-signing.',
-        },
-        { status: HTTP_STATUS.SERVER_ERROR }
-      );
-    }
-  }
-
-  if (error instanceof Error) {
-    const message = error.message;
-
-    // Auth errors
-    if (message === 'Unauthorized') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: HTTP_STATUS.UNAUTHORIZED });
-    }
-
-    // Permission errors
-    if (message === 'Forbidden' || message.startsWith('Permission denied')) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: HTTP_STATUS.FORBIDDEN });
-    }
-
-    // Not found errors
-    if (message.includes('not found')) {
-      return NextResponse.json({ error: message }, { status: HTTP_STATUS.NOT_FOUND });
-    }
-
-    // Invalid ID format
-    if (message.includes('Invalid') && message.includes('format')) {
-      return NextResponse.json({ error: message }, { status: HTTP_STATUS.BAD_REQUEST });
-    }
-
-    // Validation/business logic errors
-    return NextResponse.json({ error: message }, { status: HTTP_STATUS.BAD_REQUEST });
-  }
-
-  // Unknown error
-  return NextResponse.json({ error: defaultMessage }, { status: HTTP_STATUS.SERVER_ERROR });
+  return routeErrorResponse(error, {
+    notFound: 'any',
+    fallback: 'bad-request',
+    serverErrorMessage: defaultMessage,
+  });
 }
 
 /**

@@ -109,22 +109,11 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json({ tag }, { status: 201 });
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      if (error.message === 'Forbidden') {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-      }
-      if (error.message === 'A tag with this name already exists') {
-        return NextResponse.json({ error: error.message }, { status: 409 });
-      }
-      // Zod validation error
-      if (error.name === 'ZodError') {
-        return NextResponse.json({ error: 'Invalid input', details: error }, { status: 400 });
-      }
+    // Zod validation error
+    if (error instanceof Error && error.name === 'ZodError') {
+      return NextResponse.json({ error: 'Invalid input', details: error }, { status: 400 });
     }
     console.error('Error creating tag:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return routeErrorResponse(error, { conflict: ['A tag with this name already exists'] });
   }
 }

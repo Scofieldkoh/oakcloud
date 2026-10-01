@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireAuth } from '@/lib/auth';
+import { routeErrorResponse } from '@/lib/api-route-errors';
 import { prisma } from '@/lib/prisma';
 import { verifyPreparedBizFileRequest } from '@/services/bizfile/application/verify-prepared-request';
 import { BizFilePreparationTokenError } from '@/services/bizfile/application/preparation-token';
@@ -207,9 +208,6 @@ export async function POST(
       );
     }
     console.error('Document confirm error:', error);
-    if (error instanceof Error && error.message === 'Unauthorized') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return routeErrorResponse(error);
   }
 }

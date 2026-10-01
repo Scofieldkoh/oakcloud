@@ -5,6 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { handleApiError } from '@/lib/api-error-handler';
 import ExcelJS from 'exceljs';
 import { requireAuth, canAccessCompany } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
@@ -324,24 +325,6 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     log.error('Bulk export API error:', error);
 
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') {
-        return NextResponse.json(
-          {
-            success: false,
-            error: { code: 'AUTHENTICATION_REQUIRED', message: 'Unauthorized' },
-          },
-          { status: 401 }
-        );
-      }
-    }
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: { code: 'INTERNAL_ERROR', message: 'Internal server error' },
-      },
-      { status: 500 }
-    );
+    return handleApiError(error, 'bulk-export');
   }
 }

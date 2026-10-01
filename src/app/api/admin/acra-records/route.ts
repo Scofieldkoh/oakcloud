@@ -7,6 +7,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { createErrorResponse } from '@/lib/api-helpers';
 import { requireAuth, isAdmin } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { buildAcraEntityWhere, getAcraSort } from '@/lib/acra-records-query';
@@ -89,15 +90,6 @@ export async function GET(request: NextRequest) {
         : null,
     });
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      if (error.message === 'Forbidden') {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-      }
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return createErrorResponse(error);
   }
 }

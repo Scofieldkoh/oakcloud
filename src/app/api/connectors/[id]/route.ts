@@ -7,6 +7,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { createErrorResponse } from '@/lib/api-helpers';
 import { requireAuth } from '@/lib/auth';
 import { updateConnectorSchema } from '@/lib/validations/connector';
 import {
@@ -40,16 +41,10 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json(connector);
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      if (error.message === 'Access denied' || error.message.includes('Access denied')) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-      }
-      return NextResponse.json({ error: error.message }, { status: 400 });
+    if (error instanceof Error && error.message.includes('Access denied')) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return createErrorResponse(error);
   }
 }
 
@@ -73,19 +68,10 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json(connector);
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      if (error.message === 'Access denied' || error.message.includes('Access denied')) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-      }
-      if (error.message === 'Connector not found') {
-        return NextResponse.json({ error: 'Connector not found' }, { status: 404 });
-      }
-      return NextResponse.json({ error: error.message }, { status: 400 });
+    if (error instanceof Error && error.message.includes('Access denied')) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return createErrorResponse(error);
   }
 }
 
@@ -120,18 +106,9 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      if (error.message === 'Access denied' || error.message.includes('Access denied')) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-      }
-      if (error.message === 'Connector not found') {
-        return NextResponse.json({ error: 'Connector not found' }, { status: 404 });
-      }
-      return NextResponse.json({ error: error.message }, { status: 400 });
+    if (error instanceof Error && error.message.includes('Access denied')) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return createErrorResponse(error);
   }
 }

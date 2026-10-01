@@ -3,6 +3,7 @@ import { requireAuth, canAccessCompany } from '@/lib/auth';
 import { getUserPreferenceMap } from '@/lib/api/preferences';
 import { getProcessingDocumentSummary } from '@/services/document-processing.service';
 import { jsonWithServerTiming } from '@/lib/api/company-query';
+import { createErrorResponse } from '@/lib/api-helpers';
 
 function parsePreferenceKeys(request: NextRequest) {
   const keys = new URL(request.url).searchParams.get('preferenceKeys');
@@ -38,15 +39,6 @@ export async function GET(request: NextRequest) {
 
     return jsonWithServerTiming({ summary, preferences }, startedAt);
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      if (error.message === 'Forbidden') {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-      }
-      return NextResponse.json({ error: error.message }, { status: 400 });
-    }
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return createErrorResponse(error);
   }
 }

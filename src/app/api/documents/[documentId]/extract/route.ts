@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
+import { createErrorResponse } from '@/lib/api-helpers';
 import { prisma } from '@/lib/prisma';
 import { extractBizFileWithVision, normalizeExtractedData } from '@/services/bizfile';
 import { mapEntityType } from '@/services/bizfile/types';
@@ -209,15 +210,6 @@ export async function POST(
     }
   } catch (error) {
     console.error('BizFile extraction error:', error);
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      if (error.message === 'Forbidden') {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-      }
-      return NextResponse.json({ error: error.message }, { status: 400 });
-    }
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return createErrorResponse(error);
   }
 }

@@ -3,6 +3,7 @@ import { z, ZodError } from 'zod';
 import { requireAuth } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
 import { ContactMergeConflictError, mergeContacts } from '@/services/contact-merge.service';
+import { routeErrorResponse } from '@/lib/api-route-errors';
 
 const contactId = z.string().uuid();
 const mergeField = z.string().trim().nullable();
@@ -43,10 +44,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid contact merge', ...(error instanceof ZodError ? { issues: error.issues } : {}) }, { status: 400 });
     }
     if (error instanceof ContactMergeConflictError) return NextResponse.json({ error: error.message }, { status: 409 });
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      if (error.message === 'Forbidden' || error.message.startsWith('Permission denied')) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return routeErrorResponse(error);
   }
 }

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createErrorResponse } from '@/lib/api-helpers';
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
 import { z } from 'zod';
 import { callAIWithConnector } from '@/lib/ai';
@@ -137,12 +138,6 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     };
     return NextResponse.json(responseBody, { status: supportsPdfInput ? 200 : 200 });
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      return NextResponse.json({ error: error.message }, { status: 400 });
-    }
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return createErrorResponse(error);
   }
 }

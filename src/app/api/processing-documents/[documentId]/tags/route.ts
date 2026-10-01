@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, canAccessCompany } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
+import { routeErrorResponse } from '@/lib/api-route-errors';
 import { prisma } from '@/lib/prisma';
 import { getProcessingDocument } from '@/services/document-processing.service';
 import {
@@ -57,16 +58,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json({ tags });
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      if (error.message === 'Forbidden' || error.message.startsWith('Permission denied')) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-      }
-    }
-    console.error('Error fetching document tags:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return routeErrorResponse(error, { logLabel: 'Error fetching document tags' });
   }
 }
 
@@ -152,27 +144,13 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json({ tag: docTag }, { status: 201 });
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      if (error.message === 'Forbidden' || error.message.startsWith('Permission denied')) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-      }
-      if (error.message === 'Tag not found') {
-        return NextResponse.json({ error: error.message }, { status: 404 });
-      }
-      if (error.message === 'Document already has this tag') {
-        return NextResponse.json({ error: error.message }, { status: 409 });
-      }
-      if (error.message === 'A tag with this name already exists') {
-        return NextResponse.json({ error: error.message }, { status: 409 });
-      }
-    }
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: 'Invalid input', details: error.errors }, { status: 400 });
     }
-    console.error('Error adding tag to document:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return routeErrorResponse(error, {
+      notFound: ['Tag not found'],
+      conflict: ['Document already has this tag', 'A tag with this name already exists'],
+      logLabel: 'Error adding tag to document',
+    });
   }
 }

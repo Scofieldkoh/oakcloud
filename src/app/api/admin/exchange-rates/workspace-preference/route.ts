@@ -11,6 +11,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { createErrorResponse } from '@/lib/api-helpers';
 import { getSession } from '@/lib/auth';
 import * as exchangeRateService from '@/services/exchange-rate.service';
 import { workspaceRatePreferenceSchema } from '@/lib/validations/exchange-rate';
@@ -67,10 +68,7 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error('Failed to get workspace rate preference:', error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Internal server error' },
-      { status: 500 }
-    );
+    return createErrorResponse(error);
   }
 }
 
@@ -131,9 +129,6 @@ export async function PATCH(request: NextRequest) {
     }
 
     console.error('Failed to update workspace rate preference:', error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Internal server error' },
-      { status: 500 }
-    );
+    return createErrorResponse(error);
   }
 }

@@ -1,11 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
-import { ApiError, ErrorCodes } from '@/lib/errors';
-import {
-  createErrorResponse,
-  requireSessionWorkspaceId,
-} from '@/lib/api-helpers';
+import { routeErrorResponse } from '@/lib/api-route-errors';
+import { requireSessionWorkspaceId } from '@/lib/api-helpers';
 import {
   getCompanyReadScope,
   jsonWithServerTiming,
@@ -17,19 +14,6 @@ import {
 } from '@/lib/validations/service-roster';
 import { requireServicesWorkspaceEnabled } from '@/services/schedule-reconciliation';
 import { listServiceRoster } from '@/services/service-roster';
-
-function safeErrorResponse(error: unknown): NextResponse {
-  console.error('[API /api/client-services GET] error:', error);
-  if (error instanceof ApiError) return createErrorResponse(error);
-  if (error instanceof Error && (error.message === 'Unauthorized' || error.message === 'Forbidden' || error.message.startsWith('Permission denied'))) {
-    return createErrorResponse(error);
-  }
-  return createErrorResponse(new ApiError(
-    ErrorCodes.INTERNAL_ERROR,
-    'An unexpected error occurred',
-    500,
-  ));
-}
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   const startedAt = performance.now();
@@ -50,6 +34,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       companyIds: scope.options.companyIds,
     }), startedAt);
   } catch (error) {
-    return withServerTiming(safeErrorResponse(error), startedAt);
+    console.error('[API /api/client-services GET] error:', error);
+    return withServerTiming(routeErrorResponse(error), startedAt);
   }
 }

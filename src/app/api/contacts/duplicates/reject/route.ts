@@ -4,6 +4,7 @@ import { requireAuth } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
 import { rejectContactDuplicatePairSchema } from '@/lib/validations/contact-duplicate';
 import { rejectContactDuplicatePair } from '@/services/contact-duplicate.service';
+import { isInternalError, routeErrorResponse } from '@/lib/api-route-errors';
 
 export async function POST(request: NextRequest) {
   try {
@@ -27,11 +28,7 @@ export async function POST(request: NextRequest) {
         ...(error instanceof ZodError ? { issues: error.issues } : {}),
       }, { status: 400 });
     }
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      if (error.message === 'Forbidden' || error.message.startsWith('Permission denied')) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-      }
+    if (error instanceof Error && !isInternalError(error)) {
       if (error.message.includes('stale')) {
         return NextResponse.json({ error: 'Duplicate recommendation is stale' }, { status: 409 });
       }
@@ -39,6 +36,6 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Duplicate contact pair not found' }, { status: 404 });
       }
     }
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return routeErrorResponse(error);
   }
 }

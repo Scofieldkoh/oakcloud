@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
-import { requireWorkspaceContext } from '@/lib/api-helpers';
+import { createErrorResponse, requireWorkspaceContext } from '@/lib/api-helpers';
 import { updateCommunicationMailboxesSchema } from '@/lib/validations/communication';
 import { updateOutlookConnectorMailboxSettings } from '@/services/outlook-email-ingestion.service';
 
@@ -27,12 +27,6 @@ export async function PATCH(request: NextRequest) {
 
     return NextResponse.json({ connector });
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      return NextResponse.json({ error: error.message }, { status: 400 });
-    }
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return createErrorResponse(error);
   }
 }

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { checkRateLimit, getClientIp, getRateLimitKey, RATE_LIMIT_CONFIGS } from '@/lib/rate-limit';
 import { emailPublicFormDraft } from '@/services/form-builder.service';
+import { createErrorResponse } from '@/lib/api-helpers';
 
 const emailPayloadSchema = z.object({
   email: z.string().email().max(320),
@@ -35,9 +36,6 @@ export async function POST(request: Request, { params }: RouteParams) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: 'Invalid payload', details: error.errors }, { status: 400 });
     }
-    if (error instanceof Error) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
-    }
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return createErrorResponse(error);
   }
 }

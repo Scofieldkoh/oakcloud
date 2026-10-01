@@ -4,7 +4,6 @@ const mocks = vi.hoisted(() => ({
   requireAuth: vi.fn(),
   requirePermission: vi.fn(),
   resolveWorkspaceId: vi.fn(),
-  createErrorResponse: vi.fn(),
   findFirst: vi.fn(),
   upload: vi.fn(),
   validateFileContent: vi.fn(),
@@ -14,9 +13,9 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('@/lib/auth', () => ({ requireAuth: mocks.requireAuth }));
 vi.mock('@/lib/rbac', () => ({ requirePermission: mocks.requirePermission }));
-vi.mock('@/lib/api-helpers', () => ({
+vi.mock('@/lib/api-helpers', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/lib/api-helpers')>()),
   resolveWorkspaceId: mocks.resolveWorkspaceId,
-  createErrorResponse: mocks.createErrorResponse,
 }));
 vi.mock('@/lib/prisma', () => ({
   prisma: { form: { findFirst: mocks.findFirst } },
@@ -64,12 +63,6 @@ describe('POST /api/forms/[id]/background', () => {
     mocks.formBackground.mockReturnValue(storageKey);
     mocks.getFormBackgroundPublicUrl.mockReturnValue(publicUrl);
     mocks.upload.mockResolvedValue(undefined);
-    mocks.createErrorResponse.mockImplementation((error: unknown) =>
-      new Response(JSON.stringify({ error: error instanceof Error ? error.message : 'Internal server error' }), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      })
-    );
   });
 
   it('uploads a valid image and returns the public URL', async () => {

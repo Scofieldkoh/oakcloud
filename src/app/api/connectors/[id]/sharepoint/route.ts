@@ -16,6 +16,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { createErrorResponse } from '@/lib/api-helpers';
 import { getSession } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
 import * as sharepointService from '@/services/sharepoint.service';
@@ -85,10 +86,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     }
   } catch (error) {
     console.error('SharePoint GET error:', error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Operation failed' },
-      { status: 500 }
-    );
+    return createErrorResponse(error, 'Operation failed');
   }
 }
 
@@ -190,10 +188,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     }
   } catch (error) {
     console.error('SharePoint POST error:', error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Operation failed' },
-      { status: 500 }
-    );
+    return createErrorResponse(error, 'Operation failed');
   }
 }
 
@@ -221,9 +216,6 @@ export async function DELETE(
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('SharePoint DELETE error:', error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Delete failed' },
-      { status: 500 }
-    );
+    return createErrorResponse(error, 'Delete failed');
   }
 }

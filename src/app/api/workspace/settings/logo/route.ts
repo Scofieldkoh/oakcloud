@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { canManageWorkspace, requireAuth } from '@/lib/auth';
+import { createErrorResponse } from '@/lib/api-helpers';
 import { prisma } from '@/lib/prisma';
 import { createAuditLog } from '@/lib/audit';
 import { storage, StorageKeys } from '@/lib/storage';
@@ -130,12 +131,6 @@ export async function POST(request: Request) {
 
     return NextResponse.json(workspaceResponse(workspace), { status: 201 });
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      return NextResponse.json({ error: error.message }, { status: 400 });
-    }
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return createErrorResponse(error);
   }
 }

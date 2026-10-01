@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireAuth } from '@/lib/auth';
+import { routeErrorResponse } from '@/lib/api-route-errors';
 import { evaluateFreshAuthorization } from '@/lib/fresh-authorization';
 import { prisma } from '@/lib/prisma';
 import { storage } from '@/lib/storage';
@@ -178,7 +179,6 @@ export async function POST(
     });
   } catch (error) {
     console.error('BizFile prepare-import error:', error);
-    if (error instanceof Error && error.message === 'Unauthorized') return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: 'Invalid BizFile preparation request', issues: issuesFromZodError(error).issues }, { status: 400 });
     }
@@ -194,6 +194,6 @@ export async function POST(
     }
     // Do not expose provider, storage, database, or authorization details to a
     // caller when an unexpected preparation failure occurs.
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return routeErrorResponse(error);
   }
 }

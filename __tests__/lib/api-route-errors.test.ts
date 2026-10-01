@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it, vi } from 'vitest';
-import { routeErrorResponse } from '@/lib/api-route-errors';
+import { Prisma } from '@/generated/prisma';
+import { isInternalError, routeErrorResponse } from '@/lib/api-route-errors';
 import { ApiError, ConflictError, ErrorCodes, NotFoundError } from '@/lib/errors';
 
 async function read(response: Response) {
@@ -38,7 +39,7 @@ describe('routeErrorResponse', () => {
     await expect(read(routeErrorResponse(new Error('db down'), { logLabel: 'Load failed:' }))).resolves.toEqual({
       status: 500, body: { error: 'Internal server error' },
     });
-    expect(log).toHaveBeenCalledWith('Load failed:', expect.any(Error));
+    expect(log).toHaveBeenCalledWith(expect.stringContaining('Load failed:'), expect.any(Error));
     await expect(read(routeErrorResponse(new Error('Company not found')))).resolves.toMatchObject({ status: 500 });
     await expect(read(routeErrorResponse('oops', { fallback: 'bad-request' }))).resolves.toMatchObject({ status: 500 });
     await expect(read(routeErrorResponse(new Error('Bad UEN'), { fallback: 'bad-request' }))).resolves.toEqual({
@@ -55,5 +56,37 @@ describe('routeErrorResponse', () => {
     expect(conflict.status).toBe(409);
     const internal = await read(routeErrorResponse(new ApiError(ErrorCodes.INTERNAL_ERROR, 'secret detail')));
     expect(internal).toEqual({ status: 500, body: { error: 'Internal server error' } });
+  });
+
+  it('never shows database or runtime error messages', async () => {
+    const log = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const prismaError = (code: string) => new Prisma.PrismaClientKnownRequestError(
+      'Invalid `prisma.company.update()` invocation: column "secret" does not exist',
+      { code, clientVersion: 'test' },
+    );
+    await expect(read(routeErrorResponse(prismaError('P2002'), { fallback: 'bad-request' }))).resolves.toEqual({
+      status: 409, body: { error: 'A record with these details already exists' },
+    });
+    await expect(read(routeErrorResponse(prismaError('P2025'), { fallback: 'bad-request' }))).resolves.toEqual({
+      status: 404, body: { error: 'Record not found' },
+    });
+    await expect(read(routeErrorResponse(prismaError('P2010'), { fallback: 'bad-request', notFound: 'any' }))).resolves.toEqual({
+      status: 500, body: { error: 'Internal server error' },
+    });
+    const validation = new Prisma.PrismaClientValidationError('Invalid value for argument `id`: required', { clientVersion: 'test' });
+    await expect(read(routeErrorResponse(validation, { fallback: 'bad-request' }))).resolves.toMatchObject({ status: 500 });
+    await expect(read(routeErrorResponse(new TypeError("Cannot read properties of undefined (reading 'id')"), {
+      fallback: 'bad-request', serverErrorMessage: 'Failed to load',
+    }))).resolves.toEqual({ status: 500, body: { error: 'Failed to load' } });
+    const adapterError = Object.assign(new Error('violates check constraint "x"'), { name: 'DriverAdapterError' });
+    expect(isInternalError(adapterError)).toBe(true);
+    expect(isInternalError(new Error('Company not found'))).toBe(false);
+    log.mockRestore();
+  });
+
+  it('answers an unreadable JSON body with a 400', async () => {
+    await expect(read(routeErrorResponse(new SyntaxError('Unexpected token < in JSON at position 0')))).resolves.toEqual({
+      status: 400, body: { error: 'Invalid request body' },
+    });
   });
 });

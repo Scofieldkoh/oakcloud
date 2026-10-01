@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
-import { ApiError } from '@/lib/errors';
+import { isInternalError, routeErrorResponse } from '@/lib/api-route-errors';
 import { duplicateTemplatePartialSchema } from '@/lib/validations/template-partial';
 import { duplicateTemplatePartial } from '@/services/template-partial.service';
 
@@ -28,27 +28,12 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json({ ...partial, revision: partial.version }, { status: 201 });
   } catch (error) {
-    if (error instanceof ApiError) {
-      return NextResponse.json(
-        { error: error.message, code: error.code, ...(error.details === undefined ? {} : { details: error.details }) },
-        { status: error.statusCode },
-      );
+    if (error instanceof Error && !isInternalError(error) && error.message.includes('must start with a letter')) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
     }
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      if (error.message === 'Forbidden' || error.message.startsWith('Permission denied')) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-      }
-      if (error.message === 'Partial not found') {
-        return NextResponse.json({ error: error.message }, { status: 404 });
-      }
-      if (error.message === 'A partial with this name already exists') {
-        return NextResponse.json({ error: error.message }, { status: 409 });
-      }
-      if (error.message.includes('must start with a letter')) {
-        return NextResponse.json({ error: error.message }, { status: 400 });
-      }
-    }
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return routeErrorResponse(error, {
+      notFound: ['Partial not found'],
+      conflict: ['A partial with this name already exists'],
+    });
   }
 }

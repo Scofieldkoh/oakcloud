@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { getSession } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
 import { ApiError } from '@/lib/errors';
+import { createErrorResponse } from '@/lib/api-helpers';
 import { SharePointServiceError } from '@/services/sharepoint.service';
 import { addSharePointFilingNote } from '@/services/esigning-sharepoint-filing/recovery';
 
@@ -20,6 +21,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   } catch (error) {
     if (error instanceof SharePointServiceError) return NextResponse.json({ errorCode: error.code, error: error.message }, { status: error.statusCode ?? 400 });
     if (error instanceof ApiError) return NextResponse.json({ errorCode: error.code, error: error.message }, { status: error.statusCode });
-    return NextResponse.json({ error: error instanceof Error ? error.message : 'SharePoint filing note failed' }, { status: 400 });
+    return createErrorResponse(error, 'SharePoint filing note failed');
   }
 }

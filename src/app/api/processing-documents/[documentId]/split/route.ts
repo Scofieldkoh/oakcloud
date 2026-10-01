@@ -6,6 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { handleApiError } from '@/lib/api-error-handler';
 import crypto from 'crypto';
 import { requireAuth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
@@ -184,9 +185,6 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         });
     } catch (error) {
         log.error('Failed to split document', error);
-        return NextResponse.json(
-            { error: { message: error instanceof Error ? error.message : 'Internal server error' } },
-            { status: 500 }
-        );
+        return handleApiError(error, 'split-document');
     }
 }

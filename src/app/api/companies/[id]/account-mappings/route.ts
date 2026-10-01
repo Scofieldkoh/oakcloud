@@ -12,7 +12,7 @@ import { requireAuth, canAccessCompany } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
 import { parseIdParams } from '@/lib/validations/params';
 import { prisma } from '@/lib/prisma';
-import { requireWorkspaceContext } from '@/lib/api-helpers';
+import { createErrorResponse, requireWorkspaceContext } from '@/lib/api-helpers';
 import * as chartOfAccountsService from '@/services/chart-of-accounts.service';
 import { accountingProviderSchema, bulkMappingSchema } from '@/lib/validations/chart-of-accounts';
 import { ZodError } from 'zod';
@@ -67,20 +67,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json(mappings);
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      if (error.message === 'Forbidden' || error.message.startsWith('Permission denied')) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-      }
-    }
-
     console.error('Failed to get company account mappings:', error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Internal server error' },
-      { status: 500 }
-    );
+    return createErrorResponse(error);
   }
 }
 
@@ -151,19 +139,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      if (error.message === 'Forbidden' || error.message.startsWith('Permission denied')) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-      }
-    }
-
     console.error('Failed to update company account mappings:', error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Internal server error' },
-      { status: 500 }
-    );
+    return createErrorResponse(error);
   }
 }

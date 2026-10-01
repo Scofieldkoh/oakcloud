@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
 import { prisma } from '@/lib/prisma';
-import { ApiError } from '@/lib/errors';
+import { isInternalError, routeErrorResponse } from '@/lib/api-route-errors';
 import { updateTemplatePartialSchema } from '@/lib/validations/template-partial';
 import {
   getTemplatePartial,
@@ -28,34 +28,19 @@ function apiError(error: unknown, operation: string) {
       { status: 400 },
     );
   }
-  if (error instanceof ApiError) {
-    return NextResponse.json(
-      { error: error.message, code: error.code, ...(error.details === undefined ? {} : { details: error.details }) },
-      { status: error.statusCode },
-    );
-  }
-  if (error instanceof Error) {
-    if (error.message === 'Unauthorized') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    if (error.message === 'Forbidden' || error.message.startsWith('Permission denied')) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
-    if (error.message === 'Partial not found') {
-      return NextResponse.json({ error: error.message }, { status: 404 });
-    }
-    if (
-      error.message === 'A partial with this name already exists'
-      || error.message.startsWith('Cannot delete partial')
-    ) {
+  if (error instanceof Error && !isInternalError(error)) {
+    if (error.message.startsWith('Cannot delete partial')) {
       return NextResponse.json({ error: error.message }, { status: 409 });
     }
     if (error.message.includes('must start with a letter')) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
   }
-  console.error(`${operation} template partial error`);
-  return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  return routeErrorResponse(error, {
+    notFound: ['Partial not found'],
+    conflict: ['A partial with this name already exists'],
+    logLabel: `${operation} template partial error`,
+  });
 }
 
 export async function GET(request: NextRequest, { params }: RouteParams) {

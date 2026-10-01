@@ -141,22 +141,28 @@ if (existing.deletedAt) {
 }
 ```
 
-API routes pass anything they catch to `handleApiError` from `@/lib/api-error-handler`, which returns `{ success: false, error: { code, message, details } }` with the error's status:
+API routes pass anything they catch to one shared helper instead of writing their own auth, "not found" or `error.message` branches. Pick the helper that matches the route's response shape:
+
+| Response shape | Helper | Default mapping |
+|---|---|---|
+| `{ error: string }` (most staff routes) | `createErrorResponse(error)` from `@/lib/api-helpers` | typed error → its status; "Unauthorized" → 401; "Forbidden"/"Permission denied" → 403; "... not found" → 404; other application `Error` → 400 with its message |
+| `{ error: string }`, unknown errors must stay hidden | `routeErrorResponse(error, { notFound, conflict, logLabel })` from `@/lib/api-route-errors` | as above, but unlisted plain errors → 500 "Internal server error" unless `fallback: 'bad-request'` |
+| `{ success: false, error: { code, message, details } }` | `handleApiError(error, 'companies:update')` from `@/lib/api-error-handler` | typed error → its status, with Prisma and auth mapping |
 
 ```typescript
-import { handleApiError } from '@/lib/api-error-handler';
+import { createErrorResponse } from '@/lib/api-helpers';
 
 try {
-  const result = await someService(data, params);
-  return NextResponse.json(result);
+  // ...
 } catch (error) {
-  return handleApiError(error, 'companies:update');
+  if (error instanceof ZodError) return NextResponse.json({ error: 'Invalid request', issues: error.issues }, { status: 400 });
+  return createErrorResponse(error);
 }
 ```
 
-`handleApiError` also maps Prisma errors (unique constraint, missing record). It does not recognise `ZodError`, so validate with `schema.safeParse()` and throw a `ValidationError` on failure.
+All three helpers never show a database or runtime message (Prisma errors, driver adapter errors, `TypeError` and the like, see `isInternalError`): unique-constraint errors become 409, missing records 404, the rest a logged 500. Keep route-specific branches (Zod payloads, custom error classes with extra fields) before the helper call. Do not return `error.message` yourself.
 
-`handleApiError` still maps some plain `Error` messages (for example "Unauthorized", "Forbidden" or "not found") for older services. Do not rely on that in new code; throw a typed error instead. Some older routes return `{ error: string }` directly; keep their response shape when you touch them unless every caller is updated in the same change.
+The helpers still map some plain `Error` messages (for example "Unauthorized", "Forbidden" or "not found") for older services. Do not rely on that in new code; throw a typed error instead. Keep a route's response shape when you touch it unless every caller is updated in the same change.
 
 ### 5. Safe Logging
 

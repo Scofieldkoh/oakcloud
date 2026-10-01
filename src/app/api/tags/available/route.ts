@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, canAccessCompany } from '@/lib/auth';
 import { getAvailableTags, searchTags, getRecentTags } from '@/services/document-tag.service';
+import { routeErrorResponse } from '@/lib/api-route-errors';
 
 export async function GET(request: NextRequest) {
   try {
@@ -61,12 +62,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ tags });
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-    }
     console.error('Error fetching available tags:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return routeErrorResponse(error);
   }
 }

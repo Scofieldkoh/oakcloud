@@ -6,6 +6,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
+import { createErrorResponse } from '@/lib/api-helpers';
 import { createAuditContext, logCreate } from '@/lib/audit';
 import { duplicateRole, roleBelongsToWorkspace } from '@/services/role.service';
 
@@ -58,16 +59,10 @@ export async function POST(
 
     return NextResponse.json(newRole, { status: 201 });
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message === 'Unauthorized') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      if (error.message === 'A role with this name already exists') {
-        return NextResponse.json({ error: error.message }, { status: 409 });
-      }
-      return NextResponse.json({ error: error.message }, { status: 400 });
+    if (error instanceof Error && error.message === 'A role with this name already exists') {
+      return NextResponse.json({ error: error.message }, { status: 409 });
     }
     console.error('Failed to duplicate role:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return createErrorResponse(error);
   }
 }

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
-import { ApiError } from '@/lib/errors';
+import { isInternalError, routeErrorResponse } from '@/lib/api-route-errors';
 import {
   createTemplatePartialSchema,
   searchTemplatePartialsSchema,
@@ -17,25 +17,10 @@ function withRevision<T extends { version: number }>(value: T) {
 }
 
 function apiError(error: unknown) {
-  if (error instanceof ApiError) {
-    return NextResponse.json(
-      { error: error.message, code: error.code, ...(error.details === undefined ? {} : { details: error.details }) },
-      { status: error.statusCode },
-    );
+  if (error instanceof Error && !isInternalError(error) && error.message.includes('must start with a letter')) {
+    return NextResponse.json({ error: error.message }, { status: 400 });
   }
-  if (error instanceof Error) {
-    if (error.message === 'Unauthorized') return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    if (error.message === 'Forbidden' || error.message.startsWith('Permission denied')) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
-    if (error.message === 'A partial with this name already exists') {
-      return NextResponse.json({ error: error.message }, { status: 409 });
-    }
-    if (error.message.includes('must start with a letter')) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
-    }
-  }
-  return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  return routeErrorResponse(error, { conflict: ['A partial with this name already exists'] });
 }
 
 export async function GET(request: NextRequest) {

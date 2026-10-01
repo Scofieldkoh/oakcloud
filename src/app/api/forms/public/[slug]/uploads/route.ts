@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { checkRateLimit, getClientIp, getRateLimitKey, RATE_LIMIT_CONFIGS } from '@/lib/rate-limit';
 import { publicUploadSchema } from '@/lib/validations/form-builder';
 import { createPublicUpload } from '@/services/form-builder.service';
+import { createErrorResponse } from '@/lib/api-helpers';
 
 interface RouteParams {
   params: Promise<{ slug: string }>;
@@ -48,10 +49,6 @@ export async function POST(request: Request, { params }: RouteParams) {
       return NextResponse.json({ error: 'Invalid upload payload', details: error.errors }, { status: 400 });
     }
 
-    if (error instanceof Error) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
-    }
-
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return createErrorResponse(error);
   }
 }
