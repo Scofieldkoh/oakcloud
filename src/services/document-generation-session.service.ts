@@ -18,7 +18,7 @@ import type { GenerationSessionState } from '@/lib/validations/generated-documen
 
 interface SessionReferences {
   templateName: string | null;
-  compositionType: 'STANDARD' | 'SERVICE_AGREEMENT' | null;
+  compositionType: 'STANDARD' | 'SERVICE_AGREEMENT' | 'RESOLUTION' | null;
   templateContentJson?: unknown;
   sharePointRelativeFolderPath?: string | null;
 }
@@ -72,6 +72,11 @@ function sessionContentJson(
   ) as Prisma.InputJsonValue;
 }
 
+/** Templates that never carry a Service Agreement; null means no template yet. */
+function isNonAgreementTemplate(compositionType: SessionReferences['compositionType']): boolean {
+  return compositionType === 'STANDARD' || compositionType === 'RESOLUTION';
+}
+
 async function validateSessionReferences(
   input: SaveGenerationSessionInput,
   tenantId: string,
@@ -114,7 +119,7 @@ async function validateSessionReferences(
 
   const hasAgreement = Boolean(input.serviceAgreement);
   if (
-    compositionType === 'STANDARD'
+    isNonAgreementTemplate(compositionType)
     && (hasAgreement || (input.serviceAgreementId && !input.discardServiceAgreement))
   ) {
     throw new ValidationError('Standard templates cannot retain Service Agreement data');
@@ -269,7 +274,7 @@ export async function updateGenerationSession(
     select: { id: true, status: true },
   });
   if (
-    references.compositionType === 'STANDARD'
+    isNonAgreementTemplate(references.compositionType)
     && attachedAgreement
     && !input.discardServiceAgreement
   ) {
@@ -278,7 +283,7 @@ export async function updateGenerationSession(
     );
   }
   if (
-    references.compositionType === 'STANDARD'
+    isNonAgreementTemplate(references.compositionType)
     && attachedAgreement
     && attachedAgreement.status !== 'DRAFT'
   ) {
@@ -319,10 +324,10 @@ export async function updateGenerationSession(
       return toEnvelope(document, state, agreement);
     });
   }
-  const state = references.compositionType === 'STANDARD'
+  const state = isNonAgreementTemplate(references.compositionType)
     ? { ...sessionState(input), serviceAgreementId: null }
     : sessionState(input);
-  if (references.compositionType === 'STANDARD' && attachedAgreement) {
+  if (isNonAgreementTemplate(references.compositionType) && attachedAgreement) {
     return prisma.$transaction(async (tx) => {
       await tx.serviceAgreement.delete({ where: { id: attachedAgreement.id } });
       const document = await tx.generatedDocument.update({

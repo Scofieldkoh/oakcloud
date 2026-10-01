@@ -21,7 +21,7 @@ export interface WorkflowRenderTemplateParams extends RenderTemplateForGeneratio
   /** Stable saved template id or current editor snapshot id. */
   templateScopeId?: string;
   /** Required only for an unsaved composition preview. */
-  compositionType?: 'STANDARD' | 'SERVICE_AGREEMENT';
+  compositionType?: 'STANDARD' | 'SERVICE_AGREEMENT' | 'RESOLUTION';
 }
 
 function fieldBlockingErrors(

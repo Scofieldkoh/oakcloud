@@ -3,11 +3,12 @@ import { z } from 'zod';
 import { requireAuth } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
 import { createErrorResponse, requireSessionWorkspaceId } from '@/lib/api-helpers';
+import { documentTemplateCompositionTypeEnum } from '@/lib/validations/document-template';
 import { previewOakDocMaster } from '@/services/oakdoc-generation.service';
 
 const contextSchema = z.object({
   templateId: z.string().uuid().optional(),
-  compositionType: z.enum(['STANDARD', 'SERVICE_AGREEMENT']).optional(),
+  compositionType: documentTemplateCompositionTypeEnum.optional(),
   refreshPartialPins: z.union([z.literal('all'), z.array(z.string().uuid())]).optional(),
   companyId: z.string().uuid(),
   selectedDirectorId: z.string().min(1).optional(),

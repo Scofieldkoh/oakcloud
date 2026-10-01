@@ -1382,7 +1382,7 @@ Reusable document templates with placeholder support.
 | name | VARCHAR(200) | No | Template name (unique per tenant) |
 | description | TEXT | Yes | Template description |
 | category | ENUM | No | Template category (see DocumentTemplateCategory) |
-| composition_type | ENUM | No | `STANDARD` or `SERVICE_AGREEMENT` (default: `STANDARD`) |
+| composition_type | ENUM | No | `STANDARD`, `SERVICE_AGREEMENT` or `RESOLUTION` (default: `STANDARD`) |
 | content | TEXT | No | HTML content with placeholders |
 | content_json | JSONB | Yes | TipTap JSON format (for editor state) |
 | placeholders | JSONB | No | Array of placeholder definitions (default: []) |
@@ -2075,6 +2075,7 @@ OTHER           -- Other documents
 ```sql
 STANDARD             -- Existing direct template behavior
 SERVICE_AGREEMENT    -- Requires the three reserved agreement slots
+RESOLUTION           -- Word master with one `resolution.items` slot for numbered resolutions
 ```
 
 Service Agreement templates contain exactly one each of:

@@ -17,7 +17,11 @@ export const documentTemplateCategoryEnum = z.enum([
 export const documentTemplateCompositionTypeEnum = z.enum([
   'STANDARD',
   'SERVICE_AGREEMENT',
+  'RESOLUTION',
 ]);
+
+/** Types the OakDoc editor may set; Service Agreement masters are seeded. */
+export const oakDocEditorCompositionTypeEnum = z.enum(['STANDARD', 'RESOLUTION']);
 
 // ============================================================================
 // JSON / Placeholder Schemas

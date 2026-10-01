@@ -9,6 +9,7 @@
  * server round-trip, and so every disabled action can explain itself.
  */
 
+import { resolutionCompositionIssues } from '@/lib/resolution-composition';
 import type {
   MasterFieldCatalogue,
   MasterFieldDefinition,
@@ -145,6 +146,15 @@ export function selectItemCompleteness({
       id: 'sa:services',
       label: 'At least one service',
       filled: (agreement?.items.length ?? 0) > 0,
+    });
+  }
+
+  if (item.templateKind === 'RESOLUTION') {
+    const issues = resolutionCompositionIssues(item.configuration.resolution);
+    requirements.push({
+      id: 'resolution:sections',
+      label: issues[0] ?? 'Resolutions',
+      filled: issues.length === 0,
     });
   }
 

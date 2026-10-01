@@ -34,7 +34,7 @@ export interface EditableBatchItem {
   id?: string;
   templateId: string;
   templateName: string;
-  templateKind: 'STANDARD' | 'SERVICE_AGREEMENT';
+  templateKind: 'STANDARD' | 'SERVICE_AGREEMENT' | 'RESOLUTION';
   templateVersion: number;
   templateEngine: DocumentTemplateSummary['engine'];
   status: BatchItemStatus;

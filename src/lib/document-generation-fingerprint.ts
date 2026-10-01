@@ -54,6 +54,7 @@ export interface PreviewFingerprintInput {
   itemValues: Record<string, unknown>;
   useLetterhead: boolean;
   agreementData?: unknown;
+  resolutionData?: unknown;
 }
 
 export function createPreviewFingerprint(input: PreviewFingerprintInput): string {

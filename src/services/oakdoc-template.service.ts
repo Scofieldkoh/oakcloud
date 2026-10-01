@@ -21,6 +21,9 @@ import {
   type TenantAwareParams,
 } from '@/services/document-template.service';
 import type { DocumentTemplateCategory } from '@/generated/prisma';
+import { ValidationError } from '@/lib/errors';
+import { ensureA4ServerDomGlobals } from '@/lib/document-editor/a4-server-dom';
+import { hasOakDocResolutionSlot } from '@/lib/document-editor/oakdoc-resolutions';
 import type {
   JsonValue,
   PlaceholderDefinition,
@@ -37,6 +40,17 @@ function sha256(buffer: Buffer): string {
 }
 
 export { deriveOakDocTemplateFieldTags };
+
+/** A resolution master needs the place its numbered resolutions go. */
+function assertResolutionSlot(compositionType: string | undefined, buffer: Buffer): void {
+  if (compositionType !== 'RESOLUTION') return;
+  ensureA4ServerDomGlobals();
+  if (!hasOakDocResolutionSlot(new Uint8Array(buffer))) {
+    throw new ValidationError(
+      'Insert the numbered resolutions into the template before saving it as a resolution.',
+    );
+  }
+}
 
 async function persistAsset(input: {
   tenantId: string;
@@ -81,8 +95,9 @@ export async function createOakDocTemplate(input: {
   buffer: Buffer;
   contentJson?: Record<string, JsonValue>;
   placeholders?: PlaceholderDefinition[];
-  compositionType?: 'STANDARD' | 'SERVICE_AGREEMENT';
+  compositionType?: 'STANDARD' | 'SERVICE_AGREEMENT' | 'RESOLUTION';
 }, params: TenantAwareParams) {
+  assertResolutionSlot(input.compositionType, input.buffer);
   const partialPins = await pinOakDocPartials({
     bytes: new Uint8Array(input.buffer),
     tenantId: params.tenantId,
@@ -126,7 +141,7 @@ export async function updateOakDocTemplate(input: {
   isActive?: boolean;
   fileName: string;
   buffer: Buffer;
-  compositionType?: 'STANDARD' | 'SERVICE_AGREEMENT';
+  compositionType?: 'STANDARD' | 'SERVICE_AGREEMENT' | 'RESOLUTION';
   /** Partials to move to their latest version; others keep their pin. */
   refreshPartialPins?: 'all' | string[];
 }, params: TenantAwareParams) {
@@ -139,6 +154,7 @@ export async function updateOakDocTemplate(input: {
   if (!existingMetadata.storageKey.startsWith(`${params.tenantId}/templates/oakdoc/assets/`)) {
     throw new Error('OakDoc template storage scope is invalid');
   }
+  assertResolutionSlot(input.compositionType ?? existing.compositionType, input.buffer);
 
   const partialPins = await pinOakDocPartials({
     bytes: new Uint8Array(input.buffer),
@@ -163,7 +179,7 @@ export async function updateOakDocTemplate(input: {
       compositionType: input.compositionType,
       content: input.compositionType === 'SERVICE_AGREEMENT'
         ? OAKDOC_SERVICE_AGREEMENT_CONTENT
-        : input.compositionType === 'STANDARD'
+        : input.compositionType === 'STANDARD' || input.compositionType === 'RESOLUTION'
           ? OAKDOC_TEMPLATE_CONTENT
           : existing.content,
       contentJson: {

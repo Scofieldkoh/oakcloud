@@ -12,6 +12,7 @@ import type {
 } from '@/services/service-agreement/types';
 import type { PlaceholderValueType } from '@/types/placeholders';
 import type { DocumentEngine } from '@/lib/document-editor/document-engine';
+import type { ResolutionComposition } from '@/lib/resolution-composition';
 
 export type BatchItemStatus =
   | 'NOT_STARTED'
@@ -50,6 +51,12 @@ export interface ServiceAgreementWorkspaceState {
   items: ServiceAgreementItemInput[];
 }
 
+/**
+ * Resolutions chosen for one RESOLUTION item: Word partials or custom text,
+ * numbered in this order when the document is generated.
+ */
+export type ResolutionWorkspaceState = ResolutionComposition;
+
 export interface BatchItemConfiguration {
   version: 1;
   title: string;
@@ -65,6 +72,8 @@ export interface BatchItemConfiguration {
   masterOverrides: Record<string, string>;
   useLetterhead: boolean;
   serviceAgreement: ServiceAgreementWorkspaceState | null;
+  /** RESOLUTION templates only; absent on items saved before resolutions existed. */
+  resolution?: ResolutionWorkspaceState | null;
 }
 
 export interface MasterFieldDefinition {
@@ -105,7 +114,7 @@ export interface DocumentGenerationBatchItemDto {
   id: string;
   templateId: string;
   templateName: string;
-  templateKind: 'STANDARD' | 'SERVICE_AGREEMENT';
+  templateKind: 'STANDARD' | 'SERVICE_AGREEMENT' | 'RESOLUTION';
   templateVersion: number;
   templateEngine: DocumentEngine;
   displayOrder: number;

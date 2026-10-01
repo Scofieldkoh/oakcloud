@@ -77,6 +77,11 @@ import {
   readOakDocSowSnapshot,
   type OakDocPartialPin,
 } from '@/lib/document-editor/oakdoc-partials';
+import {
+  composeOakDocResolutions,
+  SAMPLE_RESOLUTION_COMPOSITION,
+  type ResolutionComposition,
+} from '@/lib/document-editor/oakdoc-resolutions';
 
 const log = createLogger('oakdoc-generation');
 
@@ -120,6 +125,8 @@ export interface OakDocGenerationInput {
   agreement?: OakDocAgreementContext;
   /** Structured agreement composed into a SERVICE_AGREEMENT master. */
   serviceAgreementId?: string;
+  /** Numbered resolutions composed into a RESOLUTION master. */
+  resolution?: ResolutionComposition | null;
   resolutionDate?: Date | string;
   generatedBy?: string;
 }
@@ -177,6 +184,8 @@ export interface OakDocGenerationResult {
   diagnostics: OakDocDiagnostic[];
   /** Canonical hash of the composed Service Agreement, when one was composed. */
   agreementHash?: string;
+  /** Partials the numbered resolutions used, at the versions pinned for this render. */
+  resolutionPartialPins?: OakDocPartialPin[];
 }
 
 /**
@@ -256,7 +265,7 @@ export interface OakDocMasterPreviewInput extends Omit<OakDocGenerationInput, 't
   fileName: string;
   /** Saved template being edited, for its partial pins and composition. */
   templateId?: string;
-  compositionType?: 'STANDARD' | 'SERVICE_AGREEMENT';
+  compositionType?: 'STANDARD' | 'SERVICE_AGREEMENT' | 'RESOLUTION';
   /** Same meaning as on save: partials to move to their latest version. */
   refreshPartialPins?: 'all' | string[];
 }
@@ -288,17 +297,22 @@ export async function previewOakDocMaster(
     existingPins: saved ? readOakDocPartialPins(saved.contentJson) : undefined,
     refresh: input.refreshPartialPins,
   });
+  const compositionType = input.compositionType ?? saved?.compositionType ?? 'STANDARD';
   return renderOakDocMaster({
     id: saved?.id ?? 'unsaved-template',
     name: saved?.name ?? input.fileName,
     version: saved?.version ?? 0,
     sha256: sha256(input.bytes),
     fileName: input.fileName,
-    compositionType: input.compositionType ?? saved?.compositionType ?? 'STANDARD',
+    compositionType,
     bytes: input.bytes,
     fieldTags: deriveOakDocTemplateFieldTags(input.bytes),
     partialPins,
-  }, input, params);
+  }, {
+    ...input,
+    // The editor has no Configure step, so it previews sample resolutions.
+    resolution: input.resolution ?? (compositionType === 'RESOLUTION' ? SAMPLE_RESOLUTION_COMPOSITION : null),
+  }, params);
 }
 
 interface OakDocMasterSource {
@@ -327,11 +341,40 @@ async function renderOakDocMaster(
   if (!company) throw new NotFoundError('Company not found');
 
   const knownTags = new Set(master.fieldTags);
+  let sourceBytes = pruneDeletedOakDocFields(master.bytes, knownTags).bytes;
+  let partialPins = master.partialPins;
+  const resolutionDiagnostics: OakDocDiagnostic[] = [];
+  let resolutionPartialPins: OakDocPartialPin[] | undefined;
+  if (master.compositionType === 'RESOLUTION') {
+    if (!input.resolution) {
+      resolutionDiagnostics.push({
+        code: 'OAKDOC_CONTEXT_MISSING',
+        severity: 'error',
+        stage: 'render',
+        message: 'This resolution template needs the resolutions chosen on Configure.',
+      });
+    } else {
+      // Numbered resolutions go in first: the partials they reference are
+      // pinned at their current version and expanded with the master's own.
+      const composed = composeOakDocResolutions(sourceBytes, input.resolution);
+      resolutionDiagnostics.push(...composed.diagnostics);
+      sourceBytes = composed.bytes;
+      if (composed.partialIds.length > 0) {
+        partialPins = await pinOakDocPartials({
+          bytes: sourceBytes,
+          tenantId: params.tenantId,
+          existingPins: master.partialPins,
+        });
+        const used = new Set(composed.partialIds);
+        resolutionPartialPins = partialPins.filter((pin) => used.has(pin.partialId));
+      }
+    }
+  }
   // Insert pinned native partials before anything reads the fields, so the
   // partials' own fields, conditions and repeaters resolve like the master's.
   const partials = await expandPinnedOakDocPartials({
-    bytes: pruneDeletedOakDocFields(master.bytes, knownTags).bytes,
-    pins: master.partialPins,
+    bytes: sourceBytes,
+    pins: partialPins,
     tenantId: params.tenantId,
   });
   const masterBytes = partials.bytes;
@@ -380,6 +423,7 @@ async function renderOakDocMaster(
   if (agreementContext) provided.add('agreement');
   if (input.resolutionDate) provided.add('resolution');
   const diagnostics = [
+    ...resolutionDiagnostics,
     ...partials.diagnostics,
     ...diagnoseOakDocGeneration({
       usedTags: [...fieldSummary.tags, ...conditionSummary.fieldTags, ...sowFieldTags],
@@ -491,6 +535,7 @@ async function renderOakDocMaster(
     },
     diagnostics,
     ...(agreementHash ? { agreementHash } : {}),
+    ...(resolutionPartialPins ? { resolutionPartialPins } : {}),
   };
 }
 

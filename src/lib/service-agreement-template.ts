@@ -29,7 +29,7 @@ export function findServiceAgreementSlotViolations(
 }
 
 export function assertValidTemplateComposition(
-  compositionType: 'STANDARD' | 'SERVICE_AGREEMENT',
+  compositionType: 'STANDARD' | 'SERVICE_AGREEMENT' | 'RESOLUTION',
   content: string,
 ): void {
   if (compositionType !== 'SERVICE_AGREEMENT') return;

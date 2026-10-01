@@ -11,6 +11,7 @@ import type {
 import type { EditableBatchItem } from './batch-workspace-state';
 import { StandardDocumentConfig } from './standard-document-config';
 import { ServiceAgreementConfig } from './service-agreement-config';
+import { ResolutionSectionsConfig } from './resolution-sections-config';
 import { partitionTemplateFields, type ItemCompleteness } from './batch-completeness';
 import type { ApplyScope } from './apply-to-others-menu';
 
@@ -95,29 +96,38 @@ export function BatchItemConfigurator(props: BatchItemConfiguratorProps) {
       />
     )
     : (
-      <StandardDocumentConfig
-        item={item}
-        templateFields={itemOnlyFields}
-        templateContent={props.templateContent}
-        templateFieldTags={props.templateFieldTags}
-        masterFields={masterFields}
-        effectiveMasterValues={effectiveMasterValues}
-        directors={props.directors}
-        shareholders={props.shareholders}
-        contacts={props.contacts}
-        contactsById={props.contactsById}
-        companyContacts={companyContacts}
-        partyLoading={props.partyLoading}
-        partyError={props.partyError}
-        onPartyRetry={props.onPartyRetry}
-        onContactSearch={props.onContactSearch}
-        contactsLoading={props.contactsLoading}
-        onPatch={onPatch}
-        disabled={disabled}
-        completeness={props.completeness}
-        otherItemCount={props.otherItemCount}
-        otherIncompleteCount={props.otherIncompleteCount}
-        onApplyToOthers={props.onApplyToOthers}
-      />
+      <div className="space-y-3">
+        <StandardDocumentConfig
+          item={item}
+          templateFields={itemOnlyFields}
+          templateContent={props.templateContent}
+          templateFieldTags={props.templateFieldTags}
+          masterFields={masterFields}
+          effectiveMasterValues={effectiveMasterValues}
+          directors={props.directors}
+          shareholders={props.shareholders}
+          contacts={props.contacts}
+          contactsById={props.contactsById}
+          companyContacts={companyContacts}
+          partyLoading={props.partyLoading}
+          partyError={props.partyError}
+          onPartyRetry={props.onPartyRetry}
+          onContactSearch={props.onContactSearch}
+          contactsLoading={props.contactsLoading}
+          onPatch={onPatch}
+          disabled={disabled}
+          completeness={props.completeness}
+          otherItemCount={props.otherItemCount}
+          otherIncompleteCount={props.otherIncompleteCount}
+          onApplyToOthers={props.onApplyToOthers}
+        />
+        {item.templateKind === 'RESOLUTION' ? (
+          <ResolutionSectionsConfig
+            value={item.configuration.resolution}
+            onChange={(resolution) => onPatch({ resolution })}
+            disabled={disabled}
+          />
+        ) : null}
+      </div>
     );
 }

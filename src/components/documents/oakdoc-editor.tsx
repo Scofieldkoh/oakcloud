@@ -62,6 +62,10 @@ import {
   readOakDocPartialPins,
 } from '@/lib/document-editor/oakdoc-partials';
 import { useUnsavedNavigationGuard } from '@/hooks/use-unsaved-navigation-guard';
+import {
+  hasOakDocResolutionSlot,
+  insertOakDocResolutionSlot,
+} from '@/lib/document-editor/oakdoc-resolutions';
 
 const DOCX_MIME =
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
@@ -93,9 +97,18 @@ interface OakDocTemplateRecord {
   name: string;
   description?: string | null;
   category: string;
+  compositionType?: string;
   isActive: boolean;
   contentJson?: unknown;
 }
+
+/** Service Agreement masters are seeded; the editor switches the other two. */
+type TemplateType = 'STANDARD' | 'RESOLUTION' | 'SERVICE_AGREEMENT';
+
+const TEMPLATE_TYPES = [
+  { value: 'STANDARD', label: 'Standard document' },
+  { value: 'RESOLUTION', label: 'Resolution (numbered resolutions)' },
+] as const;
 
 interface LoadedOakDocTemplate {
   template: OakDocTemplateRecord;
@@ -249,6 +262,8 @@ export function OakDocEditor() {
   );
   const [templateRevision, setTemplateRevision] = useState<number | null>(null);
   const [templateCategory, setTemplateCategory] = useState('OTHER');
+  const [templateType, setTemplateType] = useState<TemplateType>('STANDARD');
+  const [hasResolutionSlot, setHasResolutionSlot] = useState(false);
   const [templateDescription, setTemplateDescription] = useState('');
   const [templateIsActive, setTemplateIsActive] = useState(true);
   const [isDirty, setIsDirtyState] = useState(false);
@@ -365,6 +380,7 @@ export function OakDocEditor() {
     setRepeaterSummary(inspectOakDocRepeaters(bytes));
     setConditionSummary(inspectOakDocConditions(bytes));
     setPartialReferences(inspectOakDocPartialReferences(bytes));
+    setHasResolutionSlot(hasOakDocResolutionSlot(bytes));
   }, []);
 
   const replaceDocument = useCallback((
@@ -391,6 +407,11 @@ export function OakDocEditor() {
     setTitle(loaded.template.name);
     setTemplateDescription(loaded.template.description ?? '');
     setTemplateCategory(loaded.template.category || 'OTHER');
+    setTemplateType(
+      loaded.template.compositionType === 'RESOLUTION' || loaded.template.compositionType === 'SERVICE_AGREEMENT'
+        ? loaded.template.compositionType
+        : 'STANDARD',
+    );
     setTemplateIsActive(loaded.template.isActive);
     setFileName(loaded.metadata.fileName);
     setPinnedPartialVersions(pinnedVersionsOf(loaded.template.contentJson));
@@ -613,6 +634,31 @@ export function OakDocEditor() {
     }
   }, [currentDocxBytes, replaceDocument, setIsDirty]);
 
+  const insertResolutionSlot = useCallback(async () => {
+    const editor = editorRef.current?.getEditor();
+    const selection = editor?.snapshot().selection;
+    if (!selection || !('paraId' in selection.from)) {
+      setStatus('Place the caret in the paragraph the numbered resolutions should follow.');
+      setStatusKind('error');
+      return;
+    }
+
+    setBusy(true);
+    try {
+      const bytes = await currentDocxBytes();
+      replaceDocument(
+        insertOakDocResolutionSlot({ docxBytes: bytes, paraId: selection.from.paraId }),
+        'Inserted the numbered resolutions. They follow the formatting of the paragraph they replace.',
+      );
+      setIsDirty(true);
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : 'Could not insert the numbered resolutions.');
+      setStatusKind('error');
+    } finally {
+      setBusy(false);
+    }
+  }, [currentDocxBytes, replaceDocument, setIsDirty]);
+
   const removeRepeaterAtCaret = useCallback(async () => {
     const handle = editorRef.current;
     const editor = handle?.getEditor();
@@ -776,6 +822,7 @@ export function OakDocEditor() {
       formData.set('context', JSON.stringify({
         ...(templateId ? { templateId } : {}),
         ...(refreshPartials ? { refreshPartialPins: 'all' } : {}),
+        compositionType: templateType,
         companyId: company.id,
         ...(selectedDirectorId ? { selectedDirectorId } : {}),
         ...(selectedShareholderId ? { selectedShareholderId } : {}),
@@ -816,6 +863,7 @@ export function OakDocEditor() {
     selectedDirectorId,
     selectedShareholderId,
     templateId,
+    templateType,
     title,
   ]);
 
@@ -862,6 +910,7 @@ export function OakDocEditor() {
       formData.set('name', title.trim());
       formData.set('description', templateDescription);
       formData.set('category', templateCategory);
+      if (templateType !== 'SERVICE_AGREEMENT') formData.set('compositionType', templateType);
       formData.set('isActive', String(templateIsActive));
       formData.set('tenantId', activeTenantId);
       if (templateId && templateRevision !== null) {
@@ -927,6 +976,7 @@ export function OakDocEditor() {
     templateId,
     templateIsActive,
     templateRevision,
+    templateType,
     title,
   ]);
 
@@ -1087,6 +1137,26 @@ export function OakDocEditor() {
                   </option>
                 ))}
               </select>
+              {templateType === 'SERVICE_AGREEMENT' ? (
+                <p className="text-xs text-text-secondary">Type: Service Agreement</p>
+              ) : (
+                <select
+                  value={templateType}
+                  aria-label="Template type"
+                  onChange={(event) => {
+                    setTemplateType(event.target.value as TemplateType);
+                    if (event.target.value === 'RESOLUTION') setTemplateCategory('RESOLUTION');
+                    setIsDirty(true);
+                  }}
+                  className="h-9 w-full rounded-lg border border-border-primary bg-background-primary px-2.5 text-sm text-text-primary focus:border-oak-primary focus:outline-none focus:ring-2 focus:ring-oak-primary/20"
+                >
+                  {TEMPLATE_TYPES.map((type) => (
+                    <option key={type.value} value={type.value}>
+                      {type.label}
+                    </option>
+                  ))}
+                </select>
+              )}
               <textarea
                 value={templateDescription}
                 rows={2}
@@ -1177,6 +1247,34 @@ export function OakDocEditor() {
             </section>
 
             <div className="my-4 border-t border-border-secondary" />
+
+            {templateType === 'RESOLUTION' ? (
+              <>
+                <section className="space-y-2">
+                  <div>
+                    <h2 className="text-xs font-semibold uppercase tracking-wide text-text-muted">
+                      Numbered resolutions
+                    </h2>
+                    <p className="mt-1 text-xs text-text-secondary">
+                      {hasResolutionSlot
+                        ? 'In place. The partials and custom text chosen when generating print here, numbered 1, 2, 3 in that order, in the formatting of this paragraph.'
+                        : 'Put the caret in the paragraph the resolutions should follow, then insert them. A resolution template cannot be saved without them.'}
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    disabled={!hasDocument || busy || hasResolutionSlot}
+                    onClick={() => void insertResolutionSlot()}
+                  >
+                    Insert numbered resolutions
+                  </Button>
+                </section>
+
+                <div className="my-4 border-t border-border-secondary" />
+              </>
+            ) : null}
 
             <OakDocPartialPanel
               tenantId={activeTenantId ?? undefined}
