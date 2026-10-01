@@ -138,12 +138,12 @@ describe('POST /api/forms/public/[slug]/submit', () => {
     expect(await closed.json()).toEqual({ error: 'Form is closed', code: 'CONFLICT' });
   });
 
-  it('turns an ApiError whose message contains "required" into 422, overriding its status', async () => {
+  it('keeps the status of an ApiError whose message contains "required"', async () => {
     mocks.createPublicSubmission.mockRejectedValue(new UnauthorizedError('Authentication required'));
     const response = await submit({ answers: {} });
 
-    expect(response.status).toBe(422);
-    expect(await response.json()).toEqual({ error: 'Authentication required' });
+    expect(response.status).toBe(401);
+    expect(await response.json()).toMatchObject({ error: 'Authentication required' });
   });
 
   it('returns 400 for an invalid payload', async () => {
@@ -196,22 +196,22 @@ describe('GET /api/forms/public/[slug]/submissions/[submissionId]/pdf', () => {
     expect(mocks.exportPublicFormResponsePdf).not.toHaveBeenCalled();
   });
 
-  it('returns 403 for an invalid token and does not count it against the rate limit', async () => {
+  it('returns 403 for an invalid token and counts it against the rate limit', async () => {
     mocks.verifyPublicFormResponseToken.mockResolvedValue(false);
     const response = await download('?token=guess');
 
     expect(response.status).toBe(403);
     expect(await response.json()).toEqual({ error: 'Invalid or expired download token' });
     expect(mocks.exportPublicFormResponsePdf).not.toHaveBeenCalled();
-    // The token is checked before the rate limit, so failed guesses are not rate-limited.
-    expect(mocks.checkRateLimit).not.toHaveBeenCalled();
+    expect(mocks.checkRateLimit).toHaveBeenCalledWith(`form-view:${IP}:${SLUG}:pdf`, expect.any(Object));
   });
 
-  it('returns 429 for a valid token when rate limited', async () => {
+  it('returns 429 before verifying the token when rate limited', async () => {
     mocks.checkRateLimit.mockReturnValue(denied);
     const response = await download('?token=good-token');
 
     expect(response.status).toBe(429);
+    expect(mocks.verifyPublicFormResponseToken).not.toHaveBeenCalled();
     expect(mocks.exportPublicFormResponsePdf).not.toHaveBeenCalled();
   });
 
