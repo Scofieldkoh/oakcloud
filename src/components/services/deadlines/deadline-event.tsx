@@ -7,6 +7,7 @@ import { getCompanyDisplayLabel } from '@/lib/company-display-label';
 import type { DeadlineOccurrenceDto, DeadlineTimingBucket } from '@/services/deadline';
 import type { UpdateDeadlineOccurrenceInput } from '@/lib/validations/deadline';
 import { COMPANY_OBLIGATION_STATUS_LABELS, companyObligationStatusOf } from '@/services/compliance-monitoring/obligation-status-labels';
+import { isAcraObligation } from '@/services/compliance-monitoring/catalog';
 
 export interface DeadlineEventProps {
   occurrence: DeadlineOccurrenceDto;
@@ -194,7 +195,9 @@ export function DeadlineEventPanel({
         <div><dt className="text-text-muted">Type</dt><dd className="text-text-primary">{typeLabels[occurrence.deadlineType]}</dd></div>
         <div><dt className="text-text-muted">Lifecycle</dt><dd className="text-text-primary">{occurrence.status}</dd></div>
         {occurrence.obligation ? <div><dt className="text-text-muted">Filing status</dt><dd className="text-text-primary">{deadlineStatusLabel(occurrence)}</dd></div> : null}
-        {occurrence.obligation?.yearOfAssessment ? <div><dt className="text-text-muted">Year of Assessment</dt><dd className="text-text-primary">YA {occurrence.obligation.yearOfAssessment}</dd></div> : null}
+        {occurrence.obligation && isAcraObligation(occurrence.obligation.code) && occurrence.obligation.financialPeriodEnd
+          ? <div><dt className="text-text-muted">Financial year end</dt><dd className="text-text-primary">{dateLabel(occurrence.obligation.financialPeriodEnd)}</dd></div>
+          : occurrence.obligation?.yearOfAssessment ? <div><dt className="text-text-muted">Year of Assessment</dt><dd className="text-text-primary">YA {occurrence.obligation.yearOfAssessment}</dd></div> : null}
         <div><dt className="text-text-muted">Calculated date</dt><dd className="text-text-primary">{dateLabel(occurrence.calculatedDueDate)}</dd></div>
         <div><dt className="text-text-muted">Operative date</dt><dd className="text-text-primary">{dateLabel(occurrence.operativeDueDate)}</dd></div>
         <div className="col-span-2"><dt className="text-text-muted">Source</dt><dd className="break-all text-text-primary">{sourceLabel(occurrence)}</dd></div>

@@ -276,8 +276,8 @@ export function getDocumentExporter(): IDocumentExporter {
 
 ### Company statutory monitoring
 
-- Company obligations (ECI and the corporate income tax return today) are
-  owned by the company, not by a service. See section 26 of the services
+- Company obligations (ECI and the corporate income tax return for IRAS, the
+  AGM and annual return for ACRA) are owned by the company, not by a service. See section 26 of the services
   design spec for the model.
 - `Workspace.settings.servicesWorkspace.companyMonitoringWritesEnabled` or
   `COMPANY_MONITORING_WRITES_ENABLED=true` lets the worker write them;
@@ -287,7 +287,17 @@ export function getDocumentExporter(): IDocumentExporter {
 - **Deadline Rules > Add IRAS rule** creates the `SG_ECI` or `SG_FORM_C` rule
   from its reviewed preset as a draft, or re-stages the preset as the draft
   of the existing rule (`POST /api/service-catalog/deadline-rules/presets`).
+  **Add ACRA rule** does the same for `SG_AGM_DUE` (AGM, six months after
+  the FYE) and `SG_ANNUAL_RETURN` (annual return, seven months after the
+  FYE), both for non-listed companies and per financial period. They reuse
+  the codes of the older starter drafts sourced from `accountsDueDate`, so
+  the preset replaces that draft rather than adding a second rule.
   Publishing still goes through the impact preview.
+- Monitoring profiles: Tax engagement (`CORPORATE_TAX`, IRAS filings),
+  Corporate secretarial (`CORPORATE_SECRETARIAL`, AGM and annual return) and
+  Nominee director (every family). ACRA rows are labelled by financial year
+  (`FY 2026` is the year ending in 2026); the engagement start is still stored
+  as a YA, where YA n covers the financial year ending in n - 1.
 - Services opt in through the variant's **Compliance monitoring** setting.
   Nothing is monitored until a variant has a profile and a service for it
   exists: an activated agreement starts monitoring at the agreement date, and

@@ -75,7 +75,7 @@ export type CompanyMonitoringProjectionInput = {
   periodFacts: CompanyPeriodFacts;
   coverages: CoverageInput[];
   deliveryScopes: DeliveryScopeInput[];
-  /** Published rule per tenant rule code (SG_ECI, SG_FORM_C). */
+  /** Published rule per tenant rule code (SG_ECI, SG_FORM_C, SG_AGM_DUE, SG_ANNUAL_RETURN). */
   rulesByCode: Record<string, PublishedRuleInput | undefined>;
   calendar: BusinessCalendarSnapshot;
 };
@@ -464,7 +464,7 @@ export function projectCompanyObligations(input: CompanyMonitoringProjectionInpu
   if (missingFye) {
     issues.push(issue(
       'MISSING_FINANCIAL_YEAR_END',
-      'Record the financial year end (or a confirmed financial period) so tax deadlines can be calculated.',
+      'Record the financial year end (or a confirmed financial period) so statutory deadlines can be calculated.',
     ));
   }
   for (const scope of input.deliveryScopes) {

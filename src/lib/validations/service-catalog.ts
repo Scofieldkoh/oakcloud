@@ -131,7 +131,7 @@ const variantFields = {
   feeTemplates: z.array(serviceVariantFeeTemplateSchema).max(50, 'At most 50 fee rows are allowed'),
   deadlineRules: serviceVariantRuleAssociationsSchema.optional(),
   /** Company statutory monitoring this service commits Oakcloud to. */
-  monitoringProfiles: z.array(z.enum(['CORPORATE_TAX', 'NOMINEE_DIRECTOR'])).max(2)
+  monitoringProfiles: z.array(z.enum(['CORPORATE_TAX', 'CORPORATE_SECRETARIAL', 'NOMINEE_DIRECTOR'])).max(3)
     .transform((profiles) => [...new Set(profiles)]),
 };
 

@@ -6,7 +6,7 @@ import {
   type DeliveryScopeInput,
 } from '@/services/compliance-monitoring/projection';
 import { obligationsForProfiles } from '@/services/compliance-monitoring/catalog';
-import { SG_ECI_PRESET, SG_FORM_C_PRESET } from '@/services/deadline-rule/presets';
+import { SG_AGM_PRESET, SG_ANNUAL_RETURN_PRESET, SG_ECI_PRESET, SG_FORM_C_PRESET } from '@/services/deadline-rule/presets';
 import type { BusinessCalendarSnapshot, DateOnly } from '@/services/service-schedule';
 
 const calendar: BusinessCalendarSnapshot = {
@@ -220,7 +220,6 @@ describe('company obligation projection: nominee director inventory', () => {
     expect(result.obligations.map((obligation) => obligation.obligationCode)).toEqual(expect.arrayContaining(['SG_ECI', 'SG_FORM_C']));
     const families = result.issues.filter((entry) => entry.type === 'FAMILY_NOT_AUTOMATED').map((entry) => entry.obligationCode);
     expect(families).toEqual([
-      'SG_ANNUAL_RETURN_AGM',
       'SG_EMPLOYER_OBLIGATIONS',
       'SG_REGISTERS_AND_EVENTS',
       'SG_OTHER_COMPANY_OBLIGATIONS',
@@ -248,6 +247,7 @@ describe('company obligation projection: nominee director inventory', () => {
       'CORPORATE_TAX',
       'CORPORATE_TAX',
       'ANNUAL_RETURN_AGM',
+      'ANNUAL_RETURN_AGM',
       'GST',
       'EMPLOYER',
       'REGISTERS_AND_EVENTS',
@@ -271,5 +271,67 @@ describe('company obligation projection: missing configuration', () => {
   it('does nothing for a company without coverage or contracted scope', () => {
     const result = projectCompanyObligations(input({ coverages: [], deliveryScopes: [] }));
     expect(result).toMatchObject({ obligations: [], issues: [], fullyCovered: true });
+  });
+});
+
+describe('company obligation projection: ACRA AGM and annual return', () => {
+  const acraRules = Object.fromEntries([SG_AGM_PRESET, SG_ANNUAL_RETURN_PRESET].map((preset) => [preset.code, {
+    ruleId: `rule-${preset.code}`,
+    ruleCode: preset.code,
+    ruleVersionId: `version-${preset.code}`,
+    recurrence: preset.definition.recurrence,
+    applicability: preset.definition.applicability,
+    milestones: preset.definition.milestones,
+  }]));
+  const secretarial = (overrides: Partial<CoverageInput> = {}): CoverageInput => ({
+    id: 'coverage-cosec',
+    profile: 'CORPORATE_SECRETARIAL',
+    monitoringStart: '2026-04-01',
+    monitoringEnd: null,
+    clientServiceId: 'service-cosec',
+    ...overrides,
+  });
+
+  it('a corporate secretarial service monitors only the AGM and annual return, per financial year', () => {
+    const result = projectCompanyObligations(input({
+      coverages: [secretarial()],
+      deliveryScopes: [],
+      rulesByCode: { ...rulesByCode, ...acraRules },
+    }));
+    // Filings due in the year before the service started enter takeover review.
+    expect(rows(result)).toEqual([
+      ['2025-09-30', 'SG_AGM_DUE', 'FY2025-03-31', 'UNCONFIRMED', 'BEFORE_START'],
+      ['2025-10-31', 'SG_ANNUAL_RETURN', 'FY2025-03-31', 'UNCONFIRMED', 'BEFORE_START'],
+      ['2026-09-30', 'SG_AGM_DUE', 'FY2026-03-31', 'UNCONFIRMED', 'DURING'],
+      ['2026-10-31', 'SG_ANNUAL_RETURN', 'FY2026-03-31', 'UNCONFIRMED', 'DURING'],
+      ['2027-09-30', 'SG_AGM_DUE', 'FY2027-03-31', 'UNCONFIRMED', 'DURING'],
+      ['2027-10-31', 'SG_ANNUAL_RETURN', 'FY2027-03-31', 'UNCONFIRMED', 'DURING'],
+    ]);
+    expect(result.issues).toEqual([]);
+  });
+
+  it('files from the engagement start: FY 2026 is YA 2027', () => {
+    const result = projectCompanyObligations(input({
+      coverages: [secretarial({ engagementStartYearOfAssessment: 2027 })],
+      deliveryScopes: [],
+      rulesByCode: { ...rulesByCode, ...acraRules },
+    }));
+    expect(result.obligations.map((obligation) => [obligation.obligationCode, obligation.periodKey, obligation.filingResponsibility, obligation.deliveryClientServiceId])).toEqual(
+      expect.arrayContaining([
+        ['SG_AGM_DUE', 'FY2026-03-31', 'OAKCLOUD', 'service-cosec'],
+        ['SG_ANNUAL_RETURN', 'FY2026-03-31', 'OAKCLOUD', 'service-cosec'],
+      ]),
+    );
+  });
+
+  it('asks for the ACRA rules to be published before nominee monitoring can date them', () => {
+    const result = projectCompanyObligations(input({
+      coverages: [{ id: 'coverage-nominee', profile: 'NOMINEE_DIRECTOR', monitoringStart: '2026-04-01', monitoringEnd: null }],
+      deliveryScopes: [],
+    }));
+    expect(result.issues.filter((entry) => entry.type === 'RULE_NOT_PUBLISHED').map((entry) => entry.obligationCode)).toEqual([
+      'SG_AGM_DUE',
+      'SG_ANNUAL_RETURN',
+    ]);
   });
 });

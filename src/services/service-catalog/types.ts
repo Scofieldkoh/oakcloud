@@ -45,7 +45,7 @@ export interface ServiceVariantDto {
   version: number;
   isActive: boolean;
   /** Company statutory monitoring profiles; empty for ordinary services. */
-  monitoringProfiles?: Array<'CORPORATE_TAX' | 'NOMINEE_DIRECTOR'>;
+  monitoringProfiles?: Array<'CORPORATE_TAX' | 'CORPORATE_SECRETARIAL' | 'NOMINEE_DIRECTOR'>;
   sowPartial: {
     id: string;
     name: string;

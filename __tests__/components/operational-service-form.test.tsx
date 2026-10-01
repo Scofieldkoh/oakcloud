@@ -438,6 +438,57 @@ describe('OperationalServiceForm', () => {
     expect(onStatus).toHaveBeenCalledWith(expect.objectContaining({ obligationCode: 'SG_ECI', periodKey: 'FY2024-12-31' }), 'FILED');
   });
 
+  it('labels ACRA rows and a corporate secretarial engagement start by financial year', () => {
+    const onEngagementStart = vi.fn();
+    const item = (obligationCode: string, obligationName: string, dueDate: string) => ({
+      obligationCode,
+      obligationName,
+      periodKey: 'FY2026-12-31',
+      milestoneName: obligationName,
+      dueDate: dueDate as DateOnly,
+      yearOfAssessment: 2027,
+      periodProvisional: false,
+      coverageTiming: 'DURING' as const,
+      explanation: [],
+      recordedStatus: null,
+      projectedStatus: 'PENDING_FILING' as const,
+    });
+    render(
+      <OperationalServiceForm
+        mode="create"
+        values={{ ...baseValues(), deadlineRules: [] }}
+        onChange={() => undefined}
+        errors={{}}
+        monitoringProfiles={['CORPORATE_SECRETARIAL']}
+        companyObligationStatuses={{}}
+        onCompanyObligationStatusChange={() => undefined}
+        engagementStartYearOfAssessment={2027}
+        onEngagementStartChange={onEngagementStart}
+        companyObligations={{
+          isLoading: false,
+          error: null,
+          notices: [],
+          firstPeriodUnconfirmed: false,
+          statusEditable: true,
+          firstYearOfAssessment: 2026,
+          items: [
+            item('SG_AGM_DUE', 'Annual general meeting (AGM)', '2027-06-30'),
+            item('SG_ANNUAL_RETURN', 'Annual return (AR)', '2027-07-31'),
+          ],
+        }}
+      />,
+    );
+
+    expect(screen.getByText('Corporate secretarial: AGM and annual return, tracked from the service start date once saved.')).toBeInTheDocument();
+    expect(screen.getAllByText('FY 2026', { selector: 'span' })).toHaveLength(2);
+    expect(screen.queryByText('YA 2027')).not.toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: 'Filing status for Annual general meeting (AGM) FY 2026' })).toHaveValue('PENDING_FILING');
+    const start = screen.getByRole('combobox', { name: 'Our engagement starts from' });
+    expect([...start.querySelectorAll('option')].map((option) => option.textContent)).toEqual(['Not set', 'FY 2026', 'FY 2025']);
+    fireEvent.change(start, { target: { value: '2026' } });
+    expect(onEngagementStart).toHaveBeenCalledWith(2026);
+  });
+
   it('sets the engagement start YA, shows projected statuses and tints rows by status', () => {
     vi.useFakeTimers({ toFake: ['Date'] });
     vi.setSystemTime(new Date('2026-09-28T10:00:00+08:00'));

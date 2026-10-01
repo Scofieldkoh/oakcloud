@@ -19,7 +19,7 @@ import type { ClientServiceOpenBillingOccurrenceDto, ClientServiceOpenDeadlineOc
 import type { OperationalServiceValues, DeadlinePreviewState } from './client-service-form-state';
 import type { BillingScheduleConfigV1 } from '@/services/billing/types';
 import { canonicalizeBillingSchedule } from '@/services/billing/schedule';
-import { MONITORING_PROFILE_HINTS, MONITORING_PROFILE_LABELS, type MonitoringProfile } from '@/services/compliance-monitoring/catalog';
+import { MONITORING_PROFILE_HINTS, MONITORING_PROFILE_LABELS, obligationPeriodLabel, type MonitoringProfile } from '@/services/compliance-monitoring/catalog';
 import type { CompanyObligationPreviewItem } from '@/services/compliance-monitoring/writer';
 import { COMPANY_OBLIGATION_STATUSES, COMPANY_OBLIGATION_STATUS_LABELS, type CompanyObligationStatus } from '@/services/compliance-monitoring/obligation-status-labels';
 
@@ -607,6 +607,9 @@ function CompanyObligationsPanel({
   if (years.length > 0) {
     for (let year = Math.max(...years); year >= Math.min(...years); year -= 1) yearOptions.push(year);
   }
+  // A corporate secretarial service only tracks ACRA filings, which read by
+  // financial year: YA n covers the financial year ending in n - 1.
+  const financialYearOptions = monitoringProfiles.length > 0 && monitoringProfiles.every((profile) => profile === 'CORPORATE_SECRETARIAL');
   const today = todayDateKey();
   return (
     <section aria-labelledby="company-obligations-heading" className="space-y-3">
@@ -632,7 +635,7 @@ function CompanyObligationsPanel({
             onChange={(event) => onEngagementStartChange(event.target.value ? Number(event.target.value) : null)}
           >
             <option value="">Not set</option>
-            {yearOptions.map((year) => <option key={year} value={year}>YA {year}</option>)}
+            {yearOptions.map((year) => <option key={year} value={year}>{financialYearOptions ? `FY ${year - 1}` : `YA ${year}`}</option>)}
           </select>
         </div>
       ) : null}
@@ -664,6 +667,7 @@ function CompanyObligationsPanel({
           {items.map((item) => {
             const key = companyObligationKey(item);
             const status = displayedCompanyObligationStatus(item, statuses);
+            const periodLabel = obligationPeriodLabel(item);
             return (
               <div
                 key={`${key}|${item.milestoneName}`}
@@ -677,10 +681,10 @@ function CompanyObligationsPanel({
                   ) : null}
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
-                  {/* Fixed widths keep the YA, date and status columns aligned across rows. */}
-                  {item.yearOfAssessment ? (
+                  {/* Fixed widths keep the period, date and status columns aligned across rows. */}
+                  {periodLabel ? (
                     <span className="inline-flex w-[4.75rem] items-center justify-center rounded-lg border border-border-primary bg-background-elevated py-1 text-xs font-semibold text-text-primary">
-                      YA {item.yearOfAssessment}
+                      {periodLabel}
                     </span>
                   ) : <span aria-hidden className="w-[4.75rem]" />}
                   <span
@@ -697,7 +701,7 @@ function CompanyObligationsPanel({
                   </span>
                   {canSetStatus ? (
                     <select
-                      aria-label={`Filing status for ${item.obligationName} YA ${item.yearOfAssessment ?? item.periodKey}`}
+                      aria-label={`Filing status for ${item.obligationName} ${periodLabel ?? item.periodKey}`}
                       className="input input-sm w-[9.5rem] py-1 text-xs"
                       disabled={disabled}
                       value={status}
