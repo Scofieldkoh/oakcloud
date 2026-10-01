@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
 import { ApiError } from '@/lib/errors';
+import { authErrorResponse } from '@/lib/api-route-errors';
 import { getWorkspaceSharePointContext, SharePointServiceError } from '@/services/sharepoint.service';
 import { getSharePointFilingSettings } from '@/services/sharepoint-filing-settings.service';
 
@@ -27,6 +28,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ connected: false, errorCode: error.code, error: error.message }, { status: error.statusCode ?? 400 });
     }
     if (error instanceof ApiError) return NextResponse.json({ connected: false, errorCode: error.code, error: error.message }, { status: error.statusCode });
+    const authResponse = authErrorResponse(error);
+    if (authResponse) return authResponse;
     return NextResponse.json({ connected: false, error: 'SharePoint connection check failed' }, { status: 500 });
   }
 }

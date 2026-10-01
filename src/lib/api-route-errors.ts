@@ -65,6 +65,27 @@ export function isInternalError(error: unknown): boolean {
   return RUNTIME_ERRORS.some((type) => error instanceof type);
 }
 
+/** The message of an application error, or `fallback` for a database or runtime error. */
+export function clientErrorMessage(error: unknown, fallback: string): string {
+  return error instanceof Error && !isInternalError(error) ? error.message : fallback;
+}
+
+/**
+ * 401 for "Unauthorized" and 403 for "Forbidden" / "Permission denied..."
+ * thrown by `requireAuth` and `requirePermission`, or null for anything else.
+ * For routes with their own error payloads that still need these statuses.
+ */
+export function authErrorResponse(error: unknown): NextResponse | null {
+  if (!(error instanceof Error) || error instanceof ApiError || isInternalError(error)) return null;
+  if (error.message === 'Unauthorized') {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: HTTP_STATUS.UNAUTHORIZED });
+  }
+  if (error.message === 'Forbidden' || error.message.startsWith('Permission denied')) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: HTTP_STATUS.FORBIDDEN });
+  }
+  return null;
+}
+
 function prismaErrorResponse(error: Prisma.PrismaClientKnownRequestError): NextResponse | null {
   switch (error.code) {
     case 'P2002':
@@ -105,12 +126,8 @@ export function routeErrorResponse(error: unknown, options: RouteErrorOptions = 
 
   if (error instanceof Error && !(error instanceof ApiError) && !isInternalError(error)) {
     const { message } = error;
-    if (message === 'Unauthorized') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: HTTP_STATUS.UNAUTHORIZED });
-    }
-    if (message === 'Forbidden' || message.startsWith('Permission denied')) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: HTTP_STATUS.FORBIDDEN });
-    }
+    const authResponse = authErrorResponse(error);
+    if (authResponse) return authResponse;
     const notFound = options.notFound === 'any'
       ? message.includes('not found')
       : options.notFound?.includes(message) ?? false;

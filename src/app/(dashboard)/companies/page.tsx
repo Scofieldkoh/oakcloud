@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect, useMemo } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Plus, AlertCircle, FileUp, Trash2, Download, RefreshCw, Building2 } from 'lucide-react';
 import { useCompaniesPageBootstrap, useDeleteCompany, useBulkDeleteCompanies } from '@/hooks/use-companies';
@@ -21,15 +21,53 @@ import { useToast } from '@/components/ui/toast';
 import { useUpsertUserPreference } from '@/hooks/use-user-preferences';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import { useWorkspaceListReset } from '@/hooks/use-workspace-list-reset';
+import { useUrlListParams } from '@/hooks/use-url-list-params';
+import { urlParam, type UrlParamSpec } from '@/lib/url-list-params';
 import { getEntityTypeLabel, getCompanyStatusLabel } from '@/lib/constants';
 import type { EntityType, CompanyStatus } from '@/generated/prisma';
 
 const COLUMN_PREF_KEY = 'companies:list:columns:v1';
+
+interface CompanyListParams extends Omit<CompanyInlineFilters, 'companyName'> {
+  query: string;
+  page: number;
+  limit: number;
+  sortBy: string;
+  sortOrder: 'asc' | 'desc';
+  hasCharges?: boolean;
+}
+
+/** Search, filters, sort and paging kept in the /companies URL. */
+const COMPANY_LIST_PARAMS: UrlParamSpec<CompanyListParams> = {
+  query: urlParam.string('', { key: 'q' }),
+  uen: urlParam.optional(),
+  page: urlParam.int(1),
+  limit: urlParam.int(20),
+  sortBy: urlParam.string('name'),
+  sortOrder: urlParam.choice<'asc' | 'desc'>('asc'),
+  entityType: urlParam.optional<EntityType>(),
+  status: urlParam.optional<CompanyStatus>(),
+  hasCharges: urlParam.optionalBoolean(),
+  companyId: urlParam.optional(),
+  address: urlParam.optional(),
+  hasWarnings: urlParam.optionalBoolean(),
+  incorporationDateFrom: urlParam.optional(),
+  incorporationDateTo: urlParam.optional(),
+  officersMin: urlParam.optionalInt(),
+  officersMax: urlParam.optionalInt(),
+  shareholdersMin: urlParam.optionalInt(),
+  shareholdersMax: urlParam.optionalInt(),
+  homeCurrency: urlParam.optional(),
+  financialYearEndMonth: urlParam.optionalInt(),
+  paidUpCapitalMin: urlParam.optionalNumber(),
+  paidUpCapitalMax: urlParam.optionalNumber(),
+  issuedCapitalMin: urlParam.optionalNumber(),
+  issuedCapitalMax: urlParam.optionalNumber(),
+};
 const COMPANY_SEARCH_INPUT_ID = 'companies-search-input';
 
 export default function CompaniesPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { success, error: toastError } = useToast();
   const { can } = usePermissions();
   const { data: session } = useSession();
@@ -40,23 +78,7 @@ export default function CompaniesPage() {
     session?.tenantId
   );
 
-  // Parse URL params
-  const getParamsFromUrl = useCallback(() => {
-    return {
-      query: searchParams.get('q') || '',
-      uen: searchParams.get('uen') || undefined,
-      page: parseInt(searchParams.get('page') || '1', 10),
-      limit: parseInt(searchParams.get('limit') || '20', 10),
-      sortBy: searchParams.get('sortBy') || 'name',
-      sortOrder: (searchParams.get('sortOrder') || 'asc') as 'asc' | 'desc',
-      entityType: (searchParams.get('entityType') || undefined) as EntityType | undefined,
-      status: (searchParams.get('status') || undefined) as CompanyStatus | undefined,
-      hasCharges: searchParams.get('hasCharges') === 'true' ? true :
-                  searchParams.get('hasCharges') === 'false' ? false : undefined,
-    };
-  }, [searchParams]);
-
-  const [params, setParams] = useState(getParamsFromUrl);
+  const { params, setParams, updateParams, targetUrl } = useUrlListParams('/companies', COMPANY_LIST_PARAMS);
 
   // Delete dialog state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -128,188 +150,61 @@ export default function CompaniesPage() {
     }
   }, []);
 
-  // Memoize URL construction to avoid rebuilding on every render
-  const targetUrl = useMemo(() => {
-    const urlParams = new URLSearchParams();
-
-    if (params.query) urlParams.set('q', params.query);
-    if (params.uen) urlParams.set('uen', params.uen);
-    if (params.page > 1) urlParams.set('page', params.page.toString());
-    if (params.limit !== 20) urlParams.set('limit', params.limit.toString());
-    if (params.sortBy !== 'name') urlParams.set('sortBy', params.sortBy);
-    if (params.sortOrder !== 'asc') urlParams.set('sortOrder', params.sortOrder);
-    if (params.entityType) urlParams.set('entityType', params.entityType);
-    if (params.status) urlParams.set('status', params.status);
-    if (params.hasCharges !== undefined) urlParams.set('hasCharges', params.hasCharges.toString());
-
-    const queryString = urlParams.toString();
-    return queryString ? `/companies?${queryString}` : '/companies';
-  }, [params]);
 
   const resetForWorkspaceChange = useCallback(() => {
     setParams((prev) => ({ ...prev, page: 1 }));
     clearSelection();
-  }, [clearSelection]);
+  }, [clearSelection, setParams]);
 
   useWorkspaceListReset(activeTenantId, resetForWorkspaceChange);
 
-  // Sync URL when params change
-  useEffect(() => {
-    // Only update if different
-    if (window.location.pathname + window.location.search !== targetUrl) {
-      router.replace(targetUrl, { scroll: false });
-    }
-  }, [targetUrl, router]);
-
   const handleSearch = (query: string) => {
-    setParams((prev) => ({ ...prev, query, companyId: undefined, page: 1 }));
+    updateParams({ query, companyId: undefined });
   };
 
   const handleFilterChange = (newFilters: FilterValues) => {
-    setParams((prev) => ({
-      ...prev,
-      ...newFilters,
-      page: 1
-    }));
+    updateParams(newFilters);
   };
 
   const handlePageChange = (page: number) => {
-    setParams((prev) => ({ ...prev, page }));
+    updateParams({ page });
   };
 
   const handleLimitChange = (limit: number) => {
-    setParams((prev) => ({ ...prev, limit, page: 1 }));
+    updateParams({ limit });
   };
 
   // Inline filter handler - maps inline filter fields to API params
   const handleInlineFilterChange = useCallback((filters: Partial<CompanyInlineFilters>) => {
-    setParams((prev) => {
-      const newParams: typeof prev & {
-        companyId?: string;
-        incorporationDateFrom?: string;
-        incorporationDateTo?: string;
-        officersMin?: number;
-        officersMax?: number;
-        shareholdersMin?: number;
-        shareholdersMax?: number;
-        homeCurrency?: string;
-        financialYearEndMonth?: number;
-        paidUpCapitalMin?: number;
-        paidUpCapitalMax?: number;
-        issuedCapitalMin?: number;
-        issuedCapitalMax?: number;
-        address?: string;
-        hasWarnings?: boolean;
-      } = { ...prev, page: 1 };
-
-      // companyId tracks the selected company for the inline company dropdown
-      if ('companyId' in filters) {
-        newParams.companyId = filters.companyId;
-      }
-
-      // companyName maps to query (the existing search field)
-      if ('companyName' in filters) {
-        newParams.query = filters.companyName || '';
-      }
-
-      // UEN filter - now properly supported by API
-      if ('uen' in filters) {
-        newParams.uen = filters.uen;
-      }
-
-      // Address filter
-      if ('address' in filters) {
-        newParams.address = filters.address;
-      }
-
-      // Warnings filter
-      if ('hasWarnings' in filters) {
-        newParams.hasWarnings = filters.hasWarnings;
-      }
-
-      // entityType and status map directly
-      if ('entityType' in filters) {
-        newParams.entityType = filters.entityType;
-      }
-      if ('status' in filters) {
-        newParams.status = filters.status;
-      }
-
-      // Incorporation date range
-      if ('incorporationDateFrom' in filters) {
-        newParams.incorporationDateFrom = filters.incorporationDateFrom;
-      }
-      if ('incorporationDateTo' in filters) {
-        newParams.incorporationDateTo = filters.incorporationDateTo;
-      }
-
-      // Officers count range
-      if ('officersMin' in filters) {
-        newParams.officersMin = filters.officersMin;
-      }
-      if ('officersMax' in filters) {
-        newParams.officersMax = filters.officersMax;
-      }
-
-      // Shareholders count range
-      if ('shareholdersMin' in filters) {
-        newParams.shareholdersMin = filters.shareholdersMin;
-      }
-      if ('shareholdersMax' in filters) {
-        newParams.shareholdersMax = filters.shareholdersMax;
-      }
-
-      // Home currency
-      if ('homeCurrency' in filters) {
-        newParams.homeCurrency = filters.homeCurrency;
-      }
-
-      // Financial year end month
-      if ('financialYearEndMonth' in filters) {
-        newParams.financialYearEndMonth = filters.financialYearEndMonth;
-      }
-
-      // Paid-up capital range
-      if ('paidUpCapitalMin' in filters) {
-        newParams.paidUpCapitalMin = filters.paidUpCapitalMin;
-      }
-      if ('paidUpCapitalMax' in filters) {
-        newParams.paidUpCapitalMax = filters.paidUpCapitalMax;
-      }
-
-      // Issued capital range
-      if ('issuedCapitalMin' in filters) {
-        newParams.issuedCapitalMin = filters.issuedCapitalMin;
-      }
-      if ('issuedCapitalMax' in filters) {
-        newParams.issuedCapitalMax = filters.issuedCapitalMax;
-      }
-
-      return newParams;
+    const { companyName, ...rest } = filters;
+    updateParams({
+      ...rest,
+      // companyName is the existing search field
+      ...('companyName' in filters ? { query: companyName || '' } : {}),
     });
-  }, []);
+  }, [updateParams]);
 
   // Derive inline filter values from params for the table
   const inlineFilters: CompanyInlineFilters = useMemo(() => ({
-    companyId: (params as Record<string, unknown>).companyId as string | undefined,
+    companyId: params.companyId,
     companyName: params.query || undefined,
     uen: params.uen,
-    address: (params as Record<string, unknown>).address as string | undefined,
+    address: params.address,
     entityType: params.entityType,
     status: params.status,
-    incorporationDateFrom: (params as Record<string, unknown>).incorporationDateFrom as string | undefined,
-    incorporationDateTo: (params as Record<string, unknown>).incorporationDateTo as string | undefined,
-    officersMin: (params as Record<string, unknown>).officersMin as number | undefined,
-    officersMax: (params as Record<string, unknown>).officersMax as number | undefined,
-    shareholdersMin: (params as Record<string, unknown>).shareholdersMin as number | undefined,
-    shareholdersMax: (params as Record<string, unknown>).shareholdersMax as number | undefined,
-    homeCurrency: (params as Record<string, unknown>).homeCurrency as string | undefined,
-    financialYearEndMonth: (params as Record<string, unknown>).financialYearEndMonth as number | undefined,
-    paidUpCapitalMin: (params as Record<string, unknown>).paidUpCapitalMin as number | undefined,
-    paidUpCapitalMax: (params as Record<string, unknown>).paidUpCapitalMax as number | undefined,
-    issuedCapitalMin: (params as Record<string, unknown>).issuedCapitalMin as number | undefined,
-    issuedCapitalMax: (params as Record<string, unknown>).issuedCapitalMax as number | undefined,
-    hasWarnings: (params as Record<string, unknown>).hasWarnings as boolean | undefined,
+    incorporationDateFrom: params.incorporationDateFrom,
+    incorporationDateTo: params.incorporationDateTo,
+    officersMin: params.officersMin,
+    officersMax: params.officersMax,
+    shareholdersMin: params.shareholdersMin,
+    shareholdersMax: params.shareholdersMax,
+    homeCurrency: params.homeCurrency,
+    financialYearEndMonth: params.financialYearEndMonth,
+    paidUpCapitalMin: params.paidUpCapitalMin,
+    paidUpCapitalMax: params.paidUpCapitalMax,
+    issuedCapitalMin: params.issuedCapitalMin,
+    issuedCapitalMax: params.issuedCapitalMax,
+    hasWarnings: params.hasWarnings,
   }), [params]);
 
   // Generate active filter chips
@@ -497,8 +392,7 @@ export default function CompaniesPage() {
 
   // Clear all filters
   const clearAllFilters = useCallback(() => {
-    setParams((prev) => ({
-      ...prev,
+    updateParams({
       query: '',
       companyId: undefined,
       uen: undefined,
@@ -519,9 +413,8 @@ export default function CompaniesPage() {
       paidUpCapitalMax: undefined,
       issuedCapitalMin: undefined,
       issuedCapitalMax: undefined,
-      page: 1,
-    }));
-  }, []);
+    });
+  }, [updateParams]);
 
   const handleSort = (field: string) => {
     setParams((prev) => {
@@ -670,20 +563,20 @@ export default function CompaniesPage() {
             entityType: params.entityType,
             status: params.status,
             hasCharges: params.hasCharges,
-            address: (params as Record<string, unknown>).address as string | undefined,
-            homeCurrency: (params as Record<string, unknown>).homeCurrency as string | undefined,
-            hasWarnings: (params as Record<string, unknown>).hasWarnings as boolean | undefined,
-            incorporationDateFrom: (params as Record<string, unknown>).incorporationDateFrom as string | undefined,
-            incorporationDateTo: (params as Record<string, unknown>).incorporationDateTo as string | undefined,
-            officersMin: (params as Record<string, unknown>).officersMin as number | undefined,
-            officersMax: (params as Record<string, unknown>).officersMax as number | undefined,
-            shareholdersMin: (params as Record<string, unknown>).shareholdersMin as number | undefined,
-            shareholdersMax: (params as Record<string, unknown>).shareholdersMax as number | undefined,
-            paidUpCapitalMin: (params as Record<string, unknown>).paidUpCapitalMin as number | undefined,
-            paidUpCapitalMax: (params as Record<string, unknown>).paidUpCapitalMax as number | undefined,
-            issuedCapitalMin: (params as Record<string, unknown>).issuedCapitalMin as number | undefined,
-            issuedCapitalMax: (params as Record<string, unknown>).issuedCapitalMax as number | undefined,
-            financialYearEndMonth: (params as Record<string, unknown>).financialYearEndMonth as number | undefined,
+            address: params.address,
+            homeCurrency: params.homeCurrency,
+            hasWarnings: params.hasWarnings,
+            incorporationDateFrom: params.incorporationDateFrom,
+            incorporationDateTo: params.incorporationDateTo,
+            officersMin: params.officersMin,
+            officersMax: params.officersMax,
+            shareholdersMin: params.shareholdersMin,
+            shareholdersMax: params.shareholdersMax,
+            paidUpCapitalMin: params.paidUpCapitalMin,
+            paidUpCapitalMax: params.paidUpCapitalMax,
+            issuedCapitalMin: params.issuedCapitalMin,
+            issuedCapitalMax: params.issuedCapitalMax,
+            financialYearEndMonth: params.financialYearEndMonth,
           }}
           initialQuery={params.query}
           searchInputId={COMPANY_SEARCH_INPUT_ID}

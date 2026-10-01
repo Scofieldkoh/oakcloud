@@ -1,6 +1,6 @@
 'use client';
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useDropzone } from 'react-dropzone';
 import {
@@ -30,7 +30,8 @@ import { useUserPreferences, useUpsertUserPreference } from '@/hooks/use-user-pr
 import { useColumnResize } from '@/hooks/use-column-resize';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import { COLUMN_IDS, COLUMN_PREF_KEY, COLUMN_VISIBILITY_PREF_KEY, type ColumnId, DEFAULT_COLUMN_WIDTHS, processingListStats } from '@/components/processing/list/processing-list-config';
-import { applyProcessingFilters, processingListUrl, processingParamsFromUrl } from '@/components/processing/list/processing-list-url';
+import { applyProcessingFilters, PROCESSING_LIST_PARAMS, processingParamsFromUrl } from '@/components/processing/list/processing-list-url';
+import { useUrlListParams } from '@/hooks/use-url-list-params';
 import { buildProcessingFilterChips } from '@/components/processing/list/processing-filter-chips';
 import { renderProcessingDesktopCell } from '@/components/processing/list/processing-desktop-cell';
 import { ProcessingStatsCards } from '@/components/processing/list/processing-stats-cards';
@@ -40,7 +41,6 @@ import { ProcessingColumnModal } from '@/components/processing/list/processing-c
 
 export default function ProcessingDocumentsPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { can } = usePermissions();
   const { data: session } = useSession();
 
@@ -89,10 +89,7 @@ export default function ProcessingDocumentsPage() {
     noKeyboard: true, // Don't open on keyboard events
   });
 
-  // Parse URL params
-  const getParamsFromUrl = useCallback(() => processingParamsFromUrl(searchParams), [searchParams]);
-
-  const [params, setParams] = useState(getParamsFromUrl);
+  const { params, setParams } = useUrlListParams('/processing', PROCESSING_LIST_PARAMS, processingParamsFromUrl);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [selectedDocumentMap, setSelectedDocumentMap] = useState<Record<string, ProcessingDocumentListItem>>({});
   const [expandedMobileCardIds, setExpandedMobileCardIds] = useState<string[]>([]);
@@ -280,7 +277,7 @@ export default function ProcessingDocumentsPage() {
     setParams((prev) => ({ ...prev, page: 1 }));
     setSelectedIds([]);
     setSelectedDocumentMap({});
-  }, [activeTenantId, activeCompanyId]);
+  }, [activeTenantId, activeCompanyId, setParams]);
 
   useEffect(() => {
     if (previousSelectionScopeKeyRef.current !== selectionScopeKey) {
@@ -447,16 +444,6 @@ export default function ProcessingDocumentsPage() {
     return selectedIds.length === data.total;
   }, [data, selectedIds.length]);
 
-  // Memoize URL construction
-  const targetUrl = useMemo(() => processingListUrl(params), [params]);
-
-  // Sync URL when params change
-  useEffect(() => {
-    if (window.location.pathname + window.location.search !== targetUrl) {
-      router.replace(targetUrl, { scroll: false });
-    }
-  }, [targetUrl, router]);
-
   const handlePageChange = (page: number) => {
     setParams((prev) => ({ ...prev, page }));
   };
@@ -464,7 +451,7 @@ export default function ProcessingDocumentsPage() {
   // Handler for the new ProcessingFilters component
   const handleFiltersChange = useCallback((filters: Partial<ProcessingFilterValues>) => {
     setParams((prev) => applyProcessingFilters(prev, filters));
-  }, []);
+  }, [setParams]);
 
   const handleSort = useCallback((field: string) => {
     setParams((prev) => {
@@ -472,7 +459,7 @@ export default function ProcessingDocumentsPage() {
       const nextOrder: 'asc' | 'desc' = isSame ? (prev.sortOrder === 'asc' ? 'desc' : 'asc') : 'asc';
       return { ...prev, page: 1, sortBy: field, sortOrder: nextOrder };
     });
-  }, []);
+  }, [setParams]);
 
   const handleSearchChange = useCallback((query: string) => {
     setParams((prev) => ({
@@ -480,7 +467,7 @@ export default function ProcessingDocumentsPage() {
       search: query || undefined,
       page: 1,
     }));
-  }, []);
+  }, [setParams]);
 
   // Calculate stats from data
   const stats = useMemo(() => processingListStats(data), [data]);
@@ -500,7 +487,7 @@ export default function ProcessingDocumentsPage() {
       sortOrder: params.sortOrder,
       search: params.search, // Keep search
     });
-  }, [params.limit, params.sortBy, params.sortOrder, params.search]);
+  }, [params.limit, params.sortBy, params.sortOrder, params.search, setParams]);
 
   const emptyState = (
     <ListEmptyState
