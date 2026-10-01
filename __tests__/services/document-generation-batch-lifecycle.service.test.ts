@@ -87,6 +87,7 @@ import {
   listDocumentGenerationBatches,
   updateDocumentGenerationBatch,
 } from '@/services/document-generation-batch';
+import { loadMasterCatalogueForTemplateIds } from '@/services/document-generation-batch/lifecycle.service';
 import { createAuditLog } from '@/lib/audit';
 import { upsertServiceAgreementDraft } from '@/services/service-agreement';
 
@@ -235,6 +236,35 @@ describe('document generation batch lifecycle', () => {
     vi.mocked(prisma.templatePartial.findMany).mockResolvedValue([]);
     vi.mocked(prisma.generatedDocument.update).mockResolvedValue({ id: 'child' } as never);
     vi.mocked(prisma.documentGenerationBatch.update).mockResolvedValue({ id: 'batch-1' } as never);
+  });
+
+  it('shares Word template fields between documents, including two copies of one template', async () => {
+    const resolutionDate = {
+      key: 'custom.resolution_date',
+      path: 'custom.resolution_date',
+      type: 'date',
+      label: 'Resolution date',
+      source: 'custom',
+      category: 'custom',
+      required: true,
+    };
+    vi.mocked(prisma.documentTemplate.findMany).mockResolvedValue([
+      { ...templateA, placeholders: [resolutionDate] },
+      { ...templateC, placeholders: [] },
+    ] as never);
+
+    const single = await loadMasterCatalogueForTemplateIds([templateA.id, templateC.id], tenantId);
+    expect(single.fields).toEqual([]);
+
+    const copies = await loadMasterCatalogueForTemplateIds([templateA.id, templateC.id, templateA.id], tenantId);
+    expect(copies.fields).toEqual([
+      expect.objectContaining({
+        id: 'resolution_date::date',
+        label: 'Resolution date',
+        templateIds: [templateA.id],
+        requiredTemplateIds: [templateA.id],
+      }),
+    ]);
   });
 
   it('refuses a batch that includes a retired A4 template', async () => {

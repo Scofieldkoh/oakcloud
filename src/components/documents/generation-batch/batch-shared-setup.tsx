@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, type ReactNode } from 'react';
 import { AlertCircle, Building2, CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -32,6 +32,8 @@ export interface BatchSharedSetupProps {
   disabled?: boolean;
   overriddenCountByField?: Record<string, number>;
   onSelectOverridden?: (fieldId: string) => void;
+  /** Party choices shared by several documents, shown above the shared fields. */
+  sharedParties?: ReactNode;
 }
 
 function formatDate(value: string | null | undefined): string | null {
@@ -60,6 +62,7 @@ export function BatchSharedSetup({
   disabled = false,
   overriddenCountByField = {},
   onSelectOverridden,
+  sharedParties,
 }: BatchSharedSetupProps) {
   const options = useMemo<AsyncSearchSelectOption[]>(() => {
     const byId = new Map<string, AsyncSearchSelectOption>();
@@ -155,6 +158,8 @@ export function BatchSharedSetup({
           </p>
         )}
       </section>
+
+      {sharedParties}
 
       <section aria-labelledby="shared-fields-heading">
         <div className="flex flex-wrap items-baseline justify-between gap-2">

@@ -61,6 +61,26 @@ describe('document generation master fields', () => {
     ]);
   });
 
+  it('shares a field between two copies of the same template, but not within one document', () => {
+    const resolution = templateFields('resolution', [
+      { key: 'resolution_date', type: 'date', label: 'Resolution date', required: true },
+    ]);
+    expect(deriveMasterFieldCatalogue([resolution]).fields).toEqual([]);
+    expect(deriveMasterFieldCatalogue([
+      templateFields('resolution', [
+        { key: 'resolution_date', type: 'date' },
+        { key: 'custom.resolution_date', type: 'date' },
+      ]),
+    ]).fields).toEqual([]);
+    expect(deriveMasterFieldCatalogue([resolution, resolution]).fields).toEqual([
+      expect.objectContaining({
+        id: 'resolution_date::date',
+        templateIds: ['resolution'],
+        requiredTemplateIds: ['resolution'],
+      }),
+    ]);
+  });
+
   it('excludes built-in company/contact context and structured service fields', () => {
     const catalogue = deriveMasterFieldCatalogue([
       templateFields('template-a', [

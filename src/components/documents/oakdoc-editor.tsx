@@ -56,7 +56,7 @@ import { OakDocPartialPanel } from '@/components/documents/oakdoc/oakdoc-partial
 import { ResolutionPresetPanel } from '@/components/documents/oakdoc/resolution-preset-panel';
 import { useOakDocAiSelection } from '@/components/documents/oakdoc/use-oakdoc-ai-selection';
 import { AISidebar, type DocumentCategory } from '@/components/documents/ai-sidebar';
-import type { TemplatePartialSummary } from '@/hooks/use-template-partials';
+import { fetchPartialText, type TemplatePartialSummary } from '@/hooks/use-template-partials';
 import {
   insertOakDocPartialReference,
   inspectOakDocPartialReferences,
@@ -66,8 +66,10 @@ import { useUnsavedNavigationGuard } from '@/hooks/use-unsaved-navigation-guard'
 import {
   hasOakDocResolutionSlot,
   insertOakDocResolutionSlot,
+  previewOakDocResolutionSlot,
   unlockOakDocResolutionSlotContent,
 } from '@/lib/document-editor/oakdoc-resolutions';
+import { readResolutionPreset, resolutionSectionText } from '@/lib/resolution-composition';
 
 const DOCX_MIME =
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
@@ -179,6 +181,22 @@ async function fetchOakDocTemplate(
     metadata,
     bytes: new Uint8Array(await fileResponse.arrayBuffer()),
   };
+}
+
+/**
+ * Show a resolution template's preset resolutions in its slot: numbered
+ * headings and each partial's current wording. Display only; generation
+ * replaces the slot. A partial whose wording can't be loaded shows its heading.
+ */
+async function withPresetResolutionPreview(bytes: Uint8Array, rawPreset: unknown): Promise<Uint8Array> {
+  const sections = readResolutionPreset(rawPreset)?.sections ?? [];
+  const preview = await Promise.all(sections.map(async (section) => {
+    const text = resolutionSectionText(section);
+    if (text !== null || section.kind !== 'PARTIAL') return { heading: section.heading, text: text ?? '' };
+    const loaded = await fetchPartialText(section.partialId).catch(() => null);
+    return { heading: section.heading, text: loaded?.text ?? '' };
+  }));
+  return previewOakDocResolutionSlot(bytes, preview);
 }
 
 function toArrayBuffer(bytes: Uint8Array): ArrayBuffer {
@@ -421,12 +439,37 @@ export function OakDocEditor() {
     setFileName(loaded.metadata.fileName);
     setPinnedPartialVersions(pinnedVersionsOf(loaded.template.contentJson));
     setRefreshPartials(false);
-    replaceDocument(
-      unlockOakDocResolutionSlotContent(nameOakDocRepeaterItems(loaded.bytes)),
-      `Loaded OakDoc template "${loaded.template.name}" version ${revision}.`,
-    );
+    const isResolution = loaded.template.compositionType === 'RESOLUTION';
+    const hasPreset = isResolution && (readResolutionPreset(loaded.template.resolutionPreset)?.sections.length ?? 0) > 0;
+    let bytes = unlockOakDocResolutionSlotContent(nameOakDocRepeaterItems(loaded.bytes));
+    // Without a preset the slot shows its plain placeholder, even if an
+    // earlier preset's preview was saved into it.
+    if (isResolution && !hasPreset) bytes = previewOakDocResolutionSlot(bytes, []);
+    const message = `Loaded OakDoc template "${loaded.template.name}" version ${revision}.`;
+    replaceDocument(bytes, message);
     setIsDirty(false);
+    if (!hasPreset) return;
+    // Preset resolutions show in the slot once their wording has loaded.
+    void withPresetResolutionPreview(bytes, loaded.template.resolutionPreset).then((previewed) => {
+      if (previewed === bytes || loadedTemplateRevisionRef.current !== revision) return;
+      if (localRevisionRef.current !== acknowledgedRevisionRef.current) return;
+      replaceDocument(previewed, message);
+    });
   }, [replaceDocument, templateQuery.data, setIsDirty]);
+
+  const refreshPresetPreview = useCallback(async (preset: unknown) => {
+    const handle = editorRef.current;
+    if (!handle) return;
+    try {
+      const buffer = await handle.save();
+      if (!buffer) return;
+      const current = asUint8Array(buffer);
+      const previewed = await withPresetResolutionPreview(current, preset);
+      if (previewed !== current) replaceDocument(previewed, 'Preset resolutions shown in the template.');
+    } catch {
+      // The preview is display only; a failure leaves the document as it is.
+    }
+  }, [replaceDocument]);
 
   useEffect(() => {
     if (!templateQuery.error) return;
@@ -1287,6 +1330,7 @@ export function OakDocEditor() {
                     savedAsResolution={(savedCompositionType ?? templateQuery.data?.template.compositionType) === 'RESOLUTION'}
                     initialPreset={templateQuery.data?.template.resolutionPreset}
                     disabled={busy}
+                    onSaved={(preset) => void refreshPresetPreview(preset)}
                   />
                 </section>
 

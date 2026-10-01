@@ -1923,6 +1923,8 @@ Reusable template blocks (Phase 7 feature).
 | id | UUID | No | Primary key |
 | tenant_id | UUID | No | FK to tenants (required) |
 | name | VARCHAR(100) | No | Partial name (unique per tenant) |
+| display_name | VARCHAR(200) | Yes | Name shown in pickers |
+| header | VARCHAR(200) | Yes | Resolution partials: numbered heading used in resolutions; falls back to the display name |
 | description | TEXT | Yes | Partial description |
 | content | TEXT | No | HTML content |
 | placeholders | JSONB | No | Placeholder definitions (default: []) |

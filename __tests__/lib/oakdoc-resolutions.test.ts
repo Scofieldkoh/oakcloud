@@ -12,8 +12,9 @@ import {
   hasOakDocResolutionSlot,
   insertOakDocResolutionSlot,
   readOakDocPlainText,
-  buildResolutionTextPartial,
   unlockOakDocResolutionSlotContent,
+  previewOakDocResolutionSlot,
+  RESOLUTION_SLOT_PLACEHOLDER,
 } from '@/lib/document-editor/oakdoc-resolutions';
 import { buildBoardResolutionOakDocMaster } from '@/content/resolution/board-resolution-oakdoc';
 import { readResolutionPreset, resolutionCompositionIssues } from '@/lib/resolution-composition';
@@ -94,15 +95,6 @@ describe('OakDoc numbered resolutions', () => {
     expect(readResolutionPreset(null)).toBeNull();
   });
 
-  it('builds a quick resolution partial whose text takes the resolution template font', () => {
-    const bytes = buildResolutionTextPartial('RESOLVED that {company.name}\nbe removed.\n\nRESOLVED further.');
-    expect(() => inspectOakDocPackage(bytes, 'master')).not.toThrow();
-    expect(readOakDocPlainText(bytes)).toBe('RESOLVED that {company.name}\nbe removed.\n\nRESOLVED further.');
-    expect(deriveOakDocTemplateFieldTags(bytes)).toEqual(['company.name']);
-    expect(documentXml(bytes)).toContain('<w:jc w:val="both"/>');
-    expect(documentXml(bytes)).not.toContain('w:rFonts');
-  });
-
   it('reports a master without the slot', () => {
     const result = composeOakDocResolutions(buildBlankOakDocBytes(), {
       subject: '',
@@ -153,6 +145,33 @@ describe('OakDoc numbered resolutions', () => {
       sections: [{ id: 'a', kind: 'CUSTOM', heading: 'BANK ACCOUNT', body: 'RESOLVED that an account be opened.' }],
     });
     expect(documentXml(result.bytes)).toMatch(/w:ascii="Arial"[^]*?RESOLVED that an account be opened\./);
+  });
+
+  it('previews preset resolutions in the slot without changing what generation prints', () => {
+    const master = buildBoardResolutionOakDocMaster();
+    const previewed = previewOakDocResolutionSlot(master, [
+      { heading: 'APPOINTMENT OF SECRETARY', text: 'RESOLVED that X be appointed.\n\nRESOLVED further.' },
+      { heading: 'NOTICE AND LODGEMENT', text: '' },
+    ]);
+    const xml = documentXml(previewed);
+    expect(hasOakDocResolutionSlot(previewed)).toBe(true);
+    expect(xml).toContain('Preset resolutions, which can still be changed');
+    expect(xml).not.toContain(RESOLUTION_SLOT_PLACEHOLDER);
+    expect(xml).toContain('>1.</w:t><w:tab/><w:t xml:space="preserve">APPOINTMENT OF SECRETARY<');
+    expect(xml).toContain('>2.</w:t><w:tab/><w:t xml:space="preserve">NOTICE AND LODGEMENT<');
+    expect(xml).toContain('RESOLVED that X be appointed.');
+    expect(deriveOakDocTemplateFieldTags(previewed)).toEqual(deriveOakDocTemplateFieldTags(master));
+
+    // Clearing the preset restores the placeholder, and generation output is the same either way.
+    expect(documentXml(previewOakDocResolutionSlot(previewed, []))).toContain(RESOLUTION_SLOT_PLACEHOLDER);
+    const composition = {
+      subject: '',
+      sections: [{ id: 'a', kind: 'CUSTOM' as const, heading: 'BANK ACCOUNT', body: 'RESOLVED that an account be opened.' }],
+    };
+    const fromMaster = documentXml(composeOakDocResolutions(master, composition).bytes);
+    const fromPreview = documentXml(composeOakDocResolutions(previewed, composition).bytes);
+    const body = (value: string) => value.slice(value.indexOf('BANK ACCOUNT') - 400, value.indexOf('account be opened') + 40);
+    expect(body(fromPreview)).toEqual(body(fromMaster));
   });
 
   it('lists what Configure still needs', () => {

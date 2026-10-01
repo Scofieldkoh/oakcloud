@@ -5,12 +5,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ResolutionWorkspaceState } from '@/types/document-generation-batch';
 
 const partialsQuery = vi.hoisted(() => ({ value: {} as Record<string, unknown> }));
-const saveWordPartial = vi.hoisted(() => vi.fn());
 const toast = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn() }));
 vi.mock('@/components/ui/toast', () => ({ useToast: () => toast }));
 vi.mock('@/hooks/use-template-partials', () => ({
   partialKeys: { all: ['template-partials'] },
-  saveWordPartial,
   useAllTemplatePartials: () => partialsQuery.value,
   usePartialText: (id: string | null) => ({
     data: id ? { text: 'RESOLVED that Jane Tan be appointed as secretary.', revision: 2 } : undefined,
@@ -21,7 +19,7 @@ vi.mock('@/hooks/use-template-partials', () => ({
 vi.mock('@/hooks/use-auth', () => ({ useSession: () => ({ data: { tenantId: 'tenant-1', isSuperAdmin: false } }) }));
 vi.mock('@/components/ui/workspace-selector', () => ({ useActiveWorkspaceId: () => 'tenant-1' }));
 
-import { ResolutionSectionsConfig } from '@/components/documents/generation-batch/resolution-sections-config';
+import { defaultResolutionHeading, ResolutionSectionsConfig } from '@/components/documents/generation-batch/resolution-sections-config';
 
 const partial = {
   id: '11111111-1111-4111-8111-111111111111',
@@ -55,7 +53,6 @@ function Harness({ initial, templateId }: { initial: ResolutionWorkspaceState; t
 
 beforeEach(() => {
   latest = null;
-  saveWordPartial.mockReset();
   vi.unstubAllGlobals();
   partialsQuery.value = { data: { partials: [partial] }, isLoading: false, error: null };
 });
@@ -122,25 +119,16 @@ describe('ResolutionSectionsConfig', () => {
     expect(latest?.sections[0]).toMatchObject({ body: null });
   });
 
-  it('creates a resolution partial from text and adds it to the list', async () => {
-    saveWordPartial.mockResolvedValue({ id: '22222222-2222-4222-8222-222222222222', name: 'removal-of-auditor', displayName: 'Removal of Auditor' });
+  it('uses a partial header as the default heading, else its display name', () => {
+    expect(defaultResolutionHeading({
+      name: 'appointment-of-secretary-zhi-yong',
+      displayName: 'Appointment of Secretary - Zhi Yong',
+      header: 'Appointment of Secretary',
+    })).toBe('APPOINTMENT OF SECRETARY');
+    expect(defaultResolutionHeading({ name: 'notice', displayName: 'Notice and Lodgement', header: '  ' })).toBe('NOTICE AND LODGEMENT');
     render(<Harness initial={{ subject: '', sections: [] }} />);
-    fireEvent.click(screen.getByRole('button', { name: 'New partial' }));
-    fireEvent.change(screen.getByLabelText(/^Name/), { target: { value: 'Removal of Auditor' } });
-    fireEvent.change(screen.getByLabelText('New partial text'), { target: { value: 'RESOLVED that the auditor be removed.' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Create partial' }));
-
-    await waitFor(() => expect(latest?.sections).toHaveLength(1));
-    expect(saveWordPartial).toHaveBeenCalledWith(expect.objectContaining({
-      name: 'removal-of-auditor',
-      displayName: 'Removal of Auditor',
-      category: 'RESOLUTION',
-    }));
-    expect(latest?.sections[0]).toMatchObject({
-      kind: 'PARTIAL',
-      partialId: '22222222-2222-4222-8222-222222222222',
-      heading: 'REMOVAL OF AUDITOR',
-    });
+    expect(screen.getByRole('button', { name: 'Add custom resolution' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'New partial' })).toBeNull();
   });
 
   it('saves the list as the template preset', async () => {

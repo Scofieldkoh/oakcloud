@@ -56,6 +56,8 @@ import {
 } from './batch-completeness';
 import { useDocumentGenerationBatch } from './use-document-generation-batch';
 import { BatchTemplatePicker } from './batch-template-picker';
+import { BatchSharedParties } from './batch-shared-parties';
+import { templatePartyNeeds, type TemplatePartyNeeds } from './template-party-needs';
 import { BatchSharedSetup } from './batch-shared-setup';
 import { BatchDocumentQueue } from './batch-document-queue';
 import { BatchItemConfigurator } from './batch-item-configurator';
@@ -307,6 +309,20 @@ export function DocumentGenerationBatchWorkspace({
     () => readOakDocTemplateMetadata(activeTemplate?.contentJson)?.fieldTags,
     [activeTemplate],
   );
+
+  const partyNeedsByItemKey = useMemo(() => {
+    const byTemplateId = new Map(templates.map((template) => [template.id, template]));
+    const needs: Record<string, TemplatePartyNeeds> = {};
+    for (const item of state.batch.items) {
+      if (item.templateKind === 'SERVICE_AGREEMENT') continue;
+      const template = byTemplateId.get(item.templateId);
+      needs[item.key] = templatePartyNeeds(
+        template?.content,
+        readOakDocTemplateMetadata(template?.contentJson)?.fieldTags,
+      );
+    }
+    return needs;
+  }, [templates, state.batch.items]);
 
   const overriddenCountByField = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -798,6 +814,20 @@ export function DocumentGenerationBatchWorkspace({
               value,
             })}
             disabled={!state.capabilities.canEditSharedSetup}
+            sharedParties={(
+              <BatchSharedParties
+                items={state.batch.items}
+                needsByItemKey={partyNeedsByItemKey}
+                directors={partyOptions.directors}
+                shareholders={partyOptions.shareholders}
+                contacts={partyOptions.contacts}
+                isLoading={partyOptions.isLoading}
+                error={partyOptions.error}
+                onRetry={partyOptions.reload}
+                onApply={(itemIds, patch) => dispatch({ type: 'items/patch-many', itemIds, patch })}
+                disabled={!state.capabilities.canEditItems}
+              />
+            )}
             overriddenCountByField={overriddenCountByField}
             onSelectOverridden={(fieldId) => {
               const first = state.batch.items.find((item) =>
