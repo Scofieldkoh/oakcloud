@@ -43,6 +43,7 @@ export type { TenantAwareParams } from '@/lib/types';
 export interface CreatePartialInput {
   name: string;
   displayName: string;
+  header?: string | null;
   description?: string | null;
   content: string;
   placeholders?: Prisma.InputJsonValue;
@@ -54,6 +55,7 @@ export interface UpdatePartialInput {
   expectedRevision?: number;
   name?: string;
   displayName?: string;
+  header?: string | null;
   description?: string | null;
   content?: string;
   placeholders?: Prisma.InputJsonValue;
@@ -99,6 +101,7 @@ export interface PartialUsageResult {
 const TRACKED_FIELDS: (keyof TemplatePartial)[] = [
   'name',
   'displayName',
+  'header',
   'description',
   'content',
   'placeholders',
@@ -198,6 +201,7 @@ export async function updateTemplatePartial(
     if (data.name !== undefined) updateData.name = data.name;
     if (data.displayName !== undefined) updateData.displayName = data.displayName;
     if (data.description !== undefined) updateData.description = data.description;
+    if (data.header !== undefined) updateData.header = data.header?.trim() || null;
     if (data.category !== undefined) updateData.category = data.category;
     if (data.content !== undefined) updateData.content = data.content;
     if (data.placeholders !== undefined) {
@@ -408,7 +412,7 @@ export async function searchTemplatePartials(
 export async function getAllTemplatePartials(
   tenantId: string,
 ): Promise<Array<
-  Pick<TemplatePartial, 'id' | 'name' | 'displayName' | 'description' | 'content' | 'placeholders' | 'version' | 'category'>
+  Pick<TemplatePartial, 'id' | 'name' | 'displayName' | 'header' | 'description' | 'content' | 'placeholders' | 'version' | 'category'>
   & { documentEngine: 'A4' | 'OAKDOC' }
 >> {
   const partials = await prisma.templatePartial.findMany({
@@ -417,6 +421,7 @@ export async function getAllTemplatePartials(
       id: true,
       name: true,
       displayName: true,
+      header: true,
       description: true,
       content: true,
       placeholders: true,
@@ -603,6 +608,7 @@ export async function duplicateTemplatePartial(
         ? `Copy of: ${source.description}`
         : `Copy of ${source.name}`,
       content: source.content,
+      header: source.header,
       category: source.category,
       placeholders: preservePartialPlaceholders(source.placeholders, id),
       createdById: userId,

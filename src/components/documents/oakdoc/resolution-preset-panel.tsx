@@ -19,6 +19,8 @@ export interface ResolutionPresetPanelProps {
   savedAsResolution: boolean;
   initialPreset: unknown;
   disabled?: boolean;
+  /** Called after the preset is saved or cleared. */
+  onSaved?: (preset: ResolutionWorkspaceState | null) => void;
 }
 
 /** The resolutions new documents from this template start with, edited in a dialog. */
@@ -27,6 +29,7 @@ export function ResolutionPresetPanel({
   savedAsResolution,
   initialPreset,
   disabled = false,
+  onSaved,
 }: ResolutionPresetPanelProps) {
   const { success, error: showError } = useToast();
   const loaded = useMemo(() => readResolutionPreset(initialPreset), [initialPreset]);
@@ -42,6 +45,7 @@ export function ResolutionPresetPanel({
     try {
       await saveResolutionPreset(templateId, next);
       setPreset(next);
+      onSaved?.(next);
       success(next ? 'Preset resolutions saved' : 'Preset resolutions cleared');
       setOpen(false);
     } catch (caught) {

@@ -45,6 +45,7 @@ export function templatePartialCategoryLabel(category: string | null | undefined
 export const createTemplatePartialSchema = z.object({
   name: partialNameSchema,
   displayName: z.string().min(1, 'Display name is required').max(200, 'Display name must be 200 characters or less'),
+  header: z.string().max(200, 'Header must be 200 characters or less').optional().nullable(),
   description: z.string().max(1000).optional().nullable(),
   content: z.string().min(1, 'Content is required').max(500000, 'Content is too large'),
   placeholders: z.array(placeholderDefinitionSchema).default([]),
@@ -62,6 +63,7 @@ export const updateTemplatePartialSchema = z.object({
   expectedRevision: z.number().int().nonnegative().optional(),
   name: partialNameSchema.optional(),
   displayName: z.string().min(1).max(200).optional(),
+  header: z.string().max(200, 'Header must be 200 characters or less').optional().nullable(),
   description: z.string().max(1000).optional().nullable(),
   content: z.string().min(1).max(500000).optional(),
   placeholders: z.array(placeholderDefinitionSchema).optional(),

@@ -39,6 +39,7 @@ export type TemplatePartialMinAggregateOutputType = {
   tenantId: string | null
   name: string | null
   displayName: string | null
+  header: string | null
   description: string | null
   content: string | null
   category: $Enums.TemplatePartialCategory | null
@@ -54,6 +55,7 @@ export type TemplatePartialMaxAggregateOutputType = {
   tenantId: string | null
   name: string | null
   displayName: string | null
+  header: string | null
   description: string | null
   content: string | null
   category: $Enums.TemplatePartialCategory | null
@@ -69,6 +71,7 @@ export type TemplatePartialCountAggregateOutputType = {
   tenantId: number
   name: number
   displayName: number
+  header: number
   description: number
   content: number
   contentJson: number
@@ -96,6 +99,7 @@ export type TemplatePartialMinAggregateInputType = {
   tenantId?: true
   name?: true
   displayName?: true
+  header?: true
   description?: true
   content?: true
   category?: true
@@ -111,6 +115,7 @@ export type TemplatePartialMaxAggregateInputType = {
   tenantId?: true
   name?: true
   displayName?: true
+  header?: true
   description?: true
   content?: true
   category?: true
@@ -126,6 +131,7 @@ export type TemplatePartialCountAggregateInputType = {
   tenantId?: true
   name?: true
   displayName?: true
+  header?: true
   description?: true
   content?: true
   contentJson?: true
@@ -230,6 +236,7 @@ export type TemplatePartialGroupByOutputType = {
   tenantId: string
   name: string
   displayName: string | null
+  header: string | null
   description: string | null
   content: string
   contentJson: runtime.JsonValue | null
@@ -270,6 +277,7 @@ export type TemplatePartialWhereInput = {
   tenantId?: Prisma.StringFilter<"TemplatePartial"> | string
   name?: Prisma.StringFilter<"TemplatePartial"> | string
   displayName?: Prisma.StringNullableFilter<"TemplatePartial"> | string | null
+  header?: Prisma.StringNullableFilter<"TemplatePartial"> | string | null
   description?: Prisma.StringNullableFilter<"TemplatePartial"> | string | null
   content?: Prisma.StringFilter<"TemplatePartial"> | string
   contentJson?: Prisma.JsonNullableFilter<"TemplatePartial">
@@ -291,6 +299,7 @@ export type TemplatePartialOrderByWithRelationInput = {
   tenantId?: Prisma.SortOrder
   name?: Prisma.SortOrder
   displayName?: Prisma.SortOrderInput | Prisma.SortOrder
+  header?: Prisma.SortOrderInput | Prisma.SortOrder
   description?: Prisma.SortOrderInput | Prisma.SortOrder
   content?: Prisma.SortOrder
   contentJson?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -316,6 +325,7 @@ export type TemplatePartialWhereUniqueInput = Prisma.AtLeast<{
   tenantId?: Prisma.StringFilter<"TemplatePartial"> | string
   name?: Prisma.StringFilter<"TemplatePartial"> | string
   displayName?: Prisma.StringNullableFilter<"TemplatePartial"> | string | null
+  header?: Prisma.StringNullableFilter<"TemplatePartial"> | string | null
   description?: Prisma.StringNullableFilter<"TemplatePartial"> | string | null
   content?: Prisma.StringFilter<"TemplatePartial"> | string
   contentJson?: Prisma.JsonNullableFilter<"TemplatePartial">
@@ -337,6 +347,7 @@ export type TemplatePartialOrderByWithAggregationInput = {
   tenantId?: Prisma.SortOrder
   name?: Prisma.SortOrder
   displayName?: Prisma.SortOrderInput | Prisma.SortOrder
+  header?: Prisma.SortOrderInput | Prisma.SortOrder
   description?: Prisma.SortOrderInput | Prisma.SortOrder
   content?: Prisma.SortOrder
   contentJson?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -362,6 +373,7 @@ export type TemplatePartialScalarWhereWithAggregatesInput = {
   tenantId?: Prisma.StringWithAggregatesFilter<"TemplatePartial"> | string
   name?: Prisma.StringWithAggregatesFilter<"TemplatePartial"> | string
   displayName?: Prisma.StringNullableWithAggregatesFilter<"TemplatePartial"> | string | null
+  header?: Prisma.StringNullableWithAggregatesFilter<"TemplatePartial"> | string | null
   description?: Prisma.StringNullableWithAggregatesFilter<"TemplatePartial"> | string | null
   content?: Prisma.StringWithAggregatesFilter<"TemplatePartial"> | string
   contentJson?: Prisma.JsonNullableWithAggregatesFilter<"TemplatePartial">
@@ -378,6 +390,7 @@ export type TemplatePartialCreateInput = {
   id?: string
   name: string
   displayName?: string | null
+  header?: string | null
   description?: string | null
   content: string
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -398,6 +411,7 @@ export type TemplatePartialUncheckedCreateInput = {
   tenantId: string
   name: string
   displayName?: string | null
+  header?: string | null
   description?: string | null
   content: string
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -416,6 +430,7 @@ export type TemplatePartialUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   displayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  header?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   content?: Prisma.StringFieldUpdateOperationsInput | string
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -436,6 +451,7 @@ export type TemplatePartialUncheckedUpdateInput = {
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   displayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  header?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   content?: Prisma.StringFieldUpdateOperationsInput | string
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -455,6 +471,7 @@ export type TemplatePartialCreateManyInput = {
   tenantId: string
   name: string
   displayName?: string | null
+  header?: string | null
   description?: string | null
   content: string
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -471,6 +488,7 @@ export type TemplatePartialUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   displayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  header?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   content?: Prisma.StringFieldUpdateOperationsInput | string
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -487,6 +505,7 @@ export type TemplatePartialUncheckedUpdateManyInput = {
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   displayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  header?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   content?: Prisma.StringFieldUpdateOperationsInput | string
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -519,6 +538,7 @@ export type TemplatePartialCountOrderByAggregateInput = {
   tenantId?: Prisma.SortOrder
   name?: Prisma.SortOrder
   displayName?: Prisma.SortOrder
+  header?: Prisma.SortOrder
   description?: Prisma.SortOrder
   content?: Prisma.SortOrder
   contentJson?: Prisma.SortOrder
@@ -540,6 +560,7 @@ export type TemplatePartialMaxOrderByAggregateInput = {
   tenantId?: Prisma.SortOrder
   name?: Prisma.SortOrder
   displayName?: Prisma.SortOrder
+  header?: Prisma.SortOrder
   description?: Prisma.SortOrder
   content?: Prisma.SortOrder
   category?: Prisma.SortOrder
@@ -555,6 +576,7 @@ export type TemplatePartialMinOrderByAggregateInput = {
   tenantId?: Prisma.SortOrder
   name?: Prisma.SortOrder
   displayName?: Prisma.SortOrder
+  header?: Prisma.SortOrder
   description?: Prisma.SortOrder
   content?: Prisma.SortOrder
   category?: Prisma.SortOrder
@@ -694,6 +716,7 @@ export type TemplatePartialCreateWithoutTenantInput = {
   id?: string
   name: string
   displayName?: string | null
+  header?: string | null
   description?: string | null
   content: string
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -712,6 +735,7 @@ export type TemplatePartialUncheckedCreateWithoutTenantInput = {
   id?: string
   name: string
   displayName?: string | null
+  header?: string | null
   description?: string | null
   content: string
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -760,6 +784,7 @@ export type TemplatePartialScalarWhereInput = {
   tenantId?: Prisma.StringFilter<"TemplatePartial"> | string
   name?: Prisma.StringFilter<"TemplatePartial"> | string
   displayName?: Prisma.StringNullableFilter<"TemplatePartial"> | string | null
+  header?: Prisma.StringNullableFilter<"TemplatePartial"> | string | null
   description?: Prisma.StringNullableFilter<"TemplatePartial"> | string | null
   content?: Prisma.StringFilter<"TemplatePartial"> | string
   contentJson?: Prisma.JsonNullableFilter<"TemplatePartial">
@@ -776,6 +801,7 @@ export type TemplatePartialCreateWithoutCreatedByInput = {
   id?: string
   name: string
   displayName?: string | null
+  header?: string | null
   description?: string | null
   content: string
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -795,6 +821,7 @@ export type TemplatePartialUncheckedCreateWithoutCreatedByInput = {
   tenantId: string
   name: string
   displayName?: string | null
+  header?: string | null
   description?: string | null
   content: string
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -838,6 +865,7 @@ export type TemplatePartialCreateWithoutServiceVariantsInput = {
   id?: string
   name: string
   displayName?: string | null
+  header?: string | null
   description?: string | null
   content: string
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -857,6 +885,7 @@ export type TemplatePartialUncheckedCreateWithoutServiceVariantsInput = {
   tenantId: string
   name: string
   displayName?: string | null
+  header?: string | null
   description?: string | null
   content: string
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -890,6 +919,7 @@ export type TemplatePartialUpdateWithoutServiceVariantsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   displayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  header?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   content?: Prisma.StringFieldUpdateOperationsInput | string
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -909,6 +939,7 @@ export type TemplatePartialUncheckedUpdateWithoutServiceVariantsInput = {
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   displayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  header?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   content?: Prisma.StringFieldUpdateOperationsInput | string
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -926,6 +957,7 @@ export type TemplatePartialCreateWithoutServiceAgreementItemsInput = {
   id?: string
   name: string
   displayName?: string | null
+  header?: string | null
   description?: string | null
   content: string
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -945,6 +977,7 @@ export type TemplatePartialUncheckedCreateWithoutServiceAgreementItemsInput = {
   tenantId: string
   name: string
   displayName?: string | null
+  header?: string | null
   description?: string | null
   content: string
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -978,6 +1011,7 @@ export type TemplatePartialUpdateWithoutServiceAgreementItemsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   displayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  header?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   content?: Prisma.StringFieldUpdateOperationsInput | string
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -997,6 +1031,7 @@ export type TemplatePartialUncheckedUpdateWithoutServiceAgreementItemsInput = {
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   displayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  header?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   content?: Prisma.StringFieldUpdateOperationsInput | string
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -1014,6 +1049,7 @@ export type TemplatePartialCreateManyTenantInput = {
   id?: string
   name: string
   displayName?: string | null
+  header?: string | null
   description?: string | null
   content: string
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -1030,6 +1066,7 @@ export type TemplatePartialUpdateWithoutTenantInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   displayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  header?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   content?: Prisma.StringFieldUpdateOperationsInput | string
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -1048,6 +1085,7 @@ export type TemplatePartialUncheckedUpdateWithoutTenantInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   displayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  header?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   content?: Prisma.StringFieldUpdateOperationsInput | string
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -1066,6 +1104,7 @@ export type TemplatePartialUncheckedUpdateManyWithoutTenantInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   displayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  header?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   content?: Prisma.StringFieldUpdateOperationsInput | string
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -1083,6 +1122,7 @@ export type TemplatePartialCreateManyCreatedByInput = {
   tenantId: string
   name: string
   displayName?: string | null
+  header?: string | null
   description?: string | null
   content: string
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -1098,6 +1138,7 @@ export type TemplatePartialUpdateWithoutCreatedByInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   displayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  header?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   content?: Prisma.StringFieldUpdateOperationsInput | string
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -1117,6 +1158,7 @@ export type TemplatePartialUncheckedUpdateWithoutCreatedByInput = {
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   displayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  header?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   content?: Prisma.StringFieldUpdateOperationsInput | string
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -1135,6 +1177,7 @@ export type TemplatePartialUncheckedUpdateManyWithoutCreatedByInput = {
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   displayName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  header?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   content?: Prisma.StringFieldUpdateOperationsInput | string
   contentJson?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -1191,6 +1234,7 @@ export type TemplatePartialSelect<ExtArgs extends runtime.Types.Extensions.Inter
   tenantId?: boolean
   name?: boolean
   displayName?: boolean
+  header?: boolean
   description?: boolean
   content?: boolean
   contentJson?: boolean
@@ -1213,6 +1257,7 @@ export type TemplatePartialSelectCreateManyAndReturn<ExtArgs extends runtime.Typ
   tenantId?: boolean
   name?: boolean
   displayName?: boolean
+  header?: boolean
   description?: boolean
   content?: boolean
   contentJson?: boolean
@@ -1232,6 +1277,7 @@ export type TemplatePartialSelectUpdateManyAndReturn<ExtArgs extends runtime.Typ
   tenantId?: boolean
   name?: boolean
   displayName?: boolean
+  header?: boolean
   description?: boolean
   content?: boolean
   contentJson?: boolean
@@ -1251,6 +1297,7 @@ export type TemplatePartialSelectScalar = {
   tenantId?: boolean
   name?: boolean
   displayName?: boolean
+  header?: boolean
   description?: boolean
   content?: boolean
   contentJson?: boolean
@@ -1263,7 +1310,7 @@ export type TemplatePartialSelectScalar = {
   deletedAt?: boolean
 }
 
-export type TemplatePartialOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "name" | "displayName" | "description" | "content" | "contentJson" | "placeholders" | "category" | "version" | "createdById" | "createdAt" | "updatedAt" | "deletedAt", ExtArgs["result"]["templatePartial"]>
+export type TemplatePartialOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "name" | "displayName" | "header" | "description" | "content" | "contentJson" | "placeholders" | "category" | "version" | "createdById" | "createdAt" | "updatedAt" | "deletedAt", ExtArgs["result"]["templatePartial"]>
 export type TemplatePartialInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   createdBy?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
@@ -1293,6 +1340,10 @@ export type $TemplatePartialPayload<ExtArgs extends runtime.Types.Extensions.Int
     tenantId: string
     name: string
     displayName: string | null
+    /**
+     * Resolution partials: the numbered heading used in resolutions; falls back to the display name.
+     */
+    header: string | null
     description: string | null
     content: string
     /**
@@ -1740,6 +1791,7 @@ export interface TemplatePartialFieldRefs {
   readonly tenantId: Prisma.FieldRef<"TemplatePartial", 'String'>
   readonly name: Prisma.FieldRef<"TemplatePartial", 'String'>
   readonly displayName: Prisma.FieldRef<"TemplatePartial", 'String'>
+  readonly header: Prisma.FieldRef<"TemplatePartial", 'String'>
   readonly description: Prisma.FieldRef<"TemplatePartial", 'String'>
   readonly content: Prisma.FieldRef<"TemplatePartial", 'String'>
   readonly contentJson: Prisma.FieldRef<"TemplatePartial", 'Json'>

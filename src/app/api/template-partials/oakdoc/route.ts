@@ -13,7 +13,7 @@ function optionalText(value: FormDataEntryValue | null): string | null {
 /**
  * POST /api/template-partials/oakdoc
  * Create a Word partial from an uploaded DOCX (multipart: file, name,
- * displayName?, description?).
+ * displayName?, header?, description?).
  */
 export async function POST(request: NextRequest) {
   try {
@@ -33,6 +33,7 @@ export async function POST(request: NextRequest) {
       id: randomUUID(),
       name,
       displayName: optionalText(formData.get('displayName')),
+      header: optionalText(formData.get('header')),
       description: optionalText(formData.get('description')),
       category: templatePartialCategoryEnum.optional().parse(optionalText(formData.get('category')) ?? undefined),
       fileName: file.name,

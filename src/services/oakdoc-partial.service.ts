@@ -221,6 +221,7 @@ export async function createOakDocPartial(
     id: string;
     name: string;
     displayName?: string | null;
+    header?: string | null;
     description?: string | null;
     category?: TemplatePartialCategory;
     fileName: string;
@@ -249,6 +250,7 @@ export async function createOakDocPartial(
       tenantId: params.tenantId,
       name: input.name,
       displayName: input.displayName ?? null,
+      header: input.header?.trim() || null,
       description: input.description ?? null,
       ...(input.category ? { category: input.category } : {}),
       content: OAKDOC_PARTIAL_CONTENT,

@@ -157,6 +157,8 @@ function blankPartialFile(name: string): File {
   return new File([copy.buffer], `${name}.docx`, { type: OAKDOC_MIME_TYPE });
 }
 
+const PARTIAL_HEADER_HINT = 'The numbered heading in resolutions, for example APPOINTMENT OF SECRETARY. Leave empty to use the display name.';
+
 function WordPartialForm({
   partial,
   onUploaded,
@@ -171,6 +173,7 @@ function WordPartialForm({
   const [displayName, setDisplayName] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState<TemplatePartialCategoryValue>('OTHER');
+  const [header, setHeader] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const asset = partial ? readOakDocTemplateMetadata(partial.contentJson) : null;
 
@@ -185,6 +188,7 @@ function WordPartialForm({
             displayName: displayName.trim(),
             description: description.trim(),
             category,
+            header: category === 'RESOLUTION' ? header.trim() : undefined,
             file: file ?? blankPartialFile(name.trim()),
           });
       success(partial ? 'New version uploaded' : 'Word partial created');
@@ -227,6 +231,9 @@ function WordPartialForm({
           <FormInput label="Display name" value={displayName} onChange={(event) => setDisplayName(event.target.value)} />
           <FormInput label="Description" value={description} onChange={(event) => setDescription(event.target.value)} />
           <PartialCategorySelect value={category} onChange={setCategory} />
+          {category === 'RESOLUTION' && (
+            <FormInput label="Header" value={header} onChange={(event) => setHeader(event.target.value)} hint={PARTIAL_HEADER_HINT} />
+          )}
         </>
       )}
       <FormInput
@@ -248,7 +255,7 @@ function WordPartialForm({
   );
 }
 
-/** Name, display name and description of an existing Word partial. */
+/** Name, display name, header and description of an existing Word partial. */
 function PartialDetailsForm({
   partial,
   documentDirty,
@@ -265,22 +272,26 @@ function PartialDetailsForm({
   const [displayName, setDisplayName] = useState(partial.displayName ?? '');
   const [description, setDescription] = useState(partial.description ?? '');
   const [category, setCategory] = useState<TemplatePartialCategoryValue>(partial.category ?? 'OTHER');
+  const [header, setHeader] = useState(partial.header ?? '');
 
   useEffect(() => {
     setName(partial.name);
     setDisplayName(partial.displayName ?? '');
     setDescription(partial.description ?? '');
     setCategory(partial.category ?? 'OTHER');
-  }, [partial.name, partial.displayName, partial.description, partial.category]);
+    setHeader(partial.header ?? '');
+  }, [partial.name, partial.displayName, partial.description, partial.category, partial.header]);
 
   const trimmed = {
     name: name.trim(),
     displayName: displayName.trim(),
     description: description.trim(),
+    header: header.trim(),
   };
   const changed = trimmed.name !== partial.name
     || trimmed.displayName !== (partial.displayName ?? '')
     || trimmed.description !== (partial.description ?? '')
+    || trimmed.header !== (partial.header ?? '')
     || category !== (partial.category ?? 'OTHER');
 
   const submit = async (event: FormEvent) => {
@@ -294,6 +305,7 @@ function PartialDetailsForm({
         // An empty display name falls back to the name.
         displayName: trimmed.displayName || trimmed.name,
         description: trimmed.description || null,
+        header: trimmed.header || null,
         category,
         reason: 'Updated partial details',
       });
@@ -316,6 +328,9 @@ function PartialDetailsForm({
       <FormInput label="Display name" value={displayName} onChange={(event) => setDisplayName(event.target.value)} />
       <FormInput label="Description" value={description} onChange={(event) => setDescription(event.target.value)} />
       <PartialCategorySelect value={category} onChange={setCategory} />
+      {(category === 'RESOLUTION' || trimmed.header) && (
+        <FormInput label="Header" value={header} onChange={(event) => setHeader(event.target.value)} hint={PARTIAL_HEADER_HINT} />
+      )}
       {documentDirty && changed && (
         <p className="text-sm text-text-secondary">Save your changes to the document first, then save the details.</p>
       )}

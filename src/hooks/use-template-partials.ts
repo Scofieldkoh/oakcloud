@@ -90,7 +90,7 @@ async function fetchPartials(
 }
 
 export type TemplatePartialSummary =
-  Pick<TemplatePartial, 'id' | 'name' | 'displayName' | 'description' | 'placeholders' | 'version' | 'category'>
+  Pick<TemplatePartial, 'id' | 'name' | 'displayName' | 'header' | 'description' | 'placeholders' | 'version' | 'category'>
   & { documentEngine: 'A4' | 'OAKDOC' };
 
 async function fetchAllPartials(tenantId?: string): Promise<{ partials: TemplatePartialSummary[] }> {
@@ -133,6 +133,7 @@ export interface WordPartialInput {
   expectedRevision?: number;
   name?: string;
   displayName?: string;
+  header?: string;
   description?: string;
   category?: TemplatePartialCategoryValue;
   file: File;
@@ -146,6 +147,7 @@ export async function saveWordPartial(input: WordPartialInput): Promise<Template
   } else {
     form.set('name', input.name ?? '');
     if (input.displayName) form.set('displayName', input.displayName);
+    if (input.header) form.set('header', input.header);
     if (input.description) form.set('description', input.description);
     if (input.category) form.set('category', input.category);
   }
@@ -244,18 +246,20 @@ export interface PartialTextResult {
   revision: number;
 }
 
+export async function fetchPartialText(id: string): Promise<PartialTextResult> {
+  const response = await fetch(`/api/template-partials/${encodeURIComponent(id)}/text`);
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.error || 'Failed to load the partial text');
+  }
+  return response.json();
+}
+
 /** A Word partial's current wording as plain text, loaded on demand. */
 export function usePartialText(id: string | null, enabled = true) {
   return useQuery({
     queryKey: [...partialKeys.detail(id || ''), 'text'],
-    queryFn: async (): Promise<PartialTextResult> => {
-      const response = await fetch(`/api/template-partials/${id}/text`);
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error.error || 'Failed to load the partial text');
-      }
-      return response.json();
-    },
+    queryFn: () => fetchPartialText(id!),
     // Refetch when the user comes back from editing the partial in another tab.
     staleTime: 0,
     enabled: enabled && !!id,

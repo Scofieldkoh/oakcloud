@@ -280,9 +280,13 @@ Service Agreement composition templates:
   preset for this template", or "Save as new template", which duplicates the
   template with that preset) through `PUT
   /api/document-templates/[id]/resolution-preset`; saving a preset does not
-  bump the template version. "New partial" on Configure creates a Resolutions
-  Word partial from plain text and adds it, and each partial item links to
-  the partial editor. The editor preview uses sample resolutions. `scripts/seed-resolution-template.ts --email
+  bump the template version. Each partial item on Configure links to the
+  partial editor. A Resolutions partial can carry a Header
+  (`template_partials.header`), used as the item's default numbered heading
+  instead of its display name. The OakDoc editor shows a template's preset
+  resolutions inside the slot (numbered headings and each partial's current
+  wording) as a display-only preview; the slot's first paragraph keeps the
+  formatting and generation replaces the whole slot. The editor preview uses sample resolutions. `scripts/seed-resolution-template.ts --email
   <login> [--replace]` creates the starter "Board Resolution (Numbered)"
   template from the firm's reference directors' resolution.
 

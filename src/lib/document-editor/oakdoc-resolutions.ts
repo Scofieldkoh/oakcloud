@@ -13,7 +13,6 @@ import {
   type OakDocRegisteredField,
 } from '@/lib/document-editor/oakdoc-field-registry';
 import { oakDocPartialTag } from '@/lib/document-editor/oakdoc-partials';
-import { buildOakDocFromHtml } from '@/lib/document-editor/oakdoc-html-import';
 import type { OakDocDiagnostic } from '@/types/oakdoc';
 import {
   customResolutionParagraphs,
@@ -361,6 +360,57 @@ export function composeOakDocResolutions(
   return { bytes: zipSync(files, { level: 6 }), partialIds, diagnostics };
 }
 
+export const RESOLUTION_SLOT_PLACEHOLDER = '[Numbered resolutions: chosen when the document is generated]';
+const RESOLUTION_SLOT_PRESET_LABEL = '[Preset resolutions, which can still be changed when the document is generated:]';
+
+export interface ResolutionSlotPreviewSection {
+  heading: string;
+  /** Plain wording; empty when it isn't known. */
+  text: string;
+}
+
+/**
+ * Editor preview: show a template's preset resolutions inside its slot, laid
+ * out like generation (numbered headings, then the wording as plain text).
+ * The slot's first paragraph stays the formatting prototype and only changes
+ * its text, so generation formatting is unaffected; generation replaces the
+ * whole slot anyway. No sections restores the plain placeholder. Returns the
+ * input bytes untouched when there is no single slot.
+ */
+export function previewOakDocResolutionSlot(
+  docxBytes: Uint8Array,
+  sections: ResolutionSlotPreviewSection[],
+): Uint8Array {
+  const files = unzipSync(docxBytes);
+  const documentBytes = files[DOCUMENT_PART];
+  if (!documentBytes) return docxBytes;
+  const xml = parseXml(documentBytes);
+  const slots = findResolutionSlots(xml);
+  if (slots.length !== 1) return docxBytes;
+  const content = wordChild(slots[0], 'sdtContent');
+  const first = content ? wordChildren(content).find((child) => child.localName === 'p') : undefined;
+  if (!content || !first) return docxBytes;
+
+  const prototype = readPrototype(slots[0]);
+  for (const child of wordChildren(content)) {
+    if (child !== first) content.removeChild(child);
+  }
+  for (const child of wordChildren(first)) {
+    if (child.localName !== 'pPr') first.removeChild(child);
+  }
+  const label = runFrom(xml, prototype);
+  appendText(xml, label, sections.length > 0 ? RESOLUTION_SLOT_PRESET_LABEL : RESOLUTION_SLOT_PLACEHOLDER);
+  first.appendChild(label);
+  sections.forEach((section, index) => {
+    content.appendChild(headingParagraph(xml, prototype, index + 1, section.heading));
+    for (const lines of customResolutionParagraphs(section.text)) {
+      content.appendChild(textParagraph(xml, prototype, lines));
+    }
+  });
+  files[DOCUMENT_PART] = serialize(xml);
+  return zipSync(files, { level: 6 });
+}
+
 /** Whether a master already holds the numbered resolutions slot. */
 export function hasOakDocResolutionSlot(docxBytes: Uint8Array): boolean {
   const files = unzipSync(docxBytes);
@@ -448,7 +498,7 @@ export function insertOakDocResolutionSlot(input: {
   const sourceRun = paragraph.getElementsByTagNameNS(WORD_NS, 'r')[0];
   const sourceRunProperties = sourceRun ? wordChild(sourceRun, 'rPr') : undefined;
   if (sourceRunProperties) run.appendChild(sourceRunProperties.cloneNode(true));
-  appendText(xml, run, '[Numbered resolutions: chosen when the document is generated]');
+  appendText(xml, run, RESOLUTION_SLOT_PLACEHOLDER);
   body.appendChild(run);
   content.appendChild(body);
   sdt.appendChild(content);
@@ -497,30 +547,4 @@ export function readOakDocPlainText(docxBytes: Uint8Array): string {
     if (text.trim()) paragraphs.push(text.trimEnd());
   }
   return paragraphs.join('\n\n');
-}
-
-/**
- * A Word partial built from plain resolution text: justified paragraphs with
- * no explicit font, so it takes the resolution template's font, and `{tag}`
- * tokens turned into fields.
- */
-export function buildResolutionTextPartial(text: string): Uint8Array {
-  const files = unzipSync(buildOakDocFromHtml('<p style="text-align: justify">x</p>').bytes);
-  const xml = parseXml(files[DOCUMENT_PART]);
-  const body = xml.getElementsByTagNameNS(WORD_NS, 'body')[0];
-  const first = wordChildren(body).find((child) => child.localName === 'p');
-  const prototype: Prototype = {
-    paragraphProperties: first ? (wordChild(first, 'pPr')?.cloneNode(true) as Element | undefined) ?? null : null,
-    runProperties: null,
-  };
-  for (const child of wordChildren(body)) {
-    if (child.localName !== 'sectPr') body.removeChild(child);
-  }
-  const sectPr = wordChild(body, 'sectPr') ?? null;
-  const ids = new IdAllocator(xml);
-  for (const lines of customResolutionParagraphs(text)) {
-    body.insertBefore(textParagraph(xml, prototype, lines, { ids }), sectPr);
-  }
-  files[DOCUMENT_PART] = serialize(xml);
-  return zipSync(files, { level: 6 });
 }

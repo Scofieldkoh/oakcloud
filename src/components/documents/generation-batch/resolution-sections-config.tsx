@@ -7,7 +7,6 @@ import {
   ChevronDown,
   ChevronRight,
   ExternalLink,
-  FilePlus2,
   FileText,
   Loader2,
   Pencil,
@@ -35,14 +34,13 @@ import { RESOLUTION_TEXT_FIELDS } from '@/lib/document-editor/oakdoc-resolutions
 import type { ResolutionWorkspaceState } from '@/types/document-generation-batch';
 import { createServiceAgreementClientKey as createClientKey } from '@/components/documents/service-agreement/client-key';
 import { BatchSection } from './batch-section';
-import { QuickResolutionPartialModal } from './quick-resolution-partial-modal';
 import { ResolutionPresetActions } from './resolution-preset-actions';
 
 export const EMPTY_RESOLUTION_WORKSPACE: ResolutionWorkspaceState = { subject: '', sections: [] };
 
-/** A partial's default heading: its display name in capitals, like the reference resolution. */
-export function defaultResolutionHeading(partial: { name: string; displayName?: string | null }): string {
-  return (partial.displayName || partial.name).trim().toUpperCase();
+/** A resolution partial's header, else its display name or name, in capitals. */
+export function defaultResolutionHeading(partial: { name: string; displayName?: string | null; header?: string | null }): string {
+  return (partial.header?.trim() || partial.displayName || partial.name).trim().toUpperCase();
 }
 
 /** Resolution partials are listed first, then agreement wording, then the rest. */
@@ -245,7 +243,7 @@ export function ResolutionSectionsConfig({
     [sections[index], sections[target]] = [sections[target], sections[index]];
     setSections(sections);
   };
-  const addPartialSection = (partial: { id: string; name: string; displayName?: string | null }) => {
+  const addPartialSection = (partial: { id: string; name: string; displayName?: string | null; header?: string | null }) => {
     setSections([...workspace.sections, {
       id: createClientKey(),
       kind: 'PARTIAL',
@@ -258,7 +256,6 @@ export function ResolutionSectionsConfig({
     const partial = partialById.get(partialId);
     if (partial) addPartialSection(partial);
   };
-  const [quickPartialOpen, setQuickPartialOpen] = useState(false);
   const addCustom = () => setSections([...workspace.sections, {
     id: createClientKey(),
     kind: 'CUSTOM',
@@ -438,7 +435,7 @@ export function ResolutionSectionsConfig({
         )}
 
         <div className="flex flex-wrap items-end gap-3">
-          <div className="w-full max-w-sm">
+          <div className="w-full max-w-3xl">
             <SearchableSelect
               label="Add a partial"
               options={partialOptions}
@@ -467,16 +464,6 @@ export function ResolutionSectionsConfig({
           >
             Add custom resolution
           </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="md"
-            leftIcon={<FilePlus2 className="h-4 w-4" />}
-            onClick={() => setQuickPartialOpen(true)}
-            disabled={disabled || workspace.sections.length >= 50}
-          >
-            New partial
-          </Button>
         </div>
 
         {templateId && templateName ? (
@@ -488,11 +475,6 @@ export function ResolutionSectionsConfig({
           />
         ) : null}
       </div>
-      <QuickResolutionPartialModal
-        isOpen={quickPartialOpen}
-        onClose={() => setQuickPartialOpen(false)}
-        onCreated={addPartialSection}
-      />
     </BatchSection>
   );
 }
