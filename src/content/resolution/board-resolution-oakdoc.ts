@@ -4,17 +4,27 @@ import { OAKDOC_RESOLUTION_ITEMS_TAG } from '@/lib/document-editor/oakdoc-field-
 import type { PlaceholderDefinition } from '@/lib/validations/document-template';
 
 /**
- * Starter "Board Resolution" master for the RESOLUTION template type, laid
- * out like the firm's reference directors' resolution (Cosec appointment,
- * 9 Jul 2026): Times New Roman 11 pt, centred company block, a ruled title,
- * the numbered resolutions, then a signature page with every selected
- * director. The numbered resolutions are chosen per document on Configure.
+ * Starter "Board Resolution" and "Members Resolution" masters for the
+ * RESOLUTION template type, laid out like the firm's reference directors'
+ * resolution (Cosec appointment, 9 Jul 2026): Times New Roman 11 pt, centred
+ * company block, a ruled title, the numbered resolutions, then a signature
+ * page with every selected director (or, for members, every shareholder).
+ * The numbered resolutions are chosen per document on Configure.
  */
 
 export const BOARD_RESOLUTION_TEMPLATE = {
   name: 'Board Resolution (Numbered)',
   description: 'Directors’ resolutions in writing. Pick saved partials or write custom resolutions on Configure; they are numbered in that order.',
   fileName: 'Board_Resolution_Numbered.docx',
+  category: 'RESOLUTION' as const,
+  compositionType: 'RESOLUTION' as const,
+};
+
+/** Starter members' (shareholders') written resolution, same numbered layout. */
+export const MEMBERS_RESOLUTION_TEMPLATE = {
+  name: 'Members Resolution (Numbered)',
+  description: 'Members’ written resolutions under Section 184A of the Companies Act 1967, signed by every shareholder. Pick saved partials or write custom resolutions on Configure; they are numbered in that order.',
+  fileName: 'Members_Resolution_Numbered.docx',
   category: 'RESOLUTION' as const,
   compositionType: 'RESOLUTION' as const,
 };
@@ -134,7 +144,45 @@ const STYLES = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
   <w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:qFormat/></w:style>
 </w:styles>`;
 
+interface ResolutionVariant {
+  title: string;
+  intro: string;
+  repeaterTag: string;
+  repeaterAlias: string;
+  signatory: (ids: ControlIds) => string[];
+}
+
+const DIRECTORS: ResolutionVariant = {
+  title: 'DIRECTORS’ RESOLUTIONS IN WRITING PURSUANT TO ARTICLE 90 OF THE COMPANY’S ARTICLES OF ASSOCIATION',
+  intro: 'We, the undersigned, being all the directors of the Company (“Directors”) for the time being entitled to make any decision that may be made in a meeting of the board of Directors, hereby unanimously consent to the adoption and approval of the following resolutions:',
+  repeaterTag: 'repeat.directors',
+  repeaterAlias: 'Directors',
+  signatory: (ids) => [
+    paragraph(field(ids, 'director.name', 'Director Name', 'DIRECTOR NAME', { caps: true }), { keepNext: true, after: 0 }),
+    paragraph(field(ids, 'director.role', 'Director Role', 'Director'), { after: 240 }),
+  ],
+};
+
+const MEMBERS: ResolutionVariant = {
+  title: 'MEMBERS’ RESOLUTIONS IN WRITING PURSUANT TO SECTION 184A OF THE COMPANIES ACT 1967',
+  intro: 'We, the undersigned, being all the members of the Company (“Members”) for the time being entitled to attend and vote at general meetings of the Company, hereby agree to the following resolutions being passed as written resolutions of the Company:',
+  repeaterTag: 'repeat.shareholders',
+  repeaterAlias: 'Shareholders',
+  signatory: (ids) => [
+    paragraph(field(ids, 'shareholder.name', 'Shareholder Name', 'SHAREHOLDER NAME', { caps: true }), { keepNext: true, after: 0 }),
+    paragraph(run('Member'), { after: 240 }),
+  ],
+};
+
 export function buildBoardResolutionOakDocMaster(): Uint8Array {
+  return buildResolutionMaster(DIRECTORS);
+}
+
+export function buildMembersResolutionOakDocMaster(): Uint8Array {
+  return buildResolutionMaster(MEMBERS);
+}
+
+function buildResolutionMaster(variant: ResolutionVariant): Uint8Array {
   const ids = new ControlIds();
   const center = { align: 'center' as const, after: 0 };
   const body = [
@@ -143,11 +191,11 @@ export function buildBoardResolutionOakDocMaster(): Uint8Array {
     paragraph(run('(Incorporated in the Republic of Singapore)'), center),
     paragraph(run('(“Company”)', { bold: true }), { align: 'center', after: 360 }),
     paragraph(
-      run('DIRECTORS’ RESOLUTIONS IN WRITING PURSUANT TO ARTICLE 90 OF THE COMPANY’S ARTICLES OF ASSOCIATION', { bold: true }),
+      run(variant.title, { bold: true }),
       { bottomBorder: true, after: 240, keepNext: true },
     ),
     paragraph(
-      run('We, the undersigned, being all the directors of the Company (“Directors”) for the time being entitled to make any decision that may be made in a meeting of the board of Directors, hereby unanimously consent to the adoption and approval of the following resolutions:'),
+      run(variant.intro),
       { align: 'both' },
     ),
     [
@@ -173,15 +221,14 @@ export function buildBoardResolutionOakDocMaster(): Uint8Array {
     ),
     [
       '<w:sdt><w:sdtPr>',
-      `<w:alias w:val="Directors"/><w:tag w:val="repeat.directors"/><w:id w:val="${ids.take()}"/><w15:repeatingSection/>`,
+      `<w:alias w:val="${variant.repeaterAlias}"/><w:tag w:val="${variant.repeaterTag}"/><w:id w:val="${ids.take()}"/><w15:repeatingSection/>`,
       '</w:sdtPr><w:sdtContent>',
       '<w:sdt><w:sdtPr>',
       `<w:id w:val="${ids.take()}"/><w15:repeatingSectionItem/>`,
       '</w:sdtPr><w:sdtContent>',
       paragraph('', { keepNext: true, after: 600 }),
       paragraph(run('___________________________'), { keepNext: true, after: 0 }),
-      paragraph(field(ids, 'director.name', 'Director Name', 'DIRECTOR NAME', { caps: true }), { keepNext: true, after: 0 }),
-      paragraph(field(ids, 'director.role', 'Director Role', 'Director'), { after: 240 }),
+      ...variant.signatory(ids),
       '</w:sdtContent></w:sdt>',
       '</w:sdtContent></w:sdt>',
     ].join(''),

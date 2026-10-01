@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { SendForEsigningButton } from '@/components/esigning/send-for-esigning-button';
 import { useToast } from '@/components/ui/toast';
 import { cn } from '@/lib/utils';
 import { isUngeneratedDocumentDraft } from '@/lib/document-editor/document-engine';
@@ -471,6 +472,15 @@ export default function DocumentViewPage() {
               <Unlock className="w-4 h-4 mr-2" />
               Unlock
             </Button>
+          )}
+
+          {isOakDoc && (docData.status === 'DRAFT' || docData.status === 'FINALIZED') && (
+            <SendForEsigningButton
+              generatedDocumentIds={[documentId]}
+              includesDrafts={docData.status === 'DRAFT'}
+              disabled={oakDocDirty}
+              title={oakDocDirty ? 'Save your Word edits before sending for e-signing' : undefined}
+            />
           )}
 
           {/* Export */}

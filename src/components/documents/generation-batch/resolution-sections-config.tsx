@@ -1,6 +1,6 @@
 'use client';
 
-import { useId, useMemo, useState, type ReactNode } from 'react';
+import { useId, useMemo, useRef, useState, type ReactNode } from 'react';
 import {
   ArrowDown,
   ArrowUp,
@@ -31,6 +31,7 @@ import {
   type ResolutionSection,
 } from '@/lib/resolution-composition';
 import { TEMPLATE_PARTIAL_CATEGORY_OPTIONS } from '@/lib/validations/template-partial';
+import { RESOLUTION_TEXT_FIELDS } from '@/lib/document-editor/oakdoc-resolutions';
 import type { ResolutionWorkspaceState } from '@/types/document-generation-batch';
 import { createServiceAgreementClientKey as createClientKey } from '@/components/documents/service-agreement/client-key';
 import { BatchSection } from './batch-section';
@@ -51,6 +52,13 @@ function partialGroupLabel(category: string): string {
   return TEMPLATE_PARTIAL_CATEGORY_OPTIONS.find((option) => option.value === category)?.label ?? 'Others';
 }
 
+const FIELD_OPTIONS = RESOLUTION_TEXT_FIELDS.map((field) => ({
+  value: field.tag,
+  label: field.label,
+  description: `{${field.tag}}`,
+  group: field.category,
+}));
+
 function ResolutionTextInput({
   number,
   value,
@@ -66,11 +74,43 @@ function ResolutionTextInput({
   onChange: (value: string) => void;
   footer?: ReactNode;
 }) {
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const insertField = (tag: string) => {
+    if (!tag) return;
+    const token = `{${tag}}`;
+    const textarea = textareaRef.current;
+    const start = textarea?.selectionStart ?? value.length;
+    const end = textarea?.selectionEnd ?? value.length;
+    onChange(`${value.slice(0, start)}${token}${value.slice(end)}`);
+    requestAnimationFrame(() => {
+      textarea?.focus();
+      textarea?.setSelectionRange(start + token.length, start + token.length);
+    });
+  };
   return (
-    <label className="block">
-      <span className="text-sm font-medium text-text-primary">Resolution text</span>
-      <span className="ml-1 text-status-error" aria-hidden="true">*</span>
+    <div>
+      <div className="flex flex-wrap items-end justify-between gap-2">
+        <label htmlFor={`resolution-text-${number}`} className="text-sm font-medium text-text-primary">
+          Resolution text
+          <span className="ml-1 text-status-error" aria-hidden="true">*</span>
+        </label>
+        <div className="w-56">
+          <SearchableSelect
+            ariaLabel={`Insert a field into resolution ${number}`}
+            options={FIELD_OPTIONS}
+            value=""
+            onChange={insertField}
+            placeholder="Insert field..."
+            disabled={disabled}
+            clearable={false}
+            size="sm"
+            groupBy="group"
+          />
+        </div>
+      </div>
       <textarea
+        ref={textareaRef}
+        id={`resolution-text-${number}`}
         value={value}
         rows={Math.min(14, Math.max(4, value.split('\n').length + 1))}
         onChange={(event) => onChange(event.target.value)}
@@ -85,10 +125,10 @@ function ResolutionTextInput({
         )}
       />
       <span className="mt-1 block text-xs text-text-muted">
-        A blank line starts a new paragraph.
+        A blank line starts a new paragraph. Fields such as {'{company.name}'} are filled in when the document is generated.
       </span>
       {footer ? <span className="mt-1 block text-xs text-text-muted">{footer}</span> : null}
-    </label>
+    </div>
   );
 }
 
