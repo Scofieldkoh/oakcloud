@@ -10,6 +10,7 @@ import { publicSubmissionSchema } from '@/lib/validations/form-builder';
 import { createPublicSubmission } from '@/services/form-builder.service';
 import { createErrorResponse } from '@/lib/api-helpers';
 import { isInternalError } from '@/lib/api-route-errors';
+import { ApiError } from '@/lib/errors';
 
 interface RouteParams {
   params: Promise<{ slug: string }>;
@@ -64,7 +65,12 @@ export async function POST(request: Request, { params }: RouteParams) {
       return NextResponse.json({ error: 'Invalid submission payload', details: error.errors }, { status: 400 });
     }
 
-    if (error instanceof Error && !isInternalError(error) && error.message.includes('required')) {
+    if (
+      error instanceof Error
+      && !(error instanceof ApiError)
+      && !isInternalError(error)
+      && error.message.includes('required')
+    ) {
       return NextResponse.json({ error: error.message }, { status: 422 });
     }
 

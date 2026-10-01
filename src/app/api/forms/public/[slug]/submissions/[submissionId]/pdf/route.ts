@@ -17,6 +17,13 @@ export async function GET(request: Request, { params }: RouteParams) {
     const { searchParams } = new URL(request.url);
     const token = searchParams.get('token');
 
+    // Rate limit first so wrong-token guesses count against the limit.
+    const ip = getClientIp(request);
+    const rl = checkRateLimit(getRateLimitKey('form-view', `${ip}:${slug}:pdf`), RATE_LIMIT_CONFIGS.FORM_VIEW);
+    if (!rl.allowed) {
+      return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
+    }
+
     if (!token) {
       return NextResponse.json({ error: 'Download token required' }, { status: 401 });
     }
@@ -29,12 +36,6 @@ export async function GET(request: Request, { params }: RouteParams) {
 
     if (!isValidToken) {
       return NextResponse.json({ error: 'Invalid or expired download token' }, { status: 403 });
-    }
-
-    const ip = getClientIp(request);
-    const rl = checkRateLimit(getRateLimitKey('form-view', `${ip}:${slug}:pdf`), RATE_LIMIT_CONFIGS.FORM_VIEW);
-    if (!rl.allowed) {
-      return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
     }
 
     const { buffer, fileName } = await exportPublicFormResponsePdf(slug, submissionId);
