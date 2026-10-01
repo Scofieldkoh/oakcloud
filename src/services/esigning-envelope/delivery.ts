@@ -581,6 +581,7 @@ export async function voidEsigningEnvelope(
           email: true,
           status: true,
           type: true,
+          accessMode: true,
         },
       },
     },
@@ -645,6 +646,9 @@ export async function voidEsigningEnvelope(
 
   const recipientsToNotify = envelope.recipients
     .filter((recipient) => ['QUEUED', 'NOTIFIED', 'VIEWED'].includes(recipient.status))
+    // Manual link recipients were never emailed by Oakcloud, so they are not
+    // told about the void by email either.
+    .filter((recipient) => recipient.accessMode !== 'MANUAL_LINK')
     .filter(hasRecipientEmail);
 
   const deliveryResults: RecordedEsigningEmailDeliveryResult[] = [];
