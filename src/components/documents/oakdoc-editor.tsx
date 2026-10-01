@@ -53,6 +53,7 @@ import {
 } from '@/lib/document-editor/oakdoc-template';
 import { useOakDocSectionDeleteGuard } from '@/components/documents/oakdoc/use-oakdoc-section-delete-guard';
 import { OakDocPartialPanel } from '@/components/documents/oakdoc/oakdoc-partial-panel';
+import { ResolutionPresetPanel } from '@/components/documents/oakdoc/resolution-preset-panel';
 import { useOakDocAiSelection } from '@/components/documents/oakdoc/use-oakdoc-ai-selection';
 import { AISidebar, type DocumentCategory } from '@/components/documents/ai-sidebar';
 import type { TemplatePartialSummary } from '@/hooks/use-template-partials';
@@ -100,6 +101,7 @@ interface OakDocTemplateRecord {
   compositionType?: string;
   isActive: boolean;
   contentJson?: unknown;
+  resolutionPreset?: unknown;
 }
 
 /** Service Agreement masters are seeded; the editor switches the other two. */
@@ -263,6 +265,8 @@ export function OakDocEditor() {
   const [templateRevision, setTemplateRevision] = useState<number | null>(null);
   const [templateCategory, setTemplateCategory] = useState('OTHER');
   const [templateType, setTemplateType] = useState<TemplateType>('STANDARD');
+  // Composition type of the last save in this session, for the preset panel.
+  const [savedCompositionType, setSavedCompositionType] = useState<string | null>(null);
   const [hasResolutionSlot, setHasResolutionSlot] = useState(false);
   const [templateDescription, setTemplateDescription] = useState('');
   const [templateIsActive, setTemplateIsActive] = useState(true);
@@ -933,6 +937,7 @@ export function OakDocEditor() {
       }
 
       const savedId = String(payload.id);
+      setSavedCompositionType(typeof payload.compositionType === 'string' ? payload.compositionType : templateType);
       setPinnedPartialVersions(pinnedVersionsOf(payload.contentJson));
       setRefreshPartials(false);
       const savedRevision = Number(payload.revision ?? payload.version);
@@ -1270,6 +1275,18 @@ export function OakDocEditor() {
                   >
                     Insert numbered resolutions
                   </Button>
+                </section>
+
+                <section className="mt-4 space-y-2">
+                  <h2 className="text-xs font-semibold uppercase tracking-wide text-text-muted">
+                    Preset resolutions
+                  </h2>
+                  <ResolutionPresetPanel
+                    templateId={templateId}
+                    savedAsResolution={(savedCompositionType ?? templateQuery.data?.template.compositionType) === 'RESOLUTION'}
+                    initialPreset={templateQuery.data?.template.resolutionPreset}
+                    disabled={busy}
+                  />
                 </section>
 
                 <div className="my-4 border-t border-border-secondary" />

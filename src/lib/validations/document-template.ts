@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { resolutionWorkspaceSchema } from './document-generation-batch';
 
 // ============================================================================
 // Enums
@@ -159,6 +160,14 @@ export type SearchDocumentTemplatesInput = z.infer<typeof searchDocumentTemplate
 export const duplicateDocumentTemplateSchema = z.object({
   id: z.string().uuid(),
   name: z.string().min(1).max(200).optional(), // Optional new name, defaults to "Copy of X"
+  /** RESOLUTION templates only: the copy's preset resolutions instead of the source's. */
+  resolutionPreset: resolutionWorkspaceSchema.nullable().optional(),
 });
 
+export const updateResolutionPresetSchema = z.object({
+  resolutionPreset: resolutionWorkspaceSchema.nullable(),
+}).strict();
+
 export type DuplicateDocumentTemplateInput = z.infer<typeof duplicateDocumentTemplateSchema>;
+
+export type UpdateResolutionPresetInput = z.infer<typeof updateResolutionPresetSchema>;

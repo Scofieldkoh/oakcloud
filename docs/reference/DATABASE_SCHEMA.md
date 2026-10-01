@@ -1383,6 +1383,7 @@ Reusable document templates with placeholder support.
 | description | TEXT | Yes | Template description |
 | category | ENUM | No | Template category (see DocumentTemplateCategory) |
 | composition_type | ENUM | No | `STANDARD`, `SERVICE_AGREEMENT` or `RESOLUTION` (default: `STANDARD`) |
+| resolution_preset | JSONB | Yes | `RESOLUTION` only: `{ subject, sections }` new documents start with |
 | content | TEXT | No | HTML content with placeholders |
 | content_json | JSONB | Yes | TipTap JSON format (for editor state) |
 | placeholders | JSONB | No | Array of placeholder definitions (default: []) |

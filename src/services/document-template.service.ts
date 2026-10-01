@@ -13,6 +13,7 @@ import type {
   UpdateDocumentTemplateInput,
   SearchDocumentTemplatesInput,
   DuplicateDocumentTemplateInput,
+  UpdateResolutionPresetInput,
 } from '@/lib/validations/document-template';
 import { Prisma } from '@/generated/prisma';
 import type { DocumentTemplate, DocumentTemplateCategory } from '@/generated/prisma';
@@ -38,7 +39,7 @@ import {
   stripKeys,
 } from '@/lib/document-editor/oakdoc-reserved-metadata';
 import { getDocumentTemplateEngineState } from '@/lib/document-editor/document-engine';
-import { ValidationError } from '@/lib/errors';
+import { NotFoundError, ValidationError } from '@/lib/errors';
 import {
   normalizeStoredFieldDefinitionInput,
   preserveStoredFieldDefinitions,
@@ -358,6 +359,49 @@ export async function restoreDocumentTemplate(
   return template;
 }
 
+function resolutionPresetForCopy(
+  source: Pick<DocumentTemplate, 'compositionType' | 'resolutionPreset'>,
+  override: DuplicateDocumentTemplateInput['resolutionPreset'],
+): { resolutionPreset?: Prisma.InputJsonValue } {
+  if (source.compositionType !== 'RESOLUTION') return {};
+  const preset = override !== undefined ? override : source.resolutionPreset;
+  return preset == null ? {} : { resolutionPreset: preset as Prisma.InputJsonValue };
+}
+
+/**
+ * Save the resolutions a RESOLUTION template pre-fills on Configure. The Word
+ * master is unchanged, so the template version stays the same.
+ */
+export async function setDocumentTemplateResolutionPreset(
+  id: string,
+  resolutionPreset: UpdateResolutionPresetInput['resolutionPreset'],
+  params: TenantAwareParams,
+): Promise<DocumentTemplate> {
+  const { tenantId, userId } = params;
+  const existing = await prisma.documentTemplate.findFirst({
+    where: { id, tenantId, deletedAt: null },
+  });
+  if (!existing) throw new NotFoundError('Template not found');
+  if (existing.compositionType !== 'RESOLUTION') {
+    throw new ValidationError('Preset resolutions are only available on resolution templates.');
+  }
+  const template = await prisma.documentTemplate.update({
+    where: { id },
+    data: { resolutionPreset: resolutionPreset ?? Prisma.DbNull },
+  });
+  await createAuditLog({
+    tenantId,
+    userId,
+    action: 'DOCUMENT_TEMPLATE_UPDATED',
+    entityType: 'DocumentTemplate',
+    entityId: template.id,
+    entityName: template.name,
+    summary: `Updated the preset resolutions of "${template.name}" (${resolutionPreset?.sections.length ?? 0} resolutions)`,
+    changeSource: 'MANUAL',
+  });
+  return template;
+}
+
 export async function duplicateDocumentTemplate(
   data: DuplicateDocumentTemplateInput,
   params: TenantAwareParams,
@@ -421,6 +465,7 @@ export async function duplicateDocumentTemplate(
         contentJson: duplicatedContentJson,
         placeholders: preserveTemplatePlaceholders(existing.placeholders, id),
         sharePointRelativeFolderPath: existing.sharePointRelativeFolderPath,
+        ...resolutionPresetForCopy(existing, data.resolutionPreset),
         isActive: true,
         createdById: userId,
         version: 1,

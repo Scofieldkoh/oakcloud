@@ -22,6 +22,8 @@ import type {
   DocumentTemplateSummary,
 } from '@/types/document-generation';
 import { masterFieldId } from '@/lib/document-generation-master-fields';
+import { instantiateResolutionPreset } from '@/lib/resolution-composition';
+import { createServiceAgreementClientKey } from '@/components/documents/service-agreement/client-key';
 import {
   DEFAULT_DOCUMENT_GENERATION_TITLE_PATTERN,
   isAutoDocumentGenerationTitle,
@@ -149,7 +151,12 @@ export function itemFromTemplate(
     templateVersion: template.version,
     templateEngine: template.engine,
     status: 'NOT_STARTED',
-    configuration: defaultItemConfiguration(template),
+    configuration: template.compositionType === 'RESOLUTION' && template.resolutionPreset
+      ? {
+          ...defaultItemConfiguration(template),
+          resolution: instantiateResolutionPreset(template.resolutionPreset, createServiceAgreementClientKey),
+        }
+      : defaultItemConfiguration(template),
     previewContent: null,
     editedContent: null,
     editedContentJson: null,

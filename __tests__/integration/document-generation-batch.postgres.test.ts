@@ -270,6 +270,25 @@ describePostgres('document generation batch postgres integration', () => {
     expect(agreementCount).toBe(0);
   });
 
+  it('saves preset resolutions on resolution templates only, without a version bump', async () => {
+    const { actor, templates } = await seed();
+    const { setDocumentTemplateResolutionPreset } = await import('@/services/document-template.service');
+    await expect(setDocumentTemplateResolutionPreset(templates[0].id, null, actor))
+      .rejects.toThrow('Preset resolutions are only available on resolution templates.');
+
+    await prisma.documentTemplate.update({ where: { id: templates[0].id }, data: { compositionType: 'RESOLUTION' } });
+    const preset = {
+      subject: 'CHANGE IN COMPANY SECRETARY',
+      sections: [{ id: 'a', kind: 'CUSTOM' as const, heading: 'APPOINTMENT OF SECRETARY', body: 'RESOLVED that ...' }],
+    };
+    const saved = await setDocumentTemplateResolutionPreset(templates[0].id, preset, actor);
+    expect(saved.resolutionPreset).toEqual(preset);
+    expect(saved.version).toBe(templates[0].version);
+
+    const cleared = await setDocumentTemplateResolutionPreset(templates[0].id, null, actor);
+    expect(cleared.resolutionPreset).toBeNull();
+  });
+
   it('keeps repeat copies of one template as separate items through updates', async () => {
     const { actor, templates } = await seed();
     const created = await createDocumentGenerationBatch(

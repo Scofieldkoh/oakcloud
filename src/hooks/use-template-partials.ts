@@ -256,7 +256,8 @@ export function usePartialText(id: string | null, enabled = true) {
       }
       return response.json();
     },
-    staleTime: 1000 * 60,
+    // Refetch when the user comes back from editing the partial in another tab.
+    staleTime: 0,
     enabled: enabled && !!id,
   });
 }

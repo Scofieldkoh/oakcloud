@@ -8,6 +8,7 @@
  */
 
 import type { DocumentParty } from '@/lib/document-party';
+import type { ResolutionComposition } from '@/lib/resolution-composition';
 import type { DocumentEngine } from '@/lib/document-editor/document-engine';
 import type { CustomPlaceholderDefinition } from '@/types/placeholders';
 import type {
@@ -56,6 +57,8 @@ export interface DocumentTemplateSummary {
   content: string;
   contentJson?: unknown;
   placeholders: CustomPlaceholderDefinition[];
+  /** RESOLUTION templates: resolutions pre-filled on Configure. */
+  resolutionPreset?: ResolutionComposition | null;
   createdAt: string;
   updatedAt: string;
 }

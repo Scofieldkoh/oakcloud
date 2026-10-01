@@ -12329,6 +12329,7 @@ export const DocumentTemplateScalarFieldEnum = {
   contentJson: 'contentJson',
   placeholders: 'placeholders',
   sharePointRelativeFolderPath: 'sharePointRelativeFolderPath',
+  resolutionPreset: 'resolutionPreset',
   isActive: 'isActive',
   version: 'version',
   createdById: 'createdById',

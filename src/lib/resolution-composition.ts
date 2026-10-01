@@ -1,3 +1,5 @@
+import { resolutionWorkspaceSchema } from '@/lib/validations/document-generation-batch';
+
 /**
  * The numbered resolutions a RESOLUTION document prints: Word partials or
  * custom text, numbered in list order. Pure data and validation, shared by
@@ -47,6 +49,26 @@ export function customResolutionParagraphs(body: string): string[][] {
     .split(/\n\s*\n/)
     .map((block) => block.split('\n').map((line) => line.trimEnd()))
     .filter((lines) => lines.some((line) => line.trim().length > 0));
+}
+
+/** A RESOLUTION template's stored preset, or null when it has none or it is malformed. */
+export function readResolutionPreset(raw: unknown): ResolutionComposition | null {
+  if (raw == null) return null;
+  const parsed = resolutionWorkspaceSchema.safeParse(raw);
+  return parsed.success && parsed.data.sections.length + parsed.data.subject.trim().length > 0
+    ? parsed.data as ResolutionComposition
+    : null;
+}
+
+/** A fresh copy of a preset for one document, with new section ids. */
+export function instantiateResolutionPreset(
+  preset: ResolutionComposition,
+  createId: () => string,
+): ResolutionComposition {
+  return {
+    subject: preset.subject,
+    sections: preset.sections.map((section) => ({ ...section, id: createId() })),
+  };
 }
 
 /** True when a partial's text was edited on Configure and prints as plain text. */
