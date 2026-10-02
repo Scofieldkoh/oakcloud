@@ -80,6 +80,7 @@ import { downloadOakDocTemplate } from '@/services/oakdoc-template.service';
 import {
   expandPinnedOakDocPartials,
   pinOakDocPartials,
+  withResolutionPartialFields,
   readOakDocPartialPins,
 } from '@/services/oakdoc-partial.service';
 import {
@@ -381,6 +382,7 @@ async function renderOakDocMaster(
   let partialPins = master.partialPins;
   const resolutionDiagnostics: OakDocDiagnostic[] = [];
   let resolutionPartialPins: OakDocPartialPin[] | undefined;
+  let customFieldTypes = master.customFieldTypes;
   if (master.compositionType === 'RESOLUTION') {
     if (!input.resolution) {
       resolutionDiagnostics.push({
@@ -403,6 +405,11 @@ async function renderOakDocMaster(
         });
         const used = new Set(composed.partialIds);
         resolutionPartialPins = partialPins.filter((pin) => used.has(pin.partialId));
+        // The chosen partials' own custom fields, the template's winning on a shared key.
+        customFieldTypes = {
+          ...oakDocCustomFieldTypes(await withResolutionPartialFields([], composed.partialIds, params.tenantId)),
+          ...master.customFieldTypes,
+        };
       }
     }
   }
@@ -467,7 +474,7 @@ async function renderOakDocMaster(
     ...diagnoseOakDocGeneration({
       usedTags: [...fieldSummary.tags, ...conditionSummary.fieldTags, ...sowFieldTags],
       provided,
-      ...(input.customData ? { customFieldKeys: new Set(Object.keys(master.customFieldTypes)) } : {}),
+      ...(input.customData ? { customFieldKeys: new Set(Object.keys(customFieldTypes)) } : {}),
     }),
   ];
 
@@ -486,7 +493,7 @@ async function renderOakDocMaster(
     ? buildOakDocCustomFieldValues({
         tags: resolutionTags,
         data: input.customData,
-        types: master.customFieldTypes,
+        types: customFieldTypes,
       })
     : { values: {}, dates: {} };
   const values = { ...buildOakDocResolutionValues(resolutionInput), ...custom.values };

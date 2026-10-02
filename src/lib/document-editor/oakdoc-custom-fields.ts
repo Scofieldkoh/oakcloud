@@ -185,18 +185,10 @@ export function writeOakDocCustomFields(
   ];
 }
 
-/**
- * Copy the custom fields of inserted partials onto a template's placeholders,
- * so Configure prompts for them. Fields the template defines itself win;
- * copies from partials no longer inserted are dropped.
- */
-export function mergeOakDocPartialCustomFields(
-  placeholders: unknown,
+function partialFieldCopies(
   partials: ReadonlyArray<{ id: string; placeholders: unknown }>,
+  taken: Set<string>,
 ): StoredDefinition[] {
-  const existing = Array.isArray(placeholders) ? placeholders.filter(isRecord) : [];
-  const own = existing.filter((definition) => !isPartialCopy(definition));
-  const taken = new Set(readOakDocCustomFields(own).map((field) => field.key));
   const copies: StoredDefinition[] = [];
   for (const partial of partials) {
     const fields = [
@@ -212,7 +204,39 @@ export function mergeOakDocPartialCustomFields(
       });
     }
   }
-  return [...own, ...copies];
+  return copies;
+}
+
+/**
+ * Copy the custom fields of inserted partials onto a template's placeholders,
+ * so Configure prompts for them. Fields the template defines itself win;
+ * copies from partials no longer inserted are dropped.
+ */
+export function mergeOakDocPartialCustomFields(
+  placeholders: unknown,
+  partials: ReadonlyArray<{ id: string; placeholders: unknown }>,
+): StoredDefinition[] {
+  const existing = Array.isArray(placeholders) ? placeholders.filter(isRecord) : [];
+  const own = existing.filter((definition) => !isPartialCopy(definition));
+  const taken = new Set(readOakDocCustomFields(own).map((field) => field.key));
+  return [...own, ...partialFieldCopies(partials, taken)];
+}
+
+/**
+ * Add the custom fields of partials chosen for one document (numbered
+ * resolutions) to its template's placeholders. Everything the template
+ * already carries is kept and wins on a shared key.
+ */
+export function appendOakDocPartialCustomFields(
+  placeholders: unknown,
+  partials: ReadonlyArray<{ id: string; placeholders: unknown }>,
+): StoredDefinition[] {
+  const existing = Array.isArray(placeholders) ? placeholders.filter(isRecord) : [];
+  const taken = new Set([
+    ...readOakDocCustomFields(existing).map((field) => field.key),
+    ...readOakDocPartialCustomFields(existing).map((field) => field.key),
+  ]);
+  return [...existing, ...partialFieldCopies(partials, taken)];
 }
 
 /** A key for a new field from its label: "Fee amount" -> fee_amount. */

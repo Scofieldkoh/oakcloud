@@ -1490,6 +1490,8 @@ entries keyed `custom.<key>` with a `label`, `type` (text, textarea, date,
 number, currency), `required` and, for a dropdown, `options`; the document
 holds a `custom.<key>` field. Custom fields of inserted Word partials are
 copied in on save (marked `oakDocPartialId`) so Configure asks for them too.
+For a resolution document, the custom fields of the partials picked as its
+numbered resolutions are added per document, on Configure and at generation.
 
 ---
 

@@ -30,6 +30,9 @@ import type { CustomPlaceholderDefinition } from '@/types/placeholders';
 import { useDocumentPartyOptions } from '@/hooks/use-document-party-options';
 import { useOptionSearch } from '@/hooks/use-option-search';
 import { useCompanySearch, type CompanySearchOption } from '@/hooks/use-company-search';
+import { useSession } from '@/hooks/use-auth';
+import { useAllTemplatePartials } from '@/hooks/use-template-partials';
+import { useActiveWorkspaceId } from '@/components/ui/workspace-selector';
 import {
   mapCompanyOption,
   mapContactOption,
@@ -58,6 +61,7 @@ import { useDocumentGenerationBatch } from './use-document-generation-batch';
 import { BatchTemplatePicker } from './batch-template-picker';
 import { BatchSharedParties } from './batch-shared-parties';
 import { templatePartyNeeds, type TemplatePartyNeeds } from './template-party-needs';
+import { resolutionItemFields } from './resolution-item-fields';
 import { BatchSharedSetup } from './batch-shared-setup';
 import { BatchDocumentQueue } from './batch-document-queue';
 import { BatchItemConfigurator } from './batch-item-configurator';
@@ -265,6 +269,25 @@ export function DocumentGenerationBatchWorkspace({
     return map;
   }, [templates]);
 
+  // Resolution documents also ask for the custom fields of their chosen partials.
+  const { data: session } = useSession();
+  const partialTenantId = useActiveWorkspaceId(session?.isSuperAdmin ?? false, session?.tenantId) ?? undefined;
+  const hasResolutionItems = state.batch.items.some((item) => item.templateKind === 'RESOLUTION');
+  const partialsQuery = useAllTemplatePartials(partialTenantId, hasResolutionItems && Boolean(partialTenantId));
+  const itemFieldsByKey = useMemo(() => {
+    const partials = partialsQuery.data?.partials ?? [];
+    const map: Record<string, CustomPlaceholderDefinition[]> = {};
+    for (const item of state.batch.items) {
+      if (item.templateKind !== 'RESOLUTION') continue;
+      map[item.key] = resolutionItemFields(
+        templateFieldsByTemplateId[item.templateId] ?? [],
+        item.configuration.resolution,
+        partials,
+      );
+    }
+    return map;
+  }, [partialsQuery.data, state.batch.items, templateFieldsByTemplateId]);
+
   const masterFieldValues = state.batch.masterFieldValues;
 
   const completeness = useMemo(
@@ -273,12 +296,14 @@ export function DocumentGenerationBatchWorkspace({
       masterFields: state.batch.masterFields,
       masterFieldValues,
       templateFieldsByTemplateId,
+      itemFieldsByKey,
     }),
     [
       state.batch.items,
       state.batch.masterFields,
       masterFieldValues,
       templateFieldsByTemplateId,
+      itemFieldsByKey,
     ],
   );
 
@@ -890,7 +915,7 @@ export function DocumentGenerationBatchWorkspace({
                     companySearchLoading={companySearch.isLoading}
                     masterFields={state.batch.masterFields}
                     effectiveMasterValues={effectiveValues}
-                    templateFields={activeTemplate?.placeholders ?? []}
+                    templateFields={itemFieldsByKey[activeItem.key] ?? activeTemplate?.placeholders ?? []}
                     templateContent={activeTemplate?.content}
                     templateFieldTags={activeOakDocFieldTags}
                     onPatch={(patch) => dispatch({
