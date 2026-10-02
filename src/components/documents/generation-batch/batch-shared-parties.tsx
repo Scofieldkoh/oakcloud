@@ -14,6 +14,7 @@ export interface BatchSharedPartiesProps {
   needsByItemKey: Record<string, TemplatePartyNeeds>;
   directors: DocumentParty[];
   shareholders: DocumentParty[];
+  officers?: DocumentParty[];
   contacts: DocumentParty[];
   isLoading?: boolean;
   error?: string | null;
@@ -28,12 +29,16 @@ const LABELS: Record<PartyKey, string> = {
   selectedDirectorIds: 'Directors',
   selectedShareholderId: 'Shareholder',
   selectedShareholderIds: 'Shareholders',
+  selectedOfficerIds: 'Officers',
   selectedContactId: 'Contact',
 };
 
-/** Checked parties for a repeater: every party until the user narrows the list. */
-function checkedIds(options: DocumentParty[], ids: string[] | undefined): string[] {
-  if (ids === undefined) return options.map((party) => party.id);
+/**
+ * Checked parties for a repeater: every party until the user narrows the
+ * list, except officers, which start unticked.
+ */
+function checkedIds(options: DocumentParty[], ids: string[] | undefined, allByDefault = true): string[] {
+  if (ids === undefined) return allByDefault ? options.map((party) => party.id) : [];
   const available = new Set(options.map((party) => party.id));
   return ids.filter((id) => available.has(id));
 }
@@ -53,6 +58,7 @@ export function BatchSharedParties({
   needsByItemKey,
   directors,
   shareholders,
+  officers = [],
   contacts,
   isLoading = false,
   error = null,
@@ -66,6 +72,7 @@ export function BatchSharedParties({
   const optionsFor = (key: PartyKey): DocumentParty[] => {
     if (key === 'selectedDirectorId' || key === 'selectedDirectorIds') return directors;
     if (key === 'selectedShareholderId' || key === 'selectedShareholderIds') return shareholders;
+    if (key === 'selectedOfficerIds') return officers;
     return contacts;
   };
 
@@ -92,8 +99,9 @@ export function BatchSharedParties({
           const options = optionsFor(key);
           const targetKeys = targets.map((item) => item.key);
           const note = `Used by ${targets.length} documents`;
-          if (key === 'selectedDirectorIds' || key === 'selectedShareholderIds') {
-            const selections = targets.map((item) => checkedIds(options, item.configuration[key]));
+          if (key === 'selectedDirectorIds' || key === 'selectedShareholderIds' || key === 'selectedOfficerIds') {
+            const selections = targets.map((item) =>
+              checkedIds(options, item.configuration[key], key !== 'selectedOfficerIds'));
             const differs = selections.some((ids) => !sameIds(ids, selections[0]));
             return (
               <div key={key}>

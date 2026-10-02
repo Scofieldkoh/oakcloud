@@ -11,6 +11,7 @@ export type OakDocGenericRepeaterKind =
   | 'directors'
   | 'shareholders'
   | 'contacts'
+  | 'officers'
   | 'signers'
   | 'authorisedRepresentatives'
   | 'agreementEntities';
@@ -18,6 +19,7 @@ export type OakDocGenericRepeaterKind =
 export const OAKDOC_DIRECTORS_REPEATER_TAG = 'repeat.directors';
 export const OAKDOC_SHAREHOLDERS_REPEATER_TAG = 'repeat.shareholders';
 export const OAKDOC_CONTACTS_REPEATER_TAG = 'repeat.contacts';
+export const OAKDOC_OFFICERS_REPEATER_TAG = 'repeat.officers';
 
 export interface OakDocRepeaterGenerationData {
   company: OakDocCompanyDetail;
@@ -30,6 +32,8 @@ export interface OakDocRepeaterGenerationData {
   selectedDirectorIds?: readonly string[];
   /** Shareholders to repeat, by shareholder id; absent means every current shareholder. */
   selectedShareholderIds?: readonly string[];
+  /** Officers (any role) to repeat, by officer id, in that order; absent means none. */
+  selectedOfficerIds?: readonly string[];
 }
 
 function isSelected(ids: readonly string[] | undefined, id: string): boolean {
@@ -132,6 +136,17 @@ function directorValues(officer: OakDocOfficer): Record<string, string> {
   };
 }
 
+function officerValues(officer: OakDocOfficer): Record<string, string> {
+  return {
+    'officer.name': officer.name || '',
+    'officer.role': formatOakDocRole(officer.role),
+    'officer.identificationNumber': officer.identificationNumber || '',
+    'officer.nationality': officer.nationality || '',
+    'officer.appointmentDate': formatDate(officer.appointmentDate),
+    'officer.address': officer.address || '',
+  };
+}
+
 function shareholderValues(shareholder: OakDocShareholder): Record<string, string> {
   return {
     'shareholder.name': shareholder.name || '',
@@ -217,6 +232,31 @@ readonly OakDocGenericRepeaterDefinition[] = [
     ],
     generationDataAdapter: (data) => (data.contacts ?? [])
       .map((contact) => contactValues('contact', contact)),
+  },
+  {
+    kind: 'officers',
+    tag: OAKDOC_OFFICERS_REPEATER_TAG,
+    label: 'Officers',
+    itemLabel: 'Officer',
+    itemTagNamespace: 'officer',
+    fields: [
+      { tag: 'officer.name', label: 'Officer Name', category: 'Repeating Officer', example: 'Jane Ng' },
+      { tag: 'officer.role', label: 'Officer Role', category: 'Repeating Officer', example: 'Secretary' },
+      { tag: 'officer.identificationNumber', label: 'Officer Identification Number', category: 'Repeating Officer', example: 'S2345678C' },
+      { tag: 'officer.nationality', label: 'Officer Nationality', category: 'Repeating Officer', example: 'Singaporean' },
+      { tag: 'officer.appointmentDate', label: 'Officer Appointment Date', category: 'Repeating Officer', example: '1 Mar 2024' },
+      { tag: 'officer.address', label: 'Officer Address', category: 'Repeating Officer', example: '789 Sample Avenue' },
+    ],
+    // Any role (secretary, CEO, auditor, director...), only those ticked on Configure.
+    generationDataAdapter: (data) => {
+      const officers = new Map((data.company.officers ?? [])
+        .filter((officer) => officer.isCurrent !== false)
+        .map((officer) => [officer.id, officer]));
+      return (data.selectedOfficerIds ?? []).flatMap((id) => {
+        const officer = officers.get(id);
+        return officer ? [officerValues(officer)] : [];
+      });
+    },
   },
   {
     kind: 'signers',

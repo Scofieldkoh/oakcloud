@@ -5,6 +5,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { OakDocDocumentHost } from '@/components/documents/oakdoc/oakdoc-document-host';
 import { OakDocCustomFieldsPanel } from '@/components/documents/oakdoc/oakdoc-custom-fields-panel';
 import { OakDocFieldList } from '@/components/documents/oakdoc/oakdoc-field-list';
+import { OakDocRepeaterPanel } from '@/components/documents/oakdoc/oakdoc-repeater-panel';
 import {
   readOakDocCustomFields,
   readOakDocPartialCustomFields,
@@ -87,7 +88,15 @@ export function WordPartialEditor({
       load={load}
       persist={persist}
       onDirtyChange={onDirtyChange}
-      renderSidebar={({ insertField, markChanged, fieldTags, disabled }) => (
+      renderSidebar={({
+        insertField,
+        markChanged,
+        fieldTags,
+        addRepeater,
+        removeRepeaterAtCaret,
+        repeaters,
+        disabled,
+      }) => (
         <>
           <OakDocCustomFieldsPanel
             fields={customFields}
@@ -100,6 +109,16 @@ export function WordPartialEditor({
             presentTags={fieldTags}
             disabled={disabled}
             ownerLabel="partial"
+          />
+          <div className="border-t border-border-secondary" />
+          <OakDocRepeaterPanel
+            repeaterTags={repeaters.tags}
+            count={repeaters.count}
+            fieldTags={fieldTags}
+            disabled={disabled}
+            onAdd={(definition) => void addRepeater(definition)}
+            onRemoveAtCaret={() => void removeRepeaterAtCaret()}
+            onAssignField={(field) => void insertField(field)}
           />
           <div className="border-t border-border-secondary" />
           <OakDocFieldList

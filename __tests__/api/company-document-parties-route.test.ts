@@ -27,6 +27,7 @@ describe('company document parties route', () => {
       directors: [],
       shareholders: [],
       contacts: [],
+      officers: [],
     });
 
     const response = await GET(
@@ -46,6 +47,7 @@ describe('company document parties route', () => {
       directors: [],
       shareholders: [],
       contacts: [],
+      officers: [],
     });
   });
 });

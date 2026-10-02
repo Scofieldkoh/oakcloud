@@ -33,6 +33,14 @@ const replacementCompanyOption = {
   uen: '202600002B',
 };
 
+vi.mock('@/hooks/use-auth', () => ({
+  useSession: () => ({ data: { tenantId: 'tenant-1', isSuperAdmin: false } }),
+}));
+
+vi.mock('@/hooks/use-template-partials', () => ({
+  useAllTemplatePartials: () => ({ data: { partials: [] } }),
+}));
+
 vi.mock('@/hooks/use-company-search', () => ({
   useCompanySearch: () => ({
     searchQuery: '',

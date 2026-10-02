@@ -8,6 +8,13 @@ import { cn } from '@/lib/utils';
 import type { OakDocSnapshotIdentity } from '@/types/oakdoc';
 import { OAKDOC_FIELD_TAGS } from '@/lib/document-editor/oakdoc-field-registry';
 import { inspectOakDocFields, type OakDocFieldDefinition } from '@/lib/document-editor/oakdoc-fields';
+import {
+  createOakDocRepeater,
+  inspectOakDocRepeaters,
+  removeOakDocRepeater,
+  type OakDocRepeaterDefinition,
+  type OakDocRepeaterSummary,
+} from '@/lib/document-editor/oakdoc-repeaters';
 import { OakDocEditorSession } from './oakdoc-editor-session';
 import { insertOakDocField } from './insert-oakdoc-field';
 import { useOakDocSectionDeleteGuard } from './use-oakdoc-section-delete-guard';
@@ -24,6 +31,12 @@ export interface OakDocHostSidebarApi {
   markChanged: () => void;
   /** Field tags currently in the document. */
   fieldTags: readonly string[];
+  /** Make the paragraphs or table row at the caret repeat for each chosen person. */
+  addRepeater: (definition: OakDocRepeaterDefinition) => Promise<void>;
+  /** Remove the repeating section around the caret, keeping its content once. */
+  removeRepeaterAtCaret: () => Promise<void>;
+  /** Repeating sections currently in the document. */
+  repeaters: OakDocRepeaterSummary;
   disabled: boolean;
 }
 
@@ -98,6 +111,7 @@ export function OakDocDocumentHost({
   const [status, setStatus] = useState(loadingLabel);
   const [error, setError] = useState<string | null>(null);
   const [fieldTags, setFieldTags] = useState<string[]>([]);
+  const [repeaters, setRepeaters] = useState<OakDocRepeaterSummary>({ count: 0, tags: [] });
 
   loadRef.current = load;
   onDirtyChangeRef.current = onDirtyChange;
@@ -168,8 +182,10 @@ export function OakDocDocumentHost({
     if (!hasSidebar || !documentBytes) return;
     try {
       setFieldTags(inspectOakDocFields(documentBytes, OAKDOC_FIELD_TAGS).tags);
+      setRepeaters(inspectOakDocRepeaters(documentBytes));
     } catch {
       setFieldTags([]);
+      setRepeaters({ count: 0, tags: [] });
     }
   }, [documentBytes, hasSidebar]);
 
@@ -194,6 +210,56 @@ export function OakDocDocumentHost({
       setBusy(false);
     }
   }, [disabled, markChanged, readOnly, replaceMountedDocument]);
+
+  /** Rewrite the saved bytes around the caret's paragraphs and remount them. */
+  const editAtCaret = useCallback(async (
+    action: string,
+    edit: (bytes: Uint8Array, fromParaId: string, toParaId: string) => { bytes: Uint8Array; message: string },
+  ) => {
+    if (readOnly || disabled) return;
+    const handle = editorRef.current;
+    const selection = handle?.getEditor()?.snapshot().selection;
+    if (!handle || !selection || !('paraId' in selection.from) || !('paraId' in selection.to)) {
+      setError(`Place the caret inside a paragraph or table row to ${action}.`);
+      setStatus(`Place the caret inside a paragraph or table row to ${action}.`);
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    try {
+      const buffer = await handle.save();
+      if (!buffer) throw new Error('OakDoc did not return a DOCX file.');
+      const edited = edit(new Uint8Array(buffer), selection.from.paraId, selection.to.paraId);
+      markChanged();
+      replaceMountedDocument(edited.bytes, edited.message);
+    } catch (caught) {
+      const message = caught instanceof Error ? caught.message : `Could not ${action}.`;
+      setError(message);
+      setStatus(message);
+    } finally {
+      setBusy(false);
+    }
+  }, [disabled, markChanged, readOnly, replaceMountedDocument]);
+
+  const addRepeater = useCallback((definition: OakDocRepeaterDefinition) => editAtCaret(
+    'add a repeating section',
+    (bytes, fromParaId, toParaId) => {
+      const created = createOakDocRepeater({ docxBytes: bytes, fromParaId, toParaId, definition });
+      return {
+        bytes: created.bytes,
+        message: `Created ${definition.label} repeating section around the current ${created.targetKind}. `
+          + `Add ${definition.itemLabel.toLowerCase()} fields inside it.`,
+      };
+    },
+  ), [editAtCaret]);
+
+  const removeRepeaterAtCaret = useCallback(() => editAtCaret(
+    'remove a repeating section',
+    (bytes, fromParaId) => {
+      const removed = removeOakDocRepeater({ docxBytes: bytes, paraId: fromParaId });
+      return { bytes: removed.bytes, message: 'Removed the repeating section and kept its content once.' };
+    },
+  ), [editAtCaret]);
 
   const handleKeyDownCapture = useOakDocSectionDeleteGuard({
     editorRef,
@@ -348,6 +414,9 @@ export function OakDocDocumentHost({
               insertField,
               markChanged,
               fieldTags,
+              addRepeater,
+              removeRepeaterAtCaret,
+              repeaters,
               disabled: disabled || busy || saving || !documentBytes,
             })}
           </aside>

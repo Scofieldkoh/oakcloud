@@ -175,12 +175,16 @@ export function buildCompletenessMap(params: {
   masterFields: MasterFieldCatalogue;
   masterFieldValues: Record<string, string>;
   templateFieldsByTemplateId: Record<string, CustomPlaceholderDefinition[]>;
+  /** Per-document fields where they differ from the template's (resolution partials). */
+  itemFieldsByKey?: Record<string, CustomPlaceholderDefinition[]>;
 }): CompletenessMap {
   const map: CompletenessMap = {};
   for (const item of params.items) {
     map[item.key] = selectItemCompleteness({
       item,
-      templateFields: params.templateFieldsByTemplateId[item.templateId] ?? [],
+      templateFields: params.itemFieldsByKey?.[item.key]
+        ?? params.templateFieldsByTemplateId[item.templateId]
+        ?? [],
       masterFields: params.masterFields,
       masterFieldValues: params.masterFieldValues,
     });

@@ -67,6 +67,8 @@ export interface BatchItemConfiguration {
   selectedShareholderId: string | null;
   /** Explicit shareholder subset for the Word shareholders repeater; absent means all. */
   selectedShareholderIds?: string[];
+  /** Officers of any role for the Word officers repeater, in order; absent means none. */
+  selectedOfficerIds?: string[];
   selectedContactId: string | null;
   itemValues: Record<string, BatchItemFieldValue>;
   masterOverrides: Record<string, string>;

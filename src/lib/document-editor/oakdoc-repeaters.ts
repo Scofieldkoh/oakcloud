@@ -46,6 +46,7 @@ export function resolveOakDocRepeaters(input: {
   agreementEntities?: readonly OakDocAgreementEntity[];
   selectedDirectorIds?: readonly string[];
   selectedShareholderIds?: readonly string[];
+  selectedOfficerIds?: readonly string[];
 }): {
   bytes: Uint8Array;
   repeatersResolved: number;
@@ -62,6 +63,7 @@ export function resolveOakDocRepeaters(input: {
       agreementEntities: input.agreementEntities,
       selectedDirectorIds: input.selectedDirectorIds,
       selectedShareholderIds: input.selectedShareholderIds,
+      selectedOfficerIds: input.selectedOfficerIds,
     },
   });
 }

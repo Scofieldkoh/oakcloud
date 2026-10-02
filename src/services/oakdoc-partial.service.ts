@@ -27,7 +27,10 @@ import {
 import { deriveOakDocTemplateFieldTags } from '@/lib/document-editor/oakdoc-field-manifest';
 import type { OakDocDiagnostic } from '@/types/oakdoc';
 import type { TenantAwareParams } from '@/lib/types';
-import { mergeOakDocPartialCustomFields } from '@/lib/document-editor/oakdoc-custom-fields';
+import {
+  appendOakDocPartialCustomFields,
+  mergeOakDocPartialCustomFields,
+} from '@/lib/document-editor/oakdoc-custom-fields';
 import type { PlaceholderDefinition } from '@/lib/validations/document-template';
 
 export { readOakDocPartialPins, type OakDocPartialPin };
@@ -383,6 +386,25 @@ export async function collectPinnedPartialFields(
       ordered.flatMap((partial) => readOakDocPartialMetadata(partial.contentJson)?.fieldTags ?? []),
     )).sort(),
   };
+}
+
+/**
+ * A template's placeholders plus the custom fields of the partials chosen
+ * for one document's numbered resolutions, so they are asked for and typed.
+ */
+export async function withResolutionPartialFields(
+  placeholders: unknown,
+  partialIds: readonly string[],
+  tenantId: string,
+): Promise<PlaceholderDefinition[]> {
+  if (partialIds.length === 0) return (Array.isArray(placeholders) ? placeholders : []) as PlaceholderDefinition[];
+  const partials = await prisma.templatePartial.findMany({
+    where: { id: { in: [...partialIds] }, tenantId, deletedAt: null },
+    select: { id: true, placeholders: true },
+  });
+  const byId = new Map(partials.map((partial) => [partial.id, partial]));
+  const ordered = partialIds.flatMap((id) => byId.get(id) ?? []);
+  return appendOakDocPartialCustomFields(placeholders, ordered) as PlaceholderDefinition[];
 }
 
 /** Download the current bytes of a native partial for editing. */

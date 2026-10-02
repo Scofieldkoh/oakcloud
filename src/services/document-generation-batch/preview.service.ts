@@ -42,6 +42,8 @@ import {
   type GeneratedOakDocAssetMetadata,
 } from '@/lib/document-editor/document-engine';
 import { OAKDOC_MIME_TYPE } from '@/lib/document-editor/oakdoc-template';
+import { resolutionPartialIds } from '@/lib/resolution-composition';
+import { withResolutionPartialFields } from '@/services/oakdoc-partial.service';
 import {
   generateOakDocBytes,
   type OakDocGenerationInput,
@@ -83,6 +85,7 @@ export interface EvaluatedPreview {
 async function templateCustomFields(
   templateId: string,
   tenantId: string,
+  resolutionPartialIdList: readonly string[] = [],
 ): Promise<{
   ownFields: CustomPlaceholderDefinition[];
   storedDefinitions: Readonly<Record<string, unknown>>[];
@@ -93,9 +96,14 @@ async function templateCustomFields(
     select: { id: true, placeholders: true, contentJson: true },
   });
   if (!template) throw new NotFoundError('Template not found');
-  const storedDefinitions = normalizeStoredFieldDefinitionInput(template.placeholders);
+  const placeholders = await withResolutionPartialFields(
+    template.placeholders,
+    resolutionPartialIdList,
+    tenantId,
+  );
+  const storedDefinitions = normalizeStoredFieldDefinitionInput(placeholders);
   const ownFields = storageFormatToCustomPlaceholders(
-    normalizeStoredPlaceholders(template.placeholders),
+    normalizeStoredPlaceholders(placeholders),
     { scope: { kind: 'template', id: template.id } },
   ).filter((field) => !field.sourcePartial);
   const contentJson = template.contentJson;
@@ -167,6 +175,7 @@ export function oakDocBatchContext(
   | 'customData'
   | 'selectedDirectorIds'
   | 'selectedShareholderIds'
+  | 'selectedOfficerIds'
   | 'agreement'
   | 'resolutionDate'
   | 'serviceAgreementId'
@@ -180,6 +189,7 @@ export function oakDocBatchContext(
     customData: effectiveCustomData,
     selectedDirectorIds: configuration.selectedDirectorIds,
     selectedShareholderIds: configuration.selectedShareholderIds,
+    selectedOfficerIds: configuration.selectedOfficerIds,
     agreement: agreement
       ? {
           agreementDate: agreement.agreementDate,
@@ -202,7 +212,11 @@ export async function buildBatchItemRenderInput(
   actorName: string,
 ): Promise<EvaluatedPreview> {
   const configuration = parseBatchItemConfiguration(item.configuration);
-  const templateFieldConfig = await templateCustomFields(item.templateId, params.tenantId);
+  const templateFieldConfig = await templateCustomFields(
+    item.templateId,
+    params.tenantId,
+    resolutionPartialIds(configuration.resolution),
+  );
   const effectiveCustomData = typedBatchCustomData({
     templateId: item.templateId,
     storedDefinitions: templateFieldConfig.storedDefinitions,
@@ -265,6 +279,7 @@ export async function buildBatchItemRenderInput(
       selectedDirectorIds: configuration.selectedDirectorIds,
       selectedShareholderId: configuration.selectedShareholderId,
       selectedShareholderIds: configuration.selectedShareholderIds,
+      selectedOfficerIds: configuration.selectedOfficerIds,
       selectedContactId: configuration.selectedContactId,
       effectiveCustomData,
       itemValues: configuration.itemValues,

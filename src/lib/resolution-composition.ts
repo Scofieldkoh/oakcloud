@@ -96,3 +96,10 @@ export function resolutionCompositionIssues(composition: ResolutionComposition |
   });
   return issues;
 }
+
+/** Partials whose saved wording prints, in order, without repeats. */
+export function resolutionPartialIds(composition: ResolutionComposition | null | undefined): string[] {
+  const ids = (composition?.sections ?? []).flatMap((section) =>
+    section.kind === 'PARTIAL' && !isEditedPartial(section) ? [section.partialId] : []);
+  return Array.from(new Set(ids));
+}

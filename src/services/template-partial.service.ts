@@ -413,7 +413,7 @@ export async function getAllTemplatePartials(
   tenantId: string,
 ): Promise<Array<
   Pick<TemplatePartial, 'id' | 'name' | 'displayName' | 'header' | 'description' | 'content' | 'placeholders' | 'version' | 'category'>
-  & { documentEngine: 'A4' | 'OAKDOC' }
+  & { documentEngine: 'A4' | 'OAKDOC'; fieldTags: string[] }
 >> {
   const partials = await prisma.templatePartial.findMany({
     where: { tenantId, deletedAt: null },
@@ -431,10 +431,15 @@ export async function getAllTemplatePartials(
     },
     orderBy: { name: 'asc' },
   });
-  return partials.map(({ contentJson, ...partial }) => ({
-    ...partial,
-    documentEngine: readOakDocTemplateMetadata(contentJson) ? 'OAKDOC' as const : 'A4' as const,
-  }));
+  return partials.map(({ contentJson, ...partial }) => {
+    const oakDoc = readOakDocTemplateMetadata(contentJson);
+    return {
+      ...partial,
+      documentEngine: oakDoc ? 'OAKDOC' as const : 'A4' as const,
+      // Word partial field tags, so Configure offers the parties a chosen partial uses.
+      fieldTags: oakDoc?.fieldTags ?? [],
+    };
+  });
 }
 
 export async function getPartialUsage(

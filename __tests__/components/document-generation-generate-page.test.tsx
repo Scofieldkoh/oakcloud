@@ -22,6 +22,14 @@ vi.mock('@/components/ui/toast', () => ({
   useToast: () => ({ success: vi.fn(), error: vi.fn() }),
 }));
 
+vi.mock('@/hooks/use-auth', () => ({
+  useSession: () => ({ data: { tenantId: 'tenant-1', isSuperAdmin: false } }),
+}));
+
+vi.mock('@/hooks/use-template-partials', () => ({
+  useAllTemplatePartials: () => ({ data: { partials: [] } }),
+}));
+
 vi.mock('@/hooks/use-company-search', () => ({
   useCompanySearch: () => ({
     searchQuery: '',

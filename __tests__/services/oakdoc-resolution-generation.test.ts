@@ -112,6 +112,40 @@ describe('Resolution template generation', () => {
     expect(result.resolutionPartialPins).toEqual([expect.objectContaining({ partialId, version: 3 })]);
   });
 
+  it('fills the custom fields of a chosen partial with their types', async () => {
+    const field = (tag: string) => `<w:sdt><w:sdtPr><w:alias w:val="${tag}"/><w:tag w:val="${tag}"/></w:sdtPr><w:sdtContent><w:r><w:t>{{${tag}}}</w:t></w:r></w:sdtContent></w:sdt>`;
+    const feeBytes = zipSync({
+      ...unzipSync(partialBytes),
+      'word/document.xml': encodeOakDocZipText(`<w:document xmlns:w="${W}"><w:body><w:p><w:r><w:t xml:space="preserve">RESOLVED that a fee of S$</w:t></w:r>${field('custom.fee')}<w:r><w:t xml:space="preserve"> be paid on </w:t></w:r>${field('custom.pay_date')}<w:r><w:t>.</w:t></w:r></w:p><w:sectPr/></w:body></w:document>`),
+    });
+    const feeKey = `${tenantId}/template-partials/${partialId}/oakdoc/${sha(feeBytes)}.docx`;
+    prismaMock.templatePartial.findMany.mockResolvedValue([{
+      id: partialId,
+      version: 4,
+      contentJson: {
+        oakDoc: { ...asset, storageKey: feeKey, sha256: sha(feeBytes), fileSize: feeBytes.byteLength, fieldTags: ['custom.fee', 'custom.pay_date'] },
+      },
+      placeholders: [
+        { key: 'custom.fee', path: 'custom.fee', label: 'Fee', type: 'currency', source: 'custom', category: 'custom', required: true },
+        { key: 'custom.pay_date', path: 'custom.pay_date', label: 'Pay date', type: 'date', source: 'custom', category: 'custom', required: true },
+      ],
+    }]);
+    storageMock.download.mockResolvedValue(Buffer.from(feeBytes));
+
+    const result = await generateOakDocBytes({
+      templateId: stored.id,
+      ...context,
+      customData: { fee: '2500', pay_date: '2026-11-03' },
+      resolution: {
+        subject: '',
+        sections: [{ id: 'a', kind: 'PARTIAL', heading: 'DIRECTORS FEE', partialId }],
+      },
+    }, { tenantId });
+
+    expect(result.diagnostics.filter((diagnostic) => diagnostic.code === 'OAKDOC_CUSTOM_FIELD_UNDEFINED')).toEqual([]);
+    expect(documentText(result.bytes)).toContain('RESOLVED that a fee of S$2,500.00 be paid on 3 Nov 2026.');
+  });
+
   it('fills {field} tokens in custom resolution text', async () => {
     const result = await generateOakDocBytes({
       templateId: stored.id,

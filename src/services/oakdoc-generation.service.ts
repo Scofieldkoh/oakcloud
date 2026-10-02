@@ -80,6 +80,7 @@ import { downloadOakDocTemplate } from '@/services/oakdoc-template.service';
 import {
   expandPinnedOakDocPartials,
   pinOakDocPartials,
+  withResolutionPartialFields,
   readOakDocPartialPins,
 } from '@/services/oakdoc-partial.service';
 import {
@@ -129,6 +130,8 @@ export interface OakDocGenerationInput {
   selectedDirectorIds?: string[];
   /** Shareholders a shareholders repeater lists; absent means all current shareholders. */
   selectedShareholderIds?: string[];
+  /** Officers of any role an officers repeater lists, in order; absent means none. */
+  selectedOfficerIds?: string[];
   /** Any workspace contact; one linked to the company prints its role there. */
   selectedContactId?: string;
   /** Contacts listed by a contacts repeater, in this order. */
@@ -381,6 +384,7 @@ async function renderOakDocMaster(
   let partialPins = master.partialPins;
   const resolutionDiagnostics: OakDocDiagnostic[] = [];
   let resolutionPartialPins: OakDocPartialPin[] | undefined;
+  let customFieldTypes = master.customFieldTypes;
   if (master.compositionType === 'RESOLUTION') {
     if (!input.resolution) {
       resolutionDiagnostics.push({
@@ -403,6 +407,11 @@ async function renderOakDocMaster(
         });
         const used = new Set(composed.partialIds);
         resolutionPartialPins = partialPins.filter((pin) => used.has(pin.partialId));
+        // The chosen partials' own custom fields, the template's winning on a shared key.
+        customFieldTypes = {
+          ...oakDocCustomFieldTypes(await withResolutionPartialFields([], composed.partialIds, params.tenantId)),
+          ...master.customFieldTypes,
+        };
       }
     }
   }
@@ -467,7 +476,7 @@ async function renderOakDocMaster(
     ...diagnoseOakDocGeneration({
       usedTags: [...fieldSummary.tags, ...conditionSummary.fieldTags, ...sowFieldTags],
       provided,
-      ...(input.customData ? { customFieldKeys: new Set(Object.keys(master.customFieldTypes)) } : {}),
+      ...(input.customData ? { customFieldKeys: new Set(Object.keys(customFieldTypes)) } : {}),
     }),
   ];
 
@@ -486,7 +495,7 @@ async function renderOakDocMaster(
     ? buildOakDocCustomFieldValues({
         tags: resolutionTags,
         data: input.customData,
-        types: master.customFieldTypes,
+        types: customFieldTypes,
       })
     : { values: {}, dates: {} };
   const values = { ...buildOakDocResolutionValues(resolutionInput), ...custom.values };
@@ -510,6 +519,7 @@ async function renderOakDocMaster(
     contacts,
     selectedDirectorIds: input.selectedDirectorIds,
     selectedShareholderIds: input.selectedShareholderIds,
+    selectedOfficerIds: input.selectedOfficerIds,
     ...(composition
       ? { signers: composition.signers, authorisedRepresentatives: composition.representatives }
       : {}),

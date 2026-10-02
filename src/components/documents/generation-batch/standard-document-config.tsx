@@ -37,6 +37,8 @@ export interface StandardDocumentConfigProps {
   effectiveMasterValues: Record<string, string>;
   directors: DocumentParty[];
   shareholders: DocumentParty[];
+  /** Current officers of every role, for the officers repeater. */
+  officers?: DocumentParty[];
   /** Current contact result page. */
   contacts: DocumentContact[];
   /** Every contact seen so far, so existing selections stay resolvable. */
@@ -76,6 +78,7 @@ export function StandardDocumentConfig({
   effectiveMasterValues,
   directors,
   shareholders,
+  officers = [],
   contacts,
   contactsById,
   companyContacts,
@@ -108,6 +111,11 @@ export function StandardDocumentConfig({
     () => selectedPartyIds(shareholders, configuration.selectedShareholderIds),
     [configuration.selectedShareholderIds, shareholders],
   );
+  // Officers start unticked: a resolution names the ones it is about.
+  const selectedOfficerIds = useMemo(() => {
+    const available = new Set(officers.map((party) => party.id));
+    return (configuration.selectedOfficerIds ?? []).filter((id) => available.has(id));
+  }, [configuration.selectedOfficerIds, officers]);
   const partyKeys = useMemo(() => partyConfigurationKeys(needs), [needs]);
 
   const selectedContact = useMemo<DocumentContact | null>(() => {
@@ -140,6 +148,7 @@ export function StandardDocumentConfig({
     partyCollections.directors && selectedDirectorIds.length === 0,
     partySelections.shareholder && !configuration.selectedShareholderId,
     partyCollections.shareholders && selectedShareholderIds.length === 0,
+    needs.officers && selectedOfficerIds.length === 0,
     partySelections.contact && !configuration.selectedContactId,
   ].filter(Boolean).length;
 
@@ -262,6 +271,19 @@ export function StandardDocumentConfig({
                 options={shareholders}
                 values={selectedShareholderIds}
                 onChange={(values) => onPatch({ selectedShareholderIds: values })}
+                multiple
+                isLoading={partyLoading}
+                error={partyError}
+                onRetry={onPartyRetry}
+              />
+            )}
+            {needs.officers && (
+              <DocumentPartyChoiceList
+                id="selected-officers"
+                label="Officers"
+                options={officers}
+                values={selectedOfficerIds}
+                onChange={(values) => onPatch({ selectedOfficerIds: values })}
                 multiple
                 isLoading={partyLoading}
                 error={partyError}

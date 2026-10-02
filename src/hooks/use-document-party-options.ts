@@ -7,12 +7,15 @@ export interface DocumentPartyOptions {
   directors: DocumentParty[];
   shareholders: DocumentParty[];
   contacts: DocumentParty[];
+  /** Current officers of every role (secretary, CEO, auditor...). */
+  officers: DocumentParty[];
 }
 
 const EMPTY_OPTIONS: DocumentPartyOptions = {
   directors: [],
   shareholders: [],
   contacts: [],
+  officers: [],
 };
 
 /**
@@ -49,6 +52,7 @@ export function useDocumentPartyOptions(primaryCompanyId: string | null) {
           directors: data.directors ?? [],
           shareholders: data.shareholders ?? [],
           contacts: data.contacts ?? [],
+          officers: data.officers ?? [],
         });
       })
       .catch((caught: unknown) => {

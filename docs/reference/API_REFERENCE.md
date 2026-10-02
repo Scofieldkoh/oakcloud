@@ -416,8 +416,11 @@ List documents uploaded for a company.
 ---
 
 ### GET /api/companies/[id]/document-parties
-List the current directors, current shareholders, and active linked contacts that
-can be selected while generating a document for the company.
+List the current directors, current shareholders, active linked contacts, and
+current officers of every role (secretary, CEO, auditor...; `detail` is the role
+in words) that can be selected while generating a document for the company.
+Officers feed the Word `repeat.officers` repeater, which prints only the officers
+ticked on Configure (`selectedOfficerIds`, in that order).
 
 **Auth:** Authenticated with `document:read`
 
@@ -426,7 +429,8 @@ can be selected while generating a document for the company.
 {
   "directors": [{ "id": "uuid", "name": "string", "email": "string | null", "phone": "string | null", "address": { "full": "string | null", "letter": "string | null" } }],
   "shareholders": [{ "id": "uuid", "name": "string", "email": "string | null", "phone": "string | null", "address": { "full": "string | null", "letter": "string | null" } }],
-  "contacts": [{ "id": "uuid", "name": "string", "email": "string | null", "phone": "string | null", "address": { "full": "string | null", "letter": "string | null" } }]
+  "contacts": [{ "id": "uuid", "name": "string", "email": "string | null", "phone": "string | null", "address": { "full": "string | null", "letter": "string | null" } }],
+  "officers": [{ "id": "uuid", "name": "string", "detail": "Secretary", "role": "SECRETARY", "email": "string | null", "phone": "string | null", "address": { "full": "string | null", "letter": "string | null" } }]
 }
 ```
 
@@ -1490,6 +1494,8 @@ entries keyed `custom.<key>` with a `label`, `type` (text, textarea, date,
 number, currency), `required` and, for a dropdown, `options`; the document
 holds a `custom.<key>` field. Custom fields of inserted Word partials are
 copied in on save (marked `oakDocPartialId`) so Configure asks for them too.
+For a resolution document, the custom fields of the partials picked as its
+numbered resolutions are added per document, on Configure and at generation.
 
 ---
 
