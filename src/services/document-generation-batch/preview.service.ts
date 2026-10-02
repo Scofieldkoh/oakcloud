@@ -163,6 +163,8 @@ export function oakDocBatchContext(
 ): Pick<
   OakDocGenerationInput,
   | 'selectedContactId'
+  | 'contactIds'
+  | 'customData'
   | 'selectedDirectorIds'
   | 'selectedShareholderIds'
   | 'agreement'
@@ -174,6 +176,8 @@ export function oakDocBatchContext(
   const agreement = configuration.serviceAgreement;
   return {
     selectedContactId: configuration.selectedContactId ?? undefined,
+    contactIds: configuration.contactIds,
+    customData: effectiveCustomData,
     selectedDirectorIds: configuration.selectedDirectorIds,
     selectedShareholderIds: configuration.selectedShareholderIds,
     agreement: agreement

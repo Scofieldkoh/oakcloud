@@ -2,6 +2,8 @@
 
 import { cn } from '@/lib/utils';
 import { SingleDateInput } from '@/components/ui/single-date-input';
+import { SearchableSelect } from '@/components/ui/searchable-select';
+import { customFieldOptions } from '@/lib/document-generation-master-fields';
 import {
   createWorkflowFieldInputDescriptors,
   fieldInputDescriptorDefaultValue,
@@ -141,6 +143,28 @@ export function BatchCustomFieldForm({
                   {required && <span className="ml-1 text-status-error" aria-hidden="true">*</span>}
                 </span>
               </label>
+            );
+          }
+
+          const options = customFieldOptions(field);
+          if (options.length > 0) {
+            return (
+              <div key={key} className="block">
+                <span className="text-sm font-medium text-text-primary">{field.label}</span>
+                {required && <span className="ml-1 text-status-error" aria-hidden="true">*</span>}
+                <SearchableSelect
+                  ariaLabel={field.label}
+                  options={options.map((option) => ({ value: option, label: option }))}
+                  value={textValue}
+                  onChange={(next) => patchValue(field.key, next)}
+                  disabled={inputDisabled}
+                  placeholder="Choose..."
+                  clearable={!required}
+                  error={missing ? 'Required' : undefined}
+                  size="md"
+                  className="mt-1"
+                />
+              </div>
             );
           }
 

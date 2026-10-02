@@ -6,6 +6,8 @@ const prismaMock = vi.hoisted(() => ({
   documentTemplate: { findFirst: vi.fn() },
   generatedDocument: { findFirst: vi.fn(), update: vi.fn() },
   documentGenerationBatchItem: { findFirst: vi.fn() },
+  company: { findFirst: vi.fn() },
+  contact: { findMany: vi.fn() },
   $transaction: vi.fn(),
 }));
 
@@ -180,6 +182,76 @@ describe('OakDoc generation service', () => {
       sha256: templateSha,
     });
     expect(result.values['company.name']).toBe('Acme Pte. Ltd.');
+  });
+
+  it('fills custom fields from Configure and lists any picked contacts', async () => {
+    prismaMock.documentTemplate.findFirst.mockResolvedValue({
+      id: templateId,
+      name: 'Engagement Letter',
+      version: 7,
+      contentJson: templateMetadata,
+      placeholders: [
+        { key: 'custom.fee', label: 'Fee', type: 'currency', source: 'custom' },
+        { key: 'custom.meeting_date', label: 'Meeting date', type: 'date', source: 'custom' },
+      ],
+    });
+    fieldMock.inspectOakDocFields.mockReturnValue({
+      count: 4,
+      tags: ['custom.fee', 'custom.meeting_date', 'selectedContact.name', 'custom.unknown'],
+    });
+    prismaMock.company.findFirst.mockResolvedValue({
+      id: 'company-1', officers: [], shareholders: [], contacts: [],
+    });
+    prismaMock.contact.findMany.mockImplementation(async ({ where }) => (where.id.in as string[]).map((id) => ({
+      id,
+      fullName: id === 'contact-9' ? 'Outside Adviser' : 'Listed Person',
+      contactType: 'INDIVIDUAL',
+      fullAddress: '1 Example Road, Singapore 123456',
+      identificationNumber: 'S1234567A',
+      nationality: 'Singaporean',
+      contactDetails: [{ detailType: 'EMAIL', value: `${id}@example.com`, companyId: null, isPrimary: true, displayOrder: 0, createdAt: new Date() }],
+      companyRelations: [],
+      officerPositions: [],
+    })));
+
+    const result = await generateOakDocBytes({
+      templateId,
+      companyId: 'company-1',
+      selectedContactId: 'contact-9',
+      contactIds: ['contact-2'],
+      customData: { fee: '1500', meeting_date: '2026-11-03' },
+    }, { tenantId });
+
+    expect(result.values).toMatchObject({
+      'custom.fee': '1,500.00',
+      'custom.meeting_date': '3 Nov 2026',
+      'selectedContact.name': 'Outside Adviser',
+    });
+    expect(result.diagnostics).toEqual([expect.objectContaining({
+      code: 'OAKDOC_CUSTOM_FIELD_UNDEFINED',
+      severity: 'warning',
+      controlTag: 'custom.unknown',
+    })]);
+    expect(fieldMock.resolveOakDocFields).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.anything(),
+      { dates: expect.objectContaining({ 'custom.meeting_date': '2026-11-03' }) },
+    );
+    expect(repeaterMock.resolveOakDocRepeaters).toHaveBeenCalledWith(expect.objectContaining({
+      contacts: [expect.objectContaining({
+        id: 'contact-2',
+        name: 'Listed Person',
+        email: 'contact-2@example.com',
+        identificationNumber: 'S1234567A',
+      })],
+    }));
+  });
+
+  it('leaves custom fields as placeholders when no values are supplied', async () => {
+    fieldMock.inspectOakDocFields.mockReturnValue({ count: 1, tags: ['custom.fee'] });
+    const result = await generateOakDocBytes({ templateId, companyId: 'company-1' }, { tenantId });
+    expect(result.values).not.toHaveProperty('custom.fee');
+    expect(result.diagnostics).toEqual([]);
   });
 
   it('saves edits to the generated DOCX without mutating the template asset', async () => {

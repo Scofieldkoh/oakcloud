@@ -1483,6 +1483,14 @@ Create a new template.
 }
 ```
 
+A Word (OakDoc) template is uploaded as multipart form data instead: `file`
+(the .docx), `name`, `category`, `compositionType`, `description`, `isActive`
+and optional `placeholders` (JSON array). Custom fields are `placeholders`
+entries keyed `custom.<key>` with a `label`, `type` (text, textarea, date,
+number, currency), `required` and, for a dropdown, `options`; the document
+holds a `custom.<key>` field. Custom fields of inserted Word partials are
+copied in on save (marked `oakDocPartialId`) so Configure asks for them too.
+
 ---
 
 ### GET /api/document-templates/stats
@@ -1496,7 +1504,9 @@ Get a specific template.
 ---
 
 ### PUT /api/document-templates/[id]
-Update a template.
+Update a template. A Word template takes the same multipart fields as create
+plus `expectedRevision` and `refreshPartialPins=all`; leaving out
+`placeholders` keeps the stored custom fields.
 
 ---
 
@@ -1549,6 +1559,13 @@ Duplicate a partial.
 
 ### GET /api/template-partials/[id]/usage
 Get templates using this partial.
+
+---
+
+### PUT /api/template-partials/[id]/oakdoc
+Save a new version of a Word partial (multipart: `file`, `expectedRevision`,
+optional `refreshPins=all` and `placeholders` as a JSON array holding the
+partial's custom fields; leaving it out keeps them).
 
 ---
 

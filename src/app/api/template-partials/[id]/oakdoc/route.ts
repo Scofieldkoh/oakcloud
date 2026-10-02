@@ -3,6 +3,7 @@ import { requireAuth } from '@/lib/auth';
 import { requirePermission } from '@/lib/rbac';
 import { createErrorResponse, requireSessionWorkspaceId } from '@/lib/api-helpers';
 import { OAKDOC_MIME_TYPE } from '@/lib/document-editor/oakdoc-template';
+import { parsePlaceholdersFormField } from '@/lib/validations/document-template';
 import {
   downloadOakDocPartial,
   updateOakDocPartial,
@@ -37,7 +38,8 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
 
 /**
  * PUT /api/template-partials/[id]/oakdoc
- * Save new DOCX bytes (multipart: file, expectedRevision, refreshPins?=all).
+ * Save new DOCX bytes (multipart: file, expectedRevision, refreshPins?=all,
+ * placeholders? as JSON to replace the partial's custom fields).
  * Templates that use this partial keep their pinned version.
  */
 export async function PUT(request: NextRequest, { params }: RouteParams) {
@@ -63,6 +65,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       fileName: file.name,
       buffer: Buffer.from(await file.arrayBuffer()),
       refreshPins: formData.get('refreshPins') === 'all' ? 'all' : undefined,
+      placeholders: parsePlaceholdersFormField(formData.get('placeholders')),
     }, { tenantId, userId: session.id });
     return NextResponse.json({ ...partial, revision: partial.version });
   } catch (error) {

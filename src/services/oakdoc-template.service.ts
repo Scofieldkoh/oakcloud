@@ -5,6 +5,7 @@ import { deriveOakDocTemplateFieldTags } from '@/lib/document-editor/oakdoc-fiel
 import {
   pinOakDocPartials,
   readOakDocPartialPins,
+  collectPinnedPartialFields,
 } from '@/services/oakdoc-partial.service';
 import {
   OAKDOC_MIME_TYPE,
@@ -57,9 +58,14 @@ async function persistAsset(input: {
   userId: string;
   fileName: string;
   buffer: Buffer;
+  /** Field tags of inserted partials, so Configure sees the parties they use. */
+  partialFieldTags: readonly string[];
 }): Promise<OakDocTemplateMetadata> {
   inspectOakDocPackage(input.buffer, 'master');
-  const fieldTags = deriveOakDocTemplateFieldTags(new Uint8Array(input.buffer));
+  const fieldTags = Array.from(new Set([
+    ...deriveOakDocTemplateFieldTags(new Uint8Array(input.buffer)),
+    ...input.partialFieldTags,
+  ])).sort();
   const assetId = randomUUID();
   const storageKey = StorageKeys.oakDocTemplateAsset(input.tenantId, assetId);
   const fileName = normalizeFileName(input.fileName);
@@ -102,11 +108,13 @@ export async function createOakDocTemplate(input: {
     bytes: new Uint8Array(input.buffer),
     tenantId: params.tenantId,
   });
+  const inherited = await collectPinnedPartialFields(input.placeholders ?? [], partialPins, params.tenantId);
   const asset = await persistAsset({
     tenantId: params.tenantId,
     userId: params.userId,
     fileName: input.fileName,
     buffer: input.buffer,
+    partialFieldTags: inherited.fieldTags,
   });
 
   try {
@@ -122,7 +130,7 @@ export async function createOakDocTemplate(input: {
         ...mergeOakDocTemplateMetadata(input.contentJson ?? null, asset),
         oakDocPartials: partialPins as unknown as JsonValue,
       },
-      placeholders: input.placeholders ?? [],
+      placeholders: inherited.placeholders,
       isActive: input.isActive,
       sharePointRelativeFolderPath: null,
     }, params, { writer: 'oakdoc-service' });
@@ -144,6 +152,8 @@ export async function updateOakDocTemplate(input: {
   compositionType?: 'STANDARD' | 'SERVICE_AGREEMENT' | 'RESOLUTION';
   /** Partials to move to their latest version; others keep their pin. */
   refreshPartialPins?: 'all' | string[];
+  /** Replaces the stored placeholders (custom fields); absent keeps them. */
+  placeholders?: PlaceholderDefinition[];
 }, params: TenantAwareParams) {
   const existing = await getDocumentTemplateById(input.id, params.tenantId);
   if (!existing) throw new Error('Template not found');
@@ -162,11 +172,17 @@ export async function updateOakDocTemplate(input: {
     existingPins: readOakDocPartialPins(existing.contentJson),
     refresh: input.refreshPartialPins,
   });
+  const inherited = await collectPinnedPartialFields(
+    input.placeholders ?? existing.placeholders,
+    partialPins,
+    params.tenantId,
+  );
   const asset = await persistAsset({
     tenantId: params.tenantId,
     userId: params.userId,
     fileName: input.fileName,
     buffer: input.buffer,
+    partialFieldTags: inherited.fieldTags,
   });
 
   try {
@@ -186,6 +202,7 @@ export async function updateOakDocTemplate(input: {
         ...mergeOakDocTemplateMetadata(existing.contentJson, asset),
         oakDocPartials: partialPins as unknown as JsonValue,
       },
+      placeholders: inherited.placeholders,
       isActive: input.isActive,
     }, params, 'Saved from OakDoc', { writer: 'oakdoc-service' });
   } catch (error) {

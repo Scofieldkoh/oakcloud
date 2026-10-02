@@ -45,7 +45,15 @@ import {
   oakDocFieldContext,
   type OakDocFieldContext,
 } from '@/lib/document-editor/oakdoc-field-registry';
-import { resolveDocumentPartySelections } from '@/services/document-party.service';
+import {
+  getDocumentContactParties,
+  getDocumentPartyOptions,
+} from '@/services/document-party.service';
+import {
+  buildOakDocCustomFieldValues,
+  isOakDocCustomFieldTag,
+  oakDocCustomFieldTypes,
+} from '@/lib/document-editor/oakdoc-custom-fields';
 import { getServiceAgreementDraftById } from '@/services/service-agreement/draft.service';
 import {
   finalizeServiceAgreementPageBreaks,
@@ -54,6 +62,7 @@ import {
 } from '@/services/service-agreement/oakdoc-renderer';
 import type { ServiceAgreementDraftDto } from '@/services/service-agreement/types';
 import type { OakDocDiagnostic } from '@/types/oakdoc';
+import type { PlaceholderValueType } from '@/types/placeholders';
 import { ConflictError, NotFoundError, ValidationError } from '@/lib/errors';
 import { createLogger } from '@/lib/logger';
 import {
@@ -120,8 +129,15 @@ export interface OakDocGenerationInput {
   selectedDirectorIds?: string[];
   /** Shareholders a shareholders repeater lists; absent means all current shareholders. */
   selectedShareholderIds?: string[];
-  /** Resolved through the canonical party service (must be linked to the company). */
+  /** Any workspace contact; one linked to the company prints its role there. */
   selectedContactId?: string;
+  /** Contacts listed by a contacts repeater, in this order. */
+  contactIds?: string[];
+  /**
+   * Custom field values by key (without `custom.`). Absent leaves custom
+   * fields showing their placeholder, as the editor preview does.
+   */
+  customData?: Record<string, unknown>;
   agreement?: OakDocAgreementContext;
   /** Structured agreement composed into a SERVICE_AGREEMENT master. */
   serviceAgreementId?: string;
@@ -147,8 +163,23 @@ const CONTEXT_LABELS: Partial<Record<OakDocFieldContext, string>> = {
 export function diagnoseOakDocGeneration(input: {
   usedTags: readonly string[];
   provided: ReadonlySet<OakDocFieldContext>;
+  /** Custom fields the template defines; checked only when values are supplied. */
+  customFieldKeys?: ReadonlySet<string>;
 }): OakDocDiagnostic[] {
   const diagnostics = diagnoseOakDocTags(input.usedTags, 'render');
+  const undefinedCustom = Array.from(new Set(input.usedTags))
+    .filter((tag) => isOakDocCustomFieldTag(tag) && input.customFieldKeys
+      && !input.customFieldKeys.has(tag.slice('custom.'.length)))
+    .sort();
+  if (undefinedCustom.length > 0) {
+    diagnostics.push({
+      code: 'OAKDOC_CUSTOM_FIELD_UNDEFINED',
+      severity: 'warning',
+      stage: 'render',
+      message: `Custom field${undefinedCustom.length === 1 ? '' : 's'} ${undefinedCustom.join(', ')} ${undefinedCustom.length === 1 ? 'is' : 'are'} not defined on the template, so ${undefinedCustom.length === 1 ? 'it prints' : 'they print'} blank.`,
+      controlTag: undefinedCustom[0],
+    });
+  }
   const missing = new Map<OakDocFieldContext, string[]>();
   for (const tag of new Set(input.usedTags)) {
     const context = oakDocFieldContext(tag);
@@ -235,6 +266,7 @@ export async function generateOakDocBytes(
       version: true,
       contentJson: true,
       compositionType: true,
+      placeholders: true,
     },
   });
   if (!template) throw new NotFoundError('OakDoc template not found');
@@ -256,6 +288,7 @@ export async function generateOakDocBytes(
     bytes: new Uint8Array(masterBuffer),
     fieldTags: downloadedMetadata.fieldTags,
     partialPins: readOakDocPartialPins(template.contentJson),
+    customFieldTypes: oakDocCustomFieldTypes(template.placeholders),
   }, input, params);
 }
 
@@ -284,7 +317,7 @@ export async function previewOakDocMaster(
   const saved = input.templateId
     ? await prisma.documentTemplate.findFirst({
         where: { id: input.templateId, tenantId: params.tenantId, deletedAt: null },
-        select: { id: true, name: true, version: true, contentJson: true, compositionType: true },
+        select: { id: true, name: true, version: true, contentJson: true, compositionType: true, placeholders: true },
       })
     : null;
   if (input.templateId && !saved) throw new NotFoundError('OakDoc template not found');
@@ -308,6 +341,7 @@ export async function previewOakDocMaster(
     bytes: input.bytes,
     fieldTags: deriveOakDocTemplateFieldTags(input.bytes),
     partialPins,
+    customFieldTypes: oakDocCustomFieldTypes(saved?.placeholders),
   }, {
     ...input,
     // The editor has no Configure step, so it previews sample resolutions.
@@ -325,6 +359,8 @@ interface OakDocMasterSource {
   bytes: Uint8Array;
   fieldTags: readonly string[];
   partialPins: OakDocPartialPin[];
+  /** Custom fields the template defines, by key, with their value type. */
+  customFieldTypes: Record<string, PlaceholderValueType>;
 }
 
 /**
@@ -405,12 +441,15 @@ async function renderOakDocMaster(
     : undefined);
 
   const selectedContact = input.selectedContactId
-    ? (await resolveDocumentPartySelections({
+    ? await resolveSelectedContact(input.selectedContactId, input.companyId, params.tenantId)
+    : composition?.signers[0] ?? composition?.representatives[0];
+  const contacts = input.contactIds?.length
+    ? await getDocumentContactParties({
+        contactIds: input.contactIds,
         companyId: input.companyId,
         tenantId: params.tenantId,
-        selectedContactId: input.selectedContactId,
-      })).selectedContact
-    : composition?.signers[0] ?? composition?.representatives[0];
+      })
+    : [];
   const companyDetail = toOakDocCompanyDetail(company);
   const provided = new Set<OakDocFieldContext>(['company', 'system']);
   if (companyDetail.officers?.some((officer) => officer.id === input.selectedDirectorId)) {
@@ -428,6 +467,7 @@ async function renderOakDocMaster(
     ...diagnoseOakDocGeneration({
       usedTags: [...fieldSummary.tags, ...conditionSummary.fieldTags, ...sowFieldTags],
       provided,
+      ...(input.customData ? { customFieldKeys: new Set(Object.keys(master.customFieldTypes)) } : {}),
     }),
   ];
 
@@ -442,8 +482,15 @@ async function renderOakDocMaster(
     resolution: { date: input.resolutionDate },
     generatedBy: preparerName,
   };
-  const values = buildOakDocResolutionValues(resolutionInput);
-  const dates = buildOakDocResolutionDates(resolutionInput);
+  const custom = input.customData
+    ? buildOakDocCustomFieldValues({
+        tags: resolutionTags,
+        data: input.customData,
+        types: master.customFieldTypes,
+      })
+    : { values: {}, dates: {} };
+  const values = { ...buildOakDocResolutionValues(resolutionInput), ...custom.values };
+  const dates = { ...buildOakDocResolutionDates(resolutionInput), ...custom.dates };
 
   const conditioned = resolveOakDocConditions({
     docxBytes: masterBytes,
@@ -460,6 +507,7 @@ async function renderOakDocMaster(
   const repeated = resolveOakDocRepeaters({
     docxBytes: conditioned.bytes,
     company: companyDetail,
+    contacts,
     selectedDirectorIds: input.selectedDirectorIds,
     selectedShareholderIds: input.selectedShareholderIds,
     ...(composition
@@ -537,6 +585,21 @@ async function renderOakDocMaster(
     ...(agreementHash ? { agreementHash } : {}),
     ...(resolutionPartialPins ? { resolutionPartialPins } : {}),
   };
+}
+
+/**
+ * The contact a document addresses: the company's own contact when linked,
+ * otherwise any contact in the workspace. Unknown ids resolve to nothing, so
+ * generation reports the missing contact.
+ */
+async function resolveSelectedContact(
+  contactId: string,
+  companyId: string,
+  tenantId: string,
+): Promise<OakDocContact | undefined> {
+  const { contacts } = await getDocumentPartyOptions(companyId, tenantId);
+  return contacts.find((contact) => contact.id === contactId)
+    ?? (await getDocumentContactParties({ contactIds: [contactId], companyId, tenantId }))[0];
 }
 
 interface AgreementComposition {

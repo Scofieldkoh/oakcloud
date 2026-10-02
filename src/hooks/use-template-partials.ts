@@ -137,11 +137,14 @@ export interface WordPartialInput {
   description?: string;
   category?: TemplatePartialCategoryValue;
   file: File;
+  /** Stored placeholders (custom fields) to save with a new version. */
+  placeholders?: unknown[];
 }
 
 export async function saveWordPartial(input: WordPartialInput): Promise<TemplatePartial> {
   const form = new FormData();
   form.set('file', input.file);
+  if (input.placeholders) form.set('placeholders', JSON.stringify(input.placeholders));
   if (input.id) {
     form.set('expectedRevision', String(input.expectedRevision ?? ''));
   } else {

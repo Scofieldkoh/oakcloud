@@ -29,11 +29,27 @@ describe('OakDoc generation context (L2)', () => {
 
   it('reports unsupported controls with their tag', () => {
     expect(diagnoseOakDocGeneration({
-      usedTags: ['custom.fee'],
+      usedTags: ['mystery.fee'],
       provided: new Set(['company', 'system']),
     })).toEqual([expect.objectContaining({
       code: 'OAKDOC_UNSUPPORTED_FIELD',
-      controlTag: 'custom.fee',
+      controlTag: 'mystery.fee',
+    })]);
+  });
+
+  it('accepts custom fields and warns, without blocking, about ones the template does not define', () => {
+    expect(diagnoseOakDocGeneration({
+      usedTags: ['custom.fee'],
+      provided: new Set(['company', 'system']),
+    })).toEqual([]);
+    expect(diagnoseOakDocGeneration({
+      usedTags: ['custom.fee', 'custom.meeting_date'],
+      provided: new Set(['company', 'system']),
+      customFieldKeys: new Set(['fee']),
+    })).toEqual([expect.objectContaining({
+      code: 'OAKDOC_CUSTOM_FIELD_UNDEFINED',
+      severity: 'warning',
+      controlTag: 'custom.meeting_date',
     })]);
   });
 
@@ -53,10 +69,18 @@ describe('OakDoc generation context (L2)', () => {
 
     expect(oakDocBatchContext(configuration, { resolution_date: '2026-09-02' })).toEqual({
       selectedContactId: 'contact-1',
+      contactIds: [],
+      customData: { resolution_date: '2026-09-02' },
       agreement: { agreementDate: '2026-09-01', effectiveDate: null, termMonths: 12 },
       resolutionDate: '2026-09-02',
     });
     expect(oakDocBatchContext({ ...(configuration as object), selectedContactId: null, serviceAgreement: null } as never, {}))
-      .toEqual({ selectedContactId: undefined, agreement: undefined, resolutionDate: undefined });
+      .toEqual({
+        selectedContactId: undefined,
+        contactIds: [],
+        customData: {},
+        agreement: undefined,
+        resolutionDate: undefined,
+      });
   });
 });

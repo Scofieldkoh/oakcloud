@@ -6,6 +6,7 @@ import {
   createDocumentTemplateSchema,
   documentTemplateCategoryEnum,
   oakDocEditorCompositionTypeEnum,
+  parsePlaceholdersFormField,
   searchDocumentTemplatesSchema,
 } from '@/lib/validations/document-template';
 import {
@@ -117,6 +118,7 @@ export async function POST(request: NextRequest) {
         compositionType: compositionResult?.success ? compositionResult.data : undefined,
         fileName: file.name,
         buffer,
+        placeholders: parsePlaceholdersFormField(formData.get('placeholders')),
       }, { tenantId, userId: session.id });
 
       return NextResponse.json(withRevision(template), { status: 201 });

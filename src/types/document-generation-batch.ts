@@ -84,6 +84,8 @@ export interface MasterFieldDefinition {
   templateIds: string[];
   requiredTemplateIds: string[];
   defaultsByTemplateId: Record<string, string>;
+  /** Dropdown choices, when a template defines the field as a dropdown. */
+  options?: string[];
 }
 
 export interface MasterFieldCatalogue {

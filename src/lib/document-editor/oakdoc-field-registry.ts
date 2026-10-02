@@ -12,6 +12,7 @@ import {
 } from '@/lib/document-editor/oakdoc-repeater-definitions';
 import { OAKDOC_SIGNATURE_TAGS } from '@/lib/document-editor/oakdoc-signatures';
 import { OAKDOC_CONDITION_TAG_PREFIX } from '@/lib/document-editor/oakdoc-conditions';
+import { isOakDocCustomFieldTag } from '@/lib/document-editor/oakdoc-custom-fields';
 import type { OakDocDiagnostic } from '@/types/oakdoc';
 
 /**
@@ -34,6 +35,7 @@ export type OakDocFieldContext =
   | 'selectedContact'
   | 'agreement'
   | 'resolution'
+  | 'custom'
   | 'system';
 
 export interface OakDocRegisteredField extends OakDocFieldDefinition {
@@ -65,6 +67,22 @@ function withContext(
   return fields.map(({ tag, label, category }) => ({ tag, label, category, context }));
 }
 
+/** Field picker categories in the template editor: the catalog plus the contact fields. */
+export const OAKDOC_EDITOR_FIELD_CATEGORIES = [
+  ...OAKDOC_CATALOG_FIELD_CATEGORIES.filter((category) => category.key !== 'system'),
+  {
+    key: 'selected-contact',
+    label: 'Contact',
+    fields: OAKDOC_SELECTED_CONTACT_FIELD_DEFINITIONS.map((field) => ({
+      key: field.tag,
+      label: field.label,
+      example: field.example,
+      category: 'Contact',
+    })),
+  },
+  ...OAKDOC_CATALOG_FIELD_CATEGORIES.filter((category) => category.key === 'system'),
+];
+
 /** Every scalar (non-repeating) field OakDoc can resolve. */
 export const OAKDOC_SCALAR_FIELDS: readonly OakDocRegisteredField[] = [
   ...OAKDOC_CATALOG_FIELD_CATEGORIES.flatMap((category) => category.fields.map((field) => ({
@@ -86,14 +104,24 @@ export const OAKDOC_FIELD_BY_TAG: ReadonlyMap<string, OakDocFieldDefinition> = n
   [...OAKDOC_SCALAR_FIELDS, ...OAKDOC_REPEATER_ITEM_FIELDS].map((field) => [field.tag, field]),
 );
 
-/** Tags a native field control may carry (scalar or repeater item). */
-export const OAKDOC_FIELD_TAGS: ReadonlySet<string> = new Set([
+/**
+ * A fixed tag set that also accepts every `custom.<key>` field, since
+ * custom fields are defined per template rather than registered here.
+ */
+class OakDocFieldTagSet extends Set<string> {
+  override has(tag: string): boolean {
+    return super.has(tag) || isOakDocCustomFieldTag(tag);
+  }
+}
+
+/** Tags a native field control may carry (scalar, custom or repeater item). */
+export const OAKDOC_FIELD_TAGS: ReadonlySet<string> = new OakDocFieldTagSet([
   ...OAKDOC_SCALAR_FIELDS.map((field) => field.tag),
   ...OAKDOC_GENERIC_REPEATER_ITEM_TAGS,
 ]);
 
-/** Scalar fields a condition may test. */
-export const OAKDOC_CONDITION_FIELD_TAGS: ReadonlySet<string> = new Set(
+/** Scalar and custom fields a condition may test. */
+export const OAKDOC_CONDITION_FIELD_TAGS: ReadonlySet<string> = new OakDocFieldTagSet(
   OAKDOC_SCALAR_FIELDS.map((field) => field.tag),
 );
 
@@ -176,6 +204,7 @@ export function classifyOakDocTag(tag: string): OakDocTagKind {
 }
 
 export function oakDocFieldContext(tag: string): OakDocFieldContext | null {
+  if (isOakDocCustomFieldTag(tag)) return 'custom';
   return OAKDOC_SCALAR_FIELDS.find((field) => field.tag === tag)?.context ?? null;
 }
 

@@ -7,17 +7,16 @@ import {
   useRef,
   useState,
 } from 'react';
-import { DocxEditor, type DocxEditorRef, type EditorCommand } from '@docx-editor.dev/react';
+import { DocxEditor, type DocxEditorRef } from '@docx-editor.dev/react';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ArrowLeft, Download, FilePlus, FileUp, Loader2, Save, Search, Sparkles } from 'lucide-react';
+import { ArrowLeft, Download, FilePlus, FileUp, Loader2, Save, Sparkles } from 'lucide-react';
 import { buildBlankOakDocBytes } from '@/lib/document-editor/oakdoc-html-import';
 import { Button } from '@/components/ui/button';
 import { useSession } from '@/hooks/use-auth';
 import { useActiveWorkspaceId } from '@/components/ui/workspace-selector';
-import type { TemplateField } from '@/components/documents/template-editor/template-field-catalog';
 import {
-  OAKDOC_CATALOG_FIELD_CATEGORIES as OAKDOC_FIELD_CATEGORIES,
+  OAKDOC_EDITOR_FIELD_CATEGORIES as OAKDOC_FIELD_CATEGORIES,
   OAKDOC_CONDITION_FIELD_TAGS,
   OAKDOC_FIELD_BY_TAG,
   OAKDOC_FIELD_TAGS,
@@ -25,7 +24,6 @@ import {
 } from '@/lib/document-editor/oakdoc-field-registry';
 import {
   inspectOakDocFields,
-  normalizeOakDocFields,
   pruneDeletedOakDocFields,
   type OakDocFieldDefinition,
   type OakDocFieldSummary,
@@ -70,6 +68,16 @@ import {
   unlockOakDocResolutionSlotContent,
 } from '@/lib/document-editor/oakdoc-resolutions';
 import { readResolutionPreset, resolutionSectionText } from '@/lib/resolution-composition';
+import {
+  oakDocCustomFieldTag,
+  readOakDocCustomFields,
+  readOakDocPartialCustomFields,
+  writeOakDocCustomFields,
+  type OakDocCustomField,
+} from '@/lib/document-editor/oakdoc-custom-fields';
+import { insertOakDocField } from '@/components/documents/oakdoc/insert-oakdoc-field';
+import { OakDocCustomFieldsPanel } from '@/components/documents/oakdoc/oakdoc-custom-fields-panel';
+import { OakDocFieldList } from '@/components/documents/oakdoc/oakdoc-field-list';
 
 const DOCX_MIME =
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
@@ -105,6 +113,7 @@ interface OakDocTemplateRecord {
   isActive: boolean;
   contentJson?: unknown;
   resolutionPreset?: unknown;
+  placeholders?: unknown;
 }
 
 /** Service Agreement masters are seeded; the editor switches the other two. */
@@ -236,24 +245,6 @@ function safeDocxName(value: string): string {
   return base.toLowerCase().endsWith('.docx') ? base : `${base}.docx`;
 }
 
-function fieldDefinition(field: TemplateField, category: string): OakDocFieldDefinition {
-  return {
-    tag: field.key,
-    label: field.label,
-    category,
-  };
-}
-
-function fieldMatches(field: TemplateField, query: string): boolean {
-  if (!query) return true;
-  const normalized = query.toLowerCase();
-  return (
-    field.label.toLowerCase().includes(normalized)
-    || field.key.toLowerCase().includes(normalized)
-    || field.category.toLowerCase().includes(normalized)
-  );
-}
-
 function statusClasses(kind: StatusKind): string {
   if (kind === 'success') {
     return 'border-status-success/20 bg-status-success/10 text-status-success';
@@ -323,7 +314,9 @@ export function OakDocEditor() {
   const [companyId, setCompanyId] = useState('');
   const [selectedDirectorId, setSelectedDirectorId] = useState('');
   const [selectedShareholderId, setSelectedShareholderId] = useState('');
-  const [fieldSearch, setFieldSearch] = useState('');
+  // Stored placeholders of the loaded template, kept so a save only replaces its custom fields.
+  const [storedPlaceholders, setStoredPlaceholders] = useState<unknown>([]);
+  const [customFields, setCustomFields] = useState<OakDocCustomField[]>([]);
   const [fieldSummary, setFieldSummary] = useState<OakDocFieldSummary>({
     count: 0,
     tags: [],
@@ -383,16 +376,6 @@ export function OakDocEditor() {
     [company?.shareholders],
   );
 
-  const visibleCategories = useMemo(() => {
-    const query = fieldSearch.trim().toLowerCase();
-    return OAKDOC_FIELD_CATEGORIES
-      .map((category) => ({
-        ...category,
-        fields: category.fields.filter((field) => fieldMatches(field, query)),
-      }))
-      .filter((category) => category.fields.length > 0);
-  }, [fieldSearch]);
-
   useEffect(() => {
     setSelectedDirectorId('');
     setSelectedShareholderId('');
@@ -436,6 +419,8 @@ export function OakDocEditor() {
         : 'STANDARD',
     );
     setTemplateIsActive(loaded.template.isActive);
+    setStoredPlaceholders(loaded.template.placeholders ?? []);
+    setCustomFields(readOakDocCustomFields(loaded.template.placeholders));
     setFileName(loaded.metadata.fileName);
     setPinnedPartialVersions(pinnedVersionsOf(loaded.template.contentJson));
     setRefreshPartials(false);
@@ -543,65 +528,24 @@ export function OakDocEditor() {
   }, [openNewDocument]);
 
   const assignField = useCallback(async (field: OakDocFieldDefinition) => {
-    const handle = editorRef.current;
-    const editor = handle?.getEditor();
-    if (!handle || !editor) {
-      setStatus('OakDoc is not ready.');
-      setStatusKind('error');
-      return;
-    }
-
     setBusy(true);
     try {
-      const beforeBytes = await currentDocxBytes();
-      const command = {
-        type: 'insertContentControl',
-        subtype: 'plainText',
-        tag: field.tag,
-        title: field.label,
-      } as EditorCommand;
-
-      const allowed = editor.can(command);
-      if (!allowed.ok) {
-        throw new Error(allowed.reason || 'The current selection cannot be made into a field.');
-      }
-
-      const result = handle.exec(command);
-      if (!result.ok) {
-        throw new Error(result.reason || 'OakDoc could not create the Word content control.');
-      }
-
-      const afterBytes = await currentDocxBytes();
-      const normalized = normalizeOakDocFields({
-        beforeBytes,
-        afterBytes,
-        insertedField: field,
-        knownTags: OAKDOC_FIELD_TAGS,
-      });
-
-      const cleanupMessage = normalized.removed > 0
-        ? ` Removed ${normalized.removed} deleted field${normalized.removed === 1 ? '' : 's'}.`
-        : '';
-
-      if (normalized.seeded > 0 || normalized.removed > 0) {
-        replaceDocument(
-          normalized.bytes,
-          `Created ${field.label} field. Empty fields display {{${field.tag}}} until resolved.${cleanupMessage}`,
-        );
-        setIsDirty(true);
+      const inserted = await insertOakDocField(editorRef.current, field);
+      if (inserted.bytes) {
+        replaceDocument(inserted.bytes, inserted.message);
       } else {
-        updateFieldSummary(afterBytes);
-        setStatus(`Created ${field.label} field around the selected text.`);
+        updateFieldSummary(inserted.afterBytes);
+        setStatus(inserted.message);
         setStatusKind('success');
-        setIsDirty(true);
       }
+      setIsDirty(true);
     } catch (error) {
       setStatus(error instanceof Error ? error.message : 'Could not create the Word field.');
       setStatusKind('error');
     } finally {
       setBusy(false);
     }
-  }, [currentDocxBytes, replaceDocument, updateFieldSummary, setIsDirty]);
+  }, [replaceDocument, updateFieldSummary, setIsDirty]);
 
   const addRepeater = useCallback(async (definition: OakDocRepeaterDefinition) => {
     const handle = editorRef.current;
@@ -784,7 +728,9 @@ export function OakDocEditor() {
         },
         allowedFields: OAKDOC_CONDITION_FIELD_TAGS,
       });
-      const fieldLabel = OAKDOC_FIELD_BY_TAG.get(conditionField)?.label ?? conditionField;
+      const fieldLabel = OAKDOC_FIELD_BY_TAG.get(conditionField)?.label
+        ?? customFields.find((field) => oakDocCustomFieldTag(field.key) === conditionField)?.label
+        ?? conditionField;
       const comparison = conditionOperator === 'truthy'
         ? 'has a value'
         : conditionOperator === 'equals'
@@ -806,6 +752,7 @@ export function OakDocEditor() {
     conditionOperator,
     conditionValue,
     currentDocxBytes,
+    customFields,
     replaceDocument,
     setIsDirty,
   ]);
@@ -965,6 +912,7 @@ export function OakDocEditor() {
         formData.set('expectedRevision', String(templateRevision));
       }
       if (refreshPartials) formData.set('refreshPartialPins', 'all');
+      formData.set('placeholders', JSON.stringify(writeOakDocCustomFields(storedPlaceholders, customFields)));
 
       const response = await fetch(
         templateId
@@ -984,6 +932,7 @@ export function OakDocEditor() {
       setSavedCompositionType(typeof payload.compositionType === 'string' ? payload.compositionType : templateType);
       setPinnedPartialVersions(pinnedVersionsOf(payload.contentJson));
       setRefreshPartials(false);
+      setStoredPlaceholders(payload.placeholders ?? []);
       const savedRevision = Number(payload.revision ?? payload.version);
       setTemplateId(savedId);
       setTemplateRevision(savedRevision);
@@ -1016,10 +965,12 @@ export function OakDocEditor() {
   }, [
     activeTenantId,
     currentDocxBytes,
+    customFields,
     fileName,
     refreshPartials,
     replaceDocument,
     router,
+    storedPlaceholders,
     templateCategory,
     templateDescription,
     templateId,
@@ -1055,6 +1006,11 @@ export function OakDocEditor() {
 
   const hasDocument = documentBytes !== null;
   const companyOptions = companiesQuery.data ?? [];
+  const partialCustomFields = readOakDocPartialCustomFields(storedPlaceholders);
+  const conditionCustomFields = [...customFields, ...partialCustomFields];
+  const fieldLabel = (tag: string): string => OAKDOC_FIELD_BY_TAG.get(tag)?.label
+    ?? conditionCustomFields.find((field) => oakDocCustomFieldTag(field.key) === tag)?.label
+    ?? tag;
 
   return (
     <div className="h-[calc(100vh-1rem)] min-h-[720px] overflow-hidden bg-background-primary p-2">
@@ -1472,6 +1428,15 @@ export function OakDocEditor() {
                     ))}
                   </optgroup>
                 ))}
+                {conditionCustomFields.length > 0 ? (
+                  <optgroup label="Custom fields">
+                    {conditionCustomFields.map((field) => (
+                      <option key={field.key} value={oakDocCustomFieldTag(field.key)}>
+                        {field.label}
+                      </option>
+                    ))}
+                  </optgroup>
+                ) : null}
               </select>
 
               <select
@@ -1520,8 +1485,7 @@ export function OakDocEditor() {
 
                   <div className="space-y-1.5">
                     {conditionSummary.conditions.map((condition) => {
-                      const fieldLabel = OAKDOC_FIELD_BY_TAG.get(condition.field)?.label
-                        ?? condition.field;
+                      const conditionLabel = fieldLabel(condition.field);
                       const rule = condition.operator === 'truthy'
                         ? 'has a value'
                         : condition.operator === 'equals'
@@ -1533,7 +1497,7 @@ export function OakDocEditor() {
                           className="rounded-lg border border-border-primary bg-background-primary px-2.5 py-2"
                         >
                           <div className="truncate text-xs font-medium text-text-primary">
-                            {fieldLabel}
+                            {conditionLabel}
                           </div>
                           <div className="mt-0.5 truncate text-[10px] text-text-muted">
                             {rule}
@@ -1548,77 +1512,26 @@ export function OakDocEditor() {
 
             <div className="my-4 border-t border-border-secondary" />
 
-            <section>
-              <div className="mb-2 flex items-end justify-between gap-2">
-                <div>
-                  <h2 className="text-xs font-semibold uppercase tracking-wide text-text-muted">
-                    Oakcloud fields
-                  </h2>
-                  <p className="mt-1 text-xs text-text-secondary">
-                    Highlight text to wrap it, or place the caret to insert a field.
-                  </p>
-                </div>
-                <span className="shrink-0 text-[11px] text-text-muted">
-                  {fieldSummary.count} in document
-                </span>
-              </div>
+            <OakDocCustomFieldsPanel
+              fields={customFields}
+              partialFields={partialCustomFields}
+              onChange={(next) => {
+                setCustomFields(next);
+                setIsDirty(true);
+              }}
+              onInsert={(field) => void assignField(field)}
+              presentTags={fieldSummary.tags}
+              disabled={!hasDocument || busy}
+            />
 
-              <label className="relative mb-3 block">
-                <span className="sr-only">Search Oakcloud fields</span>
-                <Search
-                  className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-text-muted"
-                  aria-hidden="true"
-                />
-                <input
-                  type="search"
-                  value={fieldSearch}
-                  onChange={(event) => setFieldSearch(event.target.value)}
-                  placeholder="Search fields..."
-                  className="h-9 w-full rounded-lg border border-border-primary bg-background-primary pl-8 pr-2.5 text-sm text-text-primary placeholder:text-text-muted focus:border-oak-primary focus:outline-none focus:ring-2 focus:ring-oak-primary/20"
-                />
-              </label>
+            <div className="my-4 border-t border-border-secondary" />
 
-              <div className="space-y-4">
-                {visibleCategories.map((category) => (
-                  <div key={category.key}>
-                    <h3 className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-text-muted">
-                      {category.label}
-                    </h3>
-                    <div className="space-y-1">
-                      {category.fields.map((field) => {
-                        const definition = fieldDefinition(field, category.label);
-                        const present = fieldSummary.tags.includes(field.key);
-                        return (
-                          <button
-                            key={field.key}
-                            type="button"
-                            disabled={!hasDocument || busy}
-                            onPointerDown={(event) => event.preventDefault()}
-                            onClick={() => void assignField(definition)}
-                            className="flex w-full items-center justify-between gap-2 rounded-md border border-transparent px-2.5 py-2 text-left transition-colors hover:border-oak-primary/20 hover:bg-oak-primary/5 disabled:cursor-not-allowed disabled:opacity-40"
-                          >
-                            <span className="min-w-0">
-                              <span className="block truncate text-xs font-medium text-text-primary">
-                                {field.label}
-                              </span>
-                              <span className="block truncate text-[10px] text-text-muted">
-                                {field.key}
-                              </span>
-                            </span>
-                            {present ? (
-                              <span
-                                className="h-1.5 w-1.5 shrink-0 rounded-full bg-oak-primary"
-                                title="Used in this document"
-                              />
-                            ) : null}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
+            <OakDocFieldList
+              presentTags={fieldSummary.tags}
+              fieldCount={fieldSummary.count}
+              onInsert={(field) => void assignField(field)}
+              disabled={!hasDocument || busy}
+            />
 
             <div className="my-4 border-t border-border-secondary" />
 
@@ -1632,7 +1545,7 @@ export function OakDocEditor() {
                     <span
                       key={tag}
                       className="rounded-md bg-background-tertiary px-1.5 py-1 text-[10px] text-text-secondary"
-                      title={OAKDOC_FIELD_BY_TAG.get(tag)?.label ?? tag}
+                      title={fieldLabel(tag)}
                     >
                       {tag}
                     </span>
