@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { resolutionItemFields } from '@/components/documents/generation-batch/resolution-item-fields';
+import { resolutionItemFieldTags, resolutionItemFields } from '@/components/documents/generation-batch/resolution-item-fields';
 import { appendOakDocPartialCustomFields } from '@/lib/document-editor/oakdoc-custom-fields';
 import { resolutionPartialIds, type ResolutionComposition } from '@/lib/resolution-composition';
 import { normalizeStoredPlaceholders, storageFormatToCustomPlaceholders } from '@/lib/template-analysis';
@@ -57,5 +57,17 @@ describe('resolution partial custom fields', () => {
       ['meeting_date', 'date', true],
     ]);
     expect(resolutionItemFields(templateFields, null, partials)).toBe(templateFields);
+  });
+
+  it('adds the field tags of chosen partials, so their repeaters get pickers', () => {
+    const tagged = [
+      { id: 'p-fee', fieldTags: ['repeat.officers', 'officer.name'] },
+      { id: 'p-meeting', fieldTags: ['company.name'] },
+      { id: 'p-unused', fieldTags: ['repeat.directors'] },
+    ];
+    expect(resolutionItemFieldTags(['company.uen'], composition, tagged))
+      .toEqual(['company.uen', 'repeat.officers', 'officer.name', 'company.name']);
+    const template = ['company.uen'];
+    expect(resolutionItemFieldTags(template, null, tagged)).toBe(template);
   });
 });

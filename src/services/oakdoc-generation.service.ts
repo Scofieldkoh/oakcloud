@@ -130,6 +130,8 @@ export interface OakDocGenerationInput {
   selectedDirectorIds?: string[];
   /** Shareholders a shareholders repeater lists; absent means all current shareholders. */
   selectedShareholderIds?: string[];
+  /** Officers of any role an officers repeater lists, in order; absent means none. */
+  selectedOfficerIds?: string[];
   /** Any workspace contact; one linked to the company prints its role there. */
   selectedContactId?: string;
   /** Contacts listed by a contacts repeater, in this order. */
@@ -517,6 +519,7 @@ async function renderOakDocMaster(
     contacts,
     selectedDirectorIds: input.selectedDirectorIds,
     selectedShareholderIds: input.selectedShareholderIds,
+    selectedOfficerIds: input.selectedOfficerIds,
     ...(composition
       ? { signers: composition.signers, authorisedRepresentatives: composition.representatives }
       : {}),

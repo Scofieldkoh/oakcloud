@@ -4,6 +4,22 @@ import { normalizeStoredPlaceholders, storageFormatToCustomPlaceholders } from '
 import type { CustomPlaceholderDefinition } from '@/types/placeholders';
 
 /**
+ * A resolution document's field tags: its template's, then those of the
+ * partials chosen for its numbered resolutions, so a repeater inside a
+ * chosen partial (officers, directors) gets its Configure picker.
+ */
+export function resolutionItemFieldTags(
+  templateTags: readonly string[] | undefined,
+  resolution: ResolutionComposition | null | undefined,
+  partials: ReadonlyArray<{ id: string; fieldTags?: readonly string[] }>,
+): readonly string[] | undefined {
+  const ids = new Set(resolutionPartialIds(resolution));
+  if (ids.size === 0) return templateTags;
+  const tags = partials.filter((partial) => ids.has(partial.id)).flatMap((partial) => partial.fieldTags ?? []);
+  return tags.length === 0 ? templateTags : Array.from(new Set([...(templateTags ?? []), ...tags]));
+}
+
+/**
  * A resolution document's fields: its template's, then the custom fields of
  * the partials chosen for its numbered resolutions. Generation adds the same
  * fields (withResolutionPartialFields), so Configure asks for what prints.

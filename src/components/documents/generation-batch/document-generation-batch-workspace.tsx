@@ -61,7 +61,7 @@ import { useDocumentGenerationBatch } from './use-document-generation-batch';
 import { BatchTemplatePicker } from './batch-template-picker';
 import { BatchSharedParties } from './batch-shared-parties';
 import { templatePartyNeeds, type TemplatePartyNeeds } from './template-party-needs';
-import { resolutionItemFields } from './resolution-item-fields';
+import { resolutionItemFieldTags, resolutionItemFields } from './resolution-item-fields';
 import { BatchSharedSetup } from './batch-shared-setup';
 import { BatchDocumentQueue } from './batch-document-queue';
 import { BatchItemConfigurator } from './batch-item-configurator';
@@ -330,24 +330,33 @@ export function DocumentGenerationBatchWorkspace({
     () => templates.find((template) => template.id === activeItem?.templateId) ?? null,
     [templates, activeItem?.templateId],
   );
-  const activeOakDocFieldTags = useMemo(
-    () => readOakDocTemplateMetadata(activeTemplate?.contentJson)?.fieldTags,
-    [activeTemplate],
-  );
+  // Word field tags per document, with those of its chosen resolution partials.
+  const fieldTagsByItemKey = useMemo(() => {
+    const byTemplateId = new Map(templates.map((template) => [template.id, template]));
+    const partials = partialsQuery.data?.partials ?? [];
+    const tags: Record<string, readonly string[] | undefined> = {};
+    for (const item of state.batch.items) {
+      const templateTags = readOakDocTemplateMetadata(byTemplateId.get(item.templateId)?.contentJson)?.fieldTags;
+      tags[item.key] = item.templateKind === 'RESOLUTION'
+        ? resolutionItemFieldTags(templateTags, item.configuration.resolution, partials)
+        : templateTags;
+    }
+    return tags;
+  }, [partialsQuery.data, templates, state.batch.items]);
+  const activeOakDocFieldTags = activeItem ? fieldTagsByItemKey[activeItem.key] : undefined;
 
   const partyNeedsByItemKey = useMemo(() => {
     const byTemplateId = new Map(templates.map((template) => [template.id, template]));
     const needs: Record<string, TemplatePartyNeeds> = {};
     for (const item of state.batch.items) {
       if (item.templateKind === 'SERVICE_AGREEMENT') continue;
-      const template = byTemplateId.get(item.templateId);
       needs[item.key] = templatePartyNeeds(
-        template?.content,
-        readOakDocTemplateMetadata(template?.contentJson)?.fieldTags,
+        byTemplateId.get(item.templateId)?.content,
+        fieldTagsByItemKey[item.key],
       );
     }
     return needs;
-  }, [templates, state.batch.items]);
+  }, [fieldTagsByItemKey, templates, state.batch.items]);
 
   const overriddenCountByField = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -845,6 +854,7 @@ export function DocumentGenerationBatchWorkspace({
                 needsByItemKey={partyNeedsByItemKey}
                 directors={partyOptions.directors}
                 shareholders={partyOptions.shareholders}
+                officers={partyOptions.officers}
                 contacts={partyOptions.contacts}
                 isLoading={partyOptions.isLoading}
                 error={partyOptions.error}
@@ -905,6 +915,7 @@ export function DocumentGenerationBatchWorkspace({
                     companyContacts={partyContacts}
                     directors={partyOptions.directors}
                     shareholders={partyOptions.shareholders}
+                    officers={partyOptions.officers}
                     partyLoading={partyOptions.isLoading}
                     partyError={partyOptions.error}
                     onPartyRetry={partyOptions.reload}

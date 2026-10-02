@@ -24,6 +24,7 @@ export interface BatchItemConfiguratorProps {
   companyContacts: DocumentContact[];
   directors: DocumentPartyOption[];
   shareholders: DocumentPartyOption[];
+  officers?: DocumentPartyOption[];
   partyLoading?: boolean;
   partyError?: string | null;
   onPartyRetry?: () => void;
@@ -106,6 +107,7 @@ export function BatchItemConfigurator(props: BatchItemConfiguratorProps) {
           effectiveMasterValues={effectiveMasterValues}
           directors={props.directors}
           shareholders={props.shareholders}
+          officers={props.officers}
           contacts={props.contacts}
           contactsById={props.contactsById}
           companyContacts={companyContacts}

@@ -128,6 +128,39 @@ describe('OakDoc generic repeaters', () => {
     expect(xml(resolved.bytes)).not.toContain(tag);
   });
 
+  it('repeats only the officers ticked on Configure, any role, in that order', () => {
+    const source = docx('<w:p w14:paraId="E1000001">' + field('officer.name', 50) + field('officer.role', 51) + '</w:p>');
+    const created = createOakDocGenericRepeater({
+      docxBytes: source,
+      fromParaId: 'E1000001',
+      definition: definition('repeat.officers'),
+    });
+    const company = {
+      id: 'c1',
+      name: 'Example',
+      uen: '202600001A',
+      officers: [
+        { id: 'o1', name: 'Dana Director', role: 'DIRECTOR', isCurrent: true },
+        { id: 'o2', name: 'Sam Secretary', role: 'SECRETARY', isCurrent: true },
+        { id: 'o3', name: 'Sue Secretary', role: 'SECRETARY', isCurrent: true },
+        { id: 'o4', name: 'Old Secretary', role: 'SECRETARY', isCurrent: false },
+      ],
+    };
+    const resolved = resolveOakDocGenericRepeaters({
+      docxBytes: created.bytes,
+      data: { company, selectedOfficerIds: ['o3', 'o2', 'o4'] },
+    });
+    expect(resolved.itemsCreated).toBe(2);
+    const text = xml(resolved.bytes);
+    expect(text.indexOf('Sue Secretary')).toBeLessThan(text.indexOf('Sam Secretary'));
+    expect(text).toContain('Secretary');
+    expect(text).not.toContain('Dana Director');
+    expect(text).not.toContain('Old Secretary');
+
+    const none = resolveOakDocGenericRepeaters({ docxBytes: created.bytes, data: { company } });
+    expect(none.itemsCreated).toBe(0);
+  });
+
   it('keeps each director signing block together and puts roles in proper case', () => {
     const source = docx(
       '<w:p w14:paraId="D1000001"/>'

@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { formatOakDocRole } from '@/lib/document-editor/oakdoc-repeater-definitions';
 import {
   buildPartyContactFields,
   type DocumentParty,
@@ -259,6 +260,11 @@ export async function getDocumentPartyOptions(
     directors,
     shareholders,
     contacts,
+    /** Every current officer, any role, for the Word officers repeater. */
+    officers: officerParties.map((party) => ({
+      ...party,
+      detail: formatOakDocRole(party.role?.replace(/_/g, ' ')),
+    })),
   };
 }
 

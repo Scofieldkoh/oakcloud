@@ -125,6 +125,7 @@ describe('Document generator service', () => {
       directors: [],
       shareholders: [],
       contacts: [],
+      officers: [],
     });
     vi.mocked(resolveDocumentPartySelections).mockResolvedValue({});
   });

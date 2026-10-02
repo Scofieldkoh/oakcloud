@@ -6,6 +6,7 @@ const editorState = vi.hoisted(() => ({
   onChange: null as null | (() => void),
   saveImpl: vi.fn(async () => new Uint8Array([1, 2, 3]).buffer as ArrayBuffer),
   mounts: 0,
+  selection: null as null | { from: { paraId: string }; to: { paraId: string } },
 }));
 
 vi.mock('@docx-editor.dev/react', () => ({
@@ -16,7 +17,9 @@ vi.mock('@docx-editor.dev/react', () => ({
     useImperativeHandle(ref, () => ({
       save: editorState.saveImpl,
       snapshot: () => ({ selectionCollapsed: true, selection: null }),
-      getEditor: () => null,
+      getEditor: () => (editorState.selection
+        ? { snapshot: () => ({ selection: editorState.selection }) }
+        : null),
     }));
     editorState.onChange = props.onChange ?? null;
     if (props.onReady) queueMicrotask(props.onReady);
@@ -24,7 +27,10 @@ vi.mock('@docx-editor.dev/react', () => ({
   }),
 }));
 
-import { OakDocDocumentHost } from '@/components/documents/oakdoc/oakdoc-document-host';
+import { OakDocDocumentHost, type OakDocHostSidebarApi } from '@/components/documents/oakdoc/oakdoc-document-host';
+import { OAKDOC_OFFICERS_REPEATER_TAG } from '@/lib/document-editor/oakdoc-repeater-definitions';
+import { OAKDOC_REPEATER_DEFINITIONS } from '@/lib/document-editor/oakdoc-repeaters';
+import { createDocxFixture } from '../../helpers/docx-fixture';
 
 function deferred<T>() {
   let resolve!: (value: T) => void;
@@ -36,6 +42,46 @@ describe('OakDocDocumentHost', () => {
   beforeEach(() => {
     editorState.onChange = null;
     editorState.saveImpl.mockClear();
+    editorState.selection = null;
+  });
+
+  it('lets a sidebar make the paragraph at the caret repeat for officers', async () => {
+    const paragraph = createDocxFixture({
+      'word/document.xml': '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        + '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"'
+        + ' xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml"><w:body>'
+        + '<w:p w14:paraId="0A1B2C3D"><w:r><w:t>Secretary resigns</w:t></w:r></w:p><w:sectPr/></w:body></w:document>',
+    });
+    editorState.saveImpl.mockImplementation(async () => paragraph.slice().buffer as ArrayBuffer);
+    editorState.selection = { from: { paraId: '0A1B2C3D' }, to: { paraId: '0A1B2C3D' } };
+    let api: OakDocHostSidebarApi | null = null;
+    const onDirtyChange = vi.fn();
+
+    render(
+      <OakDocDocumentHost
+        entityKey="partial:p-1"
+        baseRevision={1}
+        title="Resignation of secretary"
+        readOnly={false}
+        description="Word partial"
+        loadingLabel="Loading…"
+        load={async () => paragraph}
+        persist={vi.fn()}
+        onDirtyChange={onDirtyChange}
+        renderSidebar={(sidebar) => {
+          api = sidebar;
+          return <span>{`${sidebar.repeaters.count} repeating`}</span>;
+        }}
+      />,
+    );
+    await screen.findByTestId('docx-editor');
+    expect(screen.getByText('0 repeating')).toBeInTheDocument();
+
+    const officers = OAKDOC_REPEATER_DEFINITIONS.find((definition) => definition.tag === OAKDOC_OFFICERS_REPEATER_TAG)!;
+    await act(async () => { await api!.addRepeater(officers); });
+
+    expect(await screen.findByText('1 repeating')).toBeInTheDocument();
+    expect(onDirtyChange).toHaveBeenLastCalledWith(true);
   });
 
   it('keeps edits typed during an in-flight save dirty and never reloads submitted bytes', async () => {

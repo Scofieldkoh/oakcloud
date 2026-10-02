@@ -48,6 +48,7 @@ export interface PreviewFingerprintInput {
   selectedDirectorIds?: string[];
   selectedShareholderId: string | null;
   selectedShareholderIds?: string[];
+  selectedOfficerIds?: string[];
   selectedContactId: string | null;
   /** Exact typed values are hashed; false/zero must not be stringified away. */
   effectiveCustomData: Record<string, unknown>;

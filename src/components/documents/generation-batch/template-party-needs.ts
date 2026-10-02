@@ -1,6 +1,7 @@
 import {
   OAKDOC_CONTACTS_REPEATER_TAG,
   OAKDOC_DIRECTORS_REPEATER_TAG,
+  OAKDOC_OFFICERS_REPEATER_TAG,
   OAKDOC_SHAREHOLDERS_REPEATER_TAG,
 } from '@/lib/document-editor/oakdoc-repeater-definitions';
 import {
@@ -17,6 +18,8 @@ export interface TemplatePartyNeeds {
   shareholder: boolean;
   shareholders: boolean;
   contact: boolean;
+  /** Officers of any role, ticked on Configure, for the Word officers repeater. */
+  officers: boolean;
   /** A contact list: the Word contacts repeater or legacy contact placeholders. */
   contacts: boolean;
 }
@@ -47,6 +50,7 @@ export function templatePartyNeeds(
     shareholder: selections.shareholder || usesField(tags, 'selectedShareholder'),
     shareholders: legacy.shareholders || tags.has(OAKDOC_SHAREHOLDERS_REPEATER_TAG),
     contact: selections.contact || usesField(tags, 'selectedContact'),
+    officers: tags.has(OAKDOC_OFFICERS_REPEATER_TAG),
     contacts: templateContent === undefined
       || tags.has(OAKDOC_CONTACTS_REPEATER_TAG)
       || getRequiredLegacyContactSelection(templateContent),
@@ -59,6 +63,7 @@ export const PARTY_CONFIGURATION_KEYS = [
   ['directors', 'selectedDirectorIds'],
   ['shareholder', 'selectedShareholderId'],
   ['shareholders', 'selectedShareholderIds'],
+  ['officers', 'selectedOfficerIds'],
   ['contact', 'selectedContactId'],
 ] as const satisfies ReadonlyArray<readonly [keyof TemplatePartyNeeds, keyof BatchItemConfiguration]>;
 

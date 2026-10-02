@@ -91,7 +91,7 @@ async function fetchPartials(
 
 export type TemplatePartialSummary =
   Pick<TemplatePartial, 'id' | 'name' | 'displayName' | 'header' | 'description' | 'placeholders' | 'version' | 'category'>
-  & { documentEngine: 'A4' | 'OAKDOC' };
+  & { documentEngine: 'A4' | 'OAKDOC'; fieldTags?: string[] };
 
 async function fetchAllPartials(tenantId?: string): Promise<{ partials: TemplatePartialSummary[] }> {
   const searchParams = new URLSearchParams({ all: 'true' });

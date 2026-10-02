@@ -179,4 +179,30 @@ describe('BatchItemConfigurator', () => {
     await user.click(screen.getByRole('checkbox', { name: /Alice Tan/ }));
     expect(p.onPatch).toHaveBeenCalledWith({ selectedDirectorIds: ['director-2'] });
   });
+
+  it('lists every officer role for an officers repeater, unticked until chosen', async () => {
+    const user = userEvent.setup();
+    const officer = (id: string, name: string, detail: string) => ({
+      id, contactId: null, name, detail, email: null, phone: null, address: { full: null, letter: null },
+    });
+    const p = props({
+      templateContent: '<p>Word</p>',
+      templateFieldTags: ['repeat.officers', 'officer.name'],
+      officers: [
+        officer('officer-1', 'Alice Tan', 'Director'),
+        officer('officer-2', 'Sam Secretary', 'Secretary'),
+        officer('officer-3', 'Sue Secretary', 'Secretary'),
+      ],
+    });
+    render(<BatchItemConfigurator {...p} />);
+
+    expect(screen.getByRole('group', { name: /officers/i })).toBeInTheDocument();
+    const boxes = screen.getAllByRole('checkbox');
+    expect(boxes).toHaveLength(3);
+    expect(boxes.some((checkbox) => (checkbox as HTMLInputElement).checked)).toBe(false);
+    expect(screen.getByText('1 required')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('checkbox', { name: /Sue Secretary/ }));
+    expect(p.onPatch).toHaveBeenCalledWith({ selectedOfficerIds: ['officer-3'] });
+  });
 });

@@ -219,6 +219,7 @@ describe('OakDoc generation service', () => {
       companyId: 'company-1',
       selectedContactId: 'contact-9',
       contactIds: ['contact-2'],
+      selectedOfficerIds: ['officer-9'],
       customData: { fee: '1500', meeting_date: '2026-11-03' },
     }, { tenantId });
 
@@ -238,6 +239,7 @@ describe('OakDoc generation service', () => {
       { dates: expect.objectContaining({ 'custom.meeting_date': '2026-11-03' }) },
     );
     expect(repeaterMock.resolveOakDocRepeaters).toHaveBeenCalledWith(expect.objectContaining({
+      selectedOfficerIds: ['officer-9'],
       contacts: [expect.objectContaining({
         id: 'contact-2',
         name: 'Listed Person',

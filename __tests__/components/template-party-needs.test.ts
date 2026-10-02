@@ -15,10 +15,16 @@ describe('templatePartyNeeds for Word templates', () => {
       shareholder: false,
       shareholders: false,
       contact: true,
+      officers: false,
       contacts: true,
     });
     expect(templatePartyNeeds(OAKDOC_TEMPLATE_CONTENT, ['selectedDirector.name', 'selectedShareholder.name']))
       .toMatchObject({ director: true, shareholder: true, contact: false, contacts: false });
+  });
+
+  it('asks for officers when the template repeats them', () => {
+    expect(templatePartyNeeds(OAKDOC_TEMPLATE_CONTENT, ['repeat.officers', 'officer.name']))
+      .toMatchObject({ officers: true, directors: false });
   });
 
   it('asks for nothing when a Word template uses only company fields', () => {
