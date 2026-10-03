@@ -288,7 +288,20 @@ Service Agreement composition templates:
   wording) as a display-only preview; the slot's first paragraph keeps the
   formatting and generation replaces the whole slot. The editor preview uses sample resolutions. `scripts/seed-resolution-template.ts --email
   <login> [--replace]` creates the starter "Board Resolution (Numbered)"
-  template from the firm's reference directors' resolution.
+  template from the firm's reference directors' resolution, and "First Board
+  Resolution" (`src/content/resolution/first-board-resolution-oakdoc.ts`):
+  a fixed "NOTED THAT" part (incorporation date, a Notice of Incorporation
+  No. custom field, primary and secondary SSIC activities, first directors)
+  and seven Resolutions partials (constitution, registered address,
+  financial year end, secretary, corporate secretarial agent, subscribers'
+  shares table, lodgement) preset in that order. A master whose styles define
+  the character style `OakDocResolutionHeading` gets it on each numbered
+  heading's text (the First Board Resolution underlines). Company fields
+  `company.primaryActivity`, `company.secondaryActivity` ("code |
+  description"), `company.financialYearEnd` ("31 December"),
+  `company.firstFinancialYearEnd` (the confirmed first period's end, else the
+  first year end on or after incorporation) and `company.paidUpCapital`
+  ("SGD 10,000.00") serve these resolutions.
 
 Service-specific input definitions use the `service` placeholder source, for
 example `service.fields.software`, and may use the `textarea` type. The editor

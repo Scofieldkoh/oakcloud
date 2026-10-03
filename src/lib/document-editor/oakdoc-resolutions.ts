@@ -250,16 +250,35 @@ function textParagraph(
   return paragraph;
 }
 
+/**
+ * Character style a master may define (word/styles.xml) to format the
+ * heading text after "N.<tab>", such as an underline; the number keeps the
+ * slot's formatting.
+ */
+export const OAKDOC_RESOLUTION_HEADING_STYLE = 'OakDocResolutionHeading';
+
+function hasHeadingStyle(files: Record<string, Uint8Array>): boolean {
+  const styles = files['word/styles.xml'];
+  return !!styles && strFromU8(styles).includes(`w:styleId="${OAKDOC_RESOLUTION_HEADING_STYLE}"`);
+}
+
 function headingParagraph(
   xml: XMLDocument,
   prototype: Prototype,
   number: number,
   heading: string,
+  styled = false,
 ): Element {
   const paragraph = paragraphFrom(xml, prototype, { keepNext: true, headingTab: true });
-  const run = runFrom(xml, prototype);
+  let run = runFrom(xml, prototype);
   appendText(xml, run, `${number}.`);
   run.appendChild(element(xml, 'tab'));
+  if (styled) {
+    paragraph.appendChild(run);
+    run = runFrom(xml, prototype);
+    const properties = wordChild(run, 'rPr') ?? run.insertBefore(element(xml, 'rPr'), run.firstChild);
+    insertOrdered(properties, element(xml, 'rStyle', { val: OAKDOC_RESOLUTION_HEADING_STYLE }), RUN_PROPERTY_ORDER);
+  }
   appendText(xml, run, heading.trim());
   paragraph.appendChild(run);
   return paragraph;
@@ -333,11 +352,12 @@ export function composeOakDocResolutions(
   const ids = new IdAllocator(xml);
   const blocks: Element[] = [];
   const partialIds: string[] = [];
+  const styledHeadings = hasHeadingStyle(files);
   if (composition.subject.trim()) {
     blocks.push(textParagraph(xml, prototype, [composition.subject.trim()], { bold: true, keepNext: true }));
   }
   composition.sections.forEach((section, index) => {
-    blocks.push(headingParagraph(xml, prototype, index + 1, section.heading));
+    blocks.push(headingParagraph(xml, prototype, index + 1, section.heading, styledHeadings));
     const text = resolutionSectionText(section);
     if (section.kind === 'PARTIAL' && text === null) {
       partialIds.push(section.partialId);
@@ -401,8 +421,9 @@ export function previewOakDocResolutionSlot(
   const label = runFrom(xml, prototype);
   appendText(xml, label, sections.length > 0 ? RESOLUTION_SLOT_PRESET_LABEL : RESOLUTION_SLOT_PLACEHOLDER);
   first.appendChild(label);
+  const styledHeadings = hasHeadingStyle(files);
   sections.forEach((section, index) => {
-    content.appendChild(headingParagraph(xml, prototype, index + 1, section.heading));
+    content.appendChild(headingParagraph(xml, prototype, index + 1, section.heading, styledHeadings));
     for (const lines of customResolutionParagraphs(section.text)) {
       content.appendChild(textParagraph(xml, prototype, lines));
     }
