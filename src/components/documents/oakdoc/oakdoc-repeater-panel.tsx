@@ -4,6 +4,7 @@ import { useId, useState } from 'react';
 import { Repeat, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CollapsibleSection } from '@/components/ui/collapsible-section';
+import { InfoTip } from '@/components/ui/info-tip';
 import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
 import { OakDocContactShortlistPicker } from '@/components/documents/oakdoc/oakdoc-contact-shortlist-picker';
 import {
@@ -117,11 +118,13 @@ export function OakDocRepeaterPanel({
     onSelect?.(key);
   };
   const toggle = (key: string) => select(selectedKey === key ? null : key);
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
   // Roles the next Officers section is limited to; none means any role.
   const [officerRoles, setOfficerRoles] = useState<string[]>([]);
   // Name of the next section inserted; a named Contacts section is its own list.
   const [newName, setNewName] = useState('');
+  // Contacts the next Contacts section offers on Configure; none means any contact.
+  const [newShortlist, setNewShortlist] = useState<OakDocCustomFieldContact[]>([]);
   const [shortlistTag, setShortlistTag] = useState<string | null>(null);
   const rolesLabelId = useId();
   const toggleOfficerRole = (role: string) => setOfficerRoles((current) => (
@@ -153,12 +156,19 @@ export function OakDocRepeaterPanel({
         : base
   );
   const insert = (definition: OakDocRepeaterDefinition) => {
-    if (pendingName) {
-      // A named list keeps its first name when the same name is inserted again.
-      const keep = parseOakDocContactListSlug(definition.tag) && sections.names[definition.tag];
-      if (!keep) setName(definition.tag, pendingName);
-      setNewName('');
+    // A named list keeps its first name when the same name is inserted again.
+    const keepName = parseOakDocContactListSlug(definition.tag) && sections.names[definition.tag];
+    const name = pendingName && !keepName ? pendingName : null;
+    const contacts = isOakDocContactsRepeaterTag(definition.tag) && newShortlist.length > 0 ? newShortlist : null;
+    if (name !== null || contacts !== null) {
+      onSectionsChange?.({
+        ...sections,
+        names: name !== null ? { ...sections.names, [definition.tag]: name } : sections.names,
+        shortlists: contacts !== null ? { ...sections.shortlists, [definition.tag]: contacts } : sections.shortlists,
+      });
     }
+    setNewName('');
+    if (contacts !== null) setNewShortlist([]);
     onAdd(definition);
     // Open the new section, for its fields and shortlist.
     select(`section:${definition.tag}`);
@@ -203,6 +213,7 @@ export function OakDocRepeaterPanel({
       count={count || undefined}
       collapsed={searching ? false : !open}
       onCollapsedChange={(collapsed) => setOpen(!collapsed)}
+      info="A paragraph or table row printed once for each director, shareholder, contact or officer chosen on Configure."
       contentClassName="space-y-3"
     >
       {searching ? (
@@ -213,7 +224,7 @@ export function OakDocRepeaterPanel({
         <>
           {usedTags.length > 0 ? (
             <div className="space-y-1">
-              <h3 className="px-1 text-[10px] font-semibold uppercase tracking-wide text-text-muted">
+              <h3 className="px-1 text-[11px] font-semibold uppercase tracking-wide text-text-muted">
                 In this document
               </h3>
               {OAKDOC_REPEATER_DEFINITIONS
@@ -250,7 +261,7 @@ export function OakDocRepeaterPanel({
                             </button>
                             {selected ? (
                               <div className="space-y-2 px-2.5 pb-2.5">
-                                <code className="block break-all text-[10px] text-text-muted">{tag}</code>
+                                <code className="block break-all text-[11px] text-text-muted">{tag}</code>
                                 {canName && tag !== OAKDOC_CONTACTS_REPEATER_TAG ? (
                                   <OakDocConfigureName
                                     value={sections.names[tag] ?? ''}
@@ -261,7 +272,7 @@ export function OakDocRepeaterPanel({
                                 ) : null}
                                 {canName && isOakDocContactsRepeaterTag(tag) ? (
                                   <div className="flex items-center justify-between gap-2">
-                                    <span className="text-[10px] leading-relaxed text-text-secondary">
+                                    <span className="text-[11px] leading-relaxed text-text-secondary">
                                       {listShortlist.length === 0
                                         ? 'Configure offers any contact.'
                                         : `Configure offers ${listShortlist.length} shortlisted contact${listShortlist.length === 1 ? '' : 's'}.`}
@@ -278,8 +289,14 @@ export function OakDocRepeaterPanel({
                                   </div>
                                 ) : null}
                                 <div className="space-y-0.5">
-                                  <div className="text-[10px] text-text-muted">
-                                    {definition.itemLabel} fields: add them inside the repeated paragraph or row.
+                                  <div className="flex items-center gap-1 text-text-muted">
+                                    <div className="text-[11px] font-semibold uppercase tracking-wide">
+                                      {definition.itemLabel} fields
+                                    </div>
+                                    <InfoTip
+                                      label={`About ${definition.itemLabel} fields`}
+                                      content="Add them inside the repeated paragraph or row."
+                                    />
                                   </div>
                                   {itemFieldRows(tag, definition)}
                                 </div>
@@ -304,12 +321,13 @@ export function OakDocRepeaterPanel({
           ) : null}
 
           <div className="space-y-1">
-            <h3 className="px-1 text-[10px] font-semibold uppercase tracking-wide text-text-muted">
-              New section
-            </h3>
-            <p className="px-1 text-[10px] leading-relaxed text-text-muted">
-              Put the caret in the paragraph or table row to repeat, then choose who it repeats for.
-            </p>
+            <div className="flex items-center gap-1 px-1 text-text-muted">
+              <h3 className="text-[11px] font-semibold uppercase tracking-wide">New section</h3>
+              <InfoTip
+                label="About New section"
+                content="Put the caret in the paragraph or table row to repeat, then choose who it repeats for."
+              />
+            </div>
             {OAKDOC_REPEATER_DEFINITIONS.map((base) => {
               const rowKey = `kind:${base.tag}`;
               const selected = selectedKey === rowKey;
@@ -323,22 +341,31 @@ export function OakDocRepeaterPanel({
                     selected ? 'border-oak-primary/40 bg-oak-primary/5' : 'border-transparent hover:bg-oak-primary/5',
                   )}
                 >
-                  <button
-                    type="button"
-                    aria-expanded={selected}
-                    disabled={disabled}
+                  {/* Clicks on the row's empty space open it too; the label button is the keyboard control. */}
+                  <div
                     onPointerDown={keepEditorCaret}
-                    onClick={() => toggle(rowKey)}
-                    className="flex w-full items-center justify-between gap-2 px-2.5 py-1.5 text-left disabled:cursor-not-allowed disabled:opacity-40"
+                    onClick={(event) => {
+                      if (!disabled && event.target === event.currentTarget) toggle(rowKey);
+                    }}
+                    className="flex cursor-pointer items-center gap-1 pr-2.5 text-text-muted"
                   >
-                    <span className="text-xs font-medium text-text-primary">{base.label}</span>
+                    <button
+                      type="button"
+                      aria-expanded={selected}
+                      disabled={disabled}
+                      onPointerDown={keepEditorCaret}
+                      onClick={() => toggle(rowKey)}
+                      className="min-w-0 py-1.5 pl-2.5 text-left text-xs font-medium text-text-primary disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      {base.label}
+                    </button>
+                    <InfoTip label={`About ${base.label}`} content={KIND_HINTS[base.kind]} />
                     {usesDefinition(repeaterTags, base) ? (
-                      <span className="h-1.5 w-1.5 rounded-full bg-oak-primary" title="Used in this document" />
+                      <span className="ml-auto h-1.5 w-1.5 shrink-0 rounded-full bg-oak-primary" title="Used in this document" />
                     ) : null}
-                  </button>
+                  </div>
                   {selected ? (
                     <div className="space-y-2 px-2.5 pb-2.5">
-                      <p className="text-[10px] leading-relaxed text-text-secondary">{KIND_HINTS[base.kind]}</p>
                       {canName ? (
                         <OakDocConfigureName
                           label={isContacts ? 'List name on Configure' : 'Name on Configure'}
@@ -351,8 +378,11 @@ export function OakDocRepeaterPanel({
                       ) : null}
                       {base.tag === OAKDOC_OFFICERS_REPEATER_TAG ? (
                         <div role="group" aria-labelledby={rolesLabelId} className="space-y-1">
-                          <div id={rolesLabelId} className="text-xs font-medium text-text-secondary">
-                            Officer roles
+                          <div className="flex items-center gap-1 text-text-muted">
+                            <div id={rolesLabelId} className="text-xs font-medium text-text-secondary">
+                              Officer roles
+                            </div>
+                            <InfoTip label="About Officer roles" content="None ticked lists officers of any role." />
                           </div>
                           <div className="flex flex-wrap gap-1">
                             {OAKDOC_OFFICER_ROLE_FILTERS.map((entry) => {
@@ -366,7 +396,7 @@ export function OakDocRepeaterPanel({
                                   onPointerDown={keepEditorCaret}
                                   onClick={() => toggleOfficerRole(entry.role)}
                                   className={cn(
-                                    'rounded border px-1.5 py-0.5 text-[10px] transition-colors disabled:cursor-not-allowed disabled:opacity-40',
+                                    'rounded border px-1.5 py-0.5 text-[11px] transition-colors disabled:cursor-not-allowed disabled:opacity-40',
                                     pressed
                                       ? 'border-oak-primary bg-oak-primary/10 text-oak-primary'
                                       : 'border-border-primary bg-background-primary text-text-secondary hover:border-oak-primary/30 hover:bg-oak-primary/5',
@@ -377,10 +407,24 @@ export function OakDocRepeaterPanel({
                               );
                             })}
                           </div>
-                          <p className="text-[10px] text-text-muted">None ticked lists officers of any role.</p>
                         </div>
                       ) : null}
-                      <code className="block break-all text-[10px] text-text-muted">{definition.tag}</code>
+                      {isContacts && canName ? (
+                        <div className="space-y-1">
+                          <OakDocContactShortlistPicker
+                            contacts={newShortlist}
+                            onChange={setNewShortlist}
+                            label="Shortlist (optional)"
+                            disabled={disabled}
+                          />
+                          <p className="text-[11px] leading-relaxed text-text-muted">
+                            {newShortlist.length === 0
+                              ? 'Empty: Configure searches every contact. Add contacts to offer only them.'
+                              : `Configure offers only these ${newShortlist.length} contact${newShortlist.length === 1 ? '' : 's'}.`}
+                          </p>
+                        </div>
+                      ) : null}
+                      <code className="block break-all text-[11px] text-text-muted">{definition.tag}</code>
                       <Button
                         variant="primary"
                         size="xs"

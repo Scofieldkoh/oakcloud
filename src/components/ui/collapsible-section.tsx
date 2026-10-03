@@ -2,6 +2,7 @@
 
 import { useState, useId, ReactNode } from 'react';
 import { ChevronDown, ChevronRight, ChevronUp } from 'lucide-react';
+import { InfoTip } from '@/components/ui/info-tip';
 import { cn } from '@/lib/utils';
 
 interface CollapsibleSectionProps {
@@ -21,9 +22,12 @@ interface CollapsibleSectionProps {
   contentClassName?: string;
   /**
    * `panel` is the compact form for side panels: a small uppercase title
-   * with a chevron, no Show/Hide text and no bottom margin.
+   * on an Oaktree green bar, with a chevron, no Show/Hide text and no
+   * bottom margin.
    */
   variant?: 'default' | 'panel';
+  /** Panel only: help text behind an information icon beside the title. */
+  info?: ReactNode;
   /** Controls beside the title (e.g. an Add button), outside the toggle. */
   action?: ReactNode;
   /** Controlled collapse state; pair with onCollapsedChange. */
@@ -44,6 +48,7 @@ export function CollapsibleSection({
   className,
   contentClassName,
   variant = 'default',
+  info,
   action,
   collapsed,
   onCollapsedChange,
@@ -64,32 +69,36 @@ export function CollapsibleSection({
   const contentId = useId();
 
   if (variant === 'panel') {
+    const Chevron = isCollapsed ? ChevronRight : ChevronDown;
     return (
       <section className={className}>
-        <div className="flex items-center justify-between gap-2">
+        {/* Clicks on the bar's empty space toggle it too; the title button is the keyboard control. */}
+        <div
+          onClick={(event) => {
+            if (event.target === event.currentTarget) setIsCollapsed(!isCollapsed);
+          }}
+          className="flex h-8 cursor-pointer items-center gap-1 rounded-md bg-oak-primary pr-1 text-white"
+        >
           <button
             type="button"
             onClick={() => setIsCollapsed(!isCollapsed)}
             aria-expanded={!isCollapsed}
             aria-controls={contentId}
             title={title}
-            className="group flex min-w-0 flex-1 items-center gap-1 py-1 text-left"
+            className="flex h-full min-w-0 items-center gap-1 pl-2 text-left"
           >
-            {isCollapsed ? (
-              <ChevronRight className="h-3.5 w-3.5 shrink-0 text-text-muted group-hover:text-text-secondary" aria-hidden="true" />
-            ) : (
-              <ChevronDown className="h-3.5 w-3.5 shrink-0 text-text-muted group-hover:text-text-secondary" aria-hidden="true" />
-            )}
-            <h2 className="truncate text-xs font-semibold uppercase tracking-wide text-text-muted group-hover:text-text-secondary">
+            <Chevron className="h-3.5 w-3.5 shrink-0 opacity-80" aria-hidden="true" />
+            <h2 className="truncate text-xs font-semibold uppercase tracking-wide">
               {title}
             </h2>
             {count !== undefined && (
-              <span className="shrink-0 rounded bg-background-tertiary px-1.5 text-[10px] text-text-muted">
+              <span className="shrink-0 rounded bg-white/20 px-1.5 text-[11px]">
                 {count}
               </span>
             )}
           </button>
-          {action}
+          {info ? <InfoTip content={info} label={`About ${title}`} /> : null}
+          {action ? <div className="ml-auto">{action}</div> : null}
         </div>
         {!isCollapsed && (
           <div id={contentId} role="region" aria-label={title} className={cn('pt-1.5', contentClassName)}>

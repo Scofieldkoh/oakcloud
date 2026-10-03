@@ -35,11 +35,24 @@ function Harness({ onInsert, onSections = vi.fn() }: {
   );
 }
 
+async function openGroups(user: ReturnType<typeof userEvent.setup>, ...titles: RegExp[]) {
+  for (const title of titles) await user.click(screen.getByRole('button', { name: title }));
+}
+
 describe('OakDocFieldPanel', () => {
+  it('starts with every group collapsed', () => {
+    render(<Harness onInsert={vi.fn()} />);
+    for (const title of [/^Custom fields/, /^Repeating sections/, /^Company/, /^Selected Director/]) {
+      expect(screen.getByRole('button', { name: title })).toHaveAttribute('aria-expanded', 'false');
+    }
+    expect(screen.queryByRole('button', { name: 'Company Name' })).not.toBeInTheDocument();
+  });
+
   it('opens a field on click and adds it with its Add button, one open at a time', async () => {
     const user = userEvent.setup();
     const onInsert = vi.fn();
     render(<Harness onInsert={onInsert} />);
+    await openGroups(user, /^Custom fields/, /^Company/);
 
     await user.click(screen.getByRole('button', { name: 'Company Name' }));
     expect(screen.getByText('{{company.name}}')).toBeInTheDocument();
@@ -55,6 +68,7 @@ describe('OakDocFieldPanel', () => {
     const user = userEvent.setup();
     const onInsert = vi.fn();
     render(<Harness onInsert={onInsert} />);
+    await openGroups(user, /^Company/);
     await user.dblClick(screen.getByRole('button', { name: 'Company Name' }));
     expect(onInsert).toHaveBeenLastCalledWith('company.name');
   });

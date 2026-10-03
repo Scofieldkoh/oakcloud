@@ -107,12 +107,14 @@ describe('OakDoc editor keeps the author\'s place', () => {
     const before = scroller().scrollTop;
     expect(before).toBeGreaterThan(500);
 
+    await act(async () => userEvent.click(screen.getByRole('button', { name: /^Company/ })));
     await act(async () => userEvent.click(screen.getByRole('button', { name: 'Company Name' })));
     await act(async () => userEvent.click(screen.getByRole('button', { name: 'Add Company Name' })));
     await waitFor(() => screen.queryByText('1 in document') !== null, 'the insert');
     expect(Math.abs(scroller().scrollTop - before)).toBeLessThan(150);
 
     // Making the paragraph repeat remounts the document; the page stays put.
+    await act(async () => userEvent.click(screen.getByRole('button', { name: /^Repeating sections/ })));
     await act(async () => userEvent.click(screen.getByRole('button', { name: 'Directors' })));
     await act(async () => userEvent.click(screen.getByRole('button', { name: 'Add Directors section' })));
     await waitFor(() => screen.queryByRole('list', { name: 'Directors sections' }) !== null, 'the section');
