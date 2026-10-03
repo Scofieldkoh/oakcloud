@@ -5,6 +5,7 @@ import { Search } from 'lucide-react';
 import type { TemplateFieldCategory } from '@/components/documents/template-editor/template-field-catalog';
 import { OAKDOC_EDITOR_FIELD_CATEGORIES } from '@/lib/document-editor/oakdoc-field-registry';
 import type { OakDocFieldDefinition } from '@/lib/document-editor/oakdoc-fields';
+import { OAKDOC_FIELD_DRAG_TYPE } from '@/lib/document-editor/oakdoc-field-blocks';
 
 export interface OakDocFieldListProps {
   /** Tags already in the document; each shows a dot. */
@@ -19,7 +20,8 @@ export interface OakDocFieldListProps {
 /**
  * Searchable list of Oakcloud fields (company, directors, shareholders,
  * contact, system). Clicking one wraps the selection in, or inserts at the
- * caret, that field's Word content control.
+ * caret, that field's Word content control; dragging one onto the page
+ * inserts it where it is dropped.
  */
 export function OakDocFieldList({
   presentTags,
@@ -85,7 +87,16 @@ export function OakDocFieldList({
                   key={field.key}
                   type="button"
                   disabled={disabled}
+                  draggable={!disabled}
                   onPointerDown={(event) => event.preventDefault()}
+                  onDragStart={(event) => {
+                    event.dataTransfer.effectAllowed = 'copy';
+                    event.dataTransfer.setData(OAKDOC_FIELD_DRAG_TYPE, JSON.stringify({
+                      tag: field.key,
+                      label: field.label,
+                      category: category.label,
+                    }));
+                  }}
                   onClick={() => onInsert({ tag: field.key, label: field.label, category: category.label })}
                   className="flex w-full items-center justify-between gap-2 rounded-md border border-transparent px-2.5 py-2 text-left transition-colors hover:border-oak-primary/20 hover:bg-oak-primary/5 disabled:cursor-not-allowed disabled:opacity-40"
                 >
