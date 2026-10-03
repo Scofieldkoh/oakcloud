@@ -227,6 +227,21 @@ async function persistTaskRecovery(
   });
 }
 
+/** Readable BizFile name, e.g. BizFile_2025-03-22_ACRA_<receipt no>.pdf. */
+export function bizFileApprovedFileName(data: ExtractedBizFileData, currentName: string): string {
+  return generateApprovedDocumentFilename({
+    documentSubCategory: 'BIZFILE',
+    documentDate: data.documentMetadata?.receiptDate
+      ? new Date(data.documentMetadata.receiptDate)
+      : null,
+    contactName: ACRA_VENDOR_NAME,
+    documentNumber: data.documentMetadata?.receiptNo || null,
+    currency: 'SGD',
+    totalAmount: 0,
+    originalExtension: getFileExtension(currentName),
+  });
+}
+
 async function persistDocumentApproval(
   tx: PrismaTransactionClient,
   args: {
@@ -237,9 +252,20 @@ async function persistDocumentApproval(
     data: ExtractedBizFileData;
   },
 ): Promise<string> {
+  // Give the approved BizFile its readable name here, inside the approval
+  // transaction, so every path (including canonical operations, whose storage
+  // key is owned by STORAGE_FINALIZE) shows it in Document Processing.
+  const current = await tx.document.findUnique({
+    where: { id: args.documentId },
+    select: { fileName: true, originalFileName: true, storageKey: true },
+  });
   await tx.document.update({
     where: { id: args.documentId },
     data: {
+      fileName: bizFileApprovedFileName(
+        args.data,
+        current?.originalFileName || current?.fileName || current?.storageKey || '',
+      ),
       companyId: args.companyId,
       extractionStatus: 'COMPLETED',
       extractedAt: new Date(),
@@ -623,18 +649,7 @@ async function moveAndRenameDocument(
       select: { fileName: true, storageKey: true },
     });
     if (!document?.storageKey) return activeStorageKey;
-    const extension = getFileExtension(document.fileName || document.storageKey);
-    const fileName = generateApprovedDocumentFilename({
-      documentSubCategory: 'BIZFILE',
-      documentDate: data.documentMetadata?.receiptDate
-        ? new Date(data.documentMetadata.receiptDate)
-        : null,
-      contactName: ACRA_VENDOR_NAME,
-      documentNumber: data.documentMetadata?.receiptNo || null,
-      currency: 'SGD',
-      totalAmount: 0,
-      originalExtension: extension,
-    });
+    const fileName = bizFileApprovedFileName(data, document.fileName || document.storageKey);
     const nextKey = buildApprovedStorageKey(document.storageKey, fileName);
     if (nextKey === document.storageKey) return activeStorageKey;
     if (await storage.exists(document.storageKey)) {
