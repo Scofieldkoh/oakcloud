@@ -121,6 +121,41 @@ describe('BatchSharedParties', () => {
     expect(onApply).toHaveBeenCalledWith(['a', 'b'], { selectedOfficerIds: ['o3'] });
   });
 
+  it('lists a shared officer once and swaps the ticked appointment when the role changes', async () => {
+    vi.spyOn(Element.prototype, 'getBoundingClientRect').mockReturnValue({
+      width: 160, height: 32, top: 0, left: 0, bottom: 32, right: 160, x: 0, y: 0, toJSON: () => undefined,
+    } as unknown as DOMRect);
+    const user = userEvent.setup();
+    const onApply = vi.fn();
+    const officer = (id: string, name: string, role: string): DocumentParty =>
+      ({ ...party(id, name), detail: role, role, identificationNumber: name === 'Jane Ng' ? 'S1234567A' : null });
+    const needs = templatePartyNeeds('', ['repeat.officers']);
+    const withOfficers = (selectedOfficerIds: string[]) => ({
+      ...item('a'),
+      configuration: { ...item('a').configuration, selectedOfficerIds },
+    });
+    render(
+      <BatchSharedParties
+        items={[withOfficers(['sam', 'jane-director', 'jane-secretary']), { ...withOfficers(['sam', 'jane-director']), key: 'b', id: 'b' }]}
+        needsByItemKey={{ a: needs, b: needs }}
+        directors={[]}
+        shareholders={[]}
+        officers={[officer('jane-director', 'Jane Ng', 'DIRECTOR'), officer('jane-secretary', 'Jane Ng', 'SECRETARY'), officer('sam', 'Sam Lee', 'SECRETARY')]}
+        contacts={[]}
+        onApply={onApply}
+      />,
+    );
+
+    expect(screen.getAllByRole('checkbox')).toHaveLength(2);
+    // A saved choice with both of Jane's roles counts her once, so the documents agree.
+    expect(screen.getByText('Used by 2 documents')).toBeInTheDocument();
+    expect(screen.queryByRole('combobox', { name: 'Role for Sam Lee' })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('combobox', { name: 'Role for Jane Ng' }));
+    await user.click(screen.getByRole('option', { name: 'Secretary' }));
+    expect(onApply).toHaveBeenLastCalledWith(['a', 'b'], { selectedOfficerIds: ['sam', 'jane-secretary'] });
+    vi.restoreAllMocks();
+  });
+
   it('titles a shared picker with the names the documents give their sections', () => {
     render(
       <BatchSharedParties

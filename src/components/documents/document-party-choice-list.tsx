@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { ExternalLink, Loader2, RefreshCw, Search, UserRound } from 'lucide-react';
 import type { DocumentParty } from '@/lib/document-party';
@@ -15,6 +15,12 @@ interface DocumentPartyChoiceListBaseProps {
   error?: string | null;
   onRetry?: () => void;
   required?: boolean;
+  /**
+   * Content at the end of an option's row, outside its label so using it
+   * never ticks the option (an officer's role, for one). It sits within the
+   * row's height, so every row stays the same height.
+   */
+  renderOptionAction?: (option: DocumentParty, selected: boolean) => ReactNode;
 }
 
 interface SinglePartyChoiceListProps extends DocumentPartyChoiceListBaseProps {
@@ -48,6 +54,7 @@ export function DocumentPartyChoiceList(props: DocumentPartyChoiceListProps) {
     error,
     onRetry,
     required = false,
+    renderOptionAction,
   } = props;
   const multiple = props.multiple === true;
   const selectedValueList = multiple ? props.values : undefined;
@@ -120,60 +127,70 @@ export function DocumentPartyChoiceList(props: DocumentPartyChoiceListProps) {
             {visibleOptions.map((option) => {
               const selected = selectedValueSet.has(option.id);
               const metadata = partyMeta(option);
+              const action = renderOptionAction?.(option, selected);
               return (
-                <label
+                <div
                   key={option.id}
                   className={cn(
-                    'flex min-h-11 cursor-pointer items-start gap-3 border-b border-border-secondary p-3 transition-colors last:border-b-0',
-                    'hover:bg-background-secondary focus-within:ring-2 focus-within:ring-inset focus-within:ring-oak-primary/30',
+                    'flex items-stretch border-b border-border-secondary transition-colors last:border-b-0',
+                    'hover:bg-background-secondary',
                     selected && 'bg-oak-primary/5',
                   )}
                 >
-                  <input
-                    type={multiple ? 'checkbox' : 'radio'}
-                    name={id}
-                    value={option.id}
-                    checked={selected}
-                    onChange={() => {
-                      if (!multiple) {
-                        props.onChange(option.id);
-                        return;
-                      }
-                      const next = selected
-                        ? selectedValues.filter((idValue) => idValue !== option.id)
-                        : [...selectedValues, option.id];
-                      props.onChange(next);
-                    }}
-                    required={multiple ? undefined : required}
-                    aria-label={`Select ${option.name}`}
-                    className="mt-1 h-4 w-4 shrink-0 accent-oak-primary"
-                  />
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-oak-primary/10 text-oak-primary">
-                    <UserRound className="h-4 w-4" aria-hidden="true" />
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    {option.contactId ? (
-                      <Link
-                        href={`/contacts/${encodeURIComponent(option.contactId)}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={(event) => event.stopPropagation()}
-                        aria-label={`Open ${option.name} contact details in a new tab`}
-                        className="inline-flex max-w-full items-center gap-1 text-sm font-medium text-oak-primary hover:underline"
+                  <label
+                    className="flex min-h-11 min-w-0 flex-1 cursor-pointer items-start gap-3 p-3 focus-within:ring-2 focus-within:ring-inset focus-within:ring-oak-primary/30"
+                  >
+                    <input
+                      type={multiple ? 'checkbox' : 'radio'}
+                      name={id}
+                      value={option.id}
+                      checked={selected}
+                      onChange={() => {
+                        if (!multiple) {
+                          props.onChange(option.id);
+                          return;
+                        }
+                        const next = selected
+                          ? selectedValues.filter((idValue) => idValue !== option.id)
+                          : [...selectedValues, option.id];
+                        props.onChange(next);
+                      }}
+                      required={multiple ? undefined : required}
+                      aria-label={`Select ${option.name}`}
+                      className="mt-1 h-4 w-4 shrink-0 accent-oak-primary"
+                    />
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-oak-primary/10 text-oak-primary">
+                      <UserRound className="h-4 w-4" aria-hidden="true" />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      {option.contactId ? (
+                        <Link
+                          href={`/contacts/${encodeURIComponent(option.contactId)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(event) => event.stopPropagation()}
+                          aria-label={`Open ${option.name} contact details in a new tab`}
+                          className="inline-flex max-w-full items-center gap-1 text-sm font-medium text-oak-primary hover:underline"
+                        >
+                          <span className="truncate">{option.name}</span>
+                          <ExternalLink className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                        </Link>
+                      ) : (
+                        <span className="block truncate text-sm font-medium text-text-primary">{option.name}</span>
+                      )}
+                      {/* The line is kept when empty so every row is the same height. */}
+                      <span
+                        className="mt-0.5 block truncate text-xs text-text-muted"
+                        aria-hidden={metadata.length > 0 ? undefined : true}
                       >
-                        <span className="truncate">{option.name}</span>
-                        <ExternalLink className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                      </Link>
-                    ) : (
-                      <span className="block text-sm font-medium text-text-primary">{option.name}</span>
-                    )}
-                    {metadata.length > 0 ? (
-                      <span className="mt-0.5 block truncate text-xs text-text-muted">
-                        {metadata.join(' · ')}
+                        {metadata.length > 0 ? metadata.join(' · ') : '\u00a0'}
                       </span>
-                    ) : null}
-                  </span>
-                </label>
+                    </span>
+                  </label>
+                  {action ? (
+                    <div className="flex shrink-0 items-center pr-3">{action}</div>
+                  ) : null}
+                </div>
               );
             })}
             {visibleOptions.length === 0 ? (

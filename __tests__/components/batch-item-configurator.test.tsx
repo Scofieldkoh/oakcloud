@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {
@@ -242,6 +242,80 @@ describe('BatchItemConfigurator', () => {
 
     await user.click(screen.getByRole('checkbox', { name: /Sam Secretary/ }));
     expect(p.onPatch).toHaveBeenCalledWith({ selectedOfficerIds: ['officer-2'] });
+  });
+
+  describe('officers listed once per person', () => {
+    const officer = (id: string, name: string, role: string, contactId: string | null = null) => ({
+      id, contactId, name, detail: role, role, email: null, phone: null, address: { full: null, letter: null },
+    });
+    const officers = [
+      officer('jane-director', 'Jane Ng', 'DIRECTOR', 'contact-jane'),
+      officer('sam-secretary', 'Sam Lee', 'SECRETARY'),
+      officer('jane-secretary', 'Jane Ng', 'SECRETARY', 'contact-jane'),
+    ];
+    const withOfficers = (selectedOfficerIds?: string[]) => props({
+      templateContent: '<p>Word</p>',
+      templateFieldTags: ['repeat.officers', 'officer.name'],
+      officers,
+      item: { ...item(), configuration: { ...item().configuration, selectedOfficerIds } },
+    });
+
+    beforeEach(() => {
+      // The role dropdown's popover renders once its trigger has a width, which jsdom lacks.
+      vi.spyOn(Element.prototype, 'getBoundingClientRect').mockReturnValue({
+        width: 160, height: 32, top: 0, left: 0, bottom: 32, right: 160, x: 0, y: 0, toJSON: () => undefined,
+      } as unknown as DOMRect);
+    });
+    afterEach(() => vi.restoreAllMocks());
+
+    it('shows a role dropdown only for a person with more than one role', async () => {
+      const user = userEvent.setup();
+      const p = withOfficers();
+      render(<BatchItemConfigurator {...p} />);
+
+      expect(screen.getAllByRole('checkbox', { name: /Jane Ng/ })).toHaveLength(1);
+      expect(screen.getAllByRole('checkbox')).toHaveLength(2);
+      expect(screen.getByRole('combobox', { name: 'Role for Jane Ng' })).toHaveValue('Director');
+      expect(screen.queryByRole('combobox', { name: 'Role for Sam Lee' })).not.toBeInTheDocument();
+      expect(screen.getByText('Secretary')).toBeInTheDocument();
+
+      // Ticking prints the first role.
+      await user.click(screen.getByRole('checkbox', { name: /Jane Ng/ }));
+      expect(p.onPatch).toHaveBeenLastCalledWith({ selectedOfficerIds: ['jane-director'] });
+    });
+
+    it('swaps the ticked appointment in place when the role changes', async () => {
+      const user = userEvent.setup();
+      const p = withOfficers(['sam-secretary', 'jane-director']);
+      render(<BatchItemConfigurator {...p} />);
+
+      await user.click(screen.getByRole('combobox', { name: 'Role for Jane Ng' }));
+      await user.click(screen.getByRole('option', { name: 'Secretary' }));
+      expect(p.onPatch).toHaveBeenLastCalledWith({ selectedOfficerIds: ['sam-secretary', 'jane-secretary'] });
+    });
+
+    it('keeps the role chosen before ticking', async () => {
+      const user = userEvent.setup();
+      const p = withOfficers();
+      render(<BatchItemConfigurator {...p} />);
+
+      await user.click(screen.getByRole('combobox', { name: 'Role for Jane Ng' }));
+      await user.click(screen.getByRole('option', { name: 'Secretary' }));
+      expect(p.onPatch).not.toHaveBeenCalled();
+      await user.click(screen.getByRole('checkbox', { name: /Jane Ng/ }));
+      expect(p.onPatch).toHaveBeenLastCalledWith({ selectedOfficerIds: ['jane-secretary'] });
+    });
+
+    it('ticks a person once when a saved choice has two of their roles', async () => {
+      const user = userEvent.setup();
+      const p = withOfficers(['jane-secretary', 'jane-director']);
+      render(<BatchItemConfigurator {...p} />);
+
+      expect(screen.getByRole('checkbox', { name: /Jane Ng/ })).toBeChecked();
+      expect(screen.getByRole('combobox', { name: 'Role for Jane Ng' })).toHaveValue('Secretary');
+      await user.click(screen.getByRole('checkbox', { name: /Sam Lee/ }));
+      expect(p.onPatch).toHaveBeenLastCalledWith({ selectedOfficerIds: ['jane-secretary', 'sam-secretary'] });
+    });
   });
 
   it('offers only the template\'s shortlisted contacts for the contacts repeater', async () => {

@@ -148,4 +148,43 @@ describe('Word repeater role filter and contact shortlist', () => {
     expect(onPatch).toHaveBeenLastCalledWith({ contactIds: ['p3'] });
     await page.screenshot();
   });
+
+  it('lists an officer once, with a role dropdown only for several roles, at one row height', async () => {
+    const onPatch = vi.fn();
+    const jane = (id: string, role: string): DocumentParty => ({ ...officer(id, 'Jane Ng', role), contactId: 'contact-jane' });
+    const rowOf = (name: RegExp) => screen.getByRole('checkbox', { name }).closest('label')!.parentElement!;
+    for (const width of [1100, 390]) {
+      await page.viewport(width, 900);
+      await act(async () => root.render(
+        <div className="p-4">
+          <StandardDocumentConfig
+            item={item()}
+            templateFields={[]}
+            templateContent="<p>Word</p>"
+            templateFieldTags={['repeat.directors', 'repeat.officers', 'officer.name']}
+            masterFields={{ fields: [], conflicts: [] }}
+            effectiveMasterValues={{}}
+            directors={[officer('d9', 'Dana Director', 'DIRECTOR')]}
+            shareholders={[]}
+            officers={[jane('o1', 'DIRECTOR'), officer('o2', 'Sam Secretary', 'SECRETARY'), jane('o3', 'SECRETARY')]}
+            contacts={[]}
+            companyContacts={[]}
+            onPatch={onPatch}
+          />
+        </div>,
+      ));
+
+      await expect.element(screen.getByRole('combobox', { name: 'Role for Jane Ng' })).toBeVisible();
+      expect(screen.getAllByRole('checkbox', { name: /Jane Ng/ })).toHaveLength(1);
+      expect(screen.queryByRole('combobox', { name: 'Role for Sam Secretary' })).toBeNull();
+      // Inside the rows' borders (the last row of a list has none).
+      const withDropdown = rowOf(/Jane Ng/).clientHeight;
+      const withoutDropdown = rowOf(/Sam Secretary/).clientHeight;
+      const directorRow = rowOf(/Dana Director/).clientHeight;
+      expect(withDropdown).toBeGreaterThan(0);
+      expect(withoutDropdown).toBe(withDropdown);
+      expect(directorRow).toBe(withDropdown);
+      await page.screenshot();
+    }
+  });
 });

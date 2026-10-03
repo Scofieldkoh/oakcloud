@@ -2,6 +2,7 @@
 
 import { DocumentPartyChoiceList } from '@/components/documents/document-party-choice-list';
 import type { DocumentParty } from '@/lib/document-party';
+import { oneOfficerPerPerson } from '@/lib/officer-identity';
 import type { BatchItemConfiguration } from '@/types/document-generation-batch';
 import type { EditableBatchItem } from './batch-workspace-state';
 import type { OakDocPickerKey, OakDocRepeaterSectionSummary } from '@/lib/document-editor/oakdoc-custom-fields';
@@ -13,6 +14,7 @@ import {
   templateContactLists,
   type TemplatePartyNeeds,
 } from './template-party-needs';
+import { OfficerChoiceList } from './officer-choice-list';
 
 type PartyKey = (typeof PARTY_CONFIGURATION_KEYS)[number][1];
 
@@ -67,12 +69,9 @@ const REPEATER_KINDS: Partial<Record<PartyKey, 'directors' | 'shareholders' | 'o
   selectedOfficerIds: 'officers',
 };
 
-/**
- * Checked parties for a repeater: every party until the user narrows the
- * list, except officers, which start unticked.
- */
-function checkedIds(options: DocumentParty[], ids: string[] | undefined, allByDefault = true): string[] {
-  if (ids === undefined) return allByDefault ? options.map((party) => party.id) : [];
+/** Checked parties for a repeater: every party until the user narrows the list. */
+function checkedIds(options: DocumentParty[], ids: string[] | undefined): string[] {
+  if (ids === undefined) return options.map((party) => party.id);
   const available = new Set(options.map((party) => party.id));
   return ids.filter((id) => available.has(id));
 }
@@ -201,9 +200,31 @@ export function BatchSharedParties({
           const options = optionsFor(key, targets);
           const targetKeys = targets.map((item) => item.key);
           const note = `Used by ${targets.length} documents`;
-          if (key === 'selectedDirectorIds' || key === 'selectedShareholderIds' || key === 'selectedOfficerIds') {
+          if (key === 'selectedOfficerIds') {
+            // Officers are listed once per person (oneOfficerPerPerson).
+            const selections = targets.map((item) => oneOfficerPerPerson(item.configuration[key] ?? [], options));
+            const differs = selections.some((ids) => !sameIds(ids, selections[0]));
+            return (
+              <div key={key}>
+                <OfficerChoiceList
+                  id={`shared-${key}`}
+                  label={labelFor(key, targets)}
+                  officers={options}
+                  values={selections[0]}
+                  onChange={(values) => apply(targetKeys, { [key]: values })}
+                  isLoading={isLoading}
+                  error={error}
+                  onRetry={onRetry}
+                />
+                <p className="mt-1 text-xs text-text-muted">
+                  {differs ? `${note}; they differ, so the first document is shown.` : note}
+                </p>
+              </div>
+            );
+          }
+          if (key === 'selectedDirectorIds' || key === 'selectedShareholderIds') {
             const selections = targets.map((item) =>
-              checkedIds(options, item.configuration[key], key !== 'selectedOfficerIds'));
+              checkedIds(options, item.configuration[key]));
             const differs = selections.some((ids) => !sameIds(ids, selections[0]));
             return (
               <div key={key}>

@@ -427,6 +427,14 @@ where the slug is the `role` in lower case with hyphens (`secretary`,
 Configure then lists only officers of those roles (all officers repeaters in a
 document together; any role when one of them is `repeat.officers`), and each
 repeater prints only the ticked officers of its own roles.
+Each officer record is one appointment, so Configure and Shared setup list a
+person once (records of one contact, else one identification number, else one
+name; `src/lib/officer-identity.ts`). A person holding more than one of the
+offered roles gets a role dropdown, and the others show their role as text; the
+ticked id is the record of the chosen role, so changing the role swaps that id
+in place and `officer.role` prints it. A person is never ticked twice: a saved
+`selectedOfficerIds` with two records of one person keeps the first, on
+Configure and when generating.
 
 **Auth:** Authenticated with `document:read`
 

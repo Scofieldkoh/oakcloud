@@ -23,7 +23,9 @@ import type { CustomPlaceholderDefinition } from '@/types/placeholders';
 import type {
   EditableBatchItem,
 } from './batch-workspace-state';
+import { oneOfficerPerPerson } from '@/lib/officer-identity';
 import { BatchCustomFieldForm } from './batch-custom-field-form';
+import { OfficerChoiceList } from './officer-choice-list';
 import { BatchSection } from './batch-section';
 import { ApplyToOthersMenu, type ApplyScope } from './apply-to-others-menu';
 import type { ItemCompleteness } from './batch-completeness';
@@ -164,11 +166,12 @@ export function StandardDocumentConfig({
   // Only officers of the roles the template's officers repeaters print.
   const officerRoles = useMemo(() => templateOfficerRoles(templateFieldTags), [templateFieldTags]);
   const officerOptions = useMemo(() => officersOfRoles(officers, officerRoles), [officers, officerRoles]);
-  // Officers start unticked: a resolution names the ones it is about.
-  const selectedOfficerIds = useMemo(() => {
-    const available = new Set(officerOptions.map((party) => party.id));
-    return (configuration.selectedOfficerIds ?? []).filter((id) => available.has(id));
-  }, [configuration.selectedOfficerIds, officerOptions]);
+  // Officers start unticked: a resolution names the ones it is about. Each
+  // person counts once (a saved choice with two of their roles keeps the first).
+  const selectedOfficerIds = useMemo(
+    () => oneOfficerPerPerson(configuration.selectedOfficerIds ?? [], officerOptions),
+    [configuration.selectedOfficerIds, officerOptions],
+  );
   const partyKeys = useMemo(() => partyConfigurationKeys(needs), [needs]);
 
   const selectedContact = useMemo<DocumentContact | null>(() => {
@@ -280,13 +283,12 @@ export function StandardDocumentConfig({
     />
   );
   const officersPicker = (
-    <DocumentPartyChoiceList
+    <OfficerChoiceList
       id="selected-officers"
       label={officerRoles ? `Officers (${formatOakDocOfficerRoles(officerRoles)})` : 'Officers'}
-      options={officerOptions}
+      officers={officerOptions}
       values={selectedOfficerIds}
       onChange={(values) => onPatch({ selectedOfficerIds: values })}
-      multiple
       isLoading={partyLoading}
       error={partyError}
       onRetry={onPartyRetry}

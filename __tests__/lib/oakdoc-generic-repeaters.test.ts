@@ -172,6 +172,33 @@ describe('OakDoc generic repeaters', () => {
     expect(none.itemsCreated).toBe(0);
   });
 
+  it('prints the role of the ticked appointment, and a person once', () => {
+    const source = docx('<w:p w14:paraId="E1000002">' + field('officer.name', 52) + field('officer.role', 53) + '</w:p>');
+    const created = createOakDocGenericRepeater({
+      docxBytes: source,
+      fromParaId: 'E1000002',
+      definition: definition('repeat.officers'),
+    });
+    const company = {
+      id: 'c1',
+      name: 'Example',
+      uen: '202600001A',
+      officers: [
+        { id: 'd1', contactId: 'p1', name: 'Jane Ng', role: 'DIRECTOR', isCurrent: true },
+        { id: 's1', contactId: 'p1', name: 'Jane Ng', role: 'SECRETARY', isCurrent: true },
+      ],
+    };
+    const chosen = resolveOakDocGenericRepeaters({ docxBytes: created.bytes, data: { company, selectedOfficerIds: ['s1'] } });
+    expect(chosen.itemsCreated).toBe(1);
+    expect(xml(chosen.bytes)).toContain('Secretary');
+    expect(xml(chosen.bytes)).not.toContain('Director');
+    // A choice saved with both appointments keeps the first.
+    const saved = resolveOakDocGenericRepeaters({ docxBytes: created.bytes, data: { company, selectedOfficerIds: ['d1', 's1'] } });
+    expect(saved.itemsCreated).toBe(1);
+    expect(xml(saved.bytes)).toContain('Director');
+    expect(xml(saved.bytes)).not.toContain('Secretary');
+  });
+
   it('encodes an officers role filter in the repeater tag', () => {
     expect(oakDocOfficersRepeaterTag([])).toBe('repeat.officers');
     expect(oakDocOfficersRepeaterTag(['CEO', 'SECRETARY', 'SECRETARY'])).toBe('repeat.officers.secretary+ceo');
