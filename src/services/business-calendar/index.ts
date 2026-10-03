@@ -4,6 +4,7 @@ export {
   getBusinessCalendarSnapshot,
   listBusinessCalendars,
   listPublicHolidaySyncCalendars,
+  listWorkspaceHolidays,
   previewBusinessCalendarImpact,
   syncBusinessCalendarWithPublicHolidays,
   updateBusinessCalendar,
@@ -17,4 +18,6 @@ export type {
   PublicHolidayCalendarSyncOptions,
   PublicHolidayCalendarSyncResult,
   PublicHolidaySourceSnapshot,
+  WorkspaceHolidayDto,
+  WorkspaceHolidaysDto,
 } from './service';
