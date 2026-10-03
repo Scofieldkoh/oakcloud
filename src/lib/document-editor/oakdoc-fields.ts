@@ -177,7 +177,13 @@ function contentControlPlaceholderState(sdt: Element) {
       .map((node) => node.textContent || '')
       .join('')
     : '';
-  const promptOnly = /^(?:Click here to enter text\.?\s*)+$/i.test(text.trim());
+  // A cut leaves the control behind with nothing inside it, which editors
+  // then render as a "Click here to enter text." prompt.
+  const emptied = !content || (
+    text.trim() === ''
+    && !['drawing', 'pict', 'object'].some((name) => content.getElementsByTagNameNS(WORD_NS, name).length > 0)
+  );
+  const promptOnly = emptied || /^(?:Click here to enter text\.?\s*)+$/i.test(text.trim());
   return { properties, showingPlaceholder, content, promptOnly };
 }
 

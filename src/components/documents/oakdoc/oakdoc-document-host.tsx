@@ -65,6 +65,11 @@ export interface OakDocDocumentHostProps {
   onSaved?: (result: OakDocPersistResult) => void;
   /** Optional panel beside an editable document, e.g. a field picker. */
   renderSidebar?: (api: OakDocHostSidebarApi) => ReactNode;
+  /**
+   * Optional repair run on loaded bytes and before each save, e.g. removing
+   * field controls a cut left empty. Cleaned bytes are remounted after save.
+   */
+  cleanup?: (bytes: Uint8Array) => { bytes: Uint8Array; removed: number };
 }
 
 function newOperationId(): string {
@@ -94,6 +99,7 @@ export function OakDocDocumentHost({
   onDirtyChange,
   onSaved,
   renderSidebar,
+  cleanup,
 }: OakDocDocumentHostProps) {
   const editorRef = useRef<DocxEditorRef>(null);
   const readyRef = useRef(false);
@@ -101,6 +107,7 @@ export function OakDocDocumentHost({
   const pendingOperationRef = useRef<{ operationId: string; localRevision: number; sessionKey: string } | null>(null);
   const baseRevisionRef = useRef(baseRevision);
   const loadRef = useRef(load);
+  const cleanupRef = useRef(cleanup);
   const onDirtyChangeRef = useRef(onDirtyChange);
   const [documentBytes, setDocumentBytes] = useState<Uint8Array | null>(null);
   const [version, setVersion] = useState(0);
@@ -114,6 +121,7 @@ export function OakDocDocumentHost({
   const [repeaters, setRepeaters] = useState<OakDocRepeaterSummary>({ count: 0, tags: [] });
 
   loadRef.current = load;
+  cleanupRef.current = cleanup;
   onDirtyChangeRef.current = onDirtyChange;
   baseRevisionRef.current = baseRevision;
 
@@ -138,7 +146,7 @@ export function OakDocDocumentHost({
     void loadRef.current(controller.signal)
       .then((bytes) => {
         if (controller.signal.aborted) return;
-        setDocumentBytes(bytes);
+        setDocumentBytes(cleanupRef.current?.(bytes).bytes ?? bytes);
         setVersion((current) => current + 1);
       })
       .catch((caught) => {
@@ -268,6 +276,7 @@ export function OakDocDocumentHost({
     onRepaired: replaceMountedDocument,
     onChanged: markChanged,
     onBusyChange: setBusy,
+    cleanup,
     onError: (message) => {
       setError(message);
       setStatus(message);
@@ -304,12 +313,18 @@ export function OakDocDocumentHost({
     try {
       const buffer = await editor.save();
       if (!buffer) throw new Error('OakDoc did not return a DOCX file.');
-      const result = await persist(new Uint8Array(buffer.slice(0)), snapshot, operationId);
+      const saved = new Uint8Array(buffer.slice(0));
+      const cleaned = cleanup?.(saved);
+      const result = await persist(cleaned?.bytes ?? saved, snapshot, operationId);
       const outcome = session.acknowledge(snapshot, result.revision);
       if (outcome === 'stale') return;
       pendingOperationRef.current = null;
       publishDirty();
-      setStatus(outcome === 'clean' ? 'Word document saved.' : 'Saved. Newer edits are not saved yet.');
+      if (outcome === 'clean' && cleaned && cleaned.removed > 0) {
+        replaceMountedDocument(cleaned.bytes, 'Word document saved.');
+      } else {
+        setStatus(outcome === 'clean' ? 'Word document saved.' : 'Saved. Newer edits are not saved yet.');
+      }
       onSaved?.(result);
     } catch (caught) {
       if (!session.isCurrent(snapshot)) return;
@@ -319,7 +334,7 @@ export function OakDocDocumentHost({
     } finally {
       setSaving(false);
     }
-  }, [disabled, onSaved, persist, publishDirty, readOnly, saving]);
+  }, [cleanup, disabled, onSaved, persist, publishDirty, readOnly, replaceMountedDocument, saving]);
 
   if (loading && !documentBytes) {
     return (

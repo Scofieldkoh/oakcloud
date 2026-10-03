@@ -25,6 +25,8 @@ import {
   type OakDocPartialExpansionResult,
 } from '@/lib/document-editor/oakdoc-partials';
 import { deriveOakDocTemplateFieldTags } from '@/lib/document-editor/oakdoc-field-manifest';
+import { pruneDeletedOakDocFields } from '@/lib/document-editor/oakdoc-fields';
+import { OAKDOC_FIELD_TAGS } from '@/lib/document-editor/oakdoc-field-registry';
 import type { OakDocDiagnostic } from '@/types/oakdoc';
 import type { TenantAwareParams } from '@/lib/types';
 import {
@@ -167,11 +169,14 @@ export async function expandPinnedOakDocPartials(input: {
     queue.push(...pin.nested);
   }
 
+  ensureA4ServerDomGlobals();
   const fragments = new Map<string, Uint8Array>();
   for (const pin of selected.values()) {
-    fragments.set(pin.partialId, await downloadPinnedPartial(pin, input.tenantId));
+    // Partials saved before empty-field cleanup may still hold the empty
+    // controls a cut left behind; they would print as stray placeholders.
+    const pinned = await downloadPinnedPartial(pin, input.tenantId);
+    fragments.set(pin.partialId, pruneDeletedOakDocFields(pinned, OAKDOC_FIELD_TAGS).bytes);
   }
-  ensureA4ServerDomGlobals();
   const result = expandOakDocPartials({ docxBytes: input.bytes, fragments });
   return { ...result, diagnostics: [...diagnostics, ...result.diagnostics] };
 }
