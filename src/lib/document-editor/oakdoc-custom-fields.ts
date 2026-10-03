@@ -1,5 +1,13 @@
 import { formatOakDocDate, oakDocIsoDate } from '@/lib/document-editor/oakdoc-context';
 import type { PlaceholderValueType } from '@/types/placeholders';
+import {
+  OAKDOC_CONTACTS_REPEATER_TAG,
+  OAKDOC_REPEATER_NAME_MAX,
+  isOakDocContactsRepeaterTag,
+  isOakDocRepeaterTag,
+  oakDocContactListNameFromSlug,
+  parseOakDocContactListSlug,
+} from '@/lib/document-editor/oakdoc-repeater-definitions';
 
 /**
  * Custom fields on Word (OakDoc) templates and partials.
@@ -337,11 +345,169 @@ export function oakDocContactShortlist(placeholders: unknown): OakDocCustomField
   return contacts.length > 0 ? contacts : null;
 }
 
-function partialShortlistCopy(partial: { id: string; placeholders: unknown }): StoredDefinition[] {
-  const contacts = oakDocContactShortlist(partial.placeholders);
-  return contacts
-    ? [{ ...shortlistDefinition(contacts), [OAKDOC_PARTIAL_FIELD_MARKER]: partial.id }]
-    : [];
+/*
+ * Names of repeating sections, and named contacts lists.
+ *
+ * The author can name any repeating section ("Signers for the
+ * resolution(s)"); Configure and Shared setup then title its picker with the
+ * name. The name is a label only: it is stored as a placeholders definition
+ * keyed by the repeater tag (`repeat.directors`, `repeat.officers.secretary`)
+ * with `fieldKind: "repeaterName"` and the name as its label, one per tag.
+ *
+ * A named Contacts section is its own list: its tag is
+ * `repeat.contacts.<slug>` and its definition is a contacts shortlist keyed by
+ * that tag, labelled with the name. Configure keeps a separate selection for it
+ * (`selectedContactListIds[slug]`). Plain `repeat.contacts` is the unnamed list.
+ *
+ * Like custom fields, partials' definitions are copied onto the template on
+ * save (marked with the partial id), and added per document for a
+ * resolution's chosen partials.
+ */
+const REPEATER_NAME_KIND = 'repeaterName';
+
+/** A template's or partial's own section names and contacts shortlists, by repeater tag. */
+export interface OakDocRepeaterSections {
+  /** Section name by repeater tag; a named contacts list always has one. */
+  names: Record<string, string>;
+  /** Contacts shortlist by contacts repeater tag (`repeat.contacts`, `repeat.contacts.<slug>`). */
+  shortlists: Record<string, OakDocCustomFieldContact[]>;
+}
+
+/** Section names and shortlists of a template together with its partials'. */
+export interface OakDocRepeaterSectionSummary {
+  /** Every distinct name given to sections with this tag, template's first. */
+  names: Record<string, string[]>;
+  shortlists: Record<string, OakDocCustomFieldContact[]>;
+}
+
+function isRepeaterEntry(definition: StoredDefinition): boolean {
+  const key = typeof definition.key === 'string' ? definition.key : '';
+  if (definition.fieldKind === CONTACT_SHORTLIST_KIND) return isOakDocContactsRepeaterTag(key);
+  return definition.fieldKind === REPEATER_NAME_KIND && isOakDocRepeaterTag(key) && !isOakDocContactsRepeaterTag(key);
+}
+
+/** A section name as stored: single-spaced, trimmed, at most OAKDOC_REPEATER_NAME_MAX characters. */
+export function normalizeOakDocRepeaterName(name: string | null | undefined): string {
+  return (name ?? '').replace(/\s+/g, ' ').trim().slice(0, OAKDOC_REPEATER_NAME_MAX).trim();
+}
+
+function entryName(definition: StoredDefinition): string | null {
+  const label = normalizeOakDocRepeaterName(typeof definition.label === 'string' ? definition.label : '');
+  if (definition.fieldKind === REPEATER_NAME_KIND) return label || null;
+  const slug = parseOakDocContactListSlug(String(definition.key));
+  return slug ? label || oakDocContactListNameFromSlug(slug) : null;
+}
+
+function repeaterEntry(
+  tag: string,
+  name: string,
+  listed: readonly OakDocCustomFieldContact[],
+): StoredDefinition | null {
+  const contacts = shortlistContacts([shortlistDefinition(listed)]);
+  if (tag === OAKDOC_CONTACTS_REPEATER_TAG) return contacts.length > 0 ? shortlistDefinition(contacts) : null;
+  const slug = parseOakDocContactListSlug(tag);
+  if (slug) {
+    return {
+      ...shortlistDefinition(contacts),
+      key: tag,
+      path: tag,
+      label: normalizeOakDocRepeaterName(name) || oakDocContactListNameFromSlug(slug),
+    };
+  }
+  const label = normalizeOakDocRepeaterName(name);
+  if (!label || !isOakDocRepeaterTag(tag)) return null;
+  return {
+    key: tag,
+    path: tag,
+    label,
+    type: 'text',
+    source: 'repeater',
+    category: 'repeater',
+    fieldKind: REPEATER_NAME_KIND,
+    required: false,
+  };
+}
+
+function repeaterEntries(placeholders: unknown, ownOnly: boolean): StoredDefinition[] {
+  if (!Array.isArray(placeholders)) return [];
+  return placeholders.filter((definition): definition is StoredDefinition => isRecord(definition)
+    && isRepeaterEntry(definition)
+    && (!ownOnly || !isPartialCopy(definition)));
+}
+
+function addEntry(summary: OakDocRepeaterSectionSummary, definition: StoredDefinition): void {
+  const tag = String(definition.key);
+  const name = entryName(definition);
+  if (name && !(summary.names[tag] ?? []).includes(name)) summary.names[tag] = [...(summary.names[tag] ?? []), name];
+  if (definition.fieldKind === CONTACT_SHORTLIST_KIND) {
+    summary.shortlists[tag] = shortlistContacts([shortlistDefinition(summary.shortlists[tag] ?? []), definition]);
+  }
+}
+
+/** The section names and contacts shortlists a template or partial sets itself. */
+export function readOakDocRepeaterSections(placeholders: unknown): OakDocRepeaterSections {
+  const summary: OakDocRepeaterSectionSummary = { names: {}, shortlists: {} };
+  for (const definition of repeaterEntries(placeholders, true)) addEntry(summary, definition);
+  const names: Record<string, string> = {};
+  for (const [tag, list] of Object.entries(summary.names)) names[tag] = list[0];
+  return { names, shortlists: summary.shortlists };
+}
+
+/**
+ * Replace a template's or partial's own section names and shortlists with
+ * these, keeping only sections still in the document (`presentTags`). A
+ * named contacts list is kept with no shortlist too, for its name.
+ */
+export function writeOakDocRepeaterSections(
+  placeholders: unknown,
+  sections: OakDocRepeaterSections,
+  presentTags: readonly string[],
+): StoredDefinition[] {
+  const existing = Array.isArray(placeholders) ? placeholders.filter(isRecord) : [];
+  const kept = existing.filter((definition) => !isRepeaterEntry(definition) || isPartialCopy(definition));
+  const written = Array.from(new Set(presentTags)).flatMap((tag) => {
+    const entry = repeaterEntry(tag, sections.names[tag] ?? '', sections.shortlists[tag] ?? []);
+    return entry ? [entry] : [];
+  });
+  return [...kept, ...written];
+}
+
+/**
+ * Section names and shortlists of a template together with the copies of
+ * its partials': every distinct name per tag, shortlists merged per tag.
+ */
+export function oakDocRepeaterSectionSummary(placeholders: unknown): OakDocRepeaterSectionSummary {
+  const summary: OakDocRepeaterSectionSummary = { names: {}, shortlists: {} };
+  const entries = repeaterEntries(placeholders, false);
+  for (const definition of entries.filter((entry) => !isPartialCopy(entry))) addEntry(summary, definition);
+  for (const definition of entries.filter(isPartialCopy)) addEntry(summary, definition);
+  return summary;
+}
+
+/** Two summaries together: a template's, then its chosen partials'. */
+export function mergeOakDocRepeaterSectionSummaries(
+  first: OakDocRepeaterSectionSummary | null | undefined,
+  second: OakDocRepeaterSectionSummary | null | undefined,
+): OakDocRepeaterSectionSummary {
+  const merged: OakDocRepeaterSectionSummary = {
+    names: { ...(first?.names ?? {}) },
+    shortlists: { ...(first?.shortlists ?? {}) },
+  };
+  for (const [tag, names] of Object.entries(second?.names ?? {})) {
+    merged.names[tag] = Array.from(new Set([...(merged.names[tag] ?? []), ...names]));
+  }
+  for (const [tag, contacts] of Object.entries(second?.shortlists ?? {})) {
+    const current = merged.shortlists[tag] ?? [];
+    const seen = new Set(current.map((contact) => contact.id));
+    merged.shortlists[tag] = [...current, ...contacts.filter((contact) => !seen.has(contact.id))];
+  }
+  return merged;
+}
+
+/** A partial's section names and shortlists (its own and its partials'), marked as copies from it. */
+function partialRepeaterCopies(partial: { id: string; placeholders: unknown }): StoredDefinition[] {
+  return repeaterEntries(partial.placeholders, false)
+    .map((definition) => ({ ...definition, [OAKDOC_PARTIAL_FIELD_MARKER]: partial.id }));
 }
 
 function partialFieldCopies(
@@ -350,7 +516,7 @@ function partialFieldCopies(
 ): StoredDefinition[] {
   const copies: StoredDefinition[] = [];
   for (const partial of partials) {
-    copies.push(...partialShortlistCopy(partial));
+    copies.push(...partialRepeaterCopies(partial));
     const fields = [
       ...readOakDocCustomFields(partial.placeholders),
       ...readOakDocPartialCustomFields(partial.placeholders),
@@ -368,10 +534,10 @@ function partialFieldCopies(
 }
 
 /**
- * Copy the custom fields (and contacts shortlists) of inserted partials onto
- * a template's placeholders, so Configure prompts for them. Fields the
- * template defines itself win; copies from partials no longer inserted are
- * dropped.
+ * Copy the custom fields (and section names and contacts shortlists) of
+ * inserted partials onto a template's placeholders, so Configure prompts for
+ * them. Fields the template defines itself win; copies from partials no
+ * longer inserted are dropped.
  */
 export function mergeOakDocPartialCustomFields(
   placeholders: unknown,

@@ -10,6 +10,7 @@
 import type { DocumentParty } from '@/lib/document-party';
 import type { ResolutionComposition } from '@/lib/resolution-composition';
 import type { DocumentEngine } from '@/lib/document-editor/document-engine';
+import type { OakDocRepeaterSectionSummary } from '@/lib/document-editor/oakdoc-custom-fields';
 import type { CustomPlaceholderDefinition } from '@/types/placeholders';
 import type {
   ServiceAgreementItemInput,
@@ -62,6 +63,11 @@ export interface DocumentTemplateSummary {
    * its partials' shortlists together); null or absent means any contact.
    */
   contactShortlist?: Array<{ id: string; name: string }> | null;
+  /**
+   * Word templates: names given to its repeating sections and the shortlists
+   * of its contacts lists, by repeater tag (its own and its partials').
+   */
+  repeaterSections?: OakDocRepeaterSectionSummary | null;
   /** RESOLUTION templates: resolutions pre-filled on Configure. */
   resolutionPreset?: ResolutionComposition | null;
   createdAt: string;

@@ -26,6 +26,11 @@ export interface OakDocRepeaterGenerationData {
   company: OakDocCompanyDetail;
   /** Contacts chosen on Configure, in the order they were picked. */
   contacts?: readonly OakDocContact[];
+  /**
+   * Contacts of each named contacts list (`repeat.contacts.<slug>`), by slug,
+   * in the order picked; a named section prints only its own list.
+   */
+  contactLists?: Readonly<Record<string, readonly OakDocContact[]>>;
   signers?: readonly OakDocContact[];
   authorisedRepresentatives?: readonly OakDocContact[];
   agreementEntities?: readonly OakDocAgreementEntity[];
@@ -111,6 +116,58 @@ export function oakDocOfficerRepeaterRoleUnion(tags: Iterable<string>): string[]
     for (const role of limited) roles.add(role);
   }
   return found ? OAKDOC_OFFICER_ROLE_FILTERS.filter((entry) => roles.has(entry.role)).map((entry) => entry.role) : null;
+}
+
+/*
+ * Named contacts lists. A Contacts section given a name ("Corporate secretary
+ * to be appointed") gets its own tag, `repeat.contacts.<slug>`, so Configure
+ * keeps a separate list for it. The slug is the name in lower case, letters
+ * and digits only, joined by single hyphens, at most 60 characters. Plain
+ * `repeat.contacts` stays the document's unnamed list.
+ */
+export const OAKDOC_CONTACT_LIST_SLUG_MAX = 60;
+/** Longest name a repeating section can be given. */
+export const OAKDOC_REPEATER_NAME_MAX = 80;
+const CONTACT_LIST_SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const CONTACT_LIST_PREFIX = OAKDOC_CONTACTS_REPEATER_TAG + '.';
+
+export function isOakDocContactListSlug(slug: string): boolean {
+  return slug.length <= OAKDOC_CONTACT_LIST_SLUG_MAX && CONTACT_LIST_SLUG.test(slug);
+}
+
+/** "Corporate secretary to be appointed" -> corporate-secretary-to-be-appointed; '' when it has no letters or digits. */
+export function oakDocContactListSlug(name: string): string {
+  return name
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, OAKDOC_CONTACT_LIST_SLUG_MAX)
+    .replace(/-+$/, '');
+}
+
+/** The contacts repeater tag of a named list; plain `repeat.contacts` without one. */
+export function oakDocContactsRepeaterTag(slug?: string | null): string {
+  return slug ? CONTACT_LIST_PREFIX + slug : OAKDOC_CONTACTS_REPEATER_TAG;
+}
+
+/** The slug of a named contacts list tag; null for any other tag (including plain `repeat.contacts`). */
+export function parseOakDocContactListSlug(tag: string): string | null {
+  if (!tag.startsWith(CONTACT_LIST_PREFIX)) return null;
+  const slug = tag.slice(CONTACT_LIST_PREFIX.length);
+  return isOakDocContactListSlug(slug) ? slug : null;
+}
+
+/** True for `repeat.contacts` and every named contacts list tag. */
+export function isOakDocContactsRepeaterTag(tag: string): boolean {
+  return tag === OAKDOC_CONTACTS_REPEATER_TAG || parseOakDocContactListSlug(tag) !== null;
+}
+
+/** A readable name from a slug, for a named list whose name was not stored. */
+export function oakDocContactListNameFromSlug(slug: string): string {
+  const words = slug.replace(/-/g, ' ');
+  return words.charAt(0).toUpperCase() + words.slice(1);
 }
 
 function isSelected(ids: readonly string[] | undefined, id: string): boolean {
@@ -309,8 +366,12 @@ readonly OakDocGenericRepeaterDefinition[] = [
       { tag: 'contact.identificationNumber', label: 'Contact Identification Number', category: 'Repeating Contact', example: 'S1234567A' },
       { tag: 'contact.nationality', label: 'Contact Nationality', category: 'Repeating Contact', example: 'Singaporean' },
     ],
-    generationDataAdapter: (data) => (data.contacts ?? [])
-      .map((contact) => contactValues('contact', contact)),
+    // A named list (`repeat.contacts.<slug>`) prints only its own contacts.
+    generationDataAdapter: (data, tag) => {
+      const slug = parseOakDocContactListSlug(tag);
+      const contacts = slug ? data.contactLists?.[slug] ?? [] : data.contacts ?? [];
+      return contacts.map((contact) => contactValues('contact', contact));
+    },
   },
   {
     kind: 'officers',
@@ -401,11 +462,13 @@ export const OAKDOC_GENERIC_REPEATER_TAGS = new Set(
 
 /**
  * The definition behind a repeater tag, including an officers repeater
- * limited to roles (`repeat.officers.secretary`).
+ * limited to roles (`repeat.officers.secretary`) and a named contacts list
+ * (`repeat.contacts.<slug>`).
  */
 export function oakDocRepeaterDefinitionForTag(tag: string): OakDocGenericRepeaterDefinition | undefined {
   const exact = OAKDOC_GENERIC_REPEATER_BY_TAG.get(tag);
   if (exact) return exact;
+  if (parseOakDocContactListSlug(tag) !== null) return OAKDOC_GENERIC_REPEATER_BY_TAG.get(OAKDOC_CONTACTS_REPEATER_TAG);
   return parseOakDocOfficerRepeaterRoles(tag) !== null
     ? OAKDOC_GENERIC_REPEATER_BY_TAG.get(OAKDOC_OFFICERS_REPEATER_TAG)
     : undefined;
@@ -421,6 +484,14 @@ export function oakDocOfficersRepeaterDefinition(roles: readonly string[]): OakD
   const tag = oakDocOfficersRepeaterTag(roles);
   if (tag === base.tag) return base;
   return { ...base, tag, label: `${base.label} (${formatOakDocOfficerRoles(roles)})` };
+}
+
+/** The contacts repeater definition inserting a named list's section; plain contacts without a name. */
+export function oakDocContactsRepeaterDefinition(name?: string | null): OakDocGenericRepeaterDefinition {
+  const base = OAKDOC_GENERIC_REPEATER_BY_TAG.get(OAKDOC_CONTACTS_REPEATER_TAG)!;
+  const slug = oakDocContactListSlug(name ?? '');
+  if (!slug) return base;
+  return { ...base, tag: oakDocContactsRepeaterTag(slug), label: `${base.label} (${name!.trim()})` };
 }
 
 export const OAKDOC_GENERIC_REPEATER_ITEM_TAGS = new Set(

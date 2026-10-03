@@ -14,6 +14,7 @@ import { ServiceAgreementConfig } from './service-agreement-config';
 import { ResolutionSectionsConfig } from './resolution-sections-config';
 import { partitionTemplateFields, type ItemCompleteness } from './batch-completeness';
 import type { ApplyScope } from './apply-to-others-menu';
+import type { OakDocRepeaterSectionSummary } from '@/lib/document-editor/oakdoc-custom-fields';
 
 export interface BatchItemConfiguratorProps {
   item: EditableBatchItem;
@@ -42,6 +43,8 @@ export interface BatchItemConfiguratorProps {
   templateFieldTags?: readonly string[];
   /** Contacts the template's contacts repeater may list; null means any contact. */
   contactShortlist?: ReadonlyArray<{ id: string; name: string }> | null;
+  /** Names of the template's repeating sections and its named contacts lists. */
+  repeaterSections?: OakDocRepeaterSectionSummary | null;
   onPatch: (patch: Partial<BatchItemConfiguration>) => void;
   disabled?: boolean;
   completeness?: ItemCompleteness;
@@ -94,6 +97,7 @@ export function BatchItemConfigurator(props: BatchItemConfiguratorProps) {
         onPrimaryCompanyChange={props.onPrimaryCompanyChange}
         masterFields={masterFields}
         effectiveMasterValues={effectiveMasterValues}
+        repeaterSections={props.repeaterSections}
         onPatch={onPatch}
         disabled={disabled}
       />
@@ -106,6 +110,7 @@ export function BatchItemConfigurator(props: BatchItemConfiguratorProps) {
           templateContent={props.templateContent}
           templateFieldTags={props.templateFieldTags}
           contactShortlist={props.contactShortlist}
+          repeaterSections={props.repeaterSections}
           masterFields={masterFields}
           effectiveMasterValues={effectiveMasterValues}
           directors={props.directors}

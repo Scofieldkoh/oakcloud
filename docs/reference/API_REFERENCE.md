@@ -1519,6 +1519,37 @@ generation prints only `contactIds` on a shortlist, dropping any other id. With
 no shortlist Configure searches every workspace contact, as before. The editors
 drop a shortlist on save when the document no longer has a contacts repeater.
 
+Any repeating section can be given a name when it is inserted, and renamed from
+the editor's repeating-sections panel (e.g. "Signers for the resolution(s)").
+The name is a label: a `placeholders` entry keyed by the repeater tag
+(`repeat.directors`, `repeat.officers.secretary`, `repeat.signers`...) with
+`fieldKind: "repeaterName"`, `source`/`category` `"repeater"` and the name as
+its `label` (one name per tag in a template or partial). Configure then shows a
+named directors, shareholders or officers picker as its own card titled with
+the name instead of under "Parties" (several names of one kind, e.g. two
+officers sections, are joined with " · " on the one card, since they share one
+selection); a Service Agreement titles its entities and representatives card
+with the names of those sections. Shared setup titles a shared picker the same
+way. Selection storage does not change.
+
+A named Contacts section is a separate list. Its tag is
+`repeat.contacts.<slug>`, where the slug is the name in lower case with every
+run of other characters turned into one hyphen and accents dropped, trimmed of
+hyphens, at most 60 characters (`^[a-z0-9]+(-[a-z0-9]+)*$`): "Corporate
+secretary to be appointed" is `repeat.contacts.corporate-secretary-to-be-appointed`.
+A name needs letters or digits; names are at most 80 characters. Its
+`placeholders` entry is a contact shortlist keyed by that tag and labelled with
+the name (kept with no contacts too, for the name); renaming changes the label,
+not the slug. Configure shows each named list as its own card titled with its
+name, offering only its own shortlist (any contact without one), and stores the
+ticks per list in `configuration.selectedContactListIds[slug]`; generation
+prints only that list's ticked contacts, in order, dropping ids not on its
+shortlist. The same name in two documents of a batch shares one Shared setup
+picker; lists with different names never do. Plain `repeat.contacts` stays the
+unnamed list and keeps using `contactIds`. Names and lists come from partials
+like shortlists do (copied on save, added per document for a resolution's
+chosen partials), and the editors drop them on save when their section is gone.
+
 ---
 
 ### GET /api/document-templates/stats
@@ -1630,6 +1661,11 @@ Resume one batch with its derived master-field catalogue. Permission:
 
 ### PUT /api/document-generation-batches/[id]
 Save full shared and item state. Permission: `document:update`.
+
+`configuration.selectedContactListIds` (optional) holds the contacts ticked for
+each named contacts list of a Word template, by list slug, in order, e.g.
+`{ "corporate-secretary-to-be-appointed": ["<contactId>"] }`; at most 50 lists
+of 100 contacts. See the contacts repeater under the template placeholders.
 
 For a Service Agreement item, `configuration.serviceAgreement` carries
 `authorizedContactIds` and `signerContactIds` arrays. Both may be empty while

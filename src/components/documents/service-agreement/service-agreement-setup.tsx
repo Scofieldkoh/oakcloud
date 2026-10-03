@@ -32,6 +32,8 @@ interface ServiceAgreementSetupProps {
   companySearchQuery?: string;
   companySearchLoading?: boolean;
   disabled?: boolean;
+  /** Heading of the representatives list; the template author's section name when given. */
+  representativesLabel?: string;
 }
 
 export function ServiceAgreementSetup({
@@ -50,6 +52,7 @@ export function ServiceAgreementSetup({
   companySearchQuery = '',
   companySearchLoading = false,
   disabled = false,
+  representativesLabel = 'Authorised representatives',
 }: ServiceAgreementSetupProps) {
   const [contactQuery, setContactQuery] = useState('');
   const selectedIds = useMemo(() => new Set(entityIds), [entityIds]);
@@ -149,7 +152,7 @@ export function ServiceAgreementSetup({
       <div className="mt-4">
         <fieldset className="space-y-2">
           <legend className="text-xs font-medium text-text-secondary">
-            Authorised representatives
+            {representativesLabel}
             <span className="ml-1 text-status-error" aria-hidden="true">*</span>
           </legend>
           <p className="text-xs text-text-muted">

@@ -7,16 +7,15 @@ import { OakDocCustomFieldsPanel } from '@/components/documents/oakdoc/oakdoc-cu
 import { OakDocFieldList } from '@/components/documents/oakdoc/oakdoc-field-list';
 import { OakDocRepeaterPanel } from '@/components/documents/oakdoc/oakdoc-repeater-panel';
 import {
-  readOakDocContactShortlist,
   readOakDocCustomFields,
   readOakDocPartialCustomFields,
-  writeOakDocContactShortlist,
+  readOakDocRepeaterSections,
   writeOakDocCustomFields,
+  writeOakDocRepeaterSections,
   type OakDocCustomField,
-  type OakDocCustomFieldContact,
+  type OakDocRepeaterSections,
 } from '@/lib/document-editor/oakdoc-custom-fields';
 import { inspectOakDocRepeaters } from '@/lib/document-editor/oakdoc-repeaters';
-import { OAKDOC_CONTACTS_REPEATER_TAG } from '@/lib/document-editor/oakdoc-repeater-definitions';
 import { pruneDeletedOakDocFields } from '@/lib/document-editor/oakdoc-fields';
 import { OAKDOC_FIELD_TAGS } from '@/lib/document-editor/oakdoc-field-registry';
 import { partialKeys, saveWordPartial } from '@/hooks/use-template-partials';
@@ -70,8 +69,8 @@ export function WordPartialEditor({
   const [customFields, setCustomFields] = useState<OakDocCustomField[]>(
     () => readOakDocCustomFields(placeholders),
   );
-  const [contactShortlist, setContactShortlist] = useState<OakDocCustomFieldContact[]>(
-    () => readOakDocContactShortlist(placeholders),
+  const [repeaterSections, setRepeaterSections] = useState<OakDocRepeaterSections>(
+    () => readOakDocRepeaterSections(placeholders),
   );
   const load = useCallback(
     (signal: AbortSignal) => loadPartialDocx(partialId, signal),
@@ -85,16 +84,17 @@ export function WordPartialEditor({
       id: partialId,
       expectedRevision: snapshot.baseRevision,
       file: new File([copy.buffer], fileName, { type: OAKDOC_MIME_TYPE }),
-      placeholders: writeOakDocContactShortlist(
+      placeholders: writeOakDocRepeaterSections(
         writeOakDocCustomFields(storedPlaceholders, customFields),
-        // A shortlist outlives its contacts repeater only until the next save.
-        inspectOakDocRepeaters(bytes).tags.includes(OAKDOC_CONTACTS_REPEATER_TAG) ? contactShortlist : [],
+        repeaterSections,
+        // A name or shortlist outlives its section only until the next save.
+        inspectOakDocRepeaters(bytes).tags,
       ),
     });
     setStoredPlaceholders(saved.placeholders ?? []);
     await queryClient.invalidateQueries({ queryKey: partialKeys.all });
     return { revision: saved.version };
-  }, [contactShortlist, customFields, fileName, partialId, queryClient, storedPlaceholders]);
+  }, [customFields, fileName, partialId, queryClient, repeaterSections, storedPlaceholders]);
 
   return (
     <OakDocDocumentHost
@@ -140,9 +140,9 @@ export function WordPartialEditor({
             onAdd={(definition) => void addRepeater(definition)}
             onRemoveAtCaret={() => void removeRepeaterAtCaret()}
             onAssignField={(field) => void insertField(field)}
-            contactShortlist={contactShortlist}
-            onContactShortlistChange={(next) => {
-              setContactShortlist(next);
+            sections={repeaterSections}
+            onSectionsChange={(next) => {
+              setRepeaterSections(next);
               markChanged();
             }}
           />

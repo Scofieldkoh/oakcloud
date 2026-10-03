@@ -14,6 +14,7 @@ import { SingleDateInput } from '@/components/ui/single-date-input';
 import { SearchableSelect } from '@/components/ui/searchable-select';
 import type { DocumentParty } from '@/lib/document-party';
 import { formatOakDocOfficerRoles } from '@/lib/document-editor/oakdoc-repeater-definitions';
+import type { OakDocRepeaterSectionSummary } from '@/lib/document-editor/oakdoc-custom-fields';
 import type {
   BatchItemConfiguration,
   MasterFieldCatalogue,
@@ -29,6 +30,8 @@ import type { ItemCompleteness } from './batch-completeness';
 import {
   officersOfRoles,
   partyConfigurationKeys,
+  repeaterSectionTitle,
+  templateContactLists,
   templateOfficerRoles,
   templatePartyNeeds,
 } from './template-party-needs';
@@ -44,6 +47,11 @@ export interface StandardDocumentConfigProps {
    * author); Configure then offers only these. Null or absent: any contact.
    */
   contactShortlist?: ReadonlyArray<{ id: string; name: string }> | null;
+  /**
+   * Names the author gave the template's repeating sections (each named one
+   * gets a card titled with it) and its named contacts lists.
+   */
+  repeaterSections?: OakDocRepeaterSectionSummary | null;
   masterFields: MasterFieldCatalogue;
   effectiveMasterValues: Record<string, string>;
   directors: DocumentParty[];
@@ -75,6 +83,34 @@ function selectedPartyIds(parties: DocumentParty[], ids: string[] | undefined): 
   return ids.filter((id) => availableIds.has(id));
 }
 
+/** Contacts of a shortlist, with what Configure already knows about each. */
+function shortlistAsContacts(
+  shortlist: ReadonlyArray<{ id: string; name: string }> | null | undefined,
+  contacts: DocumentContact[],
+  contactsById: Map<string, DocumentContact> | undefined,
+): DocumentContact[] | null {
+  if (!shortlist || shortlist.length === 0) return null;
+  return shortlist.map((entry) => contactsById?.get(entry.id)
+    ?? contacts.find((contact) => contact.id === entry.id)
+    ?? { id: entry.id, fullName: entry.name });
+}
+
+/** Ticked contacts in order: only shortlisted ones when there is a shortlist. */
+function pickedContacts(
+  ids: readonly string[],
+  shortlist: DocumentContact[] | null,
+  contacts: DocumentContact[],
+  contactsById: Map<string, DocumentContact> | undefined,
+): DocumentContact[] {
+  if (shortlist) {
+    const byId = new Map(shortlist.map((contact) => [contact.id, contact]));
+    return ids.flatMap((id) => byId.get(id) ?? []);
+  }
+  const pool = new Map<string, DocumentContact>(contactsById ?? []);
+  for (const contact of contacts) pool.set(contact.id, contact);
+  return ids.map((id) => pool.get(id) ?? { id, fullName: 'Contact unavailable' });
+}
+
 function missingCount(completeness: ItemCompleteness | undefined, prefix: string): number {
   if (!completeness) return 0;
   return completeness.missing.filter((entry) => entry.id.startsWith(prefix)).length;
@@ -86,6 +122,7 @@ export function StandardDocumentConfig({
   templateContent,
   templateFieldTags,
   contactShortlist = null,
+  repeaterSections = null,
   masterFields,
   effectiveMasterValues,
   directors,
@@ -143,25 +180,28 @@ export function StandardDocumentConfig({
   }, [companyContacts, configuration.selectedContactId, contacts, contactsById]);
 
   // A shortlist set on the template replaces the workspace contact search.
-  const shortlistContacts = useMemo<DocumentContact[] | null>(() => {
-    if (!contactShortlist || contactShortlist.length === 0) return null;
-    return contactShortlist.map((entry) => contactsById?.get(entry.id)
-      ?? contacts.find((contact) => contact.id === entry.id)
-      ?? { id: entry.id, fullName: entry.name });
-  }, [contactShortlist, contacts, contactsById]);
+  const shortlistContacts = useMemo(
+    () => shortlistAsContacts(contactShortlist, contacts, contactsById),
+    [contactShortlist, contacts, contactsById],
+  );
 
-  const selectedContacts = useMemo<DocumentContact[]>(() => {
-    if (shortlistContacts) {
-      const byId = new Map(shortlistContacts.map((contact) => [contact.id, contact]));
-      return configuration.contactIds.flatMap((id) => byId.get(id) ?? []);
-    }
-    const pool = new Map<string, DocumentContact>(contactsById ?? []);
-    for (const contact of contacts) pool.set(contact.id, contact);
-    return configuration.contactIds.map((id) => pool.get(id) ?? {
-      id,
-      fullName: 'Contact unavailable',
-    });
-  }, [configuration.contactIds, contacts, contactsById, shortlistContacts]);
+  const selectedContacts = useMemo(
+    () => pickedContacts(configuration.contactIds, shortlistContacts, contacts, contactsById),
+    [configuration.contactIds, contacts, contactsById, shortlistContacts],
+  );
+
+  // Names the author gave sections: each named one gets its own card.
+  const sectionTitles = useMemo(() => ({
+    directors: repeaterSectionTitle(repeaterSections, 'directors'),
+    shareholders: repeaterSectionTitle(repeaterSections, 'shareholders'),
+    officers: repeaterSectionTitle(repeaterSections, 'officers'),
+  }), [repeaterSections]);
+  // Named contacts lists, each with its own shortlist and ticks.
+  const contactLists = useMemo(() => templateContactLists(templateFieldTags, repeaterSections).map((list) => {
+    const shortlist = shortlistAsContacts(list.shortlist, contacts, contactsById);
+    const ids = configuration.selectedContactListIds?.[list.slug] ?? [];
+    return { ...list, shortlist, selected: pickedContacts(ids, shortlist, contacts, contactsById) };
+  }), [configuration.selectedContactListIds, contacts, contactsById, repeaterSections, templateFieldTags]);
 
   const titleMissing = configuration.title.trim().length === 0;
   const fieldMissing = missingCount(completeness, 'field:');
@@ -170,14 +210,24 @@ export function StandardDocumentConfig({
   const requiredSharedFields = masterFields.fields.filter(
     (field) => field.requiredTemplateIds.includes(item.templateId),
   ).length;
+  const namedDirectors = partyCollections.directors && sectionTitles.directors !== null;
+  const namedShareholders = partyCollections.shareholders && sectionTitles.shareholders !== null;
+  const namedOfficers = needs.officers && sectionTitles.officers !== null;
   const partyMissingCount = [
     partySelections.director && !configuration.selectedDirectorId,
-    partyCollections.directors && selectedDirectorIds.length === 0,
+    !namedDirectors && partyCollections.directors && selectedDirectorIds.length === 0,
     partySelections.shareholder && !configuration.selectedShareholderId,
-    partyCollections.shareholders && selectedShareholderIds.length === 0,
-    needs.officers && selectedOfficerIds.length === 0,
+    !namedShareholders && partyCollections.shareholders && selectedShareholderIds.length === 0,
+    !namedOfficers && needs.officers && selectedOfficerIds.length === 0,
     partySelections.contact && !configuration.selectedContactId,
   ].filter(Boolean).length;
+  // Keys under the generic Parties card; named sections have their own.
+  const namedKeys = new Set<keyof BatchItemConfiguration>([
+    ...(namedDirectors ? ['selectedDirectorIds' as const] : []),
+    ...(namedShareholders ? ['selectedShareholderIds' as const] : []),
+    ...(namedOfficers ? ['selectedOfficerIds' as const] : []),
+  ]);
+  const genericPartyKeys = partyKeys.filter((key) => !namedKeys.has(key));
 
   const applyMenu = (label: string, keys: Array<keyof BatchItemConfiguration>) =>
     onApplyToOthers ? (
@@ -201,6 +251,58 @@ export function StandardDocumentConfig({
         }}
       />
     ) : null;
+
+  const directorsPicker = (
+    <DocumentPartyChoiceList
+      id="selected-directors"
+      label="Directors"
+      options={directors}
+      values={selectedDirectorIds}
+      onChange={(values) => onPatch({ selectedDirectorIds: values })}
+      multiple
+      isLoading={partyLoading}
+      error={partyError}
+      onRetry={onPartyRetry}
+    />
+  );
+  const shareholdersPicker = (
+    <DocumentPartyChoiceList
+      id="selected-shareholders"
+      label="Shareholders"
+      options={shareholders}
+      values={selectedShareholderIds}
+      onChange={(values) => onPatch({ selectedShareholderIds: values })}
+      multiple
+      isLoading={partyLoading}
+      error={partyError}
+      onRetry={onPartyRetry}
+    />
+  );
+  const officersPicker = (
+    <DocumentPartyChoiceList
+      id="selected-officers"
+      label={officerRoles ? `Officers (${formatOakDocOfficerRoles(officerRoles)})` : 'Officers'}
+      options={officerOptions}
+      values={selectedOfficerIds}
+      onChange={(values) => onPatch({ selectedOfficerIds: values })}
+      multiple
+      isLoading={partyLoading}
+      error={partyError}
+      onRetry={onPartyRetry}
+    />
+  );
+  // A section the author named gets a card titled with its name.
+  const namedPartySections = [
+    namedDirectors
+      ? { key: 'selectedDirectorIds' as const, title: sectionTitles.directors!, count: selectedDirectorIds.length, picker: directorsPicker }
+      : null,
+    namedShareholders
+      ? { key: 'selectedShareholderIds' as const, title: sectionTitles.shareholders!, count: selectedShareholderIds.length, picker: shareholdersPicker }
+      : null,
+    namedOfficers
+      ? { key: 'selectedOfficerIds' as const, title: sectionTitles.officers!, count: selectedOfficerIds.length, picker: officersPicker }
+      : null,
+  ].flatMap((section) => section ?? []);
 
   return (
     <div className="space-y-3">
@@ -243,7 +345,7 @@ export function StandardDocumentConfig({
         </label>
       </BatchSection>
 
-      {partyKeys.length > 0 && (
+      {genericPartyKeys.length > 0 && (
         <BatchSection
           title="Parties"
           description="Officers and the contact this document addresses."
@@ -251,7 +353,7 @@ export function StandardDocumentConfig({
             complete: partyMissingCount === 0,
             label: partyMissingCount === 0 ? 'Complete' : `${partyMissingCount} required`,
           }}
-          action={applyMenu('parties', partyKeys)}
+          action={applyMenu('parties', genericPartyKeys)}
         >
           <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
             {partySelections.director && (
@@ -266,19 +368,7 @@ export function StandardDocumentConfig({
                 onRetry={onPartyRetry}
               />
             )}
-            {partyCollections.directors && (
-              <DocumentPartyChoiceList
-                id="selected-directors"
-                label="Directors"
-                options={directors}
-                values={selectedDirectorIds}
-                onChange={(values) => onPatch({ selectedDirectorIds: values })}
-                multiple
-                isLoading={partyLoading}
-                error={partyError}
-                onRetry={onPartyRetry}
-              />
-            )}
+            {partyCollections.directors && !namedDirectors && directorsPicker}
             {partySelections.shareholder && (
               <DocumentPartyChoiceList
                 id="selected-shareholder"
@@ -291,32 +381,8 @@ export function StandardDocumentConfig({
                 onRetry={onPartyRetry}
               />
             )}
-            {partyCollections.shareholders && (
-              <DocumentPartyChoiceList
-                id="selected-shareholders"
-                label="Shareholders"
-                options={shareholders}
-                values={selectedShareholderIds}
-                onChange={(values) => onPatch({ selectedShareholderIds: values })}
-                multiple
-                isLoading={partyLoading}
-                error={partyError}
-                onRetry={onPartyRetry}
-              />
-            )}
-            {needs.officers && (
-              <DocumentPartyChoiceList
-                id="selected-officers"
-                label={officerRoles ? `Officers (${formatOakDocOfficerRoles(officerRoles)})` : 'Officers'}
-                options={officerOptions}
-                values={selectedOfficerIds}
-                onChange={(values) => onPatch({ selectedOfficerIds: values })}
-                multiple
-                isLoading={partyLoading}
-                error={partyError}
-                onRetry={onPartyRetry}
-              />
-            )}
+            {partyCollections.shareholders && !namedShareholders && shareholdersPicker}
+            {needs.officers && !namedOfficers && officersPicker}
             {partySelections.contact && (
               <DocumentContactChoiceList
                 id="selected-contact"
@@ -333,6 +399,20 @@ export function StandardDocumentConfig({
           </div>
         </BatchSection>
       )}
+
+      {namedPartySections.map((section) => (
+        <BatchSection
+          key={section.key}
+          title={section.title}
+          status={{
+            complete: section.count > 0,
+            label: section.count > 0 ? `${section.count} selected` : '1 required',
+          }}
+          action={applyMenu(section.title, [section.key])}
+        >
+          <div className="max-w-xl">{section.picker}</div>
+        </BatchSection>
+      ))}
 
       {showContacts && (
         <BatchSection
@@ -369,6 +449,44 @@ export function StandardDocumentConfig({
           )}
         </BatchSection>
       )}
+
+      {contactLists.map((list) => {
+        const patchList = (selected: DocumentContact[]) => onPatch({
+          selectedContactListIds: {
+            ...(configuration.selectedContactListIds ?? {}),
+            [list.slug]: selected.map((contact) => contact.id),
+          },
+        });
+        return (
+          <BatchSection
+            key={list.slug}
+            title={list.name}
+            description={list.shortlist
+              ? 'Contacts listed in this section of the document, in the order picked, from its shortlist.'
+              : 'Contacts listed in this section of the document, in the order picked.'}
+            status={{ complete: true, label: `${list.selected.length} selected` }}
+          >
+            {list.shortlist ? (
+              <DocumentContactChoiceList
+                id={`contact-list-${list.slug}`}
+                contacts={list.shortlist}
+                selected={list.selected}
+                onChange={patchList}
+              />
+            ) : (
+              <DocumentContactChoiceList
+                id={`contact-list-${list.slug}`}
+                contacts={contacts}
+                selected={list.selected}
+                onChange={patchList}
+                onSearch={onContactSearch}
+                isLoading={contactsLoading}
+                serverFiltered={Boolean(onContactSearch)}
+              />
+            )}
+          </BatchSection>
+        );
+      })}
 
       {masterFields.fields.length > 0 && (
         <BatchSection

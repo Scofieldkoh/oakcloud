@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { isOakDocContactListSlug } from '@/lib/document-editor/oakdoc-repeater-definitions';
 import {
   serviceAgreementDateString,
   serviceAgreementItemSchema,
@@ -98,6 +99,10 @@ export const batchItemConfigurationSchema = z.object({
   selectedShareholderId: nullableUuid,
   selectedShareholderIds: z.array(uuid).max(100).optional(),
   selectedOfficerIds: z.array(uuid).max(100).optional(),
+  selectedContactListIds: z.record(
+    z.string().refine(isOakDocContactListSlug, 'Invalid contacts list'),
+    z.array(uuid).max(100),
+  ).refine((lists) => Object.keys(lists).length <= 50, 'Too many contacts lists').optional(),
   selectedContactId: nullableUuid,
   itemValues: itemFieldValues,
   masterOverrides: stringFieldValues,

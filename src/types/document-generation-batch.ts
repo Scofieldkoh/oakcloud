@@ -69,6 +69,11 @@ export interface BatchItemConfiguration {
   selectedShareholderIds?: string[];
   /** Officers of any role for the Word officers repeater, in order; absent means none. */
   selectedOfficerIds?: string[];
+  /**
+   * Contacts ticked for each named contacts list (`repeat.contacts.<slug>`),
+   * by slug, in order; the unnamed `repeat.contacts` list uses contactIds.
+   */
+  selectedContactListIds?: Record<string, string[]>;
   selectedContactId: string | null;
   itemValues: Record<string, BatchItemFieldValue>;
   masterOverrides: Record<string, string>;

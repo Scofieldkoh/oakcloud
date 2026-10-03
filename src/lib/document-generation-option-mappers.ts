@@ -10,7 +10,7 @@ import {
   storageFormatToCustomPlaceholders,
 } from '@/lib/template-analysis';
 import { readResolutionPreset } from '@/lib/resolution-composition';
-import { oakDocContactShortlist } from '@/lib/document-editor/oakdoc-custom-fields';
+import { oakDocContactShortlist, oakDocRepeaterSectionSummary } from '@/lib/document-editor/oakdoc-custom-fields';
 import type {
   Company,
   DocumentContact,
@@ -67,6 +67,7 @@ export function mapTemplateSummary(raw: Record<string, unknown>): DocumentTempla
       normalizeStoredPlaceholders(raw.placeholders),
     ),
     contactShortlist: oakDocContactShortlist(normalizeStoredPlaceholders(raw.placeholders)),
+    repeaterSections: oakDocRepeaterSectionSummary(normalizeStoredPlaceholders(raw.placeholders)),
     resolutionPreset: raw.compositionType === 'RESOLUTION' ? readResolutionPreset(raw.resolutionPreset) : null,
     createdAt: String(raw.createdAt ?? ''),
     updatedAt: String(raw.updatedAt ?? ''),

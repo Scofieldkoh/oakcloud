@@ -96,6 +96,27 @@ describe('document generation batch validation', () => {
     expect(batchItemConfigurationSchema.safeParse(validItemConfiguration()).success).toBe(true);
   });
 
+  it('accepts contacts ticked per named contacts list, keyed by a list slug', () => {
+    expect(batchItemConfigurationSchema.safeParse({
+      ...validItemConfiguration(),
+      selectedContactListIds: { 'corporate-secretary-to-be-appointed': [uuid], auditor: [] },
+    }).success).toBe(true);
+    for (const key of ['Corp Sec', 'corp--sec', '-corp', 'a'.repeat(61), '']) {
+      expect(batchItemConfigurationSchema.safeParse({
+        ...validItemConfiguration(),
+        selectedContactListIds: { [key]: [uuid] },
+      }).success, key).toBe(false);
+    }
+    expect(batchItemConfigurationSchema.safeParse({
+      ...validItemConfiguration(),
+      selectedContactListIds: { 'corp-sec': ['not-a-uuid'] },
+    }).success).toBe(false);
+    expect(batchItemConfigurationSchema.safeParse({
+      ...validItemConfiguration(),
+      selectedContactListIds: Object.fromEntries(Array.from({ length: 51 }, (_, index) => [`list-${index}`, []])),
+    }).success).toBe(false);
+  });
+
   it('accepts an empty Service Agreement workspace while still validating entered items', () => {
     const workspace = {
       authorizedContactIds: [],

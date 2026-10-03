@@ -83,4 +83,24 @@ describe('OakDoc generation context (L2)', () => {
         resolutionDate: undefined,
       });
   });
+
+  it('passes the contacts ticked for each named contacts list', () => {
+    const configuration = {
+      version: 1,
+      title: 'Doc',
+      contactIds: ['contact-1'],
+      selectedContactListIds: { 'corp-sec': ['contact-2'] },
+      selectedDirectorId: null,
+      selectedShareholderId: null,
+      selectedContactId: null,
+      itemValues: {},
+      masterOverrides: {},
+      useLetterhead: false,
+      serviceAgreement: null,
+    } as never;
+    expect(oakDocBatchContext(configuration, {})).toMatchObject({
+      contactIds: ['contact-1'],
+      selectedContactListIds: { 'corp-sec': ['contact-2'] },
+    });
+  });
 });

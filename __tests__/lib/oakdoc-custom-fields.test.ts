@@ -5,6 +5,10 @@ import {
   formatOakDocCustomFieldValue,
   isOakDocCustomFieldTag,
   mergeOakDocPartialCustomFields,
+  mergeOakDocRepeaterSectionSummaries,
+  oakDocRepeaterSectionSummary,
+  readOakDocRepeaterSections,
+  writeOakDocRepeaterSections,
   oakDocContactShortlist,
   oakDocCustomContactFields,
   oakDocCustomFieldKeyFromLabel,
@@ -215,5 +219,115 @@ describe('OakDoc custom fields', () => {
     // A resolution's chosen partials add theirs to whatever the template has.
     expect(oakDocContactShortlist(appendOakDocPartialCustomFields([], [partial])))
       .toEqual([{ id: 'c2', name: 'Bea Tan' }, { id: 'c1', name: 'Alex Lim' }]);
+  });
+
+  describe('named repeating sections', () => {
+    const fee = { key: 'custom.fee', label: 'Fee', type: 'currency', source: 'custom', category: 'custom' };
+
+    it('stores section names and named contacts lists by repeater tag', () => {
+      const stored = writeOakDocRepeaterSections([fee], {
+        names: {
+          'repeat.directors': '  Signers for   the resolution(s) ',
+          'repeat.officers.secretary': 'Outgoing secretary',
+          'repeat.contacts.corp-sec': 'Corporate secretary to be appointed',
+          'repeat.contacts.empty': '',
+          'repeat.shareholders': 'Not in the document',
+        },
+        shortlists: {
+          'repeat.contacts': [{ id: 'c1', name: 'Alex Lim' }],
+          'repeat.contacts.corp-sec': [{ id: 'c2', name: 'Bea Tan' }, { id: 'c2', name: 'Bea Tan' }],
+        },
+      }, [
+        'repeat.directors',
+        'repeat.officers.secretary',
+        'repeat.contacts',
+        'repeat.contacts.corp-sec',
+        'repeat.contacts.empty',
+        'repeat.directors',
+      ]);
+      expect(stored).toEqual([
+        fee,
+        {
+          key: 'repeat.directors',
+          path: 'repeat.directors',
+          label: 'Signers for the resolution(s)',
+          type: 'text',
+          source: 'repeater',
+          category: 'repeater',
+          fieldKind: 'repeaterName',
+          required: false,
+        },
+        expect.objectContaining({ key: 'repeat.officers.secretary', label: 'Outgoing secretary', fieldKind: 'repeaterName' }),
+        expect.objectContaining({ key: 'repeat.contacts', label: 'Contacts shortlist', fieldKind: 'contactShortlist' }),
+        expect.objectContaining({
+          key: 'repeat.contacts.corp-sec',
+          path: 'repeat.contacts.corp-sec',
+          label: 'Corporate secretary to be appointed',
+          fieldKind: 'contactShortlist',
+          options: [{ value: 'c2', label: 'Bea Tan' }],
+        }),
+        // A named list keeps its name with no shortlist; the name comes from the slug if blank.
+        expect.objectContaining({ key: 'repeat.contacts.empty', label: 'Empty', options: [] }),
+      ]);
+      expect(readOakDocRepeaterSections(stored)).toEqual({
+        names: {
+          'repeat.directors': 'Signers for the resolution(s)',
+          'repeat.officers.secretary': 'Outgoing secretary',
+          'repeat.contacts.corp-sec': 'Corporate secretary to be appointed',
+          'repeat.contacts.empty': 'Empty',
+        },
+        shortlists: {
+          'repeat.contacts': [{ id: 'c1', name: 'Alex Lim' }],
+          'repeat.contacts.corp-sec': [{ id: 'c2', name: 'Bea Tan' }],
+          'repeat.contacts.empty': [],
+        },
+      });
+      // Neither names nor lists are custom fields, and the unnamed shortlist reads as before.
+      expect(readOakDocCustomFields(stored).map((field) => field.key)).toEqual(['fee']);
+      expect(oakDocContactShortlist(stored)).toEqual([{ id: 'c1', name: 'Alex Lim' }]);
+      // Rewriting replaces them; sections no longer in the document drop out.
+      expect(writeOakDocRepeaterSections(stored, readOakDocRepeaterSections(stored), ['repeat.directors']))
+        .toEqual([fee, expect.objectContaining({ key: 'repeat.directors' })]);
+    });
+
+    it("brings partials' names and lists onto the template, a list per name", () => {
+      const template = writeOakDocRepeaterSections([], {
+        names: { 'repeat.directors': 'Signers', 'repeat.contacts.corp-sec': 'Corp sec' },
+        shortlists: { 'repeat.contacts.corp-sec': [{ id: 'c1', name: 'Alex Lim' }] },
+      }, ['repeat.directors', 'repeat.contacts.corp-sec']);
+      const partial = {
+        id: 'p1',
+        placeholders: writeOakDocRepeaterSections([], {
+          names: {
+            'repeat.directors': 'Approving directors',
+            'repeat.contacts.corp-sec': 'Corp sec',
+            'repeat.contacts.auditor': 'Auditor to be appointed',
+          },
+          shortlists: {
+            'repeat.contacts.corp-sec': [{ id: 'c2', name: 'Bea Tan' }],
+            'repeat.contacts.auditor': [{ id: 'c3', name: 'Cal Ong' }],
+          },
+        }, ['repeat.directors', 'repeat.contacts.corp-sec', 'repeat.contacts.auditor']),
+      };
+      const merged = mergeOakDocPartialCustomFields(template, [partial]);
+      // The template edits only its own.
+      expect(readOakDocRepeaterSections(merged).names).toEqual({ 'repeat.directors': 'Signers', 'repeat.contacts.corp-sec': 'Corp sec' });
+      expect(oakDocRepeaterSectionSummary(merged)).toEqual({
+        names: {
+          'repeat.directors': ['Signers', 'Approving directors'],
+          'repeat.contacts.corp-sec': ['Corp sec'],
+          'repeat.contacts.auditor': ['Auditor to be appointed'],
+        },
+        shortlists: {
+          'repeat.contacts.corp-sec': [{ id: 'c1', name: 'Alex Lim' }, { id: 'c2', name: 'Bea Tan' }],
+          'repeat.contacts.auditor': [{ id: 'c3', name: 'Cal Ong' }],
+        },
+      });
+      // A resolution's chosen partials add theirs per document.
+      const own = oakDocRepeaterSectionSummary(template);
+      const chosen = oakDocRepeaterSectionSummary(appendOakDocPartialCustomFields([], [partial]));
+      expect(mergeOakDocRepeaterSectionSummaries(own, chosen)).toEqual(oakDocRepeaterSectionSummary(merged));
+      expect(oakDocRepeaterSectionSummary(mergeOakDocPartialCustomFields(merged, []))).toEqual(own);
+    });
   });
 });

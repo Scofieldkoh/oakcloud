@@ -27,6 +27,7 @@ import type {
   DocumentTemplateSummary,
 } from '@/types/document-generation';
 import type { CustomPlaceholderDefinition } from '@/types/placeholders';
+import type { OakDocRepeaterSectionSummary } from '@/lib/document-editor/oakdoc-custom-fields';
 import { useDocumentPartyOptions } from '@/hooks/use-document-party-options';
 import { useOptionSearch } from '@/hooks/use-option-search';
 import { useCompanySearch, type CompanySearchOption } from '@/hooks/use-company-search';
@@ -63,6 +64,7 @@ import { BatchSharedParties } from './batch-shared-parties';
 import { templateOfficerRoles, templatePartyNeeds, type TemplatePartyNeeds } from './template-party-needs';
 import {
   resolutionItemContactShortlist,
+  resolutionItemRepeaterSections,
   resolutionItemFieldTags,
   resolutionItemFields,
 } from './resolution-item-fields';
@@ -362,6 +364,20 @@ export function DocumentGenerationBatchWorkspace({
       ? resolutionItemContactShortlist(shortlist, activeItem.configuration.resolution, partialsQuery.data?.partials ?? [])
       : shortlist;
   }, [activeItem, activeTemplate, partialsQuery.data]);
+  // Section names and named contacts lists per document, with those of its
+  // chosen resolution partials.
+  const repeaterSectionsByItemKey = useMemo(() => {
+    const byTemplateId = new Map(templates.map((template) => [template.id, template]));
+    const partials = partialsQuery.data?.partials ?? [];
+    const sections: Record<string, OakDocRepeaterSectionSummary | null> = {};
+    for (const item of state.batch.items) {
+      const templateSections = byTemplateId.get(item.templateId)?.repeaterSections ?? null;
+      sections[item.key] = item.templateKind === 'RESOLUTION'
+        ? resolutionItemRepeaterSections(templateSections, item.configuration.resolution, partials)
+        : templateSections;
+    }
+    return sections;
+  }, [partialsQuery.data, templates, state.batch.items]);
 
   const partyNeedsByItemKey = useMemo(() => {
     const byTemplateId = new Map(templates.map((template) => [template.id, template]));
@@ -871,6 +887,8 @@ export function DocumentGenerationBatchWorkspace({
                 items={state.batch.items}
                 needsByItemKey={partyNeedsByItemKey}
                 officerRolesByItemKey={officerRolesByItemKey}
+                fieldTagsByItemKey={fieldTagsByItemKey}
+                repeaterSectionsByItemKey={repeaterSectionsByItemKey}
                 directors={partyOptions.directors}
                 shareholders={partyOptions.shareholders}
                 officers={partyOptions.officers}
@@ -949,6 +967,7 @@ export function DocumentGenerationBatchWorkspace({
                     templateContent={activeTemplate?.content}
                     templateFieldTags={activeOakDocFieldTags}
                     contactShortlist={activeContactShortlist}
+                    repeaterSections={repeaterSectionsByItemKey[activeItem.key] ?? null}
                     onPatch={(patch) => dispatch({
                       type: 'item/patch',
                       itemId: activeItem.key,

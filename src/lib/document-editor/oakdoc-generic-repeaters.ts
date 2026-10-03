@@ -16,7 +16,9 @@ import { writeOakDocControlValue } from '@/lib/document-editor/oakdoc-fields';
 import {
   formatOakDocOfficerRoles,
   isOakDocRepeaterTag,
+  oakDocContactListNameFromSlug,
   oakDocRepeaterDefinitionForTag,
+  parseOakDocContactListSlug,
   parseOakDocOfficerRepeaterRoles,
   type OakDocGenericRepeaterDefinition,
   type OakDocRepeaterGenerationData,
@@ -176,10 +178,16 @@ export function nameOakDocRepeaterItems(docxBytes: Uint8Array): Uint8Array {
   return zipSync(files, { level: 6 });
 }
 
-/** "Officers (Secretary) repeater" for a repeater limited to roles. */
+/**
+ * "Officers (Secretary) repeater" for a repeater limited to roles,
+ * "Contacts (Corporate secretary to be appointed) repeater" for a named list.
+ */
 function repeaterName(definition: OakDocGenericRepeaterDefinition, tag: string): string {
-  const roles = formatOakDocOfficerRoles(parseOakDocOfficerRepeaterRoles(tag) ?? []);
-  return `${definition.label}${roles ? ` (${roles})` : ''} repeater`;
+  const slug = parseOakDocContactListSlug(tag);
+  const detail = slug
+    ? oakDocContactListNameFromSlug(slug)
+    : formatOakDocOfficerRoles(parseOakDocOfficerRepeaterRoles(tag) ?? []);
+  return `${definition.label}${detail ? ` (${detail})` : ''} repeater`;
 }
 
 export function createOakDocGenericRepeater(input: {
@@ -211,7 +219,10 @@ export function createOakDocGenericRepeater(input: {
   const range = resolveOakDocBlockRange(from, to);
   let id = Number(nextControlId(xml));
   const outer = xml.createElementNS(WORD_NS, 'w:sdt');
-  const name = repeaterName(managed, input.definition.tag);
+  // A named list keeps the name the author typed ("Contacts (Corporate secretary...)").
+  const name = parseOakDocContactListSlug(input.definition.tag) && input.definition.label !== managed.label
+    ? `${input.definition.label} repeater`
+    : repeaterName(managed, input.definition.tag);
   outer.appendChild(createProperties(xml, String(id++), {
     tag: input.definition.tag,
     alias: name,
