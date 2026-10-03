@@ -1,21 +1,26 @@
 'use client';
 
 import { useState, type FormEvent } from 'react';
-import { Pencil, Plus, Trash2 } from 'lucide-react';
+import { Pencil, Plus, Trash2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { FormInput } from '@/components/ui/form-input';
 import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
 import { SearchableSelect } from '@/components/ui/searchable-select';
+import { ContactSearchSelect } from '@/components/ui/contact-search-select';
 import {
+  OAKDOC_CUSTOM_CONTACT_SUBFIELDS,
   OAKDOC_CUSTOM_FIELD_TYPES,
   oakDocCustomFieldKeyFromLabel,
   oakDocCustomFieldTag,
   readPlaceholderOptions,
   type OakDocCustomField,
+  type OakDocCustomFieldContact,
   type OakDocCustomFieldType,
 } from '@/lib/document-editor/oakdoc-custom-fields';
 import type { OakDocFieldDefinition } from '@/lib/document-editor/oakdoc-fields';
+import { OAKDOC_FIELD_DRAG_TYPE } from '@/lib/document-editor/oakdoc-field-blocks';
+import { cn } from '@/lib/utils';
 
 export interface OakDocCustomFieldsPanelProps {
   fields: OakDocCustomField[];
@@ -40,12 +45,22 @@ interface Draft {
   type: OakDocCustomFieldType;
   required: boolean;
   options: string;
+  contacts: OakDocCustomFieldContact[];
 }
 
-const EMPTY_DRAFT: Draft = { label: '', type: 'text', required: true, options: '' };
+const EMPTY_DRAFT: Draft = { label: '', type: 'text', required: true, options: '', contacts: [] };
 
 function definitionOf(field: OakDocCustomField): OakDocFieldDefinition {
   return { tag: oakDocCustomFieldTag(field.key), label: field.label, category: 'Custom fields' };
+}
+
+/** The detail fields a Contact field offers, e.g. `custom.secretary.identificationNumber`. */
+function contactDetailDefinitions(field: OakDocCustomField): OakDocFieldDefinition[] {
+  return OAKDOC_CUSTOM_CONTACT_SUBFIELDS.map((detail) => ({
+    tag: `${oakDocCustomFieldTag(field.key)}.${detail.path}`,
+    label: `${field.label} ${detail.label}`,
+    category: 'Custom fields',
+  }));
 }
 
 /**
@@ -81,6 +96,7 @@ export function OakDocCustomFieldsPanel({
       type: field.type,
       required: field.required,
       options: (field.options ?? []).join('\n'),
+      contacts: field.contacts ?? [],
     });
     setError(null);
     setOpen(true);
@@ -98,6 +114,10 @@ export function OakDocCustomFieldsPanel({
       setError('List at least two choices, one per line.');
       return;
     }
+    if (draft.type === 'contact' && draft.contacts.length === 0) {
+      setError('Add at least one contact to choose from.');
+      return;
+    }
     const taken = new Set([...fields, ...partialFields].map((field) => field.key));
     if (editingKey) taken.delete(editingKey);
     const next: OakDocCustomField = {
@@ -106,6 +126,7 @@ export function OakDocCustomFieldsPanel({
       type: draft.type,
       required: draft.required,
       ...(draft.type === 'dropdown' ? { options } : {}),
+      ...(draft.type === 'contact' ? { contacts: draft.contacts } : {}),
     };
     onChange(editingKey
       ? fields.map((field) => (field.key === editingKey ? next : field))
@@ -117,15 +138,51 @@ export function OakDocCustomFieldsPanel({
     onChange(fields.filter((field) => field.key !== key));
   };
 
-  const renderRow = (field: OakDocCustomField, editable: boolean) => {
+  const renderRow = (field: OakDocCustomField, editable: boolean) => (
+    <div key={field.key}>
+      {renderMainRow(field, editable)}
+      {field.type === 'contact' ? (
+        <div className="mb-1 ml-2.5 flex flex-wrap gap-1 border-l border-border-primary pl-2">
+          {contactDetailDefinitions(field).map((detail) => (
+            <button
+              key={detail.tag}
+              type="button"
+              disabled={disabled}
+              draggable={!disabled}
+              onPointerDown={(event) => event.preventDefault()}
+              onDragStart={(event) => {
+                event.dataTransfer.effectAllowed = 'copy';
+                event.dataTransfer.setData(OAKDOC_FIELD_DRAG_TYPE, JSON.stringify(detail));
+              }}
+              onClick={() => onInsert(detail)}
+              title={`Insert ${detail.tag}`}
+              className={cn(
+                'rounded border px-1.5 py-0.5 text-[10px] text-text-secondary transition-colors hover:border-oak-primary/30 hover:bg-oak-primary/5 disabled:cursor-not-allowed disabled:opacity-40',
+                presentTags.includes(detail.tag) ? 'border-oak-primary/40' : 'border-border-primary',
+              )}
+            >
+              {detail.label.slice(field.label.length + 1)}
+            </button>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+
+  const renderMainRow = (field: OakDocCustomField, editable: boolean) => {
     const definition = definitionOf(field);
     const present = presentTags.includes(definition.tag);
     return (
-      <div key={field.key} className="flex items-center gap-1 rounded-md hover:bg-oak-primary/5">
+      <div className="flex items-center gap-1 rounded-md hover:bg-oak-primary/5">
         <button
           type="button"
           disabled={disabled}
+          draggable={!disabled}
           onPointerDown={(event) => event.preventDefault()}
+          onDragStart={(event) => {
+            event.dataTransfer.effectAllowed = 'copy';
+            event.dataTransfer.setData(OAKDOC_FIELD_DRAG_TYPE, JSON.stringify(definition));
+          }}
           onClick={() => onInsert(definition)}
           title={`Insert ${field.label}`}
           className="flex min-w-0 flex-1 items-center justify-between gap-2 px-2.5 py-2 text-left disabled:cursor-not-allowed disabled:opacity-40"
@@ -137,6 +194,7 @@ export function OakDocCustomFieldsPanel({
             </span>
             <span className="block truncate text-[10px] text-text-muted">
               {definition.tag} · {TYPE_LABELS[field.type]}
+              {field.type === 'contact' ? ` (${field.contacts?.length ?? 0} to choose from)` : ''}
             </span>
           </span>
           {present ? (
@@ -179,8 +237,9 @@ export function OakDocCustomFieldsPanel({
             Custom fields
           </h2>
           <p className="mt-1 text-xs text-text-secondary">
-            Values you type in when generating a document, such as a fee or a meeting date.
-            Click a field to insert it; save the {ownerLabel} to keep the fields.
+            Values you type in when generating a document, such as a fee or a meeting date,
+            or a contact picked from a shortlist. Click or drag a field to insert it; save
+            the {ownerLabel} to keep the fields.
           </p>
         </div>
         <Button
@@ -250,6 +309,49 @@ export function OakDocCustomFieldsPanel({
                   className="mt-1 w-full rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary focus:border-oak-primary focus:outline-none focus:ring-2 focus:ring-oak-primary/30"
                 />
               </label>
+            ) : null}
+            {draft.type === 'contact' ? (
+              <div className="space-y-2">
+                <ContactSearchSelect
+                  label="Contacts to choose from"
+                  value=""
+                  placeholder="Search contacts to add..."
+                  onChange={(id, contact) => {
+                    if (!id || draft.contacts.some((entry) => entry.id === id)) return;
+                    setDraft({
+                      ...draft,
+                      contacts: [...draft.contacts, { id, name: contact?.fullName ?? id }],
+                    });
+                  }}
+                />
+                {draft.contacts.length > 0 ? (
+                  <ul className="flex flex-wrap gap-1.5" aria-label="Contact shortlist">
+                    {draft.contacts.map((contact) => (
+                      <li
+                        key={contact.id}
+                        className="inline-flex items-center gap-1 rounded-full border border-border-primary bg-background-secondary py-0.5 pl-2.5 pr-1 text-xs text-text-primary"
+                      >
+                        {contact.name}
+                        <button
+                          type="button"
+                          aria-label={`Remove ${contact.name}`}
+                          onClick={() => setDraft({
+                            ...draft,
+                            contacts: draft.contacts.filter((entry) => entry.id !== contact.id),
+                          })}
+                          className="rounded-full p-0.5 text-text-muted hover:bg-background-tertiary hover:text-text-primary"
+                        >
+                          <X className="h-3 w-3" aria-hidden="true" />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+                <p className="text-xs text-text-secondary">
+                  Configure asks to pick one of these. Insert the field for the name, or a detail
+                  under it for the ID number, address and so on.
+                </p>
+              </div>
             ) : null}
             <Checkbox
               label="Required"

@@ -12,6 +12,7 @@ const prismaMock = vi.hoisted(() => ({
   documentTemplate: { findFirst: vi.fn() },
   templatePartial: { findMany: vi.fn(async () => [] as unknown[]) },
   user: { findFirst: vi.fn() },
+  contact: { findMany: vi.fn(async () => [] as unknown[]) },
 }));
 vi.mock('@/lib/prisma', () => ({ prisma: prismaMock }));
 
@@ -144,6 +145,68 @@ describe('Resolution template generation', () => {
 
     expect(result.diagnostics.filter((diagnostic) => diagnostic.code === 'OAKDOC_CUSTOM_FIELD_UNDEFINED')).toEqual([]);
     expect(documentText(result.bytes)).toContain('RESOLVED that a fee of S$2,500.00 be paid on 3 Nov 2026.');
+  });
+
+  it('prints the name and details of the contact picked for a Contact field', async () => {
+    const field = (tag: string) => `<w:sdt><w:sdtPr><w:alias w:val="${tag}"/><w:tag w:val="${tag}"/></w:sdtPr><w:sdtContent><w:r><w:t>{{${tag}}}</w:t></w:r></w:sdtContent></w:sdt>`;
+    const tags = ['custom.secretary', 'custom.secretary.identificationNumber', 'custom.secretary.nationality'];
+    const secretaryBytes = zipSync({
+      ...unzipSync(partialBytes),
+      'word/document.xml': encodeOakDocZipText(`<w:document xmlns:w="${W}"><w:body><w:p><w:r><w:t xml:space="preserve">RESOLVED that </w:t></w:r>${field(tags[0])}<w:r><w:t xml:space="preserve"> (</w:t></w:r>${field(tags[1])}<w:r><w:t xml:space="preserve">, </w:t></w:r>${field(tags[2])}<w:r><w:t>) be appointed as Secretary.</w:t></w:r></w:p><w:sectPr/></w:body></w:document>`),
+    });
+    const secretaryKey = `${tenantId}/template-partials/${partialId}/oakdoc/${sha(secretaryBytes)}.docx`;
+    prismaMock.templatePartial.findMany.mockResolvedValue([{
+      id: partialId,
+      version: 5,
+      contentJson: {
+        oakDoc: { ...asset, storageKey: secretaryKey, sha256: sha(secretaryBytes), fileSize: secretaryBytes.byteLength, fieldTags: tags },
+      },
+      placeholders: [{
+        key: 'custom.secretary',
+        path: 'custom.secretary',
+        label: 'Secretary',
+        type: 'text',
+        fieldKind: 'contact',
+        options: [{ value: 'contact-1', label: 'Tan Wei Jie' }, { value: 'contact-2', label: 'Lim Mei Ling' }],
+        source: 'custom',
+        category: 'custom',
+        required: true,
+      }],
+    }]);
+    storageMock.download.mockResolvedValue(Buffer.from(secretaryBytes));
+    prismaMock.contact.findMany.mockResolvedValue([{
+      id: 'contact-2',
+      fullName: 'Lim Mei Ling',
+      contactType: 'INDIVIDUAL',
+      fullAddress: null,
+      identificationNumber: 'S7654321B',
+      nationality: 'Singaporean',
+      contactDetails: [],
+      companyRelations: [],
+      officerPositions: [],
+    }]);
+    const generate = (secretary: string) => generateOakDocBytes({
+      templateId: stored.id,
+      ...context,
+      customData: { secretary },
+      resolution: {
+        subject: '',
+        sections: [{ id: 'a', kind: 'PARTIAL', heading: 'APPOINTMENT OF SECRETARY', partialId }],
+      },
+    }, { tenantId });
+
+    const result = await generate('contact-2');
+    expect(result.diagnostics.filter((diagnostic) => diagnostic.code === 'OAKDOC_CUSTOM_FIELD_UNDEFINED')).toEqual([]);
+    expect(documentText(result.bytes)).toContain('RESOLVED that Lim Mei Ling (S7654321B, Singaporean) be appointed as Secretary.');
+    expect(prismaMock.contact.findMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({ id: { in: ['contact-2'] }, tenantId }),
+    }));
+
+    // A contact that is not on the field's shortlist is never looked up.
+    prismaMock.contact.findMany.mockClear();
+    const outside = await generate('contact-9');
+    expect(prismaMock.contact.findMany).not.toHaveBeenCalled();
+    expect(documentText(outside.bytes)).toContain('RESOLVED that  (, ) be appointed as Secretary.');
   });
 
   it('fills {field} tokens in custom resolution text', async () => {

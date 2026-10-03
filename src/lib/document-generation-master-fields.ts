@@ -21,11 +21,23 @@ import type {
   MasterFieldCatalogue,
   MasterFieldDefinition,
 } from '@/types/document-generation-batch';
-import { readPlaceholderOptions } from '@/lib/document-editor/oakdoc-custom-fields';
+import {
+  readPlaceholderChoices,
+  readPlaceholderOptions,
+} from '@/lib/document-editor/oakdoc-custom-fields';
 
 /** Dropdown choices stored on a custom field definition. */
 export function customFieldOptions(field: CustomPlaceholderDefinition): string[] {
   return readPlaceholderOptions(field.storageDefinition?.options);
+}
+
+/** Labels of stored choices that differ from their value (a Contact field's contacts). */
+export function customFieldOptionLabels(field: CustomPlaceholderDefinition): Record<string, string> {
+  return Object.fromEntries(
+    readPlaceholderChoices(field.storageDefinition?.options)
+      .filter((choice) => choice.label !== choice.value)
+      .map((choice) => [choice.value, choice.label]),
+  );
 }
 
 const BUILTIN_CONTEXT_ROOTS = new Set([
@@ -87,6 +99,7 @@ export function deriveMasterFieldCatalogue(
     requiredTemplateIds: Set<string>;
     defaultsByTemplateId: Record<string, string>;
     options: string[];
+    optionLabels: Record<string, string>;
   }>();
   const conflicts = new Map<string, Set<PlaceholderValueType>>();
 
@@ -107,7 +120,10 @@ export function deriveMasterFieldCatalogue(
         if (rawField.defaultValue !== undefined) {
           existing.defaultsByTemplateId[source.templateId] = rawField.defaultValue;
         }
-        if (existing.options.length === 0) existing.options = customFieldOptions(rawField);
+        if (existing.options.length === 0) {
+          existing.options = customFieldOptions(rawField);
+          existing.optionLabels = customFieldOptionLabels(rawField);
+        }
       } else {
         groups.set(id, {
           key,
@@ -122,6 +138,7 @@ export function deriveMasterFieldCatalogue(
             ? { [source.templateId]: rawField.defaultValue }
             : {},
           options: customFieldOptions(rawField),
+          optionLabels: customFieldOptionLabels(rawField),
         });
       }
       if (!conflicts.has(key)) conflicts.set(key, new Set());
@@ -141,6 +158,7 @@ export function deriveMasterFieldCatalogue(
       requiredTemplateIds: Array.from(group.requiredTemplateIds).sort(),
       defaultsByTemplateId: group.defaultsByTemplateId,
       ...(group.options.length > 0 ? { options: group.options } : {}),
+      ...(Object.keys(group.optionLabels).length > 0 ? { optionLabels: group.optionLabels } : {}),
     }));
 
   const conflictEntries = Array.from(conflicts.entries())
