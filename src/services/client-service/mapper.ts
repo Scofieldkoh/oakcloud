@@ -1,4 +1,5 @@
 import { isPostpaidGenerationKey, isPostpaidTrigger } from '@/services/billing/postpaid-triggers';
+import { parseTieredPricing } from '@/services/billing/tiered-pricing';
 import { Prisma } from '@/generated/prisma';
 import type { BillingScheduleConfigV1 } from '@/services/billing/types';
 import type { DateOnly } from '@/services/service-schedule';
@@ -71,7 +72,7 @@ export function clientServiceDetailInclude(tenantId: string) {
       orderBy: [{ operativeExpectedDate: 'asc' as const }, { id: 'asc' as const }],
       include: {
         feeLine: {
-          select: { description: true, billingFrequency: true, customFrequencyLabel: true, postpaidTrigger: true },
+          select: { description: true, billingFrequency: true, customFrequencyLabel: true, postpaidTrigger: true, tieredPricing: true },
         },
       },
     },
@@ -128,6 +129,8 @@ export function toClientServiceDto(service: ClientServiceRecord | ClientServiceD
       postpaidTrigger: isPostpaidGenerationKey(occurrence.generationKey) && isPostpaidTrigger(occurrence.feeLine.postpaidTrigger)
         ? occurrence.feeLine.postpaidTrigger
         : null,
+      quantity: occurrence.quantity == null ? null : occurrence.quantity.toFixed(2),
+      tieredPricing: isPostpaidGenerationKey(occurrence.generationKey) ? parseTieredPricing(occurrence.feeLine.tieredPricing) : null,
       billingPeriodKey: occurrence.billingPeriodKey,
       scheduleEntryKey: occurrence.scheduleEntryKey,
       calculatedExpectedDate: dateOnly(occurrence.calculatedExpectedDate)! as DateOnly,
@@ -170,6 +173,7 @@ export function toClientServiceDto(service: ClientServiceRecord | ClientServiceD
         scheduleConfig: (fee.scheduleConfig ?? null) as BillingScheduleConfigV1 | null,
         billingTiming: fee.billingTiming ?? 'PREPAID',
         postpaidTrigger: isPostpaidTrigger(fee.postpaidTrigger) ? fee.postpaidTrigger : null,
+        tieredPricing: fee.billingTiming === 'POSTPAID' ? parseTieredPricing(fee.tieredPricing) : null,
         displayOrder: fee.displayOrder,
       })),
     ...(openDeadlineOccurrences ? { openDeadlineOccurrences } : {}),

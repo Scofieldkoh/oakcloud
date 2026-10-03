@@ -212,8 +212,28 @@ function InlineFilterRow({ columns, filters, families, companyOptions, onChange,
   );
 }
 
-function Cell({ item, column, canEdit, onEdit }: { item: BillingOccurrenceDto; column: BillingColumnId; canEdit: boolean; onEdit?: (occurrence: BillingOccurrenceDto) => void }) {
+/** Amount, with the quantity billed (or still needed) on a tiered postpaid fee. */
+function AmountValue({ item }: { item: BillingOccurrenceDto }) {
   const amount = formatCurrency(item.operativeAmount, item.operativeCurrency);
+  const pricing = item.feeLine.tieredPricing;
+  if (!pricing) return <>{amount}</>;
+  if (item.quantity == null) {
+    return (
+      <span className="inline-flex flex-wrap items-center gap-1.5">
+        {amount}
+        {item.status === 'OPEN' ? <span className="badge badge-warning">Quantity needed</span> : null}
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex flex-col">
+      <span>{amount}</span>
+      <span className="text-xs text-text-muted">{item.quantity.replace(/\.00$/, '')} × {pricing.unitLabel}</span>
+    </span>
+  );
+}
+
+function Cell({ item, column, canEdit, onEdit }: { item: BillingOccurrenceDto; column: BillingColumnId; canEdit: boolean; onEdit?: (occurrence: BillingOccurrenceDto) => void }) {
   switch (column) {
     case 'expectedDate': return <td className="px-3 py-2 align-middle text-sm text-text-secondary">{displayDate(item.operativeExpectedDate)}</td>;
     case 'timing': return <td className="px-3 py-2 align-middle"><span className={cn('badge', statusClass(item.status, item.timingState))}>{timingLabel(item)}</span></td>;
@@ -223,7 +243,7 @@ function Cell({ item, column, canEdit, onEdit }: { item: BillingOccurrenceDto; c
     case 'feeLine': return <td className="max-w-0 px-3 py-2 align-middle text-sm text-text-primary"><span className="block truncate" title={item.feeLine.description}>{item.feeLine.description || 'Fee line'}</span></td>;
     case 'period': return <td className="px-3 py-2 align-middle text-sm text-text-secondary">{item.billingPeriodKey}</td>;
     case 'status': return <td className="px-3 py-2 align-middle"><span className={cn('badge', statusClass(item.status, item.timingState))}>{statusLabel(item.status)}</span></td>;
-    case 'amount': return <td className="px-3 py-2 align-middle text-sm text-text-primary">{amount}</td>;
+    case 'amount': return <td className="px-3 py-2 align-middle text-sm text-text-primary"><AmountValue item={item} /></td>;
     case 'billedDate': return <td className="px-3 py-2 align-middle text-sm text-text-secondary">{displayDate(item.billedDate)}</td>;
     case 'reference': return <td className="max-w-0 px-3 py-2 align-middle text-sm text-text-secondary"><span className="block truncate" title={item.externalReference ?? undefined}>{item.externalReference || '—'}</span></td>;
     case 'actions': return <td className="px-3 py-2 align-middle"><Button type="button" variant="ghost" size="sm" iconOnly className="min-h-11 min-w-11 sm:min-h-8 sm:min-w-8" aria-label={`Edit tracking for ${item.company.name}`} onClick={(event) => { event.stopPropagation(); onEdit?.(item); }} disabled={!canEdit} leftIcon={<MoreHorizontal className="h-4 w-4" />} /></td>;
@@ -240,7 +260,7 @@ function MobileBillingCard({ item, canEdit, selected, onToggle, onEdit }: { item
         <CardDetailItem label="Expected date" value={displayDate(item.operativeExpectedDate)} />
         <CardDetailItem label="Fee line" value={item.feeLine.description || 'Fee line'} />
         <CardDetailItem label="Period" value={item.billingPeriodKey} />
-        <CardDetailItem label="Amount" value={formatCurrency(item.operativeAmount, item.operativeCurrency)} />
+        <CardDetailItem label="Amount" value={<AmountValue item={item} />} />
         <CardDetailItem label="Billed date" value={displayDate(item.billedDate)} />
         <CardDetailItem label="Reference" value={item.externalReference || '—'} fullWidth />
       </CardDetailsGrid>

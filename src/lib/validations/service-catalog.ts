@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { serviceVariantRuleAssociationsSchema } from './deadline-rule';
 import { BILLING_TIMINGS, POSTPAID_TRIGGERS } from '@/services/billing/postpaid-triggers';
+import { MAX_PRICING_TIERS, TIERED_PRICING_MODES, tieredPricingErrors } from '@/services/billing/tiered-pricing';
 
 const codeSchema = z
   .string()
@@ -43,13 +44,32 @@ export const billingFrequencySchema = z.enum([
 export const billingTimingSchema = z.enum(BILLING_TIMINGS);
 export const postpaidTriggerSchema = z.enum(POSTPAID_TRIGGERS);
 
-/** Postpaid lines need a trigger filing; prepaid lines never carry one. */
+/** Quantity tiers of a postpaid fee line (see billing/tiered-pricing). */
+export const tieredPricingSchema = z.object({
+  mode: z.enum(TIERED_PRICING_MODES),
+  unitLabel: z.string().trim().min(1).max(60),
+  tiers: z.array(z.object({
+    upTo: z.string().trim().nullable(),
+    flatAmount: z.string().trim(),
+    unitAmount: z.string().trim(),
+  }).strict()).min(1).max(MAX_PRICING_TIERS),
+}).strict().superRefine((value, ctx) => {
+  for (const issue of tieredPricingErrors(value)) ctx.addIssue({ code: 'custom', path: issue.path, message: issue.message });
+});
+
+/**
+ * Postpaid lines need a trigger filing; prepaid lines never carry one, nor
+ * quantity tiers.
+ */
 export function refineBillingTiming(
-  value: { billingTiming?: string; postpaidTrigger?: string | null },
+  value: { billingTiming?: string; postpaidTrigger?: string | null; tieredPricing?: unknown },
   ctx: z.RefinementCtx,
 ): void {
   if (value.billingTiming === 'POSTPAID' && !value.postpaidTrigger) {
     ctx.addIssue({ code: 'custom', path: ['postpaidTrigger'], message: 'Choose the filing a postpaid fee bills on' });
+  }
+  if (value.billingTiming !== 'POSTPAID' && value.tieredPricing != null) {
+    ctx.addIssue({ code: 'custom', path: ['tieredPricing'], message: 'Only postpaid fees can be priced by quantity' });
   }
 }
 
@@ -73,6 +93,7 @@ export const serviceVariantFeeTemplateSchema = z
     customFrequencyLabel: nullableText(100),
     billingTiming: billingTimingSchema.optional(),
     postpaidTrigger: postpaidTriggerSchema.nullable().optional(),
+    tieredPricing: tieredPricingSchema.nullable().optional(),
     displayOrder: z.number().int().min(0),
   })
   .superRefine((value, context) => {

@@ -1,4 +1,5 @@
 import { isPostpaidTrigger } from '@/services/billing/postpaid-triggers';
+import { parseTieredPricing } from '@/services/billing/tiered-pricing';
 import { NotFoundError } from '@/lib/errors';
 import { prisma } from '@/lib/prisma';
 import type { TenantAwareParams } from '@/lib/types';
@@ -162,6 +163,7 @@ export async function getManualClientServiceCatalogOptions(
         customFrequencyLabel: fee.customFrequencyLabel,
         billingTiming: fee.billingTiming ?? 'PREPAID',
         postpaidTrigger: isPostpaidTrigger(fee.postpaidTrigger) ? fee.postpaidTrigger : null,
+        tieredPricing: fee.billingTiming === 'POSTPAID' ? parseTieredPricing(fee.tieredPricing) : null,
         displayOrder: fee.displayOrder,
       })),
       deadlineRules,

@@ -5,8 +5,9 @@ import {
   postpaidTriggerSchema,
   refineBillingTiming,
   serviceCadenceSchema,
+  tieredPricingSchema,
 } from '@/lib/validations/service-catalog';
-import { billingScheduleConfigSchema } from '@/lib/validations/billing';
+import { billingScheduleConfigSchema, postpaidQuantitiesSchema } from '@/lib/validations/billing';
 import { scheduleEntriesSchema } from '@/lib/validations/service-schedule';
 import { canonicalizeBillingSchedule } from '@/services/billing/schedule';
 
@@ -104,6 +105,7 @@ export const clientServiceFeeLineInputSchema = z.object({
   scheduleConfig: billingScheduleConfigSchema.nullable().optional(),
   billingTiming: billingTimingSchema.optional(),
   postpaidTrigger: postpaidTriggerSchema.nullable().optional(),
+  tieredPricing: tieredPricingSchema.nullable().optional(),
   isActive: z.boolean().optional(),
   displayOrder: z.number().int().min(0),
 }).superRefine((value, ctx) => {
@@ -217,6 +219,7 @@ const manualFeeLineSchema = z.object({
   scheduleConfig: billingScheduleConfigSchema.nullable().optional(),
   billingTiming: billingTimingSchema.optional(),
   postpaidTrigger: postpaidTriggerSchema.nullable().optional(),
+  tieredPricing: tieredPricingSchema.nullable().optional(),
 }).strict().superRefine((value, ctx) => {
   refineBillingTiming(value, ctx);
   if (value.billingFrequency === 'CUSTOM' && !value.customFrequencyLabel?.trim()) {
@@ -228,6 +231,8 @@ export const companyObligationStatusEntrySchema = z.object({
   obligationCode: z.string().trim().min(1).max(100),
   periodKey: z.string().trim().min(1).max(40),
   status: z.enum(['TO_BE_CONFIRMED', 'PENDING_FILING', 'FILED', 'MANAGED_EXTERNALLY', 'NOT_REQUIRED']),
+  /** With Filed: quantities for tiered postpaid fees this filing bills. */
+  billingQuantities: postpaidQuantitiesSchema.optional(),
 }).strict();
 
 const yearOfAssessmentSchema = z.number().int().min(2000).max(2100);

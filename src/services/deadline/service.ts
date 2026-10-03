@@ -39,7 +39,7 @@ import type {
   ListDeadlinesOptions,
 } from './types';
 import { listDeadlineAwareness } from './awareness';
-import { findPostpaidEngagementStartConflicts, syncPostpaidBilling } from '@/services/billing/postpaid';
+import { applyPostpaidQuantities, findPostpaidEngagementStartConflicts, syncPostpaidBilling } from '@/services/billing/postpaid';
 
 const CALENDAR_RESULT_CAP = 5_000;
 const CALENDAR_QUERY_LIMIT = CALENDAR_RESULT_CAP + 1;
@@ -787,6 +787,16 @@ async function updateWithAudit(
         companyId: current.companyId,
         cancelledById: actor.userId ?? null,
       }, tx as unknown as Prisma.TransactionClient);
+      // Quantities entered on Mark complete price its tiered postpaid fees.
+      const quantities = 'billingQuantities' in input ? input.billingQuantities ?? [] : [];
+      if (data.status === 'COMPLETED' && quantities.length > 0 && current.yearOfAssessment != null) {
+        await applyPostpaidQuantities({
+          tenantId: actor.tenantId,
+          companyId: current.companyId,
+          yearOfAssessment: current.yearOfAssessment,
+          quantities,
+        }, tx as unknown as Prisma.TransactionClient);
+      }
     }
     await createAuditLog({
       tenantId: actor.tenantId,

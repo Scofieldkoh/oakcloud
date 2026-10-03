@@ -5,6 +5,7 @@ import type { ScheduleEntryInput } from '@/lib/validations/service-schedule';
 import type { BillingScheduleConfigV1 } from '@/services/billing/types';
 import { canonicalizeBillingSchedule } from '@/services/billing/schedule';
 import type { BillingTiming, PostpaidTrigger } from '@/services/billing/postpaid-triggers';
+import { tieredPricingErrors, type TieredPricing } from '@/services/billing/tiered-pricing';
 
 export type DeadlinePreviewState =
   | { state: 'IDLE'; items: ClientServiceProjectedDeadlineDto[]; warnings: string[] }
@@ -34,6 +35,8 @@ export interface OperationalFeeRow {
   /** Prepaid follows the schedule; postpaid bills when its trigger filing is Filed. */
   billingTiming?: BillingTiming;
   postpaidTrigger?: PostpaidTrigger | null;
+  /** Postpaid only: quantity tiers; null or absent for a fixed amount. */
+  tieredPricing?: TieredPricing | null;
   catalogDerived: boolean;
 }
 
@@ -86,7 +89,12 @@ export function validateOperationalServiceValues(values: OperationalServiceValue
   for (const [index, fee] of (values.billingDisposition === 'NOT_REQUIRED' ? [] : values.fees).entries()) {
     const prefix = `fee-${fee.uiId}`;
     if (!fee.description.trim()) errors[`${prefix}-description`] = `Fee ${index + 1} description is required.`;
-    if (!/^\d{1,16}(?:\.\d{1,2})?$/.test(fee.amount)) errors[`${prefix}-amount`] = `Fee ${index + 1} amount is invalid.`;
+    const tiered = fee.billingTiming === 'POSTPAID' && fee.tieredPricing;
+    if (!tiered && !/^\d{1,16}(?:\.\d{1,2})?$/.test(fee.amount)) errors[`${prefix}-amount`] = `Fee ${index + 1} amount is invalid.`;
+    if (tiered) {
+      const [tierError] = tieredPricingErrors(fee.tieredPricing!);
+      if (tierError) errors[`${prefix}-tiers`] = `Fee ${index + 1}: ${tierError.message}.`;
+    }
     if (!/^[A-Z]{3}$/.test(fee.currency.trim().toUpperCase())) errors[`${prefix}-currency`] = `Fee ${index + 1} currency must be a three-letter code.`;
     if (fee.billingTiming === 'POSTPAID') {
       if (!fee.postpaidTrigger) errors[`${prefix}-trigger`] = `Fee ${index + 1} needs the filing it bills on.`;
@@ -135,6 +143,7 @@ export function operationalErrorsFromServer(
     customFrequencyLabel: 'custom-frequency',
     billingStartDate: 'billing-start-date',
     postpaidTrigger: 'trigger',
+    tieredPricing: 'tiers',
   };
 
   for (const [path, message] of Object.entries(fieldErrors)) {
@@ -175,15 +184,20 @@ export function operationalFieldValues(values: OperationalServiceValues): Record
   );
 }
 
-/** Postpaid lines carry no schedule; the stored frequency is a placeholder. */
+/**
+ * Postpaid lines carry no schedule; the stored frequency is a placeholder.
+ * A tiered line is priced by its tiers, so its stored amount is 0.00.
+ */
 function postpaidFeeFields(fee: OperationalFeeRow) {
   return {
+    ...(fee.tieredPricing ? { amount: '0.00' } : {}),
     billingFrequency: 'ONE_TIME' as const,
     customFrequencyLabel: null,
     billingStartDate: null,
     scheduleConfig: null,
     billingTiming: 'POSTPAID' as const,
     postpaidTrigger: fee.postpaidTrigger ?? null,
+    tieredPricing: fee.tieredPricing ?? null,
   };
 }
 
@@ -211,6 +225,7 @@ export function manualCreateFeeLines(values: OperationalServiceValues) {
       scheduleConfig: fee.scheduleConfig,
       billingTiming: 'PREPAID' as const,
       postpaidTrigger: null,
+      tieredPricing: null,
     };
   });
 }
@@ -242,6 +257,7 @@ export function updateFeeLines(values: OperationalServiceValues) {
       scheduleConfig: fee.scheduleConfig,
       billingTiming: 'PREPAID' as const,
       postpaidTrigger: null,
+      tieredPricing: null,
       displayOrder,
     };
   });
@@ -442,6 +458,7 @@ export function valuesFromClientService(service: ClientServiceDto): OperationalS
       scheduleConfig: fee.billingTiming === 'POSTPAID' ? null : serviceFeeScheduleConfig(fee, service.startDate),
       billingTiming: fee.billingTiming ?? 'PREPAID',
       postpaidTrigger: fee.postpaidTrigger ?? null,
+      tieredPricing: fee.tieredPricing ?? null,
       catalogDerived: false,
     })),
     deadlineRules: (service.deadlineRules ?? []).map(serviceDeadlineRuleRow),
@@ -492,6 +509,7 @@ export function catalogReplacementForVariant(variant: ManualClientServiceCatalog
          scheduleConfig: null,
          billingTiming: fee.billingTiming ?? 'PREPAID',
          postpaidTrigger: fee.postpaidTrigger ?? null,
+         tieredPricing: fee.tieredPricing ?? null,
          catalogDerived: true,
       }))
       : [{
@@ -516,7 +534,7 @@ function operationalSignature(values: OperationalServiceValues): string {
     billingDisposition: values.billingDisposition,
     billingNotRequiredReason: values.billingNotRequiredReason,
     fields: values.fields.map(({ key, label, type, value }) => ({ key, label, type, value })),
-    fees: values.fees.map(({ description, amount, currency, billingFrequency, customFrequencyLabel, billingStartDate, scheduleConfig, billingTiming, postpaidTrigger }) => ({
+    fees: values.fees.map(({ description, amount, currency, billingFrequency, customFrequencyLabel, billingStartDate, scheduleConfig, billingTiming, postpaidTrigger, tieredPricing }) => ({
       description,
       amount,
       currency,
@@ -526,6 +544,7 @@ function operationalSignature(values: OperationalServiceValues): string {
       scheduleConfig,
       billingTiming: billingTiming ?? 'PREPAID',
       postpaidTrigger: postpaidTrigger ?? null,
+      tieredPricing: tieredPricing ?? null,
     })),
     deadlineRules: values.deadlineRules.map(({ ruleId, enabled, parameterValues, parameterProvenance, scheduleEntries }) => ({ ruleId, enabled, parameterValues, parameterProvenance, scheduleEntries })),
   });
@@ -576,6 +595,7 @@ function manualDirtySignature(values: OperationalServiceValues): string {
       scheduleConfig: fee.scheduleConfig,
       billingTiming: fee.billingTiming ?? 'PREPAID',
       postpaidTrigger: fee.postpaidTrigger ?? null,
+      tieredPricing: fee.tieredPricing ?? null,
       catalogDerived: fee.catalogDerived,
     })),
     deadlineRules: values.deadlineRules.map((rule) => ({

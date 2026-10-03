@@ -1228,6 +1228,8 @@ model ServiceVariantFeeTemplate {
   billingTiming        BillingTiming    @default(PREPAID) @map("billing_timing")
   /// Postpaid only: the filing that raises the bill (see POSTPAID_TRIGGERS).
   postpaidTrigger      String?          @map("postpaid_trigger") @db.VarChar(60)
+  /// Postpaid only: quantity tiers (see billing/tiered-pricing); null for a fixed amount.
+  tieredPricing        Json?            @map("tiered_pricing")
   displayOrder         Int              @default(0) @map("display_order")
   createdAt            DateTime         @default(now()) @map("created_at")
   updatedAt            DateTime         @updatedAt @map("updated_at")
@@ -1536,6 +1538,8 @@ model ClientServiceFeeLine {
   billingTiming            BillingTiming            @default(PREPAID) @map("billing_timing")
   /// Postpaid only: the filing that raises the bill (see POSTPAID_TRIGGERS).
   postpaidTrigger          String?                  @map("postpaid_trigger") @db.VarChar(60)
+  /// Postpaid only: quantity tiers (see billing/tiered-pricing); null for a fixed amount.
+  tieredPricing            Json?                    @map("tiered_pricing")
   isActive                 Boolean                  @default(true) @map("is_active")
   deletedAt                DateTime?                @map("deleted_at")
   deletedReason            String?                  @map("deleted_reason") @db.VarChar(1000)
@@ -1573,6 +1577,8 @@ model BillingOccurrence {
   baseCurrency           String                  @map("base_currency") @db.VarChar(3)
   operativeAmount        Decimal                 @map("operative_amount") @db.Decimal(18, 2)
   operativeCurrency      String                  @map("operative_currency") @db.VarChar(3)
+  /// Tiered postpaid entries: the quantity billed; null until staff enter it.
+  quantity               Decimal?                @db.Decimal(14, 2)
   valueOverridden        Boolean                 @default(false) @map("value_overridden")
   valueOverrideReason    String?                 @map("value_override_reason") @db.VarChar(1000)
   valueOverriddenAt      DateTime?               @map("value_overridden_at")

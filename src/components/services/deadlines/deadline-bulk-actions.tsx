@@ -9,6 +9,14 @@ import { Button } from '@/components/ui/button';
 import { Alert } from '@/components/ui/alert';
 import type { UpdateDeadlineOccurrenceInput } from '@/lib/validations/deadline';
 import type { DeadlineOccurrenceDto } from '@/services/deadline';
+import { fetchFilingBillingChecks, type FilingBillingChecks } from '@/hooks/use-deadlines';
+import {
+  BillingQuantityFields,
+  enteredQuantities,
+  hasInvalidQuantity,
+  type BillingQuantityPromptItem,
+  type BillingQuantityValues,
+} from '@/components/services/shared/billing-quantity-fields';
 
 type DeadlineBulkActionId = 'complete' | 'waive' | 'override';
 
@@ -20,12 +28,7 @@ interface DeadlineBulkActionsProps {
 
 const FILING_LABELS: Record<string, string> = { SG_ECI: 'ECI', SG_FORM_C: 'Form C', SG_AGM_DUE: 'AGM', SG_ANNUAL_RETURN: 'Annual return' };
 
-type UnbilledFilingResponse = {
-  items: Array<{
-    occurrenceId: string;
-    services: Array<{ clientServiceId: string; serviceName: string; engagementStartYearOfAssessment: number }>;
-  }>;
-};
+type UnbilledFilingResponse = Pick<FilingBillingChecks, 'items'>;
 
 /** A selected filing that would bill nothing when marked Filed. */
 export type UnbilledFiling = { id: string; company: string; filing: string; services: string };
@@ -49,6 +52,25 @@ export function describeUnbilledFilings(
   });
 }
 
+function filingLabel(occurrence: DeadlineOccurrenceDto): string {
+  const code = occurrence.obligation?.code ?? '';
+  const ya = occurrence.obligation?.yearOfAssessment;
+  return `${occurrence.company.displayLabel || occurrence.company.name} · ${FILING_LABELS[code] ?? code}${ya != null ? ` YA ${ya}` : ''}`;
+}
+
+/** Quantity prompts of the selected filings, each headed by its filing. */
+export function describeQuantityPrompts(
+  selected: readonly DeadlineOccurrenceDto[],
+  response: Pick<FilingBillingChecks, 'quantityPrompts'>,
+): BillingQuantityPromptItem[] {
+  const byId = new Map(selected.map((occurrence) => [occurrence.id, occurrence]));
+  return response.quantityPrompts.flatMap(({ occurrenceId, prompts }) => {
+    const occurrence = byId.get(occurrenceId);
+    if (!occurrence) return [];
+    return prompts.map((prompt) => ({ ...prompt, key: `${occurrenceId}:${prompt.feeLineId}`, heading: filingLabel(occurrence) }));
+  });
+}
+
 function itemLabel(count: number): string {
   return `${count} deadline${count === 1 ? '' : 's'}`;
 }
@@ -61,24 +83,28 @@ export function DeadlineBulkActions({ selected, onClearSelection, onUpdate }: De
   const [bulkPending, setBulkPending] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [unbilled, setUnbilled] = useState<UnbilledFiling[]>([]);
+  const [quantityPrompts, setQuantityPrompts] = useState<BillingQuantityPromptItem[]>([]);
+  const [quantities, setQuantities] = useState<BillingQuantityValues>({});
 
   // Before marking complete, find company filings that would raise no
-  // postpaid bill because their YA is before a service's engagement start.
+  // postpaid bill because their YA is before a service's engagement start,
+  // and tiered postpaid fees they bill that need a quantity.
   const checkIds = activeAction === 'complete'
     ? selected.filter((occurrence) => occurrence.ownershipScope === 'COMPANY' && occurrence.obligation?.yearOfAssessment != null).map((occurrence) => occurrence.id)
     : [];
   const checkKey = checkIds.join(',');
   useEffect(() => {
     setUnbilled([]);
+    setQuantityPrompts([]);
+    setQuantities({});
     if (!checkKey) return;
     let cancelled = false;
-    fetch('/api/deadlines/unbilled-filings', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ ids: checkKey.split(',') }),
-    })
-      .then((response) => (response.ok ? response.json() as Promise<UnbilledFilingResponse> : null))
-      .then((body) => { if (!cancelled && body) setUnbilled(describeUnbilledFilings(selected, body)); })
+    fetchFilingBillingChecks(checkKey.split(','))
+      .then((body) => {
+        if (cancelled) return;
+        setUnbilled(describeUnbilledFilings(selected, body));
+        setQuantityPrompts(describeQuantityPrompts(selected, body));
+      })
       .catch(() => undefined);
     return () => { cancelled = true; };
     // selected is read for labels only; the ids decide when to check.
@@ -105,7 +131,18 @@ export function DeadlineBulkActions({ selected, onClearSelection, onUpdate }: De
   };
 
   const confirmComplete = async () => {
-    await runBulkUpdate((occurrence) => ({ expectedUpdatedAt: occurrence.updatedAt, status: 'COMPLETED' }));
+    if (hasInvalidQuantity(quantityPrompts, quantities)) return;
+    const entered = enteredQuantities(quantityPrompts, quantities);
+    await runBulkUpdate((occurrence) => {
+      const billingQuantities = quantityPrompts
+        .filter((prompt) => prompt.key.startsWith(`${occurrence.id}:`) && entered.has(prompt.key))
+        .map((prompt) => entered.get(prompt.key)!);
+      return {
+        expectedUpdatedAt: occurrence.updatedAt,
+        status: 'COMPLETED',
+        ...(billingQuantities.length > 0 ? { billingQuantities } : {}),
+      };
+    });
     setActiveAction(null);
   };
 
@@ -208,6 +245,19 @@ export function DeadlineBulkActions({ selected, onClearSelection, onUpdate }: De
               ))}
             </ul>
           </Alert>
+        ) : null}
+        {quantityPrompts.length > 0 ? (
+          <div className="mt-3 space-y-2">
+            <p className="text-sm text-text-secondary">
+              These fees are priced by quantity. Enter the quantity to bill now, or leave it blank and enter it on the billing entry later.
+            </p>
+            <BillingQuantityFields
+              prompts={quantityPrompts}
+              values={quantities}
+              disabled={bulkPending}
+              onChange={(key, quantity) => setQuantities((current) => ({ ...current, [key]: quantity }))}
+            />
+          </div>
         ) : null}
       </ConfirmDialog>
       <ConfirmDialog

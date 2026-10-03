@@ -143,6 +143,15 @@ export type BillingOccurrenceSearchInput = Omit<Partial<BillingOccurrenceSearch>
   timing?: readonly BillingOccurrenceSearch['timing'][number][];
 };
 
+/** A quantity for a tiered postpaid fee, up to two decimals. */
+export const billingQuantitySchema = z.string().trim().regex(/^\d{1,12}(\.\d{1,2})?$/, 'Enter a quantity with at most two decimals');
+
+/** Quantities staff enter for tiered postpaid fees when a filing is marked Filed. */
+export const postpaidQuantitiesSchema = z.array(z.object({
+  feeLineId: z.string().uuid(),
+  quantity: billingQuantitySchema,
+}).strict()).max(50);
+
 export const updateBillingOccurrenceSchema = z.object({
   expectedUpdatedAt: z.string().datetime(),
   status: billingOccurrenceMutationStatusSchema.optional(),
@@ -150,6 +159,8 @@ export const updateBillingOccurrenceSchema = z.object({
   operativeExpectedDate: dateOnlySchema.optional(),
   amount: z.string().regex(/^\d{1,16}(\.\d{1,2})?$/).optional(),
   currency: z.string().trim().toUpperCase().regex(/^[A-Z]{3}$/).optional(),
+  /** Tiered postpaid entries only: the quantity billed; re-prices the entry. */
+  quantity: billingQuantitySchema.optional(),
   externalReference: z.string().trim().max(200).nullable().optional(),
   notes: z.string().trim().max(2000).nullable().optional(),
   updateScope: billingOccurrenceUpdateScopeSchema,
@@ -161,6 +172,7 @@ export const updateBillingOccurrenceSchema = z.object({
     && value.operativeExpectedDate === undefined
     && value.amount === undefined
     && value.currency === undefined
+    && value.quantity === undefined
     && value.externalReference === undefined
     && value.notes === undefined
   ) {

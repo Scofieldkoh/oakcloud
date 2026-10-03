@@ -29,11 +29,13 @@ export type AggregateBillingOccurrence = {
 export type BillingOccurrenceAvgAggregateOutputType = {
   baseAmount: runtime.Decimal | null
   operativeAmount: runtime.Decimal | null
+  quantity: runtime.Decimal | null
 }
 
 export type BillingOccurrenceSumAggregateOutputType = {
   baseAmount: runtime.Decimal | null
   operativeAmount: runtime.Decimal | null
+  quantity: runtime.Decimal | null
 }
 
 export type BillingOccurrenceMinAggregateOutputType = {
@@ -55,6 +57,7 @@ export type BillingOccurrenceMinAggregateOutputType = {
   baseCurrency: string | null
   operativeAmount: runtime.Decimal | null
   operativeCurrency: string | null
+  quantity: runtime.Decimal | null
   valueOverridden: boolean | null
   valueOverrideReason: string | null
   valueOverriddenAt: Date | null
@@ -95,6 +98,7 @@ export type BillingOccurrenceMaxAggregateOutputType = {
   baseCurrency: string | null
   operativeAmount: runtime.Decimal | null
   operativeCurrency: string | null
+  quantity: runtime.Decimal | null
   valueOverridden: boolean | null
   valueOverrideReason: string | null
   valueOverriddenAt: Date | null
@@ -135,6 +139,7 @@ export type BillingOccurrenceCountAggregateOutputType = {
   baseCurrency: number
   operativeAmount: number
   operativeCurrency: number
+  quantity: number
   valueOverridden: number
   valueOverrideReason: number
   valueOverriddenAt: number
@@ -161,11 +166,13 @@ export type BillingOccurrenceCountAggregateOutputType = {
 export type BillingOccurrenceAvgAggregateInputType = {
   baseAmount?: true
   operativeAmount?: true
+  quantity?: true
 }
 
 export type BillingOccurrenceSumAggregateInputType = {
   baseAmount?: true
   operativeAmount?: true
+  quantity?: true
 }
 
 export type BillingOccurrenceMinAggregateInputType = {
@@ -187,6 +194,7 @@ export type BillingOccurrenceMinAggregateInputType = {
   baseCurrency?: true
   operativeAmount?: true
   operativeCurrency?: true
+  quantity?: true
   valueOverridden?: true
   valueOverrideReason?: true
   valueOverriddenAt?: true
@@ -227,6 +235,7 @@ export type BillingOccurrenceMaxAggregateInputType = {
   baseCurrency?: true
   operativeAmount?: true
   operativeCurrency?: true
+  quantity?: true
   valueOverridden?: true
   valueOverrideReason?: true
   valueOverriddenAt?: true
@@ -267,6 +276,7 @@ export type BillingOccurrenceCountAggregateInputType = {
   baseCurrency?: true
   operativeAmount?: true
   operativeCurrency?: true
+  quantity?: true
   valueOverridden?: true
   valueOverrideReason?: true
   valueOverriddenAt?: true
@@ -394,6 +404,7 @@ export type BillingOccurrenceGroupByOutputType = {
   baseCurrency: string
   operativeAmount: runtime.Decimal
   operativeCurrency: string
+  quantity: runtime.Decimal | null
   valueOverridden: boolean
   valueOverrideReason: string | null
   valueOverriddenAt: Date | null
@@ -457,6 +468,7 @@ export type BillingOccurrenceWhereInput = {
   baseCurrency?: Prisma.StringFilter<"BillingOccurrence"> | string
   operativeAmount?: Prisma.DecimalFilter<"BillingOccurrence"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   operativeCurrency?: Prisma.StringFilter<"BillingOccurrence"> | string
+  quantity?: Prisma.DecimalNullableFilter<"BillingOccurrence"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   valueOverridden?: Prisma.BoolFilter<"BillingOccurrence"> | boolean
   valueOverrideReason?: Prisma.StringNullableFilter<"BillingOccurrence"> | string | null
   valueOverriddenAt?: Prisma.DateTimeNullableFilter<"BillingOccurrence"> | Date | string | null
@@ -507,6 +519,7 @@ export type BillingOccurrenceOrderByWithRelationInput = {
   baseCurrency?: Prisma.SortOrder
   operativeAmount?: Prisma.SortOrder
   operativeCurrency?: Prisma.SortOrder
+  quantity?: Prisma.SortOrderInput | Prisma.SortOrder
   valueOverridden?: Prisma.SortOrder
   valueOverrideReason?: Prisma.SortOrderInput | Prisma.SortOrder
   valueOverriddenAt?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -561,6 +574,7 @@ export type BillingOccurrenceWhereUniqueInput = Prisma.AtLeast<{
   baseCurrency?: Prisma.StringFilter<"BillingOccurrence"> | string
   operativeAmount?: Prisma.DecimalFilter<"BillingOccurrence"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   operativeCurrency?: Prisma.StringFilter<"BillingOccurrence"> | string
+  quantity?: Prisma.DecimalNullableFilter<"BillingOccurrence"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   valueOverridden?: Prisma.BoolFilter<"BillingOccurrence"> | boolean
   valueOverrideReason?: Prisma.StringNullableFilter<"BillingOccurrence"> | string | null
   valueOverriddenAt?: Prisma.DateTimeNullableFilter<"BillingOccurrence"> | Date | string | null
@@ -611,6 +625,7 @@ export type BillingOccurrenceOrderByWithAggregationInput = {
   baseCurrency?: Prisma.SortOrder
   operativeAmount?: Prisma.SortOrder
   operativeCurrency?: Prisma.SortOrder
+  quantity?: Prisma.SortOrderInput | Prisma.SortOrder
   valueOverridden?: Prisma.SortOrder
   valueOverrideReason?: Prisma.SortOrderInput | Prisma.SortOrder
   valueOverriddenAt?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -659,6 +674,7 @@ export type BillingOccurrenceScalarWhereWithAggregatesInput = {
   baseCurrency?: Prisma.StringWithAggregatesFilter<"BillingOccurrence"> | string
   operativeAmount?: Prisma.DecimalWithAggregatesFilter<"BillingOccurrence"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   operativeCurrency?: Prisma.StringWithAggregatesFilter<"BillingOccurrence"> | string
+  quantity?: Prisma.DecimalNullableWithAggregatesFilter<"BillingOccurrence"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   valueOverridden?: Prisma.BoolWithAggregatesFilter<"BillingOccurrence"> | boolean
   valueOverrideReason?: Prisma.StringNullableWithAggregatesFilter<"BillingOccurrence"> | string | null
   valueOverriddenAt?: Prisma.DateTimeNullableWithAggregatesFilter<"BillingOccurrence"> | Date | string | null
@@ -694,6 +710,7 @@ export type BillingOccurrenceCreateInput = {
   baseCurrency: string
   operativeAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
   operativeCurrency: string
+  quantity?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   valueOverridden?: boolean
   valueOverrideReason?: string | null
   valueOverriddenAt?: Date | string | null
@@ -739,6 +756,7 @@ export type BillingOccurrenceUncheckedCreateInput = {
   baseCurrency: string
   operativeAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
   operativeCurrency: string
+  quantity?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   valueOverridden?: boolean
   valueOverrideReason?: string | null
   valueOverriddenAt?: Date | string | null
@@ -774,6 +792,7 @@ export type BillingOccurrenceUpdateInput = {
   baseCurrency?: Prisma.StringFieldUpdateOperationsInput | string
   operativeAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   operativeCurrency?: Prisma.StringFieldUpdateOperationsInput | string
+  quantity?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   valueOverridden?: Prisma.BoolFieldUpdateOperationsInput | boolean
   valueOverrideReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   valueOverriddenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -819,6 +838,7 @@ export type BillingOccurrenceUncheckedUpdateInput = {
   baseCurrency?: Prisma.StringFieldUpdateOperationsInput | string
   operativeAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   operativeCurrency?: Prisma.StringFieldUpdateOperationsInput | string
+  quantity?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   valueOverridden?: Prisma.BoolFieldUpdateOperationsInput | boolean
   valueOverrideReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   valueOverriddenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -859,6 +879,7 @@ export type BillingOccurrenceCreateManyInput = {
   baseCurrency: string
   operativeAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
   operativeCurrency: string
+  quantity?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   valueOverridden?: boolean
   valueOverrideReason?: string | null
   valueOverriddenAt?: Date | string | null
@@ -894,6 +915,7 @@ export type BillingOccurrenceUpdateManyMutationInput = {
   baseCurrency?: Prisma.StringFieldUpdateOperationsInput | string
   operativeAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   operativeCurrency?: Prisma.StringFieldUpdateOperationsInput | string
+  quantity?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   valueOverridden?: Prisma.BoolFieldUpdateOperationsInput | boolean
   valueOverrideReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   valueOverriddenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -929,6 +951,7 @@ export type BillingOccurrenceUncheckedUpdateManyInput = {
   baseCurrency?: Prisma.StringFieldUpdateOperationsInput | string
   operativeAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   operativeCurrency?: Prisma.StringFieldUpdateOperationsInput | string
+  quantity?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   valueOverridden?: Prisma.BoolFieldUpdateOperationsInput | boolean
   valueOverrideReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   valueOverriddenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -987,6 +1010,7 @@ export type BillingOccurrenceCountOrderByAggregateInput = {
   baseCurrency?: Prisma.SortOrder
   operativeAmount?: Prisma.SortOrder
   operativeCurrency?: Prisma.SortOrder
+  quantity?: Prisma.SortOrder
   valueOverridden?: Prisma.SortOrder
   valueOverrideReason?: Prisma.SortOrder
   valueOverriddenAt?: Prisma.SortOrder
@@ -1011,6 +1035,7 @@ export type BillingOccurrenceCountOrderByAggregateInput = {
 export type BillingOccurrenceAvgOrderByAggregateInput = {
   baseAmount?: Prisma.SortOrder
   operativeAmount?: Prisma.SortOrder
+  quantity?: Prisma.SortOrder
 }
 
 export type BillingOccurrenceMaxOrderByAggregateInput = {
@@ -1032,6 +1057,7 @@ export type BillingOccurrenceMaxOrderByAggregateInput = {
   baseCurrency?: Prisma.SortOrder
   operativeAmount?: Prisma.SortOrder
   operativeCurrency?: Prisma.SortOrder
+  quantity?: Prisma.SortOrder
   valueOverridden?: Prisma.SortOrder
   valueOverrideReason?: Prisma.SortOrder
   valueOverriddenAt?: Prisma.SortOrder
@@ -1072,6 +1098,7 @@ export type BillingOccurrenceMinOrderByAggregateInput = {
   baseCurrency?: Prisma.SortOrder
   operativeAmount?: Prisma.SortOrder
   operativeCurrency?: Prisma.SortOrder
+  quantity?: Prisma.SortOrder
   valueOverridden?: Prisma.SortOrder
   valueOverrideReason?: Prisma.SortOrder
   valueOverriddenAt?: Prisma.SortOrder
@@ -1096,6 +1123,7 @@ export type BillingOccurrenceMinOrderByAggregateInput = {
 export type BillingOccurrenceSumOrderByAggregateInput = {
   baseAmount?: Prisma.SortOrder
   operativeAmount?: Prisma.SortOrder
+  quantity?: Prisma.SortOrder
 }
 
 export type BillingOccurrenceCreateNestedManyWithoutTenantInput = {
@@ -1536,6 +1564,7 @@ export type BillingOccurrenceCreateWithoutTenantInput = {
   baseCurrency: string
   operativeAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
   operativeCurrency: string
+  quantity?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   valueOverridden?: boolean
   valueOverrideReason?: string | null
   valueOverriddenAt?: Date | string | null
@@ -1579,6 +1608,7 @@ export type BillingOccurrenceUncheckedCreateWithoutTenantInput = {
   baseCurrency: string
   operativeAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
   operativeCurrency: string
+  quantity?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   valueOverridden?: boolean
   valueOverrideReason?: string | null
   valueOverriddenAt?: Date | string | null
@@ -1648,6 +1678,7 @@ export type BillingOccurrenceScalarWhereInput = {
   baseCurrency?: Prisma.StringFilter<"BillingOccurrence"> | string
   operativeAmount?: Prisma.DecimalFilter<"BillingOccurrence"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   operativeCurrency?: Prisma.StringFilter<"BillingOccurrence"> | string
+  quantity?: Prisma.DecimalNullableFilter<"BillingOccurrence"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   valueOverridden?: Prisma.BoolFilter<"BillingOccurrence"> | boolean
   valueOverrideReason?: Prisma.StringNullableFilter<"BillingOccurrence"> | string | null
   valueOverriddenAt?: Prisma.DateTimeNullableFilter<"BillingOccurrence"> | Date | string | null
@@ -1683,6 +1714,7 @@ export type BillingOccurrenceCreateWithoutDateOverriddenByInput = {
   baseCurrency: string
   operativeAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
   operativeCurrency: string
+  quantity?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   valueOverridden?: boolean
   valueOverrideReason?: string | null
   valueOverriddenAt?: Date | string | null
@@ -1726,6 +1758,7 @@ export type BillingOccurrenceUncheckedCreateWithoutDateOverriddenByInput = {
   baseCurrency: string
   operativeAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
   operativeCurrency: string
+  quantity?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   valueOverridden?: boolean
   valueOverrideReason?: string | null
   valueOverriddenAt?: Date | string | null
@@ -1771,6 +1804,7 @@ export type BillingOccurrenceCreateWithoutValueOverriddenByInput = {
   baseCurrency: string
   operativeAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
   operativeCurrency: string
+  quantity?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   valueOverridden?: boolean
   valueOverrideReason?: string | null
   valueOverriddenAt?: Date | string | null
@@ -1815,6 +1849,7 @@ export type BillingOccurrenceUncheckedCreateWithoutValueOverriddenByInput = {
   baseCurrency: string
   operativeAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
   operativeCurrency: string
+  quantity?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   valueOverridden?: boolean
   valueOverrideReason?: string | null
   valueOverriddenAt?: Date | string | null
@@ -1859,6 +1894,7 @@ export type BillingOccurrenceCreateWithoutMarkedBilledByInput = {
   baseCurrency: string
   operativeAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
   operativeCurrency: string
+  quantity?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   valueOverridden?: boolean
   valueOverrideReason?: string | null
   valueOverriddenAt?: Date | string | null
@@ -1903,6 +1939,7 @@ export type BillingOccurrenceUncheckedCreateWithoutMarkedBilledByInput = {
   baseCurrency: string
   operativeAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
   operativeCurrency: string
+  quantity?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   valueOverridden?: boolean
   valueOverrideReason?: string | null
   valueOverriddenAt?: Date | string | null
@@ -1947,6 +1984,7 @@ export type BillingOccurrenceCreateWithoutWaivedByInput = {
   baseCurrency: string
   operativeAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
   operativeCurrency: string
+  quantity?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   valueOverridden?: boolean
   valueOverrideReason?: string | null
   valueOverriddenAt?: Date | string | null
@@ -1991,6 +2029,7 @@ export type BillingOccurrenceUncheckedCreateWithoutWaivedByInput = {
   baseCurrency: string
   operativeAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
   operativeCurrency: string
+  quantity?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   valueOverridden?: boolean
   valueOverrideReason?: string | null
   valueOverriddenAt?: Date | string | null
@@ -2035,6 +2074,7 @@ export type BillingOccurrenceCreateWithoutCancelledByInput = {
   baseCurrency: string
   operativeAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
   operativeCurrency: string
+  quantity?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   valueOverridden?: boolean
   valueOverrideReason?: string | null
   valueOverriddenAt?: Date | string | null
@@ -2079,6 +2119,7 @@ export type BillingOccurrenceUncheckedCreateWithoutCancelledByInput = {
   baseCurrency: string
   operativeAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
   operativeCurrency: string
+  quantity?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   valueOverridden?: boolean
   valueOverrideReason?: string | null
   valueOverriddenAt?: Date | string | null
@@ -2203,6 +2244,7 @@ export type BillingOccurrenceCreateWithoutCompanyInput = {
   baseCurrency: string
   operativeAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
   operativeCurrency: string
+  quantity?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   valueOverridden?: boolean
   valueOverrideReason?: string | null
   valueOverriddenAt?: Date | string | null
@@ -2245,6 +2287,7 @@ export type BillingOccurrenceUncheckedCreateWithoutCompanyInput = {
   baseCurrency: string
   operativeAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
   operativeCurrency: string
+  quantity?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   valueOverridden?: boolean
   valueOverrideReason?: string | null
   valueOverriddenAt?: Date | string | null
@@ -2306,6 +2349,7 @@ export type BillingOccurrenceCreateWithoutClientServiceInput = {
   baseCurrency: string
   operativeAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
   operativeCurrency: string
+  quantity?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   valueOverridden?: boolean
   valueOverrideReason?: string | null
   valueOverriddenAt?: Date | string | null
@@ -2347,6 +2391,7 @@ export type BillingOccurrenceUncheckedCreateWithoutClientServiceInput = {
   baseCurrency: string
   operativeAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
   operativeCurrency: string
+  quantity?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   valueOverridden?: boolean
   valueOverrideReason?: string | null
   valueOverriddenAt?: Date | string | null
@@ -2408,6 +2453,7 @@ export type BillingOccurrenceCreateWithoutFeeLineInput = {
   baseCurrency: string
   operativeAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
   operativeCurrency: string
+  quantity?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   valueOverridden?: boolean
   valueOverrideReason?: string | null
   valueOverriddenAt?: Date | string | null
@@ -2449,6 +2495,7 @@ export type BillingOccurrenceUncheckedCreateWithoutFeeLineInput = {
   baseCurrency: string
   operativeAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
   operativeCurrency: string
+  quantity?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   valueOverridden?: boolean
   valueOverrideReason?: string | null
   valueOverriddenAt?: Date | string | null
@@ -2510,6 +2557,7 @@ export type BillingOccurrenceCreateWithoutCancellationReconciliationRequestInput
   baseCurrency: string
   operativeAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
   operativeCurrency: string
+  quantity?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   valueOverridden?: boolean
   valueOverrideReason?: string | null
   valueOverriddenAt?: Date | string | null
@@ -2553,6 +2601,7 @@ export type BillingOccurrenceUncheckedCreateWithoutCancellationReconciliationReq
   baseCurrency: string
   operativeAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
   operativeCurrency: string
+  quantity?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   valueOverridden?: boolean
   valueOverrideReason?: string | null
   valueOverriddenAt?: Date | string | null
@@ -2617,6 +2666,7 @@ export type BillingOccurrenceCreateManyTenantInput = {
   baseCurrency: string
   operativeAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
   operativeCurrency: string
+  quantity?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   valueOverridden?: boolean
   valueOverrideReason?: string | null
   valueOverriddenAt?: Date | string | null
@@ -2652,6 +2702,7 @@ export type BillingOccurrenceUpdateWithoutTenantInput = {
   baseCurrency?: Prisma.StringFieldUpdateOperationsInput | string
   operativeAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   operativeCurrency?: Prisma.StringFieldUpdateOperationsInput | string
+  quantity?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   valueOverridden?: Prisma.BoolFieldUpdateOperationsInput | boolean
   valueOverrideReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   valueOverriddenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2695,6 +2746,7 @@ export type BillingOccurrenceUncheckedUpdateWithoutTenantInput = {
   baseCurrency?: Prisma.StringFieldUpdateOperationsInput | string
   operativeAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   operativeCurrency?: Prisma.StringFieldUpdateOperationsInput | string
+  quantity?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   valueOverridden?: Prisma.BoolFieldUpdateOperationsInput | boolean
   valueOverrideReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   valueOverriddenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2734,6 +2786,7 @@ export type BillingOccurrenceUncheckedUpdateManyWithoutTenantInput = {
   baseCurrency?: Prisma.StringFieldUpdateOperationsInput | string
   operativeAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   operativeCurrency?: Prisma.StringFieldUpdateOperationsInput | string
+  quantity?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   valueOverridden?: Prisma.BoolFieldUpdateOperationsInput | boolean
   valueOverrideReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   valueOverriddenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2773,6 +2826,7 @@ export type BillingOccurrenceCreateManyDateOverriddenByInput = {
   baseCurrency: string
   operativeAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
   operativeCurrency: string
+  quantity?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   valueOverridden?: boolean
   valueOverrideReason?: string | null
   valueOverriddenAt?: Date | string | null
@@ -2813,6 +2867,7 @@ export type BillingOccurrenceCreateManyValueOverriddenByInput = {
   baseCurrency: string
   operativeAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
   operativeCurrency: string
+  quantity?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   valueOverridden?: boolean
   valueOverrideReason?: string | null
   valueOverriddenAt?: Date | string | null
@@ -2852,6 +2907,7 @@ export type BillingOccurrenceCreateManyMarkedBilledByInput = {
   baseCurrency: string
   operativeAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
   operativeCurrency: string
+  quantity?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   valueOverridden?: boolean
   valueOverrideReason?: string | null
   valueOverriddenAt?: Date | string | null
@@ -2891,6 +2947,7 @@ export type BillingOccurrenceCreateManyWaivedByInput = {
   baseCurrency: string
   operativeAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
   operativeCurrency: string
+  quantity?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   valueOverridden?: boolean
   valueOverrideReason?: string | null
   valueOverriddenAt?: Date | string | null
@@ -2930,6 +2987,7 @@ export type BillingOccurrenceCreateManyCancelledByInput = {
   baseCurrency: string
   operativeAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
   operativeCurrency: string
+  quantity?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   valueOverridden?: boolean
   valueOverrideReason?: string | null
   valueOverriddenAt?: Date | string | null
@@ -2964,6 +3022,7 @@ export type BillingOccurrenceUpdateWithoutDateOverriddenByInput = {
   baseCurrency?: Prisma.StringFieldUpdateOperationsInput | string
   operativeAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   operativeCurrency?: Prisma.StringFieldUpdateOperationsInput | string
+  quantity?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   valueOverridden?: Prisma.BoolFieldUpdateOperationsInput | boolean
   valueOverrideReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   valueOverriddenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3007,6 +3066,7 @@ export type BillingOccurrenceUncheckedUpdateWithoutDateOverriddenByInput = {
   baseCurrency?: Prisma.StringFieldUpdateOperationsInput | string
   operativeAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   operativeCurrency?: Prisma.StringFieldUpdateOperationsInput | string
+  quantity?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   valueOverridden?: Prisma.BoolFieldUpdateOperationsInput | boolean
   valueOverrideReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   valueOverriddenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3046,6 +3106,7 @@ export type BillingOccurrenceUncheckedUpdateManyWithoutDateOverriddenByInput = {
   baseCurrency?: Prisma.StringFieldUpdateOperationsInput | string
   operativeAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   operativeCurrency?: Prisma.StringFieldUpdateOperationsInput | string
+  quantity?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   valueOverridden?: Prisma.BoolFieldUpdateOperationsInput | boolean
   valueOverrideReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   valueOverriddenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3081,6 +3142,7 @@ export type BillingOccurrenceUpdateWithoutValueOverriddenByInput = {
   baseCurrency?: Prisma.StringFieldUpdateOperationsInput | string
   operativeAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   operativeCurrency?: Prisma.StringFieldUpdateOperationsInput | string
+  quantity?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   valueOverridden?: Prisma.BoolFieldUpdateOperationsInput | boolean
   valueOverrideReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   valueOverriddenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3125,6 +3187,7 @@ export type BillingOccurrenceUncheckedUpdateWithoutValueOverriddenByInput = {
   baseCurrency?: Prisma.StringFieldUpdateOperationsInput | string
   operativeAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   operativeCurrency?: Prisma.StringFieldUpdateOperationsInput | string
+  quantity?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   valueOverridden?: Prisma.BoolFieldUpdateOperationsInput | boolean
   valueOverrideReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   valueOverriddenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3164,6 +3227,7 @@ export type BillingOccurrenceUncheckedUpdateManyWithoutValueOverriddenByInput = 
   baseCurrency?: Prisma.StringFieldUpdateOperationsInput | string
   operativeAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   operativeCurrency?: Prisma.StringFieldUpdateOperationsInput | string
+  quantity?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   valueOverridden?: Prisma.BoolFieldUpdateOperationsInput | boolean
   valueOverrideReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   valueOverriddenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3198,6 +3262,7 @@ export type BillingOccurrenceUpdateWithoutMarkedBilledByInput = {
   baseCurrency?: Prisma.StringFieldUpdateOperationsInput | string
   operativeAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   operativeCurrency?: Prisma.StringFieldUpdateOperationsInput | string
+  quantity?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   valueOverridden?: Prisma.BoolFieldUpdateOperationsInput | boolean
   valueOverrideReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   valueOverriddenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3242,6 +3307,7 @@ export type BillingOccurrenceUncheckedUpdateWithoutMarkedBilledByInput = {
   baseCurrency?: Prisma.StringFieldUpdateOperationsInput | string
   operativeAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   operativeCurrency?: Prisma.StringFieldUpdateOperationsInput | string
+  quantity?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   valueOverridden?: Prisma.BoolFieldUpdateOperationsInput | boolean
   valueOverrideReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   valueOverriddenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3281,6 +3347,7 @@ export type BillingOccurrenceUncheckedUpdateManyWithoutMarkedBilledByInput = {
   baseCurrency?: Prisma.StringFieldUpdateOperationsInput | string
   operativeAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   operativeCurrency?: Prisma.StringFieldUpdateOperationsInput | string
+  quantity?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   valueOverridden?: Prisma.BoolFieldUpdateOperationsInput | boolean
   valueOverrideReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   valueOverriddenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3315,6 +3382,7 @@ export type BillingOccurrenceUpdateWithoutWaivedByInput = {
   baseCurrency?: Prisma.StringFieldUpdateOperationsInput | string
   operativeAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   operativeCurrency?: Prisma.StringFieldUpdateOperationsInput | string
+  quantity?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   valueOverridden?: Prisma.BoolFieldUpdateOperationsInput | boolean
   valueOverrideReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   valueOverriddenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3359,6 +3427,7 @@ export type BillingOccurrenceUncheckedUpdateWithoutWaivedByInput = {
   baseCurrency?: Prisma.StringFieldUpdateOperationsInput | string
   operativeAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   operativeCurrency?: Prisma.StringFieldUpdateOperationsInput | string
+  quantity?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   valueOverridden?: Prisma.BoolFieldUpdateOperationsInput | boolean
   valueOverrideReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   valueOverriddenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3398,6 +3467,7 @@ export type BillingOccurrenceUncheckedUpdateManyWithoutWaivedByInput = {
   baseCurrency?: Prisma.StringFieldUpdateOperationsInput | string
   operativeAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   operativeCurrency?: Prisma.StringFieldUpdateOperationsInput | string
+  quantity?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   valueOverridden?: Prisma.BoolFieldUpdateOperationsInput | boolean
   valueOverrideReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   valueOverriddenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3432,6 +3502,7 @@ export type BillingOccurrenceUpdateWithoutCancelledByInput = {
   baseCurrency?: Prisma.StringFieldUpdateOperationsInput | string
   operativeAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   operativeCurrency?: Prisma.StringFieldUpdateOperationsInput | string
+  quantity?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   valueOverridden?: Prisma.BoolFieldUpdateOperationsInput | boolean
   valueOverrideReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   valueOverriddenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3476,6 +3547,7 @@ export type BillingOccurrenceUncheckedUpdateWithoutCancelledByInput = {
   baseCurrency?: Prisma.StringFieldUpdateOperationsInput | string
   operativeAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   operativeCurrency?: Prisma.StringFieldUpdateOperationsInput | string
+  quantity?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   valueOverridden?: Prisma.BoolFieldUpdateOperationsInput | boolean
   valueOverrideReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   valueOverriddenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3515,6 +3587,7 @@ export type BillingOccurrenceUncheckedUpdateManyWithoutCancelledByInput = {
   baseCurrency?: Prisma.StringFieldUpdateOperationsInput | string
   operativeAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   operativeCurrency?: Prisma.StringFieldUpdateOperationsInput | string
+  quantity?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   valueOverridden?: Prisma.BoolFieldUpdateOperationsInput | boolean
   valueOverrideReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   valueOverriddenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3552,6 +3625,7 @@ export type BillingOccurrenceCreateManyCompanyInput = {
   baseCurrency: string
   operativeAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
   operativeCurrency: string
+  quantity?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   valueOverridden?: boolean
   valueOverrideReason?: string | null
   valueOverriddenAt?: Date | string | null
@@ -3587,6 +3661,7 @@ export type BillingOccurrenceUpdateWithoutCompanyInput = {
   baseCurrency?: Prisma.StringFieldUpdateOperationsInput | string
   operativeAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   operativeCurrency?: Prisma.StringFieldUpdateOperationsInput | string
+  quantity?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   valueOverridden?: Prisma.BoolFieldUpdateOperationsInput | boolean
   valueOverrideReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   valueOverriddenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3629,6 +3704,7 @@ export type BillingOccurrenceUncheckedUpdateWithoutCompanyInput = {
   baseCurrency?: Prisma.StringFieldUpdateOperationsInput | string
   operativeAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   operativeCurrency?: Prisma.StringFieldUpdateOperationsInput | string
+  quantity?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   valueOverridden?: Prisma.BoolFieldUpdateOperationsInput | boolean
   valueOverrideReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   valueOverriddenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3667,6 +3743,7 @@ export type BillingOccurrenceUncheckedUpdateManyWithoutCompanyInput = {
   baseCurrency?: Prisma.StringFieldUpdateOperationsInput | string
   operativeAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   operativeCurrency?: Prisma.StringFieldUpdateOperationsInput | string
+  quantity?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   valueOverridden?: Prisma.BoolFieldUpdateOperationsInput | boolean
   valueOverrideReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   valueOverriddenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3704,6 +3781,7 @@ export type BillingOccurrenceCreateManyClientServiceInput = {
   baseCurrency: string
   operativeAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
   operativeCurrency: string
+  quantity?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   valueOverridden?: boolean
   valueOverrideReason?: string | null
   valueOverriddenAt?: Date | string | null
@@ -3739,6 +3817,7 @@ export type BillingOccurrenceUpdateWithoutClientServiceInput = {
   baseCurrency?: Prisma.StringFieldUpdateOperationsInput | string
   operativeAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   operativeCurrency?: Prisma.StringFieldUpdateOperationsInput | string
+  quantity?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   valueOverridden?: Prisma.BoolFieldUpdateOperationsInput | boolean
   valueOverrideReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   valueOverriddenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3780,6 +3859,7 @@ export type BillingOccurrenceUncheckedUpdateWithoutClientServiceInput = {
   baseCurrency?: Prisma.StringFieldUpdateOperationsInput | string
   operativeAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   operativeCurrency?: Prisma.StringFieldUpdateOperationsInput | string
+  quantity?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   valueOverridden?: Prisma.BoolFieldUpdateOperationsInput | boolean
   valueOverrideReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   valueOverriddenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3817,6 +3897,7 @@ export type BillingOccurrenceUncheckedUpdateManyWithoutClientServiceInput = {
   baseCurrency?: Prisma.StringFieldUpdateOperationsInput | string
   operativeAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   operativeCurrency?: Prisma.StringFieldUpdateOperationsInput | string
+  quantity?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   valueOverridden?: Prisma.BoolFieldUpdateOperationsInput | boolean
   valueOverrideReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   valueOverriddenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3854,6 +3935,7 @@ export type BillingOccurrenceCreateManyFeeLineInput = {
   baseCurrency: string
   operativeAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
   operativeCurrency: string
+  quantity?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   valueOverridden?: boolean
   valueOverrideReason?: string | null
   valueOverriddenAt?: Date | string | null
@@ -3889,6 +3971,7 @@ export type BillingOccurrenceUpdateWithoutFeeLineInput = {
   baseCurrency?: Prisma.StringFieldUpdateOperationsInput | string
   operativeAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   operativeCurrency?: Prisma.StringFieldUpdateOperationsInput | string
+  quantity?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   valueOverridden?: Prisma.BoolFieldUpdateOperationsInput | boolean
   valueOverrideReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   valueOverriddenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3930,6 +4013,7 @@ export type BillingOccurrenceUncheckedUpdateWithoutFeeLineInput = {
   baseCurrency?: Prisma.StringFieldUpdateOperationsInput | string
   operativeAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   operativeCurrency?: Prisma.StringFieldUpdateOperationsInput | string
+  quantity?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   valueOverridden?: Prisma.BoolFieldUpdateOperationsInput | boolean
   valueOverrideReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   valueOverriddenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3967,6 +4051,7 @@ export type BillingOccurrenceUncheckedUpdateManyWithoutFeeLineInput = {
   baseCurrency?: Prisma.StringFieldUpdateOperationsInput | string
   operativeAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   operativeCurrency?: Prisma.StringFieldUpdateOperationsInput | string
+  quantity?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   valueOverridden?: Prisma.BoolFieldUpdateOperationsInput | boolean
   valueOverrideReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   valueOverriddenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -4006,6 +4091,7 @@ export type BillingOccurrenceCreateManyCancellationReconciliationRequestInput = 
   baseCurrency: string
   operativeAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
   operativeCurrency: string
+  quantity?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   valueOverridden?: boolean
   valueOverrideReason?: string | null
   valueOverriddenAt?: Date | string | null
@@ -4040,6 +4126,7 @@ export type BillingOccurrenceUpdateWithoutCancellationReconciliationRequestInput
   baseCurrency?: Prisma.StringFieldUpdateOperationsInput | string
   operativeAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   operativeCurrency?: Prisma.StringFieldUpdateOperationsInput | string
+  quantity?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   valueOverridden?: Prisma.BoolFieldUpdateOperationsInput | boolean
   valueOverrideReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   valueOverriddenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -4083,6 +4170,7 @@ export type BillingOccurrenceUncheckedUpdateWithoutCancellationReconciliationReq
   baseCurrency?: Prisma.StringFieldUpdateOperationsInput | string
   operativeAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   operativeCurrency?: Prisma.StringFieldUpdateOperationsInput | string
+  quantity?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   valueOverridden?: Prisma.BoolFieldUpdateOperationsInput | boolean
   valueOverrideReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   valueOverriddenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -4121,6 +4209,7 @@ export type BillingOccurrenceUncheckedUpdateManyWithoutCancellationReconciliatio
   baseCurrency?: Prisma.StringFieldUpdateOperationsInput | string
   operativeAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   operativeCurrency?: Prisma.StringFieldUpdateOperationsInput | string
+  quantity?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   valueOverridden?: Prisma.BoolFieldUpdateOperationsInput | boolean
   valueOverrideReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   valueOverriddenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -4162,6 +4251,7 @@ export type BillingOccurrenceSelect<ExtArgs extends runtime.Types.Extensions.Int
   baseCurrency?: boolean
   operativeAmount?: boolean
   operativeCurrency?: boolean
+  quantity?: boolean
   valueOverridden?: boolean
   valueOverrideReason?: boolean
   valueOverriddenAt?: boolean
@@ -4212,6 +4302,7 @@ export type BillingOccurrenceSelectCreateManyAndReturn<ExtArgs extends runtime.T
   baseCurrency?: boolean
   operativeAmount?: boolean
   operativeCurrency?: boolean
+  quantity?: boolean
   valueOverridden?: boolean
   valueOverrideReason?: boolean
   valueOverriddenAt?: boolean
@@ -4262,6 +4353,7 @@ export type BillingOccurrenceSelectUpdateManyAndReturn<ExtArgs extends runtime.T
   baseCurrency?: boolean
   operativeAmount?: boolean
   operativeCurrency?: boolean
+  quantity?: boolean
   valueOverridden?: boolean
   valueOverrideReason?: boolean
   valueOverriddenAt?: boolean
@@ -4312,6 +4404,7 @@ export type BillingOccurrenceSelectScalar = {
   baseCurrency?: boolean
   operativeAmount?: boolean
   operativeCurrency?: boolean
+  quantity?: boolean
   valueOverridden?: boolean
   valueOverrideReason?: boolean
   valueOverriddenAt?: boolean
@@ -4333,7 +4426,7 @@ export type BillingOccurrenceSelectScalar = {
   updatedAt?: boolean
 }
 
-export type BillingOccurrenceOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "companyId" | "clientServiceId" | "feeLineId" | "billingPeriodKey" | "scheduleEntryKey" | "generationKey" | "calculatedExpectedDate" | "operativeExpectedDate" | "dateOverridden" | "dateOverrideReason" | "dateOverriddenAt" | "dateOverriddenById" | "baseAmount" | "baseCurrency" | "operativeAmount" | "operativeCurrency" | "valueOverridden" | "valueOverrideReason" | "valueOverriddenAt" | "valueOverriddenById" | "status" | "billedDate" | "markedBilledAt" | "markedBilledById" | "externalReference" | "notes" | "waivedAt" | "waivedById" | "waiverReason" | "cancelledAt" | "cancelledById" | "cancellationReason" | "cancellationReconciliationRequestId" | "createdAt" | "updatedAt", ExtArgs["result"]["billingOccurrence"]>
+export type BillingOccurrenceOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "companyId" | "clientServiceId" | "feeLineId" | "billingPeriodKey" | "scheduleEntryKey" | "generationKey" | "calculatedExpectedDate" | "operativeExpectedDate" | "dateOverridden" | "dateOverrideReason" | "dateOverriddenAt" | "dateOverriddenById" | "baseAmount" | "baseCurrency" | "operativeAmount" | "operativeCurrency" | "quantity" | "valueOverridden" | "valueOverrideReason" | "valueOverriddenAt" | "valueOverriddenById" | "status" | "billedDate" | "markedBilledAt" | "markedBilledById" | "externalReference" | "notes" | "waivedAt" | "waivedById" | "waiverReason" | "cancelledAt" | "cancelledById" | "cancellationReason" | "cancellationReconciliationRequestId" | "createdAt" | "updatedAt", ExtArgs["result"]["billingOccurrence"]>
 export type BillingOccurrenceInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
   company?: boolean | Prisma.CompanyDefaultArgs<ExtArgs>
@@ -4404,6 +4497,10 @@ export type $BillingOccurrencePayload<ExtArgs extends runtime.Types.Extensions.I
     baseCurrency: string
     operativeAmount: runtime.Decimal
     operativeCurrency: string
+    /**
+     * Tiered postpaid entries: the quantity billed; null until staff enter it.
+     */
+    quantity: runtime.Decimal | null
     valueOverridden: boolean
     valueOverrideReason: string | null
     valueOverriddenAt: Date | null
@@ -4874,6 +4971,7 @@ export interface BillingOccurrenceFieldRefs {
   readonly baseCurrency: Prisma.FieldRef<"BillingOccurrence", 'String'>
   readonly operativeAmount: Prisma.FieldRef<"BillingOccurrence", 'Decimal'>
   readonly operativeCurrency: Prisma.FieldRef<"BillingOccurrence", 'String'>
+  readonly quantity: Prisma.FieldRef<"BillingOccurrence", 'Decimal'>
   readonly valueOverridden: Prisma.FieldRef<"BillingOccurrence", 'Boolean'>
   readonly valueOverrideReason: Prisma.FieldRef<"BillingOccurrence", 'String'>
   readonly valueOverriddenAt: Prisma.FieldRef<"BillingOccurrence", 'DateTime'>

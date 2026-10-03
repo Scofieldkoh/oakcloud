@@ -401,8 +401,22 @@ external billing and does not assert that an Oakcloud invoice exists.
   confirming, the selected filings that would not bill
   (`POST /api/deadlines/unbilled-filings`). Moving the YA back from Filed cancels a still-Open entry; filing
   again reopens it. Billed, waived and staff-cancelled entries are kept.
-  Agreement activation takes Postpaid from the variant fee template with the
-  same description.
+  Agreement activation takes Postpaid (and any tiers) from the variant fee
+  template with the same description.
+- A postpaid line can be priced Tiered by quantity instead of a fixed amount
+  (`tieredPricing` JSON, `billing/tiered-pricing.ts`): a counted unit, tiers
+  with an "up to" limit (none on the last), a flat fee and a per-unit price,
+  and a mode. VOLUME prices the whole quantity at the tier it falls in;
+  GRADUATED prices each tier's units separately and adds them, with a later
+  tier's flat fee only once the quantity reaches it. The stored line amount
+  is 0.00. Marking the trigger filing Filed (Deadlines page single or bulk,
+  service Deadline tab) first asks for the quantity of each tiered fee that
+  filing bills (`quantityPrompts` from `POST /api/deadlines/unbilled-filings`,
+  or `GET .../company-obligations/quantity-prompts`) and sends them as
+  `billingQuantities`; `applyPostpaidQuantities` stores the quantity on the
+  entry and bills its tier price. An entry raised without one bills 0.00,
+  shows "Quantity needed" and can't be marked Billed until a quantity (or an
+  amount override) is entered in the billing entry dialog, which re-prices it.
 - The Billing tab keeps reconciliation collapsed by default. It renders issue
   cards only for unresolved configuration gaps and a single compact healthy
   summary when no issues exist; it does not render a success card per service.

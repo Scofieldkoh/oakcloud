@@ -1,3 +1,4 @@
+import type { TieredPricing } from './tiered-pricing';
 import type {
   BusinessCalendarSnapshot,
   DateOnly,
@@ -132,6 +133,7 @@ export type BillingOccurrenceRecord = {
   baseCurrency: string;
   operativeAmount: unknown;
   operativeCurrency: string;
+  quantity?: unknown;
   valueOverridden: boolean;
   valueOverrideReason: string | null;
   valueOverriddenAt: Date | string | null;
@@ -178,6 +180,7 @@ export type BillingOccurrenceRecord = {
     description?: string;
     amount?: unknown;
     currency?: string;
+    tieredPricing?: unknown;
   } | null;
 };
 
@@ -200,6 +203,8 @@ export type BillingOccurrenceDto = {
   baseCurrency: string;
   operativeAmount: string;
   operativeCurrency: string;
+  /** Tiered postpaid entries: the quantity billed, null until entered. */
+  quantity?: string | null;
   valueOverridden: boolean;
   valueOverrideReason: string | null;
   valueOverriddenAt: string | null;
@@ -229,7 +234,7 @@ export type BillingOccurrenceDto = {
   };
   family: { id: string | null; name: string; displayColor: string | null };
   service: { id: string; name: string; familyName: string; variantId: string | null; variantName: string | null };
-  feeLine: { id: string; description: string; amount: string | null; currency: string | null };
+  feeLine: { id: string; description: string; amount: string | null; currency: string | null; tieredPricing?: TieredPricing | null };
 };
 
 export type BillingOccurrenceListResult = {

@@ -1,4 +1,5 @@
 import type { BillingTiming, PostpaidTrigger } from '@/services/billing/postpaid-triggers';
+import type { TieredPricing } from '@/services/billing/tiered-pricing';
 import type {
   BillingFrequency,
   ServiceCadence,
@@ -13,6 +14,7 @@ export interface ServiceVariantFeeTemplateDto {
   customFrequencyLabel: string | null;
   billingTiming: BillingTiming;
   postpaidTrigger: PostpaidTrigger | null;
+  tieredPricing?: TieredPricing | null;
   displayOrder: number;
 }
 

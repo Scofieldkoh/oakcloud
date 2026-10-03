@@ -6,6 +6,7 @@ import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
 import type { BillingOccurrenceDto } from '@/services/billing';
 import type { ResetBillingOverrideInput, UpdateBillingOccurrenceInput } from '@/lib/validations/billing';
 import { formatCurrency } from '@/lib/utils';
+import { describeTieredPricing, isValidQuantity, priceTieredQuantity } from '@/services/billing/tiered-pricing';
 
 interface BillingOccurrenceDialogProps {
   occurrence: BillingOccurrenceDto | null;
@@ -26,6 +27,7 @@ export function BillingOccurrenceDialog({ occurrence, isOpen = Boolean(occurrenc
   const [status, setStatus] = useState<UpdateBillingOccurrenceInput['status']>('OPEN');
   const [billedDate, setBilledDate] = useState('');
   const [amount, setAmount] = useState('');
+  const [quantity, setQuantity] = useState('');
   const [currency, setCurrency] = useState('SGD');
   const [externalReference, setExternalReference] = useState('');
   const [notes, setNotes] = useState('');
@@ -39,6 +41,7 @@ export function BillingOccurrenceDialog({ occurrence, isOpen = Boolean(occurrenc
     setStatus(occurrence.status === 'CANCELLED' ? 'OPEN' : occurrence.status);
     setBilledDate(dateValue(occurrence.billedDate));
     setAmount(occurrence.operativeAmount);
+    setQuantity(occurrence.quantity?.replace(/\.00$/, '') ?? '');
     setCurrency(occurrence.operativeCurrency);
     setExternalReference(occurrence.externalReference ?? '');
     setNotes(occurrence.notes ?? '');
@@ -50,6 +53,12 @@ export function BillingOccurrenceDialog({ occurrence, isOpen = Boolean(occurrenc
 
   if (!occurrence) return null;
 
+  const pricing = occurrence.feeLine.tieredPricing ?? null;
+  const quantityEditable = Boolean(pricing) && occurrence.status === 'OPEN';
+  const trimmedQuantity = quantity.trim();
+  const quantityValid = trimmedQuantity !== '' && isValidQuantity(trimmedQuantity);
+  const quantityChanged = quantityEditable && quantityValid
+    && Number(trimmedQuantity) !== Number(occurrence.quantity ?? Number.NaN);
   const amountChanged = amount !== occurrence.operativeAmount || currency.toUpperCase() !== occurrence.operativeCurrency.toUpperCase();
   const currentStatus = occurrence.status === 'CANCELLED' ? 'OPEN' : occurrence.status;
   const originalBilledDate = dateValue(occurrence.billedDate);
@@ -71,6 +80,7 @@ export function BillingOccurrenceDialog({ occurrence, isOpen = Boolean(occurrenc
     };
     if (statusChanged) payload.status = status;
     if (billedDateChanged) payload.billedDate = billedDate || null;
+    if (quantityChanged) payload.quantity = trimmedQuantity;
     if (amountChanged) {
       payload.amount = amount;
       payload.currency = currency.trim().toUpperCase();
@@ -114,6 +124,26 @@ export function BillingOccurrenceDialog({ occurrence, isOpen = Boolean(occurrenc
             <div className="mb-4 flex items-center justify-between gap-3 rounded-lg border border-status-warning/30 bg-status-warning/5 p-3">
               <p className="text-xs text-text-secondary">This row has a manually overridden tracked value.</p>
               <Button type="button" size="xs" variant="ghost" onClick={() => setResetPromptOpen(true)}>Reset tracked overrides</Button>
+            </div>
+          ) : null}
+          {pricing ? (
+            <div className="mb-4 space-y-2 rounded-lg border border-border-primary p-3">
+              <p className="text-sm font-medium text-text-primary">Priced by quantity</p>
+              <ul className="list-disc pl-5 text-xs text-text-secondary">
+                {describeTieredPricing(pricing, occurrence.operativeCurrency).map((line) => <li key={line}>{line}</li>)}
+              </ul>
+              <div className="grid items-end gap-3 sm:grid-cols-2">
+                <label className="flex flex-col gap-2 text-sm font-medium text-text-primary">
+                  {`Number of ${pricing.unitLabel}s`}
+                  <input aria-label="Quantity" inputMode="decimal" value={quantity} disabled={!quantityEditable} onChange={(event) => setQuantity(event.target.value)} placeholder={occurrence.quantity == null ? 'Quantity needed' : undefined} className="min-h-11 rounded-lg border border-border-primary bg-background-secondary px-3 text-sm font-normal text-text-primary outline-none placeholder:text-text-muted focus:border-oak-primary focus:ring-2 focus:ring-oak-primary/20 disabled:opacity-60 sm:min-h-9" />
+                </label>
+                <p className="text-sm text-text-secondary">
+                  Fee: <span className="font-semibold text-text-primary">{quantityValid ? formatCurrency(priceTieredQuantity(pricing, trimmedQuantity), occurrence.operativeCurrency) : '—'}</span>
+                </p>
+              </div>
+              {trimmedQuantity !== '' && !quantityValid ? <p role="alert" className="text-xs text-status-error">Enter a number with at most two decimals.</p> : null}
+              {!quantityEditable ? <p className="text-xs text-text-muted">Reopen this entry to change its quantity.</p> : null}
+              {quantityEditable && occurrence.valueOverridden ? <p className="text-xs text-text-muted">The amount was overridden, so a new quantity changes the configured fee only. Reset the amount override to bill the tier price.</p> : null}
             </div>
           ) : null}
           <div className="grid gap-4 sm:grid-cols-2">

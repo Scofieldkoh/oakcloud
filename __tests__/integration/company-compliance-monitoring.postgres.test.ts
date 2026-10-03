@@ -621,6 +621,110 @@ describePostgres('company compliance monitoring on PostgreSQL', () => {
     ]);
   });
 
+  it('asks for the quantity of a tiered postpaid fee and bills its tier price', async () => {
+    const { setCompanyObligationStatus } = await import('@/services/compliance-monitoring/obligation-status');
+    const { updateDeadlineOccurrence } = await import('@/services/deadline/service');
+    const { findFilingQuantityPrompts, findPostpaidQuantityPrompts } = await import('@/services/billing/postpaid');
+    const { updateBillingOccurrence } = await import('@/services/billing/service');
+    const target = await prisma.deadlineOccurrence.findFirstOrThrow({
+      where: { tenantId: fixture.tenantId, companyId: fixture.companyId, ownershipScope: 'COMPANY', obligationCode: 'SG_FORM_C', status: { not: 'CANCELLED' }, yearOfAssessment: { not: null } },
+      orderBy: { yearOfAssessment: 'desc' },
+    });
+    const ya = target.yearOfAssessment!;
+    await prisma.$transaction((tx) => setCompanyObligationStatus({
+      tenantId: fixture.tenantId, companyId: fixture.companyId, obligationCode: 'SG_FORM_C',
+      periodKey: target.obligationPeriodKey!, status: 'PENDING_FILING', actorId: fixture.userId,
+    }, tx));
+    const tieredPricing = {
+      mode: 'VOLUME',
+      unitLabel: 'transaction',
+      tiers: [
+        { upTo: '200', flatAmount: '1200', unitAmount: '0' },
+        { upTo: null, flatAmount: '1800', unitAmount: '0' },
+      ],
+    };
+    const serviceId = randomUUID();
+    const feeLineId = randomUUID();
+    await prisma.clientService.create({
+      data: {
+        id: serviceId, tenantId: fixture.tenantId, companyId: fixture.companyId, source: 'MANUAL',
+        serviceVariantId: fixture.variantId, familyName: 'Accounting', serviceName: 'Accounting (tiered)',
+        status: 'ACTIVE', serviceCadence: 'ANNUALLY', startDate: new Date('2026-04-01T00:00:00.000Z'),
+        billingDisposition: 'CONFIGURED', engagementStartYearOfAssessment: ya,
+        feeLines: { create: { id: feeLineId, tenantId: fixture.tenantId, description: 'Bookkeeping', amount: '0.00', currency: 'SGD', billingFrequency: 'ONE_TIME', billingTiming: 'POSTPAID', postpaidTrigger: 'SG_FORM_C_FILED', tieredPricing } },
+      },
+    });
+    const bills = () => prisma.billingOccurrence.findMany({ where: { tenantId: fixture.tenantId, clientServiceId: serviceId } });
+    const actor = { tenantId: fixture.tenantId, userId: fixture.userId };
+
+    // Before filing, the filing asks for the tiered fee's quantity.
+    expect(await findFilingQuantityPrompts({ tenantId: fixture.tenantId, occurrenceIds: [target.id] })).toEqual([{
+      occurrenceId: target.id,
+      prompts: [{ feeLineId, clientServiceId: serviceId, serviceName: 'Accounting (tiered)', description: 'Bookkeeping', currency: 'SGD', tieredPricing }],
+    }]);
+
+    // Mark complete with a quantity bills the tier it falls in.
+    const open = await prisma.deadlineOccurrence.findUniqueOrThrow({ where: { id: target.id } });
+    await updateDeadlineOccurrence(target.id, {
+      status: 'COMPLETED',
+      expectedUpdatedAt: open.updatedAt.toISOString(),
+      billingQuantities: [{ feeLineId, quantity: '250' }],
+    }, actor);
+    let current = await bills();
+    expect(current).toHaveLength(1);
+    expect(current[0]).toMatchObject({ billingPeriodKey: `YA${ya}`, status: 'OPEN' });
+    expect(current[0]!.quantity!.toFixed(2)).toBe('250.00');
+    expect(current[0]!.operativeAmount.toFixed(2)).toBe('1800.00');
+    // Once billed with a quantity, filing the YA asks for nothing more.
+    expect(await findPostpaidQuantityPrompts({ tenantId: fixture.tenantId, companyId: fixture.companyId, obligationCode: 'SG_FORM_C', yearOfAssessment: ya })).toEqual([]);
+
+    // Un-filing and re-filing without a quantity keeps the one entered.
+    const completed = await prisma.deadlineOccurrence.findUniqueOrThrow({ where: { id: target.id } });
+    await updateDeadlineOccurrence(target.id, { status: 'OPEN', reason: 'Not filed yet', expectedUpdatedAt: completed.updatedAt.toISOString() }, actor);
+    expect((await bills())[0]).toMatchObject({ status: 'CANCELLED' });
+    await prisma.$transaction((tx) => setCompanyObligationStatus({
+      tenantId: fixture.tenantId, companyId: fixture.companyId, obligationCode: 'SG_FORM_C',
+      periodKey: target.obligationPeriodKey!, status: 'FILED', actorId: fixture.userId,
+    }, tx));
+    current = await bills();
+    expect(current[0]).toMatchObject({ status: 'OPEN' });
+    expect(current[0]!.operativeAmount.toFixed(2)).toBe('1800.00');
+
+    // Changing the quantity on the billing entry re-prices it.
+    const updated = await updateBillingOccurrence(current[0]!.id, {
+      expectedUpdatedAt: current[0]!.updatedAt.toISOString(),
+      quantity: '150',
+      updateScope: 'THIS_OCCURRENCE',
+      reason: null,
+    }, actor);
+    expect(updated).toMatchObject({ quantity: '150.00', operativeAmount: '1200.00', baseAmount: '1200.00', valueOverridden: false });
+    expect(updated.feeLine.tieredPricing).toEqual(tieredPricing);
+
+    // Filed without a quantity (e.g. on Add service): bills 0.00 until one is entered, and can't be marked billed.
+    await prisma.billingOccurrence.deleteMany({ where: { clientServiceId: serviceId } });
+    await prisma.$transaction((tx) => setCompanyObligationStatus({
+      tenantId: fixture.tenantId, companyId: fixture.companyId, obligationCode: 'SG_FORM_C',
+      periodKey: target.obligationPeriodKey!, status: 'PENDING_FILING', actorId: fixture.userId,
+    }, tx));
+    await prisma.$transaction((tx) => setCompanyObligationStatus({
+      tenantId: fixture.tenantId, companyId: fixture.companyId, obligationCode: 'SG_FORM_C',
+      periodKey: target.obligationPeriodKey!, status: 'FILED', actorId: fixture.userId,
+    }, tx));
+    current = await bills();
+    expect(current).toHaveLength(1);
+    expect(current[0]!.quantity).toBeNull();
+    expect(current[0]!.operativeAmount.toFixed(2)).toBe('0.00');
+    await expect(updateBillingOccurrence(current[0]!.id, {
+      expectedUpdatedAt: current[0]!.updatedAt.toISOString(), status: 'BILLED', updateScope: 'THIS_OCCURRENCE', reason: null,
+    }, actor)).rejects.toThrow('Enter the quantity before marking this fee billed');
+    await prisma.$transaction((tx) => setCompanyObligationStatus({
+      tenantId: fixture.tenantId, companyId: fixture.companyId, obligationCode: 'SG_FORM_C',
+      periodKey: target.obligationPeriodKey!, status: 'FILED', actorId: fixture.userId,
+      billingQuantities: [{ feeLineId, quantity: '20' }],
+    }, tx));
+    expect((await bills())[0]!.operativeAmount.toFixed(2)).toBe('1200.00');
+  });
+
   it('permanently deleting a service removes the company filings only it covered', async () => {
     const { createMonitoringForActivatedService } = await import('@/services/compliance-monitoring/coverage');
     const { reconcileCompanyObligations } = await import('@/services/compliance-monitoring/writer');

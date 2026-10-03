@@ -8,6 +8,7 @@ import { ListEmptyState } from '@/components/ui/empty-state';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useMoveEngagementStart } from '@/hooks/use-client-services';
 import {
+  fetchFilingBillingChecks,
   useDeadlines,
   useResetDeadlineDateOverride,
   useUpdateDeadlineOccurrence,
@@ -51,6 +52,7 @@ import {
 import { DeadlineCalendar } from './deadline-calendar';
 import { DeadlineBulkActions } from './deadline-bulk-actions';
 import { ServiceColumnModal } from '@/components/services/shared/service-column-modal';
+import { BillingQuantityDialog, type BillingQuantityPromptItem } from '@/components/services/shared/billing-quantity-fields';
 
 const VIEW_PREFERENCE_KEY = 'services.deadlines.view.v1';
 const TYPE_VALUES: DeadlineFilterType[] = ['STATUTORY', 'CLIENT', 'INTERNAL'];
@@ -418,6 +420,11 @@ export function DeadlineWorkspace({ canEdit = false, deadlineWritesEnabled = fal
     yearOfAssessment: number;
     services: NonNullable<DeadlineOccurrenceDto['postpaidEngagementStartConflicts']>;
   } | null>(null);
+  const [quantityPrompt, setQuantityPrompt] = useState<{
+    occurrence: DeadlineOccurrenceDto;
+    data: UpdateDeadlineOccurrenceInput;
+    prompts: BillingQuantityPromptItem[];
+  } | null>(null);
   const resetDeadline = useResetDeadlineDateOverride();
   const families = familyFacets.data ?? [];
   const allFamiliesSelected = urlState.families.length === 0;
@@ -571,8 +578,7 @@ export function DeadlineWorkspace({ canEdit = false, deadlineWritesEnabled = fal
     persistPreference({ showHolidays });
   };
 
-  const markUpdate = useCallback((occurrence: DeadlineOccurrenceDto, data: UpdateDeadlineOccurrenceInput) => {
-    if (!canWrite) return;
+  const submitUpdate = useCallback((occurrence: DeadlineOccurrenceDto, data: UpdateDeadlineOccurrenceInput) => {
     updateDeadline.mutate({ id: occurrence.id, data }, {
       onSuccess: (saved) => {
         // Filed before a postpaid service's engagement start bills nothing,
@@ -584,7 +590,22 @@ export function DeadlineWorkspace({ canEdit = false, deadlineWritesEnabled = fal
         }
       },
     });
-  }, [canWrite, updateDeadline]);
+  }, [updateDeadline]);
+  const markUpdate = useCallback(async (occurrence: DeadlineOccurrenceDto, data: UpdateDeadlineOccurrenceInput) => {
+    if (!canWrite) return;
+    // Marking a filing complete asks for the quantity of any tiered postpaid
+    // fee it bills. If the check fails, the entry is still raised and flagged.
+    if (data.status === 'COMPLETED' && occurrence.ownershipScope === 'COMPANY' && occurrence.obligation?.yearOfAssessment != null) {
+      const prompts = await fetchFilingBillingChecks([occurrence.id])
+        .then((checks) => checks.quantityPrompts.find((item) => item.occurrenceId === occurrence.id)?.prompts ?? [])
+        .catch(() => []);
+      if (prompts.length > 0) {
+        setQuantityPrompt({ occurrence, data, prompts: prompts.map((prompt) => ({ ...prompt, key: prompt.feeLineId })) });
+        return;
+      }
+    }
+    submitUpdate(occurrence, data);
+  }, [canWrite, submitUpdate]);
   const resetOverride = useCallback((occurrence: DeadlineOccurrenceDto, reason: string) => {
     if (!canWrite) return;
     const data: ResetDeadlineDateOverrideInput = { expectedUpdatedAt: occurrence.updatedAt, reason };
@@ -722,6 +743,19 @@ export function DeadlineWorkspace({ canEdit = false, deadlineWritesEnabled = fal
       {(updateDeadline.isPending || resetDeadline.isPending) ? <div role="status" className="rounded-xl border border-border-primary bg-background-secondary p-3 text-sm text-text-secondary">Saving deadline changes…</div> : null}
       {updateDeadline.error || resetDeadline.error ? <Alert variant="error">Unable to save deadline changes. Please retry.</Alert> : null}
       {moveEngagementStart.error ? <Alert variant="error">Unable to move the engagement start. Please change it on the service.</Alert> : null}
+      <BillingQuantityDialog
+        isOpen={quantityPrompt !== null}
+        title={quantityPrompt ? `Mark complete: ${quantityPrompt.occurrence.company.displayLabel || quantityPrompt.occurrence.company.name} YA ${quantityPrompt.occurrence.obligation?.yearOfAssessment ?? ''}` : 'Mark complete'}
+        prompts={quantityPrompt?.prompts ?? []}
+        confirmLabel="Mark complete"
+        onClose={() => setQuantityPrompt(null)}
+        onConfirm={(billingQuantities) => {
+          if (!quantityPrompt) return;
+          const { occurrence, data } = quantityPrompt;
+          setQuantityPrompt(null);
+          submitUpdate(occurrence, billingQuantities.length > 0 ? { ...data, billingQuantities } : data);
+        }}
+      />
       <ConfirmDialog
         isOpen={engagementStartPrompt !== null}
         onClose={() => setEngagementStartPrompt(null)}

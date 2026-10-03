@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { CompanyObligationPreview } from '@/services/compliance-monitoring/writer';
 import type { CompanyObligationStatus } from '@/services/compliance-monitoring/obligation-status';
+import type { PostpaidQuantityInput, PostpaidQuantityPrompt } from '@/services/billing/postpaid';
 import type { ClientServiceDeadlineDraftPreview, ClientServiceDeadlineImpact, ClientServiceDto, CompanyServiceActivationDto, DuplicateClientServiceMatches, ManualClientServiceCatalogOptionsResponse, PermanentDeleteClientServiceResult, ServiceAgreementActivationDto } from '@/services/client-service';
 import type { ClientServiceDeadlineDraftPreviewInput, ClientServiceDeadlineImpactInput, CreateManualClientServiceRequest, SearchClientServicesInput, UpdateClientServiceInput } from '@/lib/validations/client-service';
 
@@ -130,7 +131,13 @@ function invalidateObligationsAndBilling(client: ReturnType<typeof useQueryClien
 export function useSetCompanyObligationStatus(companyId: string) {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (input: { obligationCode: string; periodKey: string; status: CompanyObligationStatus }) =>
+    mutationFn: (input: {
+      obligationCode: string;
+      periodKey: string;
+      status: CompanyObligationStatus;
+      /** With Filed: quantities for the tiered postpaid fees it bills. */
+      billingQuantities?: PostpaidQuantityInput[];
+    }) =>
       requestJson<{ changed: number }>(`/api/companies/${companyId}/services/company-obligations`, {
         method: 'PATCH',
         headers: { 'content-type': 'application/json' },
@@ -138,6 +145,18 @@ export function useSetCompanyObligationStatus(companyId: string) {
       }),
     onSuccess: () => invalidateObligationsAndBilling(client, companyId),
   });
+}
+
+/** Tiered postpaid fees that filing this YA would bill and that need a quantity. */
+export async function fetchObligationQuantityPrompts(
+  companyId: string,
+  input: { obligationCode: string; yearOfAssessment: number },
+): Promise<PostpaidQuantityPrompt[]> {
+  const query = new URLSearchParams({ obligationCode: input.obligationCode, yearOfAssessment: String(input.yearOfAssessment) });
+  const body = await requestJson<{ prompts?: PostpaidQuantityPrompt[] }>(
+    `/api/companies/${companyId}/services/company-obligations/quantity-prompts?${query}`,
+  );
+  return body.prompts ?? [];
 }
 
 export function useSetEngagementStart(companyId: string) {

@@ -57,6 +57,7 @@ type BillingFeeProjectionInput = {
   scheduleConfig?: unknown;
   billingTiming?: string | null;
   postpaidTrigger?: string | null;
+  tieredPricing?: unknown;
   displayOrder: number;
   isActive?: boolean;
   deletedAt?: Date | string | null;
@@ -117,6 +118,7 @@ function canonicalBillingFeeProjection(fees: readonly BillingFeeProjectionInput[
       scheduleConfig: billingScheduleProjection(fee),
       billingTiming: fee.billingTiming ?? 'PREPAID',
       postpaidTrigger: fee.postpaidTrigger ?? null,
+      tieredPricing: fee.tieredPricing ?? null,
       displayOrder: fee.displayOrder,
     }))
     .sort((left, right) => String(left.id).localeCompare(String(right.id)));
@@ -1352,6 +1354,7 @@ export async function updateClientService(id: string, input: UpdateClientService
           scheduleConfig: fee.scheduleConfig ?? Prisma.JsonNull,
           billingTiming: fee.billingTiming ?? 'PREPAID',
           postpaidTrigger: fee.billingTiming === 'POSTPAID' ? fee.postpaidTrigger ?? null : null,
+          tieredPricing: fee.billingTiming === 'POSTPAID' && fee.tieredPricing ? fee.tieredPricing : Prisma.JsonNull,
           displayOrder: fee.displayOrder,
           isActive: true,
           deletedAt: null,

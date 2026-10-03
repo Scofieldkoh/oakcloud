@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { ValidationError } from '@/lib/errors';
 import { dateOnlySchema } from './date-only';
+import { postpaidQuantitiesSchema } from './billing';
 
 const UUID = z.string().uuid();
 
@@ -89,7 +90,12 @@ export const updateDeadlineOccurrenceSchema = z.object({
   completionDate: dateOnlySchema.nullable().optional(),
   notes: z.string().trim().max(5000).nullable().optional(),
   reason: z.string().trim().min(1).max(1000).optional(),
+  /** With status COMPLETED: quantities for tiered postpaid fees this filing bills. */
+  billingQuantities: postpaidQuantitiesSchema.optional(),
 }).strict().superRefine((value, ctx) => {
+  if (value.billingQuantities?.length && value.status !== 'COMPLETED') {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['billingQuantities'], message: 'Billing quantities are only entered when marking a deadline complete' });
+  }
   if (value.status === 'WAIVED' && !value.reason) {
     ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['reason'], message: 'A reason is required when waiving a deadline' });
   }
