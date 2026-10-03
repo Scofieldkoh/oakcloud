@@ -12,9 +12,16 @@ import {
   writeOakDocCustomFields,
   type OakDocCustomField,
 } from '@/lib/document-editor/oakdoc-custom-fields';
+import { pruneDeletedOakDocFields } from '@/lib/document-editor/oakdoc-fields';
+import { OAKDOC_FIELD_TAGS } from '@/lib/document-editor/oakdoc-field-registry';
 import { partialKeys, saveWordPartial } from '@/hooks/use-template-partials';
 import { OAKDOC_MIME_TYPE } from '@/lib/document-editor/oakdoc-template';
 import type { OakDocSnapshotIdentity } from '@/types/oakdoc';
+
+/** Drops field controls a cut or delete left empty, as template saves do. */
+function pruneEmptyFields(bytes: Uint8Array) {
+  return pruneDeletedOakDocFields(bytes, OAKDOC_FIELD_TAGS);
+}
 
 export interface WordPartialEditorProps {
   partialId: string;
@@ -87,6 +94,7 @@ export function WordPartialEditor({
       loadingLabel="Loading Word partial…"
       load={load}
       persist={persist}
+      cleanup={pruneEmptyFields}
       onDirtyChange={onDirtyChange}
       renderSidebar={({
         insertField,

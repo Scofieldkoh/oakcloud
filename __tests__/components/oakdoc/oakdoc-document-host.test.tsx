@@ -6,14 +6,16 @@ const editorState = vi.hoisted(() => ({
   onChange: null as null | (() => void),
   saveImpl: vi.fn(async () => new Uint8Array([1, 2, 3]).buffer as ArrayBuffer),
   mounts: 0,
+  document: null as null | Uint8Array,
   selection: null as null | { from: { paraId: string }; to: { paraId: string } },
 }));
 
 vi.mock('@docx-editor.dev/react', () => ({
   DocxEditor: forwardRef(function MockDocxEditor(
-    props: { onChange?: () => void; onReady?: () => void },
+    props: { document?: Uint8Array; onChange?: () => void; onReady?: () => void },
     ref,
   ) {
+    editorState.document = props.document ?? null;
     useImperativeHandle(ref, () => ({
       save: editorState.saveImpl,
       snapshot: () => ({ selectionCollapsed: true, selection: null }),
@@ -82,6 +84,36 @@ describe('OakDocDocumentHost', () => {
 
     expect(await screen.findByText('1 repeating')).toBeInTheDocument();
     expect(onDirtyChange).toHaveBeenLastCalledWith(true);
+  });
+
+  it('cleans loaded and saved bytes and remounts the cleaned document after save', async () => {
+    const cleanup = vi.fn((bytes: Uint8Array) => ({ bytes: new Uint8Array([...bytes, 0]), removed: 1 }));
+    const persist = vi.fn(async () => ({ revision: 2 }));
+    editorState.saveImpl.mockImplementation(async () => new Uint8Array([1, 2, 3]).buffer as ArrayBuffer);
+
+    render(
+      <OakDocDocumentHost
+        entityKey="partial:p-2"
+        baseRevision={1}
+        title="Appointment of secretary"
+        readOnly={false}
+        description="Word partial"
+        loadingLabel="Loading…"
+        load={async () => new Uint8Array([9])}
+        persist={persist}
+        cleanup={cleanup}
+      />,
+    );
+    await screen.findByTestId('docx-editor');
+    expect(cleanup).toHaveBeenCalledWith(new Uint8Array([9]));
+
+    await act(async () => { await Promise.resolve(); });
+    act(() => editorState.onChange?.());
+    act(() => { screen.getByRole('button', { name: /save docx/i }).click(); });
+
+    await waitFor(() => expect(persist).toHaveBeenCalledOnce());
+    expect((persist.mock.calls[0] as unknown as [Uint8Array])[0]).toEqual(new Uint8Array([1, 2, 3, 0]));
+    await waitFor(() => expect(editorState.document).toEqual(new Uint8Array([1, 2, 3, 0])));
   });
 
   it('keeps edits typed during an in-flight save dirty and never reloads submitted bytes', async () => {

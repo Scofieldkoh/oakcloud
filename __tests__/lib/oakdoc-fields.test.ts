@@ -75,6 +75,26 @@ describe('OakDoc field cleanup', () => {
     expect(output).toContain(' After');
   });
 
+  it('removes the empty field shells a cut leaves behind and keeps filled fields', () => {
+    const field = (id: number, content: string) =>
+      '<w:sdt><w:sdtPr><w:tag w:val="company.name"/><w:id w:val="' + id + '"/></w:sdtPr>'
+      + content + '</w:sdt>';
+    const source = docx(
+      '<w:p>' + field(20, '<w:sdtContent><w:r><w:t>{{company.name}}</w:t></w:r></w:sdtContent>') + '</w:p>'
+      + '<w:p>' + field(21, '<w:sdtContent/>')
+      + '<w:r><w:t xml:space="preserve"> and </w:t></w:r>'
+      + field(22, '<w:sdtContent><w:r><w:t></w:t></w:r></w:sdtContent>') + '</w:p>',
+    );
+
+    const cleaned = pruneDeletedOakDocFields(source, knownTags);
+    const output = documentXml(cleaned.bytes);
+
+    expect(cleaned.removed).toBe(2);
+    expect(output.match(/<w:sdt>/g)).toHaveLength(1);
+    expect(output).toContain('{{company.name}}');
+    expect(output).toContain(' and ');
+  });
+
   it('preserves paragraph structure when a deleted block field is inside a table cell', () => {
     const source = docx(
       '<w:tbl><w:tr><w:tc>'
