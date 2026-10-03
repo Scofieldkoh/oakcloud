@@ -14,7 +14,7 @@ const mocks = vi.hoisted(() => ({
 const tx = {
   $executeRaw: vi.fn(),
   company: { upsert: vi.fn(), update: vi.fn() },
-  document: { update: vi.fn() },
+  document: { findUnique: vi.fn(), update: vi.fn() },
   companyFormerName: { deleteMany: vi.fn(), create: vi.fn() },
   companyAddress: { findFirst: vi.fn(), update: vi.fn(), create: vi.fn() },
   shareCapital: { deleteMany: vi.fn(), create: vi.fn() },

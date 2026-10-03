@@ -44,6 +44,21 @@ describe('canonical BizFile summary audit', () => {
     }), tx);
   });
 
+  it('renames the approved BizFile from its upload name to the readable BizFile name', async () => {
+    tx.document.findUnique.mockResolvedValueOnce({
+      fileName: '1036ae32-5a85-412d-902f-b5c2c925afb6.pdf',
+      originalFileName: 'acra profile.PDF',
+      storageKey: 'tenant/pending/1036ae32-5a85-412d-902f-b5c2c925afb6.pdf',
+    });
+    await processBizFileExtraction('document',
+      { ...data, documentMetadata: { receiptNo: 'ACRA250322001', receiptDate: '2025-03-22' } },
+      'user', 'tenant', undefined, undefined, undefined, plan, { operationId: 'operation', operationRepository: repository });
+    expect(tx.document.update).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({
+      where: { id: 'document' },
+      data: expect.objectContaining({ fileName: 'BizFile_2025-03-22_ACRA_ACRA250322001.pdf' }),
+    }));
+  });
+
   it('propagates audit failure through the transaction instead of returning success', async () => {
     mocks.audit.mockRejectedValue(new Error('audit unavailable'));
     await expect(execute()).rejects.toThrow('audit unavailable');
