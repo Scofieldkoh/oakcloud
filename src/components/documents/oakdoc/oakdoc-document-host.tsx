@@ -20,6 +20,7 @@ import { insertOakDocField } from './insert-oakdoc-field';
 import { useOakDocSectionDeleteGuard } from './use-oakdoc-section-delete-guard';
 import { useOakDocFieldBlocks } from './use-oakdoc-field-blocks';
 import { useOakDocViewKeeper } from './use-oakdoc-view-keeper';
+import { OakDocLetteredListButton } from './oakdoc-lettered-list';
 
 export interface OakDocPersistResult {
   revision: number;
@@ -455,6 +456,7 @@ export function OakDocDocumentHost({
               className="h-full min-h-0"
             >
               {blocks.probe}
+              <OakDocLetteredListButton />
             </DocxEditor>
           )}
         </div>
