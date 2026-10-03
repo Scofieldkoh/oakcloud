@@ -360,7 +360,8 @@ function contactAddress(contact: OakDocContact): OakDocPartyAddress {
   };
 }
 
-function buildSelectedContact(contact: OakDocContact | undefined) {
+/** The fields a contact prints, as `selectedContact.*` and Contact custom fields use them. */
+export function buildSelectedContact(contact: OakDocContact | undefined) {
   if (!contact) return undefined;
   return {
     name: contact.name,

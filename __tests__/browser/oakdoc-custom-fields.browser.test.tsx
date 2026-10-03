@@ -11,6 +11,20 @@ import type { OakDocCustomField } from '@/lib/document-editor/oakdoc-custom-fiel
 import { storagePlaceholdersToEditor } from '@/lib/template-placeholder-storage';
 import '@/app/globals.css';
 
+vi.mock('@/hooks/use-contacts', () => ({
+  useContacts: () => ({
+    data: {
+      contacts: [
+        { id: 'p1', fullName: 'Tan Wei Jie', identificationNumber: 'S1234567A' },
+        { id: 'p2', fullName: 'Lim Mei Ling', identificationNumber: 'S7654321B' },
+      ],
+    },
+    isLoading: false,
+    error: null,
+    refetch: vi.fn(),
+  }),
+}));
+
 function PanelHarness({ onInsert }: { onInsert: (tag: string) => void }) {
   const [fields, setFields] = useState<OakDocCustomField[]>([
     { key: 'fee', label: 'Annual fee', type: 'currency', required: true },
@@ -92,6 +106,28 @@ describe('Word template custom fields and contacts', () => {
     await expect.element(screen.getByText('custom.billing_basis · Dropdown')).toBeVisible();
     await act(async () => userEvent.click(screen.getByTitle('Insert Billing basis')));
     expect(onInsert).toHaveBeenCalledWith('custom.billing_basis');
+    await page.screenshot();
+  });
+
+  it('defines a Contact field from a shortlist and inserts its details', async () => {
+    await page.viewport(1100, 800);
+    const onInsert = vi.fn();
+    await act(async () => root.render(<PanelHarness onInsert={onInsert} />));
+
+    await act(async () => userEvent.click(screen.getByRole('button', { name: 'Add' })));
+    const dialog = screen.getByRole('dialog');
+    await act(async () => userEvent.fill(within(dialog).getByLabelText('Label'), 'Secretary'));
+    await act(async () => userEvent.click(within(dialog).getAllByRole('combobox')[0]));
+    await act(async () => userEvent.click(screen.getByRole('option', { name: 'Contact' })));
+    await act(async () => userEvent.click(within(dialog).getByPlaceholderText('Search contacts to add...')));
+    await act(async () => userEvent.click(await screen.findByText('Lim Mei Ling')));
+    await expect.element(within(dialog).getByRole('list', { name: 'Contact shortlist' })).toHaveTextContent('Lim Mei Ling');
+    await page.screenshot();
+    await act(async () => userEvent.click(within(dialog).getByRole('button', { name: 'Add field' })));
+
+    await expect.element(screen.getByText('custom.secretary · Contact (1 to choose from)')).toBeVisible();
+    await act(async () => userEvent.click(screen.getByTitle('Insert custom.secretary.identificationNumber')));
+    expect(onInsert).toHaveBeenCalledWith('custom.secretary.identificationNumber');
     await page.screenshot();
   });
 

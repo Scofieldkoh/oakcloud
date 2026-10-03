@@ -26,6 +26,7 @@ import {
 import {
   buildOakDocResolutionDates,
   buildOakDocResolutionValues,
+  buildSelectedContact,
   type OakDocAgreementContext,
   type OakDocCompanyDetail,
   type OakDocContact,
@@ -51,8 +52,9 @@ import {
 } from '@/services/document-party.service';
 import {
   buildOakDocCustomFieldValues,
-  isOakDocCustomFieldTag,
+  oakDocCustomContactFields,
   oakDocCustomFieldTypes,
+  parseOakDocCustomFieldTag,
 } from '@/lib/document-editor/oakdoc-custom-fields';
 import { getServiceAgreementDraftById } from '@/services/service-agreement/draft.service';
 import {
@@ -171,8 +173,10 @@ export function diagnoseOakDocGeneration(input: {
 }): OakDocDiagnostic[] {
   const diagnostics = diagnoseOakDocTags(input.usedTags, 'render');
   const undefinedCustom = Array.from(new Set(input.usedTags))
-    .filter((tag) => isOakDocCustomFieldTag(tag) && input.customFieldKeys
-      && !input.customFieldKeys.has(tag.slice('custom.'.length)))
+    .filter((tag) => {
+      const parsed = parseOakDocCustomFieldTag(tag);
+      return Boolean(parsed && input.customFieldKeys && !input.customFieldKeys.has(parsed.key));
+    })
     .sort();
   if (undefinedCustom.length > 0) {
     diagnostics.push({
@@ -292,6 +296,7 @@ export async function generateOakDocBytes(
     fieldTags: downloadedMetadata.fieldTags,
     partialPins: readOakDocPartialPins(template.contentJson),
     customFieldTypes: oakDocCustomFieldTypes(template.placeholders),
+    customContactFields: oakDocCustomContactFields(template.placeholders),
   }, input, params);
 }
 
@@ -345,6 +350,7 @@ export async function previewOakDocMaster(
     fieldTags: deriveOakDocTemplateFieldTags(input.bytes),
     partialPins,
     customFieldTypes: oakDocCustomFieldTypes(saved?.placeholders),
+    customContactFields: oakDocCustomContactFields(saved?.placeholders),
   }, {
     ...input,
     // The editor has no Configure step, so it previews sample resolutions.
@@ -364,6 +370,8 @@ interface OakDocMasterSource {
   partialPins: OakDocPartialPin[];
   /** Custom fields the template defines, by key, with their value type. */
   customFieldTypes: Record<string, PlaceholderValueType>;
+  /** Contact custom fields, by key, with the ids of their contact shortlist. */
+  customContactFields: Record<string, string[]>;
 }
 
 /**
@@ -385,6 +393,7 @@ async function renderOakDocMaster(
   const resolutionDiagnostics: OakDocDiagnostic[] = [];
   let resolutionPartialPins: OakDocPartialPin[] | undefined;
   let customFieldTypes = master.customFieldTypes;
+  let customContactFields = master.customContactFields;
   if (master.compositionType === 'RESOLUTION') {
     if (!input.resolution) {
       resolutionDiagnostics.push({
@@ -408,10 +417,9 @@ async function renderOakDocMaster(
         const used = new Set(composed.partialIds);
         resolutionPartialPins = partialPins.filter((pin) => used.has(pin.partialId));
         // The chosen partials' own custom fields, the template's winning on a shared key.
-        customFieldTypes = {
-          ...oakDocCustomFieldTypes(await withResolutionPartialFields([], composed.partialIds, params.tenantId)),
-          ...master.customFieldTypes,
-        };
+        const partialFields = await withResolutionPartialFields([], composed.partialIds, params.tenantId);
+        customFieldTypes = { ...oakDocCustomFieldTypes(partialFields), ...master.customFieldTypes };
+        customContactFields = { ...oakDocCustomContactFields(partialFields), ...master.customContactFields };
       }
     }
   }
@@ -496,6 +504,12 @@ async function renderOakDocMaster(
         tags: resolutionTags,
         data: input.customData,
         types: customFieldTypes,
+        contacts: await resolveCustomContacts({
+          fields: customContactFields,
+          data: input.customData,
+          companyId: input.companyId,
+          tenantId: params.tenantId,
+        }),
       })
     : { values: {}, dates: {} };
   const values = { ...buildOakDocResolutionValues(resolutionInput), ...custom.values };
@@ -602,6 +616,33 @@ async function renderOakDocMaster(
  * otherwise any contact in the workspace. Unknown ids resolve to nothing, so
  * generation reports the missing contact.
  */
+/**
+ * The details of the contact chosen for each Contact custom field. Only a
+ * contact on the field's shortlist is used; any other value prints blank.
+ */
+async function resolveCustomContacts(input: {
+  fields: Record<string, string[]>;
+  data: Readonly<Record<string, unknown>>;
+  companyId: string;
+  tenantId: string;
+}): Promise<Record<string, unknown>> {
+  const chosen = Object.entries(input.fields).flatMap(([key, shortlist]) => {
+    const id = input.data[key];
+    return typeof id === 'string' && shortlist.includes(id) ? [[key, id] as const] : [];
+  });
+  const parties = await getDocumentContactParties({
+    contactIds: chosen.map(([, id]) => id),
+    companyId: input.companyId,
+    tenantId: input.tenantId,
+  });
+  const byId = new Map(parties.map((party) => [party.id, party]));
+  const contacts: Record<string, unknown> = Object.fromEntries(
+    Object.keys(input.fields).map((key) => [key, undefined]),
+  );
+  for (const [key, id] of chosen) contacts[key] = buildSelectedContact(byId.get(id));
+  return contacts;
+}
+
 async function resolveSelectedContact(
   contactId: string,
   companyId: string,

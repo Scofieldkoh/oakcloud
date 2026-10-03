@@ -1492,7 +1492,12 @@ A Word (OakDoc) template is uploaded as multipart form data instead: `file`
 and optional `placeholders` (JSON array). Custom fields are `placeholders`
 entries keyed `custom.<key>` with a `label`, `type` (text, textarea, date,
 number, currency), `required` and, for a dropdown, `options`; the document
-holds a `custom.<key>` field. Custom fields of inserted Word partials are
+holds a `custom.<key>` field. A Contact field is stored as `type: "text"` with
+`fieldKind: "contact"` and its shortlist as `options` of `{ value: contactId,
+label: name }`; Configure stores the chosen contact id, `custom.<key>` prints
+the name and `custom.<key>.<detail>` (`identificationNumber`, `nationality`,
+`address.full`, `address.letter`, `email`, `phone`, `name`) a detail. Only a
+contact on the shortlist is printed. Custom fields of inserted Word partials are
 copied in on save (marked `oakDocPartialId`) so Configure asks for them too.
 For a resolution document, the custom fields of the partials picked as its
 numbered resolutions are added per document, on Configure and at generation.

@@ -4,6 +4,7 @@ import {
   formatOakDocCustomFieldValue,
   isOakDocCustomFieldTag,
   mergeOakDocPartialCustomFields,
+  oakDocCustomContactFields,
   oakDocCustomFieldKeyFromLabel,
   oakDocCustomFieldTypes,
   readOakDocCustomFields,
@@ -17,6 +18,8 @@ describe('OakDoc custom fields', () => {
     expect(isOakDocCustomFieldTag('custom.')).toBe(false);
     expect(isOakDocCustomFieldTag('custom.2fee')).toBe(false);
     expect(isOakDocCustomFieldTag('custom.fee.amount')).toBe(false);
+    expect(isOakDocCustomFieldTag('custom.secretary.identificationNumber')).toBe(true);
+    expect(isOakDocCustomFieldTag('custom.secretary.address.full')).toBe(true);
     expect(isOakDocCustomFieldTag('company.name')).toBe(false);
   });
 
@@ -123,6 +126,49 @@ describe('OakDoc custom fields', () => {
         'custom.missing': '',
       },
       dates: { 'custom.meeting_date': '2026-11-03' },
+    });
+  });
+
+  it('stores a Contact field with its shortlist and reads it back', () => {
+    const stored = writeOakDocCustomFields([], [{
+      key: 'secretary',
+      label: 'Secretary',
+      type: 'contact',
+      required: true,
+      contacts: [{ id: 'c-1', name: 'Tan Wei Jie' }, { id: 'c-2', name: 'Lim Mei Ling' }],
+    }]);
+
+    expect(stored[0]).toMatchObject({
+      key: 'custom.secretary',
+      type: 'text',
+      fieldKind: 'contact',
+      options: [{ value: 'c-1', label: 'Tan Wei Jie' }, { value: 'c-2', label: 'Lim Mei Ling' }],
+    });
+    expect(readOakDocCustomFields(stored)).toEqual([{
+      key: 'secretary',
+      label: 'Secretary',
+      type: 'contact',
+      required: true,
+      contacts: [{ id: 'c-1', name: 'Tan Wei Jie' }, { id: 'c-2', name: 'Lim Mei Ling' }],
+    }]);
+    expect(oakDocCustomContactFields(stored)).toEqual({ secretary: ['c-1', 'c-2'] });
+    expect(oakDocCustomFieldTypes(stored)).toEqual({ secretary: 'text' });
+  });
+
+  it('prints the chosen contact for a Contact field and its details', () => {
+    expect(buildOakDocCustomFieldValues({
+      tags: ['custom.secretary', 'custom.secretary.identificationNumber', 'custom.secretary.address.full', 'custom.other'],
+      data: { secretary: 'c-2', other: 'c-1' },
+      types: { secretary: 'text', other: 'text' },
+      contacts: {
+        secretary: { name: 'Lim Mei Ling', identificationNumber: 'S7654321B', address: { full: '1 Raffles Place' } },
+        other: undefined,
+      },
+    }).values).toEqual({
+      'custom.secretary': 'Lim Mei Ling',
+      'custom.secretary.identificationNumber': 'S7654321B',
+      'custom.secretary.address.full': '1 Raffles Place',
+      'custom.other': '',
     });
   });
 });
