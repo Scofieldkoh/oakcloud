@@ -53,6 +53,7 @@ import {
 import { useOakDocSectionDeleteGuard } from '@/components/documents/oakdoc/use-oakdoc-section-delete-guard';
 import { useOakDocFieldBlocks } from '@/components/documents/oakdoc/use-oakdoc-field-blocks';
 import { useOakDocViewKeeper } from '@/components/documents/oakdoc/use-oakdoc-view-keeper';
+import { keepIfSame, useOakDocSummaryRefresh } from '@/components/documents/oakdoc/use-oakdoc-summary-refresh';
 import { oakDocNamedKeysIn } from '@/lib/document-editor/oakdoc-named-sections';
 import { OakDocPartialPanel } from '@/components/documents/oakdoc/oakdoc-partial-panel';
 import { ResolutionPresetPanel } from '@/components/documents/oakdoc/resolution-preset-panel';
@@ -394,12 +395,14 @@ export function OakDocEditor() {
   }, [companyId]);
 
   const updateFieldSummary = useCallback((bytes: Uint8Array) => {
-    setFieldSummary(inspectOakDocFields(bytes, OAKDOC_FIELD_TAGS));
-    setRepeaterSummary(inspectOakDocRepeaters(bytes));
-    setConditionSummary(inspectOakDocConditions(bytes));
-    setPartialReferences(inspectOakDocPartialReferences(bytes));
+    setFieldSummary(keepIfSame(inspectOakDocFields(bytes, OAKDOC_FIELD_TAGS)));
+    setRepeaterSummary(keepIfSame(inspectOakDocRepeaters(bytes)));
+    setConditionSummary(keepIfSame(inspectOakDocConditions(bytes)));
+    setPartialReferences(keepIfSame(inspectOakDocPartialReferences(bytes)));
     setHasResolutionSlot(hasOakDocResolutionSlot(bytes));
   }, []);
+  // Deleting a field or section by typing changes no bytes the editor holds.
+  const refreshFieldSummary = useOakDocSummaryRefresh(editorRef, updateFieldSummary);
 
   // The field-block hook owns the caret probe; it is created further down.
   const caretRef = useRef<() => EditorCaret | null>(() => null);
@@ -1539,6 +1542,7 @@ export function OakDocEditor() {
                     setIsDirty(true);
                     setStatus('Document changed.');
                     setStatusKind('neutral');
+                    refreshFieldSummary();
                   }
                 }}
                 className="h-full min-h-0"

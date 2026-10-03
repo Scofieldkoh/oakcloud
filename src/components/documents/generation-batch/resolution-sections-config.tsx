@@ -266,7 +266,6 @@ export function ResolutionSectionsConfig({
   return (
     <BatchSection
       title="Resolutions"
-      description="Numbered 1, 2, 3 in this order when the document is generated."
       status={{
         complete: issues.length === 0,
         label: issues.length === 0
