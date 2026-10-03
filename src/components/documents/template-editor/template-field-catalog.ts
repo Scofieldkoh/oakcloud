@@ -41,6 +41,11 @@ export const TEMPLATE_FIELD_CATEGORIES: readonly TemplateFieldCategory[] = [
     { key: 'company.incorporationDate', label: 'Incorporation Date', example: '15 January 2023', category: 'Company' },
     { key: 'company.entityType', label: 'Entity Type', example: 'Private Limited Company', category: 'Company' },
     { key: 'company.capital', label: 'Share Capital', example: '$100,000', category: 'Company' },
+    { key: 'company.paidUpCapital', label: 'Paid-up Capital', example: 'SGD 10,000.00', category: 'Company' },
+    { key: 'company.primaryActivity', label: 'Primary Activity', example: '46900 | Wholesale trade of a variety of goods without a dominant product', category: 'Company' },
+    { key: 'company.secondaryActivity', label: 'Secondary Activity', example: '70201 | Management consultancy services', category: 'Company' },
+    { key: 'company.financialYearEnd', label: 'Financial Year End', example: '31 December', category: 'Company' },
+    { key: 'company.firstFinancialYearEnd', label: 'First Financial Year End', example: '31 December 2026', category: 'Company' },
   ] },
   { key: 'selected-director', label: 'Selected Director', fields: [
     { key: 'selectedDirector.name', label: 'Director Name', example: 'John Tan Wei Ming', category: 'Selected Director' },

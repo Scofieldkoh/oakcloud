@@ -89,7 +89,17 @@ export interface OakDocCompanyDetail {
   uen: string;
   entityType?: string | null;
   incorporationDate?: string | null;
+  primarySsicCode?: string | null;
+  primarySsicDescription?: string | null;
+  secondarySsicCode?: string | null;
+  secondarySsicDescription?: string | null;
+  financialYearEndDay?: number | null;
+  financialYearEndMonth?: number | null;
+  /** The first confirmed financial period (it may run over 12 months). */
+  financialPeriods?: Array<{ periodEnd?: string | null }>;
+  paidUpCapitalCurrency?: string | null;
   paidUpCapitalAmount?: number | string | null;
+  issuedCapitalCurrency?: string | null;
   issuedCapitalAmount?: number | string | null;
   registeredAddress?: string | null;
   addresses?: OakDocCompanyAddress[];
@@ -282,6 +292,54 @@ function registeredAddress(company: OakDocCompanyDetail): OakDocCompanyAddress |
   ) ?? company.addresses?.find((address) => address.isCurrent !== false);
 }
 
+/** "46900 | Wholesale trade ..." from an SSIC code and its description. */
+function ssicActivity(code: string | null | undefined, description: string | null | undefined): string {
+  return [code?.trim(), description?.trim()].filter(Boolean).join(' | ');
+}
+
+function validMonthDay(day: number | null | undefined, month: number | null | undefined): boolean {
+  return Number.isInteger(day) && Number.isInteger(month) && month! >= 1 && month! <= 12 && day! >= 1 && day! <= 31;
+}
+
+/** "31 December" from the company's financial year end day and month. */
+function financialYearEnd(company: OakDocCompanyDetail): string {
+  const { financialYearEndDay: day, financialYearEndMonth: month } = company;
+  return validMonthDay(day, month) ? `${day} ${MONTHS[month! - 1]}` : '';
+}
+
+/**
+ * The first financial year end as a date-only value: the confirmed first
+ * period's end, else the first year end date on or after incorporation.
+ */
+function firstFinancialYearEnd(company: OakDocCompanyDetail): string {
+  const confirmed = oakDocIsoDate(company.financialPeriods?.[0]?.periodEnd);
+  if (confirmed) return confirmed;
+  const incorporated = calendarDate(company.incorporationDate);
+  const { financialYearEndDay: day, financialYearEndMonth: month } = company;
+  if (!incorporated || !validMonthDay(day, month)) return '';
+  const afterIncorporation = month! > incorporated.month
+    || (month === incorporated.month && day! >= incorporated.day);
+  const year = afterIncorporation ? incorporated.year : incorporated.year + 1;
+  // A 29 or 31 year end in a shorter month falls on that month's last day.
+  const lastDay = new Date(Date.UTC(year, month!, 0)).getUTCDate();
+  return [
+    String(year).padStart(4, '0'),
+    String(month).padStart(2, '0'),
+    String(Math.min(day!, lastDay)).padStart(2, '0'),
+  ].join('-');
+}
+
+/** "SGD 10,000.00" from the paid-up (else issued) capital. */
+function paidUpCapital(company: OakDocCompanyDetail): string {
+  const paid = company.paidUpCapitalAmount;
+  const [amount, currency] = paid !== null && paid !== undefined && paid !== ''
+    ? [paid, company.paidUpCapitalCurrency]
+    : [company.issuedCapitalAmount, company.issuedCapitalCurrency];
+  if (amount === null || amount === undefined || amount === '' || !Number.isFinite(Number(amount))) return '';
+  const formatted = Number(amount).toLocaleString('en-SG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return `${currency?.trim() || 'SGD'} ${formatted}`;
+}
+
 function buildCompanyContext(company: OakDocCompanyDetail) {
   const address = registeredAddress(company);
   const fullAddress = company.registeredAddress ?? address?.fullAddress ?? '';
@@ -309,6 +367,11 @@ function buildCompanyContext(company: OakDocCompanyDetail) {
       letter,
     },
     capital: company.paidUpCapitalAmount ?? company.issuedCapitalAmount ?? '',
+    paidUpCapital: paidUpCapital(company),
+    primaryActivity: ssicActivity(company.primarySsicCode, company.primarySsicDescription),
+    secondaryActivity: ssicActivity(company.secondarySsicCode, company.secondarySsicDescription),
+    financialYearEnd: financialYearEnd(company),
+    firstFinancialYearEnd: firstFinancialYearEnd(company),
   };
 }
 
