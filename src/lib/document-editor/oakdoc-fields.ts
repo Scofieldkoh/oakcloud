@@ -306,16 +306,78 @@ export function normalizeOakDocFields(input: {
   };
 }
 
+function textRun(document: Document, text: string, properties: Element | undefined): Element {
+  const run = document.createElementNS(WORD_NS, 'w:r');
+  if (properties) run.appendChild(properties.cloneNode(true));
+  const textElement = document.createElementNS(WORD_NS, 'w:t');
+  setTextValue(textElement, text);
+  run.appendChild(textElement);
+  return run;
+}
+
+/**
+ * Move text typed at a field's edge out of the field. Typing right before or
+ * after a field lands inside its control in the editor, and generation would
+ * overwrite it with the field value. Only inline fields still showing their
+ * own `{{tag}}` token are touched.
+ */
+export function moveOakDocFieldEdgeText(
+  docxBytes: Uint8Array,
+  knownTags: ReadonlySet<string>,
+): { bytes: Uint8Array; moved: number } {
+  const files = unzipSync(docxBytes);
+  let moved = 0;
+
+  for (const name of wordXmlPartNames(files)) {
+    const xml = parseXml(files[name]);
+    let changed = false;
+
+    for (const sdt of Array.from(xml.getElementsByTagNameNS(WORD_NS, 'sdt'))) {
+      const tag = contentControlTag(sdt);
+      if (!knownTags.has(tag) || !isWordElement(sdt.parentNode, 'p')) continue;
+      const content = wordChildren(sdt).find((child) => isWordElement(child, 'sdtContent'));
+      if (!content) continue;
+      const textNodes = Array.from(content.getElementsByTagNameNS(WORD_NS, 't'));
+      const text = textNodes.map((node) => node.textContent || '').join('');
+      const token = `{{${tag}}}`;
+      const index = text.indexOf(token);
+      if (index < 0 || text === token) continue;
+
+      const before = text.slice(0, index);
+      const after = text.slice(index + token.length);
+      const firstRun = wordChildren(content).find((child) => isWordElement(child, 'r'));
+      const properties = firstRun
+        ? wordChildren(firstRun).find((child) => isWordElement(child, 'rPr'))
+        : undefined;
+      const parent = sdt.parentNode!;
+      if (before) parent.insertBefore(textRun(xml, before, properties), sdt);
+      if (after) parent.insertBefore(textRun(xml, after, properties), sdt.nextSibling);
+      textNodes.forEach((node, position) => setTextValue(node, position === 0 ? token : ''));
+      moved += 1;
+      changed = true;
+    }
+
+    if (changed) files[name] = serializeXml(xml);
+  }
+
+  return { bytes: moved > 0 ? zipSync(files, { level: 6 }) : docxBytes, moved };
+}
+
+/**
+ * Remove deleted or emptied fields and move edge text out of the rest.
+ * `changed` counts both, for callers that remount the cleaned document.
+ */
 export function pruneDeletedOakDocFields(
   docxBytes: Uint8Array,
   knownTags: ReadonlySet<string>,
-): { bytes: Uint8Array; removed: number } {
+): { bytes: Uint8Array; removed: number; changed: number } {
   const result = normalizeOakDocFields({
     beforeBytes: null,
     afterBytes: docxBytes,
     knownTags,
   });
-  return { bytes: result.bytes, removed: result.removed };
+  const edges = moveOakDocFieldEdgeText(result.bytes, knownTags);
+  return { bytes: edges.bytes, removed: result.removed, changed: result.removed + edges.moved };
 }
 
 export function inspectOakDocFields(

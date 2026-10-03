@@ -95,6 +95,7 @@ export function WordPartialEditor({
       load={load}
       persist={persist}
       cleanup={pruneEmptyFields}
+      fieldBlocks
       onDirtyChange={onDirtyChange}
       renderSidebar={({
         insertField,

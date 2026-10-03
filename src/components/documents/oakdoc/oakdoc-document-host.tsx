@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { DocxEditor, type DocxEditorRef } from '@docx-editor.dev/react';
 import { CheckCircle2, Loader2, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -18,6 +18,7 @@ import {
 import { OakDocEditorSession } from './oakdoc-editor-session';
 import { insertOakDocField } from './insert-oakdoc-field';
 import { useOakDocSectionDeleteGuard } from './use-oakdoc-section-delete-guard';
+import { useOakDocFieldBlocks } from './use-oakdoc-field-blocks';
 
 export interface OakDocPersistResult {
   revision: number;
@@ -69,7 +70,13 @@ export interface OakDocDocumentHostProps {
    * Optional repair run on loaded bytes and before each save, e.g. removing
    * field controls a cut left empty. Cleaned bytes are remounted after save.
    */
-  cleanup?: (bytes: Uint8Array) => { bytes: Uint8Array; removed: number };
+  cleanup?: (bytes: Uint8Array) => { bytes: Uint8Array; removed: number; changed?: number };
+  /** Authoring: fields act as blocks (no typing inside, whole-field delete). Needs `cleanup`. */
+  fieldBlocks?: boolean;
+}
+
+function keepBytes(bytes: Uint8Array) {
+  return { bytes, removed: 0 };
 }
 
 function newOperationId(): string {
@@ -100,6 +107,7 @@ export function OakDocDocumentHost({
   onSaved,
   renderSidebar,
   cleanup,
+  fieldBlocks = false,
 }: OakDocDocumentHostProps) {
   const editorRef = useRef<DocxEditorRef>(null);
   const readyRef = useRef(false);
@@ -283,6 +291,21 @@ export function OakDocDocumentHost({
     },
   });
 
+  const showHint = useCallback((message: string) => setStatus(message), []);
+  const blocks = useOakDocFieldBlocks({
+    editorRef,
+    disabled: !fieldBlocks || !cleanup || readOnly || disabled || busy,
+    cleanup: cleanup ?? keepBytes,
+    onRepaired: replaceMountedDocument,
+    onChanged: markChanged,
+    onHint: showHint,
+    onDropField: insertField,
+  });
+  const handleEditorKeyDownCapture = useCallback((event: KeyboardEvent<HTMLDivElement>) => {
+    blocks.onKeyDownCapture(event);
+    if (!event.defaultPrevented) handleKeyDownCapture(event);
+  }, [blocks, handleKeyDownCapture]);
+
   const save = useCallback(async () => {
     if (readOnly || disabled || saving) return;
     const editor = editorRef.current;
@@ -320,7 +343,7 @@ export function OakDocDocumentHost({
       if (outcome === 'stale') return;
       pendingOperationRef.current = null;
       publishDirty();
-      if (outcome === 'clean' && cleaned && cleaned.removed > 0) {
+      if (outcome === 'clean' && cleaned && (cleaned.changed ?? cleaned.removed) > 0) {
         replaceMountedDocument(cleaned.bytes, 'Word document saved.');
       } else {
         setStatus(outcome === 'clean' ? 'Word document saved.' : 'Saved. Newer edits are not saved yet.');
@@ -393,7 +416,10 @@ export function OakDocDocumentHost({
       <div className="flex min-h-0 flex-1">
         <div
           className="relative min-h-0 min-w-0 flex-1 overflow-hidden bg-[#eef0f2]"
-          onKeyDownCapture={handleKeyDownCapture}
+          onKeyDownCapture={handleEditorKeyDownCapture}
+          onPointerUpCapture={blocks.onPointerUpCapture}
+          onDragOver={blocks.onDragOver}
+          onDrop={blocks.onDrop}
         >
           {documentBytes && (
             <DocxEditor
@@ -417,7 +443,9 @@ export function OakDocDocumentHost({
                 if (!readOnly && readyRef.current) markChanged();
               }}
               className="h-full min-h-0"
-            />
+            >
+              {blocks.probe}
+            </DocxEditor>
           )}
         </div>
         {renderSidebar && !readOnly ? (

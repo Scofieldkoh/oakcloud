@@ -6,6 +6,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type KeyboardEvent as ReactKeyboardEvent,
 } from 'react';
 import { DocxEditor, type DocxEditorRef } from '@docx-editor.dev/react';
 import { useQuery } from '@tanstack/react-query';
@@ -50,6 +51,7 @@ import {
   type OakDocTemplateMetadata,
 } from '@/lib/document-editor/oakdoc-template';
 import { useOakDocSectionDeleteGuard } from '@/components/documents/oakdoc/use-oakdoc-section-delete-guard';
+import { useOakDocFieldBlocks } from '@/components/documents/oakdoc/use-oakdoc-field-blocks';
 import { OakDocPartialPanel } from '@/components/documents/oakdoc/oakdoc-partial-panel';
 import { ResolutionPresetPanel } from '@/components/documents/oakdoc/resolution-preset-panel';
 import { useOakDocAiSelection } from '@/components/documents/oakdoc/use-oakdoc-ai-selection';
@@ -132,6 +134,10 @@ interface LoadedOakDocTemplate {
 }
 
 type StatusKind = 'neutral' | 'success' | 'error';
+
+function pruneTemplateFields(bytes: Uint8Array) {
+  return pruneDeletedOakDocFields(bytes, OAKDOC_FIELD_TAGS);
+}
 
 function asUint8Array(buffer: ArrayBuffer): Uint8Array {
   return new Uint8Array(buffer);
@@ -475,7 +481,7 @@ export function OakDocEditor() {
     editorRef,
     documentBytes,
     disabled: busy,
-    cleanup: (bytes) => pruneDeletedOakDocFields(bytes, OAKDOC_FIELD_TAGS),
+    cleanup: pruneTemplateFields,
     onRepaired: (bytes, message) => replaceDocument(bytes, message, 'success'),
     onChanged: () => setIsDirty(true),
     onBusyChange: setBusy,
@@ -547,6 +553,23 @@ export function OakDocEditor() {
       setBusy(false);
     }
   }, [replaceDocument, updateFieldSummary, setIsDirty]);
+
+  const fieldBlocks = useOakDocFieldBlocks({
+    editorRef,
+    disabled: busy,
+    cleanup: pruneTemplateFields,
+    onRepaired: (bytes, message) => replaceDocument(bytes, message, 'success'),
+    onChanged: () => setIsDirty(true),
+    onHint: (message) => {
+      setStatus(message);
+      setStatusKind('neutral');
+    },
+    onDropField: (field) => void assignField(field),
+  });
+  const handleEditorKeyDown = (event: ReactKeyboardEvent<HTMLElement>) => {
+    fieldBlocks.onKeyDownCapture(event);
+    if (!event.defaultPrevented) handleEditorKeyDownCapture(event);
+  };
 
   const addRepeater = useCallback(async (definition: OakDocRepeaterDefinition) => {
     const handle = editorRef.current;
@@ -941,7 +964,7 @@ export function OakDocEditor() {
       setFileName(savedFileName);
       const savedMessage = `Saved OakDoc template "${title.trim()}" version ${savedRevision}.`;
       const changedSinceSnapshot = localRevisionRef.current !== snapshotRevision;
-      if (cleaned.removed > 0 && !changedSinceSnapshot) {
+      if (cleaned.changed > 0 && !changedSinceSnapshot) {
         // Only remount when the server-bound bytes differ from the editor
         // (deleted fields were pruned) and nothing changed during the save.
         replaceDocument(cleaned.bytes, savedMessage);
@@ -1488,7 +1511,10 @@ export function OakDocEditor() {
 
           <section
             className="relative min-h-0 min-w-0 overflow-hidden bg-[#eef0f2]"
-            onKeyDownCapture={handleEditorKeyDownCapture}
+            onKeyDownCapture={handleEditorKeyDown}
+            onPointerUpCapture={fieldBlocks.onPointerUpCapture}
+            onDragOver={fieldBlocks.onDragOver}
+            onDrop={fieldBlocks.onDrop}
           >
             {documentBytes ? (
               <DocxEditor
@@ -1522,7 +1548,9 @@ export function OakDocEditor() {
                   }
                 }}
                 className="h-full min-h-0"
-              />
+              >
+                {fieldBlocks.probe}
+              </DocxEditor>
             ) : (
               <div className="absolute inset-6 grid place-items-center">
                 <div className="max-w-lg rounded-xl border border-dashed border-border-primary bg-background-primary p-8 text-center shadow-sm">
