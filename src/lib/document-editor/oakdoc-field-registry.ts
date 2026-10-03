@@ -8,7 +8,7 @@ import {
 import {
   OAKDOC_GENERIC_REPEATER_DEFINITIONS,
   OAKDOC_GENERIC_REPEATER_ITEM_TAGS,
-  OAKDOC_GENERIC_REPEATER_TAGS,
+  isOakDocRepeaterTag,
 } from '@/lib/document-editor/oakdoc-repeater-definitions';
 import { OAKDOC_SIGNATURE_TAGS } from '@/lib/document-editor/oakdoc-signatures';
 import { OAKDOC_CONDITION_TAG_PREFIX } from '@/lib/document-editor/oakdoc-conditions';
@@ -186,7 +186,7 @@ export type OakDocTagKind =
   | 'unknown';
 
 export function classifyOakDocTag(tag: string): OakDocTagKind {
-  if (OAKDOC_GENERIC_REPEATER_TAGS.has(tag)) return 'repeater';
+  if (isOakDocRepeaterTag(tag)) return 'repeater';
   if (OAKDOC_GENERIC_REPEATER_ITEM_TAGS.has(tag)) return 'repeater-item';
   if (OAKDOC_SIGNATURE_TAGS.has(tag)) return 'signature';
   if (tag.startsWith(OAKDOC_CONDITION_TAG_PREFIX)) return 'condition';

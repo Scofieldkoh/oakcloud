@@ -37,7 +37,7 @@ import {
 } from '@/lib/document-editor/generated-document-revision';
 import {
   resolveOakDocRepeaters,
-  OAKDOC_REPEATER_OUTER_TAGS,
+  isOakDocRepeaterOuterTag,
   inspectOakDocRepeaters,
 } from '@/lib/document-editor/oakdoc-repeaters';
 import { OAKDOC_SIGNATURE_TAGS } from '@/lib/document-editor/oakdoc-signatures';
@@ -52,6 +52,7 @@ import {
 } from '@/services/document-party.service';
 import {
   buildOakDocCustomFieldValues,
+  oakDocContactShortlist,
   oakDocCustomContactFields,
   oakDocCustomFieldTypes,
   parseOakDocCustomFieldTag,
@@ -297,6 +298,7 @@ export async function generateOakDocBytes(
     partialPins: readOakDocPartialPins(template.contentJson),
     customFieldTypes: oakDocCustomFieldTypes(template.placeholders),
     customContactFields: oakDocCustomContactFields(template.placeholders),
+    contactShortlist: contactShortlistIds(template.placeholders),
   }, input, params);
 }
 
@@ -351,6 +353,7 @@ export async function previewOakDocMaster(
     partialPins,
     customFieldTypes: oakDocCustomFieldTypes(saved?.placeholders),
     customContactFields: oakDocCustomContactFields(saved?.placeholders),
+    contactShortlist: contactShortlistIds(saved?.placeholders),
   }, {
     ...input,
     // The editor has no Configure step, so it previews sample resolutions.
@@ -372,6 +375,12 @@ interface OakDocMasterSource {
   customFieldTypes: Record<string, PlaceholderValueType>;
   /** Contact custom fields, by key, with the ids of their contact shortlist. */
   customContactFields: Record<string, string[]>;
+  /** Ids the contacts repeater may list (template and partial shortlists); null: any contact. */
+  contactShortlist: string[] | null;
+}
+
+function contactShortlistIds(placeholders: unknown): string[] | null {
+  return oakDocContactShortlist(placeholders)?.map((contact) => contact.id) ?? null;
 }
 
 /**
@@ -394,6 +403,7 @@ async function renderOakDocMaster(
   let resolutionPartialPins: OakDocPartialPin[] | undefined;
   let customFieldTypes = master.customFieldTypes;
   let customContactFields = master.customContactFields;
+  let contactShortlist = master.contactShortlist;
   if (master.compositionType === 'RESOLUTION') {
     if (!input.resolution) {
       resolutionDiagnostics.push({
@@ -420,6 +430,8 @@ async function renderOakDocMaster(
         const partialFields = await withResolutionPartialFields([], composed.partialIds, params.tenantId);
         customFieldTypes = { ...oakDocCustomFieldTypes(partialFields), ...master.customFieldTypes };
         customContactFields = { ...oakDocCustomContactFields(partialFields), ...master.customContactFields };
+        const partialShortlist = contactShortlistIds(partialFields);
+        if (partialShortlist) contactShortlist = Array.from(new Set([...(contactShortlist ?? []), ...partialShortlist]));
       }
     }
   }
@@ -460,9 +472,14 @@ async function renderOakDocMaster(
   const selectedContact = input.selectedContactId
     ? await resolveSelectedContact(input.selectedContactId, input.companyId, params.tenantId)
     : composition?.signers[0] ?? composition?.representatives[0];
-  const contacts = input.contactIds?.length
+  // With a shortlist set by the template author, only shortlisted contacts print.
+  const shortlist = contactShortlist ? new Set(contactShortlist) : null;
+  const contactIds = shortlist
+    ? (input.contactIds ?? []).filter((id) => shortlist.has(id))
+    : input.contactIds;
+  const contacts = contactIds?.length
     ? await getDocumentContactParties({
-        contactIds: input.contactIds,
+        contactIds,
         companyId: input.companyId,
         tenantId: params.tenantId,
       })
@@ -612,11 +629,6 @@ async function renderOakDocMaster(
 }
 
 /**
- * The contact a document addresses: the company's own contact when linked,
- * otherwise any contact in the workspace. Unknown ids resolve to nothing, so
- * generation reports the missing contact.
- */
-/**
  * The details of the contact chosen for each Contact custom field. Only a
  * contact on the field's shortlist is used; any other value prints blank.
  */
@@ -643,6 +655,11 @@ async function resolveCustomContacts(input: {
   return contacts;
 }
 
+/**
+ * The contact a document addresses: the company's own contact when linked,
+ * otherwise any contact in the workspace. Unknown ids resolve to nothing, so
+ * generation reports the missing contact.
+ */
 async function resolveSelectedContact(
   contactId: string,
   companyId: string,
@@ -1112,7 +1129,7 @@ export async function checkGeneratedOakDocFinalization(
   }
   const unresolvedFields = resolveOakDocFields(bytes, values).unresolvedTags
     .filter((tag) => !OAKDOC_SIGNATURE_TAGS.has(tag))
-    .filter((tag) => !OAKDOC_REPEATER_OUTER_TAGS.has(tag))
+    .filter((tag) => !isOakDocRepeaterOuterTag(tag))
     .filter((tag) => !tag.startsWith(OAKDOC_CONDITION_TAG_PREFIX));
   const unresolvedConditions = inspectOakDocConditions(bytes).count;
   const unresolvedRepeaters = inspectOakDocRepeaters(bytes).count;

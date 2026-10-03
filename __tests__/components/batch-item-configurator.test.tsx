@@ -205,4 +205,64 @@ describe('BatchItemConfigurator', () => {
     await user.click(screen.getByRole('checkbox', { name: /Sue Secretary/ }));
     expect(p.onPatch).toHaveBeenCalledWith({ selectedOfficerIds: ['officer-3'] });
   });
+
+  it('lists only officers of the roles the officers repeaters are limited to', async () => {
+    const user = userEvent.setup();
+    const officer = (id: string, name: string, role: string) => ({
+      id, contactId: null, name, detail: role, role, email: null, phone: null, address: { full: null, letter: null },
+    });
+    const p = props({
+      templateContent: '<p>Word</p>',
+      templateFieldTags: ['repeat.officers.secretary', 'repeat.officers.ceo', 'officer.name'],
+      officers: [
+        officer('officer-1', 'Alice Tan', 'DIRECTOR'),
+        officer('officer-2', 'Sam Secretary', 'SECRETARY'),
+        officer('officer-3', 'Carl Chief', 'CEO'),
+      ],
+      item: { ...item(), configuration: { ...item().configuration, selectedOfficerIds: ['officer-1'] } },
+    });
+    render(<BatchItemConfigurator {...p} />);
+
+    const boxes = screen.getAllByRole('checkbox');
+    expect(boxes).toHaveLength(2);
+    expect(screen.queryByRole('checkbox', { name: /Alice Tan/ })).not.toBeInTheDocument();
+    // A ticked officer of another role does not count as chosen.
+    expect(screen.getByText('1 required')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('checkbox', { name: /Sam Secretary/ }));
+    expect(p.onPatch).toHaveBeenCalledWith({ selectedOfficerIds: ['officer-2'] });
+  });
+
+  it('offers only the template\'s shortlisted contacts for the contacts repeater', async () => {
+    const user = userEvent.setup();
+    const p = props({
+      templateContent: '<p>Word</p>',
+      templateFieldTags: ['repeat.contacts', 'contact.name'],
+      contacts: [{ id: 'contact-9', fullName: 'Anyone Else' }],
+      contactsById: new Map([['contact-2', { id: 'contact-2', fullName: 'Bea Tan', email: 'bea@example.com' }]]),
+      contactShortlist: [{ id: 'contact-1', name: 'Alex Lim' }, { id: 'contact-2', name: 'Bea Tan' }],
+      item: { ...item(), configuration: { ...item().configuration, contactIds: ['contact-9', 'contact-2'] } },
+    });
+    render(<BatchItemConfigurator {...p} />);
+
+    expect(screen.getByText(/from the template's shortlist/)).toBeInTheDocument();
+    expect(screen.queryByRole('checkbox', { name: /Anyone Else/ })).not.toBeInTheDocument();
+    expect(screen.getByText('bea@example.com')).toBeInTheDocument();
+    expect(screen.getByRole('checkbox', { name: /Bea Tan/ })).toBeChecked();
+    expect(screen.getByRole('checkbox', { name: /Alex Lim/ })).not.toBeChecked();
+
+    await user.click(screen.getByRole('checkbox', { name: /Alex Lim/ }));
+    expect(p.onPatch).toHaveBeenCalledWith({ contactIds: ['contact-2', 'contact-1'] });
+  });
+
+  it('searches every contact when the template sets no shortlist', () => {
+    render(<BatchItemConfigurator {...props({
+      templateContent: '<p>Word</p>',
+      templateFieldTags: ['repeat.contacts', 'contact.name'],
+      contacts: [{ id: 'contact-9', fullName: 'Anyone Else' }],
+      contactShortlist: null,
+    })} />);
+    expect(screen.getByRole('checkbox', { name: /Anyone Else/ })).toBeInTheDocument();
+    expect(screen.queryByText(/from the template's shortlist/)).not.toBeInTheDocument();
+  });
 });

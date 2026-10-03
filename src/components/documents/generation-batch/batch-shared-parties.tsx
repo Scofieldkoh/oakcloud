@@ -4,7 +4,7 @@ import { DocumentPartyChoiceList } from '@/components/documents/document-party-c
 import type { DocumentParty } from '@/lib/document-party';
 import type { BatchItemConfiguration } from '@/types/document-generation-batch';
 import type { EditableBatchItem } from './batch-workspace-state';
-import { PARTY_CONFIGURATION_KEYS, type TemplatePartyNeeds } from './template-party-needs';
+import { PARTY_CONFIGURATION_KEYS, officersOfRoles, type TemplatePartyNeeds } from './template-party-needs';
 
 type PartyKey = (typeof PARTY_CONFIGURATION_KEYS)[number][1];
 
@@ -12,6 +12,11 @@ export interface BatchSharedPartiesProps {
   items: EditableBatchItem[];
   /** Party choices each item's template asks for, by item key. */
   needsByItemKey: Record<string, TemplatePartyNeeds>;
+  /**
+   * Roles each item's officers repeaters print (templateOfficerRoles), by
+   * item key; null or absent means any role.
+   */
+  officerRolesByItemKey?: Record<string, readonly string[] | null>;
   directors: DocumentParty[];
   shareholders: DocumentParty[];
   officers?: DocumentParty[];
@@ -56,6 +61,7 @@ function sameIds(a: string[], b: string[]): boolean {
 export function BatchSharedParties({
   items,
   needsByItemKey,
+  officerRolesByItemKey = {},
   directors,
   shareholders,
   officers = [],
@@ -69,10 +75,20 @@ export function BatchSharedParties({
   const apply = (itemKeys: string[], patch: Partial<BatchItemConfiguration>) => {
     if (!disabled) onApply(itemKeys, patch);
   };
-  const optionsFor = (key: PartyKey): DocumentParty[] => {
+  // Officers of every role any of the documents prints; any role when one takes any.
+  const sharedOfficerRoles = (targets: EditableBatchItem[]): string[] | null => {
+    const roles = new Set<string>();
+    for (const item of targets) {
+      const itemRoles = officerRolesByItemKey[item.key];
+      if (!itemRoles) return null;
+      for (const role of itemRoles) roles.add(role);
+    }
+    return [...roles];
+  };
+  const optionsFor = (key: PartyKey, targets: EditableBatchItem[]): DocumentParty[] => {
     if (key === 'selectedDirectorId' || key === 'selectedDirectorIds') return directors;
     if (key === 'selectedShareholderId' || key === 'selectedShareholderIds') return shareholders;
-    if (key === 'selectedOfficerIds') return officers;
+    if (key === 'selectedOfficerIds') return officersOfRoles(officers, sharedOfficerRoles(targets));
     return contacts;
   };
 
@@ -96,7 +112,7 @@ export function BatchSharedParties({
       </p>
       <div className="mt-3 grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
         {shared.map(({ key, targets }) => {
-          const options = optionsFor(key);
+          const options = optionsFor(key, targets);
           const targetKeys = targets.map((item) => item.key);
           const note = `Used by ${targets.length} documents`;
           if (key === 'selectedDirectorIds' || key === 'selectedShareholderIds' || key === 'selectedOfficerIds') {

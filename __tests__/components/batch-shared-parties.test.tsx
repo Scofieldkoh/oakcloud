@@ -95,4 +95,29 @@ describe('BatchSharedParties', () => {
     );
     expect(screen.queryByRole('heading', { name: 'Shared parties' })).not.toBeInTheDocument();
   });
+
+  it('offers officers of every role the documents print', async () => {
+    const user = userEvent.setup();
+    const onApply = vi.fn();
+    const officer = (id: string, name: string, role: string): DocumentParty => ({ ...party(id, name), detail: role, role });
+    const secretaryNeeds = templatePartyNeeds('', ['repeat.officers.secretary']);
+    const ceoNeeds = templatePartyNeeds('', ['repeat.officers.ceo']);
+    render(
+      <BatchSharedParties
+        items={[item('a'), item('b')]}
+        needsByItemKey={{ a: secretaryNeeds, b: ceoNeeds }}
+        officerRolesByItemKey={{ a: ['SECRETARY'], b: ['CEO'] }}
+        directors={[]}
+        shareholders={[]}
+        officers={[officer('o1', 'Dana Director', 'DIRECTOR'), officer('o2', 'Sam Secretary', 'SECRETARY'), officer('o3', 'Carl Chief', 'CEO')]}
+        contacts={[]}
+        onApply={onApply}
+      />,
+    );
+
+    expect(screen.getAllByRole('checkbox')).toHaveLength(2);
+    expect(screen.queryByRole('checkbox', { name: /Dana Director/ })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('checkbox', { name: /Carl Chief/ }));
+    expect(onApply).toHaveBeenCalledWith(['a', 'b'], { selectedOfficerIds: ['o3'] });
+  });
 });

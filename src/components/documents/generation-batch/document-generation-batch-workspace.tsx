@@ -60,8 +60,12 @@ import {
 import { useDocumentGenerationBatch } from './use-document-generation-batch';
 import { BatchTemplatePicker } from './batch-template-picker';
 import { BatchSharedParties } from './batch-shared-parties';
-import { templatePartyNeeds, type TemplatePartyNeeds } from './template-party-needs';
-import { resolutionItemFieldTags, resolutionItemFields } from './resolution-item-fields';
+import { templateOfficerRoles, templatePartyNeeds, type TemplatePartyNeeds } from './template-party-needs';
+import {
+  resolutionItemContactShortlist,
+  resolutionItemFieldTags,
+  resolutionItemFields,
+} from './resolution-item-fields';
 import { BatchSharedSetup } from './batch-shared-setup';
 import { BatchDocumentQueue } from './batch-document-queue';
 import { BatchItemConfigurator } from './batch-item-configurator';
@@ -344,6 +348,20 @@ export function DocumentGenerationBatchWorkspace({
     return tags;
   }, [partialsQuery.data, templates, state.batch.items]);
   const activeOakDocFieldTags = activeItem ? fieldTagsByItemKey[activeItem.key] : undefined;
+  const officerRolesByItemKey = useMemo(() => {
+    const roles: Record<string, string[] | null> = {};
+    for (const item of state.batch.items) roles[item.key] = templateOfficerRoles(fieldTagsByItemKey[item.key]);
+    return roles;
+  }, [fieldTagsByItemKey, state.batch.items]);
+  // Contacts a document's contacts repeater may list, when its template or
+  // chosen partials set a shortlist.
+  const activeContactShortlist = useMemo(() => {
+    if (!activeItem) return null;
+    const shortlist = activeTemplate?.contactShortlist ?? null;
+    return activeItem.templateKind === 'RESOLUTION'
+      ? resolutionItemContactShortlist(shortlist, activeItem.configuration.resolution, partialsQuery.data?.partials ?? [])
+      : shortlist;
+  }, [activeItem, activeTemplate, partialsQuery.data]);
 
   const partyNeedsByItemKey = useMemo(() => {
     const byTemplateId = new Map(templates.map((template) => [template.id, template]));
@@ -852,6 +870,7 @@ export function DocumentGenerationBatchWorkspace({
               <BatchSharedParties
                 items={state.batch.items}
                 needsByItemKey={partyNeedsByItemKey}
+                officerRolesByItemKey={officerRolesByItemKey}
                 directors={partyOptions.directors}
                 shareholders={partyOptions.shareholders}
                 officers={partyOptions.officers}
@@ -929,6 +948,7 @@ export function DocumentGenerationBatchWorkspace({
                     templateFields={itemFieldsByKey[activeItem.key] ?? activeTemplate?.placeholders ?? []}
                     templateContent={activeTemplate?.content}
                     templateFieldTags={activeOakDocFieldTags}
+                    contactShortlist={activeContactShortlist}
                     onPatch={(patch) => dispatch({
                       type: 'item/patch',
                       itemId: activeItem.key,

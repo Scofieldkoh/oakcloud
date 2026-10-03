@@ -209,6 +209,80 @@ describe('Resolution template generation', () => {
     expect(documentText(outside.bytes)).toContain('RESOLVED that  (, ) be appointed as Secretary.');
   });
 
+  it('prints a partial\'s officers of its roles and only its shortlisted contacts', async () => {
+    const field = (tag: string) => `<w:sdt><w:sdtPr><w:tag w:val="${tag}"/></w:sdtPr><w:sdtContent><w:r><w:t>{{${tag}}}</w:t></w:r></w:sdtContent></w:sdt>`;
+    const repeater = (tag: string, body: string) => `<w:sdt><w:sdtPr><w:tag w:val="${tag}"/><w15:repeatingSection/></w:sdtPr><w:sdtContent><w:sdt><w:sdtPr><w15:repeatingSectionItem/></w:sdtPr><w:sdtContent>${body}</w:sdtContent></w:sdt></w:sdtContent></w:sdt>`;
+    const W15 = 'http://schemas.microsoft.com/office/word/2012/wordml';
+    const bytes = zipSync({
+      ...unzipSync(partialBytes),
+      'word/document.xml': encodeOakDocZipText(`<w:document xmlns:w="${W}" xmlns:w15="${W15}"><w:body>`
+        + repeater('repeat.officers.secretary', `<w:p><w:r><w:t xml:space="preserve">Secretary: </w:t></w:r>${field('officer.name')}</w:p>`)
+        + repeater('repeat.contacts', `<w:p><w:r><w:t xml:space="preserve">Copy to: </w:t></w:r>${field('contact.name')}</w:p>`)
+        + '<w:sectPr/></w:body></w:document>'),
+    });
+    const tags = deriveOakDocTemplateFieldTags(bytes);
+    expect(tags).toEqual(expect.arrayContaining(['repeat.officers.secretary', 'repeat.contacts']));
+    prismaMock.templatePartial.findMany.mockResolvedValue([{
+      id: partialId,
+      version: 6,
+      contentJson: {
+        oakDoc: { ...asset, storageKey: `${tenantId}/template-partials/${partialId}/oakdoc/${sha(bytes)}.docx`, sha256: sha(bytes), fileSize: bytes.byteLength, fieldTags: tags },
+      },
+      placeholders: [{
+        key: 'repeat.contacts',
+        path: 'repeat.contacts',
+        label: 'Contacts shortlist',
+        type: 'text',
+        source: 'repeater',
+        category: 'repeater',
+        fieldKind: 'contactShortlist',
+        options: [{ value: 'contact-1', label: 'Tan Wei Jie' }, { value: 'contact-2', label: 'Lim Mei Ling' }],
+      }],
+    }]);
+    storageMock.download.mockResolvedValue(Buffer.from(bytes));
+    companyMock.getCompanyById.mockResolvedValue({
+      id: 'company-1',
+      name: '96 Fruit Avenue Pte. Ltd.',
+      uen: '202425961Z',
+      addresses: [],
+      officers: [
+        { id: 'o1', name: 'Dana Director', role: 'DIRECTOR', isCurrent: true },
+        { id: 'o2', name: 'Sam Secretary', role: 'SECRETARY', isCurrent: true },
+      ],
+      shareholders: [],
+    });
+    prismaMock.contact.findMany.mockResolvedValue([{
+      id: 'contact-2',
+      fullName: 'Lim Mei Ling',
+      contactType: 'INDIVIDUAL',
+      fullAddress: null,
+      contactDetails: [],
+      companyRelations: [],
+      officerPositions: [],
+    }]);
+
+    const result = await generateOakDocBytes({
+      templateId: stored.id,
+      ...context,
+      selectedOfficerIds: ['o1', 'o2'],
+      contactIds: ['contact-9', 'contact-2'],
+      resolution: {
+        subject: '',
+        sections: [{ id: 'a', kind: 'PARTIAL', heading: 'NOTICES', partialId }],
+      },
+    }, { tenantId });
+
+    const text = documentText(result.bytes);
+    // The master's directors still sign; the secretary repeater lists only secretaries.
+    expect(text).toContain('Secretary: Sam SecretaryCopy to:');
+    expect(text).toContain('Copy to: Lim Mei Ling');
+    // A contact outside the shortlist is never looked up.
+    expect(prismaMock.contact.findMany).toHaveBeenCalledTimes(1);
+    expect(prismaMock.contact.findMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({ id: { in: ['contact-2'] }, tenantId }),
+    }));
+  });
+
   it('fills {field} tokens in custom resolution text', async () => {
     const result = await generateOakDocBytes({
       templateId: stored.id,

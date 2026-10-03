@@ -14,8 +14,10 @@ import {
 } from '@/lib/document-editor/oakdoc-blocks';
 import { writeOakDocControlValue } from '@/lib/document-editor/oakdoc-fields';
 import {
-  OAKDOC_GENERIC_REPEATER_BY_TAG,
-  OAKDOC_GENERIC_REPEATER_TAGS,
+  formatOakDocOfficerRoles,
+  isOakDocRepeaterTag,
+  oakDocRepeaterDefinitionForTag,
+  parseOakDocOfficerRepeaterRoles,
   type OakDocGenericRepeaterDefinition,
   type OakDocRepeaterGenerationData,
 } from '@/lib/document-editor/oakdoc-repeater-definitions';
@@ -154,10 +156,11 @@ export function nameOakDocRepeaterItems(docxBytes: Uint8Array): Uint8Array {
   const xml = parseXml(part);
   let named = 0;
   for (const repeater of Array.from(xml.getElementsByTagNameNS(WORD_NS, 'sdt'))) {
-    const definition = OAKDOC_GENERIC_REPEATER_BY_TAG.get(controlTag(repeater));
+    const tag = controlTag(repeater);
+    const definition = oakDocRepeaterDefinitionForTag(tag);
     const content = wordChild(repeater, 'sdtContent');
     if (!definition || !content || !isRepeatingSection(repeater)) continue;
-    const name = controlAlias(repeater) || definition.label + ' repeater';
+    const name = controlAlias(repeater) || repeaterName(definition, tag);
     for (const item of wordChildren(content)) {
       const pr = isWordElement(item, 'sdt') && isRepeatingItem(item) ? properties(item) : undefined;
       if (!pr || controlAlias(item)) continue;
@@ -173,13 +176,19 @@ export function nameOakDocRepeaterItems(docxBytes: Uint8Array): Uint8Array {
   return zipSync(files, { level: 6 });
 }
 
+/** "Officers (Secretary) repeater" for a repeater limited to roles. */
+function repeaterName(definition: OakDocGenericRepeaterDefinition, tag: string): string {
+  const roles = formatOakDocOfficerRoles(parseOakDocOfficerRepeaterRoles(tag) ?? []);
+  return `${definition.label}${roles ? ` (${roles})` : ''} repeater`;
+}
+
 export function createOakDocGenericRepeater(input: {
   docxBytes: Uint8Array;
   fromParaId: string;
   toParaId?: string;
   definition: OakDocGenericRepeaterDefinition;
 }): { bytes: Uint8Array; targetKind: OakDocBlockRangeKind } {
-  const managed = OAKDOC_GENERIC_REPEATER_BY_TAG.get(input.definition.tag);
+  const managed = oakDocRepeaterDefinitionForTag(input.definition.tag);
   if (!managed || managed.kind !== input.definition.kind) {
     throw new Error('This repeating section definition is not managed by OakDoc.');
   }
@@ -202,9 +211,10 @@ export function createOakDocGenericRepeater(input: {
   const range = resolveOakDocBlockRange(from, to);
   let id = Number(nextControlId(xml));
   const outer = xml.createElementNS(WORD_NS, 'w:sdt');
+  const name = repeaterName(managed, input.definition.tag);
   outer.appendChild(createProperties(xml, String(id++), {
-    tag: managed.tag,
-    alias: managed.label + ' repeater',
+    tag: input.definition.tag,
+    alias: name,
     repeatingSection: true,
   }));
   const outerContent = xml.createElementNS(WORD_NS, 'w:sdtContent');
@@ -212,7 +222,7 @@ export function createOakDocGenericRepeater(input: {
 
   const item = xml.createElementNS(WORD_NS, 'w:sdt');
   item.appendChild(createProperties(xml, String(id++), {
-    alias: managed.label + ' repeater',
+    alias: name,
     repeatingItem: true,
   }));
   const itemContent = xml.createElementNS(WORD_NS, 'w:sdtContent');
@@ -352,10 +362,11 @@ export function resolveOakDocGenericRepeaters(input: {
   let fieldsResolved = 0;
 
   const repeaters = Array.from(xml.getElementsByTagNameNS(WORD_NS, 'sdt'))
-    .filter((sdt) => OAKDOC_GENERIC_REPEATER_TAGS.has(controlTag(sdt)) && isRepeatingSection(sdt));
+    .filter((sdt) => isOakDocRepeaterTag(controlTag(sdt)) && isRepeatingSection(sdt));
 
   for (const repeater of repeaters) {
-    const definition = OAKDOC_GENERIC_REPEATER_BY_TAG.get(controlTag(repeater));
+    const tag = controlTag(repeater);
+    const definition = oakDocRepeaterDefinitionForTag(tag);
     const outerContent = wordChild(repeater, 'sdtContent');
     const parent = repeater.parentNode;
     if (!definition || !outerContent || !parent) continue;
@@ -364,7 +375,7 @@ export function resolveOakDocGenericRepeaters(input: {
     const itemContent = item ? wordChild(item, 'sdtContent') : undefined;
     if (!itemContent) continue;
 
-    for (const values of definition.generationDataAdapter(input.data)) {
+    for (const values of definition.generationDataAdapter(input.data, tag)) {
       const clones: Node[] = [];
       for (const templateNode of Array.from(itemContent.childNodes)) {
         const clone = templateNode.cloneNode(true);
@@ -410,7 +421,7 @@ export function removeOakDocGenericRepeater(input: {
   const repeater = closestRepeater(paragraph);
   if (!repeater) throw new Error('The caret is not inside an OakDoc repeating section.');
   const tag = controlTag(repeater);
-  if (!OAKDOC_GENERIC_REPEATER_TAGS.has(tag)) {
+  if (!isOakDocRepeaterTag(tag)) {
     throw new Error('The current repeating section is not managed by OakDoc.');
   }
   const outerContent = wordChild(repeater, 'sdtContent');
@@ -438,7 +449,7 @@ export function inspectOakDocGenericRepeaters(
 
   const xml = parseXml(part);
   const tags = Array.from(xml.getElementsByTagNameNS(WORD_NS, 'sdt'))
-    .filter((sdt) => OAKDOC_GENERIC_REPEATER_TAGS.has(controlTag(sdt)) && isRepeatingSection(sdt))
+    .filter((sdt) => isOakDocRepeaterTag(controlTag(sdt)) && isRepeatingSection(sdt))
     .map(controlTag);
 
   return {

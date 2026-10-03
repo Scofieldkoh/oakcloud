@@ -1,4 +1,5 @@
 import type { OakDocFieldDefinition } from '@/lib/document-editor/oakdoc-fields';
+import { OFFICER_ROLES } from '@/lib/constants';
 import type {
   OakDocAgreementEntity,
   OakDocCompanyDetail,
@@ -32,8 +33,84 @@ export interface OakDocRepeaterGenerationData {
   selectedDirectorIds?: readonly string[];
   /** Shareholders to repeat, by shareholder id; absent means every current shareholder. */
   selectedShareholderIds?: readonly string[];
-  /** Officers (any role) to repeat, by officer id, in that order; absent means none. */
+  /**
+   * Officers to repeat, by officer id, in that order; absent means none. An
+   * officers repeater limited to roles prints only those of its roles.
+   */
   selectedOfficerIds?: readonly string[];
+}
+
+/** Roles an officers repeater can be limited to, with the slug its tag carries. */
+export const OAKDOC_OFFICER_ROLE_FILTERS: ReadonlyArray<{ role: string; slug: string; label: string }> =
+  OFFICER_ROLES.map(({ value, label }) => ({
+    role: value,
+    slug: value.toLowerCase().replace(/_/g, '-'),
+    label,
+  }));
+
+const OFFICER_ROLE_BY_SLUG = new Map(OAKDOC_OFFICER_ROLE_FILTERS.map((entry) => [entry.slug, entry]));
+const OFFICER_ROLE_SEPARATOR = '+';
+
+/** A stored role ("SECRETARY", "Managing Director") as its registry value. */
+export function normalizeOakDocOfficerRole(role: string | null | undefined): string {
+  return (role ?? '').trim().toUpperCase().replace(/[\s-]+/g, '_');
+}
+
+/**
+ * The roles an officers repeater tag is limited to: `repeat.officers` is
+ * any role (an empty list), `repeat.officers.secretary+ceo` those roles.
+ * Null when the tag is not an officers repeater or names an unknown role.
+ */
+export function parseOakDocOfficerRepeaterRoles(tag: string): string[] | null {
+  if (tag === OAKDOC_OFFICERS_REPEATER_TAG) return [];
+  const prefix = OAKDOC_OFFICERS_REPEATER_TAG + '.';
+  if (!tag.startsWith(prefix)) return null;
+  const slugs = tag.slice(prefix.length).split(OFFICER_ROLE_SEPARATOR);
+  const roles: string[] = [];
+  for (const slug of slugs) {
+    const entry = OFFICER_ROLE_BY_SLUG.get(slug);
+    if (!entry) return null;
+    roles.push(entry.role);
+  }
+  // Only the canonical spelling (registry order, no repeats) is a repeater tag.
+  return oakDocOfficersRepeaterTag(roles) === tag ? roles : null;
+}
+
+/** The officers repeater tag for these roles, in registry order; none means any role. */
+export function oakDocOfficersRepeaterTag(roles: readonly string[]): string {
+  const wanted = new Set(roles.map(normalizeOakDocOfficerRole));
+  const slugs = OAKDOC_OFFICER_ROLE_FILTERS
+    .filter((entry) => wanted.has(entry.role))
+    .map((entry) => entry.slug);
+  return slugs.length === 0
+    ? OAKDOC_OFFICERS_REPEATER_TAG
+    : OAKDOC_OFFICERS_REPEATER_TAG + '.' + slugs.join(OFFICER_ROLE_SEPARATOR);
+}
+
+/** "Secretary, CEO" for a role list; empty for any role. */
+export function formatOakDocOfficerRoles(roles: readonly string[]): string {
+  const wanted = new Set(roles.map(normalizeOakDocOfficerRole));
+  return OAKDOC_OFFICER_ROLE_FILTERS
+    .filter((entry) => wanted.has(entry.role))
+    .map((entry) => entry.label)
+    .join(', ');
+}
+
+/**
+ * Roles the officers repeaters among these tags print, together: null when
+ * any of them takes any role (or none is present), else the union.
+ */
+export function oakDocOfficerRepeaterRoleUnion(tags: Iterable<string>): string[] | null {
+  const roles = new Set<string>();
+  let found = false;
+  for (const tag of tags) {
+    const limited = parseOakDocOfficerRepeaterRoles(tag);
+    if (limited === null) continue;
+    if (limited.length === 0) return null;
+    found = true;
+    for (const role of limited) roles.add(role);
+  }
+  return found ? OAKDOC_OFFICER_ROLE_FILTERS.filter((entry) => roles.has(entry.role)).map((entry) => entry.role) : null;
 }
 
 function isSelected(ids: readonly string[] | undefined, id: string): boolean {
@@ -47,8 +124,10 @@ export interface OakDocGenericRepeaterDefinition {
   itemLabel: string;
   itemTagNamespace: string;
   fields: ReadonlyArray<OakDocFieldDefinition & { example: string }>;
+  /** Item values to repeat; `tag` is the repeater's own tag, which may narrow it. */
   generationDataAdapter: (
     data: OakDocRepeaterGenerationData,
+    tag: string,
   ) => Array<Record<string, string>>;
 }
 
@@ -247,10 +326,13 @@ readonly OakDocGenericRepeaterDefinition[] = [
       { tag: 'officer.appointmentDate', label: 'Officer Appointment Date', category: 'Repeating Officer', example: '1 Mar 2024' },
       { tag: 'officer.address', label: 'Officer Address', category: 'Repeating Officer', example: '789 Sample Avenue' },
     ],
-    // Any role (secretary, CEO, auditor, director...), only those ticked on Configure.
-    generationDataAdapter: (data) => {
+    // Officers ticked on Configure, of the repeater's roles (any role when
+    // its tag names none: secretary, CEO, auditor, director...).
+    generationDataAdapter: (data, tag) => {
+      const roles = new Set(parseOakDocOfficerRepeaterRoles(tag) ?? []);
       const officers = new Map((data.company.officers ?? [])
-        .filter((officer) => officer.isCurrent !== false)
+        .filter((officer) => officer.isCurrent !== false
+          && (roles.size === 0 || roles.has(normalizeOakDocOfficerRole(officer.role))))
         .map((officer) => [officer.id, officer]));
       return (data.selectedOfficerIds ?? []).flatMap((id) => {
         const officer = officers.get(id);
@@ -316,6 +398,30 @@ export const OAKDOC_GENERIC_REPEATER_BY_TAG = new Map(
 export const OAKDOC_GENERIC_REPEATER_TAGS = new Set(
   OAKDOC_GENERIC_REPEATER_DEFINITIONS.map((definition) => definition.tag),
 );
+
+/**
+ * The definition behind a repeater tag, including an officers repeater
+ * limited to roles (`repeat.officers.secretary`).
+ */
+export function oakDocRepeaterDefinitionForTag(tag: string): OakDocGenericRepeaterDefinition | undefined {
+  const exact = OAKDOC_GENERIC_REPEATER_BY_TAG.get(tag);
+  if (exact) return exact;
+  return parseOakDocOfficerRepeaterRoles(tag) !== null
+    ? OAKDOC_GENERIC_REPEATER_BY_TAG.get(OAKDOC_OFFICERS_REPEATER_TAG)
+    : undefined;
+}
+
+export function isOakDocRepeaterTag(tag: string): boolean {
+  return oakDocRepeaterDefinitionForTag(tag) !== undefined;
+}
+
+/** The officers repeater definition inserting a section limited to these roles. */
+export function oakDocOfficersRepeaterDefinition(roles: readonly string[]): OakDocGenericRepeaterDefinition {
+  const base = OAKDOC_GENERIC_REPEATER_BY_TAG.get(OAKDOC_OFFICERS_REPEATER_TAG)!;
+  const tag = oakDocOfficersRepeaterTag(roles);
+  if (tag === base.tag) return base;
+  return { ...base, tag, label: `${base.label} (${formatOakDocOfficerRoles(roles)})` };
+}
 
 export const OAKDOC_GENERIC_REPEATER_ITEM_TAGS = new Set(
   OAKDOC_GENERIC_REPEATER_DEFINITIONS.flatMap(

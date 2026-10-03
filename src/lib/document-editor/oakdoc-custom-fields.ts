@@ -257,12 +257,100 @@ export function writeOakDocCustomFields(
   ];
 }
 
+/*
+ * Contact shortlist of the Word contacts repeater (`repeat.contacts`).
+ *
+ * A template or partial can limit the contacts Configure offers for its
+ * contacts repeater. The shortlist is stored in its placeholders as one
+ * definition keyed `repeat.contacts` (not a custom field, so Configure does
+ * not prompt for it as a value), with the contacts as { value: id, label:
+ * name } options. A template carries copies of its partials' shortlists,
+ * marked like copied custom fields, and Configure offers all of them
+ * together; with no shortlist anywhere any workspace contact can be picked.
+ */
+export const OAKDOC_CONTACT_SHORTLIST_KEY = 'repeat.contacts';
+const CONTACT_SHORTLIST_KIND = 'contactShortlist';
+
+function isContactShortlist(definition: StoredDefinition): boolean {
+  return definition.fieldKind === CONTACT_SHORTLIST_KIND && definition.key === OAKDOC_CONTACT_SHORTLIST_KEY;
+}
+
+function shortlistContacts(definitions: readonly StoredDefinition[]): OakDocCustomFieldContact[] {
+  const seen = new Set<string>();
+  const contacts: OakDocCustomFieldContact[] = [];
+  for (const definition of definitions) {
+    for (const choice of readPlaceholderChoices(definition.options)) {
+      if (seen.has(choice.value)) continue;
+      seen.add(choice.value);
+      contacts.push({ id: choice.value, name: choice.label });
+    }
+  }
+  return contacts;
+}
+
+function shortlistDefinition(contacts: readonly OakDocCustomFieldContact[]): StoredDefinition {
+  return {
+    key: OAKDOC_CONTACT_SHORTLIST_KEY,
+    path: OAKDOC_CONTACT_SHORTLIST_KEY,
+    label: 'Contacts shortlist',
+    type: 'text',
+    source: 'repeater',
+    category: 'repeater',
+    fieldKind: CONTACT_SHORTLIST_KIND,
+    required: false,
+    options: contacts.map((contact) => ({ value: contact.id, label: contact.name })),
+  };
+}
+
+/** The contacts shortlist a template or partial sets itself (not copies from its partials). */
+export function readOakDocContactShortlist(placeholders: unknown): OakDocCustomFieldContact[] {
+  if (!Array.isArray(placeholders)) return [];
+  return shortlistContacts(placeholders.filter(
+    (definition): definition is StoredDefinition => isRecord(definition)
+      && isContactShortlist(definition)
+      && !isPartialCopy(definition),
+  ));
+}
+
+/** Replace the own contacts shortlist in a stored placeholder list; none removes it. */
+export function writeOakDocContactShortlist(
+  placeholders: unknown,
+  contacts: readonly OakDocCustomFieldContact[],
+): StoredDefinition[] {
+  const existing = Array.isArray(placeholders) ? placeholders.filter(isRecord) : [];
+  const kept = existing.filter((definition) => !isContactShortlist(definition) || isPartialCopy(definition));
+  const own = shortlistContacts([shortlistDefinition(contacts)]);
+  return own.length > 0 ? [...kept, shortlistDefinition(own)] : kept;
+}
+
+/**
+ * The contacts Configure offers for the contacts repeater: the template's
+ * shortlist and those copied from its partials, together. Null when none
+ * is set, meaning any workspace contact.
+ */
+export function oakDocContactShortlist(placeholders: unknown): OakDocCustomFieldContact[] | null {
+  if (!Array.isArray(placeholders)) return null;
+  const definitions = placeholders.filter(
+    (definition): definition is StoredDefinition => isRecord(definition) && isContactShortlist(definition),
+  );
+  const contacts = shortlistContacts(definitions);
+  return contacts.length > 0 ? contacts : null;
+}
+
+function partialShortlistCopy(partial: { id: string; placeholders: unknown }): StoredDefinition[] {
+  const contacts = oakDocContactShortlist(partial.placeholders);
+  return contacts
+    ? [{ ...shortlistDefinition(contacts), [OAKDOC_PARTIAL_FIELD_MARKER]: partial.id }]
+    : [];
+}
+
 function partialFieldCopies(
   partials: ReadonlyArray<{ id: string; placeholders: unknown }>,
   taken: Set<string>,
 ): StoredDefinition[] {
   const copies: StoredDefinition[] = [];
   for (const partial of partials) {
+    copies.push(...partialShortlistCopy(partial));
     const fields = [
       ...readOakDocCustomFields(partial.placeholders),
       ...readOakDocPartialCustomFields(partial.placeholders),
@@ -280,9 +368,10 @@ function partialFieldCopies(
 }
 
 /**
- * Copy the custom fields of inserted partials onto a template's placeholders,
- * so Configure prompts for them. Fields the template defines itself win;
- * copies from partials no longer inserted are dropped.
+ * Copy the custom fields (and contacts shortlists) of inserted partials onto
+ * a template's placeholders, so Configure prompts for them. Fields the
+ * template defines itself win; copies from partials no longer inserted are
+ * dropped.
  */
 export function mergeOakDocPartialCustomFields(
   placeholders: unknown,
