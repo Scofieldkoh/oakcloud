@@ -205,7 +205,7 @@ export function OakDocCustomFieldsPanel({
       >
         {field.type === 'contact' ? (
           <div className="space-y-1">
-            <div className="text-[10px] text-text-muted">Details of the chosen contact</div>
+            <div className="text-[11px] text-text-muted">Details of the chosen contact</div>
             <div className="flex flex-wrap gap-1">
               {contactDetailDefinitions(field).map((detail) => (
                 <button
@@ -222,7 +222,7 @@ export function OakDocCustomFieldsPanel({
                   title={`Add ${detail.tag}`}
                   aria-label={`Add ${detail.label}`}
                   className={cn(
-                    'inline-flex items-center gap-0.5 rounded border bg-background-primary px-1.5 py-0.5 text-[10px] text-text-secondary transition-colors hover:border-oak-primary/30 hover:bg-oak-primary/5 disabled:cursor-not-allowed disabled:opacity-40',
+                    'inline-flex items-center gap-0.5 rounded border bg-background-primary px-1.5 py-0.5 text-[11px] text-text-secondary transition-colors hover:border-oak-primary/30 hover:bg-oak-primary/5 disabled:cursor-not-allowed disabled:opacity-40',
                     presentTags.includes(detail.tag) ? 'border-oak-primary/40' : 'border-border-primary',
                   )}
                 >
@@ -260,7 +260,7 @@ export function OakDocCustomFieldsPanel({
           disabled={disabled}
           onClick={openNew}
           aria-label="New custom field"
-          className="text-white hover:bg-white/15 hover:text-white"
+          className="h-6 min-h-0 px-2 text-white hover:bg-white/15 hover:text-white sm:min-h-0"
         >
           New
         </Button>
@@ -274,14 +274,14 @@ export function OakDocCustomFieldsPanel({
       {visibleFields.map((field) => renderRow(field, true))}
       {visiblePartialFields.length > 0 ? (
         <>
-          <h3 className="px-1 pt-1 text-[10px] font-semibold uppercase tracking-wide text-text-muted">
+          <h3 className="px-1 pt-1 text-[11px] font-semibold uppercase tracking-wide text-text-muted">
             From inserted partials
           </h3>
           {visiblePartialFields.map((field) => renderRow(field, false))}
         </>
       ) : null}
       {usedCount === 0 && fields.length > 0 && !searching ? (
-        <p className="px-1 pt-1 text-[10px] text-text-muted">None of these is in the document yet.</p>
+        <p className="px-1 pt-1 text-[11px] text-text-muted">None of these is in the document yet.</p>
       ) : null}
 
       <Modal

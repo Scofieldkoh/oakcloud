@@ -224,7 +224,7 @@ export function OakDocRepeaterPanel({
         <>
           {usedTags.length > 0 ? (
             <div className="space-y-1">
-              <h3 className="px-1 text-[10px] font-semibold uppercase tracking-wide text-text-muted">
+              <h3 className="px-1 text-[11px] font-semibold uppercase tracking-wide text-text-muted">
                 In this document
               </h3>
               {OAKDOC_REPEATER_DEFINITIONS
@@ -261,7 +261,7 @@ export function OakDocRepeaterPanel({
                             </button>
                             {selected ? (
                               <div className="space-y-2 px-2.5 pb-2.5">
-                                <code className="block break-all text-[10px] text-text-muted">{tag}</code>
+                                <code className="block break-all text-[11px] text-text-muted">{tag}</code>
                                 {canName && tag !== OAKDOC_CONTACTS_REPEATER_TAG ? (
                                   <OakDocConfigureName
                                     value={sections.names[tag] ?? ''}
@@ -272,7 +272,7 @@ export function OakDocRepeaterPanel({
                                 ) : null}
                                 {canName && isOakDocContactsRepeaterTag(tag) ? (
                                   <div className="flex items-center justify-between gap-2">
-                                    <span className="text-[10px] leading-relaxed text-text-secondary">
+                                    <span className="text-[11px] leading-relaxed text-text-secondary">
                                       {listShortlist.length === 0
                                         ? 'Configure offers any contact.'
                                         : `Configure offers ${listShortlist.length} shortlisted contact${listShortlist.length === 1 ? '' : 's'}.`}
@@ -290,7 +290,7 @@ export function OakDocRepeaterPanel({
                                 ) : null}
                                 <div className="space-y-0.5">
                                   <div className="flex items-center gap-1 text-text-muted">
-                                    <div className="text-[10px] font-semibold uppercase tracking-wide">
+                                    <div className="text-[11px] font-semibold uppercase tracking-wide">
                                       {definition.itemLabel} fields
                                     </div>
                                     <InfoTip
@@ -322,7 +322,7 @@ export function OakDocRepeaterPanel({
 
           <div className="space-y-1">
             <div className="flex items-center gap-1 px-1 text-text-muted">
-              <h3 className="text-[10px] font-semibold uppercase tracking-wide">New section</h3>
+              <h3 className="text-[11px] font-semibold uppercase tracking-wide">New section</h3>
               <InfoTip
                 label="About New section"
                 content="Put the caret in the paragraph or table row to repeat, then choose who it repeats for."
@@ -396,7 +396,7 @@ export function OakDocRepeaterPanel({
                                   onPointerDown={keepEditorCaret}
                                   onClick={() => toggleOfficerRole(entry.role)}
                                   className={cn(
-                                    'rounded border px-1.5 py-0.5 text-[10px] transition-colors disabled:cursor-not-allowed disabled:opacity-40',
+                                    'rounded border px-1.5 py-0.5 text-[11px] transition-colors disabled:cursor-not-allowed disabled:opacity-40',
                                     pressed
                                       ? 'border-oak-primary bg-oak-primary/10 text-oak-primary'
                                       : 'border-border-primary bg-background-primary text-text-secondary hover:border-oak-primary/30 hover:bg-oak-primary/5',
@@ -417,14 +417,14 @@ export function OakDocRepeaterPanel({
                             label="Shortlist (optional)"
                             disabled={disabled}
                           />
-                          <p className="text-[10px] leading-relaxed text-text-muted">
+                          <p className="text-[11px] leading-relaxed text-text-muted">
                             {newShortlist.length === 0
                               ? 'Empty: Configure searches every contact. Add contacts to offer only them.'
                               : `Configure offers only these ${newShortlist.length} contact${newShortlist.length === 1 ? '' : 's'}.`}
                           </p>
                         </div>
                       ) : null}
-                      <code className="block break-all text-[10px] text-text-muted">{definition.tag}</code>
+                      <code className="block break-all text-[11px] text-text-muted">{definition.tag}</code>
                       <Button
                         variant="primary"
                         size="xs"

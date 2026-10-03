@@ -1,4 +1,5 @@
 import type { DocxEditorRef, EditorCommand } from '@docx-editor.dev/react';
+import type { RunFormatting } from '@docx-editor.dev/core';
 import { OAKDOC_FIELD_TAGS } from '@/lib/document-editor/oakdoc-field-registry';
 import {
   normalizeOakDocFields,
@@ -17,6 +18,26 @@ async function editorBytes(handle: DocxEditorRef): Promise<Uint8Array> {
   const buffer = await handle.save();
   if (!buffer) throw new Error('OakDoc did not return a DOCX file.');
   return new Uint8Array(buffer);
+}
+
+type CaretFont = Pick<RunFormatting, 'fontFamily' | 'fontSizePt'> | null;
+
+/**
+ * Gives the empty field at the caret the font and size the text at the
+ * caret had. A field beside text already takes that text's font; one in an
+ * empty paragraph otherwise falls back to the document default, ignoring the
+ * font the paragraph mark carries.
+ */
+function matchCaretFont(handle: DocxEditorRef, font: CaretFont) {
+  const inside = handle.getEditor()?.query({ type: 'selectionFormatting' });
+  if (!font || !inside) return;
+  if (font.fontFamily && inside.fontFamily !== font.fontFamily) {
+    handle.exec({ type: 'setMarkAttr', mark: 'fontFamily', attr: 'family', value: font.fontFamily });
+  }
+  if (font.fontSizePt && inside.fontSizePt !== font.fontSizePt) {
+    // Word sizes are in half points.
+    handle.exec({ type: 'setMarkAttr', mark: 'fontSize', attr: 'val', value: Math.round(font.fontSizePt * 2) });
+  }
 }
 
 /**
@@ -46,6 +67,7 @@ export async function insertOakDocField(
     throw new Error(allowed.reason || 'The current selection cannot be made into a field.');
   }
   const atCaret = editor.snapshot().selectionCollapsed;
+  const caretFont = atCaret ? editor.query({ type: 'selectionFormatting' }) : null;
   const result = handle.exec(command);
   if (!result.ok) {
     throw new Error(result.reason || 'OakDoc could not create the Word content control.');
@@ -54,6 +76,7 @@ export async function insertOakDocField(
   // token in place fills it without reloading the document, so the caret and
   // scroll position stay where the author was working.
   if (atCaret) {
+    matchCaretFont(handle, caretFont);
     handle.exec({ type: 'insertText', text: `{{${field.tag}}}` } as unknown as EditorCommand);
   }
 

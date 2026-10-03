@@ -87,8 +87,8 @@ export function OakDocFieldRow({
       {selected ? (
         <div className="space-y-2 px-2.5 pb-2.5">
           <div className="space-y-0.5">
-            <code className="block break-all text-[10px] text-text-muted">{`{{${field.tag}}}`}</code>
-            {detail ? <div className="text-[10px] text-text-secondary">{detail}</div> : null}
+            <code className="block break-all text-[11px] text-text-muted">{`{{${field.tag}}}`}</code>
+            {detail ? <div className="text-[11px] text-text-secondary">{detail}</div> : null}
           </div>
           {children}
           <div className="flex items-center gap-1">

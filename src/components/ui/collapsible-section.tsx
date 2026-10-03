@@ -77,7 +77,7 @@ export function CollapsibleSection({
           onClick={(event) => {
             if (event.target === event.currentTarget) setIsCollapsed(!isCollapsed);
           }}
-          className="flex cursor-pointer items-center gap-1 rounded-md bg-oak-primary pr-1 text-white"
+          className="flex h-8 cursor-pointer items-center gap-1 rounded-md bg-oak-primary pr-1 text-white"
         >
           <button
             type="button"
@@ -85,14 +85,14 @@ export function CollapsibleSection({
             aria-expanded={!isCollapsed}
             aria-controls={contentId}
             title={title}
-            className="flex min-w-0 items-center gap-1 py-1.5 pl-2 text-left"
+            className="flex h-full min-w-0 items-center gap-1 pl-2 text-left"
           >
             <Chevron className="h-3.5 w-3.5 shrink-0 opacity-80" aria-hidden="true" />
             <h2 className="truncate text-xs font-semibold uppercase tracking-wide">
               {title}
             </h2>
             {count !== undefined && (
-              <span className="shrink-0 rounded bg-white/20 px-1.5 text-[10px]">
+              <span className="shrink-0 rounded bg-white/20 px-1.5 text-[11px]">
                 {count}
               </span>
             )}
