@@ -9,6 +9,8 @@ import {
   oakDocRepeaterSectionSummary,
   readOakDocRepeaterSections,
   writeOakDocRepeaterSections,
+  oakDocPickerKeyOfTag,
+  oakDocPickerKeysInUse,
   oakDocContactShortlist,
   oakDocCustomContactFields,
   oakDocCustomFieldKeyFromLabel,
@@ -288,6 +290,27 @@ describe('OakDoc custom fields', () => {
       // Rewriting replaces them; sections no longer in the document drop out.
       expect(writeOakDocRepeaterSections(stored, readOakDocRepeaterSections(stored), ['repeat.directors']))
         .toEqual([fee, expect.objectContaining({ key: 'repeat.directors' })]);
+    });
+
+    it('stores the Configure name of a single-person picker while its fields are in the document', () => {
+      const stored = writeOakDocRepeaterSections([fee], {
+        names: { selectedDirector: ' Signer of the resolution(s) ', selectedContact: 'Unused', 'company.name': 'Not a picker' },
+        shortlists: {},
+      }, ['selectedDirector', 'company.name']);
+      expect(stored).toEqual([
+        fee,
+        expect.objectContaining({ key: 'selectedDirector', label: 'Signer of the resolution(s)', fieldKind: 'repeaterName' }),
+      ]);
+      expect(readOakDocRepeaterSections(stored).names).toEqual({ selectedDirector: 'Signer of the resolution(s)' });
+      expect(oakDocRepeaterSectionSummary(stored).names).toEqual({ selectedDirector: ['Signer of the resolution(s)'] });
+      expect(readOakDocCustomFields(stored).map((field) => field.key)).toEqual(['fee']);
+    });
+
+    it('knows which pickers a document uses from its field tags', () => {
+      expect(oakDocPickerKeyOfTag('selectedShareholder.name')).toBe('selectedShareholder');
+      expect(oakDocPickerKeyOfTag('company.name')).toBeNull();
+      expect(oakDocPickerKeysInUse(['company.name', 'selectedContact.email', 'selectedDirector.name']))
+        .toEqual(['selectedDirector', 'selectedContact']);
     });
 
     it("brings partials' names and lists onto the template, a list per name", () => {

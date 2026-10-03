@@ -139,6 +139,26 @@ describe('BatchSharedParties', () => {
     expect(screen.getByRole('group', { name: /Signers for the resolution\(s\) · Approving directors/ })).toBeInTheDocument();
   });
 
+  it('titles a shared single-director picker with the name the templates give it', () => {
+    const signerNeeds = templatePartyNeeds('', ['selectedDirector.name']);
+    render(
+      <BatchSharedParties
+        items={[item('a'), item('b')]}
+        needsByItemKey={{ a: signerNeeds, b: signerNeeds }}
+        repeaterSectionsByItemKey={{
+          a: { names: { selectedDirector: ['Signer of the resolution(s)'] }, shortlists: {} },
+          b: null,
+        }}
+        directors={directors}
+        shareholders={[]}
+        contacts={[]}
+        onApply={vi.fn()}
+      />,
+    );
+    expect(screen.getByText('Signer of the resolution(s)')).toBeInTheDocument();
+    expect(screen.queryByText('Director', { exact: true })).not.toBeInTheDocument();
+  });
+
   it('shares a named contacts list only with lists of the same name', async () => {
     const user = userEvent.setup();
     const onApply = vi.fn();

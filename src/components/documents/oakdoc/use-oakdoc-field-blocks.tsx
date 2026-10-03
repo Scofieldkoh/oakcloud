@@ -217,9 +217,12 @@ export function useOakDocFieldBlocks({
     window.setTimeout(() => onDropField(field), 0);
   }, [disabled, editorRef, onDropField]);
 
+  const getCaret = useCallback(() => caretRef.current, []);
+
   return {
     onDragOver,
     onDrop,
+    getCaret,
     probe: <OakDocCaretProbe caretRef={caretRef} />,
     onKeyDownCapture,
     onPointerUpCapture,

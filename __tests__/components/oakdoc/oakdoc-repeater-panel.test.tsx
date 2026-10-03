@@ -34,14 +34,18 @@ describe('OakDocRepeaterPanel', () => {
     const user = userEvent.setup();
     const props = panel();
 
-    await user.click(screen.getByRole('button', { name: /^Officers\s*repeat\.officers$/ }));
+    await user.click(screen.getByRole('button', { name: 'Officers' }));
+    await user.click(screen.getByRole('button', { name: 'Add Officers section' }));
     expect(props.onAdd).toHaveBeenLastCalledWith(expect.objectContaining({ tag: 'repeat.officers', label: 'Officers' }));
 
+    // Adding opens the new section; open the Officers kind again for a limited one.
+    await user.click(screen.getAllByRole('button', { name: 'Officers' }).at(-1)!);
     const roles = screen.getByRole('group', { name: 'Officer roles' });
     await user.click(within(roles).getByRole('button', { name: 'CEO' }));
     await user.click(within(roles).getByRole('button', { name: 'Secretary' }));
     expect(within(roles).getByRole('button', { name: 'Secretary' })).toHaveAttribute('aria-pressed', 'true');
-    await user.click(screen.getByRole('button', { name: /repeat\.officers\.secretary\+ceo/ }));
+    expect(screen.getByText('repeat.officers.secretary+ceo')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Add Officers (Secretary, CEO) section' }));
     expect(props.onAdd).toHaveBeenLastCalledWith(expect.objectContaining({
       kind: 'officers',
       tag: 'repeat.officers.secretary+ceo',
@@ -51,10 +55,19 @@ describe('OakDocRepeaterPanel', () => {
 
   it('shows the officers repeaters in the document with their roles', () => {
     panel({ repeaterTags: ['repeat.officers', 'repeat.officers.secretary'] });
-    expect(screen.getByText('Officer fields')).toBeInTheDocument();
     const sections = screen.getByRole('list', { name: 'Officers sections' });
     expect(within(sections).getByText('Officers (any role)')).toBeInTheDocument();
     expect(within(sections).getByText('Officers (Secretary)')).toBeInTheDocument();
+  });
+
+  it('opens a section in the document to add its fields', async () => {
+    const user = userEvent.setup();
+    const props = panel({ repeaterTags: ['repeat.directors'], fieldTags: ['director.name'] });
+    const sections = screen.getByRole('list', { name: 'Directors sections' });
+    await user.click(within(sections).getByRole('button', { name: 'Directors' }));
+    await user.click(within(sections).getByRole('button', { name: 'Director Role' }));
+    await user.click(within(sections).getByRole('button', { name: 'Add Director Role' }));
+    expect(props.onAssignField).toHaveBeenLastCalledWith(expect.objectContaining({ tag: 'director.role' }));
   });
 
   it('edits the contacts repeater shortlist', async () => {
@@ -78,6 +91,7 @@ describe('OakDocRepeaterPanel', () => {
     }
     render(<Harness />);
 
+    await user.click(within(screen.getByRole('list', { name: 'Contacts sections' })).getByRole('button', { name: 'Contacts' }));
     expect(screen.getByText('Configure offers 1 shortlisted contact.')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Shortlist' }));
     const dialog = screen.getByRole('dialog');
@@ -88,8 +102,10 @@ describe('OakDocRepeaterPanel', () => {
     expect(screen.getByText('Configure offers 1 shortlisted contact.')).toBeInTheDocument();
   });
 
-  it('does not offer a shortlist without the contacts repeater or an editor for it', () => {
+  it('does not offer a shortlist without the contacts repeater or an editor for it', async () => {
+    const user = userEvent.setup();
     panel({ repeaterTags: ['repeat.contacts'] });
+    await user.click(within(screen.getByRole('list', { name: 'Contacts sections' })).getByRole('button', { name: 'Contacts' }));
     expect(screen.queryByRole('button', { name: 'Shortlist' })).not.toBeInTheDocument();
   });
 
@@ -123,8 +139,9 @@ describe('OakDocRepeaterPanel', () => {
       const onChange = vi.fn();
       render(<Harness tags={[]} onAdd={onAdd} onChange={onChange} />);
 
-      await user.type(screen.getByLabelText('Section name'), 'Corporate secretary to be appointed');
-      await user.click(screen.getByRole('button', { name: /repeat\.contacts\.corporate-secretary-to-be-appointed/ }));
+      await user.click(screen.getByRole('button', { name: 'Contacts' }));
+      await user.type(screen.getByLabelText('List name on Configure'), 'Corporate secretary to be appointed');
+      await user.click(screen.getByRole('button', { name: 'Add Contacts (Corporate secretary to be appointed) section' }));
       expect(onAdd).toHaveBeenLastCalledWith(expect.objectContaining({
         kind: 'contacts',
         tag: 'repeat.contacts.corporate-secretary-to-be-appointed',
@@ -134,8 +151,10 @@ describe('OakDocRepeaterPanel', () => {
         names: { 'repeat.contacts.corporate-secretary-to-be-appointed': 'Corporate secretary to be appointed' },
         shortlists: {},
       });
-      expect(screen.getByLabelText('Section name')).toHaveValue('');
-      expect(screen.getByRole('button', { name: /^Contacts\s*repeat\.contacts$/ })).toBeInTheDocument();
+      // The name box is cleared for the next section.
+      await user.click(screen.getByRole('button', { name: 'Contacts' }));
+      expect(screen.getByLabelText('List name on Configure')).toHaveValue('');
+      expect(screen.getByRole('button', { name: 'Add Contacts section' })).toBeInTheDocument();
     });
 
     it('names any other section as a label, keeping its tag', async () => {
@@ -144,8 +163,9 @@ describe('OakDocRepeaterPanel', () => {
       const onChange = vi.fn();
       render(<Harness tags={[]} onAdd={onAdd} onChange={onChange} />);
 
-      await user.type(screen.getByLabelText('Section name'), 'Signers for the resolution(s)');
-      await user.click(screen.getByRole('button', { name: /^Directors\s*repeat\.directors$/ }));
+      await user.click(screen.getByRole('button', { name: 'Directors' }));
+      await user.type(screen.getByLabelText('Name on Configure'), 'Signers for the resolution(s)');
+      await user.click(screen.getByRole('button', { name: 'Add Directors section' }));
       expect(onAdd).toHaveBeenLastCalledWith(expect.objectContaining({ tag: 'repeat.directors' }));
       expect(onChange).toHaveBeenLastCalledWith({
         names: { 'repeat.directors': 'Signers for the resolution(s)' },
@@ -164,9 +184,9 @@ describe('OakDocRepeaterPanel', () => {
         />,
       );
 
-      expect(screen.getByText('Signers · Directors')).toBeInTheDocument();
       expect(screen.getByText('Corp sec · Contacts list')).toBeInTheDocument();
-      const name = screen.getByRole('textbox', { name: 'Name of Directors section' });
+      await user.click(screen.getByRole('button', { name: 'Signers · Directors' }));
+      const name = screen.getByRole('textbox', { name: 'Name on Configure' });
       await user.clear(name);
       await user.type(name, 'Approving directors');
       expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({
@@ -177,10 +197,10 @@ describe('OakDocRepeaterPanel', () => {
     it('needs letters or numbers in a Contacts list name', async () => {
       const user = userEvent.setup();
       render(<Harness tags={[]} />);
-      await user.type(screen.getByLabelText('Section name'), '!!!');
+      await user.click(screen.getByRole('button', { name: 'Contacts' }));
+      await user.type(screen.getByLabelText('List name on Configure'), '!!!');
       expect(screen.getByText('A Contacts list name needs letters or numbers.')).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /^Contacts\s*repeat\.contacts$/ })).toBeDisabled();
-      expect(screen.getByRole('button', { name: /^Directors\s*repeat\.directors$/ })).toBeEnabled();
+      expect(screen.getByRole('button', { name: 'Add Contacts section' })).toBeDisabled();
     });
 
     it("edits each contacts list's own shortlist", async () => {
@@ -197,6 +217,7 @@ describe('OakDocRepeaterPanel', () => {
         />,
       );
 
+      await user.click(screen.getByRole('button', { name: 'Corp sec · Contacts list' }));
       await user.click(screen.getByRole('button', { name: 'Shortlist for Corp sec' }));
       const dialog = screen.getByRole('dialog', { name: 'Corp sec shortlist' });
       await user.click(within(dialog).getByRole('button', { name: /add Bea Tan/ }));

@@ -21,6 +21,9 @@ import {
 import type { OakDocFieldDefinition } from '@/lib/document-editor/oakdoc-fields';
 import { OAKDOC_FIELD_DRAG_TYPE } from '@/lib/document-editor/oakdoc-field-blocks';
 import { cn } from '@/lib/utils';
+import { CollapsibleSection } from '@/components/ui/collapsible-section';
+import { OakDocFieldRow, keepEditorCaret } from './oakdoc-field-row';
+import { matchesOakDocFieldQuery } from './oakdoc-field-search';
 
 export interface OakDocCustomFieldsPanelProps {
   fields: OakDocCustomField[];
@@ -34,6 +37,11 @@ export interface OakDocCustomFieldsPanelProps {
   disabled?: boolean;
   /** Where the fields are defined, for the help text. */
   ownerLabel?: 'template' | 'partial';
+  /** Panel search; only matching fields show while it is set. */
+  query?: string;
+  /** The open row's key in the panel, `custom:<key>`; uncontrolled when absent. */
+  selectedKey?: string | null;
+  onSelect?: (key: string | null) => void;
 }
 
 const TYPE_LABELS = Object.fromEntries(
@@ -64,9 +72,10 @@ function contactDetailDefinitions(field: OakDocCustomField): OakDocFieldDefiniti
 }
 
 /**
- * Custom fields of a Word template or partial: define them (label, type,
- * required, dropdown choices) and insert them into the document. Configure
- * asks for their values when a document is generated.
+ * Custom fields of a Word template or partial, as a group of the OakDoc
+ * field panel: define them (label, type, required, dropdown choices) and
+ * add them to the document. Configure asks for their values when a
+ * document is generated.
  */
 export function OakDocCustomFieldsPanel({
   fields,
@@ -76,9 +85,19 @@ export function OakDocCustomFieldsPanel({
   partialFields = [],
   disabled = false,
   ownerLabel = 'template',
+  query = '',
+  selectedKey: controlledKey,
+  onSelect: onSelectKey,
 }: OakDocCustomFieldsPanelProps) {
+  const [localKey, setLocalKey] = useState<string | null>(null);
+  const selectedKey = controlledKey === undefined ? localKey : controlledKey;
+  const onSelect = (key: string | null) => {
+    if (controlledKey === undefined) setLocalKey(key);
+    onSelectKey?.(key);
+  };
   const [editingKey, setEditingKey] = useState<string | null>(null);
-  const [open, setOpen] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [open, setOpen] = useState(true);
   const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT);
   const [error, setError] = useState<string | null>(null);
 
@@ -86,7 +105,7 @@ export function OakDocCustomFieldsPanel({
     setEditingKey(null);
     setDraft(EMPTY_DRAFT);
     setError(null);
-    setOpen(true);
+    setDialogOpen(true);
   };
 
   const openEdit = (field: OakDocCustomField) => {
@@ -99,7 +118,7 @@ export function OakDocCustomFieldsPanel({
       contacts: field.contacts ?? [],
     });
     setError(null);
-    setOpen(true);
+    setDialogOpen(true);
   };
 
   const submit = (event: FormEvent) => {
@@ -131,77 +150,33 @@ export function OakDocCustomFieldsPanel({
     onChange(editingKey
       ? fields.map((field) => (field.key === editingKey ? next : field))
       : [...fields, next]);
-    setOpen(false);
+    setDialogOpen(false);
+    // Open the new field so it can be added straight away.
+    onSelect(`custom:${next.key}`);
+    setOpen(true);
   };
 
   const remove = (key: string) => {
     onChange(fields.filter((field) => field.key !== key));
   };
 
-  const renderRow = (field: OakDocCustomField, editable: boolean) => (
-    <div key={field.key}>
-      {renderMainRow(field, editable)}
-      {field.type === 'contact' ? (
-        <div className="mb-1 ml-2.5 flex flex-wrap gap-1 border-l border-border-primary pl-2">
-          {contactDetailDefinitions(field).map((detail) => (
-            <button
-              key={detail.tag}
-              type="button"
-              disabled={disabled}
-              draggable={!disabled}
-              onPointerDown={(event) => event.preventDefault()}
-              onDragStart={(event) => {
-                event.dataTransfer.effectAllowed = 'copy';
-                event.dataTransfer.setData(OAKDOC_FIELD_DRAG_TYPE, JSON.stringify(detail));
-              }}
-              onClick={() => onInsert(detail)}
-              title={`Insert ${detail.tag}`}
-              className={cn(
-                'rounded border px-1.5 py-0.5 text-[10px] text-text-secondary transition-colors hover:border-oak-primary/30 hover:bg-oak-primary/5 disabled:cursor-not-allowed disabled:opacity-40',
-                presentTags.includes(detail.tag) ? 'border-oak-primary/40' : 'border-border-primary',
-              )}
-            >
-              {detail.label.slice(field.label.length + 1)}
-            </button>
-          ))}
-        </div>
-      ) : null}
-    </div>
-  );
-
-  const renderMainRow = (field: OakDocCustomField, editable: boolean) => {
+  const renderRow = (field: OakDocCustomField, editable: boolean) => {
     const definition = definitionOf(field);
-    const present = presentTags.includes(definition.tag);
+    const rowKey = `custom:${field.key}`;
     return (
-      <div className="flex items-center gap-1 rounded-md hover:bg-oak-primary/5">
-        <button
-          type="button"
-          disabled={disabled}
-          draggable={!disabled}
-          onPointerDown={(event) => event.preventDefault()}
-          onDragStart={(event) => {
-            event.dataTransfer.effectAllowed = 'copy';
-            event.dataTransfer.setData(OAKDOC_FIELD_DRAG_TYPE, JSON.stringify(definition));
-          }}
-          onClick={() => onInsert(definition)}
-          title={`Insert ${field.label}`}
-          className="flex min-w-0 flex-1 items-center justify-between gap-2 px-2.5 py-2 text-left disabled:cursor-not-allowed disabled:opacity-40"
-        >
-          <span className="min-w-0">
-            <span className="block truncate text-xs font-medium text-text-primary">
-              {field.label}
-              {field.required ? <span className="ml-0.5 text-status-error" aria-label="required">*</span> : null}
-            </span>
-            <span className="block truncate text-[10px] text-text-muted">
-              {definition.tag} · {TYPE_LABELS[field.type]}
-              {field.type === 'contact' ? ` (${field.contacts?.length ?? 0} to choose from)` : ''}
-            </span>
-          </span>
-          {present ? (
-            <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-oak-primary" title="Used in this document" />
-          ) : null}
-        </button>
-        {editable ? (
+      <OakDocFieldRow
+        key={field.key}
+        field={definition}
+        badge={field.required ? <span className="ml-0.5 text-status-error" aria-label="required">*</span> : null}
+        detail={`${TYPE_LABELS[field.type]}${field.required ? ' · required' : ''}`
+          + (field.type === 'contact' ? ` · ${field.contacts?.length ?? 0} to choose from` : '')
+          + (editable ? '' : ' · from a partial')}
+        present={presentTags.includes(definition.tag)}
+        selected={selectedKey === rowKey}
+        onSelect={() => onSelect(selectedKey === rowKey ? null : rowKey)}
+        onAdd={onInsert}
+        disabled={disabled}
+        actions={editable ? (
           <>
             <Button
               variant="ghost"
@@ -225,53 +200,92 @@ export function OakDocCustomFieldsPanel({
             </Button>
           </>
         ) : null}
-      </div>
+      >
+        {field.type === 'contact' ? (
+          <div className="space-y-1">
+            <div className="text-[10px] text-text-muted">Details of the chosen contact</div>
+            <div className="flex flex-wrap gap-1">
+              {contactDetailDefinitions(field).map((detail) => (
+                <button
+                  key={detail.tag}
+                  type="button"
+                  disabled={disabled}
+                  draggable={!disabled}
+                  onPointerDown={keepEditorCaret}
+                  onDragStart={(event) => {
+                    event.dataTransfer.effectAllowed = 'copy';
+                    event.dataTransfer.setData(OAKDOC_FIELD_DRAG_TYPE, JSON.stringify(detail));
+                  }}
+                  onClick={() => onInsert(detail)}
+                  title={`Add ${detail.tag}`}
+                  aria-label={`Add ${detail.label}`}
+                  className={cn(
+                    'inline-flex items-center gap-0.5 rounded border bg-background-primary px-1.5 py-0.5 text-[10px] text-text-secondary transition-colors hover:border-oak-primary/30 hover:bg-oak-primary/5 disabled:cursor-not-allowed disabled:opacity-40',
+                    presentTags.includes(detail.tag) ? 'border-oak-primary/40' : 'border-border-primary',
+                  )}
+                >
+                  <Plus className="h-2.5 w-2.5" aria-hidden="true" />
+                  {detail.label.slice(field.label.length + 1)}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : null}
+      </OakDocFieldRow>
     );
   };
 
+  const matches = (field: OakDocCustomField) => matchesOakDocFieldQuery(query, field.label, field.key, 'custom');
+  const visibleFields = fields.filter(matches);
+  const visiblePartialFields = partialFields.filter(matches);
+  const searching = query.trim() !== '';
+  if (searching && visibleFields.length === 0 && visiblePartialFields.length === 0) return null;
+  const usedCount = [...fields, ...partialFields]
+    .filter((field) => presentTags.includes(oakDocCustomFieldTag(field.key))).length;
+
   return (
-    <section className="space-y-2">
-      <div className="flex items-end justify-between gap-2">
-        <div>
-          <h2 className="text-xs font-semibold uppercase tracking-wide text-text-muted">
-            Custom fields
-          </h2>
-          <p className="mt-1 text-xs text-text-secondary">
-            Values you type in when generating a document, such as a fee or a meeting date,
-            or a contact picked from a shortlist. Click or drag a field to insert it; save
-            the {ownerLabel} to keep the fields.
-          </p>
-        </div>
+    <CollapsibleSection
+      variant="panel"
+      title="Custom fields"
+      count={fields.length + partialFields.length || undefined}
+      collapsed={searching ? false : !open}
+      onCollapsedChange={(collapsed) => setOpen(!collapsed)}
+      action={(
         <Button
-          variant="secondary"
+          variant="ghost"
           size="xs"
           leftIcon={<Plus className="h-3.5 w-3.5" aria-hidden="true" />}
           disabled={disabled}
           onClick={openNew}
+          aria-label="New custom field"
         >
-          Add
+          New
         </Button>
-      </div>
-
-      {fields.length === 0 && partialFields.length === 0 ? (
-        <p className="text-xs text-text-muted">No custom fields yet.</p>
-      ) : (
-        <div className="space-y-1">
-          {fields.map((field) => renderRow(field, true))}
-          {partialFields.length > 0 ? (
-            <>
-              <h3 className="pt-1 text-[11px] font-semibold uppercase tracking-wide text-text-muted">
-                From inserted partials
-              </h3>
-              {partialFields.map((field) => renderRow(field, false))}
-            </>
-          ) : null}
-        </div>
       )}
+      contentClassName="space-y-0.5"
+    >
+      {fields.length === 0 && partialFields.length === 0 ? (
+        <p className="px-1 text-[11px] leading-relaxed text-text-muted">
+          Values typed in when a document is generated, such as a fee or a meeting date, or a
+          contact picked from a shortlist. Save the {ownerLabel} to keep them.
+        </p>
+      ) : null}
+      {visibleFields.map((field) => renderRow(field, true))}
+      {visiblePartialFields.length > 0 ? (
+        <>
+          <h3 className="px-1 pt-1 text-[10px] font-semibold uppercase tracking-wide text-text-muted">
+            From inserted partials
+          </h3>
+          {visiblePartialFields.map((field) => renderRow(field, false))}
+        </>
+      ) : null}
+      {usedCount === 0 && fields.length > 0 && !searching ? (
+        <p className="px-1 pt-1 text-[10px] text-text-muted">None of these is in the document yet.</p>
+      ) : null}
 
       <Modal
-        isOpen={open}
-        onClose={() => setOpen(false)}
+        isOpen={dialogOpen}
+        onClose={() => setDialogOpen(false)}
         title={editingKey ? 'Edit custom field' : 'Add custom field'}
         size="sm"
       >
@@ -332,13 +346,13 @@ export function OakDocCustomFieldsPanel({
             {error ? <p role="alert" className="text-sm text-status-error">{error}</p> : null}
           </ModalBody>
           <ModalFooter>
-            <Button type="button" variant="secondary" onClick={() => setOpen(false)}>Cancel</Button>
+            <Button type="button" variant="secondary" onClick={() => setDialogOpen(false)}>Cancel</Button>
             <Button type="submit" variant="primary">
               {editingKey ? 'Save field' : 'Add field'}
             </Button>
           </ModalFooter>
         </form>
       </Modal>
-    </section>
+    </CollapsibleSection>
   );
 }

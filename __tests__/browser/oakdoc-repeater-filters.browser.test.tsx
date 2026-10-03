@@ -94,14 +94,17 @@ describe('Word repeater role filter and contact shortlist', () => {
     const onAdd = vi.fn();
     await act(async () => root.render(<PanelHarness onAdd={onAdd} />));
 
+    await act(async () => userEvent.click(screen.getByRole('button', { name: 'Officers' })));
     const roles = screen.getByRole('group', { name: 'Officer roles' });
     await act(async () => userEvent.click(within(roles).getByRole('button', { name: 'Secretary' })));
-    const insertSecretaries = screen.getByRole('button', { name: /^Officers \(Secretary\)\s*repeat\.officers\.secretary$/ });
-    await expect.element(insertSecretaries).toBeVisible();
+    await expect.element(screen.getByText('repeat.officers.secretary', { exact: true })).toBeVisible();
+    const insertSecretaries = screen.getByRole('button', { name: 'Add Officers (Secretary) section' });
     await act(async () => userEvent.click(insertSecretaries));
     expect(onAdd).toHaveBeenLastCalledWith(expect.objectContaining({ tag: 'repeat.officers.secretary' }));
     await expect.element(within(screen.getByRole('list', { name: 'Officers sections' })).getByText('Officers (Secretary)')).toBeVisible();
 
+    const contacts = screen.getByRole('list', { name: 'Contacts sections' });
+    await act(async () => userEvent.click(within(contacts).getByRole('button', { name: 'Contacts' })));
     await expect.element(screen.getByText('Configure offers any contact.')).toBeVisible();
     await act(async () => userEvent.click(screen.getByRole('button', { name: 'Shortlist' })));
     const dialog = screen.getByRole('dialog');

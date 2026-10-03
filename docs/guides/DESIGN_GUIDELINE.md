@@ -5714,6 +5714,8 @@ import { CollapsibleSection } from '@/components/ui/collapsible-section';
 </CollapsibleSection>
 ```
 
+In side panels (such as the OakDoc field panel) use `variant="panel"`: a small uppercase title with a chevron and no Show/Hide text. `action` puts a control such as a New button beside the title, and `collapsed` with `onCollapsedChange` lets the parent open every group while a search is active.
+
 ### Mobile Card View Components
 
 For tables with many columns, display cards on mobile and tables on desktop. Use the reusable components from `responsive-table.tsx`:

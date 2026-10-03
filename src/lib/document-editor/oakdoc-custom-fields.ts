@@ -359,15 +359,40 @@ export function oakDocContactShortlist(placeholders: unknown): OakDocCustomField
  * that tag, labelled with the name. Configure keeps a separate selection for it
  * (`selectedContactListIds[slug]`). Plain `repeat.contacts` is the unnamed list.
  *
+ * A single-person picker (the selected director, shareholder or contact) can
+ * be named the same way, keyed by its field root (`selectedDirector`), so
+ * Configure titles it "Signer of the resolution(s)" instead of "Director".
+ *
  * Like custom fields, partials' definitions are copied onto the template on
  * save (marked with the partial id), and added per document for a
  * resolution's chosen partials.
  */
 const REPEATER_NAME_KIND = 'repeaterName';
 
+/** Field roots of the single-person pickers Configure shows, which an author can name. */
+export const OAKDOC_PICKER_KEYS = ['selectedDirector', 'selectedShareholder', 'selectedContact'] as const;
+export type OakDocPickerKey = typeof OAKDOC_PICKER_KEYS[number];
+
+export function isOakDocPickerKey(key: string): key is OakDocPickerKey {
+  return (OAKDOC_PICKER_KEYS as readonly string[]).includes(key);
+}
+
+/** The picker a field belongs to: `selectedDirector.name` is the selected director's. */
+export function oakDocPickerKeyOfTag(tag: string): OakDocPickerKey | null {
+  return OAKDOC_PICKER_KEYS.find((key) => tag.startsWith(`${key}.`)) ?? null;
+}
+
+/** Pickers whose fields are in a document, for keeping their names on save. */
+export function oakDocPickerKeysInUse(fieldTags: readonly string[]): OakDocPickerKey[] {
+  return OAKDOC_PICKER_KEYS.filter((key) => fieldTags.some((tag) => oakDocPickerKeyOfTag(tag) === key));
+}
+
 /** A template's or partial's own section names and contacts shortlists, by repeater tag. */
 export interface OakDocRepeaterSections {
-  /** Section name by repeater tag; a named contacts list always has one. */
+  /**
+   * Section name by repeater tag, or picker name by picker key
+   * (`selectedDirector`); a named contacts list always has one.
+   */
   names: Record<string, string>;
   /** Contacts shortlist by contacts repeater tag (`repeat.contacts`, `repeat.contacts.<slug>`). */
   shortlists: Record<string, OakDocCustomFieldContact[]>;
@@ -383,7 +408,8 @@ export interface OakDocRepeaterSectionSummary {
 function isRepeaterEntry(definition: StoredDefinition): boolean {
   const key = typeof definition.key === 'string' ? definition.key : '';
   if (definition.fieldKind === CONTACT_SHORTLIST_KIND) return isOakDocContactsRepeaterTag(key);
-  return definition.fieldKind === REPEATER_NAME_KIND && isOakDocRepeaterTag(key) && !isOakDocContactsRepeaterTag(key);
+  if (definition.fieldKind !== REPEATER_NAME_KIND) return false;
+  return isOakDocPickerKey(key) || (isOakDocRepeaterTag(key) && !isOakDocContactsRepeaterTag(key));
 }
 
 /** A section name as stored: single-spaced, trimmed, at most OAKDOC_REPEATER_NAME_MAX characters. */
@@ -415,7 +441,7 @@ function repeaterEntry(
     };
   }
   const label = normalizeOakDocRepeaterName(name);
-  if (!label || !isOakDocRepeaterTag(tag)) return null;
+  if (!label || !(isOakDocRepeaterTag(tag) || isOakDocPickerKey(tag))) return null;
   return {
     key: tag,
     path: tag,
@@ -455,8 +481,9 @@ export function readOakDocRepeaterSections(placeholders: unknown): OakDocRepeate
 
 /**
  * Replace a template's or partial's own section names and shortlists with
- * these, keeping only sections still in the document (`presentTags`). A
- * named contacts list is kept with no shortlist too, for its name.
+ * these, keeping only sections (and pickers) still in the document
+ * (`presentTags`: repeater tags and picker keys). A named contacts list is
+ * kept with no shortlist too, for its name.
  */
 export function writeOakDocRepeaterSections(
   placeholders: unknown,

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useId, ReactNode } from 'react';
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronDown, ChevronRight, ChevronUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface CollapsibleSectionProps {
@@ -19,6 +19,16 @@ interface CollapsibleSectionProps {
   className?: string;
   /** Optional class for the content wrapper */
   contentClassName?: string;
+  /**
+   * `panel` is the compact form for side panels: a small uppercase title
+   * with a chevron, no Show/Hide text and no bottom margin.
+   */
+  variant?: 'default' | 'panel';
+  /** Controls beside the title (e.g. an Add button), outside the toggle. */
+  action?: ReactNode;
+  /** Controlled collapse state; pair with onCollapsedChange. */
+  collapsed?: boolean;
+  onCollapsedChange?: (collapsed: boolean) => void;
 }
 
 /**
@@ -33,16 +43,62 @@ export function CollapsibleSection({
   defaultCollapsedDesktop = false,
   className,
   contentClassName,
+  variant = 'default',
+  action,
+  collapsed,
+  onCollapsedChange,
 }: CollapsibleSectionProps) {
   // Determine initial state based on screen size
   // Using a simple check - could be enhanced with useIsMobile hook
-  const [isCollapsed, setIsCollapsed] = useState(() => {
+  const [localCollapsed, setLocalCollapsed] = useState(() => {
     if (typeof window === 'undefined') return defaultCollapsedMobile;
     return window.innerWidth < 768 ? defaultCollapsedMobile : defaultCollapsedDesktop;
   });
+  const isCollapsed = collapsed ?? localCollapsed;
+  const setIsCollapsed = (next: boolean) => {
+    if (collapsed === undefined) setLocalCollapsed(next);
+    onCollapsedChange?.(next);
+  };
 
   // Generate unique IDs for ARIA relationships
   const contentId = useId();
+
+  if (variant === 'panel') {
+    return (
+      <section className={className}>
+        <div className="flex items-center justify-between gap-2">
+          <button
+            type="button"
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            aria-expanded={!isCollapsed}
+            aria-controls={contentId}
+            title={title}
+            className="group flex min-w-0 flex-1 items-center gap-1 py-1 text-left"
+          >
+            {isCollapsed ? (
+              <ChevronRight className="h-3.5 w-3.5 shrink-0 text-text-muted group-hover:text-text-secondary" aria-hidden="true" />
+            ) : (
+              <ChevronDown className="h-3.5 w-3.5 shrink-0 text-text-muted group-hover:text-text-secondary" aria-hidden="true" />
+            )}
+            <h2 className="truncate text-xs font-semibold uppercase tracking-wide text-text-muted group-hover:text-text-secondary">
+              {title}
+            </h2>
+            {count !== undefined && (
+              <span className="shrink-0 rounded bg-background-tertiary px-1.5 text-[10px] text-text-muted">
+                {count}
+              </span>
+            )}
+          </button>
+          {action}
+        </div>
+        {!isCollapsed && (
+          <div id={contentId} role="region" aria-label={title} className={cn('pt-1.5', contentClassName)}>
+            {children}
+          </div>
+        )}
+      </section>
+    );
+  }
 
   return (
     <div className={cn('mb-6', className)}>
