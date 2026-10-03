@@ -94,6 +94,7 @@ describe('Word repeater role filter and contact shortlist', () => {
     const onAdd = vi.fn();
     await act(async () => root.render(<PanelHarness onAdd={onAdd} />));
 
+    await act(async () => userEvent.click(screen.getByRole('button', { name: /^Repeating sections/ })));
     await act(async () => userEvent.click(screen.getByRole('button', { name: 'Officers' })));
     const roles = screen.getByRole('group', { name: 'Officer roles' });
     await act(async () => userEvent.click(within(roles).getByRole('button', { name: 'Secretary' })));

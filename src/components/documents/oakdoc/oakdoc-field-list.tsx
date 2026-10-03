@@ -76,8 +76,7 @@ export function OakDocFieldList({
         const used = category.fields.filter((field) => presentTags.includes(field.key)).length;
         const picker = category.fields.map((field) => oakDocPickerKeyOfTag(field.key)).find(Boolean) ?? null;
         const pickerName = picker ? sections?.names[picker] ?? '' : '';
-        // Groups the document uses start open.
-        const open = searching || (openGroups[category.key] ?? (used > 0 || category.key === 'company'));
+        const open = searching || (openGroups[category.key] ?? false);
         return (
           <CollapsibleSection
             key={category.key}

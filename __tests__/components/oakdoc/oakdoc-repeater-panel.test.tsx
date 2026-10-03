@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { OakDocRepeaterPanel } from '@/components/documents/oakdoc/oakdoc-repeater-panel';
 import type { OakDocRepeaterSections } from '@/lib/document-editor/oakdoc-custom-fields';
@@ -25,11 +25,31 @@ function panel(overrides: Partial<Parameters<typeof OakDocRepeaterPanel>[0]> = {
     onAssignField: vi.fn(),
     ...overrides,
   };
-  render(<OakDocRepeaterPanel {...props} />);
+  renderOpen(<OakDocRepeaterPanel {...props} />);
   return props;
 }
 
+/** Renders the panel and opens it; it starts collapsed. */
+function renderOpen(ui: React.ReactElement) {
+  render(ui);
+  fireEvent.click(screen.getByRole('button', { name: /^Repeating sections/ }));
+}
+
 describe('OakDocRepeaterPanel', () => {
+  it('shows the New section hint behind an information icon', async () => {
+    const user = userEvent.setup();
+    panel();
+    expect(screen.queryByText(/Put the caret in the paragraph/)).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'About New section' }));
+    expect(screen.getByRole('tooltip')).toHaveTextContent('Put the caret in the paragraph or table row to repeat');
+  });
+
+  it('starts collapsed', () => {
+    render(<OakDocRepeaterPanel repeaterTags={['repeat.directors']} fieldTags={[]} onAdd={vi.fn()} onRemoveAtCaret={vi.fn()} onAssignField={vi.fn()} />);
+    expect(screen.getByRole('button', { name: /^Repeating sections/ })).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.queryByRole('list', { name: 'Directors sections' })).not.toBeInTheDocument();
+  });
+
   it('inserts an Officers section for any role, or limited to the ticked roles', async () => {
     const user = userEvent.setup();
     const props = panel();
@@ -89,7 +109,7 @@ describe('OakDocRepeaterPanel', () => {
         />
       );
     }
-    render(<Harness />);
+    renderOpen(<Harness />);
 
     await user.click(within(screen.getByRole('list', { name: 'Contacts sections' })).getByRole('button', { name: 'Contacts' }));
     expect(screen.getByText('Configure offers 1 shortlisted contact.')).toBeInTheDocument();
@@ -137,7 +157,7 @@ describe('OakDocRepeaterPanel', () => {
       const user = userEvent.setup();
       const onAdd = vi.fn();
       const onChange = vi.fn();
-      render(<Harness tags={[]} onAdd={onAdd} onChange={onChange} />);
+      renderOpen(<Harness tags={[]} onAdd={onAdd} onChange={onChange} />);
 
       await user.click(screen.getByRole('button', { name: 'Contacts' }));
       await user.type(screen.getByLabelText('List name on Configure'), 'Corporate secretary to be appointed');
@@ -157,11 +177,31 @@ describe('OakDocRepeaterPanel', () => {
       expect(screen.getByRole('button', { name: 'Add Contacts section' })).toBeInTheDocument();
     });
 
+    it('shortlists the contacts of a new Contacts section before it is added', async () => {
+      const user = userEvent.setup();
+      const onAdd = vi.fn();
+      const onChange = vi.fn();
+      renderOpen(<Harness tags={[]} onAdd={onAdd} onChange={onChange} />);
+
+      await user.click(screen.getByRole('button', { name: 'Contacts' }));
+      expect(screen.getByText('Empty: Configure searches every contact. Add contacts to offer only them.')).toBeInTheDocument();
+      await user.type(screen.getByLabelText('List name on Configure'), 'Auditor');
+      await user.click(screen.getByRole('button', { name: /add Bea Tan/ }));
+      expect(screen.getByRole('list', { name: 'Contact shortlist' })).toHaveTextContent('Bea Tan');
+      expect(screen.getByText('Configure offers only these 1 contact.')).toBeInTheDocument();
+      await user.click(screen.getByRole('button', { name: 'Add Contacts (Auditor) section' }));
+      expect(onAdd).toHaveBeenLastCalledWith(expect.objectContaining({ tag: 'repeat.contacts.auditor' }));
+      expect(onChange).toHaveBeenLastCalledWith({
+        names: { 'repeat.contacts.auditor': 'Auditor' },
+        shortlists: { 'repeat.contacts.auditor': [{ id: 'c2', name: 'Bea Tan' }] },
+      });
+    });
+
     it('names any other section as a label, keeping its tag', async () => {
       const user = userEvent.setup();
       const onAdd = vi.fn();
       const onChange = vi.fn();
-      render(<Harness tags={[]} onAdd={onAdd} onChange={onChange} />);
+      renderOpen(<Harness tags={[]} onAdd={onAdd} onChange={onChange} />);
 
       await user.click(screen.getByRole('button', { name: 'Directors' }));
       await user.type(screen.getByLabelText('Name on Configure'), 'Signers for the resolution(s)');
@@ -176,7 +216,7 @@ describe('OakDocRepeaterPanel', () => {
     it('renames a section in the document', async () => {
       const user = userEvent.setup();
       const onChange = vi.fn();
-      render(
+      renderOpen(
         <Harness
           tags={['repeat.directors', 'repeat.contacts.corp-sec']}
           initial={{ names: { 'repeat.directors': 'Signers', 'repeat.contacts.corp-sec': 'Corp sec' }, shortlists: {} }}
@@ -196,7 +236,7 @@ describe('OakDocRepeaterPanel', () => {
 
     it('needs letters or numbers in a Contacts list name', async () => {
       const user = userEvent.setup();
-      render(<Harness tags={[]} />);
+      renderOpen(<Harness tags={[]} />);
       await user.click(screen.getByRole('button', { name: 'Contacts' }));
       await user.type(screen.getByLabelText('List name on Configure'), '!!!');
       expect(screen.getByText('A Contacts list name needs letters or numbers.')).toBeInTheDocument();
@@ -206,7 +246,7 @@ describe('OakDocRepeaterPanel', () => {
     it("edits each contacts list's own shortlist", async () => {
       const user = userEvent.setup();
       const onChange = vi.fn();
-      render(
+      renderOpen(
         <Harness
           tags={['repeat.contacts', 'repeat.contacts.corp-sec']}
           initial={{

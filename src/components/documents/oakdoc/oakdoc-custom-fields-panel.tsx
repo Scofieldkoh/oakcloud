@@ -97,7 +97,7 @@ export function OakDocCustomFieldsPanel({
   };
   const [editingKey, setEditingKey] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT);
   const [error, setError] = useState<string | null>(null);
 
@@ -106,6 +106,8 @@ export function OakDocCustomFieldsPanel({
     setDraft(EMPTY_DRAFT);
     setError(null);
     setDialogOpen(true);
+    // The dialog lives in the group, and the new field shows there.
+    setOpen(true);
   };
 
   const openEdit = (field: OakDocCustomField) => {
@@ -258,17 +260,16 @@ export function OakDocCustomFieldsPanel({
           disabled={disabled}
           onClick={openNew}
           aria-label="New custom field"
+          className="text-white hover:bg-white/15 hover:text-white"
         >
           New
         </Button>
       )}
+      info={`Values typed in when a document is generated, such as a fee or a meeting date, or a contact picked from a shortlist. Save the ${ownerLabel} to keep them.`}
       contentClassName="space-y-0.5"
     >
       {fields.length === 0 && partialFields.length === 0 ? (
-        <p className="px-1 text-[11px] leading-relaxed text-text-muted">
-          Values typed in when a document is generated, such as a fee or a meeting date, or a
-          contact picked from a shortlist. Save the {ownerLabel} to keep them.
-        </p>
+        <p className="px-1 text-[11px] text-text-muted">No custom fields yet. Use New to add one.</p>
       ) : null}
       {visibleFields.map((field) => renderRow(field, true))}
       {visiblePartialFields.length > 0 ? (

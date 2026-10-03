@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Search } from 'lucide-react';
 import { FormInput } from '@/components/ui/form-input';
+import { InfoTip } from '@/components/ui/info-tip';
 import type { OakDocFieldDefinition } from '@/lib/document-editor/oakdoc-fields';
 import type { OakDocRepeaterDefinition } from '@/lib/document-editor/oakdoc-repeaters';
 import type { OakDocCustomField, OakDocRepeaterSections } from '@/lib/document-editor/oakdoc-custom-fields';
@@ -59,11 +60,15 @@ export function OakDocFieldPanel({
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       <div className="space-y-2">
-        <div className="flex items-end justify-between gap-2">
-          <h2 className="text-xs font-semibold uppercase tracking-wide text-text-muted">Fields</h2>
-          <span className="shrink-0 text-[11px] text-text-muted">{fieldCount} in document</span>
+        <div className="flex items-center gap-1 text-text-muted">
+          <h2 className="text-xs font-semibold uppercase tracking-wide">Fields</h2>
+          <InfoTip
+            label="About Fields"
+            content="Click a field, then Add to put it at the caret or around the selected text. Double-click adds it at once; drag drops it on the page."
+          />
+          <span className="ml-auto shrink-0 text-[11px]">{fieldCount} in document</span>
         </div>
         <FormInput
           type="search"
@@ -75,10 +80,6 @@ export function OakDocFieldPanel({
           leftIcon={<Search className="h-3.5 w-3.5" aria-hidden="true" />}
           className="focus:ring-offset-0"
         />
-        <p className="text-[11px] leading-relaxed text-text-secondary">
-          Click a field, then <span className="font-medium">Add</span> to put it at the caret or around
-          the selected text. Double-click adds it at once; drag drops it on the page.
-        </p>
       </div>
 
       <OakDocCustomFieldsPanel
@@ -109,19 +110,16 @@ export function OakDocFieldPanel({
         onSelect={setSelectedKey}
       />
 
-      <div className="space-y-1">
-        <h2 className="text-xs font-semibold uppercase tracking-wide text-text-muted">Oakcloud fields</h2>
-        <OakDocFieldList
-          presentTags={presentTags}
-          onInsert={onInsert}
-          disabled={disabled}
-          query={query}
-          selectedKey={selectedKey}
-          onSelect={setSelectedKey}
-          sections={sections}
-          onSectionsChange={onSectionsChange}
-        />
-      </div>
+      <OakDocFieldList
+        presentTags={presentTags}
+        onInsert={onInsert}
+        disabled={disabled}
+        query={query}
+        selectedKey={selectedKey}
+        onSelect={setSelectedKey}
+        sections={sections}
+        onSectionsChange={onSectionsChange}
+      />
     </div>
   );
 }
