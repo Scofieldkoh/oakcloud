@@ -30,6 +30,7 @@ import type { ItemCompleteness } from './batch-completeness';
 import {
   officersOfRoles,
   partyConfigurationKeys,
+  pickerTitle,
   repeaterSectionTitle,
   templateContactLists,
   templateOfficerRoles,
@@ -359,7 +360,7 @@ export function StandardDocumentConfig({
             {partySelections.director && (
               <DocumentPartyChoiceList
                 id="selected-director"
-                label="Director"
+                label={pickerTitle(repeaterSections, 'selectedDirector') ?? 'Director'}
                 options={directors}
                 value={configuration.selectedDirectorId ?? ''}
                 onChange={(value) => onPatch({ selectedDirectorId: value || null })}
@@ -372,7 +373,7 @@ export function StandardDocumentConfig({
             {partySelections.shareholder && (
               <DocumentPartyChoiceList
                 id="selected-shareholder"
-                label="Shareholder"
+                label={pickerTitle(repeaterSections, 'selectedShareholder') ?? 'Shareholder'}
                 options={shareholders}
                 value={configuration.selectedShareholderId ?? ''}
                 onChange={(value) => onPatch({ selectedShareholderId: value || null })}
@@ -386,7 +387,7 @@ export function StandardDocumentConfig({
             {partySelections.contact && (
               <DocumentContactChoiceList
                 id="selected-contact"
-                label="Contact"
+                label={pickerTitle(repeaterSections, 'selectedContact') ?? 'Contact'}
                 single
                 contacts={contacts}
                 selected={selectedContact ? [selectedContact] : []}

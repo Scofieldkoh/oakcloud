@@ -4,7 +4,7 @@ import { DocumentPartyChoiceList } from '@/components/documents/document-party-c
 import type { DocumentParty } from '@/lib/document-party';
 import type { BatchItemConfiguration } from '@/types/document-generation-batch';
 import type { EditableBatchItem } from './batch-workspace-state';
-import type { OakDocRepeaterSectionSummary } from '@/lib/document-editor/oakdoc-custom-fields';
+import type { OakDocPickerKey, OakDocRepeaterSectionSummary } from '@/lib/document-editor/oakdoc-custom-fields';
 import {
   PARTY_CONFIGURATION_KEYS,
   joinRepeaterSectionNames,
@@ -52,6 +52,19 @@ const LABELS: Record<PartyKey, string> = {
   selectedShareholderIds: 'Shareholders',
   selectedOfficerIds: 'Officers',
   selectedContactId: 'Contact',
+};
+
+/** The single-person picker each key fills, whose name the author may set. */
+const PICKER_KEYS: Partial<Record<PartyKey, OakDocPickerKey>> = {
+  selectedDirectorId: 'selectedDirector',
+  selectedShareholderId: 'selectedShareholder',
+  selectedContactId: 'selectedContact',
+};
+
+const REPEATER_KINDS: Partial<Record<PartyKey, 'directors' | 'shareholders' | 'officers'>> = {
+  selectedDirectorIds: 'directors',
+  selectedShareholderIds: 'shareholders',
+  selectedOfficerIds: 'officers',
 };
 
 /**
@@ -125,15 +138,13 @@ export function BatchSharedParties({
 
   // A picker shared by documents whose sections have different names shows them all.
   const labelFor = (key: PartyKey, targets: EditableBatchItem[]): string => {
-    const kind = key === 'selectedDirectorIds'
-      ? 'directors'
-      : key === 'selectedShareholderIds'
-        ? 'shareholders'
-        : key === 'selectedOfficerIds' ? 'officers' : null;
-    if (!kind) return LABELS[key];
-    const names = Array.from(new Set(targets.flatMap(
-      (item) => repeaterSectionNames(repeaterSectionsByItemKey[item.key], kind),
-    )));
+    const names = Array.from(new Set(targets.flatMap((item) => {
+      const sections = repeaterSectionsByItemKey[item.key];
+      const picker = PICKER_KEYS[key];
+      if (picker) return sections?.names[picker] ?? [];
+      const kind = REPEATER_KINDS[key];
+      return kind ? repeaterSectionNames(sections, kind) : [];
+    })));
     return joinRepeaterSectionNames(names) ?? LABELS[key];
   };
 

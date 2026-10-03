@@ -3,9 +3,7 @@
 import { useCallback, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { OakDocDocumentHost } from '@/components/documents/oakdoc/oakdoc-document-host';
-import { OakDocCustomFieldsPanel } from '@/components/documents/oakdoc/oakdoc-custom-fields-panel';
-import { OakDocFieldList } from '@/components/documents/oakdoc/oakdoc-field-list';
-import { OakDocRepeaterPanel } from '@/components/documents/oakdoc/oakdoc-repeater-panel';
+import { OakDocFieldPanel } from '@/components/documents/oakdoc/oakdoc-field-panel';
 import {
   readOakDocCustomFields,
   readOakDocPartialCustomFields,
@@ -15,7 +13,7 @@ import {
   type OakDocCustomField,
   type OakDocRepeaterSections,
 } from '@/lib/document-editor/oakdoc-custom-fields';
-import { inspectOakDocRepeaters } from '@/lib/document-editor/oakdoc-repeaters';
+import { oakDocNamedKeysIn } from '@/lib/document-editor/oakdoc-named-sections';
 import { pruneDeletedOakDocFields } from '@/lib/document-editor/oakdoc-fields';
 import { OAKDOC_FIELD_TAGS } from '@/lib/document-editor/oakdoc-field-registry';
 import { partialKeys, saveWordPartial } from '@/hooks/use-template-partials';
@@ -87,8 +85,8 @@ export function WordPartialEditor({
       placeholders: writeOakDocRepeaterSections(
         writeOakDocCustomFields(storedPlaceholders, customFields),
         repeaterSections,
-        // A name or shortlist outlives its section only until the next save.
-        inspectOakDocRepeaters(bytes).tags,
+        // A name or shortlist outlives its section (or picker) only until the next save.
+        oakDocNamedKeysIn(bytes),
       ),
     });
     setStoredPlaceholders(saved.placeholders ?? []);
@@ -118,41 +116,27 @@ export function WordPartialEditor({
         repeaters,
         disabled,
       }) => (
-        <>
-          <OakDocCustomFieldsPanel
-            fields={customFields}
-            partialFields={readOakDocPartialCustomFields(storedPlaceholders)}
-            onChange={(next) => {
-              setCustomFields(next);
-              markChanged();
-            }}
-            onInsert={(field) => void insertField(field)}
-            presentTags={fieldTags}
-            disabled={disabled}
-            ownerLabel="partial"
-          />
-          <div className="border-t border-border-secondary" />
-          <OakDocRepeaterPanel
-            repeaterTags={repeaters.tags}
-            count={repeaters.count}
-            fieldTags={fieldTags}
-            disabled={disabled}
-            onAdd={(definition) => void addRepeater(definition)}
-            onRemoveAtCaret={() => void removeRepeaterAtCaret()}
-            onAssignField={(field) => void insertField(field)}
-            sections={repeaterSections}
-            onSectionsChange={(next) => {
-              setRepeaterSections(next);
-              markChanged();
-            }}
-          />
-          <div className="border-t border-border-secondary" />
-          <OakDocFieldList
-            presentTags={fieldTags}
-            onInsert={(field) => void insertField(field)}
-            disabled={disabled}
-          />
-        </>
+        <OakDocFieldPanel
+          presentTags={fieldTags}
+          onInsert={(field) => void insertField(field)}
+          disabled={disabled}
+          customFields={customFields}
+          partialCustomFields={readOakDocPartialCustomFields(storedPlaceholders)}
+          onCustomFieldsChange={(next) => {
+            setCustomFields(next);
+            markChanged();
+          }}
+          ownerLabel="partial"
+          repeaterTags={repeaters.tags}
+          repeaterCount={repeaters.count}
+          onAddRepeater={(definition) => void addRepeater(definition)}
+          onRemoveRepeaterAtCaret={() => void removeRepeaterAtCaret()}
+          sections={repeaterSections}
+          onSectionsChange={(next) => {
+            setRepeaterSections(next);
+            markChanged();
+          }}
+        />
       )}
     />
   );

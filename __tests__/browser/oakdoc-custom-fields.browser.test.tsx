@@ -94,7 +94,7 @@ describe('Word template custom fields and contacts', () => {
     const onInsert = vi.fn();
     await act(async () => root.render(<PanelHarness onInsert={onInsert} />));
 
-    await act(async () => userEvent.click(screen.getByRole('button', { name: 'Add' })));
+    await act(async () => userEvent.click(screen.getByRole('button', { name: 'New custom field' })));
     const dialog = screen.getByRole('dialog');
     await act(async () => userEvent.fill(within(dialog).getByLabelText('Label'), 'Billing basis'));
     await act(async () => userEvent.click(within(dialog).getByRole('combobox')));
@@ -103,8 +103,10 @@ describe('Word template custom fields and contacts', () => {
     await page.screenshot();
     await act(async () => userEvent.click(within(dialog).getByRole('button', { name: 'Add field' })));
 
-    await expect.element(screen.getByText('custom.billing_basis · Dropdown')).toBeVisible();
-    await act(async () => userEvent.click(screen.getByTitle('Insert Billing basis')));
+    // The new field opens, ready to add.
+    await expect.element(screen.getByText('{{custom.billing_basis}}')).toBeVisible();
+    await expect.element(screen.getByText('Dropdown · required')).toBeVisible();
+    await act(async () => userEvent.click(screen.getByRole('button', { name: 'Add Billing basis' })));
     expect(onInsert).toHaveBeenCalledWith('custom.billing_basis');
     await page.screenshot();
   });
@@ -114,7 +116,7 @@ describe('Word template custom fields and contacts', () => {
     const onInsert = vi.fn();
     await act(async () => root.render(<PanelHarness onInsert={onInsert} />));
 
-    await act(async () => userEvent.click(screen.getByRole('button', { name: 'Add' })));
+    await act(async () => userEvent.click(screen.getByRole('button', { name: 'New custom field' })));
     const dialog = screen.getByRole('dialog');
     await act(async () => userEvent.fill(within(dialog).getByLabelText('Label'), 'Secretary'));
     await act(async () => userEvent.click(within(dialog).getAllByRole('combobox')[0]));
@@ -125,8 +127,8 @@ describe('Word template custom fields and contacts', () => {
     await page.screenshot();
     await act(async () => userEvent.click(within(dialog).getByRole('button', { name: 'Add field' })));
 
-    await expect.element(screen.getByText('custom.secretary · Contact (1 to choose from)')).toBeVisible();
-    await act(async () => userEvent.click(screen.getByTitle('Insert custom.secretary.identificationNumber')));
+    await expect.element(screen.getByText('Contact · required · 1 to choose from')).toBeVisible();
+    await act(async () => userEvent.click(screen.getByTitle('Add custom.secretary.identificationNumber')));
     expect(onInsert).toHaveBeenCalledWith('custom.secretary.identificationNumber');
     await page.screenshot();
   });

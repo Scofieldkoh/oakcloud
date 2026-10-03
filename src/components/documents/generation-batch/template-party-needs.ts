@@ -14,6 +14,7 @@ import {
 } from '@/lib/document-editor/oakdoc-repeater-definitions';
 import type {
   OakDocCustomFieldContact,
+  OakDocPickerKey,
   OakDocRepeaterSectionSummary,
 } from '@/lib/document-editor/oakdoc-custom-fields';
 import type { DocumentParty } from '@/lib/document-party';
@@ -102,6 +103,18 @@ export function repeaterSectionTitle(
 }
 
 type NamedRepeaterKind = Exclude<OakDocGenericRepeaterKind, 'contacts'>;
+
+/**
+ * The names the author gave a single-person picker (the selected director,
+ * shareholder or contact), joined: "Signer of the resolution(s)". Null when
+ * none is named, so the picker keeps its usual label.
+ */
+export function pickerTitle(
+  sections: OakDocRepeaterSectionSummary | null | undefined,
+  key: OakDocPickerKey,
+): string | null {
+  return joinRepeaterSectionNames(sections?.names[key] ?? []);
+}
 
 /** The distinct names given to the template's sections of one kind. */
 export function repeaterSectionNames(

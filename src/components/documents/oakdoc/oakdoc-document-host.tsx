@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
-import { DocxEditor, type DocxEditorRef } from '@docx-editor.dev/react';
+import { DocxEditor, type DocxEditorRef, type EditorCaret } from '@docx-editor.dev/react';
 import { CheckCircle2, Loader2, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -19,6 +19,7 @@ import { OakDocEditorSession } from './oakdoc-editor-session';
 import { insertOakDocField } from './insert-oakdoc-field';
 import { useOakDocSectionDeleteGuard } from './use-oakdoc-section-delete-guard';
 import { useOakDocFieldBlocks } from './use-oakdoc-field-blocks';
+import { useOakDocViewKeeper } from './use-oakdoc-view-keeper';
 
 export interface OakDocPersistResult {
   revision: number;
@@ -186,12 +187,18 @@ export function OakDocDocumentHost({
     setStatus('Document changed.');
   }, [publishDirty]);
 
+  // The field-block hook owns the caret probe; it is created further down.
+  const caretRef = useRef<() => EditorCaret | null>(() => null);
+  const getCaret = useCallback(() => caretRef.current(), []);
+  const { containerRef: viewRef, keep: keepView, restore: restoreView } = useOakDocViewKeeper(editorRef, getCaret);
+
   const replaceMountedDocument = useCallback((bytes: Uint8Array, message: string) => {
+    keepView();
     readyRef.current = false;
     setDocumentBytes(bytes);
     setVersion((current) => current + 1);
     setStatus(message);
-  }, []);
+  }, [keepView]);
 
   const hasSidebar = Boolean(renderSidebar);
   useEffect(() => {
@@ -301,6 +308,7 @@ export function OakDocDocumentHost({
     onHint: showHint,
     onDropField: insertField,
   });
+  caretRef.current = blocks.getCaret;
   const handleEditorKeyDownCapture = useCallback((event: KeyboardEvent<HTMLDivElement>) => {
     blocks.onKeyDownCapture(event);
     if (!event.defaultPrevented) handleKeyDownCapture(event);
@@ -415,6 +423,7 @@ export function OakDocDocumentHost({
 
       <div className="flex min-h-0 flex-1">
         <div
+          ref={(element) => { viewRef.current = element; }}
           className="relative min-h-0 min-w-0 flex-1 overflow-hidden bg-[#eef0f2]"
           onKeyDownCapture={handleEditorKeyDownCapture}
           onPointerUpCapture={blocks.onPointerUpCapture}
@@ -435,6 +444,7 @@ export function OakDocDocumentHost({
               onSave={() => void save()}
               onReady={() => {
                 readyRef.current = true;
+                restoreView();
                 if (!sessionRef.current.dirty) {
                   setStatus(readOnly ? 'Final Word document loaded.' : 'Word document ready to edit.');
                 }

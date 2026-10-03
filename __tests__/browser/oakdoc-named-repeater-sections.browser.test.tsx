@@ -102,9 +102,13 @@ describe('Named repeating sections', () => {
     const onSections = vi.fn();
     await act(async () => root.render(<PanelHarness onSections={onSections} />));
 
-    await act(async () => userEvent.fill(screen.getByLabelText('Section name'), 'Corporate secretary to be appointed'));
+    // Open the Contacts kind under New section, name it and repeat the caret's paragraph.
+    await act(async () => userEvent.click(screen.getByRole('button', { name: 'Contacts' })));
+    await act(async () => userEvent.fill(screen.getByLabelText('List name on Configure'), 'Corporate secretary to be appointed'));
     await expect.element(screen.getByText(SECRETARY_TAG)).toBeVisible();
-    await act(async () => userEvent.click(screen.getByText(SECRETARY_TAG)));
+    await act(async () => userEvent.click(screen.getByRole('button', {
+      name: 'Add Contacts (Corporate secretary to be appointed) section',
+    })));
     const contacts = screen.getByRole('list', { name: 'Contacts sections' });
     await expect.element(within(contacts).getByText('Corporate secretary to be appointed · Contacts list')).toBeVisible();
 
@@ -118,8 +122,10 @@ describe('Named repeating sections', () => {
     await act(async () => userEvent.click(within(dialog).getByRole('button', { name: 'Done' })));
     await expect.element(within(contacts).getByText('Configure offers 1 shortlisted contact.')).toBeVisible();
 
+    const directors = screen.getByRole('list', { name: 'Directors sections' });
+    await act(async () => userEvent.click(within(directors).getByRole('button', { name: 'Directors' })));
     await act(async () => userEvent.fill(
-      screen.getByRole('textbox', { name: 'Name of Directors section' }),
+      within(directors).getByRole('textbox', { name: 'Name on Configure' }),
       'Signers for the resolution(s)',
     ));
     expect(onSections).toHaveBeenLastCalledWith({

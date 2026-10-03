@@ -8,7 +8,7 @@ import {
   useState,
   type KeyboardEvent as ReactKeyboardEvent,
 } from 'react';
-import { DocxEditor, type DocxEditorRef } from '@docx-editor.dev/react';
+import { DocxEditor, type DocxEditorRef, type EditorCaret } from '@docx-editor.dev/react';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, Download, FilePlus, FileUp, Loader2, Save, Sparkles } from 'lucide-react';
@@ -52,6 +52,8 @@ import {
 } from '@/lib/document-editor/oakdoc-template';
 import { useOakDocSectionDeleteGuard } from '@/components/documents/oakdoc/use-oakdoc-section-delete-guard';
 import { useOakDocFieldBlocks } from '@/components/documents/oakdoc/use-oakdoc-field-blocks';
+import { useOakDocViewKeeper } from '@/components/documents/oakdoc/use-oakdoc-view-keeper';
+import { oakDocNamedKeysIn } from '@/lib/document-editor/oakdoc-named-sections';
 import { OakDocPartialPanel } from '@/components/documents/oakdoc/oakdoc-partial-panel';
 import { ResolutionPresetPanel } from '@/components/documents/oakdoc/resolution-preset-panel';
 import { useOakDocAiSelection } from '@/components/documents/oakdoc/use-oakdoc-ai-selection';
@@ -81,9 +83,7 @@ import {
   type OakDocRepeaterSections,
 } from '@/lib/document-editor/oakdoc-custom-fields';
 import { insertOakDocField } from '@/components/documents/oakdoc/insert-oakdoc-field';
-import { OakDocCustomFieldsPanel } from '@/components/documents/oakdoc/oakdoc-custom-fields-panel';
-import { OakDocFieldList } from '@/components/documents/oakdoc/oakdoc-field-list';
-import { OakDocRepeaterPanel } from '@/components/documents/oakdoc/oakdoc-repeater-panel';
+import { OakDocFieldPanel } from '@/components/documents/oakdoc/oakdoc-field-panel';
 
 const DOCX_MIME =
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
@@ -401,18 +401,24 @@ export function OakDocEditor() {
     setHasResolutionSlot(hasOakDocResolutionSlot(bytes));
   }, []);
 
+  // The field-block hook owns the caret probe; it is created further down.
+  const caretRef = useRef<() => EditorCaret | null>(() => null);
+  const getCaret = useCallback(() => caretRef.current(), []);
+  const { containerRef: viewRef, keep: keepView, restore: restoreView } = useOakDocViewKeeper(editorRef, getCaret);
+
   const replaceDocument = useCallback((
     bytes: Uint8Array,
     message: string,
     kind: StatusKind = 'success',
   ) => {
+    keepView();
     readyMessageRef.current = message;
     setDocumentBytes(bytes);
     setDocumentVersion((value) => value + 1);
     updateFieldSummary(bytes);
     setStatus(message);
     setStatusKind(kind);
-  }, [updateFieldSummary]);
+  }, [keepView, updateFieldSummary]);
 
   useEffect(() => {
     const loaded = templateQuery.data;
@@ -572,6 +578,7 @@ export function OakDocEditor() {
     },
     onDropField: (field) => void assignField(field),
   });
+  caretRef.current = fieldBlocks.getCaret;
   const handleEditorKeyDown = (event: ReactKeyboardEvent<HTMLElement>) => {
     fieldBlocks.onKeyDownCapture(event);
     if (!event.defaultPrevented) handleEditorKeyDownCapture(event);
@@ -945,8 +952,8 @@ export function OakDocEditor() {
       formData.set('placeholders', JSON.stringify(writeOakDocRepeaterSections(
         writeOakDocCustomFields(storedPlaceholders, customFields),
         repeaterSections,
-        // A name or shortlist outlives its section only until the next save.
-        inspectOakDocRepeaters(cleaned.bytes).tags,
+        // A name or shortlist outlives its section (or picker) only until the next save.
+        oakDocNamedKeysIn(cleaned.bytes),
       )));
 
       const response = await fetch(
@@ -1139,6 +1146,21 @@ export function OakDocEditor() {
 
         <main className="grid min-h-0 min-w-0 grid-cols-[320px_minmax(0,1fr)_auto] overflow-hidden">
           <aside className="min-h-0 overflow-y-auto border-r border-border-primary bg-background-primary p-3">
+            {/* Pinned so the result of an insert or save shows wherever the panel is scrolled. */}
+            <div
+              role="status"
+              aria-live="polite"
+              className="sticky -top-3 z-10 -mx-3 -mt-3 mb-3 bg-background-primary px-3 pb-2 pt-3"
+            >
+              <div className={`rounded-lg border p-2.5 text-xs leading-relaxed ${statusClasses(statusKind)}`}>
+                {busy ? (
+                  <span className="inline-flex items-center gap-2">
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    {status}
+                  </span>
+                ) : status}
+              </div>
+            </div>
             <section className="space-y-2">
               <div className="flex items-center justify-between gap-2">
                 <div>
@@ -1330,6 +1352,30 @@ export function OakDocEditor() {
               </>
             ) : null}
 
+            <OakDocFieldPanel
+              presentTags={fieldSummary.tags}
+              fieldCount={fieldSummary.count}
+              onInsert={(field) => void assignField(field)}
+              disabled={!hasDocument || busy}
+              customFields={customFields}
+              partialCustomFields={partialCustomFields}
+              onCustomFieldsChange={(next) => {
+                setCustomFields(next);
+                setIsDirty(true);
+              }}
+              repeaterTags={repeaterSummary.tags}
+              repeaterCount={repeaterSummary.count}
+              onAddRepeater={(definition) => void addRepeater(definition)}
+              onRemoveRepeaterAtCaret={() => void removeRepeaterAtCaret()}
+              sections={repeaterSections}
+              onSectionsChange={(next) => {
+                setRepeaterSections(next);
+                setIsDirty(true);
+              }}
+            />
+
+            <div className="my-4 border-t border-border-secondary" />
+
             <OakDocPartialPanel
               tenantId={activeTenantId ?? undefined}
               referencedIds={partialReferences}
@@ -1338,23 +1384,6 @@ export function OakDocEditor() {
               pinnedVersions={pinnedPartialVersions}
               refreshLatest={refreshPartials}
               onRefreshLatestChange={setRefreshPartials}
-            />
-
-            <div className="my-4 border-t border-border-secondary" />
-
-            <OakDocRepeaterPanel
-              repeaterTags={repeaterSummary.tags}
-              count={repeaterSummary.count}
-              fieldTags={fieldSummary.tags}
-              disabled={!hasDocument || busy}
-              onAdd={(definition) => void addRepeater(definition)}
-              onRemoveAtCaret={() => void removeRepeaterAtCaret()}
-              onAssignField={(field) => void assignField(field)}
-              sections={repeaterSections}
-              onSectionsChange={(next) => {
-                setRepeaterSections(next);
-                setIsDirty(true);
-              }}
             />
 
             <div className="my-4 border-t border-border-secondary" />
@@ -1470,63 +1499,10 @@ export function OakDocEditor() {
               ) : null}
             </section>
 
-            <div className="my-4 border-t border-border-secondary" />
-
-            <OakDocCustomFieldsPanel
-              fields={customFields}
-              partialFields={partialCustomFields}
-              onChange={(next) => {
-                setCustomFields(next);
-                setIsDirty(true);
-              }}
-              onInsert={(field) => void assignField(field)}
-              presentTags={fieldSummary.tags}
-              disabled={!hasDocument || busy}
-            />
-
-            <div className="my-4 border-t border-border-secondary" />
-
-            <OakDocFieldList
-              presentTags={fieldSummary.tags}
-              fieldCount={fieldSummary.count}
-              onInsert={(field) => void assignField(field)}
-              disabled={!hasDocument || busy}
-            />
-
-            <div className="my-4 border-t border-border-secondary" />
-
-            <section className="space-y-2">
-              <h2 className="text-xs font-semibold uppercase tracking-wide text-text-muted">
-                Document fields
-              </h2>
-              {fieldSummary.tags.length > 0 ? (
-                <div className="flex flex-wrap gap-1.5">
-                  {fieldSummary.tags.map((tag) => (
-                    <span
-                      key={tag}
-                      className="rounded-md bg-background-tertiary px-1.5 py-1 text-[10px] text-text-secondary"
-                      title={fieldLabel(tag)}
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-xs text-text-muted">No OakDoc fields yet.</p>
-              )}
-
-              <div className={`rounded-lg border p-2.5 text-xs leading-relaxed ${statusClasses(statusKind)}`}>
-                {busy ? (
-                  <span className="inline-flex items-center gap-2">
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    {status}
-                  </span>
-                ) : status}
-              </div>
-            </section>
           </aside>
 
           <section
+            ref={(element) => { viewRef.current = element; }}
             className="relative min-h-0 min-w-0 overflow-hidden bg-[#eef0f2]"
             onKeyDownCapture={handleEditorKeyDown}
             onPointerUpCapture={fieldBlocks.onPointerUpCapture}
@@ -1552,6 +1528,7 @@ export function OakDocEditor() {
                 onSave={() => void saveTemplate()}
                 onReady={() => {
                   setEditorReadyKey((value) => value + 1);
+                  restoreView();
                   const message = readyMessageRef.current || 'DOCX ready.';
                   readyMessageRef.current = '';
                   setStatus(message);

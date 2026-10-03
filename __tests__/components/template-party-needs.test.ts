@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   officersOfRoles,
+  pickerTitle,
   repeaterSectionTitle,
   templateContactLists,
   templateOfficerRoles,
@@ -64,6 +65,15 @@ describe('named repeating sections on Configure', () => {
     expect(repeaterSectionTitle(sections, 'officers')).toBe('Outgoing secretary · Incoming CEO');
     expect(repeaterSectionTitle(sections, 'shareholders')).toBeNull();
     expect(repeaterSectionTitle(null, 'directors')).toBeNull();
+  });
+
+  it('titles a single-person picker with the names it was given', () => {
+    const named = { names: { selectedDirector: ['Signer of the resolution(s)', 'Chairman'] }, shortlists: {} };
+    expect(pickerTitle(named, 'selectedDirector')).toBe('Signer of the resolution(s) · Chairman');
+    expect(pickerTitle(named, 'selectedShareholder')).toBeNull();
+    expect(pickerTitle(null, 'selectedContact')).toBeNull();
+    // A picker name is not a repeating section's.
+    expect(repeaterSectionTitle(named, 'directors')).toBeNull();
   });
 
   it('lists the named contacts lists with their names and shortlists', () => {

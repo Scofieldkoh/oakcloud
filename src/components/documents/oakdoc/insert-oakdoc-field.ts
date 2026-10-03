@@ -22,7 +22,9 @@ async function editorBytes(handle: DocxEditorRef): Promise<Uint8Array> {
 /**
  * Wrap the selection in (or insert at the caret) a Word content control for
  * an Oakcloud field. Shared by the template editor and the Word partial
- * editor so both create identical fields.
+ * editor so both create identical fields. The document is only remounted
+ * when the editor could not fill the new field itself or a deleted field
+ * had to be pruned.
  */
 export async function insertOakDocField(
   handle: DocxEditorRef | null,
@@ -43,9 +45,16 @@ export async function insertOakDocField(
   if (!allowed.ok) {
     throw new Error(allowed.reason || 'The current selection cannot be made into a field.');
   }
+  const atCaret = editor.snapshot().selectionCollapsed;
   const result = handle.exec(command);
   if (!result.ok) {
     throw new Error(result.reason || 'OakDoc could not create the Word content control.');
+  }
+  // At a caret the new control is empty with the caret inside it; typing its
+  // token in place fills it without reloading the document, so the caret and
+  // scroll position stay where the author was working.
+  if (atCaret) {
+    handle.exec({ type: 'insertText', text: `{{${field.tag}}}` } as unknown as EditorCommand);
   }
 
   const afterBytes = await editorBytes(handle);
@@ -68,6 +77,8 @@ export async function insertOakDocField(
   return {
     bytes: null,
     afterBytes,
-    message: `Created ${field.label} field around the selected text.`,
+    message: atCaret
+      ? `Added ${field.label} field.`
+      : `Created ${field.label} field around the selected text.`,
   };
 }

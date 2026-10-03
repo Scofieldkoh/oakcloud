@@ -1,7 +1,9 @@
 'use client';
 
 import { useId, useState } from 'react';
+import { Repeat, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { CollapsibleSection } from '@/components/ui/collapsible-section';
 import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
 import { OakDocContactShortlistPicker } from '@/components/documents/oakdoc/oakdoc-contact-shortlist-picker';
 import {
@@ -12,7 +14,6 @@ import {
   OAKDOC_CONTACTS_REPEATER_TAG,
   OAKDOC_OFFICERS_REPEATER_TAG,
   OAKDOC_OFFICER_ROLE_FILTERS,
-  OAKDOC_REPEATER_NAME_MAX,
   formatOakDocOfficerRoles,
   isOakDocContactsRepeaterTag,
   oakDocContactListNameFromSlug,
@@ -22,6 +23,7 @@ import {
   oakDocRepeaterDefinitionForTag,
   parseOakDocContactListSlug,
   parseOakDocOfficerRepeaterRoles,
+  type OakDocGenericRepeaterKind,
 } from '@/lib/document-editor/oakdoc-repeater-definitions';
 import type { OakDocFieldDefinition } from '@/lib/document-editor/oakdoc-fields';
 import {
@@ -30,6 +32,8 @@ import {
   type OakDocRepeaterSections,
 } from '@/lib/document-editor/oakdoc-custom-fields';
 import { cn } from '@/lib/utils';
+import { OakDocConfigureName, OakDocFieldRow, keepEditorCaret } from './oakdoc-field-row';
+import { matchesOakDocFieldQuery } from './oakdoc-field-search';
 
 export interface OakDocRepeaterPanelProps {
   /** Repeater tags in the document, one per repeating section. */
@@ -48,9 +52,29 @@ export interface OakDocRepeaterPanelProps {
    */
   sections?: OakDocRepeaterSections;
   onSectionsChange?: (sections: OakDocRepeaterSections) => void;
+  /** Panel search; matching section fields show while it is set. */
+  query?: string;
+  /**
+   * The open row's key in the panel: `section:<tag>` for a section in the
+   * document, `kind:<tag>` for a new one, `item:<tag>:<field>` for a field.
+   * Uncontrolled when absent.
+   */
+  selectedKey?: string | null;
+  onSelect?: (key: string | null) => void;
 }
 
 const NO_SECTIONS: OakDocRepeaterSections = { names: {}, shortlists: {} };
+
+/** Who each kind of section repeats for, shown when a new one is opened. */
+const KIND_HINTS: Record<OakDocGenericRepeaterKind, string> = {
+  directors: 'Repeats for each director ticked on Configure.',
+  shareholders: 'Repeats for each shareholder ticked on Configure.',
+  contacts: 'Repeats for each contact picked on Configure. Name it to keep it a separate list with its own shortlist.',
+  officers: 'Repeats for each officer ticked on Configure, of any role or only the roles chosen here.',
+  signers: 'Service agreements: repeats for each signer.',
+  authorisedRepresentatives: 'Service agreements: repeats for each authorised representative.',
+  agreementEntities: 'Service agreements: repeats for each entity in the agreement.',
+};
 
 /** True when a tag in the document is this definition's repeater (an officers one with any roles). */
 function usesDefinition(tags: readonly string[], definition: OakDocRepeaterDefinition): boolean {
@@ -66,9 +90,11 @@ function sectionKindLabel(tag: string, definition: OakDocRepeaterDefinition): st
 }
 
 /**
- * Repeating sections (directors, officers, shareholders, contacts...) and the
- * item fields of those in the document. Shared by the template editor and the
- * Word partial editor.
+ * Repeating sections (directors, officers, shareholders, contacts...) as a
+ * group of the OakDoc field panel. Open a section in the document for its
+ * Configure name, shortlist and fields, or open a kind to name a new
+ * section and make the paragraph or table row at the caret repeat.
+ * Shared by the template editor and the Word partial editor.
  */
 export function OakDocRepeaterPanel({
   repeaterTags,
@@ -80,14 +106,24 @@ export function OakDocRepeaterPanel({
   onAssignField,
   sections = NO_SECTIONS,
   onSectionsChange,
+  query = '',
+  selectedKey: controlledKey,
+  onSelect,
 }: OakDocRepeaterPanelProps) {
+  const [localKey, setLocalKey] = useState<string | null>(null);
+  const selectedKey = controlledKey === undefined ? localKey : controlledKey;
+  const select = (key: string | null) => {
+    if (controlledKey === undefined) setLocalKey(key);
+    onSelect?.(key);
+  };
+  const toggle = (key: string) => select(selectedKey === key ? null : key);
+  const [open, setOpen] = useState(true);
   // Roles the next Officers section is limited to; none means any role.
   const [officerRoles, setOfficerRoles] = useState<string[]>([]);
   // Name of the next section inserted; a named Contacts section is its own list.
   const [newName, setNewName] = useState('');
   const [shortlistTag, setShortlistTag] = useState<string | null>(null);
   const rolesLabelId = useId();
-  const nameInputId = useId();
   const toggleOfficerRole = (role: string) => setOfficerRoles((current) => (
     current.includes(role) ? current.filter((entry) => entry !== role) : [...current, role]
   ));
@@ -95,6 +131,7 @@ export function OakDocRepeaterPanel({
   const pendingName = canName ? normalizeOakDocRepeaterName(newName) : '';
   const contactListUnnamed = pendingName !== '' && oakDocContactListSlug(pendingName) === '';
   const usedTags = Array.from(new Set(repeaterTags));
+  const searching = query.trim() !== '';
 
   const nameOf = (tag: string): string => {
     const slug = parseOakDocContactListSlug(tag);
@@ -108,6 +145,13 @@ export function OakDocRepeaterPanel({
     ...sections,
     shortlists: { ...sections.shortlists, [tag]: contacts },
   });
+  const definitionToInsert = (base: OakDocRepeaterDefinition): OakDocRepeaterDefinition => (
+    base.tag === OAKDOC_OFFICERS_REPEATER_TAG
+      ? oakDocOfficersRepeaterDefinition(officerRoles)
+      : base.tag === OAKDOC_CONTACTS_REPEATER_TAG
+        ? oakDocContactsRepeaterDefinition(pendingName)
+        : base
+  );
   const insert = (definition: OakDocRepeaterDefinition) => {
     if (pendingName) {
       // A named list keeps its first name when the same name is inserted again.
@@ -116,212 +160,246 @@ export function OakDocRepeaterPanel({
       setNewName('');
     }
     onAdd(definition);
+    // Open the new section, for its fields and shortlist.
+    select(`section:${definition.tag}`);
   };
   const shortlist = shortlistTag ? sections.shortlists[shortlistTag] ?? [] : [];
   const shortlistName = shortlistTag ? nameOf(shortlistTag) : '';
 
+  const itemFieldRows = (sectionKey: string, definition: OakDocRepeaterDefinition, fields = definition.fields) => fields.map((field) => {
+    const rowKey = `item:${sectionKey}:${field.tag}`;
+    return (
+      <OakDocFieldRow
+        key={field.tag}
+        field={field}
+        detail={`Inside the ${definition.label.toLowerCase()} section · e.g. ${field.example}`}
+        present={fieldTags.includes(field.tag)}
+        selected={selectedKey === rowKey}
+        onSelect={() => toggle(rowKey)}
+        onAdd={onAssignField}
+        disabled={disabled}
+      />
+    );
+  });
+
+  // While searching, list the matching fields of the sections in the document.
+  const searchResults = searching
+    ? OAKDOC_REPEATER_DEFINITIONS
+      .filter((definition) => usesDefinition(repeaterTags, definition))
+      .map((definition) => ({
+        definition,
+        fields: definition.fields.filter((field) => matchesOakDocFieldQuery(
+          query, field.label, field.tag, definition.label, definition.itemLabel,
+        )),
+      }))
+      .filter((entry) => entry.fields.length > 0)
+    : [];
+  if (searching && searchResults.length === 0) return null;
+
   return (
-    <section className="space-y-3">
-      <div>
-        <div className="flex items-end justify-between gap-2">
-          <h2 className="text-xs font-semibold uppercase tracking-wide text-text-muted">
-            Repeating sections
-          </h2>
-          <span className="text-[11px] text-text-muted">
-            {count} in document
-          </span>
+    <CollapsibleSection
+      variant="panel"
+      title="Repeating sections"
+      count={count || undefined}
+      collapsed={searching ? false : !open}
+      onCollapsedChange={(collapsed) => setOpen(!collapsed)}
+      contentClassName="space-y-3"
+    >
+      {searching ? (
+        <div className="space-y-0.5">
+          {searchResults.map(({ definition, fields }) => itemFieldRows(definition.tag, definition, fields))}
         </div>
-        <p className="mt-1 text-xs text-text-secondary">
-          Put the caret in a paragraph or table row, then make that structure repeat for every person chosen.
-        </p>
-      </div>
-
-      {canName ? (
-        <div className="space-y-1">
-          <label htmlFor={nameInputId} className="block text-[11px] font-semibold uppercase tracking-wide text-text-muted">
-            Section name
-          </label>
-          <input
-            id={nameInputId}
-            type="text"
-            value={newName}
-            maxLength={OAKDOC_REPEATER_NAME_MAX}
-            disabled={disabled}
-            placeholder="e.g. Signers for the resolution(s)"
-            onChange={(event) => setNewName(event.target.value)}
-            aria-invalid={contactListUnnamed || undefined}
-            className="w-full rounded-md border border-border-primary bg-background-primary px-2 py-1.5 text-xs text-text-primary placeholder:text-text-muted focus:border-oak-primary focus:outline-none focus:ring-2 focus:ring-oak-primary/30 disabled:opacity-40"
-          />
-          <p className={cn('text-[10px] leading-relaxed', contactListUnnamed ? 'text-status-error' : 'text-text-muted')}>
-            {contactListUnnamed
-              ? 'A Contacts list name needs letters or numbers.'
-              : 'Optional. Configure titles the new section\'s picker with it. A named Contacts section is its own list, with its own shortlist and ticks.'}
-          </p>
-        </div>
-      ) : null}
-
-      <div className="grid grid-cols-2 gap-2">
-        {OAKDOC_REPEATER_DEFINITIONS.map((base) => {
-          const definition = base.tag === OAKDOC_OFFICERS_REPEATER_TAG
-            ? oakDocOfficersRepeaterDefinition(officerRoles)
-            : base.tag === OAKDOC_CONTACTS_REPEATER_TAG
-              ? oakDocContactsRepeaterDefinition(pendingName)
-              : base;
-          const present = usesDefinition(repeaterTags, base);
-          const blocked = base.tag === OAKDOC_CONTACTS_REPEATER_TAG && contactListUnnamed;
-          return (
-            <button
-              key={base.tag}
-              type="button"
-              disabled={disabled || blocked}
-              onPointerDown={(event) => event.preventDefault()}
-              onClick={() => insert(definition)}
-              className="rounded-lg border border-border-primary bg-background-primary px-2.5 py-2 text-left transition-colors hover:border-oak-primary/40 hover:bg-oak-primary/5 disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              <span className="flex items-center justify-between gap-2">
-                <span className="text-xs font-medium text-text-primary">{definition.label}</span>
-                {present ? (
-                  <span className="h-1.5 w-1.5 rounded-full bg-oak-primary" title="Used in this document" />
-                ) : null}
-              </span>
-              <span className="mt-0.5 block break-all text-[10px] text-text-muted">{definition.tag}</span>
-            </button>
-          );
-        })}
-      </div>
-
-      <div role="group" aria-labelledby={rolesLabelId} className="space-y-1.5">
-        <div id={rolesLabelId} className="text-[11px] font-semibold uppercase tracking-wide text-text-muted">
-          Officer roles
-        </div>
-        <p className="text-[10px] leading-relaxed text-text-muted">
-          Limit a new Officers section to these roles, e.g. Secretary only. With none
-          ticked it lists officers of any role. Configure offers only officers of these roles.
-        </p>
-        <div className="flex flex-wrap gap-1">
-          {OAKDOC_OFFICER_ROLE_FILTERS.map((entry) => {
-            const pressed = officerRoles.includes(entry.role);
-            return (
-              <button
-                key={entry.role}
-                type="button"
-                aria-pressed={pressed}
+      ) : (
+        <>
+          {usedTags.length > 0 ? (
+            <div className="space-y-1">
+              <h3 className="px-1 text-[10px] font-semibold uppercase tracking-wide text-text-muted">
+                In this document
+              </h3>
+              {OAKDOC_REPEATER_DEFINITIONS
+                .filter((definition) => usesDefinition(repeaterTags, definition))
+                .map((definition) => (
+                  <ul key={definition.tag} className="space-y-1" aria-label={`${definition.label} sections`}>
+                    {usedTags
+                      .filter((tag) => oakDocRepeaterDefinitionForTag(tag)?.tag === definition.tag)
+                      .map((tag) => {
+                        const kindLabel = sectionKindLabel(tag, definition);
+                        const name = nameOf(tag);
+                        const rowKey = `section:${tag}`;
+                        const selected = selectedKey === rowKey || Boolean(selectedKey?.startsWith(`item:${tag}:`));
+                        const listShortlist = sections.shortlists[tag] ?? [];
+                        return (
+                          <li
+                            key={tag}
+                            className={cn(
+                              'rounded-md border transition-colors',
+                              selected ? 'border-oak-primary/40 bg-oak-primary/5' : 'border-border-primary bg-background-primary',
+                            )}
+                          >
+                            <button
+                              type="button"
+                              aria-expanded={selected}
+                              onPointerDown={keepEditorCaret}
+                              onClick={() => toggle(rowKey)}
+                              className="flex w-full items-start gap-2 px-2.5 py-1.5 text-left [&>svg]:mt-0.5"
+                            >
+                              <Repeat className="h-3.5 w-3.5 shrink-0 text-oak-primary" aria-hidden="true" />
+                              <span className="min-w-0 text-xs font-medium text-text-primary">
+                                {name ? `${name} · ${kindLabel}` : kindLabel}
+                              </span>
+                            </button>
+                            {selected ? (
+                              <div className="space-y-2 px-2.5 pb-2.5">
+                                <code className="block break-all text-[10px] text-text-muted">{tag}</code>
+                                {canName && tag !== OAKDOC_CONTACTS_REPEATER_TAG ? (
+                                  <OakDocConfigureName
+                                    value={sections.names[tag] ?? ''}
+                                    onChange={(value) => setName(tag, value)}
+                                    placeholder={parseOakDocContactListSlug(tag) ? name : kindLabel}
+                                    disabled={disabled}
+                                  />
+                                ) : null}
+                                {canName && isOakDocContactsRepeaterTag(tag) ? (
+                                  <div className="flex items-center justify-between gap-2">
+                                    <span className="text-[10px] leading-relaxed text-text-secondary">
+                                      {listShortlist.length === 0
+                                        ? 'Configure offers any contact.'
+                                        : `Configure offers ${listShortlist.length} shortlisted contact${listShortlist.length === 1 ? '' : 's'}.`}
+                                    </span>
+                                    <Button
+                                      variant="secondary"
+                                      size="xs"
+                                      disabled={disabled}
+                                      aria-label={tag === OAKDOC_CONTACTS_REPEATER_TAG ? undefined : `Shortlist for ${name}`}
+                                      onClick={() => setShortlistTag(tag)}
+                                    >
+                                      Shortlist
+                                    </Button>
+                                  </div>
+                                ) : null}
+                                <div className="space-y-0.5">
+                                  <div className="text-[10px] text-text-muted">
+                                    {definition.itemLabel} fields: add them inside the repeated paragraph or row.
+                                  </div>
+                                  {itemFieldRows(tag, definition)}
+                                </div>
+                              </div>
+                            ) : null}
+                          </li>
+                        );
+                      })}
+                  </ul>
+                ))}
+              <Button
+                variant="ghost"
+                size="xs"
                 disabled={disabled}
-                onPointerDown={(event) => event.preventDefault()}
-                onClick={() => toggleOfficerRole(entry.role)}
-                className={cn(
-                  'rounded border px-1.5 py-0.5 text-[10px] transition-colors disabled:cursor-not-allowed disabled:opacity-40',
-                  pressed
-                    ? 'border-oak-primary bg-oak-primary/10 text-oak-primary'
-                    : 'border-border-primary text-text-secondary hover:border-oak-primary/30 hover:bg-oak-primary/5',
-                )}
+                onPointerDown={keepEditorCaret}
+                onClick={onRemoveAtCaret}
+                leftIcon={<Trash2 className="h-3.5 w-3.5" aria-hidden="true" />}
               >
-                {entry.label}
-              </button>
-            );
-          })}
-        </div>
-      </div>
+                Remove section at caret
+              </Button>
+            </div>
+          ) : null}
 
-      {count > 0 ? (
-        <button
-          type="button"
-          disabled={disabled}
-          onClick={onRemoveAtCaret}
-          className="w-full rounded-md border border-border-primary px-2.5 py-2 text-xs text-text-secondary transition-colors hover:border-status-error/40 hover:bg-status-error/5 hover:text-status-error disabled:cursor-not-allowed disabled:opacity-40"
-        >
-          Remove repeater at caret
-        </button>
-      ) : null}
-
-      {OAKDOC_REPEATER_DEFINITIONS
-        .filter((definition) => usesDefinition(repeaterTags, definition))
-        .map((definition) => {
-          const tags = usedTags.filter((tag) => oakDocRepeaterDefinitionForTag(tag)?.tag === definition.tag);
-          return (
-            <div key={definition.tag} className="rounded-lg border border-border-primary p-2.5">
-              <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-text-muted">
-                {definition.itemLabel} fields
-              </div>
-              <ul className="mb-2 space-y-1.5" aria-label={`${definition.label} sections`}>
-                {tags.map((tag) => {
-                  const kindLabel = sectionKindLabel(tag, definition);
-                  const name = nameOf(tag);
-                  const contactsTag = isOakDocContactsRepeaterTag(tag);
-                  const listShortlist = sections.shortlists[tag] ?? [];
-                  return (
-                    <li key={tag} className="space-y-1 rounded-md bg-background-secondary px-2 py-1.5">
-                      <div className="text-[10px] font-medium text-text-secondary">
-                        {name ? `${name} · ${kindLabel}` : kindLabel}
-                      </div>
-                      <div className="break-all text-[10px] text-text-muted">{tag}</div>
-                      {canName && tag !== OAKDOC_CONTACTS_REPEATER_TAG ? (
-                        <input
-                          type="text"
-                          value={sections.names[tag] ?? ''}
-                          maxLength={OAKDOC_REPEATER_NAME_MAX}
+          <div className="space-y-1">
+            <h3 className="px-1 text-[10px] font-semibold uppercase tracking-wide text-text-muted">
+              New section
+            </h3>
+            <p className="px-1 text-[10px] leading-relaxed text-text-muted">
+              Put the caret in the paragraph or table row to repeat, then choose who it repeats for.
+            </p>
+            {OAKDOC_REPEATER_DEFINITIONS.map((base) => {
+              const rowKey = `kind:${base.tag}`;
+              const selected = selectedKey === rowKey;
+              const definition = definitionToInsert(base);
+              const isContacts = base.tag === OAKDOC_CONTACTS_REPEATER_TAG;
+              return (
+                <div
+                  key={base.tag}
+                  className={cn(
+                    'rounded-md border transition-colors',
+                    selected ? 'border-oak-primary/40 bg-oak-primary/5' : 'border-transparent hover:bg-oak-primary/5',
+                  )}
+                >
+                  <button
+                    type="button"
+                    aria-expanded={selected}
+                    disabled={disabled}
+                    onPointerDown={keepEditorCaret}
+                    onClick={() => toggle(rowKey)}
+                    className="flex w-full items-center justify-between gap-2 px-2.5 py-1.5 text-left disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    <span className="text-xs font-medium text-text-primary">{base.label}</span>
+                    {usesDefinition(repeaterTags, base) ? (
+                      <span className="h-1.5 w-1.5 rounded-full bg-oak-primary" title="Used in this document" />
+                    ) : null}
+                  </button>
+                  {selected ? (
+                    <div className="space-y-2 px-2.5 pb-2.5">
+                      <p className="text-[10px] leading-relaxed text-text-secondary">{KIND_HINTS[base.kind]}</p>
+                      {canName ? (
+                        <OakDocConfigureName
+                          label={isContacts ? 'List name on Configure' : 'Name on Configure'}
+                          value={newName}
+                          onChange={setNewName}
+                          placeholder={isContacts ? 'e.g. Corporate secretary to be appointed' : 'e.g. Signers for the resolution(s)'}
+                          error={isContacts && contactListUnnamed ? 'A Contacts list name needs letters or numbers.' : undefined}
                           disabled={disabled}
-                          aria-label={`Name of ${kindLabel} section`}
-                          placeholder={parseOakDocContactListSlug(tag) ? name : 'Name shown on Configure'}
-                          onChange={(event) => setName(tag, event.target.value)}
-                          className="w-full rounded border border-border-primary bg-background-primary px-1.5 py-1 text-[11px] text-text-primary placeholder:text-text-muted focus:border-oak-primary focus:outline-none disabled:opacity-40"
                         />
                       ) : null}
-                      {canName && contactsTag ? (
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="text-[10px] leading-relaxed text-text-secondary">
-                            {listShortlist.length === 0
-                              ? 'Configure offers any contact.'
-                              : `Configure offers ${listShortlist.length} shortlisted contact${listShortlist.length === 1 ? '' : 's'}.`}
-                          </span>
-                          <Button
-                            variant="secondary"
-                            size="xs"
-                            disabled={disabled}
-                            aria-label={tag === OAKDOC_CONTACTS_REPEATER_TAG ? undefined : `Shortlist for ${name}`}
-                            onClick={() => setShortlistTag(tag)}
-                          >
-                            Shortlist
-                          </Button>
+                      {base.tag === OAKDOC_OFFICERS_REPEATER_TAG ? (
+                        <div role="group" aria-labelledby={rolesLabelId} className="space-y-1">
+                          <div id={rolesLabelId} className="text-xs font-medium text-text-secondary">
+                            Officer roles
+                          </div>
+                          <div className="flex flex-wrap gap-1">
+                            {OAKDOC_OFFICER_ROLE_FILTERS.map((entry) => {
+                              const pressed = officerRoles.includes(entry.role);
+                              return (
+                                <button
+                                  key={entry.role}
+                                  type="button"
+                                  aria-pressed={pressed}
+                                  disabled={disabled}
+                                  onPointerDown={keepEditorCaret}
+                                  onClick={() => toggleOfficerRole(entry.role)}
+                                  className={cn(
+                                    'rounded border px-1.5 py-0.5 text-[10px] transition-colors disabled:cursor-not-allowed disabled:opacity-40',
+                                    pressed
+                                      ? 'border-oak-primary bg-oak-primary/10 text-oak-primary'
+                                      : 'border-border-primary bg-background-primary text-text-secondary hover:border-oak-primary/30 hover:bg-oak-primary/5',
+                                  )}
+                                >
+                                  {entry.label}
+                                </button>
+                              );
+                            })}
+                          </div>
+                          <p className="text-[10px] text-text-muted">None ticked lists officers of any role.</p>
                         </div>
                       ) : null}
-                    </li>
-                  );
-                })}
-              </ul>
-              <p className="mb-2 text-[10px] leading-relaxed text-text-muted">
-                Select sample text inside the repeated row or paragraph, then assign the matching field.
-              </p>
-              <div className="space-y-1">
-                {definition.fields.map((field) => {
-                  const present = fieldTags.includes(field.tag);
-                  return (
-                    <button
-                      key={field.tag}
-                      type="button"
-                      disabled={disabled}
-                      onPointerDown={(event) => event.preventDefault()}
-                      onClick={() => onAssignField(field)}
-                      className="flex w-full items-center justify-between gap-2 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-oak-primary/5 disabled:cursor-not-allowed disabled:opacity-40"
-                    >
-                      <span className="min-w-0">
-                        <span className="block truncate text-xs font-medium text-text-primary">
-                          {field.label}
-                        </span>
-                        <span className="block truncate text-[10px] text-text-muted">
-                          {field.tag}
-                        </span>
-                      </span>
-                      {present ? (
-                        <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-oak-primary" title="Used in this document" />
-                      ) : null}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          );
-        })}
+                      <code className="block break-all text-[10px] text-text-muted">{definition.tag}</code>
+                      <Button
+                        variant="primary"
+                        size="xs"
+                        disabled={disabled || (isContacts && contactListUnnamed)}
+                        onPointerDown={keepEditorCaret}
+                        onClick={() => insert(definition)}
+                        leftIcon={<Repeat className="h-3.5 w-3.5" aria-hidden="true" />}
+                        aria-label={`Add ${definition.label} section`}
+                      >
+                        Repeat at caret
+                      </Button>
+                    </div>
+                  ) : null}
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
 
       {onSectionsChange ? (
         <Modal
@@ -348,6 +426,6 @@ export function OakDocRepeaterPanel({
           </ModalFooter>
         </Modal>
       ) : null}
-    </section>
+    </CollapsibleSection>
   );
 }
