@@ -53,6 +53,7 @@ import {
 import { useOakDocSectionDeleteGuard } from '@/components/documents/oakdoc/use-oakdoc-section-delete-guard';
 import { useOakDocFieldBlocks } from '@/components/documents/oakdoc/use-oakdoc-field-blocks';
 import { useOakDocViewKeeper } from '@/components/documents/oakdoc/use-oakdoc-view-keeper';
+import { OakDocLetteredListButton } from '@/components/documents/oakdoc/oakdoc-lettered-list';
 import { keepIfSame, useOakDocSummaryRefresh } from '@/components/documents/oakdoc/use-oakdoc-summary-refresh';
 import { oakDocNamedKeysIn } from '@/lib/document-editor/oakdoc-named-sections';
 import { OakDocPartialPanel } from '@/components/documents/oakdoc/oakdoc-partial-panel';
@@ -1548,6 +1549,7 @@ export function OakDocEditor() {
                 className="h-full min-h-0"
               >
                 {fieldBlocks.probe}
+                <OakDocLetteredListButton />
               </DocxEditor>
             ) : (
               <div className="absolute inset-6 grid place-items-center">
