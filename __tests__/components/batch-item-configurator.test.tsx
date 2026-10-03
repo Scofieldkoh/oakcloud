@@ -71,7 +71,18 @@ function props(overrides: Partial<BatchItemConfiguratorProps> = {}): BatchItemCo
   };
 }
 
+/** The Contacts card's heading; another "Contacts" heading can sit inside a card. */
+function contactsCardHeading() {
+  return screen.getAllByRole('heading', { name: 'Contacts' }).find((heading) => heading.closest('header'))!;
+}
+
 describe('BatchItemConfigurator', () => {
+  it('shows no subtext under the card headers', () => {
+    render(<BatchItemConfigurator {...props({ templateContent: '<p>Word</p>', templateFieldTags: ['repeat.contacts', 'contact.name'] })} />);
+    expect(contactsCardHeading()).toBeInTheDocument();
+    expect(screen.queryByText(/in the order picked/)).not.toBeInTheDocument();
+  });
+
   it('uses muted orange headers for incomplete required sections and green for complete sections', () => {
     render(<BatchItemConfigurator {...props()} />);
 
@@ -81,7 +92,7 @@ describe('BatchItemConfigurator', () => {
       .toHaveClass('bg-oak-primary');
     expect(screen.getByRole('heading', { name: /^Parties/ }).closest('header'))
       .toHaveClass('bg-[#9b6348]');
-    expect(screen.getByRole('heading', { name: /^ContactsContacts listed/ }).closest('header'))
+    expect(contactsCardHeading().closest('header'))
       .toHaveClass('bg-oak-primary');
   });
 
@@ -245,7 +256,6 @@ describe('BatchItemConfigurator', () => {
     });
     render(<BatchItemConfigurator {...p} />);
 
-    expect(screen.getByText(/from the template's shortlist/)).toBeInTheDocument();
     expect(screen.queryByRole('checkbox', { name: /Anyone Else/ })).not.toBeInTheDocument();
     expect(screen.getByText('bea@example.com')).toBeInTheDocument();
     expect(screen.getByRole('checkbox', { name: /Bea Tan/ })).toBeChecked();
@@ -263,7 +273,6 @@ describe('BatchItemConfigurator', () => {
       contactShortlist: null,
     })} />);
     expect(screen.getByRole('checkbox', { name: /Anyone Else/ })).toBeInTheDocument();
-    expect(screen.queryByText(/from the template's shortlist/)).not.toBeInTheDocument();
   });
 
   it('gives each named contacts list its own card, shortlist and ticks', async () => {
@@ -294,7 +303,7 @@ describe('BatchItemConfigurator', () => {
     });
     render(<BatchItemConfigurator {...p} />);
 
-    expect(screen.getByRole('heading', { name: /^Contacts\s*Contacts listed in the document's Contacts section/ })).toBeInTheDocument();
+    expect(contactsCardHeading()).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /^Corporate secretary to be appointed/ })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /^Auditor to be appointed/ })).toBeInTheDocument();
     const corpSec = screen.getByRole('heading', { name: /^Corporate secretary to be appointed/ }).closest('section')!;

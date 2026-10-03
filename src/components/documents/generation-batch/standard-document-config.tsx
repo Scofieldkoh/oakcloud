@@ -349,7 +349,6 @@ export function StandardDocumentConfig({
       {genericPartyKeys.length > 0 && (
         <BatchSection
           title="Parties"
-          description="Officers and the contact this document addresses."
           status={{
             complete: partyMissingCount === 0,
             label: partyMissingCount === 0 ? 'Complete' : `${partyMissingCount} required`,
@@ -418,9 +417,6 @@ export function StandardDocumentConfig({
       {showContacts && (
         <BatchSection
           title="Contacts"
-          description={shortlistContacts
-            ? "Contacts listed in the document's Contacts section, in the order picked, from the template's shortlist."
-            : "Contacts listed in the document's Contacts section, in the order picked."}
           status={{
             complete: true,
             label: `${selectedContacts.length} selected`,
@@ -462,9 +458,6 @@ export function StandardDocumentConfig({
           <BatchSection
             key={list.slug}
             title={list.name}
-            description={list.shortlist
-              ? 'Contacts listed in this section of the document, in the order picked, from its shortlist.'
-              : 'Contacts listed in this section of the document, in the order picked.'}
             status={{ complete: true, label: `${list.selected.length} selected` }}
           >
             {list.shortlist ? (
@@ -492,7 +485,6 @@ export function StandardDocumentConfig({
       {masterFields.fields.length > 0 && (
         <BatchSection
           title="Shared values"
-          description="Inherited from Shared setup unless this document overrides them."
           status={requiredSharedFields > 0
             ? {
                 complete: sharedMissing === 0,
@@ -637,7 +629,6 @@ export function StandardDocumentConfig({
 
       <BatchSection
         title="Document fields"
-        description="Values used only by this document."
         status={requiredTemplateFields > 0
           ? {
               complete: fieldMissing === 0,

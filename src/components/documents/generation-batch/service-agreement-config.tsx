@@ -282,7 +282,6 @@ export function ServiceAgreementConfig({
 
       <BatchSection
         title={partiesTitle ?? 'Entities and representative'}
-        description="Every entity covered by this agreement, plus who signs for them."
         status={{
           complete: partiesComplete,
           label: partiesComplete
@@ -345,7 +344,6 @@ export function ServiceAgreementConfig({
       {masterFields.fields.length > 0 && (
         <BatchSection
           title="Shared values"
-          description="Effective shared values for this document."
           defaultOpen={false}
           status={requiredSharedFields.length > 0
             ? {

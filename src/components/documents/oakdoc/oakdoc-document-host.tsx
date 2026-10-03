@@ -17,6 +17,7 @@ import {
 } from '@/lib/document-editor/oakdoc-repeaters';
 import { OakDocEditorSession } from './oakdoc-editor-session';
 import { insertOakDocField } from './insert-oakdoc-field';
+import { keepIfSame, useOakDocSummaryRefresh } from './use-oakdoc-summary-refresh';
 import { useOakDocSectionDeleteGuard } from './use-oakdoc-section-delete-guard';
 import { useOakDocFieldBlocks } from './use-oakdoc-field-blocks';
 import { useOakDocViewKeeper } from './use-oakdoc-view-keeper';
@@ -202,16 +203,20 @@ export function OakDocDocumentHost({
   }, [keepView]);
 
   const hasSidebar = Boolean(renderSidebar);
-  useEffect(() => {
-    if (!hasSidebar || !documentBytes) return;
+  const updateSummaries = useCallback((bytes: Uint8Array) => {
     try {
-      setFieldTags(inspectOakDocFields(documentBytes, OAKDOC_FIELD_TAGS).tags);
-      setRepeaters(inspectOakDocRepeaters(documentBytes));
+      setFieldTags(keepIfSame(inspectOakDocFields(bytes, OAKDOC_FIELD_TAGS).tags));
+      setRepeaters(keepIfSame(inspectOakDocRepeaters(bytes)));
     } catch {
       setFieldTags([]);
       setRepeaters({ count: 0, tags: [] });
     }
-  }, [documentBytes, hasSidebar]);
+  }, []);
+  useEffect(() => {
+    if (hasSidebar && documentBytes) updateSummaries(documentBytes);
+  }, [documentBytes, hasSidebar, updateSummaries]);
+  // Deleting a field or section by typing changes no bytes the host holds.
+  const refreshSummaries = useOakDocSummaryRefresh(editorRef, updateSummaries);
 
   const insertField = useCallback(async (field: OakDocFieldDefinition) => {
     if (readOnly || disabled) return;
@@ -223,7 +228,7 @@ export function OakDocDocumentHost({
       if (inserted.bytes) {
         replaceMountedDocument(inserted.bytes, inserted.message);
       } else {
-        setFieldTags(inspectOakDocFields(inserted.afterBytes, OAKDOC_FIELD_TAGS).tags);
+        updateSummaries(inserted.afterBytes);
         setStatus(inserted.message);
       }
     } catch (caught) {
@@ -233,7 +238,7 @@ export function OakDocDocumentHost({
     } finally {
       setBusy(false);
     }
-  }, [disabled, markChanged, readOnly, replaceMountedDocument]);
+  }, [disabled, markChanged, readOnly, replaceMountedDocument, updateSummaries]);
 
   /** Rewrite the saved bytes around the caret's paragraphs and remount them. */
   const editAtCaret = useCallback(async (
@@ -451,7 +456,10 @@ export function OakDocDocumentHost({
                 }
               }}
               onChange={() => {
-                if (!readOnly && readyRef.current) markChanged();
+                if (!readOnly && readyRef.current) {
+                  markChanged();
+                  if (hasSidebar) refreshSummaries();
+                }
               }}
               className="h-full min-h-0"
             >
