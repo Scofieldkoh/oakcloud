@@ -6,7 +6,6 @@ import { cn } from '@/lib/utils';
 
 export interface BatchSectionProps {
   title: string;
-  description?: string;
   /**
    * Optional completion summary rendered in the header so a collapsed section
    * still tells the user whether it needs attention.
@@ -21,7 +20,6 @@ export interface BatchSectionProps {
 
 export function BatchSection({
   title,
-  description,
   status = null,
   action,
   defaultOpen = true,
@@ -53,15 +51,8 @@ export function BatchSection({
               aria-controls={contentId}
               className="flex min-h-9 w-full min-w-0 items-center gap-2 text-left"
             >
-              <span className="min-w-0">
-                <span className="block text-sm font-medium text-white">
-                  {title}
-                </span>
-                {description && (
-                  <span className="block text-xs font-normal text-white/70">
-                    {description}
-                  </span>
-                )}
+              <span className="block min-w-0 text-sm font-medium text-white">
+                {title}
               </span>
               <span className="ml-auto shrink-0 text-white/70">
                 {expanded
@@ -73,7 +64,6 @@ export function BatchSection({
         ) : (
           <div className="min-w-0 flex-1">
             <h3 id={headingId} className="text-sm font-medium text-white">{title}</h3>
-            {description && <p className="text-xs text-white/70">{description}</p>}
           </div>
         )}
 
