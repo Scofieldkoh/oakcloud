@@ -7,6 +7,21 @@ import {
 import type { EditableBatchItem } from '@/components/documents/generation-batch/batch-workspace-state';
 import type { CustomPlaceholderDefinition } from '@/types/placeholders';
 
+// The real select positions its popover from layout, which jsdom lacks.
+vi.mock('@/components/ui/searchable-select', () => ({
+  SearchableSelect: ({ ariaLabel, options, value, onChange }: {
+    ariaLabel?: string;
+    options: Array<{ value: string; label: string }>;
+    value: string;
+    onChange: (value: string) => void;
+  }) => (
+    <select aria-label={ariaLabel} value={value} onChange={(event) => onChange(event.target.value)}>
+      <option value="">Choose...</option>
+      {options.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+    </select>
+  ),
+}));
+
 function item(): EditableBatchItem {
   return {
     key: 'item-1',
@@ -94,6 +109,29 @@ describe('BatchCustomFieldForm', () => {
     expect(p.onPatch).toHaveBeenCalledWith({
       itemValues: { reference: 'REF-1' },
     });
+    unmount();
+  });
+
+  it('offers a Contact field\'s shortlist by name and stores the chosen contact', () => {
+    const p = props({
+      fields: [{
+        id: 'secretary',
+        key: 'secretary',
+        label: 'Secretary',
+        type: 'text',
+        required: true,
+        storageDefinition: {
+          key: 'custom.secretary',
+          fieldKind: 'contact',
+          options: [{ value: 'c-1', label: 'Tan Wei Jie' }, { value: 'c-2', label: 'Lim Mei Ling' }],
+        },
+      }],
+    });
+    const { unmount } = render(<BatchCustomFieldForm {...p} />);
+
+    expect(screen.getByRole('option', { name: 'Lim Mei Ling' })).toHaveValue('c-2');
+    fireEvent.change(screen.getByRole('combobox', { name: 'Secretary' }), { target: { value: 'c-2' } });
+    expect(p.onPatch).toHaveBeenCalledWith({ itemValues: { secretary: 'c-2' } });
     unmount();
   });
 });

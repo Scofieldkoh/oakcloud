@@ -26,6 +26,7 @@ import {
 import {
   buildOakDocResolutionDates,
   buildOakDocResolutionValues,
+  buildSelectedContact,
   type OakDocAgreementContext,
   type OakDocCompanyDetail,
   type OakDocContact,
@@ -36,7 +37,7 @@ import {
 } from '@/lib/document-editor/generated-document-revision';
 import {
   resolveOakDocRepeaters,
-  OAKDOC_REPEATER_OUTER_TAGS,
+  isOakDocRepeaterOuterTag,
   inspectOakDocRepeaters,
 } from '@/lib/document-editor/oakdoc-repeaters';
 import { OAKDOC_SIGNATURE_TAGS } from '@/lib/document-editor/oakdoc-signatures';
@@ -51,8 +52,10 @@ import {
 } from '@/services/document-party.service';
 import {
   buildOakDocCustomFieldValues,
-  isOakDocCustomFieldTag,
+  oakDocContactShortlist,
+  oakDocCustomContactFields,
   oakDocCustomFieldTypes,
+  parseOakDocCustomFieldTag,
 } from '@/lib/document-editor/oakdoc-custom-fields';
 import { getServiceAgreementDraftById } from '@/services/service-agreement/draft.service';
 import {
@@ -171,8 +174,10 @@ export function diagnoseOakDocGeneration(input: {
 }): OakDocDiagnostic[] {
   const diagnostics = diagnoseOakDocTags(input.usedTags, 'render');
   const undefinedCustom = Array.from(new Set(input.usedTags))
-    .filter((tag) => isOakDocCustomFieldTag(tag) && input.customFieldKeys
-      && !input.customFieldKeys.has(tag.slice('custom.'.length)))
+    .filter((tag) => {
+      const parsed = parseOakDocCustomFieldTag(tag);
+      return Boolean(parsed && input.customFieldKeys && !input.customFieldKeys.has(parsed.key));
+    })
     .sort();
   if (undefinedCustom.length > 0) {
     diagnostics.push({
@@ -292,6 +297,8 @@ export async function generateOakDocBytes(
     fieldTags: downloadedMetadata.fieldTags,
     partialPins: readOakDocPartialPins(template.contentJson),
     customFieldTypes: oakDocCustomFieldTypes(template.placeholders),
+    customContactFields: oakDocCustomContactFields(template.placeholders),
+    contactShortlist: contactShortlistIds(template.placeholders),
   }, input, params);
 }
 
@@ -345,6 +352,8 @@ export async function previewOakDocMaster(
     fieldTags: deriveOakDocTemplateFieldTags(input.bytes),
     partialPins,
     customFieldTypes: oakDocCustomFieldTypes(saved?.placeholders),
+    customContactFields: oakDocCustomContactFields(saved?.placeholders),
+    contactShortlist: contactShortlistIds(saved?.placeholders),
   }, {
     ...input,
     // The editor has no Configure step, so it previews sample resolutions.
@@ -364,6 +373,14 @@ interface OakDocMasterSource {
   partialPins: OakDocPartialPin[];
   /** Custom fields the template defines, by key, with their value type. */
   customFieldTypes: Record<string, PlaceholderValueType>;
+  /** Contact custom fields, by key, with the ids of their contact shortlist. */
+  customContactFields: Record<string, string[]>;
+  /** Ids the contacts repeater may list (template and partial shortlists); null: any contact. */
+  contactShortlist: string[] | null;
+}
+
+function contactShortlistIds(placeholders: unknown): string[] | null {
+  return oakDocContactShortlist(placeholders)?.map((contact) => contact.id) ?? null;
 }
 
 /**
@@ -385,6 +402,8 @@ async function renderOakDocMaster(
   const resolutionDiagnostics: OakDocDiagnostic[] = [];
   let resolutionPartialPins: OakDocPartialPin[] | undefined;
   let customFieldTypes = master.customFieldTypes;
+  let customContactFields = master.customContactFields;
+  let contactShortlist = master.contactShortlist;
   if (master.compositionType === 'RESOLUTION') {
     if (!input.resolution) {
       resolutionDiagnostics.push({
@@ -408,10 +427,11 @@ async function renderOakDocMaster(
         const used = new Set(composed.partialIds);
         resolutionPartialPins = partialPins.filter((pin) => used.has(pin.partialId));
         // The chosen partials' own custom fields, the template's winning on a shared key.
-        customFieldTypes = {
-          ...oakDocCustomFieldTypes(await withResolutionPartialFields([], composed.partialIds, params.tenantId)),
-          ...master.customFieldTypes,
-        };
+        const partialFields = await withResolutionPartialFields([], composed.partialIds, params.tenantId);
+        customFieldTypes = { ...oakDocCustomFieldTypes(partialFields), ...master.customFieldTypes };
+        customContactFields = { ...oakDocCustomContactFields(partialFields), ...master.customContactFields };
+        const partialShortlist = contactShortlistIds(partialFields);
+        if (partialShortlist) contactShortlist = Array.from(new Set([...(contactShortlist ?? []), ...partialShortlist]));
       }
     }
   }
@@ -452,9 +472,14 @@ async function renderOakDocMaster(
   const selectedContact = input.selectedContactId
     ? await resolveSelectedContact(input.selectedContactId, input.companyId, params.tenantId)
     : composition?.signers[0] ?? composition?.representatives[0];
-  const contacts = input.contactIds?.length
+  // With a shortlist set by the template author, only shortlisted contacts print.
+  const shortlist = contactShortlist ? new Set(contactShortlist) : null;
+  const contactIds = shortlist
+    ? (input.contactIds ?? []).filter((id) => shortlist.has(id))
+    : input.contactIds;
+  const contacts = contactIds?.length
     ? await getDocumentContactParties({
-        contactIds: input.contactIds,
+        contactIds,
         companyId: input.companyId,
         tenantId: params.tenantId,
       })
@@ -496,6 +521,12 @@ async function renderOakDocMaster(
         tags: resolutionTags,
         data: input.customData,
         types: customFieldTypes,
+        contacts: await resolveCustomContacts({
+          fields: customContactFields,
+          data: input.customData,
+          companyId: input.companyId,
+          tenantId: params.tenantId,
+        }),
       })
     : { values: {}, dates: {} };
   const values = { ...buildOakDocResolutionValues(resolutionInput), ...custom.values };
@@ -595,6 +626,33 @@ async function renderOakDocMaster(
     ...(agreementHash ? { agreementHash } : {}),
     ...(resolutionPartialPins ? { resolutionPartialPins } : {}),
   };
+}
+
+/**
+ * The details of the contact chosen for each Contact custom field. Only a
+ * contact on the field's shortlist is used; any other value prints blank.
+ */
+async function resolveCustomContacts(input: {
+  fields: Record<string, string[]>;
+  data: Readonly<Record<string, unknown>>;
+  companyId: string;
+  tenantId: string;
+}): Promise<Record<string, unknown>> {
+  const chosen = Object.entries(input.fields).flatMap(([key, shortlist]) => {
+    const id = input.data[key];
+    return typeof id === 'string' && shortlist.includes(id) ? [[key, id] as const] : [];
+  });
+  const parties = await getDocumentContactParties({
+    contactIds: chosen.map(([, id]) => id),
+    companyId: input.companyId,
+    tenantId: input.tenantId,
+  });
+  const byId = new Map(parties.map((party) => [party.id, party]));
+  const contacts: Record<string, unknown> = Object.fromEntries(
+    Object.keys(input.fields).map((key) => [key, undefined]),
+  );
+  for (const [key, id] of chosen) contacts[key] = buildSelectedContact(byId.get(id));
+  return contacts;
 }
 
 /**
@@ -1071,7 +1129,7 @@ export async function checkGeneratedOakDocFinalization(
   }
   const unresolvedFields = resolveOakDocFields(bytes, values).unresolvedTags
     .filter((tag) => !OAKDOC_SIGNATURE_TAGS.has(tag))
-    .filter((tag) => !OAKDOC_REPEATER_OUTER_TAGS.has(tag))
+    .filter((tag) => !isOakDocRepeaterOuterTag(tag))
     .filter((tag) => !tag.startsWith(OAKDOC_CONDITION_TAG_PREFIX));
   const unresolvedConditions = inspectOakDocConditions(bytes).count;
   const unresolvedRepeaters = inspectOakDocRepeaters(bytes).count;

@@ -13,6 +13,7 @@ import {
 import { SingleDateInput } from '@/components/ui/single-date-input';
 import { SearchableSelect } from '@/components/ui/searchable-select';
 import type { DocumentParty } from '@/lib/document-party';
+import { formatOakDocOfficerRoles } from '@/lib/document-editor/oakdoc-repeater-definitions';
 import type {
   BatchItemConfiguration,
   MasterFieldCatalogue,
@@ -25,7 +26,12 @@ import { BatchCustomFieldForm } from './batch-custom-field-form';
 import { BatchSection } from './batch-section';
 import { ApplyToOthersMenu, type ApplyScope } from './apply-to-others-menu';
 import type { ItemCompleteness } from './batch-completeness';
-import { partyConfigurationKeys, templatePartyNeeds } from './template-party-needs';
+import {
+  officersOfRoles,
+  partyConfigurationKeys,
+  templateOfficerRoles,
+  templatePartyNeeds,
+} from './template-party-needs';
 
 export interface StandardDocumentConfigProps {
   item: EditableBatchItem;
@@ -33,11 +39,16 @@ export interface StandardDocumentConfigProps {
   templateContent?: string;
   /** Tags in a Word (OakDoc) template; its repeaters add party pickers. */
   templateFieldTags?: readonly string[];
+  /**
+   * Contacts the template's contacts repeater may list (set by the template
+   * author); Configure then offers only these. Null or absent: any contact.
+   */
+  contactShortlist?: ReadonlyArray<{ id: string; name: string }> | null;
   masterFields: MasterFieldCatalogue;
   effectiveMasterValues: Record<string, string>;
   directors: DocumentParty[];
   shareholders: DocumentParty[];
-  /** Current officers of every role, for the officers repeater. */
+  /** Current officers of every role; narrowed to the officers repeaters' roles. */
   officers?: DocumentParty[];
   /** Current contact result page. */
   contacts: DocumentContact[];
@@ -74,6 +85,7 @@ export function StandardDocumentConfig({
   templateFields,
   templateContent,
   templateFieldTags,
+  contactShortlist = null,
   masterFields,
   effectiveMasterValues,
   directors,
@@ -111,11 +123,14 @@ export function StandardDocumentConfig({
     () => selectedPartyIds(shareholders, configuration.selectedShareholderIds),
     [configuration.selectedShareholderIds, shareholders],
   );
+  // Only officers of the roles the template's officers repeaters print.
+  const officerRoles = useMemo(() => templateOfficerRoles(templateFieldTags), [templateFieldTags]);
+  const officerOptions = useMemo(() => officersOfRoles(officers, officerRoles), [officers, officerRoles]);
   // Officers start unticked: a resolution names the ones it is about.
   const selectedOfficerIds = useMemo(() => {
-    const available = new Set(officers.map((party) => party.id));
+    const available = new Set(officerOptions.map((party) => party.id));
     return (configuration.selectedOfficerIds ?? []).filter((id) => available.has(id));
-  }, [configuration.selectedOfficerIds, officers]);
+  }, [configuration.selectedOfficerIds, officerOptions]);
   const partyKeys = useMemo(() => partyConfigurationKeys(needs), [needs]);
 
   const selectedContact = useMemo<DocumentContact | null>(() => {
@@ -127,14 +142,26 @@ export function StandardDocumentConfig({
       ?? { id, fullName: 'Contact unavailable' };
   }, [companyContacts, configuration.selectedContactId, contacts, contactsById]);
 
+  // A shortlist set on the template replaces the workspace contact search.
+  const shortlistContacts = useMemo<DocumentContact[] | null>(() => {
+    if (!contactShortlist || contactShortlist.length === 0) return null;
+    return contactShortlist.map((entry) => contactsById?.get(entry.id)
+      ?? contacts.find((contact) => contact.id === entry.id)
+      ?? { id: entry.id, fullName: entry.name });
+  }, [contactShortlist, contacts, contactsById]);
+
   const selectedContacts = useMemo<DocumentContact[]>(() => {
+    if (shortlistContacts) {
+      const byId = new Map(shortlistContacts.map((contact) => [contact.id, contact]));
+      return configuration.contactIds.flatMap((id) => byId.get(id) ?? []);
+    }
     const pool = new Map<string, DocumentContact>(contactsById ?? []);
     for (const contact of contacts) pool.set(contact.id, contact);
     return configuration.contactIds.map((id) => pool.get(id) ?? {
       id,
       fullName: 'Contact unavailable',
     });
-  }, [configuration.contactIds, contacts, contactsById]);
+  }, [configuration.contactIds, contacts, contactsById, shortlistContacts]);
 
   const titleMissing = configuration.title.trim().length === 0;
   const fieldMissing = missingCount(completeness, 'field:');
@@ -280,8 +307,8 @@ export function StandardDocumentConfig({
             {needs.officers && (
               <DocumentPartyChoiceList
                 id="selected-officers"
-                label="Officers"
-                options={officers}
+                label={officerRoles ? `Officers (${formatOakDocOfficerRoles(officerRoles)})` : 'Officers'}
+                options={officerOptions}
                 values={selectedOfficerIds}
                 onChange={(values) => onPatch({ selectedOfficerIds: values })}
                 multiple
@@ -310,23 +337,36 @@ export function StandardDocumentConfig({
       {showContacts && (
         <BatchSection
           title="Contacts"
-          description="Contacts listed in the document's Contacts section, in the order picked."
+          description={shortlistContacts
+            ? "Contacts listed in the document's Contacts section, in the order picked, from the template's shortlist."
+            : "Contacts listed in the document's Contacts section, in the order picked."}
           status={{
             complete: true,
-            label: `${configuration.contactIds.length} selected`,
+            label: `${selectedContacts.length} selected`,
           }}
           action={applyMenu('contacts', ['contactIds'])}
         >
-          <DocumentContactChoiceList
-            contacts={contacts}
-            selected={selectedContacts}
-            onChange={(selected) => onPatch({
-              contactIds: selected.map((contact) => contact.id),
-            })}
-            onSearch={onContactSearch}
-            isLoading={contactsLoading}
-            serverFiltered={Boolean(onContactSearch)}
-          />
+          {shortlistContacts ? (
+            <DocumentContactChoiceList
+              id="shortlist-contacts"
+              contacts={shortlistContacts}
+              selected={selectedContacts}
+              onChange={(selected) => onPatch({
+                contactIds: selected.map((contact) => contact.id),
+              })}
+            />
+          ) : (
+            <DocumentContactChoiceList
+              contacts={contacts}
+              selected={selectedContacts}
+              onChange={(selected) => onPatch({
+                contactIds: selected.map((contact) => contact.id),
+              })}
+              onSearch={onContactSearch}
+              isLoading={contactsLoading}
+              serverFiltered={Boolean(onContactSearch)}
+            />
+          )}
         </BatchSection>
       )}
 

@@ -15,6 +15,7 @@ import {
   OAKDOC_GENERIC_REPEATER_DEFINITIONS,
   OAKDOC_GENERIC_REPEATER_ITEM_TAGS,
   OAKDOC_GENERIC_REPEATER_TAGS,
+  isOakDocRepeaterTag,
   type OakDocGenericRepeaterDefinition,
   type OakDocGenericRepeaterKind,
 } from '@/lib/document-editor/oakdoc-repeater-definitions';
@@ -31,6 +32,8 @@ export const OAKDOC_REPEATER_DEFINITIONS = OAKDOC_GENERIC_REPEATER_DEFINITIONS;
 export const OAKDOC_REPEATER_BY_TAG = OAKDOC_GENERIC_REPEATER_BY_TAG;
 export const OAKDOC_REPEATER_OUTER_TAGS = OAKDOC_GENERIC_REPEATER_TAGS;
 export const OAKDOC_REPEATER_ITEM_TAGS = OAKDOC_GENERIC_REPEATER_ITEM_TAGS;
+/** Any repeater tag, including an officers repeater limited to roles. */
+export const isOakDocRepeaterOuterTag = isOakDocRepeaterTag;
 
 export const createOakDocRepeater = createOakDocGenericRepeater;
 export const removeOakDocRepeater = removeOakDocGenericRepeater;

@@ -14,6 +14,7 @@ import type {
 import { deadlineSearchSchema } from '@/lib/validations/deadline';
 import type { DeadlineListResult, DeadlineOccurrenceDto } from '@/services/deadline';
 import type { PostpaidQuantityPrompt } from '@/services/billing/postpaid';
+import type { WorkspaceHolidaysDto } from '@/services/business-calendar';
 
 export type DeadlineSearchInput = Omit<Partial<DeadlineSearch>, 'types' | 'familyIds' | 'companyIds' | 'statuses' | 'timing'> & {
   types?: readonly DeadlineSearch['types'][number][];
@@ -106,6 +107,7 @@ export const deadlineKeys = {
     normalizeDeadlineSearch(search),
   ] as const,
   detail: (id: string) => ['deadline', id] as const,
+  holidays: (from: string, to: string) => ['deadline-holidays', from, to] as const,
 };
 
 export function deadlineSearchParams(search: DeadlineSearchInput = {}): string {
@@ -148,6 +150,16 @@ export function useDeadlines(search: DeadlineSearchInput = {}) {
     queryKey: deadlineKeys.list(normalized),
     queryFn: ({ signal }) => requestJson<DeadlineListResult>(`/api/deadlines?${deadlineSearchParams(normalized)}`, { signal }),
     placeholderData: keepPreviousData,
+  });
+}
+
+/** Weekend days and holidays from the workspace's business calendars for a calendar range. */
+export function useDeadlineHolidays(range: { from: string; to: string }) {
+  return useQuery<WorkspaceHolidaysDto>({
+    queryKey: deadlineKeys.holidays(range.from, range.to),
+    queryFn: ({ signal }) => requestJson<WorkspaceHolidaysDto>(`/api/deadlines/holidays?${new URLSearchParams(range)}`, { signal }),
+    placeholderData: keepPreviousData,
+    staleTime: 60 * 60 * 1000,
   });
 }
 

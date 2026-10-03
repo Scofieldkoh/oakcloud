@@ -1,13 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import {
+  appendOakDocPartialCustomFields,
   buildOakDocCustomFieldValues,
   formatOakDocCustomFieldValue,
   isOakDocCustomFieldTag,
   mergeOakDocPartialCustomFields,
+  oakDocContactShortlist,
+  oakDocCustomContactFields,
   oakDocCustomFieldKeyFromLabel,
   oakDocCustomFieldTypes,
+  readOakDocContactShortlist,
   readOakDocCustomFields,
   readOakDocPartialCustomFields,
+  writeOakDocContactShortlist,
   writeOakDocCustomFields,
 } from '@/lib/document-editor/oakdoc-custom-fields';
 
@@ -17,6 +22,8 @@ describe('OakDoc custom fields', () => {
     expect(isOakDocCustomFieldTag('custom.')).toBe(false);
     expect(isOakDocCustomFieldTag('custom.2fee')).toBe(false);
     expect(isOakDocCustomFieldTag('custom.fee.amount')).toBe(false);
+    expect(isOakDocCustomFieldTag('custom.secretary.identificationNumber')).toBe(true);
+    expect(isOakDocCustomFieldTag('custom.secretary.address.full')).toBe(true);
     expect(isOakDocCustomFieldTag('company.name')).toBe(false);
   });
 
@@ -124,5 +131,89 @@ describe('OakDoc custom fields', () => {
       },
       dates: { 'custom.meeting_date': '2026-11-03' },
     });
+  });
+
+  it('stores a Contact field with its shortlist and reads it back', () => {
+    const stored = writeOakDocCustomFields([], [{
+      key: 'secretary',
+      label: 'Secretary',
+      type: 'contact',
+      required: true,
+      contacts: [{ id: 'c-1', name: 'Tan Wei Jie' }, { id: 'c-2', name: 'Lim Mei Ling' }],
+    }]);
+
+    expect(stored[0]).toMatchObject({
+      key: 'custom.secretary',
+      type: 'text',
+      fieldKind: 'contact',
+      options: [{ value: 'c-1', label: 'Tan Wei Jie' }, { value: 'c-2', label: 'Lim Mei Ling' }],
+    });
+    expect(readOakDocCustomFields(stored)).toEqual([{
+      key: 'secretary',
+      label: 'Secretary',
+      type: 'contact',
+      required: true,
+      contacts: [{ id: 'c-1', name: 'Tan Wei Jie' }, { id: 'c-2', name: 'Lim Mei Ling' }],
+    }]);
+    expect(oakDocCustomContactFields(stored)).toEqual({ secretary: ['c-1', 'c-2'] });
+    expect(oakDocCustomFieldTypes(stored)).toEqual({ secretary: 'text' });
+  });
+
+  it('prints the chosen contact for a Contact field and its details', () => {
+    expect(buildOakDocCustomFieldValues({
+      tags: ['custom.secretary', 'custom.secretary.identificationNumber', 'custom.secretary.address.full', 'custom.other'],
+      data: { secretary: 'c-2', other: 'c-1' },
+      types: { secretary: 'text', other: 'text' },
+      contacts: {
+        secretary: { name: 'Lim Mei Ling', identificationNumber: 'S7654321B', address: { full: '1 Raffles Place' } },
+        other: undefined,
+      },
+    }).values).toEqual({
+      'custom.secretary': 'Lim Mei Ling',
+      'custom.secretary.identificationNumber': 'S7654321B',
+      'custom.secretary.address.full': '1 Raffles Place',
+      'custom.other': '',
+    });
+  });
+
+  it('stores the contacts repeater shortlist apart from the custom fields', () => {
+    const fee = { key: 'custom.fee', label: 'Fee', type: 'currency', source: 'custom', category: 'custom' };
+    const stored = writeOakDocContactShortlist([fee], [
+      { id: 'c1', name: 'Alex Lim' },
+      { id: 'c2', name: 'Bea Tan' },
+      { id: 'c1', name: 'Alex Lim' },
+    ]);
+    expect(stored).toEqual([fee, {
+      key: 'repeat.contacts',
+      path: 'repeat.contacts',
+      label: 'Contacts shortlist',
+      type: 'text',
+      source: 'repeater',
+      category: 'repeater',
+      fieldKind: 'contactShortlist',
+      required: false,
+      options: [{ value: 'c1', label: 'Alex Lim' }, { value: 'c2', label: 'Bea Tan' }],
+    }]);
+    expect(readOakDocContactShortlist(stored)).toEqual([{ id: 'c1', name: 'Alex Lim' }, { id: 'c2', name: 'Bea Tan' }]);
+    // Not a custom field, so Configure does not ask for it as a value.
+    expect(readOakDocCustomFields(stored).map((field) => field.key)).toEqual(['fee']);
+    expect(Object.keys(oakDocCustomFieldTypes(stored))).toEqual(['fee']);
+    // Saving the custom fields keeps it; an empty shortlist removes it.
+    expect(readOakDocContactShortlist(writeOakDocCustomFields(stored, []))).toHaveLength(2);
+    expect(writeOakDocContactShortlist(stored, [])).toEqual([fee]);
+    expect(oakDocContactShortlist([fee])).toBeNull();
+  });
+
+  it('offers the shortlists of a template and its partials together', () => {
+    const template = writeOakDocContactShortlist([], [{ id: 'c1', name: 'Alex Lim' }]);
+    const partial = { id: 'p1', placeholders: writeOakDocContactShortlist([], [{ id: 'c2', name: 'Bea Tan' }, { id: 'c1', name: 'Alex Lim' }]) };
+    const merged = mergeOakDocPartialCustomFields(template, [partial, { id: 'p2', placeholders: [] }]);
+    expect(readOakDocContactShortlist(merged)).toEqual([{ id: 'c1', name: 'Alex Lim' }]);
+    expect(oakDocContactShortlist(merged)).toEqual([{ id: 'c1', name: 'Alex Lim' }, { id: 'c2', name: 'Bea Tan' }]);
+    // Copies are recomputed: a partial no longer inserted drops out.
+    expect(oakDocContactShortlist(mergeOakDocPartialCustomFields(merged, []))).toEqual([{ id: 'c1', name: 'Alex Lim' }]);
+    // A resolution's chosen partials add theirs to whatever the template has.
+    expect(oakDocContactShortlist(appendOakDocPartialCustomFields([], [partial])))
+      .toEqual([{ id: 'c2', name: 'Bea Tan' }, { id: 'c1', name: 'Alex Lim' }]);
   });
 });

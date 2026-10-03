@@ -65,6 +65,7 @@ import {
   listBusinessCalendars,
   previewBusinessCalendarImpact,
   updateBusinessCalendar,
+  listWorkspaceHolidays,
 } from '@/services/business-calendar';
 
 const actor = { tenantId: 'tenant-1', userId: 'user-1' };
@@ -529,5 +530,32 @@ describe('business calendar validation', () => {
   it('requires a current revision and both lowercase SHA-256 preview hashes', () => {
     expect(() => businessCalendarUpdateSchema.parse({ ...input, expectedRevision: 0, proposedHash: 'a'.repeat(64), previewFingerprint: 'b'.repeat(64) })).toThrow();
     expect(() => businessCalendarUpdateSchema.parse({ ...input, expectedRevision: 1, proposedHash: 'A'.repeat(64), previewFingerprint: 'b'.repeat(64) })).toThrow();
+  });
+});
+
+describe('workspace holidays', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('merges active calendars by date and keeps the first calendar weekend', async () => {
+    prismaMock.businessCalendar.findMany.mockResolvedValueOnce([
+      { weekendDays: [6, 0], holidays: [{ date: new Date('2026-08-10T00:00:00.000Z'), name: 'National Day' }] },
+      { weekendDays: [5], holidays: [
+        { date: new Date('2026-08-10T00:00:00.000Z'), name: 'National Day' },
+        { date: new Date('2026-08-03T00:00:00.000Z'), name: 'Office closure' },
+      ] },
+    ]);
+
+    await expect(listWorkspaceHolidays({ tenantId: 'tenant-1', from: '2026-08-01' as DateOnly, to: '2026-08-31' as DateOnly })).resolves.toEqual({
+      weekendDays: [0, 6],
+      holidays: [{ date: '2026-08-03', name: 'Office closure' }, { date: '2026-08-10', name: 'National Day' }],
+    });
+    expect(prismaMock.businessCalendar.findMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: { tenantId: 'tenant-1', isActive: true, archivedAt: null },
+    }));
+  });
+
+  it('falls back to Saturday and Sunday without an active calendar', async () => {
+    prismaMock.businessCalendar.findMany.mockResolvedValueOnce([]);
+    await expect(listWorkspaceHolidays({ tenantId: 'tenant-1', from: '2026-08-01' as DateOnly, to: '2026-08-31' as DateOnly })).resolves.toEqual({ weekendDays: [0, 6], holidays: [] });
   });
 });

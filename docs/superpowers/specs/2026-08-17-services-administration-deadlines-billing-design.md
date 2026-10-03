@@ -371,6 +371,13 @@ When a day contains more events than can be displayed, render a `+N more`
 control. Mobile uses one month and a readable day/agenda interaction instead of
 compressing event text beyond usability.
 
+Day cells are coloured by kind: working days keep the plain background,
+weekends are light blue and holidays light orange (a holiday on a weekend shows
+as a holiday). Holidays come from the workspace's active business calendars
+(manual and synced public holidays) through `/api/deadlines/holidays`, which
+deadline readers can call without calendar administration rights. A Show
+holidays switch (on by default, saved per user) hides holiday colours and names.
+
 Default visible month count:
 
 - One month below the large desktop breakpoint
@@ -1017,6 +1024,7 @@ reference, notes, reason, update scope, and `expectedUpdatedAt`.
 - `/api/service-calendars`
 - `/api/service-calendars/:id`
 - `/api/service-calendars/:id/impact`
+- `/api/deadlines/holidays` (read-only holidays and weekend days for a range)
 
 Publish/archive requests never trust client impact totals. The server rechecks
 current version, definition hash, preview fingerprint, and authorization.
@@ -1085,6 +1093,7 @@ Versioned JSON payloads cover:
 - Default deadline mode: table or calendar
 - Visible deadline types and family filters
 - Calendar month count: one, two, or three
+- Show holidays on the calendar (default on)
 - The calendar focus date is not stored in preferences; it comes from the URL
   and defaults to the current Singapore month
 

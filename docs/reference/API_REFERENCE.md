@@ -420,7 +420,13 @@ List the current directors, current shareholders, active linked contacts, and
 current officers of every role (secretary, CEO, auditor...; `detail` is the role
 in words) that can be selected while generating a document for the company.
 Officers feed the Word `repeat.officers` repeater, which prints only the officers
-ticked on Configure (`selectedOfficerIds`, in that order).
+ticked on Configure (`selectedOfficerIds`, in that order). An officers repeater
+can be limited to roles in its tag: `repeat.officers.<role-slug>[+<role-slug>...]`,
+where the slug is the `role` in lower case with hyphens (`secretary`,
+`managing-director`, `ceo`), in registry order, e.g. `repeat.officers.secretary+ceo`.
+Configure then lists only officers of those roles (all officers repeaters in a
+document together; any role when one of them is `repeat.officers`), and each
+repeater prints only the ticked officers of its own roles.
 
 **Auth:** Authenticated with `document:read`
 
@@ -1492,10 +1498,26 @@ A Word (OakDoc) template is uploaded as multipart form data instead: `file`
 and optional `placeholders` (JSON array). Custom fields are `placeholders`
 entries keyed `custom.<key>` with a `label`, `type` (text, textarea, date,
 number, currency), `required` and, for a dropdown, `options`; the document
-holds a `custom.<key>` field. Custom fields of inserted Word partials are
+holds a `custom.<key>` field. A Contact field is stored as `type: "text"` with
+`fieldKind: "contact"` and its shortlist as `options` of `{ value: contactId,
+label: name }`; Configure stores the chosen contact id, `custom.<key>` prints
+the name and `custom.<key>.<detail>` (`identificationNumber`, `nationality`,
+`address.full`, `address.letter`, `email`, `phone`, `name`) a detail. Only a
+contact on the shortlist is printed. Custom fields of inserted Word partials are
 copied in on save (marked `oakDocPartialId`) so Configure asks for them too.
 For a resolution document, the custom fields of the partials picked as its
 numbered resolutions are added per document, on Configure and at generation.
+
+The contacts repeater (`repeat.contacts`) can carry a shortlist: a `placeholders`
+entry keyed `repeat.contacts` with `fieldKind: "contactShortlist"`,
+`source`/`category` `"repeater"` and the contacts as `options` of `{ value:
+contactId, label: name }`. It is not a custom field, so Configure does not ask
+for it as a value. Partials' shortlists are copied in like their custom fields
+(and added per document for a resolution's chosen partials); Configure offers
+the template's and its partials' shortlisted contacts together as tick boxes, and
+generation prints only `contactIds` on a shortlist, dropping any other id. With
+no shortlist Configure searches every workspace contact, as before. The editors
+drop a shortlist on save when the document no longer has a contacts repeater.
 
 ---
 

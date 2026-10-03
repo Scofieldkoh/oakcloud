@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { resolutionItemFieldTags, resolutionItemFields } from '@/components/documents/generation-batch/resolution-item-fields';
-import { appendOakDocPartialCustomFields } from '@/lib/document-editor/oakdoc-custom-fields';
+import {
+  resolutionItemContactShortlist,
+  resolutionItemFieldTags,
+  resolutionItemFields,
+} from '@/components/documents/generation-batch/resolution-item-fields';
+import { appendOakDocPartialCustomFields, writeOakDocContactShortlist } from '@/lib/document-editor/oakdoc-custom-fields';
 import { resolutionPartialIds, type ResolutionComposition } from '@/lib/resolution-composition';
 import { normalizeStoredPlaceholders, storageFormatToCustomPlaceholders } from '@/lib/template-analysis';
 
@@ -69,5 +73,19 @@ describe('resolution partial custom fields', () => {
       .toEqual(['company.uen', 'repeat.officers', 'officer.name', 'company.name']);
     const template = ['company.uen'];
     expect(resolutionItemFieldTags(template, null, tagged)).toBe(template);
+  });
+
+  it('offers the contacts shortlists of the template and its chosen partials together', () => {
+    const shortlisted = [
+      { id: 'p-fee', placeholders: writeOakDocContactShortlist([], [{ id: 'c2', name: 'Bea Tan' }]) },
+      { id: 'p-meeting', placeholders: [] },
+      { id: 'p-unused', placeholders: writeOakDocContactShortlist([], [{ id: 'c3', name: 'Unused' }]) },
+    ];
+    const template = [{ id: 'c1', name: 'Alex Lim' }];
+    expect(resolutionItemContactShortlist(template, composition, shortlisted))
+      .toEqual([{ id: 'c1', name: 'Alex Lim' }, { id: 'c2', name: 'Bea Tan' }]);
+    expect(resolutionItemContactShortlist(null, composition, shortlisted)).toEqual([{ id: 'c2', name: 'Bea Tan' }]);
+    expect(resolutionItemContactShortlist(null, composition, partials)).toBeNull();
+    expect(resolutionItemContactShortlist(template, null, shortlisted)).toEqual(template);
   });
 });

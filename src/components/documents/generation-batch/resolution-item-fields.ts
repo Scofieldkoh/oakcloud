@@ -1,4 +1,8 @@
-import { appendOakDocPartialCustomFields } from '@/lib/document-editor/oakdoc-custom-fields';
+import {
+  appendOakDocPartialCustomFields,
+  oakDocContactShortlist,
+  type OakDocCustomFieldContact,
+} from '@/lib/document-editor/oakdoc-custom-fields';
 import { resolutionPartialIds, type ResolutionComposition } from '@/lib/resolution-composition';
 import { normalizeStoredPlaceholders, storageFormatToCustomPlaceholders } from '@/lib/template-analysis';
 import type { CustomPlaceholderDefinition } from '@/types/placeholders';
@@ -39,4 +43,25 @@ export function resolutionItemFields(
   const taken = new Set(templateFields.map((field) => field.key));
   const added = partialFields.filter((field) => !taken.has(field.key));
   return added.length === 0 ? templateFields : [...templateFields, ...added];
+}
+
+/**
+ * A resolution document's contacts shortlist: its template's, then those of
+ * the partials chosen for its numbered resolutions, together. Null when none
+ * sets one (any contact). Generation reads the same placeholders.
+ */
+export function resolutionItemContactShortlist(
+  templateShortlist: readonly OakDocCustomFieldContact[] | null | undefined,
+  resolution: ResolutionComposition | null | undefined,
+  partials: ReadonlyArray<{ id: string; placeholders: unknown }>,
+): OakDocCustomFieldContact[] | null {
+  const ids = resolutionPartialIds(resolution);
+  const base = templateShortlist ? [...templateShortlist] : [];
+  if (ids.length === 0) return base.length > 0 ? base : null;
+  const byId = new Map(partials.map((partial) => [partial.id, partial]));
+  const chosen = ids.flatMap((id) => byId.get(id) ?? []);
+  const fromPartials = oakDocContactShortlist(appendOakDocPartialCustomFields([], chosen)) ?? [];
+  const seen = new Set(base.map((contact) => contact.id));
+  const merged = [...base, ...fromPartials.filter((contact) => !seen.has(contact.id))];
+  return merged.length > 0 ? merged : null;
 }

@@ -40,6 +40,8 @@ export interface BatchItemConfiguratorProps {
   templateContent?: string;
   /** Tags in a Word (OakDoc) template, which decide its party pickers. */
   templateFieldTags?: readonly string[];
+  /** Contacts the template's contacts repeater may list; null means any contact. */
+  contactShortlist?: ReadonlyArray<{ id: string; name: string }> | null;
   onPatch: (patch: Partial<BatchItemConfiguration>) => void;
   disabled?: boolean;
   completeness?: ItemCompleteness;
@@ -103,6 +105,7 @@ export function BatchItemConfigurator(props: BatchItemConfiguratorProps) {
           templateFields={itemOnlyFields}
           templateContent={props.templateContent}
           templateFieldTags={props.templateFieldTags}
+          contactShortlist={props.contactShortlist}
           masterFields={masterFields}
           effectiveMasterValues={effectiveMasterValues}
           directors={props.directors}

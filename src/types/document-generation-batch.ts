@@ -88,6 +88,8 @@ export interface MasterFieldDefinition {
   defaultsByTemplateId: Record<string, string>;
   /** Dropdown choices, when a template defines the field as a dropdown. */
   options?: string[];
+  /** Display labels of choices whose value is an id, e.g. a Contact field's contacts. */
+  optionLabels?: Record<string, string>;
 }
 
 export interface MasterFieldCatalogue {

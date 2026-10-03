@@ -1324,3 +1324,42 @@ async function applyPublicHolidaySync(
     coveredByManual,
   };
 }
+
+export type WorkspaceHolidayDto = {
+  date: DateOnly;
+  name: string;
+};
+
+export type WorkspaceHolidaysDto = {
+  /** Weekend days (0 = Sunday) of the workspace's first active calendar, Saturday and Sunday when it has none. */
+  weekendDays: number[];
+  holidays: WorkspaceHolidayDto[];
+};
+
+/** Read-only holiday view of every active calendar in a workspace, for date pickers and calendars. */
+export async function listWorkspaceHolidays(params: { tenantId: string; from: DateOnly; to: DateOnly }): Promise<WorkspaceHolidaysDto> {
+  const calendars = await prisma.businessCalendar.findMany({
+    where: { tenantId: params.tenantId, isActive: true, archivedAt: null },
+    select: {
+      weekendDays: true,
+      holidays: {
+        where: { tenantId: params.tenantId, isActive: true, date: { gte: parseDateOnly(params.from), lte: parseDateOnly(params.to) } },
+        select: { date: true, name: true },
+      },
+    },
+    orderBy: [{ name: 'asc' }, { id: 'asc' }],
+  });
+  const namesByDate = new Map<DateOnly, string[]>();
+  for (const holiday of calendars.flatMap((calendar) => calendar.holidays)) {
+    const date = toDateOnly(holiday.date);
+    const names = namesByDate.get(date) ?? [];
+    if (!names.includes(holiday.name)) names.push(holiday.name);
+    namesByDate.set(date, names);
+  }
+  return {
+    weekendDays: calendars.length > 0 ? [...new Set(calendars[0].weekendDays)].sort((left, right) => left - right) : [0, 6],
+    holidays: [...namesByDate.entries()]
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([date, names]) => ({ date, name: names.join(' / ') })),
+  };
+}

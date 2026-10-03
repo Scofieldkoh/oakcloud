@@ -95,6 +95,24 @@ describe('OakDoc field cleanup', () => {
     expect(output).toContain(' and ');
   });
 
+  it('moves text typed at a field edge out of the field', () => {
+    const source = docx(
+      '<w:p><w:sdt><w:sdtPr><w:tag w:val="company.name"/><w:id w:val="30"/></w:sdtPr>'
+      + '<w:sdtContent><w:r><w:rPr><w:b/></w:rPr><w:t>Mr {{company.name}}, Esq</w:t></w:r></w:sdtContent></w:sdt></w:p>',
+    );
+
+    const cleaned = pruneDeletedOakDocFields(source, knownTags);
+    const output = documentXml(cleaned.bytes);
+
+    expect(cleaned.removed).toBe(0);
+    expect(cleaned.changed).toBe(1);
+    expect(output).toContain(
+      '<w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">Mr </w:t></w:r><w:sdt>',
+    );
+    expect(output).toContain('<w:t>{{company.name}}</w:t>');
+    expect(output).toContain('</w:sdt><w:r><w:rPr><w:b/></w:rPr><w:t>, Esq</w:t></w:r>');
+  });
+
   it('preserves paragraph structure when a deleted block field is inside a table cell', () => {
     const source = docx(
       '<w:tbl><w:tr><w:tc>'

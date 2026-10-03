@@ -305,6 +305,7 @@ export function DeadlineWorkspace({ canEdit = false, deadlineWritesEnabled = fal
   const [savedTypes, setSavedTypes] = useState<DeadlineFilterType[]>(defaultDeadlineViewPreference.visibleTypes);
   const [savedFamilies, setSavedFamilies] = useState<string[]>(defaultDeadlineViewPreference.familyIds);
   const [calendarMonthCountOverride, setCalendarMonthCountOverride] = useState<1 | 2 | 3 | null>(null);
+  const [showHolidaysOverride, setShowHolidaysOverride] = useState<boolean | null>(null);
   const [selectedDeadlineIds, setSelectedDeadlineIds] = useState<Set<string>>(new Set());
 
   useEffect(() => setOptimisticSearchKey(null), [canonicalSearchKey]);
@@ -344,7 +345,8 @@ export function DeadlineWorkspace({ canEdit = false, deadlineWritesEnabled = fal
     tableColumnVisibility: columnVisibility,
     pageSize: urlState.limit,
     monthCount: calendarMonthCountOverride ?? parsedPreference.monthCount,
-  }), [calendarMonthCountOverride, columnOrder, columnVisibility, columnWidths, parsedPreference, savedFamilies, savedTypes, urlState.limit]);
+    showHolidays: showHolidaysOverride ?? parsedPreference.showHolidays,
+  }), [calendarMonthCountOverride, showHolidaysOverride, columnOrder, columnVisibility, columnWidths, parsedPreference, savedFamilies, savedTypes, urlState.limit]);
   const currentPreferenceRef = useRef(currentPreference);
   currentPreferenceRef.current = currentPreference;
 
@@ -569,6 +571,11 @@ export function DeadlineWorkspace({ canEdit = false, deadlineWritesEnabled = fal
     const visibleCount = isLargeDesktop ? monthCount : 1;
     const range = monthRange(dateFromMonth(urlState.from ?? currentDateInSingapore()), visibleCount);
     replaceUrl({ from: range.from, to: range.to, page: '1' });
+  };
+
+  const handleShowHolidaysChange = (showHolidays: boolean) => {
+    setShowHolidaysOverride(showHolidays);
+    persistPreference({ showHolidays });
   };
 
   const submitUpdate = useCallback((occurrence: DeadlineOccurrenceDto, data: UpdateDeadlineOccurrenceInput) => {
@@ -847,6 +854,7 @@ export function DeadlineWorkspace({ canEdit = false, deadlineWritesEnabled = fal
           mutationError={updateDeadline.error ?? resetDeadline.error}
           onMonthChange={handleCalendarMonthChange}
           onMonthCountChange={handleCalendarMonthCountChange}
+          onShowHolidaysChange={handleShowHolidaysChange}
           onUpdate={markUpdate}
           onResetOverride={resetOverride}
         />

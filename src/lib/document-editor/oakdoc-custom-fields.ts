@@ -16,23 +16,51 @@ export const OAKDOC_CUSTOM_FIELD_PREFIX = 'custom.';
 
 const CUSTOM_KEY = /^[A-Za-z][A-Za-z0-9_]*$/;
 
+/** Details a Contact custom field can print, as `custom.<key>.<path>`. */
+export const OAKDOC_CUSTOM_CONTACT_SUBFIELDS: ReadonlyArray<{ path: string; label: string }> = [
+  { path: 'name', label: 'Name' },
+  { path: 'identificationNumber', label: 'ID number' },
+  { path: 'nationality', label: 'Nationality' },
+  { path: 'address.full', label: 'Full address' },
+  { path: 'address.letter', label: 'Letter address' },
+  { path: 'email', label: 'Email' },
+  { path: 'phone', label: 'Phone' },
+];
+
+const CONTACT_SUBFIELD_PATHS = new Set(OAKDOC_CUSTOM_CONTACT_SUBFIELDS.map((field) => field.path));
+
+/** The field key and, for a Contact field detail, its path: `custom.sec.name` -> sec, name. */
+export function parseOakDocCustomFieldTag(tag: string): { key: string; path: string | null } | null {
+  if (!tag.startsWith(OAKDOC_CUSTOM_FIELD_PREFIX)) return null;
+  const rest = tag.slice(OAKDOC_CUSTOM_FIELD_PREFIX.length);
+  const dot = rest.indexOf('.');
+  const key = dot < 0 ? rest : rest.slice(0, dot);
+  const path = dot < 0 ? null : rest.slice(dot + 1);
+  if (!CUSTOM_KEY.test(key) || (path !== null && !CONTACT_SUBFIELD_PATHS.has(path))) return null;
+  return { key, path };
+}
+
 export function isOakDocCustomFieldTag(tag: string): boolean {
-  return tag.startsWith(OAKDOC_CUSTOM_FIELD_PREFIX)
-    && CUSTOM_KEY.test(tag.slice(OAKDOC_CUSTOM_FIELD_PREFIX.length));
+  return parseOakDocCustomFieldTag(tag) !== null;
 }
 
 export function oakDocCustomFieldTag(key: string): string {
   return `${OAKDOC_CUSTOM_FIELD_PREFIX}${key}`;
 }
 
-/** Types offered when defining a custom field. A dropdown is stored as text with choices. */
+/**
+ * Types offered when defining a custom field. A dropdown is stored as text
+ * with choices; a contact as text holding the chosen contact's id, with the
+ * shortlist of contacts as its choices.
+ */
 export type OakDocCustomFieldType =
   | 'text'
   | 'textarea'
   | 'date'
   | 'number'
   | 'currency'
-  | 'dropdown';
+  | 'dropdown'
+  | 'contact';
 
 export const OAKDOC_CUSTOM_FIELD_TYPES: ReadonlyArray<{ value: OakDocCustomFieldType; label: string }> = [
   { value: 'text', label: 'Text' },
@@ -41,7 +69,13 @@ export const OAKDOC_CUSTOM_FIELD_TYPES: ReadonlyArray<{ value: OakDocCustomField
   { value: 'number', label: 'Number' },
   { value: 'currency', label: 'Amount' },
   { value: 'dropdown', label: 'Dropdown' },
+  { value: 'contact', label: 'Contact' },
 ];
+
+export interface OakDocCustomFieldContact {
+  id: string;
+  name: string;
+}
 
 export interface OakDocCustomField {
   key: string;
@@ -50,6 +84,8 @@ export interface OakDocCustomField {
   required: boolean;
   /** Dropdown choices, in display order. */
   options?: string[];
+  /** Contact shortlist offered on Configure, in display order. */
+  contacts?: OakDocCustomFieldContact[];
 }
 
 /** Marks a definition copied from an inserted partial; recomputed on every template save. */
@@ -71,6 +107,27 @@ function storedKey(definition: StoredDefinition): string | null {
   return CUSTOM_KEY.test(bare) ? bare : null;
 }
 
+/** Stored choices with their display labels; a plain string is its own label. */
+export function readPlaceholderChoices(options: unknown): Array<{ value: string; label: string }> {
+  if (!Array.isArray(options)) return [];
+  const seen = new Set<string>();
+  const result: Array<{ value: string; label: string }> = [];
+  for (const option of options) {
+    const value = typeof option === 'string'
+      ? option.trim()
+      : isRecord(option) && typeof option.value === 'string'
+        ? option.value.trim()
+        : '';
+    if (!value || seen.has(value)) continue;
+    seen.add(value);
+    const label = isRecord(option) && typeof option.label === 'string' && option.label.trim()
+      ? option.label.trim()
+      : value;
+    result.push({ value, label });
+  }
+  return result;
+}
+
 /** Dropdown choices stored on a definition, trimmed and without duplicates. */
 export function readPlaceholderOptions(options: unknown): string[] {
   if (!Array.isArray(options)) return [];
@@ -90,7 +147,10 @@ export function readPlaceholderOptions(options: unknown): string[] {
   return result;
 }
 
+const CONTACT_FIELD_KIND = 'contact';
+
 function fieldType(definition: StoredDefinition): OakDocCustomFieldType {
+  if (definition.fieldKind === CONTACT_FIELD_KIND) return 'contact';
   const options = readPlaceholderOptions(definition.options);
   const type = definition.type;
   if (options.length > 0 && (type === 'text' || type === 'dropdown' || type === 'select')) return 'dropdown';
@@ -119,6 +179,12 @@ export function readOakDocCustomFields(placeholders: unknown): OakDocCustomField
       type,
       required: definition.required === true,
       ...(type === 'dropdown' ? { options: readPlaceholderOptions(definition.options) } : {}),
+      ...(type === 'contact'
+        ? {
+            contacts: readPlaceholderChoices(definition.options)
+              .map((choice) => ({ id: choice.value, name: choice.label })),
+          }
+        : {}),
     });
   }
   return fields;
@@ -135,7 +201,7 @@ export function readOakDocPartialCustomFields(placeholders: unknown): Array<OakD
 }
 
 function storedType(type: OakDocCustomFieldType): PlaceholderValueType {
-  return type === 'dropdown' ? 'text' : type;
+  return type === 'dropdown' || type === 'contact' ? 'text' : type;
 }
 
 function toStoredDefinition(
@@ -153,9 +219,15 @@ function toStoredDefinition(
     category: 'custom',
     required: field.required,
   };
-  const options = field.type === 'dropdown' ? readPlaceholderOptions(field.options) : [];
+  const options = field.type === 'dropdown'
+    ? readPlaceholderOptions(field.options)
+    : field.type === 'contact'
+      ? (field.contacts ?? []).map((contact) => ({ value: contact.id, label: contact.name }))
+      : [];
   if (options.length > 0) next.options = options;
   else delete next.options;
+  if (field.type === 'contact') next.fieldKind = CONTACT_FIELD_KIND;
+  else delete next.fieldKind;
   return next;
 }
 
@@ -185,12 +257,100 @@ export function writeOakDocCustomFields(
   ];
 }
 
+/*
+ * Contact shortlist of the Word contacts repeater (`repeat.contacts`).
+ *
+ * A template or partial can limit the contacts Configure offers for its
+ * contacts repeater. The shortlist is stored in its placeholders as one
+ * definition keyed `repeat.contacts` (not a custom field, so Configure does
+ * not prompt for it as a value), with the contacts as { value: id, label:
+ * name } options. A template carries copies of its partials' shortlists,
+ * marked like copied custom fields, and Configure offers all of them
+ * together; with no shortlist anywhere any workspace contact can be picked.
+ */
+export const OAKDOC_CONTACT_SHORTLIST_KEY = 'repeat.contacts';
+const CONTACT_SHORTLIST_KIND = 'contactShortlist';
+
+function isContactShortlist(definition: StoredDefinition): boolean {
+  return definition.fieldKind === CONTACT_SHORTLIST_KIND && definition.key === OAKDOC_CONTACT_SHORTLIST_KEY;
+}
+
+function shortlistContacts(definitions: readonly StoredDefinition[]): OakDocCustomFieldContact[] {
+  const seen = new Set<string>();
+  const contacts: OakDocCustomFieldContact[] = [];
+  for (const definition of definitions) {
+    for (const choice of readPlaceholderChoices(definition.options)) {
+      if (seen.has(choice.value)) continue;
+      seen.add(choice.value);
+      contacts.push({ id: choice.value, name: choice.label });
+    }
+  }
+  return contacts;
+}
+
+function shortlistDefinition(contacts: readonly OakDocCustomFieldContact[]): StoredDefinition {
+  return {
+    key: OAKDOC_CONTACT_SHORTLIST_KEY,
+    path: OAKDOC_CONTACT_SHORTLIST_KEY,
+    label: 'Contacts shortlist',
+    type: 'text',
+    source: 'repeater',
+    category: 'repeater',
+    fieldKind: CONTACT_SHORTLIST_KIND,
+    required: false,
+    options: contacts.map((contact) => ({ value: contact.id, label: contact.name })),
+  };
+}
+
+/** The contacts shortlist a template or partial sets itself (not copies from its partials). */
+export function readOakDocContactShortlist(placeholders: unknown): OakDocCustomFieldContact[] {
+  if (!Array.isArray(placeholders)) return [];
+  return shortlistContacts(placeholders.filter(
+    (definition): definition is StoredDefinition => isRecord(definition)
+      && isContactShortlist(definition)
+      && !isPartialCopy(definition),
+  ));
+}
+
+/** Replace the own contacts shortlist in a stored placeholder list; none removes it. */
+export function writeOakDocContactShortlist(
+  placeholders: unknown,
+  contacts: readonly OakDocCustomFieldContact[],
+): StoredDefinition[] {
+  const existing = Array.isArray(placeholders) ? placeholders.filter(isRecord) : [];
+  const kept = existing.filter((definition) => !isContactShortlist(definition) || isPartialCopy(definition));
+  const own = shortlistContacts([shortlistDefinition(contacts)]);
+  return own.length > 0 ? [...kept, shortlistDefinition(own)] : kept;
+}
+
+/**
+ * The contacts Configure offers for the contacts repeater: the template's
+ * shortlist and those copied from its partials, together. Null when none
+ * is set, meaning any workspace contact.
+ */
+export function oakDocContactShortlist(placeholders: unknown): OakDocCustomFieldContact[] | null {
+  if (!Array.isArray(placeholders)) return null;
+  const definitions = placeholders.filter(
+    (definition): definition is StoredDefinition => isRecord(definition) && isContactShortlist(definition),
+  );
+  const contacts = shortlistContacts(definitions);
+  return contacts.length > 0 ? contacts : null;
+}
+
+function partialShortlistCopy(partial: { id: string; placeholders: unknown }): StoredDefinition[] {
+  const contacts = oakDocContactShortlist(partial.placeholders);
+  return contacts
+    ? [{ ...shortlistDefinition(contacts), [OAKDOC_PARTIAL_FIELD_MARKER]: partial.id }]
+    : [];
+}
+
 function partialFieldCopies(
   partials: ReadonlyArray<{ id: string; placeholders: unknown }>,
   taken: Set<string>,
 ): StoredDefinition[] {
   const copies: StoredDefinition[] = [];
   for (const partial of partials) {
+    copies.push(...partialShortlistCopy(partial));
     const fields = [
       ...readOakDocCustomFields(partial.placeholders),
       ...readOakDocPartialCustomFields(partial.placeholders),
@@ -208,9 +368,10 @@ function partialFieldCopies(
 }
 
 /**
- * Copy the custom fields of inserted partials onto a template's placeholders,
- * so Configure prompts for them. Fields the template defines itself win;
- * copies from partials no longer inserted are dropped.
+ * Copy the custom fields (and contacts shortlists) of inserted partials onto
+ * a template's placeholders, so Configure prompts for them. Fields the
+ * template defines itself win; copies from partials no longer inserted are
+ * dropped.
  */
 export function mergeOakDocPartialCustomFields(
   placeholders: unknown,
@@ -286,17 +447,36 @@ export function formatOakDocCustomFieldValue(value: unknown, type: PlaceholderVa
   }
 }
 
-/** Values and calendar dates for the custom field controls in a document. */
+function textAtPath(source: unknown, path: string): string {
+  let value: unknown = source;
+  for (const part of path.split('.')) {
+    value = isRecord(value) ? value[part] : undefined;
+  }
+  return typeof value === 'string' ? value : value === null || value === undefined ? '' : String(value);
+}
+
+/**
+ * Values and calendar dates for the custom field controls in a document.
+ * `contacts` holds, by key, the details of the contact chosen for each
+ * Contact field: the bare field prints the name, `custom.<key>.<path>` the
+ * detail at that path.
+ */
 export function buildOakDocCustomFieldValues(input: {
   tags: readonly string[];
   data: Readonly<Record<string, unknown>>;
   types: Readonly<Record<string, PlaceholderValueType>>;
+  contacts?: Readonly<Record<string, unknown>>;
 }): { values: Record<string, string>; dates: Record<string, string> } {
   const values: Record<string, string> = {};
   const dates: Record<string, string> = {};
   for (const tag of new Set(input.tags)) {
-    if (!isOakDocCustomFieldTag(tag)) continue;
-    const key = tag.slice(OAKDOC_CUSTOM_FIELD_PREFIX.length);
+    const parsed = parseOakDocCustomFieldTag(tag);
+    if (!parsed) continue;
+    const { key, path } = parsed;
+    if (path !== null || (input.contacts && key in input.contacts)) {
+      values[tag] = textAtPath(input.contacts?.[key], path ?? 'name');
+      continue;
+    }
     const raw = input.data[key];
     const type = input.types[key];
     values[tag] = formatOakDocCustomFieldValue(raw, type);
@@ -306,6 +486,18 @@ export function buildOakDocCustomFieldValues(input: {
     }
   }
   return { values, dates };
+}
+
+/** The contact shortlist of every Contact field a template defines or copies, by key. */
+export function oakDocCustomContactFields(placeholders: unknown): Record<string, string[]> {
+  const fields: Record<string, string[]> = {};
+  if (!Array.isArray(placeholders)) return fields;
+  for (const definition of placeholders) {
+    if (!isRecord(definition) || fieldType(definition) !== 'contact') continue;
+    const key = storedKey(definition);
+    if (key && !(key in fields)) fields[key] = readPlaceholderOptions(definition.options);
+  }
+  return fields;
 }
 
 /** Stored value type of every custom field a template defines or copies from its partials. */

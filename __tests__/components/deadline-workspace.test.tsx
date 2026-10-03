@@ -26,6 +26,7 @@ vi.mock('@/hooks/use-client-services', () => ({
 }));
 vi.mock('@/hooks/use-deadlines', () => ({
   useDeadlines: hooks.useDeadlines,
+  useDeadlineHolidays: () => ({ data: undefined }),
   useUpdateDeadlineOccurrence: hooks.useUpdateDeadlineOccurrence,
   useResetDeadlineDateOverride: hooks.useResetDeadlineDateOverride,
 }));

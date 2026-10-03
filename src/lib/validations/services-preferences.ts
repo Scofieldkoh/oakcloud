@@ -140,6 +140,7 @@ export const deadlineViewPreferenceSchema = z.object({
   sortBy: z.enum(['dueDate', 'company', 'family', 'service', 'type', 'status']).default('dueDate'),
   sortOrder: z.enum(['asc', 'desc']).default('asc'),
   pageSize: z.union([z.literal(10), z.literal(20), z.literal(50), z.literal(100)]).default(20),
+  showHolidays: z.boolean().default(true),
 });
 
 export type DeadlineViewPreference = z.infer<typeof deadlineViewPreferenceSchema>;
@@ -176,6 +177,7 @@ export const defaultDeadlineViewPreference: DeadlineViewPreference = {
   sortBy: 'dueDate',
   sortOrder: 'asc',
   pageSize: 20,
+  showHolidays: true,
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -196,6 +198,7 @@ export function parseDeadlineViewPreference(value: unknown): DeadlineViewPrefere
     sortBy: value.sortBy ?? 'dueDate',
     sortOrder: value.sortOrder ?? 'asc',
     pageSize: value.pageSize ?? 20,
+    showHolidays: typeof value.showHolidays === 'boolean' ? value.showHolidays : true,
   });
   if (!parsed.success) return defaultDeadlineViewPreference;
 

@@ -233,7 +233,10 @@ export function BatchSharedSetup({
                     />
                   ) : field.options?.length ? (
                     <SearchableSelect
-                      options={field.options.map((option) => ({ value: option, label: option }))}
+                      options={field.options.map((option) => ({
+                        value: option,
+                        label: field.optionLabels?.[option] ?? option,
+                      }))}
                       value={value}
                       onChange={(next) => onMasterValueChange(field.id, next)}
                       disabled={disabled}

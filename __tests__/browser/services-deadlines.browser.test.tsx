@@ -10,7 +10,7 @@ const hooks = vi.hoisted(() => ({
   useUpsertUserPreference: vi.fn(),
 }));
 
-vi.mock('@/hooks/use-deadlines', () => ({ useDeadlines: hooks.useDeadlines }));
+vi.mock('@/hooks/use-deadlines', () => ({ useDeadlines: hooks.useDeadlines, useDeadlineHolidays: () => ({ data: undefined }) }));
 vi.mock('@/hooks/use-user-preferences', () => ({
   useUserPreference: hooks.useUserPreference,
   useUpsertUserPreference: hooks.useUpsertUserPreference,
