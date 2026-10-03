@@ -25,6 +25,8 @@ import {
   parseDateOnly,
   type DateOnly,
 } from '@/services/service-schedule';
+import { isPostpaidGenerationKey } from './postpaid-triggers';
+import { parseTieredPricing, priceTieredQuantity } from './tiered-pricing';
 import type {
   BillingOccurrenceActor,
   BillingOccurrenceDb,
@@ -150,6 +152,7 @@ export function toBillingOccurrenceDto(
     baseCurrency: record.baseCurrency,
     operativeAmount: moneyString(record.operativeAmount),
     operativeCurrency: record.operativeCurrency,
+    quantity: record.quantity == null ? null : moneyString(record.quantity),
     valueOverridden: record.valueOverridden,
     valueOverrideReason: record.valueOverrideReason ?? null,
     valueOverriddenAt: asInstant(record.valueOverriddenAt),
@@ -190,6 +193,7 @@ export function toBillingOccurrenceDto(
       description: record.feeLine?.description ?? '',
       amount: record.feeLine?.amount == null ? null : moneyString(record.feeLine.amount),
       currency: record.feeLine?.currency ?? null,
+      tieredPricing: isPostpaidGenerationKey(record.generationKey) ? parseTieredPricing(record.feeLine?.tieredPricing) : null,
     },
   };
 }
@@ -342,7 +346,7 @@ function includeForOccurrence(): Prisma.BillingOccurrenceInclude {
       },
     },
     feeLine: {
-      select: { id: true, tenantId: true, clientServiceId: true, description: true, amount: true, currency: true },
+      select: { id: true, tenantId: true, clientServiceId: true, description: true, amount: true, currency: true, tieredPricing: true },
     },
   };
 }
@@ -509,6 +513,19 @@ function buildMutationData(
     valueData.valueOverriddenById = actor.userId;
     valueData.valueOverriddenAt = now;
   }
+  const pricing = isPostpaidGenerationKey(current.generationKey) ? parseTieredPricing(current.feeLine?.tieredPricing) : null;
+  if (pricing && input.status === 'BILLED' && current.quantity == null && input.quantity === undefined && !current.valueOverridden && input.amount === undefined) {
+    throw new ValidationError('Enter the quantity before marking this fee billed');
+  }
+  if (input.quantity !== undefined) {
+    // A tiered postpaid entry bills the tier price of its quantity.
+    if (!pricing) throw new ValidationError('Only fees priced by quantity tiers take a quantity');
+    if (current.status !== 'OPEN') throw new ValidationError('Reopen the billing entry to change its quantity');
+    const amount = priceTieredQuantity(pricing, input.quantity);
+    data.quantity = input.quantity;
+    data.baseAmount = amount;
+    if (!current.valueOverridden && input.amount === undefined) data.operativeAmount = amount;
+  }
   if (input.externalReference !== undefined) data.externalReference = input.externalReference;
   if (input.notes !== undefined) data.notes = input.notes;
   data.updatedAt = now;
@@ -531,6 +548,7 @@ function auditState(record: DbRecord): Record<string, unknown> {
     baseCurrency: record.baseCurrency,
     operativeAmount: moneyString(record.operativeAmount),
     operativeCurrency: record.operativeCurrency,
+    quantity: record.quantity == null ? null : moneyString(record.quantity),
     valueOverridden: record.valueOverridden,
     valueOverrideReason: record.valueOverrideReason,
     valueOverriddenAt: asInstant(record.valueOverriddenAt),

@@ -1,7 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import type { Prisma } from '@/generated/prisma';
 import { ValidationError } from '@/lib/errors';
-import { syncPostpaidBilling } from '@/services/billing/postpaid';
+import { applyPostpaidQuantities, syncPostpaidBilling, type PostpaidQuantityInput } from '@/services/billing/postpaid';
 import {
   COMPANY_OBLIGATION_STATUS_LABELS,
   companyObligationStatusOf,
@@ -40,6 +40,8 @@ export type SetCompanyObligationStatusInput = {
   periodKey: string;
   status: CompanyObligationStatus;
   actorId: string | null;
+  /** With Filed: quantities for the tiered postpaid fees it bills. */
+  billingQuantities?: readonly PostpaidQuantityInput[];
 };
 
 /**
@@ -61,7 +63,7 @@ export async function setCompanyObligationStatus(
       obligationPeriodKey: input.periodKey,
       status: { not: 'CANCELLED' },
     },
-    select: { id: true, status: true, filingResponsibility: true, completedAt: true },
+    select: { id: true, status: true, filingResponsibility: true, completedAt: true, yearOfAssessment: true },
   });
   const now = new Date();
   let changed = 0;
@@ -125,6 +127,15 @@ export async function setCompanyObligationStatus(
   // Postpaid fees pegged to this filing bill (or stop billing) with it.
   if (changed > 0) {
     await syncPostpaidBilling({ tenantId: input.tenantId, companyId: input.companyId, cancelledById: input.actorId }, db);
+  }
+  const yearOfAssessment = occurrences.find((occurrence) => occurrence.yearOfAssessment != null)?.yearOfAssessment;
+  if (input.status === 'FILED' && input.billingQuantities?.length && yearOfAssessment != null) {
+    await applyPostpaidQuantities({
+      tenantId: input.tenantId,
+      companyId: input.companyId,
+      yearOfAssessment,
+      quantities: input.billingQuantities,
+    }, db);
   }
   return changed;
 }

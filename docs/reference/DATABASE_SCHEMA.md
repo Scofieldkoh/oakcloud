@@ -2004,6 +2004,7 @@ these defaults into entity-specific agreement fee rows.
 | custom_frequency_label | VARCHAR(100) | Yes | Required only for CUSTOM frequency |
 | billing_timing | ENUM | No | BillingTiming (default: PREPAID); copied to service fee lines |
 | postpaid_trigger | VARCHAR(60) | Yes | Postpaid only: SG_ECI_FILED, SG_FORM_C_FILED or SG_ECI_OR_FORM_C_FILED |
+| tiered_pricing | JSONB | Yes | Postpaid only: quantity tiers `{ mode: VOLUME \| GRADUATED, unitLabel, tiers: [{ upTo, flatAmount, unitAmount }] }`; null for a fixed amount. Also on client_service_fee_lines; billing_occurrences.quantity keeps the quantity billed |
 | display_order | INT | No | Row order |
 | created_at | TIMESTAMP | No | Record creation time |
 | updated_at | TIMESTAMP | No | Last update time |

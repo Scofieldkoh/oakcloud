@@ -82,6 +82,7 @@ describe('manual client service catalog options', () => {
           customFrequencyLabel: null,
           billingTiming: 'PREPAID',
           postpaidTrigger: null,
+          tieredPricing: null,
           displayOrder: 0,
         }],
         deadlineRules: [],

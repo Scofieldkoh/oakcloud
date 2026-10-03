@@ -61,6 +61,7 @@ export async function createManualClientService(
       billingStartDate: fee.billingStartDate ?? fee.scheduleConfig?.startDate ?? null,
       billingTiming: fee.billingTiming ?? 'PREPAID',
       postpaidTrigger: fee.billingTiming === 'POSTPAID' ? fee.postpaidTrigger ?? null : null,
+      tieredPricing: fee.billingTiming === 'POSTPAID' ? fee.tieredPricing ?? null : null,
     })),
     confirmDuplicate: rawInput.confirmDuplicate ?? false,
   } as CreateManualClientServiceInput;
@@ -195,6 +196,7 @@ export async function createManualClientService(
             scheduleConfig: fee.scheduleConfig ?? Prisma.JsonNull,
             billingTiming: fee.billingTiming,
             postpaidTrigger: fee.postpaidTrigger,
+            tieredPricing: fee.tieredPricing ?? Prisma.JsonNull,
             isActive: true,
             displayOrder: fee.displayOrder,
           })),

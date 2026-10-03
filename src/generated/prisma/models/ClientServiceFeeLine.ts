@@ -92,6 +92,7 @@ export type ClientServiceFeeLineCountAggregateOutputType = {
   scheduleConfig: number
   billingTiming: number
   postpaidTrigger: number
+  tieredPricing: number
   isActive: number
   deletedAt: number
   deletedReason: number
@@ -168,6 +169,7 @@ export type ClientServiceFeeLineCountAggregateInputType = {
   scheduleConfig?: true
   billingTiming?: true
   postpaidTrigger?: true
+  tieredPricing?: true
   isActive?: true
   deletedAt?: true
   deletedReason?: true
@@ -277,6 +279,7 @@ export type ClientServiceFeeLineGroupByOutputType = {
   scheduleConfig: runtime.JsonValue | null
   billingTiming: $Enums.BillingTiming
   postpaidTrigger: string | null
+  tieredPricing: runtime.JsonValue | null
   isActive: boolean
   deletedAt: Date | null
   deletedReason: string | null
@@ -322,6 +325,7 @@ export type ClientServiceFeeLineWhereInput = {
   scheduleConfig?: Prisma.JsonNullableFilter<"ClientServiceFeeLine">
   billingTiming?: Prisma.EnumBillingTimingFilter<"ClientServiceFeeLine"> | $Enums.BillingTiming
   postpaidTrigger?: Prisma.StringNullableFilter<"ClientServiceFeeLine"> | string | null
+  tieredPricing?: Prisma.JsonNullableFilter<"ClientServiceFeeLine">
   isActive?: Prisma.BoolFilter<"ClientServiceFeeLine"> | boolean
   deletedAt?: Prisma.DateTimeNullableFilter<"ClientServiceFeeLine"> | Date | string | null
   deletedReason?: Prisma.StringNullableFilter<"ClientServiceFeeLine"> | string | null
@@ -349,6 +353,7 @@ export type ClientServiceFeeLineOrderByWithRelationInput = {
   scheduleConfig?: Prisma.SortOrderInput | Prisma.SortOrder
   billingTiming?: Prisma.SortOrder
   postpaidTrigger?: Prisma.SortOrderInput | Prisma.SortOrder
+  tieredPricing?: Prisma.SortOrderInput | Prisma.SortOrder
   isActive?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   deletedReason?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -381,6 +386,7 @@ export type ClientServiceFeeLineWhereUniqueInput = Prisma.AtLeast<{
   scheduleConfig?: Prisma.JsonNullableFilter<"ClientServiceFeeLine">
   billingTiming?: Prisma.EnumBillingTimingFilter<"ClientServiceFeeLine"> | $Enums.BillingTiming
   postpaidTrigger?: Prisma.StringNullableFilter<"ClientServiceFeeLine"> | string | null
+  tieredPricing?: Prisma.JsonNullableFilter<"ClientServiceFeeLine">
   isActive?: Prisma.BoolFilter<"ClientServiceFeeLine"> | boolean
   deletedAt?: Prisma.DateTimeNullableFilter<"ClientServiceFeeLine"> | Date | string | null
   deletedReason?: Prisma.StringNullableFilter<"ClientServiceFeeLine"> | string | null
@@ -408,6 +414,7 @@ export type ClientServiceFeeLineOrderByWithAggregationInput = {
   scheduleConfig?: Prisma.SortOrderInput | Prisma.SortOrder
   billingTiming?: Prisma.SortOrder
   postpaidTrigger?: Prisma.SortOrderInput | Prisma.SortOrder
+  tieredPricing?: Prisma.SortOrderInput | Prisma.SortOrder
   isActive?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   deletedReason?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -438,6 +445,7 @@ export type ClientServiceFeeLineScalarWhereWithAggregatesInput = {
   scheduleConfig?: Prisma.JsonNullableWithAggregatesFilter<"ClientServiceFeeLine">
   billingTiming?: Prisma.EnumBillingTimingWithAggregatesFilter<"ClientServiceFeeLine"> | $Enums.BillingTiming
   postpaidTrigger?: Prisma.StringNullableWithAggregatesFilter<"ClientServiceFeeLine"> | string | null
+  tieredPricing?: Prisma.JsonNullableWithAggregatesFilter<"ClientServiceFeeLine">
   isActive?: Prisma.BoolWithAggregatesFilter<"ClientServiceFeeLine"> | boolean
   deletedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"ClientServiceFeeLine"> | Date | string | null
   deletedReason?: Prisma.StringNullableWithAggregatesFilter<"ClientServiceFeeLine"> | string | null
@@ -457,6 +465,7 @@ export type ClientServiceFeeLineCreateInput = {
   scheduleConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   billingTiming?: $Enums.BillingTiming
   postpaidTrigger?: string | null
+  tieredPricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   isActive?: boolean
   deletedAt?: Date | string | null
   deletedReason?: string | null
@@ -484,6 +493,7 @@ export type ClientServiceFeeLineUncheckedCreateInput = {
   scheduleConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   billingTiming?: $Enums.BillingTiming
   postpaidTrigger?: string | null
+  tieredPricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   isActive?: boolean
   deletedAt?: Date | string | null
   deletedReason?: string | null
@@ -505,6 +515,7 @@ export type ClientServiceFeeLineUpdateInput = {
   scheduleConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   billingTiming?: Prisma.EnumBillingTimingFieldUpdateOperationsInput | $Enums.BillingTiming
   postpaidTrigger?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tieredPricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -532,6 +543,7 @@ export type ClientServiceFeeLineUncheckedUpdateInput = {
   scheduleConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   billingTiming?: Prisma.EnumBillingTimingFieldUpdateOperationsInput | $Enums.BillingTiming
   postpaidTrigger?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tieredPricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -556,6 +568,7 @@ export type ClientServiceFeeLineCreateManyInput = {
   scheduleConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   billingTiming?: $Enums.BillingTiming
   postpaidTrigger?: string | null
+  tieredPricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   isActive?: boolean
   deletedAt?: Date | string | null
   deletedReason?: string | null
@@ -575,6 +588,7 @@ export type ClientServiceFeeLineUpdateManyMutationInput = {
   scheduleConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   billingTiming?: Prisma.EnumBillingTimingFieldUpdateOperationsInput | $Enums.BillingTiming
   postpaidTrigger?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tieredPricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -597,6 +611,7 @@ export type ClientServiceFeeLineUncheckedUpdateManyInput = {
   scheduleConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   billingTiming?: Prisma.EnumBillingTimingFieldUpdateOperationsInput | $Enums.BillingTiming
   postpaidTrigger?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tieredPricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -640,6 +655,7 @@ export type ClientServiceFeeLineCountOrderByAggregateInput = {
   scheduleConfig?: Prisma.SortOrder
   billingTiming?: Prisma.SortOrder
   postpaidTrigger?: Prisma.SortOrder
+  tieredPricing?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrder
   deletedReason?: Prisma.SortOrder
@@ -877,6 +893,7 @@ export type ClientServiceFeeLineCreateWithoutTenantInput = {
   scheduleConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   billingTiming?: $Enums.BillingTiming
   postpaidTrigger?: string | null
+  tieredPricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   isActive?: boolean
   deletedAt?: Date | string | null
   deletedReason?: string | null
@@ -902,6 +919,7 @@ export type ClientServiceFeeLineUncheckedCreateWithoutTenantInput = {
   scheduleConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   billingTiming?: $Enums.BillingTiming
   postpaidTrigger?: string | null
+  tieredPricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   isActive?: boolean
   deletedAt?: Date | string | null
   deletedReason?: string | null
@@ -955,6 +973,7 @@ export type ClientServiceFeeLineScalarWhereInput = {
   scheduleConfig?: Prisma.JsonNullableFilter<"ClientServiceFeeLine">
   billingTiming?: Prisma.EnumBillingTimingFilter<"ClientServiceFeeLine"> | $Enums.BillingTiming
   postpaidTrigger?: Prisma.StringNullableFilter<"ClientServiceFeeLine"> | string | null
+  tieredPricing?: Prisma.JsonNullableFilter<"ClientServiceFeeLine">
   isActive?: Prisma.BoolFilter<"ClientServiceFeeLine"> | boolean
   deletedAt?: Prisma.DateTimeNullableFilter<"ClientServiceFeeLine"> | Date | string | null
   deletedReason?: Prisma.StringNullableFilter<"ClientServiceFeeLine"> | string | null
@@ -974,6 +993,7 @@ export type ClientServiceFeeLineCreateWithoutSourceAgreementFeeLineInput = {
   scheduleConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   billingTiming?: $Enums.BillingTiming
   postpaidTrigger?: string | null
+  tieredPricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   isActive?: boolean
   deletedAt?: Date | string | null
   deletedReason?: string | null
@@ -999,6 +1019,7 @@ export type ClientServiceFeeLineUncheckedCreateWithoutSourceAgreementFeeLineInpu
   scheduleConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   billingTiming?: $Enums.BillingTiming
   postpaidTrigger?: string | null
+  tieredPricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   isActive?: boolean
   deletedAt?: Date | string | null
   deletedReason?: string | null
@@ -1046,6 +1067,7 @@ export type ClientServiceFeeLineCreateWithoutClientServiceInput = {
   scheduleConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   billingTiming?: $Enums.BillingTiming
   postpaidTrigger?: string | null
+  tieredPricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   isActive?: boolean
   deletedAt?: Date | string | null
   deletedReason?: string | null
@@ -1071,6 +1093,7 @@ export type ClientServiceFeeLineUncheckedCreateWithoutClientServiceInput = {
   scheduleConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   billingTiming?: $Enums.BillingTiming
   postpaidTrigger?: string | null
+  tieredPricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   isActive?: boolean
   deletedAt?: Date | string | null
   deletedReason?: string | null
@@ -1118,6 +1141,7 @@ export type ClientServiceFeeLineCreateWithoutBillingOccurrencesInput = {
   scheduleConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   billingTiming?: $Enums.BillingTiming
   postpaidTrigger?: string | null
+  tieredPricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   isActive?: boolean
   deletedAt?: Date | string | null
   deletedReason?: string | null
@@ -1144,6 +1168,7 @@ export type ClientServiceFeeLineUncheckedCreateWithoutBillingOccurrencesInput = 
   scheduleConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   billingTiming?: $Enums.BillingTiming
   postpaidTrigger?: string | null
+  tieredPricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   isActive?: boolean
   deletedAt?: Date | string | null
   deletedReason?: string | null
@@ -1180,6 +1205,7 @@ export type ClientServiceFeeLineUpdateWithoutBillingOccurrencesInput = {
   scheduleConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   billingTiming?: Prisma.EnumBillingTimingFieldUpdateOperationsInput | $Enums.BillingTiming
   postpaidTrigger?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tieredPricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1206,6 +1232,7 @@ export type ClientServiceFeeLineUncheckedUpdateWithoutBillingOccurrencesInput = 
   scheduleConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   billingTiming?: Prisma.EnumBillingTimingFieldUpdateOperationsInput | $Enums.BillingTiming
   postpaidTrigger?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tieredPricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1226,6 +1253,7 @@ export type ClientServiceFeeLineCreateWithoutBillingCoverageIssuesInput = {
   scheduleConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   billingTiming?: $Enums.BillingTiming
   postpaidTrigger?: string | null
+  tieredPricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   isActive?: boolean
   deletedAt?: Date | string | null
   deletedReason?: string | null
@@ -1252,6 +1280,7 @@ export type ClientServiceFeeLineUncheckedCreateWithoutBillingCoverageIssuesInput
   scheduleConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   billingTiming?: $Enums.BillingTiming
   postpaidTrigger?: string | null
+  tieredPricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   isActive?: boolean
   deletedAt?: Date | string | null
   deletedReason?: string | null
@@ -1288,6 +1317,7 @@ export type ClientServiceFeeLineUpdateWithoutBillingCoverageIssuesInput = {
   scheduleConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   billingTiming?: Prisma.EnumBillingTimingFieldUpdateOperationsInput | $Enums.BillingTiming
   postpaidTrigger?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tieredPricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1314,6 +1344,7 @@ export type ClientServiceFeeLineUncheckedUpdateWithoutBillingCoverageIssuesInput
   scheduleConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   billingTiming?: Prisma.EnumBillingTimingFieldUpdateOperationsInput | $Enums.BillingTiming
   postpaidTrigger?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tieredPricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1336,6 +1367,7 @@ export type ClientServiceFeeLineCreateManyTenantInput = {
   scheduleConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   billingTiming?: $Enums.BillingTiming
   postpaidTrigger?: string | null
+  tieredPricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   isActive?: boolean
   deletedAt?: Date | string | null
   deletedReason?: string | null
@@ -1355,6 +1387,7 @@ export type ClientServiceFeeLineUpdateWithoutTenantInput = {
   scheduleConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   billingTiming?: Prisma.EnumBillingTimingFieldUpdateOperationsInput | $Enums.BillingTiming
   postpaidTrigger?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tieredPricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1380,6 +1413,7 @@ export type ClientServiceFeeLineUncheckedUpdateWithoutTenantInput = {
   scheduleConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   billingTiming?: Prisma.EnumBillingTimingFieldUpdateOperationsInput | $Enums.BillingTiming
   postpaidTrigger?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tieredPricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1403,6 +1437,7 @@ export type ClientServiceFeeLineUncheckedUpdateManyWithoutTenantInput = {
   scheduleConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   billingTiming?: Prisma.EnumBillingTimingFieldUpdateOperationsInput | $Enums.BillingTiming
   postpaidTrigger?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tieredPricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1424,6 +1459,7 @@ export type ClientServiceFeeLineCreateManySourceAgreementFeeLineInput = {
   scheduleConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   billingTiming?: $Enums.BillingTiming
   postpaidTrigger?: string | null
+  tieredPricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   isActive?: boolean
   deletedAt?: Date | string | null
   deletedReason?: string | null
@@ -1443,6 +1479,7 @@ export type ClientServiceFeeLineUpdateWithoutSourceAgreementFeeLineInput = {
   scheduleConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   billingTiming?: Prisma.EnumBillingTimingFieldUpdateOperationsInput | $Enums.BillingTiming
   postpaidTrigger?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tieredPricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1468,6 +1505,7 @@ export type ClientServiceFeeLineUncheckedUpdateWithoutSourceAgreementFeeLineInpu
   scheduleConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   billingTiming?: Prisma.EnumBillingTimingFieldUpdateOperationsInput | $Enums.BillingTiming
   postpaidTrigger?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tieredPricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1491,6 +1529,7 @@ export type ClientServiceFeeLineUncheckedUpdateManyWithoutSourceAgreementFeeLine
   scheduleConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   billingTiming?: Prisma.EnumBillingTimingFieldUpdateOperationsInput | $Enums.BillingTiming
   postpaidTrigger?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tieredPricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1512,6 +1551,7 @@ export type ClientServiceFeeLineCreateManyClientServiceInput = {
   scheduleConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   billingTiming?: $Enums.BillingTiming
   postpaidTrigger?: string | null
+  tieredPricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   isActive?: boolean
   deletedAt?: Date | string | null
   deletedReason?: string | null
@@ -1531,6 +1571,7 @@ export type ClientServiceFeeLineUpdateWithoutClientServiceInput = {
   scheduleConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   billingTiming?: Prisma.EnumBillingTimingFieldUpdateOperationsInput | $Enums.BillingTiming
   postpaidTrigger?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tieredPricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1556,6 +1597,7 @@ export type ClientServiceFeeLineUncheckedUpdateWithoutClientServiceInput = {
   scheduleConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   billingTiming?: Prisma.EnumBillingTimingFieldUpdateOperationsInput | $Enums.BillingTiming
   postpaidTrigger?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tieredPricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1579,6 +1621,7 @@ export type ClientServiceFeeLineUncheckedUpdateManyWithoutClientServiceInput = {
   scheduleConfig?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   billingTiming?: Prisma.EnumBillingTimingFieldUpdateOperationsInput | $Enums.BillingTiming
   postpaidTrigger?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  tieredPricing?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1641,6 +1684,7 @@ export type ClientServiceFeeLineSelect<ExtArgs extends runtime.Types.Extensions.
   scheduleConfig?: boolean
   billingTiming?: boolean
   postpaidTrigger?: boolean
+  tieredPricing?: boolean
   isActive?: boolean
   deletedAt?: boolean
   deletedReason?: boolean
@@ -1669,6 +1713,7 @@ export type ClientServiceFeeLineSelectCreateManyAndReturn<ExtArgs extends runtim
   scheduleConfig?: boolean
   billingTiming?: boolean
   postpaidTrigger?: boolean
+  tieredPricing?: boolean
   isActive?: boolean
   deletedAt?: boolean
   deletedReason?: boolean
@@ -1694,6 +1739,7 @@ export type ClientServiceFeeLineSelectUpdateManyAndReturn<ExtArgs extends runtim
   scheduleConfig?: boolean
   billingTiming?: boolean
   postpaidTrigger?: boolean
+  tieredPricing?: boolean
   isActive?: boolean
   deletedAt?: boolean
   deletedReason?: boolean
@@ -1719,6 +1765,7 @@ export type ClientServiceFeeLineSelectScalar = {
   scheduleConfig?: boolean
   billingTiming?: boolean
   postpaidTrigger?: boolean
+  tieredPricing?: boolean
   isActive?: boolean
   deletedAt?: boolean
   deletedReason?: boolean
@@ -1727,7 +1774,7 @@ export type ClientServiceFeeLineSelectScalar = {
   updatedAt?: boolean
 }
 
-export type ClientServiceFeeLineOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "clientServiceId" | "sourceAgreementFeeLineId" | "description" | "amount" | "currency" | "billingFrequency" | "customFrequencyLabel" | "billingStartDate" | "scheduleConfig" | "billingTiming" | "postpaidTrigger" | "isActive" | "deletedAt" | "deletedReason" | "displayOrder" | "createdAt" | "updatedAt", ExtArgs["result"]["clientServiceFeeLine"]>
+export type ClientServiceFeeLineOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "clientServiceId" | "sourceAgreementFeeLineId" | "description" | "amount" | "currency" | "billingFrequency" | "customFrequencyLabel" | "billingStartDate" | "scheduleConfig" | "billingTiming" | "postpaidTrigger" | "tieredPricing" | "isActive" | "deletedAt" | "deletedReason" | "displayOrder" | "createdAt" | "updatedAt", ExtArgs["result"]["clientServiceFeeLine"]>
 export type ClientServiceFeeLineInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
   clientService?: boolean | Prisma.ClientServiceDefaultArgs<ExtArgs>
@@ -1776,6 +1823,10 @@ export type $ClientServiceFeeLinePayload<ExtArgs extends runtime.Types.Extension
      * Postpaid only: the filing that raises the bill (see POSTPAID_TRIGGERS).
      */
     postpaidTrigger: string | null
+    /**
+     * Postpaid only: quantity tiers (see billing/tiered-pricing); null for a fixed amount.
+     */
+    tieredPricing: runtime.JsonValue | null
     isActive: boolean
     deletedAt: Date | null
     deletedReason: string | null
@@ -2223,6 +2274,7 @@ export interface ClientServiceFeeLineFieldRefs {
   readonly scheduleConfig: Prisma.FieldRef<"ClientServiceFeeLine", 'Json'>
   readonly billingTiming: Prisma.FieldRef<"ClientServiceFeeLine", 'BillingTiming'>
   readonly postpaidTrigger: Prisma.FieldRef<"ClientServiceFeeLine", 'String'>
+  readonly tieredPricing: Prisma.FieldRef<"ClientServiceFeeLine", 'Json'>
   readonly isActive: Prisma.FieldRef<"ClientServiceFeeLine", 'Boolean'>
   readonly deletedAt: Prisma.FieldRef<"ClientServiceFeeLine", 'DateTime'>
   readonly deletedReason: Prisma.FieldRef<"ClientServiceFeeLine", 'String'>

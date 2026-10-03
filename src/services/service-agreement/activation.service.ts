@@ -16,6 +16,7 @@ import { processScheduleReconciliationBatch } from '@/services/schedule-reconcil
 import { canonicalizeBillingSchedule, isMaterializableBillingSchedule } from '@/services/billing/schedule';
 import { snapshotClientServiceFees } from '@/services/client-service/fee-summary';
 import { isPostpaidTrigger, type PostpaidTrigger } from '@/services/billing/postpaid-triggers';
+import { parseTieredPricing, type TieredPricing } from '@/services/billing/tiered-pricing';
 
 const log = createLogger('service-agreement-activation');
 
@@ -23,20 +24,26 @@ function feeTemplateKey(description: string): string {
   return description.trim().toLowerCase();
 }
 
-/** Postpaid triggers of a variant's fee templates, keyed by description. */
+type PostpaidFeeTemplate = { postpaidTrigger: PostpaidTrigger; tieredPricing: TieredPricing | null };
+
+/** Postpaid triggers and quantity tiers of a variant's fee templates, keyed by description. */
 async function postpaidFeeTemplatesFor(
   tx: Prisma.TransactionClient,
   tenantId: string,
   serviceVariantId: string,
-): Promise<Map<string, PostpaidTrigger>> {
-  const result = new Map<string, PostpaidTrigger>();
+): Promise<Map<string, PostpaidFeeTemplate>> {
+  const result = new Map<string, PostpaidFeeTemplate>();
   if (!tx.serviceVariantFeeTemplate?.findMany) return result;
   const templates = await tx.serviceVariantFeeTemplate.findMany({
     where: { tenantId, variantId: serviceVariantId, billingTiming: 'POSTPAID' },
-    select: { description: true, postpaidTrigger: true },
+    select: { description: true, postpaidTrigger: true, tieredPricing: true },
   });
   for (const template of templates ?? []) {
-    if (isPostpaidTrigger(template.postpaidTrigger)) result.set(feeTemplateKey(template.description), template.postpaidTrigger);
+    if (!isPostpaidTrigger(template.postpaidTrigger)) continue;
+    result.set(feeTemplateKey(template.description), {
+      postpaidTrigger: template.postpaidTrigger,
+      tieredPricing: parseTieredPricing(template.tieredPricing),
+    });
   }
   return result;
 }
@@ -268,9 +275,9 @@ export async function processServiceAgreementActivation(claim: ActivationClaim):
           const fees = item.feeLines.filter((fee) => fee.agreementEntityId === link.agreementEntityId);
           const postpaidTemplates = await postpaidFeeTemplatesFor(tx, agreement.tenantId, item.serviceVariantId);
           const activationFees = fees.map((fee) => {
-            const postpaidTrigger = postpaidTemplates.get(feeTemplateKey(fee.description));
-            if (postpaidTrigger) {
-              return { ...fee, billingStartDate: null, scheduleConfig: null, billingTiming: 'POSTPAID' as const, postpaidTrigger };
+            const postpaid = postpaidTemplates.get(feeTemplateKey(fee.description));
+            if (postpaid) {
+              return { ...fee, billingStartDate: null, scheduleConfig: null, billingTiming: 'POSTPAID' as const, ...postpaid };
             }
             const billingStartDate = fee.billingStartDate ?? item.startDate;
             const scheduleConfig = canonicalizeBillingSchedule({
@@ -284,6 +291,7 @@ export async function processServiceAgreementActivation(claim: ActivationClaim):
               scheduleConfig,
               billingTiming: 'PREPAID' as const,
               postpaidTrigger: null,
+              tieredPricing: null,
             };
           });
           const activationBillingDisposition = fees.length > 0
@@ -295,7 +303,7 @@ export async function processServiceAgreementActivation(claim: ActivationClaim):
           }
           clientServiceCount += 1;
           if (created && fees.length > 0) {
-            await tx.clientServiceFeeLine.createMany({ data: activationFees.map((fee) => ({ tenantId: agreement.tenantId, clientServiceId: service!.id, sourceAgreementFeeLineId: fee.id, description: fee.description, amount: fee.amount, currency: fee.currency, billingFrequency: fee.billingFrequency, customFrequencyLabel: fee.customFrequencyLabel, billingStartDate: fee.billingStartDate, scheduleConfig: fee.scheduleConfig ?? Prisma.JsonNull, billingTiming: fee.billingTiming, postpaidTrigger: fee.postpaidTrigger, isActive: true, displayOrder: fee.displayOrder })) });
+            await tx.clientServiceFeeLine.createMany({ data: activationFees.map((fee) => ({ tenantId: agreement.tenantId, clientServiceId: service!.id, sourceAgreementFeeLineId: fee.id, description: fee.description, amount: fee.amount, currency: fee.currency, billingFrequency: fee.billingFrequency, customFrequencyLabel: fee.customFrequencyLabel, billingStartDate: fee.billingStartDate, scheduleConfig: fee.scheduleConfig ?? Prisma.JsonNull, billingTiming: fee.billingTiming, postpaidTrigger: fee.postpaidTrigger, tieredPricing: fee.tieredPricing ?? Prisma.JsonNull, isActive: true, displayOrder: fee.displayOrder })) });
           }
           if (created) {
             const variantRules = tx.serviceVariantDeadlineRule?.findMany

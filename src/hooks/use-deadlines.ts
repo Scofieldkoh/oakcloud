@@ -13,6 +13,7 @@ import type {
 } from '@/lib/validations/deadline';
 import { deadlineSearchSchema } from '@/lib/validations/deadline';
 import type { DeadlineListResult, DeadlineOccurrenceDto } from '@/services/deadline';
+import type { PostpaidQuantityPrompt } from '@/services/billing/postpaid';
 
 export type DeadlineSearchInput = Omit<Partial<DeadlineSearch>, 'types' | 'familyIds' | 'companyIds' | 'statuses' | 'timing'> & {
   types?: readonly DeadlineSearch['types'][number][];
@@ -199,3 +200,24 @@ export function useResetDeadlineDateOverride() {
 }
 
 export type { DeadlineListResult, DeadlineOccurrenceDto };
+
+/** Billing checks for company filings about to be marked Filed. */
+export type FilingBillingChecks = {
+  /** Filings that bill nothing because their YA is before a service's engagement start. */
+  items: Array<{
+    occurrenceId: string;
+    services: Array<{ clientServiceId: string; serviceName: string; engagementStartYearOfAssessment: number }>;
+  }>;
+  /** Tiered postpaid fees each filing bills that need a quantity. */
+  quantityPrompts: Array<{ occurrenceId: string; prompts: PostpaidQuantityPrompt[] }>;
+};
+
+export async function fetchFilingBillingChecks(ids: readonly string[], signal?: AbortSignal): Promise<FilingBillingChecks> {
+  const body = await requestJson<Partial<FilingBillingChecks>>('/api/deadlines/unbilled-filings', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ ids }),
+    signal,
+  });
+  return { items: body.items ?? [], quantityPrompts: body.quantityPrompts ?? [] };
+}

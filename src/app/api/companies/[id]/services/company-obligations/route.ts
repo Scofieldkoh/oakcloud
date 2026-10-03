@@ -84,6 +84,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       periodKey: input.periodKey,
       status: input.status,
       actorId: session.id,
+      billingQuantities: input.billingQuantities,
     }, tx));
     if (changed === 0) {
       const exists = await prisma.deadlineOccurrence.count({

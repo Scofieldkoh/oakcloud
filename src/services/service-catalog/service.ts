@@ -15,6 +15,7 @@ import { Prisma } from '@/generated/prisma';
 import { validateVariantRuleAssociations } from '@/services/deadline-rule/association-validation';
 import { hashConfiguration } from '@/services/service-schedule/hash';
 import { isPostpaidTrigger } from '@/services/billing/postpaid-triggers';
+import { parseTieredPricing } from '@/services/billing/tiered-pricing';
 import type {
   ServiceCatalogDto,
   ServiceFamilyDto,
@@ -148,6 +149,7 @@ function toVariantDto(variant: VariantRecord): ServiceVariantDto {
       customFrequencyLabel: fee.customFrequencyLabel,
       billingTiming: fee.billingTiming,
       postpaidTrigger: isPostpaidTrigger(fee.postpaidTrigger) ? fee.postpaidTrigger : null,
+      tieredPricing: fee.billingTiming === 'POSTPAID' ? parseTieredPricing(fee.tieredPricing) : null,
       displayOrder: fee.displayOrder,
     })),
     deadlineRules: (variant.deadlineRuleAssociations ?? []).map((association) => ({
@@ -197,6 +199,7 @@ function feeFingerprint(fees: ServiceVariantFeeTemplateInput[]): string {
         customFrequencyLabel: fee.customFrequencyLabel ?? null,
         billingTiming: fee.billingTiming ?? 'PREPAID',
         postpaidTrigger: fee.postpaidTrigger ?? null,
+        tieredPricing: fee.tieredPricing ?? null,
         displayOrder: fee.displayOrder,
       }))
       .sort((left, right) => left.displayOrder - right.displayOrder),
@@ -214,6 +217,7 @@ function storedFeeFingerprint(fees: VariantRecord['defaultFeeTemplates']): strin
         customFrequencyLabel: fee.customFrequencyLabel,
         billingTiming: fee.billingTiming,
         postpaidTrigger: fee.postpaidTrigger ?? null,
+        tieredPricing: fee.tieredPricing ?? null,
         displayOrder: fee.displayOrder,
       }))
       .sort((left, right) => left.displayOrder - right.displayOrder),
@@ -233,6 +237,7 @@ function feeCreateData(
     customFrequencyLabel: fee.customFrequencyLabel ?? null,
     billingTiming: fee.billingTiming ?? 'PREPAID',
     postpaidTrigger: fee.billingTiming === 'POSTPAID' ? fee.postpaidTrigger ?? null : null,
+    tieredPricing: fee.billingTiming === 'POSTPAID' && fee.tieredPricing ? fee.tieredPricing : Prisma.JsonNull,
     displayOrder: fee.displayOrder,
   }));
 }

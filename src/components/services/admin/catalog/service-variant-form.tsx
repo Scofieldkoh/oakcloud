@@ -17,6 +17,7 @@ import type {
 import type { ScheduleEntryInput } from '@/lib/validations/service-schedule';
 import { ScheduleEntryEditor } from '@/components/services/shared/schedule-entry-editor';
 import { BillingTimingFields } from '@/components/services/shared/billing-timing-fields';
+import { TieredPricingFields } from '@/components/services/shared/tiered-pricing-fields';
 import type {
   ServiceVariantDeadlineRuleDto,
   ServiceVariantDto,
@@ -181,6 +182,7 @@ function emptyFee(displayOrder: number): ServiceVariantFeeTemplateInput {
     customFrequencyLabel: null,
     billingTiming: 'PREPAID',
     postpaidTrigger: null,
+    tieredPricing: null,
     displayOrder,
   };
 }
@@ -367,6 +369,9 @@ export function ServiceVariantForm({
             : null,
         billingTiming: fee.billingTiming ?? 'PREPAID',
         postpaidTrigger: fee.billingTiming === 'POSTPAID' ? fee.postpaidTrigger ?? null : null,
+        tieredPricing: fee.billingTiming === 'POSTPAID' ? fee.tieredPricing ?? null : null,
+        // A tiered fee is priced by its tiers, not a default amount.
+        ...(fee.billingTiming === 'POSTPAID' && fee.tieredPricing ? { defaultAmount: null } : {}),
         displayOrder: index,
       })),
       deadlineRules: deadlineRules.map(({ parameterTypes: _parameterTypes, ...rule }) => ({
@@ -542,7 +547,7 @@ export function ServiceVariantForm({
                       }
                       required
                     />
-                    <FormInput
+                    {fee.billingTiming === 'POSTPAID' && fee.tieredPricing ? null : <FormInput
                       label="Default amount"
                       inputMode="decimal"
                       value={fee.defaultAmount ?? ''}
@@ -552,7 +557,7 @@ export function ServiceVariantForm({
                         })
                       }
                       placeholder="0.00"
-                    />
+                    />}
                     <FormInput
                       label="Currency"
                       value={fee.currency}
@@ -591,10 +596,22 @@ export function ServiceVariantForm({
                       value={{
                         billingTiming: fee.billingTiming ?? 'PREPAID',
                         postpaidTrigger: fee.postpaidTrigger ?? null,
+                        tieredPricing: fee.tieredPricing ?? null,
                       }}
                       onChange={(timing) => updateFee(index, timing)}
                     />
                   </div>
+                  {fee.billingTiming === 'POSTPAID' && fee.tieredPricing ? (
+                    <div className="mt-3">
+                      <TieredPricingFields
+                        idPrefix={`fee-template-${index}`}
+                        label={`Fee row ${index + 1}`}
+                        currency={fee.currency || 'SGD'}
+                        value={fee.tieredPricing}
+                        onChange={(tieredPricing) => updateFee(index, { tieredPricing })}
+                      />
+                    </div>
+                  ) : null}
                   {fee.billingFrequency === 'CUSTOM' && fee.billingTiming !== 'POSTPAID' ? (
                     <div className="mt-3">
                       <FormInput

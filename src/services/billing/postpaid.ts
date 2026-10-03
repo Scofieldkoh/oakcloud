@@ -8,6 +8,7 @@ import {
   postpaidBillingPeriodKey,
   postpaidGenerationKey,
 } from './postpaid-triggers';
+import { parseTieredPricing, priceTieredQuantity, type TieredPricing } from './tiered-pricing';
 
 export { isPostpaidGenerationKey, POSTPAID_GENERATION_PREFIX, POSTPAID_SCHEDULE_ENTRY_KEY } from './postpaid-triggers';
 
@@ -17,6 +18,11 @@ export { isPostpaidGenerationKey, POSTPAID_GENERATION_PREFIX, POSTPAID_SCHEDULE_
  * Filed again, or filing both ECI and Form C, never adds a second entry.
  * Moving the YA back from Filed cancels an entry that is still Open; filing
  * again reopens it. Billed, waived and staff-cancelled entries are kept.
+ *
+ * A fee line priced by quantity tiers bills its tier price for the quantity
+ * staff enter when they mark the filing Filed (applyPostpaidQuantities). An
+ * entry raised without one, e.g. by reconciliation, bills 0.00 until staff
+ * enter the quantity.
  */
 
 type Db = Prisma.TransactionClient | typeof prisma;
@@ -37,7 +43,7 @@ type PostpaidService = {
   companyId: string;
   startDate: Date;
   engagementStartYearOfAssessment: number | null;
-  feeLines: Array<{ id: string; amount: Prisma.Decimal; currency: string; postpaidTrigger: string | null }>;
+  feeLines: Array<{ id: string; amount: Prisma.Decimal; currency: string; postpaidTrigger: string | null; tieredPricing: unknown }>;
 };
 
 function dateValue(value: DateOnly): Date {
@@ -47,6 +53,20 @@ function dateValue(value: DateOnly): Date {
 function amountString(value: unknown): string {
   if (value instanceof Prisma.Decimal) return value.toFixed(2);
   return new Prisma.Decimal(String(value)).toFixed(2);
+}
+
+/**
+ * What a postpaid entry bills: the fixed amount, or for a tiered line the
+ * tier price of its quantity (0.00 until a quantity is entered).
+ */
+export function postpaidEntryAmount(
+  feeLine: { amount: unknown; tieredPricing: unknown },
+  quantity: unknown,
+): string {
+  const pricing = parseTieredPricing(feeLine.tieredPricing);
+  if (!pricing) return amountString(feeLine.amount);
+  if (quantity == null) return '0.00';
+  return priceTieredQuantity(pricing, amountString(quantity));
 }
 
 /**
@@ -116,7 +136,7 @@ export async function syncPostpaidBilling(
       engagementStartYearOfAssessment: true,
       feeLines: {
         where: { billingTiming: 'POSTPAID', isActive: true, deletedAt: null },
-        select: { id: true, amount: true, currency: true, postpaidTrigger: true },
+        select: { id: true, amount: true, currency: true, postpaidTrigger: true, tieredPricing: true },
       },
     },
   }) as PostpaidService[];
@@ -149,16 +169,17 @@ export async function syncPostpaidBilling(
           valueOverridden: true,
           baseAmount: true,
           baseCurrency: true,
+          quantity: true,
         },
       });
       const byPeriod = new Map(existing.map((row) => [row.billingPeriodKey, row]));
-      const amount = amountString(feeLine.amount);
 
       const creates: Prisma.BillingOccurrenceCreateManyInput[] = [];
       for (const [yearOfAssessment, filedOn] of billable) {
         const periodKey = postpaidBillingPeriodKey(yearOfAssessment);
         const row = byPeriod.get(periodKey);
         if (!row) {
+          const amount = postpaidEntryAmount(feeLine, null);
           creates.push({
             tenantId: input.tenantId,
             companyId: service.companyId,
@@ -194,6 +215,7 @@ export async function syncPostpaidBilling(
           continue;
         }
         // Keep an Open entry's fee in step with the line, as prepaid rows are.
+        const amount = postpaidEntryAmount(feeLine, row.quantity);
         if (row.status === 'OPEN'
           && (amountString(row.baseAmount) !== amount || row.baseCurrency !== feeLine.currency)) {
           await db.billingOccurrence.update({
@@ -305,6 +327,162 @@ export async function findUnbilledFilings(
     }
     const services = await cache.get(key)!;
     if (services.length > 0) result.push({ occurrenceId: row.id, services });
+  }
+  return result;
+}
+
+export type PostpaidQuantityPrompt = {
+  feeLineId: string;
+  clientServiceId: string;
+  serviceName: string;
+  description: string;
+  currency: string;
+  tieredPricing: TieredPricing;
+};
+
+/**
+ * Tiered postpaid fee lines that filing this YA would bill and that still
+ * need a quantity: no entry yet, or an Open (or reopenable) entry without one.
+ */
+export async function findPostpaidQuantityPrompts(
+  input: { tenantId: string; companyId: string; obligationCode: string; yearOfAssessment: number },
+  db: Db = prisma,
+): Promise<PostpaidQuantityPrompt[]> {
+  const triggers = Object.entries(POSTPAID_TRIGGER_OBLIGATIONS)
+    .filter(([, codes]) => codes.includes(input.obligationCode))
+    .map(([trigger]) => trigger);
+  if (triggers.length === 0) return [];
+  const today = currentDateInSingapore();
+  const services = await db.clientService.findMany({
+    where: {
+      tenantId: input.tenantId,
+      companyId: input.companyId,
+      status: 'ACTIVE',
+      deletedAt: null,
+      billingDisposition: 'CONFIGURED',
+      feeLines: { some: { billingTiming: 'POSTPAID', postpaidTrigger: { in: triggers }, isActive: true, deletedAt: null } },
+    },
+    select: {
+      id: true,
+      serviceName: true,
+      startDate: true,
+      engagementStartYearOfAssessment: true,
+      feeLines: {
+        where: { billingTiming: 'POSTPAID', postpaidTrigger: { in: triggers }, isActive: true, deletedAt: null },
+        select: { id: true, description: true, currency: true, tieredPricing: true },
+        orderBy: { displayOrder: 'asc' },
+      },
+    },
+    orderBy: { serviceName: 'asc' },
+  });
+  const prompts: PostpaidQuantityPrompt[] = [];
+  for (const service of services) {
+    const billsThisYear = service.engagementStartYearOfAssessment != null
+      ? input.yearOfAssessment >= service.engagementStartYearOfAssessment
+      : service.startDate.toISOString().slice(0, 10) <= today;
+    if (!billsThisYear) continue;
+    for (const feeLine of service.feeLines) {
+      const tieredPricing = parseTieredPricing(feeLine.tieredPricing);
+      if (!tieredPricing) continue;
+      const entry = await db.billingOccurrence.findFirst({
+        where: {
+          tenantId: input.tenantId,
+          feeLineId: feeLine.id,
+          billingPeriodKey: postpaidBillingPeriodKey(input.yearOfAssessment),
+          generationKey: postpaidGenerationKey(feeLine.id),
+        },
+        select: { status: true, quantity: true, cancellationReason: true },
+      });
+      const needsQuantity = !entry
+        || (entry.quantity == null && (entry.status === 'OPEN'
+          || (entry.status === 'CANCELLED' && entry.cancellationReason === POSTPAID_UNFILED_REASON)));
+      if (!needsQuantity) continue;
+      prompts.push({
+        feeLineId: feeLine.id,
+        clientServiceId: service.id,
+        serviceName: service.serviceName,
+        description: feeLine.description,
+        currency: feeLine.currency,
+        tieredPricing,
+      });
+    }
+  }
+  return prompts;
+}
+
+export type PostpaidQuantityInput = { feeLineId: string; quantity: string };
+
+/**
+ * Record the quantities staff entered for a filed YA on its Open tiered
+ * entries and bill their tier price. Run after the filing is synced; a
+ * quantity for a line with no Open entry for the YA is ignored. Returns how
+ * many entries changed.
+ */
+export async function applyPostpaidQuantities(
+  input: { tenantId: string; companyId: string; yearOfAssessment: number; quantities: readonly PostpaidQuantityInput[] },
+  db: Db = prisma,
+): Promise<number> {
+  let changed = 0;
+  for (const { feeLineId, quantity } of input.quantities) {
+    const entry = await db.billingOccurrence.findFirst({
+      where: {
+        tenantId: input.tenantId,
+        companyId: input.companyId,
+        feeLineId,
+        billingPeriodKey: postpaidBillingPeriodKey(input.yearOfAssessment),
+        generationKey: postpaidGenerationKey(feeLineId),
+        status: 'OPEN',
+      },
+      select: { id: true, valueOverridden: true, feeLine: { select: { amount: true, tieredPricing: true } } },
+    });
+    if (!entry || !parseTieredPricing(entry.feeLine.tieredPricing)) continue;
+    const amount = postpaidEntryAmount(entry.feeLine, quantity);
+    await db.billingOccurrence.update({
+      where: { id: entry.id },
+      data: {
+        quantity,
+        baseAmount: amount,
+        ...(entry.valueOverridden ? {} : { operativeAmount: amount }),
+      },
+    });
+    changed += 1;
+  }
+  return changed;
+}
+
+/**
+ * For company filings about to be set to Filed, the tiered postpaid fee
+ * lines each would bill that need a quantity.
+ */
+export async function findFilingQuantityPrompts(
+  input: { tenantId: string; companyIds?: string[]; occurrenceIds: string[] },
+  db: Db = prisma,
+): Promise<Array<{ occurrenceId: string; prompts: PostpaidQuantityPrompt[] }>> {
+  if (input.occurrenceIds.length === 0) return [];
+  const rows = await db.deadlineOccurrence.findMany({
+    where: {
+      id: { in: input.occurrenceIds },
+      tenantId: input.tenantId,
+      ...(input.companyIds === undefined ? {} : { companyId: { in: input.companyIds } }),
+      ownershipScope: 'COMPANY',
+      status: { not: 'COMPLETED' },
+      obligationCode: { not: null },
+      yearOfAssessment: { not: null },
+    },
+    select: { id: true, companyId: true, obligationCode: true, yearOfAssessment: true },
+  });
+  const result: Array<{ occurrenceId: string; prompts: PostpaidQuantityPrompt[] }> = [];
+  const seen = new Set<string>();
+  for (const row of rows) {
+    // Two selected filings of one YA (ECI and Form C) bill once, so ask once.
+    const prompts = (await findPostpaidQuantityPrompts({
+      tenantId: input.tenantId,
+      companyId: row.companyId,
+      obligationCode: row.obligationCode!,
+      yearOfAssessment: row.yearOfAssessment!,
+    }, db)).filter((prompt) => !seen.has(`${prompt.feeLineId}|${row.yearOfAssessment}`));
+    for (const prompt of prompts) seen.add(`${prompt.feeLineId}|${row.yearOfAssessment}`);
+    if (prompts.length > 0) result.push({ occurrenceId: row.id, prompts });
   }
   return result;
 }

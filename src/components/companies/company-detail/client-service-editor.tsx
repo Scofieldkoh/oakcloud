@@ -8,6 +8,7 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { FormInput } from '@/components/ui/form-input';
 import type { ClientServiceDto } from '@/services/client-service';
 import {
+  fetchObligationQuantityPrompts,
   isHttpRequestError,
   previewClientServiceDeadlineImpact,
   useArchiveClientService,
@@ -20,6 +21,10 @@ import {
 } from '@/hooks/use-client-services';
 import { OperationalServiceForm, toCompanyObligationsState } from './operational-service-form';
 import { FirstFinancialPeriodDialog } from './first-financial-period-dialog';
+import { BillingQuantityDialog, type BillingQuantityPromptItem } from '@/components/services/shared/billing-quantity-fields';
+import type { PostpaidQuantityInput } from '@/services/billing/postpaid';
+import type { CompanyObligationPreviewItem } from '@/services/compliance-monitoring/writer';
+import type { CompanyObligationStatus } from '@/services/compliance-monitoring/obligation-status';
 import { ServiceCompanyContext } from './service-company-context';
 import {
   deadlineImpactPayload,
@@ -75,6 +80,22 @@ export function ClientServiceEditor({
   const setEngagementStart = useSetEngagementStart(service.companyId);
   const [firstPeriodOpen, setFirstPeriodOpen] = useState(false);
   const [obligationError, setObligationError] = useState('');
+  const [quantityPrompt, setQuantityPrompt] = useState<{
+    item: CompanyObligationPreviewItem;
+    status: CompanyObligationStatus;
+    prompts: BillingQuantityPromptItem[];
+  } | null>(null);
+  const saveObligationStatus = (item: CompanyObligationPreviewItem, status: CompanyObligationStatus, billingQuantities?: PostpaidQuantityInput[]) => {
+    setObligationError('');
+    return setObligationStatus.mutateAsync({
+      obligationCode: item.obligationCode,
+      periodKey: item.periodKey,
+      status,
+      ...(billingQuantities?.length ? { billingQuantities } : {}),
+    })
+      .then(() => undefined)
+      .catch((error: unknown) => setObligationError(error instanceof Error ? error.message : 'Unable to save the filing status.'));
+  };
   const update = useUpdateClientService();
   const archive = useArchiveClientService();
   const permanentDelete = useDeleteClientServicePermanently();
@@ -344,11 +365,20 @@ export function ClientServiceEditor({
           companyObligations={(companyObligations.data?.items.length ?? 0) > 0 || (companyObligations.data?.notices.length ?? 0) > 0
             ? { ...toCompanyObligationsState(companyObligations), error: obligationError || toCompanyObligationsState(companyObligations).error }
             : undefined}
-          onCompanyObligationStatusChange={(item, status) => {
-            setObligationError('');
-            return setObligationStatus.mutateAsync({ obligationCode: item.obligationCode, periodKey: item.periodKey, status })
-              .then(() => undefined)
-              .catch((error: unknown) => setObligationError(error instanceof Error ? error.message : 'Unable to save the filing status.'));
+          onCompanyObligationStatusChange={async (item, status) => {
+            // Filing a YA asks for the quantity of any tiered postpaid fee it
+            // bills. If the check fails, the entry is still raised and flagged.
+            if (status === 'FILED' && item.yearOfAssessment != null) {
+              const prompts = await fetchObligationQuantityPrompts(service.companyId, {
+                obligationCode: item.obligationCode,
+                yearOfAssessment: item.yearOfAssessment,
+              }).catch(() => []);
+              if (prompts.length > 0) {
+                setQuantityPrompt({ item, status, prompts: prompts.map((prompt) => ({ ...prompt, key: prompt.feeLineId })) });
+                return;
+              }
+            }
+            return saveObligationStatus(item, status);
           }}
           onConfirmFirstPeriod={() => setFirstPeriodOpen(true)}
           engagementStartYearOfAssessment={companyObligations.data?.engagementStartYearOfAssessment ?? null}
@@ -376,6 +406,19 @@ export function ClientServiceEditor({
         {!readOnly ? <Button isLoading={busy} disabled={hasConflict || busy} onClick={save}>Save changes</Button> : null}
       </ModalFooter>
     </Modal>
+    <BillingQuantityDialog
+      isOpen={quantityPrompt !== null}
+      title={quantityPrompt ? `Mark ${quantityPrompt.item.obligationName} YA ${quantityPrompt.item.yearOfAssessment ?? ''} Filed` : 'Mark Filed'}
+      prompts={quantityPrompt?.prompts ?? []}
+      isLoading={setObligationStatus.isPending}
+      onClose={() => setQuantityPrompt(null)}
+      onConfirm={async (billingQuantities) => {
+        if (!quantityPrompt) return;
+        const { item, status } = quantityPrompt;
+        setQuantityPrompt(null);
+        await saveObligationStatus(item, status, billingQuantities);
+      }}
+    />
     <FirstFinancialPeriodDialog
       companyId={service.companyId}
       isOpen={firstPeriodOpen}

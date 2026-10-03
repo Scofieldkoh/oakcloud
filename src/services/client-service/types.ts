@@ -1,4 +1,5 @@
 import type { BillingTiming, PostpaidTrigger } from '@/services/billing/postpaid-triggers';
+import type { TieredPricing } from '@/services/billing/tiered-pricing';
 import type { BillingFrequency, ClientServiceSource, ClientServiceStatus, ServiceAgreementActivationStatus, ServiceAgreementStatus, ServiceCadence } from '@/generated/prisma';
 import type { ClientServiceDeadlineRuleInput } from '@/lib/validations/client-service';
 import type { ScheduleEntryInput } from '@/lib/validations/service-schedule';
@@ -74,6 +75,8 @@ export interface ManualClientServiceCatalogFeeTemplate {
   customFrequencyLabel: string | null;
   billingTiming: BillingTiming;
   postpaidTrigger: PostpaidTrigger | null;
+  /** Postpaid only: quantity tiers; null for a fixed amount. */
+  tieredPricing?: TieredPricing | null;
   displayOrder: number;
 }
 
@@ -139,6 +142,8 @@ export interface ClientServiceFeeLineDto {
   scheduleConfig: BillingScheduleConfigV1 | null;
   billingTiming: BillingTiming;
   postpaidTrigger: PostpaidTrigger | null;
+  /** Postpaid only: quantity tiers; null for a fixed amount. */
+  tieredPricing?: TieredPricing | null;
   displayOrder: number;
 }
 
@@ -152,6 +157,10 @@ export interface ClientServiceOpenBillingOccurrenceDto {
   customFrequencyLabel: string | null;
   /** Set on postpaid entries: the filing that raised the bill. */
   postpaidTrigger?: PostpaidTrigger | null;
+  /** Tiered postpaid entries: the quantity billed, null until entered. */
+  quantity?: string | null;
+  /** Set when the fee line is priced by quantity tiers. */
+  tieredPricing?: TieredPricing | null;
   billingPeriodKey: string;
   scheduleEntryKey: string;
   calculatedExpectedDate: DateOnly;

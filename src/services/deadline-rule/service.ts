@@ -25,6 +25,7 @@ import type {
   ServiceVariantRuleAssociationDto,
 } from './types';
 import { isPostpaidTrigger } from '@/services/billing/postpaid-triggers';
+import { parseTieredPricing } from '@/services/billing/tiered-pricing';
 
 const versionInclude = {
   parameterDefinitions: { orderBy: [{ displayOrder: 'asc' as const }, { key: 'asc' as const }] },
@@ -548,6 +549,7 @@ export async function replaceVariantRuleAssociations(
         customFrequencyLabel: fee.customFrequencyLabel,
         billingTiming: fee.billingTiming,
         postpaidTrigger: isPostpaidTrigger(fee.postpaidTrigger) ? fee.postpaidTrigger : null,
+        tieredPricing: fee.billingTiming === 'POSTPAID' ? parseTieredPricing(fee.tieredPricing) : null,
         displayOrder: fee.displayOrder,
       })),
       deadlineRules: associations.map((association) => ({
