@@ -57,6 +57,11 @@ export interface DocumentTemplateSummary {
   content: string;
   contentJson?: unknown;
   placeholders: CustomPlaceholderDefinition[];
+  /**
+   * Word templates: the contacts its contacts repeater may list (its own and
+   * its partials' shortlists together); null or absent means any contact.
+   */
+  contactShortlist?: Array<{ id: string; name: string }> | null;
   /** RESOLUTION templates: resolutions pre-filled on Configure. */
   resolutionPreset?: ResolutionComposition | null;
   createdAt: string;

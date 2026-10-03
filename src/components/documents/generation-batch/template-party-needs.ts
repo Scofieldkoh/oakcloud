@@ -1,9 +1,12 @@
 import {
   OAKDOC_CONTACTS_REPEATER_TAG,
   OAKDOC_DIRECTORS_REPEATER_TAG,
-  OAKDOC_OFFICERS_REPEATER_TAG,
   OAKDOC_SHAREHOLDERS_REPEATER_TAG,
+  normalizeOakDocOfficerRole,
+  oakDocOfficerRepeaterRoleUnion,
+  parseOakDocOfficerRepeaterRoles,
 } from '@/lib/document-editor/oakdoc-repeater-definitions';
+import type { DocumentParty } from '@/lib/document-party';
 import {
   getRequiredLegacyContactSelection,
   getRequiredPartySelections,
@@ -18,7 +21,7 @@ export interface TemplatePartyNeeds {
   shareholder: boolean;
   shareholders: boolean;
   contact: boolean;
-  /** Officers of any role, ticked on Configure, for the Word officers repeater. */
+  /** Officers ticked on Configure, for the Word officers repeaters (see templateOfficerRoles). */
   officers: boolean;
   /** A contact list: the Word contacts repeater or legacy contact placeholders. */
   contacts: boolean;
@@ -50,11 +53,29 @@ export function templatePartyNeeds(
     shareholder: selections.shareholder || usesField(tags, 'selectedShareholder'),
     shareholders: legacy.shareholders || tags.has(OAKDOC_SHAREHOLDERS_REPEATER_TAG),
     contact: selections.contact || usesField(tags, 'selectedContact'),
-    officers: tags.has(OAKDOC_OFFICERS_REPEATER_TAG),
+    officers: [...tags].some((tag) => parseOakDocOfficerRepeaterRoles(tag) !== null),
     contacts: templateContent === undefined
       || tags.has(OAKDOC_CONTACTS_REPEATER_TAG)
       || getRequiredLegacyContactSelection(templateContent),
   };
+}
+
+/**
+ * Roles Configure offers officers of: null for any role, else the roles of
+ * every officers repeater in the template together (`repeat.officers.secretary`).
+ */
+export function templateOfficerRoles(templateFieldTags?: readonly string[]): string[] | null {
+  return oakDocOfficerRepeaterRoleUnion(templateFieldTags ?? []);
+}
+
+/** The officers of these roles; every officer when roles is null. */
+export function officersOfRoles<T extends Pick<DocumentParty, 'role'>>(
+  officers: readonly T[],
+  roles: readonly string[] | null | undefined,
+): T[] {
+  if (!roles) return [...officers];
+  const wanted = new Set(roles);
+  return officers.filter((officer) => wanted.has(normalizeOakDocOfficerRole(officer.role)));
 }
 
 /** Configuration keys behind each party choice, in display order. */

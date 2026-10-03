@@ -13,6 +13,11 @@ import {
 import {
   OAKDOC_GENERIC_REPEATER_BY_TAG,
   formatOakDocRole,
+  oakDocOfficerRepeaterRoleUnion,
+  oakDocOfficersRepeaterDefinition,
+  oakDocOfficersRepeaterTag,
+  oakDocRepeaterDefinitionForTag,
+  parseOakDocOfficerRepeaterRoles,
   type OakDocRepeaterGenerationData,
 } from '@/lib/document-editor/oakdoc-repeater-definitions';
 import type { OakDocCompanyDetail } from '@/lib/document-editor/oakdoc-context';
@@ -161,6 +166,67 @@ describe('OakDoc generic repeaters', () => {
     expect(none.itemsCreated).toBe(0);
   });
 
+  it('encodes an officers role filter in the repeater tag', () => {
+    expect(oakDocOfficersRepeaterTag([])).toBe('repeat.officers');
+    expect(oakDocOfficersRepeaterTag(['CEO', 'SECRETARY', 'SECRETARY'])).toBe('repeat.officers.secretary+ceo');
+    expect(oakDocOfficersRepeaterTag(['Managing Director'])).toBe('repeat.officers.managing-director');
+    expect(parseOakDocOfficerRepeaterRoles('repeat.officers')).toEqual([]);
+    expect(parseOakDocOfficerRepeaterRoles('repeat.officers.secretary+ceo')).toEqual(['SECRETARY', 'CEO']);
+    expect(parseOakDocOfficerRepeaterRoles('repeat.officers.ceo+secretary')).toBeNull();
+    expect(parseOakDocOfficerRepeaterRoles('repeat.officers.treasurer')).toBeNull();
+    expect(parseOakDocOfficerRepeaterRoles('repeat.directors')).toBeNull();
+    expect(oakDocRepeaterDefinitionForTag('repeat.officers.auditor')?.kind).toBe('officers');
+    expect(oakDocOfficerRepeaterRoleUnion(['repeat.officers.secretary', 'repeat.officers.ceo', 'officer.name']))
+      .toEqual(['SECRETARY', 'CEO']);
+    expect(oakDocOfficerRepeaterRoleUnion(['repeat.officers.secretary', 'repeat.officers'])).toBeNull();
+    expect(oakDocOfficerRepeaterRoleUnion(['repeat.directors'])).toBeNull();
+    expect(oakDocOfficersRepeaterDefinition(['SECRETARY'])).toMatchObject({
+      tag: 'repeat.officers.secretary',
+      label: 'Officers (Secretary)',
+    });
+  });
+
+  it('prints only the ticked officers of each repeater\'s own roles', () => {
+    const source = docx(
+      '<w:p w14:paraId="E2000001">' + field('officer.name', 60) + '</w:p>'
+      + '<w:p w14:paraId="E2000002"><w:r><w:t>Between</w:t></w:r></w:p>'
+      + '<w:p w14:paraId="E2000003">' + field('officer.name', 61) + '</w:p>',
+    );
+    const secretaries = createOakDocGenericRepeater({
+      docxBytes: source,
+      fromParaId: 'E2000001',
+      definition: oakDocOfficersRepeaterDefinition(['SECRETARY']),
+    });
+    const both = createOakDocGenericRepeater({
+      docxBytes: secretaries.bytes,
+      fromParaId: 'E2000003',
+      definition: oakDocOfficersRepeaterDefinition([]),
+    });
+    expect(xml(both.bytes)).toContain('<w:alias w:val="Officers (Secretary) repeater"/><w:tag w:val="repeat.officers.secretary"/>');
+    const company = {
+      id: 'c1',
+      name: 'Example',
+      uen: '202600001A',
+      officers: [
+        { id: 'o1', name: 'Dana Director', role: 'DIRECTOR', isCurrent: true },
+        { id: 'o2', name: 'Sam Secretary', role: 'SECRETARY', isCurrent: true },
+      ],
+    };
+    const resolved = resolveOakDocGenericRepeaters({
+      docxBytes: both.bytes,
+      data: { company, selectedOfficerIds: ['o1', 'o2'] },
+    });
+    expect(resolved.repeatersResolved).toBe(2);
+    expect(resolved.itemsCreated).toBe(3);
+    const text = xml(resolved.bytes);
+    const between = text.indexOf('Between');
+    expect(text.slice(0, between)).toContain('Sam Secretary');
+    expect(text.slice(0, between)).not.toContain('Dana Director');
+    expect(text.slice(between)).toContain('Dana Director');
+    expect(text.slice(between)).toContain('Sam Secretary');
+    expect(text).not.toContain('repeat.officers');
+  });
+
   it('keeps each director signing block together and puts roles in proper case', () => {
     const source = docx(
       '<w:p w14:paraId="D1000001"/>'
@@ -224,7 +290,7 @@ describe('OakDoc generic repeaters', () => {
       ],
     } as unknown as OakDocCompanyDetail;
     const names = (tag: string, data: Omit<OakDocRepeaterGenerationData, 'company'>) =>
-      definition(tag).generationDataAdapter({ company, ...data })
+      definition(tag).generationDataAdapter({ company, ...data }, tag)
         .map((row) => row[tag === 'repeat.directors' ? 'director.name' : 'shareholder.name']);
 
     expect(names('repeat.directors', {})).toEqual(['Ann Lim', 'Ben Ong']);

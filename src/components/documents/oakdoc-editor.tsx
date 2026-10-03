@@ -72,15 +72,19 @@ import {
 import { readResolutionPreset, resolutionSectionText } from '@/lib/resolution-composition';
 import {
   oakDocCustomFieldTag,
+  readOakDocContactShortlist,
   readOakDocCustomFields,
   readOakDocPartialCustomFields,
+  writeOakDocContactShortlist,
   writeOakDocCustomFields,
   type OakDocCustomField,
+  type OakDocCustomFieldContact,
 } from '@/lib/document-editor/oakdoc-custom-fields';
 import { insertOakDocField } from '@/components/documents/oakdoc/insert-oakdoc-field';
 import { OakDocCustomFieldsPanel } from '@/components/documents/oakdoc/oakdoc-custom-fields-panel';
 import { OakDocFieldList } from '@/components/documents/oakdoc/oakdoc-field-list';
 import { OakDocRepeaterPanel } from '@/components/documents/oakdoc/oakdoc-repeater-panel';
+import { OAKDOC_CONTACTS_REPEATER_TAG } from '@/lib/document-editor/oakdoc-repeater-definitions';
 
 const DOCX_MIME =
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
@@ -324,6 +328,7 @@ export function OakDocEditor() {
   // Stored placeholders of the loaded template, kept so a save only replaces its custom fields.
   const [storedPlaceholders, setStoredPlaceholders] = useState<unknown>([]);
   const [customFields, setCustomFields] = useState<OakDocCustomField[]>([]);
+  const [contactShortlist, setContactShortlist] = useState<OakDocCustomFieldContact[]>([]);
   const [fieldSummary, setFieldSummary] = useState<OakDocFieldSummary>({
     count: 0,
     tags: [],
@@ -428,6 +433,7 @@ export function OakDocEditor() {
     setTemplateIsActive(loaded.template.isActive);
     setStoredPlaceholders(loaded.template.placeholders ?? []);
     setCustomFields(readOakDocCustomFields(loaded.template.placeholders));
+    setContactShortlist(readOakDocContactShortlist(loaded.template.placeholders));
     setFileName(loaded.metadata.fileName);
     setPinnedPartialVersions(pinnedVersionsOf(loaded.template.contentJson));
     setRefreshPartials(false);
@@ -936,7 +942,11 @@ export function OakDocEditor() {
         formData.set('expectedRevision', String(templateRevision));
       }
       if (refreshPartials) formData.set('refreshPartialPins', 'all');
-      formData.set('placeholders', JSON.stringify(writeOakDocCustomFields(storedPlaceholders, customFields)));
+      formData.set('placeholders', JSON.stringify(writeOakDocContactShortlist(
+        writeOakDocCustomFields(storedPlaceholders, customFields),
+        // A shortlist outlives its contacts repeater only until the next save.
+        inspectOakDocRepeaters(cleaned.bytes).tags.includes(OAKDOC_CONTACTS_REPEATER_TAG) ? contactShortlist : [],
+      )));
 
       const response = await fetch(
         templateId
@@ -988,6 +998,7 @@ export function OakDocEditor() {
     }
   }, [
     activeTenantId,
+    contactShortlist,
     currentDocxBytes,
     customFields,
     fileName,
@@ -1338,6 +1349,11 @@ export function OakDocEditor() {
               onAdd={(definition) => void addRepeater(definition)}
               onRemoveAtCaret={() => void removeRepeaterAtCaret()}
               onAssignField={(field) => void assignField(field)}
+              contactShortlist={contactShortlist}
+              onContactShortlistChange={(next) => {
+                setContactShortlist(next);
+                setIsDirty(true);
+              }}
             />
 
             <div className="my-4 border-t border-border-secondary" />

@@ -55,7 +55,7 @@ const conditionMock = vi.hoisted(() => ({
 vi.mock('@/lib/document-editor/oakdoc-conditions', () => conditionMock);
 
 const repeaterMock = vi.hoisted(() => ({
-  OAKDOC_REPEATER_OUTER_TAGS: new Set<string>(),
+  isOakDocRepeaterOuterTag: () => false,
   inspectOakDocRepeaters: vi.fn(),
   resolveOakDocRepeaters: vi.fn(),
 }));
