@@ -34,6 +34,7 @@ vi.mock('@/hooks/use-client-services', () => ({
 }));
 vi.mock('@/hooks/use-deadlines', () => ({
   useDeadlines: hooks.useDeadlines,
+  useDeadlineHolidays: () => ({ data: undefined }),
   useUpdateDeadlineOccurrence: hooks.useUpdateDeadlineOccurrence,
   useResetDeadlineDateOverride: hooks.useResetDeadlineDateOverride,
 }));
@@ -182,6 +183,9 @@ describe('Task 12 review remediations', () => {
     expect(parsed.tableColumnWidths).toEqual({ dueDate: 96, company: 800 });
     expect(parsed.tableColumnVisibility).toEqual(expect.objectContaining({ actions: true, company: false }));
     expect(parsed.tableColumnVisibility).not.toHaveProperty('unknown');
+    expect(parsed.showHolidays).toBe(true);
+    expect(parseDeadlineViewPreference({ ...parsed, showHolidays: false }).showHolidays).toBe(false);
+    expect(parseDeadlineViewPreference({ ...parsed, showHolidays: 'no' }).showHolidays).toBe(true);
   });
 
   it('canonicalizes calendar history after async preferences and viewport transitions without loops', () => {

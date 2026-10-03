@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
   getDeadlineOccurrence: vi.fn(),
   updateDeadlineOccurrence: vi.fn(),
   resetDeadlineDateOverride: vi.fn(),
+  listWorkspaceHolidays: vi.fn(),
 }));
 
 vi.mock('@/lib/auth', () => ({ requireAuth: mocks.requireAuth }));
@@ -27,7 +28,10 @@ vi.mock('@/services/deadline', () => ({
   resetDeadlineDateOverride: mocks.resetDeadlineDateOverride,
 }));
 
+vi.mock('@/services/business-calendar', () => ({ listWorkspaceHolidays: mocks.listWorkspaceHolidays }));
+
 import { GET as listGET } from '@/app/api/deadlines/route';
+import { GET as holidaysGET } from '@/app/api/deadlines/holidays/route';
 import { GET as detailGET, PATCH as detailPATCH } from '@/app/api/deadlines/[id]/route';
 import { POST as resetPOST } from '@/app/api/deadlines/[id]/reset-date-override/route';
 
@@ -87,6 +91,22 @@ describe('deadline routes', () => {
     const duplicate = await listGET(new NextRequest('http://localhost/api/deadlines?from=2026-08-01&from=2026-08-02&to=2026-08-31'));
     expect(duplicate.status).toBe(400);
     expect(mocks.listDeadlines).not.toHaveBeenCalled();
+  });
+
+  it('reads workspace holidays for deadline readers and bounds the range', async () => {
+    mocks.listWorkspaceHolidays.mockResolvedValue({ weekendDays: [0, 6], holidays: [{ date: '2026-08-10', name: 'National Day' }] });
+    const response = await holidaysGET(new NextRequest('http://localhost/api/deadlines/holidays?from=2026-08-01&to=2026-10-31'));
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({ weekendDays: [0, 6], holidays: [{ date: '2026-08-10', name: 'National Day' }] });
+    expect(mocks.requirePermission).toHaveBeenCalledWith(session, 'company', 'read');
+    expect(mocks.requireServicesWorkspaceEnabled).toHaveBeenCalledWith(tenantId);
+    expect(mocks.listWorkspaceHolidays).toHaveBeenCalledWith({ tenantId, from: '2026-08-01', to: '2026-10-31' });
+
+    for (const query of ['from=2026-08-01', 'from=2026-08-31&to=2026-08-01', 'from=2026-01-01&to=2027-12-31', 'from=2026-08-01&to=2026-08-31&tenantId=x']) {
+      expect((await holidaysGET(new NextRequest(`http://localhost/api/deadlines/holidays?${query}`))).status).toBe(400);
+    }
+    expect(mocks.listWorkspaceHolidays).toHaveBeenCalledTimes(1);
   });
 
   it('loads the occurrence before checking company:update for lifecycle mutation', async () => {

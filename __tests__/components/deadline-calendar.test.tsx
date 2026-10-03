@@ -4,12 +4,13 @@ import type { DeadlineOccurrenceDto } from '@/services/deadline';
 
 const hooks = vi.hoisted(() => ({
   useDeadlines: vi.fn(),
+  useDeadlineHolidays: vi.fn((): { data?: { weekendDays: number[]; holidays: Array<{ date: string; name: string }> } } => ({ data: undefined })),
   useUserPreference: vi.fn(),
   useUpsertUserPreference: vi.fn(),
 }));
 const media = vi.hoisted(() => ({ isLargeDesktop: vi.fn(() => true) }));
 
-vi.mock('@/hooks/use-deadlines', () => ({ useDeadlines: hooks.useDeadlines }));
+vi.mock('@/hooks/use-deadlines', () => ({ useDeadlines: hooks.useDeadlines, useDeadlineHolidays: hooks.useDeadlineHolidays }));
 vi.mock('@/hooks/use-user-preferences', () => ({
   useUserPreference: hooks.useUserPreference,
   useUpsertUserPreference: hooks.useUpsertUserPreference,
@@ -19,6 +20,7 @@ vi.mock('@/hooks/use-media-query', () => ({ useIsLargeDesktop: media.isLargeDesk
 import { DeadlineCalendar } from '@/components/services/deadlines/deadline-calendar';
 import { DeadlineEvent } from '@/components/services/deadlines/deadline-event';
 import { DeadlineTable } from '@/components/services/deadlines/deadline-table';
+import { defaultDeadlineViewPreference } from '@/lib/validations/services-preferences';
 
 const occurrence: DeadlineOccurrenceDto = {
   id: '44444444-4444-4444-8444-444444444444',
@@ -110,6 +112,32 @@ describe('DeadlineCalendar', () => {
 
     expect(screen.getAllByRole('grid', { name: /calendar/i })).toHaveLength(3);
     expect(screen.getByRole('grid', { name: /September 2026/i })).toBeVisible();
+  });
+
+  it('colours weekends and holidays and hides holidays when the toggle is off', () => {
+    media.isLargeDesktop.mockReturnValue(false);
+    hooks.useDeadlines.mockReturnValue({ data: { mode: 'CALENDAR', items: [], truncated: false }, isLoading: false, isFetching: false, error: null });
+    hooks.useDeadlineHolidays.mockReturnValue({ data: { weekendDays: [0, 6], holidays: [{ date: '2026-08-10', name: 'National Day' }] } });
+    const toggle = vi.fn();
+    const view = render(<DeadlineCalendar items={[]} focusMonth={new Date(2026, 7, 1)} onShowHolidaysChange={toggle} />);
+
+    const cell = (date: string) => document.querySelector(`[data-calendar-day="${date}"]`)!;
+    expect(cell('2026-08-10')).toHaveAttribute('data-day-kind', 'holiday');
+    expect(cell('2026-08-10')).toHaveClass('bg-orange-100/70');
+    expect(within(cell('2026-08-10') as HTMLElement).getByText('National Day')).toBeVisible();
+    expect(cell('2026-08-08')).toHaveAttribute('data-day-kind', 'weekend');
+    expect(cell('2026-08-08')).toHaveClass('bg-sky-100/70');
+    expect(cell('2026-08-11')).toHaveAttribute('data-day-kind', 'working');
+    expect(hooks.useDeadlineHolidays).toHaveBeenCalledWith({ from: '2026-08-01', to: '2026-08-31' });
+
+    fireEvent.click(screen.getByRole('switch', { name: 'Show holidays' }));
+    expect(toggle).toHaveBeenCalledWith(false);
+
+    view.rerender(<DeadlineCalendar items={[]} focusMonth={new Date(2026, 7, 1)} preferenceValue={{ ...defaultDeadlineViewPreference, showHolidays: false }} />);
+    expect(screen.getByRole('switch', { name: 'Show holidays' })).toHaveAttribute('aria-checked', 'false');
+    expect(cell('2026-08-10')).toHaveAttribute('data-day-kind', 'working');
+    expect(screen.queryByText('National Day')).toBeNull();
+    hooks.useDeadlineHolidays.mockReturnValue({ data: undefined });
   });
 
   it('shows company label and full name in an event popover', () => {

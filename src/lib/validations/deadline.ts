@@ -182,3 +182,14 @@ export function emptyDeadlineResult(input: Pick<DeadlineSearch, 'mode' | 'page' 
   if (input.mode === 'CALENDAR') return { mode: 'CALENDAR' as const, items: [], awarenessItems: [], truncated: false };
   return { mode: 'TABLE' as const, items: [], awarenessItems: [], total: 0, page: input.page, limit: input.limit, totalPages: 0 };
 }
+
+/** The calendar never shows more than three months, so a year bounds holiday reads. */
+export const DEADLINE_HOLIDAY_MAX_DAYS = 400;
+
+export const deadlineHolidaySearchSchema = z.object({
+  from: dateOnlySchema,
+  to: dateOnlySchema,
+}).strict().refine(
+  ({ from, to }) => from <= to && (Date.parse(to) - Date.parse(from)) / 86_400_000 <= DEADLINE_HOLIDAY_MAX_DAYS,
+  { message: `to must be on or after from and at most ${DEADLINE_HOLIDAY_MAX_DAYS} days later` },
+);
