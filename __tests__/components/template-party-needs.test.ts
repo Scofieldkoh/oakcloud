@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   officersOfRoles,
+  repeaterSectionTitle,
+  templateContactLists,
   templateOfficerRoles,
   templatePartyNeeds,
 } from '@/components/documents/generation-batch/template-party-needs';
@@ -43,5 +45,32 @@ describe('templatePartyNeeds for Word templates', () => {
     const officers = [{ id: 'a', role: 'SECRETARY' }, { id: 'b', role: 'DIRECTOR' }, { id: 'c', role: 'Auditor' }];
     expect(officersOfRoles(officers, templateOfficerRoles(tags)).map((officer) => officer.id)).toEqual(['a', 'c']);
     expect(officersOfRoles(officers, null)).toHaveLength(3);
+  });
+});
+
+describe('named repeating sections on Configure', () => {
+  const sections = {
+    names: {
+      'repeat.directors': ['Signers for the resolution(s)'],
+      'repeat.officers.secretary': ['Outgoing secretary'],
+      'repeat.officers.ceo': ['Incoming CEO', 'Outgoing secretary'],
+      'repeat.contacts.corp-sec': ['Corporate secretary to be appointed'],
+    },
+    shortlists: { 'repeat.contacts.corp-sec': [{ id: 'c1', name: 'Alex Lim' }] },
+  };
+
+  it('titles a kind with every name its sections were given', () => {
+    expect(repeaterSectionTitle(sections, 'directors')).toBe('Signers for the resolution(s)');
+    expect(repeaterSectionTitle(sections, 'officers')).toBe('Outgoing secretary · Incoming CEO');
+    expect(repeaterSectionTitle(sections, 'shareholders')).toBeNull();
+    expect(repeaterSectionTitle(null, 'directors')).toBeNull();
+  });
+
+  it('lists the named contacts lists with their names and shortlists', () => {
+    expect(templateContactLists(['repeat.contacts', 'repeat.contacts.corp-sec', 'repeat.contacts.auditor'], sections)).toEqual([
+      { slug: 'corp-sec', name: 'Corporate secretary to be appointed', shortlist: [{ id: 'c1', name: 'Alex Lim' }] },
+      { slug: 'auditor', name: 'Auditor', shortlist: [] },
+    ]);
+    expect(templateContactLists(['repeat.contacts'], null)).toEqual([]);
   });
 });

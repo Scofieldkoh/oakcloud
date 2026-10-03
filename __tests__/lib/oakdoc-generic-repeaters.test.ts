@@ -13,6 +13,12 @@ import {
 import {
   OAKDOC_GENERIC_REPEATER_BY_TAG,
   formatOakDocRole,
+  isOakDocContactListSlug,
+  oakDocContactListNameFromSlug,
+  oakDocContactListSlug,
+  oakDocContactsRepeaterDefinition,
+  oakDocContactsRepeaterTag,
+  parseOakDocContactListSlug,
   oakDocOfficerRepeaterRoleUnion,
   oakDocOfficersRepeaterDefinition,
   oakDocOfficersRepeaterTag,
@@ -225,6 +231,76 @@ describe('OakDoc generic repeaters', () => {
     expect(text.slice(between)).toContain('Dana Director');
     expect(text.slice(between)).toContain('Sam Secretary');
     expect(text).not.toContain('repeat.officers');
+  });
+
+  it('encodes a named contacts list in the repeater tag', () => {
+    expect(oakDocContactListSlug('Corporate secretary to be appointed')).toBe('corporate-secretary-to-be-appointed');
+    expect(oakDocContactListSlug('  Directors’ nominees (2026) — Café ')).toBe('directors-nominees-2026-cafe');
+    expect(oakDocContactListSlug('!!!')).toBe('');
+    expect(oakDocContactListSlug('a'.repeat(70)).length).toBe(60);
+    expect(oakDocContactsRepeaterTag(null)).toBe('repeat.contacts');
+    expect(oakDocContactsRepeaterTag('corp-sec')).toBe('repeat.contacts.corp-sec');
+    expect(parseOakDocContactListSlug('repeat.contacts.corp-sec')).toBe('corp-sec');
+    expect(parseOakDocContactListSlug('repeat.contacts')).toBeNull();
+    expect(parseOakDocContactListSlug('repeat.contacts.Corp_Sec')).toBeNull();
+    expect(parseOakDocContactListSlug('repeat.contacts.corp--sec')).toBeNull();
+    expect(isOakDocContactListSlug('a'.repeat(61))).toBe(false);
+    expect(oakDocRepeaterDefinitionForTag('repeat.contacts.corp-sec')?.kind).toBe('contacts');
+    expect(oakDocRepeaterDefinitionForTag('repeat.contacts.Corp')).toBeUndefined();
+    expect(oakDocContactListNameFromSlug('corp-sec')).toBe('Corp sec');
+    expect(oakDocContactsRepeaterDefinition('  ')).toMatchObject({ tag: 'repeat.contacts', label: 'Contacts' });
+    expect(oakDocContactsRepeaterDefinition('Corp sec')).toMatchObject({
+      tag: 'repeat.contacts.corp-sec',
+      label: 'Contacts (Corp sec)',
+    });
+  });
+
+  it("prints each named contacts list's own contacts, and the unnamed list its own", () => {
+    const source = docx(
+      '<w:p w14:paraId="F1000001">' + field('contact.name', 70) + '</w:p>'
+      + '<w:p w14:paraId="F1000002"><w:r><w:t>Between</w:t></w:r></w:p>'
+      + '<w:p w14:paraId="F1000003">' + field('contact.name', 71) + '</w:p>',
+    );
+    const named = createOakDocGenericRepeater({
+      docxBytes: source,
+      fromParaId: 'F1000001',
+      definition: oakDocContactsRepeaterDefinition('Corporate secretary to be appointed'),
+    });
+    const both = createOakDocGenericRepeater({
+      docxBytes: named.bytes,
+      fromParaId: 'F1000003',
+      definition: oakDocContactsRepeaterDefinition(null),
+    });
+    expect(xml(both.bytes)).toContain(
+      '<w:alias w:val="Contacts (Corporate secretary to be appointed) repeater"/>'
+      + '<w:tag w:val="repeat.contacts.corporate-secretary-to-be-appointed"/>',
+    );
+    const resolved = resolveOakDocGenericRepeaters({
+      docxBytes: both.bytes,
+      data: {
+        company: { id: 'c1', name: 'Example', uen: '202600001A' },
+        contacts: [{ id: 'k1', name: 'Una Unnamed' }],
+        contactLists: {
+          'corporate-secretary-to-be-appointed': [{ id: 'k2', name: 'Nina New' }, { id: 'k3', name: 'Abe Also' }],
+          other: [{ id: 'k4', name: 'Otto Other' }],
+        },
+      },
+    });
+    expect(resolved.repeatersResolved).toBe(2);
+    const text = xml(resolved.bytes);
+    const between = text.indexOf('Between');
+    expect(text.slice(0, between)).toContain('Nina New');
+    expect(text.indexOf('Nina New')).toBeLessThan(text.indexOf('Abe Also'));
+    expect(text.slice(0, between)).not.toContain('Una Unnamed');
+    expect(text.slice(between)).toContain('Una Unnamed');
+    expect(text.slice(between)).not.toContain('Nina New');
+    expect(text).not.toContain('Otto Other');
+
+    const empty = resolveOakDocGenericRepeaters({
+      docxBytes: named.bytes,
+      data: { company: { id: 'c1', name: 'Example', uen: '202600001A' }, contacts: [{ id: 'k1', name: 'Una Unnamed' }] },
+    });
+    expect(empty.itemsCreated).toBe(0);
   });
 
   it('keeps each director signing block together and puts roles in proper case', () => {

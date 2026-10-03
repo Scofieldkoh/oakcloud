@@ -40,6 +40,7 @@ import {
   isOakDocRepeaterOuterTag,
   inspectOakDocRepeaters,
 } from '@/lib/document-editor/oakdoc-repeaters';
+import { parseOakDocContactListSlug } from '@/lib/document-editor/oakdoc-repeater-definitions';
 import { OAKDOC_SIGNATURE_TAGS } from '@/lib/document-editor/oakdoc-signatures';
 import {
   diagnoseOakDocTags,
@@ -54,6 +55,7 @@ import {
   buildOakDocCustomFieldValues,
   oakDocContactShortlist,
   oakDocCustomContactFields,
+  oakDocRepeaterSectionSummary,
   oakDocCustomFieldTypes,
   parseOakDocCustomFieldTag,
 } from '@/lib/document-editor/oakdoc-custom-fields';
@@ -139,6 +141,8 @@ export interface OakDocGenerationInput {
   selectedContactId?: string;
   /** Contacts listed by a contacts repeater, in this order. */
   contactIds?: string[];
+  /** Contacts listed by each named contacts list (`repeat.contacts.<slug>`), by slug, in order. */
+  selectedContactListIds?: Record<string, string[]>;
   /**
    * Custom field values by key (without `custom.`). Absent leaves custom
    * fields showing their placeholder, as the editor preview does.
@@ -299,6 +303,7 @@ export async function generateOakDocBytes(
     customFieldTypes: oakDocCustomFieldTypes(template.placeholders),
     customContactFields: oakDocCustomContactFields(template.placeholders),
     contactShortlist: contactShortlistIds(template.placeholders),
+    contactListShortlists: contactListShortlistIds(template.placeholders),
   }, input, params);
 }
 
@@ -354,6 +359,7 @@ export async function previewOakDocMaster(
     customFieldTypes: oakDocCustomFieldTypes(saved?.placeholders),
     customContactFields: oakDocCustomContactFields(saved?.placeholders),
     contactShortlist: contactShortlistIds(saved?.placeholders),
+    contactListShortlists: contactListShortlistIds(saved?.placeholders),
   }, {
     ...input,
     // The editor has no Configure step, so it previews sample resolutions.
@@ -377,10 +383,22 @@ interface OakDocMasterSource {
   customContactFields: Record<string, string[]>;
   /** Ids the contacts repeater may list (template and partial shortlists); null: any contact. */
   contactShortlist: string[] | null;
+  /** Ids each named contacts list may list, by slug; a list without a shortlist takes any contact. */
+  contactListShortlists: Record<string, string[]>;
 }
 
 function contactShortlistIds(placeholders: unknown): string[] | null {
   return oakDocContactShortlist(placeholders)?.map((contact) => contact.id) ?? null;
+}
+
+/** Shortlisted contact ids of each named contacts list (template's and partials'), by slug. */
+function contactListShortlistIds(placeholders: unknown): Record<string, string[]> {
+  const lists: Record<string, string[]> = {};
+  for (const [tag, contacts] of Object.entries(oakDocRepeaterSectionSummary(placeholders).shortlists)) {
+    const slug = parseOakDocContactListSlug(tag);
+    if (slug && contacts.length > 0) lists[slug] = contacts.map((contact) => contact.id);
+  }
+  return lists;
 }
 
 /**
@@ -404,6 +422,7 @@ async function renderOakDocMaster(
   let customFieldTypes = master.customFieldTypes;
   let customContactFields = master.customContactFields;
   let contactShortlist = master.contactShortlist;
+  let contactListShortlists = master.contactListShortlists;
   if (master.compositionType === 'RESOLUTION') {
     if (!input.resolution) {
       resolutionDiagnostics.push({
@@ -432,6 +451,10 @@ async function renderOakDocMaster(
         customContactFields = { ...oakDocCustomContactFields(partialFields), ...master.customContactFields };
         const partialShortlist = contactShortlistIds(partialFields);
         if (partialShortlist) contactShortlist = Array.from(new Set([...(contactShortlist ?? []), ...partialShortlist]));
+        contactListShortlists = { ...contactListShortlists };
+        for (const [slug, ids] of Object.entries(contactListShortlistIds(partialFields))) {
+          contactListShortlists[slug] = Array.from(new Set([...(contactListShortlists[slug] ?? []), ...ids]));
+        }
       }
     }
   }
@@ -477,13 +500,25 @@ async function renderOakDocMaster(
   const contactIds = shortlist
     ? (input.contactIds ?? []).filter((id) => shortlist.has(id))
     : input.contactIds;
-  const contacts = contactIds?.length
+  // Each named list prints only its own ticked contacts, on its shortlist when it has one.
+  const contactListIds: Record<string, string[]> = {};
+  for (const [slug, ids] of Object.entries(input.selectedContactListIds ?? {})) {
+    const listShortlist = contactListShortlists[slug] ? new Set(contactListShortlists[slug]) : null;
+    contactListIds[slug] = listShortlist ? ids.filter((id) => listShortlist.has(id)) : ids;
+  }
+  const allContactIds = [...(contactIds ?? []), ...Object.values(contactListIds).flat()];
+  const contactParties = allContactIds.length
     ? await getDocumentContactParties({
-        contactIds,
+        contactIds: allContactIds,
         companyId: input.companyId,
         tenantId: params.tenantId,
       })
     : [];
+  const contactById = new Map(contactParties.map((contact) => [contact.id, contact]));
+  const contacts = Array.from(new Set(contactIds ?? [])).flatMap((id) => contactById.get(id) ?? []);
+  const contactLists = Object.fromEntries(Object.entries(contactListIds).map(
+    ([slug, ids]) => [slug, Array.from(new Set(ids)).flatMap((id) => contactById.get(id) ?? [])],
+  ));
   const companyDetail = toOakDocCompanyDetail(company);
   const provided = new Set<OakDocFieldContext>(['company', 'system']);
   if (companyDetail.officers?.some((officer) => officer.id === input.selectedDirectorId)) {
@@ -548,6 +583,7 @@ async function renderOakDocMaster(
     docxBytes: conditioned.bytes,
     company: companyDetail,
     contacts,
+    contactLists,
     selectedDirectorIds: input.selectedDirectorIds,
     selectedShareholderIds: input.selectedShareholderIds,
     selectedOfficerIds: input.selectedOfficerIds,

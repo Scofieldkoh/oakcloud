@@ -44,6 +44,8 @@ export function resolveOakDocRepeaters(input: {
   docxBytes: Uint8Array;
   company: OakDocCompanyDetail;
   contacts?: readonly OakDocContact[];
+  /** Contacts of each named contacts list, by slug. */
+  contactLists?: Readonly<Record<string, readonly OakDocContact[]>>;
   signers?: readonly OakDocContact[];
   authorisedRepresentatives?: readonly OakDocContact[];
   agreementEntities?: readonly OakDocAgreementEntity[];
@@ -61,6 +63,7 @@ export function resolveOakDocRepeaters(input: {
     data: {
       company: input.company,
       contacts: input.contacts,
+      contactLists: input.contactLists,
       signers: input.signers,
       authorisedRepresentatives: input.authorisedRepresentatives,
       agreementEntities: input.agreementEntities,

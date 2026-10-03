@@ -24,6 +24,8 @@ describe('OakDoc field registry', () => {
     expect(classifyOakDocTag('custom.1st')).toBe('unknown');
     expect(classifyOakDocTag('contact.email')).toBe('repeater-item');
     expect(classifyOakDocTag('repeat.contacts')).toBe('repeater');
+    expect(classifyOakDocTag('repeat.contacts.corporate-secretary-to-be-appointed')).toBe('repeater');
+    expect(classifyOakDocTag('repeat.contacts.Not_A_Slug')).toBe('unknown');
     expect(classifyOakDocTag('repeat.officers.secretary')).toBe('repeater');
     expect(classifyOakDocTag('repeat.officers.secretary+ceo')).toBe('repeater');
     expect(classifyOakDocTag('repeat.officers.treasurer')).toBe('unknown');

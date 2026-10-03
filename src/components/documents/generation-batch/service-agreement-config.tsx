@@ -20,6 +20,8 @@ import type {
 } from './batch-workspace-state';
 import { BatchSection } from './batch-section';
 import { rankAppointments } from '@/lib/representative-authority';
+import type { OakDocRepeaterSectionSummary } from '@/lib/document-editor/oakdoc-custom-fields';
+import { joinRepeaterSectionNames, repeaterSectionNames } from './template-party-needs';
 
 export interface ServiceAgreementConfigProps {
   item: EditableBatchItem;
@@ -34,6 +36,8 @@ export interface ServiceAgreementConfigProps {
   onCompanySearch?: (query: string) => void;
   companySearchLoading?: boolean;
   onPrimaryCompanyChange?: (companyId: string | null, company: Company | null) => void;
+  /** Names the author gave the template's entities, representatives and signers sections. */
+  repeaterSections?: OakDocRepeaterSectionSummary | null;
 }
 
 function emptyWorkspace(primaryCompanyId: string | null): ServiceAgreementWorkspaceState {
@@ -62,7 +66,17 @@ export function ServiceAgreementConfig({
   onCompanySearch = () => undefined,
   companySearchLoading = false,
   onPrimaryCompanyChange,
+  repeaterSections = null,
 }: ServiceAgreementConfigProps) {
+  // The author's section names replace the generic headings.
+  const partiesTitle = joinRepeaterSectionNames([
+    ...repeaterSectionNames(repeaterSections, 'agreementEntities'),
+    ...repeaterSectionNames(repeaterSections, 'authorisedRepresentatives'),
+    ...repeaterSectionNames(repeaterSections, 'signers'),
+  ]);
+  const representativesLabel = joinRepeaterSectionNames(
+    repeaterSectionNames(repeaterSections, 'authorisedRepresentatives'),
+  );
   const workspace = item.configuration.serviceAgreement
     ?? emptyWorkspace(primaryCompany?.id ?? null);
   const inferredRepresentativeRoles = useMemo(() => {
@@ -267,7 +281,7 @@ export function ServiceAgreementConfig({
       </BatchSection>
 
       <BatchSection
-        title="Entities and representative"
+        title={partiesTitle ?? 'Entities and representative'}
         description="Every entity covered by this agreement, plus who signs for them."
         status={{
           complete: partiesComplete,
@@ -307,6 +321,7 @@ export function ServiceAgreementConfig({
           onSignerContactIdsChange={(signerContactIds) =>
             updateWorkspace({ signerContactIds })}
           disabled={disabled}
+          representativesLabel={representativesLabel ?? undefined}
         />
       </BatchSection>
 

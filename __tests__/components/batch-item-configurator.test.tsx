@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {
   BatchItemConfigurator,
@@ -264,5 +264,108 @@ describe('BatchItemConfigurator', () => {
     })} />);
     expect(screen.getByRole('checkbox', { name: /Anyone Else/ })).toBeInTheDocument();
     expect(screen.queryByText(/from the template's shortlist/)).not.toBeInTheDocument();
+  });
+
+  it('gives each named contacts list its own card, shortlist and ticks', async () => {
+    const user = userEvent.setup();
+    const p = props({
+      templateContent: '<p>Word</p>',
+      templateFieldTags: ['repeat.contacts', 'repeat.contacts.corp-sec', 'repeat.contacts.auditor', 'contact.name'],
+      contacts: [{ id: 'contact-9', fullName: 'Anyone Else' }],
+      contactShortlist: [{ id: 'contact-1', name: 'Alex Lim' }],
+      repeaterSections: {
+        names: {
+          'repeat.contacts.corp-sec': ['Corporate secretary to be appointed'],
+          'repeat.contacts.auditor': ['Auditor to be appointed'],
+        },
+        shortlists: {
+          'repeat.contacts': [{ id: 'contact-1', name: 'Alex Lim' }],
+          'repeat.contacts.corp-sec': [{ id: 'contact-2', name: 'Bea Tan' }, { id: 'contact-3', name: 'Cal Ong' }],
+        },
+      },
+      item: {
+        ...item(),
+        configuration: {
+          ...item().configuration,
+          contactIds: ['contact-1'],
+          selectedContactListIds: { 'corp-sec': ['contact-3', 'contact-1'], auditor: ['contact-9'] },
+        },
+      },
+    });
+    render(<BatchItemConfigurator {...p} />);
+
+    expect(screen.getByRole('heading', { name: /^Contacts\s*Contacts listed in the document's Contacts section/ })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /^Corporate secretary to be appointed/ })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /^Auditor to be appointed/ })).toBeInTheDocument();
+    const corpSec = screen.getByRole('heading', { name: /^Corporate secretary to be appointed/ }).closest('section')!;
+    // Only its own shortlist; an id not on it is not ticked.
+    expect(within(corpSec).getAllByRole('checkbox')).toHaveLength(2);
+    expect(within(corpSec).getByRole('checkbox', { name: /Cal Ong/ })).toBeChecked();
+    expect(within(corpSec).getAllByRole('checkbox').filter((box) => (box as HTMLInputElement).checked)).toHaveLength(1);
+    // A list with no shortlist searches every contact.
+    const auditor = screen.getByRole('heading', { name: /^Auditor to be appointed/ }).closest('section')!;
+    expect(within(auditor).getByRole('checkbox', { name: /Anyone Else/ })).toBeChecked();
+
+    await user.click(within(corpSec).getByRole('checkbox', { name: /Bea Tan/ }));
+    expect(p.onPatch).toHaveBeenLastCalledWith({
+      selectedContactListIds: { 'corp-sec': ['contact-3', 'contact-2'], auditor: ['contact-9'] },
+    });
+  });
+
+  it('titles a named section with its name instead of Parties', async () => {
+    const user = userEvent.setup();
+    const officer = (id: string, name: string, role: string) => ({
+      id, contactId: null, name, detail: role, role, email: null, phone: null, address: { full: null, letter: null },
+    });
+    const p = props({
+      templateContent: '<p>Word</p>',
+      templateFieldTags: ['repeat.directors', 'repeat.officers.secretary', 'repeat.officers.ceo', 'selectedContact.name'],
+      directors: [officer('director-1', 'Dana Director', 'DIRECTOR')],
+      officers: [officer('officer-2', 'Sam Secretary', 'SECRETARY')],
+      repeaterSections: {
+        names: {
+          'repeat.directors': ['Signers for the resolution(s)'],
+          'repeat.officers.secretary': ['Outgoing secretary'],
+          'repeat.officers.ceo': ['Incoming CEO'],
+        },
+        shortlists: {},
+      },
+    });
+    render(<BatchItemConfigurator {...p} />);
+
+    expect(screen.getByRole('heading', { name: 'Signers for the resolution(s)' })).toBeInTheDocument();
+    // Two officers sections share one selection; the card shows both names.
+    expect(screen.getByRole('heading', { name: 'Outgoing secretary · Incoming CEO' })).toBeInTheDocument();
+    // The selected contact stays under Parties.
+    const parties = screen.getByRole('heading', { name: /^Parties/ }).closest('section')!;
+    expect(within(parties).queryByRole('group', { name: /Directors/ })).not.toBeInTheDocument();
+
+    const officers = screen.getByRole('heading', { name: 'Outgoing secretary · Incoming CEO' }).closest('section')!;
+    expect(within(officers).getByText('1 required')).toBeInTheDocument();
+    await user.click(within(officers).getByRole('checkbox', { name: /Sam Secretary/ }));
+    expect(p.onPatch).toHaveBeenCalledWith({ selectedOfficerIds: ['officer-2'] });
+  });
+
+  it('keeps the Parties heading when no section is named', () => {
+    render(<BatchItemConfigurator {...props({
+      templateContent: '<p>Word</p>',
+      templateFieldTags: ['repeat.directors', 'director.name'],
+      repeaterSections: { names: {}, shortlists: {} },
+    })} />);
+    expect(screen.getByRole('heading', { name: /^Parties/ })).toBeInTheDocument();
+  });
+
+  it('titles the service agreement parties with the sections the author named', () => {
+    render(<BatchItemConfigurator {...props({
+      item: item('SERVICE_AGREEMENT'),
+      repeaterSections: {
+        names: {
+          'repeat.authorisedRepresentatives': ['Persons signing for the client'],
+          'repeat.agreementEntities': ['Client entities'],
+        },
+        shortlists: {},
+      },
+    })} />);
+    expect(screen.getByRole('heading', { name: /^Client entities · Persons signing for the client/ })).toBeInTheDocument();
   });
 });

@@ -3,8 +3,13 @@ import {
   resolutionItemContactShortlist,
   resolutionItemFieldTags,
   resolutionItemFields,
+  resolutionItemRepeaterSections,
 } from '@/components/documents/generation-batch/resolution-item-fields';
-import { appendOakDocPartialCustomFields, writeOakDocContactShortlist } from '@/lib/document-editor/oakdoc-custom-fields';
+import {
+  appendOakDocPartialCustomFields,
+  writeOakDocContactShortlist,
+  writeOakDocRepeaterSections,
+} from '@/lib/document-editor/oakdoc-custom-fields';
 import { resolutionPartialIds, type ResolutionComposition } from '@/lib/resolution-composition';
 import { normalizeStoredPlaceholders, storageFormatToCustomPlaceholders } from '@/lib/template-analysis';
 
@@ -87,5 +92,24 @@ describe('resolution partial custom fields', () => {
     expect(resolutionItemContactShortlist(null, composition, shortlisted)).toEqual([{ id: 'c2', name: 'Bea Tan' }]);
     expect(resolutionItemContactShortlist(null, composition, partials)).toBeNull();
     expect(resolutionItemContactShortlist(template, null, shortlisted)).toEqual(template);
+  });
+
+  it("adds the chosen partials' section names and contacts lists per document", () => {
+    const named = (tag: string, name: string, contacts: Array<{ id: string; name: string }> = []) =>
+      writeOakDocRepeaterSections([], { names: { [tag]: name }, shortlists: { [tag]: contacts } }, [tag]);
+    const withLists = [
+      { id: 'p-fee', placeholders: named('repeat.contacts.corp-sec', 'Corporate secretary to be appointed', [{ id: 'c2', name: 'Bea Tan' }]) },
+      { id: 'p-meeting', placeholders: named('repeat.directors', 'Signers for the resolution(s)') },
+      { id: 'p-unused', placeholders: named('repeat.contacts.auditor', 'Auditor to be appointed') },
+    ];
+    const template = { names: { 'repeat.directors': ['Directors present'] }, shortlists: {} };
+    expect(resolutionItemRepeaterSections(template, composition, withLists)).toEqual({
+      names: {
+        'repeat.directors': ['Directors present', 'Signers for the resolution(s)'],
+        'repeat.contacts.corp-sec': ['Corporate secretary to be appointed'],
+      },
+      shortlists: { 'repeat.contacts.corp-sec': [{ id: 'c2', name: 'Bea Tan' }] },
+    });
+    expect(resolutionItemRepeaterSections(template, null, withLists)).toEqual(template);
   });
 });

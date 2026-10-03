@@ -6,7 +6,7 @@ import { screen, within } from '@testing-library/react';
 import { OakDocRepeaterPanel } from '@/components/documents/oakdoc/oakdoc-repeater-panel';
 import { StandardDocumentConfig } from '@/components/documents/generation-batch/standard-document-config';
 import type { EditableBatchItem } from '@/components/documents/generation-batch/batch-workspace-state';
-import type { OakDocCustomFieldContact } from '@/lib/document-editor/oakdoc-custom-fields';
+import type { OakDocRepeaterSections } from '@/lib/document-editor/oakdoc-custom-fields';
 import type { OakDocRepeaterDefinition } from '@/lib/document-editor/oakdoc-repeaters';
 import type { DocumentParty } from '@/lib/document-party';
 import '@/app/globals.css';
@@ -26,7 +26,7 @@ vi.mock('@/hooks/use-contacts', () => ({
 }));
 
 function PanelHarness({ onAdd }: { onAdd: (definition: OakDocRepeaterDefinition) => void }) {
-  const [contacts, setContacts] = useState<OakDocCustomFieldContact[]>([]);
+  const [sections, setSections] = useState<OakDocRepeaterSections>({ names: {}, shortlists: {} });
   return (
     <div className="w-72 bg-background-secondary p-3">
       <OakDocRepeaterPanel
@@ -35,8 +35,8 @@ function PanelHarness({ onAdd }: { onAdd: (definition: OakDocRepeaterDefinition)
         onAdd={onAdd}
         onRemoveAtCaret={vi.fn()}
         onAssignField={vi.fn()}
-        contactShortlist={contacts}
-        onContactShortlistChange={setContacts}
+        sections={sections}
+        onSectionsChange={setSections}
       />
     </div>
   );
@@ -96,10 +96,11 @@ describe('Word repeater role filter and contact shortlist', () => {
 
     const roles = screen.getByRole('group', { name: 'Officer roles' });
     await act(async () => userEvent.click(within(roles).getByRole('button', { name: 'Secretary' })));
-    await expect.element(screen.getByText('repeat.officers.secretary')).toBeVisible();
-    await act(async () => userEvent.click(screen.getByText('repeat.officers.secretary')));
+    const insertSecretaries = screen.getByRole('button', { name: /^Officers \(Secretary\)\s*repeat\.officers\.secretary$/ });
+    await expect.element(insertSecretaries).toBeVisible();
+    await act(async () => userEvent.click(insertSecretaries));
     expect(onAdd).toHaveBeenLastCalledWith(expect.objectContaining({ tag: 'repeat.officers.secretary' }));
-    await expect.element(screen.getByText('In this document: Officers (Secretary)')).toBeVisible();
+    await expect.element(within(screen.getByRole('list', { name: 'Officers sections' })).getByText('Officers (Secretary)')).toBeVisible();
 
     await expect.element(screen.getByText('Configure offers any contact.')).toBeVisible();
     await act(async () => userEvent.click(screen.getByRole('button', { name: 'Shortlist' })));

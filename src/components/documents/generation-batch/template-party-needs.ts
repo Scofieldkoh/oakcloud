@@ -2,10 +2,20 @@ import {
   OAKDOC_CONTACTS_REPEATER_TAG,
   OAKDOC_DIRECTORS_REPEATER_TAG,
   OAKDOC_SHAREHOLDERS_REPEATER_TAG,
+  isOakDocContactsRepeaterTag,
   normalizeOakDocOfficerRole,
+  oakDocContactListNameFromSlug,
+  oakDocContactsRepeaterTag,
   oakDocOfficerRepeaterRoleUnion,
+  oakDocRepeaterDefinitionForTag,
+  parseOakDocContactListSlug,
   parseOakDocOfficerRepeaterRoles,
+  type OakDocGenericRepeaterKind,
 } from '@/lib/document-editor/oakdoc-repeater-definitions';
+import type {
+  OakDocCustomFieldContact,
+  OakDocRepeaterSectionSummary,
+} from '@/lib/document-editor/oakdoc-custom-fields';
 import type { DocumentParty } from '@/lib/document-party';
 import {
   getRequiredLegacyContactSelection,
@@ -76,6 +86,69 @@ export function officersOfRoles<T extends Pick<DocumentParty, 'role'>>(
   if (!roles) return [...officers];
   const wanted = new Set(roles);
   return officers.filter((officer) => wanted.has(normalizeOakDocOfficerRole(officer.role)));
+}
+
+/**
+ * The names the author gave the template's sections of one kind (its own
+ * and its partials'), joined: "Signers for the resolution(s)". Null when
+ * none is named, so the picker keeps its usual heading. Contacts lists are
+ * separate lists (templateContactLists), not labels.
+ */
+export function repeaterSectionTitle(
+  sections: OakDocRepeaterSectionSummary | null | undefined,
+  kind: NamedRepeaterKind,
+): string | null {
+  return joinRepeaterSectionNames(repeaterSectionNames(sections, kind));
+}
+
+type NamedRepeaterKind = Exclude<OakDocGenericRepeaterKind, 'contacts'>;
+
+/** The distinct names given to the template's sections of one kind. */
+export function repeaterSectionNames(
+  sections: OakDocRepeaterSectionSummary | null | undefined,
+  kind: NamedRepeaterKind,
+): string[] {
+  const names: string[] = [];
+  for (const [tag, tagNames] of Object.entries(sections?.names ?? {})) {
+    if (isOakDocContactsRepeaterTag(tag) || oakDocRepeaterDefinitionForTag(tag)?.kind !== kind) continue;
+    for (const name of tagNames) if (!names.includes(name)) names.push(name);
+  }
+  return names;
+}
+
+/** Several section names as one heading; null for none. */
+export function joinRepeaterSectionNames(names: readonly string[]): string | null {
+  return names.length > 0 ? names.join(' · ') : null;
+}
+
+export interface TemplateContactList {
+  slug: string;
+  name: string;
+  /** Contacts Configure offers; empty means any contact. */
+  shortlist: OakDocCustomFieldContact[];
+}
+
+/**
+ * The template's named contacts lists (`repeat.contacts.<slug>`), each a
+ * separate list with its own name and shortlist, in document order.
+ */
+export function templateContactLists(
+  templateFieldTags: readonly string[] | undefined,
+  sections: OakDocRepeaterSectionSummary | null | undefined,
+): TemplateContactList[] {
+  const slugs = new Set<string>();
+  for (const tag of [...(templateFieldTags ?? []), ...Object.keys(sections?.names ?? {})]) {
+    const slug = parseOakDocContactListSlug(tag);
+    if (slug) slugs.add(slug);
+  }
+  return [...slugs].map((slug) => {
+    const tag = oakDocContactsRepeaterTag(slug);
+    return {
+      slug,
+      name: sections?.names[tag]?.[0] ?? oakDocContactListNameFromSlug(slug),
+      shortlist: sections?.shortlists[tag] ?? [],
+    };
+  });
 }
 
 /** Configuration keys behind each party choice, in display order. */

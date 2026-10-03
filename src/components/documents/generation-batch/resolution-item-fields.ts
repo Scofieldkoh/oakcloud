@@ -1,7 +1,10 @@
 import {
   appendOakDocPartialCustomFields,
+  mergeOakDocRepeaterSectionSummaries,
   oakDocContactShortlist,
+  oakDocRepeaterSectionSummary,
   type OakDocCustomFieldContact,
+  type OakDocRepeaterSectionSummary,
 } from '@/lib/document-editor/oakdoc-custom-fields';
 import { resolutionPartialIds, type ResolutionComposition } from '@/lib/resolution-composition';
 import { normalizeStoredPlaceholders, storageFormatToCustomPlaceholders } from '@/lib/template-analysis';
@@ -64,4 +67,23 @@ export function resolutionItemContactShortlist(
   const seen = new Set(base.map((contact) => contact.id));
   const merged = [...base, ...fromPartials.filter((contact) => !seen.has(contact.id))];
   return merged.length > 0 ? merged : null;
+}
+
+/**
+ * A resolution document's section names and contacts lists: its template's,
+ * then those of the partials chosen for its numbered resolutions.
+ */
+export function resolutionItemRepeaterSections(
+  templateSections: OakDocRepeaterSectionSummary | null | undefined,
+  resolution: ResolutionComposition | null | undefined,
+  partials: ReadonlyArray<{ id: string; placeholders: unknown }>,
+): OakDocRepeaterSectionSummary {
+  const ids = resolutionPartialIds(resolution);
+  if (ids.length === 0) return mergeOakDocRepeaterSectionSummaries(templateSections, null);
+  const byId = new Map(partials.map((partial) => [partial.id, partial]));
+  const chosen = ids.flatMap((id) => byId.get(id) ?? []);
+  return mergeOakDocRepeaterSectionSummaries(
+    templateSections,
+    oakDocRepeaterSectionSummary(appendOakDocPartialCustomFields([], chosen)),
+  );
 }

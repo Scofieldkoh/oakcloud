@@ -7,6 +7,7 @@ import { deriveOakDocTemplateFieldTags } from '@/lib/document-editor/oakdoc-fiel
 import { OAKDOC_MIME_TYPE } from '@/lib/document-editor/oakdoc-template';
 import { ensureA4ServerDomGlobals } from '@/lib/document-editor/a4-server-dom';
 import { encodeOakDocZipText } from '@/lib/document-editor/oakdoc-zip';
+import { writeOakDocRepeaterSections } from '@/lib/document-editor/oakdoc-custom-fields';
 
 const prismaMock = vi.hoisted(() => ({
   documentTemplate: { findFirst: vi.fn() },
@@ -280,6 +281,68 @@ describe('Resolution template generation', () => {
     expect(prismaMock.contact.findMany).toHaveBeenCalledTimes(1);
     expect(prismaMock.contact.findMany).toHaveBeenCalledWith(expect.objectContaining({
       where: expect.objectContaining({ id: { in: ['contact-2'] }, tenantId }),
+    }));
+  });
+
+  it("prints each of a partial's named contacts lists with only its own ticked contacts", async () => {
+    const field = (tag: string) => `<w:sdt><w:sdtPr><w:tag w:val="${tag}"/></w:sdtPr><w:sdtContent><w:r><w:t>{{${tag}}}</w:t></w:r></w:sdtContent></w:sdt>`;
+    const repeater = (tag: string, label: string) => `<w:sdt><w:sdtPr><w:tag w:val="${tag}"/><w15:repeatingSection/></w:sdtPr><w:sdtContent><w:sdt><w:sdtPr><w15:repeatingSectionItem/></w:sdtPr><w:sdtContent><w:p><w:r><w:t xml:space="preserve">${label}: </w:t></w:r>${field('contact.name')}</w:p></w:sdtContent></w:sdt></w:sdtContent></w:sdt>`;
+    const W15 = 'http://schemas.microsoft.com/office/word/2012/wordml';
+    const bytes = zipSync({
+      ...unzipSync(partialBytes),
+      'word/document.xml': encodeOakDocZipText(`<w:document xmlns:w="${W}" xmlns:w15="${W15}"><w:body>`
+        + repeater('repeat.contacts.corporate-secretary-to-be-appointed', 'New secretary')
+        + repeater('repeat.contacts.auditor', 'Auditor')
+        + repeater('repeat.contacts', 'Copy to')
+        + '<w:sectPr/></w:body></w:document>'),
+    });
+    const tags = deriveOakDocTemplateFieldTags(bytes);
+    expect(tags).toEqual(expect.arrayContaining(['repeat.contacts.corporate-secretary-to-be-appointed', 'repeat.contacts.auditor']));
+    const secretaryTag = 'repeat.contacts.corporate-secretary-to-be-appointed';
+    prismaMock.templatePartial.findMany.mockResolvedValue([{
+      id: partialId,
+      version: 7,
+      contentJson: {
+        oakDoc: { ...asset, storageKey: `${tenantId}/template-partials/${partialId}/oakdoc/${sha(bytes)}.docx`, sha256: sha(bytes), fileSize: bytes.byteLength, fieldTags: tags },
+      },
+      // As the Word partial editor saves them.
+      placeholders: writeOakDocRepeaterSections([], {
+        names: { [secretaryTag]: 'Corporate secretary to be appointed', 'repeat.contacts.auditor': 'Auditor' },
+        shortlists: { [secretaryTag]: [{ id: 'contact-1', name: 'Tan Wei Jie' }, { id: 'contact-2', name: 'Lim Mei Ling' }] },
+      }, tags),
+    }]);
+    storageMock.download.mockResolvedValue(Buffer.from(bytes));
+    const row = (id: string, fullName: string) => ({
+      id, fullName, contactType: 'INDIVIDUAL', fullAddress: null, contactDetails: [], companyRelations: [], officerPositions: [],
+    });
+    prismaMock.contact.findMany.mockResolvedValue([
+      row('contact-1', 'Tan Wei Jie'),
+      row('contact-2', 'Lim Mei Ling'),
+      row('contact-3', 'Ong Audit'),
+    ]);
+
+    const result = await generateOakDocBytes({
+      templateId: stored.id,
+      ...context,
+      contactIds: ['contact-1'],
+      selectedContactListIds: {
+        // contact-9 is not on this list's shortlist, so it is dropped.
+        'corporate-secretary-to-be-appointed': ['contact-9', 'contact-2', 'contact-1'],
+        // No shortlist: any contact.
+        auditor: ['contact-3'],
+      },
+      resolution: {
+        subject: '',
+        sections: [{ id: 'a', kind: 'PARTIAL', heading: 'CHANGE OF OFFICERS', partialId }],
+      },
+    }, { tenantId });
+
+    expect(result.diagnostics.filter((diagnostic) => diagnostic.severity === 'error')).toEqual([]);
+    const text = documentText(result.bytes);
+    expect(text).toContain('New secretary: Lim Mei LingNew secretary: Tan Wei JieAuditor: Ong AuditCopy to: Tan Wei Jie');
+    expect(prismaMock.contact.findMany).toHaveBeenCalledTimes(1);
+    expect(prismaMock.contact.findMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({ id: { in: ['contact-1', 'contact-2', 'contact-3'] }, tenantId }),
     }));
   });
 

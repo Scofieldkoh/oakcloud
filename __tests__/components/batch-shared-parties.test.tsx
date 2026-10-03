@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { BatchSharedParties } from '@/components/documents/generation-batch/batch-shared-parties';
 import type { EditableBatchItem } from '@/components/documents/generation-batch/batch-workspace-state';
@@ -119,5 +119,64 @@ describe('BatchSharedParties', () => {
     expect(screen.queryByRole('checkbox', { name: /Dana Director/ })).not.toBeInTheDocument();
     await user.click(screen.getByRole('checkbox', { name: /Carl Chief/ }));
     expect(onApply).toHaveBeenCalledWith(['a', 'b'], { selectedOfficerIds: ['o3'] });
+  });
+
+  it('titles a shared picker with the names the documents give their sections', () => {
+    render(
+      <BatchSharedParties
+        items={[item('a'), item('b')]}
+        needsByItemKey={{ a: resolutionNeeds, b: resolutionNeeds }}
+        repeaterSectionsByItemKey={{
+          a: { names: { 'repeat.directors': ['Signers for the resolution(s)'] }, shortlists: {} },
+          b: { names: { 'repeat.directors': ['Approving directors'] }, shortlists: {} },
+        }}
+        directors={directors}
+        shareholders={[]}
+        contacts={[]}
+        onApply={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole('group', { name: /Signers for the resolution\(s\) · Approving directors/ })).toBeInTheDocument();
+  });
+
+  it('shares a named contacts list only with lists of the same name', async () => {
+    const user = userEvent.setup();
+    const onApply = vi.fn();
+    const tags = ['repeat.contacts.corp-sec', 'contact.name'];
+    const needs = templatePartyNeeds('', tags);
+    const corpSec = (shortlist: Array<{ id: string; name: string }>) => ({
+      names: { 'repeat.contacts.corp-sec': ['Corporate secretary to be appointed'] },
+      shortlists: { 'repeat.contacts.corp-sec': shortlist },
+    });
+    const a = item('a');
+    a.configuration.selectedContactListIds = { 'corp-sec': ['k1'], other: ['k9'] };
+    render(
+      <BatchSharedParties
+        items={[a, item('b'), item('c')]}
+        needsByItemKey={{ a: needs, b: needs, c: needs }}
+        fieldTagsByItemKey={{ a: tags, b: tags, c: ['repeat.contacts.auditor'] }}
+        repeaterSectionsByItemKey={{
+          a: corpSec([{ id: 'k1', name: 'Kim Lee' }]),
+          b: corpSec([{ id: 'k2', name: 'Kay Ng' }]),
+          c: { names: { 'repeat.contacts.auditor': ['Auditor to be appointed'] }, shortlists: {} },
+        }}
+        directors={[]}
+        shareholders={[]}
+        contacts={[party('k9', 'Anyone Else')]}
+        onApply={onApply}
+      />,
+    );
+
+    // One picker for the two lists of the same name; the auditor list is not shared.
+    const picker = screen.getByRole('group', { name: /Corporate secretary to be appointed/ });
+    expect(screen.queryByRole('group', { name: /Auditor to be appointed/ })).not.toBeInTheDocument();
+    expect(screen.getAllByRole('checkbox')).toHaveLength(2);
+    expect(screen.queryByRole('checkbox', { name: /Anyone Else/ })).not.toBeInTheDocument();
+    expect(screen.getByText(/they differ/)).toBeInTheDocument();
+
+    await user.click(within(picker).getByRole('checkbox', { name: /Kay Ng/ }));
+    // Each document keeps its other lists.
+    expect(onApply).toHaveBeenCalledWith(['a'], { selectedContactListIds: { 'corp-sec': ['k1', 'k2'], other: ['k9'] } });
+    expect(onApply).toHaveBeenCalledWith(['b'], { selectedContactListIds: { 'corp-sec': ['k1', 'k2'] } });
   });
 });
