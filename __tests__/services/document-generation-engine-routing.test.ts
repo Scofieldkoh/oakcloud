@@ -122,6 +122,35 @@ describe('batch document engine routing', () => {
     expect(a4Mock.materializeDocumentFromTemplate).not.toHaveBeenCalled();
   });
 
+  it('passes company values set for the document only to OakDoc generation', async () => {
+    oakMock.materializeOakDocGeneratedDocument.mockResolvedValue({ id: 'document-1', title: 'Generated', revision: 6 });
+
+    await materializeBatchDocumentByEngine({
+      batch,
+      item: item({
+        oakDoc: {
+          schemaVersion: 1,
+          storageKey: 'tenant-1/templates/oakdoc/assets/master.docx',
+          fileName: 'master.docx',
+          fileSize: 100,
+          sha256: 'a'.repeat(64),
+          mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          fieldTags: [],
+        },
+      }),
+      configuration: { ...configuration, companyFieldValues: { firstFinancialYearEnd: '2026-12-31' } },
+      evaluated,
+      actor: 'Ava Tan',
+      params: actorParams,
+    });
+
+    expect(oakMock.materializeOakDocGeneratedDocument).toHaveBeenCalledWith(
+      expect.objectContaining({ companyFieldValues: { firstFinancialYearEnd: '2026-12-31' } }),
+      actorParams,
+      undefined,
+    );
+  });
+
   it('keeps legacy A4 templates on the existing materializer', async () => {
     a4Mock.materializeDocumentFromTemplate.mockResolvedValue({
       id: 'document-1',

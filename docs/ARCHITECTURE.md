@@ -371,6 +371,28 @@ change there is written onto each of those documents' configuration. Service Agr
 stay item-specific and persist transactionally through the existing
 `ServiceAgreement` lifecycle.
 
+Configure warns when a Word template prints a company value that is blank for
+the primary company ("Missing company information"). The values come from
+`GET /api/companies/[id]/document-fields?tags=…`, resolved exactly as
+generation resolves them. `src/lib/document-editor/oakdoc-company-field-homes.ts`
+maps each fillable value to where the company keeps it, with its input type:
+UEN and incorporation date (profile identity), financial year end (compliance
+data), first financial year end (the first confirmed financial period, as the
+Compliance card saves it), registered office address (`company.registeredAddress`
+and `company.address.*`) and paid-up capital (`company.paidUpCapital`,
+`company.capital`). After the user enters a value they confirm where it goes:
+**Save to company** (`POST /api/companies/[id]/document-fields`, which needs
+`company:update`, only fills a blank value, and saves through
+`saveCompanyProfileSection` or `confirmFirstFinancialYearEnd`, so validation,
+schedule reconciliation and the audit log apply), or **Use for this document
+only**, stored in the item's `configuration.companyFieldValues` and applied to
+the company details before rendering (derived fields such as the first FYE and
+the letter address follow). Blank derived fields with no editable home (for
+example `company.secondaryActivity`) are listed without a save option. The
+warning is advisory and does not block Review & generate. Add a home to the
+mapping (and its section merge in `document-field-values.service.ts`) to cover
+another field.
+
 Generation claims items with conditional `READY -> GENERATING` updates carrying
 an attempt ID and claim time. Claims older than 15 minutes are reclaimable.
 Preflight is all-or-nothing, execution commits each item independently, and
