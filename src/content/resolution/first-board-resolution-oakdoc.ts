@@ -1,4 +1,5 @@
 import { createOakDocCondition } from '@/lib/document-editor/oakdoc-conditions';
+import { oakDocFieldTitle } from '@/lib/document-editor/oakdoc-field-case';
 import { OAKDOC_CONDITION_FIELD_TAGS } from '@/lib/document-editor/oakdoc-field-registry';
 import { oakDocOfficersRepeaterTag } from '@/lib/document-editor/oakdoc-repeater-definitions';
 import { OAKDOC_RESOLUTION_HEADING_STYLE } from '@/lib/document-editor/oakdoc-resolutions';
@@ -200,7 +201,7 @@ export const FIRST_BOARD_RESOLUTION_PARTIALS: readonly SeedResolutionPartial[] =
     build: () => partialPackage((ids) => [
       paragraph([
         run('the registered address of the Company situated at '),
-        field(ids, 'company.registeredAddress', 'Full Address', '123 SAMPLE STREET, SINGAPORE 123456', { bold: true, caps: true }),
+        field(ids, 'company.registeredAddress', oakDocFieldTitle('Full Address', 'upper'), '123 SAMPLE STREET, SINGAPORE 123456', bold),
         run(' since the date of incorporation be hereby confirmed.'),
       ].join(''), partialText),
     ]),
@@ -226,7 +227,7 @@ export const FIRST_BOARD_RESOLUTION_PARTIALS: readonly SeedResolutionPartial[] =
     build: () => partialPackage((ids) => [
       repeatingSection(ids, oakDocOfficersRepeaterTag(['SECRETARY']), 'Secretary', paragraph([
         run('the appointment of '),
-        field(ids, 'officer.name', 'Officer Name', 'SECRETARY NAME', { bold: true, caps: true }),
+        field(ids, 'officer.name', oakDocFieldTitle('Officer Name', 'upper'), 'SECRETARY NAME', bold),
         run(' ('),
         field(ids, 'officer.identificationNumber', 'Officer Identification Number', 'S1234567A', bold),
         run(') as Secretary of the Company be hereby approved with effect from the date of consent to act.'),

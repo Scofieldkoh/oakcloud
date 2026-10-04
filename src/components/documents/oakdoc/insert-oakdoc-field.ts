@@ -1,6 +1,7 @@
 import type { DocxEditorRef, EditorCommand } from '@docx-editor.dev/react';
 import type { RunFormatting } from '@docx-editor.dev/core';
 import { OAKDOC_FIELD_TAGS } from '@/lib/document-editor/oakdoc-field-registry';
+import { oakDocFieldTitle } from '@/lib/document-editor/oakdoc-field-case';
 import {
   normalizeOakDocFields,
   type OakDocFieldDefinition,
@@ -59,7 +60,7 @@ export async function insertOakDocField(
     type: 'insertContentControl',
     subtype: 'plainText',
     tag: field.tag,
-    title: field.label,
+    title: oakDocFieldTitle(field.label, field.textCase),
   } as EditorCommand;
 
   const allowed = editor.can(command);

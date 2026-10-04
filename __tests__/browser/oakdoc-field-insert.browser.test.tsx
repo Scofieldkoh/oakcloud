@@ -82,4 +82,16 @@ describe('OakDoc field insert at the caret', () => {
     );
     expect(output).not.toContain('showingPlcHdr');
   });
+
+  it('keeps the chosen text case in the new field\'s Word title', async () => {
+    const { host, ref } = await mountEditor(docx());
+    const first = Array.from(host.querySelectorAll('span, div'))
+      .find((el) => el.textContent?.trim() === 'RESOLVED that the company') as HTMLElement;
+    await userEvent.click(first);
+    await userEvent.keyboard('{End}');
+    await insertOakDocField(ref.current, { tag: 'officer.name', label: 'Officer Name', category: 'Officer', textCase: 'upper' });
+
+    const output = bodyXml(new Uint8Array((await ref.current!.save())!));
+    expect(output).toMatch(/<w:alias w:val="Officer Name · UPPERCASE"\/>.*?<w:tag w:val="officer\.name"\/>/);
+  });
 });

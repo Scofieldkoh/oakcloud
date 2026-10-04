@@ -1,10 +1,12 @@
 'use client';
 
-import { useId, type ReactNode } from 'react';
+import { useId, useState, type ReactNode } from 'react';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { FormInput } from '@/components/ui/form-input';
+import { SearchableSelect } from '@/components/ui/searchable-select';
 import { OAKDOC_REPEATER_NAME_MAX } from '@/lib/document-editor/oakdoc-repeater-definitions';
+import { OAKDOC_FIELD_CASE_OPTIONS, isOakDocFieldCase } from '@/lib/document-editor/oakdoc-field-case';
 import type { OakDocFieldDefinition } from '@/lib/document-editor/oakdoc-fields';
 import { OAKDOC_FIELD_DRAG_TYPE } from '@/lib/document-editor/oakdoc-field-blocks';
 import { cn } from '@/lib/utils';
@@ -30,6 +32,30 @@ export interface OakDocFieldRowProps {
   addLabel?: string;
 }
 
+/** Offers the text case the field prints in; Add (and a drag) carry the choice. */
+function OakDocFieldCaseSelect({
+  value,
+  onChange,
+  disabled,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  disabled: boolean;
+}) {
+  return (
+    <SearchableSelect
+      label="Text case"
+      options={OAKDOC_FIELD_CASE_OPTIONS.map((option) => ({ value: option.value || 'stored', label: option.label }))}
+      value={value || 'stored'}
+      onChange={(next) => onChange(next === 'stored' ? '' : next)}
+      disabled={disabled}
+      clearable={false}
+      showKeyboardHints={false}
+      size="sm"
+    />
+  );
+}
+
 /** Keeps the editor's caret where it is when a panel button is pressed. */
 export function keepEditorCaret(event: { preventDefault: () => void }) {
   event.preventDefault();
@@ -37,7 +63,7 @@ export function keepEditorCaret(event: { preventDefault: () => void }) {
 
 /**
  * One field in the OakDoc field panel. Clicking it opens it, showing its
- * placeholder, any settings and an Add button that inserts it at the
+ * placeholder, the text case it prints in, any settings and an Add button that inserts it at the
  * caret (or around the selected text). A double click adds it at once,
  * and it can be dragged onto the page.
  */
@@ -54,6 +80,9 @@ export function OakDocFieldRow({
   actions,
   addLabel = 'Add',
 }: OakDocFieldRowProps) {
+  const [textCase, setTextCase] = useState('');
+  // The field as Add inserts it, in the chosen case.
+  const withCase = isOakDocFieldCase(textCase) ? { ...field, textCase } : field;
   return (
     <div
       className={cn(
@@ -69,10 +98,10 @@ export function OakDocFieldRow({
         onPointerDown={keepEditorCaret}
         onDragStart={(event) => {
           event.dataTransfer.effectAllowed = 'copy';
-          event.dataTransfer.setData(OAKDOC_FIELD_DRAG_TYPE, JSON.stringify(field));
+          event.dataTransfer.setData(OAKDOC_FIELD_DRAG_TYPE, JSON.stringify(withCase));
         }}
         onClick={onSelect}
-        onDoubleClick={() => onAdd(field)}
+        onDoubleClick={() => onAdd(withCase)}
         title={selected ? undefined : 'Click for options, double-click to add, or drag onto the page'}
         className="flex w-full items-center justify-between gap-2 px-2.5 py-1.5 text-left disabled:cursor-not-allowed disabled:opacity-40"
       >
@@ -90,6 +119,7 @@ export function OakDocFieldRow({
             <code className="block break-all text-[11px] text-text-muted">{`{{${field.tag}}}`}</code>
             {detail ? <div className="text-[11px] text-text-secondary">{detail}</div> : null}
           </div>
+          <OakDocFieldCaseSelect value={textCase} onChange={setTextCase} disabled={disabled} />
           {children}
           <div className="flex items-center gap-1">
             <Button
@@ -97,7 +127,7 @@ export function OakDocFieldRow({
               size="xs"
               disabled={disabled}
               onPointerDown={keepEditorCaret}
-              onClick={() => onAdd(field)}
+              onClick={() => onAdd(withCase)}
               leftIcon={<Plus className="h-3.5 w-3.5" aria-hidden="true" />}
               aria-label={`${addLabel} ${field.label}`}
             >
