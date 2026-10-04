@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { RotateCcw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -23,7 +23,7 @@ import type { CustomPlaceholderDefinition } from '@/types/placeholders';
 import type {
   EditableBatchItem,
 } from './batch-workspace-state';
-import { oneOfficerPerPerson } from '@/lib/officer-identity';
+import { oneOfficerPerPerson, soleOfficerDefault } from '@/lib/officer-identity';
 import { BatchCustomFieldForm } from './batch-custom-field-form';
 import { OfficerChoiceList } from './officer-choice-list';
 import { BatchSection } from './batch-section';
@@ -172,6 +172,14 @@ export function StandardDocumentConfig({
     () => oneOfficerPerPerson(configuration.selectedOfficerIds ?? [], officerOptions),
     [configuration.selectedOfficerIds, officerOptions],
   );
+  // With only one person to choose, tick them until something is chosen.
+  const officerDefault = needs.officers && !partyLoading && !disabled
+    ? soleOfficerDefault(configuration.selectedOfficerIds, officerOptions)
+    : null;
+  const officerDefaultId = officerDefault?.[0];
+  useEffect(() => {
+    if (officerDefaultId) onPatch({ selectedOfficerIds: [officerDefaultId] });
+  }, [officerDefaultId, onPatch]);
   const partyKeys = useMemo(() => partyConfigurationKeys(needs), [needs]);
 
   const selectedContact = useMemo<DocumentContact | null>(() => {

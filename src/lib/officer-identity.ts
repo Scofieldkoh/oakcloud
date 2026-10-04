@@ -79,3 +79,16 @@ export function oneOfficerPerPerson<T extends OfficerIdentityFields>(
     return true;
   });
 }
+
+/**
+ * The officer to tick by default: the only person offered, when nothing has
+ * been chosen yet (`saved` undefined). Null when there is nothing to default.
+ */
+export function soleOfficerDefault<T extends OfficerIdentityFields>(
+  saved: readonly string[] | undefined,
+  officers: readonly T[],
+): string[] | null {
+  if (saved !== undefined) return null;
+  const people = groupOfficersByPerson(officers);
+  return people.length === 1 ? [people[0].records[0].id] : null;
+}

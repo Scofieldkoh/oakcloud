@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { groupOfficersByPerson, oneOfficerPerPerson, sameOfficerPerson } from '@/lib/officer-identity';
+import { groupOfficersByPerson, oneOfficerPerPerson, sameOfficerPerson, soleOfficerDefault } from '@/lib/officer-identity';
 
 type Officer = { id: string; contactId?: string | null; identificationNumber?: string | null; name: string; role: string };
 
@@ -42,5 +42,17 @@ describe('officer identity', () => {
     ];
     expect(oneOfficerPerPerson(['s1', 'd2', 'd1', 'gone', 'd2'], officers)).toEqual(['s1', 'd2']);
     expect(oneOfficerPerPerson([], officers)).toEqual([]);
+  });
+
+  it('ticks the only person offered until something is chosen', () => {
+    const secretary = officer('s1', 'Wong Lee Chuin', 'SECRETARY', { identificationNumber: 'S1' });
+    const sameAsDirector = officer('d1', 'Wong Lee Chuin', 'DIRECTOR', { identificationNumber: 'S1' });
+    expect(soleOfficerDefault(undefined, [secretary])).toEqual(['s1']);
+    // One person with two appointments is still one choice.
+    expect(soleOfficerDefault(undefined, [secretary, sameAsDirector])).toEqual(['s1']);
+    // A choice already made, even none, is kept.
+    expect(soleOfficerDefault([], [secretary])).toBeNull();
+    expect(soleOfficerDefault(undefined, [secretary, officer('s2', 'Tan Wei Jie', 'SECRETARY')])).toBeNull();
+    expect(soleOfficerDefault(undefined, [])).toBeNull();
   });
 });
