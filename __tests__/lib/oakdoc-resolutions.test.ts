@@ -56,7 +56,7 @@ describe('OakDoc numbered resolutions', () => {
     expect(xml).toContain('>2.</w:t><w:tab/><w:t xml:space="preserve">CORPORATE SERVICE PROVIDER<');
     expect(xml).toContain('RESOLVED that A &amp; B</w:t><w:br/><w:t xml:space="preserve">be appointed.');
     expect(xml).toContain('Times New Roman');
-    expect(xml).toContain('<w:tab w:val="left" w:pos="567"/>');
+    expect(xml).toContain('<w:tab w:val="left" w:pos="720"/>');
   });
 
   it('prints edited partial text as plain paragraphs instead of the partial', () => {
