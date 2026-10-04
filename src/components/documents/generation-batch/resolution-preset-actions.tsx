@@ -41,9 +41,13 @@ export interface ResolutionPresetActionsProps {
   disabled?: boolean;
 }
 
+/** White outline buttons for the section's green header, like Apply to others. */
+const HEADER_BUTTON_CLASS = 'min-h-9 border border-white/50 text-white hover:bg-white/10 hover:text-white';
+
 /**
  * Save the resolutions on Configure as the template's preset, or as a new
  * template that uses the same Word layout with these resolutions preset.
+ * Shown in the Resolutions section header.
  */
 export function ResolutionPresetActions({
   templateId,
@@ -85,13 +89,13 @@ export function ResolutionPresetActions({
   };
 
   return (
-    <div className="flex flex-wrap items-center gap-2 border-t border-border-secondary pt-3">
-      <span className="text-xs text-text-muted">Reuse this list:</span>
+    <div className="flex flex-wrap items-center gap-2">
       <Button
         type="button"
         variant="ghost"
-        size="sm"
-        leftIcon={<Save className="h-4 w-4" />}
+        size="xs"
+        className={HEADER_BUTTON_CLASS}
+        leftIcon={<Save className="h-3.5 w-3.5" />}
         disabled={disabled || busy || empty}
         onClick={() => setConfirmOpen(true)}
       >
@@ -100,8 +104,9 @@ export function ResolutionPresetActions({
       <Button
         type="button"
         variant="ghost"
-        size="sm"
-        leftIcon={<CopyPlus className="h-4 w-4" />}
+        size="xs"
+        className={HEADER_BUTTON_CLASS}
+        leftIcon={<CopyPlus className="h-3.5 w-3.5" />}
         disabled={disabled || busy || empty}
         onClick={() => {
           setCopyName(value.subject.trim() ? `${templateName} - ${value.subject.trim()}`.slice(0, 200) : '');

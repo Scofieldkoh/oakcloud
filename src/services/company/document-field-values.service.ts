@@ -10,10 +10,12 @@ import { buildOakDocResolutionValues } from '@/lib/document-editor/oakdoc-contex
 import {
   companyFieldHome,
   companyFieldTagsToResolve,
+  encodeYearEnd,
   normalizeCompanyFieldValue,
   parseAddressValue,
   parseMoneyValue,
   parseYearEnd,
+  yearEndOfDate,
   type CompanyFieldHomeId,
 } from '@/lib/document-editor/oakdoc-company-field-homes';
 import { ConflictError, NotFoundError, ValidationError } from '@/lib/errors';
@@ -124,6 +126,22 @@ export async function saveCompanyDocumentField(
         { tenantId: args.tenantId, companyId: args.companyId, userId: args.userId },
         value as DateOnly,
       );
+      // A company with no year end on record takes it from the first FYE.
+      const yearEnd = yearEndOfDate(value);
+      const after = await getCompanyProfileSection<Record<string, unknown>>(
+        args.companyId, args.tenantId, 'compliance',
+      );
+      if (yearEnd && (after.data.financialYearEndDay == null || after.data.financialYearEndMonth == null)) {
+        await saveCompanyProfileSection({
+          companyId: args.companyId,
+          tenantId: args.tenantId,
+          userId: args.userId,
+          section: 'compliance',
+          ifMatchVersion: after.version,
+          reason: REASON,
+          data: fillSection('financialYearEnd', after.data, encodeYearEnd(yearEnd.day, yearEnd.month)),
+        });
+      }
     } else {
       const current = await getCompanyProfileSection<Record<string, unknown>>(
         args.companyId, args.tenantId, home.section,

@@ -262,6 +262,12 @@ export function AsyncSearchSelect<T extends AsyncSearchSelectOption>({
           }
           break;
         case 'Tab':
+          // Typing until one result is left, then Tab, picks it (focus still moves on).
+          if (isOpen && !isLoading && searchQuery.trim() && options.length === 1) {
+            const [only] = options;
+            setSelectedItem(only);
+            onChange(only.id, only);
+          }
           setIsOpen(false);
           setIsEditing(false);
           onSearchChange('');
@@ -273,7 +279,7 @@ export function AsyncSearchSelect<T extends AsyncSearchSelectOption>({
           break;
       }
     },
-    [isOpen, options, highlightedIndex, handleSelect, onSearchChange]
+    [isOpen, isLoading, searchQuery, options, highlightedIndex, handleSelect, onChange, onSearchChange]
   );
 
   const defaultRenderSelected = (item: T) => (

@@ -188,6 +188,14 @@ export function encodeYearEnd(day: number, month: number): string {
   return `${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 }
 
+/** The financial year end (day and month) a first FYE date falls on: 2026-12-31 -> 31 December. */
+export function yearEndOfDate(value: string): { day: number; month: number } | null {
+  const match = /^\d{4}-(\d{2})-(\d{2})/.exec(value.trim());
+  if (!match) return null;
+  const parsed = parseYearEnd(`${match[1]}-${match[2]}`);
+  return parsed.ok ? parsed.value : null;
+}
+
 export function parseAddressValue(value: string): CompanyFieldParseResult<CompanyFieldAddressValue> {
   const record = parseJson(value);
   if (!record) return { ok: false, error: 'Enter the address.' };
@@ -341,6 +349,13 @@ export function detectMissingCompanyFields(params: {
     if (entry) entry.tags.push(tag);
     else fillable.set(home.id, { home, tags: [tag], documentValue: params.documentValues?.[home.id] ?? null });
   }
+  // With both missing, only the first FYE is asked: the year end is its day and month.
+  const firstFye = fillable.get('firstFinancialYearEnd');
+  const yearEnd = fillable.get('financialYearEnd');
+  if (firstFye && yearEnd && !yearEnd.documentValue) {
+    firstFye.tags.push(...yearEnd.tags);
+    fillable.delete('financialYearEnd');
+  }
   const order = new Map(COMPANY_FIELD_HOMES.map((home, index) => [home.id, index]));
   return {
     fillable: Array.from(fillable.values()).sort((a, b) => order.get(a.home.id)! - order.get(b.home.id)!),
@@ -389,9 +404,15 @@ export function applyCompanyFieldValues(
         }
         break;
       }
-      case 'firstFinancialYearEnd':
+      case 'firstFinancialYearEnd': {
         next = { ...next, financialPeriods: [{ periodEnd: value }] };
+        // A company with no year end on record takes it from the first FYE.
+        const yearEnd = yearEndOfDate(value);
+        if (yearEnd && (next.financialYearEndDay == null || next.financialYearEndMonth == null)) {
+          next = { ...next, financialYearEndDay: yearEnd.day, financialYearEndMonth: yearEnd.month };
+        }
         break;
+      }
       case 'registeredAddress': {
         const parsed = parseAddressValue(value);
         if (!parsed.ok) break;

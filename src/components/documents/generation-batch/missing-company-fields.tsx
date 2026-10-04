@@ -93,7 +93,7 @@ function FieldEditor({
           ariaLabel={home.label}
           error={error}
           disabled={disabled}
-          className="w-[17rem] max-w-full"
+          className="w-full"
         />
       );
     case 'text':
@@ -193,6 +193,9 @@ function MissingFieldRow({
   return (
     <li className="rounded-lg border border-border-primary bg-background-primary p-3">
       <p className="text-sm font-medium text-text-primary">{home.label}</p>
+      {home.id === 'firstFinancialYearEnd' && field.tags.includes('company.financialYearEnd') ? (
+        <p className="text-xs text-text-muted">The financial year end is taken from this date&apos;s day and month.</p>
+      ) : null}
       {documentValue ? (
         <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-2">
           <p className="text-sm text-text-secondary">

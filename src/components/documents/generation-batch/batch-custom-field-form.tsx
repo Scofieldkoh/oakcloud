@@ -112,7 +112,7 @@ export function BatchCustomFieldForm({
                   ariaLabel={field.label}
                   showTodayButton
                   error={missing ? 'Required' : undefined}
-                  className="mt-1 w-[17rem] max-w-full"
+                  className="mt-1 w-full"
                 />
               </div>
             );

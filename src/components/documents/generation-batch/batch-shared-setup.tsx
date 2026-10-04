@@ -229,7 +229,7 @@ export function BatchSharedSetup({
                       ariaLabel={field.label}
                       showTodayButton
                       error={missing ? 'Required' : undefined}
-                      className="mt-2 w-[17rem] max-w-full"
+                      className="mt-2 w-full"
                     />
                   ) : field.options?.length ? (
                     <SearchableSelect
