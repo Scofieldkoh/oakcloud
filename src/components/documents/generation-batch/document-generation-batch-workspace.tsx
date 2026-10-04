@@ -44,6 +44,12 @@ import {
 } from '@/lib/task-launch-context';
 import { readOakDocTemplateMetadata } from '@/lib/document-editor/oakdoc-template';
 import {
+  isCompanyPerPersonTag,
+  perPersonSelectedIds,
+  type DocumentPersonChoice,
+} from '@/lib/document-generation-per-person';
+import { oakDocRepeaterDefinitionForTag } from '@/lib/document-editor/oakdoc-repeater-definitions';
+import {
   BATCH_STAGES,
   STAGE_LABELS,
   selectCanRequestPreflight,
@@ -296,6 +302,13 @@ export function DocumentGenerationBatchWorkspace({
 
   const masterFieldValues = state.batch.masterFieldValues;
 
+  // Templates with a section that makes a separate document for each person.
+  const perPersonTagByTemplateId = useMemo(() => {
+    const tags: Record<string, string | null> = {};
+    for (const template of templates) tags[template.id] = template.repeaterSections?.perPersonTag ?? null;
+    return tags;
+  }, [templates]);
+
   const completeness = useMemo(
     () => buildCompletenessMap({
       items: state.batch.items,
@@ -303,6 +316,7 @@ export function DocumentGenerationBatchWorkspace({
       masterFieldValues,
       templateFieldsByTemplateId,
       itemFieldsByKey,
+      perPersonTagByTemplateId,
     }),
     [
       state.batch.items,
@@ -310,6 +324,7 @@ export function DocumentGenerationBatchWorkspace({
       masterFieldValues,
       templateFieldsByTemplateId,
       itemFieldsByKey,
+      perPersonTagByTemplateId,
     ],
   );
 
@@ -379,6 +394,18 @@ export function DocumentGenerationBatchWorkspace({
     return sections;
   }, [partialsQuery.data, templates, state.batch.items]);
 
+  // Shared parties leave out a section that splits documents per person:
+  // each of those documents is for its own person.
+  const sharedPartyFieldTagsByItemKey = useMemo(() => {
+    const tags: Record<string, readonly string[] | undefined> = {};
+    for (const item of state.batch.items) {
+      const perPersonTag = perPersonTagByTemplateId[item.templateId];
+      const itemTags = fieldTagsByItemKey[item.key];
+      tags[item.key] = perPersonTag ? itemTags?.filter((tag) => tag !== perPersonTag) : itemTags;
+    }
+    return tags;
+  }, [fieldTagsByItemKey, perPersonTagByTemplateId, state.batch.items]);
+
   const partyNeedsByItemKey = useMemo(() => {
     const byTemplateId = new Map(templates.map((template) => [template.id, template]));
     const needs: Record<string, TemplatePartyNeeds> = {};
@@ -386,11 +413,56 @@ export function DocumentGenerationBatchWorkspace({
       if (item.templateKind === 'SERVICE_AGREEMENT') continue;
       needs[item.key] = templatePartyNeeds(
         byTemplateId.get(item.templateId)?.content,
-        fieldTagsByItemKey[item.key],
+        sharedPartyFieldTagsByItemKey[item.key],
       );
     }
     return needs;
-  }, [fieldTagsByItemKey, templates, state.batch.items]);
+  }, [sharedPartyFieldTagsByItemKey, templates, state.batch.items]);
+
+  const activePerPersonTag = activeItem ? perPersonTagByTemplateId[activeItem.templateId] ?? null : null;
+  // Everyone with a document of the active template, in batch order.
+  const activeDocumentPeople = useMemo<DocumentPersonChoice[]>(() => {
+    if (!activeItem || !activePerPersonTag) return [];
+    return state.batch.items.flatMap((item) => {
+      const person = item.configuration.documentPerson;
+      return item.templateId === activeItem.templateId && person?.tag === activePerPersonTag
+        ? [{ id: person.id, name: person.name }]
+        : [];
+    });
+  }, [activeItem, activePerPersonTag, state.batch.items]);
+
+  // Directors and shareholders start ticked, as in a repeating section: a
+  // per-person template not yet chosen for gets a document for each of them.
+  useEffect(() => {
+    if (state.stage !== 'configure' || partyOptions.isLoading || !state.capabilities.canEditComposition) return;
+    const started = new Set<string>();
+    for (const item of state.batch.items) {
+      const tag = perPersonTagByTemplateId[item.templateId];
+      if (!tag || started.has(item.templateId) || !isCompanyPerPersonTag(tag)) continue;
+      const kind = oakDocRepeaterDefinitionForTag(tag)?.kind;
+      if (kind !== 'directors' && kind !== 'shareholders') continue;
+      const group = state.batch.items.filter((entry) => entry.templateId === item.templateId);
+      if (group.some((entry) => entry.configuration.documentPerson || perPersonSelectedIds(tag, entry.configuration) !== undefined)) continue;
+      const parties = kind === 'directors' ? partyOptions.directors : partyOptions.shareholders;
+      if (parties.length === 0) continue;
+      started.add(item.templateId);
+      dispatch({
+        type: 'items/set-document-people',
+        itemId: item.key,
+        tag,
+        people: parties.map((party) => ({ id: party.id, name: party.name })),
+      });
+    }
+  }, [
+    dispatch,
+    partyOptions.directors,
+    partyOptions.isLoading,
+    partyOptions.shareholders,
+    perPersonTagByTemplateId,
+    state.batch.items,
+    state.capabilities.canEditComposition,
+    state.stage,
+  ]);
 
   const overriddenCountByField = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -887,7 +959,7 @@ export function DocumentGenerationBatchWorkspace({
                 items={state.batch.items}
                 needsByItemKey={partyNeedsByItemKey}
                 officerRolesByItemKey={officerRolesByItemKey}
-                fieldTagsByItemKey={fieldTagsByItemKey}
+                fieldTagsByItemKey={sharedPartyFieldTagsByItemKey}
                 repeaterSectionsByItemKey={repeaterSectionsByItemKey}
                 directors={partyOptions.directors}
                 shareholders={partyOptions.shareholders}
@@ -968,6 +1040,13 @@ export function DocumentGenerationBatchWorkspace({
                     templateFieldTags={activeOakDocFieldTags}
                     contactShortlist={activeContactShortlist}
                     repeaterSections={repeaterSectionsByItemKey[activeItem.key] ?? null}
+                    perPersonTag={activePerPersonTag}
+                    documentPeople={activeDocumentPeople}
+                    onDocumentPeopleChange={(people) => {
+                      if (activePerPersonTag) {
+                        dispatch({ type: 'items/set-document-people', itemId: activeItem.key, tag: activePerPersonTag, people });
+                      }
+                    }}
                     onPatch={(patch) => dispatch({
                       type: 'item/patch',
                       itemId: activeItem.key,

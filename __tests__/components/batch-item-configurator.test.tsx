@@ -452,4 +452,41 @@ describe('BatchItemConfigurator', () => {
     })} />);
     expect(screen.getByRole('heading', { name: /^Client entities · Persons signing for the client/ })).toBeInTheDocument();
   });
+
+  describe('one document per person', () => {
+    const party = (id: string, name: string) => ({ id, contactId: null, name, detail: 'DIRECTOR', email: null, phone: null, address: { full: null, letter: null } });
+    const directors = [party('d1', 'Liang Joo Heong'), party('d2', 'Yuly Mirawati')];
+
+    it('picks the people on their own card and leaves the section out of Parties', async () => {
+      const user = userEvent.setup();
+      const onDocumentPeopleChange = vi.fn();
+      const base = item();
+      render(<BatchItemConfigurator {...props({
+        item: {
+          ...base,
+          templateEngine: 'OAKDOC',
+          configuration: {
+            ...base.configuration,
+            selectedDirectorIds: ['d1'],
+            documentPerson: { tag: 'repeat.directors', id: 'd1', name: 'Liang Joo Heong' },
+          },
+        },
+        templateContent: '',
+        templateFieldTags: ['repeat.directors', 'director.name'],
+        directors,
+        perPersonTag: 'repeat.directors',
+        documentPeople: [{ id: 'd1', name: 'Liang Joo Heong' }],
+        onDocumentPeopleChange,
+      })} />);
+      expect(screen.getByRole('heading', { name: 'Directors · one document each' })).toBeInTheDocument();
+      expect(screen.getByText(/This document is for Liang Joo Heong/)).toBeInTheDocument();
+      expect(screen.queryByRole('heading', { name: 'Parties' })).not.toBeInTheDocument();
+      expect(screen.getByRole('checkbox', { name: /Liang Joo Heong/ })).toBeChecked();
+      await user.click(screen.getByRole('checkbox', { name: /Yuly Mirawati/ }));
+      expect(onDocumentPeopleChange).toHaveBeenLastCalledWith([
+        { id: 'd1', name: 'Liang Joo Heong' },
+        { id: 'd2', name: 'Yuly Mirawati' },
+      ]);
+    });
+  });
 });

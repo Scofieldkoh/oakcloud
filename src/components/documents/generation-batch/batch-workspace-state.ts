@@ -28,6 +28,12 @@ import {
   DEFAULT_DOCUMENT_GENERATION_TITLE_PATTERN,
   isAutoDocumentGenerationTitle,
 } from '@/lib/document-generation-title';
+import {
+  isCompanyPerPersonTag,
+  perPersonDocumentTitle,
+  perPersonSelectionPatch,
+  type DocumentPersonChoice,
+} from '@/lib/document-generation-per-person';
 
 export type BatchStage = 'documents' | 'shared-setup' | 'configure' | 'review-generate';
 
@@ -96,6 +102,11 @@ export type DocumentGenerationBatchAction =
   | { type: 'shared/masterValue'; fieldId: string; value: string }
   | { type: 'item/patch'; itemId: string; patch: Partial<BatchItemConfiguration> }
   | { type: 'items/patch-many'; itemIds: string[]; patch: Partial<BatchItemConfiguration> }
+  /**
+   * One document per person: the documents of this item's template become one
+   * per person, in this order, each for its person (see document-generation-per-person).
+   */
+  | { type: 'items/set-document-people'; itemId: string; tag: string; people: DocumentPersonChoice[] }
   | { type: 'conflict/accept-revision' }
   | { type: 'item/edit-content'; itemId: string; editedContent: string | null; editedContentJson: unknown | null }
   | { type: 'item/activate'; itemId: string }
@@ -367,6 +378,144 @@ function applyAutomaticTitleDefaults(
   return changed ? replaceBatchItems(batch, items) : batch;
 }
 
+const MAX_BATCH_ITEMS = 20;
+
+/**
+ * A change to a document's choices. A per-person document keeps its person:
+ * a choice copied from another document cannot widen its section.
+ */
+function patchConfiguration(
+  configuration: BatchItemConfiguration,
+  patch: Partial<BatchItemConfiguration>,
+): BatchItemConfiguration {
+  const next = { ...configuration, ...patch };
+  const person = next.documentPerson;
+  return person ? { ...next, ...perPersonSelectionPatch(person.tag, person.id, next) } : next;
+}
+
+function newItemKey(templateId: string): string {
+  return `${templateId}~${globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`}`;
+}
+
+/** A new, unsaved document of the same template with the same choices. */
+function copyBatchItem(item: EditableBatchItem): EditableBatchItem {
+  return {
+    key: newItemKey(item.templateId),
+    templateId: item.templateId,
+    templateName: item.templateName,
+    templateKind: item.templateKind,
+    templateVersion: item.templateVersion,
+    templateEngine: item.templateEngine,
+    status: 'NOT_STARTED',
+    configuration: JSON.parse(JSON.stringify(item.configuration)) as BatchItemConfiguration,
+    previewContent: null,
+    editedContent: null,
+    editedContentJson: null,
+    previewFingerprint: null,
+    reviewedFingerprint: null,
+    validationDiagnostics: null,
+    lastError: null,
+  };
+}
+
+/** A per-person document's title follows its person unless the user typed their own. */
+function perPersonTitle(item: EditableBatchItem, person: DocumentPersonChoice | null): string {
+  const current = item.configuration.title;
+  const previous = item.configuration.documentPerson;
+  const followsPerson = isAutoDocumentGenerationTitle(current, item.templateName)
+    || (previous ? current === perPersonDocumentTitle(item.templateName, previous.name) : false);
+  if (!followsPerson) return current;
+  return person ? perPersonDocumentTitle(item.templateName, person.name) : DEFAULT_DOCUMENT_GENERATION_TITLE_PATTERN;
+}
+
+/** The document for this person (none: for nobody yet), invalidated only when it changes. */
+function assignDocumentPerson(
+  item: EditableBatchItem,
+  tag: string,
+  person: DocumentPersonChoice | null,
+): EditableBatchItem {
+  const configuration: BatchItemConfiguration = {
+    ...item.configuration,
+    ...perPersonSelectionPatch(tag, person?.id ?? null, item.configuration),
+    documentPerson: person ? { tag, id: person.id, name: person.name } : null,
+    title: perPersonTitle(item, person),
+  };
+  if (JSON.stringify(configuration) === JSON.stringify(item.configuration)) return item;
+  return invalidateItem({ ...item, configuration });
+}
+
+/**
+ * Make the documents of the item's template one per person, in order. A
+ * document already for a person stays theirs; the rest are reused for new
+ * people before copies of the item are added, and left over ones removed.
+ * With nobody picked one document stays, for nobody yet. Generated documents
+ * are left alone, and the batch keeps to its document limit.
+ */
+function setDocumentPeople(
+  items: EditableBatchItem[],
+  itemKey: string,
+  tag: string,
+  people: readonly DocumentPersonChoice[],
+): EditableBatchItem[] {
+  const anchor = items.find((item) => item.key === itemKey);
+  if (!anchor || anchor.status === 'GENERATED') return items;
+  const inGroup = (item: EditableBatchItem) => item.templateId === anchor.templateId && item.status !== 'GENERATED';
+  const room = MAX_BATCH_ITEMS - items.filter((item) => !inGroup(item)).length;
+  const seen = new Set<string>();
+  const wanted = people.filter((person) => !seen.has(person.id) && seen.add(person.id)).slice(0, Math.max(room, 1));
+  const group = items.filter(inGroup);
+  const personOf = (item: EditableBatchItem) => (
+    item.configuration.documentPerson?.tag === tag ? item.configuration.documentPerson.id : null
+  );
+  const kept = new Map<string, EditableBatchItem>();
+  for (const item of group) {
+    const id = personOf(item);
+    if (id && !kept.has(id) && wanted.some((person) => person.id === id)) kept.set(id, item);
+  }
+  const keptItems = new Set(kept.values());
+  // The item being configured is reused first, so it stays on screen.
+  const spare = group.filter((item) => !keptItems.has(item)).sort((a, b) => Number(b === anchor) - Number(a === anchor));
+  const next = wanted.map((person) => {
+    const existing = kept.get(person.id);
+    if (existing) return assignDocumentPerson(existing, tag, person);
+    return assignDocumentPerson(spare.shift() ?? copyBatchItem(anchor), tag, person);
+  });
+  if (next.length === 0) next.push(assignDocumentPerson(spare[0] ?? anchor, tag, null));
+
+  const result: EditableBatchItem[] = [];
+  let placed = false;
+  for (const item of items) {
+    if (!inGroup(item)) {
+      result.push(item);
+    } else if (!placed) {
+      result.push(...next);
+      placed = true;
+    }
+  }
+  return result;
+}
+
+/**
+ * A new company has other directors, shareholders and officers: each
+ * template's per-person documents for those go back to one document for
+ * nobody yet. Contacts are not the company's and stay.
+ */
+function resetCompanyDocumentPeople(items: EditableBatchItem[]): EditableBatchItem[] {
+  const reset = new Set<string>();
+  const result: EditableBatchItem[] = [];
+  for (const item of items) {
+    const person = item.configuration.documentPerson;
+    if (!person || item.status === 'GENERATED' || !isCompanyPerPersonTag(person.tag)) {
+      result.push(item);
+      continue;
+    }
+    if (reset.has(item.templateId)) continue;
+    reset.add(item.templateId);
+    result.push(assignDocumentPerson(item, person.tag, null));
+  }
+  return result;
+}
+
 function itemConsumesMasterField(
   item: EditableBatchItem,
   fieldId: string,
@@ -382,12 +531,10 @@ function reduceBatchState(
   switch (action.type) {
     case 'template/add': {
       if (!state.capabilities.canEditComposition) return state;
-      if (state.batch.items.length >= 20) return state;
+      if (state.batch.items.length >= MAX_BATCH_ITEMS) return state;
       // Repeat copies of a template need their own local key until saved.
       const keyTaken = state.batch.items.some((item) => item.key === action.template.id);
-      const key = keyTaken
-        ? `${action.template.id}~${globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`}`
-        : action.template.id;
+      const key = keyTaken ? newItemKey(action.template.id) : action.template.id;
       const items = [...state.batch.items, itemFromTemplate(action.template, key)];
       const batch = replaceBatchItems(state.batch, items);
       return {
@@ -480,10 +627,16 @@ function reduceBatchState(
           },
         };
       });
-      const batch = replaceBatchItems(nextBatch, synchronizedItems);
+      const peopleItems = action.companyId === previousPrimaryCompanyId
+        ? synchronizedItems
+        : resetCompanyDocumentPeople(synchronizedItems);
+      const batch = replaceBatchItems(nextBatch, peopleItems);
       return {
         ...state,
         batch,
+        activeItemId: peopleItems.some((item) => item.key === state.activeItemId)
+          ? state.activeItemId
+          : peopleItems[0]?.key ?? null,
         capabilities: deriveCapabilities(batch),
       };
     }
@@ -508,7 +661,7 @@ function reduceBatchState(
         if (item.key !== action.itemId || item.status === 'GENERATED') return item;
         return invalidateItem({
           ...item,
-          configuration: { ...item.configuration, ...action.patch },
+          configuration: patchConfiguration(item.configuration, action.patch),
         });
       });
       const batch = replaceBatchItems(state.batch, items);
@@ -525,13 +678,30 @@ function reduceBatchState(
         if (!targets.has(item.key) || item.status === 'GENERATED') return item;
         return invalidateItem({
           ...item,
-          configuration: { ...item.configuration, ...action.patch },
+          configuration: patchConfiguration(item.configuration, action.patch),
         });
       });
       const batch = replaceBatchItems(state.batch, items);
       return {
         ...state,
         batch,
+        capabilities: deriveCapabilities(batch),
+      };
+    }
+    case 'items/set-document-people': {
+      if (!state.capabilities.canEditComposition) return state;
+      const items = setDocumentPeople(state.batch.items, action.itemId, action.tag, action.people);
+      if (items === state.batch.items) return state;
+      const batch = replaceBatchItems(state.batch, items);
+      const activeItemId = items.some((item) => item.key === state.activeItemId)
+        ? state.activeItemId
+        : items.find((item) => item.templateId === state.batch.items.find((entry) => entry.key === action.itemId)?.templateId)?.key
+          ?? items[0]?.key
+          ?? null;
+      return {
+        ...state,
+        batch,
+        activeItemId,
         capabilities: deriveCapabilities(batch),
       };
     }

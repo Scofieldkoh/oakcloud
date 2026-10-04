@@ -81,6 +81,8 @@ export interface SelectItemCompletenessParams {
   templateFields: CustomPlaceholderDefinition[];
   masterFields: MasterFieldCatalogue;
   masterFieldValues: Record<string, string>;
+  /** The template's section that makes one document per person, which then needs its person. */
+  perPersonTag?: string | null;
 }
 
 export function selectItemCompleteness({
@@ -88,6 +90,7 @@ export function selectItemCompleteness({
   templateFields,
   masterFields,
   masterFieldValues,
+  perPersonTag = null,
 }: SelectItemCompletenessParams): ItemCompleteness {
   const requirements: Array<{ id: string; label: string; filled: boolean }> = [];
 
@@ -96,6 +99,14 @@ export function selectItemCompleteness({
     label: 'Document title',
     filled: item.configuration.title.trim().length > 0,
   });
+
+  if (perPersonTag) {
+    requirements.push({
+      id: 'person',
+      label: 'Person this document is for',
+      filled: item.configuration.documentPerson?.tag === perPersonTag,
+    });
+  }
 
   const { itemOnly } = partitionTemplateFields(templateFields, masterFields);
   const descriptors = createWorkflowFieldInputDescriptors(itemOnly, {
@@ -177,6 +188,8 @@ export function buildCompletenessMap(params: {
   templateFieldsByTemplateId: Record<string, CustomPlaceholderDefinition[]>;
   /** Per-document fields where they differ from the template's (resolution partials). */
   itemFieldsByKey?: Record<string, CustomPlaceholderDefinition[]>;
+  /** Each template's section that makes one document per person, if any. */
+  perPersonTagByTemplateId?: Record<string, string | null | undefined>;
 }): CompletenessMap {
   const map: CompletenessMap = {};
   for (const item of params.items) {
@@ -187,6 +200,7 @@ export function buildCompletenessMap(params: {
         ?? [],
       masterFields: params.masterFields,
       masterFieldValues: params.masterFieldValues,
+      perPersonTag: params.perPersonTagByTemplateId?.[item.templateId] ?? null,
     });
   }
   return map;

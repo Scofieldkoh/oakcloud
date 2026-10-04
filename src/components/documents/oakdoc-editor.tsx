@@ -1399,6 +1399,7 @@ export function OakDocEditor() {
                 setRepeaterSections(next);
                 setIsDirty(true);
               }}
+              allowPerPersonDocuments={templateType !== 'SERVICE_AGREEMENT'}
             />
 
             <div className="my-4 border-t border-border-secondary" />

@@ -16,6 +16,7 @@ import { MissingCompanyFields } from './missing-company-fields';
 import { partitionTemplateFields, type ItemCompleteness } from './batch-completeness';
 import type { ApplyScope } from './apply-to-others-menu';
 import type { OakDocRepeaterSectionSummary } from '@/lib/document-editor/oakdoc-custom-fields';
+import type { DocumentPersonChoice } from '@/lib/document-generation-per-person';
 
 export interface BatchItemConfiguratorProps {
   item: EditableBatchItem;
@@ -46,6 +47,11 @@ export interface BatchItemConfiguratorProps {
   contactShortlist?: ReadonlyArray<{ id: string; name: string }> | null;
   /** Names of the template's repeating sections and its named contacts lists. */
   repeaterSections?: OakDocRepeaterSectionSummary | null;
+  /** The template's section that makes a separate document for each person, if any. */
+  perPersonTag?: string | null;
+  /** Everyone with a document of this template in the batch, in order. */
+  documentPeople?: DocumentPersonChoice[];
+  onDocumentPeopleChange?: (people: DocumentPersonChoice[]) => void;
   onPatch: (patch: Partial<BatchItemConfiguration>) => void;
   disabled?: boolean;
   completeness?: ItemCompleteness;
@@ -126,6 +132,9 @@ export function BatchItemConfigurator(props: BatchItemConfiguratorProps) {
           templateFieldTags={props.templateFieldTags}
           contactShortlist={props.contactShortlist}
           repeaterSections={props.repeaterSections}
+          perPersonTag={props.perPersonTag}
+          documentPeople={props.documentPeople}
+          onDocumentPeopleChange={props.onDocumentPeopleChange}
           masterFields={masterFields}
           effectiveMasterValues={effectiveMasterValues}
           directors={props.directors}

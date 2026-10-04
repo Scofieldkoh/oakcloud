@@ -215,11 +215,19 @@ function calendarDate(value: unknown): CalendarDate | null {
  * Format a date with a Word date pattern (`d`, `dd`, `M`, `MM`, `MMM`,
  * `MMMM`, `yy`, `yyyy`). The default keeps OakDoc's short style.
  */
+/** 1st, 2nd, 3rd, 4th... 11th, 12th, 13th, 21st. */
+function ordinalDay(day: number): string {
+  const teen = day % 100 >= 11 && day % 100 <= 13;
+  const suffix = teen ? 'th' : ({ 1: 'st', 2: 'nd', 3: 'rd' } as Record<number, string>)[day % 10] ?? 'th';
+  return `${day}${suffix}`;
+}
+
+/** A date in a Word-style pattern; `do` is the day as an ordinal ("3rd"). */
 export function formatOakDocDate(value: unknown, pattern = 'd MMM yyyy'): string | undefined {
   const date = calendarDate(value);
   if (!date) return undefined;
   const month = MONTHS[date.month - 1];
-  return pattern.replace(/yyyy|yy|MMMM|MMM|MM|M|dd|d/g, (token) => {
+  return pattern.replace(/yyyy|yy|MMMM|MMM|MM|M|do|dd|d/g, (token) => {
     switch (token) {
       case 'yyyy': return String(date.year);
       case 'yy': return String(date.year).slice(-2);
@@ -227,6 +235,7 @@ export function formatOakDocDate(value: unknown, pattern = 'd MMM yyyy'): string
       case 'MMM': return month.slice(0, 3);
       case 'MM': return String(date.month).padStart(2, '0');
       case 'M': return String(date.month);
+      case 'do': return ordinalDay(date.day);
       case 'dd': return String(date.day).padStart(2, '0');
       default: return String(date.day);
     }

@@ -384,3 +384,90 @@ describe('document generation batch workspace state', () => {
     expect(second?.sections[0].id).not.toBe(first?.sections[0].id);
   });
 });
+
+describe('one document per person', () => {
+  const people = [
+    { id: '11111111-1111-4111-8111-111111111111', name: 'Liang Joo Heong' },
+    { id: '22222222-2222-4222-8222-222222222222', name: 'Yuly Mirawati' },
+    { id: '33333333-3333-4333-8333-333333333333', name: 'Tan Wei Jie' },
+  ];
+  const form = (key: string, overrides: Parameters<typeof item>[1] = {}) => item(key, {
+    templateId: 'template-f45',
+    templateName: 'F45',
+    templateEngine: 'OAKDOC',
+    ...overrides,
+    configuration: { title: DEFAULT_DOCUMENT_GENERATION_TITLE_PATTERN, ...(overrides.configuration ?? {}) },
+  });
+  const setPeople = (state: ReturnType<typeof batch>, itemId: string, chosen: typeof people, tag = 'repeat.directors') =>
+    documentGenerationBatchReducer(state, { type: 'items/set-document-people', itemId, tag, people: chosen });
+
+  it('makes a document for each person picked, titled with their name and narrowed to them', () => {
+    const state = batch([item('a'), form('f45'), item('b')]);
+    const next = setPeople(state, 'f45', people.slice(0, 2));
+    expect(next.batch.items.map((entry) => entry.templateId)).toEqual(['template-a', 'template-f45', 'template-f45', 'template-b']);
+    const [first, second] = next.batch.items.slice(1, 3);
+    expect(first.key).toBe('f45');
+    expect(first.configuration).toMatchObject({
+      title: 'F45 - Liang Joo Heong',
+      selectedDirectorIds: [people[0].id],
+      documentPerson: { tag: 'repeat.directors', id: people[0].id, name: 'Liang Joo Heong' },
+    });
+    expect(second.id).toBeUndefined();
+    expect(second.previewContent).toBeNull();
+    expect(second.configuration).toMatchObject({
+      title: 'F45 - Yuly Mirawati',
+      selectedDirectorIds: [people[1].id],
+    });
+    expect(next.activeItemId).toBe('a');
+    expect(next.dirty).toBe(true);
+  });
+
+  it('keeps each person\'s document, reuses the others and removes the rest', () => {
+    const two = setPeople(batch([form('f45')]), 'f45', people.slice(0, 2));
+    const secondKey = two.batch.items[1].key;
+    // Untick the first person: their document is reused for nobody else, so it goes.
+    const one = setPeople(two, 'f45', [people[1]]);
+    expect(one.batch.items.map((entry) => entry.key)).toEqual([secondKey]);
+    expect(one.activeItemId).toBe(secondKey);
+    // Nobody: one document stays, for nobody yet, with its automatic title back.
+    const none = setPeople(one, secondKey, []);
+    expect(none.batch.items).toHaveLength(1);
+    expect(none.batch.items[0].configuration).toMatchObject({
+      documentPerson: null,
+      selectedDirectorIds: [],
+      title: DEFAULT_DOCUMENT_GENERATION_TITLE_PATTERN,
+    });
+  });
+
+  it('narrows a named contacts list and keeps the person when choices are copied in', () => {
+    const tag = 'repeat.contacts.corporate-secretary-to-be-appointed';
+    const state = setPeople(batch([form('f45b'), item('other')]), 'f45b', [people[2]], tag);
+    expect(state.batch.items[0].configuration.selectedContactListIds).toEqual({
+      'corporate-secretary-to-be-appointed': [people[2].id],
+    });
+    const copied = documentGenerationBatchReducer(state, {
+      type: 'items/patch-many',
+      itemIds: ['f45b'],
+      patch: { selectedContactListIds: { 'corporate-secretary-to-be-appointed': [people[0].id, people[1].id] } },
+    });
+    expect(copied.batch.items[0].configuration.selectedContactListIds).toEqual({
+      'corporate-secretary-to-be-appointed': [people[2].id],
+    });
+  });
+
+  it('goes back to one document for nobody when the company changes', () => {
+    const state = setPeople(batch([form('f45'), item('other')]), 'f45', people.slice(0, 2));
+    const next = documentGenerationBatchReducer(state, { type: 'shared/company', companyId: 'company-2', companyName: 'Other' });
+    expect(next.batch.items.map((entry) => entry.templateId)).toEqual(['template-f45', 'template-other']);
+    expect(next.batch.items[0].configuration.documentPerson).toBeNull();
+  });
+
+  it('stays within the batch limit', () => {
+    const many = Array.from({ length: 25 }, (_, index) => ({
+      id: `00000000-0000-4000-8000-${String(index).padStart(12, '0')}`,
+      name: `Director ${index}`,
+    }));
+    const next = setPeople(batch([item('a'), form('f45')]), 'f45', many);
+    expect(next.batch.items).toHaveLength(20);
+  });
+});

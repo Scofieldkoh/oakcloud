@@ -318,7 +318,8 @@ case, remove it and add it again with the new case. Date fields (custom date
 fields and scalar fields such as Incorporation Date, Resolution Date and First
 Financial Year End; not the FYE or fields inside repeating sections) also offer
 Date format: Default, common formats such as dd/mm/yyyy, d mmm yyyy and
-d mmmm yyyy, or a custom pattern of d, m and y (`normalizeOakDocDateFormat`
+d mmmm yyyy, or a custom pattern of d, m and y, where `do` prints the day as
+an ordinal ("3rd") (`normalizeOakDocDateFormat`
 turns "dd/mm/yyyy" into Word's "dd/MM/yyyy"). It is kept in the same title
 ("Resolution Date · dd/MM/yyyy") and applied at generation when the field
 has a calendar date; a date control's own `w:date/w:dateFormat` wins.
@@ -331,6 +332,23 @@ tag. At generation, when two or more items are listed, each copy's first
 paragraph with text opens with "(a)" and a tab at its old left indent, and every
 paragraph of the copy moves one OakDoc indent (720 twips) in. One item prints
 unlettered; copies holding tables are left as they are.
+
+One document per person (`src/lib/document-generation-per-person.ts`): in the
+template editor, a directors, shareholders, officers or contacts section can be
+switched to "Separate document for each person" (one section per template;
+stored in the template's placeholders as a `documentPerPerson` definition keyed
+by the section's tag, never copied from partials). On Configure that section's
+people are picked on their own card instead of with the other parties, and each
+person ticked gets a separate batch item of the template, titled
+"<template> - <person>", whose usual selection (`selectedDirectorIds`,
+`contactIds`, `selectedContactListIds[slug]`...) holds only that person and
+whose `documentPerson` records whom it is for; preview and generation need
+nothing else. Directors and shareholders start all ticked; a change of company
+returns those documents to one, for nobody yet. Shared parties leave the
+section out. Starter templates "F45" (consent to act as director, per director)
+and "F45B" (consent to act as secretary, per contact on the "Corporate
+secretary to be appointed" list) are in `src/content/secretarial/` and are
+seeded with `scripts/seed-consent-form-templates.ts --email <login>`.
 
 Service-specific input definitions use the `service` placeholder source, for
 example `service.fields.software`, and may use the `textarea` type. The editor

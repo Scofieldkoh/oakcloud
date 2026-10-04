@@ -57,6 +57,14 @@ export interface ServiceAgreementWorkspaceState {
  */
 export type ResolutionWorkspaceState = ResolutionComposition;
 
+export interface BatchDocumentPerson {
+  /** The repeater tag that splits documents: `repeat.directors`, `repeat.contacts.<slug>`... */
+  tag: string;
+  /** Officer, shareholder or contact id, as the section's selection stores it. */
+  id: string;
+  name: string;
+}
+
 export interface BatchItemConfiguration {
   version: 1;
   title: string;
@@ -81,6 +89,12 @@ export interface BatchItemConfiguration {
   serviceAgreement: ServiceAgreementWorkspaceState | null;
   /** RESOLUTION templates only; absent on items saved before resolutions existed. */
   resolution?: ResolutionWorkspaceState | null;
+  /**
+   * Templates with a section that makes a separate document for each person:
+   * that section's tag and the person this document is for. The section's
+   * usual selection (selectedDirectorIds, contactIds...) holds only them.
+   */
+  documentPerson?: BatchDocumentPerson | null;
   /**
    * Company values missing on record, filled for this document only, by
    * company field home id (see `oakdoc-company-field-homes`).

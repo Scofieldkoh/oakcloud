@@ -35,6 +35,8 @@ export interface OakDocFieldPanelProps {
   /** Names of sections and pickers on Configure, and contacts shortlists. */
   sections: OakDocRepeaterSections;
   onSectionsChange: (sections: OakDocRepeaterSections) => void;
+  /** Templates: a section can make a separate document for each person. */
+  allowPerPersonDocuments?: boolean;
 }
 
 /**
@@ -60,6 +62,7 @@ export function OakDocFieldPanel({
   onRepeaterLetteringChange,
   sections,
   onSectionsChange,
+  allowPerPersonDocuments = false,
 }: OakDocFieldPanelProps) {
   const [query, setQuery] = useState('');
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
@@ -112,6 +115,7 @@ export function OakDocFieldPanel({
         onAssignField={onInsert}
         sections={sections}
         onSectionsChange={onSectionsChange}
+        allowPerPerson={allowPerPersonDocuments}
         query={query}
         selectedKey={selectedKey}
         onSelect={setSelectedKey}
