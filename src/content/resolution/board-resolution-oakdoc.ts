@@ -1,12 +1,13 @@
 import type { PlaceholderDefinition } from '@/lib/validations/document-template';
 import {
   ControlIds,
-  field,
+  TIMES_11,
   packageOakDoc,
-  paragraph,
   repeatingSection,
   resolutionSlot,
-  run,
+  wordWriter,
+  type Typeface,
+  type WordWriter,
 } from './resolution-oakdoc-xml';
 
 /**
@@ -52,7 +53,7 @@ interface ResolutionVariant {
   intro: string;
   repeaterTag: string;
   repeaterAlias: string;
-  signatory: (ids: ControlIds) => string[];
+  signatory: (ids: ControlIds, writer: WordWriter) => string[];
 }
 
 const DIRECTORS: ResolutionVariant = {
@@ -60,7 +61,7 @@ const DIRECTORS: ResolutionVariant = {
   intro: 'We, the undersigned, being all the directors of the Company (“Directors”) for the time being entitled to make any decision that may be made in a meeting of the board of Directors, hereby unanimously consent to the adoption and approval of the following resolutions:',
   repeaterTag: 'repeat.directors',
   repeaterAlias: 'Directors',
-  signatory: (ids) => [
+  signatory: (ids, { paragraph, field }) => [
     paragraph(field(ids, 'director.name', 'Director Name', 'DIRECTOR NAME', { caps: true }), { keepNext: true, after: 0 }),
     paragraph(field(ids, 'director.role', 'Director Role', 'Director'), { after: 240 }),
   ],
@@ -71,7 +72,7 @@ const MEMBERS: ResolutionVariant = {
   intro: 'We, the undersigned, being all the members of the Company (“Members”) for the time being entitled to attend and vote at general meetings of the Company, hereby agree to the following resolutions being passed as written resolutions of the Company:',
   repeaterTag: 'repeat.shareholders',
   repeaterAlias: 'Shareholders',
-  signatory: (ids) => [
+  signatory: (ids, { paragraph, field, run }) => [
     paragraph(field(ids, 'shareholder.name', 'Shareholder Name', 'SHAREHOLDER NAME', { caps: true }), { keepNext: true, after: 0 }),
     paragraph(run('Member'), { after: 240 }),
   ],
@@ -90,6 +91,8 @@ export interface ResolutionMasterOptions {
   beforeResolutions?: string[];
   /** Extra word/styles.xml styles, such as the numbered heading style. */
   extraStyles?: string;
+  /** Typeface of the whole master; Times New Roman 11 pt by default. */
+  typeface?: Typeface;
 }
 
 /** The directors' layout with extra blocks, for masters built on it (First Resolution). */
@@ -105,6 +108,9 @@ function buildResolutionMaster(
   options: ResolutionMasterOptions = {},
   ids = new ControlIds(),
 ): Uint8Array {
+  const typeface = options.typeface ?? TIMES_11;
+  const writer = wordWriter(typeface);
+  const { paragraph, run, field } = writer;
   const center = { align: 'center' as const, after: 0 };
   const body = [
     paragraph(field(ids, 'company.name', 'Company Name', 'SAMPLE COMPANY PTE. LTD.', { bold: true, caps: true }), center),
@@ -120,7 +126,7 @@ function buildResolutionMaster(
       { align: 'both' },
     ),
     ...(options.beforeResolutions ?? []),
-    resolutionSlot(ids),
+    resolutionSlot(ids, writer),
     paragraph(''),
     paragraph(run('[Signature Page Follow]', { italic: true }), { align: 'center' }),
     paragraph(
@@ -137,9 +143,9 @@ function buildResolutionMaster(
     repeatingSection(ids, variant.repeaterTag, variant.repeaterAlias, [
       paragraph('', { keepNext: true, after: 600 }),
       paragraph(run('___________________________'), { keepNext: true, after: 0 }),
-      ...variant.signatory(ids),
+      ...variant.signatory(ids, writer),
     ].join('')),
   ].join('\n    ');
 
-  return packageOakDoc(body, { extraStyles: options.extraStyles });
+  return packageOakDoc(body, { extraStyles: options.extraStyles, typeface });
 }

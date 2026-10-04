@@ -295,7 +295,7 @@ Service Agreement composition templates:
   and seven Resolutions partials (constitution, registered address,
   financial year end, secretary, corporate secretarial agent, subscribers'
   shares table, lodgement) preset in that order. The partials are named
-  "First Resolution - ..." and print in Arial 10 pt, each ending with an
+  "First Resolution - ..." and, like the rest of that template, print in Arial 10 pt, each ending with an
   empty line; the constitution partial asks which constitution is adopted
   (a `custom.constitution` dropdown). A master whose styles define
   the character style `OakDocResolutionHeading` gets it on each numbered

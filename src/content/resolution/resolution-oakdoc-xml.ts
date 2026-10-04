@@ -104,7 +104,11 @@ export function wordWriter(typeface: Typeface) {
   return { run, tabRun, paragraph, field };
 }
 
-export const { run, tabRun, paragraph, field } = wordWriter(TIMES_11);
+export type WordWriter = ReturnType<typeof wordWriter>;
+
+const TIMES_WRITER = wordWriter(TIMES_11);
+
+export const { run, tabRun, paragraph, field } = TIMES_WRITER;
 
 export class ControlIds {
   private next: number;
@@ -136,7 +140,7 @@ export function repeatingSection(ids: ControlIds, tag: string, alias: string, co
 }
 
 /** The locked block the numbered resolutions replace at generation. */
-export function resolutionSlot(ids: ControlIds): string {
+export function resolutionSlot(ids: ControlIds, { paragraph, run }: WordWriter = TIMES_WRITER): string {
   return [
     '<w:sdt><w:sdtPr>',
     `<w:alias w:val="Numbered resolutions"/><w:tag w:val="${OAKDOC_RESOLUTION_ITEMS_TAG}"/><w:id w:val="${ids.take()}"/>`,
