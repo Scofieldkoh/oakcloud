@@ -15,6 +15,7 @@ function Harness({ onInsert, onSections = vi.fn() }: {
 }) {
   const [fields, setFields] = useState<OakDocCustomField[]>([
     { key: 'meeting_date', label: 'Meeting date', type: 'date', required: true },
+    { key: 'constitution', label: 'Constitution adopted', type: 'dropdown', required: true, options: ['Model', 'Custom'] },
   ]);
   const [sections, setSections] = useState<OakDocRepeaterSections>({ names: {}, shortlists: {} });
   return (
@@ -62,6 +63,16 @@ describe('OakDocFieldPanel', () => {
     await user.click(screen.getByRole('button', { name: /Meeting date/ }));
     expect(screen.queryByText('{{company.name}}')).not.toBeInTheDocument();
     expect(screen.getByText('Date · required')).toBeInTheDocument();
+  });
+
+  it('lists a dropdown field\'s choices when it is opened', async () => {
+    const user = userEvent.setup();
+    render(<Harness onInsert={vi.fn()} />);
+    await openGroups(user, /^Custom fields/);
+    expect(screen.queryByText('Custom')).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /^Constitution adopted/ }));
+    const choices = screen.getByRole('list');
+    expect(within(choices).getAllByRole('listitem').map((item) => item.textContent)).toEqual(['Model', 'Custom']);
   });
 
   it('adds a field at once on double click', async () => {

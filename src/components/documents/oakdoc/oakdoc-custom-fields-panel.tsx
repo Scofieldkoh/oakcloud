@@ -203,6 +203,14 @@ export function OakDocCustomFieldsPanel({
           </>
         ) : null}
       >
+        {field.type === 'dropdown' && field.options?.length ? (
+          <div className="space-y-1">
+            <div className="text-[11px] text-text-muted">Choices</div>
+            <ol className="list-decimal space-y-0.5 pl-4 text-[11px] text-text-secondary">
+              {field.options.map((option) => <li key={option}>{option}</li>)}
+            </ol>
+          </div>
+        ) : null}
         {field.type === 'contact' ? (
           <div className="space-y-1">
             <div className="text-[11px] text-text-muted">Details of the chosen contact</div>
