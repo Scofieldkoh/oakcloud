@@ -39,6 +39,9 @@ import {
   templatePartyNeeds,
 } from './template-party-needs';
 
+/** Party and contact pickers take one column of this grid, so every section lines up. */
+const PICKER_GRID = 'grid gap-4 lg:grid-cols-2 xl:grid-cols-3';
+
 export interface StandardDocumentConfigProps {
   item: EditableBatchItem;
   templateFields: CustomPlaceholderDefinition[];
@@ -365,7 +368,7 @@ export function StandardDocumentConfig({
           }}
           action={applyMenu('parties', genericPartyKeys)}
         >
-          <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
+          <div className={PICKER_GRID}>
             {partySelections.director && (
               <DocumentPartyChoiceList
                 id="selected-director"
@@ -420,7 +423,7 @@ export function StandardDocumentConfig({
           }}
           action={applyMenu(section.title, [section.key])}
         >
-          <div className="max-w-xl">{section.picker}</div>
+          <div className={PICKER_GRID}>{section.picker}</div>
         </BatchSection>
       ))}
 
@@ -433,27 +436,29 @@ export function StandardDocumentConfig({
           }}
           action={applyMenu('contacts', ['contactIds'])}
         >
-          {shortlistContacts ? (
-            <DocumentContactChoiceList
-              id="shortlist-contacts"
-              contacts={shortlistContacts}
-              selected={selectedContacts}
-              onChange={(selected) => onPatch({
-                contactIds: selected.map((contact) => contact.id),
-              })}
-            />
-          ) : (
-            <DocumentContactChoiceList
-              contacts={contacts}
-              selected={selectedContacts}
-              onChange={(selected) => onPatch({
-                contactIds: selected.map((contact) => contact.id),
-              })}
-              onSearch={onContactSearch}
-              isLoading={contactsLoading}
-              serverFiltered={Boolean(onContactSearch)}
-            />
-          )}
+          <div className={PICKER_GRID}>
+            {shortlistContacts ? (
+              <DocumentContactChoiceList
+                id="shortlist-contacts"
+                contacts={shortlistContacts}
+                selected={selectedContacts}
+                onChange={(selected) => onPatch({
+                  contactIds: selected.map((contact) => contact.id),
+                })}
+              />
+            ) : (
+              <DocumentContactChoiceList
+                contacts={contacts}
+                selected={selectedContacts}
+                onChange={(selected) => onPatch({
+                  contactIds: selected.map((contact) => contact.id),
+                })}
+                onSearch={onContactSearch}
+                isLoading={contactsLoading}
+                serverFiltered={Boolean(onContactSearch)}
+              />
+            )}
+          </div>
         </BatchSection>
       )}
 
@@ -470,24 +475,26 @@ export function StandardDocumentConfig({
             title={list.name}
             status={{ complete: true, label: `${list.selected.length} selected` }}
           >
-            {list.shortlist ? (
-              <DocumentContactChoiceList
-                id={`contact-list-${list.slug}`}
-                contacts={list.shortlist}
-                selected={list.selected}
-                onChange={patchList}
-              />
-            ) : (
-              <DocumentContactChoiceList
-                id={`contact-list-${list.slug}`}
-                contacts={contacts}
-                selected={list.selected}
-                onChange={patchList}
-                onSearch={onContactSearch}
-                isLoading={contactsLoading}
-                serverFiltered={Boolean(onContactSearch)}
-              />
-            )}
+            <div className={PICKER_GRID}>
+              {list.shortlist ? (
+                <DocumentContactChoiceList
+                  id={`contact-list-${list.slug}`}
+                  contacts={list.shortlist}
+                  selected={list.selected}
+                  onChange={patchList}
+                />
+              ) : (
+                <DocumentContactChoiceList
+                  id={`contact-list-${list.slug}`}
+                  contacts={contacts}
+                  selected={list.selected}
+                  onChange={patchList}
+                  onSearch={onContactSearch}
+                  isLoading={contactsLoading}
+                  serverFiltered={Boolean(onContactSearch)}
+                />
+              )}
+            </div>
           </BatchSection>
         );
       })}
