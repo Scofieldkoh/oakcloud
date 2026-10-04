@@ -3,7 +3,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { CompanyEditWorkspace } from '@/components/companies/company-edit/company-edit-workspace';
 import type { CompanyProfileSectionDto } from '@/services/company/profile-sections';
-import { companyProfileSectionKey } from '@/hooks/use-company-profile-sections';
+import { CompanyProfileSectionError, companyProfileSectionKey } from '@/hooks/use-company-profile-sections';
 
 const sections = {
   identity: { uen: '202400001A', name: 'Example Pte. Ltd.', entityType: 'PRIVATE_LIMITED', status: 'LIVE', statusDate: null, incorporationDate: null },
@@ -69,5 +69,35 @@ describe('CompanyEditWorkspace', () => {
     });
 
     await waitFor(() => expect(input).toHaveValue('My unsaved street'));
+  });
+  it('sends a blank year end typed in as numbers', async () => {
+    const blank = {
+      ...initialSections,
+      compliance: { ...initialSections.compliance, data: { ...sections.compliance, financialYearEndDay: null, financialYearEndMonth: null } },
+    } as Record<string, CompanyProfileSectionDto>;
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
+    const onSave = vi.fn().mockImplementation(async (section, data) => ({ section, version: 'b'.repeat(64), data }));
+    render(<QueryClientProvider client={client}><CompanyEditWorkspace companyId="company-1" initialSections={blank} onSave={onSave} /></QueryClientProvider>);
+    const day = screen.getByLabelText('Financial year end day');
+    expect(day).toHaveAttribute('type', 'number');
+    fireEvent.change(day, { target: { value: '31' } });
+    fireEvent.change(screen.getByLabelText('Financial year end month'), { target: { value: '12' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save Compliance' }));
+    await waitFor(() => expect(onSave).toHaveBeenCalledWith(
+      'compliance',
+      expect.objectContaining({ financialYearEndDay: 31, financialYearEndMonth: 12 }),
+      'a'.repeat(64),
+    ));
+  });
+
+  it('names the fields a save was refused for', async () => {
+    view(vi.fn().mockRejectedValue(new CompanyProfileSectionError('Please correct the highlighted fields', [
+      { path: 'financialYearEndDay', message: 'Expected number, received string' },
+    ])));
+    fireEvent.change(screen.getByLabelText('Home currency'), { target: { value: 'USD' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save Compliance' }));
+    expect(await screen.findByText(
+      'Please correct these fields: Financial year end day (Expected number, received string)',
+    )).toBeInTheDocument();
   });
 });

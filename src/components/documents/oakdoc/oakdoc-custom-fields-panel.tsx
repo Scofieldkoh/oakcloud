@@ -59,7 +59,12 @@ interface Draft {
 const EMPTY_DRAFT: Draft = { label: '', type: 'text', required: true, options: '', contacts: [] };
 
 function definitionOf(field: OakDocCustomField): OakDocFieldDefinition {
-  return { tag: oakDocCustomFieldTag(field.key), label: field.label, category: 'Custom fields' };
+  return {
+    tag: oakDocCustomFieldTag(field.key),
+    label: field.label,
+    category: 'Custom fields',
+    ...(field.type === 'date' ? { valueType: 'date' as const } : {}),
+  };
 }
 
 /** The detail fields a Contact field offers, e.g. `custom.secretary.identificationNumber`. */

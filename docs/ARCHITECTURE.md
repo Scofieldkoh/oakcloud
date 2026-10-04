@@ -314,7 +314,14 @@ Case) before Add or a drag. The choice is kept in that field's Word title
 (`w:alias`, e.g. "Full Address · UPPERCASE"), so it travels with the one field
 into partials and repeating sections and shows on hover;
 `writeOakDocControlValue` prints the value in that case. To change a field's
-case, remove it and add it again with the new case.
+case, remove it and add it again with the new case. Date fields (custom date
+fields and scalar fields such as Incorporation Date, Resolution Date and First
+Financial Year End; not the FYE or fields inside repeating sections) also offer
+Date format: Default, common formats such as dd/mm/yyyy, d mmm yyyy and
+d mmmm yyyy, or a custom pattern of d, m and y (`normalizeOakDocDateFormat`
+turns "dd/mm/yyyy" into Word's "dd/MM/yyyy"). It is kept in the same title
+("Resolution Date · dd/MM/yyyy") and applied at generation when the field
+has a calendar date; a date control's own `w:date/w:dateFormat` wins.
 
 Repeating section lettering (`src/lib/document-editor/oakdoc-repeater-lettering.ts`):
 opening a section in the Repeating sections panel offers "Letter each one (a),

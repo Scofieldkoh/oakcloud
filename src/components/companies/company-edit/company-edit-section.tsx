@@ -9,9 +9,11 @@ import { SingleDateInput } from '@/components/ui/single-date-input';
 import { Toggle } from '@/components/ui/toggle';
 import { COMPANY_ALIAS_MAX_LENGTH } from '@/lib/company-display-label';
 import type { CompanyProfileSectionId } from '@/lib/company-profile-sections';
+import { COMPANY_PROFILE_NUMBER_FIELDS } from '@/lib/validations/company-profile';
 import type { CompanyProfileSectionDto } from '@/services/company/profile-sections';
 import {
   CompanyProfileConflictError,
+  CompanyProfileSectionError,
   useCompanyProfileSection,
   useSaveCompanyProfileSection,
 } from '@/hooks/use-company-profile-sections';
@@ -76,7 +78,7 @@ export function CompanyProfileValueEditor({ value, path, onChange }: { value: un
   if (typeof value === 'boolean') {
     return <Toggle size="sm" labelPosition="top" label={label} checked={value} onChange={onChange} />;
   }
-  const numeric = typeof value === 'number';
+  const numeric = typeof value === 'number' || (value == null && COMPANY_PROFILE_NUMBER_FIELDS.has(key));
   const enumOptions = COMPANY_PROFILE_FIELD_OPTIONS[key];
   if (enumOptions) {
     return <div className="block text-sm">
@@ -131,7 +133,12 @@ export function CompanyEditSection({ companyId, section, title, initialData, onS
     } catch (caught) {
       const conflictLatest = caught instanceof CompanyProfileConflictError ? caught.latest : caught && typeof caught === 'object' && 'latest' in caught ? (caught as { latest: CompanyProfileSectionDto }).latest : null;
       if (conflictLatest) setLatest(conflictLatest);
-      setError(caught instanceof Error ? caught.message : 'Failed to save section');
+      const issues = caught instanceof CompanyProfileSectionError ? caught.issues : [];
+      const message = caught instanceof Error ? caught.message : 'Failed to save section';
+      // Name the fields at fault, since the editor does not mark them itself.
+      setError(issues.length > 0
+        ? `Please correct these fields: ${issues.map((issue) => `${fieldLabel(issue.path.split('.'))} (${issue.message})`).join('; ')}`
+        : message);
     }
   };
 

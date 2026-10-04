@@ -1,7 +1,12 @@
 import { strFromU8, unzipSync, zipSync } from 'fflate';
 import { encodeOakDocZipText } from '@/lib/document-editor/oakdoc-zip';
 import { formatOakDocDate } from '@/lib/document-editor/oakdoc-context';
-import { applyOakDocFieldCase, oakDocFieldCaseOfTitle, type OakDocFieldCase } from '@/lib/document-editor/oakdoc-field-case';
+import {
+  applyOakDocFieldCase,
+  oakDocFieldCaseOfTitle,
+  oakDocFieldDateFormatOfTitle,
+  type OakDocFieldCase,
+} from '@/lib/document-editor/oakdoc-field-case';
 
 const WORD_NS = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
 const XML_NS = 'http://www.w3.org/XML/1998/namespace';
@@ -12,6 +17,10 @@ export interface OakDocFieldDefinition {
   category: string;
   /** Case the value prints in, chosen when the field is added; absent = as stored. */
   textCase?: OakDocFieldCase;
+  /** Word date pattern a date prints in, e.g. "dd/MM/yyyy"; absent = the field's default. */
+  dateFormat?: string;
+  /** Set for a custom date field, so the field panel offers a date format. */
+  valueType?: 'date';
 }
 
 export interface OakDocFieldSummary {
@@ -74,7 +83,11 @@ function controlCase(sdt: Element): OakDocFieldCase | null {
   return oakDocFieldCaseOfTitle(getWordVal(alias));
 }
 
-/** The Word date pattern a date content control asks for, if any. */
+/**
+ * The Word date pattern a date field asks for, if any: a date content
+ * control's own pattern, else the one chosen in the field panel (kept in
+ * its Word title).
+ */
 function controlDateFormat(sdt: Element): string {
   const properties = wordChildren(sdt).find((child) => isWordElement(child, 'sdtPr'));
   const date = properties
@@ -83,7 +96,10 @@ function controlDateFormat(sdt: Element): string {
   const format = date
     ? wordChildren(date).find((child) => isWordElement(child, 'dateFormat'))
     : undefined;
-  return getWordVal(format);
+  const alias = properties
+    ? wordChildren(properties).find((child) => isWordElement(child, 'alias'))
+    : undefined;
+  return getWordVal(format) || oakDocFieldDateFormatOfTitle(getWordVal(alias)) || '';
 }
 
 /**

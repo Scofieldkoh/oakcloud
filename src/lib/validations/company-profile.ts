@@ -134,6 +134,22 @@ export const additionalSectionSchema = z.object({
   }).nullable(),
 });
 
+/**
+ * Profile fields that hold numbers. The section editor shows them as number
+ * inputs even while blank (null), so a typed value is sent as a number.
+ */
+export const COMPANY_PROFILE_NUMBER_FIELDS: ReadonlySet<string> = new Set([
+  'financialYearEndDay',
+  'financialYearEndMonth',
+  'paidUpCapitalAmount',
+  'issuedCapitalAmount',
+  'numberOfShares',
+  'percentageHeld',
+  'parValue',
+  'totalValue',
+  'amountSecured',
+]);
+
 export const companyProfileSectionSchemas = {
   identity: identitySectionSchema,
   addresses: addressesSectionSchema,
