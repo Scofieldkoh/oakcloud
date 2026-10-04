@@ -236,6 +236,8 @@ export async function createOakDocPartial(
     category?: TemplatePartialCategory;
     fileName: string;
     buffer: Buffer;
+    /** The partial's own custom fields. */
+    placeholders?: PlaceholderDefinition[];
   },
   params: TenantAwareParams,
 ) {
@@ -265,7 +267,7 @@ export async function createOakDocPartial(
       ...(input.category ? { category: input.category } : {}),
       content: OAKDOC_PARTIAL_CONTENT,
       contentJson: partialContentJson(asset, pins),
-      placeholders: [],
+      placeholders: (input.placeholders ?? []) as Prisma.InputJsonValue,
       createdById: params.userId,
     },
   });

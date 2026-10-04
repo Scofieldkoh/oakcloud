@@ -84,7 +84,15 @@ async function seedPartial(partial: SeedResolutionPartial, params: Operator, rep
     return existing.id;
   }
   if (existing) {
-    await updateOakDocPartial({ id: existing.id, expectedRevision: existing.version, fileName, buffer }, params);
+    await updateOakDocPartial({
+      id: existing.id,
+      expectedRevision: existing.version,
+      fileName,
+      buffer,
+      displayName: partial.displayName,
+      description: null,
+      placeholders: partial.placeholders ?? [],
+    }, params);
     console.info(`Replaced partial "${partial.name}" with the starter wording.`);
     return existing.id;
   }
@@ -93,10 +101,10 @@ async function seedPartial(partial: SeedResolutionPartial, params: Operator, rep
     name: partial.name,
     displayName: partial.displayName,
     header: partial.header,
-    description: partial.description,
     category: 'RESOLUTION',
     fileName,
     buffer,
+    placeholders: partial.placeholders,
   }, params);
   console.info(`Created partial "${partial.name}".`);
   return created.id;

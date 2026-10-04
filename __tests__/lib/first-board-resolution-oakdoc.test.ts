@@ -2,6 +2,7 @@
 import { strFromU8, unzipSync } from 'fflate';
 import { describe, expect, it } from 'vitest';
 import {
+  CONSTITUTION_OPTIONS,
   FIRST_BOARD_RESOLUTION_PARTIALS,
   buildFirstBoardResolutionOakDocMaster,
 } from '@/content/resolution/first-board-resolution-oakdoc';
@@ -82,6 +83,7 @@ function generate(company: OakDocCompanyDetail, selectedOfficerIds: string[]): s
   const values = {
     ...buildOakDocResolutionValues(input),
     'custom.notice_of_incorporation_no': 'T261308696',
+    'custom.constitution': CONSTITUTION_OPTIONS[1],
   };
   const conditioned = resolveOakDocConditions({
     docxBytes: expanded.bytes,
@@ -106,6 +108,12 @@ describe('First Board Resolution starter', () => {
       expect(validateOakDocPartialPackage(bytes).filter((entry) => entry.severity === 'error')).toEqual([]);
       expect(diagnoseOakDocTags(deriveOakDocTemplateFieldTags(bytes), 'render')).toEqual([]);
       expect(partial.name).toMatch(/^[a-zA-Z][a-zA-Z0-9_-]*$/);
+      expect(partial.displayName).toMatch(/^First Resolution - /);
+      // Arial 10 throughout, ending with an empty line before the next resolution.
+      const xml = documentXml(bytes);
+      expect(xml).not.toContain('Times New Roman');
+      expect(xml).not.toContain('w:val="22"');
+      expect(xml).toMatch(/<w:p><w:pPr>(?:(?!<w:r>)[^])*<\/w:pPr><\/w:p>\s*<w:sectPr>/);
     }
   });
 
@@ -119,6 +127,7 @@ describe('First Board Resolution starter', () => {
     expect(text).toContain('•\tLiang Joo Heong (S2039870A)');
     expect(text).not.toContain('•\tTan Wei Jie');
     expect(text).toContain('1.\tADOPTION OF CONSTITUTION');
+    expect(text).toContain('RESOLVED that the Company shall adopt the model constitution in force from time to time.');
     expect(text).toContain('7.\tNOTIFICATION AND LODGEMENT');
     expect(text).toContain('situated at 21 BUKIT BATOK CRESCENT, #25-72, WCEGA TOWER, SINGAPORE 658065 since');
     expect(text).toContain('fixed on 31 December with its first financial year end to be 31 December 2026.');
@@ -127,6 +136,15 @@ describe('First Board Resolution starter', () => {
     expect(text).toContain('total consideration of SGD 10,000.00 by virtue of Section 63');
     expect(text).toContain('Engterprise Holdings Pte. Ltd.\n3,500');
     expect(text).toContain('Dated this 3 day of October, 2026');
+  });
+
+  it('asks for the constitution as a dropdown on the constitution partial', () => {
+    const [constitution] = FIRST_BOARD_RESOLUTION_PARTIALS;
+    expect(constitution.placeholders).toEqual([expect.objectContaining({
+      key: 'custom.constitution',
+      options: CONSTITUTION_OPTIONS,
+    })]);
+    expect(deriveOakDocTemplateFieldTags(constitution.build())).toContain('custom.constitution');
   });
 
   it('leaves out the secondary activity line when the company has none', () => {

@@ -5,6 +5,7 @@ import { OAKDOC_RESOLUTION_HEADING_STYLE } from '@/lib/document-editor/oakdoc-re
 import type { PlaceholderDefinition } from '@/lib/validations/document-template';
 import { BOARD_RESOLUTION_PLACEHOLDERS, buildDirectorsResolutionOakDocMaster } from './board-resolution-oakdoc';
 import {
+  ARIAL_10,
   ControlIds,
   field,
   packageOakDoc,
@@ -12,6 +13,7 @@ import {
   repeatingSection,
   run,
   tabRun,
+  wordWriter,
 } from './resolution-oakdoc-xml';
 
 /**
@@ -54,7 +56,7 @@ const SECONDARY_ACTIVITY_PARAGRAPH = '1F2A0001';
 
 const justified = { align: 'both' as const };
 const lettered = { align: 'both' as const, indent: { left: 360, hanging: 360 }, after: 80 };
-const bulleted = { indent: { left: 1080, hanging: 360 }, after: 80 };
+const bulleted = { indent: { left: 720, hanging: 360 }, after: 80 };
 
 function noted(ids: ControlIds): string[] {
   const heading = (text: string) => paragraph(run(text, { underline: true }), { keepNext: true });
@@ -114,13 +116,34 @@ export interface SeedResolutionPartial {
   displayName: string;
   /** Default numbered heading. */
   header: string;
-  description: string;
+  /** Custom fields asked on Configure when the partial is picked. */
+  placeholders?: PlaceholderDefinition[];
   build: () => Uint8Array;
 }
 
+/** Partials print in Arial 10 pt. */
+const {
+  run: partialRun,
+  paragraph: partialParagraph,
+  field: partialField,
+} = wordWriter(ARIAL_10);
+
+const partialText = { align: 'both' as const, after: 0 };
+
+/** A partial package; each ends with an empty line, which spaces it from the next resolution. */
 function partialPackage(blocks: (ids: ControlIds) => string[]): Uint8Array {
-  return packageOakDoc(blocks(new ControlIds(9500)).join('\n    '));
+  const body = [...blocks(new ControlIds(9500)), partialParagraph('', { after: 0 })];
+  return packageOakDoc(body.join('\n    '), { typeface: ARIAL_10 });
 }
+
+const CONSTITUTION_KEY = 'constitution';
+
+/** What the company adopts; the chosen option prints inside the sentence. */
+export const CONSTITUTION_OPTIONS = [
+  'the model constitution in force at the time of adoption',
+  'the model constitution in force from time to time',
+  'the constitution drafted by the Shareholders',
+];
 
 const bold = { bold: true };
 
@@ -129,14 +152,14 @@ function subscriberTable(ids: ControlIds): string {
   const widths = [5026, 4000];
   const cell = (width: number, content: string) =>
     `<w:tc><w:tcPr><w:tcW w:w="${width}" w:type="dxa"/></w:tcPr>${content}</w:tc>`;
-  const cellParagraph = (content: string, align: 'left' | 'center') => paragraph(content, { align, after: 0 });
+  const cellParagraph = (content: string, align: 'left' | 'center') => partialParagraph(content, { align, after: 0 });
   const header = `<w:tr><w:trPr><w:tblHeader/></w:trPr>${[
-    cell(widths[0], cellParagraph(run('Subscriber’s Name', { bold: true, underline: true }), 'center')),
-    cell(widths[1], cellParagraph(run('No. of Ordinary Shares Allotted', { bold: true, underline: true }), 'center')),
+    cell(widths[0], cellParagraph(partialRun('Subscriber’s Name', { bold: true, underline: true }), 'center')),
+    cell(widths[1], cellParagraph(partialRun('No. of Ordinary Shares Allotted', { bold: true, underline: true }), 'center')),
   ].join('')}</w:tr>`;
   const row = `<w:tr>${[
-    cell(widths[0], cellParagraph(field(ids, 'shareholder.name', 'Shareholder Name', 'Shareholder Name'), 'left')),
-    cell(widths[1], cellParagraph(field(ids, 'shareholder.numberOfShares', 'Number of Shares', '1,000'), 'center')),
+    cell(widths[0], cellParagraph(partialField(ids, 'shareholder.name', 'Shareholder Name', 'Shareholder Name'), 'left')),
+    cell(widths[1], cellParagraph(partialField(ids, 'shareholder.numberOfShares', 'Number of Shares', '1,000'), 'center')),
   ].join('')}</w:tr>`;
   return [
     '<w:tbl><w:tblPr><w:tblW w:w="9026" w:type="dxa"/>',
@@ -154,91 +177,97 @@ function subscriberTable(ids: ControlIds): string {
 export const FIRST_BOARD_RESOLUTION_PARTIALS: readonly SeedResolutionPartial[] = [
   {
     name: 'resolution-adopt-model-constitution',
-    displayName: 'Adoption of Constitution',
+    displayName: 'First Resolution - Adoption of Constitution',
     header: 'ADOPTION OF CONSTITUTION',
-    description: 'The company adopts the model constitution.',
-    build: () => partialPackage(() => [
-      paragraph(run('RESOLVED that the Company shall adopt the model constitution in force at the time of adoption.'), justified),
+    placeholders: [{
+      key: `custom.${CONSTITUTION_KEY}`,
+      path: `custom.${CONSTITUTION_KEY}`,
+      type: 'text',
+      label: 'Constitution adopted',
+      source: 'custom',
+      category: 'custom',
+      required: true,
+      options: CONSTITUTION_OPTIONS,
+    }],
+    build: () => partialPackage((ids) => [
+      partialParagraph([
+        partialRun('RESOLVED that the Company shall adopt '),
+        partialField(ids, `custom.${CONSTITUTION_KEY}`, 'Constitution adopted', CONSTITUTION_OPTIONS[0]),
+        partialRun('.'),
+      ].join(''), partialText),
     ]),
   },
   {
     name: 'resolution-confirm-registered-address',
-    displayName: 'Registered Address',
+    displayName: 'First Resolution - Registered Address',
     header: 'REGISTERED ADDRESS',
-    description: 'Confirms the registered address since incorporation.',
     build: () => partialPackage((ids) => [
-      paragraph([
-        run('the registered address of the Company situated at '),
-        field(ids, 'company.registeredAddress', 'Full Address', '123 SAMPLE STREET, SINGAPORE 123456', { bold: true, caps: true }),
-        run(' since the date of incorporation be hereby confirmed.'),
-      ].join(''), justified),
+      partialParagraph([
+        partialRun('the registered address of the Company situated at '),
+        partialField(ids, 'company.registeredAddress', 'Full Address', '123 SAMPLE STREET, SINGAPORE 123456', { bold: true, caps: true }),
+        partialRun(' since the date of incorporation be hereby confirmed.'),
+      ].join(''), partialText),
     ]),
   },
   {
     name: 'resolution-fix-financial-year-end',
-    displayName: 'Company’s Financial Year End',
+    displayName: 'First Resolution - Company’s Financial Year End',
     header: 'COMPANY’S FINANCIAL YEAR END',
-    description: 'Fixes the financial year end and the first financial year end.',
     build: () => partialPackage((ids) => [
-      paragraph([
-        run('the financial year end of the Company be fixed on '),
-        field(ids, 'company.financialYearEnd', 'Financial Year End', '31 December', bold),
-        run(' with its first financial year end to be '),
-        field(ids, 'company.firstFinancialYearEnd', 'First Financial Year End', '31 December 2026', bold, 'd MMMM yyyy'),
-        run('.'),
-      ].join(''), justified),
+      partialParagraph([
+        partialRun('the financial year end of the Company be fixed on '),
+        partialField(ids, 'company.financialYearEnd', 'Financial Year End', '31 December', bold),
+        partialRun(' with its first financial year end to be '),
+        partialField(ids, 'company.firstFinancialYearEnd', 'First Financial Year End', '31 December 2026', bold, 'd MMMM yyyy'),
+        partialRun('.'),
+      ].join(''), partialText),
     ]),
   },
   {
     name: 'resolution-appoint-secretary',
-    displayName: 'Appointment of Secretary',
+    displayName: 'First Resolution - Appointment of Secretary',
     header: 'APPOINTMENT OF SECRETARY',
-    description: 'Appoints each secretary ticked on Configure.',
     build: () => partialPackage((ids) => [
-      repeatingSection(ids, oakDocOfficersRepeaterTag(['SECRETARY']), 'Secretary', paragraph([
-        run('the appointment of '),
-        field(ids, 'officer.name', 'Officer Name', 'SECRETARY NAME', { bold: true, caps: true }),
-        run(' ('),
-        field(ids, 'officer.identificationNumber', 'Officer Identification Number', 'S1234567A', bold),
-        run(') as Secretary of the Company be hereby approved with effect from the date of consent to act.'),
-      ].join(''), justified)),
+      repeatingSection(ids, oakDocOfficersRepeaterTag(['SECRETARY']), 'Secretary', partialParagraph([
+        partialRun('the appointment of '),
+        partialField(ids, 'officer.name', 'Officer Name', 'SECRETARY NAME', { bold: true, caps: true }),
+        partialRun(' ('),
+        partialField(ids, 'officer.identificationNumber', 'Officer Identification Number', 'S1234567A', bold),
+        partialRun(') as Secretary of the Company be hereby approved with effect from the date of consent to act.'),
+      ].join(''), partialText)),
     ]),
   },
   {
     name: 'resolution-appoint-corporate-secretarial-agent',
-    displayName: 'Corporate Service Provider',
+    displayName: 'First Resolution - Corporate Service Provider',
     header: 'CORPORATE SERVICE PROVIDER',
-    description: 'Appoints Oaktree as corporate secretarial agent.',
     build: () => partialPackage(() => [
-      paragraph([
-        run('that '),
-        run('OAKTREE ACCOUNTING & CORPORATE SOLUTIONS PTE. LTD. (202437906H)', bold),
-        run(' be hereby appointed as corporate secretarial agent of the Company with effect from the date enumerated in the service agreement.'),
-      ].join(''), justified),
+      partialParagraph([
+        partialRun('that '),
+        partialRun('OAKTREE ACCOUNTING & CORPORATE SOLUTIONS PTE. LTD. (202437906H)', bold),
+        partialRun(' be hereby appointed as corporate secretarial agent of the Company with effect from the date enumerated in the service agreement.'),
+      ].join(''), partialText),
     ]),
   },
   {
     name: 'resolution-confirm-subscribers-shares',
-    displayName: 'Subscribers’ Shares',
+    displayName: 'First Resolution - Subscribers’ Shares',
     header: 'SUBSCRIBERS’ SHARES',
-    description: 'Confirms the allotment of subscribers’ shares, with a table of the shareholders ticked on Configure.',
     build: () => partialPackage((ids) => [
-      paragraph([
-        run('that the allotment of subscribers’ shares for a total consideration of '),
-        field(ids, 'company.paidUpCapital', 'Paid-up Capital', 'SGD 10,000.00', bold),
-        run(' by virtue of Section 63 of the Companies Act 1967 to the subscribers to the Constitution of the Company, listed below, be hereby confirmed.'),
-      ].join(''), justified),
+      partialParagraph([
+        partialRun('that the allotment of subscribers’ shares for a total consideration of '),
+        partialField(ids, 'company.paidUpCapital', 'Paid-up Capital', 'SGD 10,000.00', bold),
+        partialRun(' by virtue of Section 63 of the Companies Act 1967 to the subscribers to the Constitution of the Company, listed below, be hereby confirmed.'),
+      ].join(''), { ...partialText, after: 120 }),
       subscriberTable(ids),
-      paragraph('', { after: 0 }),
     ]),
   },
   {
     name: 'resolution-notification-and-lodgement',
-    displayName: 'Notification and Lodgement',
+    displayName: 'First Resolution - Notification and Lodgement',
     header: 'NOTIFICATION AND LODGEMENT',
-    description: 'Documents and forms are completed, signed and lodged with ACRA.',
     build: () => partialPackage(() => [
-      paragraph(run('that all necessary documents and forms be completed, signed and lodged with the Accounting and Corporate Regulatory Authority.'), justified),
+      partialParagraph(partialRun('that all necessary documents and forms be completed, signed and lodged with the Accounting and Corporate Regulatory Authority.'), partialText),
     ]),
   },
 ];

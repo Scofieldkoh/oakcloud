@@ -294,7 +294,10 @@ Service Agreement composition templates:
   No. custom field, primary and secondary SSIC activities, first directors)
   and seven Resolutions partials (constitution, registered address,
   financial year end, secretary, corporate secretarial agent, subscribers'
-  shares table, lodgement) preset in that order. A master whose styles define
+  shares table, lodgement) preset in that order. The partials are named
+  "First Resolution - ..." and print in Arial 10 pt, each ending with an
+  empty line; the constitution partial asks which constitution is adopted
+  (a `custom.constitution` dropdown). A master whose styles define
   the character style `OakDocResolutionHeading` gets it on each numbered
   heading's text (the First Board Resolution underlines). Company fields
   `company.primaryActivity`, `company.secondaryActivity` ("code |

@@ -4,11 +4,26 @@ import { OAKDOC_RESOLUTION_ITEMS_TAG } from '@/lib/document-editor/oakdoc-field-
 
 /**
  * WordprocessingML helpers for the seeded resolution masters and partials:
- * Times New Roman 11 pt runs and paragraphs, field controls, and a minimal
- * DOCX package around a body.
+ * runs and paragraphs in one typeface (Times New Roman 11 pt by default),
+ * field controls, and a minimal DOCX package around a body.
  */
 
-export const FONT = '<w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman" w:eastAsia="Times New Roman" w:cs="Times New Roman"/>';
+export interface Typeface {
+  name: string;
+  /** Size in half-points (22 = 11 pt). */
+  halfPoints: number;
+}
+
+export const TIMES_11: Typeface = { name: 'Times New Roman', halfPoints: 22 };
+export const ARIAL_10: Typeface = { name: 'Arial', halfPoints: 20 };
+
+function fontName({ name }: Typeface): string {
+  return `<w:rFonts w:ascii="${name}" w:hAnsi="${name}" w:eastAsia="${name}" w:cs="${name}"/>`;
+}
+
+function fontSize({ halfPoints }: Typeface): string {
+  return `<w:sz w:val="${halfPoints}"/><w:szCs w:val="${halfPoints}"/>`;
+}
 
 export interface RunFormat {
   bold?: boolean;
@@ -19,28 +34,6 @@ export interface RunFormat {
 
 export function xmlText(value: string): string {
   return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-}
-
-function runProperties(format: RunFormat = {}): string {
-  return [
-    '<w:rPr>',
-    FONT,
-    format.bold ? '<w:b/><w:bCs/>' : '',
-    format.italic ? '<w:i/><w:iCs/>' : '',
-    format.caps ? '<w:caps/>' : '',
-    '<w:sz w:val="22"/><w:szCs w:val="22"/>',
-    format.underline ? '<w:u w:val="single"/>' : '',
-    '</w:rPr>',
-  ].join('');
-}
-
-export function run(text: string, format: RunFormat = {}): string {
-  return `<w:r>${runProperties(format)}<w:t xml:space="preserve">${xmlText(text)}</w:t></w:r>`;
-}
-
-/** A run holding a tab, for "a)<tab>text" list items. */
-export function tabRun(): string {
-  return `<w:r>${runProperties()}<w:tab/></w:r>`;
 }
 
 export interface ParagraphFormat {
@@ -55,8 +48,29 @@ export interface ParagraphFormat {
   paraId?: string;
 }
 
-function paragraphProperties(format: ParagraphFormat = {}): string {
-  return [
+/** Run, paragraph and field builders that all use one typeface. */
+export function wordWriter(typeface: Typeface) {
+  const fonts = fontName(typeface);
+  const size = fontSize(typeface);
+
+  const runProperties = (format: RunFormat = {}) => [
+    '<w:rPr>',
+    fonts,
+    format.bold ? '<w:b/><w:bCs/>' : '',
+    format.italic ? '<w:i/><w:iCs/>' : '',
+    format.caps ? '<w:caps/>' : '',
+    size,
+    format.underline ? '<w:u w:val="single"/>' : '',
+    '</w:rPr>',
+  ].join('');
+
+  const run = (text: string, format: RunFormat = {}) =>
+    `<w:r>${runProperties(format)}<w:t xml:space="preserve">${xmlText(text)}</w:t></w:r>`;
+
+  /** A run holding a tab, for "a)<tab>text" list items. */
+  const tabRun = () => `<w:r>${runProperties()}<w:tab/></w:r>`;
+
+  const paragraphProperties = (format: ParagraphFormat = {}) => [
     '<w:pPr>',
     format.keepNext ? '<w:keepNext/>' : '',
     format.pageBreakBefore ? '<w:pageBreakBefore/>' : '',
@@ -67,15 +81,30 @@ function paragraphProperties(format: ParagraphFormat = {}): string {
       ? `<w:ind w:left="${format.indent.left}"${format.indent.hanging ? ` w:hanging="${format.indent.hanging}"` : ''}/>`
       : '',
     format.align && format.align !== 'left' ? `<w:jc w:val="${format.align}"/>` : '',
-    `<w:rPr>${FONT}<w:sz w:val="22"/><w:szCs w:val="22"/></w:rPr>`,
+    `<w:rPr>${fonts}${size}</w:rPr>`,
     '</w:pPr>',
   ].join('');
+
+  const paragraph = (content: string, format: ParagraphFormat = {}) => {
+    const id = format.paraId ? ` w14:paraId="${format.paraId}"` : '';
+    return `<w:p${id}>${paragraphProperties(format)}${content}</w:p>`;
+  };
+
+  const field = (ids: ControlIds, tag: string, alias: string, sample: string, format: RunFormat = {}, dateFormat?: string) => [
+    '<w:sdt><w:sdtPr>',
+    `<w:alias w:val="${xmlText(alias)}"/><w:tag w:val="${xmlText(tag)}"/><w:id w:val="${ids.take()}"/>`,
+    dateFormat
+      ? `<w:date><w:dateFormat w:val="${dateFormat}"/><w:lid w:val="en-SG"/><w:storeMappedDataAs w:val="dateTime"/><w:calendar w:val="gregorian"/></w:date>`
+      : '<w:text/>',
+    '</w:sdtPr><w:sdtContent>',
+    run(sample, format),
+    '</w:sdtContent></w:sdt>',
+  ].join('');
+
+  return { run, tabRun, paragraph, field };
 }
 
-export function paragraph(content: string, format: ParagraphFormat = {}): string {
-  const id = format.paraId ? ` w14:paraId="${format.paraId}"` : '';
-  return `<w:p${id}>${paragraphProperties(format)}${content}</w:p>`;
-}
+export const { run, tabRun, paragraph, field } = wordWriter(TIMES_11);
 
 export class ControlIds {
   private next: number;
@@ -89,19 +118,6 @@ export class ControlIds {
     this.next += 1;
     return value;
   }
-}
-
-export function field(ids: ControlIds, tag: string, alias: string, sample: string, format: RunFormat = {}, dateFormat?: string): string {
-  return [
-    '<w:sdt><w:sdtPr>',
-    `<w:alias w:val="${xmlText(alias)}"/><w:tag w:val="${xmlText(tag)}"/><w:id w:val="${ids.take()}"/>`,
-    dateFormat
-      ? `<w:date><w:dateFormat w:val="${dateFormat}"/><w:lid w:val="en-SG"/><w:storeMappedDataAs w:val="dateTime"/><w:calendar w:val="gregorian"/></w:date>`
-      : '<w:text/>',
-    '</w:sdtPr><w:sdtContent>',
-    run(sample, format),
-    '</w:sdtContent></w:sdt>',
-  ].join('');
 }
 
 /** A Word repeating section with one item holding `content`. */
@@ -149,11 +165,11 @@ const DOCUMENT_RELS = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
   <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>
 </Relationships>`;
 
-function stylesXml(extraStyles: string): string {
+function stylesXml(extraStyles: string, typeface: Typeface): string {
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
   <w:docDefaults>
-    <w:rPrDefault><w:rPr>${FONT}<w:sz w:val="22"/><w:szCs w:val="22"/><w:lang w:val="en-SG"/></w:rPr></w:rPrDefault>
+    <w:rPrDefault><w:rPr>${fontName(typeface)}${fontSize(typeface)}<w:lang w:val="en-SG"/></w:rPr></w:rPrDefault>
     <w:pPrDefault><w:pPr><w:spacing w:after="200" w:line="240" w:lineRule="auto"/></w:pPr></w:pPrDefault>
   </w:docDefaults>
   <w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:qFormat/></w:style>${extraStyles}
@@ -161,7 +177,10 @@ function stylesXml(extraStyles: string): string {
 }
 
 /** An A4 DOCX with 1-inch margins around `body` (joined block XML). */
-export function packageOakDoc(body: string, options: { extraStyles?: string } = {}): Uint8Array {
+export function packageOakDoc(
+  body: string,
+  options: { extraStyles?: string; typeface?: Typeface } = {},
+): Uint8Array {
   const documentXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"
   xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml"
@@ -182,6 +201,6 @@ export function packageOakDoc(body: string, options: { extraStyles?: string } = 
     '_rels/.rels': encodeOakDocZipText(ROOT_RELS),
     'word/document.xml': encodeOakDocZipText(documentXml),
     'word/_rels/document.xml.rels': encodeOakDocZipText(DOCUMENT_RELS),
-    'word/styles.xml': encodeOakDocZipText(stylesXml(options.extraStyles ?? '')),
+    'word/styles.xml': encodeOakDocZipText(stylesXml(options.extraStyles ?? '', options.typeface ?? TIMES_11)),
   }, { level: 6 });
 }
