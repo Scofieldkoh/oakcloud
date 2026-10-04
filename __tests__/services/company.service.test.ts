@@ -27,6 +27,7 @@ vi.mock('@/lib/prisma', () => ({
     companyCharge: { findMany: vi.fn() },
     companyAuditor: { findUnique: vi.fn() },
     document: { findMany: vi.fn() },
+    companyFinancialPeriod: { findMany: vi.fn() },
     $transaction: vi.fn(),
     tenant: {
       findUnique: vi.fn(),
@@ -289,6 +290,7 @@ describe('Company Service', () => {
       vi.mocked(prisma.companyCharge.findMany).mockResolvedValue([]);
       vi.mocked(prisma.companyAuditor.findUnique).mockResolvedValue(null);
       vi.mocked(prisma.document.findMany).mockResolvedValue([]);
+      vi.mocked(prisma.companyFinancialPeriod.findMany).mockResolvedValue([]);
 
       const result = await getCompanyFullDetails('company-1', 'tenant-1');
 
@@ -297,6 +299,25 @@ describe('Company Service', () => {
         uen: '202312345A',
         displayAlias: 'OAK',
       }));
+    });
+
+    it('includes the first confirmed financial period for the Compliance card', async () => {
+      vi.mocked(prisma.company.findFirst).mockResolvedValue({ id: 'company-1', name: 'Bordeus Pte Ltd', tenantId: 'tenant-1' } as never);
+      for (const model of [prisma.companyFormerName, prisma.companyAddress, prisma.companyOfficer, prisma.companyShareholder, prisma.shareCapital, prisma.companyCharge, prisma.document]) {
+        vi.mocked(model.findMany).mockResolvedValue([] as never);
+      }
+      vi.mocked(prisma.companyAuditor.findUnique).mockResolvedValue(null);
+      vi.mocked(prisma.companyFinancialPeriod.findMany).mockResolvedValue([
+        { periodStart: new Date('2026-10-03'), periodEnd: new Date('2026-12-31'), yearsOfAssessment: [2027] },
+      ] as never);
+
+      const result = await getCompanyFullDetails('company-1', 'tenant-1');
+
+      expect(prisma.companyFinancialPeriod.findMany).toHaveBeenCalledWith(expect.objectContaining({
+        where: { companyId: 'company-1', provenance: 'CONFIRMED' },
+        take: 1,
+      }));
+      expect((result as { financialPeriods?: Array<{ periodEnd: unknown }> } | null)?.financialPeriods?.[0]?.periodEnd).toBeDefined();
     });
   });
 

@@ -1252,6 +1252,7 @@ export async function getCompanyFullDetails(
     auditor,
     documents,
     sharePointFolderMapping,
+    financialPeriods,
   ] = await Promise.all([
     // Main company data (minimal select for speed)
     prisma.company.findFirst({
@@ -1357,6 +1358,13 @@ export async function getCompanyFullDetails(
         lastVerifiedAt: true,
       },
     }),
+    // The first confirmed financial period, as getCompanyById loads it.
+    prisma.companyFinancialPeriod.findMany({
+      where: { companyId: id, provenance: 'CONFIRMED' },
+      orderBy: { periodEnd: 'asc' },
+      take: 1,
+      select: { periodStart: true, periodEnd: true, yearsOfAssessment: true },
+    }),
   ]);
 
   if (!company) return null;
@@ -1374,6 +1382,7 @@ export async function getCompanyFullDetails(
     auditor,
     documents,
     sharePointFolderMapping,
+    financialPeriods,
     _count: {
       documents: documents.length,
       officers: officers.length,
