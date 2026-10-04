@@ -12,6 +12,7 @@ import type { EditableBatchItem } from './batch-workspace-state';
 import { StandardDocumentConfig } from './standard-document-config';
 import { ServiceAgreementConfig } from './service-agreement-config';
 import { ResolutionSectionsConfig } from './resolution-sections-config';
+import { MissingCompanyFields } from './missing-company-fields';
 import { partitionTemplateFields, type ItemCompleteness } from './batch-completeness';
 import type { ApplyScope } from './apply-to-others-menu';
 import type { OakDocRepeaterSectionSummary } from '@/lib/document-editor/oakdoc-custom-fields';
@@ -84,26 +85,40 @@ export function BatchItemConfigurator(props: BatchItemConfiguratorProps) {
     );
   }
 
+  const missingCompanyFields = (
+    <MissingCompanyFields
+      company={props.primaryCompany}
+      templateFieldTags={props.templateFieldTags}
+      documentValues={item.configuration.companyFieldValues}
+      onPatch={onPatch}
+      disabled={disabled}
+    />
+  );
+
   return item.templateKind === 'SERVICE_AGREEMENT'
     ? (
-      <ServiceAgreementConfig
-        item={item}
-        primaryCompany={props.primaryCompany}
-        companies={props.companies}
-        contacts={companyContacts}
-        companySearchQuery={props.companySearchQuery}
-        onCompanySearch={props.onCompanySearch}
-        companySearchLoading={props.companySearchLoading}
-        onPrimaryCompanyChange={props.onPrimaryCompanyChange}
-        masterFields={masterFields}
-        effectiveMasterValues={effectiveMasterValues}
-        repeaterSections={props.repeaterSections}
-        onPatch={onPatch}
-        disabled={disabled}
-      />
+      <div className="space-y-3">
+        {missingCompanyFields}
+        <ServiceAgreementConfig
+          item={item}
+          primaryCompany={props.primaryCompany}
+          companies={props.companies}
+          contacts={companyContacts}
+          companySearchQuery={props.companySearchQuery}
+          onCompanySearch={props.onCompanySearch}
+          companySearchLoading={props.companySearchLoading}
+          onPrimaryCompanyChange={props.onPrimaryCompanyChange}
+          masterFields={masterFields}
+          effectiveMasterValues={effectiveMasterValues}
+          repeaterSections={props.repeaterSections}
+          onPatch={onPatch}
+          disabled={disabled}
+        />
+      </div>
     )
     : (
       <div className="space-y-3">
+        {missingCompanyFields}
         <StandardDocumentConfig
           item={item}
           templateFields={itemOnlyFields}

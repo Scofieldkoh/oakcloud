@@ -342,7 +342,9 @@ export function getDocumentExporter(): IDocumentExporter {
   YAs drop out. The company Compliance card shows it as First FYE, and it can
   be changed or cleared in Edit > Compliance (`firstFinancialYearEndDate`;
   BizFile sync omits it and leaves the period alone). Changing the
-  incorporation date moves the first period's start with it.
+  incorporation date moves the first period's start with it. Document
+  generation's "Missing company information" prompt on Configure saves a
+  missing first FYE through the same `confirmFirstFinancialYearEnd`.
 - Monitoring never sends client reminders and never writes billing records.
 - Pause by turning the flag off: stored company obligations stay readable and
   the worker returns to observe mode. Do not delete company rows to roll back.

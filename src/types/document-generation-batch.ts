@@ -81,6 +81,11 @@ export interface BatchItemConfiguration {
   serviceAgreement: ServiceAgreementWorkspaceState | null;
   /** RESOLUTION templates only; absent on items saved before resolutions existed. */
   resolution?: ResolutionWorkspaceState | null;
+  /**
+   * Company values missing on record, filled for this document only, by
+   * company field home id (see `oakdoc-company-field-homes`).
+   */
+  companyFieldValues?: Record<string, string>;
 }
 
 export interface MasterFieldDefinition {

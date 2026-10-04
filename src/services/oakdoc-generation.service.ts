@@ -81,6 +81,7 @@ import { deriveOakDocTemplateFieldTags } from '@/lib/document-editor/oakdoc-fiel
 import type { TenantAwareParams } from '@/lib/types';
 import type { TaskLaunchContext } from '@/services/tasks/types';
 import { getCompanyById } from '@/services/company.service';
+import { applyCompanyFieldValues } from '@/lib/document-editor/oakdoc-company-field-homes';
 import { downloadOakDocTemplate } from '@/services/oakdoc-template.service';
 import {
   expandPinnedOakDocPartials,
@@ -109,7 +110,7 @@ function safeDocxName(value: string): string {
   return base.toLowerCase().endsWith('.docx') ? base : `${base}.docx`;
 }
 
-function toOakDocCompanyDetail(value: unknown): OakDocCompanyDetail {
+export function toOakDocCompanyDetail(value: unknown): OakDocCompanyDetail {
   // Prisma Dates and Decimal values are serialized to stable string forms.
   // OakDoc's resolver deliberately accepts date strings and numeric strings.
   return JSON.parse(JSON.stringify(value)) as OakDocCompanyDetail;
@@ -154,6 +155,11 @@ export interface OakDocGenerationInput {
   /** Numbered resolutions composed into a RESOLUTION master. */
   resolution?: ResolutionComposition | null;
   resolutionDate?: Date | string;
+  /**
+   * Company values missing on record, set for this document only, by
+   * company field home id (see `oakdoc-company-field-homes`).
+   */
+  companyFieldValues?: Record<string, string>;
   generatedBy?: string;
 }
 
@@ -519,7 +525,10 @@ async function renderOakDocMaster(
   const contactLists = Object.fromEntries(Object.entries(contactListIds).map(
     ([slug, ids]) => [slug, Array.from(new Set(ids)).flatMap((id) => contactById.get(id) ?? [])],
   ));
-  const companyDetail = toOakDocCompanyDetail(company);
+  const companyDetail = applyCompanyFieldValues(
+    toOakDocCompanyDetail(company),
+    input.companyFieldValues,
+  );
   const provided = new Set<OakDocFieldContext>(['company', 'system']);
   if (companyDetail.officers?.some((officer) => officer.id === input.selectedDirectorId)) {
     provided.add('selectedDirector');

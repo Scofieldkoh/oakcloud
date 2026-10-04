@@ -181,6 +181,7 @@ export function oakDocBatchContext(
   | 'resolutionDate'
   | 'serviceAgreementId'
   | 'resolution'
+  | 'companyFieldValues'
 > {
   const resolutionDate = effectiveCustomData.resolution_date;
   const agreement = configuration.serviceAgreement;
@@ -204,7 +205,16 @@ export function oakDocBatchContext(
       : undefined,
     ...(serviceAgreementId ? { serviceAgreementId } : {}),
     ...(configuration.resolution ? { resolution: configuration.resolution } : {}),
+    ...(hasCompanyFieldValues(configuration)
+      ? { companyFieldValues: configuration.companyFieldValues }
+      : {}),
   };
+}
+
+function hasCompanyFieldValues(
+  configuration: ReturnType<typeof parseBatchItemConfiguration>,
+): boolean {
+  return Object.keys(configuration.companyFieldValues ?? {}).length > 0;
 }
 
 export async function buildBatchItemRenderInput(
@@ -289,6 +299,9 @@ export async function buildBatchItemRenderInput(
       useLetterhead: false,
       agreementData: configuration.serviceAgreement ?? undefined,
       resolutionData: configuration.resolution ?? undefined,
+      companyFieldValues: hasCompanyFieldValues(configuration)
+        ? configuration.companyFieldValues
+        : undefined,
     });
     return {
       content: OAKDOC_GENERATED_CONTENT,

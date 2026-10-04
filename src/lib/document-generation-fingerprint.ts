@@ -57,6 +57,8 @@ export interface PreviewFingerprintInput {
   useLetterhead: boolean;
   agreementData?: unknown;
   resolutionData?: unknown;
+  /** Company values set for this document only; absent when there are none. */
+  companyFieldValues?: Record<string, string>;
 }
 
 export function createPreviewFingerprint(input: PreviewFingerprintInput): string {
