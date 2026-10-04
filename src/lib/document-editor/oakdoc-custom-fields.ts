@@ -3,6 +3,7 @@ import type { PlaceholderValueType } from '@/types/placeholders';
 import {
   OAKDOC_CONTACTS_REPEATER_TAG,
   OAKDOC_REPEATER_NAME_MAX,
+  canOakDocRepeaterSplitDocuments,
   isOakDocContactsRepeaterTag,
   isOakDocRepeaterTag,
   oakDocContactListNameFromSlug,
@@ -366,8 +367,16 @@ export function oakDocContactShortlist(placeholders: unknown): OakDocCustomField
  * Like custom fields, partials' definitions are copied onto the template on
  * save (marked with the partial id), and added per document for a
  * resolution's chosen partials.
+ *
+ * One section of a template (directors, shareholders, officers or a contacts
+ * list) can make a separate document for each person: Configure then makes
+ * one document per person picked, and the section prints only that person.
+ * It is stored as a definition keyed by the section's tag with
+ * `fieldKind: "documentPerPerson"`, one per template, and is never copied
+ * from partials.
  */
 const REPEATER_NAME_KIND = 'repeaterName';
+const DOCUMENT_PER_PERSON_KIND = 'documentPerPerson';
 
 /** Field roots of the single-person pickers Configure shows, which an author can name. */
 export const OAKDOC_PICKER_KEYS = ['selectedDirector', 'selectedShareholder', 'selectedContact'] as const;
@@ -396,6 +405,8 @@ export interface OakDocRepeaterSections {
   names: Record<string, string>;
   /** Contacts shortlist by contacts repeater tag (`repeat.contacts`, `repeat.contacts.<slug>`). */
   shortlists: Record<string, OakDocCustomFieldContact[]>;
+  /** The section that makes a separate document for each person, if any (templates only). */
+  perPersonTag?: string | null;
 }
 
 /** Section names and shortlists of a template together with its partials'. */
@@ -403,10 +414,19 @@ export interface OakDocRepeaterSectionSummary {
   /** Every distinct name given to sections with this tag, template's first. */
   names: Record<string, string[]>;
   shortlists: Record<string, OakDocCustomFieldContact[]>;
+  /** The template's section that makes a separate document for each person, if any. */
+  perPersonTag?: string | null;
+}
+
+function isPerPersonEntry(definition: StoredDefinition): boolean {
+  return definition.fieldKind === DOCUMENT_PER_PERSON_KIND
+    && typeof definition.key === 'string'
+    && canOakDocRepeaterSplitDocuments(definition.key);
 }
 
 function isRepeaterEntry(definition: StoredDefinition): boolean {
   const key = typeof definition.key === 'string' ? definition.key : '';
+  if (isPerPersonEntry(definition)) return true;
   if (definition.fieldKind === CONTACT_SHORTLIST_KIND) return isOakDocContactsRepeaterTag(key);
   if (definition.fieldKind !== REPEATER_NAME_KIND) return false;
   return isOakDocPickerKey(key) || (isOakDocRepeaterTag(key) && !isOakDocContactsRepeaterTag(key));
@@ -454,6 +474,19 @@ function repeaterEntry(
   };
 }
 
+function perPersonEntry(tag: string): StoredDefinition {
+  return {
+    key: tag,
+    path: tag,
+    label: 'One document per person',
+    type: 'text',
+    source: 'repeater',
+    category: 'repeater',
+    fieldKind: DOCUMENT_PER_PERSON_KIND,
+    required: false,
+  };
+}
+
 function repeaterEntries(placeholders: unknown, ownOnly: boolean): StoredDefinition[] {
   if (!Array.isArray(placeholders)) return [];
   return placeholders.filter((definition): definition is StoredDefinition => isRecord(definition)
@@ -463,6 +496,11 @@ function repeaterEntries(placeholders: unknown, ownOnly: boolean): StoredDefinit
 
 function addEntry(summary: OakDocRepeaterSectionSummary, definition: StoredDefinition): void {
   const tag = String(definition.key);
+  if (isPerPersonEntry(definition)) {
+    // Only the template's own setting splits its documents.
+    if (!isPartialCopy(definition) && !summary.perPersonTag) summary.perPersonTag = tag;
+    return;
+  }
   const name = entryName(definition);
   if (name && !(summary.names[tag] ?? []).includes(name)) summary.names[tag] = [...(summary.names[tag] ?? []), name];
   if (definition.fieldKind === CONTACT_SHORTLIST_KIND) {
@@ -476,7 +514,11 @@ export function readOakDocRepeaterSections(placeholders: unknown): OakDocRepeate
   for (const definition of repeaterEntries(placeholders, true)) addEntry(summary, definition);
   const names: Record<string, string> = {};
   for (const [tag, list] of Object.entries(summary.names)) names[tag] = list[0];
-  return { names, shortlists: summary.shortlists };
+  return {
+    names,
+    shortlists: summary.shortlists,
+    ...(summary.perPersonTag ? { perPersonTag: summary.perPersonTag } : {}),
+  };
 }
 
 /**
@@ -492,11 +534,17 @@ export function writeOakDocRepeaterSections(
 ): StoredDefinition[] {
   const existing = Array.isArray(placeholders) ? placeholders.filter(isRecord) : [];
   const kept = existing.filter((definition) => !isRepeaterEntry(definition) || isPartialCopy(definition));
-  const written = Array.from(new Set(presentTags)).flatMap((tag) => {
+  const present = Array.from(new Set(presentTags));
+  const written = present.flatMap((tag) => {
     const entry = repeaterEntry(tag, sections.names[tag] ?? '', sections.shortlists[tag] ?? []);
     return entry ? [entry] : [];
   });
-  return [...kept, ...written];
+  const perPerson = sections.perPersonTag
+    && present.includes(sections.perPersonTag)
+    && canOakDocRepeaterSplitDocuments(sections.perPersonTag)
+    ? [perPersonEntry(sections.perPersonTag)]
+    : [];
+  return [...kept, ...written, ...perPerson];
 }
 
 /**
@@ -519,6 +567,7 @@ export function mergeOakDocRepeaterSectionSummaries(
   const merged: OakDocRepeaterSectionSummary = {
     names: { ...(first?.names ?? {}) },
     shortlists: { ...(first?.shortlists ?? {}) },
+    ...(first?.perPersonTag ? { perPersonTag: first.perPersonTag } : {}),
   };
   for (const [tag, names] of Object.entries(second?.names ?? {})) {
     merged.names[tag] = Array.from(new Set([...(merged.names[tag] ?? []), ...names]));
@@ -534,6 +583,7 @@ export function mergeOakDocRepeaterSectionSummaries(
 /** A partial's section names and shortlists (its own and its partials'), marked as copies from it. */
 function partialRepeaterCopies(partial: { id: string; placeholders: unknown }): StoredDefinition[] {
   return repeaterEntries(partial.placeholders, false)
+    .filter((definition) => !isPerPersonEntry(definition))
     .map((definition) => ({ ...definition, [OAKDOC_PARTIAL_FIELD_MARKER]: partial.id }));
 }
 

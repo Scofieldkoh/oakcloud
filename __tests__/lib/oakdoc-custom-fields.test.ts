@@ -353,4 +353,26 @@ describe('OakDoc custom fields', () => {
       expect(oakDocRepeaterSectionSummary(mergeOakDocPartialCustomFields(merged, []))).toEqual(own);
     });
   });
+
+  describe('one document per person', () => {
+    it('stores the template section that splits documents, while that section is present', () => {
+      const sections = { names: {}, shortlists: {}, perPersonTag: 'repeat.directors' };
+      const stored = writeOakDocRepeaterSections([], sections, ['repeat.directors']);
+      expect(stored).toEqual([expect.objectContaining({ key: 'repeat.directors', fieldKind: 'documentPerPerson' })]);
+      expect(readOakDocRepeaterSections(stored).perPersonTag).toBe('repeat.directors');
+      expect(oakDocRepeaterSectionSummary(stored).perPersonTag).toBe('repeat.directors');
+      // Gone with its section, and never for a section that cannot split (signers).
+      expect(writeOakDocRepeaterSections(stored, sections, [])).toEqual([]);
+      expect(writeOakDocRepeaterSections([], { ...sections, perPersonTag: 'repeat.signers' }, ['repeat.signers'])).toEqual([]);
+    });
+
+    it('is not copied from partials', () => {
+      const partial = {
+        id: 'partial-1',
+        placeholders: writeOakDocRepeaterSections([], { names: {}, shortlists: {}, perPersonTag: 'repeat.directors' }, ['repeat.directors']),
+      };
+      const merged = mergeOakDocPartialCustomFields([], [partial]);
+      expect(oakDocRepeaterSectionSummary(merged).perPersonTag).toBeUndefined();
+    });
+  });
 });

@@ -483,6 +483,15 @@ export function isOakDocRepeaterTag(tag: string): boolean {
   return oakDocRepeaterDefinitionForTag(tag) !== undefined;
 }
 
+/** Sections that can make a separate document for each person: people picked on Configure. */
+const PER_PERSON_KINDS: ReadonlySet<OakDocGenericRepeaterKind> = new Set(['directors', 'shareholders', 'officers', 'contacts']);
+
+/** True when a section with this tag can make a separate document for each person. */
+export function canOakDocRepeaterSplitDocuments(tag: string): boolean {
+  const kind = oakDocRepeaterDefinitionForTag(tag)?.kind;
+  return kind !== undefined && PER_PERSON_KINDS.has(kind);
+}
+
 /** The officers repeater definition inserting a section limited to these roles. */
 export function oakDocOfficersRepeaterDefinition(roles: readonly string[]): OakDocGenericRepeaterDefinition {
   const base = OAKDOC_GENERIC_REPEATER_BY_TAG.get(OAKDOC_OFFICERS_REPEATER_TAG)!;

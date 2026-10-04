@@ -16,6 +16,7 @@ export interface Typeface {
 
 export const TIMES_11: Typeface = { name: 'Times New Roman', halfPoints: 22 };
 export const ARIAL_10: Typeface = { name: 'Arial', halfPoints: 20 };
+export const ARIAL_11: Typeface = { name: 'Arial', halfPoints: 22 };
 
 function fontName({ name }: Typeface): string {
   return `<w:rFonts w:ascii="${name}" w:hAnsi="${name}" w:eastAsia="${name}" w:cs="${name}"/>`;
@@ -30,6 +31,9 @@ export interface RunFormat {
   italic?: boolean;
   caps?: boolean;
   underline?: boolean;
+  strike?: boolean;
+  /** Size in half-points, when not the typeface's. */
+  halfPoints?: number;
 }
 
 export function xmlText(value: string): string {
@@ -37,7 +41,8 @@ export function xmlText(value: string): string {
 }
 
 export interface ParagraphFormat {
-  align?: 'left' | 'center' | 'both';
+  align?: 'left' | 'center' | 'right' | 'both';
+  before?: number;
   after?: number;
   keepNext?: boolean;
   pageBreakBefore?: boolean;
@@ -59,7 +64,8 @@ export function wordWriter(typeface: Typeface) {
     format.bold ? '<w:b/><w:bCs/>' : '',
     format.italic ? '<w:i/><w:iCs/>' : '',
     format.caps ? '<w:caps/>' : '',
-    size,
+    format.strike ? '<w:strike/>' : '',
+    format.halfPoints ? fontSize({ name: typeface.name, halfPoints: format.halfPoints }) : size,
     format.underline ? '<w:u w:val="single"/>' : '',
     '</w:rPr>',
   ].join('');
@@ -76,7 +82,7 @@ export function wordWriter(typeface: Typeface) {
     format.pageBreakBefore ? '<w:pageBreakBefore/>' : '',
     format.bottomBorder ? '<w:pBdr><w:bottom w:val="single" w:sz="6" w:space="4" w:color="000000"/></w:pBdr>' : '',
     format.indent?.hanging ? `<w:tabs><w:tab w:val="left" w:pos="${format.indent.left}"/></w:tabs>` : '',
-    `<w:spacing w:before="0" w:after="${format.after ?? 200}" w:line="240" w:lineRule="auto"/>`,
+    `<w:spacing w:before="${format.before ?? 0}" w:after="${format.after ?? 200}" w:line="240" w:lineRule="auto"/>`,
     format.indent
       ? `<w:ind w:left="${format.indent.left}"${format.indent.hanging ? ` w:hanging="${format.indent.hanging}"` : ''}/>`
       : '',
@@ -180,11 +186,21 @@ function stylesXml(extraStyles: string, typeface: Typeface): string {
 </w:styles>`;
 }
 
-/** An A4 DOCX with 1-inch margins around `body` (joined block XML). */
+export interface PageMargins {
+  top: number;
+  right: number;
+  bottom: number;
+  left: number;
+}
+
+const INCH_MARGINS: PageMargins = { top: 1440, right: 1440, bottom: 1440, left: 1440 };
+
+/** An A4 DOCX around `body` (joined block XML), with 1-inch margins unless given. */
 export function packageOakDoc(
   body: string,
-  options: { extraStyles?: string; typeface?: Typeface } = {},
+  options: { extraStyles?: string; typeface?: Typeface; margins?: PageMargins } = {},
 ): Uint8Array {
+  const margins = options.margins ?? INCH_MARGINS;
   const documentXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"
   xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml"
@@ -195,7 +211,7 @@ export function packageOakDoc(
     ${body}
     <w:sectPr>
       <w:pgSz w:w="11906" w:h="16838"/>
-      <w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440" w:header="720" w:footer="720" w:gutter="0"/>
+      <w:pgMar w:top="${margins.top}" w:right="${margins.right}" w:bottom="${margins.bottom}" w:left="${margins.left}" w:header="720" w:footer="720" w:gutter="0"/>
     </w:sectPr>
   </w:body>
 </w:document>`;

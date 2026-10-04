@@ -1,5 +1,8 @@
 import { z } from 'zod';
-import { isOakDocContactListSlug } from '@/lib/document-editor/oakdoc-repeater-definitions';
+import {
+  canOakDocRepeaterSplitDocuments,
+  isOakDocContactListSlug,
+} from '@/lib/document-editor/oakdoc-repeater-definitions';
 import { isCompanyFieldHomeId } from '@/lib/document-editor/oakdoc-company-field-ids';
 import {
   serviceAgreementDateString,
@@ -114,6 +117,11 @@ export const batchItemConfigurationSchema = z.object({
     z.string().refine(isCompanyFieldHomeId, 'Unknown company field'),
     z.string().max(2000),
   ).optional(),
+  documentPerson: z.object({
+    tag: z.string().max(200).refine(canOakDocRepeaterSplitDocuments, 'Invalid section'),
+    id: uuid,
+    name: z.string().max(300),
+  }).strict().nullable().optional(),
 }).strict();
 
 export const createDocumentGenerationBatchSchema = z.object({

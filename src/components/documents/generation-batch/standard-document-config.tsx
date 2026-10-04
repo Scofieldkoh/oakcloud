@@ -13,7 +13,10 @@ import {
 import { SingleDateInput } from '@/components/ui/single-date-input';
 import { SearchableSelect } from '@/components/ui/searchable-select';
 import type { DocumentParty } from '@/lib/document-party';
-import { formatOakDocOfficerRoles } from '@/lib/document-editor/oakdoc-repeater-definitions';
+import {
+  formatOakDocOfficerRoles,
+  parseOakDocContactListSlug,
+} from '@/lib/document-editor/oakdoc-repeater-definitions';
 import type { OakDocRepeaterSectionSummary } from '@/lib/document-editor/oakdoc-custom-fields';
 import type {
   BatchItemConfiguration,
@@ -24,7 +27,9 @@ import type {
   EditableBatchItem,
 } from './batch-workspace-state';
 import { oneOfficerPerPerson, soleOfficerDefault } from '@/lib/officer-identity';
+import type { DocumentPersonChoice } from '@/lib/document-generation-per-person';
 import { BatchCustomFieldForm } from './batch-custom-field-form';
+import { PerPersonDocumentsSection } from './per-person-documents-section';
 import { OfficerChoiceList } from './officer-choice-list';
 import { BatchSection } from './batch-section';
 import { ApplyToOthersMenu, type ApplyScope } from './apply-to-others-menu';
@@ -58,6 +63,14 @@ export interface StandardDocumentConfigProps {
    * gets a card titled with it) and its named contacts lists.
    */
   repeaterSections?: OakDocRepeaterSectionSummary | null;
+  /**
+   * The template's section that makes a separate document for each person:
+   * its people are picked on their own card, not with the other parties.
+   */
+  perPersonTag?: string | null;
+  /** Everyone with a document of this template in the batch, in order. */
+  documentPeople?: DocumentPersonChoice[];
+  onDocumentPeopleChange?: (people: DocumentPersonChoice[]) => void;
   masterFields: MasterFieldCatalogue;
   effectiveMasterValues: Record<string, string>;
   directors: DocumentParty[];
@@ -129,6 +142,9 @@ export function StandardDocumentConfig({
   templateFieldTags,
   contactShortlist = null,
   repeaterSections = null,
+  perPersonTag = null,
+  documentPeople = [],
+  onDocumentPeopleChange,
   masterFields,
   effectiveMasterValues,
   directors,
@@ -150,10 +166,15 @@ export function StandardDocumentConfig({
   onApplyToOthers,
 }: StandardDocumentConfigProps) {
   const configuration = item.configuration;
+  // The other pickers leave out the section that splits documents per person.
+  const pickerFieldTags = useMemo(
+    () => (perPersonTag ? templateFieldTags?.filter((tag) => tag !== perPersonTag) : templateFieldTags),
+    [perPersonTag, templateFieldTags],
+  );
 
   const needs = useMemo(
-    () => templatePartyNeeds(templateContent, templateFieldTags),
-    [templateContent, templateFieldTags],
+    () => templatePartyNeeds(templateContent, pickerFieldTags),
+    [templateContent, pickerFieldTags],
   );
   const partySelections = { director: needs.director, shareholder: needs.shareholder, contact: needs.contact };
   const partyCollections = { directors: needs.directors, shareholders: needs.shareholders };
@@ -167,7 +188,7 @@ export function StandardDocumentConfig({
     [configuration.selectedShareholderIds, shareholders],
   );
   // Only officers of the roles the template's officers repeaters print.
-  const officerRoles = useMemo(() => templateOfficerRoles(templateFieldTags), [templateFieldTags]);
+  const officerRoles = useMemo(() => templateOfficerRoles(pickerFieldTags), [pickerFieldTags]);
   const officerOptions = useMemo(() => officersOfRoles(officers, officerRoles), [officers, officerRoles]);
   // Officers start unticked: a resolution names the ones it is about. Each
   // person counts once (a saved choice with two of their roles keeps the first).
@@ -212,11 +233,12 @@ export function StandardDocumentConfig({
     officers: repeaterSectionTitle(repeaterSections, 'officers'),
   }), [repeaterSections]);
   // Named contacts lists, each with its own shortlist and ticks.
-  const contactLists = useMemo(() => templateContactLists(templateFieldTags, repeaterSections).map((list) => {
+  const contactLists = useMemo(() => templateContactLists(pickerFieldTags, repeaterSections).map((list) => {
     const shortlist = shortlistAsContacts(list.shortlist, contacts, contactsById);
     const ids = configuration.selectedContactListIds?.[list.slug] ?? [];
     return { ...list, shortlist, selected: pickedContacts(ids, shortlist, contacts, contactsById) };
-  }), [configuration.selectedContactListIds, contacts, contactsById, repeaterSections, templateFieldTags]);
+  }).filter((list) => !perPersonTag || list.slug !== parseOakDocContactListSlug(perPersonTag)),
+  [configuration.selectedContactListIds, contacts, contactsById, perPersonTag, repeaterSections, pickerFieldTags]);
 
   const titleMissing = configuration.title.trim().length === 0;
   const fieldMissing = missingCount(completeness, 'field:');
@@ -358,6 +380,28 @@ export function StandardDocumentConfig({
           )}
         </label>
       </BatchSection>
+
+      {perPersonTag && onDocumentPeopleChange ? (
+        <PerPersonDocumentsSection
+          tag={perPersonTag}
+          person={configuration.documentPerson}
+          people={documentPeople}
+          onPeopleChange={onDocumentPeopleChange}
+          repeaterSections={repeaterSections}
+          contactShortlist={contactShortlist}
+          directors={directors}
+          shareholders={shareholders}
+          officers={officers}
+          contacts={contacts}
+          contactsById={contactsById}
+          partyLoading={partyLoading}
+          partyError={partyError}
+          onPartyRetry={onPartyRetry}
+          onContactSearch={onContactSearch}
+          contactsLoading={contactsLoading}
+          disabled={disabled}
+        />
+      ) : null}
 
       {genericPartyKeys.length > 0 && (
         <BatchSection

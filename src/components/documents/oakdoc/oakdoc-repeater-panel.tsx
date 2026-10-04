@@ -16,6 +16,7 @@ import {
   OAKDOC_CONTACTS_REPEATER_TAG,
   OAKDOC_OFFICERS_REPEATER_TAG,
   OAKDOC_OFFICER_ROLE_FILTERS,
+  canOakDocRepeaterSplitDocuments,
   formatOakDocOfficerRoles,
   isOakDocContactsRepeaterTag,
   oakDocContactListNameFromSlug,
@@ -57,6 +58,11 @@ export interface OakDocRepeaterPanelProps {
    */
   sections?: OakDocRepeaterSections;
   onSectionsChange?: (sections: OakDocRepeaterSections) => void;
+  /**
+   * Templates: with onSectionsChange, a directors, shareholders, officers or
+   * contacts section can be switched to make a separate document per person.
+   */
+  allowPerPerson?: boolean;
   /** Panel search; matching section fields show while it is set. */
   query?: string;
   /**
@@ -113,6 +119,7 @@ export function OakDocRepeaterPanel({
   onLetteredChange,
   sections = NO_SECTIONS,
   onSectionsChange,
+  allowPerPerson = false,
   query = '',
   selectedKey: controlledKey,
   onSelect,
@@ -149,6 +156,10 @@ export function OakDocRepeaterPanel({
   const setName = (tag: string, name: string) => onSectionsChange?.({
     ...sections,
     names: { ...sections.names, [tag]: name },
+  });
+  const setPerPerson = (tag: string, perPerson: boolean) => onSectionsChange?.({
+    ...sections,
+    perPersonTag: perPerson ? tag : sections.perPersonTag === tag ? null : sections.perPersonTag ?? null,
   });
   const setShortlist = (tag: string, contacts: OakDocCustomFieldContact[]) => onSectionsChange?.({
     ...sections,
@@ -263,6 +274,7 @@ export function OakDocRepeaterPanel({
                               <Repeat className="h-3.5 w-3.5 shrink-0 text-oak-primary" aria-hidden="true" />
                               <span className="min-w-0 text-xs font-medium text-text-primary">
                                 {name ? `${name} · ${kindLabel}` : kindLabel}
+                                {sections.perPersonTag === tag ? ' · one document each' : ''}
                               </span>
                             </button>
                             {selected ? (
@@ -292,6 +304,22 @@ export function OakDocRepeaterPanel({
                                     >
                                       Shortlist
                                     </Button>
+                                  </div>
+                                ) : null}
+                                {canName && allowPerPerson && canOakDocRepeaterSplitDocuments(tag) ? (
+                                  <div className="flex items-center gap-1 text-text-muted">
+                                    <Toggle
+                                      size="sm"
+                                      label="Separate document for each person"
+                                      checked={sections.perPersonTag === tag}
+                                      onChange={(perPerson) => setPerPerson(tag, perPerson)}
+                                      disabled={disabled}
+                                      className="min-w-0 flex-1"
+                                    />
+                                    <InfoTip
+                                      label="About separate documents"
+                                      content="Configure makes one document for each person picked, and this section prints only that person. One section per template can do this; turning it on here turns it off elsewhere."
+                                    />
                                   </div>
                                 ) : null}
                                 {onLetteredChange ? (

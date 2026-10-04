@@ -31,6 +31,7 @@ export const OAKDOC_DATE_FORMAT_OPTIONS: readonly string[] = [
   'd MMMM yyyy',
   'dd MMMM yyyy',
   'MMMM d, yyyy',
+  'do MMMM yyyy',
   'yyyy-MM-dd',
 ];
 
@@ -38,13 +39,14 @@ export function isOakDocFieldCase(value: unknown): value is OakDocFieldCase {
   return value === 'upper' || value === 'title';
 }
 
-const DATE_TOKEN = /yyyy|yy|MMMM|MMM|MM|M|dd|d/g;
+const DATE_TOKEN = /yyyy|yy|MMMM|MMM|MM|M|do|dd|d/g;
 const DATE_SEPARATORS = /^[\s/.,-]*$/;
 
 /**
  * A date format as Word writes it ("dd/MM/yyyy"), from what a person typed:
  * "dd/mm/yyyy", "D MMM YYYY"... Months are M (there is no time of day), days
- * d, years yy or yyyy, between spaces, slashes, dots, commas or dashes.
+ * d (do for "3rd"), years yy or yyyy, between spaces, slashes, dots, commas
+ * or dashes.
  * Null when it is not a date format.
  */
 export function normalizeOakDocDateFormat(input: string): string | null {

@@ -75,4 +75,22 @@ describe('OakDoc field text case', () => {
     writeOakDocControlValue(slashed, '4 October 2026', { isoDate: '2026-10-04' });
     expect(slashed.textContent).toBe('04/10/2026');
   });
+
+  it('prints the day as an ordinal with do', () => {
+    expect(normalizeOakDocDateFormat('do MMMM yyyy')).toBe('do MMMM yyyy');
+    expect(normalizeOakDocDateFormat('MMMM, yyyy')).toBe('MMMM, yyyy');
+    const write = (iso: string) => {
+      const sdt = control('Appointment date · do');
+      writeOakDocControlValue(sdt, iso, { isoDate: iso });
+      return sdt.textContent;
+    };
+    expect(write('2026-10-01')).toBe('1st');
+    expect(write('2026-10-02')).toBe('2nd');
+    expect(write('2026-10-03')).toBe('3rd');
+    expect(write('2026-10-11')).toBe('11th');
+    expect(write('2026-10-12')).toBe('12th');
+    expect(write('2026-10-13')).toBe('13th');
+    expect(write('2026-10-22')).toBe('22nd');
+    expect(write('2026-10-31')).toBe('31st');
+  });
 });

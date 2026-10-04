@@ -92,6 +92,32 @@ describe('OakDocRepeaterPanel', () => {
     expect(onLetteredChange).toHaveBeenCalledWith('repeat.officers.secretary', true);
   });
 
+  it('switches a section to one document per person, on templates only', async () => {
+    const user = userEvent.setup();
+    const onSectionsChange = vi.fn();
+    const sections: OakDocRepeaterSections = { names: {}, shortlists: {}, perPersonTag: 'repeat.officers.secretary' };
+    panel({ repeaterTags: ['repeat.directors', 'repeat.officers.secretary', 'repeat.signers'], sections, onSectionsChange, allowPerPerson: true });
+    const directors = screen.getByRole('list', { name: 'Directors sections' });
+    await user.click(within(directors).getByRole('button', { name: 'Directors' }));
+    const toggle = within(directors).getByRole('switch', { name: 'Separate document for each person' });
+    expect(toggle).toHaveAttribute('aria-checked', 'false');
+    await user.click(toggle);
+    // One section per template: switching it on here moves it from the secretary section.
+    expect(onSectionsChange).toHaveBeenLastCalledWith({ ...sections, perPersonTag: 'repeat.directors' });
+    expect(screen.getByText(/Officers \(Secretary\) · one document each/)).toBeInTheDocument();
+    const signers = screen.getByRole('list', { name: 'Signers sections' });
+    await user.click(within(signers).getByRole('button', { name: 'Signers' }));
+    expect(within(signers).queryByRole('switch', { name: 'Separate document for each person' })).not.toBeInTheDocument();
+  });
+
+  it('offers no per-person switch in partials', async () => {
+    const user = userEvent.setup();
+    panel({ repeaterTags: ['repeat.directors'], sections: { names: {}, shortlists: {} }, onSectionsChange: vi.fn() });
+    const directors = screen.getByRole('list', { name: 'Directors sections' });
+    await user.click(within(directors).getByRole('button', { name: 'Directors' }));
+    expect(within(directors).queryByRole('switch', { name: 'Separate document for each person' })).not.toBeInTheDocument();
+  });
+
   it('shows a lettered section switched on', async () => {
     const user = userEvent.setup();
     panel({ repeaterTags: ['repeat.directors'], letteredTags: ['repeat.directors'], onLetteredChange: vi.fn() });
