@@ -47,8 +47,11 @@ export {
 };
 
 const DOCUMENT_PART = 'word/document.xml';
-/** Heading text starts 1 cm in, after "N." and a tab. */
-const HEADING_TAB_TWIPS = 567;
+/**
+ * Heading text starts after "N." and a tab, one editor indent step (0.5 in)
+ * in, so it lines up with partial text indented once in OakDoc.
+ */
+const HEADING_TAB_TWIPS = 720;
 
 /** Word's schema order for the paragraph properties this module adds. */
 const PARAGRAPH_PROPERTY_ORDER = [
