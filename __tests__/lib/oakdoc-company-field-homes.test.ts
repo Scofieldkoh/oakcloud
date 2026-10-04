@@ -108,6 +108,21 @@ describe('detectMissingCompanyFields', () => {
     // Worked-out values such as the secondary activity are not flagged.
   });
 
+  it('asks only for the first FYE when the year end is missing too', () => {
+    const result = detectMissingCompanyFields({
+      tags: ['company.financialYearEnd', 'company.firstFinancialYearEnd'],
+      values: { 'company.financialYearEnd': '', 'company.firstFinancialYearEnd': '' },
+    });
+    expect(result.fillable.map((field) => [field.home.id, field.tags])).toEqual([
+      ['firstFinancialYearEnd', ['company.firstFinancialYearEnd', 'company.financialYearEnd']],
+    ]);
+    // A template printing only the year end still asks for its day and month.
+    expect(detectMissingCompanyFields({
+      tags: ['company.financialYearEnd'],
+      values: { 'company.financialYearEnd': '' },
+    }).fillable.map((field) => field.home.id)).toEqual(['financialYearEnd']);
+  });
+
   it('does not flag an optional address part when the address is on record', () => {
     const result = detectMissingCompanyFields({
       tags: ['company.address.level'],
@@ -163,5 +178,7 @@ describe('applyCompanyFieldValues', () => {
     const blankFirst = applyCompanyFieldValues(company, { firstFinancialYearEnd: '2026-06-30' });
     expect(buildOakDocResolutionValues({ company: blankFirst, fieldTags })['company.firstFinancialYearEnd']).toBe('30 Jun 2026');
     expect(applyCompanyFieldValues(company, undefined)).toBe(company);
+    // With no year end on record, it is taken from the first FYE.
+    expect(buildOakDocResolutionValues({ company: blankFirst, fieldTags })['company.financialYearEnd']).toBe('30 June');
   });
 });

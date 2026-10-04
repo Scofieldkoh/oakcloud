@@ -96,6 +96,9 @@ describe('company document field values', () => {
   });
 
   it('saves the first FYE as the first confirmed financial period, as the Compliance card does', async () => {
+    mocks.getSection.mockResolvedValue({
+      section: 'compliance', version: 'v1', data: { ...compliance, financialYearEndDay: 31, financialYearEndMonth: 12 },
+    });
     const result = await saveCompanyDocumentField({ ...args, fieldId: 'firstFinancialYearEnd', value: '2025-12-31' });
     expect(mocks.confirmFirstFye).toHaveBeenCalledWith(
       { tenantId: 'tenant-1', companyId: 'company-1', userId: 'user-1' },
@@ -103,6 +106,17 @@ describe('company document field values', () => {
     );
     expect(mocks.saveSection).not.toHaveBeenCalled();
     expect(result).toMatchObject({ fieldId: 'firstFinancialYearEnd', value: '2025-12-31' });
+  });
+
+  it('also records the financial year end from the first FYE when the company has none', async () => {
+    await saveCompanyDocumentField({ ...args, fieldId: 'firstFinancialYearEnd', value: '2026-06-30' });
+    expect(mocks.confirmFirstFye).toHaveBeenCalledWith(expect.anything(), '2026-06-30');
+    expect(mocks.saveSection).toHaveBeenCalledWith(expect.objectContaining({
+      section: 'compliance',
+      ifMatchVersion: 'v1',
+      data: expect.objectContaining({ financialYearEndDay: 30, financialYearEndMonth: 6 }),
+    }));
+    expect(mocks.saveSection.mock.calls[0][0].data).not.toHaveProperty('firstFinancialYearEndDate');
   });
 
   it('fills a missing registered address without touching the mailing address', async () => {

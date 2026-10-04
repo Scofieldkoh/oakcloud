@@ -26,6 +26,12 @@ function roleLabel(officer: DocumentParty): string {
   return formatOakDocRole(officer.role ?? officer.detail);
 }
 
+/** The role as the director list shows it, e.g. "SECRETARY". */
+function detailRole(officer: DocumentParty): string | null {
+  const role = (officer.role ?? officer.detail)?.replace(/_/g, ' ').trim();
+  return role ? role.toUpperCase() : null;
+}
+
 /**
  * Officers listed once per person. A person holding several of the offered
  * roles has a role dropdown choosing which appointment prints; the ticked id
@@ -60,9 +66,13 @@ export function OfficerChoiceList({
     () => new Map(rows.map((row) => [row.chosen.id, row])),
     [rows],
   );
-  // The role shows in its own column, not in the details line.
+  // A one-role person shows the role in the details line, like the director
+  // and shareholder lists; a person with several roles picks it in a dropdown.
   const options = useMemo(
-    () => rows.map(({ chosen }) => ({ ...chosen, detail: null })),
+    () => rows.map(({ person, chosen }) => ({
+      ...chosen,
+      detail: person.records.length < 2 ? detailRole(chosen) : null,
+    })),
     [rows],
   );
 
@@ -93,13 +103,7 @@ export function OfficerChoiceList({
         const row = rowByRecordId.get(option.id);
         if (!row) return null;
         const { person, chosen } = row;
-        if (person.records.length < 2) {
-          return (
-            <span className={`flex h-8 items-center truncate px-3 text-sm text-text-secondary ${ROLE_COLUMN_CLASS}`}>
-              {roleLabel(chosen)}
-            </span>
-          );
-        }
+        if (person.records.length < 2) return null;
         return (
           <SearchableSelect
             options={person.records.map((record) => ({ value: record.id, label: roleLabel(record) }))}

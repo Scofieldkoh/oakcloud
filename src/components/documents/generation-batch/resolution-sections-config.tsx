@@ -272,6 +272,14 @@ export function ResolutionSectionsConfig({
           ? `${workspace.sections.length} resolution${workspace.sections.length === 1 ? '' : 's'}`
           : workspace.sections.length === 0 ? 'At least one resolution required' : `${issues.length} to fix`,
       }}
+      action={templateId && templateName ? (
+        <ResolutionPresetActions
+          templateId={templateId}
+          templateName={templateName}
+          value={workspace}
+          disabled={disabled || issues.length > 0}
+        />
+      ) : undefined}
     >
       <div className="space-y-4">
         <FormInput
@@ -465,14 +473,6 @@ export function ResolutionSectionsConfig({
           </Button>
         </div>
 
-        {templateId && templateName ? (
-          <ResolutionPresetActions
-            templateId={templateId}
-            templateName={templateName}
-            value={workspace}
-            disabled={disabled || issues.length > 0}
-          />
-        ) : null}
       </div>
     </BatchSection>
   );

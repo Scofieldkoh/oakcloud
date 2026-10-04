@@ -263,6 +263,10 @@ export function SearchableSelect({
           }
           break;
         case 'Tab':
+          // Typing until one option is left, then Tab, picks it (focus still moves on).
+          if (isOpen && search.trim() && filteredOptions.length === 1) {
+            handleSelect(filteredOptions[0].value);
+          }
           setIsOpen(false);
           break;
         case 'Escape':
@@ -270,7 +274,7 @@ export function SearchableSelect({
           break;
       }
     },
-    [isOpen, filteredOptions, highlightedIndex, handleSelect]
+    [isOpen, filteredOptions, highlightedIndex, handleSelect, search]
   );
 
   const sizeClasses = {

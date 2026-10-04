@@ -277,7 +277,8 @@ describe('BatchItemConfigurator', () => {
       expect(screen.getAllByRole('checkbox')).toHaveLength(2);
       expect(screen.getByRole('combobox', { name: 'Role for Jane Ng' })).toHaveValue('Director');
       expect(screen.queryByRole('combobox', { name: 'Role for Sam Lee' })).not.toBeInTheDocument();
-      expect(screen.getByText('Secretary')).toBeInTheDocument();
+      // A one-role person shows the role under the name, like the director list.
+      expect(screen.getByText('SECRETARY')).toBeInTheDocument();
 
       // Ticking prints the first role.
       await user.click(screen.getByRole('checkbox', { name: /Jane Ng/ }));
