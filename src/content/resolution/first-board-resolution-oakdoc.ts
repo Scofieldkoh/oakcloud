@@ -7,12 +7,8 @@ import { BOARD_RESOLUTION_PLACEHOLDERS, buildDirectorsResolutionOakDocMaster } f
 import {
   ARIAL_10,
   ControlIds,
-  field,
   packageOakDoc,
-  paragraph,
   repeatingSection,
-  run,
-  tabRun,
   wordWriter,
 } from './resolution-oakdoc-xml';
 
@@ -51,6 +47,9 @@ export const FIRST_BOARD_RESOLUTION_PLACEHOLDERS: PlaceholderDefinition[] = [
 /** Underlines the heading text after "N.<tab>", as in the reference. */
 const HEADING_STYLE = `
   <w:style w:type="character" w:customStyle="1" w:styleId="${OAKDOC_RESOLUTION_HEADING_STYLE}"><w:name w:val="Resolution Heading"/><w:rPr><w:u w:val="single"/></w:rPr></w:style>`;
+
+/** The whole template, master and partials, prints in Arial 10 pt. */
+const { run, tabRun, paragraph, field } = wordWriter(ARIAL_10);
 
 const SECONDARY_ACTIVITY_PARAGRAPH = '1F2A0001';
 
@@ -101,7 +100,11 @@ function noted(ids: ControlIds): string[] {
 /** The First Board Resolution master; the secondary activity line prints only when there is one. */
 export function buildFirstBoardResolutionOakDocMaster(): Uint8Array {
   const ids = new ControlIds();
-  const bytes = buildDirectorsResolutionOakDocMaster({ beforeResolutions: noted(ids), extraStyles: HEADING_STYLE }, ids);
+  const bytes = buildDirectorsResolutionOakDocMaster({
+    beforeResolutions: noted(ids),
+    extraStyles: HEADING_STYLE,
+    typeface: ARIAL_10,
+  }, ids);
   return createOakDocCondition({
     docxBytes: bytes,
     fromParaId: SECONDARY_ACTIVITY_PARAGRAPH,
@@ -121,18 +124,11 @@ export interface SeedResolutionPartial {
   build: () => Uint8Array;
 }
 
-/** Partials print in Arial 10 pt. */
-const {
-  run: partialRun,
-  paragraph: partialParagraph,
-  field: partialField,
-} = wordWriter(ARIAL_10);
-
 const partialText = { align: 'both' as const, after: 0 };
 
 /** A partial package; each ends with an empty line, which spaces it from the next resolution. */
 function partialPackage(blocks: (ids: ControlIds) => string[]): Uint8Array {
-  const body = [...blocks(new ControlIds(9500)), partialParagraph('', { after: 0 })];
+  const body = [...blocks(new ControlIds(9500)), paragraph('', { after: 0 })];
   return packageOakDoc(body.join('\n    '), { typeface: ARIAL_10 });
 }
 
@@ -152,14 +148,14 @@ function subscriberTable(ids: ControlIds): string {
   const widths = [5026, 4000];
   const cell = (width: number, content: string) =>
     `<w:tc><w:tcPr><w:tcW w:w="${width}" w:type="dxa"/></w:tcPr>${content}</w:tc>`;
-  const cellParagraph = (content: string, align: 'left' | 'center') => partialParagraph(content, { align, after: 0 });
+  const cellParagraph = (content: string, align: 'left' | 'center') => paragraph(content, { align, after: 0 });
   const header = `<w:tr><w:trPr><w:tblHeader/></w:trPr>${[
-    cell(widths[0], cellParagraph(partialRun('Subscriber’s Name', { bold: true, underline: true }), 'center')),
-    cell(widths[1], cellParagraph(partialRun('No. of Ordinary Shares Allotted', { bold: true, underline: true }), 'center')),
+    cell(widths[0], cellParagraph(run('Subscriber’s Name', { bold: true, underline: true }), 'center')),
+    cell(widths[1], cellParagraph(run('No. of Ordinary Shares Allotted', { bold: true, underline: true }), 'center')),
   ].join('')}</w:tr>`;
   const row = `<w:tr>${[
-    cell(widths[0], cellParagraph(partialField(ids, 'shareholder.name', 'Shareholder Name', 'Shareholder Name'), 'left')),
-    cell(widths[1], cellParagraph(partialField(ids, 'shareholder.numberOfShares', 'Number of Shares', '1,000'), 'center')),
+    cell(widths[0], cellParagraph(field(ids, 'shareholder.name', 'Shareholder Name', 'Shareholder Name'), 'left')),
+    cell(widths[1], cellParagraph(field(ids, 'shareholder.numberOfShares', 'Number of Shares', '1,000'), 'center')),
   ].join('')}</w:tr>`;
   return [
     '<w:tbl><w:tblPr><w:tblW w:w="9026" w:type="dxa"/>',
@@ -190,10 +186,10 @@ export const FIRST_BOARD_RESOLUTION_PARTIALS: readonly SeedResolutionPartial[] =
       options: CONSTITUTION_OPTIONS,
     }],
     build: () => partialPackage((ids) => [
-      partialParagraph([
-        partialRun('RESOLVED that the Company shall adopt '),
-        partialField(ids, `custom.${CONSTITUTION_KEY}`, 'Constitution adopted', CONSTITUTION_OPTIONS[0]),
-        partialRun('.'),
+      paragraph([
+        run('RESOLVED that the Company shall adopt '),
+        field(ids, `custom.${CONSTITUTION_KEY}`, 'Constitution adopted', CONSTITUTION_OPTIONS[0]),
+        run('.'),
       ].join(''), partialText),
     ]),
   },
@@ -202,10 +198,10 @@ export const FIRST_BOARD_RESOLUTION_PARTIALS: readonly SeedResolutionPartial[] =
     displayName: 'First Resolution - Registered Address',
     header: 'REGISTERED ADDRESS',
     build: () => partialPackage((ids) => [
-      partialParagraph([
-        partialRun('the registered address of the Company situated at '),
-        partialField(ids, 'company.registeredAddress', 'Full Address', '123 SAMPLE STREET, SINGAPORE 123456', { bold: true, caps: true }),
-        partialRun(' since the date of incorporation be hereby confirmed.'),
+      paragraph([
+        run('the registered address of the Company situated at '),
+        field(ids, 'company.registeredAddress', 'Full Address', '123 SAMPLE STREET, SINGAPORE 123456', { bold: true, caps: true }),
+        run(' since the date of incorporation be hereby confirmed.'),
       ].join(''), partialText),
     ]),
   },
@@ -214,12 +210,12 @@ export const FIRST_BOARD_RESOLUTION_PARTIALS: readonly SeedResolutionPartial[] =
     displayName: 'First Resolution - Company’s Financial Year End',
     header: 'COMPANY’S FINANCIAL YEAR END',
     build: () => partialPackage((ids) => [
-      partialParagraph([
-        partialRun('the financial year end of the Company be fixed on '),
-        partialField(ids, 'company.financialYearEnd', 'Financial Year End', '31 December', bold),
-        partialRun(' with its first financial year end to be '),
-        partialField(ids, 'company.firstFinancialYearEnd', 'First Financial Year End', '31 December 2026', bold, 'd MMMM yyyy'),
-        partialRun('.'),
+      paragraph([
+        run('the financial year end of the Company be fixed on '),
+        field(ids, 'company.financialYearEnd', 'Financial Year End', '31 December', bold),
+        run(' with its first financial year end to be '),
+        field(ids, 'company.firstFinancialYearEnd', 'First Financial Year End', '31 December 2026', bold, 'd MMMM yyyy'),
+        run('.'),
       ].join(''), partialText),
     ]),
   },
@@ -228,12 +224,12 @@ export const FIRST_BOARD_RESOLUTION_PARTIALS: readonly SeedResolutionPartial[] =
     displayName: 'First Resolution - Appointment of Secretary',
     header: 'APPOINTMENT OF SECRETARY',
     build: () => partialPackage((ids) => [
-      repeatingSection(ids, oakDocOfficersRepeaterTag(['SECRETARY']), 'Secretary', partialParagraph([
-        partialRun('the appointment of '),
-        partialField(ids, 'officer.name', 'Officer Name', 'SECRETARY NAME', { bold: true, caps: true }),
-        partialRun(' ('),
-        partialField(ids, 'officer.identificationNumber', 'Officer Identification Number', 'S1234567A', bold),
-        partialRun(') as Secretary of the Company be hereby approved with effect from the date of consent to act.'),
+      repeatingSection(ids, oakDocOfficersRepeaterTag(['SECRETARY']), 'Secretary', paragraph([
+        run('the appointment of '),
+        field(ids, 'officer.name', 'Officer Name', 'SECRETARY NAME', { bold: true, caps: true }),
+        run(' ('),
+        field(ids, 'officer.identificationNumber', 'Officer Identification Number', 'S1234567A', bold),
+        run(') as Secretary of the Company be hereby approved with effect from the date of consent to act.'),
       ].join(''), partialText)),
     ]),
   },
@@ -242,10 +238,10 @@ export const FIRST_BOARD_RESOLUTION_PARTIALS: readonly SeedResolutionPartial[] =
     displayName: 'First Resolution - Corporate Service Provider',
     header: 'CORPORATE SERVICE PROVIDER',
     build: () => partialPackage(() => [
-      partialParagraph([
-        partialRun('that '),
-        partialRun('OAKTREE ACCOUNTING & CORPORATE SOLUTIONS PTE. LTD. (202437906H)', bold),
-        partialRun(' be hereby appointed as corporate secretarial agent of the Company with effect from the date enumerated in the service agreement.'),
+      paragraph([
+        run('that '),
+        run('OAKTREE ACCOUNTING & CORPORATE SOLUTIONS PTE. LTD. (202437906H)', bold),
+        run(' be hereby appointed as corporate secretarial agent of the Company with effect from the date enumerated in the service agreement.'),
       ].join(''), partialText),
     ]),
   },
@@ -254,10 +250,10 @@ export const FIRST_BOARD_RESOLUTION_PARTIALS: readonly SeedResolutionPartial[] =
     displayName: 'First Resolution - Subscribers’ Shares',
     header: 'SUBSCRIBERS’ SHARES',
     build: () => partialPackage((ids) => [
-      partialParagraph([
-        partialRun('that the allotment of subscribers’ shares for a total consideration of '),
-        partialField(ids, 'company.paidUpCapital', 'Paid-up Capital', 'SGD 10,000.00', bold),
-        partialRun(' by virtue of Section 63 of the Companies Act 1967 to the subscribers to the Constitution of the Company, listed below, be hereby confirmed.'),
+      paragraph([
+        run('that the allotment of subscribers’ shares for a total consideration of '),
+        field(ids, 'company.paidUpCapital', 'Paid-up Capital', 'SGD 10,000.00', bold),
+        run(' by virtue of Section 63 of the Companies Act 1967 to the subscribers to the Constitution of the Company, listed below, be hereby confirmed.'),
       ].join(''), { ...partialText, after: 120 }),
       subscriberTable(ids),
     ]),
@@ -267,7 +263,7 @@ export const FIRST_BOARD_RESOLUTION_PARTIALS: readonly SeedResolutionPartial[] =
     displayName: 'First Resolution - Notification and Lodgement',
     header: 'NOTIFICATION AND LODGEMENT',
     build: () => partialPackage(() => [
-      partialParagraph(partialRun('that all necessary documents and forms be completed, signed and lodged with the Accounting and Corporate Regulatory Authority.'), partialText),
+      paragraph(run('that all necessary documents and forms be completed, signed and lodged with the Accounting and Corporate Regulatory Authority.'), partialText),
     ]),
   },
 ];

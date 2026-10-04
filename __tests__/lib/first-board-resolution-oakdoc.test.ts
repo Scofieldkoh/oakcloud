@@ -101,6 +101,8 @@ describe('First Board Resolution starter', () => {
   it('builds a master and partials OakDoc accepts, using only known fields', () => {
     const master = buildFirstBoardResolutionOakDocMaster();
     expect(() => inspectOakDocPackage(master, 'master')).not.toThrow();
+    expect(documentXml(master)).not.toContain('Times New Roman');
+    expect(documentXml(master)).not.toContain('w:val="22"');
     expect(diagnoseOakDocTags(deriveOakDocTemplateFieldTags(master), 'render')).toEqual([]);
     expect(inspectOakDocConditions(master).fieldTags).toEqual(['company.secondaryActivity']);
     for (const partial of FIRST_BOARD_RESOLUTION_PARTIALS) {
