@@ -36,6 +36,7 @@ import {
   nameOakDocRepeaterItems,
   OAKDOC_REPEATER_DEFINITIONS,
   removeOakDocRepeater,
+  setOakDocRepeaterLettering,
   type OakDocRepeaterDefinition,
   type OakDocRepeaterSummary,
 } from '@/lib/document-editor/oakdoc-repeaters';
@@ -341,6 +342,7 @@ export function OakDocEditor() {
   const [repeaterSummary, setRepeaterSummary] = useState<OakDocRepeaterSummary>({
     count: 0,
     tags: [],
+    letteredTags: [],
   });
   const [conditionSummary, setConditionSummary] = useState<OakDocConditionSummary>({
     count: 0,
@@ -725,6 +727,25 @@ export function OakDocEditor() {
       setIsDirty(true);
     } catch (error) {
       setStatus(error instanceof Error ? error.message : 'Could not remove repeating section.');
+      setStatusKind('error');
+    } finally {
+      setBusy(false);
+    }
+  }, [currentDocxBytes, replaceDocument, setIsDirty]);
+
+  const setRepeaterLettering = useCallback(async (tag: string, lettered: boolean) => {
+    setBusy(true);
+    try {
+      const bytes = await currentDocxBytes();
+      replaceDocument(
+        setOakDocRepeaterLettering({ docxBytes: bytes, tag, lettered }),
+        lettered
+          ? 'Each person in this section is lettered (a), (b) when more than one is listed.'
+          : 'This section is no longer lettered.',
+      );
+      setIsDirty(true);
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : 'Could not change the lettering.');
       setStatusKind('error');
     } finally {
       setBusy(false);
@@ -1369,8 +1390,10 @@ export function OakDocEditor() {
               }}
               repeaterTags={repeaterSummary.tags}
               repeaterCount={repeaterSummary.count}
+              letteredRepeaterTags={repeaterSummary.letteredTags}
               onAddRepeater={(definition) => void addRepeater(definition)}
               onRemoveRepeaterAtCaret={() => void removeRepeaterAtCaret()}
+              onRepeaterLetteringChange={(tag, lettered) => void setRepeaterLettering(tag, lettered)}
               sections={repeaterSections}
               onSectionsChange={(next) => {
                 setRepeaterSections(next);

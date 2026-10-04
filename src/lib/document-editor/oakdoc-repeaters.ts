@@ -9,6 +9,7 @@ import {
   nameOakDocRepeaterItems,
   removeOakDocGenericRepeater,
   resolveOakDocGenericRepeaters,
+  setOakDocGenericRepeaterLettering,
 } from '@/lib/document-editor/oakdoc-generic-repeaters';
 import {
   OAKDOC_GENERIC_REPEATER_BY_TAG,
@@ -26,6 +27,8 @@ export type OakDocRepeaterDefinition = OakDocGenericRepeaterDefinition;
 export interface OakDocRepeaterSummary {
   count: number;
   tags: string[];
+  /** Tags of sections lettered (a), (b) when more than one is listed. */
+  letteredTags: string[];
 }
 
 export const OAKDOC_REPEATER_DEFINITIONS = OAKDOC_GENERIC_REPEATER_DEFINITIONS;
@@ -38,6 +41,7 @@ export const isOakDocRepeaterOuterTag = isOakDocRepeaterTag;
 export const createOakDocRepeater = createOakDocGenericRepeater;
 export const removeOakDocRepeater = removeOakDocGenericRepeater;
 export const inspectOakDocRepeaters = inspectOakDocGenericRepeaters;
+export const setOakDocRepeaterLettering = setOakDocGenericRepeaterLettering;
 export { nameOakDocRepeaterItems };
 
 export function resolveOakDocRepeaters(input: {

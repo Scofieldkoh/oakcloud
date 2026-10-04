@@ -14,6 +14,12 @@ import {
 } from '@/lib/document-editor/oakdoc-blocks';
 import { writeOakDocControlValue } from '@/lib/document-editor/oakdoc-fields';
 import {
+  isOakDocRepeaterLettered,
+  letterOakDocRepeaterItem,
+  oakDocRepeaterAliasName,
+  setOakDocRepeaterLetteredAlias,
+} from '@/lib/document-editor/oakdoc-repeater-lettering';
+import {
   formatOakDocOfficerRoles,
   isOakDocRepeaterTag,
   oakDocContactListNameFromSlug,
@@ -162,7 +168,7 @@ export function nameOakDocRepeaterItems(docxBytes: Uint8Array): Uint8Array {
     const definition = oakDocRepeaterDefinitionForTag(tag);
     const content = wordChild(repeater, 'sdtContent');
     if (!definition || !content || !isRepeatingSection(repeater)) continue;
-    const name = controlAlias(repeater) || repeaterName(definition, tag);
+    const name = oakDocRepeaterAliasName(controlAlias(repeater)) || repeaterName(definition, tag);
     for (const item of wordChildren(content)) {
       const pr = isWordElement(item, 'sdt') && isRepeatingItem(item) ? properties(item) : undefined;
       if (!pr || controlAlias(item)) continue;
@@ -386,7 +392,10 @@ export function resolveOakDocGenericRepeaters(input: {
     const itemContent = item ? wordChild(item, 'sdtContent') : undefined;
     if (!itemContent) continue;
 
-    for (const values of definition.generationDataAdapter(input.data, tag)) {
+    const items = definition.generationDataAdapter(input.data, tag);
+    // Lettered sections letter each copy only when there is more than one.
+    const lettered = items.length > 1 && isOakDocRepeaterLettered(repeater);
+    for (const [index, values] of items.entries()) {
       const clones: Node[] = [];
       for (const templateNode of Array.from(itemContent.childNodes)) {
         const clone = templateNode.cloneNode(true);
@@ -396,6 +405,7 @@ export function resolveOakDocGenericRepeaters(input: {
         parent.insertBefore(clone, repeater);
         clones.push(clone);
       }
+      if (lettered) letterOakDocRepeaterItem(clones, index);
       keepItemTogether(clones);
       itemsCreated += 1;
     }
@@ -451,20 +461,48 @@ export function removeOakDocGenericRepeater(input: {
 }
 
 
+/**
+ * Turn "(a), (b)" lettering on or off for every repeating section with
+ * this tag. Returns the original bytes when nothing changes.
+ */
+export function setOakDocGenericRepeaterLettering(input: {
+  docxBytes: Uint8Array;
+  tag: string;
+  lettered: boolean;
+}): Uint8Array {
+  const files = unzipSync(input.docxBytes);
+  const part = files[DOCUMENT_PART];
+  const definition = oakDocRepeaterDefinitionForTag(input.tag);
+  if (!part || !definition) return input.docxBytes;
+  const xml = parseXml(part);
+  let changed = 0;
+  for (const repeater of Array.from(xml.getElementsByTagNameNS(WORD_NS, 'sdt'))) {
+    if (controlTag(repeater) !== input.tag || !isRepeatingSection(repeater)) continue;
+    if (isOakDocRepeaterLettered(repeater) === input.lettered) continue;
+    setOakDocRepeaterLetteredAlias(repeater, input.lettered, repeaterName(definition, input.tag));
+    changed += 1;
+  }
+  if (changed === 0) return input.docxBytes;
+  files[DOCUMENT_PART] = serializeXml(xml);
+  return zipSync(files, { level: 6 });
+}
+
 export function inspectOakDocGenericRepeaters(
   docxBytes: Uint8Array,
-): { count: number; tags: string[] } {
+): { count: number; tags: string[]; letteredTags: string[] } {
   const files = unzipSync(docxBytes);
   const part = files[DOCUMENT_PART];
-  if (!part) return { count: 0, tags: [] };
+  if (!part) return { count: 0, tags: [], letteredTags: [] };
 
   const xml = parseXml(part);
-  const tags = Array.from(xml.getElementsByTagNameNS(WORD_NS, 'sdt'))
-    .filter((sdt) => isOakDocRepeaterTag(controlTag(sdt)) && isRepeatingSection(sdt))
-    .map(controlTag);
+  const repeaters = Array.from(xml.getElementsByTagNameNS(WORD_NS, 'sdt'))
+    .filter((sdt) => isOakDocRepeaterTag(controlTag(sdt)) && isRepeatingSection(sdt));
+  const tags = repeaters.map(controlTag);
+  const lettered = repeaters.filter(isOakDocRepeaterLettered).map(controlTag);
 
   return {
     count: tags.length,
     tags: Array.from(new Set(tags)).sort(),
+    letteredTags: Array.from(new Set(lettered)).sort(),
   };
 }

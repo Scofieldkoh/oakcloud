@@ -80,6 +80,26 @@ describe('OakDocRepeaterPanel', () => {
     expect(within(sections).getByText('Officers (Secretary)')).toBeInTheDocument();
   });
 
+  it('switches lettering (a), (b) on a section in the document', async () => {
+    const user = userEvent.setup();
+    const onLetteredChange = vi.fn();
+    panel({ repeaterTags: ['repeat.officers.secretary'], letteredTags: [], onLetteredChange });
+    const sections = screen.getByRole('list', { name: 'Officers sections' });
+    await user.click(within(sections).getByRole('button', { name: 'Officers (Secretary)' }));
+    const toggle = within(sections).getByRole('switch', { name: 'Letter each one (a), (b)' });
+    expect(toggle).toHaveAttribute('aria-checked', 'false');
+    await user.click(toggle);
+    expect(onLetteredChange).toHaveBeenCalledWith('repeat.officers.secretary', true);
+  });
+
+  it('shows a lettered section switched on', async () => {
+    const user = userEvent.setup();
+    panel({ repeaterTags: ['repeat.directors'], letteredTags: ['repeat.directors'], onLetteredChange: vi.fn() });
+    const sections = screen.getByRole('list', { name: 'Directors sections' });
+    await user.click(within(sections).getByRole('button', { name: 'Directors' }));
+    expect(within(sections).getByRole('switch', { name: 'Letter each one (a), (b)' })).toHaveAttribute('aria-checked', 'true');
+  });
+
   it('opens a section in the document to add its fields', async () => {
     const user = userEvent.setup();
     const props = panel({ repeaterTags: ['repeat.directors'], fieldTags: ['director.name'] });

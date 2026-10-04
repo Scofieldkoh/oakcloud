@@ -74,6 +74,7 @@ describe('OakDoc repeating sections', () => {
     expect(inspectOakDocRepeaters(created.bytes)).toEqual({
       count: 1,
       tags: ['repeat.directors'],
+      letteredTags: [],
     });
     expect(documentXml(created.bytes)).toContain('w15:repeatingSection');
 

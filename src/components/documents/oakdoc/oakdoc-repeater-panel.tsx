@@ -5,6 +5,7 @@ import { Repeat, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CollapsibleSection } from '@/components/ui/collapsible-section';
 import { InfoTip } from '@/components/ui/info-tip';
+import { Toggle } from '@/components/ui/toggle';
 import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
 import { OakDocContactShortlistPicker } from '@/components/documents/oakdoc/oakdoc-contact-shortlist-picker';
 import {
@@ -47,6 +48,9 @@ export interface OakDocRepeaterPanelProps {
   onAdd: (definition: OakDocRepeaterDefinition) => void;
   onRemoveAtCaret: () => void;
   onAssignField: (field: OakDocFieldDefinition) => void;
+  /** Tags of sections lettered (a), (b); with onLetteredChange the author can switch it. */
+  letteredTags?: readonly string[];
+  onLetteredChange?: (tag: string, lettered: boolean) => void;
   /**
    * Names of the document's sections and shortlists of its contacts lists;
    * with onSectionsChange the author can name sections and edit shortlists.
@@ -105,6 +109,8 @@ export function OakDocRepeaterPanel({
   onAdd,
   onRemoveAtCaret,
   onAssignField,
+  letteredTags = [],
+  onLetteredChange,
   sections = NO_SECTIONS,
   onSectionsChange,
   query = '',
@@ -286,6 +292,22 @@ export function OakDocRepeaterPanel({
                                     >
                                       Shortlist
                                     </Button>
+                                  </div>
+                                ) : null}
+                                {onLetteredChange ? (
+                                  <div className="flex items-center gap-1 text-text-muted">
+                                    <Toggle
+                                      size="sm"
+                                      label="Letter each one (a), (b)"
+                                      checked={letteredTags.includes(tag)}
+                                      onChange={(lettered) => onLetteredChange(tag, lettered)}
+                                      disabled={disabled}
+                                      className="min-w-0 flex-1"
+                                    />
+                                    <InfoTip
+                                      label="About lettering"
+                                      content="When two or more are listed, each copy opens with (a), (b)... and its text moves one indent in. One alone prints without a letter."
+                                    />
                                   </div>
                                 ) : null}
                                 <div className="space-y-0.5">

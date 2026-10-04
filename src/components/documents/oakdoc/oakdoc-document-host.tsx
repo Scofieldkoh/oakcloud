@@ -12,6 +12,7 @@ import {
   createOakDocRepeater,
   inspectOakDocRepeaters,
   removeOakDocRepeater,
+  setOakDocRepeaterLettering,
   type OakDocRepeaterDefinition,
   type OakDocRepeaterSummary,
 } from '@/lib/document-editor/oakdoc-repeaters';
@@ -39,6 +40,8 @@ export interface OakDocHostSidebarApi {
   addRepeater: (definition: OakDocRepeaterDefinition) => Promise<void>;
   /** Remove the repeating section around the caret, keeping its content once. */
   removeRepeaterAtCaret: () => Promise<void>;
+  /** Letter each copy of the sections with this tag (a), (b) when more than one is listed. */
+  setRepeaterLettering: (tag: string, lettered: boolean) => Promise<void>;
   /** Repeating sections currently in the document. */
   repeaters: OakDocRepeaterSummary;
   disabled: boolean;
@@ -129,7 +132,7 @@ export function OakDocDocumentHost({
   const [status, setStatus] = useState(loadingLabel);
   const [error, setError] = useState<string | null>(null);
   const [fieldTags, setFieldTags] = useState<string[]>([]);
-  const [repeaters, setRepeaters] = useState<OakDocRepeaterSummary>({ count: 0, tags: [] });
+  const [repeaters, setRepeaters] = useState<OakDocRepeaterSummary>({ count: 0, tags: [], letteredTags: [] });
 
   loadRef.current = load;
   cleanupRef.current = cleanup;
@@ -209,7 +212,7 @@ export function OakDocDocumentHost({
       setRepeaters(keepIfSame(inspectOakDocRepeaters(bytes)));
     } catch {
       setFieldTags([]);
-      setRepeaters({ count: 0, tags: [] });
+      setRepeaters({ count: 0, tags: [], letteredTags: [] });
     }
   }, []);
   useEffect(() => {
@@ -289,6 +292,27 @@ export function OakDocDocumentHost({
       return { bytes: removed.bytes, message: 'Removed the repeating section and kept its content once.' };
     },
   ), [editAtCaret]);
+
+  const setRepeaterLettering = useCallback(async (tag: string, lettered: boolean) => {
+    if (readOnly || disabled) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const buffer = await editorRef.current?.save();
+      if (!buffer) throw new Error('OakDoc did not return a DOCX file.');
+      const bytes = setOakDocRepeaterLettering({ docxBytes: new Uint8Array(buffer), tag, lettered });
+      markChanged();
+      replaceMountedDocument(bytes, lettered
+        ? 'Each person in this section is lettered (a), (b) when more than one is listed.'
+        : 'This section is no longer lettered.');
+    } catch (caught) {
+      const message = caught instanceof Error ? caught.message : 'Could not change the lettering.';
+      setError(message);
+      setStatus(message);
+    } finally {
+      setBusy(false);
+    }
+  }, [disabled, markChanged, readOnly, replaceMountedDocument]);
 
   const handleKeyDownCapture = useOakDocSectionDeleteGuard({
     editorRef,
@@ -479,6 +503,7 @@ export function OakDocDocumentHost({
               fieldTags,
               addRepeater,
               removeRepeaterAtCaret,
+              setRepeaterLettering,
               repeaters,
               disabled: disabled || busy || saving || !documentBytes,
             })}
