@@ -304,7 +304,17 @@ Service Agreement composition templates:
   description"), `company.financialYearEnd` ("31 December"),
   `company.firstFinancialYearEnd` (the confirmed first period's end, else the
   first year end on or after incorporation) and `company.paidUpCapital`
-  ("SGD 10,000.00") serve these resolutions.
+  ("SGD 10,000.00") serve these resolutions. The registered address and
+  secretary name fields use the UPPERCASE text case (below), not Word's All
+  caps formatting.
+
+Field text case (`src/lib/document-editor/oakdoc-field-case.ts`): opening a
+field in the OakDoc field panel offers Text case (As stored, UPPERCASE, Title
+Case) before Add or a drag. The choice is kept in that field's Word title
+(`w:alias`, e.g. "Full Address · UPPERCASE"), so it travels with the one field
+into partials and repeating sections and shows on hover;
+`writeOakDocControlValue` prints the value in that case. To change a field's
+case, remove it and add it again with the new case.
 
 Service-specific input definitions use the `service` placeholder source, for
 example `service.fields.software`, and may use the `textarea` type. The editor

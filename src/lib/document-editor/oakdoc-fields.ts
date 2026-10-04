@@ -1,6 +1,7 @@
 import { strFromU8, unzipSync, zipSync } from 'fflate';
 import { encodeOakDocZipText } from '@/lib/document-editor/oakdoc-zip';
 import { formatOakDocDate } from '@/lib/document-editor/oakdoc-context';
+import { applyOakDocFieldCase, oakDocFieldCaseOfTitle, type OakDocFieldCase } from '@/lib/document-editor/oakdoc-field-case';
 
 const WORD_NS = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
 const XML_NS = 'http://www.w3.org/XML/1998/namespace';
@@ -9,6 +10,8 @@ export interface OakDocFieldDefinition {
   tag: string;
   label: string;
   category: string;
+  /** Case the value prints in, chosen when the field is added; absent = as stored. */
+  textCase?: OakDocFieldCase;
 }
 
 export interface OakDocFieldSummary {
@@ -62,6 +65,15 @@ function setTextValue(textElement: Element, value: string): void {
   }
 }
 
+/** The case a field control's Word title asks for (see oakdoc-field-case). */
+function controlCase(sdt: Element): OakDocFieldCase | null {
+  const properties = wordChildren(sdt).find((child) => isWordElement(child, 'sdtPr'));
+  const alias = properties
+    ? wordChildren(properties).find((child) => isWordElement(child, 'alias'))
+    : undefined;
+  return oakDocFieldCaseOfTitle(getWordVal(alias));
+}
+
 /** The Word date pattern a date content control asks for, if any. */
 function controlDateFormat(sdt: Element): string {
   const properties = wordChildren(sdt).find((child) => isWordElement(child, 'sdtPr'));
@@ -97,8 +109,8 @@ function retargetMailtoField(content: Element, value: string): void {
 }
 
 /**
- * Write a resolved value into a field control's content. The first text
- * node keeps its run formatting; line breaks in the value become Word line
+ * Write a resolved value into a field control's content, in the case its
+ * Word title asks for. The first text node keeps its run formatting; line breaks in the value become Word line
  * breaks in that same run, and any other text in the control is cleared.
  */
 export function writeOakDocControlValue(
@@ -112,9 +124,10 @@ export function writeOakDocControlValue(
   if (textNodes.length === 0) return false;
 
   const dateFormat = options.isoDate ? controlDateFormat(sdt) : '';
-  const display = dateFormat
-    ? formatOakDocDate(options.isoDate, dateFormat) ?? value
-    : value;
+  const display = applyOakDocFieldCase(
+    dateFormat ? formatOakDocDate(options.isoDate, dateFormat) ?? value : value,
+    controlCase(sdt),
+  );
   const [first, ...rest] = display.replace(/\r\n?/g, '\n').split('\n');
   // Line breaks in the placeholder belong to the old value.
   for (const lineBreak of [

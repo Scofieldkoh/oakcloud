@@ -115,6 +115,8 @@ describe('First Board Resolution starter', () => {
       const xml = documentXml(bytes);
       expect(xml).not.toContain('Times New Roman');
       expect(xml).not.toContain('w:val="22"');
+      // Capitals come from the field's text case, not Word's All caps.
+      expect(xml).not.toContain('<w:caps/>');
       expect(xml).toMatch(/<w:p><w:pPr>(?:(?!<w:r>)[^])*<\/w:pPr><\/w:p>\s*<w:sectPr>/);
     }
   });
@@ -133,7 +135,8 @@ describe('First Board Resolution starter', () => {
     expect(text).toContain('7.\tNOTIFICATION AND LODGEMENT');
     expect(text).toContain('situated at 21 BUKIT BATOK CRESCENT, #25-72, WCEGA TOWER, SINGAPORE 658065 since');
     expect(text).toContain('fixed on 31 December with its first financial year end to be 31 December 2026.');
-    expect(text).toContain('the appointment of Tan Wei Jie (S9101817I) as Secretary');
+    // The secretary's name field is set to print in UPPERCASE.
+    expect(text).toContain('the appointment of TAN WEI JIE (S9101817I) as Secretary');
     expect(text).toContain('OAKTREE ACCOUNTING & CORPORATE SOLUTIONS PTE. LTD. (202437906H)');
     expect(text).toContain('total consideration of SGD 10,000.00 by virtue of Section 63');
     expect(text).toContain('Engterprise Holdings Pte. Ltd.\n3,500');
