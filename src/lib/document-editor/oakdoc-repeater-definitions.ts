@@ -1,5 +1,6 @@
 import type { OakDocFieldDefinition } from '@/lib/document-editor/oakdoc-fields';
 import { OFFICER_ROLES } from '@/lib/constants';
+import { oneOfficerPerPerson } from '@/lib/officer-identity';
 import type {
   OakDocAgreementEntity,
   OakDocCompanyDetail,
@@ -40,7 +41,8 @@ export interface OakDocRepeaterGenerationData {
   selectedShareholderIds?: readonly string[];
   /**
    * Officers to repeat, by officer id, in that order; absent means none. An
-   * officers repeater limited to roles prints only those of its roles.
+   * officers repeater limited to roles prints only those of its roles, and
+   * each person once (Configure stores the record of the role chosen).
    */
   selectedOfficerIds?: readonly string[];
 }
@@ -395,10 +397,13 @@ readonly OakDocGenericRepeaterDefinition[] = [
         .filter((officer) => officer.isCurrent !== false
           && (roles.size === 0 || roles.has(normalizeOakDocOfficerRole(officer.role))))
         .map((officer) => [officer.id, officer]));
-      return (data.selectedOfficerIds ?? []).flatMap((id) => {
-        const officer = officers.get(id);
-        return officer ? [officerValues(officer)] : [];
-      });
+      // One paragraph per person: a saved choice with two appointments of
+      // one person (from before Configure listed people once) keeps the first.
+      return oneOfficerPerPerson(data.selectedOfficerIds ?? [], [...officers.values()])
+        .flatMap((id) => {
+          const officer = officers.get(id);
+          return officer ? [officerValues(officer)] : [];
+        });
     },
   },
   {

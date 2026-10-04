@@ -21,6 +21,8 @@ export interface OakDocPartyAddress {
 
 export interface OakDocOfficer {
   id: string;
+  /** The person's contact, when linked; tells two appointments of one person apart from namesakes. */
+  contactId?: string | null;
   name: string;
   role?: string | null;
   identificationNumber?: string | null;
