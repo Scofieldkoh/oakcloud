@@ -29,6 +29,9 @@ export interface OakDocFieldPanelProps {
   repeaterCount?: number;
   onAddRepeater: (definition: OakDocRepeaterDefinition) => void;
   onRemoveRepeaterAtCaret: () => void;
+  /** Repeater tags lettered (a), (b); with onRepeaterLetteringChange the author can switch it. */
+  letteredRepeaterTags?: readonly string[];
+  onRepeaterLetteringChange?: (tag: string, lettered: boolean) => void;
   /** Names of sections and pickers on Configure, and contacts shortlists. */
   sections: OakDocRepeaterSections;
   onSectionsChange: (sections: OakDocRepeaterSections) => void;
@@ -53,6 +56,8 @@ export function OakDocFieldPanel({
   repeaterCount,
   onAddRepeater,
   onRemoveRepeaterAtCaret,
+  letteredRepeaterTags,
+  onRepeaterLetteringChange,
   sections,
   onSectionsChange,
 }: OakDocFieldPanelProps) {
@@ -102,6 +107,8 @@ export function OakDocFieldPanel({
         disabled={disabled}
         onAdd={onAddRepeater}
         onRemoveAtCaret={onRemoveRepeaterAtCaret}
+        letteredTags={letteredRepeaterTags}
+        onLetteredChange={onRepeaterLetteringChange}
         onAssignField={onInsert}
         sections={sections}
         onSectionsChange={onSectionsChange}

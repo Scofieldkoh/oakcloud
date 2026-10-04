@@ -113,6 +113,7 @@ export function WordPartialEditor({
         fieldTags,
         addRepeater,
         removeRepeaterAtCaret,
+        setRepeaterLettering,
         repeaters,
         disabled,
       }) => (
@@ -129,8 +130,10 @@ export function WordPartialEditor({
           ownerLabel="partial"
           repeaterTags={repeaters.tags}
           repeaterCount={repeaters.count}
+          letteredRepeaterTags={repeaters.letteredTags}
           onAddRepeater={(definition) => void addRepeater(definition)}
           onRemoveRepeaterAtCaret={() => void removeRepeaterAtCaret()}
+          onRepeaterLetteringChange={(tag, lettered) => void setRepeaterLettering(tag, lettered)}
           sections={repeaterSections}
           onSectionsChange={(next) => {
             setRepeaterSections(next);

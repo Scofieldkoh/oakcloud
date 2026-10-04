@@ -316,6 +316,15 @@ into partials and repeating sections and shows on hover;
 `writeOakDocControlValue` prints the value in that case. To change a field's
 case, remove it and add it again with the new case.
 
+Repeating section lettering (`src/lib/document-editor/oakdoc-repeater-lettering.ts`):
+opening a section in the Repeating sections panel offers "Letter each one (a),
+(b)". The choice is kept in the section's Word title (`w:alias`, e.g. "Officers
+(Secretary) repeater · Lettered (a), (b)") and applies to every section with that
+tag. At generation, when two or more items are listed, each copy's first
+paragraph with text opens with "(a)" and a tab at its old left indent, and every
+paragraph of the copy moves one OakDoc indent (720 twips) in. One item prints
+unlettered; copies holding tables are left as they are.
+
 Service-specific input definitions use the `service` placeholder source, for
 example `service.fields.software`, and may use the `textarea` type. The editor
 keeps these separate from custom fields and preserves source, path, category,

@@ -2,7 +2,9 @@ import { strFromU8, unzipSync, zipSync } from 'fflate';
 import { encodeOakDocZipText } from '@/lib/document-editor/oakdoc-zip';
 import {
   WORD_NS,
+  WORD_PARAGRAPH_PROPERTY_ORDER as PARAGRAPH_PROPERTY_ORDER,
   getWordVal,
+  insertWordChildOrdered as insertOrdered,
   isWordElement,
   wordChild,
   wordChildren,
@@ -53,16 +55,6 @@ const DOCUMENT_PART = 'word/document.xml';
  */
 const HEADING_TAB_TWIPS = 720;
 
-/** Word's schema order for the paragraph properties this module adds. */
-const PARAGRAPH_PROPERTY_ORDER = [
-  'pStyle', 'keepNext', 'keepLines', 'pageBreakBefore', 'framePr', 'widowControl',
-  'numPr', 'suppressLineNumbers', 'pBdr', 'shd', 'tabs', 'suppressAutoHyphens',
-  'kinsoku', 'wordWrap', 'overflowPunct', 'topLinePunct', 'autoSpaceDE',
-  'autoSpaceDN', 'bidi', 'adjustRightInd', 'snapToGrid', 'spacing', 'ind',
-  'contextualSpacing', 'mirrorIndents', 'suppressOverlap', 'jc', 'textDirection',
-  'textAlignment', 'textboxTightWrap', 'outlineLvl', 'divId', 'cnfStyle', 'rPr',
-  'sectPr', 'pPrChange',
-];
 const RUN_PROPERTY_ORDER = ['rStyle', 'rFonts', 'b', 'bCs', 'i', 'iCs', 'caps'];
 
 function parseXml(bytes: Uint8Array): XMLDocument {
@@ -93,15 +85,6 @@ function controlTag(sdt: Element): string {
 export function findResolutionSlots(xml: XMLDocument): Element[] {
   return Array.from(xml.getElementsByTagNameNS(WORD_NS, 'sdt'))
     .filter((sdt) => controlTag(sdt) === OAKDOC_RESOLUTION_ITEMS_TAG);
-}
-
-/** Insert `child` among `parent`'s children in schema order. */
-function insertOrdered(parent: Element, child: Element, order: readonly string[]): void {
-  const rank = order.indexOf(child.localName);
-  const existing = wordChild(parent, child.localName);
-  if (existing) parent.removeChild(existing);
-  const before = wordChildren(parent).find((candidate) => order.indexOf(candidate.localName) > rank);
-  parent.insertBefore(child, before ?? null);
 }
 
 class IdAllocator {

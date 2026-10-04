@@ -32,6 +32,26 @@ export function wordChild(node: Node, localName: string): Element | undefined {
   return wordChildren(node).find((child) => isWordElement(child, localName));
 }
 
+/** Word's schema order for paragraph properties (`w:pPr` children). */
+export const WORD_PARAGRAPH_PROPERTY_ORDER: readonly string[] = [
+  'pStyle', 'keepNext', 'keepLines', 'pageBreakBefore', 'framePr', 'widowControl',
+  'numPr', 'suppressLineNumbers', 'pBdr', 'shd', 'tabs', 'suppressAutoHyphens',
+  'kinsoku', 'wordWrap', 'overflowPunct', 'topLinePunct', 'autoSpaceDE',
+  'autoSpaceDN', 'bidi', 'adjustRightInd', 'snapToGrid', 'spacing', 'ind',
+  'contextualSpacing', 'mirrorIndents', 'suppressOverlap', 'jc', 'textDirection',
+  'textAlignment', 'textboxTightWrap', 'outlineLvl', 'divId', 'cnfStyle', 'rPr',
+  'sectPr', 'pPrChange',
+];
+
+/** Insert `child` among `parent`'s children in schema order, replacing one of the same name. */
+export function insertWordChildOrdered(parent: Element, child: Element, order: readonly string[]): void {
+  const rank = order.indexOf(child.localName);
+  const existing = wordChild(parent, child.localName);
+  if (existing) parent.removeChild(existing);
+  const before = wordChildren(parent).find((candidate) => order.indexOf(candidate.localName) > rank);
+  parent.insertBefore(child, before ?? null);
+}
+
 export function getWordVal(element: Element | undefined): string {
   return element
     ? (element.getAttributeNS(WORD_NS, 'val') || element.getAttribute('w:val') || '')
