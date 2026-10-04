@@ -104,6 +104,20 @@ export const OAKDOC_FIELD_BY_TAG: ReadonlyMap<string, OakDocFieldDefinition> = n
   [...OAKDOC_SCALAR_FIELDS, ...OAKDOC_REPEATER_ITEM_FIELDS].map((field) => [field.tag, field]),
 );
 
+const SCALAR_TAGS: ReadonlySet<string> = new Set(OAKDOC_SCALAR_FIELDS.map((field) => field.tag));
+
+/**
+ * A field that prints a calendar date, so it can take its own date format:
+ * a custom date field, or a scalar field such as Incorporation Date or
+ * Resolution Date. The financial year end (day and month only) and fields
+ * inside repeating sections are not.
+ */
+export function isOakDocDateField(field: OakDocFieldDefinition): boolean {
+  if (field.valueType === 'date') return true;
+  if (!SCALAR_TAGS.has(field.tag)) return false;
+  return /date$/i.test(field.tag) || field.tag === 'company.firstFinancialYearEnd';
+}
+
 /**
  * A fixed tag set that also accepts every `custom.<key>` field, since
  * custom fields are defined per template rather than registered here.

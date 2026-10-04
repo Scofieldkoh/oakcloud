@@ -2,7 +2,9 @@
 import { describe, expect, it } from 'vitest';
 import {
   applyOakDocFieldCase,
+  normalizeOakDocDateFormat,
   oakDocFieldCaseOfTitle,
+  oakDocFieldDateFormatOfTitle,
   oakDocFieldTitle,
 } from '@/lib/document-editor/oakdoc-field-case';
 import { writeOakDocControlValue } from '@/lib/document-editor/oakdoc-fields';
@@ -42,5 +44,35 @@ describe('OakDoc field text case', () => {
     const stored = control('Officer Name');
     writeOakDocControlValue(stored, 'Tan Wei Jie');
     expect(stored.textContent).toBe('Tan Wei Jie');
+  });
+
+  it('keeps a date format in the field title beside the case', () => {
+    expect(oakDocFieldTitle('Resolution Date', null, 'dd/MM/yyyy')).toBe('Resolution Date · dd/MM/yyyy');
+    expect(oakDocFieldTitle('First FYE', 'upper', 'd MMM yyyy')).toBe('First FYE · UPPERCASE · d MMM yyyy');
+    expect(oakDocFieldDateFormatOfTitle('First FYE · UPPERCASE · d MMM yyyy')).toBe('d MMM yyyy');
+    expect(oakDocFieldCaseOfTitle('First FYE · UPPERCASE · d MMM yyyy')).toBe('upper');
+    expect(oakDocFieldDateFormatOfTitle('Resolution Date')).toBeNull();
+    expect(oakDocFieldDateFormatOfTitle('Officers (Secretary) repeater · Lettered (a), (b)')).toBeNull();
+  });
+
+  it('reads date formats as people type them', () => {
+    expect(normalizeOakDocDateFormat('dd/mm/yyyy')).toBe('dd/MM/yyyy');
+    expect(normalizeOakDocDateFormat('dd mmm yyyy')).toBe('dd MMM yyyy');
+    expect(normalizeOakDocDateFormat(' D MMMM YYYY ')).toBe('d MMMM yyyy');
+    expect(normalizeOakDocDateFormat('mmmm d, yyyy')).toBe('MMMM d, yyyy');
+    expect(normalizeOakDocDateFormat('dd.mm.yy')).toBe('dd.MM.yy');
+    expect(normalizeOakDocDateFormat('yyyy')).toBeNull();
+    expect(normalizeOakDocDateFormat('the date')).toBeNull();
+    expect(normalizeOakDocDateFormat('ddd/mm/yyy')).toBeNull();
+    expect(normalizeOakDocDateFormat('')).toBeNull();
+  });
+
+  it('writes a date in the format and case its title asks for', () => {
+    const date = control('First FYE · UPPERCASE · d MMM yyyy');
+    writeOakDocControlValue(date, '31 December 2026', { isoDate: '2026-12-31' });
+    expect(date.textContent).toBe('31 DEC 2026');
+    const slashed = control('Resolution Date · dd/MM/yyyy');
+    writeOakDocControlValue(slashed, '4 October 2026', { isoDate: '2026-10-04' });
+    expect(slashed.textContent).toBe('04/10/2026');
   });
 });

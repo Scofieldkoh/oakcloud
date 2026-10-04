@@ -60,7 +60,7 @@ export async function insertOakDocField(
     type: 'insertContentControl',
     subtype: 'plainText',
     tag: field.tag,
-    title: oakDocFieldTitle(field.label, field.textCase),
+    title: oakDocFieldTitle(field.label, field.textCase, field.dateFormat),
   } as EditorCommand;
 
   const allowed = editor.can(command);

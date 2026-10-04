@@ -6,7 +6,14 @@ import { Button } from '@/components/ui/button';
 import { FormInput } from '@/components/ui/form-input';
 import { SearchableSelect } from '@/components/ui/searchable-select';
 import { OAKDOC_REPEATER_NAME_MAX } from '@/lib/document-editor/oakdoc-repeater-definitions';
-import { OAKDOC_FIELD_CASE_OPTIONS, isOakDocFieldCase } from '@/lib/document-editor/oakdoc-field-case';
+import {
+  OAKDOC_DATE_FORMAT_OPTIONS,
+  OAKDOC_FIELD_CASE_OPTIONS,
+  isOakDocFieldCase,
+  normalizeOakDocDateFormat,
+} from '@/lib/document-editor/oakdoc-field-case';
+import { formatOakDocDate } from '@/lib/document-editor/oakdoc-context';
+import { isOakDocDateField } from '@/lib/document-editor/oakdoc-field-registry';
 import type { OakDocFieldDefinition } from '@/lib/document-editor/oakdoc-fields';
 import { OAKDOC_FIELD_DRAG_TYPE } from '@/lib/document-editor/oakdoc-field-blocks';
 import { cn } from '@/lib/utils';
@@ -56,6 +63,73 @@ function OakDocFieldCaseSelect({
   );
 }
 
+const DEFAULT_DATE_FORMAT = 'default';
+const CUSTOM_DATE_FORMAT = 'custom';
+/** The date each format is shown with, chosen so day and month read apart. */
+const SAMPLE_DATE = '2026-01-31';
+
+/** "dd/MM/yyyy" as people write it, "dd/mm/yyyy", with the sample date. */
+function dateFormatLabel(pattern: string): string {
+  return `${pattern.replace(/M/g, 'm')} (${formatOakDocDate(SAMPLE_DATE, pattern)})`;
+}
+
+/**
+ * Offers the format a date field prints in: the field's default, a common
+ * format, or one typed in (e.g. "dd.mm.yy"). Reports a format only when it
+ * is a valid date format, and '' for the default.
+ */
+function OakDocDateFormatSelect({
+  onChange,
+  disabled,
+}: {
+  onChange: (value: string) => void;
+  disabled: boolean;
+}) {
+  const [choice, setChoice] = useState(DEFAULT_DATE_FORMAT);
+  const [custom, setCustom] = useState('');
+  const customPattern = normalizeOakDocDateFormat(custom);
+  const choose = (next: string) => {
+    setChoice(next);
+    if (next === CUSTOM_DATE_FORMAT) onChange(customPattern ?? '');
+    else onChange(next === DEFAULT_DATE_FORMAT ? '' : next);
+  };
+  return (
+    <div className="space-y-1.5">
+      <SearchableSelect
+        label="Date format"
+        options={[
+          { value: DEFAULT_DATE_FORMAT, label: 'Default' },
+          ...OAKDOC_DATE_FORMAT_OPTIONS.map((pattern) => ({ value: pattern, label: dateFormatLabel(pattern) })),
+          { value: CUSTOM_DATE_FORMAT, label: 'Custom...' },
+        ]}
+        value={choice}
+        onChange={(next) => choose(next || DEFAULT_DATE_FORMAT)}
+        disabled={disabled}
+        clearable={false}
+        showKeyboardHints={false}
+        size="sm"
+      />
+      {choice === CUSTOM_DATE_FORMAT ? (
+        <FormInput
+          label="Custom format"
+          inputSize="xs"
+          value={custom}
+          placeholder="e.g. dd.mm.yy"
+          disabled={disabled}
+          onChange={(event) => {
+            setCustom(event.target.value);
+            onChange(normalizeOakDocDateFormat(event.target.value) ?? '');
+          }}
+          hint={customPattern ? `Prints ${formatOakDocDate(SAMPLE_DATE, customPattern)}` : 'd or dd for the day, m to mmmm for the month, yy or yyyy for the year.'}
+          error={custom.trim() && !customPattern ? 'Use d, m and y with spaces, / . , or -.' : undefined}
+          containerClassName="gap-1"
+          className="focus:ring-offset-0"
+        />
+      ) : null}
+    </div>
+  );
+}
+
 /** Keeps the editor's caret where it is when a panel button is pressed. */
 export function keepEditorCaret(event: { preventDefault: () => void }) {
   event.preventDefault();
@@ -63,7 +137,7 @@ export function keepEditorCaret(event: { preventDefault: () => void }) {
 
 /**
  * One field in the OakDoc field panel. Clicking it opens it, showing its
- * placeholder, the text case it prints in, any settings and an Add button that inserts it at the
+ * placeholder, the text case (and for a date the format) it prints in, any settings and an Add button that inserts it at the
  * caret (or around the selected text). A double click adds it at once,
  * and it can be dragged onto the page.
  */
@@ -81,8 +155,14 @@ export function OakDocFieldRow({
   addLabel = 'Add',
 }: OakDocFieldRowProps) {
   const [textCase, setTextCase] = useState('');
-  // The field as Add inserts it, in the chosen case.
-  const withCase = isOakDocFieldCase(textCase) ? { ...field, textCase } : field;
+  const [dateFormat, setDateFormat] = useState('');
+  const isDate = isOakDocDateField(field);
+  // The field as Add inserts it, in the chosen case and date format.
+  const withCase: OakDocFieldDefinition = {
+    ...field,
+    ...(isOakDocFieldCase(textCase) ? { textCase } : {}),
+    ...(isDate && dateFormat ? { dateFormat } : {}),
+  };
   return (
     <div
       className={cn(
@@ -120,6 +200,7 @@ export function OakDocFieldRow({
             {detail ? <div className="text-[11px] text-text-secondary">{detail}</div> : null}
           </div>
           <OakDocFieldCaseSelect value={textCase} onChange={setTextCase} disabled={disabled} />
+          {isDate ? <OakDocDateFormatSelect onChange={setDateFormat} disabled={disabled} /> : null}
           {children}
           <div className="flex items-center gap-1">
             <Button
