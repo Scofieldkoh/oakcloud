@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { FormInput } from '@/components/ui/form-input';
@@ -8,8 +8,20 @@ import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from '@/components/ui/dropdown';
 import { useToast } from '@/components/ui/toast';
-import { Pagination } from '@/components/ui/pagination';
 import { RichTextDisplay } from '@/components/ui/rich-text-editor';
+import { DataGrid, type DataGridColumn } from '@/components/ui/data-grid';
+import { TableSelectFilter, TableTextFilter } from '@/components/ui/data-table';
+import { TableDateRangeFilter, toLocalDateString } from '@/components/ui/table-date-range-filter';
+import { ActiveFilterBar, type ActiveFilter } from '@/components/ui/active-filter-bar';
+import { ListEmptyState } from '@/components/ui/empty-state';
+import { BulkActionsToolbar } from '@/components/ui/bulk-actions-toolbar';
+import { MobileCard, CardDetailsGrid, CardDetailItem } from '@/components/ui/responsive-table';
+import { ServiceColumnModal } from '@/components/services/shared/service-column-modal';
+import { quickFilterClass } from '@/components/services/shared/service-filter-toolbar';
+import { useDebouncedSearch } from '@/hooks/use-debounced-search';
+import { useUrlListParams } from '@/hooks/use-url-list-params';
+import { useTableColumnPreference } from '@/hooks/use-table-column-preference';
+import { urlParam, type UrlParamSpec } from '@/lib/url-list-params';
 import {
   usePersistSessionListSnapshot,
   useSessionListRestore,
@@ -20,19 +32,20 @@ import {
   Pencil,
   Trash2,
   Copy,
-  Search,
   FileText,
-  Loader2,
   AlertCircle,
   Check,
   X,
   Eye,
+  CalendarDays,
+  CheckCircle,
+  CircleOff,
+  Gavel,
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
+import { cn, formatDateShort } from '@/lib/utils';
 import { isOakDocTemplate as isOakDocContentJson } from '@/lib/document-editor/oakdoc-template';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { LibraryViewSelect, TemplateLibraryShell, type LibraryView } from '../template-library-shell';
+import { keepPreviousData, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { LibraryToolbar, TemplateLibraryShell } from '../template-library-shell';
 
 // ============================================================================
 // Types
@@ -45,7 +58,6 @@ interface DocumentTemplate {
   category: string;
   content: string;
   contentJson?: unknown;
-  placeholders: PlaceholderDefinition[];
   isActive: boolean;
   version: number;
   createdAt: string;
@@ -62,17 +74,6 @@ interface DocumentTemplate {
 
 function isOakDocTemplate(template: Pick<DocumentTemplate, 'contentJson'>): boolean {
   return isOakDocContentJson(template.contentJson);
-}
-
-interface PlaceholderDefinition {
-  key: string;
-  label: string;
-  type: 'text' | 'textarea' | 'date' | 'number' | 'currency' | 'boolean' | 'list' | 'conditional';
-  source: 'company' | 'contact' | 'officer' | 'shareholder' | 'service' | 'custom' | 'system';
-  path?: string;
-  defaultValue?: string;
-  format?: string;
-  required: boolean;
 }
 
 interface TemplateSearchResult {
@@ -103,8 +104,6 @@ interface TemplateStats {
   };
 }
 
-// PartialFormData moved to editor page for full-page editing
-
 const CATEGORIES = [
   { value: 'RESOLUTION', label: 'Resolution' },
   { value: 'CONTRACT', label: 'Contract' },
@@ -115,19 +114,84 @@ const CATEGORIES = [
   { value: 'OTHER', label: 'Other' },
 ];
 
+const STATUS_OPTIONS = [
+  { value: 'active', label: 'Active' },
+  { value: 'inactive', label: 'Inactive' },
+];
+
+type TemplateStatusFilter = 'active' | 'inactive';
+type TemplateSortField = 'name' | 'category' | 'isActive' | 'version' | 'usage' | 'createdBy' | 'updatedAt';
+
+function getCategoryLabel(category: string) {
+  return CATEGORIES.find((c) => c.value === category)?.label || category;
+}
+
+// ============================================================================
+// List state (kept in the URL) and columns (kept per user)
+// ============================================================================
+
+interface TemplateListParams {
+  query: string;
+  archived: true | undefined;
+  name: string | undefined;
+  category: string | undefined;
+  status: TemplateStatusFilter | undefined;
+  createdBy: string | undefined;
+  updatedFrom: string | undefined;
+  updatedTo: string | undefined;
+  sortBy: TemplateSortField;
+  sortOrder: 'asc' | 'desc';
+  page: number;
+  limit: number;
+}
+
+const TEMPLATE_LIST_PARAMS: UrlParamSpec<TemplateListParams> = {
+  query: urlParam.string('', { key: 'q' }),
+  archived: urlParam.flag(),
+  name: urlParam.optional(),
+  category: urlParam.optional(),
+  status: urlParam.optional<TemplateStatusFilter>(),
+  createdBy: urlParam.optional(),
+  updatedFrom: urlParam.optional(),
+  updatedTo: urlParam.optional(),
+  sortBy: urlParam.choice<TemplateSortField>('name'),
+  sortOrder: urlParam.choice<'asc' | 'desc'>('asc'),
+  page: urlParam.int(1),
+  limit: urlParam.int(20),
+};
+
+const COLUMN_IDS = ['name', 'description', 'category', 'status', 'version', 'usage', 'createdBy', 'updated', 'actions'] as const;
+type ColumnId = (typeof COLUMN_IDS)[number];
+const COLUMN_LABELS: Record<ColumnId, string> = {
+  name: 'Template',
+  description: 'Description',
+  category: 'Category',
+  status: 'Status',
+  version: 'Version',
+  usage: 'Documents',
+  createdBy: 'Created By',
+  updated: 'Updated',
+  actions: 'Actions',
+};
+const COLUMN_PREFERENCE_KEY = 'template-library:documents:columns:v1';
+const LOCKED_COLUMNS: ColumnId[] = ['name', 'actions'];
+
 // ============================================================================
 // Template API Functions
 // ============================================================================
 
-async function fetchTemplates(
-  params: { search?: string; category?: string; isActive?: boolean; editor?: 'oakdoc' | 'a4'; page: number; limit: number },
-  tenantId?: string
-): Promise<TemplateSearchResult> {
+async function fetchTemplates(params: TemplateListParams, tenantId?: string): Promise<TemplateSearchResult> {
   const searchParams = new URLSearchParams();
-  if (params.search) searchParams.set('query', params.search);
+  if (params.query) searchParams.set('query', params.query);
+  if (params.name) searchParams.set('name', params.name);
   if (params.category) searchParams.set('category', params.category);
-  if (params.isActive !== undefined) searchParams.set('isActive', String(params.isActive));
-  if (params.editor) searchParams.set('editor', params.editor);
+  if (params.status) searchParams.set('isActive', String(params.status === 'active'));
+  if (params.createdBy) searchParams.set('createdBy', params.createdBy);
+  if (params.updatedFrom) searchParams.set('updatedFrom', params.updatedFrom);
+  if (params.updatedTo) searchParams.set('updatedTo', params.updatedTo);
+  searchParams.set('editor', params.archived ? 'a4' : 'oakdoc');
+  searchParams.set('sortBy', params.sortBy);
+  searchParams.set('sortOrder', params.sortOrder);
   searchParams.set('page', params.page.toString());
   searchParams.set('limit', params.limit.toString());
   if (tenantId) searchParams.set('tenantId', tenantId);
@@ -152,35 +216,9 @@ async function fetchTemplateStats(tenantId?: string): Promise<TemplateStats> {
   return response.json();
 }
 
-async function _createTemplate(
-  data: {
-    name: string;
-    description?: string;
-    category: string;
-    content: string;
-    isActive: boolean;
-    tenantId?: string;
-  }
-): Promise<DocumentTemplate> {
-  const response = await fetch('/api/document-templates', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  });
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to create template');
-  }
-  return response.json();
-}
-
 async function updateTemplate(
   data: {
     id: string;
-    name?: string;
-    description?: string;
-    category?: string;
-    content?: string;
     isActive?: boolean;
     expectedRevision?: number;
     tenantId?: string;
@@ -231,6 +269,24 @@ async function duplicateTemplate(id: string, name: string, tenantId?: string): P
   return response.json();
 }
 
+/** Runs `action` on each template in turn; returns how many succeeded and the first error. */
+async function runForEach(
+  templates: DocumentTemplate[],
+  action: (template: DocumentTemplate) => Promise<unknown>,
+): Promise<{ done: number; firstError?: string }> {
+  let done = 0;
+  let firstError: string | undefined;
+  for (const template of templates) {
+    try {
+      await action(template);
+      done += 1;
+    } catch (err) {
+      firstError ??= `${template.name}: ${err instanceof Error ? err.message : 'failed'}`;
+    }
+  }
+  return { done, firstError };
+}
+
 // ============================================================================
 // Document Templates List
 // ============================================================================
@@ -250,47 +306,41 @@ function DocumentTemplatesTab({
   const { success, error: showError } = useToast();
   const queryClient = useQueryClient();
 
-  // List state
-  const [view, setView] = useState<LibraryView>('word');
-  const oakDocOnly = view === 'word';
-  const [search, setSearch] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(20);
+  // Search, filters, sort and page live in the URL; the column layout is saved per user.
+  const { params, setParams, updateParams } = useUrlListParams('/template-partials/documents', TEMPLATE_LIST_PARAMS);
+  const oakDocOnly = !params.archived;
+  const search = useDebouncedSearch(params.query, (query) => updateParams({ query }));
+  const columns = useTableColumnPreference(COLUMN_PREFERENCE_KEY, COLUMN_IDS, {
+    locked: LOCKED_COLUMNS,
+    hiddenByDefault: ['createdBy'],
+  });
+  const [columnsOpen, setColumnsOpen] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   // Modal states (only for view, delete, duplicate - create/edit use full page)
   const [viewingTemplate, setViewingTemplate] = useState<DocumentTemplate | null>(null);
   const [deletingTemplate, setDeletingTemplate] = useState<DocumentTemplate | null>(null);
   const [duplicatingTemplate, setDuplicatingTemplate] = useState<DocumentTemplate | null>(null);
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [bulkAction, setBulkAction] = useState<string | null>(null);
 
   // Form state for duplicate modal
   const [duplicateName, setDuplicateName] = useState('');
 
   // Query
-  const queryKey = [
-    'document-templates',
-    { search, categoryFilter, statusFilter, page, limit, oakDocOnly },
-    activeTenantId,
-  ] as const;
+  const queryKey = ['document-templates', params, activeTenantId] as const;
   const { initialData, restoredFromSession } = useSessionListRestore<TemplateSearchResult>(
     queryClient,
     queryKey,
     { enabled: !!activeTenantId, validate: isTemplateSearchResult },
   );
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, isFetching, error } = useQuery({
     queryKey,
-    queryFn: () => fetchTemplates({
-      search,
-      category: categoryFilter,
-      isActive: statusFilter === 'active' ? true : statusFilter === 'inactive' ? false : undefined,
-      editor: oakDocOnly ? 'oakdoc' : 'a4',
-      page,
-      limit,
-    }, activeTenantId),
+    queryFn: () => fetchTemplates(params, activeTenantId),
     enabled: !!activeTenantId,
     initialData,
     initialDataUpdatedAt: restoredFromSession ? 0 : undefined,
+    placeholderData: keepPreviousData,
   });
   usePersistSessionListSnapshot(queryKey, data);
 
@@ -300,13 +350,17 @@ function DocumentTemplatesTab({
     enabled: !!activeTenantId && !oakDocOnly,
   });
 
+  const invalidateLists = () => {
+    queryClient.invalidateQueries({ queryKey: ['document-templates'] });
+    queryClient.invalidateQueries({ queryKey: ['document-templates-stats'] });
+  };
+
   // Mutations
   const deleteMutation = useMutation({
     mutationFn: ({ id, reason, revision }: { id: string; reason: string; revision: number }) =>
       deleteTemplate(id, reason, activeTenantId, revision),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['document-templates'] });
-      queryClient.invalidateQueries({ queryKey: ['document-templates-stats'] });
+      invalidateLists();
       success('Template deleted successfully');
       setDeletingTemplate(null);
     },
@@ -317,8 +371,7 @@ function DocumentTemplatesTab({
     mutationFn: ({ id, name }: { id: string; name: string }) =>
       duplicateTemplate(id, name, activeTenantId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['document-templates'] });
-      queryClient.invalidateQueries({ queryKey: ['document-templates-stats'] });
+      invalidateLists();
       success('Template duplicated successfully');
       setDuplicatingTemplate(null);
       setDuplicateName('');
@@ -336,15 +389,14 @@ function DocumentTemplatesTab({
         reason: isActive ? 'Activated template' : 'Deactivated template',
       }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['document-templates'] });
-      queryClient.invalidateQueries({ queryKey: ['document-templates-stats'] });
+      invalidateLists();
       success('Template status updated');
     },
     onError: (err: Error) => showError(err.message),
   });
 
   // Handlers - Navigate to editor page for create/edit
-  const openCreateModal = () => {
+  const openCreate = () => {
     router.push('/generated-documents/generate?editor=oakdoc');
   };
 
@@ -356,6 +408,12 @@ function DocumentTemplatesTab({
       return;
     }
     router.push(`/template-partials/editor?id=${template.id}&tab=templates`);
+  };
+
+  // Word templates open in OakDoc; archived A4 templates open the read-only preview.
+  const openTemplate = (template: DocumentTemplate) => {
+    if (oakDocOnly) openEditModal(template);
+    else setViewingTemplate(template);
   };
 
   const handleDelete = (reason?: string) => {
@@ -378,81 +436,332 @@ function DocumentTemplatesTab({
     setDuplicateName(`Copy of ${template.name}`);
   };
 
-  const getCategoryLabel = (category: string) => {
-    return CATEGORIES.find((c) => c.value === category)?.label || category;
-  };
-
-  const templates = data?.templates || [];
+  const templates = useMemo(() => data?.templates ?? [], [data?.templates]);
+  const selectedTemplates = templates.filter((template) => selectedIds.has(template.id));
   const health = templateStats?.health;
 
-  return (
-    <div>
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-6">
-        <div className="flex-1 max-w-md relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setPage(1);
-            }}
-            placeholder={oakDocOnly ? 'Search Word templates...' : 'Search archived A4 templates...'}
-            className="w-full h-9 pl-9 pr-4 border border-border-primary rounded-md bg-background-primary text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-primary/50 text-sm"
-          />
-        </div>
-        <LibraryViewSelect
-          value={view}
-          noun="templates"
-          onChange={(next) => {
-            setView(next);
-            setPage(1);
-          }}
+  // Selection is per page: changing the list clears it.
+  const setListParams = useCallback((patch: Partial<TemplateListParams>) => {
+    setSelectedIds(new Set());
+    updateParams(patch);
+  }, [updateParams]);
+
+  const toggleStatus = (status: TemplateStatusFilter) => {
+    setListParams({ status: params.status === status ? undefined : status });
+  };
+  const toggleCategory = (category: string) => {
+    setListParams({ category: params.category === category ? undefined : category });
+  };
+  const today = toLocalDateString(new Date());
+  const updatedToday = Boolean(today && params.updatedFrom === today && params.updatedTo === today);
+  const toggleUpdatedToday = () => {
+    setListParams(updatedToday ? { updatedFrom: undefined, updatedTo: undefined } : { updatedFrom: today, updatedTo: today });
+  };
+
+  const handleSort = (field: string) => {
+    const sortBy = field as TemplateSortField;
+    setListParams({
+      sortBy,
+      sortOrder: params.sortBy === sortBy && params.sortOrder === 'asc' ? 'desc' : 'asc',
+    });
+  };
+
+  const clearAllFilters = () => {
+    setSelectedIds(new Set());
+    setParams((previous) => ({
+      ...previous,
+      query: '',
+      name: undefined,
+      category: undefined,
+      status: undefined,
+      createdBy: undefined,
+      updatedFrom: undefined,
+      updatedTo: undefined,
+      page: 1,
+    }));
+    search.setDraft('');
+  };
+
+  const activeFilters: ActiveFilter[] = [];
+  if (params.query) activeFilters.push({ key: 'query', label: 'Search', value: params.query, onRemove: () => search.commitNow('') });
+  if (params.name) activeFilters.push({ key: 'name', label: 'Template', value: params.name, onRemove: () => setListParams({ name: undefined }) });
+  if (params.category) activeFilters.push({ key: 'category', label: 'Category', value: getCategoryLabel(params.category), onRemove: () => setListParams({ category: undefined }) });
+  if (params.status) activeFilters.push({ key: 'status', label: 'Status', value: params.status === 'active' ? 'Active' : 'Inactive', onRemove: () => setListParams({ status: undefined }) });
+  if (params.createdBy) activeFilters.push({ key: 'createdBy', label: 'Created By', value: params.createdBy, onRemove: () => setListParams({ createdBy: undefined }) });
+  if (params.updatedFrom || params.updatedTo) {
+    activeFilters.push({
+      key: 'updated',
+      label: 'Updated',
+      value: params.updatedFrom === params.updatedTo
+        ? formatDateShort(params.updatedFrom!)
+        : `${params.updatedFrom ? formatDateShort(params.updatedFrom) : '...'} to ${params.updatedTo ? formatDateShort(params.updatedTo) : '...'}`,
+      onRemove: () => setListParams({ updatedFrom: undefined, updatedTo: undefined }),
+    });
+  }
+
+  const runBulk = async (
+    actionId: string,
+    action: (template: DocumentTemplate) => Promise<unknown>,
+    verb: string,
+  ) => {
+    setBulkAction(actionId);
+    const { done, firstError } = await runForEach(selectedTemplates, action);
+    setBulkAction(null);
+    invalidateLists();
+    setSelectedIds(new Set());
+    if (done > 0) success(`${verb} ${done} template${done === 1 ? '' : 's'}`);
+    if (firstError) showError(firstError);
+  };
+
+  const handleBulkAction = (actionId: string) => {
+    if (actionId === 'delete') {
+      setBulkDeleteOpen(true);
+      return;
+    }
+    const isActive = actionId === 'activate';
+    void runBulk(
+      actionId,
+      (template) => updateTemplate({
+        id: template.id,
+        isActive,
+        expectedRevision: template.version,
+        tenantId: activeTenantId,
+        reason: isActive ? 'Activated template' : 'Deactivated template',
+      }),
+      isActive ? 'Activated' : 'Deactivated',
+    );
+  };
+
+  const handleBulkDelete = async (reason?: string) => {
+    await runBulk(
+      'delete',
+      (template) => deleteTemplate(template.id, reason || 'Deleted by user', activeTenantId, template.version),
+      'Deleted',
+    );
+    setBulkDeleteOpen(false);
+  };
+
+  const renderStatus = (template: DocumentTemplate) => (
+    <span className={cn('badge', template.isActive ? 'badge-success' : 'badge-neutral')}>
+      {template.isActive ? 'Active' : 'Inactive'}
+    </span>
+  );
+
+  const renderActions = (template: DocumentTemplate) => (
+    <div className="flex items-center justify-end gap-1">
+      <button
+        type="button"
+        onClick={() => openTemplate(template)}
+        title={oakDocOnly ? 'Open in OakDoc' : 'Preview template'}
+        aria-label={oakDocOnly ? `Open ${template.name} in OakDoc` : `Preview ${template.name}`}
+        className="inline-flex h-8 w-8 items-center justify-center rounded text-text-muted transition-colors hover:bg-background-tertiary hover:text-text-primary"
+      >
+        <Eye className="w-4 h-4" aria-hidden="true" />
+      </button>
+
+      {(canCreate || canUpdate || canDelete) && (
+        <Dropdown>
+          <DropdownTrigger asChild>
+            <button
+              type="button"
+              aria-label={`More actions for ${template.name}`}
+              className="inline-flex h-8 w-8 items-center justify-center rounded text-text-muted transition-colors hover:bg-background-tertiary hover:text-text-primary"
+            >
+              <MoreVertical className="w-4 h-4" aria-hidden="true" />
+            </button>
+          </DropdownTrigger>
+          <DropdownMenu align="right">
+            {canUpdate && <DropdownItem icon={<Pencil className="w-4 h-4" />} onClick={() => openEditModal(template)}>{isOakDocTemplate(template) ? 'Edit' : 'View'}</DropdownItem>}
+            {canCreate && isOakDocTemplate(template) && <DropdownItem icon={<Copy className="w-4 h-4" />} onClick={() => openDuplicateDialog(template)}>Duplicate</DropdownItem>}
+            {canUpdate && <DropdownItem
+              icon={template.isActive ? <X className="w-4 h-4" /> : <Check className="w-4 h-4" />}
+              onClick={() => toggleActiveMutation.mutate({
+                id: template.id,
+                isActive: !template.isActive,
+                revision: template.version,
+              })}
+            >{template.isActive ? 'Deactivate' : 'Activate'}</DropdownItem>}
+            {canDelete && <DropdownItem icon={<Trash2 className="w-4 h-4" />} destructive onClick={() => setDeletingTemplate(template)}>Delete</DropdownItem>}
+          </DropdownMenu>
+        </Dropdown>
+      )}
+    </div>
+  );
+
+  const columnDefinitions: Record<ColumnId, DataGridColumn<DocumentTemplate>> = {
+    name: {
+      id: 'name',
+      label: COLUMN_LABELS.name,
+      sortField: 'name',
+      defaultWidth: 320,
+      minWidth: 160,
+      renderFilter: () => (
+        <TableTextFilter
+          ariaLabel="Filter by template name"
+          value={params.name}
+          onChange={(name) => setListParams({ name })}
+          debounceMs={300}
         />
-        <select
-          value={categoryFilter}
-          onChange={(e) => {
-            setCategoryFilter(e.target.value);
-            setPage(1);
-          }}
-          className="h-9 px-3 text-sm border border-border-primary rounded-md bg-background-primary text-text-primary focus:outline-none focus:ring-2 focus:ring-accent-primary/50 w-full sm:w-48"
-        >
-          <option value="">All Categories</option>
-          {CATEGORIES.map((cat) => (
-            <option key={cat.value} value={cat.value}>
-              {cat.label}
-            </option>
-          ))}
-        </select>
-        {oakDocOnly && (
-          <select
-            value={statusFilter}
-            onChange={(e) => {
-              setStatusFilter(e.target.value);
-              setPage(1);
-            }}
-            className="h-9 px-3 text-sm border border-border-primary rounded-md bg-background-primary text-text-primary focus:outline-none focus:ring-2 focus:ring-accent-primary/50 w-full sm:w-40"
-          >
-            <option value="">All Statuses</option>
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
-          </select>
-        )}
-        {canCreate && oakDocOnly && (
-          <Button
-            variant="primary"
-            className="h-9"
-            leftIcon={<Plus />}
-            onClick={() => router.push('/generated-documents/generate?editor=oakdoc')}
-          >
-            New Word Template
-          </Button>
-        )}
-      </div>
+      ),
+      render: (template) => (
+        <span className="block truncate font-medium text-text-primary" title={template.name}>
+          {template.name}
+        </span>
+      ),
+    },
+    description: {
+      id: 'description',
+      label: COLUMN_LABELS.description,
+      defaultWidth: 240,
+      minWidth: 140,
+      render: (template) => template.description
+        ? <span className="block truncate text-text-secondary" title={template.description}>{template.description}</span>
+        : <span className="text-text-muted">—</span>,
+    },
+    category: {
+      id: 'category',
+      label: COLUMN_LABELS.category,
+      sortField: 'category',
+      defaultWidth: 130,
+      minWidth: 110,
+      renderFilter: () => (
+        <TableSelectFilter
+          options={[{ value: '', label: 'All categories' }, ...CATEGORIES]}
+          value={params.category ?? ''}
+          onChange={(category) => setListParams({ category: category || undefined })}
+          placeholder="All categories"
+          ariaLabel="Filter by category"
+        />
+      ),
+      render: (template) => <span className="badge badge-info">{getCategoryLabel(template.category)}</span>,
+    },
+    status: {
+      id: 'status',
+      label: COLUMN_LABELS.status,
+      sortField: 'isActive',
+      defaultWidth: 120,
+      minWidth: 100,
+      renderFilter: () => (
+        <TableSelectFilter
+          options={[{ value: '', label: 'All statuses' }, ...STATUS_OPTIONS]}
+          value={params.status ?? ''}
+          onChange={(status) => setListParams({ status: (status || undefined) as TemplateStatusFilter | undefined })}
+          placeholder="All statuses"
+          ariaLabel="Filter by status"
+        />
+      ),
+      render: renderStatus,
+    },
+    version: {
+      id: 'version',
+      label: COLUMN_LABELS.version,
+      sortField: 'version',
+      rightAligned: true,
+      defaultWidth: 90,
+      minWidth: 80,
+      render: (template) => <span className="text-text-secondary">v{template.version}</span>,
+    },
+    usage: {
+      id: 'usage',
+      label: COLUMN_LABELS.usage,
+      sortField: 'usage',
+      rightAligned: true,
+      defaultWidth: 110,
+      minWidth: 90,
+      render: (template) => <span className="text-text-secondary">{template._count?.generatedDocuments ?? 0}</span>,
+    },
+    createdBy: {
+      id: 'createdBy',
+      label: COLUMN_LABELS.createdBy,
+      sortField: 'createdBy',
+      defaultWidth: 160,
+      minWidth: 110,
+      renderFilter: () => (
+        <TableTextFilter
+          ariaLabel="Filter by creator"
+          value={params.createdBy}
+          onChange={(createdBy) => setListParams({ createdBy })}
+          debounceMs={300}
+        />
+      ),
+      render: (template) => template.createdBy
+        ? <span className="text-text-secondary">{template.createdBy.firstName} {template.createdBy.lastName}</span>
+        : <span className="text-text-muted">—</span>,
+    },
+    updated: {
+      id: 'updated',
+      label: COLUMN_LABELS.updated,
+      sortField: 'updatedAt',
+      defaultWidth: 140,
+      minWidth: 120,
+      renderFilter: () => (
+        <TableDateRangeFilter
+          from={params.updatedFrom}
+          to={params.updatedTo}
+          onChange={({ from, to }) => setListParams({ updatedFrom: from, updatedTo: to })}
+        />
+      ),
+      render: (template) => <span className="text-text-secondary">{formatDateShort(template.updatedAt)}</span>,
+    },
+    actions: {
+      id: 'actions',
+      label: COLUMN_LABELS.actions,
+      rightAligned: true,
+      fixedWidth: 96,
+      render: renderActions,
+    },
+  };
+  const gridColumns = columns.columnOrder.map((id) => columnDefinitions[id]);
+  const selectable = canUpdate || canDelete;
+  const filtered = activeFilters.length > 0;
+
+  return (
+    <div className="space-y-4">
+      <LibraryToolbar
+        label="Template filters"
+        searchLabel="Search templates"
+        searchPlaceholder={oakDocOnly ? 'Search Word templates by name or description' : 'Search archived A4 templates'}
+        search={search.draft}
+        onSearchChange={search.setDraft}
+        onSearchClear={() => search.commitNow('')}
+        archived={!oakDocOnly}
+        onArchivedChange={(archived) => setListParams({ archived: archived || undefined })}
+        hiddenColumnCount={columns.hiddenColumnCount}
+        onAdjustColumns={() => setColumnsOpen(true)}
+      >
+        <button type="button" aria-pressed={params.status === 'active'} onClick={() => toggleStatus('active')} className={quickFilterClass(params.status === 'active')}>
+          <CheckCircle className="h-3.5 w-3.5" aria-hidden="true" />
+          Active
+        </button>
+        <button type="button" aria-pressed={params.status === 'inactive'} onClick={() => toggleStatus('inactive')} className={quickFilterClass(params.status === 'inactive')}>
+          <CircleOff className="h-3.5 w-3.5" aria-hidden="true" />
+          Inactive
+        </button>
+        <button type="button" aria-pressed={params.category === 'RESOLUTION'} onClick={() => toggleCategory('RESOLUTION')} className={quickFilterClass(params.category === 'RESOLUTION')}>
+          <Gavel className="h-3.5 w-3.5" aria-hidden="true" />
+          Resolutions
+        </button>
+        <button type="button" aria-pressed={updatedToday} onClick={toggleUpdatedToday} className={quickFilterClass(updatedToday)}>
+          <CalendarDays className="h-3.5 w-3.5" aria-hidden="true" />
+          Updated today
+        </button>
+      </LibraryToolbar>
+
+      <ServiceColumnModal
+        isOpen={columnsOpen}
+        onClose={() => setColumnsOpen(false)}
+        columns={columns.columnOrder.map((id) => ({ id, label: COLUMN_LABELS[id], locked: LOCKED_COLUMNS.includes(id) }))}
+        visibility={columns.columnVisibility}
+        onToggle={columns.toggleColumn}
+        onMove={columns.moveColumn}
+        onShowAll={columns.showAllColumns}
+        onResetWidths={columns.resetColumnWidths}
+      />
+
+      <ActiveFilterBar filters={activeFilters} onClearAll={clearAllFilters} />
 
       {!oakDocOnly && health && (
-        <div className="card mb-6 border-border-primary bg-background-secondary">
+        <div className="card border-border-primary bg-background-secondary">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             <div>
               <div className="flex items-center gap-2">
@@ -494,16 +803,8 @@ function DocumentTemplatesTab({
         </div>
       )}
 
-      {/* Loading */}
-      {isLoading && (
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="w-6 h-6 animate-spin text-text-muted" />
-        </div>
-      )}
-
-      {/* Error */}
       {error && (
-        <div className="card border-status-error bg-status-error/5 mb-4">
+        <div className="card border-status-error bg-status-error/5">
           <div className="flex items-center gap-3 text-status-error">
             <AlertCircle className="w-5 h-5" />
             <p>{error instanceof Error ? error.message : 'Failed to load templates'}</p>
@@ -511,142 +812,74 @@ function DocumentTemplatesTab({
         </div>
       )}
 
-      {/* Empty state */}
-      {!isLoading && !error && templates.length === 0 && (
-        <div className="flex flex-col items-center justify-center py-12">
-          <FileText className="w-12 h-12 mb-3 opacity-50 text-text-muted" />
-          <p className="text-sm text-text-muted">
-            {search || categoryFilter || statusFilter
-              ? oakDocOnly
-                ? 'No Word templates found matching your search'
-                : 'No archived A4 templates found matching your search'
-              : oakDocOnly
-                ? 'No Word templates yet'
-                : 'No archived A4 templates'}
-          </p>
-          {canCreate && oakDocOnly && !search && !categoryFilter && !statusFilter && (
-            <button
-              onClick={openCreateModal}
-              className="mt-3 px-4 py-1.5 text-sm text-text-secondary bg-background-tertiary hover:bg-background-elevated rounded-full transition-colors"
-            >
-              Create your first Word template
-            </button>
+      {!error && (
+        <DataGrid
+          data={templates}
+          columns={gridColumns}
+          getRowKey={(template) => template.id}
+          columnVisibility={columns.columnVisibility}
+          columnWidths={columns.columnWidths}
+          onColumnWidthChange={(id, width) => columns.setColumnWidth(id as ColumnId, width)}
+          sortBy={params.sortBy}
+          sortOrder={params.sortOrder}
+          onSort={handleSort}
+          selectable={selectable}
+          selectedKeys={selectedIds}
+          onSelectionChange={setSelectedIds}
+          onRowActivate={openTemplate}
+          getRowAriaLabel={(template) => `Open ${template.name}`}
+          getRowName={(template) => template.name}
+          isLoading={isLoading && !data}
+          isFetching={isFetching && !isLoading}
+          page={data?.page ?? params.page}
+          totalPages={data?.totalPages ?? 0}
+          total={data?.total ?? 0}
+          limit={data?.limit ?? params.limit}
+          onPageChange={(page) => {
+            setSelectedIds(new Set());
+            updateParams({ page });
+          }}
+          onLimitChange={(limit) => setListParams({ limit })}
+          emptyState={(
+            <ListEmptyState
+              icon={FileText}
+              noun={oakDocOnly ? 'Word templates' : 'archived A4 templates'}
+              filtered={filtered}
+              onClearFilters={clearAllFilters}
+              createAction={canCreate && oakDocOnly
+                ? <Button variant="primary" size="sm" leftIcon={<Plus />} onClick={openCreate}>Create your first Word template</Button>
+                : undefined}
+            />
           )}
-        </div>
-      )}
-
-      {/* Templates List */}
-      {!isLoading && !error && templates.length > 0 && (
-        <div className="space-y-3">
-          {templates.map((template) => (
-            <div
+          renderMobileCard={(template, index) => (
+            <MobileCard
               key={template.id}
-              className="card hover:border-accent-primary transition-colors"
-            >
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <button
-                      onClick={() => canUpdate && openEditModal(template)}
-                      className={cn(
-                        "font-medium text-text-primary text-left",
-                        canUpdate && "hover:text-accent-primary hover:underline cursor-pointer"
-                      )}
-                    >
-                      {template.name}
-                    </button>
-                    <span
-                      className={cn(
-                        'badge text-xs',
-                        template.isActive
-                          ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
-                          : 'bg-gray-100 text-gray-600 dark:bg-gray-900/30 dark:text-gray-400'
-                      )}
-                    >
-                      {template.isActive ? 'Active' : 'Inactive'}
-                    </span>
-                    <span className="badge bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 text-xs">
-                      {getCategoryLabel(template.category)}
-                    </span>
-                    {isOakDocTemplate(template) && (
-                      <span className="badge bg-background-tertiary text-text-secondary text-xs">
-                        Word / OakDoc
-                      </span>
-                    )}
-                  </div>
-                  {template.description && (
-                    <p className="text-sm text-text-secondary mt-1 line-clamp-2">
-                      {template.description}
-                    </p>
-                  )}
-                  <div className="flex items-center gap-4 mt-2 text-xs text-text-muted">
-                    <span>Version {template.version}</span>
-                    <span>
-                      {template._count?.generatedDocuments || 0} documents generated
-                    </span>
-                    <span>Updated {format(new Date(template.updatedAt), 'MMM d, yyyy')}</span>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => {
-                      if (oakDocOnly) {
-                        openEditModal(template);
-                      } else {
-                        setViewingTemplate(template);
-                      }
-                    }}
-                    title={oakDocOnly ? 'Open in OakDoc' : 'Preview template'}
-                    className="p-1.5 rounded hover:bg-background-tertiary text-text-muted hover:text-text-primary transition-colors"
-                  >
-                    <Eye className="w-4 h-4" />
-                  </button>
-
-                  {(canCreate || canUpdate || canDelete) && (
-                    <Dropdown>
-                      <DropdownTrigger asChild>
-                        <button className="p-1.5 rounded hover:bg-background-tertiary text-text-muted hover:text-text-primary transition-colors">
-                          <MoreVertical className="w-4 h-4" />
-                        </button>
-                      </DropdownTrigger>
-                      <DropdownMenu align="right">
-                        {canUpdate && <DropdownItem icon={<Pencil className="w-4 h-4" />} onClick={() => openEditModal(template)}>{isOakDocTemplate(template) ? 'Edit' : 'View'}</DropdownItem>}
-                        {canCreate && isOakDocTemplate(template) && <DropdownItem icon={<Copy className="w-4 h-4" />} onClick={() => openDuplicateDialog(template)}>Duplicate</DropdownItem>}
-                        {canUpdate && <DropdownItem
-                          icon={template.isActive ? <X className="w-4 h-4" /> : <Check className="w-4 h-4" />}
-                          onClick={() => toggleActiveMutation.mutate({
-                            id: template.id,
-                            isActive: !template.isActive,
-                            revision: template.version,
-                          })}
-                        >{template.isActive ? 'Deactivate' : 'Activate'}</DropdownItem>}
-                        {canDelete && <DropdownItem icon={<Trash2 className="w-4 h-4" />} destructive onClick={() => setDeletingTemplate(template)}>Delete</DropdownItem>}
-                      </DropdownMenu>
-                    </Dropdown>
-                  )}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Pagination */}
-      {data && data.totalPages > 0 && (
-        <div className="mt-6">
-          <Pagination
-            page={data.page}
-            totalPages={data.totalPages}
-            total={data.total}
-            limit={data.limit}
-            onPageChange={setPage}
-            onLimitChange={(newLimit) => {
-              setLimit(newLimit);
-              setPage(1);
-            }}
-          />
-        </div>
+              title={template.name}
+              subtitle={template.description || undefined}
+              badge={renderStatus(template)}
+              selectable={selectable}
+              isSelected={selectedIds.has(template.id)}
+              onToggle={() => {
+                const next = new Set(selectedIds);
+                if (next.has(template.id)) next.delete(template.id);
+                else next.add(template.id);
+                setSelectedIds(next);
+              }}
+              selectionLabel={`${selectedIds.has(template.id) ? 'Deselect' : 'Select'} ${template.name}`}
+              onCardClick={() => openTemplate(template)}
+              className={index % 2 === 1 ? 'bg-oak-row-alt' : undefined}
+              actions={renderActions(template)}
+              details={(
+                <CardDetailsGrid>
+                  <CardDetailItem label="Category" value={getCategoryLabel(template.category)} />
+                  <CardDetailItem label="Version" value={`v${template.version}`} />
+                  <CardDetailItem label="Documents" value={template._count?.generatedDocuments ?? 0} />
+                  <CardDetailItem label="Updated" value={formatDateShort(template.updatedAt)} />
+                </CardDetailsGrid>
+              )}
+            />
+          )}
+        />
       )}
 
       {/* Preview Modal */}
@@ -660,19 +893,8 @@ function DocumentTemplatesTab({
           {viewingTemplate && (
             <div className="space-y-4">
               <div className="flex items-center gap-2 flex-wrap">
-                <span
-                  className={cn(
-                    'badge text-xs',
-                    viewingTemplate.isActive
-                      ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
-                      : 'bg-gray-100 text-gray-600 dark:bg-gray-900/30 dark:text-gray-400'
-                  )}
-                >
-                  {viewingTemplate.isActive ? 'Active' : 'Inactive'}
-                </span>
-                <span className="badge bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 text-xs">
-                  {getCategoryLabel(viewingTemplate.category)}
-                </span>
+                {renderStatus(viewingTemplate)}
+                <span className="badge badge-info">{getCategoryLabel(viewingTemplate.category)}</span>
                 <span className="text-xs text-text-muted">Version {viewingTemplate.version}</span>
               </div>
 
@@ -771,13 +993,60 @@ function DocumentTemplatesTab({
         reasonMinLength={10}
         isLoading={deleteMutation.isPending}
       />
+
+      <ConfirmDialog
+        isOpen={bulkDeleteOpen}
+        onClose={() => setBulkDeleteOpen(false)}
+        onConfirm={handleBulkDelete}
+        title="Delete Templates"
+        description={`Delete ${selectedTemplates.length} selected template${selectedTemplates.length === 1 ? '' : 's'}? This action cannot be undone.`}
+        confirmLabel="Delete"
+        variant="danger"
+        requireReason
+        reasonMinLength={10}
+        isLoading={bulkAction === 'delete'}
+      />
+
+      {selectable && (
+        <BulkActionsToolbar
+          selectedCount={selectedTemplates.length}
+          onClearSelection={() => setSelectedIds(new Set())}
+          itemLabel="template"
+          actions={[
+            ...(canUpdate ? [
+              { id: 'activate', label: 'Activate', icon: Check, isLoading: bulkAction === 'activate' },
+              { id: 'deactivate', label: 'Deactivate', icon: X, isLoading: bulkAction === 'deactivate' },
+            ] : []),
+            ...(canDelete ? [{ id: 'delete', label: 'Delete', icon: Trash2, variant: 'danger' as const }] : []),
+          ]}
+          onAction={handleBulkAction}
+        />
+      )}
     </div>
+  );
+}
+
+function NewTemplateButton() {
+  const router = useRouter();
+  return (
+    <Button
+      variant="primary"
+      size="sm"
+      leftIcon={<Plus />}
+      onClick={() => router.push('/generated-documents/generate?editor=oakdoc')}
+    >
+      New Word Template
+    </Button>
   );
 }
 
 export default function DocumentTemplatesPage() {
   return (
-    <TemplateLibraryShell title="Document Templates" description="Manage the Word templates used to generate documents.">
+    <TemplateLibraryShell
+      title="Document Templates"
+      description="Manage the Word templates used to generate documents."
+      actions={(can) => (can.createDocument ? <NewTemplateButton /> : null)}
+    >
       {({ activeTenantId, can }) => (
         <DocumentTemplatesTab
           activeTenantId={activeTenantId}

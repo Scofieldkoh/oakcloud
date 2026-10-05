@@ -8,6 +8,7 @@
 
 import { randomUUID } from 'node:crypto';
 import { prisma } from '@/lib/prisma';
+import { dayRangeFilter, personNameFilter } from '@/lib/list-column-filters';
 import { createAuditLog, computeChanges } from '@/lib/audit';
 import { Prisma } from '@/generated/prisma';
 import type { TemplatePartial, TemplatePartialCategory } from '@/generated/prisma';
@@ -69,8 +70,13 @@ export interface SearchPartialsInput {
   editor?: 'oakdoc' | 'a4';
   page?: number;
   limit?: number;
-  sortBy?: 'name' | 'createdAt' | 'updatedAt';
+  sortBy?: 'name' | 'category' | 'createdBy' | 'createdAt' | 'updatedAt';
   sortOrder?: 'asc' | 'desc';
+  /** Column filters: name or display name, creator's name, and updated day range. */
+  name?: string;
+  createdBy?: string;
+  updatedFrom?: string;
+  updatedTo?: string;
 }
 
 export interface SearchPartialsResult {
@@ -362,10 +368,27 @@ export async function searchTemplatePartials(
     sortOrder = 'asc',
     editor,
     category,
+    name,
+    createdBy,
+    updatedFrom,
+    updatedTo,
   } = input;
 
   const where: Prisma.TemplatePartialWhereInput = { tenantId, deletedAt: null };
+  const and: Prisma.TemplatePartialWhereInput[] = [];
   if (category) where.category = category;
+  if (name?.trim()) {
+    and.push({
+      OR: [
+        { name: { contains: name.trim(), mode: 'insensitive' } },
+        { displayName: { contains: name.trim(), mode: 'insensitive' } },
+      ],
+    });
+  }
+  if (createdBy?.trim()) where.createdBy = personNameFilter(createdBy);
+  const updatedAt = dayRangeFilter(updatedFrom, updatedTo);
+  if (updatedAt) where.updatedAt = updatedAt;
+  if (and.length > 0) where.AND = and;
   if (search) {
     where.OR = [
       { name: { contains: search, mode: 'insensitive' } },
@@ -386,7 +409,11 @@ export async function searchTemplatePartials(
     prisma.templatePartial.findMany({
       where,
       include: { createdBy: { select: { id: true, firstName: true, lastName: true } } },
-      orderBy: { [sortBy]: sortOrder },
+      orderBy: sortBy === 'createdBy'
+        ? [{ createdBy: { firstName: sortOrder } }, { name: 'asc' }]
+        : sortBy === 'name'
+          ? [{ name: sortOrder }]
+          : [{ [sortBy]: sortOrder }, { name: 'asc' }],
       skip: (page - 1) * limit,
       take: limit,
     }),

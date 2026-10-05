@@ -7,6 +7,7 @@ import { useColumnResize } from '@/hooks/use-column-resize';
 import {
   TableBody,
   TableCell,
+  TableEmptyState,
   TableFilterCell,
   TableFilterRow,
   TableHead,
@@ -73,6 +74,8 @@ export interface DataGridProps<T> {
   onRowActivate?: (row: T) => void;
   /** Optional accessible label for interactive rows. */
   getRowAriaLabel?: (row: T) => string;
+  /** The row's name in its selection button label ("Select <name>"); defaults to "row". */
+  getRowName?: (row: T) => string;
 
   // Pagination
   page?: number;
@@ -92,7 +95,11 @@ export interface DataGridProps<T> {
   className?: string;
   variant?: 'default' | 'compact';
   emptyMessage?: string;
+  /** Shown inside the table body when there are no rows, so the headers and inline filters stay usable. Overrides `emptyMessage`. */
+  emptyState?: ReactNode;
   isLoading?: boolean;
+  /** Dims the table while a refetch (new filter, sort or page) is in flight. */
+  isFetching?: boolean;
   loadingRows?: number;
 
   // Mobile
@@ -123,6 +130,7 @@ export function DataGrid<T>({
   onSelectionChange,
   onRowActivate,
   getRowAriaLabel,
+  getRowName,
   page = 1,
   totalPages = 1,
   total = 0,
@@ -136,7 +144,9 @@ export function DataGrid<T>({
   className,
   variant = 'default',
   emptyMessage = 'No data found',
+  emptyState,
   isLoading = false,
+  isFetching = false,
   loadingRows = 5,
   renderMobileCard,
   mobileCardsOnly = false,
@@ -224,9 +234,12 @@ export function DataGrid<T>({
                   </TableHeaderCell>
                 ) : null}
                 {visibleColumns.map((column) => (
-                  <TableHeaderCell key={column.id} className={headerDensityClass}>
-                    <div className="h-4 w-20 animate-pulse rounded bg-background-tertiary" />
-                  </TableHeaderCell>
+                  <TableHeaderCell
+                    key={column.id}
+                    label={column.label}
+                    align={column.rightAligned ? 'right' : 'left'}
+                    className={headerDensityClass}
+                  />
                 ))}
               </TableHeaderRow>
             </TableHead>
@@ -252,7 +265,8 @@ export function DataGrid<T>({
     );
   }
 
-  if (data.length === 0) {
+  // Without inline filters there is nothing to keep on screen, so an empty grid is a plain card.
+  if (data.length === 0 && !hasInlineFilters && !emptyState) {
     return (
       <div className="card p-8 text-center">
         <p className="text-text-secondary">{emptyMessage}</p>
@@ -260,15 +274,19 @@ export function DataGrid<T>({
     );
   }
 
+  const emptyContent = emptyState ?? emptyMessage;
+
   return (
     <div className="space-y-4">
       {renderMobileCard ? (
         <div className={cn('space-y-3', mobileCardsOnly ? 'block' : 'md:hidden')}>
-          {data.map((row, index) => renderMobileCard(row, index))}
+          {data.length === 0
+            ? <div className="card">{typeof emptyContent === 'string' ? <p className="p-8 text-center text-text-secondary">{emptyContent}</p> : emptyContent}</div>
+            : data.map((row, index) => renderMobileCard(row, index))}
         </div>
       ) : null}
 
-      <TableShell className={tableVisibilityClass}>
+      <TableShell className={tableVisibilityClass} isFetching={isFetching}>
         <TableViewport>
           <TableRoot className={className}>
             <colgroup>
@@ -333,6 +351,9 @@ export function DataGrid<T>({
             </TableHead>
 
             <TableBody>
+              {data.length === 0 ? (
+                <TableEmptyState colSpan={visibleColumns.length + (selectable ? 1 : 0)} message={emptyContent} />
+              ) : null}
               {data.map((row, index) => {
                 const rowKey = getRowKey(row);
                 const selected = selectedKeys.has(rowKey);
@@ -350,7 +371,7 @@ export function DataGrid<T>({
                         <TableSelectionButton
                           selected={selected}
                           onClick={() => handleRowSelect(rowKey)}
-                          ariaLabel={selected ? 'Deselect row' : 'Select row'}
+                          ariaLabel={`${selected ? 'Deselect' : 'Select'} ${getRowName?.(row) ?? 'row'}`}
                         />
                       </TableCell>
                     ) : null}
@@ -361,6 +382,8 @@ export function DataGrid<T>({
                         className={cn(
                           cellDensityClass,
                           column.rightAligned ? 'text-right' : 'text-left',
+                          // A sized column keeps its width; long content truncates instead of widening it.
+                          getColumnWidth(column) ? 'max-w-0' : undefined,
                         )}
                       >
                         {column.render(row, index)}

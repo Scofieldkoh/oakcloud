@@ -7,6 +7,7 @@
 
 import { randomUUID } from 'node:crypto';
 import { prisma } from '@/lib/prisma';
+import { dayRangeFilter, personNameFilter } from '@/lib/list-column-filters';
 import { createAuditLog, computeChanges } from '@/lib/audit';
 import type {
   CreateDocumentTemplateInput,
@@ -534,8 +535,12 @@ export async function searchDocumentTemplates(
       { description: { contains: searchTerm, mode: 'insensitive' } },
     ];
   }
+  if (params.name?.trim()) where.name = { contains: params.name.trim(), mode: 'insensitive' };
   if (params.category) where.category = params.category;
   if (params.isActive !== undefined) where.isActive = params.isActive;
+  if (params.createdBy?.trim()) where.createdBy = personNameFilter(params.createdBy);
+  const updatedAt = dayRangeFilter(params.updatedFrom, params.updatedTo);
+  if (updatedAt) where.updatedAt = updatedAt;
   if (params.editor === 'oakdoc') {
     where.contentJson = oakDocContentJsonFilter();
   } else if (params.editor === 'a4') {
@@ -549,8 +554,15 @@ export async function searchDocumentTemplates(
     where.id = { notIn: wordTemplates.map((template) => template.id) };
   }
 
-  const orderBy: Prisma.DocumentTemplateOrderByWithRelationInput = {};
-  orderBy[params.sortBy] = params.sortOrder;
+  const order = params.sortOrder;
+  const primaryOrder: Prisma.DocumentTemplateOrderByWithRelationInput =
+    params.sortBy === 'usage'
+      ? { generatedDocuments: { _count: order } }
+      : params.sortBy === 'createdBy'
+        ? { createdBy: { firstName: order } }
+        : { [params.sortBy]: order };
+  // Ties (same status, version or usage) keep a stable name order across pages.
+  const orderBy = params.sortBy === 'name' ? [primaryOrder] : [primaryOrder, { name: 'asc' as const }];
   const skip = (params.page - 1) * params.limit;
   const [templates, total] = await Promise.all([
     prisma.documentTemplate.findMany({

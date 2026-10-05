@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { placeholderDefinitionSchema } from './document-template';
+import { listDateSchema, placeholderDefinitionSchema } from './document-template';
 
 // ============================================================================
 // Partial Name Validation
@@ -80,10 +80,15 @@ export const searchTemplatePartialsSchema = z.object({
   search: z.string().optional(),
   page: z.number().min(1).default(1),
   limit: z.number().min(1).max(100).default(20),
-  sortBy: z.enum(['name', 'createdAt', 'updatedAt']).default('name'),
+  sortBy: z.enum(['name', 'category', 'createdBy', 'createdAt', 'updatedAt']).default('name'),
   sortOrder: z.enum(['asc', 'desc']).default('asc'),
   editor: z.enum(['oakdoc', 'a4']).optional(),
   category: templatePartialCategoryEnum.optional(),
+  /** Column filters from the partial list. */
+  name: z.string().optional(),
+  createdBy: z.string().optional(),
+  updatedFrom: listDateSchema.optional(),
+  updatedTo: listDateSchema.optional(),
 });
 
 export type SearchTemplatePartialsInput = z.infer<typeof searchTemplatePartialsSchema>;

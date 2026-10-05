@@ -155,14 +155,22 @@ export type UpdateDocumentTemplateInput = z.infer<typeof updateDocumentTemplateS
 // Search Templates
 // ============================================================================
 
+/** A calendar day (YYYY-MM-DD) from a list's date filter. */
+export const listDateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use a YYYY-MM-DD date');
+
 export const searchDocumentTemplatesSchema = z.object({
   query: z.string().optional(),
   category: documentTemplateCategoryEnum.optional(),
   isActive: z.boolean().optional(),
   editor: z.enum(['oakdoc', 'a4']).optional(),
+  /** Column filters from the template list. */
+  name: z.string().optional(),
+  createdBy: z.string().optional(),
+  updatedFrom: listDateSchema.optional(),
+  updatedTo: listDateSchema.optional(),
   page: z.number().min(1).default(1),
   limit: z.number().min(1).max(100).default(20),
-  sortBy: z.enum(['name', 'category', 'createdAt', 'updatedAt']).default('name'),
+  sortBy: z.enum(['name', 'category', 'isActive', 'version', 'usage', 'createdBy', 'createdAt', 'updatedAt']).default('name'),
   sortOrder: z.enum(['asc', 'desc']).default('asc'),
 });
 

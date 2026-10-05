@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ToastProvider } from '@/components/ui/toast';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -87,5 +87,70 @@ describe('Document Templates pages', () => {
     expect(await screen.findByRole('button', { name: 'New Word partial' })).toBeVisible();
     expect(screen.queryByRole('button', { name: 'Document Templates' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'New Word Template' })).not.toBeInTheDocument();
+  });
+
+  it('lists templates in the shared table with filters, sorting, columns and selection', async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.startsWith('/api/user-preferences')) {
+        return new Response(JSON.stringify({ data: { key: 'k', value: null, updatedAt: null } }));
+      }
+      return new Response(JSON.stringify({
+        templates: [
+          { id: 't1', name: 'First Board Resolution', description: 'Directors resolution', category: 'RESOLUTION', content: '', contentJson: { oakDoc: { schemaVersion: 1 } }, isActive: true, version: 3, createdAt: '2026-10-01T00:00:00Z', updatedAt: '2026-10-02T00:00:00Z', _count: { generatedDocuments: 4 } },
+          { id: 't2', name: 'Engagement Letter', description: null, category: 'LETTER', content: '', contentJson: { oakDoc: { schemaVersion: 1 } }, isActive: false, version: 1, createdAt: '2026-10-01T00:00:00Z', updatedAt: '2026-10-03T00:00:00Z', _count: { generatedDocuments: 0 } },
+        ],
+        total: 2,
+        page: 1,
+        limit: 20,
+        totalPages: 1,
+      }));
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    const templateCalls = () => fetchMock.mock.calls.map(([url]) => String(url)).filter((url) => url.startsWith('/api/document-templates?'));
+
+    renderWithProviders(<DocumentTemplatesPage />);
+
+    await waitFor(() => expect(screen.getByRole('table')).toHaveTextContent('First Board Resolution'));
+    const table = screen.getByRole('table');
+    const rows = within(table).getAllByRole('row');
+    // Filter row, header row, then the two templates; the second template row is banded.
+    expect(rows).toHaveLength(4);
+    expect(rows[3].className).toContain('bg-oak-row-alt');
+    expect(within(table).getByRole('searchbox', { name: 'Filter by template name' })).toBeVisible();
+    expect(within(table).getByRole('button', { name: 'Sort by Documents' })).toBeVisible();
+    expect(within(table).getByRole('separator', { name: 'Resize Template column' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Columns/ })).toBeVisible();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Resolutions' }));
+    await waitFor(() => expect(templateCalls().at(-1)).toContain('category=RESOLUTION'));
+    expect(screen.getByRole('button', { name: 'Remove Category filter' })).toBeVisible();
+
+    fireEvent.click(within(table).getByRole('button', { name: 'Sort by Documents' }));
+    await waitFor(() => expect(templateCalls().at(-1)).toContain('sortBy=usage'));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Archived A4' }));
+    await waitFor(() => expect(templateCalls().at(-1)).toContain('editor=a4'));
+
+    fireEvent.click(within(table).getByRole('button', { name: 'Select First Board Resolution' }));
+    expect(screen.getByText('selected')).toBeVisible();
+    expect(screen.getByRole('button', { name: /Deactivate/ })).toBeVisible();
+  });
+
+  it('keeps the partial table filters on screen when nothing matches', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.startsWith('/api/user-preferences')) {
+        return new Response(JSON.stringify({ data: { key: 'k', value: null, updatedAt: null } }));
+      }
+      return new Response(JSON.stringify({ partials: [], total: 0, page: 1, limit: 20, totalPages: 0 }));
+    }));
+
+    renderWithProviders(<PartialTemplatesPage />);
+
+    await waitFor(() => expect(screen.getByRole('table')).toHaveTextContent('No Word partials yet'));
+    const table = screen.getByRole('table');
+    expect(within(table).getByRole('searchbox', { name: 'Filter by partial name' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Resolutions' })).toBeVisible();
   });
 });
