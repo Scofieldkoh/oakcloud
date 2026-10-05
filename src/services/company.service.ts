@@ -106,6 +106,11 @@ export interface CompanyWithRelations extends Company {
     dischargeDate?: Date | null;
     isFullyDischarged: boolean;
   }>;
+  auditor?: {
+    name: string;
+    address?: string | null;
+    appointmentDate?: Date | null;
+  } | null;
   _count?: {
     documents: number;
     officers: number;
@@ -888,6 +893,7 @@ export async function getCompanyById(
         },
         orderBy: { numberOfShares: 'desc' },
       },
+      auditor: { select: { name: true, address: true, appointmentDate: true } },
       charges: {
         where: { isFullyDischarged: false },
         select: {

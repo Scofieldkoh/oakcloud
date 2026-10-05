@@ -82,8 +82,8 @@ export function buildBoardResolutionOakDocMaster(): Uint8Array {
   return buildResolutionMaster(DIRECTORS);
 }
 
-export function buildMembersResolutionOakDocMaster(): Uint8Array {
-  return buildResolutionMaster(MEMBERS);
+export function buildMembersResolutionOakDocMaster(options: ResolutionMasterOptions = {}): Uint8Array {
+  return buildResolutionMaster(MEMBERS, options);
 }
 
 export interface ResolutionMasterOptions {

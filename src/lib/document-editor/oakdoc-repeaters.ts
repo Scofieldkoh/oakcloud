@@ -56,6 +56,7 @@ export function resolveOakDocRepeaters(input: {
   selectedDirectorIds?: readonly string[];
   selectedShareholderIds?: readonly string[];
   selectedOfficerIds?: readonly string[];
+  dividendPerShare?: number | null;
 }): {
   bytes: Uint8Array;
   repeatersResolved: number;
@@ -74,6 +75,7 @@ export function resolveOakDocRepeaters(input: {
       selectedDirectorIds: input.selectedDirectorIds,
       selectedShareholderIds: input.selectedShareholderIds,
       selectedOfficerIds: input.selectedOfficerIds,
+      dividendPerShare: input.dividendPerShare,
     },
   });
 }

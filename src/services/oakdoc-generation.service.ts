@@ -40,7 +40,11 @@ import {
   isOakDocRepeaterOuterTag,
   inspectOakDocRepeaters,
 } from '@/lib/document-editor/oakdoc-repeaters';
-import { parseOakDocContactListSlug } from '@/lib/document-editor/oakdoc-repeater-definitions';
+import {
+  OAKDOC_DIVIDEND_PER_SHARE_KEY,
+  parseOakDocAmount,
+  parseOakDocContactListSlug,
+} from '@/lib/document-editor/oakdoc-repeater-definitions';
 import { OAKDOC_SIGNATURE_TAGS } from '@/lib/document-editor/oakdoc-signatures';
 import {
   diagnoseOakDocTags,
@@ -596,6 +600,7 @@ async function renderOakDocMaster(
     selectedDirectorIds: input.selectedDirectorIds,
     selectedShareholderIds: input.selectedShareholderIds,
     selectedOfficerIds: input.selectedOfficerIds,
+    dividendPerShare: parseOakDocAmount(input.customData?.[OAKDOC_DIVIDEND_PER_SHARE_KEY]),
     ...(composition
       ? { signers: composition.signers, authorisedRepresentatives: composition.representatives }
       : {}),
