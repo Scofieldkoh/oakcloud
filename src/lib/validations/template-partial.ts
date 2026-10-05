@@ -86,6 +86,11 @@ export const searchTemplatePartialsSchema = z.object({
   category: templatePartialCategoryEnum.optional(),
   /** Column filters from the partial list. */
   name: z.string().optional(),
+  /** The partial's reference key (`{{> key}}`). */
+  reference: z.string().optional(),
+  description: z.string().optional(),
+  /** `used`: referenced by at least one template; `unused`: by none. */
+  usage: z.enum(['used', 'unused']).optional(),
   createdBy: z.string().optional(),
   updatedFrom: listDateSchema.optional(),
   updatedTo: listDateSchema.optional(),

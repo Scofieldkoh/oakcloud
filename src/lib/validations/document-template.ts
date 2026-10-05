@@ -165,6 +165,10 @@ export const searchDocumentTemplatesSchema = z.object({
   editor: z.enum(['oakdoc']).optional(),
   /** Column filters from the template list. */
   name: z.string().optional(),
+  description: z.string().optional(),
+  version: z.number().int().min(1).optional(),
+  /** `used`: at least one generated document; `unused`: none. */
+  usage: z.enum(['used', 'unused']).optional(),
   createdBy: z.string().optional(),
   updatedFrom: listDateSchema.optional(),
   updatedTo: listDateSchema.optional(),

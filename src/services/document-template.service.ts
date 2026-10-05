@@ -536,6 +536,9 @@ export async function searchDocumentTemplates(
     ];
   }
   if (params.name?.trim()) where.name = { contains: params.name.trim(), mode: 'insensitive' };
+  if (params.description?.trim()) where.description = { contains: params.description.trim(), mode: 'insensitive' };
+  if (params.version !== undefined) where.version = params.version;
+  if (params.usage) where.generatedDocuments = params.usage === 'used' ? { some: {} } : { none: {} };
   if (params.category) where.category = params.category;
   if (params.isActive !== undefined) where.isActive = params.isActive;
   if (params.createdBy?.trim()) where.createdBy = personNameFilter(params.createdBy);
