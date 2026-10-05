@@ -129,8 +129,8 @@ describe('Document Templates pages', () => {
     fireEvent.click(within(table).getByRole('button', { name: 'Sort by Documents' }));
     await waitFor(() => expect(templateCalls().at(-1)).toContain('sortBy=usage'));
 
-    fireEvent.click(screen.getByRole('button', { name: 'Archived A4' }));
-    await waitFor(() => expect(templateCalls().at(-1)).toContain('editor=a4'));
+    expect(templateCalls().every((url) => url.includes('editor=oakdoc'))).toBe(true);
+    expect(screen.queryByRole('button', { name: 'Archived A4' })).not.toBeInTheDocument();
 
     fireEvent.click(within(table).getByRole('button', { name: 'Select First Board Resolution' }));
     expect(screen.getByText('selected')).toBeVisible();

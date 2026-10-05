@@ -71,29 +71,6 @@ describe('document-template search', () => {
     expect(firstCall.where).not.toHaveProperty('contentJson');
   });
 
-  it('lists archived A4 templates by excluding every Word template', async () => {
-    prismaMock.documentTemplate.findMany
-      .mockResolvedValueOnce([{ id: 'word-1' }, { id: 'word-2' }])
-      .mockResolvedValueOnce([]);
-
-    await searchDocumentTemplates(
-      { editor: 'a4', page: 1, limit: 20, sortBy: 'name', sortOrder: 'asc' },
-      'tenant-1',
-    );
-
-    expect(prismaMock.documentTemplate.findMany).toHaveBeenNthCalledWith(1, {
-      where: {
-        tenantId: 'tenant-1',
-        deletedAt: null,
-        contentJson: { path: ['oakDoc', 'schemaVersion'], equals: 1 },
-      },
-      select: { id: true },
-    });
-    const listCall = prismaMock.documentTemplate.findMany.mock.calls[1]?.[0];
-    expect(listCall.where).toMatchObject({ tenantId: 'tenant-1', id: { notIn: ['word-1', 'word-2'] } });
-    expect(listCall.where).not.toHaveProperty('contentJson');
-  });
-
   it('applies the table column filters and sorts by usage with a stable name order', async () => {
     await searchDocumentTemplates(
       {

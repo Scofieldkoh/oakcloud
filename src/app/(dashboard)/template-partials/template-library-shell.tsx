@@ -1,20 +1,13 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { Archive, Search, X } from 'lucide-react';
-import { ServiceFilterToolbar, quickFilterClass } from '@/components/services/shared/service-filter-toolbar';
+import { Search, X } from 'lucide-react';
+import { ServiceFilterToolbar } from '@/components/services/shared/service-filter-toolbar';
 import { useSession } from '@/hooks/use-auth';
 import { usePermissions } from '@/hooks/use-permissions';
 import { useActiveWorkspaceId } from '@/components/ui/workspace-selector';
 
-export type LibraryView = 'word' | 'archived';
-
-/**
- * Search box, quick filters and Columns button above a library table. The
- * last quick filter is always "Archived A4": A4 templates and HTML partials
- * are archived (read-only, kept for existing documents and links) and listed
- * only when it is on.
- */
+/** Search box, quick filters and Columns button above a library table. */
 export function LibraryToolbar({
   label,
   searchLabel,
@@ -22,8 +15,6 @@ export function LibraryToolbar({
   search,
   onSearchChange,
   onSearchClear,
-  archived,
-  onArchivedChange,
   hiddenColumnCount,
   onAdjustColumns,
   children,
@@ -34,8 +25,6 @@ export function LibraryToolbar({
   search: string;
   onSearchChange: (value: string) => void;
   onSearchClear: () => void;
-  archived: boolean;
-  onArchivedChange: (archived: boolean) => void;
   hiddenColumnCount: number;
   onAdjustColumns: () => void;
   children?: ReactNode;
@@ -67,15 +56,6 @@ export function LibraryToolbar({
       </label>
       <div className="flex flex-wrap items-center gap-2">
         {children}
-        <button
-          type="button"
-          aria-pressed={archived}
-          onClick={() => onArchivedChange(!archived)}
-          className={quickFilterClass(archived)}
-        >
-          <Archive className="h-3.5 w-3.5" aria-hidden="true" />
-          Archived A4
-        </button>
       </div>
     </ServiceFilterToolbar>
   );

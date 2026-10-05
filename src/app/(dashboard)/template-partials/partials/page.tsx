@@ -48,12 +48,7 @@ import {
   CalendarDays,
 } from 'lucide-react';
 import { formatDateShort } from '@/lib/utils';
-import { isOakDocTemplate as isOakDocContentJson } from '@/lib/document-editor/oakdoc-template';
 import { LibraryToolbar, TemplateLibraryShell } from '../template-library-shell';
-
-function isWordPartial(partial: { contentJson?: unknown }): boolean {
-  return isOakDocContentJson(partial.contentJson);
-}
 
 // ============================================================================
 // Helper Components
@@ -84,7 +79,6 @@ type PartialSortField = 'name' | 'category' | 'createdBy' | 'updatedAt';
 
 interface PartialListParams {
   query: string;
-  archived: true | undefined;
   name: string | undefined;
   category: TemplatePartialCategoryValue | undefined;
   createdBy: string | undefined;
@@ -98,7 +92,6 @@ interface PartialListParams {
 
 const PARTIAL_LIST_PARAMS: UrlParamSpec<PartialListParams> = {
   query: urlParam.string('', { key: 'q' }),
-  archived: urlParam.flag(),
   name: urlParam.optional(),
   category: urlParam.optional<TemplatePartialCategoryValue>(),
   createdBy: urlParam.optional(),
@@ -147,7 +140,6 @@ function TemplatePartialsTab({
 
   // Search, filters, sort and page live in the URL; the column layout is saved per user.
   const { params, setParams, updateParams } = useUrlListParams('/template-partials/partials', PARTIAL_LIST_PARAMS);
-  const view = params.archived ? 'archived' : 'word';
   const search = useDebouncedSearch(params.query, (query) => updateParams({ query }));
   const columns = useTableColumnPreference(COLUMN_PREFERENCE_KEY, COLUMN_IDS, {
     locked: LOCKED_COLUMNS,
@@ -170,7 +162,7 @@ function TemplatePartialsTab({
   // Queries and mutations
   const { data, isLoading, isFetching, error } = useTemplatePartials({
     search: params.query || undefined,
-    editor: params.archived ? 'a4' : 'oakdoc',
+    editor: 'oakdoc',
     category: params.category,
     name: params.name,
     createdBy: params.createdBy,
@@ -351,8 +343,8 @@ function TemplatePartialsTab({
             </button>
           </DropdownTrigger>
           <DropdownMenu align="right">
-            {canUpdate && <DropdownItem icon={<Pencil className="w-4 h-4" />} onClick={() => openEdit(partial)}>{isWordPartial(partial) ? 'Edit' : 'View'}</DropdownItem>}
-            {canCreate && isWordPartial(partial) && <DropdownItem icon={<Copy className="w-4 h-4" />} onClick={() => openDuplicate(partial)}>Duplicate</DropdownItem>}
+            {canUpdate && <DropdownItem icon={<Pencil className="w-4 h-4" />} onClick={() => openEdit(partial)}>Edit</DropdownItem>}
+            {canCreate && <DropdownItem icon={<Copy className="w-4 h-4" />} onClick={() => openDuplicate(partial)}>Duplicate</DropdownItem>}
             <DropdownItem icon={<FileCode className="w-4 h-4" />} onClick={() => openUsage(partial)}>View Usage</DropdownItem>
             {canDelete && <DropdownItem icon={<Trash2 className="w-4 h-4" />} destructive onClick={() => openDelete(partial)}>Delete</DropdownItem>}
           </DropdownMenu>
@@ -473,12 +465,10 @@ function TemplatePartialsTab({
       <LibraryToolbar
         label="Partial filters"
         searchLabel="Search partials"
-        searchPlaceholder={view === 'word' ? 'Search Word partials by name or description' : 'Search archived A4 partials'}
+        searchPlaceholder="Search Word partials by name or description"
         search={search.draft}
         onSearchChange={search.setDraft}
         onSearchClear={() => search.commitNow('')}
-        archived={view === 'archived'}
-        onArchivedChange={(archived) => setListParams({ archived: archived || undefined })}
         hiddenColumnCount={columns.hiddenColumnCount}
         onAdjustColumns={() => setColumnsOpen(true)}
       >
@@ -552,10 +542,10 @@ function TemplatePartialsTab({
           emptyState={(
             <ListEmptyState
               icon={Code}
-              noun={view === 'word' ? 'Word partials' : 'archived A4 partials'}
+              noun="Word partials"
               filtered={filtered}
               onClearFilters={clearAllFilters}
-              createAction={canCreate && view === 'word'
+              createAction={canCreate
                 ? <Button variant="primary" size="sm" leftIcon={<Plus />} onClick={openCreate}>Create your first Word partial</Button>
                 : undefined}
             />

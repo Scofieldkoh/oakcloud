@@ -543,15 +543,6 @@ export async function searchDocumentTemplates(
   if (updatedAt) where.updatedAt = updatedAt;
   if (params.editor === 'oakdoc') {
     where.contentJson = oakDocContentJsonFilter();
-  } else if (params.editor === 'a4') {
-    // Archived A4 templates: everything that is not a Word template. A JSON
-    // path NOT would drop rows whose contentJson lacks the path, so exclude
-    // the Word IDs instead.
-    const wordTemplates = await prisma.documentTemplate.findMany({
-      where: { tenantId, deletedAt: null, contentJson: oakDocContentJsonFilter() },
-      select: { id: true },
-    });
-    where.id = { notIn: wordTemplates.map((template) => template.id) };
   }
 
   const order = params.sortOrder;

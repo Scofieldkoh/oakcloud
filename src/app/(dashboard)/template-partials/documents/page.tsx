@@ -8,7 +8,6 @@ import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from '@/components/ui/dropdown';
 import { useToast } from '@/components/ui/toast';
-import { RichTextDisplay } from '@/components/ui/rich-text-editor';
 import { DataGrid, type DataGridColumn } from '@/components/ui/data-grid';
 import { TableSelectFilter, TableTextFilter } from '@/components/ui/data-table';
 import { TableDateRangeFilter, toLocalDateString } from '@/components/ui/table-date-range-filter';
@@ -43,7 +42,6 @@ import {
   Gavel,
 } from 'lucide-react';
 import { cn, formatDateShort } from '@/lib/utils';
-import { isOakDocTemplate as isOakDocContentJson } from '@/lib/document-editor/oakdoc-template';
 import { keepPreviousData, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { LibraryToolbar, TemplateLibraryShell } from '../template-library-shell';
 
@@ -56,8 +54,6 @@ interface DocumentTemplate {
   name: string;
   description?: string | null;
   category: string;
-  content: string;
-  contentJson?: unknown;
   isActive: boolean;
   version: number;
   createdAt: string;
@@ -70,10 +66,6 @@ interface DocumentTemplate {
   _count?: {
     generatedDocuments: number;
   };
-}
-
-function isOakDocTemplate(template: Pick<DocumentTemplate, 'contentJson'>): boolean {
-  return isOakDocContentJson(template.contentJson);
 }
 
 interface TemplateSearchResult {
@@ -93,15 +85,6 @@ function isTemplateSearchResult(value: unknown): value is TemplateSearchResult {
     typeof candidate.total === 'number' &&
     typeof candidate.totalPages === 'number'
   );
-}
-
-interface TemplateStats {
-  health?: {
-    activeTemplatesCanGenerateCleanly: number;
-    activeTemplatesWithMissingPartials: number;
-    missingPartialReferences: Array<{ templateId: string; templateName: string; partialName: string }>;
-    requiredCustomFields: Array<{ templateId: string; templateName: string; key: string; label: string }>;
-  };
 }
 
 const CATEGORIES = [
@@ -132,7 +115,6 @@ function getCategoryLabel(category: string) {
 
 interface TemplateListParams {
   query: string;
-  archived: true | undefined;
   name: string | undefined;
   category: string | undefined;
   status: TemplateStatusFilter | undefined;
@@ -147,7 +129,6 @@ interface TemplateListParams {
 
 const TEMPLATE_LIST_PARAMS: UrlParamSpec<TemplateListParams> = {
   query: urlParam.string('', { key: 'q' }),
-  archived: urlParam.flag(),
   name: urlParam.optional(),
   category: urlParam.optional(),
   status: urlParam.optional<TemplateStatusFilter>(),
@@ -189,7 +170,7 @@ async function fetchTemplates(params: TemplateListParams, tenantId?: string): Pr
   if (params.createdBy) searchParams.set('createdBy', params.createdBy);
   if (params.updatedFrom) searchParams.set('updatedFrom', params.updatedFrom);
   if (params.updatedTo) searchParams.set('updatedTo', params.updatedTo);
-  searchParams.set('editor', params.archived ? 'a4' : 'oakdoc');
+  searchParams.set('editor', 'oakdoc');
   searchParams.set('sortBy', params.sortBy);
   searchParams.set('sortOrder', params.sortOrder);
   searchParams.set('page', params.page.toString());
@@ -200,18 +181,6 @@ async function fetchTemplates(params: TemplateListParams, tenantId?: string): Pr
   if (!response.ok) {
     const error = await response.json();
     throw new Error(error.error || 'Failed to fetch templates');
-  }
-  return response.json();
-}
-
-async function fetchTemplateStats(tenantId?: string): Promise<TemplateStats> {
-  const searchParams = new URLSearchParams();
-  if (tenantId) searchParams.set('tenantId', tenantId);
-
-  const response = await fetch(`/api/document-templates/stats?${searchParams}`);
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to fetch template stats');
   }
   return response.json();
 }
@@ -308,7 +277,6 @@ function DocumentTemplatesTab({
 
   // Search, filters, sort and page live in the URL; the column layout is saved per user.
   const { params, setParams, updateParams } = useUrlListParams('/template-partials/documents', TEMPLATE_LIST_PARAMS);
-  const oakDocOnly = !params.archived;
   const search = useDebouncedSearch(params.query, (query) => updateParams({ query }));
   const columns = useTableColumnPreference(COLUMN_PREFERENCE_KEY, COLUMN_IDS, {
     locked: LOCKED_COLUMNS,
@@ -317,8 +285,7 @@ function DocumentTemplatesTab({
   const [columnsOpen, setColumnsOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
-  // Modal states (only for view, delete, duplicate - create/edit use full page)
-  const [viewingTemplate, setViewingTemplate] = useState<DocumentTemplate | null>(null);
+  // Modal states (only for delete and duplicate - create/edit use full page)
   const [deletingTemplate, setDeletingTemplate] = useState<DocumentTemplate | null>(null);
   const [duplicatingTemplate, setDuplicatingTemplate] = useState<DocumentTemplate | null>(null);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
@@ -344,15 +311,8 @@ function DocumentTemplatesTab({
   });
   usePersistSessionListSnapshot(queryKey, data);
 
-  const { data: templateStats } = useQuery({
-    queryKey: ['document-templates-stats', activeTenantId],
-    queryFn: () => fetchTemplateStats(activeTenantId),
-    enabled: !!activeTenantId && !oakDocOnly,
-  });
-
   const invalidateLists = () => {
     queryClient.invalidateQueries({ queryKey: ['document-templates'] });
-    queryClient.invalidateQueries({ queryKey: ['document-templates-stats'] });
   };
 
   // Mutations
@@ -400,20 +360,8 @@ function DocumentTemplatesTab({
     router.push('/generated-documents/generate?editor=oakdoc');
   };
 
-  const openEditModal = (template: DocumentTemplate) => {
-    if (isOakDocTemplate(template)) {
-      router.push(
-        `/generated-documents/generate?editor=oakdoc&templateId=${encodeURIComponent(template.id)}`,
-      );
-      return;
-    }
-    router.push(`/template-partials/editor?id=${template.id}&tab=templates`);
-  };
-
-  // Word templates open in OakDoc; archived A4 templates open the read-only preview.
   const openTemplate = (template: DocumentTemplate) => {
-    if (oakDocOnly) openEditModal(template);
-    else setViewingTemplate(template);
+    router.push(`/generated-documents/generate?editor=oakdoc&templateId=${encodeURIComponent(template.id)}`);
   };
 
   const handleDelete = (reason?: string) => {
@@ -438,7 +386,6 @@ function DocumentTemplatesTab({
 
   const templates = useMemo(() => data?.templates ?? [], [data?.templates]);
   const selectedTemplates = templates.filter((template) => selectedIds.has(template.id));
-  const health = templateStats?.health;
 
   // Selection is per page: changing the list clears it.
   const setListParams = useCallback((patch: Partial<TemplateListParams>) => {
@@ -552,8 +499,8 @@ function DocumentTemplatesTab({
       <button
         type="button"
         onClick={() => openTemplate(template)}
-        title={oakDocOnly ? 'Open in OakDoc' : 'Preview template'}
-        aria-label={oakDocOnly ? `Open ${template.name} in OakDoc` : `Preview ${template.name}`}
+        title="Open in OakDoc"
+        aria-label={`Open ${template.name} in OakDoc`}
         className="inline-flex h-8 w-8 items-center justify-center rounded text-text-muted transition-colors hover:bg-background-tertiary hover:text-text-primary"
       >
         <Eye className="w-4 h-4" aria-hidden="true" />
@@ -571,8 +518,8 @@ function DocumentTemplatesTab({
             </button>
           </DropdownTrigger>
           <DropdownMenu align="right">
-            {canUpdate && <DropdownItem icon={<Pencil className="w-4 h-4" />} onClick={() => openEditModal(template)}>{isOakDocTemplate(template) ? 'Edit' : 'View'}</DropdownItem>}
-            {canCreate && isOakDocTemplate(template) && <DropdownItem icon={<Copy className="w-4 h-4" />} onClick={() => openDuplicateDialog(template)}>Duplicate</DropdownItem>}
+            {canUpdate && <DropdownItem icon={<Pencil className="w-4 h-4" />} onClick={() => openTemplate(template)}>Edit</DropdownItem>}
+            {canCreate && <DropdownItem icon={<Copy className="w-4 h-4" />} onClick={() => openDuplicateDialog(template)}>Duplicate</DropdownItem>}
             {canUpdate && <DropdownItem
               icon={template.isActive ? <X className="w-4 h-4" /> : <Check className="w-4 h-4" />}
               onClick={() => toggleActiveMutation.mutate({
@@ -720,12 +667,10 @@ function DocumentTemplatesTab({
       <LibraryToolbar
         label="Template filters"
         searchLabel="Search templates"
-        searchPlaceholder={oakDocOnly ? 'Search Word templates by name or description' : 'Search archived A4 templates'}
+        searchPlaceholder="Search Word templates by name or description"
         search={search.draft}
         onSearchChange={search.setDraft}
         onSearchClear={() => search.commitNow('')}
-        archived={!oakDocOnly}
-        onArchivedChange={(archived) => setListParams({ archived: archived || undefined })}
         hiddenColumnCount={columns.hiddenColumnCount}
         onAdjustColumns={() => setColumnsOpen(true)}
       >
@@ -759,49 +704,6 @@ function DocumentTemplatesTab({
       />
 
       <ActiveFilterBar filters={activeFilters} onClearAll={clearAllFilters} />
-
-      {!oakDocOnly && health && (
-        <div className="card border-border-primary bg-background-secondary">
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-2">
-                <FileText className="w-4 h-4 text-accent-primary" />
-                <h3 className="text-sm font-medium text-text-primary">Template Health</h3>
-              </div>
-              <p className="text-xs text-text-muted mt-1">
-                {health.activeTemplatesCanGenerateCleanly} active templates can render without missing partials.
-              </p>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
-              <div>
-                <p className="text-text-muted text-xs">Missing Partials</p>
-                <p className={cn(
-                  'font-semibold',
-                  health.activeTemplatesWithMissingPartials > 0 ? 'text-status-error' : 'text-status-success'
-                )}>
-                  {health.activeTemplatesWithMissingPartials}
-                </p>
-              </div>
-              <div>
-                <p className="text-text-muted text-xs">Required Fields</p>
-                <p className="font-semibold text-text-primary">{health.requiredCustomFields.length}</p>
-              </div>
-              <div>
-                <p className="text-text-muted text-xs">Last Successful Test</p>
-                <p className="font-semibold text-text-primary">Not tracked</p>
-              </div>
-            </div>
-          </div>
-          {health.missingPartialReferences.length > 0 && (
-            <p className="mt-3 text-xs text-status-error">
-              Missing: {health.missingPartialReferences.slice(0, 3).map((item) => (
-                `${item.templateName} -> ${item.partialName}`
-              )).join(', ')}
-              {health.missingPartialReferences.length > 3 ? '...' : ''}
-            </p>
-          )}
-        </div>
-      )}
 
       {error && (
         <div className="card border-status-error bg-status-error/5">
@@ -843,10 +745,10 @@ function DocumentTemplatesTab({
           emptyState={(
             <ListEmptyState
               icon={FileText}
-              noun={oakDocOnly ? 'Word templates' : 'archived A4 templates'}
+              noun="Word templates"
               filtered={filtered}
               onClearFilters={clearAllFilters}
-              createAction={canCreate && oakDocOnly
+              createAction={canCreate
                 ? <Button variant="primary" size="sm" leftIcon={<Plus />} onClick={openCreate}>Create your first Word template</Button>
                 : undefined}
             />
@@ -881,62 +783,6 @@ function DocumentTemplatesTab({
           )}
         />
       )}
-
-      {/* Preview Modal */}
-      <Modal
-        isOpen={!!viewingTemplate}
-        onClose={() => setViewingTemplate(null)}
-        title={viewingTemplate?.name || 'Template Preview'}
-        size="xl"
-      >
-        <ModalBody>
-          {viewingTemplate && (
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 flex-wrap">
-                {renderStatus(viewingTemplate)}
-                <span className="badge badge-info">{getCategoryLabel(viewingTemplate.category)}</span>
-                <span className="text-xs text-text-muted">Version {viewingTemplate.version}</span>
-              </div>
-
-              {viewingTemplate.description && (
-                <p className="text-sm text-text-secondary">{viewingTemplate.description}</p>
-              )}
-
-              <div className="border border-border-primary rounded-lg p-4 bg-background-secondary">
-                {isOakDocTemplate(viewingTemplate) ? (
-                  <div className="py-8 text-center">
-                    <FileText className="mx-auto h-8 w-8 text-accent-primary" />
-                    <p className="mt-2 text-sm font-medium text-text-primary">
-                      DOCX-native OakDoc template
-                    </p>
-                    <p className="mt-1 text-xs text-text-muted">
-                      Open this template in OakDoc to view and edit the Word document.
-                    </p>
-                  </div>
-                ) : (
-                  <RichTextDisplay content={viewingTemplate.content} />
-                )}
-              </div>
-            </div>
-          )}
-        </ModalBody>
-        <ModalFooter>
-          <Button variant="secondary" onClick={() => setViewingTemplate(null)}>
-            Close
-          </Button>
-          {canUpdate && viewingTemplate && (
-            <Button
-              variant="primary"
-              onClick={() => {
-                setViewingTemplate(null);
-                openEditModal(viewingTemplate);
-              }}
-            >
-              Edit Template
-            </Button>
-          )}
-        </ModalFooter>
-      </Modal>
 
       {/* Duplicate Modal */}
       <Modal

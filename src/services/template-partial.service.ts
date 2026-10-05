@@ -66,8 +66,8 @@ export interface UpdatePartialInput {
 export interface SearchPartialsInput {
   search?: string;
   category?: TemplatePartialCategory;
-  /** `oakdoc` lists Word partials, `a4` the archived HTML partials. */
-  editor?: 'oakdoc' | 'a4';
+  /** `oakdoc` lists only Word partials. */
+  editor?: 'oakdoc';
   page?: number;
   limit?: number;
   sortBy?: 'name' | 'category' | 'createdBy' | 'createdAt' | 'updatedAt';
@@ -397,12 +397,6 @@ export async function searchTemplatePartials(
   }
   if (editor === 'oakdoc') {
     where.contentJson = oakDocContentJsonFilter();
-  } else if (editor === 'a4') {
-    const wordPartials = await prisma.templatePartial.findMany({
-      where: { tenantId, deletedAt: null, contentJson: oakDocContentJsonFilter() },
-      select: { id: true },
-    });
-    where.id = { notIn: wordPartials.map((partial) => partial.id) };
   }
 
   const [partials, total] = await Promise.all([

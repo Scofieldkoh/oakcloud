@@ -162,7 +162,7 @@ export const searchDocumentTemplatesSchema = z.object({
   query: z.string().optional(),
   category: documentTemplateCategoryEnum.optional(),
   isActive: z.boolean().optional(),
-  editor: z.enum(['oakdoc', 'a4']).optional(),
+  editor: z.enum(['oakdoc']).optional(),
   /** Column filters from the template list. */
   name: z.string().optional(),
   createdBy: z.string().optional(),

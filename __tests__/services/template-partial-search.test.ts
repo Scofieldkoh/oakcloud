@@ -32,22 +32,6 @@ describe('template partial search', () => {
     expect(listCall.where).toMatchObject({ tenantId: 'tenant-1', deletedAt: null, contentJson: wordFilter });
   });
 
-  it('lists archived A4 partials by excluding every Word partial', async () => {
-    prismaMock.templatePartial.findMany
-      .mockResolvedValueOnce([{ id: 'word-1' }])
-      .mockResolvedValueOnce([]);
-
-    await searchTemplatePartials({ editor: 'a4' }, actor);
-
-    expect(prismaMock.templatePartial.findMany).toHaveBeenNthCalledWith(1, {
-      where: { tenantId: 'tenant-1', deletedAt: null, contentJson: wordFilter },
-      select: { id: true },
-    });
-    const listCall = prismaMock.templatePartial.findMany.mock.calls[1]?.[0];
-    expect(listCall.where).toMatchObject({ id: { notIn: ['word-1'] } });
-    expect(listCall.where).not.toHaveProperty('contentJson');
-  });
-
   it('keeps unfiltered searches for other callers', async () => {
     await searchTemplatePartials({}, actor);
 

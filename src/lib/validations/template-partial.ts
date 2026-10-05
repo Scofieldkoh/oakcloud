@@ -82,7 +82,7 @@ export const searchTemplatePartialsSchema = z.object({
   limit: z.number().min(1).max(100).default(20),
   sortBy: z.enum(['name', 'category', 'createdBy', 'createdAt', 'updatedAt']).default('name'),
   sortOrder: z.enum(['asc', 'desc']).default('asc'),
-  editor: z.enum(['oakdoc', 'a4']).optional(),
+  editor: z.enum(['oakdoc']).optional(),
   category: templatePartialCategoryEnum.optional(),
   /** Column filters from the partial list. */
   name: z.string().optional(),
