@@ -117,7 +117,15 @@ describe('Document Templates pages', () => {
     // Filter row, header row, then the two templates; the second template row is banded.
     expect(rows).toHaveLength(4);
     expect(rows[3].className).toContain('bg-oak-row-alt');
-    expect(within(table).getByRole('searchbox', { name: 'Filter by template name' })).toBeVisible();
+    for (const name of ['Filter by template name', 'Filter by description', 'Filter by version']) {
+      expect(within(table).getByRole(name === 'Filter by version' ? 'spinbutton' : 'searchbox', { name })).toBeVisible();
+    }
+    const filterRow = rows[0];
+    const filterCells = within(filterRow).getAllByRole('columnheader').slice(1, -1);
+    // Every data column (not the selection box or Actions) carries an inline filter.
+    for (const cell of filterCells) {
+      expect(cell.childElementCount).toBeGreaterThan(0);
+    }
     expect(within(table).getByRole('button', { name: 'Sort by Documents' })).toBeVisible();
     expect(within(table).getByRole('separator', { name: 'Resize Template column' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Columns/ })).toBeVisible();
@@ -150,7 +158,9 @@ describe('Document Templates pages', () => {
 
     await waitFor(() => expect(screen.getByRole('table')).toHaveTextContent('No Word partials yet'));
     const table = screen.getByRole('table');
-    expect(within(table).getByRole('searchbox', { name: 'Filter by partial name' })).toBeVisible();
+    for (const name of ['Filter by partial name', 'Filter by reference', 'Filter by description']) {
+      expect(within(table).getByRole('searchbox', { name })).toBeVisible();
+    }
     expect(screen.getByRole('button', { name: 'Resolutions' })).toBeVisible();
   });
 });

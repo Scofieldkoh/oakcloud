@@ -113,11 +113,21 @@ function getCategoryLabel(category: string) {
 // List state (kept in the URL) and columns (kept per user)
 // ============================================================================
 
+type UsageFilter = 'used' | 'unused';
+
+const USAGE_OPTIONS: { value: UsageFilter; label: string }[] = [
+  { value: 'used', label: 'Any' },
+  { value: 'unused', label: 'None' },
+];
+
 interface TemplateListParams {
   query: string;
   name: string | undefined;
+  description: string | undefined;
   category: string | undefined;
   status: TemplateStatusFilter | undefined;
+  version: string | undefined;
+  usage: UsageFilter | undefined;
   createdBy: string | undefined;
   updatedFrom: string | undefined;
   updatedTo: string | undefined;
@@ -130,8 +140,11 @@ interface TemplateListParams {
 const TEMPLATE_LIST_PARAMS: UrlParamSpec<TemplateListParams> = {
   query: urlParam.string('', { key: 'q' }),
   name: urlParam.optional(),
+  description: urlParam.optional(),
   category: urlParam.optional(),
   status: urlParam.optional<TemplateStatusFilter>(),
+  version: urlParam.optional(),
+  usage: urlParam.optional<UsageFilter>(),
   createdBy: urlParam.optional(),
   updatedFrom: urlParam.optional(),
   updatedTo: urlParam.optional(),
@@ -167,6 +180,9 @@ async function fetchTemplates(params: TemplateListParams, tenantId?: string): Pr
   if (params.name) searchParams.set('name', params.name);
   if (params.category) searchParams.set('category', params.category);
   if (params.status) searchParams.set('isActive', String(params.status === 'active'));
+  if (params.description) searchParams.set('description', params.description);
+  if (params.version && /^\d+$/.test(params.version)) searchParams.set('version', params.version);
+  if (params.usage) searchParams.set('usage', params.usage);
   if (params.createdBy) searchParams.set('createdBy', params.createdBy);
   if (params.updatedFrom) searchParams.set('updatedFrom', params.updatedFrom);
   if (params.updatedTo) searchParams.set('updatedTo', params.updatedTo);
@@ -419,8 +435,11 @@ function DocumentTemplatesTab({
       ...previous,
       query: '',
       name: undefined,
+      description: undefined,
       category: undefined,
       status: undefined,
+      version: undefined,
+      usage: undefined,
       createdBy: undefined,
       updatedFrom: undefined,
       updatedTo: undefined,
@@ -434,6 +453,9 @@ function DocumentTemplatesTab({
   if (params.name) activeFilters.push({ key: 'name', label: 'Template', value: params.name, onRemove: () => setListParams({ name: undefined }) });
   if (params.category) activeFilters.push({ key: 'category', label: 'Category', value: getCategoryLabel(params.category), onRemove: () => setListParams({ category: undefined }) });
   if (params.status) activeFilters.push({ key: 'status', label: 'Status', value: params.status === 'active' ? 'Active' : 'Inactive', onRemove: () => setListParams({ status: undefined }) });
+  if (params.description) activeFilters.push({ key: 'description', label: 'Description', value: params.description, onRemove: () => setListParams({ description: undefined }) });
+  if (params.version) activeFilters.push({ key: 'version', label: 'Version', value: `v${params.version}`, onRemove: () => setListParams({ version: undefined }) });
+  if (params.usage) activeFilters.push({ key: 'usage', label: 'Documents', value: params.usage === 'used' ? 'Any' : 'None', onRemove: () => setListParams({ usage: undefined }) });
   if (params.createdBy) activeFilters.push({ key: 'createdBy', label: 'Created By', value: params.createdBy, onRemove: () => setListParams({ createdBy: undefined }) });
   if (params.updatedFrom || params.updatedTo) {
     activeFilters.push({
@@ -561,6 +583,14 @@ function DocumentTemplatesTab({
       label: COLUMN_LABELS.description,
       defaultWidth: 240,
       minWidth: 140,
+      renderFilter: () => (
+        <TableTextFilter
+          ariaLabel="Filter by description"
+          value={params.description}
+          onChange={(description) => setListParams({ description })}
+          debounceMs={300}
+        />
+      ),
       render: (template) => template.description
         ? <span className="block truncate text-text-secondary" title={template.description}>{template.description}</span>
         : <span className="text-text-muted">—</span>,
@@ -606,6 +636,15 @@ function DocumentTemplatesTab({
       rightAligned: true,
       defaultWidth: 90,
       minWidth: 80,
+      renderFilter: () => (
+        <TableTextFilter
+          type="number"
+          ariaLabel="Filter by version"
+          value={params.version}
+          onChange={(version) => setListParams({ version })}
+          debounceMs={300}
+        />
+      ),
       render: (template) => <span className="text-text-secondary">v{template.version}</span>,
     },
     usage: {
@@ -615,6 +654,15 @@ function DocumentTemplatesTab({
       rightAligned: true,
       defaultWidth: 110,
       minWidth: 90,
+      renderFilter: () => (
+        <TableSelectFilter
+          options={[{ value: '', label: 'All' }, ...USAGE_OPTIONS]}
+          value={params.usage ?? ''}
+          onChange={(usage) => setListParams({ usage: (usage || undefined) as UsageFilter | undefined })}
+          placeholder="All"
+          ariaLabel="Filter by documents"
+        />
+      ),
       render: (template) => <span className="text-text-secondary">{template._count?.generatedDocuments ?? 0}</span>,
     },
     createdBy: {

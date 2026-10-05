@@ -112,4 +112,18 @@ describe('document-template search', () => {
     expect(prismaMock.documentTemplate.findMany.mock.calls[0]?.[0].orderBy).toEqual([{ isActive: 'asc' }, { name: 'asc' }]);
     expect(prismaMock.documentTemplate.findMany.mock.calls[1]?.[0].orderBy).toEqual([{ createdBy: { firstName: 'desc' } }, { name: 'asc' }]);
   });
+
+  it('filters by description, exact version and whether documents were generated', async () => {
+    await searchDocumentTemplates({ page: 1, limit: 20, sortBy: 'name', sortOrder: 'asc', description: 'board', version: 3, usage: 'used' }, 'tenant-1');
+    await searchDocumentTemplates({ page: 1, limit: 20, sortBy: 'name', sortOrder: 'asc', usage: 'unused' }, 'tenant-1');
+
+    expect(prismaMock.documentTemplate.findMany.mock.calls[0]?.[0].where).toMatchObject({
+      description: { contains: 'board', mode: 'insensitive' },
+      version: 3,
+      generatedDocuments: { some: {} },
+    });
+    expect(prismaMock.documentTemplate.findMany.mock.calls[1]?.[0].where).toMatchObject({
+      generatedDocuments: { none: {} },
+    });
+  });
 });

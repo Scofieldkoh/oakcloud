@@ -80,6 +80,9 @@ async function fetchPartials(
   if (params.editor) searchParams.set('editor', params.editor);
   if (params.category) searchParams.set('category', params.category);
   if (params.name) searchParams.set('name', params.name);
+  if (params.reference) searchParams.set('reference', params.reference);
+  if (params.description) searchParams.set('description', params.description);
+  if (params.usage) searchParams.set('usage', params.usage);
   if (params.createdBy) searchParams.set('createdBy', params.createdBy);
   if (params.updatedFrom) searchParams.set('updatedFrom', params.updatedFrom);
   if (params.updatedTo) searchParams.set('updatedTo', params.updatedTo);
@@ -231,6 +234,9 @@ export function useTemplatePartials(options: UseTemplatePartialsOptions = {}) {
     editor: params.editor,
     category: params.category,
     name: params.name,
+    reference: params.reference,
+    description: params.description,
+    usage: params.usage,
     createdBy: params.createdBy,
     updatedFrom: params.updatedFrom,
     updatedTo: params.updatedTo,

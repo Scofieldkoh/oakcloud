@@ -500,6 +500,8 @@ export function TableTextFilter({
         aria-label={ariaLabel}
         className={cn(
           TABLE_FILTER_NATIVE_INPUT_CLASS,
+          // The clear button below replaces the browser's own search clear icon.
+          '[&::-webkit-search-cancel-button]:appearance-none',
           draft && 'pr-8',
         )}
       />

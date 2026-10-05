@@ -77,10 +77,20 @@ function PartialSyntax({ name }: { name: string }) {
 
 type PartialSortField = 'name' | 'category' | 'createdBy' | 'updatedAt';
 
+type UsageFilter = 'used' | 'unused';
+
+const USAGE_OPTIONS: { value: UsageFilter; label: string }[] = [
+  { value: 'used', label: 'Used' },
+  { value: 'unused', label: 'Unused' },
+];
+
 interface PartialListParams {
   query: string;
   name: string | undefined;
+  reference: string | undefined;
+  description: string | undefined;
   category: TemplatePartialCategoryValue | undefined;
+  usage: UsageFilter | undefined;
   createdBy: string | undefined;
   updatedFrom: string | undefined;
   updatedTo: string | undefined;
@@ -93,7 +103,10 @@ interface PartialListParams {
 const PARTIAL_LIST_PARAMS: UrlParamSpec<PartialListParams> = {
   query: urlParam.string('', { key: 'q' }),
   name: urlParam.optional(),
+  reference: urlParam.optional(),
+  description: urlParam.optional(),
   category: urlParam.optional<TemplatePartialCategoryValue>(),
+  usage: urlParam.optional<UsageFilter>(),
   createdBy: urlParam.optional(),
   updatedFrom: urlParam.optional(),
   updatedTo: urlParam.optional(),
@@ -165,6 +178,9 @@ function TemplatePartialsTab({
     editor: 'oakdoc',
     category: params.category,
     name: params.name,
+    reference: params.reference,
+    description: params.description,
+    usage: params.usage,
     createdBy: params.createdBy,
     updatedFrom: params.updatedFrom,
     updatedTo: params.updatedTo,
@@ -292,7 +308,10 @@ function TemplatePartialsTab({
       ...previous,
       query: '',
       name: undefined,
+      reference: undefined,
+      description: undefined,
       category: undefined,
+      usage: undefined,
       createdBy: undefined,
       updatedFrom: undefined,
       updatedTo: undefined,
@@ -305,6 +324,9 @@ function TemplatePartialsTab({
   if (params.query) activeFilters.push({ key: 'query', label: 'Search', value: params.query, onRemove: () => search.commitNow('') });
   if (params.name) activeFilters.push({ key: 'name', label: 'Partial', value: params.name, onRemove: () => setListParams({ name: undefined }) });
   if (params.category) activeFilters.push({ key: 'category', label: 'Category', value: templatePartialCategoryLabel(params.category), onRemove: () => setListParams({ category: undefined }) });
+  if (params.reference) activeFilters.push({ key: 'reference', label: 'Reference', value: params.reference, onRemove: () => setListParams({ reference: undefined }) });
+  if (params.description) activeFilters.push({ key: 'description', label: 'Description', value: params.description, onRemove: () => setListParams({ description: undefined }) });
+  if (params.usage) activeFilters.push({ key: 'usage', label: 'Used In', value: params.usage === 'used' ? 'Used' : 'Unused', onRemove: () => setListParams({ usage: undefined }) });
   if (params.createdBy) activeFilters.push({ key: 'createdBy', label: 'Created By', value: params.createdBy, onRemove: () => setListParams({ createdBy: undefined }) });
   if (params.updatedFrom || params.updatedTo) {
     activeFilters.push({
@@ -379,6 +401,14 @@ function TemplatePartialsTab({
       label: COLUMN_LABELS.syntax,
       defaultWidth: 260,
       minWidth: 140,
+      renderFilter: () => (
+        <TableTextFilter
+          ariaLabel="Filter by reference"
+          value={params.reference}
+          onChange={(reference) => setListParams({ reference })}
+          debounceMs={300}
+        />
+      ),
       render: (partial) => <span className="block truncate" title={`{{> ${partial.name} }}`}><PartialSyntax name={partial.name} /></span>,
     },
     description: {
@@ -386,6 +416,14 @@ function TemplatePartialsTab({
       label: COLUMN_LABELS.description,
       defaultWidth: 200,
       minWidth: 140,
+      renderFilter: () => (
+        <TableTextFilter
+          ariaLabel="Filter by description"
+          value={params.description}
+          onChange={(description) => setListParams({ description })}
+          debounceMs={300}
+        />
+      ),
       render: (partial) => partial.description
         ? <span className="block truncate text-text-secondary" title={partial.description}>{partial.description}</span>
         : <span className="text-text-muted">—</span>,
@@ -414,6 +452,15 @@ function TemplatePartialsTab({
       label: COLUMN_LABELS.usage,
       defaultWidth: 120,
       minWidth: 110,
+      renderFilter: () => (
+        <TableSelectFilter
+          options={[{ value: '', label: 'All' }, ...USAGE_OPTIONS]}
+          value={params.usage ?? ''}
+          onChange={(usage) => setListParams({ usage: (usage || undefined) as UsageFilter | undefined })}
+          placeholder="All"
+          ariaLabel="Filter by usage"
+        />
+      ),
       render: (partial) => <UsageCount count={partial._count?.usedInTemplates || 0} />,
     },
     createdBy: {

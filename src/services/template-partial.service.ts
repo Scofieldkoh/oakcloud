@@ -74,6 +74,9 @@ export interface SearchPartialsInput {
   sortOrder?: 'asc' | 'desc';
   /** Column filters: name or display name, creator's name, and updated day range. */
   name?: string;
+  reference?: string;
+  description?: string;
+  usage?: 'used' | 'unused';
   createdBy?: string;
   updatedFrom?: string;
   updatedTo?: string;
@@ -369,6 +372,9 @@ export async function searchTemplatePartials(
     editor,
     category,
     name,
+    reference,
+    description,
+    usage,
     createdBy,
     updatedFrom,
     updatedTo,
@@ -385,6 +391,8 @@ export async function searchTemplatePartials(
       ],
     });
   }
+  if (reference?.trim()) and.push({ name: { contains: reference.trim(), mode: 'insensitive' } });
+  if (description?.trim()) where.description = { contains: description.trim(), mode: 'insensitive' };
   if (createdBy?.trim()) where.createdBy = personNameFilter(createdBy);
   const updatedAt = dayRangeFilter(updatedFrom, updatedTo);
   if (updatedAt) where.updatedAt = updatedAt;
@@ -399,27 +407,45 @@ export async function searchTemplatePartials(
     where.contentJson = oakDocContentJsonFilter();
   }
 
+  const orderBy: Prisma.TemplatePartialOrderByWithRelationInput[] = sortBy === 'createdBy'
+    ? [{ createdBy: { firstName: sortOrder } }, { name: 'asc' }]
+    : sortBy === 'name'
+      ? [{ name: sortOrder }]
+      : [{ [sortBy]: sortOrder }, { name: 'asc' }];
+  const usageCount = await loadTemplateUsageCounter(tenantId);
+  const withUsage = (partial: TemplatePartialWithRelations) =>
+    ({ ...partial, _count: { usedInTemplates: usageCount(partial.name) } });
+
+  // Usage is worked out from template content, not stored, so a usage filter
+  // counts every matching partial and pages the filtered list in memory.
+  if (usage) {
+    const matching = (await prisma.templatePartial.findMany({
+      where,
+      include: { createdBy: { select: { id: true, firstName: true, lastName: true } } },
+      orderBy,
+    })).map(withUsage);
+    const filtered = matching.filter((partial) => (partial._count.usedInTemplates > 0) === (usage === 'used'));
+    return {
+      partials: filtered.slice((page - 1) * limit, page * limit),
+      total: filtered.length,
+      page,
+      limit,
+      totalPages: Math.ceil(filtered.length / limit),
+    };
+  }
+
   const [partials, total] = await Promise.all([
     prisma.templatePartial.findMany({
       where,
       include: { createdBy: { select: { id: true, firstName: true, lastName: true } } },
-      orderBy: sortBy === 'createdBy'
-        ? [{ createdBy: { firstName: sortOrder } }, { name: 'asc' }]
-        : sortBy === 'name'
-          ? [{ name: sortOrder }]
-          : [{ [sortBy]: sortOrder }, { name: 'asc' }],
+      orderBy,
       skip: (page - 1) * limit,
       take: limit,
     }),
     prisma.templatePartial.count({ where }),
   ]);
 
-  const partialsWithCounts = await Promise.all(
-    partials.map(async (partial) => {
-      const usageCount = await countPartialUsage(partial.id, params);
-      return { ...partial, _count: { usedInTemplates: usageCount } };
-    }),
-  );
+  const partialsWithCounts = partials.map(withUsage);
 
   return {
     partials: partialsWithCounts,
@@ -513,6 +539,24 @@ async function countPartialUsage(
 ): Promise<number> {
   const usage = await getPartialUsage(partialId, params);
   return usage.templates.length;
+}
+
+/**
+ * Reads every template once and returns how many reference a partial name,
+ * the same count `getPartialUsage` gives per partial.
+ */
+async function loadTemplateUsageCounter(tenantId: string): Promise<(partialName: string) => number> {
+  const templates = await prisma.documentTemplate.findMany({
+    where: { tenantId, deletedAt: null },
+    select: { content: true },
+  });
+  const counts = new Map<string, number>();
+  for (const template of templates) {
+    for (const name of new Set(extractPartialReferences(template.content))) {
+      counts.set(name, (counts.get(name) ?? 0) + 1);
+    }
+  }
+  return (partialName) => counts.get(partialName) ?? 0;
 }
 
 export async function getPartialsUsedInTemplate(

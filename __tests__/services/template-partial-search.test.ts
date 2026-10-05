@@ -1,6 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const prismaMock = vi.hoisted(() => ({
+  documentTemplate: {
+    findMany: vi.fn(),
+  },
   templatePartial: {
     findMany: vi.fn(),
     count: vi.fn(),
@@ -23,6 +26,7 @@ describe('template partial search', () => {
     vi.clearAllMocks();
     prismaMock.templatePartial.findMany.mockResolvedValue([]);
     prismaMock.templatePartial.count.mockResolvedValue(0);
+    prismaMock.documentTemplate.findMany.mockResolvedValue([]);
   });
 
   it('lists Word partials by their OakDoc metadata', async () => {
@@ -76,5 +80,50 @@ describe('template partial search', () => {
     expect(prismaMock.templatePartial.findMany.mock.calls[0]?.[0].orderBy).toEqual([{ category: 'desc' }, { name: 'asc' }]);
     expect(prismaMock.templatePartial.findMany.mock.calls[1]?.[0].orderBy).toEqual([{ createdBy: { firstName: 'asc' } }, { name: 'asc' }]);
     expect(prismaMock.templatePartial.findMany.mock.calls[2]?.[0].orderBy).toEqual([{ name: 'asc' }]);
+  });
+
+  it('filters by reference key and description', async () => {
+    await searchTemplatePartials({ reference: ' director ', description: 'resign' }, actor);
+
+    const listCall = prismaMock.templatePartial.findMany.mock.calls[0]?.[0];
+    expect(listCall.where).toMatchObject({
+      AND: [{ name: { contains: 'director', mode: 'insensitive' } }],
+      description: { contains: 'resign', mode: 'insensitive' },
+    });
+  });
+
+  it('counts template usage once per template from one template read', async () => {
+    prismaMock.templatePartial.findMany.mockResolvedValue([
+      { id: 'p1', name: 'header' },
+      { id: 'p2', name: 'footer' },
+    ]);
+    prismaMock.templatePartial.count.mockResolvedValue(2);
+    prismaMock.documentTemplate.findMany.mockResolvedValue([
+      { content: '{{> header }} {{> header }}' },
+      { content: '{{> header }}' },
+    ]);
+
+    const result = await searchTemplatePartials({}, actor);
+
+    expect(prismaMock.documentTemplate.findMany).toHaveBeenCalledTimes(1);
+    expect(result.partials.map((partial) => partial._count?.usedInTemplates)).toEqual([2, 0]);
+  });
+
+  it('filters by usage and pages the filtered list', async () => {
+    prismaMock.templatePartial.findMany.mockResolvedValue([
+      { id: 'p1', name: 'a' },
+      { id: 'p2', name: 'b' },
+      { id: 'p3', name: 'c' },
+    ]);
+    prismaMock.documentTemplate.findMany.mockResolvedValue([{ content: '{{> a }} {{> c }}' }]);
+
+    const used = await searchTemplatePartials({ usage: 'used', page: 2, limit: 1 }, actor);
+    const unused = await searchTemplatePartials({ usage: 'unused' }, actor);
+
+    expect(prismaMock.templatePartial.findMany.mock.calls[0]?.[0]).not.toHaveProperty('skip');
+    expect(used).toMatchObject({ total: 2, totalPages: 2, page: 2 });
+    expect(used.partials.map((partial) => partial.id)).toEqual(['p3']);
+    expect(unused.partials.map((partial) => partial.id)).toEqual(['p2']);
+    expect(prismaMock.templatePartial.count).not.toHaveBeenCalled();
   });
 });
