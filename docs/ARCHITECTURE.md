@@ -350,6 +350,29 @@ and "F45B" (consent to act as secretary, per contact on the "Corporate
 secretary to be appointed" list) are in `src/content/secretarial/` and are
 seeded with `scripts/seed-consent-form-templates.ts --email <login>`.
 
+The corporate secretarial starters (`src/content/secretarial/corp-sec-*.ts`)
+are seeded separately with `scripts/seed-corp-sec-templates.ts --email <login>
+[--replace]`: 36 resolution partials (display names grouped "AGM - ",
+"Officers - ", "Auditor - ", "Shares - ", "Company - ", "Bank - ",
+"Dividend - ", "Striking Off - ", "General - "), 22 "Board Resolution - ..." and
+"Members Resolution - ..." templates presetting them (Arial 10, underlined
+headings), 19 standard documents (AGM notice, short notice consent, attendance
+list, minutes, proxy and corporate representative forms, director and auditor
+letters, nominee director agreement and indemnity, application for shares,
+share certificate, instrument of transfer, solvency statement, dividend
+voucher, striking off declaration, onboarding letters) and a draft
+"Customer Due Diligence (Corporate Client)" form
+(`src/lib/form-templates/sg-customer-due-diligence.ts`). The documents are
+written with a small sentence kit (`corp-sec-oakdoc-kit.ts`) that collects
+each one's custom fields and section names into its placeholders; custom keys
+are shared across documents (`corp-sec-fields.ts`) so Shared setup asks once
+per batch. People come from named contacts lists ("Applicant", "Transferor",
+"Transferee", "Director to be appointed", "Authorised signatories",
+"Nominator", "Nominee director"), the officers record, or the shareholders
+record. `company.auditorName` and `company.auditorAddress` print the auditor
+on record, and `shareholder.dividendAmount` is the holder's shares times the
+`custom.dividend_per_share` amount entered on Configure.
+
 Service-specific input definitions use the `service` placeholder source, for
 example `service.fields.software`, and may use the `textarea` type. The editor
 keeps these separate from custom fields and preserves source, path, category,

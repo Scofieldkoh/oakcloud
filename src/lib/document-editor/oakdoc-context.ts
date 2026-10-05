@@ -108,6 +108,8 @@ export interface OakDocCompanyDetail {
   officers?: OakDocOfficer[];
   shareholders?: OakDocShareholder[];
   contacts?: OakDocContact[];
+  /** The company's auditor on record, if any. */
+  auditor?: { name?: string | null; address?: string | null } | null;
 }
 
 export const OAKDOC_AGREEMENT_FIELD_DEFINITIONS: ReadonlyArray<
@@ -383,6 +385,8 @@ function buildCompanyContext(company: OakDocCompanyDetail) {
     secondaryActivity: ssicActivity(company.secondarySsicCode, company.secondarySsicDescription),
     financialYearEnd: financialYearEnd(company),
     firstFinancialYearEnd: firstFinancialYearEnd(company),
+    auditorName: company.auditor?.name?.trim() ?? '',
+    auditorAddress: company.auditor?.address?.trim() ?? '',
   };
 }
 

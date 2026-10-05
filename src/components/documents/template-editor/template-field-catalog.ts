@@ -46,6 +46,8 @@ export const TEMPLATE_FIELD_CATEGORIES: readonly TemplateFieldCategory[] = [
     { key: 'company.secondaryActivity', label: 'Secondary Activity', example: '70201 | Management consultancy services', category: 'Company' },
     { key: 'company.financialYearEnd', label: 'Financial Year End', example: '31 December', category: 'Company' },
     { key: 'company.firstFinancialYearEnd', label: 'First Financial Year End', example: '31 December 2026', category: 'Company' },
+    { key: 'company.auditorName', label: 'Auditor Name', example: 'Sample & Co. Public Accounting Corporation', category: 'Company' },
+    { key: 'company.auditorAddress', label: 'Auditor Address', example: '1 Sample Road, #10-01, Singapore 123456', category: 'Company' },
   ] },
   { key: 'selected-director', label: 'Selected Director', fields: [
     { key: 'selectedDirector.name', label: 'Director Name', example: 'John Tan Wei Ming', category: 'Selected Director' },

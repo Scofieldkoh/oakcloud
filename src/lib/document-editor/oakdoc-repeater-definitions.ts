@@ -45,6 +45,24 @@ export interface OakDocRepeaterGenerationData {
    * each person once (Configure stores the record of the role chosen).
    */
   selectedOfficerIds?: readonly string[];
+  /**
+   * The dividend per share entered on Configure (the `custom.dividend_per_share`
+   * field), from which each shareholder's Dividend Amount is worked out.
+   */
+  dividendPerShare?: number | null;
+}
+
+/** Custom field key whose amount each shareholder's Dividend Amount multiplies. */
+export const OAKDOC_DIVIDEND_PER_SHARE_KEY = 'dividend_per_share';
+
+/** A typed amount ("0.05", "SGD 1,000.50") as a number; null when it is not one. */
+export function parseOakDocAmount(value: unknown): number | null {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : null;
+  if (typeof value !== 'string') return null;
+  const text = value.replace(/[^0-9.-]/g, '');
+  if (!/^-?\d*\.?\d+$/.test(text)) return null;
+  const amount = Number(text);
+  return Number.isFinite(amount) ? amount : null;
 }
 
 /** Roles an officers repeater can be limited to, with the slug its tag carries. */
@@ -285,7 +303,15 @@ function officerValues(officer: OakDocOfficer): Record<string, string> {
   };
 }
 
-function shareholderValues(shareholder: OakDocShareholder): Record<string, string> {
+/** Shares times the dividend per share, to the cent; blank without either. */
+function dividendAmount(shares: number | null | undefined, perShare: number | null | undefined): string {
+  if (perShare === null || perShare === undefined || shares === null || shares === undefined) return '';
+  const amount = Math.round(Number(shares) * perShare * 100) / 100;
+  if (!Number.isFinite(amount)) return '';
+  return amount.toLocaleString('en-SG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function shareholderValues(shareholder: OakDocShareholder, dividendPerShare?: number | null): Record<string, string> {
   return {
     'shareholder.name': shareholder.name || '',
     'shareholder.shareholderType': formatOakDocRole(shareholder.shareholderType),
@@ -296,6 +322,7 @@ function shareholderValues(shareholder: OakDocShareholder): Record<string, strin
     'shareholder.numberOfShares': formatNumber(shareholder.numberOfShares),
     'shareholder.percentageHeld': formatPercentage(shareholder.percentageHeld),
     'shareholder.isNominee': shareholder.isNominee ? 'Yes' : 'No',
+    'shareholder.dividendAmount': dividendAmount(shareholder.numberOfShares, dividendPerShare),
   };
 }
 
@@ -346,11 +373,12 @@ readonly OakDocGenericRepeaterDefinition[] = [
       { tag: 'shareholder.numberOfShares', label: 'Number of Shares', category: 'Repeating Shareholder', example: '50,000' },
       { tag: 'shareholder.percentageHeld', label: 'Percentage Held', category: 'Repeating Shareholder', example: '50%' },
       { tag: 'shareholder.isNominee', label: 'Nominee Shareholder', category: 'Repeating Shareholder', example: 'No' },
+      { tag: 'shareholder.dividendAmount', label: 'Dividend Amount (shares x Dividend per share)', category: 'Repeating Shareholder', example: '350.00' },
     ],
     generationDataAdapter: (data) => (data.company.shareholders ?? [])
       .filter((shareholder) => shareholder.isCurrent !== false
         && isSelected(data.selectedShareholderIds, shareholder.id))
-      .map(shareholderValues),
+      .map((shareholder) => shareholderValues(shareholder, data.dividendPerShare)),
   },
   {
     kind: 'contacts',

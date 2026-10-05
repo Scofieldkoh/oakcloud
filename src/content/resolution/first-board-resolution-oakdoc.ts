@@ -46,7 +46,7 @@ export const FIRST_BOARD_RESOLUTION_PLACEHOLDERS: PlaceholderDefinition[] = [
 ];
 
 /** Underlines the heading text after "N.<tab>", as in the reference. */
-const HEADING_STYLE = `
+export const HEADING_STYLE = `
   <w:style w:type="character" w:customStyle="1" w:styleId="${OAKDOC_RESOLUTION_HEADING_STYLE}"><w:name w:val="Resolution Heading"/><w:rPr><w:u w:val="single"/></w:rPr></w:style>`;
 
 /** The whole template, master and partials, prints in Arial 10 pt. */
