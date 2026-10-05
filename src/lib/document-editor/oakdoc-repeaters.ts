@@ -19,7 +19,9 @@ import {
   isOakDocRepeaterTag,
   type OakDocGenericRepeaterDefinition,
   type OakDocGenericRepeaterKind,
+  type OakDocRepeaterGenerationData,
 } from '@/lib/document-editor/oakdoc-repeater-definitions';
+import type { OakDocConditionDefinition } from '@/lib/document-editor/oakdoc-conditions';
 
 export type OakDocRepeaterKind = OakDocGenericRepeaterKind;
 export type OakDocRepeaterDefinition = OakDocGenericRepeaterDefinition;
@@ -57,6 +59,8 @@ export function resolveOakDocRepeaters(input: {
   selectedShareholderIds?: readonly string[];
   selectedOfficerIds?: readonly string[];
   dividendPerShare?: number | null;
+  personValues?: OakDocRepeaterGenerationData['personValues'];
+  conditions?: ReadonlyMap<string, OakDocConditionDefinition>;
 }): {
   bytes: Uint8Array;
   repeatersResolved: number;
@@ -76,6 +80,8 @@ export function resolveOakDocRepeaters(input: {
       selectedShareholderIds: input.selectedShareholderIds,
       selectedOfficerIds: input.selectedOfficerIds,
       dividendPerShare: input.dividendPerShare,
+      personValues: input.personValues,
     },
+    conditions: input.conditions,
   });
 }

@@ -1,6 +1,7 @@
 import type { OakDocFieldDefinition } from '@/lib/document-editor/oakdoc-fields';
 import { OFFICER_ROLES } from '@/lib/constants';
 import { oneOfficerPerPerson } from '@/lib/officer-identity';
+import { contactIdentity, identificationLabel } from '@/lib/document-party';
 import type {
   OakDocAgreementEntity,
   OakDocCompanyDetail,
@@ -50,7 +51,18 @@ export interface OakDocRepeaterGenerationData {
    * field), from which each shareholder's Dividend Amount is worked out.
    */
   dividendPerShare?: number | null;
+  /**
+   * Values of each section's per-person fields (`item.<key>`), ready to
+   * print: by repeater tag, then person id, then field tag.
+   */
+  personValues?: Readonly<Record<string, Readonly<Record<string, Readonly<Record<string, string>>>>>>;
 }
+
+/**
+ * The id of the person (officer, shareholder or contact) a repeated item is
+ * for, carried with its values so per-person values can be added; not a tag.
+ */
+export const OAKDOC_REPEATER_ITEM_ID = '@id';
 
 /** Custom field key whose amount each shareholder's Dividend Amount multiplies. */
 export const OAKDOC_DIVIDEND_PER_SHARE_KEY = 'dividend_per_share';
@@ -244,8 +256,14 @@ function phoneAfterEmail(contact: OakDocContact): string {
   return email ? ` / ${phone}` : phone;
 }
 
+function isCorporate(type: string | null | undefined): boolean {
+  return (type ?? '').toUpperCase() === 'CORPORATE';
+}
+
 function contactValues(namespace: string, contact: OakDocContact): Record<string, string> {
+  const corporate = isCorporate(contact.contactType);
   return {
+    [OAKDOC_REPEATER_ITEM_ID]: contact.id,
     [namespace + '.name']: contact.name || '',
     [namespace + '.role']:
       formatOakDocRole(contact.role || contact.detail || contact.appointments?.[0]),
@@ -254,6 +272,8 @@ function contactValues(namespace: string, contact: OakDocContact): Record<string
     [namespace + '.phoneAfterEmail']: phoneAfterEmail(contact),
     [namespace + '.address']: contactAddress(contact),
     [namespace + '.identificationNumber']: contact.identificationNumber || '',
+    [namespace + '.idLabel']: identificationLabel(contact.identificationType, corporate, contact.identificationNumber),
+    [namespace + '.isCorporate']: corporate ? 'Yes' : '',
     [namespace + '.nationality']: contact.nationality || '',
   };
 }
@@ -268,8 +288,10 @@ const ROLE_SMALL_WORDS = new Set(['and', 'of', 'the', 'for', 'to', 'in', 'on', '
  * role already typed in mixed case is left untouched.
  */
 export function formatOakDocRole(value: string | null | undefined): string {
-  const role = (value ?? '').trim();
-  if (!role || role !== role.toUpperCase()) return role;
+  const stored = (value ?? '').trim();
+  if (!stored || stored !== stored.toUpperCase()) return stored;
+  // Registry keys ("NOMINEE_DIRECTOR") read as words.
+  const role = stored.replace(/_/g, ' ');
   let first = true;
   return role.replace(/[A-Za-z]+/g, (word) => {
     const isFirst = first;
@@ -281,11 +303,22 @@ export function formatOakDocRole(value: string | null | undefined): string {
   });
 }
 
+/** An officer's or shareholder's own number, else their linked contact's. */
+function partyIdentity(party: OakDocOfficer | OakDocShareholder): { number: string; type: string | null } {
+  const own = party.identificationNumber?.trim();
+  if (own) return { number: own, type: party.identificationType ?? null };
+  const linked = party.contact ? contactIdentity(party.contact) : null;
+  return { number: linked?.identificationNumber ?? '', type: linked?.identificationType ?? null };
+}
+
 function directorValues(officer: OakDocOfficer): Record<string, string> {
+  const identity = partyIdentity(officer);
   return {
+    [OAKDOC_REPEATER_ITEM_ID]: officer.id,
     'director.name': officer.name || '',
     'director.role': formatOakDocRole(officer.role),
-    'director.identificationNumber': officer.identificationNumber || '',
+    'director.identificationNumber': identity.number,
+    'director.idLabel': identificationLabel(identity.type, false, identity.number),
     'director.nationality': officer.nationality || '',
     'director.appointmentDate': formatDate(officer.appointmentDate),
     'director.address': officer.address || '',
@@ -293,10 +326,13 @@ function directorValues(officer: OakDocOfficer): Record<string, string> {
 }
 
 function officerValues(officer: OakDocOfficer): Record<string, string> {
+  const identity = partyIdentity(officer);
   return {
+    [OAKDOC_REPEATER_ITEM_ID]: officer.id,
     'officer.name': officer.name || '',
     'officer.role': formatOakDocRole(officer.role),
-    'officer.identificationNumber': officer.identificationNumber || '',
+    'officer.identificationNumber': identity.number,
+    'officer.idLabel': identificationLabel(identity.type, false, identity.number),
     'officer.nationality': officer.nationality || '',
     'officer.appointmentDate': formatDate(officer.appointmentDate),
     'officer.address': officer.address || '',
@@ -312,11 +348,18 @@ function dividendAmount(shares: number | null | undefined, perShare: number | nu
 }
 
 function shareholderValues(shareholder: OakDocShareholder, dividendPerShare?: number | null): Record<string, string> {
+  const corporate = isCorporate(shareholder.shareholderType);
+  const identity = partyIdentity(shareholder);
+  const nationality = shareholder.nationality?.trim() ?? '';
   return {
+    [OAKDOC_REPEATER_ITEM_ID]: shareholder.id,
     'shareholder.name': shareholder.name || '',
     'shareholder.shareholderType': formatOakDocRole(shareholder.shareholderType),
-    'shareholder.identificationNumber': shareholder.identificationNumber || '',
-    'shareholder.nationality': shareholder.nationality || '',
+    'shareholder.identificationNumber': identity.number,
+    'shareholder.idLabel': identificationLabel(identity.type, corporate, identity.number),
+    'shareholder.isCorporate': corporate ? 'Yes' : '',
+    'shareholder.nationality': nationality,
+    'shareholder.nationalityOrPlace': corporate ? shareholder.placeOfOrigin?.trim() || nationality : nationality,
     'shareholder.address': shareholder.address || '',
     'shareholder.shareClass': shareholder.shareClass || '',
     'shareholder.numberOfShares': formatNumber(shareholder.numberOfShares),
@@ -347,6 +390,7 @@ readonly OakDocGenericRepeaterDefinition[] = [
       { tag: 'director.name', label: 'Director Name', category: 'Repeating Director', example: 'John Tan' },
       { tag: 'director.role', label: 'Director Role', category: 'Repeating Director', example: 'Director' },
       { tag: 'director.identificationNumber', label: 'Director Identification Number', category: 'Repeating Director', example: 'S1234567A' },
+      { tag: 'director.idLabel', label: 'Director ID Type (NRIC No., Passport No.)', category: 'Repeating Director', example: 'NRIC No.' },
       { tag: 'director.nationality', label: 'Director Nationality', category: 'Repeating Director', example: 'Singaporean' },
       { tag: 'director.appointmentDate', label: 'Director Appointment Date', category: 'Repeating Director', example: '15 Jan 2023' },
       { tag: 'director.address', label: 'Director Address', category: 'Repeating Director', example: '123 Sample Street' },
@@ -366,8 +410,11 @@ readonly OakDocGenericRepeaterDefinition[] = [
     fields: [
       { tag: 'shareholder.name', label: 'Shareholder Name', category: 'Repeating Shareholder', example: 'Mary Lee' },
       { tag: 'shareholder.shareholderType', label: 'Shareholder Type', category: 'Repeating Shareholder', example: 'Individual' },
-      { tag: 'shareholder.identificationNumber', label: 'Shareholder Identification Number', category: 'Repeating Shareholder', example: 'S7654321B' },
+      { tag: 'shareholder.identificationNumber', label: 'Shareholder Identification Number (UEN for a company)', category: 'Repeating Shareholder', example: 'S7654321B' },
+      { tag: 'shareholder.idLabel', label: 'Shareholder ID Type (NRIC No., UEN)', category: 'Repeating Shareholder', example: 'NRIC No.' },
+      { tag: 'shareholder.isCorporate', label: 'Shareholder Is a Company (Yes or blank)', category: 'Repeating Shareholder', example: '' },
       { tag: 'shareholder.nationality', label: 'Shareholder Nationality', category: 'Repeating Shareholder', example: 'Singaporean' },
+      { tag: 'shareholder.nationalityOrPlace', label: 'Shareholder Nationality or Place of Incorporation', category: 'Repeating Shareholder', example: 'Singaporean' },
       { tag: 'shareholder.address', label: 'Shareholder Address', category: 'Repeating Shareholder', example: '456 Sample Road' },
       { tag: 'shareholder.shareClass', label: 'Share Class', category: 'Repeating Shareholder', example: 'Ordinary' },
       { tag: 'shareholder.numberOfShares', label: 'Number of Shares', category: 'Repeating Shareholder', example: '50,000' },
@@ -393,7 +440,9 @@ readonly OakDocGenericRepeaterDefinition[] = [
       { tag: 'contact.phone', label: 'Contact Phone', category: 'Repeating Contact', example: '+65 6123 4567' },
       { tag: 'contact.phoneAfterEmail', label: 'Contact Phone (after email)', category: 'Repeating Contact', example: ' / +65 6123 4567' },
       { tag: 'contact.address', label: 'Contact Address', category: 'Repeating Contact', example: '123 Sample Street' },
-      { tag: 'contact.identificationNumber', label: 'Contact Identification Number', category: 'Repeating Contact', example: 'S1234567A' },
+      { tag: 'contact.identificationNumber', label: 'Contact Identification Number (UEN for a company)', category: 'Repeating Contact', example: 'S1234567A' },
+      { tag: 'contact.idLabel', label: 'Contact ID Type (NRIC No., UEN)', category: 'Repeating Contact', example: 'NRIC No.' },
+      { tag: 'contact.isCorporate', label: 'Contact Is a Company (Yes or blank)', category: 'Repeating Contact', example: '' },
       { tag: 'contact.nationality', label: 'Contact Nationality', category: 'Repeating Contact', example: 'Singaporean' },
     ],
     // A named list (`repeat.contacts.<slug>`) prints only its own contacts.
@@ -413,6 +462,7 @@ readonly OakDocGenericRepeaterDefinition[] = [
       { tag: 'officer.name', label: 'Officer Name', category: 'Repeating Officer', example: 'Jane Ng' },
       { tag: 'officer.role', label: 'Officer Role', category: 'Repeating Officer', example: 'Secretary' },
       { tag: 'officer.identificationNumber', label: 'Officer Identification Number', category: 'Repeating Officer', example: 'S2345678C' },
+      { tag: 'officer.idLabel', label: 'Officer ID Type (NRIC No., Passport No.)', category: 'Repeating Officer', example: 'NRIC No.' },
       { tag: 'officer.nationality', label: 'Officer Nationality', category: 'Repeating Officer', example: 'Singaporean' },
       { tag: 'officer.appointmentDate', label: 'Officer Appointment Date', category: 'Repeating Officer', example: '1 Mar 2024' },
       { tag: 'officer.address', label: 'Officer Address', category: 'Repeating Officer', example: '789 Sample Avenue' },

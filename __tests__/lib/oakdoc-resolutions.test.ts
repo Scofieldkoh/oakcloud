@@ -14,8 +14,11 @@ import {
   readOakDocPlainText,
   unlockOakDocResolutionSlotContent,
   previewOakDocResolutionSlot,
+  clearOakDocResolutionSlotPreview,
   RESOLUTION_SLOT_PLACEHOLDER,
 } from '@/lib/document-editor/oakdoc-resolutions';
+import { APPROVE_SHARE_TRANSFER, LODGEMENT, TRANSFEROR_LIST } from '@/content/secretarial/corp-sec-resolutions';
+
 import { buildBoardResolutionOakDocMaster } from '@/content/resolution/board-resolution-oakdoc';
 import { readResolutionPreset, resolutionCompositionIssues } from '@/lib/resolution-composition';
 import { inspectOakDocPackage } from '@/lib/document-editor/oakdoc-package-policy';
@@ -145,6 +148,28 @@ describe('OakDoc numbered resolutions', () => {
       sections: [{ id: 'a', kind: 'CUSTOM', heading: 'BANK ACCOUNT', body: 'RESOLVED that an account be opened.' }],
     });
     expect(documentXml(result.bytes)).toMatch(/w:ascii="Arial"[^]*?RESOLVED that an account be opened\./);
+  });
+
+  it('previews a preset partial with its own fields and sections, and clears the preview before saving', () => {
+    const master = buildBoardResolutionOakDocMaster();
+    const transfer = APPROVE_SHARE_TRANSFER.build().bytes;
+    const previewed = previewOakDocResolutionSlot(master, [
+      { heading: 'TRANSFER OF SHARES', text: 'fallback text', partial: { id: '77777777-7777-4777-8777-777777777777', bytes: transfer } },
+      { heading: 'NOTIFICATION AND LODGEMENT', text: '', partial: { id: '77777777-7777-4777-8777-777777777778', bytes: LODGEMENT.build().bytes } },
+    ]);
+    const xml = documentXml(previewed);
+    expect(xml).not.toContain('fallback text');
+    expect(xml).toContain('w:val="contact.name"');
+    expect(xml).toContain('w:val="item.shares"');
+    expect(xml).toContain(`repeat.contacts.${TRANSFEROR_LIST.toLowerCase()}`);
+    expect(xml).toContain('>2.</w:t><w:tab/><w:t xml:space="preserve">NOTIFICATION AND LODGEMENT<');
+
+    const cleared = clearOakDocResolutionSlotPreview(previewed);
+    expect(documentXml(cleared)).toContain(RESOLUTION_SLOT_PLACEHOLDER);
+    expect(documentXml(cleared)).not.toContain('item.shares');
+    expect(deriveOakDocTemplateFieldTags(cleared)).toEqual(deriveOakDocTemplateFieldTags(master));
+    // A plain slot is left as it is.
+    expect(clearOakDocResolutionSlotPreview(master)).toBe(master);
   });
 
   it('previews preset resolutions in the slot without changing what generation prints', () => {

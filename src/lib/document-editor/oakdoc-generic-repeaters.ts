@@ -14,6 +14,10 @@ import {
 } from '@/lib/document-editor/oakdoc-blocks';
 import { writeOakDocControlValue } from '@/lib/document-editor/oakdoc-fields';
 import {
+  resolveOakDocItemConditions,
+  type OakDocConditionDefinition,
+} from '@/lib/document-editor/oakdoc-conditions';
+import {
   isOakDocRepeaterLettered,
   letterOakDocRepeaterItem,
   oakDocRepeaterAliasName,
@@ -26,6 +30,7 @@ import {
   oakDocRepeaterDefinitionForTag,
   parseOakDocContactListSlug,
   parseOakDocOfficerRepeaterRoles,
+  OAKDOC_REPEATER_ITEM_ID,
   type OakDocGenericRepeaterDefinition,
   type OakDocRepeaterGenerationData,
 } from '@/lib/document-editor/oakdoc-repeater-definitions';
@@ -359,6 +364,8 @@ function keepItemTogether(nodes: readonly Node[]): void {
 export function resolveOakDocGenericRepeaters(input: {
   docxBytes: Uint8Array;
   data: OakDocRepeaterGenerationData;
+  /** The package's conditions; those testing an item's own fields resolve per item. */
+  conditions?: ReadonlyMap<string, OakDocConditionDefinition>;
 }): { bytes: Uint8Array; repeatersResolved: number; itemsCreated: number; fieldsResolved: number } {
   const files = unzipSync(input.docxBytes);
   const part = files[DOCUMENT_PART];
@@ -393,17 +400,24 @@ export function resolveOakDocGenericRepeaters(input: {
     if (!itemContent) continue;
 
     const items = definition.generationDataAdapter(input.data, tag);
+    const personValues = input.data.personValues?.[tag];
     // Lettered sections letter each copy only when there is more than one.
     const lettered = items.length > 1 && isOakDocRepeaterLettered(repeater);
-    for (const [index, values] of items.entries()) {
+    for (const [index, itemValues] of items.entries()) {
+      const values = { ...itemValues, ...(personValues?.[itemValues[OAKDOC_REPEATER_ITEM_ID]] ?? {}) };
       const clones: Node[] = [];
       for (const templateNode of Array.from(itemContent.childNodes)) {
         const clone = templateNode.cloneNode(true);
         reseedParagraphIds(clone, para, text);
         reseedControls(clone, allocateId);
-        fieldsResolved += resolveItemFields(clone, values);
-        parent.insertBefore(clone, repeater);
-        clones.push(clone);
+        const kept = input.conditions?.size
+          ? resolveOakDocItemConditions(clone, input.conditions, values)
+          : [clone];
+        for (const node of kept) {
+          fieldsResolved += resolveItemFields(node, values);
+          parent.insertBefore(node, repeater);
+          clones.push(node);
+        }
       }
       if (lettered) letterOakDocRepeaterItem(clones, index);
       keepItemTogether(clones);

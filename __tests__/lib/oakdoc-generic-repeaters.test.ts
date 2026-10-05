@@ -373,6 +373,7 @@ describe('OakDoc generic repeaters', () => {
 
   it('formats registry roles and leaves typed roles alone', () => {
     expect(formatOakDocRole('DIRECTOR')).toBe('Director');
+    expect(formatOakDocRole('NOMINEE_DIRECTOR')).toBe('Nominee Director');
     expect(formatOakDocRole('CEO')).toBe('CEO');
     expect(formatOakDocRole('DIRECTOR / CFO')).toBe('Director / CFO');
     expect(formatOakDocRole('ALTERNATE DIRECTOR')).toBe('Alternate Director');

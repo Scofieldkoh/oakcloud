@@ -16,6 +16,7 @@ import {
 import {
   OAKDOC_CONDITION_TAG_PREFIX,
   inspectOakDocConditions,
+  readOakDocConditionDefinitions,
   resolveOakDocConditions,
 } from '@/lib/document-editor/oakdoc-conditions';
 import {
@@ -42,12 +43,23 @@ import {
 } from '@/lib/document-editor/oakdoc-repeaters';
 import {
   OAKDOC_DIVIDEND_PER_SHARE_KEY,
+  OAKDOC_REPEATER_ITEM_ID,
+  oakDocContactListNameFromSlug,
+  oakDocRepeaterDefinitionForTag,
   parseOakDocAmount,
   parseOakDocContactListSlug,
+  type OakDocRepeaterGenerationData,
 } from '@/lib/document-editor/oakdoc-repeater-definitions';
+import {
+  checkOakDocPersonFields,
+  formatOakDocPersonValues,
+  type OakDocPersonValues,
+} from '@/lib/document-editor/oakdoc-person-values';
 import { OAKDOC_SIGNATURE_TAGS } from '@/lib/document-editor/oakdoc-signatures';
 import {
+  OAKDOC_REPEATER_ITEM_FIELD_TAGS,
   diagnoseOakDocTags,
+  isOakDocRepeaterItemFieldTag,
   oakDocFieldContext,
   type OakDocFieldContext,
 } from '@/lib/document-editor/oakdoc-field-registry';
@@ -59,9 +71,11 @@ import {
   buildOakDocCustomFieldValues,
   oakDocContactShortlist,
   oakDocCustomContactFields,
+  mergeOakDocRepeaterSectionSummaries,
   oakDocRepeaterSectionSummary,
   oakDocCustomFieldTypes,
   parseOakDocCustomFieldTag,
+  type OakDocPersonField,
 } from '@/lib/document-editor/oakdoc-custom-fields';
 import { getServiceAgreementDraftById } from '@/services/service-agreement/draft.service';
 import {
@@ -148,6 +162,8 @@ export interface OakDocGenerationInput {
   contactIds?: string[];
   /** Contacts listed by each named contacts list (`repeat.contacts.<slug>`), by slug, in order. */
   selectedContactListIds?: Record<string, string[]>;
+  /** Per-person field values (`item.<key>`): by repeater tag, then person id, then key. */
+  personValues?: OakDocPersonValues;
   /**
    * Custom field values by key (without `custom.`). Absent leaves custom
    * fields showing their placeholder, as the editor preview does.
@@ -314,6 +330,7 @@ export async function generateOakDocBytes(
     customContactFields: oakDocCustomContactFields(template.placeholders),
     contactShortlist: contactShortlistIds(template.placeholders),
     contactListShortlists: contactListShortlistIds(template.placeholders),
+    personFields: oakDocRepeaterSectionSummary(template.placeholders).personFields ?? {},
   }, input, params);
 }
 
@@ -370,6 +387,7 @@ export async function previewOakDocMaster(
     customContactFields: oakDocCustomContactFields(saved?.placeholders),
     contactShortlist: contactShortlistIds(saved?.placeholders),
     contactListShortlists: contactListShortlistIds(saved?.placeholders),
+    personFields: oakDocRepeaterSectionSummary(saved?.placeholders).personFields ?? {},
   }, {
     ...input,
     // The editor has no Configure step, so it previews sample resolutions.
@@ -395,6 +413,8 @@ interface OakDocMasterSource {
   contactShortlist: string[] | null;
   /** Ids each named contacts list may list, by slug; a list without a shortlist takes any contact. */
   contactListShortlists: Record<string, string[]>;
+  /** Per-person fields of the template's sections (and its inserted partials'), by repeater tag. */
+  personFields: Record<string, OakDocPersonField[]>;
 }
 
 function contactShortlistIds(placeholders: unknown): string[] | null {
@@ -409,6 +429,46 @@ function contactListShortlistIds(placeholders: unknown): Record<string, string[]
     if (slug && contacts.length > 0) lists[slug] = contacts.map((contact) => contact.id);
   }
   return lists;
+}
+
+/**
+ * Per-person values ready to print, for the sections in the document: the
+ * people each section lists are the ones it prints. Missing required values
+ * and totals that don't add up stop generation, naming the person.
+ */
+function resolvePersonValues(input: {
+  personFields: Record<string, OakDocPersonField[]>;
+  repeaterTags: readonly string[];
+  data: OakDocRepeaterGenerationData;
+  values?: OakDocPersonValues;
+  customData: Record<string, unknown>;
+}): Record<string, Record<string, Record<string, string>>> {
+  const present = new Set(input.repeaterTags);
+  const fields = Object.fromEntries(Object.entries(input.personFields).filter(([tag]) => present.has(tag)));
+  const people = Object.fromEntries(Object.keys(fields).map((tag) => {
+    const definition = oakDocRepeaterDefinitionForTag(tag);
+    const items = definition ? definition.generationDataAdapter(input.data, tag) : [];
+    return [tag, items.map((item) => ({
+      id: item[OAKDOC_REPEATER_ITEM_ID] ?? '',
+      name: item[`${definition!.itemTagNamespace}.name`] || definition!.itemLabel,
+    })).filter((person) => person.id)];
+  }));
+  const checked = checkOakDocPersonFields({
+    personFields: fields,
+    people,
+    values: input.values,
+    customData: input.customData,
+    sectionName: (tag) => {
+      const slug = parseOakDocContactListSlug(tag);
+      return slug ? oakDocContactListNameFromSlug(slug) : oakDocRepeaterDefinitionForTag(tag)?.label ?? tag;
+    },
+  });
+  if (checked.issues.length > 0) {
+    throw new ValidationError(checked.issues.map((issue) => issue.message).join(' '), {
+      personFields: checked.issues,
+    });
+  }
+  return formatOakDocPersonValues(fields, checked.values);
 }
 
 /**
@@ -433,6 +493,7 @@ async function renderOakDocMaster(
   let customContactFields = master.customContactFields;
   let contactShortlist = master.contactShortlist;
   let contactListShortlists = master.contactListShortlists;
+  let personFields = master.personFields;
   if (master.compositionType === 'RESOLUTION') {
     if (!input.resolution) {
       resolutionDiagnostics.push({
@@ -465,6 +526,10 @@ async function renderOakDocMaster(
         for (const [slug, ids] of Object.entries(contactListShortlistIds(partialFields))) {
           contactListShortlists[slug] = Array.from(new Set([...(contactListShortlists[slug] ?? []), ...ids]));
         }
+        personFields = mergeOakDocRepeaterSectionSummaries(
+          { names: {}, shortlists: {}, personFields },
+          oakDocRepeaterSectionSummary(partialFields),
+        ).personFields ?? {};
       }
     }
   }
@@ -584,6 +649,8 @@ async function renderOakDocMaster(
     docxBytes: masterBytes,
     values,
     allowedFields: new Set(resolutionTags),
+    // Conditions on a section's own fields resolve for each person it lists.
+    deferField: isOakDocRepeaterItemFieldTag,
   });
   if (conditioned.unresolvedFields.length > 0) {
     throw new ValidationError(
@@ -592,8 +659,7 @@ async function renderOakDocMaster(
     );
   }
 
-  const repeated = resolveOakDocRepeaters({
-    docxBytes: conditioned.bytes,
+  const repeaterData = {
     company: companyDetail,
     contacts,
     contactLists,
@@ -601,10 +667,33 @@ async function renderOakDocMaster(
     selectedShareholderIds: input.selectedShareholderIds,
     selectedOfficerIds: input.selectedOfficerIds,
     dividendPerShare: parseOakDocAmount(input.customData?.[OAKDOC_DIVIDEND_PER_SHARE_KEY]),
+  };
+  // Per-person values are checked only with Configure's values, as custom fields are.
+  const personValues = input.customData
+    ? resolvePersonValues({
+        personFields,
+        repeaterTags: inspectOakDocRepeaters(conditioned.bytes).tags,
+        data: repeaterData,
+        values: input.personValues,
+        customData: input.customData,
+      })
+    : undefined;
+  const repeatedSections = resolveOakDocRepeaters({
+    docxBytes: conditioned.bytes,
+    ...repeaterData,
+    personValues,
+    conditions: readOakDocConditionDefinitions(conditioned.bytes),
     ...(composition
       ? { signers: composition.signers, authorisedRepresentatives: composition.representatives }
       : {}),
   });
+  // A condition on a section's field placed outside any section has no person: it is left out.
+  const leftover = resolveOakDocConditions({
+    docxBytes: repeatedSections.bytes,
+    values: {},
+    allowedFields: OAKDOC_REPEATER_ITEM_FIELD_TAGS,
+  });
+  const repeated = { ...repeatedSections, bytes: leftover.bytes };
 
   let composedBytes = repeated.bytes;
   let agreementHash: string | undefined;

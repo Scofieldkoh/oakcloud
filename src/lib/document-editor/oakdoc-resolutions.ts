@@ -14,7 +14,7 @@ import {
   OAKDOC_SCALAR_FIELDS,
   type OakDocRegisteredField,
 } from '@/lib/document-editor/oakdoc-field-registry';
-import { oakDocPartialTag } from '@/lib/document-editor/oakdoc-partials';
+import { expandOakDocPartials, oakDocPartialTag } from '@/lib/document-editor/oakdoc-partials';
 import type { OakDocDiagnostic } from '@/types/oakdoc';
 import {
   customResolutionParagraphs,
@@ -373,15 +373,23 @@ export interface ResolutionSlotPreviewSection {
   heading: string;
   /** Plain wording; empty when it isn't known. */
   text: string;
+  /**
+   * The partial's current Word file. When given, the preview shows the
+   * partial itself (its fields and repeating sections as in the editor)
+   * instead of the plain wording.
+   */
+  partial?: { id: string; bytes: Uint8Array };
 }
 
 /**
  * Editor preview: show a template's preset resolutions inside its slot, laid
- * out like generation (numbered headings, then the wording as plain text).
- * The slot's first paragraph stays the formatting prototype and only changes
- * its text, so generation formatting is unaffected; generation replaces the
- * whole slot anyway. No sections restores the plain placeholder. Returns the
- * input bytes untouched when there is no single slot.
+ * out like generation (numbered headings, then each partial with its fields,
+ * or the wording as plain text). The slot's first paragraph stays the
+ * formatting prototype and only changes its text, so generation formatting
+ * is unaffected; generation replaces the whole slot anyway, and saving
+ * clears the preview (`clearOakDocResolutionSlotPreview`). No sections
+ * restores the plain placeholder. Returns the input bytes untouched when
+ * there is no single slot.
  */
 export function previewOakDocResolutionSlot(
   docxBytes: Uint8Array,
@@ -408,14 +416,43 @@ export function previewOakDocResolutionSlot(
   appendText(xml, label, sections.length > 0 ? RESOLUTION_SLOT_PRESET_LABEL : RESOLUTION_SLOT_PLACEHOLDER);
   first.appendChild(label);
   const styledHeadings = hasHeadingStyle(files);
+  const ids = new IdAllocator(xml);
+  const fragments = new Map<string, Uint8Array>();
   sections.forEach((section, index) => {
     content.appendChild(headingParagraph(xml, prototype, index + 1, section.heading, styledHeadings));
+    if (section.partial) {
+      fragments.set(section.partial.id, section.partial.bytes);
+      content.appendChild(partialReference(xml, ids, section.partial.id, section.heading.trim() || 'Resolution'));
+      return;
+    }
     for (const lines of customResolutionParagraphs(section.text)) {
       content.appendChild(textParagraph(xml, prototype, lines));
     }
   });
   files[DOCUMENT_PART] = serialize(xml);
-  return zipSync(files, { level: 6 });
+  const bytes = zipSync(files, { level: 6 });
+  if (fragments.size === 0) return bytes;
+  // Partials go in as generation inserts them; one that can't stays a reference.
+  return expandOakDocPartials({ docxBytes: bytes, fragments }).bytes;
+}
+
+/**
+ * The master as it is saved: a preset preview in the slot is display only,
+ * so the slot goes back to its plain placeholder (its formatting kept).
+ * Bytes without a single slot, or with a plain one, come back unchanged.
+ */
+export function clearOakDocResolutionSlotPreview(docxBytes: Uint8Array): Uint8Array {
+  const files = unzipSync(docxBytes);
+  const documentBytes = files[DOCUMENT_PART];
+  if (!documentBytes) return docxBytes;
+  const slots = findResolutionSlots(parseXml(documentBytes));
+  if (slots.length !== 1) return docxBytes;
+  const content = wordChild(slots[0], 'sdtContent');
+  const blocks = content ? wordChildren(content) : [];
+  const plain = blocks.length === 1
+    && blocks[0].localName === 'p'
+    && (blocks[0].textContent ?? '').trim() === RESOLUTION_SLOT_PLACEHOLDER;
+  return plain ? docxBytes : previewOakDocResolutionSlot(docxBytes, []);
 }
 
 /** Whether a master already holds the numbered resolutions slot. */

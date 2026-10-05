@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { formatOakDocRole } from '@/lib/document-editor/oakdoc-repeater-definitions';
 import {
   buildPartyContactFields,
+  contactIdentity,
   type DocumentParty,
 } from '@/lib/document-party';
 import { canonicalAppointment, rankAppointments } from '@/lib/representative-authority';
@@ -29,6 +30,17 @@ function isPositionRelationship(value: string): boolean {
   );
 }
 
+function withoutBlankIdentity<T extends { identificationNumber?: string | null; identificationType?: string | null }>(
+  fields: T | undefined,
+): Partial<T> {
+  if (!fields) return {};
+  if (fields.identificationNumber?.trim()) return fields;
+  const rest: Partial<T> = { ...fields };
+  delete rest.identificationNumber;
+  delete rest.identificationType;
+  return rest;
+}
+
 export interface DocumentPartySelections {
   selectedDirector?: DocumentParty;
   selectedDirectors?: DocumentParty[];
@@ -42,6 +54,9 @@ function contactSelect(tenantId: string) {
     fullName: true,
     contactType: true,
     fullAddress: true,
+    identificationType: true,
+    identificationNumber: true,
+    corporateUen: true,
     contactDetails: {
       where: { tenantId, deletedAt: null },
       select: {
@@ -72,6 +87,7 @@ export async function getDocumentPartyOptions(
           name: true,
           role: true,
           nationality: true,
+          identificationType: true,
           identificationNumber: true,
           address: true,
           appointmentDate: true,
@@ -85,6 +101,7 @@ export async function getDocumentPartyOptions(
           name: true,
           shareholderType: true,
           nationality: true,
+          identificationType: true,
           identificationNumber: true,
           shareClass: true,
           numberOfShares: true,
@@ -141,6 +158,7 @@ export async function getDocumentPartyOptions(
         DocumentParty,
         | 'nationality'
         | 'identificationNumber'
+        | 'identificationType'
         | 'role'
         | 'appointmentDate'
         | 'shareholderType'
@@ -154,6 +172,9 @@ export async function getDocumentPartyOptions(
       fullName: string;
       contactType: string;
       fullAddress: string | null;
+      identificationType: string | null;
+      identificationNumber: string | null;
+      corporateUen: string | null;
       contactDetails: Array<{
         detailType: string;
         value: string;
@@ -169,7 +190,10 @@ export async function getDocumentPartyOptions(
     name: record.name,
     detail: record.detail,
     contactType: record.contact?.contactType ?? null,
-    ...record.roleFields,
+    // A role record without its own number (a corporate shareholder keyed
+    // in by hand) prints its contact's: a company's UEN.
+    ...(record.contact ? contactIdentity(record.contact) : {}),
+    ...withoutBlankIdentity(record.roleFields),
     ...buildPartyContactFields({
       companyId,
       roleAddress: record.roleAddress,
@@ -192,6 +216,7 @@ export async function getDocumentPartyOptions(
         role: officer.role,
         nationality: officer.nationality,
         identificationNumber: officer.identificationNumber,
+        identificationType: officer.identificationType,
         appointmentDate: officer.appointmentDate,
       },
     }),
@@ -214,6 +239,7 @@ export async function getDocumentPartyOptions(
         shareholderType: shareholder.shareholderType,
         nationality: shareholder.nationality,
         identificationNumber: shareholder.identificationNumber,
+        identificationType: shareholder.identificationType,
         shareClass: shareholder.shareClass,
         numberOfShares: shareholder.numberOfShares,
         percentageHeld: shareholder.percentageHeld?.toString() ?? null,
@@ -342,7 +368,6 @@ export async function getDocumentContactParties(input: {
     where: { id: { in: ids }, tenantId: input.tenantId, deletedAt: null },
     select: {
       ...contactSelect(input.tenantId),
-      identificationNumber: true,
       nationality: true,
       companyRelations: {
         where: { companyId: companyId ?? '', deletedAt: null },
@@ -370,7 +395,7 @@ export async function getDocumentContactParties(input: {
       appointments,
       role: appointments[0] ?? null,
       contactType: contact.contactType,
-      identificationNumber: contact.identificationNumber,
+      ...contactIdentity(contact),
       nationality: contact.nationality,
       ...buildPartyContactFields({
         companyId: companyId ?? '',

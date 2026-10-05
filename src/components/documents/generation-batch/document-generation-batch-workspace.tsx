@@ -49,6 +49,7 @@ import {
   type DocumentPersonChoice,
 } from '@/lib/document-generation-per-person';
 import { oakDocRepeaterDefinitionForTag } from '@/lib/document-editor/oakdoc-repeater-definitions';
+import { personFieldIssues } from '@/lib/document-generation-person-fields';
 import {
   BATCH_STAGES,
   STAGE_LABELS,
@@ -300,6 +301,70 @@ export function DocumentGenerationBatchWorkspace({
     return map;
   }, [partialsQuery.data, state.batch.items, templateFieldsByTemplateId]);
 
+  // Word field tags per document, with those of its chosen resolution partials.
+  const fieldTagsByItemKey = useMemo(() => {
+    const byTemplateId = new Map(templates.map((template) => [template.id, template]));
+    const partials = partialsQuery.data?.partials ?? [];
+    const tags: Record<string, readonly string[] | undefined> = {};
+    for (const item of state.batch.items) {
+      const templateTags = readOakDocTemplateMetadata(byTemplateId.get(item.templateId)?.contentJson)?.fieldTags;
+      tags[item.key] = item.templateKind === 'RESOLUTION'
+        ? resolutionItemFieldTags(templateTags, item.configuration.resolution, partials)
+        : templateTags;
+    }
+    return tags;
+  }, [partialsQuery.data, templates, state.batch.items]);
+  // Section names and named contacts lists per document, with those of its
+  // chosen resolution partials.
+  const repeaterSectionsByItemKey = useMemo(() => {
+    const byTemplateId = new Map(templates.map((template) => [template.id, template]));
+    const partials = partialsQuery.data?.partials ?? [];
+    const sections: Record<string, OakDocRepeaterSectionSummary | null> = {};
+    for (const item of state.batch.items) {
+      const templateSections = byTemplateId.get(item.templateId)?.repeaterSections ?? null;
+      sections[item.key] = item.templateKind === 'RESOLUTION'
+        ? resolutionItemRepeaterSections(templateSections, item.configuration.resolution, partials)
+        : templateSections;
+    }
+    return sections;
+  }, [partialsQuery.data, templates, state.batch.items]);
+
+  // What is still missing or wrong in each document's per-person values.
+  const personFieldIssuesByKey = useMemo(() => {
+    const contactName = (id: string) => contactsById.get(id)?.fullName ?? 'Contact';
+    const issues: Record<string, ReturnType<typeof personFieldIssues>> = {};
+    for (const item of state.batch.items) {
+      const { configuration } = item;
+      issues[item.key] = personFieldIssues({
+        sections: repeaterSectionsByItemKey[item.key],
+        fieldTags: fieldTagsByItemKey[item.key],
+        configuration,
+        customValue: (key) => {
+          const own = configuration.itemValues[key];
+          if (typeof own === 'string' && own.trim()) return own;
+          const shared = state.batch.masterFields.fields.find((field) => field.key === key);
+          if (!shared) return '';
+          return configuration.masterOverrides[shared.id] ?? state.batch.masterFieldValues[shared.id] ?? '';
+        },
+        directors: partyOptions.directors,
+        shareholders: partyOptions.shareholders,
+        officers: partyOptions.officers,
+        contactName,
+      });
+    }
+    return issues;
+  }, [
+    contactsById,
+    fieldTagsByItemKey,
+    partyOptions.directors,
+    partyOptions.officers,
+    partyOptions.shareholders,
+    repeaterSectionsByItemKey,
+    state.batch.items,
+    state.batch.masterFields.fields,
+    state.batch.masterFieldValues,
+  ]);
+
   const masterFieldValues = state.batch.masterFieldValues;
 
   // Templates with a section that makes a separate document for each person.
@@ -317,8 +382,10 @@ export function DocumentGenerationBatchWorkspace({
       templateFieldsByTemplateId,
       itemFieldsByKey,
       perPersonTagByTemplateId,
+      personFieldIssuesByKey,
     }),
     [
+      personFieldIssuesByKey,
       state.batch.items,
       state.batch.masterFields,
       masterFieldValues,
@@ -351,19 +418,6 @@ export function DocumentGenerationBatchWorkspace({
     () => templates.find((template) => template.id === activeItem?.templateId) ?? null,
     [templates, activeItem?.templateId],
   );
-  // Word field tags per document, with those of its chosen resolution partials.
-  const fieldTagsByItemKey = useMemo(() => {
-    const byTemplateId = new Map(templates.map((template) => [template.id, template]));
-    const partials = partialsQuery.data?.partials ?? [];
-    const tags: Record<string, readonly string[] | undefined> = {};
-    for (const item of state.batch.items) {
-      const templateTags = readOakDocTemplateMetadata(byTemplateId.get(item.templateId)?.contentJson)?.fieldTags;
-      tags[item.key] = item.templateKind === 'RESOLUTION'
-        ? resolutionItemFieldTags(templateTags, item.configuration.resolution, partials)
-        : templateTags;
-    }
-    return tags;
-  }, [partialsQuery.data, templates, state.batch.items]);
   const activeOakDocFieldTags = activeItem ? fieldTagsByItemKey[activeItem.key] : undefined;
   const officerRolesByItemKey = useMemo(() => {
     const roles: Record<string, string[] | null> = {};
@@ -379,21 +433,6 @@ export function DocumentGenerationBatchWorkspace({
       ? resolutionItemContactShortlist(shortlist, activeItem.configuration.resolution, partialsQuery.data?.partials ?? [])
       : shortlist;
   }, [activeItem, activeTemplate, partialsQuery.data]);
-  // Section names and named contacts lists per document, with those of its
-  // chosen resolution partials.
-  const repeaterSectionsByItemKey = useMemo(() => {
-    const byTemplateId = new Map(templates.map((template) => [template.id, template]));
-    const partials = partialsQuery.data?.partials ?? [];
-    const sections: Record<string, OakDocRepeaterSectionSummary | null> = {};
-    for (const item of state.batch.items) {
-      const templateSections = byTemplateId.get(item.templateId)?.repeaterSections ?? null;
-      sections[item.key] = item.templateKind === 'RESOLUTION'
-        ? resolutionItemRepeaterSections(templateSections, item.configuration.resolution, partials)
-        : templateSections;
-    }
-    return sections;
-  }, [partialsQuery.data, templates, state.batch.items]);
-
   // Shared parties leave out a section that splits documents per person:
   // each of those documents is for its own person.
   const sharedPartyFieldTagsByItemKey = useMemo(() => {

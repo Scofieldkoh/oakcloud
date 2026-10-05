@@ -107,6 +107,10 @@ export const batchItemConfigurationSchema = z.object({
     z.string().refine(isOakDocContactListSlug, 'Invalid contacts list'),
     z.array(uuid).max(100),
   ).refine((lists) => Object.keys(lists).length <= 50, 'Too many contacts lists').optional(),
+  personValues: z.record(
+    z.string().max(200).refine(canOakDocRepeaterSplitDocuments, 'Invalid section'),
+    z.record(uuid, z.record(z.string().regex(/^[A-Za-z][A-Za-z0-9_]*$/).max(100), z.string().max(2000))),
+  ).refine((sections) => Object.keys(sections).length <= 50, 'Too many sections').optional(),
   selectedContactId: nullableUuid,
   itemValues: itemFieldValues,
   masterOverrides: stringFieldValues,

@@ -1,6 +1,10 @@
 import { zipSync } from 'fflate';
 import { encodeOakDocZipText } from '@/lib/document-editor/oakdoc-zip';
 import { OAKDOC_RESOLUTION_ITEMS_TAG } from '@/lib/document-editor/oakdoc-field-registry';
+import {
+  OAKDOC_CONDITION_TAG_PREFIX,
+  type OakDocConditionDefinition,
+} from '@/lib/document-editor/oakdoc-conditions';
 
 /**
  * WordprocessingML helpers for the seeded resolution masters and partials:
@@ -142,6 +146,29 @@ export function repeatingSection(ids: ControlIds, tag: string, alias: string, co
     content,
     '</w:sdtContent></w:sdt>',
     '</w:sdtContent></w:sdt>',
+  ].join('');
+}
+
+/**
+ * A stable id per condition, so seeded documents and partials agree on it
+ * (identical conditions share one definition when partials are merged).
+ */
+export function seededConditionId(condition: OakDocConditionDefinition): string {
+  const value = condition.value ?? '';
+  let hash = 0;
+  for (const char of value) hash = (hash * 31 + char.charCodeAt(0)) >>> 0;
+  return `${condition.field.replace(/[^A-Za-z0-9]/g, '')}${condition.operator}${value ? hash.toString(36) : ''}`;
+}
+
+/**
+ * Blocks (paragraphs or table rows) kept at generation only when the
+ * condition holds; store the definition with `addOakDocConditionDefinitions`.
+ */
+export function conditionalBlock(ids: ControlIds, conditionId: string, content: string): string {
+  return [
+    '<w:sdt><w:sdtPr><w:alias w:val="OakDoc conditional block"/>',
+    `<w:tag w:val="${OAKDOC_CONDITION_TAG_PREFIX}${xmlText(conditionId)}"/><w:id w:val="${ids.take()}"/></w:sdtPr>`,
+    `<w:sdtContent>${content}</w:sdtContent></w:sdt>`,
   ].join('');
 }
 

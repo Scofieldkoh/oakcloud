@@ -9,6 +9,12 @@ import {
 } from '@/lib/document-editor/oakdoc-blocks';
 import { OAKDOC_PARTIAL_TAG_PREFIX } from '@/lib/document-editor/oakdoc-field-registry';
 import {
+  addOakDocConditionDefinitions,
+  importOakDocConditionBlocks,
+  readOakDocConditionDefinitionsFromFiles,
+  type OakDocConditionDefinition,
+} from '@/lib/document-editor/oakdoc-conditions';
+import {
   createResolvedStyle,
   defaultParagraphStyleId,
   readStyleSheet,
@@ -311,9 +317,14 @@ class MasterPackage {
   private readonly drawingIds: IdAllocator;
   private relationshipCounter = 0;
   private dirty = new Set<string>();
+  /** The master's conditions and those its partials bring, written after the merge. */
+  readonly conditions: Map<string, OakDocConditionDefinition>;
+  private readonly masterConditionIds: Set<string>;
 
   constructor(files: Files) {
     this.files = files;
+    this.conditions = readOakDocConditionDefinitionsFromFiles(files);
+    this.masterConditionIds = new Set(this.conditions.keys());
     this.document = parseXml(files[DOCUMENT_PART], DOCUMENT_PART);
     this.styles = files[STYLES_PART] ? parseXml(files[STYLES_PART], STYLES_PART) : null;
     this.numbering = files[NUMBERING_PART] ? parseXml(files[NUMBERING_PART], NUMBERING_PART) : null;
@@ -466,7 +477,10 @@ class MasterPackage {
     if (this.dirty.has(NUMBERING_PART) && this.numbering) this.files[NUMBERING_PART] = serialize(this.numbering);
     if (this.dirty.has(DOCUMENT_RELS_PART)) this.files[DOCUMENT_RELS_PART] = serialize(this.relationships);
     if (this.dirty.has(CONTENT_TYPES_PART)) this.files[CONTENT_TYPES_PART] = serialize(this.contentTypes);
-    return zipSync(this.files, { level: 6 });
+    const bytes = zipSync(this.files, { level: 6 });
+    // Conditions live in a custom properties part, added once the package is whole.
+    const imported = new Map([...this.conditions].filter(([id]) => !this.masterConditionIds.has(id)));
+    return addOakDocConditionDefinitions(bytes, imported);
   }
 }
 
@@ -751,6 +765,12 @@ function importFragment(
   for (const docPr of descendants(blocks, WP_NS, 'docPr')) {
     docPr.setAttribute('id', master.nextDrawingId());
   }
+  // Conditional blocks in the partial keep their conditions.
+  importOakDocConditionBlocks({
+    blocks,
+    source: readOakDocConditionDefinitionsFromFiles(fragmentFiles),
+    target: master.conditions,
+  });
 
   return blocks;
 }

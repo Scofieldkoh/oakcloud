@@ -2,7 +2,7 @@ import {
   OAKDOC_DIVIDEND_PER_SHARE_KEY,
   oakDocOfficersRepeaterTag,
 } from '@/lib/document-editor/oakdoc-repeater-definitions';
-import { custom, field } from './corp-sec-oakdoc-kit';
+import { custom, field, personField } from './corp-sec-oakdoc-kit';
 
 /**
  * Fields the corporate secretarial starters share. A custom field keeps one
@@ -27,19 +27,27 @@ export const RESOLUTION_DATE = field('resolution.date', 'Resolution Date', '3 Oc
 // Repeating people
 export const DIRECTOR_NAME = field('director.name', 'Director Name', 'DIRECTOR NAME', { upper: true });
 export const DIRECTOR_ID = field('director.identificationNumber', 'Director Identification Number', 'S1234567A');
+export const DIRECTOR_ID_LABEL = field('director.idLabel', 'Director ID Type', 'NRIC No.');
 export const SHAREHOLDER_NAME = field('shareholder.name', 'Shareholder Name', 'SHAREHOLDER NAME', { upper: true });
 export const SHAREHOLDER_ID = field('shareholder.identificationNumber', 'Shareholder Identification Number', 'S7654321B');
+export const SHAREHOLDER_ID_LABEL = field('shareholder.idLabel', 'Shareholder ID Type', 'NRIC No.');
+export const SHAREHOLDER_IS_CORPORATE = 'shareholder.isCorporate';
 export const SHAREHOLDER_ADDRESS = field('shareholder.address', 'Shareholder Address', '456 Sample Road, Singapore 456456');
 export const SHAREHOLDER_SHARES = field('shareholder.numberOfShares', 'Number of Shares', '3,500');
-export const SHAREHOLDER_CLASS = field('shareholder.shareClass', 'Share Class', 'Ordinary');
+export const SHAREHOLDER_CLASS = field('shareholder.shareClass', 'Share Class', 'Ordinary', { titleCase: true });
 export const SHAREHOLDER_DIVIDEND = field('shareholder.dividendAmount', 'Dividend Amount (shares x Dividend per share)', '350.00');
 export const OFFICER_NAME = field('officer.name', 'Officer Name', 'OFFICER NAME', { upper: true, bold: true });
-export const OFFICER_ID = field('officer.identificationNumber', 'Officer Identification Number', 'S2345678C', { bold: true });
+export const OFFICER_ID = field('officer.identificationNumber', 'Officer Identification Number', 'S2345678C');
+export const OFFICER_ID_LABEL = field('officer.idLabel', 'Officer ID Type', 'NRIC No.');
 export const OFFICER_ROLE = field('officer.role', 'Officer Role', 'Director');
 export const SECRETARY_NAME = field('officer.name', 'Officer Name', 'SECRETARY NAME', { upper: true });
 export const CONTACT_NAME = field('contact.name', 'Contact Name', 'CONTACT NAME', { upper: true });
 export const CONTACT_NAME_BOLD = field('contact.name', 'Contact Name', 'CONTACT NAME', { upper: true, bold: true });
 export const CONTACT_ID = field('contact.identificationNumber', 'Contact Identification Number', 'S1234567A');
+/** "NRIC No.", "Passport No.", or "UEN" for a company. */
+export const CONTACT_ID_LABEL = field('contact.idLabel', 'Contact ID Type', 'NRIC No.');
+/** "Yes" for a company, blank for a person: for wording that differs. */
+export const CONTACT_IS_CORPORATE = 'contact.isCorporate';
 export const CONTACT_ADDRESS = field('contact.address', 'Contact Address', '21 Bukit Batok Crescent, #25-72, WCEGA Tower, Singapore 658065');
 export const CONTACT_NATIONALITY = field('contact.nationality', 'Contact Nationality', 'Singaporean');
 
@@ -70,13 +78,13 @@ export const AGM_TIME = custom('agm_time', 'Meeting time', 'text', '10.00 a.m.')
 export const AGM_VENUE = custom('agm_venue', 'Meeting venue', 'text', '21 Bukit Batok Crescent, #25-72, WCEGA Tower, Singapore 658065');
 export const NOTICE_DATE = custom('notice_date', 'Date of notice', 'date', '1 June 2027', { dateFormat: LONG_DATE });
 export const AUDIT_EXEMPTION_OPTIONS = [
-  'a small company within the meaning of Section 205C of the Companies Act 1967',
-  'a dormant relevant company within the meaning of Section 205B of the Companies Act 1967',
+  'a small company within the meaning of Section 205C of, and the Thirteenth Schedule to, the Companies Act 1967',
+  'a dormant company within the meaning of Section 205B of the Companies Act 1967',
 ] as const;
 export const AUDIT_EXEMPTION_BASIS = custom('audit_exemption_basis', 'Audit exemption', 'text', AUDIT_EXEMPTION_OPTIONS[0], { choices: AUDIT_EXEMPTION_OPTIONS });
 export const AGM_AUDITOR_OPTIONS = [
   'To re-appoint the retiring auditors and to authorise the Directors to fix their remuneration.',
-  'To note that the Company is exempt from audit under Section 205C of the Companies Act 1967 and that no auditor is to be appointed.',
+  'To note that the Company is exempt from having its financial statements audited and that no auditor is to be appointed.',
 ] as const;
 export const AGM_AUDITOR_ITEM = custom('agm_auditor_item', 'Auditor business', 'text', AGM_AUDITOR_OPTIONS[1], { choices: AGM_AUDITOR_OPTIONS });
 
@@ -84,6 +92,11 @@ export const AGM_AUDITOR_ITEM = custom('agm_auditor_item', 'Auditor business', '
 export const APPOINTMENT_DATE = custom('appointment_date', 'Appointment date', 'date', '3 October 2026', { dateFormat: LONG_DATE });
 export const CESSATION_DATE = custom('cessation_date', 'Cessation date', 'date', '31 October 2026', { dateFormat: LONG_DATE });
 export const NEW_AUDITOR_NAME = custom('new_auditor_name', 'New auditor', 'text', 'SAMPLE & CO. PUBLIC ACCOUNTING CORPORATION', { upper: true, bold: true });
+export const AUDITOR_APPOINTMENT_OPTIONS = [
+  'Section 205(2) of the Companies Act 1967, the Company not having held its first annual general meeting',
+  'Section 205(6) of the Companies Act 1967, to fill a casual vacancy in the office of auditor',
+] as const;
+export const AUDITOR_APPOINTMENT_BASIS = custom('auditor_appointment_basis', 'Directors appoint under', 'text', AUDITOR_APPOINTMENT_OPTIONS[0], { choices: AUDITOR_APPOINTMENT_OPTIONS });
 export const NEW_AUDITOR_ADDRESS = custom('new_auditor_address', 'New auditor’s address', 'textarea', '1 Sample Road, #10-01\nSingapore 123456');
 export const AUDITOR_CESSATION_DATE = custom('auditor_cessation_date', 'Auditor resigns on', 'date', '31 October 2026', { dateFormat: LONG_DATE });
 export const CHANGED_PARTICULAR_OPTIONS = [
@@ -94,27 +107,41 @@ export const CHANGED_PARTICULAR_OPTIONS = [
   'Email address',
   'Contact number',
 ] as const;
-export const CHANGED_PARTICULAR = custom('changed_particular', 'Particular changed', 'text', CHANGED_PARTICULAR_OPTIONS[0], { choices: CHANGED_PARTICULAR_OPTIONS });
-export const NEW_PARTICULARS = custom('new_particulars', 'New particulars', 'textarea', '10 New Road, #05-01, Singapore 123456');
+// Each director's own change, asked per director on Configure.
+export const CHANGED_PARTICULAR = personField('changed_particular', 'Particular changed (e.g. Residential address)', 'text', CHANGED_PARTICULAR_OPTIONS[0]);
+export const NEW_PARTICULARS = personField('new_particulars', 'New particulars', 'text', '10 New Road, #05-01, Singapore 123456');
 export const EFFECTIVE_DATE = custom('effective_date', 'Effective date', 'date', '1 November 2026', { dateFormat: LONG_DATE });
 
 // Shares
 export const ALLOTMENT_SHARES = custom('allotment_shares', 'Total shares to be allotted', 'number', '3,500');
 export const ISSUE_PRICE = custom('issue_price', 'Issue price per share (S$)', 'currency', '1.00');
 export const ALLOTMENT_CONSIDERATION = custom('allotment_consideration', 'Total consideration (S$)', 'currency', '3,500.00');
-export const APPLICATION_SHARES = custom('application_shares', 'Shares applied for', 'number', '3,500');
-export const APPLICATION_AMOUNT = custom('application_amount', 'Amount payable (S$)', 'currency', '3,500.00');
+// Each applicant's part of the allotment, adding up to the totals.
+export const APPLICANT_SHARES = personField('shares', 'Shares allotted', 'number', '3,500', { totalOf: ALLOTMENT_SHARES });
+export const APPLICANT_AMOUNT = personField('amount', 'Amount payable (S$)', 'currency', '3,500.00', { totalOf: ALLOTMENT_CONSIDERATION });
+// The application form is one document per applicant, so its values have no total to meet.
+export const APPLICATION_SHARES = personField('shares', 'Shares applied for', 'number', '3,500');
+export const APPLICATION_AMOUNT = personField('amount', 'Amount payable (S$)', 'currency', '3,500.00');
 export const APPLICATION_DATE = custom('application_date', 'Application date', 'date', '3rd', { dateFormat: 'do' });
 export const APPLICATION_MONTH_YEAR = custom('application_date', 'Application date', 'date', 'October, 2026', { dateFormat: 'MMMM, yyyy' });
-export const AUTHORISED_SIGNATORY = custom('authorised_signatory', 'Authorised signatory (corporate applicant)', 'text', 'Yuly Mirawati', { required: false });
+/** Who signs for a corporate party; printed only for a company. */
+export const AUTHORISED_SIGNATORY = personField('authorised_signatory', 'Authorised signatory (companies only)', 'text', 'Yuly Mirawati', { required: false });
 export const TRANSFER_SHARES = custom('transfer_shares', 'Shares transferred', 'number', '1,000');
 export const TRANSFER_CONSIDERATION = custom('transfer_consideration', 'Transfer consideration (S$)', 'currency', '1,000.00');
 export const TRANSFER_DATE = custom('transfer_date', 'Transfer date', 'date', '3 October 2026', { dateFormat: LONG_DATE });
-export const OLD_CERTIFICATE_NO = custom('old_certificate_no', 'Certificate to be cancelled', 'text', '1');
-export const CERTIFICATE_NO = custom('certificate_no', 'Certificate no.', 'text', '1');
+// Each party's part of a transfer, adding up to the totals.
+export const TRANSFEROR_SHARES = personField('shares', 'Shares transferred', 'number', '1,000', { totalOf: TRANSFER_SHARES });
+export const TRANSFEROR_CONSIDERATION = personField('consideration', 'Consideration received (S$)', 'currency', '1,000.00', { totalOf: TRANSFER_CONSIDERATION });
+export const TRANSFEROR_CERTIFICATE = personField('certificate_no', 'Share certificate no. to be cancelled', 'text', '1');
+export const TRANSFEREE_SHARES = personField('shares', 'Shares received', 'number', '1,000', { totalOf: TRANSFER_SHARES });
+// Each certificate's own number and shares.
+export const CERTIFICATE_NO = personField('certificate_no', 'Certificate no.', 'text', '1');
+export const CERTIFICATE_SHARES = personField('certificate_shares', 'Shares on this certificate', 'number', '3,500');
 export const CERTIFICATE_DATE = custom('certificate_date', 'Certificate date', 'date', '3 October 2026', { dateFormat: LONG_DATE });
 export const REDUCTION_SHARES = custom('reduction_shares', 'Shares cancelled', 'number', '5,000');
 export const REDUCTION_AMOUNT = custom('reduction_amount', 'Capital returned (S$)', 'currency', '5,000.00');
+export const MEMBER_REDUCTION_SHARES = personField('reduction_shares', 'Shares cancelled', 'number', '5,000', { totalOf: REDUCTION_SHARES });
+export const MEMBER_REDUCTION_AMOUNT = personField('reduction_amount', 'Capital returned (S$)', 'currency', '5,000.00', { totalOf: REDUCTION_AMOUNT });
 export const BUYBACK_SHARES = custom('buyback_shares', 'Maximum shares to buy back', 'number', '1,000');
 export const BUYBACK_PRICE = custom('buyback_price', 'Price per share (S$)', 'currency', '1.00');
 
@@ -141,11 +168,13 @@ export const SIGNING_MANDATE = custom('signing_mandate', 'Signing mandate', 'tex
 export const DIVIDEND_PER_SHARE = custom(OAKDOC_DIVIDEND_PER_SHARE_KEY, 'Dividend per share (S$)', 'currency', '0.10');
 export const DIVIDEND_TOTAL = custom('dividend_total', 'Total dividend (S$)', 'currency', '1,000.00');
 export const DIVIDEND_PERIOD_END = custom('dividend_period_end', 'Dividend for the financial year ending', 'date', '31 December 2026', { dateFormat: LONG_DATE });
+export const DIVIDEND_RECORD_DATE = custom('dividend_record_date', 'Dividend record date (members registered on)', 'date', '1 December 2026', { dateFormat: LONG_DATE });
 export const DIVIDEND_PAYMENT_DATE = custom('dividend_payment_date', 'Dividend payment date', 'date', '15 December 2026', { dateFormat: LONG_DATE });
 
 // Letters
 export const LETTER_DATE = custom('letter_date', 'Letter date', 'date', '3 October 2026', { dateFormat: LONG_DATE });
 export const PREVIOUS_SECRETARY = custom('previous_secretary', 'Former secretary or corporate secretarial firm', 'text', 'Previous Corporate Services Pte. Ltd.', { bold: true });
 export const PREVIOUS_SECRETARY_ADDRESS = custom('previous_secretary_address', 'Former secretary’s address', 'textarea', '1 Sample Road, #01-01\nSingapore 123456');
+export const NEW_SECRETARY_NAME = custom('new_secretary_name', 'New company secretary', 'text', 'SECRETARY NAME', { upper: true, bold: true });
 export const FIRM_NAME = 'OAKTREE ACCOUNTING & CORPORATE SOLUTIONS PTE. LTD.';
 export const FIRM_UEN = '202437906H';

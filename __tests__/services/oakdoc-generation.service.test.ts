@@ -51,6 +51,7 @@ const conditionMock = vi.hoisted(() => ({
   OAKDOC_CONDITION_TAG_PREFIX: 'oakdoc.condition.',
   inspectOakDocConditions: vi.fn(),
   resolveOakDocConditions: vi.fn(),
+  readOakDocConditionDefinitions: vi.fn(() => new Map()),
 }));
 vi.mock('@/lib/document-editor/oakdoc-conditions', () => conditionMock);
 
