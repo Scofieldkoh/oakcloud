@@ -33,6 +33,10 @@ export async function GET(request: NextRequest) {
         ? searchParams.get('isActive') === 'true'
         : undefined,
       editor: searchParams.get('editor') || undefined,
+      name: searchParams.get('name') || undefined,
+      createdBy: searchParams.get('createdBy') || undefined,
+      updatedFrom: searchParams.get('updatedFrom') || undefined,
+      updatedTo: searchParams.get('updatedTo') || undefined,
       page: searchParams.get('page') ? Number(searchParams.get('page')) : undefined,
       limit: searchParams.get('limit') ? Number(searchParams.get('limit')) : undefined,
       sortBy: searchParams.get('sortBy') || undefined,

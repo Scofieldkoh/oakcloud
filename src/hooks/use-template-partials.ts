@@ -1,6 +1,6 @@
 'use client';
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { TemplatePartial } from '@/generated/prisma';
 import type {
   UpdateTemplatePartialInput,
@@ -79,6 +79,10 @@ async function fetchPartials(
   if (params.sortOrder) searchParams.set('sortOrder', params.sortOrder);
   if (params.editor) searchParams.set('editor', params.editor);
   if (params.category) searchParams.set('category', params.category);
+  if (params.name) searchParams.set('name', params.name);
+  if (params.createdBy) searchParams.set('createdBy', params.createdBy);
+  if (params.updatedFrom) searchParams.set('updatedFrom', params.updatedFrom);
+  if (params.updatedTo) searchParams.set('updatedTo', params.updatedTo);
   if (tenantId) searchParams.set('tenantId', tenantId);
 
   const response = await fetch(`/api/template-partials?${searchParams}`);
@@ -226,12 +230,18 @@ export function useTemplatePartials(options: UseTemplatePartialsOptions = {}) {
     search: params.search,
     editor: params.editor,
     category: params.category,
+    name: params.name,
+    createdBy: params.createdBy,
+    updatedFrom: params.updatedFrom,
+    updatedTo: params.updatedTo,
   };
 
   return useQuery({
     queryKey: [...partialKeys.list(fullParams), tenantId],
     queryFn: () => fetchPartials(fullParams, tenantId),
     enabled: tenantId !== undefined ? !!tenantId : true,
+    // Keep the current rows on screen while a filter, sort or page change loads.
+    placeholderData: keepPreviousData,
   });
 }
 

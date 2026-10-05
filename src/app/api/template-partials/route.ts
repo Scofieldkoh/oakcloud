@@ -50,6 +50,10 @@ export async function GET(request: NextRequest) {
       sortOrder: searchParams.get('sortOrder') || 'asc',
       editor: searchParams.get('editor') || undefined,
       category: searchParams.get('category') || undefined,
+      name: searchParams.get('name') || undefined,
+      createdBy: searchParams.get('createdBy') || undefined,
+      updatedFrom: searchParams.get('updatedFrom') || undefined,
+      updatedTo: searchParams.get('updatedTo') || undefined,
     });
 
     const result = await searchTemplatePartials(input, {

@@ -4324,6 +4324,17 @@ function UsersTable() {
 | `showOnMobile` | `boolean?` | Show on mobile card view |
 | `render` | `(row, index) => ReactNode` | Cell content renderer |
 | `renderHeader` | `() => ReactNode?` | Custom header renderer |
+| `renderFilter` | `() => ReactNode?` | Inline filter for the column (adds the filter row) |
+
+**Other DataGrid props worth knowing:**
+- `emptyState` renders inside the table body, so headers and inline filters stay usable when nothing matches (use `ListEmptyState`).
+- `isFetching` dims the table during a refetch; pair it with `placeholderData: keepPreviousData` so rows stay on screen.
+- `getRowName` names the row in its selection button ("Select First Board Resolution").
+- A column with a width keeps it; long content truncates instead of widening the column.
+
+**Saved column layout:** `useTableColumnPreference(key, columnIds, { locked, hiddenByDefault })` (`src/hooks/use-table-column-preference.ts`) keeps column order, visibility and widths per user. Feed `columnOrder` into the columns you pass, `columnVisibility`/`columnWidths`/`setColumnWidth` into `DataGrid`, and the rest into `ServiceColumnModal` behind a Columns button (`ServiceFilterToolbar`).
+
+**Reference list page:** the Document Templates and Partials pages (`src/app/(dashboard)/template-partials/`) combine `DataGrid` with a search box, quick filter buttons, `ActiveFilterBar`, the Columns modal, URL-kept filters (`useUrlListParams`), bulk actions and mobile cards.
 
 **Utility Hooks:**
 
@@ -4339,8 +4350,8 @@ const { page, setPage, limit, setLimit, resetPage } = useDataGridPagination(20);
 ```
 
 **When to Use DataGrid vs Custom Table:**
-- Use `DataGrid` for: Standard data tables needing sorting, selection, pagination
-- Use custom table for: Highly specialized layouts (like document processing with inline filters)
+- Use `DataGrid` for: Standard data tables needing sorting, selection, pagination, inline filters and adjustable columns
+- Use custom table for: Highly specialized layouts (like document processing)
 
 **Reference:** [src/components/ui/data-grid.tsx](../src/components/ui/data-grid.tsx)
 
