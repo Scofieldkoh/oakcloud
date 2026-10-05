@@ -378,6 +378,115 @@ export function oakDocContactShortlist(placeholders: unknown): OakDocCustomField
 const REPEATER_NAME_KIND = 'repeaterName';
 const DOCUMENT_PER_PERSON_KIND = 'documentPerPerson';
 
+/*
+ * Per-person fields. A repeating section of people (directors,
+ * shareholders, officers or a contacts list) can ask Configure for a value
+ * for each person ticked: the shares each transferor transfers, each
+ * applicant's subscription, each certificate's number. The section's text
+ * holds an `item.<key>` field, which prints that person's value in their
+ * copy. A number or amount field can be checked against a custom field
+ * (`totalOf`, the custom field's key): the values of the people ticked must
+ * add up to it, and a single person's value defaults to it.
+ *
+ * Each is stored as a placeholders definition keyed `item.<key>` with
+ * `fieldKind: "personField"` and the section's tag as `repeaterTag`, so
+ * the same key can be asked separately in two sections (transferors and
+ * transferees). Partials' definitions are copied like section names.
+ */
+const PERSON_FIELD_KIND = 'personField';
+export const OAKDOC_PERSON_FIELD_PREFIX = 'item.';
+
+export type OakDocPersonFieldType = 'text' | 'number' | 'currency' | 'date';
+
+export const OAKDOC_PERSON_FIELD_TYPES: ReadonlyArray<{ value: OakDocPersonFieldType; label: string }> = [
+  { value: 'number', label: 'Number' },
+  { value: 'currency', label: 'Amount' },
+  { value: 'text', label: 'Text' },
+  { value: 'date', label: 'Date' },
+];
+
+export interface OakDocPersonField {
+  key: string;
+  label: string;
+  type: OakDocPersonFieldType;
+  required: boolean;
+  /** Custom field key the values of the people ticked must add up to (number and amount only). */
+  totalOf?: string | null;
+}
+
+export function oakDocPersonFieldTag(key: string): string {
+  return `${OAKDOC_PERSON_FIELD_PREFIX}${key}`;
+}
+
+/** The key of an `item.<key>` field; null for any other tag. */
+export function parseOakDocPersonFieldTag(tag: string): string | null {
+  if (!tag.startsWith(OAKDOC_PERSON_FIELD_PREFIX)) return null;
+  const key = tag.slice(OAKDOC_PERSON_FIELD_PREFIX.length);
+  return CUSTOM_KEY.test(key) ? key : null;
+}
+
+export function isOakDocPersonFieldTag(tag: string): boolean {
+  return parseOakDocPersonFieldTag(tag) !== null;
+}
+
+function isPersonFieldEntry(definition: StoredDefinition): boolean {
+  return definition.fieldKind === PERSON_FIELD_KIND
+    && typeof definition.key === 'string'
+    && isOakDocPersonFieldTag(definition.key)
+    && typeof definition.repeaterTag === 'string'
+    && canOakDocRepeaterSplitDocuments(definition.repeaterTag);
+}
+
+function personFieldType(value: unknown): OakDocPersonFieldType {
+  return value === 'number' || value === 'currency' || value === 'date' ? value : 'text';
+}
+
+function readPersonField(definition: StoredDefinition): OakDocPersonField {
+  const key = parseOakDocPersonFieldTag(String(definition.key))!;
+  const type = personFieldType(definition.type);
+  const totalOf = typeof definition.totalOf === 'string' && CUSTOM_KEY.test(definition.totalOf)
+    && (type === 'number' || type === 'currency')
+    ? definition.totalOf
+    : null;
+  return {
+    key,
+    label: typeof definition.label === 'string' && definition.label.trim() ? definition.label.trim() : key,
+    type,
+    required: definition.required === true,
+    ...(totalOf ? { totalOf } : {}),
+  };
+}
+
+function personFieldEntry(tag: string, field: OakDocPersonField): StoredDefinition | null {
+  if (!CUSTOM_KEY.test(field.key) || !canOakDocRepeaterSplitDocuments(tag)) return null;
+  const fieldTag = oakDocPersonFieldTag(field.key);
+  const totalOf = field.totalOf && CUSTOM_KEY.test(field.totalOf) && (field.type === 'number' || field.type === 'currency')
+    ? field.totalOf
+    : null;
+  return {
+    key: fieldTag,
+    path: fieldTag,
+    label: field.label.trim() || field.key,
+    type: field.type,
+    source: 'repeater',
+    category: 'repeater',
+    fieldKind: PERSON_FIELD_KIND,
+    repeaterTag: tag,
+    required: field.required,
+    ...(totalOf ? { totalOf } : {}),
+  };
+}
+
+function addPersonField(
+  fields: Record<string, OakDocPersonField[]>,
+  tag: string,
+  field: OakDocPersonField,
+): void {
+  const list = fields[tag] ?? [];
+  if (list.some((existing) => existing.key === field.key)) return;
+  fields[tag] = [...list, field];
+}
+
 /** Field roots of the single-person pickers Configure shows, which an author can name. */
 export const OAKDOC_PICKER_KEYS = ['selectedDirector', 'selectedShareholder', 'selectedContact'] as const;
 export type OakDocPickerKey = typeof OAKDOC_PICKER_KEYS[number];
@@ -407,6 +516,8 @@ export interface OakDocRepeaterSections {
   shortlists: Record<string, OakDocCustomFieldContact[]>;
   /** The section that makes a separate document for each person, if any (templates only). */
   perPersonTag?: string | null;
+  /** Per-person fields by repeater tag, in the order they were defined. */
+  personFields?: Record<string, OakDocPersonField[]>;
 }
 
 /** Section names and shortlists of a template together with its partials'. */
@@ -416,6 +527,8 @@ export interface OakDocRepeaterSectionSummary {
   shortlists: Record<string, OakDocCustomFieldContact[]>;
   /** The template's section that makes a separate document for each person, if any. */
   perPersonTag?: string | null;
+  /** Per-person fields by repeater tag: the template's, then its partials' (first of a key wins). */
+  personFields?: Record<string, OakDocPersonField[]>;
 }
 
 function isPerPersonEntry(definition: StoredDefinition): boolean {
@@ -426,7 +539,7 @@ function isPerPersonEntry(definition: StoredDefinition): boolean {
 
 function isRepeaterEntry(definition: StoredDefinition): boolean {
   const key = typeof definition.key === 'string' ? definition.key : '';
-  if (isPerPersonEntry(definition)) return true;
+  if (isPerPersonEntry(definition) || isPersonFieldEntry(definition)) return true;
   if (definition.fieldKind === CONTACT_SHORTLIST_KIND) return isOakDocContactsRepeaterTag(key);
   if (definition.fieldKind !== REPEATER_NAME_KIND) return false;
   return isOakDocPickerKey(key) || (isOakDocRepeaterTag(key) && !isOakDocContactsRepeaterTag(key));
@@ -495,6 +608,11 @@ function repeaterEntries(placeholders: unknown, ownOnly: boolean): StoredDefinit
 }
 
 function addEntry(summary: OakDocRepeaterSectionSummary, definition: StoredDefinition): void {
+  if (isPersonFieldEntry(definition)) {
+    summary.personFields = summary.personFields ?? {};
+    addPersonField(summary.personFields, String(definition.repeaterTag), readPersonField(definition));
+    return;
+  }
   const tag = String(definition.key);
   if (isPerPersonEntry(definition)) {
     // Only the template's own setting splits its documents.
@@ -518,6 +636,7 @@ export function readOakDocRepeaterSections(placeholders: unknown): OakDocRepeate
     names,
     shortlists: summary.shortlists,
     ...(summary.perPersonTag ? { perPersonTag: summary.perPersonTag } : {}),
+    ...(summary.personFields ? { personFields: summary.personFields } : {}),
   };
 }
 
@@ -544,7 +663,11 @@ export function writeOakDocRepeaterSections(
     && canOakDocRepeaterSplitDocuments(sections.perPersonTag)
     ? [perPersonEntry(sections.perPersonTag)]
     : [];
-  return [...kept, ...written, ...perPerson];
+  const personFields = present.flatMap((tag) => (sections.personFields?.[tag] ?? []).flatMap((field) => {
+    const entry = personFieldEntry(tag, field);
+    return entry ? [entry] : [];
+  }));
+  return [...kept, ...written, ...perPerson, ...personFields];
 }
 
 /**
@@ -576,6 +699,12 @@ export function mergeOakDocRepeaterSectionSummaries(
     const current = merged.shortlists[tag] ?? [];
     const seen = new Set(current.map((contact) => contact.id));
     merged.shortlists[tag] = [...current, ...contacts.filter((contact) => !seen.has(contact.id))];
+  }
+  for (const summary of [first, second]) {
+    for (const [tag, fields] of Object.entries(summary?.personFields ?? {})) {
+      merged.personFields = merged.personFields ?? {};
+      for (const field of fields) addPersonField(merged.personFields, tag, field);
+    }
   }
   return merged;
 }

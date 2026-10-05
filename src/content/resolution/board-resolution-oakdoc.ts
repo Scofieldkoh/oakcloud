@@ -1,10 +1,16 @@
 import type { PlaceholderDefinition } from '@/lib/validations/document-template';
 import {
+  addOakDocConditionDefinitions,
+  type OakDocConditionDefinition,
+} from '@/lib/document-editor/oakdoc-conditions';
+import {
   ControlIds,
   TIMES_11,
+  conditionalBlock,
   packageOakDoc,
   repeatingSection,
   resolutionSlot,
+  seededConditionId,
   wordWriter,
   type Typeface,
   type WordWriter,
@@ -53,7 +59,19 @@ interface ResolutionVariant {
   intro: string;
   repeaterTag: string;
   repeaterAlias: string;
-  signatory: (ids: ControlIds, writer: WordWriter) => string[];
+  /** Each signatory's block in the repeating section. */
+  signature: (ids: ControlIds, writer: WordWriter) => string[];
+  /** Conditions the signature blocks use. */
+  conditions?: OakDocConditionDefinition[];
+}
+
+const SIGNATURE_LINE = '___________________________';
+
+function signatureLine({ paragraph, run }: WordWriter): string[] {
+  return [
+    paragraph('', { keepNext: true, after: 600 }),
+    paragraph(run(SIGNATURE_LINE), { keepNext: true, after: 0 }),
+  ];
 }
 
 const DIRECTORS: ResolutionVariant = {
@@ -61,21 +79,42 @@ const DIRECTORS: ResolutionVariant = {
   intro: 'We, the undersigned, being all the directors of the Company (“Directors”) for the time being entitled to make any decision that may be made in a meeting of the board of Directors, hereby unanimously consent to the adoption and approval of the following resolutions:',
   repeaterTag: 'repeat.directors',
   repeaterAlias: 'Directors',
-  signatory: (ids, { paragraph, field }) => [
-    paragraph(field(ids, 'director.name', 'Director Name', 'DIRECTOR NAME', { caps: true }), { keepNext: true, after: 0 }),
-    paragraph(field(ids, 'director.role', 'Director Role', 'Director'), { after: 240 }),
+  signature: (ids, writer) => [
+    ...signatureLine(writer),
+    writer.paragraph(writer.field(ids, 'director.name', 'Director Name', 'DIRECTOR NAME', { caps: true }), { keepNext: true, after: 0 }),
+    writer.paragraph(writer.field(ids, 'director.role', 'Director Role', 'Director'), { after: 240 }),
   ],
 };
+
+const INDIVIDUAL_MEMBER: OakDocConditionDefinition = { field: 'shareholder.isCorporate', operator: 'equals', value: '' };
+const CORPORATE_MEMBER: OakDocConditionDefinition = { field: 'shareholder.isCorporate', operator: 'truthy' };
 
 const MEMBERS: ResolutionVariant = {
   title: 'MEMBERS’ RESOLUTIONS IN WRITING PURSUANT TO SECTION 184A OF THE COMPANIES ACT 1967',
   intro: 'We, the undersigned, being all the members of the Company (“Members”) for the time being entitled to attend and vote at general meetings of the Company, hereby agree to the following resolutions being passed as written resolutions of the Company:',
   repeaterTag: 'repeat.shareholders',
   repeaterAlias: 'Shareholders',
-  signatory: (ids, { paragraph, field, run }) => [
-    paragraph(field(ids, 'shareholder.name', 'Shareholder Name', 'SHAREHOLDER NAME', { caps: true }), { keepNext: true, after: 0 }),
-    paragraph(run('Member'), { after: 240 }),
-  ],
+  // A person signs as a member; a corporate member through its authorised signatory.
+  signature: (ids, writer) => {
+    const { paragraph, field, run } = writer;
+    const name = () => field(ids, 'shareholder.name', 'Shareholder Name', 'SHAREHOLDER NAME', { caps: true });
+    return [
+      conditionalBlock(ids, seededConditionId(INDIVIDUAL_MEMBER), [
+        ...signatureLine(writer),
+        paragraph(name(), { keepNext: true, after: 0 }),
+        paragraph(run('Member'), { after: 240 }),
+      ].join('')),
+      conditionalBlock(ids, seededConditionId(CORPORATE_MEMBER), [
+        paragraph('', { keepNext: true, after: 360 }),
+        paragraph(run('For and on behalf of'), { keepNext: true, after: 0 }),
+        paragraph(name(), { keepNext: true, after: 0 }),
+        ...signatureLine(writer),
+        paragraph(run('Name:'), { keepNext: true, after: 0 }),
+        paragraph(run('Authorised Signatory'), { after: 240 }),
+      ].join('')),
+    ];
+  },
+  conditions: [INDIVIDUAL_MEMBER, CORPORATE_MEMBER],
 };
 
 export function buildBoardResolutionOakDocMaster(): Uint8Array {
@@ -140,12 +179,12 @@ function buildResolutionMaster(
       ].join(''),
       { align: 'center', pageBreakBefore: true, after: 480 },
     ),
-    repeatingSection(ids, variant.repeaterTag, variant.repeaterAlias, [
-      paragraph('', { keepNext: true, after: 600 }),
-      paragraph(run('___________________________'), { keepNext: true, after: 0 }),
-      ...variant.signatory(ids, writer),
-    ].join('')),
+    repeatingSection(ids, variant.repeaterTag, variant.repeaterAlias, variant.signature(ids, writer).join('')),
   ].join('\n    ');
 
-  return packageOakDoc(body, { extraStyles: options.extraStyles, typeface });
+  const bytes = packageOakDoc(body, { extraStyles: options.extraStyles, typeface });
+  return addOakDocConditionDefinitions(
+    bytes,
+    new Map((variant.conditions ?? []).map((condition) => [seededConditionId(condition), condition])),
+  );
 }

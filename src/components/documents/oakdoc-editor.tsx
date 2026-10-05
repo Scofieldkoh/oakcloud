@@ -18,11 +18,12 @@ import { useSession } from '@/hooks/use-auth';
 import { useActiveWorkspaceId } from '@/components/ui/workspace-selector';
 import {
   OAKDOC_EDITOR_FIELD_CATEGORIES as OAKDOC_FIELD_CATEGORIES,
-  OAKDOC_CONDITION_FIELD_TAGS,
   OAKDOC_FIELD_BY_TAG,
   OAKDOC_FIELD_TAGS,
+  OAKDOC_ITEM_CONDITION_FIELD_TAGS,
   OAKDOC_SCALAR_FIELDS,
 } from '@/lib/document-editor/oakdoc-field-registry';
+import { oakDocRepeaterDefinitionForTag } from '@/lib/document-editor/oakdoc-repeater-definitions';
 import {
   inspectOakDocFields,
   pruneDeletedOakDocFields,
@@ -71,12 +72,14 @@ import { useUnsavedNavigationGuard } from '@/hooks/use-unsaved-navigation-guard'
 import {
   hasOakDocResolutionSlot,
   insertOakDocResolutionSlot,
+  clearOakDocResolutionSlotPreview,
   previewOakDocResolutionSlot,
   unlockOakDocResolutionSlotContent,
 } from '@/lib/document-editor/oakdoc-resolutions';
 import { readResolutionPreset, resolutionSectionText } from '@/lib/resolution-composition';
 import {
   oakDocCustomFieldTag,
+  oakDocPersonFieldTag,
   readOakDocCustomFields,
   readOakDocPartialCustomFields,
   readOakDocRepeaterSections,
@@ -205,16 +208,25 @@ async function fetchOakDocTemplate(
   };
 }
 
+/** A Word partial's current file, for the preset preview; null when it can't be loaded. */
+async function fetchPartialDocx(id: string): Promise<Uint8Array | null> {
+  const response = await fetch(`/api/template-partials/${encodeURIComponent(id)}/oakdoc`, { cache: 'no-store' });
+  return response.ok ? new Uint8Array(await response.arrayBuffer()) : null;
+}
+
 /**
  * Show a resolution template's preset resolutions in its slot: numbered
- * headings and each partial's current wording. Display only; generation
- * replaces the slot. A partial whose wording can't be loaded shows its heading.
+ * headings and each partial as it currently is, fields and repeating
+ * sections included. Display only; saving clears it and generation replaces
+ * the slot. A partial that can't be loaded shows its wording, or its heading.
  */
 async function withPresetResolutionPreview(bytes: Uint8Array, rawPreset: unknown): Promise<Uint8Array> {
   const sections = readResolutionPreset(rawPreset)?.sections ?? [];
   const preview = await Promise.all(sections.map(async (section) => {
     const text = resolutionSectionText(section);
     if (text !== null || section.kind !== 'PARTIAL') return { heading: section.heading, text: text ?? '' };
+    const partialBytes = await fetchPartialDocx(section.partialId).catch(() => null);
+    if (partialBytes) return { heading: section.heading, text: '', partial: { id: section.partialId, bytes: partialBytes } };
     const loaded = await fetchPartialText(section.partialId).catch(() => null);
     return { heading: section.heading, text: loaded?.text ?? '' };
   }));
@@ -273,6 +285,8 @@ export function OakDocEditor() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const readyMessageRef = useRef('');
   const loadedTemplateRevisionRef = useRef<number | null>(null);
+  /** The preset resolutions shown in the slot, to show again after a save remounts the document. */
+  const presetRef = useRef<unknown>(null);
 
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -397,7 +411,9 @@ export function OakDocEditor() {
     setSelectedShareholderId('');
   }, [companyId]);
 
-  const updateFieldSummary = useCallback((bytes: Uint8Array) => {
+  const updateFieldSummary = useCallback((current: Uint8Array) => {
+    // The preset preview's fields belong to its partials, not the template.
+    const bytes = clearOakDocResolutionSlotPreview(current);
     setFieldSummary(keepIfSame(inspectOakDocFields(bytes, OAKDOC_FIELD_TAGS)));
     setRepeaterSummary(keepIfSame(inspectOakDocRepeaters(bytes)));
     setConditionSummary(keepIfSame(inspectOakDocConditions(bytes)));
@@ -451,6 +467,7 @@ export function OakDocEditor() {
     setRefreshPartials(false);
     const isResolution = loaded.template.compositionType === 'RESOLUTION';
     const hasPreset = isResolution && (readResolutionPreset(loaded.template.resolutionPreset)?.sections.length ?? 0) > 0;
+    presetRef.current = hasPreset ? loaded.template.resolutionPreset : null;
     let bytes = unlockOakDocResolutionSlotContent(nameOakDocRepeaterItems(loaded.bytes));
     // Without a preset the slot shows its plain placeholder, even if an
     // earlier preset's preview was saved into it.
@@ -468,6 +485,7 @@ export function OakDocEditor() {
   }, [replaceDocument, templateQuery.data, setIsDirty]);
 
   const refreshPresetPreview = useCallback(async (preset: unknown) => {
+    presetRef.current = preset;
     const handle = editorRef.current;
     if (!handle) return;
     try {
@@ -761,7 +779,7 @@ export function OakDocEditor() {
       return;
     }
 
-    if (!conditionField || !OAKDOC_CONDITION_FIELD_TAGS.has(conditionField)) {
+    if (!conditionField || !OAKDOC_ITEM_CONDITION_FIELD_TAGS.has(conditionField)) {
       setStatus('Choose a field for the condition.');
       setStatusKind('error');
       return;
@@ -788,7 +806,7 @@ export function OakDocEditor() {
           operator: conditionOperator,
           ...(conditionOperator === 'truthy' ? {} : { value: conditionValue }),
         },
-        allowedFields: OAKDOC_CONDITION_FIELD_TAGS,
+        allowedFields: OAKDOC_ITEM_CONDITION_FIELD_TAGS,
       });
       const fieldLabel = OAKDOC_FIELD_BY_TAG.get(conditionField)?.label
         ?? customFields.find((field) => oakDocCustomFieldTag(field.key) === conditionField)?.label
@@ -956,7 +974,7 @@ export function OakDocEditor() {
     setBusy(true);
     const snapshotRevision = localRevisionRef.current;
     try {
-      const bytes = await currentDocxBytes();
+      const bytes = clearOakDocResolutionSlotPreview(await currentDocxBytes());
       const cleaned = pruneDeletedOakDocFields(bytes, OAKDOC_FIELD_TAGS);
       const savedFileName = safeDocxName(fileName || title);
       const formData = new FormData();
@@ -1011,6 +1029,7 @@ export function OakDocEditor() {
         // Only remount when the server-bound bytes differ from the editor
         // (deleted fields were pruned) and nothing changed during the save.
         replaceDocument(cleaned.bytes, savedMessage);
+        if (presetRef.current) void refreshPresetPreview(presetRef.current);
       } else {
         setStatus(changedSinceSnapshot ? `${savedMessage} Newer edits are not saved yet.` : savedMessage);
         setStatusKind('success');
@@ -1035,6 +1054,7 @@ export function OakDocEditor() {
     customFields,
     fileName,
     refreshPartials,
+    refreshPresetPreview,
     repeaterSections,
     replaceDocument,
     router,
@@ -1051,7 +1071,7 @@ export function OakDocEditor() {
   const exportDocx = useCallback(async () => {
     setBusy(true);
     try {
-      const bytes = await currentDocxBytes();
+      const bytes = clearOakDocResolutionSlotPreview(await currentDocxBytes());
       const cleaned = pruneDeletedOakDocFields(bytes, OAKDOC_FIELD_TAGS);
       const blob = new Blob([toArrayBuffer(cleaned.bytes)], { type: DOCX_MIME });
       const url = URL.createObjectURL(blob);
@@ -1076,8 +1096,18 @@ export function OakDocEditor() {
   const companyOptions = companiesQuery.data ?? [];
   const partialCustomFields = readOakDocPartialCustomFields(storedPlaceholders);
   const conditionCustomFields = [...customFields, ...partialCustomFields];
+  // A condition inside a repeating section can test each person's own details
+  // (is the contact a company?) and per-person fields.
+  const sectionConditionFields = Array.from(new Map(repeaterSummary.tags.flatMap((tag) => [
+    ...(oakDocRepeaterDefinitionForTag(tag)?.fields ?? []).map((field) => ({ tag: field.tag, label: field.label })),
+    ...(repeaterSections.personFields?.[tag] ?? []).map((field) => ({
+      tag: oakDocPersonFieldTag(field.key),
+      label: `${field.label} (per person)`,
+    })),
+  ]).map((field) => [field.tag, field])).values());
   const fieldLabel = (tag: string): string => OAKDOC_FIELD_BY_TAG.get(tag)?.label
     ?? conditionCustomFields.find((field) => oakDocCustomFieldTag(field.key) === tag)?.label
+    ?? sectionConditionFields.find((field) => field.tag === tag)?.label
     ?? tag;
 
   return (
@@ -1445,6 +1475,15 @@ export function OakDocEditor() {
                     ))}
                   </optgroup>
                 ))}
+                {sectionConditionFields.length > 0 ? (
+                  <optgroup label="Each person in a repeating section">
+                    {sectionConditionFields.map((field) => (
+                      <option key={field.tag} value={field.tag}>
+                        {field.label}
+                      </option>
+                    ))}
+                  </optgroup>
+                ) : null}
                 {conditionCustomFields.length > 0 ? (
                   <optgroup label="Custom fields">
                     {conditionCustomFields.map((field) => (

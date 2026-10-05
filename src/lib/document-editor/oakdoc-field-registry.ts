@@ -12,7 +12,7 @@ import {
 } from '@/lib/document-editor/oakdoc-repeater-definitions';
 import { OAKDOC_SIGNATURE_TAGS } from '@/lib/document-editor/oakdoc-signatures';
 import { OAKDOC_CONDITION_TAG_PREFIX } from '@/lib/document-editor/oakdoc-conditions';
-import { isOakDocCustomFieldTag } from '@/lib/document-editor/oakdoc-custom-fields';
+import { isOakDocCustomFieldTag, isOakDocPersonFieldTag } from '@/lib/document-editor/oakdoc-custom-fields';
 import type { OakDocDiagnostic } from '@/types/oakdoc';
 
 /**
@@ -128,8 +128,24 @@ class OakDocFieldTagSet extends Set<string> {
   }
 }
 
-/** Tags a native field control may carry (scalar, custom or repeater item). */
-export const OAKDOC_FIELD_TAGS: ReadonlySet<string> = new OakDocFieldTagSet([
+/** A field of a repeating section's item: a person's detail or a per-person field (`item.<key>`). */
+export function isOakDocRepeaterItemFieldTag(tag: string): boolean {
+  return OAKDOC_GENERIC_REPEATER_ITEM_TAGS.has(tag) || isOakDocPersonFieldTag(tag);
+}
+
+/** Every repeating-section item field, per-person fields included (a set answering `has` only). */
+export const OAKDOC_REPEATER_ITEM_FIELD_TAGS: ReadonlySet<string> = new (class extends Set<string> {
+  override has(tag: string): boolean {
+    return isOakDocRepeaterItemFieldTag(tag);
+  }
+})();
+
+/** Tags a native field control may carry (scalar, custom, repeater item or per-person). */
+export const OAKDOC_FIELD_TAGS: ReadonlySet<string> = new (class extends OakDocFieldTagSet {
+  override has(tag: string): boolean {
+    return super.has(tag) || isOakDocPersonFieldTag(tag);
+  }
+})([
   ...OAKDOC_SCALAR_FIELDS.map((field) => field.tag),
   ...OAKDOC_GENERIC_REPEATER_ITEM_TAGS,
 ]);
@@ -138,6 +154,17 @@ export const OAKDOC_FIELD_TAGS: ReadonlySet<string> = new OakDocFieldTagSet([
 export const OAKDOC_CONDITION_FIELD_TAGS: ReadonlySet<string> = new OakDocFieldTagSet(
   OAKDOC_SCALAR_FIELDS.map((field) => field.tag),
 );
+
+/**
+ * Fields a condition inside a repeating section may also test: each item's
+ * own details (whether the contact is a company) and per-person fields,
+ * resolved separately for every person listed.
+ */
+export const OAKDOC_ITEM_CONDITION_FIELD_TAGS: ReadonlySet<string> = new (class extends OakDocFieldTagSet {
+  override has(tag: string): boolean {
+    return super.has(tag) || isOakDocRepeaterItemFieldTag(tag);
+  }
+})(OAKDOC_SCALAR_FIELDS.map((field) => field.tag));
 
 /** Structural Service Agreement slots replaced by the agreement renderer. */
 export const OAKDOC_AGREEMENT_SLOT_TAGS = {
@@ -201,7 +228,7 @@ export type OakDocTagKind =
 
 export function classifyOakDocTag(tag: string): OakDocTagKind {
   if (isOakDocRepeaterTag(tag)) return 'repeater';
-  if (OAKDOC_GENERIC_REPEATER_ITEM_TAGS.has(tag)) return 'repeater-item';
+  if (isOakDocRepeaterItemFieldTag(tag)) return 'repeater-item';
   if (OAKDOC_SIGNATURE_TAGS.has(tag)) return 'signature';
   if (tag.startsWith(OAKDOC_CONDITION_TAG_PREFIX)) return 'condition';
   if (tag.startsWith(OAKDOC_PARTIAL_TAG_PREFIX)) return 'partial';

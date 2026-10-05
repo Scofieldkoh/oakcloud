@@ -545,7 +545,10 @@ function evaluateCondition(
   const actual = values[condition.field] ?? '';
   if (condition.operator === 'truthy') {
     const normalized = actual.trim().toLowerCase();
-    return !['', '0', 'false', 'no', 'null', 'undefined'].includes(normalized);
+    if (['', '0', 'false', 'no', 'null', 'undefined'].includes(normalized)) return false;
+    // An amount of nothing ("0.00", "S$0") is no value either.
+    const digits = normalized.replace(/^[a-z$\s]*/, '').replace(/,/g, '');
+    return !(/^[0.]+$/.test(digits) && /0/.test(digits));
   }
   if (condition.operator === 'equals') {
     return actual === (condition.value ?? '');
@@ -553,10 +556,116 @@ function evaluateCondition(
   return actual !== (condition.value ?? '');
 }
 
+/** Every condition a package's unzipped files define, by id. */
+export function readOakDocConditionDefinitionsFromFiles(
+  files: Record<string, Uint8Array>,
+): Map<string, OakDocConditionDefinition> {
+  return readConditionProperties(files);
+}
+
+function sameCondition(a: OakDocConditionDefinition, b: OakDocConditionDefinition): boolean {
+  return a.field === b.field && a.operator === b.operator && (a.value ?? '') === (b.value ?? '');
+}
+
+/**
+ * Carry the conditions of copied blocks (a partial's body placed in a
+ * template) into the receiving package's definitions. A condition whose id
+ * the receiver already uses for something else takes a new id, retagged in
+ * the blocks. Returns the definitions to add with `addOakDocConditionDefinitions`.
+ */
+export function importOakDocConditionBlocks(input: {
+  blocks: readonly Element[];
+  source: ReadonlyMap<string, OakDocConditionDefinition>;
+  /** Definitions the receiver has, plus ones already imported; updated in place. */
+  target: Map<string, OakDocConditionDefinition>;
+}): void {
+  const controls = input.blocks.flatMap((block) => [
+    ...(isWordElement(block, 'sdt') ? [block] : []),
+    ...Array.from(block.getElementsByTagNameNS(WORD_NS, 'sdt')),
+  ]);
+  const renamed = new Map<string, string>();
+  for (const sdt of controls) {
+    const id = conditionIdFromTag(contentControlTag(sdt));
+    const definition = id ? input.source.get(id) : undefined;
+    if (!id || !definition) continue;
+    let next = renamed.get(id);
+    if (!next) {
+      const existing = input.target.get(id);
+      next = !existing || sameCondition(existing, definition) ? id : createConditionId(new Set(input.target.keys()));
+      input.target.set(next, definition);
+      renamed.set(id, next);
+    }
+    if (next === id) continue;
+    const properties = contentControlProperties(sdt);
+    const tag = properties ? wordChild(properties, 'tag') : undefined;
+    if (tag) setWordVal(tag, CONDITION_TAG_PREFIX + next);
+  }
+}
+
+/** Store condition definitions in a package (adding or replacing by id). */
+export function addOakDocConditionDefinitions(
+  docxBytes: Uint8Array,
+  definitions: ReadonlyMap<string, OakDocConditionDefinition>,
+): Uint8Array {
+  if (definitions.size === 0) return docxBytes;
+  const files = unzipSync(docxBytes);
+  const existing = readConditionProperties(files);
+  let changed = false;
+  for (const [id, definition] of definitions) {
+    const current = existing.get(id);
+    if (current && sameCondition(current, definition)) continue;
+    writeConditionProperty(files, { id, tag: CONDITION_TAG_PREFIX + id, ...definition });
+    changed = true;
+  }
+  return changed ? zipSync(files, { level: 6 }) : docxBytes;
+}
+
+/** Every condition a package defines, by id. */
+export function readOakDocConditionDefinitions(docxBytes: Uint8Array): Map<string, OakDocConditionDefinition> {
+  return readConditionProperties(unzipSync(docxBytes));
+}
+
+/**
+ * Resolve the conditions inside one repeated item (a node and its
+ * descendants) that test this item's own values, such as whether the
+ * contact is a company: kept ones are unwrapped, the rest removed. Returns
+ * the nodes that take the given node's place (none when it was removed).
+ */
+export function resolveOakDocItemConditions(
+  node: Node,
+  conditions: ReadonlyMap<string, OakDocConditionDefinition>,
+  values: Readonly<Record<string, string>>,
+): Node[] {
+  const applies = (sdt: Element) => {
+    const id = conditionIdFromTag(contentControlTag(sdt));
+    const condition = id ? conditions.get(id) : undefined;
+    return condition && Object.prototype.hasOwnProperty.call(values, condition.field) ? condition : null;
+  };
+  if (node.nodeType !== Node.ELEMENT_NODE) return [node];
+  const element = node as Element;
+  const nested = Array.from(element.getElementsByTagNameNS(WORD_NS, 'sdt')).reverse();
+  for (const sdt of nested) {
+    const condition = applies(sdt);
+    if (!condition) continue;
+    if (evaluateCondition(condition, values)) unwrapContentControl(sdt);
+    else sdt.parentNode?.removeChild(sdt);
+  }
+  const own = isWordElement(element, 'sdt') ? applies(element) : null;
+  if (!own) return [element];
+  if (!evaluateCondition(own, values)) return [];
+  const content = wordChild(element, 'sdtContent');
+  return content ? Array.from(content.childNodes) : [];
+}
+
 export function resolveOakDocConditions(input: {
   docxBytes: Uint8Array;
   values: Readonly<Record<string, string>>;
   allowedFields: ReadonlySet<string>;
+  /**
+   * Fields resolved later, per repeated item (a repeating section's own
+   * fields): conditions on them are left in place without being reported.
+   */
+  deferField?: (field: string) => boolean;
 }): {
   bytes: Uint8Array;
   resolved: number;
@@ -595,6 +704,7 @@ export function resolveOakDocConditions(input: {
     const id = conditionIdFromTag(tag);
     if (!id) continue;
     const condition = metadata.get(id);
+    if (condition && !input.allowedFields.has(condition.field) && input.deferField?.(condition.field)) continue;
     if (!condition || !input.allowedFields.has(condition.field)) {
       if (condition?.field) unresolvedFields.add(condition.field);
       continue;

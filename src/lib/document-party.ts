@@ -15,12 +15,62 @@ export interface DocumentParty {
   address: PartyAddress;
   nationality?: string | null;
   identificationNumber?: string | null;
+  /** NRIC, FIN, PASSPORT, UEN or OTHER, when known. */
+  identificationType?: string | null;
   role?: string | null;
   appointmentDate?: Date | string | null;
   shareholderType?: string | null;
   shareClass?: string | null;
   numberOfShares?: number | null;
   percentageHeld?: number | string | null;
+}
+
+/**
+ * The number a contact is identified by: a company's UEN (its registration
+ * number when no UEN is recorded), a person's NRIC, FIN or passport number.
+ */
+export function contactIdentity(contact: {
+  contactType?: string | null;
+  identificationType?: string | null;
+  identificationNumber?: string | null;
+  corporateUen?: string | null;
+}): { identificationNumber: string | null; identificationType: string | null } {
+  if (contact.contactType === 'CORPORATE') {
+    const uen = contact.corporateUen?.trim();
+    if (uen) return { identificationNumber: uen, identificationType: 'UEN' };
+  }
+  return {
+    identificationNumber: contact.identificationNumber?.trim() || null,
+    identificationType: contact.identificationType ?? null,
+  };
+}
+
+const NRIC = /^[ST]\d{7}[A-Z]$/i;
+const FIN = /^[FGM]\d{7}[A-Z]$/i;
+// Business (8 digits), local company (9 digits) or other entity (T08LL1234A) UENs.
+const UEN = /^(?:\d{8,9}[A-Z]|[TRS]\d{2}[A-Z]{2}\d{4}[A-Z])$/i;
+
+/**
+ * "NRIC No.", "Passport No.", "UEN": what the identification number is, for
+ * "(UEN 202400001A)". A number stored without its type is recognised from
+ * its shape (an NRIC, FIN or UEN) where it can be.
+ */
+export function identificationLabel(
+  type: string | null | undefined,
+  corporate = false,
+  number?: string | null,
+): string {
+  switch ((type ?? '').toUpperCase()) {
+    case 'NRIC': return 'NRIC No.';
+    case 'FIN': return 'FIN';
+    case 'PASSPORT': return 'Passport No.';
+    case 'UEN': return 'UEN';
+  }
+  const value = (number ?? '').trim();
+  if (corporate) return UEN.test(value) ? 'UEN' : 'Registration No.';
+  if (NRIC.test(value)) return 'NRIC No.';
+  if (FIN.test(value)) return 'FIN';
+  return 'ID No.';
 }
 
 export interface AddressInput {

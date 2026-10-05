@@ -83,6 +83,8 @@ export interface SelectItemCompletenessParams {
   masterFieldValues: Record<string, string>;
   /** The template's section that makes one document per person, which then needs its person. */
   perPersonTag?: string | null;
+  /** What is missing or wrong in its per-person values (each is one requirement). */
+  personFieldIssues?: ReadonlyArray<{ message: string }>;
 }
 
 export function selectItemCompleteness({
@@ -91,6 +93,7 @@ export function selectItemCompleteness({
   masterFields,
   masterFieldValues,
   perPersonTag = null,
+  personFieldIssues = [],
 }: SelectItemCompletenessParams): ItemCompleteness {
   const requirements: Array<{ id: string; label: string; filled: boolean }> = [];
 
@@ -160,6 +163,10 @@ export function selectItemCompleteness({
     });
   }
 
+  personFieldIssues.forEach((issue, index) => {
+    requirements.push({ id: `person-field:${index}`, label: issue.message, filled: false });
+  });
+
   if (item.templateKind === 'RESOLUTION') {
     const issues = resolutionCompositionIssues(item.configuration.resolution);
     requirements.push({
@@ -190,6 +197,8 @@ export function buildCompletenessMap(params: {
   itemFieldsByKey?: Record<string, CustomPlaceholderDefinition[]>;
   /** Each template's section that makes one document per person, if any. */
   perPersonTagByTemplateId?: Record<string, string | null | undefined>;
+  /** Per-person value problems of each document, by item key. */
+  personFieldIssuesByKey?: Record<string, ReadonlyArray<{ message: string }>>;
 }): CompletenessMap {
   const map: CompletenessMap = {};
   for (const item of params.items) {
@@ -201,6 +210,7 @@ export function buildCompletenessMap(params: {
       masterFields: params.masterFields,
       masterFieldValues: params.masterFieldValues,
       perPersonTag: params.perPersonTagByTemplateId?.[item.templateId] ?? null,
+      personFieldIssues: params.personFieldIssuesByKey?.[item.key],
     });
   }
   return map;

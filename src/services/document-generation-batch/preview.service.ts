@@ -177,6 +177,7 @@ export function oakDocBatchContext(
   | 'selectedShareholderIds'
   | 'selectedOfficerIds'
   | 'selectedContactListIds'
+  | 'personValues'
   | 'agreement'
   | 'resolutionDate'
   | 'serviceAgreementId'
@@ -193,6 +194,7 @@ export function oakDocBatchContext(
     selectedShareholderIds: configuration.selectedShareholderIds,
     selectedOfficerIds: configuration.selectedOfficerIds,
     selectedContactListIds: configuration.selectedContactListIds,
+    personValues: configuration.personValues,
     agreement: agreement
       ? {
           agreementDate: agreement.agreementDate,
@@ -293,6 +295,7 @@ export async function buildBatchItemRenderInput(
       selectedShareholderIds: configuration.selectedShareholderIds,
       selectedOfficerIds: configuration.selectedOfficerIds,
       selectedContactListIds: configuration.selectedContactListIds,
+      personValues: configuration.personValues,
       selectedContactId: configuration.selectedContactId,
       effectiveCustomData,
       itemValues: configuration.itemValues,

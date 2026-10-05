@@ -82,6 +82,11 @@ export interface BatchItemConfiguration {
    * by slug, in order; the unnamed `repeat.contacts` list uses contactIds.
    */
   selectedContactListIds?: Record<string, string[]>;
+  /**
+   * Values of the per-person fields (`item.<key>`) of the template's
+   * sections: by repeater tag, then person id, then field key.
+   */
+  personValues?: Record<string, Record<string, Record<string, string>>>;
   selectedContactId: string | null;
   itemValues: Record<string, BatchItemFieldValue>;
   masterOverrides: Record<string, string>;

@@ -32,11 +32,13 @@ import type { OakDocFieldDefinition } from '@/lib/document-editor/oakdoc-fields'
 import {
   normalizeOakDocRepeaterName,
   type OakDocCustomFieldContact,
+  type OakDocPersonField,
   type OakDocRepeaterSections,
 } from '@/lib/document-editor/oakdoc-custom-fields';
 import { cn } from '@/lib/utils';
 import { OakDocConfigureName, OakDocFieldRow, keepEditorCaret } from './oakdoc-field-row';
 import { matchesOakDocFieldQuery } from './oakdoc-field-search';
+import { OakDocPersonFieldsEditor } from './oakdoc-person-fields-editor';
 
 export interface OakDocRepeaterPanelProps {
   /** Repeater tags in the document, one per repeating section. */
@@ -63,6 +65,11 @@ export interface OakDocRepeaterPanelProps {
    * contacts section can be switched to make a separate document per person.
    */
   allowPerPerson?: boolean;
+  /**
+   * The document's custom fields, which a per-person number or amount can be
+   * required to add up to (per-person fields need onSectionsChange).
+   */
+  customFields?: ReadonlyArray<{ key: string; label: string; type: string }>;
   /** Panel search; matching section fields show while it is set. */
   query?: string;
   /**
@@ -120,6 +127,7 @@ export function OakDocRepeaterPanel({
   sections = NO_SECTIONS,
   onSectionsChange,
   allowPerPerson = false,
+  customFields = [],
   query = '',
   selectedKey: controlledKey,
   onSelect,
@@ -160,6 +168,10 @@ export function OakDocRepeaterPanel({
   const setPerPerson = (tag: string, perPerson: boolean) => onSectionsChange?.({
     ...sections,
     perPersonTag: perPerson ? tag : sections.perPersonTag === tag ? null : sections.perPersonTag ?? null,
+  });
+  const setPersonFields = (tag: string, fields: OakDocPersonField[]) => onSectionsChange?.({
+    ...sections,
+    personFields: { ...(sections.personFields ?? {}), [tag]: fields },
   });
   const setShortlist = (tag: string, contacts: OakDocCustomFieldContact[]) => onSectionsChange?.({
     ...sections,
@@ -254,7 +266,9 @@ export function OakDocRepeaterPanel({
                         const kindLabel = sectionKindLabel(tag, definition);
                         const name = nameOf(tag);
                         const rowKey = `section:${tag}`;
-                        const selected = selectedKey === rowKey || Boolean(selectedKey?.startsWith(`item:${tag}:`));
+                        const selected = selectedKey === rowKey
+                          || Boolean(selectedKey?.startsWith(`item:${tag}:`))
+                          || Boolean(selectedKey?.startsWith(`person:${tag}:`));
                         const listShortlist = sections.shortlists[tag] ?? [];
                         return (
                           <li
@@ -350,6 +364,20 @@ export function OakDocRepeaterPanel({
                                   </div>
                                   {itemFieldRows(tag, definition)}
                                 </div>
+                                {canName && canOakDocRepeaterSplitDocuments(tag) ? (
+                                  <OakDocPersonFieldsEditor
+                                    tag={tag}
+                                    itemLabel={name || definition.itemLabel}
+                                    fields={sections.personFields?.[tag] ?? []}
+                                    onChange={(fields) => setPersonFields(tag, fields)}
+                                    customFields={customFields}
+                                    fieldTags={fieldTags}
+                                    onAssignField={onAssignField}
+                                    selectedKey={selectedKey}
+                                    onSelect={(key) => select(key ?? rowKey)}
+                                    disabled={disabled}
+                                  />
+                                ) : null}
                               </div>
                             ) : null}
                           </li>

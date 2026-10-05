@@ -226,7 +226,8 @@ describe('OakDoc conditional blocks', () => {
   });
 
   it('treats common false-like values as false for truthy conditions', () => {
-    const falseLikeValues = ['', '0', 'false', 'False', 'NO', 'null', 'undefined'];
+    // An amount of nothing (a directors' fee of 0.00) is false too.
+    const falseLikeValues = ['', '0', 'false', 'False', 'NO', 'null', 'undefined', '0.00', 'S$0', '0,000.00'];
 
     for (const value of falseLikeValues) {
       const created = createOakDocCondition({
@@ -250,6 +251,37 @@ describe('OakDoc conditional blocks', () => {
       expect(resolved.removed).toBe(1);
       expect(part(resolved.bytes, 'word/document.xml')).not.toContain('Conditional paragraph');
     }
+  });
+
+  it('keeps non-zero amounts for truthy conditions', () => {
+    for (const value of ['0.50', 'S$1,000.00', '10']) {
+      const created = createOakDocCondition({
+        docxBytes: docx('<w:p w14:paraId="D1E2F3B5"><w:r><w:t>Fee paragraph</w:t></w:r></w:p>'),
+        fromParaId: 'D1E2F3B5',
+        condition: { field: 'system.generatedBy', operator: 'truthy' },
+        allowedFields,
+      });
+      const resolved = resolveOakDocConditions({ docxBytes: created.bytes, values: { 'system.generatedBy': value }, allowedFields });
+      expect(resolved.kept).toBe(1);
+    }
+  });
+
+  it('leaves conditions on a repeating section’s own fields for the section to resolve', () => {
+    const created = createOakDocCondition({
+      docxBytes: docx('<w:p w14:paraId="D1E2F3B6"><w:r><w:t>Company wording</w:t></w:r></w:p>'),
+      fromParaId: 'D1E2F3B6',
+      condition: { field: 'contact.isCorporate', operator: 'truthy' },
+      allowedFields: new Set(['contact.isCorporate']),
+    });
+    const resolved = resolveOakDocConditions({
+      docxBytes: created.bytes,
+      values: {},
+      allowedFields,
+      deferField: (field) => field.startsWith('contact.'),
+    });
+    expect(resolved.resolved).toBe(0);
+    expect(resolved.unresolvedFields).toEqual([]);
+    expect(part(resolved.bytes, 'word/document.xml')).toContain(created.condition.tag);
   });
 
   it('unwraps a condition at the caret while keeping the document content', () => {

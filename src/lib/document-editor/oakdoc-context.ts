@@ -26,6 +26,8 @@ export interface OakDocOfficer {
   name: string;
   role?: string | null;
   identificationNumber?: string | null;
+  /** NRIC, FIN, PASSPORT, UEN or OTHER, when known. */
+  identificationType?: string | null;
   nationality?: string | null;
   address?: string | null;
   letterAddress?: string | null;
@@ -33,6 +35,16 @@ export interface OakDocOfficer {
   phone?: string | null;
   appointmentDate?: string | null;
   isCurrent?: boolean;
+  /** The linked contact's identity, when the appointment's own is blank. */
+  contact?: OakDocPartyIdentity | null;
+}
+
+/** Identity details of a party's linked contact. */
+export interface OakDocPartyIdentity {
+  contactType?: string | null;
+  identificationType?: string | null;
+  identificationNumber?: string | null;
+  corporateUen?: string | null;
 }
 
 export interface OakDocShareholder {
@@ -41,7 +53,11 @@ export interface OakDocShareholder {
   shareholderType?: string | null;
   isNominee?: boolean | null;
   identificationNumber?: string | null;
+  identificationType?: string | null;
   nationality?: string | null;
+  /** A corporate shareholder's place of incorporation. */
+  placeOfOrigin?: string | null;
+  contact?: OakDocPartyIdentity | null;
   address?: string | null;
   letterAddress?: string | null;
   email?: string | null;
@@ -64,6 +80,7 @@ export interface OakDocContact {
   phone?: string | null;
   nationality?: string | null;
   identificationNumber?: string | null;
+  identificationType?: string | null;
   address?: OakDocPartyAddress | string | null;
 }
 

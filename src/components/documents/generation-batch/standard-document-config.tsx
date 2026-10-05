@@ -30,6 +30,7 @@ import { oneOfficerPerPerson, soleOfficerDefault } from '@/lib/officer-identity'
 import type { DocumentPersonChoice } from '@/lib/document-generation-per-person';
 import { BatchCustomFieldForm } from './batch-custom-field-form';
 import { PerPersonDocumentsSection } from './per-person-documents-section';
+import { PersonFieldsSection } from './person-fields-section';
 import { OfficerChoiceList } from './officer-choice-list';
 import { BatchSection } from './batch-section';
 import { ApplyToOthersMenu, type ApplyScope } from './apply-to-others-menu';
@@ -239,6 +240,25 @@ export function StandardDocumentConfig({
     return { ...list, shortlist, selected: pickedContacts(ids, shortlist, contacts, contactsById) };
   }).filter((list) => !perPersonTag || list.slug !== parseOakDocContactListSlug(perPersonTag)),
   [configuration.selectedContactListIds, contacts, contactsById, perPersonTag, repeaterSections, pickerFieldTags]);
+
+  // Per-person values: names of the people listed, and the document values their totals check.
+  const contactName = (id: string) => contactsById?.get(id)?.fullName
+    ?? contacts.find((contact) => contact.id === id)?.fullName
+    ?? 'Contact';
+  const customValue = (key: string) => {
+    const own = configuration.itemValues[key];
+    if (typeof own === 'string' && own.trim()) return own;
+    const shared = masterFields.fields.find((field) => field.key === key);
+    if (!shared) return '';
+    return configuration.masterOverrides[shared.id] ?? effectiveMasterValues[key] ?? '';
+  };
+  // A field is keyed `custom.<key>` on the template; callers pass the bare key.
+  const customLabel = (key: string) => {
+    const tag = key.startsWith('custom.') ? key : `custom.${key}`;
+    return templateFields.find((field) => field.key === tag || field.key === key)?.label
+      ?? masterFields.fields.find((field) => field.key === tag || field.key === key)?.label
+      ?? key;
+  };
 
   const titleMissing = configuration.title.trim().length === 0;
   const fieldMissing = missingCount(completeness, 'field:');
@@ -542,6 +562,20 @@ export function StandardDocumentConfig({
           </BatchSection>
         );
       })}
+
+      <PersonFieldsSection
+        configuration={configuration}
+        repeaterSections={repeaterSections}
+        fieldTags={templateFieldTags}
+        directors={directors}
+        shareholders={shareholders}
+        officers={officers}
+        contactName={contactName}
+        customValue={customValue}
+        customLabel={customLabel}
+        onPatch={onPatch}
+        disabled={disabled}
+      />
 
       {masterFields.fields.length > 0 && (
         <BatchSection

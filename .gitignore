@@ -76,3 +76,4 @@ tmp/pdfs/
 
 # Local database and storage backups (may contain client personal data)
 /forms-restore-backup/
+.vitest-attachments

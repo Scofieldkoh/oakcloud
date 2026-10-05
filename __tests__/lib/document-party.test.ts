@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 import {
   buildPartyContactFields,
   chooseContactDetail,
+  contactIdentity,
   formatLetterAddress,
+  identificationLabel,
   type ContactDetailInput,
 } from '@/lib/document-party';
 
@@ -245,5 +247,25 @@ describe('buildPartyContactFields', () => {
       phone: null,
       address: { full: null, letter: null },
     });
+  });
+});
+
+describe('party identification', () => {
+  it('uses a company’s UEN as its identification number', () => {
+    expect(contactIdentity({ contactType: 'CORPORATE', corporateUen: ' 202624322D ', identificationNumber: null }))
+      .toEqual({ identificationNumber: '202624322D', identificationType: 'UEN' });
+    expect(contactIdentity({ contactType: 'INDIVIDUAL', identificationType: 'NRIC', identificationNumber: 'S1234567A', corporateUen: '1' }))
+      .toEqual({ identificationNumber: 'S1234567A', identificationType: 'NRIC' });
+  });
+
+  it('labels the number by its type, or by its shape when no type is stored', () => {
+    expect(identificationLabel('PASSPORT')).toBe('Passport No.');
+    expect(identificationLabel('UEN', true)).toBe('UEN');
+    expect(identificationLabel(null, false, 'S1234567A')).toBe('NRIC No.');
+    expect(identificationLabel(null, false, 'G1234567X')).toBe('FIN');
+    expect(identificationLabel(null, false, 'E1234567')).toBe('ID No.');
+    expect(identificationLabel(null, true, '202624322D')).toBe('UEN');
+    expect(identificationLabel(null, true, 'T08LL1234A')).toBe('UEN');
+    expect(identificationLabel(null, true, 'C-12345')).toBe('Registration No.');
   });
 });

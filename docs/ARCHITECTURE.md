@@ -371,7 +371,34 @@ per batch. People come from named contacts lists ("Applicant", "Transferor",
 "Nominator", "Nominee director"), the officers record, or the shareholders
 record. `company.auditorName` and `company.auditorAddress` print the auditor
 on record, and `shareholder.dividendAmount` is the holder's shares times the
-`custom.dividend_per_share` amount entered on Configure.
+`custom.dividend_per_share` amount entered on Configure. Parties print their
+identification with its label (`contact.idLabel`, "NRIC No.", "UEN"), a
+company's UEN standing in for a blank number, and wording that differs for a
+company (signature blocks, "I/We") is a condition on `contact.isCorporate` or
+`shareholder.isCorporate`. Share documents ask each party their own shares,
+consideration and certificate number, checked against the document's totals.
+
+Per-person fields (`src/lib/document-editor/oakdoc-custom-fields.ts`,
+`oakdoc-person-values.ts`): opening a directors, shareholders, officers or
+contacts section in the Repeating sections panel offers per-person fields,
+values Configure asks for each person the section lists (each transferor's
+shares, each certificate's number). They are placed in the repeated text as
+`item.<key>` controls and kept in the template's placeholders as `personField`
+definitions keyed by the section's tag. A number or amount can be required to
+"add up to" one of the document's custom fields: Configure shows a card per
+section with a row per person, a running total and what is wrong, batch
+completeness counts the issues, and `resolveOakDocGenerationInput` rejects a
+generation whose values are missing, not numbers or do not tally. One person's
+empty value takes the whole total.
+
+Conditions inside a repeating section (`resolveOakDocItemConditions`) test the
+printed person rather than the document: the condition picker offers each
+section's item fields, among them Contact/Shareholder Is a Company, and
+per-person fields. The global condition pass defers these (`deferField`), the
+repeater resolves them per item against that person's values, and a leftover
+pass removes any left in a section that printed nobody. A partial's conditions
+are carried into the template when its body is placed
+(`importOakDocConditionBlocks`), renumbered when an id clashes.
 
 Service-specific input definitions use the `service` placeholder source, for
 example `service.fields.software`, and may use the `textarea` type. The editor

@@ -1,5 +1,14 @@
 import { oakDocFieldTitle } from '@/lib/document-editor/oakdoc-field-case';
-import { writeOakDocRepeaterSections } from '@/lib/document-editor/oakdoc-custom-fields';
+import {
+  addOakDocConditionDefinitions,
+  type OakDocConditionDefinition,
+} from '@/lib/document-editor/oakdoc-conditions';
+import {
+  oakDocPersonFieldTag,
+  writeOakDocRepeaterSections,
+  type OakDocPersonField,
+  type OakDocPersonFieldType,
+} from '@/lib/document-editor/oakdoc-custom-fields';
 import {
   oakDocContactListSlug,
   oakDocContactsRepeaterTag,
@@ -8,8 +17,10 @@ import type { PlaceholderDefinition } from '@/lib/validations/document-template'
 import {
   ARIAL_10,
   ControlIds,
+  conditionalBlock,
   packageOakDoc,
   repeatingSection,
+  seededConditionId,
   wordWriter,
   type PageMargins,
   type ParagraphFormat,
@@ -34,6 +45,8 @@ export interface FieldRef {
   format?: RunFormat;
   /** The custom field's definition, for `custom.<key>` fields. */
   definition?: PlaceholderDefinition;
+  /** A per-person field's definition, for `item.<key>` fields. */
+  person?: OakDocPersonField;
 }
 
 /** Text printed in a format of its own (bold, underlined). */
@@ -50,13 +63,15 @@ export const TAB = '\t';
 export interface FieldOptions {
   /** Print the value in capitals (the field's Text case, not Word's All caps). */
   upper?: boolean;
+  /** Print the value in Title Case ("ORDINARY" as "Ordinary"). */
+  titleCase?: boolean;
   /** Word date pattern the value prints in, e.g. "d MMMM yyyy". */
   dateFormat?: string;
   bold?: boolean;
 }
 
 function title(label: string, options: FieldOptions): string {
-  return oakDocFieldTitle(label, options.upper ? 'upper' : null, options.dateFormat ?? null);
+  return oakDocFieldTitle(label, options.upper ? 'upper' : options.titleCase ? 'title' : null, options.dateFormat ?? null);
 }
 
 /** A registered field (company, repeating person, picker). */
@@ -91,6 +106,47 @@ export function custom(
       ...(options.choices ? { options: [...options.choices] } : {}),
     },
   };
+}
+
+/**
+ * A value Configure asks for each person a repeating section lists (each
+ * transferor's shares), printed inside that section. A number or amount can
+ * be required to add up to a custom field.
+ */
+export function personField(
+  key: string,
+  label: string,
+  type: OakDocPersonFieldType,
+  sample: string,
+  options: FieldOptions & { totalOf?: FieldRef; required?: boolean } = {},
+): FieldRef {
+  const totalOf = options.totalOf?.definition?.key.replace(/^custom\./, '');
+  return {
+    ...field(oakDocPersonFieldTag(key), label, sample, options),
+    person: { key, label, type, required: options.required ?? true, ...(totalOf ? { totalOf } : {}) },
+  };
+}
+
+/** A condition on a field: shown when it has a value, equals or differs from one. */
+export interface Condition {
+  field: string;
+  operator: OakDocConditionDefinition['operator'];
+  value?: string;
+}
+
+/** Shown when the field has a value ("Yes" for a company's `isCorporate`). */
+export function whenSet(ref: FieldRef | string): Condition {
+  return { field: typeof ref === 'string' ? ref : ref.tag, operator: 'truthy' };
+}
+
+/** Shown when the field has no value. */
+export function whenBlank(ref: FieldRef | string): Condition {
+  return { field: typeof ref === 'string' ? ref : ref.tag, operator: 'equals', value: '' };
+}
+
+/** Shown when the field equals the value. */
+export function whenEquals(ref: FieldRef | string, value: string): Condition {
+  return { field: typeof ref === 'string' ? ref : ref.tag, operator: 'equals', value };
 }
 
 /** The same field printed differently (bold, capitals, another date format). */
@@ -136,6 +192,10 @@ export class DocumentWriter {
   private readonly definitions = new Map<string, PlaceholderDefinition>();
   private readonly names: Record<string, string> = {};
   private readonly present = new Set<string>();
+  private readonly personFields: Record<string, OakDocPersonField[]> = {};
+  /** Per-person fields written since the last repeating section, which they belong to. */
+  private pendingPersonFields: OakDocPersonField[] = [];
+  private readonly conditions = new Map<string, OakDocConditionDefinition>();
 
   constructor(readonly typeface: Typeface = ARIAL_10, idStart = 9100) {
     this.ids = new ControlIds(idStart);
@@ -150,6 +210,9 @@ export class DocumentWriter {
       if (!isField(segment)) return this.w.run(segment.text, { ...base, ...segment.format });
       if (segment.definition && !this.definitions.has(segment.definition.key)) {
         this.definitions.set(segment.definition.key, segment.definition);
+      }
+      if (segment.person && !this.pendingPersonFields.some((entry) => entry.key === segment.person!.key)) {
+        this.pendingPersonFields.push(segment.person);
       }
       if (segment.tag.startsWith('selectedDirector.')) this.present.add('selectedDirector');
       if (segment.tag.startsWith('selectedShareholder.')) this.present.add('selectedShareholder');
@@ -207,7 +270,30 @@ export class DocumentWriter {
   repeat(tag: string, content: string, name?: string): string {
     this.present.add(tag);
     if (name) this.names[tag] = name;
+    if (this.pendingPersonFields.length > 0) {
+      const fields = this.personFields[tag] ?? [];
+      for (const entry of this.pendingPersonFields) {
+        if (!fields.some((existing) => existing.key === entry.key)) fields.push(entry);
+      }
+      this.personFields[tag] = fields;
+      this.pendingPersonFields = [];
+    }
     return repeatingSection(this.ids, tag, name ?? tag, content);
+  }
+
+  /**
+   * Blocks (paragraphs, or table rows) kept only when the condition holds.
+   * Inside a repeating section it can test each person's own fields.
+   */
+  when(condition: Condition, blocks: string | string[]): string {
+    const definition: OakDocConditionDefinition = {
+      field: condition.field,
+      operator: condition.operator,
+      ...(condition.value === undefined ? {} : { value: condition.value }),
+    };
+    const id = seededConditionId(definition);
+    this.conditions.set(id, definition);
+    return conditionalBlock(this.ids, id, Array.isArray(blocks) ? blocks.join('') : blocks);
   }
 
   /** A named contacts list: its own picker on Configure, shared by name across a batch. */
@@ -223,15 +309,19 @@ export class DocumentWriter {
 
   /** The custom fields, section names and per-person setting to store on the template or partial. */
   placeholders(perPersonTag?: string): PlaceholderDefinition[] {
+    if (this.pendingPersonFields.length > 0) {
+      throw new Error(`Per-person fields outside a repeating section: ${this.pendingPersonFields.map((entry) => entry.key).join(', ')}`);
+    }
     return writeOakDocRepeaterSections(
       [...this.definitions.values()],
-      { names: this.names, shortlists: {}, perPersonTag: perPersonTag ?? null },
+      { names: this.names, shortlists: {}, perPersonTag: perPersonTag ?? null, personFields: this.personFields },
       [...this.present],
     ) as PlaceholderDefinition[];
   }
 
   package(body: string[], margins?: PageMargins, extraStyles?: string): Uint8Array {
-    return packageOakDoc(body.join('\n    '), { typeface: this.typeface, margins, extraStyles });
+    const bytes = packageOakDoc(body.join('\n    '), { typeface: this.typeface, margins, extraStyles });
+    return addOakDocConditionDefinitions(bytes, this.conditions);
   }
 }
 

@@ -50,6 +50,7 @@ export interface PreviewFingerprintInput {
   selectedShareholderIds?: string[];
   selectedOfficerIds?: string[];
   selectedContactListIds?: Record<string, string[]>;
+  personValues?: Record<string, Record<string, Record<string, string>>>;
   selectedContactId: string | null;
   /** Exact typed values are hashed; false/zero must not be stringified away. */
   effectiveCustomData: Record<string, unknown>;

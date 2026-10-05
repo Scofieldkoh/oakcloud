@@ -1,4 +1,7 @@
-import { OAKDOC_DIRECTORS_REPEATER_TAG } from '@/lib/document-editor/oakdoc-repeater-definitions';
+import {
+  OAKDOC_DIRECTORS_REPEATER_TAG,
+  OAKDOC_SHAREHOLDERS_REPEATER_TAG,
+} from '@/lib/document-editor/oakdoc-repeater-definitions';
 import type { PlaceholderDefinition } from '@/lib/validations/document-template';
 import {
   BOARD_RESOLUTION_PLACEHOLDERS,
@@ -63,18 +66,26 @@ function partial(
   };
 }
 
-function resolved(d: DocumentWriter, segments: Segment[], kind: 'first' | 'further' | 'special' = 'first'): string {
-  const lead = { first: 'RESOLVED THAT ', further: 'FURTHER RESOLVED THAT ', special: 'RESOLVED AS A SPECIAL RESOLUTION THAT ' }[kind];
-  return d.p([bold(lead), ...segments], paragraph);
+type Lead = 'first' | 'further' | 'ordinary' | 'special';
+
+const LEADS: Record<Lead, string> = {
+  first: 'RESOLVED THAT ',
+  further: 'FURTHER RESOLVED THAT ',
+  // Members' resolutions say which kind they are.
+  ordinary: 'RESOLVED AS AN ORDINARY RESOLUTION THAT ',
+  special: 'RESOLVED AS A SPECIAL RESOLUTION THAT ',
+};
+
+function resolved(d: DocumentWriter, segments: Segment[], kind: Lead = 'first'): string {
+  return d.p([bold(LEADS[kind]), ...segments], paragraph);
 }
 
-function personLine(d: DocumentWriter, name: Segment, id: Segment): string {
-  return d.p(['•', TAB, name, ' (', id, ')'], bullet);
-}
+/** "NAME (NRIC No. S1234567A)", or "(UEN 202624322D)" for a company. */
+const CONTACT = t`${F.CONTACT_NAME_BOLD} (${F.CONTACT_ID_LABEL} ${F.CONTACT_ID})`;
 
-/** "• NAME (ID)" for each contact on a named list. */
-function contactList(d: DocumentWriter, listName: string): string {
-  return d.contacts(listName, personLine(d, F.CONTACT_NAME_BOLD, F.CONTACT_ID));
+/** "• NAME (NRIC No. ID)", then any details, for each contact on a named list. */
+function contactList(d: DocumentWriter, listName: string, details: Segment[] = []): string {
+  return d.contacts(listName, d.p(['•', TAB, ...CONTACT, ...details], bullet));
 }
 
 const LODGEMENT_TEXT = 'all necessary documents and forms be completed, signed and lodged with the Accounting and Corporate Regulatory Authority.';
@@ -96,7 +107,7 @@ export const AUTHORISATION = partial('resolution-cosec-authorisation', 'General 
 // ---------------------------------------------------------------------------
 
 export const APPROVE_FINANCIAL_STATEMENTS = partial('resolution-agm-approve-financial-statements', 'AGM - Approval of Financial Statements (Directors)', 'FINANCIAL STATEMENTS', (d) => [
-  resolved(d, t`the ${F.FS_DOCUMENTS} for the financial year ended ${F.FS_PERIOD_END} be approved.`),
+  resolved(d, t`the financial statements of the Company for the financial year ended ${F.FS_PERIOD_END} be approved and the Directors’ Statement be adopted, the Independent Auditor’s Report on them, where the financial statements are audited, having been noted.`),
   resolved(d, ['any two Directors, or the sole Director where the Company has only one, be authorised to sign the Directors’ Statement and the statement of financial position on behalf of the Board.'], 'further'),
 ]);
 
@@ -109,17 +120,17 @@ export const CONVENE_AGM = partial('resolution-agm-convene', 'AGM - Convene Annu
 ]);
 
 export const RECEIVE_FINANCIAL_STATEMENTS = partial('resolution-agm-receive-financial-statements', 'AGM - Adoption of Financial Statements (Members)', 'FINANCIAL STATEMENTS', (d) => [
-  resolved(d, t`the ${F.FS_DOCUMENTS} for the financial year ended ${F.FS_PERIOD_END} be received and adopted.`),
+  resolved(d, t`the ${F.FS_DOCUMENTS} for the financial year ended ${F.FS_PERIOD_END} be received and adopted.`, 'ordinary'),
 ]);
 
 export const DIRECTORS_FOR_RE_ELECTION = 'Directors for re-election';
 
 export const RE_ELECT_DIRECTORS = partial('resolution-agm-re-elect-directors', 'AGM - Re-election of Directors (Members)', 'RE-ELECTION OF DIRECTORS', (d) => [
-  d.repeat(OAKDOC_DIRECTORS_REPEATER_TAG, resolved(d, t`${F.DIRECTOR_NAME} (${F.DIRECTOR_ID}), who retires in accordance with the Constitution of the Company and, being eligible, has offered to be re-elected, be re-elected as a Director of the Company.`), DIRECTORS_FOR_RE_ELECTION),
+  d.repeat(OAKDOC_DIRECTORS_REPEATER_TAG, resolved(d, t`${F.DIRECTOR_NAME} (${F.DIRECTOR_ID_LABEL} ${F.DIRECTOR_ID}), who retires in accordance with the Constitution of the Company and, being eligible, has offered to be re-elected, be re-elected as a Director of the Company.`, 'ordinary'), DIRECTORS_FOR_RE_ELECTION),
 ]);
 
 export const AUDIT_EXEMPTION_MEMBERS = partial('resolution-agm-audit-exemption', 'AGM - Audit Exemption (Members)', 'AUDIT EXEMPTION', (d) => [
-  resolved(d, t`the Company, being ${F.AUDIT_EXEMPTION_BASIS}, is exempt from having its financial statements audited, and that no auditor be appointed for so long as the Company remains so exempt.`),
+  resolved(d, t`it be noted that the Company, being ${F.AUDIT_EXEMPTION_BASIS}, is exempt from having its financial statements audited, and that no auditor be appointed for so long as the Company remains so exempt.`, 'ordinary'),
 ]);
 
 export const AUDIT_EXEMPTION_DIRECTORS = partial('resolution-agm-audit-exemption-directors', 'AGM - Audit Exemption (Directors)', 'AUDIT EXEMPTION', (d) => [
@@ -127,15 +138,15 @@ export const AUDIT_EXEMPTION_DIRECTORS = partial('resolution-agm-audit-exemption
 ]);
 
 export const RE_APPOINT_AUDITORS = partial('resolution-agm-re-appoint-auditors', 'AGM - Re-appointment of Auditors (Members)', 'RE-APPOINTMENT OF AUDITORS', (d) => [
-  resolved(d, t`${F.AUDITOR_NAME} be re-appointed as auditors of the Company to hold office until the conclusion of the next annual general meeting, and that the Directors be authorised to fix their remuneration.`),
+  resolved(d, t`${F.AUDITOR_NAME} be re-appointed as auditors of the Company to hold office until the conclusion of the next annual general meeting, and that the Directors be authorised to fix their remuneration.`, 'ordinary'),
 ]);
 
 export const DIRECTORS_FEES = partial('resolution-agm-directors-fees', 'AGM - Directors’ Fees (Members)', 'DIRECTORS’ FEES', (d) => [
-  resolved(d, t`the payment of Directors’ fees of S$${F.DIRECTORS_FEES} for the financial year ended ${F.FS_PERIOD_END} be approved.`),
+  resolved(d, t`the payment of Directors’ fees of S$${F.DIRECTORS_FEES} for the financial year ended ${F.FS_PERIOD_END} be approved.`, 'ordinary'),
 ]);
 
 export const SHARE_ISSUE_MANDATE = partial('resolution-agm-share-issue-mandate', 'AGM - Authority to Allot and Issue Shares (Members)', 'AUTHORITY TO ALLOT AND ISSUE SHARES', (d) => [
-  resolved(d, ['pursuant to Section 161 of the Companies Act 1967, authority be given to the Directors to allot and issue shares in the Company at any time, upon such terms and conditions, for such purposes and to such persons as the Directors may in their absolute discretion deem fit, and that this authority continue in force until the conclusion of the next annual general meeting of the Company or the expiration of the period within which the next annual general meeting is required by law to be held, whichever is earlier.']),
+  resolved(d, ['pursuant to Section 161 of the Companies Act 1967, authority be given to the Directors to allot and issue shares in the Company at any time, upon such terms and conditions, for such purposes and to such persons as the Directors may in their absolute discretion deem fit, and that this authority continue in force until the conclusion of the next annual general meeting of the Company or the expiration of the period within which the next annual general meeting is required by law to be held, whichever is earlier.'], 'ordinary'),
 ]);
 
 // ---------------------------------------------------------------------------
@@ -145,17 +156,18 @@ export const SHARE_ISSUE_MANDATE = partial('resolution-agm-share-issue-mandate',
 export const DIRECTOR_TO_BE_APPOINTED = 'Director to be appointed';
 
 export const APPOINT_DIRECTOR = partial('resolution-officers-appoint-director', 'Officers - Appointment of Director', 'APPOINTMENT OF DIRECTOR', (d) => [
-  d.contacts(DIRECTOR_TO_BE_APPOINTED, resolved(d, t`${F.CONTACT_NAME_BOLD} (${F.CONTACT_ID}), having consented to act, be appointed as a Director of the Company with effect from ${F.APPOINTMENT_DATE}.`)),
+  d.contacts(DIRECTOR_TO_BE_APPOINTED, resolved(d, t`${CONTACT}, having consented to act, be appointed as a Director of the Company with effect from ${F.APPOINTMENT_DATE}.`)),
 ]);
 
 export const DIRECTOR_RESIGNING = 'Director resigning';
 
 export const DIRECTOR_RESIGNATION = partial('resolution-officers-director-resignation', 'Officers - Resignation of Director', 'RESIGNATION OF DIRECTOR', (d) => [
-  d.repeat(F.DIRECTOR_OFFICERS_TAG, resolved(d, t`the resignation of ${F.OFFICER_NAME} (${F.OFFICER_ID}) as a Director of the Company with effect from ${F.CESSATION_DATE} be accepted, and that the Board record its appreciation for the services rendered.`), DIRECTOR_RESIGNING),
+  d.repeat(F.DIRECTOR_OFFICERS_TAG, resolved(d, t`the resignation of ${F.OFFICER_NAME} (${F.OFFICER_ID_LABEL} ${F.OFFICER_ID}) as a Director of the Company with effect from ${F.CESSATION_DATE} be accepted, and that the Board record its appreciation for the services rendered.`), DIRECTOR_RESIGNING),
+  resolved(d, ['it be noted that, after the resignation, the Company will continue to have at least one Director who is ordinarily resident in Singapore, as Section 145 of the Companies Act 1967 requires.'], 'further'),
 ]);
 
 export const APPOINT_AUDITORS = partial('resolution-auditor-appoint', 'Auditor - Appointment of Auditors (Directors)', 'APPOINTMENT OF AUDITORS', (d) => [
-  resolved(d, t`${F.NEW_AUDITOR_NAME}, having consented to act, be appointed as auditors of the Company to hold office until the conclusion of the next annual general meeting of the Company, at a remuneration to be fixed by the Directors.`),
+  resolved(d, t`pursuant to ${F.AUDITOR_APPOINTMENT_BASIS}, ${F.NEW_AUDITOR_NAME}, having consented to act, be appointed as auditors of the Company to hold office until the conclusion of the next annual general meeting of the Company, at a remuneration to be fixed by the Directors.`),
 ]);
 
 export const AUDITOR_RESIGNATION = partial('resolution-auditor-resignation', 'Auditor - Resignation of Auditors (Directors)', 'RESIGNATION OF AUDITORS', (d) => [
@@ -171,36 +183,39 @@ export const TRANSFEROR_LIST = 'Transferor';
 export const TRANSFEREE_LIST = 'Transferee';
 
 export const APPROVE_SHARE_ISSUE = partial('resolution-shares-section-161-approval', 'Shares - Approval to Issue Shares (Members)', 'ISSUE OF SHARES', (d) => [
-  resolved(d, t`pursuant to Section 161 of the Companies Act 1967, approval be given to the Directors to allot and issue ${F.ALLOTMENT_SHARES} new ordinary shares in the capital of the Company at an issue price of S$${F.ISSUE_PRICE} per share, for a total consideration of S$${F.ALLOTMENT_CONSIDERATION}, to such persons and on such terms as the Directors may decide.`),
+  resolved(d, t`pursuant to Section 161 of the Companies Act 1967, approval be given to the Directors to allot and issue ${F.ALLOTMENT_SHARES} new ordinary shares in the capital of the Company at an issue price of S$${F.ISSUE_PRICE} per share, for a total consideration of S$${F.ALLOTMENT_CONSIDERATION}, to such persons and on such terms as the Directors may decide.`, 'ordinary'),
 ]);
 
 export const WAIVE_PRE_EMPTION = partial('resolution-shares-waive-pre-emption', 'Shares - Waiver of Pre-emption Rights (Members)', 'WAIVER OF PRE-EMPTION RIGHTS', (d) => [
-  resolved(d, t`the members waive any rights of pre-emption they may have under the Constitution of the Company in respect of the allotment and issue of the ${F.ALLOTMENT_SHARES} new ordinary shares.`),
+  resolved(d, t`the members waive any rights of pre-emption they may have under the Constitution of the Company in respect of the allotment and issue of the ${F.ALLOTMENT_SHARES} new ordinary shares.`, 'ordinary'),
 ]);
 
 export const ALLOT_SHARES = partial('resolution-shares-allotment', 'Shares - Allotment of Shares (Directors)', 'ALLOTMENT OF SHARES', (d) => [
   resolved(d, t`the applications for an aggregate of ${F.ALLOTMENT_SHARES} ordinary shares in the capital of the Company at S$${F.ISSUE_PRICE} per share, for a total consideration of S$${F.ALLOTMENT_CONSIDERATION} payable in cash, from the following applicants be accepted, and that the shares be allotted and issued to them in accordance with their applications, credited as fully paid:`),
-  contactList(d, APPLICANT_LIST),
+  contactList(d, APPLICANT_LIST, t`: ${F.APPLICANT_SHARES} shares for S$${F.APPLICANT_AMOUNT}`),
   d.gap(60),
   resolved(d, ['share certificates be issued to the allottees under the signature of two Directors, or a Director and the Secretary, and that a return of allotment be lodged with the Accounting and Corporate Regulatory Authority.'], 'further'),
 ]);
 
 export const APPROVE_SHARE_TRANSFER = partial('resolution-shares-transfer', 'Shares - Transfer of Shares (Directors)', 'TRANSFER OF SHARES', (d) => [
-  resolved(d, t`the transfer of ${F.TRANSFER_SHARES} ordinary shares in the capital of the Company from the Transferor to the Transferee named below, for a consideration of S$${F.TRANSFER_CONSIDERATION}, be approved and registered, subject to the instrument of transfer being duly stamped:`),
-  d.p([bold('Transferor')], { after: 0, keepNext: true }),
-  contactList(d, TRANSFEROR_LIST),
-  d.p([bold('Transferee')], { before: 60, after: 0, keepNext: true }),
-  contactList(d, TRANSFEREE_LIST),
+  resolved(d, t`the transfer of ${F.TRANSFER_SHARES} ordinary shares in the capital of the Company, for a total consideration of S$${F.TRANSFER_CONSIDERATION}, from the Transferor(s) to the Transferee(s) named below be approved and registered, subject to the instrument of transfer being duly stamped:`),
+  d.p([bold('Transferor(s)')], { after: 0, keepNext: true }),
+  contactList(d, TRANSFEROR_LIST, t`: ${F.TRANSFEROR_SHARES} shares, for S$${F.TRANSFEROR_CONSIDERATION} (share certificate no. ${F.TRANSFEROR_CERTIFICATE})`),
+  d.p([bold('Transferee(s)')], { before: 60, after: 0, keepNext: true }),
+  contactList(d, TRANSFEREE_LIST, t`: ${F.TRANSFEREE_SHARES} shares`),
   d.gap(60),
-  resolved(d, t`share certificate no. ${F.OLD_CERTIFICATE_NO} be cancelled, that a new share certificate be issued to the Transferee (and a balance certificate to the Transferor for any shares not transferred), and that the transfer be lodged with the Accounting and Corporate Regulatory Authority.`, 'further'),
+  resolved(d, ['the share certificates of the Transferor(s) listed above be cancelled, that new share certificates be issued to the Transferee(s) (and balance certificates to the Transferor(s) for any shares not transferred), and that the transfer be lodged with the Accounting and Corporate Regulatory Authority.'], 'further'),
 ]);
 
+export const SHAREHOLDERS_AFFECTED = 'Shareholders affected';
+
 export const REDUCE_CAPITAL = partial('resolution-shares-capital-reduction', 'Shares - Reduction of Share Capital (Members)', 'REDUCTION OF SHARE CAPITAL', (d) => [
-  resolved(d, t`pursuant to Section 78B of the Companies Act 1967 and the Constitution of the Company, the share capital of the Company be reduced by the cancellation of ${F.REDUCTION_SHARES} ordinary shares and the return of S$${F.REDUCTION_AMOUNT} to the shareholders in proportion to their shareholdings, the Directors having made a solvency statement in relation to the reduction in accordance with Sections 7A and 78B of the Companies Act 1967.`, 'special'),
+  resolved(d, t`pursuant to Section 78B of the Companies Act 1967 and the Constitution of the Company, the share capital of the Company be reduced by the cancellation of ${F.REDUCTION_SHARES} ordinary shares and the return of S$${F.REDUCTION_AMOUNT} to the shareholders listed below, as set out against their names, the Directors having made a solvency statement in relation to the reduction in accordance with Sections 7A and 78B of the Companies Act 1967:`, 'special'),
+  d.repeat(OAKDOC_SHAREHOLDERS_REPEATER_TAG, d.p(t`•${TAB}${F.SHAREHOLDER_NAME} (${F.SHAREHOLDER_ID_LABEL} ${F.SHAREHOLDER_ID}): ${F.MEMBER_REDUCTION_SHARES} shares cancelled and S$${F.MEMBER_REDUCTION_AMOUNT} returned`, bullet), SHAREHOLDERS_AFFECTED),
 ]);
 
 export const SHARE_BUY_BACK = partial('resolution-shares-buy-back', 'Shares - Share Buy-Back (Members)', 'SHARE BUY-BACK', (d) => [
-  resolved(d, t`pursuant to Section 76C of the Companies Act 1967, the Directors be authorised to purchase on behalf of the Company up to ${F.BUYBACK_SHARES} ordinary shares in the capital of the Company by way of an off-market acquisition in accordance with an equal access scheme, at a price of S$${F.BUYBACK_PRICE} per share, payable out of the capital or profits of the Company, the Company being solvent within the meaning of Section 76F of the Companies Act 1967, and that this authority continue until the conclusion of the next annual general meeting of the Company.`),
+  resolved(d, t`pursuant to Section 76C of the Companies Act 1967, the Directors be authorised to purchase on behalf of the Company up to ${F.BUYBACK_SHARES} ordinary shares in the capital of the Company by way of an off-market acquisition in accordance with an equal access scheme, at a price of S$${F.BUYBACK_PRICE} per share, payable out of the capital or profits of the Company, the Company being solvent within the meaning of Section 76F of the Companies Act 1967, and that this authority continue until the conclusion of the next annual general meeting of the Company.`, 'ordinary'),
 ]);
 
 // ---------------------------------------------------------------------------
@@ -266,11 +281,11 @@ export const CLOSE_BANK_ACCOUNT = partial('resolution-bank-close-account', 'Bank
 // ---------------------------------------------------------------------------
 
 export const INTERIM_DIVIDEND = partial('resolution-dividend-interim', 'Dividend - Interim Dividend (Directors)', 'INTERIM DIVIDEND', (d) => [
-  resolved(d, t`an interim one-tier tax-exempt dividend of S$${F.DIVIDEND_PER_SHARE} per ordinary share, amounting to S$${F.DIVIDEND_TOTAL} in total, in respect of the financial year ending ${F.DIVIDEND_PERIOD_END}, be declared and paid on ${F.DIVIDEND_PAYMENT_DATE} to the shareholders registered on that date, the Directors being satisfied that the Company has profits available for distribution and will remain solvent after the payment.`),
+  resolved(d, t`an interim one-tier tax-exempt dividend of S$${F.DIVIDEND_PER_SHARE} per ordinary share, amounting to S$${F.DIVIDEND_TOTAL} in total, in respect of the financial year ending ${F.DIVIDEND_PERIOD_END}, be declared and paid on ${F.DIVIDEND_PAYMENT_DATE} to the shareholders registered in the Register of Members on ${F.DIVIDEND_RECORD_DATE}, the Directors being satisfied that the Company has profits available for distribution and will remain solvent after the payment.`),
 ]);
 
 export const FINAL_DIVIDEND = partial('resolution-dividend-final', 'Dividend - Final Dividend (Members)', 'FINAL DIVIDEND', (d) => [
-  resolved(d, t`a final one-tier tax-exempt dividend of S$${F.DIVIDEND_PER_SHARE} per ordinary share, amounting to S$${F.DIVIDEND_TOTAL} in total, in respect of the financial year ended ${F.DIVIDEND_PERIOD_END}, as recommended by the Directors, be approved and paid on ${F.DIVIDEND_PAYMENT_DATE}.`),
+  resolved(d, t`a final one-tier tax-exempt dividend of S$${F.DIVIDEND_PER_SHARE} per ordinary share, amounting to S$${F.DIVIDEND_TOTAL} in total, in respect of the financial year ended ${F.DIVIDEND_PERIOD_END}, as recommended by the Directors, be declared and paid on ${F.DIVIDEND_PAYMENT_DATE} to the shareholders registered in the Register of Members on ${F.DIVIDEND_RECORD_DATE}.`, 'ordinary'),
 ]);
 
 // ---------------------------------------------------------------------------
@@ -282,7 +297,7 @@ export const STRIKE_OFF_APPLICATION = partial('resolution-strike-off-application
 ]);
 
 export const STRIKE_OFF_CONSENT = partial('resolution-strike-off-consent', 'Striking Off - Members’ Consent', 'STRIKING OFF', (d) => [
-  resolved(d, ['the members consent to the Company applying to the Registrar of Companies under Section 344A of the Companies Act 1967 for the name of the Company to be struck off the register.']),
+  resolved(d, ['the members consent to the Company applying to the Registrar of Companies under Section 344A of the Companies Act 1967 for the name of the Company to be struck off the register.'], 'ordinary'),
 ]);
 
 export const CORP_SEC_PARTIALS: readonly CorpSecPartial[] = [
@@ -376,12 +391,12 @@ export const CORP_SEC_RESOLUTION_TEMPLATES: readonly CorpSecResolutionTemplate[]
   template('Board', 'Audit Exemption', 'Directors note that the company is a small or dormant company exempt from audit for the year.', [AUDIT_EXEMPTION_DIRECTORS]),
   template('Board', 'Appointment of Director', 'Appoints the contact picked as “Director to be appointed” from the appointment date.', [APPOINT_DIRECTOR, AUTHORISATION, LODGEMENT]),
   template('Board', 'Resignation of Director', 'Accepts the resignation of the director ticked under “Director resigning”.', [DIRECTOR_RESIGNATION, LODGEMENT]),
-  template('Board', 'Appointment of Auditors', 'Appoints auditors who have consented to act.', [APPOINT_AUDITORS, LODGEMENT]),
+  template('Board', 'Appointment of Auditors', 'Appoints auditors who have consented to act, before the first AGM or to fill a casual vacancy (otherwise members appoint them).', [APPOINT_AUDITORS, LODGEMENT]),
   template('Board', 'Resignation of Auditors', 'Accepts the resignation of the auditors on the company record.', [AUDITOR_RESIGNATION, LODGEMENT]),
   template('Members', 'Approval to Issue Shares', 'Members’ approval under Section 161 for the directors to issue new shares, with a waiver of pre-emption rights.', [APPROVE_SHARE_ISSUE, WAIVE_PRE_EMPTION]),
-  template('Board', 'Allotment of Shares', 'Allots shares to the contacts on the “Applicant” list, issues certificates and lodges the return of allotment.', [ALLOT_SHARES, AUTHORISATION]),
-  template('Board', 'Transfer of Shares', 'Approves a transfer between the contacts on the “Transferor” and “Transferee” lists and replaces the share certificate.', [APPROVE_SHARE_TRANSFER, AUTHORISATION]),
-  template('Members', 'Reduction of Share Capital', 'Special resolution reducing share capital under Section 78B, backed by the directors’ solvency statement.', [REDUCE_CAPITAL, LODGEMENT]),
+  template('Board', 'Allotment of Shares', 'Allots shares to the contacts on the “Applicant” list, with each applicant’s shares and amount (checked against the totals on Configure), issues certificates and lodges the return of allotment.', [ALLOT_SHARES, AUTHORISATION]),
+  template('Board', 'Transfer of Shares', 'Approves a transfer between the contacts on the “Transferor” and “Transferee” lists, with each party’s shares (checked against the total on Configure), and replaces the share certificates.', [APPROVE_SHARE_TRANSFER, AUTHORISATION]),
+  template('Members', 'Reduction of Share Capital', 'Special resolution reducing share capital under Section 78B, with each affected shareholder’s shares and capital returned, backed by the directors’ solvency statement.', [REDUCE_CAPITAL, LODGEMENT]),
   template('Members', 'Share Buy-Back', 'Authority for an off-market share buy-back on an equal access scheme.', [SHARE_BUY_BACK, LODGEMENT]),
   template('Board', 'Change of Registered Office', 'Moves the registered office to a new address from the effective date.', [CHANGE_REGISTERED_OFFICE, LODGEMENT]),
   template('Members', 'Change of Name', 'Special resolution changing the company’s name.', [CHANGE_NAME, LODGEMENT]),

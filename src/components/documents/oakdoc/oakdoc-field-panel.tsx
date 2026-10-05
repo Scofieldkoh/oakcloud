@@ -116,6 +116,7 @@ export function OakDocFieldPanel({
         sections={sections}
         onSectionsChange={onSectionsChange}
         allowPerPerson={allowPerPersonDocuments}
+        customFields={[...customFields, ...partialCustomFields]}
         query={query}
         selectedKey={selectedKey}
         onSelect={setSelectedKey}
