@@ -280,6 +280,11 @@ export function buildDuplicateEnvelopeTitle(title: string): string {
   return `${title.slice(0, 160 - suffix.length).trimEnd()}${suffix}`;
 }
 
+/** A copy keeps the original's expiry only while it is still ahead; a past expiry would expire the copy as soon as it is sent. */
+export function getDuplicateEnvelopeExpiry(expiresAt: Date | null, now = new Date()): Date | null {
+  return expiresAt && expiresAt > now ? expiresAt : null;
+}
+
 export function buildEsigningListDateRange(
   from?: string,
   to?: string
