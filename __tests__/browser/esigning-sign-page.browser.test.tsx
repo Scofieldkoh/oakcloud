@@ -269,9 +269,11 @@ describe('E-signing client document browser flow', () => {
         await page.getByRole('button', { name: 'Sign', exact: true }).click();
       }
       await page.getByRole('button', { name: 'Close signature editor' }).click();
-      expect(
-        host.querySelector('[data-testid="signature-progress-banner-signature-field"]')?.textContent
-      ).toContain('0 out of 1 signed. Continue to next field');
+      const progressHint = host.querySelector<HTMLElement>(
+        '[data-testid="signature-progress-banner-signature-field"]'
+      );
+      expect(progressHint?.textContent).toBe('0 out of 1 signedClick to continue tonext field');
+      expect(progressHint?.dataset.side).toBe('right');
 
       await page.getByRole('button', { name: /0 out of 1 signed/ }).click();
       await waitUntil(() => host.querySelector('[data-viewer-page]')?.getAttribute('data-viewer-page') === '2');

@@ -23,6 +23,7 @@ import { EsigningFieldInputModal } from '@/components/esigning/signing/esigning-
 import { EsigningSigningHeader } from '@/components/esigning/signing/esigning-signing-header';
 import { EsigningFieldOverlay } from '@/components/esigning/signing/esigning-field-overlay';
 import { EsigningPostItTab } from '@/components/esigning/signing/esigning-post-it-tab';
+import { EsigningSignatureProgressHint } from '@/components/esigning/signing/esigning-signature-progress-hint';
 import { EsigningSignatureModal } from '@/components/esigning/signing/esigning-signature-modal';
 import { EsigningCompletionScreen } from '@/components/esigning/signing/esigning-completion-screen';
 import { EsigningDeclineModal } from '@/components/esigning/signing/esigning-decline-modal';
@@ -1594,54 +1595,19 @@ export function EsigningSignPage() {
                   })}
                 {signatureFields
                   .filter((field) => field.documentId === selectedDocument.id && field.pageNumber === pageNumber)
-                  .map((field) => {
-                    const bannerWidth = Math.max(
-                      210,
-                      Math.min(320, width * Math.max(field.widthPercent, 0.22))
-                    );
-                    const left = Math.min(
-                      Math.max(0, width - bannerWidth),
-                      field.xPercent * width
-                    );
-                    const top = Math.min(
-                      Math.max(0, height - 44),
-                      (field.yPercent + field.heightPercent) * height + 6
-                    );
-
-                    return (
-                      <button
-                        key={`signature-progress-${field.id}`}
-                        data-testid={`signature-progress-banner-${field.id}`}
-                        type="button"
-                        disabled={canFinish}
-                        onClick={() => goToNextUnfilledField(field.id)}
-                        className="text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-oak-primary"
-                        style={{
-                          position: 'absolute',
-                          left,
-                          top,
-                          width: bannerWidth,
-                          minHeight: 38,
-                          display: 'flex',
-                          alignItems: 'center',
-                          padding: '6px 10px',
-                          border: '1px solid rgba(41, 77, 68, 0.22)',
-                          borderRadius: 10,
-                          background: 'rgba(247, 251, 249, 0.96)',
-                          color: '#294d44',
-                          boxShadow: '0 4px 12px rgba(15, 23, 42, 0.12)',
-                          fontSize: 11,
-                          fontWeight: 600,
-                          lineHeight: 1.25,
-                          pointerEvents: 'auto',
-                          cursor: canFinish ? 'default' : 'pointer',
-                        }}
-                      >
-                        {signedSignatureCount} out of {signatureFields.length} signed.{' '}
-                        {canFinish ? 'All required fields are complete.' : 'Continue to next field'}
-                      </button>
-                    );
-                  })}
+                  .map((field) => (
+                    <EsigningSignatureProgressHint
+                      key={`signature-progress-${field.id}`}
+                      fieldId={field.id}
+                      field={field}
+                      pageWidth={width}
+                      pageHeight={height}
+                      signedCount={signedSignatureCount}
+                      totalCount={signatureFields.length}
+                      isComplete={canFinish}
+                      onContinue={() => goToNextUnfilledField(field.id)}
+                    />
+                  ))}
               </>
             )}
             renderHighlightContent={(highlight, _pixelRect, _idx) => {
