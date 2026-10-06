@@ -31,7 +31,12 @@ import {
 } from '@/services/esigning-envelope.lib';
 import { safelyCaptureEsigningTaskStageIds, safelyReconcileTaskStageIds } from '@/services/tasks/integration.service';
 import type { TaskLaunchContext } from '@/services/tasks/types';
-import { log, buildDuplicateEnvelopeTitle, buildEsigningListDateRange } from './shared';
+import {
+  log,
+  buildDuplicateEnvelopeTitle,
+  buildEsigningListDateRange,
+  getDuplicateEnvelopeExpiry,
+} from './shared';
 
 export async function listEsigningEnvelopes(
   session: SessionUser,
@@ -710,7 +715,7 @@ export async function duplicateEsigningEnvelope(
           emailSubject: sourceEnvelope.emailSubject ?? sourceEnvelope.title,
           message: sourceEnvelope.message,
           signingOrder: sourceEnvelope.signingOrder,
-          expiresAt: sourceEnvelope.expiresAt,
+          expiresAt: getDuplicateEnvelopeExpiry(sourceEnvelope.expiresAt),
           reminderFrequencyDays: sourceEnvelope.reminderFrequencyDays,
           reminderStartDays: sourceEnvelope.reminderStartDays,
           expiryWarningDays: sourceEnvelope.expiryWarningDays,
