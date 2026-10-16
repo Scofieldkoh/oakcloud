@@ -39,7 +39,7 @@ export interface CorpSecPartial {
 }
 
 const paragraph = { align: 'both' as const, after: 120 };
-const bullet = { indent: { left: 720, hanging: 360 }, after: 60 };
+export const bullet = { indent: { left: 720, hanging: 360 }, after: 60 };
 
 /** Builds once; the seed and the tests read the same bytes and placeholders. */
 function once(build: () => BuiltDocument): () => BuiltDocument {
@@ -47,7 +47,7 @@ function once(build: () => BuiltDocument): () => BuiltDocument {
   return () => (built ??= build());
 }
 
-function partial(
+export function partial(
   name: string,
   displayName: string,
   header: string,
@@ -66,7 +66,7 @@ function partial(
   };
 }
 
-type Lead = 'first' | 'further' | 'ordinary' | 'special';
+export type Lead = 'first' | 'further' | 'ordinary' | 'special' | 'noted' | 'furtherNoted';
 
 const LEADS: Record<Lead, string> = {
   first: 'RESOLVED THAT ',
@@ -74,9 +74,12 @@ const LEADS: Record<Lead, string> = {
   // Members' resolutions say which kind they are.
   ordinary: 'RESOLVED AS AN ORDINARY RESOLUTION THAT ',
   special: 'RESOLVED AS A SPECIAL RESOLUTION THAT ',
+  // What the members record rather than decide.
+  noted: 'IT IS NOTED THAT ',
+  furtherNoted: 'IT IS FURTHER NOTED THAT ',
 };
 
-function resolved(d: DocumentWriter, segments: Segment[], kind: Lead = 'first'): string {
+export function resolved(d: DocumentWriter, segments: Segment[], kind: Lead = 'first'): string {
   return d.p([bold(LEADS[kind]), ...segments], paragraph);
 }
 
@@ -365,7 +368,7 @@ const membersMaster = once(() => ({
   placeholders: BOARD_RESOLUTION_PLACEHOLDERS,
 }));
 
-function template(
+export function template(
   signedBy: 'Board' | 'Members',
   subject: string,
   description: string,

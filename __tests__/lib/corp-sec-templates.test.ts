@@ -19,7 +19,8 @@ import {
   TRANSFEROR_LIST,
   type CorpSecResolutionTemplate,
 } from '@/content/secretarial/corp-sec-resolutions';
-import { FS_OPTIONS } from '@/content/secretarial/corp-sec-fields';
+import { AGM_PARTIALS, AGM_RESOLUTION_TEMPLATES } from '@/content/secretarial/agm-resolutions';
+import { AUDIT_EXEMPTION_OPTIONS, FS_OPTIONS } from '@/content/secretarial/corp-sec-fields';
 import {
   buildOakDocResolutionDates,
   buildOakDocResolutionValues,
@@ -412,6 +413,65 @@ describe('corporate secretarial generation', () => {
     const text = generate(bytes, { custom: { cessation_date: '2026-10-31' }, placeholders, repeaters: { selectedOfficerIds: ['d2'] } });
     expect(text).toContain('the resignation of LIANG JOO HEONG (NRIC No. S2039870A) as a Director of the Company with effect from 31 October 2026 be accepted');
     expect(text).toContain('Liang Joo Heong\nNominee Director');
+  });
+});
+
+describe('members’ resolutions for a year without an AGM', () => {
+  it('adds partials of their own and presets only partials they add or the corporate secretarial seed has', () => {
+    const corpSecNames = new Set(CORP_SEC_PARTIALS.map((partial) => partial.name));
+    for (const partial of AGM_PARTIALS) {
+      expect(partial.name).toMatch(/^resolution-[a-z0-9-]+$/);
+      expect(corpSecNames.has(partial.name)).toBe(false);
+      const { bytes, placeholders } = partial.build();
+      expect(validateOakDocPartialPackage(bytes).filter((entry) => entry.severity === 'error')).toEqual([]);
+      expect(diagnoseOakDocTags(deriveOakDocTemplateFieldTags(bytes), 'render')).toEqual([]);
+      expect(definedKeys(placeholders).sort()).toEqual([...new Set(customKeys(bytes))].sort());
+    }
+    const templateNames = new Set([...CORP_SEC_RESOLUTION_TEMPLATES, ...CORP_SEC_DOCUMENTS].map((template) => template.name));
+    for (const template of AGM_RESOLUTION_TEMPLATES) {
+      expect(templateNames.has(template.name)).toBe(false);
+      for (const partial of template.partials) expect([...AGM_PARTIALS, ...CORP_SEC_PARTIALS]).toContain(partial);
+      const { bytes } = composeTemplate(template);
+      expect(diagnoseOakDocTags(deriveOakDocTemplateFieldTags(bytes), 'render')).toEqual([]);
+    }
+  });
+
+  const agmTemplate = (name: string) => AGM_RESOLUTION_TEMPLATES.find((entry) => entry.name === `Members Resolution - ${name}`)!;
+
+  it('dispenses with AGMs, adopts the accounts and names each director re-elected', () => {
+    const { bytes, placeholders } = composeTemplate(agmTemplate('Dispense with AGM'));
+    const text = generate(bytes, {
+      custom: { fs_documents: FS_OPTIONS[1], fs_period_end: '2025-10-31', audit_exemption_basis: AUDIT_EXEMPTION_OPTIONS[0] },
+      placeholders,
+    });
+    expect(text).toContain('1.\tDISPENSATION WITH ANNUAL GENERAL MEETINGS\nRESOLVED THAT pursuant to Section 175A(2) of the Companies Act 1967, the Company dispense with the holding of annual general meetings');
+    expect(text).toContain('2.\tFINANCIAL STATEMENTS\nRESOLVED AS AN ORDINARY RESOLUTION THAT the unaudited financial statements of the Company together with the Directors’ Statement for the financial year ended 31 October 2025 be received and adopted.');
+    expect(text).toContain('3.\tAUDIT EXEMPTION');
+    expect(text).toContain('4.\tRE-ELECTION OF DIRECTORS');
+    expect(text).toContain('•\tYULY MIRAWATI (NRIC No. S8078571B)\n•\tLIANG JOO HEONG (NRIC No. S2039870A)');
+    expect(text).toContain('5.\tFILING OF ANNUAL RETURN\nRESOLVED THAT the Company Secretary and/or OAKTREE ACCOUNTING & CORPORATE SOLUTIONS PTE. LTD. be authorised to lodge the annual return of the Company for the financial year ended 31 October 2025');
+    expect(text).toContain('For and on behalf of\nEngterprise Holdings Pte. Ltd.');
+  });
+
+  it('records when the financial statements were sent', () => {
+    const { bytes, placeholders } = composeTemplate(agmTemplate('Financial Statements Sent (No AGM)'));
+    const text = generate(bytes, {
+      custom: { fs_documents: FS_OPTIONS[1], fs_period_end: '2025-10-31', fs_sent_date: '2025-12-12', audit_exemption_basis: AUDIT_EXEMPTION_OPTIONS[0] },
+      placeholders,
+      repeaters: { selectedDirectorIds: ['d1'] },
+    });
+    expect(text).toContain('2.\tNO ANNUAL GENERAL MEETING\nIT IS NOTED THAT the unaudited financial statements of the Company together with the Directors’ Statement for the financial year ended 31 October 2025 were sent to all members of the Company on 12 December 2025');
+    expect(text).toContain('as Section 175A(1)(b) of the Companies Act 1967 permits');
+    expect(text).not.toContain('LIANG JOO HEONG (NRIC');
+  });
+
+  it('records the dormant company exemptions without asking for accounts', () => {
+    const { bytes, placeholders } = composeTemplate(agmTemplate('Dormant Company'));
+    expect(definedKeys(placeholders)).not.toContain('fs_documents');
+    const text = generate(bytes, { custom: { fs_period_end: '2025-12-31' }, placeholders });
+    expect(text).toContain('1.\tDORMANT COMPANY\nIT IS NOTED THAT the Company has been dormant, within the meaning of Section 205B of the Companies Act 1967, throughout the financial year ended 31 December 2025');
+    expect(text).toContain('(a)\tthe Directors are exempt under Section 201A');
+    expect(text).toContain('3.\tFILING OF ANNUAL RETURN');
   });
 });
 
