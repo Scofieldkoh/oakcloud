@@ -1,5 +1,6 @@
 import type { OakDocFieldDefinition } from '@/lib/document-editor/oakdoc-fields';
 import { formatLetterAddress } from '@/lib/document-party';
+import { listedOakDocDirectors, listedOakDocShareholders } from '@/lib/document-editor/oakdoc-repeater-definitions';
 
 export interface OakDocCompanyAddress {
   addressType?: string | null;
@@ -185,6 +186,28 @@ export const OAKDOC_RESOLUTION_FIELD_DEFINITIONS: ReadonlyArray<
     label: 'Resolution Date',
     category: 'Resolution Context',
     example: '25 Sep 2026',
+  },
+];
+
+/**
+ * Whether the directors or shareholders sections list more than one person,
+ * for wording such as "Director" or "Directors" in a condition. "Yes" when
+ * they do, blank for one or none, like `shareholder.isCorporate`.
+ */
+export const OAKDOC_SECTION_COUNT_FIELD_DEFINITIONS: ReadonlyArray<
+  OakDocFieldDefinition & { example: string }
+> = [
+  {
+    tag: 'directors.isPlural',
+    label: 'More Than One Director Listed (Yes or blank)',
+    category: 'Repeating Section Counts',
+    example: 'Yes',
+  },
+  {
+    tag: 'shareholders.isPlural',
+    label: 'More Than One Shareholder Listed (Yes or blank)',
+    category: 'Repeating Section Counts',
+    example: 'Yes',
   },
 ];
 
@@ -481,6 +504,9 @@ export interface OakDocResolutionInput {
   fieldTags: readonly string[];
   selectedDirectorId?: string;
   selectedShareholderId?: string;
+  /** Directors and shareholders ticked on Configure; absent means every current one. */
+  selectedDirectorIds?: readonly string[];
+  selectedShareholderIds?: readonly string[];
   selectedContactId?: string;
   selectedContact?: OakDocContact;
   agreement?: OakDocAgreementContext;
@@ -514,6 +540,12 @@ function buildResolutionContext(input: OakDocResolutionInput) {
     },
     resolution: {
       date: input.resolution?.date,
+    },
+    directors: {
+      isPlural: listedOakDocDirectors(input.company, input.selectedDirectorIds).length > 1 ? 'Yes' : '',
+    },
+    shareholders: {
+      isPlural: listedOakDocShareholders(input.company, input.selectedShareholderIds).length > 1 ? 'Yes' : '',
     },
     system: {
       currentDate: new Date(),

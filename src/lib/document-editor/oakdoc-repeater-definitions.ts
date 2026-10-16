@@ -206,6 +206,19 @@ function isSelected(ids: readonly string[] | undefined, id: string): boolean {
   return ids === undefined || ids.includes(id);
 }
 
+/** The directors a directors section lists: current ones, those ticked on Configure. */
+export function listedOakDocDirectors(company: OakDocCompanyDetail, selectedIds?: readonly string[]): OakDocOfficer[] {
+  return (company.officers ?? []).filter((officer) => officer.isCurrent !== false
+    && String(officer.role || '').toUpperCase().includes('DIRECTOR')
+    && isSelected(selectedIds, officer.id));
+}
+
+/** The shareholders a shareholders section lists: current ones, those ticked on Configure. */
+export function listedOakDocShareholders(company: OakDocCompanyDetail, selectedIds?: readonly string[]): OakDocShareholder[] {
+  return (company.shareholders ?? []).filter((shareholder) => shareholder.isCurrent !== false
+    && isSelected(selectedIds, shareholder.id));
+}
+
 export interface OakDocGenericRepeaterDefinition {
   kind: OakDocGenericRepeaterKind;
   tag: string;
@@ -395,11 +408,7 @@ readonly OakDocGenericRepeaterDefinition[] = [
       { tag: 'director.appointmentDate', label: 'Director Appointment Date', category: 'Repeating Director', example: '15 Jan 2023' },
       { tag: 'director.address', label: 'Director Address', category: 'Repeating Director', example: '123 Sample Street' },
     ],
-    generationDataAdapter: (data) => (data.company.officers ?? [])
-      .filter((officer) => officer.isCurrent !== false
-        && String(officer.role || '').toUpperCase().includes('DIRECTOR')
-        && isSelected(data.selectedDirectorIds, officer.id))
-      .map(directorValues),
+    generationDataAdapter: (data) => listedOakDocDirectors(data.company, data.selectedDirectorIds).map(directorValues),
   },
   {
     kind: 'shareholders',
@@ -422,9 +431,7 @@ readonly OakDocGenericRepeaterDefinition[] = [
       { tag: 'shareholder.isNominee', label: 'Nominee Shareholder', category: 'Repeating Shareholder', example: 'No' },
       { tag: 'shareholder.dividendAmount', label: 'Dividend Amount (shares x Dividend per share)', category: 'Repeating Shareholder', example: '350.00' },
     ],
-    generationDataAdapter: (data) => (data.company.shareholders ?? [])
-      .filter((shareholder) => shareholder.isCurrent !== false
-        && isSelected(data.selectedShareholderIds, shareholder.id))
+    generationDataAdapter: (data) => listedOakDocShareholders(data.company, data.selectedShareholderIds)
       .map((shareholder) => shareholderValues(shareholder, data.dividendPerShare)),
   },
   {

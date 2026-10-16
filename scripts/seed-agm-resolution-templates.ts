@@ -9,20 +9,22 @@
  * statements sent, dormant company, re-election of all directors, filing
  * of annual return). The templates also preset two partials from
  * seed-corp-sec-templates.ts (adoption of financial statements, audit
- * exemption): those are found by name and never changed here, or created
- * if the workspace has none.
+ * exemption): those are found by name, or created if the workspace has
+ * none. --replace also refreshes the adoption of financial statements
+ * partial (shared with "Members Resolution - In Lieu of AGM"); the audit
+ * exemption partial is never changed here.
  *
  *   npx tsx scripts/seed-agm-resolution-templates.ts --email <login> [--replace]
  *
  * Creates whatever the workspace has none of by that name. --replace
- * overwrites only the templates and partials listed above (in-app edits
+ * overwrites only the templates and partials named above (in-app edits
  * are lost) and resets those templates' preset resolutions.
  */
 import { pathToFileURL } from 'node:url';
 import { prisma } from '../src/lib/prisma';
 import { ensureA4ServerDomGlobals } from '../src/lib/document-editor/a4-server-dom';
 import { AGM_PARTIALS, AGM_RESOLUTION_TEMPLATES } from '../src/content/secretarial/agm-resolutions';
-import type { CorpSecPartial } from '../src/content/secretarial/corp-sec-resolutions';
+import { RECEIVE_FINANCIAL_STATEMENTS, type CorpSecPartial } from '../src/content/secretarial/corp-sec-resolutions';
 import { flag } from './lib/oakdoc-cli-args';
 import { operator, seedPartial, seedResolutionTemplate } from './lib/corp-sec-seed';
 
@@ -35,8 +37,10 @@ async function main() {
   for (const template of AGM_RESOLUTION_TEMPLATES) {
     for (const partial of template.partials) {
       if (partialIds.has(partial)) continue;
-      // Partials from the corporate secretarial seed are reused as they are.
-      partialIds.set(partial, await seedPartial(partial, params, replace && AGM_PARTIALS.includes(partial)));
+      // Partials from the corporate secretarial seed are reused as they are,
+      // except the adoption of financial statements, whose wording changed for these.
+      const refresh = AGM_PARTIALS.includes(partial) || partial === RECEIVE_FINANCIAL_STATEMENTS;
+      partialIds.set(partial, await seedPartial(partial, params, replace && refresh));
     }
   }
 

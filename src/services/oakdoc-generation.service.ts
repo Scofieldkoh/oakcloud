@@ -624,6 +624,8 @@ async function renderOakDocMaster(
     fieldTags: resolutionTags,
     selectedDirectorId: input.selectedDirectorId,
     selectedShareholderId: input.selectedShareholderId,
+    selectedDirectorIds: input.selectedDirectorIds,
+    selectedShareholderIds: input.selectedShareholderIds,
     selectedContact,
     agreement: agreementContext,
     resolution: { date: input.resolutionDate },
