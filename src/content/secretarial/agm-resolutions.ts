@@ -25,9 +25,9 @@ import * as F from './corp-sec-fields';
 
 const ACT = 'the Companies Act 1967';
 
-export const DISPENSE_WITH_AGM = partial('resolution-agm-dispense', 'AGM - Dispense with AGMs (Members)', 'DISPENSATION WITH ANNUAL GENERAL MEETINGS', (d) => [
-  resolved(d, [`pursuant to Section 175A(2) of ${ACT}, the Company dispense with the holding of annual general meetings for the year in which this resolution is passed and for subsequent years, and that any matter which would otherwise be dealt with at an annual general meeting be dealt with by written resolution under Section 184A of ${ACT}.`]),
-  resolved(d, [`this resolution is passed by all the members of the Company entitled to vote at a general meeting, as Section 175A(2) of ${ACT} requires; that it ceases to have effect if the Company converts to a public company; and that any member may still require the Company to hold an annual general meeting for a financial year by notice to the Company given not later than 14 days before the last day by which that meeting would have to be held, under Section 175A(4) of ${ACT}.`], 'noted'),
+// For the one financial year only, as the firm prefers to decide each year.
+export const DISPENSE_WITH_AGM = partial('resolution-agm-dispense', 'AGM - Dispense with AGM (Members)', 'DISPENSATION WITH ANNUAL GENERAL MEETING', (d) => [
+  resolved(d, t`pursuant to Section 175A of ${ACT}, the Company dispense with the holding of an annual general meeting for the financial year ended ${F.FS_PERIOD_END}, and that the matters which would otherwise be dealt with at that meeting be dealt with by these written resolutions under Section 184A of ${ACT}.`),
 ]);
 
 export const FINANCIAL_STATEMENTS_SENT = partial('resolution-agm-financial-statements-sent', 'AGM - Financial Statements Sent, No AGM (Members)', 'NO ANNUAL GENERAL MEETING', (d) => [
@@ -64,7 +64,7 @@ export const AGM_PARTIALS: readonly CorpSecPartial[] = [
 ];
 
 export const AGM_RESOLUTION_TEMPLATES: readonly CorpSecResolutionTemplate[] = [
-  template('Members', 'Dispense with AGM', 'All members resolve under Section 175A to stop holding AGMs, then adopt the financial statements, note the audit exemption, re-elect the directors and authorise the annual return. For audited accounts, swap the audit exemption for “Re-appointment of Auditors”.', [DISPENSE_WITH_AGM, RECEIVE_FINANCIAL_STATEMENTS, AUDIT_EXEMPTION_MEMBERS, RE_ELECT_ALL_DIRECTORS, FILE_ANNUAL_RETURN]),
+  template('Members', 'Dispense with AGM', 'All members resolve under Section 175A to dispense with the AGM for the financial year, then adopt the financial statements, note the audit exemption, re-elect the directors and authorise the annual return. For audited accounts, swap the audit exemption for “Re-appointment of Auditors”.', [DISPENSE_WITH_AGM, RECEIVE_FINANCIAL_STATEMENTS, AUDIT_EXEMPTION_MEMBERS, RE_ELECT_ALL_DIRECTORS, FILE_ANNUAL_RETURN]),
   template('Members', 'Financial Statements Sent (No AGM)', 'No AGM because the financial statements were sent to members within five months of the year end (Section 175A(1)(b)): adopt them, record the send date, note the audit exemption, re-elect the directors and authorise the annual return.', [RECEIVE_FINANCIAL_STATEMENTS, FINANCIAL_STATEMENTS_SENT, AUDIT_EXEMPTION_MEMBERS, RE_ELECT_ALL_DIRECTORS, FILE_ANNUAL_RETURN]),
   template('Members', 'Dormant Company', 'A dormant relevant company (total assets up to S$500,000) records that it need not prepare financial statements (Section 201A) or hold an AGM (Section 175A(1)(c)), re-elects the directors and authorises the annual return.', [DORMANT_COMPANY, RE_ELECT_ALL_DIRECTORS, FILE_ANNUAL_RETURN]),
 ];

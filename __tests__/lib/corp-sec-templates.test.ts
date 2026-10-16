@@ -444,7 +444,8 @@ describe('members’ resolutions for a year without an AGM', () => {
       custom: { fs_documents: FS_OPTIONS[1], fs_period_end: '2025-10-31', audit_exemption_basis: AUDIT_EXEMPTION_OPTIONS[0] },
       placeholders,
     });
-    expect(text).toContain('1.\tDISPENSATION WITH ANNUAL GENERAL MEETINGS\nRESOLVED THAT pursuant to Section 175A(2) of the Companies Act 1967, the Company dispense with the holding of annual general meetings');
+    expect(text).toContain('1.\tDISPENSATION WITH ANNUAL GENERAL MEETING\nRESOLVED THAT pursuant to Section 175A of the Companies Act 1967, the Company dispense with the holding of an annual general meeting for the financial year ended 31 October 2025, and that the matters which would otherwise be dealt with at that meeting be dealt with by these written resolutions');
+    expect(text).not.toContain('subsequent years');
     expect(text).toContain('2.\tFINANCIAL STATEMENTS\nRESOLVED AS AN ORDINARY RESOLUTION THAT the unaudited financial statements of the Company together with the Directors’ Statement for the financial year ended 31 October 2025 be received and adopted.');
     expect(text).toContain('3.\tAUDIT EXEMPTION');
     expect(text).toContain('4.\tRE-ELECTION OF DIRECTORS');
