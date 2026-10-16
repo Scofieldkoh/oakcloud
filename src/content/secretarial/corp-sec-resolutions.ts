@@ -122,8 +122,8 @@ export const CONVENE_AGM = partial('resolution-agm-convene', 'AGM - Convene Annu
   resolved(d, t`the Annual General Meeting of the Company be convened and held at ${F.AGM_VENUE} on ${F.AGM_DATE} at ${F.AGM_TIME}, and that the Secretary be authorised to issue the notice of the meeting to all members.`),
 ]);
 
-export const RECEIVE_FINANCIAL_STATEMENTS = partial('resolution-agm-receive-financial-statements', 'AGM - Adoption of Financial Statements (Members)', 'FINANCIAL STATEMENTS', (d) => [
-  resolved(d, t`the ${F.FS_DOCUMENTS} for the financial year ended ${F.FS_PERIOD_END} be received and adopted.`, 'ordinary'),
+export const RECEIVE_FINANCIAL_STATEMENTS = partial('resolution-agm-receive-financial-statements', 'AGM - Adoption of Financial Statements (Members)', 'FINANCIAL STATEMENTS AND DIRECTORS’ STATEMENT', (d) => [
+  resolved(d, t`the ${F.FS_DOCUMENTS} for the financial year ended ${F.FS_PERIOD_END} be received, and are hereby approved and adopted by the members of the Company.`, 'ordinary'),
 ]);
 
 export const DIRECTORS_FOR_RE_ELECTION = 'Directors for re-election';

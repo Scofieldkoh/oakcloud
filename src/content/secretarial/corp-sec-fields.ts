@@ -32,6 +32,8 @@ export const SHAREHOLDER_NAME = field('shareholder.name', 'Shareholder Name', 'S
 export const SHAREHOLDER_ID = field('shareholder.identificationNumber', 'Shareholder Identification Number', 'S7654321B');
 export const SHAREHOLDER_ID_LABEL = field('shareholder.idLabel', 'Shareholder ID Type', 'NRIC No.');
 export const SHAREHOLDER_IS_CORPORATE = 'shareholder.isCorporate';
+/** "Yes" when the directors section lists more than one director: for "Director" or "Directors". */
+export const DIRECTORS_ARE_PLURAL = 'directors.isPlural';
 export const SHAREHOLDER_ADDRESS = field('shareholder.address', 'Shareholder Address', '456 Sample Road, Singapore 456456');
 export const SHAREHOLDER_SHARES = field('shareholder.numberOfShares', 'Number of Shares', '3,500');
 export const SHAREHOLDER_CLASS = field('shareholder.shareClass', 'Share Class', 'Ordinary', { titleCase: true });

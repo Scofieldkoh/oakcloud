@@ -3,6 +3,7 @@ import type { OakDocFieldDefinition } from '@/lib/document-editor/oakdoc-fields'
 import {
   OAKDOC_AGREEMENT_FIELD_DEFINITIONS,
   OAKDOC_RESOLUTION_FIELD_DEFINITIONS,
+  OAKDOC_SECTION_COUNT_FIELD_DEFINITIONS,
   OAKDOC_SELECTED_CONTACT_FIELD_DEFINITIONS,
 } from '@/lib/document-editor/oakdoc-context';
 import {
@@ -80,6 +81,16 @@ export const OAKDOC_EDITOR_FIELD_CATEGORIES = [
       category: 'Contact',
     })),
   },
+  {
+    key: 'section-counts',
+    label: 'Repeating Section Counts',
+    fields: OAKDOC_SECTION_COUNT_FIELD_DEFINITIONS.map((field) => ({
+      key: field.tag,
+      label: field.label,
+      example: field.example,
+      category: field.category,
+    })),
+  },
   ...OAKDOC_CATALOG_FIELD_CATEGORIES.filter((category) => category.key === 'system'),
 ];
 
@@ -94,6 +105,8 @@ export const OAKDOC_SCALAR_FIELDS: readonly OakDocRegisteredField[] = [
   ...withContext(OAKDOC_SELECTED_CONTACT_FIELD_DEFINITIONS, 'selectedContact'),
   ...withContext(OAKDOC_AGREEMENT_FIELD_DEFINITIONS, 'agreement'),
   ...withContext(OAKDOC_RESOLUTION_FIELD_DEFINITIONS, 'resolution'),
+  // Always resolvable: with nobody ticked, every current director or shareholder is listed.
+  ...withContext(OAKDOC_SECTION_COUNT_FIELD_DEFINITIONS, 'company'),
 ];
 
 /** Fields that live inside a repeater item. */

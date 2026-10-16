@@ -131,7 +131,14 @@ interface Generation {
 /** Generation as the generation service runs it: conditions, repeaters, then fields. */
 function generate(bytes: Uint8Array, input: Generation = {}): string {
   const fieldTags = deriveOakDocTemplateFieldTags(bytes);
-  const context = { company: BORDEUS, fieldTags, resolution: { date: '2026-10-03' }, selectedDirectorId: input.selectedDirectorId };
+  const context = {
+    company: BORDEUS,
+    fieldTags,
+    resolution: { date: '2026-10-03' },
+    selectedDirectorId: input.selectedDirectorId,
+    selectedDirectorIds: input.repeaters?.selectedDirectorIds,
+    selectedShareholderIds: input.repeaters?.selectedShareholderIds,
+  };
   const custom = buildOakDocCustomFieldValues({
     tags: fieldTags,
     data: input.custom ?? {},
@@ -384,7 +391,7 @@ describe('corporate secretarial generation', () => {
     });
     expect(text).toContain('MEMBERS’ RESOLUTIONS IN WRITING');
     expect(text).toContain('1.\tFINANCIAL STATEMENTS');
-    expect(text).toContain('RESOLVED AS AN ORDINARY RESOLUTION THAT the unaudited financial statements of the Company together with the Directors’ Statement for the financial year ended 31 December 2026 be received and adopted.');
+    expect(text).toContain('RESOLVED AS AN ORDINARY RESOLUTION THAT the unaudited financial statements of the Company together with the Directors’ Statement for the financial year ended 31 December 2026 be received, and are hereby approved and adopted by the members of the Company.');
     expect(text).toContain('YULY MIRAWATI (NRIC No. S8078571B), who retires');
     expect(text).not.toContain('LIANG JOO HEONG (NRIC No. S2039870A), who retires');
     expect(text).toContain('5.\tAUTHORITY TO ALLOT AND ISSUE SHARES');
@@ -446,10 +453,10 @@ describe('members’ resolutions for a year without an AGM', () => {
     });
     expect(text).toContain('1.\tDISPENSATION WITH ANNUAL GENERAL MEETING\nRESOLVED THAT pursuant to Section 175A of the Companies Act 1967, the Company dispense with the holding of an annual general meeting for the financial year ended 31 October 2025, and that the matters which would otherwise be dealt with at that meeting be dealt with by these written resolutions');
     expect(text).not.toContain('subsequent years');
-    expect(text).toContain('2.\tFINANCIAL STATEMENTS\nRESOLVED AS AN ORDINARY RESOLUTION THAT the unaudited financial statements of the Company together with the Directors’ Statement for the financial year ended 31 October 2025 be received and adopted.');
+    expect(text).toContain('2.\tFINANCIAL STATEMENTS AND DIRECTORS’ STATEMENT\nRESOLVED AS AN ORDINARY RESOLUTION THAT the unaudited financial statements of the Company together with the Directors’ Statement for the financial year ended 31 October 2025 be received, and are hereby approved and adopted by the members of the Company.');
     expect(text).toContain('3.\tAUDIT EXEMPTION');
     expect(text).toContain('4.\tRE-ELECTION OF DIRECTORS');
-    expect(text).toContain('•\tYULY MIRAWATI (NRIC No. S8078571B)\n•\tLIANG JOO HEONG (NRIC No. S2039870A)');
+    expect(text).toContain('THAT the following Directors, retiring from office whether pursuant to the Constitution of the Company or voluntarily, and being eligible and having offered themselves for re-election, be re-elected as Directors of the Company:\n•\tYULY MIRAWATI (NRIC No. S8078571B)\n•\tLIANG JOO HEONG (NRIC No. S2039870A)');
     expect(text).toContain('5.\tFILING OF ANNUAL RETURN\nRESOLVED THAT the Company Secretary and/or OAKTREE ACCOUNTING & CORPORATE SOLUTIONS PTE. LTD. be authorised to lodge the annual return of the Company for the financial year ended 31 October 2025');
     expect(text).toContain('For and on behalf of\nEngterprise Holdings Pte. Ltd.');
   });
@@ -464,6 +471,9 @@ describe('members’ resolutions for a year without an AGM', () => {
     expect(text).toContain('2.\tNO ANNUAL GENERAL MEETING\nIT IS NOTED THAT the unaudited financial statements of the Company together with the Directors’ Statement for the financial year ended 31 October 2025 were sent to all members of the Company on 12 December 2025');
     expect(text).toContain('as Section 175A(1)(b) of the Companies Act 1967 permits');
     expect(text).not.toContain('LIANG JOO HEONG (NRIC');
+    // One director ticked: "Director", not "Directors".
+    expect(text).toContain('THAT the following Director, retiring from office whether pursuant to the Constitution of the Company or voluntarily, and being eligible and having offered to be re-elected, be re-elected as a Director of the Company:\n•\tYULY MIRAWATI (NRIC No. S8078571B)');
+    expect(text).not.toContain('following Directors');
   });
 
   it('records the dormant company exemptions without asking for accounts', () => {

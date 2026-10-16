@@ -1,5 +1,5 @@
 import { OAKDOC_DIRECTORS_REPEATER_TAG } from '@/lib/document-editor/oakdoc-repeater-definitions';
-import { TAB, t } from './corp-sec-oakdoc-kit';
+import { TAB, t, whenBlank, whenSet } from './corp-sec-oakdoc-kit';
 import {
   AUDIT_EXEMPTION_MEMBERS,
   DIRECTORS_FOR_RE_ELECTION,
@@ -44,9 +44,13 @@ export const DORMANT_COMPANY = partial('resolution-agm-dormant-company', 'AGM - 
   resolved(d, ['the Directors have confirmed that the Company is solvent, being able to pay its debts as they fall due.'], 'furtherNoted'),
 ]);
 
-/** Every director, named, whether retiring under the Constitution or of their own accord. */
+const RETIRING = 'retiring from office whether pursuant to the Constitution of the Company or voluntarily, and being eligible';
+
+/** Every director ticked, named, whether retiring under the Constitution or of their own accord. */
 export const RE_ELECT_ALL_DIRECTORS = partial('resolution-agm-re-elect-all-directors', 'AGM - Re-election of All Directors (Members)', 'RE-ELECTION OF DIRECTORS', (d) => [
-  resolved(d, ['the following Director(s), retiring from office whether pursuant to the Constitution of the Company or voluntarily, and being eligible and having offered themselves for re-election, be re-elected as Director(s) of the Company:'], 'ordinary'),
+  // "Directors" when more than one is ticked, "Director" for one.
+  d.when(whenSet(F.DIRECTORS_ARE_PLURAL), resolved(d, [`the following Directors, ${RETIRING} and having offered themselves for re-election, be re-elected as Directors of the Company:`], 'ordinary')),
+  d.when(whenBlank(F.DIRECTORS_ARE_PLURAL), resolved(d, [`the following Director, ${RETIRING} and having offered to be re-elected, be re-elected as a Director of the Company:`], 'ordinary')),
   d.repeat(OAKDOC_DIRECTORS_REPEATER_TAG, d.p(['•', TAB, ...t`${F.DIRECTOR_NAME} (${F.DIRECTOR_ID_LABEL} ${F.DIRECTOR_ID})`], bullet), DIRECTORS_FOR_RE_ELECTION),
 ]);
 

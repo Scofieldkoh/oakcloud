@@ -385,7 +385,10 @@ The members' resolutions for a year without an AGM
 Statements Sent (No AGM)" (s.175A(1)(b)) and "- Dormant Company" (s.175A(1)(c),
 s.201A), with five new "AGM - " partials. They also preset the corporate
 secretarial "Adoption of Financial Statements" and "Audit Exemption" partials,
-which this seed finds by name and never replaces. Both seeds share
+found by name; only the first is refreshed, and only with `--replace`. The
+re-election partial says "Director" or "Directors" by a condition on
+`directors.isPlural` ("Yes" when the directors section lists more than one;
+`shareholders.isPlural` likewise), set from the people ticked on Configure. Both seeds share
 `scripts/lib/corp-sec-seed.ts`.
 
 Per-person fields (`src/lib/document-editor/oakdoc-custom-fields.ts`,
