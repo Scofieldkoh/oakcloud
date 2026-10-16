@@ -72,6 +72,7 @@ export const FS_OPTIONS = [
 ] as const;
 export const FS_DOCUMENTS = custom('fs_documents', 'Financial statements', 'text', FS_OPTIONS[1], { choices: FS_OPTIONS });
 export const FS_PERIOD_END = custom('fs_period_end', 'Financial year ended', 'date', '31 December 2026', { dateFormat: LONG_DATE });
+export const FS_SENT_DATE = custom('fs_sent_date', 'Financial statements sent to members on', 'date', '12 May 2027', { dateFormat: LONG_DATE });
 export const DIRECTORS_FEES = custom('directors_fees', 'Directors’ fees (S$)', 'currency', '0.00');
 export const AGM_DATE = custom('agm_date', 'Meeting date', 'date', '30 June 2027', { dateFormat: LONG_DATE });
 export const AGM_TIME = custom('agm_time', 'Meeting time', 'text', '10.00 a.m.');

@@ -378,6 +378,16 @@ company (signature blocks, "I/We") is a condition on `contact.isCorporate` or
 `shareholder.isCorporate`. Share documents ask each party their own shares,
 consideration and certificate number, checked against the document's totals.
 
+The members' resolutions for a year without an AGM
+(`src/content/secretarial/agm-resolutions.ts`) are seeded on their own with
+`scripts/seed-agm-resolution-templates.ts --email <login> [--replace]`:
+"Members Resolution - Dispense with AGM" (s.175A(1)(a)), "- Financial
+Statements Sent (No AGM)" (s.175A(1)(b)) and "- Dormant Company" (s.175A(1)(c),
+s.201A), with five new "AGM - " partials. They also preset the corporate
+secretarial "Adoption of Financial Statements" and "Audit Exemption" partials,
+which this seed finds by name and never replaces. Both seeds share
+`scripts/lib/corp-sec-seed.ts`.
+
 Per-person fields (`src/lib/document-editor/oakdoc-custom-fields.ts`,
 `oakdoc-person-values.ts`): opening a directors, shareholders, officers or
 contacts section in the Repeating sections panel offers per-person fields,
