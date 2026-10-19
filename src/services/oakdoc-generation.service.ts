@@ -58,6 +58,7 @@ import {
 import { OAKDOC_SIGNATURE_TAGS } from '@/lib/document-editor/oakdoc-signatures';
 import {
   OAKDOC_REPEATER_ITEM_FIELD_TAGS,
+  classifyOakDocTag,
   diagnoseOakDocTags,
   isOakDocRepeaterItemFieldTag,
   oakDocFieldContext,
@@ -1271,7 +1272,9 @@ export async function checkGeneratedOakDocFinalization(
   const unresolvedFields = resolveOakDocFields(bytes, values).unresolvedTags
     .filter((tag) => !OAKDOC_SIGNATURE_TAGS.has(tag))
     .filter((tag) => !isOakDocRepeaterOuterTag(tag))
-    .filter((tag) => !tag.startsWith(OAKDOC_CONDITION_TAG_PREFIX));
+    .filter((tag) => !tag.startsWith(OAKDOC_CONDITION_TAG_PREFIX))
+    // The agreement renderer keeps its per-service wrappers; they hold content, not values.
+    .filter((tag) => classifyOakDocTag(tag) !== 'agreement-slot');
   const unresolvedConditions = inspectOakDocConditions(bytes).count;
   const unresolvedRepeaters = inspectOakDocRepeaters(bytes).count;
 
@@ -1289,8 +1292,14 @@ export async function assertGeneratedOakDocReadyForFinalization(
 ): Promise<void> {
   const check = await checkGeneratedOakDocFinalization(documentId, tenantId);
   if (check.ready) return;
+  // Batch results show only the message, so it names what is left to fill in.
+  const remaining = [
+    ...check.unresolvedFields,
+    ...(check.unresolvedConditions > 0 ? [`${check.unresolvedConditions} condition(s)`] : []),
+    ...(check.unresolvedRepeaters > 0 ? [`${check.unresolvedRepeaters} repeating section(s)`] : []),
+  ];
   throw new ValidationError(
-    'Resolve the remaining OakDoc fields, conditions and repeaters before finalizing',
+    `Resolve the remaining OakDoc fields, conditions and repeaters before finalizing: ${remaining.join(', ')}`,
     {
       reason: OAKDOC_ERROR_REASONS.UNRESOLVED_CONTROLS,
       fields: check.unresolvedFields,
