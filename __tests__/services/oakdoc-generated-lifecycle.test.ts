@@ -243,6 +243,15 @@ describe('native generated-document lifecycle (L1)', () => {
     const check = await checkGeneratedOakDocFinalization(documentId, tenantId);
     expect(check).toMatchObject({ ready: false, unresolvedFields: ['director.name'] });
     await expect(assertGeneratedOakDocReadyForFinalization(documentId, tenantId))
-      .rejects.toMatchObject({ details: { reason: 'OAKDOC_UNRESOLVED_CONTROLS' } });
+      .rejects.toMatchObject({
+        message: expect.stringContaining(': director.name'),
+        details: { reason: 'OAKDOC_UNRESOLVED_CONTROLS' },
+      });
+  });
+
+  it('finalization ignores the per-service wrappers a Service Agreement keeps', async () => {
+    seedDocument(docx(`${field('company.name', 'Acme')}${field('agreement.service.item:item-1', 'Scope')}`));
+    await expect(checkGeneratedOakDocFinalization(documentId, tenantId))
+      .resolves.toMatchObject({ ready: true, unresolvedFields: [] });
   });
 });
