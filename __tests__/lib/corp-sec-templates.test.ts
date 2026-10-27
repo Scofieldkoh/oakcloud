@@ -20,7 +20,7 @@ import {
   type CorpSecResolutionTemplate,
 } from '@/content/secretarial/corp-sec-resolutions';
 import { AGM_PARTIALS, AGM_RESOLUTION_TEMPLATES } from '@/content/secretarial/agm-resolutions';
-import { AUDIT_EXEMPTION_OPTIONS, FS_OPTIONS } from '@/content/secretarial/corp-sec-fields';
+import { AUDIT_EXEMPTION_OPTIONS, DORMANT_SINCE_OPTIONS, FS_OPTIONS, SOLVENCY_NOT_APPLICABLE } from '@/content/secretarial/corp-sec-fields';
 import {
   buildOakDocResolutionDates,
   buildOakDocResolutionValues,
@@ -171,7 +171,7 @@ function generate(bytes: Uint8Array, input: Generation = {}): string {
 function composeTemplate(template: CorpSecResolutionTemplate): { bytes: Uint8Array; placeholders: PlaceholderDefinition[] } {
   const ids = template.partials.map((_, index) => `6666666${index}-6666-4666-8666-666666666666`);
   const preset: ResolutionComposition = {
-    subject: '',
+    subject: template.heading ?? '',
     sections: template.partials.map((partial, index) => ({
       id: `preset-${index + 1}`,
       kind: 'PARTIAL' as const,
@@ -423,7 +423,7 @@ describe('corporate secretarial generation', () => {
   });
 });
 
-describe('members’ resolutions for a year without an AGM', () => {
+describe('resolutions for a year without an AGM', () => {
   it('adds partials of their own and presets only partials they add or the corporate secretarial seed has', () => {
     const corpSecNames = new Set(CORP_SEC_PARTIALS.map((partial) => partial.name));
     for (const partial of AGM_PARTIALS) {
@@ -479,10 +479,43 @@ describe('members’ resolutions for a year without an AGM', () => {
   it('records the dormant company exemptions without asking for accounts', () => {
     const { bytes, placeholders } = composeTemplate(agmTemplate('Dormant Company'));
     expect(definedKeys(placeholders)).not.toContain('fs_documents');
-    const text = generate(bytes, { custom: { fs_period_end: '2025-12-31' }, placeholders });
-    expect(text).toContain('1.\tDORMANT COMPANY\nIT IS NOTED THAT the Company has been dormant, within the meaning of Section 205B of the Companies Act 1967, throughout the financial year ended 31 December 2025');
-    expect(text).toContain('(a)\tthe Directors are exempt under Section 201A');
+    const text = generate(bytes, { custom: { fs_period_end: '2025-12-31' }, placeholders, repeaters: { selectedDirectorIds: ['d1'] } });
+    expect(text).toContain('1.\tDORMANT RELEVANT COMPANY\nIT IS NOTED THAT the Directors have confirmed that the Company satisfies the requirements of a dormant relevant company under the Companies Act 1967 (the “Act”) for the financial year ended 31 December 2025 (the “Financial Year”), including the applicable dormancy and asset criteria');
+    expect(text).toContain('IT IS FURTHER NOTED THAT, subject to compliance with the applicable statutory requirements:\n(a)\tthe Directors are exempt from preparing financial statements for the Financial Year under Section 201A of the Act;\n(b)\tthe Company is exempt from audit requirements for the Financial Year under Section 205B of the Act; and\n(c)\tthe Company, being a private company and a dormant relevant company, is not required to hold an Annual General Meeting');
+    expect(text).toContain('2.\tRE-ELECTION OF DIRECTORS\nRESOLVED AS AN ORDINARY RESOLUTION THAT the following Director, retiring from office in accordance with the Constitution of the Company, and being eligible and having offered to be re-elected, be re-elected as a Director of the Company:\n•\tYULY MIRAWATI (NRIC No. S8078571B)');
     expect(text).toContain('3.\tFILING OF ANNUAL RETURN');
+    expect(text).not.toContain('solvent');
+  });
+
+  const boardDormant = AGM_RESOLUTION_TEMPLATES.find((entry) => entry.name === 'Board Resolution - Dormant Company')!;
+
+  it('records the directors’ dormancy confirmations for a company dormant since incorporation', () => {
+    const { bytes, placeholders } = composeTemplate(boardDormant);
+    expect(definedKeys(placeholders).sort()).toEqual(['dormant_since', 'fs_period_end', 'parent_company', 'previous_fs_period_end', 'resolution_date', 'solvency']);
+    const text = generate(bytes, {
+      custom: { fs_period_end: '2025-12-31', dormant_since: DORMANT_SINCE_OPTIONS[0], parent_company: 'No', solvency: 'is able' },
+      placeholders,
+    });
+    expect(text).toContain('DORMANT RELEVANT COMPANY\n1.\tDORMANCY\nCONFIRMED THAT the Company has been dormant from the time of its incorporation, and that no accounting transactions have occurred during the financial year ended 31 December 2025 (the “Financial Year”), other than transactions disregarded for the purpose of determining dormancy under the Companies Act 1967 (the “Act”).');
+    expect(text).toContain('2.\tRELEVANT COMPANY STATUS\nCONFIRMED THAT the Company satisfies the requirements of a “relevant company” under the Act, in that:\n(a)\tthe Company is neither a listed company nor a subsidiary of a listed company; and\n(b)\tthe total assets of the Company did not exceed S$500,000 at any time during the Financial Year.\n3.');
+    expect(text).toContain('3.\tDIRECTORS’ DECLARATION\nCONFIRMED THAT:\n(a)\tthe Company has remained dormant throughout the Financial Year;');
+    expect(text).toContain('(c)\tno notice has been received requiring the Company to obtain an audit of its accounts for the Financial Year;\n(d)\tthe accounting and other records required to be kept by the Company have been properly maintained in accordance with the Act; and\n(e)\tfor the purpose of the Annual Return solvency declaration, the Company is able to pay its debts as and when they fall due.');
+    expect(text).toContain('4.\tSTATUTORY EXEMPTIONS\nNOTED THAT, based on the foregoing confirmations:\n(a)\tthe Directors are entitled to exemption');
+    expect(text).toContain('5.\tAPPROVAL OF STATUTORY DECLARATIONS AND FILING OF ANNUAL RETURN\nRESOLVED THAT the statutory statements and declarations by the Directors reflecting the confirmations set out in paragraph 3');
+    expect(text).toContain('FURTHER RESOLVED THAT any one Director, the Company Secretary, or OAKTREE ACCOUNTING & CORPORATE SOLUTIONS PTE. LTD. be and is hereby authorised to prepare and lodge');
+  });
+
+  it('dates dormancy from the previous year end, adds the group test and leaves out the solvency declaration', () => {
+    const { bytes, placeholders } = composeTemplate(boardDormant);
+    const text = generate(bytes, {
+      custom: { fs_period_end: '2025-12-31', dormant_since: DORMANT_SINCE_OPTIONS[1], previous_fs_period_end: '2024-12-31', parent_company: 'Yes', solvency: SOLVENCY_NOT_APPLICABLE },
+      placeholders,
+    });
+    expect(text).toContain('CONFIRMED THAT the Company has been dormant since the end of the previous financial year ended 31 December 2024, and that no accounting transactions');
+    expect(text).not.toContain('from the time of its incorporation');
+    expect(text).toContain('(a)\tthe Company is neither a listed company nor a subsidiary of a listed company;\n(b)\tthe total assets of the Company did not exceed S$500,000 at any time during the Financial Year; and\n(c)\twhere the Company is a parent company which is not itself a subsidiary of another corporation, the consolidated total assets of its group did not exceed S$500,000');
+    expect(text).toContain('(c)\tno notice has been received requiring the Company to obtain an audit of its accounts for the Financial Year; and\n(d)\tthe accounting and other records required to be kept by the Company have been properly maintained in accordance with the Act.\n4.');
+    expect(text).not.toContain('solvency declaration');
   });
 });
 

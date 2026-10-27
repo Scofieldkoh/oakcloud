@@ -378,14 +378,25 @@ company (signature blocks, "I/We") is a condition on `contact.isCorporate` or
 `shareholder.isCorporate`. Share documents ask each party their own shares,
 consideration and certificate number, checked against the document's totals.
 
-The members' resolutions for a year without an AGM
+The resolutions for a year without an AGM
 (`src/content/secretarial/agm-resolutions.ts`) are seeded on their own with
 `scripts/seed-agm-resolution-templates.ts --email <login> [--replace]`:
 "Members Resolution - Dispense with AGM" (s.175A(1)(a)), "- Financial
-Statements Sent (No AGM)" (s.175A(1)(b)) and "- Dormant Company" (s.175A(1)(c),
-s.201A), with five new "AGM - " partials. They also preset the corporate
+Statements Sent (No AGM)" (s.175A(1)(b)) and "- Dormant Company" (s.175A,
+s.201A, s.205B), and "Board Resolution - Dormant Company", the Directors'
+confirmations (dormancy, relevant company status, declarations, exemptions,
+approval of the declarations and annual return) under a preset "DORMANT
+RELEVANT COMPANY" subject heading, with their own "AGM - " partials. The
+directors' version asks on Configure since when the company has been dormant,
+whether the group assets test applies (a parent company not itself a
+subsidiary) and the annual return solvency answer for an exempt private
+company ("Not applicable" leaves item (e) out); each choice is a condition
+that keeps the lettered items' "; and" in the right place. A condition built
+from a custom field registers that field, so a field only tested (the parent
+company question) is still asked. They also preset the corporate
 secretarial "Adoption of Financial Statements" and "Audit Exemption" partials,
-found by name; only the first is refreshed, and only with `--replace`. The
+found by name; only the first is refreshed, and only with `--replace`, which
+also refreshes the default heading of each partial it replaces. The
 re-election partial says "Director" or "Directors" by a condition on
 `directors.isPlural` ("Yes" when the directors section lists more than one;
 `shareholders.isPlural` likewise), set from the people ticked on Configure. Both seeds share

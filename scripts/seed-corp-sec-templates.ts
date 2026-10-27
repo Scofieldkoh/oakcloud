@@ -21,6 +21,7 @@
  * seed-resolution-template.ts, seed-consent-form-templates.ts and
  * seed-agm-resolution-templates.ts.
  */
+import 'dotenv/config';
 import { pathToFileURL } from 'node:url';
 import type { Prisma } from '../src/generated/prisma';
 import { prisma } from '../src/lib/prisma';

@@ -297,6 +297,7 @@ export async function updateOakDocPartial(
     fileName: string;
     buffer: Buffer;
     displayName?: string | null;
+    header?: string | null;
     description?: string | null;
     refreshPins?: 'all' | string[];
     /** Replaces the partial's custom fields; absent keeps them. */
@@ -334,6 +335,7 @@ export async function updateOakDocPartial(
         placeholders: inherited.placeholders as Prisma.InputJsonValue,
         version: { increment: 1 },
         ...(input.displayName !== undefined ? { displayName: input.displayName } : {}),
+        ...(input.header !== undefined ? { header: input.header?.trim() || null } : {}),
         ...(input.description !== undefined ? { description: input.description } : {}),
       },
     });

@@ -85,6 +85,18 @@ export const AUDIT_EXEMPTION_OPTIONS = [
   'a dormant company within the meaning of Section 205B of the Companies Act 1967',
 ] as const;
 export const AUDIT_EXEMPTION_BASIS = custom('audit_exemption_basis', 'Audit exemption', 'text', AUDIT_EXEMPTION_OPTIONS[0], { choices: AUDIT_EXEMPTION_OPTIONS });
+// Dormant relevant company (directors' confirmations)
+export const DORMANT_SINCE_OPTIONS = [
+  'from the time of its incorporation',
+  'since the end of the previous financial year',
+] as const;
+export const DORMANT_SINCE = custom('dormant_since', 'Dormant', 'text', DORMANT_SINCE_OPTIONS[0], { choices: DORMANT_SINCE_OPTIONS });
+export const PREVIOUS_FS_PERIOD_END = custom('previous_fs_period_end', 'Previous financial year ended (if dormant since then)', 'date', '31 December 2025', { dateFormat: LONG_DATE, required: false });
+export const PARENT_COMPANY_OPTIONS = ['No', 'Yes'] as const;
+export const PARENT_COMPANY = custom('parent_company', 'Parent company that is not itself a subsidiary (group assets test)', 'text', PARENT_COMPANY_OPTIONS[0], { choices: PARENT_COMPANY_OPTIONS });
+export const SOLVENCY_NOT_APPLICABLE = 'Not applicable (not an exempt private company)';
+export const SOLVENCY_OPTIONS = ['is able', 'is unable', SOLVENCY_NOT_APPLICABLE] as const;
+export const SOLVENCY = custom('solvency', 'Annual return solvency: the Company … to pay its debts', 'text', SOLVENCY_OPTIONS[0], { choices: SOLVENCY_OPTIONS });
 export const AGM_AUDITOR_OPTIONS = [
   'To re-appoint the retiring auditors and to authorise the Directors to fix their remuneration.',
   'To note that the Company is exempt from having its financial statements audited and that no auditor is to be appointed.',

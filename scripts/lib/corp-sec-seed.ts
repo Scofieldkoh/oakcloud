@@ -46,6 +46,7 @@ export async function seedPartial(partial: CorpSecPartial, params: Operator, rep
       fileName,
       buffer: Buffer.from(bytes),
       displayName: partial.displayName,
+      header: partial.header,
       description: null,
       placeholders,
     }, params);
@@ -127,7 +128,7 @@ export async function seedResolutionTemplate(
   const templateId = await seedTemplate({ ...template, bytes: template.build() }, params, replace);
   if (!templateId) return;
   const preset: ResolutionComposition = {
-    subject: '',
+    subject: template.heading ?? '',
     sections: template.partials.map((partial, index) => {
       const partialId = partialIds.get(partial);
       if (!partialId) throw new Error(`No partial "${partial.displayName}" for "${template.name}"`);

@@ -1,18 +1,20 @@
 /**
- * Seed the members' resolutions for a year without an AGM:
+ * Seed the resolutions for a year without an AGM:
  *
  * - "Members Resolution - Dispense with AGM" (Section 175A(1)(a));
  * - "Members Resolution - Financial Statements Sent (No AGM)" (Section 175A(1)(b));
- * - "Members Resolution - Dormant Company" (Sections 175A(1)(c) and 201A);
+ * - "Members Resolution - Dormant Company" (Sections 175A, 201A and 205B);
+ * - "Board Resolution - Dormant Company" (the Directors' confirmations);
  *
- * and the five resolution partials they add (dispensation, financial
- * statements sent, dormant company, re-election of all directors, filing
- * of annual return). The templates also preset two partials from
- * seed-corp-sec-templates.ts (adoption of financial statements, audit
- * exemption): those are found by name, or created if the workspace has
- * none. --replace also refreshes the adoption of financial statements
- * partial (shared with "Members Resolution - In Lieu of AGM"); the audit
- * exemption partial is never changed here.
+ * and the resolution partials they add (dispensation, financial statements
+ * sent, dormant relevant company, re-election of all directors or of those
+ * retiring under the Constitution, filing of annual return, and the five
+ * directors' dormant company resolutions). The templates also preset two
+ * partials from seed-corp-sec-templates.ts (adoption of financial
+ * statements, audit exemption): those are found by name, or created if the
+ * workspace has none. --replace also refreshes the adoption of financial
+ * statements partial (shared with "Members Resolution - In Lieu of AGM");
+ * the audit exemption partial is never changed here.
  *
  *   npx tsx scripts/seed-agm-resolution-templates.ts --email <login> [--replace]
  *
@@ -20,6 +22,7 @@
  * overwrites only the templates and partials named above (in-app edits
  * are lost) and resets those templates' preset resolutions.
  */
+import 'dotenv/config';
 import { pathToFileURL } from 'node:url';
 import { prisma } from '../src/lib/prisma';
 import { ensureA4ServerDomGlobals } from '../src/lib/document-editor/a4-server-dom';

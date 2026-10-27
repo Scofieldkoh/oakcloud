@@ -38,7 +38,7 @@ export interface CorpSecPartial {
   build: () => BuiltDocument;
 }
 
-const paragraph = { align: 'both' as const, after: 120 };
+export const paragraph = { align: 'both' as const, after: 120 };
 export const bullet = { indent: { left: 720, hanging: 360 }, after: 60 };
 
 /** Builds once; the seed and the tests read the same bytes and placeholders. */
@@ -66,7 +66,7 @@ export function partial(
   };
 }
 
-export type Lead = 'first' | 'further' | 'ordinary' | 'special' | 'noted' | 'furtherNoted';
+export type Lead = 'first' | 'further' | 'ordinary' | 'special' | 'noted' | 'furtherNoted' | 'confirmed';
 
 const LEADS: Record<Lead, string> = {
   first: 'RESOLVED THAT ',
@@ -77,6 +77,8 @@ const LEADS: Record<Lead, string> = {
   // What the members record rather than decide.
   noted: 'IT IS NOTED THAT ',
   furtherNoted: 'IT IS FURTHER NOTED THAT ',
+  // What the Directors confirm as fact (a dormant company's declarations).
+  confirmed: 'CONFIRMED THAT ',
 };
 
 export function resolved(d: DocumentWriter, segments: Segment[], kind: Lead = 'first'): string {
@@ -356,6 +358,8 @@ export interface CorpSecResolutionTemplate {
   build: () => Uint8Array;
   /** Preset resolutions, in order. */
   partials: readonly CorpSecPartial[];
+  /** Preset bold subject heading above the resolutions. */
+  heading?: string;
 }
 
 /** Directors' and members' masters in Arial 10 with underlined headings, as the First Board Resolution. */
@@ -373,6 +377,7 @@ export function template(
   subject: string,
   description: string,
   partials: readonly CorpSecPartial[],
+  heading?: string,
 ): CorpSecResolutionTemplate {
   const name = `${signedBy} Resolution - ${subject}`;
   const master = signedBy === 'Board' ? directorsMaster : membersMaster;
@@ -385,6 +390,7 @@ export function template(
     placeholders: BOARD_RESOLUTION_PLACEHOLDERS,
     build: () => master().bytes,
     partials,
+    ...(heading ? { heading } : {}),
   };
 }
 

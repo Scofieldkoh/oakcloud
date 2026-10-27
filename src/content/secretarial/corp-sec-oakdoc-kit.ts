@@ -132,21 +132,38 @@ export interface Condition {
   field: string;
   operator: OakDocConditionDefinition['operator'];
   value?: string;
+  /** A custom field's definition, so a field the document only tests is still asked on Configure. */
+  definition?: PlaceholderDefinition;
+}
+
+function on(ref: FieldRef | string, operator: Condition['operator'], value?: string): Condition {
+  if (typeof ref === 'string') return { field: ref, operator, ...(value === undefined ? {} : { value }) };
+  return {
+    field: ref.tag,
+    operator,
+    ...(value === undefined ? {} : { value }),
+    ...(ref.definition ? { definition: ref.definition } : {}),
+  };
 }
 
 /** Shown when the field has a value ("Yes" for a company's `isCorporate`). */
 export function whenSet(ref: FieldRef | string): Condition {
-  return { field: typeof ref === 'string' ? ref : ref.tag, operator: 'truthy' };
+  return on(ref, 'truthy');
 }
 
 /** Shown when the field has no value. */
 export function whenBlank(ref: FieldRef | string): Condition {
-  return { field: typeof ref === 'string' ? ref : ref.tag, operator: 'equals', value: '' };
+  return on(ref, 'equals', '');
 }
 
 /** Shown when the field equals the value. */
 export function whenEquals(ref: FieldRef | string, value: string): Condition {
-  return { field: typeof ref === 'string' ? ref : ref.tag, operator: 'equals', value };
+  return on(ref, 'equals', value);
+}
+
+/** Shown when the field differs from the value. */
+export function whenNotEquals(ref: FieldRef | string, value: string): Condition {
+  return on(ref, 'notEquals', value);
 }
 
 /** The same field printed differently (bold, capitals, another date format). */
@@ -293,6 +310,9 @@ export class DocumentWriter {
     };
     const id = seededConditionId(definition);
     this.conditions.set(id, definition);
+    if (condition.definition && !this.definitions.has(condition.definition.key)) {
+      this.definitions.set(condition.definition.key, condition.definition);
+    }
     return conditionalBlock(this.ids, id, Array.isArray(blocks) ? blocks.join('') : blocks);
   }
 
