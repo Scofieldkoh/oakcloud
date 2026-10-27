@@ -4,8 +4,11 @@
  * Runs the full-backup schedule (Backup page) and marks backups left running
  * by a restart as failed.
  *
+ * The schedule itself is switched on from the Backup page, so this task runs
+ * whenever the scheduler does.
+ *
  * Configuration:
- * - SCHEDULER_BACKUP_ENABLED=true (enable backup scheduling)
+ * - SCHEDULER_BACKUP_ENABLED=false (stop scheduled backups on this install)
  * - SCHEDULER_BACKUP_CRON="0,15,30,45 * * * *" (check every 15 minutes)
  */
 
@@ -24,7 +27,8 @@ async function executeBackupTask(): Promise<TaskResult> {
   log.info('Checking for due scheduled backups...');
 
   try {
-    await cleanupStaleFullBackups();
+    // A cleanup failure must not stop the due backup from starting.
+    await cleanupStaleFullBackups().catch((error) => log.error('Failed to clean up stale full backups:', error));
     const full = await processScheduledFullBackup();
     if (!full) {
       return { success: true, message: 'No scheduled backups due at this time', data: { processed: 0 } };
@@ -54,6 +58,7 @@ export const backupTask: TaskRegistration = {
   id: 'backup',
   name: 'Scheduled Backups',
   description: 'Starts the scheduled full backup when it is due',
+  enabledByDefault: true,
   defaultCronPattern: '0,15,30,45 * * * *', // Every 15 minutes
   execute: executeBackupTask,
 };
