@@ -22,6 +22,7 @@
  * overwrites only the templates and partials named above (in-app edits
  * are lost) and resets those templates' preset resolutions.
  */
+import 'dotenv/config';
 import { pathToFileURL } from 'node:url';
 import { prisma } from '../src/lib/prisma';
 import { ensureA4ServerDomGlobals } from '../src/lib/document-editor/a4-server-dom';
