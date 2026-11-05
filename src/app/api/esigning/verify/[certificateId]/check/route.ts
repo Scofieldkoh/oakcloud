@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createErrorResponse } from '@/lib/api-helpers';
 import { RATE_LIMIT_CONFIGS } from '@/lib/rate-limit';
-import { enforceEsigningRateLimit, requireEsigningSameOrigin } from '@/lib/esigning-public-route';
+import { enforceEsigningRateLimit, requireEsigningSameOrigin, enforceEsigningLookupAggregateLimit } from '@/lib/esigning-public-route';
 import { ESIGNING_PAYLOAD_LIMITS, formatByteLimit } from '@/lib/esigning-payload-limits';
 import { readLimitedFormData } from '@/lib/esigning-request-body';
 import {
@@ -28,6 +28,11 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
   );
   if ('response' in rateLimit) {
     return rateLimit.response;
+  }
+
+  const lookupLimit = enforceEsigningLookupAggregateLimit(request);
+  if ('response' in lookupLimit) {
+    return lookupLimit.response;
   }
 
   try {

@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createErrorResponse } from '@/lib/api-helpers';
 import { RATE_LIMIT_CONFIGS } from '@/lib/rate-limit';
-import { enforceEsigningRateLimit } from '@/lib/esigning-public-route';
+import { enforceEsigningSessionRateLimit } from '@/lib/esigning-public-route';
 import { loadEsigningSigningSession } from '@/services/esigning-signing.service';
 
 export async function GET(request: NextRequest) {
-  const rateLimit = enforceEsigningRateLimit(
+  const rateLimit = await enforceEsigningSessionRateLimit(
     request,
     'esigning_sign_load',
     'session-load',
