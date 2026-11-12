@@ -537,7 +537,7 @@ export const SHARE_CERTIFICATE = document('Share Certificate', 'CERTIFICATE', 'S
 });
 
 /** A party's particulars and their part of the transfer, for each contact on the list. */
-function transferParty(d: DocumentWriter, list: string, shares: Segment[]): string {
+function transferParty(d: DocumentWriter, list: string, shares: Segment[], extra: Array<[string, Segment[]]> = []): string {
   const widths = [2600, 284, 6142];
   const row = (text: Segment[] | string, value: Segment[]) => d.row([
     d.cell(widths[0], d.p(text, { after: 80 })),
@@ -549,27 +549,28 @@ function transferParty(d: DocumentWriter, list: string, shares: Segment[]): stri
     row([F.CONTACT_ID_LABEL], [F.CONTACT_ID]),
     row('Address', [F.CONTACT_ADDRESS]),
     row('Shares', shares),
+    ...extra.map(([label, value]) => row(label, value)),
     d.row([d.cell(widths[0], d.gap(120)), d.cell(widths[1], ''), d.cell(widths[2], '')]),
   ].join(''))]);
 }
 
-/** Each party on the list signs before a witness; a company through its authorised signatory. */
+/** Each party on the list signs; a company through its authorised signatory. */
 function transferSignatures(d: DocumentWriter, list: string, role: string): string {
   return d.contacts(list, [
     d.p([bold(`Signed by the ${role}`)], { before: 240, after: 0, keepNext: true }),
-    partySignature(d, { name: F.CONTACT_NAME, isCorporate: F.CONTACT_IS_CORPORATE, capacity: role, after: 120 }),
-    d.p('Witness: ………………………………', { after: 0, keepNext: true }),
-    d.p('Name and NRIC: ………………………', { after: 240 }),
+    partySignature(d, { name: F.CONTACT_NAME, isCorporate: F.CONTACT_IS_CORPORATE, capacity: role }),
   ].join(''));
 }
 
-export const INSTRUMENT_OF_TRANSFER = document('Instrument of Transfer', 'OTHER', 'Share transfer form between the contacts on the “Transferor” and “Transferee” lists, with each party’s shares and consideration (checked against the totals on Configure), a document number at the top, and a signature and witness for each party on a new page.', (d) => ({
+export const INSTRUMENT_OF_TRANSFER = document('Instrument of Transfer', 'OTHER', 'Share transfer form between the contacts on the “Transferor” and “Transferee” lists, with each party’s shares and consideration (checked against the totals on Configure), each transferor’s paid-up capital transferred, a document number at the top, and a signature for each party on a new page.', (d) => ({
   body: [
     d.p(t`Document No. ${F.TRANSFER_DOCUMENT_NO}`, { align: 'right', after: 240 }),
     title(d, 'INSTRUMENT OF TRANSFER', 360),
     d.p(t`Name of Company: ${F.COMPANY_NAME_UPPER} (UEN ${F.COMPANY_UEN}) (the “Company”)`, { after: 240 }),
     heading(d, 'TRANSFEROR(S)'),
-    transferParty(d, TRANSFEROR_LIST, t`${F.TRANSFEROR_SHARES} ordinary shares, for a consideration of S$${F.TRANSFEROR_CONSIDERATION} (share certificate no. ${F.TRANSFEROR_CERTIFICATE})`),
+    transferParty(d, TRANSFEROR_LIST, t`${F.TRANSFEROR_SHARES} ordinary shares, for a consideration of S$${F.TRANSFEROR_CONSIDERATION} (share certificate no. ${F.TRANSFEROR_CERTIFICATE})`, [
+      ['Paid-up capital', t`S$${F.TRANSFEROR_PAID_UP} paid-up share capital attributable to the shares transferred`],
+    ]),
     d.gap(120),
     heading(d, 'TRANSFEREE(S)'),
     transferParty(d, TRANSFEREE_LIST, t`${F.TRANSFEREE_SHARES} ordinary shares`),

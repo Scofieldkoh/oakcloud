@@ -1,7 +1,8 @@
 /**
  * Update only the "Instrument of Transfer" template in a workspace to the
  * current starter layout: a document number at the top, no nationality for
- * the transferors and transferees, the signatures on a new page from
+ * the transferors and transferees, each transferor's paid-up capital
+ * transferred, the signatures (without witnesses) on a new page from
  * "Dated", and no stamp duty footnote.
  *
  *   npx tsx scripts/seed-instrument-of-transfer-template.ts --email <login>

@@ -378,8 +378,8 @@ company (signature blocks, "I/We") is a condition on `contact.isCorporate` or
 `shareholder.isCorporate`. Share documents ask each party their own shares,
 consideration and certificate number, checked against the document's totals.
 `scripts/seed-instrument-of-transfer-template.ts --email <login>` updates only
-the "Instrument of Transfer" template (document number at the top, no party
-nationality, signatures on a new page from "Dated", no stamp duty footnote),
+the "Instrument of Transfer" template (document number at the top, each
+transferor's paid-up capital transferred, no party nationality, no witness, signatures on a new page from "Dated", no stamp duty footnote),
 saving it as a new version or creating it when missing.
 
 The resolutions for a year without an AGM

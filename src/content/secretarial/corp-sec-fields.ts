@@ -148,6 +148,7 @@ export const TRANSFER_DOCUMENT_NO = custom('transfer_document_no', 'Document no.
 export const TRANSFEROR_SHARES = personField('shares', 'Shares transferred', 'number', '1,000', { totalOf: TRANSFER_SHARES });
 export const TRANSFEROR_CONSIDERATION = personField('consideration', 'Consideration received (S$)', 'currency', '1,000.00', { totalOf: TRANSFER_CONSIDERATION });
 export const TRANSFEROR_CERTIFICATE = personField('certificate_no', 'Share certificate no. to be cancelled', 'text', '1');
+export const TRANSFEROR_PAID_UP = personField('paid_up_capital', 'Paid-up capital transferred (S$)', 'currency', '1,000.00');
 export const TRANSFEREE_SHARES = personField('shares', 'Shares received', 'number', '1,000', { totalOf: TRANSFER_SHARES });
 // Each certificate's own number and shares.
 export const CERTIFICATE_NO = personField('certificate_no', 'Certificate no.', 'text', '1');

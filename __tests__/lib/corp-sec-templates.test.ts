@@ -280,7 +280,7 @@ describe('corporate secretarial generation', () => {
   it('prints each party’s shares on the instrument of transfer, with a signature for each', () => {
     const { bytes, placeholders } = INSTRUMENT_OF_TRANSFER.build();
     const personValues: Record<string, Record<string, Record<string, string>>> = {
-      [listTag(TRANSFEROR_LIST)]: { c1: { shares: '1000', consideration: '1000', certificate_no: '1' } },
+      [listTag(TRANSFEROR_LIST)]: { c1: { shares: '1000', consideration: '1000', certificate_no: '1', paid_up_capital: '1000' } },
       [listTag(TRANSFEREE_LIST)]: { c2: { shares: '600' }, c3: { shares: '400' } },
     };
     const SECOND: OakDocContact = { id: 'c3', name: 'Lim Mei Ling', identificationNumber: 'G1234567X', nationality: 'Malaysian', address: '2 Orchard Road' };
@@ -291,11 +291,13 @@ describe('corporate secretarial generation', () => {
       repeaters: { contactLists: { [slug(TRANSFEROR_LIST)]: [ENGTERPRISE], [slug(TRANSFEREE_LIST)]: [TAN, SECOND] } },
     });
     expect(text).toMatch(/TRANSFEROR\(S\)\nName\n:\nENGTERPRISE HOLDINGS PTE\. LTD\.\nUEN\n:\n202624322D\nAddress/);
-    expect(text).toContain('Shares\n:\n1,000 ordinary shares, for a consideration of S$1,000.00 (share certificate no. 1)');
+    expect(text).toContain('Shares\n:\n1,000 ordinary shares, for a consideration of S$1,000.00 (share certificate no. 1)\nPaid-up capital\n:\nS$1,000.00 paid-up share capital attributable to the shares transferred');
+    expect(text.match(/Paid-up capital\n/g)).toHaveLength(1);
     expect(text.startsWith('Document No. IT-007\nINSTRUMENT OF TRANSFER')).toBe(true);
     expect(text).toMatch(/TRANSFEREE\(S\)\nName\n:\nTAN WEI JIE\nNRIC No\.\n:\nS9101817I\nAddress/);
     expect(text).not.toContain('Nationality');
     expect(text).not.toContain('Stamp duty');
+    expect(text).not.toContain('Witness');
     expect(text).toContain('LIM MEI LING\nFIN\n:\nG1234567X');
     expect(text).toContain('Shares\n:\n600 ordinary shares');
     expect(text).toContain('Shares\n:\n400 ordinary shares');
