@@ -285,14 +285,17 @@ describe('corporate secretarial generation', () => {
     };
     const SECOND: OakDocContact = { id: 'c3', name: 'Lim Mei Ling', identificationNumber: 'G1234567X', nationality: 'Malaysian', address: '2 Orchard Road' };
     const text = generate(bytes, {
-      custom: { transfer_shares: '1000', transfer_consideration: '1000', transfer_date: '2026-10-03' },
+      custom: { transfer_document_no: 'IT-007', transfer_shares: '1000', transfer_consideration: '1000', transfer_date: '2026-10-03' },
       placeholders,
       personValues,
       repeaters: { contactLists: { [slug(TRANSFEROR_LIST)]: [ENGTERPRISE], [slug(TRANSFEREE_LIST)]: [TAN, SECOND] } },
     });
     expect(text).toMatch(/TRANSFEROR\(S\)\nName\n:\nENGTERPRISE HOLDINGS PTE\. LTD\.\nUEN\n:\n202624322D\nAddress/);
     expect(text).toContain('Shares\n:\n1,000 ordinary shares, for a consideration of S$1,000.00 (share certificate no. 1)');
-    expect(text).toMatch(/TRANSFEREE\(S\)\nName\n:\nTAN WEI JIE\nNRIC No\.\n:\nS9101817I\nNationality\n:\nSingaporean/);
+    expect(text.startsWith('Document No. IT-007\nINSTRUMENT OF TRANSFER')).toBe(true);
+    expect(text).toMatch(/TRANSFEREE\(S\)\nName\n:\nTAN WEI JIE\nNRIC No\.\n:\nS9101817I\nAddress/);
+    expect(text).not.toContain('Nationality');
+    expect(text).not.toContain('Stamp duty');
     expect(text).toContain('LIM MEI LING\nFIN\n:\nG1234567X');
     expect(text).toContain('Shares\n:\n600 ordinary shares');
     expect(text).toContain('Shares\n:\n400 ordinary shares');
@@ -300,6 +303,8 @@ describe('corporate secretarial generation', () => {
     expect(text).toContain('Signed by the Transferor\nFor and on behalf of\nENGTERPRISE HOLDINGS PTE. LTD.');
     expect(text).toContain('Signed by the Transferee\n……………………………………..\nTAN WEI JIE\nTransferee');
     expect(text).toContain('LIM MEI LING\nTransferee');
+    const xml = strFromU8(unzipSync(bytes)['word/document.xml']);
+    expect(xml).toMatch(/<w:pageBreakBefore\/>(?:(?!<\/w:p>).)*Dated/);
   });
 
   it('lists each transferor’s and transferee’s shares in the transfer resolution and checks they tally', () => {

@@ -547,7 +547,6 @@ function transferParty(d: DocumentWriter, list: string, shares: Segment[]): stri
   return d.table(widths, [d.contacts(list, [
     row('Name', [F.CONTACT_NAME_BOLD]),
     row([F.CONTACT_ID_LABEL], [F.CONTACT_ID]),
-    d.when(whenBlank(F.CONTACT_IS_CORPORATE), row('Nationality', [F.CONTACT_NATIONALITY])),
     row('Address', [F.CONTACT_ADDRESS]),
     row('Shares', shares),
     d.row([d.cell(widths[0], d.gap(120)), d.cell(widths[1], ''), d.cell(widths[2], '')]),
@@ -564,8 +563,9 @@ function transferSignatures(d: DocumentWriter, list: string, role: string): stri
   ].join(''));
 }
 
-export const INSTRUMENT_OF_TRANSFER = document('Instrument of Transfer', 'OTHER', 'Share transfer form between the contacts on the “Transferor” and “Transferee” lists, with each party’s shares and consideration (checked against the totals on Configure), a signature and witness for each party, and a stamp duty reminder.', (d) => ({
+export const INSTRUMENT_OF_TRANSFER = document('Instrument of Transfer', 'OTHER', 'Share transfer form between the contacts on the “Transferor” and “Transferee” lists, with each party’s shares and consideration (checked against the totals on Configure), a document number at the top, and a signature and witness for each party on a new page.', (d) => ({
   body: [
+    d.p(t`Document No. ${F.TRANSFER_DOCUMENT_NO}`, { align: 'right', after: 240 }),
     title(d, 'INSTRUMENT OF TRANSFER', 360),
     d.p(t`Name of Company: ${F.COMPANY_NAME_UPPER} (UEN ${F.COMPANY_UEN}) (the “Company”)`, { after: 240 }),
     heading(d, 'TRANSFEROR(S)'),
@@ -575,10 +575,9 @@ export const INSTRUMENT_OF_TRANSFER = document('Instrument of Transfer', 'OTHER'
     transferParty(d, TRANSFEREE_LIST, t`${F.TRANSFEREE_SHARES} ordinary shares`),
     d.gap(240),
     d.p(t`The Transferor(s) named above, in consideration of the total sum of S$${F.TRANSFER_CONSIDERATION} paid by the Transferee(s) named above (the receipt of which is acknowledged), hereby transfer to the Transferee(s) ${F.TRANSFER_SHARES} ordinary shares in the Company standing in the name of the Transferor(s) in the register of members of the Company, in the numbers set out above, to hold unto the Transferee(s), and their executors, administrators, successors and assigns, subject to the several conditions on which the Transferor(s) held the same at the time of signing this instrument; and the Transferee(s) hereby agree to take the said shares subject to the same conditions.`, justified),
-    d.p(t`Dated ${F.TRANSFER_DATE}`, { after: 240 }),
+    d.p(t`Dated ${F.TRANSFER_DATE}`, { pageBreakBefore: true, after: 240 }),
     transferSignatures(d, TRANSFEROR_LIST, 'Transferor'),
     transferSignatures(d, TRANSFEREE_LIST, 'Transferee'),
-    d.p('Stamp duty is payable on this instrument to the Inland Revenue Authority of Singapore within 14 days after the date it is signed (30 days if signed outside Singapore).', { before: 480, after: 0 }, { italic: true, halfPoints: 16 }),
   ],
 }));
 

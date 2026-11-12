@@ -51,7 +51,6 @@ export const CONTACT_ID_LABEL = field('contact.idLabel', 'Contact ID Type', 'NRI
 /** "Yes" for a company, blank for a person: for wording that differs. */
 export const CONTACT_IS_CORPORATE = 'contact.isCorporate';
 export const CONTACT_ADDRESS = field('contact.address', 'Contact Address', '21 Bukit Batok Crescent, #25-72, WCEGA Tower, Singapore 658065');
-export const CONTACT_NATIONALITY = field('contact.nationality', 'Contact Nationality', 'Singaporean');
 
 // The director a letter is from, or who chairs a meeting.
 export const PICKED_DIRECTOR_NAME = field('selectedDirector.name', 'Director Name', 'DIRECTOR NAME', { upper: true });
@@ -144,6 +143,7 @@ export const AUTHORISED_SIGNATORY = personField('authorised_signatory', 'Authori
 export const TRANSFER_SHARES = custom('transfer_shares', 'Shares transferred', 'number', '1,000');
 export const TRANSFER_CONSIDERATION = custom('transfer_consideration', 'Transfer consideration (S$)', 'currency', '1,000.00');
 export const TRANSFER_DATE = custom('transfer_date', 'Transfer date', 'date', '3 October 2026', { dateFormat: LONG_DATE });
+export const TRANSFER_DOCUMENT_NO = custom('transfer_document_no', 'Document no.', 'text', 'IT-001');
 // Each party's part of a transfer, adding up to the totals.
 export const TRANSFEROR_SHARES = personField('shares', 'Shares transferred', 'number', '1,000', { totalOf: TRANSFER_SHARES });
 export const TRANSFEROR_CONSIDERATION = personField('consideration', 'Consideration received (S$)', 'currency', '1,000.00', { totalOf: TRANSFER_CONSIDERATION });
