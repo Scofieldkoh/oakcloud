@@ -64,7 +64,7 @@ const text = (key: string, label: string, extra: Partial<Draft> = {}): Draft => 
 const date = (key: string, label: string, extra: Partial<Draft> = {}): Draft => ({
   type: 'SHORT_TEXT', inputType: 'date', key, label, isRequired: true, ...extra,
 });
-const pageBreak = (key: string, label: string): Draft => ({ type: 'PAGE_BREAK', key, label });
+const pageBreak = (key: string, label: string, condition?: FieldConditionInput): Draft => ({ type: 'PAGE_BREAK', key, label, condition });
 const heading = (key: string, label: string, condition?: FieldConditionInput): Draft => ({
   type: 'PARAGRAPH', inputType: 'info_heading_2', key, label, condition,
 });
@@ -164,7 +164,7 @@ function drafts(input: AnnualReturnBuildOptions): Draft[] {
 
     // Page 2 — an at-a-glance share capital grid, followed by one row per person
     // or corporate shareholder. Each row can be expanded for full particulars.
-    pageBreak('page_company_records', 'Share capital and people'),
+    pageBreak('page_company_records', 'Share capital and people', prefilled),
     heading('part_records', 'Share capital and people', prefilled),
     text('record_as_at', 'Record snapshot', { isReadOnly: true, isRequired: false, condition: prefilled }),
     heading('part_capital', 'Share capital', prefilledShares),
@@ -302,9 +302,12 @@ function drafts(input: AnnualReturnBuildOptions): Draft[] {
     { type: 'DROPDOWN', key: 'ceo_existing_person', label: 'Choose an existing person', isRequired: true,
       condition: all(prefilled, eq(K.ceoExists, YES), eq('ceo_source', 'Existing listed person')),
       placeholder: 'Select a person from the records above',
-      validation: { optionsFromRepeatFieldKey: 'person_name' } },
+      validation: { optionsFromRepeatFieldKey: 'person_name', optionsFromRepeatFieldIdKey: 'person_record_id', optionsFromRepeatKindKey: 'person_kind', optionsFromRepeatRoleKeys: ['person_role_1', 'person_role_2', 'person_role_3'] } },
     text('ceo_new_name', 'New CEO full name', {
       condition: all(prefilled, eq(K.ceoExists, YES), eq('ceo_source', 'New individual')) }),
+    date('ceo_new_appointment_date', 'CEO appointment date', {
+      condition: all(prefilled, eq(K.ceoExists, YES), eq('ceo_source', 'New individual')),
+      validation: { maxDate: 'today' } }),
     info('ceo_new_kyccdd', 'Individual KYC / CDD',
       'For a new individual, also complete the <a target="_blank" rel="noopener noreferrer" href="https://service.oakcloud.app/forms/f/kyccdd-individual">individual KYC/CDD form</a>. The completed questionnaire does not automatically create a company officer record.',
       all(prefilled, eq(K.ceoExists, YES), eq('ceo_source', 'New individual'))),

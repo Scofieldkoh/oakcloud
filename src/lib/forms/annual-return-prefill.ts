@@ -51,8 +51,6 @@ const str = (value: unknown) => value == null ? '' : String(value);
 const contactRecord = (value: unknown): Record<string, unknown> =>
   value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {};
 const normalizeLabel = (value: string) => value.toLowerCase().replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-const activity = (code: string | null | undefined, description: string | null | undefined) =>
-  [str(code), str(description)].filter(Boolean).join(' - ');
 
 function proposedYearEnd(company: ExtraRecord, now: Date): string {
   const last = company.fyeAsAtLastAr || company.financialPeriods?.at(-1)?.periodEnd;
@@ -102,38 +100,45 @@ function combinedPeople(
   officers: NonNullable<CompanyWithRelations['officers']>,
   shareholders: NonNullable<CompanyWithRelations['shareholders']>,
 ): PersonRow[] {
-  const individuals = new Map<string, PersonRow>();
+  const identities = new Map<string, PersonRow>();
   const rows: PersonRow[] = [];
-  const seenNames = new Map<string, number>();
-
-  // A name-only match is never sufficient: unrelated people can share names.
-  // Matching verified contact IDs or identification numbers is preferred.
-  // Where both are absent, require both identical full names and addresses.
-  const identityKey = (person: SourcePerson) => {
-    if (person.contactId) return 'contact:' + person.contactId;
+  // Different Oakcloud officer/shareholder records may reference the same
+  // individual through a contact ID, an ID number, or matching name/address.
+  // Register all trustworthy aliases to avoid duplicate rows.
+  const identityKeys = (person: SourcePerson, kind: PersonRow['kind']): string[] => {
+    const keys: string[] = [];
+    if (person.contactId) keys.push('contact:' + person.contactId);
     const id = canonical(officialId(person));
-    if (id) return 'identity:' + id;
+    if (id) keys.push('identity:' + id);
     const name = canonical(person.name);
     const address = canonical(officialAddress(person));
-    return name && address ? 'name_address:' + name + ':' + address : null;
+    if (name && address) keys.push('name_address:' + name + ':' + address);
+    return keys.map(key => kind + ':' + key);
   };
   const add = (person: SourcePerson, kind: PersonRow['kind']): PersonRow => {
-    const identity = identityKey(person);
-    const existing = identity && individuals.get(identity);
+    const keys = identityKeys(person, kind);
+    const existing = keys.map(key => identities.get(key)).find(
+      (candidate): candidate is PersonRow => !!candidate,
+    );
     if (existing) {
-      if (kind === 'Corporate') existing.kind = 'Corporate';
+      // Only fill missing information; never replace better source particulars
+      // with blanks from a second role/shareholding record.
+      if (!existing.identification) existing.identification = officialId(person);
+      if (!existing.nationality) existing.nationality = officialNationality(person);
+      if (!existing.address) existing.address = officialAddress(person);
+      if (kind === 'Corporate' && existing.positions.length === 0) existing.kind = kind;
+      keys.forEach(key => identities.set(key, existing));
       return existing;
     }
-    const name = tidy(person.name);
-    const identityNumber = officialId(person);
-    const address = officialAddress(person);
     const row: PersonRow = {
-      id: 'person:' + person.id, kind, name, identification: identityNumber,
-      nationality: officialNationality(person), address, positions: [], holdings: [],
+      id: 'person:' + person.id,
+      kind, name: tidy(person.name),
+      identification: officialId(person),
+      nationality: officialNationality(person),
+      address: officialAddress(person), positions: [], holdings: [],
     };
-    if (identity) individuals.set(identity, row);
+    keys.forEach(key => identities.set(key, row));
     rows.push(row);
-    seenNames.set(canonical(name), (seenNames.get(canonical(name)) || 0) + 1);
     return row;
   };
 

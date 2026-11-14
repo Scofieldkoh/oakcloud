@@ -73,6 +73,29 @@ export function protectPrefillAnswers(
     // If the client removed every row, leave the array empty; never restore removed records implicitly.
     protectedAnswers[section.id] = ids;
   }
+  if (Object.prototype.hasOwnProperty.call(baseline, 'person_record_id')) {
+    const roles = [1, 2, 3].flatMap((number) => {
+      const rows = asArray(protectedAnswers[`person_role_${number}`]);
+      return rows.map((role, index) => ({ role, index }));
+    });
+    const kinds = asArray(protectedAnswers.person_kind);
+    protectedAnswers.ceo_role_listed = roles.some(({ role, index }) =>
+      role === 'CEO' && kinds[index] !== 'Corporate') ? 'Yes' : 'No';
+    const selected = text(protectedAnswers.ceo_existing_person);
+    if (protectedAnswers.ceo_source === 'Existing listed person' && selected) {
+      const ids = asArray(protectedAnswers.person_record_id).map(text);
+      const matchedIndex = ids.indexOf(selected);
+      const newRowIndex = /^new-person:(\\d+)$/.exec(selected);
+      const rowIndex = matchedIndex >= 0 ? matchedIndex : newRowIndex ? Number(newRowIndex[1]) : -1;
+      const isExistingOfficer = [1, 2, 3].some((number) =>
+        text(asArray(protectedAnswers[`person_role_${number}`])[rowIndex]).trim().length > 0);
+      if (rowIndex < 0 || rowIndex >= ids.length ||
+        (newRowIndex && ids[rowIndex] !== '') || kinds[rowIndex] === 'Corporate' ||
+        !text(asArray(protectedAnswers.person_name)[rowIndex]).trim() || !isExistingOfficer) {
+        throw new Error('Invalid existing CEO selection');
+      }
+    }
+  }
   return protectedAnswers;
 }
 

@@ -114,6 +114,9 @@ export type ValidationConfig = {
   repeatCompactCards?: boolean;
   repeatSummaryFieldKeys?: string[];
   optionsFromRepeatFieldKey?: string;
+  optionsFromRepeatFieldIdKey?: string;
+  optionsFromRepeatKindKey?: string;
+  optionsFromRepeatRoleKeys?: string[];
   repeatTotalFieldKey?: string;
   repeatTotalLabel?: string;
   repeatTotalSuffix?: string;

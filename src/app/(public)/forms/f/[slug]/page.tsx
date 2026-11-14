@@ -213,7 +213,11 @@ export default function PublicFormPage() {
     ));
     const marker = assigned ? 'Yes' : 'No';
     if (answers.ceo_role_listed !== marker) {
-      setAnswers((prev) => ({ ...prev, ceo_role_listed: marker }));
+      setAnswers((prev) => ({
+        ...prev,
+        ceo_role_listed: marker,
+        ...(marker === 'No' ? { ceo_exists: undefined, ceo_source: undefined, ceo_existing_person: undefined } : {}),
+      }));
     }
   }, [answers]);
   const prefillChanges = useMemo(
@@ -1980,7 +1984,7 @@ export default function PublicFormPage() {
                   ? (answers[baselineSection.id] as unknown[])[rowIndex]
                   : null;
                 const canRemoveRow = rowCount > sectionConfig.minItems || (!!prefillBaseline && !!currentRecordId);
-                const expandedKey = `${sectionId}:${rowIndex}`;
+                const expandedKey = `${sectionId}:${currentRecordId || `new-row-${rowIndex}`}`;
                 const expanded = expandedRepeatCards[expandedKey] ?? !currentRecordId;
                 const rowWasAdded = !!prefillBaseline && !!baselineSection
                   && !currentRecordId
@@ -3199,10 +3203,24 @@ export default function PublicFormPage() {
             const dynamicKey = parseObject(field.validation)?.optionsFromRepeatFieldKey;
             const dynamicValues = typeof dynamicKey === 'string' && Array.isArray(answers[dynamicKey])
               ? (answers[dynamicKey] as unknown[]).map((item) => typeof item === 'string' ? item.trim() : '')
-                .filter((item) => item.length > 0)
               : null;
+            const dynamicIdKey = parseObject(field.validation)?.optionsFromRepeatFieldIdKey;
+            const dynamicKindKey = parseObject(field.validation)?.optionsFromRepeatKindKey;
+            const dynamicIds = typeof dynamicIdKey === 'string' && Array.isArray(answers[dynamicIdKey])
+              ? answers[dynamicIdKey] as unknown[] : [];
+            const dynamicKinds = typeof dynamicKindKey === 'string' && Array.isArray(answers[dynamicKindKey])
+              ? answers[dynamicKindKey] as unknown[] : [];
+            const roleKeys = parseObject(field.validation)?.optionsFromRepeatRoleKeys;
+            const roleRows = Array.isArray(roleKeys) ? roleKeys.flatMap((key) =>
+              typeof key === 'string' && Array.isArray(answers[key]) ? [answers[key] as unknown[]] : []) : [];
             const dropdownOptions = dynamicValues
-              ? [...new Set(dynamicValues)].map((name) => ({ value: name, label: name }))
+              ? dynamicValues.flatMap((name, index) => {
+                if (!name || (dynamicKindKey && dynamicKinds[index] === 'Corporate')
+                  || (roleRows.length > 0 && !roleRows.some((row) => typeof row[index] === 'string' && String(row[index]).trim()))) return [];
+                const stableId = typeof dynamicIds[index] === 'string' && dynamicIds[index]
+                  ? dynamicIds[index] as string : `new-person:${index}`;
+                return [{ value: stableId, label: name }];
+              })
               : parseChoiceOptions(localizedField.options).map((opt) => ({ value: opt.value, label: opt.label }));
             const selectedLabel = typeof value === 'string' && value
               ? dropdownOptions.find((opt) => opt.value === value)?.label ?? null

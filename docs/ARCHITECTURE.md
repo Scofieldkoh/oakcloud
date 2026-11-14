@@ -720,3 +720,33 @@ revision and warns when the stored snapshot is stale. Identification numbers
 and addresses are intentionally shown in full behind the private token; handle
 the link as sensitive. Existing published forms and their submissions are
 never modified by the seed.
+
+### Annual Return Declaration v3 (compact respondent experience)
+
+The guided Annual Return Declaration v3 remains an unpublished draft until staff
+review and publish it. The builder now uses one page for each company/filing
+topic: company identity, share capital and people, financial statements, AGM,
+directors' statement, CEO/particulars, and final declaration. Company details
+use the workspace SSIC 2025 preset, with the five-digit code as the answer value.
+
+The shared form engine supports compact repeat cards through
+`repeatCompactCards` and `repeatSummaryFieldKeys` (expanded for new rows,
+collapsed for prefilled rows). Share capital uses a 50/50 first line and
+33/33/33 second line. Company officer and shareholder source records are
+combined into a person-centric repeat section using verified contact IDs,
+identification numbers, or exact name-and-address identity matches, never name
+alone. The person has up to three structured positions and appointment dates,
+additional positions as optional text, and shareholding by class. Corporate
+shareholders never receive officer role inputs.
+
+If no listed individual has a CEO role, the respondent answers whether someone
+acts as CEO. A Yes response prompts selection of a unique existing officer
+record or entry of a new CEO name and appointment date, with a link to the
+existing individual KYC/CDD questionnaire. The private prefill baseline,
+unforgeable source IDs, change tracking and staff/PDF comparisons are retained.
+Server-side comparison recalculates the CEO-role marker from the person rows
+and validates existing-officer selection; no underlying company records are
+changed by respondent answers.
+
+Older published v2 forms and their responses stay intact. The company page
+prefers the highest published version for new prefilled drafts.

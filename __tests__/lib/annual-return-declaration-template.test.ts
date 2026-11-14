@@ -50,6 +50,45 @@ describe('Annual Return Declaration guided template', () => {
     expect(SG_ANNUAL_RETURN_DECLARATION_TEMPLATE_KEY).toBe('sg_annual_return_declaration');
   });
 
+  it('splits the declaration into page-specific sections and groups share capital before people', () => {
+    const pageKeys = fields.filter((field) =>
+      field.type === 'PAGE_BREAK' && field.inputType !== 'repeat_start' && field.inputType !== 'repeat_end'
+    ).map((field) => field.key);
+    expect(pageKeys).toEqual([
+      'page_company_records', 'page_financial_statements', 'page_agm',
+      'page_director_statement', 'page_particulars', 'page_declaration',
+    ]);
+    const capitalIndex = fields.findIndex((field) => field.key === 'share_capital_section');
+    const peopleIndex = fields.findIndex((field) => field.key === 'people_section');
+    expect(capitalIndex).toBeLessThan(peopleIndex);
+    const recordFields = fields.filter((field) => field.key?.startsWith('person_role_'));
+    expect(recordFields).toHaveLength(6);
+    const peopleRepeat = fields.find((field) => field.key === 'people_section');
+    expect(peopleRepeat?.validation).toMatchObject({ repeatCompactCards: true, repeatMinItems: 1 });
+  });
+
+  it('uses the SSIC preset for both activity fields when configured', () => {
+    const id = '12345678-1234-4234-8234-123456789abc';
+    const prefilled = buildSgAnnualReturnDeclarationFields({ ssicPresetId: id });
+    expect(prefilled.find((field) => field.key === 'record_primary_activity')?.optionPresetId).toBe(id);
+    expect(prefilled.find((field) => field.key === 'record_secondary_activity')?.optionPresetId).toBe(id);
+  });
+
+  it('offers CEO selection only when no listed person holds that role', () => {
+    const data = base(ARD_COMPANY_TYPES.private, { prefill_source: 'company_record', ceo_role_listed: 'No', ceo_exists: 'Yes' });
+    expect(visible('ceo_exists', data)).toBe(true);
+    expect(visible('ceo_source', data)).toBe(true);
+    const newPerson = { ...data, ceo_source: 'New individual' };
+    expect(visible('ceo_new_name', newPerson)).toBe(true);
+    expect(visible('ceo_new_appointment_date', newPerson)).toBe(true);
+    expect(visible('ceo_new_kyccdd', newPerson)).toBe(true);
+    const existing = { ...data, ceo_source: 'Existing listed person' };
+    expect(visible('ceo_existing_person', existing)).toBe(true);
+    const known = { ...data, ceo_role_listed: 'Yes' };
+    expect(visible('ceo_exists', known)).toBe(false);
+    expect(visible('ceo_already_recorded', known)).toBe(true);
+  });
+
   it('does not offer written dispensation of an AGM anywhere', () => {
     const content = JSON.stringify(fields).toLowerCase();
     expect(content).not.toContain('dispense');
