@@ -4,9 +4,21 @@ import { ValidationError } from '@/lib/errors';
 import { ARD_COMPANY_TYPES } from '@/lib/form-templates/sg-annual-return-declaration';
 
 export const AR_RECORD_SECTIONS = [
-  { section: 'officers_section', id: 'officer_record_id', label: 'officer_name', fields: ['officer_role', 'officer_name', 'officer_id_number', 'officer_nationality', 'officer_address', 'officer_appointment_date'] },
-  { section: 'share_capital_section', id: 'capital_record_id', label: 'capital_class', fields: ['capital_class', 'capital_currency', 'capital_shares', 'capital_amount', 'capital_paid_up'] },
-  { section: 'shareholders_section', id: 'shareholder_record_id', label: 'shareholder_name', fields: ['shareholder_name', 'shareholder_id_number', 'shareholder_address', 'shareholder_class', 'shareholder_shares'] },
+  { section: 'share_capital_section', id: 'capital_record_id', label: 'capital_class',
+    fields: ['capital_class', 'capital_currency', 'capital_shares', 'capital_amount', 'capital_paid_up'] },
+  { section: 'people_section', id: 'person_record_id', label: 'person_name',
+    fields: ['person_kind', 'person_name', 'person_id_number', 'person_nationality',
+      'person_address', 'person_role_1', 'person_role_2', 'person_role_3',
+      'person_role_date_1', 'person_role_date_2', 'person_role_date_3',
+      'person_additional_positions', 'person_shareholding'] },
+  // Recognise v2 snapshots on existing submissions and drafts. Do not discard
+  // legacy records during a v3 rollout.
+  { section: 'officers_section', id: 'officer_record_id', label: 'officer_name',
+    fields: ['officer_role', 'officer_name', 'officer_id_number',
+      'officer_nationality', 'officer_address', 'officer_appointment_date'] },
+  { section: 'shareholders_section', id: 'shareholder_record_id', label: 'shareholder_name',
+    fields: ['shareholder_name', 'shareholder_id_number', 'shareholder_address',
+      'shareholder_class', 'shareholder_shares'] },
 ] as const;
 
 type ExtraRecord = CompanyWithRelations & {
@@ -65,6 +77,93 @@ function proposedYearEnd(company: ExtraRecord, now: Date): string {
   return dateOnly(candidate);
 }
 
+type PersonRow = {
+  id: string;
+  kind: 'Individual' | 'Corporate';
+  name: string;
+  identification: string;
+  nationality: string;
+  address: string;
+  positions: Array<{ role: string; date: string }>;
+  holdings: Array<{ shareClass: string; shares: string }>;
+};
+type SourcePerson = { id: string; contactId?: string | null; name: string; address?: string | null;
+  nationality?: string | null; contact?: unknown; identificationNumber?: string | null };
+const tidy = (value: unknown) => str(value).trim();
+const canonical = (value: unknown) => tidy(value).replace(/\\s+/g, ' ').toLocaleUpperCase('en');
+const officialId = (item: SourcePerson): string =>
+  tidy(item.identificationNumber || contactRecord(item.contact).identificationNumber);
+const officialAddress = (item: SourcePerson): string =>
+  tidy(item.address || contactRecord(item.contact).fullAddress);
+const officialNationality = (item: SourcePerson): string =>
+  tidy(item.nationality || contactRecord(item.contact).nationality);
+
+function combinedPeople(
+  officers: NonNullable<CompanyWithRelations['officers']>,
+  shareholders: NonNullable<CompanyWithRelations['shareholders']>,
+): PersonRow[] {
+  const individuals = new Map<string, PersonRow>();
+  const rows: PersonRow[] = [];
+  const seenNames = new Map<string, number>();
+
+  // A name-only match is never sufficient: unrelated people can share names.
+  // Matching verified contact IDs or identification numbers is preferred.
+  // Where both are absent, require both identical full names and addresses.
+  const identityKey = (person: SourcePerson) => {
+    if (person.contactId) return 'contact:' + person.contactId;
+    const id = canonical(officialId(person));
+    if (id) return 'identity:' + id;
+    const name = canonical(person.name);
+    const address = canonical(officialAddress(person));
+    return name && address ? 'name_address:' + name + ':' + address : null;
+  };
+  const add = (person: SourcePerson, kind: PersonRow['kind']): PersonRow => {
+    const identity = identityKey(person);
+    const existing = identity && individuals.get(identity);
+    if (existing) {
+      if (kind === 'Corporate') existing.kind = 'Corporate';
+      return existing;
+    }
+    const name = tidy(person.name);
+    const identityNumber = officialId(person);
+    const address = officialAddress(person);
+    const row: PersonRow = {
+      id: 'person:' + person.id, kind, name, identification: identityNumber,
+      nationality: officialNationality(person), address, positions: [], holdings: [],
+    };
+    if (identity) individuals.set(identity, row);
+    rows.push(row);
+    seenNames.set(canonical(name), (seenNames.get(canonical(name)) || 0) + 1);
+    return row;
+  };
+
+  for (const officer of officers) {
+    const row = add(officer as SourcePerson, 'Individual');
+    const position = officerRoleLabels[officer.role] || officer.role;
+    const date = dateOnly(officer.appointmentDate);
+    if (!row.positions.some(item => item.role === position && item.date === date)) {
+      row.positions.push({ role: position, date });
+    }
+  }
+  for (const shareholder of shareholders) {
+    const corporate = shareholder.shareholderType === 'CORPORATE' ||
+      shareholder.shareholderType === 'COMPANY';
+    const row = add(shareholder as SourcePerson, corporate ? 'Corporate' : 'Individual');
+    const shareClass = tidy(shareholder.shareClass) || 'ORDINARY';
+    const shares = str(shareholder.numberOfShares);
+    const existing = row.holdings.find(h => h.shareClass === shareClass);
+    // Distinct active shareholding records of the same class may be additive.
+    // Keep the detail in one person and do not merge across different classes.
+    if (existing) {
+      const a = Number(existing.shares);
+      const b = Number(shares);
+      existing.shares = Number.isFinite(a + b) ? String(a + b) : existing.shares;
+    } else row.holdings.push({ shareClass, shares });
+  }
+  if (rows.length > 50) throw new ValidationError('The company has over 50 distinct persons; review capacity before sending');
+  return rows;
+}
+
 export function buildAnnualReturnPrefill(company: AnnualReturnCompanyRecord, now = new Date()): {
   answers: Record<string, unknown>;
   repeatSectionCounts: Record<string, number>;
@@ -73,79 +172,70 @@ export function buildAnnualReturnPrefill(company: AnnualReturnCompanyRecord, now
   const companyType = companyTypes[record.entityType];
   if (!companyType) throw new ValidationError('Only Singapore companies limited by shares or guarantee can use this declaration');
   const officers = (record.officers || []).filter(item => item.isCurrent && !item.cessationDate);
-  // A company limited by guarantee has members rather than shareholders
-  // and no share capital; those sections are not shown in the declaration.
   const hasShareCapital = companyType !== ARD_COMPANY_TYPES.publicGuarantee;
   const shareholders = hasShareCapital ? (record.shareholders || []).filter(item => item.isCurrent) : [];
-  // The source is ordered newest first. Keep the latest record per class/currency:
-  // historical capital movements must not be counted again as current capital.
   const capitalClasses = new Set<string>();
-  const capitals = (hasShareCapital ? record.shareCapital || [] : []).filter((item) => {
+  const capitals = (hasShareCapital ? record.shareCapital || [] : []).filter(item => {
     if (item.isTreasury) return false;
-    const key = `${item.shareClass}:${item.currency}`;
+    const key = item.shareClass + ':' + item.currency;
     if (capitalClasses.has(key)) return false;
     capitalClasses.add(key);
     return true;
   });
-  const rows = (count: number, label: string) => {
-    if (count > 50) throw new ValidationError(`The company has more than 50 ${label}; review the form capacity first`);
-  };
-  rows(officers.length + (record.auditor ? 1 : 0), 'position holders');
-  rows(shareholders.length, 'shareholders');
-  rows(capitals.length, 'share capital rows');
+  if (capitals.length > 50) throw new ValidationError('The company has more than 50 share capital classes');
 
+  const people = combinedPeople(officers, shareholders);
   const answers: Record<string, unknown> = {
     prefill_source: 'company_record',
     company_name: record.name,
     company_uen: record.uen,
     company_type: companyType,
     financial_year_end: proposedYearEnd(record, now),
-    record_as_at: `From our records as at ${dateOnly(now)}. Please correct anything that is wrong or out of date; your changes are highlighted.`,
+    record_as_at: `From our records as at ${dateOnly(now)}. Please correct outdated information; changes are highlighted.`,
     record_entity_status: normalizeLabel(str(record.status)),
-    record_primary_activity: activity(record.primarySsicCode, record.primarySsicDescription),
-    record_secondary_activity: activity(record.secondarySsicCode, record.secondarySsicDescription),
-    record_registered_office: (record.addresses || []).find(row => row.isCurrent && row.addressType === 'REGISTERED_OFFICE')?.fullAddress || '',
+    // The SSIC 2025 preset stores five-digit codes as values; descriptions are labels.
+    record_primary_activity: tidy(record.primarySsicCode),
+    record_secondary_activity: tidy(record.secondarySsicCode),
+    record_registered_office: (record.addresses || []).find(
+      row => row.isCurrent && row.addressType === 'REGISTERED_OFFICE',
+    )?.fullAddress || '',
+    record_auditor: tidy(record.auditor?.name),
+    ceo_role_listed: people.some(row => row.positions.some(p => p.role === 'CEO')) ? 'Yes' : 'No',
   };
 
-  const allOfficers = [...officers.map(o => ({
-    id: o.id, role: o.role, name: o.name,
-    identification: contactRecord(o).identificationNumber || contactRecord(o.contact).identificationNumber,
-    nationality: o.nationality || contactRecord(o.contact).nationality,
-    address: o.address || contactRecord(o.contact).fullAddress,
-    appointmentDate: o.appointmentDate,
-  }))];
-  if (record.auditor) {
-    allOfficers.push({ id: 'auditor:' + record.id, role: 'AUDITOR', name: record.auditor.name,
-      identification: null, nationality: null, address: record.auditor.address, appointmentDate: record.auditor.appointmentDate });
-  }
-  answers.officer_record_id = allOfficers.map(x => x.id);
-  answers.officer_role = allOfficers.map(x => officerRoleLabels[x.role] || x.role);
-  answers.officer_name = allOfficers.map(x => str(x.name));
-  answers.officer_id_number = allOfficers.map(x => str(x.identification));
-  answers.officer_nationality = allOfficers.map(x => str(x.nationality));
-  answers.officer_address = allOfficers.map(x => str(x.address));
-  answers.officer_appointment_date = allOfficers.map(x => dateOnly(x.appointmentDate));
-
-  answers.capital_record_id = capitals.map(x => x.id);
-  answers.capital_class = capitals.map(x => str(x.shareClass));
-  answers.capital_currency = capitals.map(x => str(x.currency));
-  answers.capital_shares = capitals.map(x => str(x.numberOfShares));
-  answers.capital_amount = capitals.map(x => str(x.totalValue));
-  answers.capital_paid_up = capitals.map((x) => {
+  answers.capital_record_id = capitals.map(c => c.id);
+  answers.capital_class = capitals.map(c => str(c.shareClass));
+  answers.capital_currency = capitals.map(c => str(c.currency));
+  answers.capital_shares = capitals.map(c => str(c.numberOfShares));
+  answers.capital_amount = capitals.map(c => str(c.totalValue));
+  answers.capital_paid_up = capitals.map(c => {
     if (capitals.length === 1 && record.paidUpCapitalAmount != null) return str(record.paidUpCapitalAmount);
-    return x.isPaidUp ? str(x.totalValue) : ''; // Unpaid/partly paid: require explicit confirmation.
+    return c.isPaidUp ? str(c.totalValue) : '';
   });
 
-  answers.shareholder_record_id = shareholders.map(x => x.id);
-  answers.shareholder_name = shareholders.map(x => str(x.name));
-  answers.shareholder_id_number = shareholders.map(x => str(contactRecord(x).identificationNumber || contactRecord(x.contact).identificationNumber));
-  answers.shareholder_address = shareholders.map(x => str(x.address || contactRecord(x.contact).fullAddress));
-  answers.shareholder_class = shareholders.map(x => str(x.shareClass));
-  answers.shareholder_shares = shareholders.map(x => str(x.numberOfShares));
-  if (officers.some(item => item.role === 'CEO')) answers.ceo_exists = 'Yes';
+  answers.person_record_id = people.map(p => p.id);
+  answers.person_kind = people.map(p => p.kind);
+  answers.person_name = people.map(p => p.name);
+  answers.person_id_number = people.map(p => p.identification);
+  answers.person_nationality = people.map(p => p.nationality);
+  answers.person_address = people.map(p => p.address);
+  for (const n of [1, 2, 3]) {
+    answers[`person_role_${n}`] = people.map(p => p.positions[n - 1]?.role || '');
+    answers[`person_role_date_${n}`] = people.map(p => p.positions[n - 1]?.date || '');
+  }
+  answers.person_additional_positions = people.map(p =>
+    p.positions.slice(3).map(position => position.role + (position.date ? ' (' + position.date + ')' : '')).join('\\n'),
+  );
+  answers.person_shareholding = people.map(p =>
+    p.holdings.map(holding => holding.shareClass + ': ' + holding.shares + ' shares').join('\\n'),
+  );
+  if (people.some(row => row.positions.some(position => position.role === 'CEO'))) answers.ceo_exists = 'Yes';
 
   return {
     answers,
-    repeatSectionCounts: Object.fromEntries(AR_RECORD_SECTIONS.map(section => [section.section, Math.max(1, (answers[section.id] as string[]).length)])),
+    repeatSectionCounts: {
+      share_capital_section: Math.max(1, capitals.length),
+      people_section: Math.max(1, people.length),
+    },
   };
 }
