@@ -158,6 +158,7 @@ function drafts(input: AnnualReturnBuildOptions): Draft[] {
     { type: 'DROPDOWN', key: 'record_secondary_activity', label: 'Secondary SSIC 2025 activity',
       condition: prefilled, optionPresetId: input.ssicPresetId, isRequired: false,
       placeholder: 'Optional: search SSIC activity or code', layoutWidth: 100 },
+    text('record_auditor', 'Auditor / audit firm', { condition: prefilled, isRequired: false, layoutWidth: 100 }),
     { type: 'LONG_TEXT', key: 'record_registered_office', label: 'Registered office address',
       condition: prefilled, isRequired: true },
 
@@ -214,6 +215,9 @@ function drafts(input: AnnualReturnBuildOptions): Draft[] {
       isRequired: false, layoutWidth: 33 }),
     date('person_role_date_3', 'Appointment date 3', { condition: all(prefilled, eq('person_kind', 'Individual')),
       isRequired: false, layoutWidth: 33 }),
+    { type: 'LONG_TEXT', key: 'person_additional_positions', label: 'Additional positions (beyond first 3)',
+      condition: all(prefilled, eq('person_kind', 'Individual')), isRequired: false, layoutWidth: 100,
+      helpText: 'If the individual holds more than three positions, list remaining appointments and dates here.' },
     { type: 'LONG_TEXT', key: 'person_shareholding', label: 'Shareholding by class',
       condition: prefilledShares, layoutWidth: 100, isRequired: false,
       placeholder: 'ORDINARY: 100 shares\\nPREFERENCE: 20 shares',
