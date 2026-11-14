@@ -201,6 +201,21 @@ export default function PublicFormPage() {
   const [draftEmailError, setDraftEmailError] = useState<string | null>(null);
   const [draftEmailSent, setDraftEmailSent] = useState(false);
   const [repeatSectionCounts, setRepeatSectionCounts] = useState<Record<string, number>>({});
+  const [expandedRepeatCards, setExpandedRepeatCards] = useState<Record<string, boolean>>({});
+  // Keep the marker used by the CEO question in sync with the three role
+  // selectors. A respondent removing or adding a CEO immediately changes the path.
+  useEffect(() => {
+    if (answers.prefill_source !== 'company_record' || !Array.isArray(answers.person_name)) return;
+    const assigned = [1, 2, 3].some((number) => (
+      Array.isArray(answers[`person_role_${number}`])
+      && (answers[`person_role_${number}`] as unknown[]).some((role, index) =>
+        role === 'CEO' && (!Array.isArray(answers.person_kind) || answers.person_kind[index] !== 'Corporate'))
+    ));
+    const marker = assigned ? 'Yes' : 'No';
+    if (answers.ceo_role_listed !== marker) {
+      setAnswers((prev) => ({ ...prev, ceo_role_listed: marker }));
+    }
+  }, [answers]);
   const prefillChanges = useMemo(
     () => prefillBaseline ? getPrefillChanges(prefillBaseline, answers) : null,
     [prefillBaseline, answers]
@@ -1932,6 +1947,9 @@ export default function PublicFormPage() {
       const canAddRow = sectionConfig.maxItems === null || rowCount < sectionConfig.maxItems;
       const sectionHasVisibleLabels = sectionFields.some((sectionField) => sectionField.type !== 'HIDDEN' && !sectionField.hideLabel);
       const cardMode = sectionConfig.itemLabel !== null;
+      const compactCards = parseObject(field.validation)?.repeatCompactCards === true;
+      const compactSummaryKeys = parseObject(field.validation)?.repeatSummaryFieldKeys;
+      const summaryKeys = Array.isArray(compactSummaryKeys) ? compactSummaryKeys.filter((key): key is string => typeof key === 'string') : [];
       const addRowLabel = cardMode ? sectionConfig.addLabel : (localizedUiLabels.add_row || sectionConfig.addLabel);
       const removeRowLabel = localizedUiLabels.remove_row || 'Remove row';
       const sectionTotal = sectionConfig.total
@@ -1962,6 +1980,8 @@ export default function PublicFormPage() {
                   ? (answers[baselineSection.id] as unknown[])[rowIndex]
                   : null;
                 const canRemoveRow = rowCount > sectionConfig.minItems || (!!prefillBaseline && !!currentRecordId);
+                const expandedKey = `${sectionId}:${rowIndex}`;
+                const expanded = expandedRepeatCards[expandedKey] ?? !currentRecordId;
                 const rowWasAdded = !!prefillBaseline && !!baselineSection
                   && !currentRecordId
                   && baselineSection.fields.some((key) =>
@@ -1991,6 +2011,14 @@ export default function PublicFormPage() {
                             return nameValue ? <span className="font-normal text-text-secondary"> · {nameValue}</span> : null;
                           })()}
                         </p>
+                        {compactCards && (
+                          <button type="button" aria-expanded={expanded} aria-label={`${expanded ? 'Collapse' : 'Expand'} ${sectionConfig.itemLabel} ${rowIndex + 1}`}
+                            onClick={() => setExpandedRepeatCards((prev) => ({ ...prev, [expandedKey]: !expanded }))}
+                            className="ml-auto inline-flex items-center gap-1 rounded-md border border-border-primary px-2 py-1 text-xs text-text-secondary hover:bg-background-secondary">
+                            {expanded ? 'Collapse' : 'Edit details'}
+                            <ChevronDown className={cn('h-3.5 w-3.5 transition-transform', expanded && 'rotate-180')} />
+                          </button>
+                        )}
                         {canRemoveRow && (
                           <button
                             type="button"
@@ -2003,7 +2031,20 @@ export default function PublicFormPage() {
                         )}
                       </div>
                     )}
-                    <div className={cn(cardMode ? 'grid grid-cols-1' : 'grid grid-cols-[minmax(0,1fr)_1.75rem] items-center gap-2 sm:gap-3')}>
+                    {compactCards && !expanded && (
+                      <div className="flex flex-wrap gap-1.5 text-xs text-text-secondary">
+                        {summaryKeys.map((key) => {
+                          const fieldName = sectionFields.find((entry) => entry.key === key)?.label || key;
+                          const raw = rowAnswers[key];
+                          const value = typeof raw === 'string' || typeof raw === 'number' ? String(raw).trim() : '';
+                          return value ? <span key={key} className="rounded-md bg-background-secondary px-2 py-1">
+                            {fieldName}: <strong className="text-text-primary">{value.length > 80 ? value.slice(0, 77) + '...' : value}</strong>
+                          </span> : null;
+                        })}
+                      </div>
+                    )}
+                    <div className={cn(cardMode ? 'grid grid-cols-1' : 'grid grid-cols-[minmax(0,1fr)_1.75rem] items-center gap-2 sm:gap-3',
+                      compactCards && !expanded && 'hidden')}>
                       <div className="grid grid-cols-12 gap-3">
                         {sectionFields.map((sectionField) => {
                       if (!evaluateCondition(sectionField.condition, rowAnswers, { fields: sectionFields })) return null;
@@ -3155,7 +3196,14 @@ export default function PublicFormPage() {
 
           {/* DROPDOWN */}
           {field.type === 'DROPDOWN' && (() => {
-            const dropdownOptions = parseChoiceOptions(localizedField.options).map((opt) => ({ value: opt.value, label: opt.label }));
+            const dynamicKey = parseObject(field.validation)?.optionsFromRepeatFieldKey;
+            const dynamicValues = typeof dynamicKey === 'string' && Array.isArray(answers[dynamicKey])
+              ? (answers[dynamicKey] as unknown[]).map((item) => typeof item === 'string' ? item.trim() : '')
+                .filter((item) => item.length > 0)
+              : null;
+            const dropdownOptions = dynamicValues
+              ? [...new Set(dynamicValues)].map((name) => ({ value: name, label: name }))
+              : parseChoiceOptions(localizedField.options).map((opt) => ({ value: opt.value, label: opt.label }));
             const selectedLabel = typeof value === 'string' && value
               ? dropdownOptions.find((opt) => opt.value === value)?.label ?? null
               : null;
