@@ -10,6 +10,8 @@ import {
   Trash2,
   Upload,
   ExternalLink,
+  Send,
+  Copy,
 } from 'lucide-react';
 import {
   useCompany,
@@ -23,6 +25,10 @@ import { usePermissions } from '@/hooks/use-permissions';
 import { getEntityTypeLabel } from '@/lib/constants';
 import type { UpdateCompanyInput } from '@/lib/validations/company';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
+import { copyTextToClipboard } from '@/lib/clipboard';
+import { parseFormTemplateBinding } from '@/lib/form-templates';
+import { SG_ANNUAL_RETURN_DECLARATION_TEMPLATE_KEY } from '@/lib/form-templates/sg-annual-return-declaration';
 import { useToast } from '@/components/ui/toast';
 import { InternalNotes } from '@/components/notes/internal-notes';
 import {
@@ -47,6 +53,32 @@ function CompanyDetailContent({ id }: { id: string }) {
   const { can } = usePermissions(id);
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [annualReturnForm, setAnnualReturnForm] = useState<{ id: string; tenantId: string } | null>(null);
+  useEffect(() => {
+    if (!company?.tenantId) return;
+    let cancelled = false;
+    const query = new URLSearchParams({ status: 'PUBLISHED', query: 'Annual Return Declaration', limit: '100', tenantId: company.tenantId });
+    fetch(`/api/forms?${query.toString()}`)
+      .then(async (response) => {
+        if (!response.ok) throw new Error('Form lookup unavailable');
+        return response.json();
+      })
+      .then((data) => {
+        if (cancelled || !Array.isArray(data?.forms)) return;
+        const published = data.forms.find((candidate: { settings?: unknown }) =>
+          parseFormTemplateBinding(candidate.settings)?.key === SG_ANNUAL_RETURN_DECLARATION_TEMPLATE_KEY
+          && (parseFormTemplateBinding(candidate.settings)?.version ?? 0) >= 2);
+        setAnnualReturnForm(published ? { id: published.id, tenantId: company.tenantId } : null);
+      })
+      .catch(() => { if (!cancelled) setAnnualReturnForm(null); });
+    return () => { cancelled = true; };
+  }, [company?.tenantId]);
+  const [isCreatingAnnualReturn, setIsCreatingAnnualReturn] = useState(false);
+  const [annualReturnLink, setAnnualReturnLink] = useState('');
+  const [annualReturnWarning, setAnnualReturnWarning] = useState<string | null>(null);
+  const [annualReturnModalOpen, setAnnualReturnModalOpen] = useState(false);
+  const [annualReturnError, setAnnualReturnError] = useState<string | null>(null);
+
   const { data: bizFileInfo } = useCompanyBizFile(id);
 
   // URL-persisted tab state
@@ -91,6 +123,30 @@ function CompanyDetailContent({ id }: { id: string }) {
       toastError(err instanceof Error ? err.message : 'Failed to delete company');
     }
   };
+
+  async function createAnnualReturnDeclaration() {
+    if (!annualReturnForm || isCreatingAnnualReturn) return;
+    setIsCreatingAnnualReturn(true);
+    setAnnualReturnError(null);
+    try {
+      const response = await fetch(`/api/forms/${encodeURIComponent(annualReturnForm.id)}/prefilled-drafts`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ companyId: id, tenantId: annualReturnForm.tenantId }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Could not prepare the declaration');
+      setAnnualReturnLink(data.resumeUrl);
+      setAnnualReturnWarning(data.sourceWarning ?? null);
+      setAnnualReturnModalOpen(true);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Could not prepare the declaration';
+      setAnnualReturnError(message);
+      toastError(message);
+    } finally {
+      setIsCreatingAnnualReturn(false);
+    }
+  }
 
   const handleRefresh = useCallback(() => {
     refetch();
@@ -239,6 +295,12 @@ function CompanyDetailContent({ id }: { id: string }) {
           <p className="mt-1 text-xs text-text-secondary">{getEntityTypeLabel(company.entityType, true)}</p>
         </div>
         <div className="flex flex-wrap items-center justify-end gap-2">
+          <button type="button" disabled={isCreatingAnnualReturn || !annualReturnForm} onClick={() => void createAnnualReturnDeclaration()}
+            title={!annualReturnForm ? 'Publish the guided Annual Return Declaration form in Forms first' : 'Prepare a private, company-prefilled declaration link'}
+            className="btn-secondary btn-sm flex items-center gap-2 whitespace-nowrap disabled:opacity-50">
+            <Send className="h-3.5 w-3.5" />
+            {isCreatingAnnualReturn ? 'Preparing...' : 'Send annual return declaration'}
+          </button>
           {bizFileInfo ? <button type="button" onClick={() => window.open(bizFileInfo.pdfUrl, '_blank')} className="btn-secondary btn-sm flex items-center gap-2 whitespace-nowrap"><ExternalLink className="h-3.5 w-3.5" />View BizFile</button> : null}
           {can.updateDocument && (
             <Link
@@ -298,6 +360,27 @@ function CompanyDetailContent({ id }: { id: string }) {
         entityId={id}
         canEdit={can.updateCompany}
       />
+
+      <Modal isOpen={annualReturnModalOpen} onClose={() => setAnnualReturnModalOpen(false)}
+        title="Annual Return Declaration" description="Send this private draft link to the company's authorised respondent." size="lg">
+        <ModalBody className="space-y-3">
+          <p className="text-sm text-text-secondary">The link contains a secret access token and exposes full company-record particulars, including identification numbers. It expires with the draft. Share it securely.</p>
+          {annualReturnWarning && <p role="alert" className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900">{annualReturnWarning}</p>}
+          <input aria-label="Private declaration link" value={annualReturnLink} readOnly onClick={(e) => e.currentTarget.select()}
+            className="w-full rounded-lg border border-border-primary bg-background-primary p-3 text-xs text-text-primary" />
+          {annualReturnError && <p role="alert" className="text-sm text-status-error">{annualReturnError}</p>}
+        </ModalBody>
+        <ModalFooter>
+          <button type="button" className="btn-secondary btn-sm" onClick={() => setAnnualReturnModalOpen(false)}>Close</button>
+          <button type="button" className="btn-primary btn-sm inline-flex items-center gap-2"
+            onClick={() => void copyTextToClipboard(annualReturnLink).then((copied) => {
+              if (copied) success('Declaration link copied');
+              else setAnnualReturnError('Unable to copy automatically; select the link above.');
+            })}>
+            <Copy className="h-3.5 w-3.5" /> Copy link
+          </button>
+        </ModalFooter>
+      </Modal>
 
       {/* Delete Confirmation Dialog */}
       <ConfirmDialog

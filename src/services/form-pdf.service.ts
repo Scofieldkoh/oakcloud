@@ -20,6 +20,7 @@ import {
 import { extractSignatureDataUrl, isSignatureDataUrl } from '@/lib/signature-utils';
 import { prisma } from '@/lib/prisma';
 import { getAppBaseUrl, sendEmail } from '@/lib/email';
+import { getPrefillChanges, getPrefillFieldState, readStoredPrefill } from '@/lib/forms/prefill-changes';
 import { StorageKeys } from '@/lib/storage';
 import { normalizeWorkspaceLogoUrl } from '@/lib/workspace-logo-url';
 import {
@@ -383,8 +384,11 @@ export function buildSubmissionPdfHtml(input: {
   tenantLogoUrl?: string | null;
   tenantName?: string | null;
   formSettings?: unknown;
+  submissionMetadata?: unknown;
   timeZone?: string;
 }): { contentHtml: string; footerHtml: string } {
+  const prefill = readStoredPrefill(input.submissionMetadata);
+  const prefillChanges = prefill ? getPrefillChanges(prefill.baseline, input.answers) : null;
   const settings = parseObject(input.formSettings);
   const hideLogo = settings?.hideLogo === true;
   const hideFooter = settings?.hideFooter === true;
@@ -620,20 +624,25 @@ export function buildSubmissionPdfHtml(input: {
     return text ? `<span style="white-space:pre-wrap">${esc(text)}</span>` : `<span class="empty">\u2014</span>`;
   }
 
-  function renderField(field: FormField, value: unknown): string {
+  function renderField(field: FormField, value: unknown, rowIndex?: number): string {
+    const prefillState = getPrefillFieldState(field.key, value, prefill?.baseline ?? null, input.answers, rowIndex);
+    const editedClass = prefillState.edited ? ' field-edited' : '';
+    const editedLabel = prefillState.edited ? `<div class="edited-indicator">Edited (originally ${esc(String(prefillState.original ?? '(blank)'))})</div>` : '';
+
     if (field.type === 'PARAGRAPH') return renderInformationBlock(field);
     if (field.type === 'HTML' || field.type === 'HIDDEN') return '';
     const span = colSpan(field.layoutWidth);
 
     // choiceInlineRight: label on left, selected option pills on right
     if ((field.type === 'SINGLE_CHOICE' || field.type === 'MULTIPLE_CHOICE') && isChoiceInlineRight(field)) {
-      return `<div class="field" style="${fieldGridStyle(field, span)}">${renderChoiceInlineRight(field, value)}</div>`;
+      return `<div class="field${editedClass}" style="${fieldGridStyle(field, span)}">${editedLabel}${renderChoiceInlineRight(field, value)}</div>`;
     }
 
     const label = esc(field.label?.trim() || field.key);
     return `
-      <div class="field" style="${fieldGridStyle(field, span)}">
+      <div class="field${editedClass}" style="${fieldGridStyle(field, span)}">
         <div class="field-label">${label}</div>
+        ${editedLabel}
         <div class="field-value">${renderFieldValue(field, value)}</div>
       </div>`;
   }
@@ -702,9 +711,9 @@ export function buildSubmissionPdfHtml(input: {
       );
       if (rowFields.length === 0) return '';
       return `
-        <div class="repeat-card">
+        <div class="repeat-card${item.fields.some((f) => getPrefillFieldState(f.key, rowAnswers[f.key], prefill?.baseline ?? null, input.answers, rowIndex).added) ? ' repeat-card-added' : ''}">
           <div class="repeat-card-label">Entry ${rowIndex + 1}</div>
-          <div class="repeat-card-fields fields-grid">${rowFields.map((f) => renderField(f, rowAnswers[f.key])).join('')}</div>
+          <div class="repeat-card-fields fields-grid">${rowFields.map((f) => renderField(f, rowAnswers[f.key], rowIndex)).join('')}</div>
         </div>`;
     }).join('');
 
@@ -713,6 +722,10 @@ export function buildSubmissionPdfHtml(input: {
         <div class="repeat-title">${esc(item.title)}</div>
         ${item.hint ? `<div class="repeat-hint">${esc(item.hint)}</div>` : ''}
         ${rowsHtml}
+        ${prefillChanges?.removedRows.filter((row) => item.fields.some((f) => {
+          const sections = { officer_name: 'officers_section', capital_class: 'share_capital_section', shareholder_name: 'shareholders_section' };
+          return sections[f.key as keyof typeof sections] === row.section;
+        })).map((row) => `<div class="prefill-removed">Removed: ${esc(row.label)}</div>`).join('') || ''}
       </div>`;
   }).join('');
 
@@ -738,6 +751,13 @@ export function buildSubmissionPdfHtml(input: {
   /* --- Fields grid (12 columns) --- */
   .fields-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 12px 16px; }
   .field { page-break-inside: avoid; min-width: 0; }
+  .field-edited .field-value, .field-edited .field-inline-right {
+    background: #fffbeb; border-color: #f59e0b;
+  }
+  .edited-indicator { color: #92400e; font-size: 10px; font-weight: 700; margin: 3px 0; }
+  .repeat-card-added { background: #fffbeb; border-color: #f59e0b; }
+  .prefill-removed { background: #fffbeb; border: 1px solid #f59e0b; color: #92400e; padding: 7px 10px; margin: 6px 0; border-radius: 6px; }
+
   .field-label { font-size: 11px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
   .field-value {
     font-size: 13px; color: #111827; background: #f9fafb; border: 1px solid #e5e7eb;
@@ -832,6 +852,7 @@ export async function buildSubmissionPdfBuffer(input: {
   tenantLogoUrl?: string | null;
   tenantName?: string | null;
   formSettings?: unknown;
+  submissionMetadata?: unknown;
   timeZone?: string;
 }): Promise<Buffer> {
   const { contentHtml, footerHtml } = buildSubmissionPdfHtml(input);
@@ -906,6 +927,7 @@ export async function exportFormResponsePdf(
     tenantLogoUrl: normalizeWorkspaceLogoUrl(form.tenant?.logoUrl),
     tenantName: form.tenant?.name ?? null,
     formSettings: form.settings,
+    submissionMetadata: submission.metadata,
     timeZone: tenantTimeZone,
   });
   const fileName = resolveSubmissionPdfFileName({
@@ -991,6 +1013,7 @@ export async function exportPublicFormResponsePdf(
     tenantLogoUrl: normalizeWorkspaceLogoUrl(form.tenant?.logoUrl),
     tenantName: form.tenant?.name ?? null,
     formSettings: form.settings,
+    submissionMetadata: submission.metadata,
     timeZone: tenantTimeZone,
   });
   const fileName = resolveSubmissionPdfFileName({

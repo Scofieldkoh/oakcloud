@@ -145,6 +145,8 @@ import {
   formatDataAsOf,
   parseNameCheckResults,
 } from './_lib/field-config';
+import { EDITED_VALUE_CLASS, getPrefillChanges, getPrefillFieldState, undoRemovedPrefillRow } from '@/lib/forms/prefill-changes';
+import { AR_RECORD_SECTIONS } from '@/lib/forms/annual-return-prefill';
 import { FieldHint } from './_components/field-hint';
 import { FaqField } from './_components/faq-field';
 
@@ -165,6 +167,7 @@ export default function PublicFormPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [answers, setAnswers] = useState<Record<string, unknown>>({});
+  const [prefillBaseline, setPrefillBaseline] = useState<Record<string, unknown> | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [pageIssueMessages, setPageIssueMessages] = useState<string[]>([]);
   const [nameCheckResults, setNameCheckResults] = useState<Record<string, NameCheckResult>>({});
@@ -198,6 +201,11 @@ export default function PublicFormPage() {
   const [draftEmailError, setDraftEmailError] = useState<string | null>(null);
   const [draftEmailSent, setDraftEmailSent] = useState(false);
   const [repeatSectionCounts, setRepeatSectionCounts] = useState<Record<string, number>>({});
+  const prefillChanges = useMemo(
+    () => prefillBaseline ? getPrefillChanges(prefillBaseline, answers) : null,
+    [prefillBaseline, answers]
+  );
+
   const [pdfRecipientEmail, setPdfRecipientEmail] = useState('');
   const [emailFeedback, setEmailFeedback] = useState<string | null>(null);
   const [isSendingEmail, setIsSendingEmail] = useState(false);
@@ -458,6 +466,7 @@ export default function PublicFormPage() {
         if (!isCancelled) {
           setForm(resolvedForm);
           setAnswers({});
+          setPrefillBaseline(null);
           setFieldErrors({});
           setNameCheckResults({});
           setCurrentPage(0);
@@ -549,6 +558,9 @@ export default function PublicFormPage() {
     ));
     setUploadedByFieldKey(pendingDraftRestore.uploadsByFieldKey);
     setNameCheckResults(parseNameCheckResults(pendingDraftRestore.metadata.nameCheckResults));
+    const prefillPayload = parseObject(pendingDraftRestore.metadata.prefill);
+    setPrefillBaseline(parseObject(prefillPayload?.baseline));
+
 
     const metadataRepeatCounts = pendingDraftRestore.metadata.repeatSectionCounts;
     if (metadataRepeatCounts && typeof metadataRepeatCounts === 'object' && !Array.isArray(metadataRepeatCounts)) {
@@ -1945,7 +1957,16 @@ export default function PublicFormPage() {
                 for (const [answerKey, answerValue] of Object.entries(answers)) {
                   rowAnswers[answerKey] = Array.isArray(answerValue) ? answerValue[rowIndex] : answerValue;
                 }
-                const canRemoveRow = rowCount > sectionConfig.minItems;
+                const baselineSection = AR_RECORD_SECTIONS.find((candidate) => candidate.section === field.key);
+                const currentRecordId = baselineSection && Array.isArray(answers[baselineSection.id])
+                  ? (answers[baselineSection.id] as unknown[])[rowIndex]
+                  : null;
+                const canRemoveRow = rowCount > sectionConfig.minItems || (!!prefillBaseline && !!currentRecordId);
+                const rowWasAdded = !!prefillBaseline && !!baselineSection
+                  && !currentRecordId
+                  && baselineSection.fields.some((key) =>
+                    Array.isArray(answers[key]) && String((answers[key] as unknown[])[rowIndex] ?? '').trim());
+
 
                 return (
                   <div
@@ -1953,7 +1974,8 @@ export default function PublicFormPage() {
                     className={cn(
                       cardMode
                         ? 'rounded-xl border border-border-primary/60 bg-white p-3 shadow-sm sm:p-4'
-                        : rowIndex > 0 && 'border-t border-border-primary/40 pt-4'
+                        : rowIndex > 0 && 'border-t border-border-primary/40 pt-4',
+                      rowWasAdded && EDITED_VALUE_CLASS
                     )}
                     role={cardMode ? 'group' : undefined}
                     aria-label={cardMode ? `${sectionConfig.itemLabel} ${rowIndex + 1}` : undefined}
@@ -1962,6 +1984,7 @@ export default function PublicFormPage() {
                       <div className="mb-3 flex items-center justify-between gap-3">
                         <p className="text-sm font-semibold text-text-primary">
                           {sectionConfig.itemLabel} {rowIndex + 1}
+                          {rowWasAdded && <span className="ml-2 text-xs font-medium text-amber-800" aria-label="Added row">Added</span>}
                           {(() => {
                             const nameField = sectionFields.find((candidate) => candidate.type === 'SHORT_TEXT' && (candidate.inputType === 'text' || !candidate.inputType));
                             const nameValue = nameField && typeof rowAnswers[nameField.key] === 'string' ? (rowAnswers[nameField.key] as string).trim() : '';
@@ -1988,6 +2011,8 @@ export default function PublicFormPage() {
                       const localizedSectionField = getLocalizedField(sectionField);
                       const sectionWidthClass = WIDTH_CLASS[sectionField.layoutWidth] || WIDTH_CLASS[100];
                       const sectionValue = getRepeatFieldValue(sectionField.key, rowIndex);
+                      const sectionPrefill = getPrefillFieldState(sectionField.key, sectionValue, prefillBaseline, answers, rowIndex);
+
                       const sectionErrorText = fieldErrors[getFieldErrorKey(sectionField.key, rowIndex)];
                       const sectionDropdownOptions = parseChoiceOptions(localizedSectionField.options);
                       const sectionChoiceOptions = parseChoiceOptions(localizedSectionField.options);
@@ -2026,7 +2051,9 @@ export default function PublicFormPage() {
                       return (
                         <div
                           key={`${sectionField.id}-${rowIndex}`}
-                          className={cn(sectionWidthClass, isLayoutBreakBeforeEnabled(sectionField) && 'md:col-start-1')}
+                          className={cn(sectionWidthClass, isLayoutBreakBeforeEnabled(sectionField) && 'md:col-start-1',
+                            sectionPrefill.edited && 'rounded-lg border border-amber-400/60 bg-amber-50/60 p-2 dark:bg-amber-950/30')}
+                          title={sectionPrefill.edited ? `Original: ${String(sectionPrefill.original ?? '(blank)')}` : undefined}
                         >
                           {!sectionField.hideLabel && !sectionChoiceInlineRight && sectionField.type !== 'PARAGRAPH' && (
                             <label
@@ -2490,6 +2517,9 @@ export default function PublicFormPage() {
                             </div>
                           )}
 
+                          {sectionPrefill.edited && <p className="mb-1 text-xs font-semibold text-amber-800 dark:text-amber-300" aria-label="Edited value">
+                            {sectionPrefill.added ? 'Added' : 'Edited'}{!sectionPrefill.added ? ` · Originally: ${String(sectionPrefill.original ?? '(blank)')}` : ''}
+                          </p>}
                           {sectionErrorText && !sectionUseDateSelector && !sectionUseTimeTimezoneInput && (
                             <p id={sectionErrorId} className="mt-1 text-xs text-status-error">{sectionErrorText}</p>
                           )}
@@ -2518,6 +2548,23 @@ export default function PublicFormPage() {
                 );
               })}
             </div>
+            {prefillChanges?.removedRows.filter((item) => item.section === field.key).map((item) => (
+              <div key={item.recordId} className="mt-2 flex items-center justify-between rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900" role="status">
+                <span>Removed: {item.label}</span>
+                <button type="button" className="font-semibold underline" onClick={() => {
+                  if (!prefillBaseline) return;
+                  const restored = undoRemovedPrefillRow(prefillBaseline, answers, item.section, item.recordId);
+                  setAnswers(restored);
+                  const restoredSection = AR_RECORD_SECTIONS.find((candidate) => candidate.section === item.section);
+                  const restoredCount = restoredSection && Array.isArray(restored[restoredSection.id])
+                    ? (restored[restoredSection.id] as unknown[]).length : 1;
+                  setRepeatSectionCounts((prev) => ({
+                    ...prev,
+                    [sectionId]: Math.min(50, Math.max(sectionConfig.minItems, restoredCount)),
+                  }));
+                }}>Undo</button>
+              </div>
+            ))}
             {sectionTotal !== null && sectionConfig.total && (() => {
               const target = sectionConfig.total.target;
               const matchesTarget = target === null || sectionTotal === parseDecimalString(String(target));
@@ -2587,6 +2634,7 @@ export default function PublicFormPage() {
 
     const widthClass = WIDTH_CLASS[field.layoutWidth] || WIDTH_CLASS[100];
     const value = answers[field.key];
+    const prefillState = getPrefillFieldState(field.key, value, prefillBaseline, answers);
     const errorText = fieldErrors[getFieldErrorKey(field.key)];
     const fieldDomId = `form-field-${toDomSafeId(field.id || field.key)}`;
     const controlId = `${fieldDomId}-control`;
@@ -2818,7 +2866,9 @@ export default function PublicFormPage() {
 
     return (
       <React.Fragment key={field.id}>
-        <div className={cn(widthClass, isLayoutBreakBeforeEnabled(field) && 'md:col-start-1')}>
+        <div className={cn(widthClass, isLayoutBreakBeforeEnabled(field) && 'md:col-start-1',
+          prefillState.edited && 'rounded-lg border border-amber-400/60 bg-amber-50/60 p-2 dark:bg-amber-950/30')}
+          title={prefillState.edited ? `Original: ${String(prefillState.original ?? '(blank)')}` : undefined}>
           {/* Label */}
           {!field.hideLabel && !choiceInlineRight && (
             renderLabelAsText ? (
@@ -2844,6 +2894,11 @@ export default function PublicFormPage() {
             )
           )}
 
+          {prefillState.edited && (
+            <p className="mb-2 text-xs font-semibold text-amber-800 dark:text-amber-300" aria-label="Edited value">
+              Edited · Originally: {String(prefillState.original ?? '(blank)')}
+            </p>
+          )}
           {localizedField.subtext && <FieldHint id={hintId} text={localizedField.subtext} className="mb-2 text-sm text-text-secondary" />}
           {inlineTooltipBlock}
 

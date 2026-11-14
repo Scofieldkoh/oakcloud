@@ -694,6 +694,10 @@ export function sanitizePublicAnswers(
       case 'HIDDEN':
         if (typeof value === 'string') {
           sanitizedAnswers[key] = value.slice(0, 10_000);
+        } else if (Array.isArray(value)) {
+          // Preserve repeat-section record IDs, including blank IDs for new rows.
+          sanitizedAnswers[key] = value.slice(0, 100).map((item) =>
+            typeof item === 'string' ? item.slice(0, 500) : '');
         }
         break;
       default:

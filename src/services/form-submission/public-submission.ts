@@ -29,6 +29,7 @@ import type { PublicSubmissionInput } from '@/lib/validations/form-builder';
 import { applyDefaultTodayAnswers, getTenantTimeZone, toJsonInput } from '@/services/form-builder.helpers';
 import { resolveSubmissionUploadFileNames } from '@/services/form-pdf.service';
 import { loadDraftByAccess } from '@/services/form-draft.service';
+import { OAK_PREFILL_METADATA_KEY, getPrefillChanges, protectPrefillAnswers, readStoredPrefill } from '@/lib/forms/prefill-changes';
 import {
   evaluateCompanyIncorporationSubmission,
   recheckAdvisoryCompanyNames,
@@ -188,9 +189,26 @@ export async function createPublicSubmission(
   }
 
   const tenantTimeZone = await getTenantTimeZone(form.tenantId);
+  const activeDraft = input.draftCode && input.accessToken
+    ? await loadDraftByAccess({
+      formId: form.id,
+      tenantId: form.tenantId,
+      draftCode: input.draftCode,
+      accessToken: input.accessToken,
+    })
+    : null;
+  if (input.draftCode && input.accessToken && !activeDraft) {
+    throw new Error('Draft not found');
+  }
+  const storedPrefill = readStoredPrefill(activeDraft?.metadata);
+  const submittedAnswers = toAnswerRecord(input.answers);
+  // Never let a public request opt into the company-record pathway on its own.
+  const authoritativeAnswers = storedPrefill
+    ? protectPrefillAnswers(submittedAnswers, storedPrefill.baseline)
+    : { ...submittedAnswers, prefill_source: undefined };
   const answers = pruneHiddenConditionalAnswers(
     form.fields,
-    applyDefaultTodayAnswers(form.fields, toAnswerRecord(input.answers))
+    applyDefaultTodayAnswers(form.fields, authoritativeAnswers)
   );
   const referencedUploadIdSet = new Set(
     form.fields
@@ -222,21 +240,14 @@ export async function createPublicSubmission(
   if (companyIncorporation) {
     sanitizedMetadata.companyIncorporation = companyIncorporation;
   }
+  if (storedPrefill) {
+    sanitizedMetadata[OAK_PREFILL_METADATA_KEY] = {
+      ...storedPrefill,
+      changes: getPrefillChanges(storedPrefill.baseline, sanitizedAnswers),
+    };
+  }
   const fieldById = new Map(form.fields.map((field) => [field.id, { key: field.key, validation: field.validation }]));
   const renamedUploadsById = new Map<string, string>();
-
-  const activeDraft = input.draftCode && input.accessToken
-    ? await loadDraftByAccess({
-      formId: form.id,
-      tenantId: form.tenantId,
-      draftCode: input.draftCode,
-      accessToken: input.accessToken,
-    })
-    : null;
-
-  if (input.draftCode && input.accessToken && !activeDraft) {
-    throw new Error('Draft not found');
-  }
 
   const submissionResult = await prisma.$transaction(async (tx) => {
     let pendingUploads: Array<Pick<FormUpload, 'id' | 'fieldId' | 'fileName' | 'mimeType'>> = [];

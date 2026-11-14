@@ -22,6 +22,14 @@ import { formDraftEmail } from '@/lib/email-templates';
 import type { TenantAwareParams } from '@/lib/types';
 import type { PublicDraftSaveInput } from '@/lib/validations/form-builder';
 import { applyDefaultTodayAnswers, toJsonInput } from './form-builder.helpers';
+import { parseFormTemplateBinding } from '@/lib/form-templates';
+import { SG_ANNUAL_RETURN_DECLARATION_TEMPLATE_KEY } from '@/lib/form-templates/sg-annual-return-declaration';
+import {
+  OAK_PREFILL_METADATA_KEY,
+  protectPrefillAnswers,
+  readStoredPrefill,
+  type StoredPrefill,
+} from '@/lib/forms/prefill-changes';
 
 export interface DeleteFormDraftResult {
   id: string;
@@ -166,6 +174,13 @@ export function sanitizeDraftMetadataForClient(metadata: unknown): Record<string
 
   const sanitized = { ...raw };
   delete sanitized[INTERNAL_DRAFT_RESUME_TOKEN_METADATA_KEY];
+  const prefill = readStoredPrefill(metadata);
+  delete sanitized[OAK_PREFILL_METADATA_KEY];
+  if (prefill) {
+    // The bearer token grants access to answer values, but never to staff identity
+    // or internal company identifiers. Browser cannot write the server-only record.
+    sanitized.prefill = { baseline: prefill.baseline, createdAt: prefill.createdAt };
+  }
   return sanitized;
 }
 
@@ -468,6 +483,10 @@ function sanitizePublicAnswers(
       case 'HIDDEN':
         if (typeof value === 'string') {
           sanitizedAnswers[key] = value.slice(0, 10_000);
+        } else if (Array.isArray(value)) {
+          // Preserve repeat-section record IDs, including blank IDs for new rows.
+          sanitizedAnswers[key] = value.slice(0, 100).map((item) =>
+            typeof item === 'string' ? item.slice(0, 500) : '');
         }
         break;
       default:
@@ -489,6 +508,56 @@ export { sanitizeChoiceEntry, sanitizePublicAnswers };
 // ---------------------------------------------------------------------------
 // Exported functions
 // ---------------------------------------------------------------------------
+
+/** Staff-only creation of a company-linked prefilled draft of a published template. */
+export async function createPrefilledFormDraft(
+  formId: string,
+  answers: Record<string, unknown>,
+  serverMetadata: StoredPrefill & { repeatSectionCounts: Record<string, number> },
+  params: TenantAwareParams,
+): Promise<GenerateFormDraftResumeLinkResult> {
+  const form = await prisma.form.findFirst({
+    where: { id: formId, tenantId: params.tenantId, status: 'PUBLISHED', deletedAt: null },
+    include: { fields: { orderBy: { position: 'asc' } } },
+  });
+  const binding = parseFormTemplateBinding(form?.settings);
+  if (!form || binding?.key !== SG_ANNUAL_RETURN_DECLARATION_TEMPLATE_KEY
+    || binding.version < 2
+    || !form.fields.some((field) => field.key === 'officers_section')) {
+    throw new Error('Publish the version 2 Annual Return Declaration form before creating prefilled drafts');
+  }
+  const draftSettings = parseFormDraftSettings(form.settings);
+  if (!draftSettings.enabled) throw new Error('Draft saving must be enabled for this form');
+  const protectedAnswers = protectPrefillAnswers(answers, serverMetadata.baseline);
+  const cleanedAnswers = sanitizePublicAnswers(form.fields,
+    pruneHiddenConditionalAnswers(form.fields, protectedAnswers), new Set());
+  const metadata = {
+    repeatSectionCounts: serverMetadata.repeatSectionCounts,
+    [OAK_PREFILL_METADATA_KEY]: {
+      companyId: serverMetadata.companyId,
+      companyAggregateRevision: serverMetadata.companyAggregateRevision,
+      createdAt: serverMetadata.createdAt,
+      createdById: serverMetadata.createdById,
+      baseline: serverMetadata.baseline,
+    } satisfies StoredPrefill,
+  };
+  const now = new Date();
+  const expiresAt = new Date(now.getTime() + draftSettings.autoDeleteDays * 24 * 60 * 60 * 1000);
+  const result = await prisma.$transaction(async (tx) =>
+    createFormDraftRecord(tx, form, cleanedAnswers, metadata, expiresAt, now));
+  await createAuditLog({
+    tenantId: params.tenantId, userId: params.userId, action: 'CREATE',
+    entityType: 'FormDraft', entityId: result.draft.id, entityName: result.draft.code,
+    summary: `Created prefilled Annual Return Declaration draft for company ${serverMetadata.companyId}`,
+    changeSource: 'MANUAL',
+    metadata: { event: 'annual_return_prefill', formId, companyId: serverMetadata.companyId },
+  });
+  return {
+    draftId: result.draft.id, draftCode: result.draft.code,
+    resumeUrl: buildDraftResumeUrl(form.slug, result.draft.code, result.accessToken),
+    expiresAt,
+  };
+}
 
 export async function savePublicDraft(
   slug: string,
@@ -520,9 +589,27 @@ export async function savePublicDraft(
     throw new Error('Draft access is incomplete');
   }
 
+  const existingDraft = input.draftCode && input.accessToken
+    ? await loadDraftByAccess({
+      formId: form.id,
+      tenantId: form.tenantId,
+      draftCode: input.draftCode,
+      accessToken: input.accessToken,
+    })
+    : null;
+
+  if (input.draftCode && input.accessToken && !existingDraft) {
+    throw new Error('Draft not found');
+  }
+  const prefill = readStoredPrefill(existingDraft?.metadata);
+  // Client-supplied prefill_source is not an authority to reveal records.
+  const rawAnswers = toAnswerRecord(input.answers);
+  const authoritativeAnswers = prefill
+    ? protectPrefillAnswers(rawAnswers, prefill.baseline)
+    : { ...rawAnswers, prefill_source: undefined };
   const answers = pruneHiddenConditionalAnswers(
     form.fields,
-    applyDefaultTodayAnswers(form.fields, toAnswerRecord(input.answers))
+    applyDefaultTodayAnswers(form.fields, authoritativeAnswers)
   );
   const referencedUploadIdSet = new Set(
     form.fields
@@ -536,21 +623,10 @@ export async function savePublicDraft(
   const uploadIdSet = new Set(uploadIds);
   const sanitizedAnswers = sanitizePublicAnswers(form.fields, answers, uploadIdSet);
   const normalizedMetadata = normalizeDraftMetadata(input.metadata);
+  // Only a verified server-issued draft may carry this immutable snapshot.
+  if (prefill) normalizedMetadata[OAK_PREFILL_METADATA_KEY] = prefill;
   const expiresAt = new Date(Date.now() + draftSettings.autoDeleteDays * 24 * 60 * 60 * 1000);
   const savedAt = new Date();
-
-  const existingDraft = input.draftCode && input.accessToken
-    ? await loadDraftByAccess({
-      formId: form.id,
-      tenantId: form.tenantId,
-      draftCode: input.draftCode,
-      accessToken: input.accessToken,
-    })
-    : null;
-
-  if (input.draftCode && input.accessToken && !existingDraft) {
-    throw new Error('Draft not found');
-  }
 
   const persisted = await prisma.$transaction(async (tx) => {
     const staleUploads = existingDraft
@@ -850,7 +926,7 @@ export async function generateFormDraftResumeLink(
   const accessToken = reusableAccessToken ?? generateDraftAccessToken();
 
   if (!reusableAccessToken) {
-    const metadata = sanitizeDraftMetadataForClient(draft.metadata);
+    const metadata = parseObject(draft.metadata) || {};
     await prisma.formDraft.update({
       where: { id: draft.id },
       data: {

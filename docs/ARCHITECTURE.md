@@ -699,5 +699,24 @@ unlocked draft or creates a new draft next to a published version, importing
 live branding and notification settings where available. Staff must review and
 publish the draft manually; the existing live form and responses remain intact.
 Date fields accept calendar-month offsets relative to another date field,
-clamping missing month-end days before applying any day offset. Company-record
-prefill is not included in this initial seed.
+clamping missing month-end days before applying any day offset. Phase 2 company-record prefill is available with template version 2. Staff
+publish the seeded v2 draft and use **Send annual return declaration** on
+the Company page to create a private 30-day prefilled draft. The endpoint is
+`POST /api/forms/[id]/prefilled-drafts` with `companyId`; a Next rewrite
+routes it to the dedicated POST handler under `/api/forms/[id]/drafts`. It requires
+document-update permission, company-read permission and tenant scope, and
+records an audit entry.
+
+The company snapshot, originating company ID and its aggregate revision are
+stored only in server-owned `FormDraft.metadata.__oak_prefill`. The public
+draft-resume response exposes only the baseline and snapshot date after
+bearer-token verification, never the internal company ID. Saves preserve the
+server snapshot and reject forged/duplicate row IDs. Form submissions include
+the immutable snapshot and server-computed changed fields, added rows and
+removed rows; they never mutate Company records. Public input fields show amber
+edit indicators, removed rows support Undo, and staff responses and PDFs
+highlight changes. The response page checks the current company aggregate
+revision and warns when the stored snapshot is stale. Identification numbers
+and addresses are intentionally shown in full behind the private token; handle
+the link as sensitive. Existing published forms and their submissions are
+never modified by the seed.

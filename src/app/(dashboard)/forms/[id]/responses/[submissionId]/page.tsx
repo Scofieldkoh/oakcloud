@@ -40,6 +40,7 @@ import {
   type NameCheckResultValue,
 } from '@/lib/forms/name-check-result';
 import { SG_COMPANY_INCORPORATION_TEMPLATE_KEY } from '@/lib/form-templates/sg-company-incorporation';
+import { getPrefillChanges, getPrefillFieldState, readStoredPrefill } from '@/lib/forms/prefill-changes';
 
 type RepeatSectionConfig = {
   id: string;
@@ -342,6 +343,28 @@ export default function FormResponseDetailPage() {
   const updateReviewStatusMutation = useUpdateFormResponseReviewStatus(formId);
 
   const submission = responseDetail?.submission ?? null;
+  const storedPrefill = readStoredPrefill(submission?.metadata);
+  const [currentCompanyRevision, setCurrentCompanyRevision] = useState<number | null>(null);
+  const [companyRevisionError, setCompanyRevisionError] = useState(false);
+  const prefillCompanyId = storedPrefill?.companyId;
+  useEffect(() => {
+    if (!prefillCompanyId || !form?.tenantId) return;
+    let cancelled = false;
+    fetch(`/api/companies/${encodeURIComponent(prefillCompanyId)}?tenantId=${encodeURIComponent(form.tenantId)}`)
+      .then(async (response) => {
+        if (!response.ok) throw new Error('Company record not available');
+        return response.json();
+      })
+      .then((company) => {
+        if (!cancelled) {
+          setCurrentCompanyRevision(typeof company.aggregateRevision === 'number' ? company.aggregateRevision : null);
+          setCompanyRevisionError(false);
+        }
+      })
+      .catch(() => { if (!cancelled) setCompanyRevisionError(true); });
+    return () => { cancelled = true; };
+  }, [prefillCompanyId, form?.tenantId]);
+
   const uploadCount = responseDetail?.uploads.length ?? 0;
   const reviewStatus = parseFormResponseReviewStatus(submission?.metadata);
   const isCompanyIncorporationResponse = parseObject(parseObject(submission?.metadata)?.companyIncorporation)?.templateKey === SG_COMPANY_INCORPORATION_TEMPLATE_KEY;
@@ -350,6 +373,9 @@ export default function FormResponseDetailPage() {
     () => toAnswerRecord(submission?.answers),
     [submission?.answers]
   );
+  const prefillChanges = storedPrefill
+    ? getPrefillChanges(storedPrefill.baseline, submissionAnswers)
+    : null;
   const aiReview = useMemo(
     () => parseFormSubmissionAiReview(submission?.metadata),
     [submission?.metadata]
@@ -679,6 +705,8 @@ export default function FormResponseDetailPage() {
 
   function renderFieldCard(field: FormField, value: unknown, copyKey: string, fieldKey: string) {
     const widthClass = WIDTH_CLASS[field.layoutWidth] || WIDTH_CLASS[100];
+    const prefillState = getPrefillFieldState(field.key, value, storedPrefill?.baseline ?? null,
+      submissionAnswers, copyKey.split(':').length === 4 ? Number(copyKey.split(':')[2]) : undefined);
     const copyValue = field.type === 'FILE_UPLOAD'
       ? (() => {
         const ids = toUploadIds(value);
@@ -688,7 +716,10 @@ export default function FormResponseDetailPage() {
       : toCopyValue(field, value);
 
     return (
-      <div key={fieldKey} className={widthClass}>
+      <div key={fieldKey} className={`${widthClass}${prefillState.edited ? ' rounded-lg border border-amber-400 bg-amber-50/60 p-2 dark:bg-amber-950/30' : ''}`}>
+        {prefillState.edited && <p className="mb-1 text-xs font-semibold text-amber-800" title={`Original: ${String(prefillState.original ?? '(blank)')}`}>
+          Edited · Originally: {String(prefillState.original ?? '(blank)')}
+        </p>}
         <div className="mb-1.5 flex items-center justify-between gap-2">
           <label className="block text-xs font-medium text-text-secondary">
             {field.label || field.key}
@@ -1034,6 +1065,44 @@ export default function FormResponseDetailPage() {
             </div>
           )}
         </div>
+      )}
+
+      {storedPrefill && prefillChanges && (
+        <section aria-label="Changes from company record" className="rounded-2xl border border-amber-300 bg-background-secondary p-4 shadow-sm sm:rounded-3xl sm:p-5">
+          <h2 className="text-base font-semibold text-text-primary">Changes from company record</h2>
+          <p className="mt-1 text-xs text-text-secondary">
+            Snapshot: {formatDate(storedPrefill.createdAt)} · <Link href={`/companies/${storedPrefill.companyId}`} className="text-oak-primary underline">Open company record</Link>
+          </p>
+          <p className="mt-2 text-sm text-text-secondary">
+            {companyRevisionError
+              ? 'Current company-record revision could not be checked.'
+              : currentCompanyRevision === null
+                ? 'Checking company-record revision...'
+                : currentCompanyRevision !== storedPrefill.companyAggregateRevision
+                  ? 'The company record has changed since this form was prefilled. Reconcile against the latest details.'
+                  : 'Company record has not changed since this form was prefilled.'}
+          </p>
+          <div className="mt-3 flex flex-wrap gap-3 text-sm">
+            <span>{prefillChanges.fields.length} edited fields</span>
+            <span>{prefillChanges.addedRows.length} added rows</span>
+            <span>{prefillChanges.removedRows.length} removed rows</span>
+          </div>
+          {(prefillChanges.fields.length > 0 || prefillChanges.addedRows.length > 0 || prefillChanges.removedRows.length > 0) && (
+            <ul className="mt-3 space-y-1.5 text-sm">
+              {prefillChanges.fields.map((change, i) => (
+                <li key={`${change.key}-${change.recordId ?? ''}-${i}`} className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-amber-950">
+                  <strong>{change.key.replace(/_/g, ' ')}</strong>{change.recordId ? ` (record ${change.recordId})` : ''}: {change.previous || '(blank)'} → {change.current || '(blank)'}
+                </li>
+              ))}
+              {prefillChanges.addedRows.map((row, i) => (
+                <li key={`added-${i}`} className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-amber-950">Added {row.section.replace(/_/g, ' ')}: {row.label}</li>
+              ))}
+              {prefillChanges.removedRows.map((row, i) => (
+                <li key={`removed-${i}`} className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-amber-950">Removed {row.section.replace(/_/g, ' ')}: {row.label}</li>
+              ))}
+            </ul>
+          )}
+        </section>
       )}
 
       {/* Meta cards */}
