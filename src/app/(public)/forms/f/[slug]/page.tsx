@@ -40,6 +40,8 @@ import {
   type PublicFormDefinition,
 } from '@/lib/form-utils';
 import { SearchableSelect } from '@/components/ui/searchable-select';
+import { PersonShareholdingsEditor } from '@/components/forms/person-shareholdings-editor';
+import { formatPersonShareholdings, personShareholdingError } from '@/lib/forms/person-shareholdings';
 import {
   DEFAULT_PHONE_COUNTRY_CODE,
   getPhoneCountryCodeOptions,
@@ -1084,6 +1086,9 @@ export default function PublicFormPage() {
     if (field.isRequired && !hasRequiredValue(field, value)) {
       return uiLabel('validation_required', { field: fieldLabel });
     }
+    if (field.type === 'SHORT_TEXT' && field.inputType === 'shareholding_list') {
+      return personShareholdingError(value);
+    }
 
     if (
       field.type === 'SHORT_TEXT' &&
@@ -2040,7 +2045,9 @@ export default function PublicFormPage() {
                         {summaryKeys.map((key) => {
                           const fieldName = sectionFields.find((entry) => entry.key === key)?.label || key;
                           const raw = rowAnswers[key];
-                          const value = typeof raw === 'string' || typeof raw === 'number' ? String(raw).trim() : '';
+                          const value = key === 'person_shareholding'
+                            ? (formatPersonShareholdings(raw) || '').replace(/\\n/g, '; ')
+                            : typeof raw === 'string' || typeof raw === 'number' ? String(raw).trim() : '';
                           return value ? <span key={key} className="rounded-md bg-background-secondary px-2 py-1">
                             {fieldName}: <strong className="text-text-primary">{value.length > 80 ? value.slice(0, 77) + '...' : value}</strong>
                           </span> : null;
@@ -2098,7 +2105,7 @@ export default function PublicFormPage() {
                           key={`${sectionField.id}-${rowIndex}`}
                           className={cn(sectionWidthClass, isLayoutBreakBeforeEnabled(sectionField) && 'md:col-start-1',
                             sectionPrefill.edited && 'rounded-lg border border-amber-400/60 bg-amber-50/60 p-2 dark:bg-amber-950/30')}
-                          title={sectionPrefill.edited ? `Original: ${String(sectionPrefill.original ?? '(blank)')}` : undefined}
+                          title={sectionPrefill.edited ? `Original: ${sectionField.inputType === 'shareholding_list' ? formatPersonShareholdings(sectionPrefill.original) || '(blank)' : String(sectionPrefill.original ?? '(blank)')}` : undefined}
                         >
                           {!sectionField.hideLabel && !sectionChoiceInlineRight && sectionField.type !== 'PARAGRAPH' && (
                             <label
@@ -2127,7 +2134,25 @@ export default function PublicFormPage() {
                             </div>
                           )}
 
-                          {sectionField.type === 'SHORT_TEXT' && !sectionUseDateSelector && !sectionUseSplitPhoneInput && !sectionUseTimeTimezoneInput && (
+                          {sectionField.type === 'SHORT_TEXT' && sectionField.inputType === 'shareholding_list' && (
+                            <PersonShareholdingsEditor
+                              value={sectionValue}
+                              onChange={(nextRows) => setRepeatFieldValue(sectionField.key, rowIndex, nextRows)}
+                              onBlur={() => handleFieldBlur(sectionField, getRepeatFieldValue(sectionField.key, rowIndex), getFieldErrorKey(sectionField.key, rowIndex), buildAnswerContext(answers, rowIndex))}
+                              options={Array.from(new Map([
+                                ...sectionDropdownOptions.map((option) => [option.value.toUpperCase(), { value: option.value, label: option.label }] as const),
+                                ...(Array.isArray(answers.capital_class) ? answers.capital_class : [])
+                                  .filter((entry): entry is string => typeof entry === 'string' && entry.trim().length > 0)
+                                  .map((entry) => [entry.trim().toUpperCase(), { value: entry.trim(), label: entry.trim() }] as const),
+                              ]).values())}
+                              disabled={sectionField.isReadOnly}
+                              error={sectionErrorText}
+                              label={sectionLabel}
+                              idPrefix={sectionFieldDomId}
+                            />
+                          )}
+
+                          {sectionField.type === 'SHORT_TEXT' && sectionField.inputType !== 'shareholding_list' && !sectionUseDateSelector && !sectionUseSplitPhoneInput && !sectionUseTimeTimezoneInput && (
                             <input
                               id={sectionControlId}
                               type={sectionField.inputType === 'phone' ? 'tel' : sectionField.inputType || 'text'}
@@ -2949,7 +2974,19 @@ export default function PublicFormPage() {
           {inlineTooltipBlock}
 
           {/* SHORT_TEXT */}
-          {field.type === 'SHORT_TEXT' && !useDateSelector && !useSplitPhoneInput && !useTimeTimezoneInput && (
+          {field.type === 'SHORT_TEXT' && field.inputType === 'shareholding_list' && (
+            <PersonShareholdingsEditor
+              value={value}
+              onChange={(rows) => setFieldValue(field.key, rows)}
+              onBlur={() => handleFieldBlur(field, answers[field.key], getFieldErrorKey(field.key), answers)}
+              options={parseChoiceOptions(localizedField.options).map((option) => ({ value: option.value, label: option.label }))}
+              disabled={field.isReadOnly}
+              error={errorText}
+              label={accessibleLabel}
+              idPrefix={fieldDomId}
+            />
+          )}
+          {field.type === 'SHORT_TEXT' && field.inputType !== 'shareholding_list' && !useDateSelector && !useSplitPhoneInput && !useTimeTimezoneInput && (
             <input
               id={controlId}
               type={field.inputType === 'phone' ? 'tel' : field.inputType || 'text'}

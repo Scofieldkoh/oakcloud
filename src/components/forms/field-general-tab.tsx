@@ -361,6 +361,7 @@ export function FieldGeneralTab({
             <option value="number">Number</option>
             <option value="date">Datepicker</option>
             <option value="time_timezone">Time + timezone</option>
+            <option value="shareholding_list">Shareholdings by class (repeat section)</option>
           </select>
         </div>
       )}

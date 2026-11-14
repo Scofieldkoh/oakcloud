@@ -1,5 +1,6 @@
 /** Generic form prefill comparison. Repeat rows are matched by stable record IDs, not position. */
 import { AR_RECORD_SECTIONS } from '@/lib/forms/annual-return-prefill';
+import { formatPersonShareholdings } from '@/lib/forms/person-shareholdings';
 
 export const OAK_PREFILL_METADATA_KEY = '__oak_prefill';
 
@@ -40,6 +41,8 @@ export const valuesDifferFromPrefill = (original: unknown, current: unknown): bo
   normalized(original) !== normalized(current);
 
 const text = (value: unknown) => value === undefined || value === null ? '' : String(value);
+const changedText = (key: string, value: unknown) =>
+  key === 'person_shareholding' ? formatPersonShareholdings(value) || '' : text(value);
 const asArray = (value: unknown): unknown[] => Array.isArray(value) ? value : [];
 const asObject = (value: unknown): Record<string, unknown> | null =>
   value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : null;
@@ -150,7 +153,7 @@ export function getPrefillChanges(
         const previous = asArray(baseline[key])[oldIndex];
         const current = asArray(answers[key])[row];
         if (valuesDifferFromPrefill(previous, current)) {
-          result.fields.push({ key, section: section.section, recordId: id, previous: text(previous), current: text(current) });
+          result.fields.push({ key, section: section.section, recordId: id, previous: changedText(key, previous), current: changedText(key, current) });
         }
       }
     }

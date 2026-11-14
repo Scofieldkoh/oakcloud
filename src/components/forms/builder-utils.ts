@@ -33,6 +33,7 @@ export type ShortInputType =
   | 'number'
   | 'date'
   | 'time_timezone'
+  | 'shareholding_list'
   | 'info_text'
   | 'info_image'
   | 'info_url'
@@ -203,6 +204,7 @@ export function suggestFieldLayoutWidth(
   const key = (field.key + ' ' + field.label).toLowerCase();
   if (/address|description|notes|explanation|shareholding|resolution/.test(key)) return 100;
   if (field.type === 'SHORT_TEXT') {
+    if (field.inputType === 'shareholding_list') return 100;
     if (field.inputType === 'date' || field.inputType === 'number') return 33;
     if (field.inputType === 'time_timezone' || field.inputType === 'phone') return 50;
     if (/uen\b|currency|code|postal|count|share class/.test(key)) return 33;
@@ -456,6 +458,10 @@ export function toPayloadFields(fields: BuilderField[]): FormFieldInput[] {
       ? field.options
         .map((option) => serializeChoiceOption(option, field.type))
         .filter((option): option is NonNullable<typeof option> => !!option)
+      : (field.type === 'SHORT_TEXT' && field.inputType === 'shareholding_list')
+        ? field.options
+          .map((option) => serializeChoiceOption(option, field.type))
+          .filter((option): option is NonNullable<typeof option> => !!option)
       : (field.type === 'DROPDOWN' && field.optionPresetId
         ? null
         : field.type === 'DROPDOWN'

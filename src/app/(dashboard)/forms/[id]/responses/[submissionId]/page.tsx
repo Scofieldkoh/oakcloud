@@ -32,6 +32,7 @@ import {
   type FormSubmissionAiReviewSection,
 } from '@/lib/form-utils';
 import { formatResponseFieldValue, isResponseAnswerField } from '@/lib/form-response-display';
+import { formatPersonShareholdings } from '@/lib/forms/person-shareholdings';
 import { extractSignatureDataUrl } from '@/lib/signature-utils';
 import {
   describeNameCheckAssessment,
@@ -40,6 +41,9 @@ import {
   type NameCheckResultValue,
 } from '@/lib/forms/name-check-result';
 import { SG_COMPANY_INCORPORATION_TEMPLATE_KEY } from '@/lib/form-templates/sg-company-incorporation';
+import { SG_ANNUAL_RETURN_DECLARATION_TEMPLATE_KEY } from '@/lib/form-templates/sg-annual-return-declaration';
+import { parseFormTemplateBinding } from '@/lib/form-templates';
+import { isCeoKycRequired, parseKycSubmissionReference, readCeoKycReview } from '@/lib/forms/ceo-kyc-review';
 import { getPrefillChanges, getPrefillFieldState, readStoredPrefill } from '@/lib/forms/prefill-changes';
 
 type RepeatSectionConfig = {
@@ -325,6 +329,8 @@ export default function FormResponseDetailPage() {
   const [isResolvingAiWarning, setIsResolvingAiWarning] = useState(false);
   const [isResolveReasonModalOpen, setIsResolveReasonModalOpen] = useState(false);
   const [resolveReason, setResolveReason] = useState('');
+  const [ceoKycReference, setCeoKycReference] = useState('');
+  const [isSavingCeoKyc, setIsSavingCeoKyc] = useState(false);
   const [isAttachmentCheckOpen, setIsAttachmentCheckOpen] = useState(false);
   const [isRunningAttachmentCheck, setIsRunningAttachmentCheck] = useState(false);
   const [attachmentCheckResult, setAttachmentCheckResult] = useState<AttachmentCheckResult | null>(null);
@@ -373,6 +379,11 @@ export default function FormResponseDetailPage() {
     () => toAnswerRecord(submission?.answers),
     [submission?.answers]
   );
+  const annualReturnBinding = parseFormTemplateBinding(form?.settings);
+  const isCeoKycHandoff = annualReturnBinding?.key === SG_ANNUAL_RETURN_DECLARATION_TEMPLATE_KEY
+    && annualReturnBinding.version >= 4
+    && isCeoKycRequired(submissionAnswers);
+  const ceoKycReview = readCeoKycReview(submission?.metadata);
   const prefillChanges = storedPrefill
     ? getPrefillChanges(storedPrefill.baseline, submissionAnswers)
     : null;
@@ -657,6 +668,36 @@ export default function FormResponseDetailPage() {
     }
   }
 
+  async function saveCeoKycReview(action: 'LINK' | 'REVIEW' | 'CLEAR') {
+    if (!submission || !form || isSavingCeoKyc) return;
+    if (action === 'LINK' && !parseKycSubmissionReference(ceoKycReference)) {
+      showError('Enter the completed KYC/CDD submission ID or its staff response link.');
+      return;
+    }
+    setIsSavingCeoKyc(true);
+    try {
+      const response = await fetch(`/api/forms/${encodeURIComponent(form.id)}/responses/${encodeURIComponent(submission.id)}?tenantId=${encodeURIComponent(form.tenantId)}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ceoKyc: action === 'LINK'
+            ? { action, reference: ceoKycReference.trim() }
+            : { action },
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(typeof data?.error === 'string' ? data.error : 'Could not update the CEO KYC/CDD review');
+      setCeoKycReference('');
+      await refetchResponse();
+      success(action === 'LINK' ? 'Completed KYC/CDD response linked and marked received'
+        : action === 'REVIEW' ? 'CEO KYC/CDD marked reviewed' : 'CEO KYC/CDD link cleared');
+    } catch (err) {
+      showError(err instanceof Error ? err.message : 'Failed to update the KYC/CDD review');
+    } finally {
+      setIsSavingCeoKyc(false);
+    }
+  }
+
   if (isFormLoading || isResponseLoading) {
     return (
       <div className="min-h-screen bg-background-primary">
@@ -717,8 +758,10 @@ export default function FormResponseDetailPage() {
 
     return (
       <div key={fieldKey} className={`${widthClass}${prefillState.edited ? ' rounded-lg border border-amber-400 bg-amber-50/60 p-2 dark:bg-amber-950/30' : ''}`}>
-        {prefillState.edited && <p className="mb-1 text-xs font-semibold text-amber-800" title={`Original: ${String(prefillState.original ?? '(blank)')}`}>
-          Edited · Originally: {String(prefillState.original ?? '(blank)')}
+        {prefillState.edited && <p className="mb-1 text-xs font-semibold text-amber-800" title={`Original: ${field.inputType === 'shareholding_list' ? formatPersonShareholdings(prefillState.original) || '(blank)' : String(prefillState.original ?? '(blank)')}`}>
+          Edited · Originally: {field.inputType === 'shareholding_list'
+            ? formatPersonShareholdings(prefillState.original) || '(blank)'
+            : String(prefillState.original ?? '(blank)')}
         </p>}
         <div className="mb-1.5 flex items-center justify-between gap-2">
           <label className="block text-xs font-medium text-text-secondary">
@@ -751,7 +794,7 @@ export default function FormResponseDetailPage() {
         )}
 
         {(field.type === 'SHORT_TEXT' || field.type === 'DROPDOWN' || field.type === 'SINGLE_CHOICE') && (
-          <div className="rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary">
+          <div className={`rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary ${field.inputType === 'shareholding_list' ? 'whitespace-pre-line' : ''}`}>
             {isEmptyValue(value) ? (
               <span className="text-text-muted">-</span>
             ) : (
@@ -1101,6 +1144,68 @@ export default function FormResponseDetailPage() {
                 <li key={`removed-${i}`} className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-amber-950">Removed {row.section.replace(/_/g, ' ')}: {row.label}</li>
               ))}
             </ul>
+          )}
+        </section>
+      )}
+
+      {isCeoKycHandoff && (
+        <section className="rounded-2xl border border-border-primary bg-background-secondary p-4 shadow-sm sm:rounded-3xl sm:p-5" aria-label="CEO KYC/CDD prerequisite">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className="text-sm font-semibold text-text-primary">CEO individual KYC/CDD prerequisite</h2>
+            <span className="rounded-full border border-border-primary px-2.5 py-1 text-xs font-medium text-text-secondary">
+              {ceoKycReview?.status === 'REVIEWED' ? 'Reviewed'
+                : ceoKycReview?.status === 'RECEIVED' ? 'Received · awaiting review'
+                  : 'Pending receipt'}
+            </span>
+          </div>
+          <p className="mt-2 text-sm text-text-secondary">
+            A new CEO requires a separate individual KYC/CDD response. Link the completed
+            questionnaire here so filing staff can check receipt and record their review.
+            Linking confirms receipt, not identity verification or ACRA filing.
+          </p>
+          {ceoKycReview && (
+            <div className="mt-3 space-y-1 text-xs text-text-secondary">
+              <p>
+                Linked {formatDate(ceoKycReview.linkedAt)}
+                {ceoKycReview.reviewedAt ? ` · Reviewed ${formatDate(ceoKycReview.reviewedAt)}` : ''}
+              </p>
+              <Link
+                href={`/forms/${encodeURIComponent(ceoKycReview.linkedFormId)}/responses/${encodeURIComponent(ceoKycReview.linkedSubmissionId)}`}
+                className="font-medium text-oak-primary underline"
+              >
+                View linked individual KYC/CDD response
+              </Link>
+            </div>
+          )}
+          <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-end">
+            <div className="min-w-0 flex-1">
+              <label htmlFor="ceo-kyc-reference" className="mb-1 block text-xs font-medium text-text-secondary">
+                Completed KYC/CDD submission ID or staff response URL
+              </label>
+              <input
+                id="ceo-kyc-reference"
+                value={ceoKycReference}
+                onChange={(event) => setCeoKycReference(event.target.value)}
+                placeholder="Paste the individual KYC/CDD response link"
+                className="h-10 w-full rounded-lg border border-border-primary bg-background-primary px-3 text-sm text-text-primary"
+              />
+            </div>
+            <Button variant="secondary" size="sm" onClick={() => void saveCeoKycReview('LINK')}
+              disabled={isSavingCeoKyc || !ceoKycReference.trim()}>
+              {ceoKycReview ? 'Replace linked response' : 'Link and mark received'}
+            </Button>
+          </div>
+          {ceoKycReview && (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {ceoKycReview.status !== 'REVIEWED' && (
+                <Button size="sm" onClick={() => void saveCeoKycReview('REVIEW')} disabled={isSavingCeoKyc}>
+                  Mark KYC/CDD reviewed
+                </Button>
+              )}
+              <Button variant="secondary" size="sm" onClick={() => void saveCeoKycReview('CLEAR')} disabled={isSavingCeoKyc}>
+                Clear link
+              </Button>
+            </div>
           )}
         </section>
       )}

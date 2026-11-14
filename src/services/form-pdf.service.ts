@@ -22,6 +22,7 @@ import { prisma } from '@/lib/prisma';
 import { getAppBaseUrl, sendEmail } from '@/lib/email';
 import { getPrefillChanges, getPrefillFieldState, readStoredPrefill } from '@/lib/forms/prefill-changes';
 import { resolveRepeatDropdownLabel } from '@/lib/form-response-display';
+import { formatPersonShareholdings } from '@/lib/forms/person-shareholdings';
 import { StorageKeys } from '@/lib/storage';
 import { normalizeWorkspaceLogoUrl } from '@/lib/workspace-logo-url';
 import {
@@ -587,6 +588,10 @@ export function buildSubmissionPdfHtml(input: {
   }
 
   function renderFieldValue(field: FormField, value: unknown): string {
+    if (field.type === 'SHORT_TEXT' && field.inputType === 'shareholding_list') {
+      const formatted = formatPersonShareholdings(value);
+      return formatted ? `<span style="white-space:pre-wrap">${esc(formatted)}</span>` : '<span class="empty">—</span>';
+    }
     if (field.type === 'SIGNATURE') {
       const signatureDataUrl = extractSignatureDataUrl(value);
       if (signatureDataUrl) {
@@ -628,7 +633,8 @@ export function buildSubmissionPdfHtml(input: {
   function renderField(field: FormField, value: unknown, rowIndex?: number): string {
     const prefillState = getPrefillFieldState(field.key, value, prefill?.baseline ?? null, input.answers, rowIndex);
     const editedClass = prefillState.edited ? ' field-edited' : '';
-    const editedLabel = prefillState.edited ? `<div class="edited-indicator">Edited (originally ${esc(String(prefillState.original ?? '(blank)'))})</div>` : '';
+    const originalLabel = field.inputType === 'shareholding_list' ? formatPersonShareholdings(prefillState.original) || '(blank)' : String(prefillState.original ?? '(blank)');
+    const editedLabel = prefillState.edited ? `<div class="edited-indicator">Edited (originally ${esc(originalLabel)})</div>` : '';
 
     if (field.type === 'PARAGRAPH') return renderInformationBlock(field);
     if (field.type === 'HTML' || field.type === 'HIDDEN') return '';

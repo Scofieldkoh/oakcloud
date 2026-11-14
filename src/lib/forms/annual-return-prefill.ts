@@ -160,9 +160,10 @@ function combinedPeople(
     // Distinct active shareholding records of the same class may be additive.
     // Keep the detail in one person and do not merge across different classes.
     if (existing) {
-      const a = Number(existing.shares);
-      const b = Number(shares);
-      existing.shares = Number.isFinite(a + b) ? String(a + b) : existing.shares;
+      if (!/^\\d+$/.test(existing.shares) || !/^\\d+$/.test(shares)) {
+        throw new ValidationError('Shareholding quantity must be a whole number');
+      }
+      existing.shares = String(BigInt(existing.shares) + BigInt(shares));
     } else row.holdings.push({ shareClass, shares });
   }
   if (rows.length > 50) throw new ValidationError('The company has over 50 distinct persons; review capacity before sending');
@@ -241,7 +242,7 @@ export function buildAnnualReturnPrefill(company: AnnualReturnCompanyRecord, now
     p.positions.slice(3).map(position => position.role + (position.date ? ' (' + position.date + ')' : '')).join('\\n'),
   );
   answers.person_shareholding = people.map(p =>
-    p.holdings.map(holding => holding.shareClass + ': ' + holding.shares + ' shares').join('\\n'),
+    p.holdings.map(holding => ({ shareClass: holding.shareClass, shares: holding.shares })),
   );
   if (people.some(row => row.positions.some(position => position.role === 'CEO'))) answers.ceo_exists = 'Yes';
 

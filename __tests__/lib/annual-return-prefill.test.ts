@@ -37,7 +37,7 @@ function company(overrides: Record<string, unknown> = {}): CompanyWithRelations 
   } as unknown as CompanyWithRelations;
 }
 
-describe('Annual Return v3 company snapshot mapping', () => {
+describe('Annual Return v4 company snapshot mapping', () => {
   it('prefills company identity and SSIC codes, not formatted descriptions', () => {
     const { answers } = buildAnnualReturnPrefill(company(), new Date('2026-11-14'));
     expect(answers).toMatchObject({
@@ -51,7 +51,7 @@ describe('Annual Return v3 company snapshot mapping', () => {
     expect(answers.capital_paid_up).toEqual(['100.00']);
     expect(answers.person_name).toEqual(['Alice', 'Bob']);
     expect(answers.person_role_1).toEqual(['Director', 'CEO']);
-    expect(answers.person_shareholding).toEqual(['ORDINARY: 80 shares', '']);
+    expect(answers.person_shareholding).toEqual([[{ shareClass: 'ORDINARY', shares: '80' }], []]);
     expect(answers.person_record_id).toHaveLength(2);
   });
   it('consolidates multiple positions on one contact record', () => {
@@ -72,7 +72,7 @@ describe('Annual Return v3 company snapshot mapping', () => {
     expect(answers.person_role_1).toEqual(['Director']);
     expect(answers.person_role_2).toEqual(['Secretary']);
     expect(answers.person_role_3).toEqual(['CEO']);
-    expect(answers.person_shareholding).toEqual(['ORDINARY: 100 shares']);
+    expect(answers.person_shareholding).toEqual([[{ shareClass: 'ORDINARY', shares: '100' }]]);
     expect(repeatSectionCounts.people_section).toBe(1);
   });
   it('does not merge different people with the same name without matching identity evidence', () => {

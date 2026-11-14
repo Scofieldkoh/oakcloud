@@ -41,6 +41,16 @@ describe('form response display helpers', () => {
     expect(formatResponseFieldValue(field, 'new-person:2', answers)).toBe('new-person:2');
   });
 
+  it('formats structured per-person holdings and previous free-text responses', () => {
+    const field = { type: 'SHORT_TEXT', inputType: 'shareholding_list' };
+    expect(formatResponseFieldValue(field, [
+      { shareClass: 'ORDINARY', shares: '100' },
+      { shareClass: 'PREFERENCE', shares: '20' },
+    ])).toBe('ORDINARY: 100 shares\nPREFERENCE: 20 shares');
+    expect(formatResponseFieldValue(field, 'ORDINARY: 100 shares')).toBe('ORDINARY: 100 shares');
+    expect(formatResponseFieldValue(field, [])).toBeNull();
+  });
+
   it('does not show information blocks as response answer fields', () => {
     expect(isResponseAnswerField({ type: 'PARAGRAPH' })).toBe(false);
     expect(isResponseAnswerField({ type: 'HTML' })).toBe(false);

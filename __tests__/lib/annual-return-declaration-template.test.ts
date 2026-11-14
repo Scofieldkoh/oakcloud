@@ -6,6 +6,7 @@ import {
   ARD_COMPANY_TYPES, buildSgAnnualReturnDeclarationFields,
   buildSgAnnualReturnDeclarationSettings,
   SG_ANNUAL_RETURN_DECLARATION_TEMPLATE_KEY,
+  SG_ANNUAL_RETURN_DECLARATION_TEMPLATE_VERSION,
 } from '@/lib/form-templates/sg-annual-return-declaration';
 import { fieldValidationSchema, saveFormFieldsSchema } from '@/lib/validations/form-builder';
 import { getDateValidationRange } from '@/app/(public)/forms/f/[slug]/_lib/validation';
@@ -89,6 +90,18 @@ describe('Annual Return Declaration guided template', () => {
     expect(recordFields).toHaveLength(6);
     const peopleRepeat = fields.find((field) => field.key === 'people_section');
     expect(peopleRepeat?.validation).toMatchObject({ repeatCompactCards: true, repeatMinItems: 1 });
+  });
+
+  it('defines structured per-person shareholding rows in version 4', () => {
+    expect(SG_ANNUAL_RETURN_DECLARATION_TEMPLATE_VERSION).toBe(4);
+    const field = fields.find((entry) => entry.key === 'person_shareholding');
+    expect(field).toMatchObject({
+      type: 'SHORT_TEXT', inputType: 'shareholding_list', layoutWidth: 100,
+      validation: { allowCustomOption: true },
+    });
+    expect(fields.filter((entry) => entry.key === 'person_shareholding')).toHaveLength(1);
+    expect(fields.find((entry) => entry.key === 'people_section')?.validation)
+      .toMatchObject({ repeatSummaryFieldKeys: expect.arrayContaining(['person_shareholding']) });
   });
 
   it('uses the SSIC, nationality and ISO currency presets when configured', () => {

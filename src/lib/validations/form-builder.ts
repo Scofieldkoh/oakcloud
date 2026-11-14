@@ -44,6 +44,7 @@ export const shortInputTypeSchema = z.enum([
   'number',
   'date',
   'time_timezone',
+  'shareholding_list',
   'info_text',
   'info_image',
   'info_url',

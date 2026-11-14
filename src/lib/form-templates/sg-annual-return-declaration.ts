@@ -2,7 +2,7 @@
 import type { FieldConditionInput, FormFieldInput } from '@/lib/validations/form-builder';
 
 export const SG_ANNUAL_RETURN_DECLARATION_TEMPLATE_KEY = 'sg_annual_return_declaration';
-export const SG_ANNUAL_RETURN_DECLARATION_TEMPLATE_VERSION = 3;
+export const SG_ANNUAL_RETURN_DECLARATION_TEMPLATE_VERSION = 4;
 export const SG_ANNUAL_RETURN_DECLARATION_TITLE = 'Annual Return Declaration';
 
 export const ANNUAL_RETURN_KEYS = {
@@ -206,7 +206,7 @@ function drafts(input: AnnualReturnBuildOptions): Draft[] {
 
     heading('part_people', 'People and shareholders', prefilled),
     info('people_help', 'Edit people',
-      'Each person appears once, even if they have several positions or share classes. Expand a row to edit identifying information, up to three positions and their dates, or shareholdings. Add missing persons separately.', prefilled),
+      'Each person appears once, even if they have several positions or share classes. Expand a row to edit their particulars, up to three positions and dates, and structured shareholdings by class and quantity. Add missing people separately.', prefilled),
     { type: 'PAGE_BREAK', inputType: 'repeat_start', key: 'people_section', label: 'People and shareholders',
       condition: prefilled, validation: { repeatMinItems: 1, repeatMaxItems: 50, repeatItemLabel: 'Person',
         repeatAddLabel: 'Add person / shareholder', repeatCompactCards: true,
@@ -239,10 +239,11 @@ function drafts(input: AnnualReturnBuildOptions): Draft[] {
     { type: 'LONG_TEXT', key: 'person_additional_positions', label: 'Additional positions (beyond first 3)',
       condition: all(prefilled, eq('person_kind', 'Individual')), isRequired: false, layoutWidth: 100,
       helpText: 'If the individual holds more than three positions, list remaining appointments and dates here.' },
-    { type: 'LONG_TEXT', key: 'person_shareholding', label: 'Shareholding by class',
-      condition: prefilledShares, layoutWidth: 100, isRequired: false,
-      placeholder: 'ORDINARY: 100 shares\\nPREFERENCE: 20 shares',
-      helpText: 'Enter one share class and number of shares per line. Leave blank for a non-shareholder.' },
+    { type: 'SHORT_TEXT', inputType: 'shareholding_list', key: 'person_shareholding',
+      label: 'Shareholdings by class', condition: prefilledShares, layoutWidth: 100,
+      isRequired: false, options: options(['ORDINARY', 'PREFERENCE', 'REDEEMABLE PREFERENCE', 'NON-VOTING']),
+      validation: { allowCustomOption: true },
+      helpText: 'Add a row for each class this person holds, with its whole-number quantity. Leave empty for a non-shareholder.' },
     { type: 'PAGE_BREAK', inputType: 'repeat_end', key: 'people_end', label: 'End people', condition: prefilled },
 
     heading('part_ceo', 'Chief executive officer', prefilled),

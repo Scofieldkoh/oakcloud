@@ -775,3 +775,39 @@ fields. Manually edited revisions are excluded from automatic seed-draft
 selection, so reseeding cannot overwrite them. New revision links are distinct
 from older published links; company prefill chooses the latest published form
 among versions with the same template key.
+
+### Annual Return Declaration v4 – structured shareholdings and CEO KYC/CDD handoff
+
+Version 4 replaces the person card's free-text shareholding summary with
+`SHORT_TEXT` + `shareholding_list`, a nested list of class/quantity objects
+under the existing `person_shareholding` key. Each person can add or remove
+up to 20 share-class rows. A share class must be nonempty and unique for that
+person, and its share quantity must be a positive whole-number decimal string
+(up to 20 digits). Class suggestions include common share classes and the
+current declared capital classes. The form accepts custom class names when
+needed. Existing v2/v3 published forms retain their original field definitions
+and stored free-text answers; the staff response/PDF display still renders them.
+
+The company prefill now saves each person's holdings as a structured array.
+The one-person-per-record ID, role handling, row-level prefill change tracking,
+undo-removed-person behaviour, response summaries and PDFs continue to work.
+The public submission sanitizer strictly validates nested shareholding data;
+malformed values and duplicate share classes are rejected rather than
+silently truncated or converted to plain text.
+
+For an Annual Return submission identifying an unlisted **new CEO**, the staff
+response page shows a CEO KYC/CDD prerequisite. The respondent only promises
+to provide the separate individual KYC/CDD questionnaire. Staff paste the
+completed KYC/CDD submission UUID or internal response URL; the PATCH endpoint
+checks it is a **COMPLETED** response of the `kyccdd-individual` form in the
+**same tenant**, then marks it Received. After examining its contents, staff
+can mark it Reviewed or clear/replace the link. This records a server-owned
+`metadata.ceoKycReview` reference and an audit log, while never modifying
+the original answers, identity records, company registers, or ACRA filings.
+The server rejects forged public `ceoKycReview` metadata. Receipt is not
+identity verification; Reviewed denotes a staff action, not automatic CDD
+approval. Concurrent updates to the same response are protected by the
+`updatedAt` optimistic-concurrency check.
+
+Version 4 is seeded to an **unpublished draft** and published manually; the
+previous live URL/submissions remain intact. No schema migration is required.

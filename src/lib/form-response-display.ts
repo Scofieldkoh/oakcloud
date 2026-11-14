@@ -3,6 +3,7 @@ import {
   formatTimeTimezoneAnswer,
   isEmptyValue,
 } from '@/lib/form-utils';
+import { formatPersonShareholdings } from '@/lib/forms/person-shareholdings';
 
 type ResponseFieldLike = {
   type: string;
@@ -49,6 +50,10 @@ export function formatResponseFieldValue(
   answers?: Record<string, unknown>,
 ): string | null {
   if (isEmptyValue(value)) return null;
+
+  if (field.type === 'SHORT_TEXT' && field.inputType === 'shareholding_list') {
+    return formatPersonShareholdings(value);
+  }
 
   if (field.type === 'SHORT_TEXT' && field.inputType === 'time_timezone') {
     return formatTimeTimezoneAnswer(value);
