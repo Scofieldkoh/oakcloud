@@ -127,6 +127,12 @@ export async function seedCompanyIncorporationForm(params: TenantAwareParams): P
 
 /** Seed revised Annual Return Declaration as a draft; leave the live form untouched. */
 export async function seedAnnualReturnDeclarationForm(params: TenantAwareParams): Promise<SeedFormResult> {
+  await ensureBuiltInFormOptionPresets(params.tenantId, params.userId);
+  const ssicPreset = await prisma.formOptionPreset.findUnique({
+    where: { tenantId_builtInKey: { tenantId: params.tenantId, builtInKey: 'ssic' } },
+    select: { id: true },
+  });
+  if (!ssicPreset) throw new ValidationError('The SSIC 2025 option list is unavailable in this workspace');
   return seedGuidedForm({
     params,
     key: SG_ANNUAL_RETURN_DECLARATION_TEMPLATE_KEY,
@@ -134,7 +140,7 @@ export async function seedAnnualReturnDeclarationForm(params: TenantAwareParams)
     title: SG_ANNUAL_RETURN_DECLARATION_TITLE,
     tag: 'annual-return',
     description: 'Declaration form for ACRA annual return filing',
-    fields: buildSgAnnualReturnDeclarationFields(),
+    fields: buildSgAnnualReturnDeclarationFields({ ssicPresetId: ssicPreset.id }),
     defaultSettings: buildSgAnnualReturnDeclarationSettings(),
     liveSettingsSlug: 'annual-return-declaration',
   });
