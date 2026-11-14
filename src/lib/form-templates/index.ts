@@ -9,6 +9,12 @@ import {
   SG_COMPANY_INCORPORATION_TITLE,
 } from './sg-company-incorporation';
 
+import {
+  SG_ANNUAL_RETURN_DECLARATION_TEMPLATE_KEY,
+  SG_ANNUAL_RETURN_DECLARATION_TEMPLATE_VERSION,
+  SG_ANNUAL_RETURN_DECLARATION_TITLE,
+} from './sg-annual-return-declaration';
+
 export interface FormTemplateSummary {
   key: string;
   version: number;
@@ -17,6 +23,12 @@ export interface FormTemplateSummary {
 }
 
 export const FORM_TEMPLATES: FormTemplateSummary[] = [
+  {
+    key: SG_ANNUAL_RETURN_DECLARATION_TEMPLATE_KEY,
+    version: SG_ANNUAL_RETURN_DECLARATION_TEMPLATE_VERSION,
+    title: SG_ANNUAL_RETURN_DECLARATION_TITLE,
+    description: 'Annual return filing and related AGM or written-resolution declaration for Singapore companies.',
+  },
   {
     key: SG_COMPANY_INCORPORATION_TEMPLATE_KEY,
     version: SG_COMPANY_INCORPORATION_TEMPLATE_VERSION,
@@ -59,6 +71,10 @@ export function parseFormTemplateBinding(settings: unknown): FormTemplateBinding
     definitionHash: typeof binding.definitionHash === 'string' ? binding.definitionHash : null,
     lockedAt: typeof binding.lockedAt === 'string' ? binding.lockedAt : null,
   };
+}
+
+export function isAnnualReturnDeclarationForm(settings: unknown): boolean {
+  return parseFormTemplateBinding(settings)?.key === SG_ANNUAL_RETURN_DECLARATION_TEMPLATE_KEY;
 }
 
 export function isCompanyIncorporationForm(settings: unknown): boolean {

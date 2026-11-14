@@ -382,6 +382,7 @@ export function FieldValidationTab({
                           ...(field.validation || {}),
                           minDateFieldKey: e.target.value || undefined,
                           minDateOffsetDays: e.target.value ? (field.validation?.minDateOffsetDays || 0) : undefined,
+                           minDateOffsetMonths: e.target.value ? (field.validation?.minDateOffsetMonths || 0) : undefined,
                         },
                       })}
                       className="w-full rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary"
@@ -407,6 +408,19 @@ export function FieldValidationTab({
                       })}
                     />
                   </div>
+                  <FormInput
+                    label="Offset months (applied before days)"
+                    type="number"
+                    disabled={!field.validation?.minDateFieldKey}
+                    value={field.validation?.minDateOffsetMonths?.toString() || '0'}
+                    onChange={(e) => onChange({
+                      ...field,
+                      validation: {
+                        ...(field.validation || {}),
+                        minDateOffsetMonths: e.target.value ? Number(e.target.value) : 0,
+                      },
+                    })}
+                  />
                 </div>
                 <div>
                   <label className="mb-1.5 block text-xs font-medium text-text-secondary">Relative max date</label>
@@ -419,6 +433,7 @@ export function FieldValidationTab({
                           ...(field.validation || {}),
                           maxDateFieldKey: e.target.value || undefined,
                           maxDateOffsetDays: e.target.value ? (field.validation?.maxDateOffsetDays || 0) : undefined,
+                           maxDateOffsetMonths: e.target.value ? (field.validation?.maxDateOffsetMonths || 0) : undefined,
                         },
                       })}
                       className="w-full rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary"
@@ -444,8 +459,21 @@ export function FieldValidationTab({
                       })}
                     />
                   </div>
+                  <FormInput
+                    label="Offset months (applied before days)"
+                    type="number"
+                    disabled={!field.validation?.maxDateFieldKey}
+                    value={field.validation?.maxDateOffsetMonths?.toString() || '0'}
+                    onChange={(e) => onChange({
+                      ...field,
+                      validation: {
+                        ...(field.validation || {}),
+                        maxDateOffsetMonths: e.target.value ? Number(e.target.value) : 0,
+                      },
+                    })}
+                  />
                 </div>
-                <p className="text-2xs text-text-muted">Offsets are relative to the selected date field. Use -15 for 15 days earlier, 15 for 15 days later.</p>
+                <p className="text-2xs text-text-muted">Offsets are relative to the selected date field. Months apply first (clamped to month-end), then days.</p>
               </div>
             </>
           )}

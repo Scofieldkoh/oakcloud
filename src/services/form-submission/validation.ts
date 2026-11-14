@@ -1,3 +1,4 @@
+import { addIsoDateMonths } from '@/lib/forms/relative-date';
 /** Validation and sanitising of public form answers and submission metadata. */
 
 import { Prisma, type FormField } from '@/generated/prisma';
@@ -152,7 +153,10 @@ function resolveRelativeDateBoundary(
 
   const rawOffset = validation?.[offsetName];
   const offsetDays = typeof rawOffset === 'number' && Number.isFinite(rawOffset) ? Math.trunc(rawOffset) : 0;
-  return addIsoDateDays(referencedValue.trim(), offsetDays);
+  const rawMonths = validation?.[offsetName === 'minDateOffsetDays' ? 'minDateOffsetMonths' : 'maxDateOffsetMonths'];
+  const offsetMonths = typeof rawMonths === 'number' && Number.isFinite(rawMonths) ? Math.trunc(rawMonths) : 0;
+  const withMonths = addIsoDateMonths(referencedValue.trim(), offsetMonths);
+  return withMonths ? addIsoDateDays(withMonths, offsetDays) : undefined;
 }
 
 function getDateValidationRange(field: FormField, answersRecord: Record<string, unknown>): { minDate?: string; maxDate?: string } {

@@ -8,9 +8,16 @@ import {
   buildSgCompanyIncorporationFields,
   buildSgCompanyIncorporationSettings,
 } from '@/lib/form-templates/sg-company-incorporation';
+import {
+  SG_ANNUAL_RETURN_DECLARATION_TEMPLATE_KEY,
+  SG_ANNUAL_RETURN_DECLARATION_TEMPLATE_VERSION,
+  SG_ANNUAL_RETURN_DECLARATION_TITLE,
+  buildSgAnnualReturnDeclarationFields,
+  buildSgAnnualReturnDeclarationSettings,
+} from '@/lib/form-templates/sg-annual-return-declaration';
 import { prisma } from '@/lib/prisma';
 import type { TenantAwareParams } from '@/lib/types';
-import { saveFormFieldsSchema } from '@/lib/validations/form-builder';
+import { saveFormFieldsSchema, type FormFieldInput } from '@/lib/validations/form-builder';
 import { createForm, saveFormFields } from './form-crud.service';
 import { ensureBuiltInFormOptionPresets } from './form-option-preset.service';
 
@@ -19,75 +26,63 @@ export interface SeedFormResult {
   action: 'created' | 'updated';
 }
 
-/**
- * Seed the Singapore Company Incorporation form into a workspace.
- *
- * An unpublished form already bound to the template is updated in place with the
- * current questions; otherwise (none yet, or every copy published and locked) a new
- * DRAFT form is created. Nothing is published; staff review and publish it in the
- * builder as usual.
- */
-export async function seedCompanyIncorporationForm(params: TenantAwareParams): Promise<SeedFormResult> {
-  await ensureBuiltInFormOptionPresets(params.tenantId, params.userId);
-  const presetId = (builtInKey: string) => prisma.formOptionPreset.findUnique({
-    where: { tenantId_builtInKey: { tenantId: params.tenantId, builtInKey } },
-    select: { id: true },
-  });
-  const [ssicPreset, nationalityPreset, countryPreset, workspace, candidates] = await Promise.all([
-    presetId('ssic'),
-    presetId('nationalities'),
-    presetId('countries'),
-    prisma.workspace.findUnique({ where: { id: params.tenantId }, select: { name: true } }),
+const settingsObject = (value: unknown): Record<string, unknown> =>
+  value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {};
+
+/** Shared guided-template seed path: never mutate published or locked forms. */
+async function seedGuidedForm(input: {
+  params: TenantAwareParams;
+  key: string;
+  version: number;
+  title: string;
+  tag: string;
+  description: string | null;
+  fields: FormFieldInput[];
+  defaultSettings: Record<string, unknown>;
+  liveSettingsSlug?: string;
+}): Promise<SeedFormResult> {
+  const { params } = input;
+  const fields = saveFormFieldsSchema.parse({ fields: input.fields }).fields;
+  const [candidates, liveForm] = await Promise.all([
     prisma.form.findMany({
       where: { tenantId: params.tenantId, deletedAt: null, status: 'DRAFT' },
       select: { id: true, settings: true },
       orderBy: { updatedAt: 'desc' },
     }),
+    input.liveSettingsSlug ? prisma.form.findFirst({
+      where: { tenantId: params.tenantId, deletedAt: null,
+        slug: input.liveSettingsSlug, status: 'PUBLISHED' },
+      select: { settings: true },
+    }) : Promise.resolve(null),
   ]);
-  if (!ssicPreset || !nationalityPreset || !countryPreset) {
-    throw new ValidationError('The SSIC, nationality or country option list is unavailable in this workspace');
-  }
-
-  const firmName = workspace?.name?.trim() || '';
-  const fields = saveFormFieldsSchema.parse({
-    fields: buildSgCompanyIncorporationFields({
-      firmName,
-      ssicPresetId: ssicPreset.id,
-      nationalityPresetId: nationalityPreset.id,
-      countryPresetId: countryPreset.id,
-    }),
-  }).fields;
-
   const existing = candidates.find((candidate) => {
     const binding = parseFormTemplateBinding(candidate.settings);
-    return binding?.key === SG_COMPANY_INCORPORATION_TEMPLATE_KEY && !binding.lockedAt;
+    return binding?.key === input.key && !binding.lockedAt;
   });
+  const form = existing ? { id: existing.id } : await createForm({
+    title: input.title, tags: [input.tag], status: 'DRAFT',
+  }, params);
 
-  const form = existing
-    ? { id: existing.id }
-    : await createForm({
-      title: SG_COMPANY_INCORPORATION_TITLE,
-      tags: ['incorporation'],
-      status: 'DRAFT',
-    }, params);
+  await saveFormFields(form.id, fields, params,
+    `${existing ? 'Updated to' : 'Seeded from'} template version ${input.version}`);
 
-  const reason = existing
-    ? `Updated to template version ${SG_COMPANY_INCORPORATION_TEMPLATE_VERSION}`
-    : `Seeded from template version ${SG_COMPANY_INCORPORATION_TEMPLATE_VERSION}`;
-  await saveFormFields(form.id, fields, params, reason);
-
-  // The binding is server-owned: updateForm preserves an existing binding but will
-  // not accept one from a settings payload, so write it directly here. Settings the
-  // template does not own (notifications, branding) are kept on an update.
-  const previousSettings = existing?.settings && typeof existing.settings === 'object' && !Array.isArray(existing.settings)
-    ? existing.settings as Record<string, unknown>
-    : {};
+  const defaults = { ...input.defaultSettings };
+  // User-specific configuration is never checked into the repository.
+  // Retain branding, locale, response display and notifications from the current
+  // draft; on creation, inherit them from the existing published live form.
+  const source = settingsObject(existing?.settings ?? liveForm?.settings);
+  const portable = Object.fromEntries([
+    'notifications', 'responseTable', 'i18n', 'hideLogo', 'hideFooter',
+    'backgroundImageUrl', 'backgroundImageOpacity', 'panelOpacity', 'headingColor',
+    'branding', 'pdf',
+  ].filter((key) => key in source).map((key) => [key, source[key]]));
   const settings = {
-    ...previousSettings,
-    ...buildSgCompanyIncorporationSettings({ firmName }),
+    ...source,
+    ...defaults,
+    ...portable,
     template: {
-      key: SG_COMPANY_INCORPORATION_TEMPLATE_KEY,
-      version: SG_COMPANY_INCORPORATION_TEMPLATE_VERSION,
+      key: input.key,
+      version: input.version,
       installedAt: new Date().toISOString(),
       definitionHash: null,
       lockedAt: null,
@@ -96,8 +91,51 @@ export async function seedCompanyIncorporationForm(params: TenantAwareParams): P
 
   const saved = await prisma.form.update({
     where: { id: form.id },
-    // The form shows no description; the first page's introduction covers it.
-    data: { settings, description: null },
+    data: { settings, description: input.description },
   });
   return { form: saved, action: existing ? 'updated' : 'created' };
+}
+
+/** Seed an editable draft beside any published company incorporation form. */
+export async function seedCompanyIncorporationForm(params: TenantAwareParams): Promise<SeedFormResult> {
+  await ensureBuiltInFormOptionPresets(params.tenantId, params.userId);
+  const presetId = (builtInKey: string) => prisma.formOptionPreset.findUnique({
+    where: { tenantId_builtInKey: { tenantId: params.tenantId, builtInKey } },
+    select: { id: true },
+  });
+  const [ssicPreset, nationalityPreset, countryPreset, workspace] = await Promise.all([
+    presetId('ssic'), presetId('nationalities'), presetId('countries'),
+    prisma.workspace.findUnique({ where: { id: params.tenantId }, select: { name: true } }),
+  ]);
+  if (!ssicPreset || !nationalityPreset || !countryPreset) {
+    throw new ValidationError('The SSIC, nationality or country option list is unavailable in this workspace');
+  }
+  const firmName = workspace?.name?.trim() || '';
+  return seedGuidedForm({
+    params, key: SG_COMPANY_INCORPORATION_TEMPLATE_KEY,
+    version: SG_COMPANY_INCORPORATION_TEMPLATE_VERSION,
+    title: SG_COMPANY_INCORPORATION_TITLE, tag: 'incorporation', description: null,
+    fields: buildSgCompanyIncorporationFields({
+      firmName,
+      ssicPresetId: ssicPreset.id,
+      nationalityPresetId: nationalityPreset.id,
+      countryPresetId: countryPreset.id,
+    }),
+    defaultSettings: buildSgCompanyIncorporationSettings({ firmName }),
+  });
+}
+
+/** Seed revised Annual Return Declaration as a draft; leave the live form untouched. */
+export async function seedAnnualReturnDeclarationForm(params: TenantAwareParams): Promise<SeedFormResult> {
+  return seedGuidedForm({
+    params,
+    key: SG_ANNUAL_RETURN_DECLARATION_TEMPLATE_KEY,
+    version: SG_ANNUAL_RETURN_DECLARATION_TEMPLATE_VERSION,
+    title: SG_ANNUAL_RETURN_DECLARATION_TITLE,
+    tag: 'annual-return',
+    description: 'Declaration form for ACRA annual return filing',
+    fields: buildSgAnnualReturnDeclarationFields(),
+    defaultSettings: buildSgAnnualReturnDeclarationSettings(),
+    liveSettingsSlug: 'annual-return-declaration',
+  });
 }

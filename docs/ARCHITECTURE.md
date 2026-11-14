@@ -688,3 +688,16 @@ The 2026-07-24 migration is a complete reset of the retired Workflow/Projects da
 | Bank Reconciliation | Transaction matching and review |
 | Client Portal | Client-facing access and requests |
 | Accounting Integration | Xero, QuickBooks, MYOB |
+
+## Annual Return Declaration guided form
+
+The Annual Return Declaration form is seeded as an unpublished draft with
+`npm run db:seed-annual-return-declaration -- --email <login>`. Its stable
+answer keys and AGM/financial-statement conditions are declared in
+`src/lib/form-templates/sg-annual-return-declaration.ts`. The seed updates an
+unlocked draft or creates a new draft next to a published version, importing
+live branding and notification settings where available. Staff must review and
+publish the draft manually; the existing live form and responses remain intact.
+Date fields accept calendar-month offsets relative to another date field,
+clamping missing month-end days before applying any day offset. Company-record
+prefill is not included in this initial seed.

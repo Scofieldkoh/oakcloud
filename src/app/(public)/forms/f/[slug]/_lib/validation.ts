@@ -1,3 +1,4 @@
+import { addIsoDateMonths } from '@/lib/forms/relative-date';
 /** Date boundaries and text/number validation for public form answers. */
 
 import {
@@ -54,7 +55,10 @@ export function resolveRelativeDateBoundary(
 
   const rawOffset = validation?.[offsetName];
   const offsetDays = typeof rawOffset === 'number' && Number.isFinite(rawOffset) ? Math.trunc(rawOffset) : 0;
-  return addIsoDateDays(referencedValue.trim(), offsetDays);
+  const rawMonths = validation?.[offsetName === 'minDateOffsetDays' ? 'minDateOffsetMonths' : 'maxDateOffsetMonths'];
+  const offsetMonths = typeof rawMonths === 'number' && Number.isFinite(rawMonths) ? Math.trunc(rawMonths) : 0;
+  const withMonths = addIsoDateMonths(referencedValue.trim(), offsetMonths);
+  return withMonths ? addIsoDateDays(withMonths, offsetDays) : undefined;
 }
 
 export function getDateValidationRange(field: PublicField, answersRecord: Record<string, unknown>): { minDate?: string; maxDate?: string } {

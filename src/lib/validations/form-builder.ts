@@ -70,8 +70,10 @@ export const fieldValidationSchema = z
     maxDate: z.string().regex(DATE_BOUND_PATTERN).optional(),
     minDateFieldKey: z.string().min(1).max(FORM_FIELD_KEY_MAX_LENGTH).optional(),
     minDateOffsetDays: z.number().int().min(-3650).max(3650).optional(),
+    minDateOffsetMonths: z.number().int().min(-120).max(120).optional(),
     maxDateFieldKey: z.string().min(1).max(FORM_FIELD_KEY_MAX_LENGTH).optional(),
     maxDateOffsetDays: z.number().int().min(-3650).max(3650).optional(),
+    maxDateOffsetMonths: z.number().int().min(-120).max(120).optional(),
     startsWith: z.string().max(200).optional(),
     containsText: z.string().max(200).optional(),
     notContainsText: z.string().max(200).optional(),
@@ -151,6 +153,12 @@ export const fieldValidationSchema = z
     }
     if (value.maxDateOffsetDays !== undefined && value.maxDateFieldKey === undefined) {
       ctx.addIssue({ code: 'custom', message: 'maxDateFieldKey is required when maxDateOffsetDays is set', path: ['maxDateFieldKey'] });
+    }
+    if (value.minDateOffsetMonths !== undefined && value.minDateFieldKey === undefined) {
+      ctx.addIssue({ code: 'custom', message: 'minDateFieldKey is required when minDateOffsetMonths is set', path: ['minDateFieldKey'] });
+    }
+    if (value.maxDateOffsetMonths !== undefined && value.maxDateFieldKey === undefined) {
+      ctx.addIssue({ code: 'custom', message: 'maxDateFieldKey is required when maxDateOffsetMonths is set', path: ['maxDateFieldKey'] });
     }
     if (value.repeatMinItems !== undefined && value.repeatMaxItems !== undefined) {
       if (value.repeatMaxItems < value.repeatMinItems) {

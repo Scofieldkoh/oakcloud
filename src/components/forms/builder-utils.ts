@@ -65,8 +65,10 @@ export type ValidationConfig = {
   maxDate?: string;
   minDateFieldKey?: string;
   minDateOffsetDays?: number;
+  minDateOffsetMonths?: number;
   maxDateFieldKey?: string;
   maxDateOffsetDays?: number;
+  maxDateOffsetMonths?: number;
   startsWith?: string;
   containsText?: string;
   notContainsText?: string;
