@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { CalendarClock } from 'lucide-react';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import { FormInput } from '@/components/ui/form-input';
 import { SearchableSelect } from '@/components/ui/searchable-select';
 import { Toggle } from '@/components/ui/toggle';
@@ -27,6 +28,23 @@ function parseCron(cron: string): { frequency: Frequency; hour: string } {
   return { frequency: weekday === '*' ? 'daily' : 'weekly', hour: /^\d+$/.test(hour) ? hour : '2' };
 }
 
+/** The scheduler checks every 15 minutes, so a run this late never started. */
+const OVERDUE_AFTER_MS = 30 * 60 * 1000;
+
+function scheduleSummary(settings: BackupSettings | undefined): { text: string; overdue: boolean } {
+  if (!settings?.scheduleEnabled || !settings.nextRunAt) return { text: 'Off.', overdue: false };
+  const nextRunAt = new Date(settings.nextRunAt);
+  const due = format(nextRunAt, 'dd MMM yyyy HH:mm');
+  const lastRun = settings.lastRunAt ? ` Last run ${format(new Date(settings.lastRunAt), 'dd MMM yyyy HH:mm')}.` : '';
+  if (Date.now() - nextRunAt.getTime() > OVERDUE_AFTER_MS) {
+    return {
+      text: `The run due ${due} (Singapore time) has not started, so scheduled backups are not running on this install. In .env, SCHEDULER_ENABLED must be "true" and SCHEDULER_BACKUP_ENABLED must not be "false"; restart the app after changing it.${lastRun}`,
+      overdue: true,
+    };
+  }
+  return { text: `Next run ${due} (Singapore time).${lastRun}`, overdue: false };
+}
+
 function buildCron(frequency: Frequency, hour: string): string {
   return frequency === 'weekly' ? `0 ${hour} * * 0` : `0 ${hour} * * *`;
 }
@@ -48,6 +66,7 @@ export function FullBackupScheduleCard({ settings }: { settings: BackupSettings 
     setMaxBackups(String(settings.maxBackups));
   }, [settings]);
 
+  const summary = scheduleSummary(settings);
   const keep = Number(maxBackups);
   const keepValid = Number.isInteger(keep) && keep >= 1 && keep <= 100;
   const dirty = settings
@@ -76,10 +95,8 @@ export function FullBackupScheduleCard({ settings }: { settings: BackupSettings 
         <CalendarClock className="w-5 h-5 text-text-secondary mt-0.5" />
         <div>
           <div className="text-sm font-medium text-text-primary">Scheduled full backups</div>
-          <div className="text-xs text-text-secondary mt-0.5">
-            {settings?.scheduleEnabled && settings.nextRunAt
-              ? `Next run ${format(new Date(settings.nextRunAt), 'dd MMM yyyy HH:mm')} (Singapore time).`
-              : 'Off.'}
+          <div className={cn('text-xs mt-0.5', summary.overdue ? 'text-status-error' : 'text-text-secondary')}>
+            {summary.text}
             {settings?.lastError ? ` Last run failed: ${settings.lastError}` : ''}
           </div>
         </div>
