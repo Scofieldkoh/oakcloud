@@ -5,6 +5,10 @@
 
 import { Prisma, type FormSubmission } from '@/generated/prisma';
 import { createAuditLog } from '@/lib/audit';
+import { ValidationError } from '@/lib/errors';
+import { parseFormTemplateBinding } from '@/lib/form-templates';
+import { SG_ANNUAL_RETURN_DECLARATION_TEMPLATE_KEY } from '@/lib/form-templates/sg-annual-return-declaration';
+import { INDIVIDUAL_KYC_FORM_SLUG, isCeoKycRequired, readCeoKycReview } from '@/lib/forms/ceo-kyc-review';
 import {
   RESPONSE_COLUMN_STATUS_ID,
   RESPONSE_COLUMN_SUBMITTED_ID,
@@ -503,6 +507,7 @@ export async function updateFormResponseReviewStatus(
       form: {
         select: {
           title: true,
+          settings: true,
         },
       },
     },
@@ -510,6 +515,29 @@ export async function updateFormResponseReviewStatus(
 
   if (!submission) {
     throw new Error('Submission not found');
+  }
+
+  const templateBinding = parseFormTemplateBinding(submission.form.settings);
+  if (reviewStatus === 'reviewed'
+    && templateBinding?.key === SG_ANNUAL_RETURN_DECLARATION_TEMPLATE_KEY
+    && templateBinding.version >= 4
+    && isCeoKycRequired(toAnswerRecord(submission.answers))) {
+    const linked = readCeoKycReview(submission.metadata);
+    if (!linked || linked.status !== 'REVIEWED') {
+      throw new ValidationError('Review and link the completed new-CEO KYC/CDD response before marking this Annual Return reviewed');
+    }
+    const stillCompleted = await prisma.formSubmission.findFirst({
+      where: {
+        id: linked.linkedSubmissionId, tenantId: params.tenantId,
+        deletedAt: null, status: 'COMPLETED',
+        formId: linked.linkedFormId,
+        form: { slug: INDIVIDUAL_KYC_FORM_SLUG, deletedAt: null },
+      },
+      select: { id: true },
+    });
+    if (!stillCompleted) {
+      throw new ValidationError('The linked CEO KYC/CDD response is no longer available or completed');
+    }
   }
 
   const previousReviewStatus = parseFormResponseReviewStatus(submission.metadata);

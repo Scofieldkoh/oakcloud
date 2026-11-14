@@ -44,6 +44,7 @@ export const shortInputTypeSchema = z.enum([
   'number',
   'date',
   'time_timezone',
+  'shareholding_list',
   'info_text',
   'info_image',
   'info_url',
@@ -117,6 +118,13 @@ export const fieldValidationSchema = z
     repeatMaxItems: z.number().int().min(1).max(50).optional(),
     repeatAddLabel: z.string().min(1).max(80).optional(),
     repeatItemLabel: z.string().min(1).max(80).optional(),
+    allowCustomOption: z.boolean().optional(),
+    repeatCompactCards: z.boolean().optional(),
+    repeatSummaryFieldKeys: z.array(z.string().min(1).max(FORM_FIELD_KEY_MAX_LENGTH)).max(8).optional(),
+    optionsFromRepeatFieldKey: z.string().min(1).max(FORM_FIELD_KEY_MAX_LENGTH).optional(),
+    optionsFromRepeatFieldIdKey: z.string().min(1).max(FORM_FIELD_KEY_MAX_LENGTH).optional(),
+    optionsFromRepeatKindKey: z.string().min(1).max(FORM_FIELD_KEY_MAX_LENGTH).optional(),
+    optionsFromRepeatRoleKeys: z.array(z.string().min(1).max(FORM_FIELD_KEY_MAX_LENGTH)).max(3).optional(),
     repeatTotalFieldKey: z.string().min(1).max(FORM_FIELD_KEY_MAX_LENGTH).optional(),
     repeatTotalLabel: z.string().min(1).max(80).optional(),
     repeatTotalSuffix: z.string().max(10).optional(),
@@ -304,6 +312,7 @@ export const saveFormFieldsSchema = z.object({
 
 export const duplicateFormSchema = z.object({
   title: z.string().min(1).max(120).optional(),
+  asRevision: z.boolean().optional(),
 });
 
 export const listFormsQuerySchema = z.object({

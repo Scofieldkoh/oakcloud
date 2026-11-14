@@ -19,8 +19,10 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const body = await request.json().catch(() => ({}));
     const tenantId = resolveWorkspaceId(session, body?.tenantId);
     const payload = duplicateFormSchema.parse(body ?? {});
-
-    const form = await duplicateForm(id, { tenantId, userId: session.id }, payload.title);
+    if (payload.asRevision) {
+      await requirePermission(session, 'document', 'update');
+    }
+    const form = await duplicateForm(id, { tenantId, userId: session.id }, payload.title, payload.asRevision === true);
 
     return NextResponse.json(form, { status: 201 });
   } catch (error) {

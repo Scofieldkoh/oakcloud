@@ -1,5 +1,6 @@
 /** Generic form prefill comparison. Repeat rows are matched by stable record IDs, not position. */
 import { AR_RECORD_SECTIONS } from '@/lib/forms/annual-return-prefill';
+import { formatPersonShareholdings } from '@/lib/forms/person-shareholdings';
 
 export const OAK_PREFILL_METADATA_KEY = '__oak_prefill';
 
@@ -40,6 +41,8 @@ export const valuesDifferFromPrefill = (original: unknown, current: unknown): bo
   normalized(original) !== normalized(current);
 
 const text = (value: unknown) => value === undefined || value === null ? '' : String(value);
+const changedText = (key: string, value: unknown) =>
+  key === 'person_shareholding' ? formatPersonShareholdings(value) || '' : text(value);
 const asArray = (value: unknown): unknown[] => Array.isArray(value) ? value : [];
 const asObject = (value: unknown): Record<string, unknown> | null =>
   value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : null;
@@ -72,6 +75,29 @@ export function protectPrefillAnswers(
     }
     // If the client removed every row, leave the array empty; never restore removed records implicitly.
     protectedAnswers[section.id] = ids;
+  }
+  if (Object.prototype.hasOwnProperty.call(baseline, 'person_record_id')) {
+    const roles = [1, 2, 3].flatMap((number) => {
+      const rows = asArray(protectedAnswers[`person_role_${number}`]);
+      return rows.map((role, index) => ({ role, index }));
+    });
+    const kinds = asArray(protectedAnswers.person_kind);
+    protectedAnswers.ceo_role_listed = roles.some(({ role, index }) =>
+      role === 'CEO' && kinds[index] !== 'Corporate') ? 'Yes' : 'No';
+    const selected = text(protectedAnswers.ceo_existing_person);
+    if (['Existing listed person', 'Existing listed officer'].includes(text(protectedAnswers.ceo_source)) && selected) {
+      const ids = asArray(protectedAnswers.person_record_id).map(text);
+      const matchedIndex = ids.indexOf(selected);
+      const newRowIndex = /^new-person:(\\d+)$/.exec(selected);
+      const rowIndex = matchedIndex >= 0 ? matchedIndex : newRowIndex ? Number(newRowIndex[1]) : -1;
+      const isExistingOfficer = [1, 2, 3].some((number) =>
+        text(asArray(protectedAnswers[`person_role_${number}`])[rowIndex]).trim().length > 0);
+      if (rowIndex < 0 || rowIndex >= ids.length ||
+        (newRowIndex && ids[rowIndex] !== '') || kinds[rowIndex] === 'Corporate' ||
+        !text(asArray(protectedAnswers.person_name)[rowIndex]).trim() || !isExistingOfficer) {
+        throw new Error('Invalid existing CEO selection');
+      }
+    }
   }
   return protectedAnswers;
 }
@@ -127,7 +153,7 @@ export function getPrefillChanges(
         const previous = asArray(baseline[key])[oldIndex];
         const current = asArray(answers[key])[row];
         if (valuesDifferFromPrefill(previous, current)) {
-          result.fields.push({ key, section: section.section, recordId: id, previous: text(previous), current: text(current) });
+          result.fields.push({ key, section: section.section, recordId: id, previous: changedText(key, previous), current: changedText(key, current) });
         }
       }
     }

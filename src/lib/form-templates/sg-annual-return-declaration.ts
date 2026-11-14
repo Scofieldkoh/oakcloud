@@ -1,8 +1,8 @@
-/** Singapore Annual Return Declaration guided form, version 1. */
+/** Singapore Annual Return Declaration guided form, version 3: compact person-centred declaration. */
 import type { FieldConditionInput, FormFieldInput } from '@/lib/validations/form-builder';
 
 export const SG_ANNUAL_RETURN_DECLARATION_TEMPLATE_KEY = 'sg_annual_return_declaration';
-export const SG_ANNUAL_RETURN_DECLARATION_TEMPLATE_VERSION = 2;
+export const SG_ANNUAL_RETURN_DECLARATION_TEMPLATE_VERSION = 4;
 export const SG_ANNUAL_RETURN_DECLARATION_TITLE = 'Annual Return Declaration';
 
 export const ANNUAL_RETURN_KEYS = {
@@ -27,6 +27,7 @@ export const ANNUAL_RETURN_KEYS = {
   agmAgenda: 'agm_agenda',
   resolutionMatters: 'resolution_matters',
   ceoExists: 'ceo_exists',
+  ceoRoleListed: 'ceo_role_listed',
   particularsAccurate: 'particulars_accurate',
 } as const;
 
@@ -63,6 +64,7 @@ const text = (key: string, label: string, extra: Partial<Draft> = {}): Draft => 
 const date = (key: string, label: string, extra: Partial<Draft> = {}): Draft => ({
   type: 'SHORT_TEXT', inputType: 'date', key, label, isRequired: true, ...extra,
 });
+const pageBreak = (key: string, label: string, condition?: FieldConditionInput): Draft => ({ type: 'PAGE_BREAK', key, label, condition });
 const heading = (key: string, label: string, condition?: FieldConditionInput): Draft => ({
   type: 'PARAGRAPH', inputType: 'info_heading_2', key, label, condition,
 });
@@ -82,7 +84,14 @@ const matters = [
   { value: 'Other matters', label: 'Other matters', allowTextInput: true, textInputLabel: 'Describe other matters' },
 ];
 
-function drafts(): Draft[] {
+const POSITION_OPTIONS = [
+  'Director', 'Managing Director', 'Alternate Director', 'Nominee Director', 'Secretary',
+  'CEO', 'CFO', 'Auditor', 'Liquidator', 'Receiver', 'Judicial Manager',
+];
+
+export interface AnnualReturnBuildOptions { ssicPresetId?: string; nationalityPresetId?: string; currencyPresetId?: string; }
+
+function drafts(input: AnnualReturnBuildOptions): Draft[] {
   const privateType = any(eq(K.companyType, ARD_COMPANY_TYPES.exemptPrivate), eq(K.companyType, ARD_COMPANY_TYPES.private));
   const exemptPrivate = eq(K.companyType, ARD_COMPANY_TYPES.exemptPrivate);
   const dormant = eq(K.companyStatus, 'Dormant');
@@ -123,59 +132,149 @@ function drafts(): Draft[] {
       validation: { faqDefaultState: 'collapsed', faqSearchEnabled: false },
     },
     heading('part_company', 'Part 1: Company information'),
-    text(K.companyName, 'Company Name'),
+    text(K.companyName, 'Company Name', { layoutWidth: 66 }),
     text(K.companyUen, 'UEN', { layoutWidth: 33, validation: { maxLength: 30 } }),
     { type: 'DROPDOWN', key: K.companyType, label: 'Company Type', isRequired: true,
-      options: options(Object.values(ARD_COMPANY_TYPES)),
+      layoutWidth: 66, options: options(Object.values(ARD_COMPANY_TYPES)),
       helpText: 'A company limited by guarantee is a public company. Choose the company type registered with ACRA.' },
-    date(K.financialYearEnd, 'Financial year-end', { validation: { maxDate: 'today' } }),
-    { type: 'SINGLE_CHOICE', key: K.companyStatus, label: 'Company Status', isRequired: true,
-      options: options(['Active', 'Dormant']),
+    date(K.financialYearEnd, 'Financial year-end', { layoutWidth: 33, validation: { maxDate: 'today' } }),
+    { type: 'DROPDOWN', key: K.companyStatus, label: 'Company Status', isRequired: true,
+      layoutWidth: 50, options: options(['Active', 'Dormant']),
       helpText: 'A company is dormant when no accounting transactions occur, disregarding the initial subscribers shares, appointment of a secretary or auditor, maintaining the office or registers, and statutory fees and penalties.' },
-    { type: 'SINGLE_CHOICE', key: K.companySolvency, label: 'Company Solvency', isRequired: true,
-      options: options(['Solvent', 'Insolvent']), condition: exemptPrivate,
+    { type: 'DROPDOWN', key: K.companySolvency, label: 'Company Solvency', isRequired: true,
+      layoutWidth: 50, options: options(['Solvent', 'Insolvent']), condition: exemptPrivate,
       helpText: 'Solvent means the company can pay its debts as they fall due.' },
     yesNo(K.dormantCheck1, 'Has the company been dormant since formation or the end of the previous financial year?', { condition: dormant }),
     yesNo(K.dormantCheck2, 'Is the company neither listed nor a subsidiary of a listed company, and were its total assets (consolidated if applicable) not more than S$500,000 at any time in the financial year?', { condition: dormant }),
     tick('dormant_confirm', 'The company has been dormant since its formation or the end of the previous financial year, has received no notice requiring financial statements or an audit, and has kept its accounting records.', exemptDormant),
 
-    heading('part_records', 'Company records', prefilled),
-    text('record_as_at', 'Record snapshot', { isReadOnly: true, isRequired: false, condition: prefilled }),
-    text('record_entity_status', 'Entity status', { condition: prefilled }),
-    text('record_primary_activity', 'Primary business activity', { condition: prefilled }),
-    text('record_secondary_activity', 'Secondary business activity', { isRequired: false, condition: prefilled }),
-    { type: 'LONG_TEXT', key: 'record_registered_office', label: 'Registered office address', condition: prefilled, isRequired: true },
-    { type: 'PAGE_BREAK', inputType: 'repeat_start', key: 'officers_section', label: 'Position holders',
-      condition: prefilled, validation: { repeatMinItems: 1, repeatMaxItems: 50, repeatItemLabel: 'Position holder', repeatAddLabel: 'Add position holder' } },
-    { type: 'HIDDEN', key: 'officer_record_id', label: 'Position record ID', condition: prefilled },
-    { type: 'DROPDOWN', key: 'officer_role', label: 'Position', condition: prefilled, isRequired: true,
-      options: options(['Director', 'Managing Director', 'Alternate Director', 'Nominee Director', 'Secretary', 'CEO', 'CFO', 'Auditor', 'Liquidator', 'Receiver', 'Judicial Manager']) },
-    text('officer_name', 'Name', { condition: prefilled }),
-    text('officer_id_number', 'Identification number', { condition: prefilled, isRequired: false }),
-    text('officer_nationality', 'Nationality', { condition: prefilled, isRequired: false }),
-    { type: 'LONG_TEXT', key: 'officer_address', label: 'Address', condition: prefilled },
-    date('officer_appointment_date', 'Date of appointment', { condition: prefilled, isRequired: false }),
-    { type: 'PAGE_BREAK', inputType: 'repeat_end', key: 'officers_end', label: 'End position holders', condition: prefilled },
-    { type: 'PAGE_BREAK', inputType: 'repeat_start', key: 'share_capital_section', label: 'Share capital',
-      condition: prefilledShares, validation: { repeatMinItems: 1, repeatMaxItems: 50, repeatItemLabel: 'Share capital', repeatAddLabel: 'Add share capital' } },
-    { type: 'HIDDEN', key: 'capital_record_id', label: 'Capital record ID', condition: prefilledShares },
-    text('capital_class', 'Share class', { condition: prefilledShares }),
-    text('capital_currency', 'Currency', { condition: prefilledShares, layoutWidth: 33 }),
-    { type: 'SHORT_TEXT', inputType: 'number', key: 'capital_shares', label: 'Number of shares', condition: prefilledShares, isRequired: true, validation: { min: 0 } },
-    { type: 'SHORT_TEXT', inputType: 'number', key: 'capital_amount', label: 'Issued amount', condition: prefilledShares, isRequired: true, validation: { min: 0 } },
-    { type: 'SHORT_TEXT', inputType: 'number', key: 'capital_paid_up', label: 'Paid-up amount', condition: prefilledShares, isRequired: true, validation: { min: 0 }, helpText: 'Confirm the actual amount paid up for each share class, especially if the shares are partly paid.' },
-    { type: 'PAGE_BREAK', inputType: 'repeat_end', key: 'capital_end', label: 'End share capital', condition: prefilledShares },
-    { type: 'PAGE_BREAK', inputType: 'repeat_start', key: 'shareholders_section', label: 'Shareholders',
-      condition: prefilledShares, validation: { repeatMinItems: 1, repeatMaxItems: 50, repeatItemLabel: 'Shareholder', repeatAddLabel: 'Add shareholder' } },
-    { type: 'HIDDEN', key: 'shareholder_record_id', label: 'Shareholder record ID', condition: prefilledShares },
-    text('shareholder_name', 'Name', { condition: prefilledShares }),
-    text('shareholder_id_number', 'Identification number', { condition: prefilledShares, isRequired: false }),
-    { type: 'LONG_TEXT', key: 'shareholder_address', label: 'Address', condition: prefilledShares },
-    text('shareholder_class', 'Share class', { condition: prefilledShares }),
-    { type: 'SHORT_TEXT', inputType: 'number', key: 'shareholder_shares', label: 'Number of shares', condition: prefilledShares, isRequired: true, validation: { min: 0 } },
-    { type: 'PAGE_BREAK', inputType: 'repeat_end', key: 'shareholders_end', label: 'End shareholders', condition: prefilledShares },
+    yesNo(K.particularsAccurate, "Are ACRA's records of directors, CEO, secretary, auditor, shareholders and registered office accurate?", {
+      condition: notPrefilled,
+      helpText: 'Check against the latest business profile.' }),
+    { type: 'LONG_TEXT', key: 'particulars_changes', label: 'What needs updating?', isRequired: true,
+      condition: all(notPrefilled, eq(K.particularsAccurate, NO)), layoutWidth: 100, validation: { maxLength: 4000 } },
+    { type: 'SHORT_TEXT', inputType: 'number', key: 'guarantee_member_count', label: 'Number of guarantee members',
+      isRequired: true, layoutWidth: 33,
+      condition: eq(K.companyType, ARD_COMPANY_TYPES.publicGuarantee), validation: { min: 0 } },
 
-    heading('part_financial_statements', 'Part 2: Financial statements'),
+    // The last fields on page 1 form the company particulars section.
+    heading('part_records_identity', 'Registered particulars', prefilled),
+    { type: 'HIDDEN', key: K.ceoRoleListed, label: 'CEO included in listed positions', condition: prefilled },
+    { type: 'DROPDOWN', key: 'record_entity_status', label: 'ACRA entity status',
+      condition: prefilled, isRequired: true, layoutWidth: 33, options: options([
+        'Live', 'Struck Off', 'Winding Up', 'Dissolved', 'In Liquidation',
+        'In Receivership', 'Amalgamated', 'Converted', 'Other',
+      ]) },
+    { type: 'DROPDOWN', key: 'record_primary_activity', label: 'Primary SSIC 2025 activity',
+      isRequired: true, condition: prefilled, optionPresetId: input.ssicPresetId,
+      placeholder: 'Search SSIC activity or 5-digit code', layoutWidth: 50 },
+    { type: 'DROPDOWN', key: 'record_secondary_activity', label: 'Secondary SSIC 2025 activity',
+      condition: prefilled, optionPresetId: input.ssicPresetId, isRequired: false,
+      placeholder: 'Optional: search SSIC activity or code', layoutWidth: 50 },
+    text('record_auditor', 'Auditor / audit firm', { condition: prefilled, isRequired: false, layoutWidth: 66 }),
+    { type: 'LONG_TEXT', key: 'record_registered_office', label: 'Registered office address',
+      condition: prefilled, isRequired: true },
+
+    // Page 2 — an at-a-glance share capital grid, followed by one row per person
+    // or corporate shareholder. Each row can be expanded for full particulars.
+    pageBreak('page_company_records', 'Share capital and people', prefilled),
+    heading('part_records', 'Share capital and people', prefilled),
+    text('record_as_at', 'Record snapshot', { isReadOnly: true, isRequired: false, condition: prefilled }),
+    heading('part_capital', 'Share capital', prefilledShares),
+    { type: 'PAGE_BREAK', inputType: 'repeat_start', key: 'share_capital_section', label: 'Share capital',
+      condition: prefilledShares,
+      validation: { repeatMinItems: 1, repeatMaxItems: 50, repeatItemLabel: 'Share class',
+        repeatAddLabel: 'Add share class', repeatCompactCards: true,
+        repeatSummaryFieldKeys: ['capital_class', 'capital_shares', 'capital_currency', 'capital_amount', 'capital_paid_up'] } },
+    { type: 'HIDDEN', key: 'capital_record_id', label: 'Capital record ID', condition: prefilledShares },
+    { type: 'DROPDOWN', key: 'capital_class', label: 'Share class',
+      condition: prefilledShares, isRequired: true, layoutWidth: 50,
+      options: options(['ORDINARY', 'PREFERENCE', 'REDEEMABLE PREFERENCE', 'NON-VOTING']),
+      validation: { allowCustomOption: true },
+      helpText: 'Choose a common share class or enter the class shown in the company register.' },
+    { type: 'SHORT_TEXT', inputType: 'number', key: 'capital_shares', label: 'Number of shares',
+      condition: prefilledShares, isRequired: true, layoutWidth: 50, validation: { min: 0 } },
+    { type: 'DROPDOWN', key: 'capital_currency', label: 'Currency',
+      condition: prefilledShares, isRequired: true, optionPresetId: input.currencyPresetId,
+      layoutWidth: 33, placeholder: 'Select ISO currency' },
+    { type: 'SHORT_TEXT', inputType: 'number', key: 'capital_amount', label: 'Issued amount',
+      condition: prefilledShares, isRequired: true, layoutWidth: 33, validation: { min: 0 } },
+    { type: 'SHORT_TEXT', inputType: 'number', key: 'capital_paid_up', label: 'Paid-up amount',
+      condition: prefilledShares, isRequired: true, layoutWidth: 33, validation: { min: 0 },
+      helpText: 'Confirm the actual paid-up amount, especially for partly-paid shares.' },
+    { type: 'PAGE_BREAK', inputType: 'repeat_end', key: 'capital_end', label: 'End share capital', condition: prefilledShares },
+
+    heading('part_people', 'People and shareholders', prefilled),
+    info('people_help', 'Edit people',
+      'Each person appears once, even if they have several positions or share classes. Expand a row to edit their particulars, up to three positions and dates, and structured shareholdings by class and quantity. Add missing people separately.', prefilled),
+    { type: 'PAGE_BREAK', inputType: 'repeat_start', key: 'people_section', label: 'People and shareholders',
+      condition: prefilled, validation: { repeatMinItems: 1, repeatMaxItems: 50, repeatItemLabel: 'Person',
+        repeatAddLabel: 'Add person / shareholder', repeatCompactCards: true,
+        repeatSummaryFieldKeys: ['person_role_1', 'person_role_2', 'person_role_3', 'person_shareholding'] } },
+    { type: 'HIDDEN', key: 'person_record_id', label: 'Person source ID', condition: prefilled },
+    { type: 'DROPDOWN', key: 'person_kind', label: 'Person / organisation',
+      condition: prefilled, isRequired: true, layoutWidth: 33, options: options(['Individual', 'Corporate']) },
+    text('person_name', 'Name', { condition: prefilled, layoutWidth: 66 }),
+    text('person_id_number', 'Identification / registration no.', { condition: prefilled, isRequired: false, layoutWidth: 50 }),
+    { type: 'DROPDOWN', key: 'person_nationality', label: 'Nationality',
+      condition: all(prefilled, eq('person_kind', 'Individual')), isRequired: false,
+      layoutWidth: 50, optionPresetId: input.nationalityPresetId,
+      placeholder: 'Select nationality', validation: { allowCustomOption: true } },
+    { type: 'LONG_TEXT', key: 'person_address', label: 'Residential / registered address',
+      condition: prefilled, isRequired: false, layoutWidth: 100 },
+    { type: 'PARAGRAPH', inputType: 'info_heading_3', key: 'person_positions_heading',
+      label: 'Positions (up to 3)', condition: all(prefilled, eq('person_kind', 'Individual')) },
+    { type: 'DROPDOWN', key: 'person_role_1', label: 'Position 1', condition: all(prefilled, eq('person_kind', 'Individual')),
+      isRequired: false, layoutWidth: 33, options: options(POSITION_OPTIONS) },
+    { type: 'DROPDOWN', key: 'person_role_2', label: 'Position 2', condition: all(prefilled, eq('person_kind', 'Individual')),
+      isRequired: false, layoutWidth: 33, options: options(POSITION_OPTIONS) },
+    { type: 'DROPDOWN', key: 'person_role_3', label: 'Position 3', condition: all(prefilled, eq('person_kind', 'Individual')),
+      isRequired: false, layoutWidth: 33, options: options(POSITION_OPTIONS) },
+    date('person_role_date_1', 'Appointment date 1', { condition: all(prefilled, eq('person_kind', 'Individual')),
+      isRequired: false, layoutWidth: 33 }),
+    date('person_role_date_2', 'Appointment date 2', { condition: all(prefilled, eq('person_kind', 'Individual')),
+      isRequired: false, layoutWidth: 33 }),
+    date('person_role_date_3', 'Appointment date 3', { condition: all(prefilled, eq('person_kind', 'Individual')),
+      isRequired: false, layoutWidth: 33 }),
+    { type: 'LONG_TEXT', key: 'person_additional_positions', label: 'Additional positions (beyond first 3)',
+      condition: all(prefilled, eq('person_kind', 'Individual')), isRequired: false, layoutWidth: 100,
+      helpText: 'If the individual holds more than three positions, list remaining appointments and dates here.' },
+    { type: 'SHORT_TEXT', inputType: 'shareholding_list', key: 'person_shareholding',
+      label: 'Shareholdings by class', condition: prefilledShares, layoutWidth: 100,
+      isRequired: false, options: options(['ORDINARY', 'PREFERENCE', 'REDEEMABLE PREFERENCE', 'NON-VOTING']),
+      validation: { allowCustomOption: true },
+      helpText: 'Add a row for each class this person holds, with its whole-number quantity. Leave empty for a non-shareholder.' },
+    { type: 'PAGE_BREAK', inputType: 'repeat_end', key: 'people_end', label: 'End people', condition: prefilled },
+
+    heading('part_ceo', 'Chief executive officer', prefilled),
+    info('ceo_already_recorded', 'CEO already listed',
+      'A person with a CEO role is included above. Review the appointment and make any corrections in that individual\'s positions.',
+      all(prefilled, eq(K.ceoRoleListed, YES))),
+    yesNo(K.ceoExists, 'Does someone act as CEO, even if that is not their job title?', {
+      condition: any(notPrefilled, all(prefilled, eq(K.ceoRoleListed, NO))),
+      helpText: 'If someone is acting as CEO, select an existing officer or complete the separate individual KYC/CDD form for a new person.' }),
+    info('ceo_manual_kyccdd', 'New CEO information',
+      'If the CEO is not already an officer in the company record, complete the <a target="_blank" rel="noopener noreferrer" href="https://service.oakcloud.app/forms/f/kyccdd-individual">individual KYC/CDD form</a>. Do not re-enter those particulars here.',
+      all(notPrefilled, eq(K.ceoExists, YES))),
+
+    { type: 'DROPDOWN', key: 'ceo_source', label: 'Who performs the CEO role?', isRequired: true, layoutWidth: 50,
+      condition: all(prefilled, eq(K.ceoRoleListed, NO), eq(K.ceoExists, YES)),
+      options: options(['Existing listed officer', 'New individual']) },
+    { type: 'DROPDOWN', key: 'ceo_existing_person', label: 'Select existing officer', isRequired: true, layoutWidth: 50,
+      condition: all(prefilled, eq(K.ceoRoleListed, NO), eq(K.ceoExists, YES), eq('ceo_source', 'Existing listed officer')),
+      placeholder: 'Choose from existing officers',
+      validation: { optionsFromRepeatFieldKey: 'person_name', optionsFromRepeatFieldIdKey: 'person_record_id',
+        optionsFromRepeatKindKey: 'person_kind', optionsFromRepeatRoleKeys: ['person_role_1', 'person_role_2', 'person_role_3'] } },
+    info('ceo_new_kyccdd', 'New CEO – complete individual KYC/CDD',
+      'For a new CEO, complete the <a target="_blank" rel="noopener noreferrer" href="https://service.oakcloud.app/forms/f/kyccdd-individual">individual KYC/CDD form</a>. There is no need to enter their identity, address or appointment particulars again in this declaration. We will follow up to update ACRA.',
+      all(prefilled, eq(K.ceoRoleListed, NO), eq(K.ceoExists, YES), eq('ceo_source', 'New individual'))),
+    tick('ceo_kyccdd_ack', 'I will provide the separate individual KYC/CDD form for the new CEO before the filing is completed.',
+      all(prefilled, eq(K.ceoRoleListed, NO), eq(K.ceoExists, YES), eq('ceo_source', 'New individual'))),
+
+
+
+    pageBreak('page_financial_statements', 'Financial statements'),
+    heading('part_financial_statements', 'Part 3: Financial statements'),
     info('fs_not_required_msg', 'Financial statements exemption', 'The company is exempt from preparing financial statements.', exemptDormant),
     info('fs_prepare_only_msg', 'Preparation without filing', 'The company must prepare financial statements and send them to its members. As a solvent exempt private company it need not file them with ACRA.', noFiling),
     info('label_fs_ds', 'Financial statements filing', 'The company must prepare financial statements, send them to its members and file them with ACRA.', filing),
@@ -183,26 +282,27 @@ function drafts(): Draft[] {
     { type: 'FILE_UPLOAD', key: 'attachment_fs_ds', label: "Financial statements and directors' statement",
       isRequired: true, condition: ready,
       validation: { maxFileSizeMb: 50, allowMultipleFiles: true, allowedMimeTypes: ['application/pdf', 'image/jpeg', 'image/png'] } },
-    date(K.fsDate, "Date of the directors' statement", { condition: ready,
+    date(K.fsDate, "Date of the directors' statement", { condition: ready, layoutWidth: 33,
       subtext: 'The date the directors signed the statement that accompanies the financial statements.',
       validation: { minDateFieldKey: K.financialYearEnd, minDateOffsetDays: 0, maxDate: 'today' } }),
     date('date_fs_ds', 'Estimated date of completion', {
-      condition: all(prepare, eq(K.fsReady, NO)), validation: { minDate: 'today' },
+      condition: all(prepare, eq(K.fsReady, NO)), layoutWidth: 33, validation: { minDate: 'today' },
     }),
-    { type: 'SINGLE_CHOICE', key: K.fsAuditStatus, label: 'Are the financial statements audited?',
-      isRequired: true, condition: prepare, options: [
+    { type: 'DROPDOWN', key: K.fsAuditStatus, label: 'Are the financial statements audited?',
+      isRequired: true, condition: prepare, layoutWidth: 66, options: [
         { label: 'Audited', value: 'Audited' },
         { label: 'Not audited (small company exemption)', value: 'Not audited (small company exemption)', condition: privateType },
         { label: 'Not audited (dormant company exemption)', value: 'Not audited (dormant company exemption)', condition: dormant },
       ] },
 
-    heading('part_agm', 'Part 3: AGM matters'),
-    { type: 'SINGLE_CHOICE', key: K.fsExemption,
+    pageBreak('page_agm', 'AGM matters'),
+    heading('part_agm', 'Part 4: AGM matters'),
+    { type: 'DROPDOWN', key: K.fsExemption,
       label: 'Have the financial statements been sent to all members within five months after the financial year-end?',
-      isRequired: true, condition: all(privateType, prepare),
+      isRequired: true, layoutWidth: 100, condition: all(privateType, prepare),
       options: options([YES, PENDING_CIRCULATION, NO]) },
     date(K.fsCirculation, 'Date the financial statements were sent',
-      { condition: all(privateType, prepare, circulationYes),
+      { condition: all(privateType, prepare, circulationYes), layoutWidth: 33,
         validation: { minDateFieldKey: K.fsDate, minDateOffsetDays: 0,
           maxDateFieldKey: K.financialYearEnd, maxDateOffsetMonths: 5, maxDate: 'today' } }),
     yesNo(K.agmMemberRequest, 'Has any member or the auditor asked for an AGM?', { condition: route }),
@@ -218,55 +318,40 @@ function drafts(): Draft[] {
     info('label_agm_msg', 'AGM required', 'The company is required to hold an AGM.', requiredAgm),
     yesNo('short_notice_consent', 'Have all members entitled to attend and vote agreed to shorter notice?', { condition: agmHeld }),
     date('agm_notice_date', 'Date of AGM notice', {
-      condition: agmHeld, validation: { maxDateFieldKey: K.agmDate, maxDateOffsetDays: -14 } }),
+      condition: agmHeld, layoutWidth: 33, validation: { maxDateFieldKey: K.agmDate, maxDateOffsetDays: -14 } }),
     date(K.agmDate, 'Proposed AGM date', {
-      condition: agmHeld, validation: { minDate: 'today' },
+      condition: agmHeld, layoutWidth: 33, validation: { minDate: 'today' },
       helpText: 'For companies that are not listed, the AGM is normally due within six months after financial year-end. Contact us if it is late.' }),
-    text('agm_time', 'Proposed AGM time', { condition: agmHeld, layoutWidth: 50 }),
-    text('proposed_agm_venue', 'Proposed AGM venue', { condition: agmHeld }),
+    { type: 'SHORT_TEXT', inputType: 'time_timezone', key: 'agm_time', label: 'Proposed AGM time', condition: agmHeld, isRequired: true, layoutWidth: 50, validation: { timezoneDefault: 'Asia/Singapore' } },
+    text('proposed_agm_venue', 'Proposed AGM venue', { condition: agmHeld, layoutWidth: 50 }),
     { type: 'MULTIPLE_CHOICE', key: K.agmAgenda, label: 'Matters to be included in AGM agenda',
       condition: agmHeld, options: [{ value: 'Receive and adopt the Financial Statement', label: 'Receive and adopt the Financial Statement' }, ...matters] },
     { type: 'MULTIPLE_CHOICE', key: K.resolutionMatters, label: 'Matters to be approved by written resolution',
       condition: noAgm, options: matters },
 
-    heading('part_director_statement', "Part 4: Directors' statement", prepare),
+    pageBreak('page_director_statement', "Directors' statement", prepare),
+    heading('part_director_statement', "Part 5: Directors' statement", prepare),
     info('director_statement', "Directors' statement",
       'The directors statement accompanying the financial statements is signed by two directors, or by the sole director where there is only one.', prepare),
     yesNo('director_statement_consent', "Have the shareholders agreed to omit directors' interests from the directors' statement?", { condition: prepare }),
     info('director_statement_consent_msg', 'Directors interests disclosure', 'Please provide the shareholders consent and supporting records for the directors interests disclosure.', all(prepare, eq('director_statement_consent', YES))),
     info('director_statement_consent_block', 'Directors interests disclosure pending', 'Please contact us if the company requires assistance with directors interests disclosure.', all(prepare, eq('director_statement_consent', NO))),
 
-    heading('part_particulars', 'Part 5: CEO and company particulars'),
-    yesNo(K.ceoExists, 'Does any individual perform the role of chief executive officer of the company?', {
-      helpText: 'ACRA asks this in every annual return from 20 October 2026. It is about the role performed, not the job title.' }),
-    info('ceo_prefill_guidance', 'CEO record', 'If yes, make sure the CEO is listed under position holders above.', all(prefilled, eq(K.ceoExists, YES))),
-    { type: 'LONG_TEXT', key: 'ceo_details', label: 'Name of the CEO and date of appointment',
-      isRequired: true, condition: all(eq(K.ceoExists, YES), notPrefilled),
-      validation: { maxLength: 2000 } },
-    yesNo(K.particularsAccurate, "Are ACRA's records of the company's directors, CEO, secretary, auditor, shareholders and registered office accurate?", {
-      condition: notPrefilled,
-      helpText: 'ACRA requires this confirmation in every annual return from 20 October 2026. Check against the company business profile.' }),
-    { type: 'LONG_TEXT', key: 'particulars_changes', label: 'What needs to be updated?', isRequired: true,
-      condition: all(notPrefilled, eq(K.particularsAccurate, NO)),
-      validation: { maxLength: 4000 } },
-    { type: 'SHORT_TEXT', inputType: 'number', key: 'guarantee_member_count', label: 'Total number of members',
-      isRequired: true, condition: eq(K.companyType, ARD_COMPANY_TYPES.publicGuarantee),
-      validation: { min: 0 } },
-
+    pageBreak('page_declaration', 'Declaration'),
     heading('part_declaration', 'Declaration'),
     info('declaration_text', 'Declaration',
       'I confirm that the information supplied is accurate to the best of my knowledge and authorise the firm to prepare the annual return and related resolutions based on it.'),
     tick('record_confirm', 'The company records above, with my changes, are accurate and complete.', prefilled),
     { type: 'SIGNATURE', key: 'sign', label: 'Signature', isRequired: true },
-    text('sign_full_name', 'Full name of person signing'),
-    date('sign_date', 'Date of declaration', { validation: { maxDate: 'today', defaultToday: true } }),
+    text('sign_full_name', 'Full name of person signing', { layoutWidth: 66 }),
+    date('sign_date', 'Date of declaration', { layoutWidth: 33, validation: { maxDate: 'today', defaultToday: true } }),
     // Phase 2 can extend this template with a new version. The phase-1 hidden
     // prefill field is reserved so existing keys remain stable.
   ];
 }
 
-export function buildSgAnnualReturnDeclarationFields(): FormFieldInput[] {
-  return drafts().map((field, position) => ({
+export function buildSgAnnualReturnDeclarationFields(input: AnnualReturnBuildOptions = {}): FormFieldInput[] {
+  return drafts(input).map((field, position) => ({
     ...field, position, isRequired: field.isRequired ?? false,
     hideLabel: field.hideLabel ?? false, isReadOnly: field.isReadOnly ?? false,
     layoutWidth: field.layoutWidth ?? 100,

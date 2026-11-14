@@ -720,3 +720,94 @@ revision and warns when the stored snapshot is stale. Identification numbers
 and addresses are intentionally shown in full behind the private token; handle
 the link as sensitive. Existing published forms and their submissions are
 never modified by the seed.
+
+### Annual Return Declaration v3 (compact respondent experience)
+
+The guided Annual Return Declaration v3 remains an unpublished draft until staff
+review and publish it. The builder now uses one page for each company/filing
+topic: company identity, share capital and people (including CEO handling),
+financial statements, AGM, directors' statement, and final declaration.
+Company SSIC and nationality fields use the existing workspace presets;
+currency fields use the built-in searchable ISO 4217 currency preset.
+Common share classes use searchable dropdowns with custom entries enabled.
+Short dates, numbers, currency codes, identifiers and names use narrower grid
+widths; long addresses and multi-class shareholding remain full-width.
+
+The shared form engine supports compact repeat cards through
+`repeatCompactCards` and `repeatSummaryFieldKeys` (expanded for new rows,
+collapsed for prefilled rows). Share capital uses a 50/50 first line and
+33/33/33 second line. Company officer and shareholder source records are
+combined into a person-centric repeat section using verified contact IDs,
+identification numbers, or exact name-and-address identity matches, never name
+alone. The person has up to three structured positions and appointment dates,
+additional positions as optional text, and shareholding by class. Corporate
+shareholders never receive officer role inputs.
+
+If no listed individual has a CEO role, the respondent answers whether someone
+acts as CEO on the people page. A Yes response prompts selection of a unique
+existing officer or directs a new individual to the separate KYC/CDD form,
+without duplicating name, identification or appointment particulars. The
+respondent confirms the separate form will be provided. The private prefill baseline,
+unforgeable source IDs, change tracking and staff/PDF comparisons are retained.
+Server-side comparison recalculates the CEO-role marker from the person rows
+and validates existing-officer selection; no underlying company records are
+changed by respondent answers.
+
+Older published v2 forms and their responses stay intact. The company page
+prefers the highest published version for new prefilled drafts.
+
+### Form Builder quality-of-life changes and published revisions
+
+The shared SearchableSelect supports opt-in **custom dropdown values**. The
+field editor exposes the "Allow a custom option" switch and an opt-in
+"Suggest compact width" action, which recommends a grid fraction based on the
+field type and expected answer length. Neither setting silently changes other
+forms.
+
+For a published form, the Form Builder now offers **Create editable revision**.
+This POSTs to the existing `/api/forms/[id]/duplicate` route with
+`asRevision: true`, requiring document create and update permission. A revision
+is a separate editable DRAFT with a new form ID and slug; its original published
+form, URL and submissions are not changed. Guided-template revisions retain
+their template binding and version but clear the definition lock for draft
+editing. Publishing hashes and locks the new definition after persisting its
+fields. Manually edited revisions are excluded from automatic seed-draft
+selection, so reseeding cannot overwrite them. New revision links are distinct
+from older published links; company prefill chooses the latest published form
+among versions with the same template key.
+
+### Annual Return Declaration v4 – structured shareholdings and CEO KYC/CDD handoff
+
+Version 4 replaces the person card's free-text shareholding summary with
+`SHORT_TEXT` + `shareholding_list`, a nested list of class/quantity objects
+under the existing `person_shareholding` key. Each person can add or remove
+up to 20 share-class rows. A share class must be nonempty and unique for that
+person, and its share quantity must be a positive whole-number decimal string
+(up to 20 digits). Class suggestions include common share classes and the
+current declared capital classes. The form accepts custom class names when
+needed. Existing v2/v3 published forms retain their original field definitions
+and stored free-text answers; the staff response/PDF display still renders them.
+
+The company prefill now saves each person's holdings as a structured array.
+The one-person-per-record ID, role handling, row-level prefill change tracking,
+undo-removed-person behaviour, response summaries and PDFs continue to work.
+The public submission sanitizer strictly validates nested shareholding data;
+malformed values and duplicate share classes are rejected rather than
+silently truncated or converted to plain text.
+
+For an Annual Return submission identifying an unlisted **new CEO**, the staff
+response page shows a CEO KYC/CDD prerequisite. The respondent only promises
+to provide the separate individual KYC/CDD questionnaire. Staff paste the
+completed KYC/CDD submission UUID or internal response URL; the PATCH endpoint
+checks it is a **COMPLETED** response of the `kyccdd-individual` form in the
+**same tenant**, then marks it Received. After examining its contents, staff
+can mark it Reviewed or clear/replace the link. This records a server-owned
+`metadata.ceoKycReview` reference and an audit log, while never modifying
+the original answers, identity records, company registers, or ACRA filings.
+The server rejects forged public `ceoKycReview` metadata. Receipt is not
+identity verification; Reviewed denotes a staff action, not automatic CDD
+approval. Concurrent updates to the same response are protected by the
+`updatedAt` optimistic-concurrency check.
+
+Version 4 is seeded to an **unpublished draft** and published manually; the
+previous live URL/submissions remain intact. No schema migration is required.

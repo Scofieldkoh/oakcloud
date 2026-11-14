@@ -40,6 +40,8 @@ import {
   type PublicFormDefinition,
 } from '@/lib/form-utils';
 import { SearchableSelect } from '@/components/ui/searchable-select';
+import { PersonShareholdingsEditor } from '@/components/forms/person-shareholdings-editor';
+import { formatPersonShareholdings, personShareholdingError } from '@/lib/forms/person-shareholdings';
 import {
   DEFAULT_PHONE_COUNTRY_CODE,
   getPhoneCountryCodeOptions,
@@ -201,6 +203,25 @@ export default function PublicFormPage() {
   const [draftEmailError, setDraftEmailError] = useState<string | null>(null);
   const [draftEmailSent, setDraftEmailSent] = useState(false);
   const [repeatSectionCounts, setRepeatSectionCounts] = useState<Record<string, number>>({});
+  const [expandedRepeatCards, setExpandedRepeatCards] = useState<Record<string, boolean>>({});
+  // Keep the marker used by the CEO question in sync with the three role
+  // selectors. A respondent removing or adding a CEO immediately changes the path.
+  useEffect(() => {
+    if (answers.prefill_source !== 'company_record' || !Array.isArray(answers.person_name)) return;
+    const assigned = [1, 2, 3].some((number) => (
+      Array.isArray(answers[`person_role_${number}`])
+      && (answers[`person_role_${number}`] as unknown[]).some((role, index) =>
+        role === 'CEO' && (!Array.isArray(answers.person_kind) || answers.person_kind[index] !== 'Corporate'))
+    ));
+    const marker = assigned ? 'Yes' : 'No';
+    if (answers.ceo_role_listed !== marker) {
+      setAnswers((prev) => ({
+        ...prev,
+        ceo_role_listed: marker,
+        ...(marker === 'No' ? { ceo_exists: undefined, ceo_source: undefined, ceo_existing_person: undefined } : {}),
+      }));
+    }
+  }, [answers]);
   const prefillChanges = useMemo(
     () => prefillBaseline ? getPrefillChanges(prefillBaseline, answers) : null,
     [prefillBaseline, answers]
@@ -1064,6 +1085,9 @@ export default function PublicFormPage() {
 
     if (field.isRequired && !hasRequiredValue(field, value)) {
       return uiLabel('validation_required', { field: fieldLabel });
+    }
+    if (field.type === 'SHORT_TEXT' && field.inputType === 'shareholding_list') {
+      return personShareholdingError(value);
     }
 
     if (
@@ -1932,6 +1956,9 @@ export default function PublicFormPage() {
       const canAddRow = sectionConfig.maxItems === null || rowCount < sectionConfig.maxItems;
       const sectionHasVisibleLabels = sectionFields.some((sectionField) => sectionField.type !== 'HIDDEN' && !sectionField.hideLabel);
       const cardMode = sectionConfig.itemLabel !== null;
+      const compactCards = parseObject(field.validation)?.repeatCompactCards === true;
+      const compactSummaryKeys = parseObject(field.validation)?.repeatSummaryFieldKeys;
+      const summaryKeys = Array.isArray(compactSummaryKeys) ? compactSummaryKeys.filter((key): key is string => typeof key === 'string') : [];
       const addRowLabel = cardMode ? sectionConfig.addLabel : (localizedUiLabels.add_row || sectionConfig.addLabel);
       const removeRowLabel = localizedUiLabels.remove_row || 'Remove row';
       const sectionTotal = sectionConfig.total
@@ -1962,6 +1989,8 @@ export default function PublicFormPage() {
                   ? (answers[baselineSection.id] as unknown[])[rowIndex]
                   : null;
                 const canRemoveRow = rowCount > sectionConfig.minItems || (!!prefillBaseline && !!currentRecordId);
+                const expandedKey = `${sectionId}:${currentRecordId || `new-row-${rowIndex}`}`;
+                const expanded = expandedRepeatCards[expandedKey] ?? !currentRecordId;
                 const rowWasAdded = !!prefillBaseline && !!baselineSection
                   && !currentRecordId
                   && baselineSection.fields.some((key) =>
@@ -1991,6 +2020,14 @@ export default function PublicFormPage() {
                             return nameValue ? <span className="font-normal text-text-secondary"> · {nameValue}</span> : null;
                           })()}
                         </p>
+                        {compactCards && (
+                          <button type="button" aria-expanded={expanded} aria-label={`${expanded ? 'Collapse' : 'Expand'} ${sectionConfig.itemLabel} ${rowIndex + 1}`}
+                            onClick={() => setExpandedRepeatCards((prev) => ({ ...prev, [expandedKey]: !expanded }))}
+                            className="ml-auto inline-flex items-center gap-1 rounded-md border border-border-primary px-2 py-1 text-xs text-text-secondary hover:bg-background-secondary">
+                            {expanded ? 'Collapse' : 'Edit details'}
+                            <ChevronDown className={cn('h-3.5 w-3.5 transition-transform', expanded && 'rotate-180')} />
+                          </button>
+                        )}
                         {canRemoveRow && (
                           <button
                             type="button"
@@ -2003,7 +2040,22 @@ export default function PublicFormPage() {
                         )}
                       </div>
                     )}
-                    <div className={cn(cardMode ? 'grid grid-cols-1' : 'grid grid-cols-[minmax(0,1fr)_1.75rem] items-center gap-2 sm:gap-3')}>
+                    {compactCards && !expanded && (
+                      <div className="flex flex-wrap gap-1.5 text-xs text-text-secondary">
+                        {summaryKeys.map((key) => {
+                          const fieldName = sectionFields.find((entry) => entry.key === key)?.label || key;
+                          const raw = rowAnswers[key];
+                          const value = key === 'person_shareholding'
+                            ? (formatPersonShareholdings(raw) || '').replace(/\\n/g, '; ')
+                            : typeof raw === 'string' || typeof raw === 'number' ? String(raw).trim() : '';
+                          return value ? <span key={key} className="rounded-md bg-background-secondary px-2 py-1">
+                            {fieldName}: <strong className="text-text-primary">{value.length > 80 ? value.slice(0, 77) + '...' : value}</strong>
+                          </span> : null;
+                        })}
+                      </div>
+                    )}
+                    <div className={cn(cardMode ? 'grid grid-cols-1' : 'grid grid-cols-[minmax(0,1fr)_1.75rem] items-center gap-2 sm:gap-3',
+                      compactCards && !expanded && 'hidden')}>
                       <div className="grid grid-cols-12 gap-3">
                         {sectionFields.map((sectionField) => {
                       if (!evaluateCondition(sectionField.condition, rowAnswers, { fields: sectionFields })) return null;
@@ -2053,7 +2105,7 @@ export default function PublicFormPage() {
                           key={`${sectionField.id}-${rowIndex}`}
                           className={cn(sectionWidthClass, isLayoutBreakBeforeEnabled(sectionField) && 'md:col-start-1',
                             sectionPrefill.edited && 'rounded-lg border border-amber-400/60 bg-amber-50/60 p-2 dark:bg-amber-950/30')}
-                          title={sectionPrefill.edited ? `Original: ${String(sectionPrefill.original ?? '(blank)')}` : undefined}
+                          title={sectionPrefill.edited ? `Original: ${sectionField.inputType === 'shareholding_list' ? formatPersonShareholdings(sectionPrefill.original) || '(blank)' : String(sectionPrefill.original ?? '(blank)')}` : undefined}
                         >
                           {!sectionField.hideLabel && !sectionChoiceInlineRight && sectionField.type !== 'PARAGRAPH' && (
                             <label
@@ -2082,7 +2134,25 @@ export default function PublicFormPage() {
                             </div>
                           )}
 
-                          {sectionField.type === 'SHORT_TEXT' && !sectionUseDateSelector && !sectionUseSplitPhoneInput && !sectionUseTimeTimezoneInput && (
+                          {sectionField.type === 'SHORT_TEXT' && sectionField.inputType === 'shareholding_list' && (
+                            <PersonShareholdingsEditor
+                              value={sectionValue}
+                              onChange={(nextRows) => setRepeatFieldValue(sectionField.key, rowIndex, nextRows)}
+                              onBlur={() => handleFieldBlur(sectionField, getRepeatFieldValue(sectionField.key, rowIndex), getFieldErrorKey(sectionField.key, rowIndex), buildAnswerContext(answers, rowIndex))}
+                              options={Array.from(new Map([
+                                ...sectionDropdownOptions.map((option) => [option.value.toUpperCase(), { value: option.value, label: option.label }] as const),
+                                ...(Array.isArray(answers.capital_class) ? answers.capital_class : [])
+                                  .filter((entry): entry is string => typeof entry === 'string' && entry.trim().length > 0)
+                                  .map((entry) => [entry.trim().toUpperCase(), { value: entry.trim(), label: entry.trim() }] as const),
+                              ]).values())}
+                              disabled={sectionField.isReadOnly}
+                              error={sectionErrorText}
+                              label={sectionLabel}
+                              idPrefix={sectionFieldDomId}
+                            />
+                          )}
+
+                          {sectionField.type === 'SHORT_TEXT' && sectionField.inputType !== 'shareholding_list' && !sectionUseDateSelector && !sectionUseSplitPhoneInput && !sectionUseTimeTimezoneInput && (
                             <input
                               id={sectionControlId}
                               type={sectionField.inputType === 'phone' ? 'tel' : sectionField.inputType || 'text'}
@@ -2208,6 +2278,7 @@ export default function PublicFormPage() {
                           {sectionField.type === 'DROPDOWN' && (
                             <SearchableSelect
                               options={sectionDropdownOptions.map((opt) => ({ value: opt.value, label: opt.label }))}
+                              allowCustomValue={parseObject(sectionField.validation)?.allowCustomOption === true}
                               value={typeof sectionValue === 'string' ? sectionValue : ''}
                               onChange={(val) => setRepeatFieldValue(sectionField.key, rowIndex, val)}
                               onBlur={() => handleFieldBlur(sectionField, getRepeatFieldValue(sectionField.key, rowIndex), getFieldErrorKey(sectionField.key, rowIndex), buildAnswerContext(answers, rowIndex))}
@@ -2903,7 +2974,19 @@ export default function PublicFormPage() {
           {inlineTooltipBlock}
 
           {/* SHORT_TEXT */}
-          {field.type === 'SHORT_TEXT' && !useDateSelector && !useSplitPhoneInput && !useTimeTimezoneInput && (
+          {field.type === 'SHORT_TEXT' && field.inputType === 'shareholding_list' && (
+            <PersonShareholdingsEditor
+              value={value}
+              onChange={(rows) => setFieldValue(field.key, rows)}
+              onBlur={() => handleFieldBlur(field, answers[field.key], getFieldErrorKey(field.key), answers)}
+              options={parseChoiceOptions(localizedField.options).map((option) => ({ value: option.value, label: option.label }))}
+              disabled={field.isReadOnly}
+              error={errorText}
+              label={accessibleLabel}
+              idPrefix={fieldDomId}
+            />
+          )}
+          {field.type === 'SHORT_TEXT' && field.inputType !== 'shareholding_list' && !useDateSelector && !useSplitPhoneInput && !useTimeTimezoneInput && (
             <input
               id={controlId}
               type={field.inputType === 'phone' ? 'tel' : field.inputType || 'text'}
@@ -3155,7 +3238,28 @@ export default function PublicFormPage() {
 
           {/* DROPDOWN */}
           {field.type === 'DROPDOWN' && (() => {
-            const dropdownOptions = parseChoiceOptions(localizedField.options).map((opt) => ({ value: opt.value, label: opt.label }));
+            const dynamicKey = parseObject(field.validation)?.optionsFromRepeatFieldKey;
+            const dynamicValues = typeof dynamicKey === 'string' && Array.isArray(answers[dynamicKey])
+              ? (answers[dynamicKey] as unknown[]).map((item) => typeof item === 'string' ? item.trim() : '')
+              : null;
+            const dynamicIdKey = parseObject(field.validation)?.optionsFromRepeatFieldIdKey;
+            const dynamicKindKey = parseObject(field.validation)?.optionsFromRepeatKindKey;
+            const dynamicIds = typeof dynamicIdKey === 'string' && Array.isArray(answers[dynamicIdKey])
+              ? answers[dynamicIdKey] as unknown[] : [];
+            const dynamicKinds = typeof dynamicKindKey === 'string' && Array.isArray(answers[dynamicKindKey])
+              ? answers[dynamicKindKey] as unknown[] : [];
+            const roleKeys = parseObject(field.validation)?.optionsFromRepeatRoleKeys;
+            const roleRows = Array.isArray(roleKeys) ? roleKeys.flatMap((key) =>
+              typeof key === 'string' && Array.isArray(answers[key]) ? [answers[key] as unknown[]] : []) : [];
+            const dropdownOptions = dynamicValues
+              ? dynamicValues.flatMap((name, index) => {
+                if (!name || (dynamicKindKey && dynamicKinds[index] === 'Corporate')
+                  || (roleRows.length > 0 && !roleRows.some((row) => typeof row[index] === 'string' && String(row[index]).trim()))) return [];
+                const stableId = typeof dynamicIds[index] === 'string' && dynamicIds[index]
+                  ? dynamicIds[index] as string : `new-person:${index}`;
+                return [{ value: stableId, label: name }];
+              })
+              : parseChoiceOptions(localizedField.options).map((opt) => ({ value: opt.value, label: opt.label }));
             const selectedLabel = typeof value === 'string' && value
               ? dropdownOptions.find((opt) => opt.value === value)?.label ?? null
               : null;
@@ -3163,6 +3267,7 @@ export default function PublicFormPage() {
               <>
                 <SearchableSelect
                   options={dropdownOptions}
+                  allowCustomValue={parseObject(field.validation)?.allowCustomOption === true}
                   value={typeof value === 'string' ? value : ''}
                   onChange={(val) => setFieldValue(field.key, val)}
                   placeholder={localizedField.placeholder || uiLabel('select_option_placeholder')}

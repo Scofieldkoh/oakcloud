@@ -81,6 +81,34 @@ export function isCompanyIncorporationForm(settings: unknown): boolean {
   return parseFormTemplateBinding(settings)?.key === SG_COMPANY_INCORPORATION_TEMPLATE_KEY;
 }
 
+/** Copy published settings into a new editable draft without changing the
+ * original's frozen definition. The revision publishes under a new form ID
+ * and URL, so older responses retain their original source definition.
+ */
+export function createEditableFormRevisionSettings(
+  sourceSettings: unknown,
+  sourceFormId: string,
+  sourceSlug: string,
+  createdAt: string,
+): Record<string, unknown> {
+  const source = isRecord(sourceSettings) ? { ...sourceSettings } : {};
+  const binding = parseFormTemplateBinding(sourceSettings);
+  if (binding) {
+    source.template = {
+      ...binding,
+      installedAt: createdAt,
+      lockedAt: null,
+      definitionHash: null,
+    };
+  } else {
+    delete source.template;
+  }
+  return {
+    ...source,
+    revision: { sourceFormId, sourceSlug, createdAt },
+  };
+}
+
 /**
  * Keep the server-owned binding when a settings object from the client replaces
  * the stored settings. The client can neither add, change nor remove it.
