@@ -151,7 +151,7 @@ describe('Generic prefilled-answer change tracking', () => {
     expect(protectedAnswers.ceo_role_listed).toBe('No');
     const selected = {
       ...amended,
-      ceo_source: 'Existing listed person',
+      ceo_source: 'Existing listed officer',
       ceo_existing_person: (baseline.person_record_id as string[])[0],
     };
     expect(() => protectPrefillAnswers(selected, baseline)).not.toThrow();

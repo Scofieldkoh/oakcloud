@@ -166,6 +166,15 @@ function combinedPeople(
     } else row.holdings.push({ shareClass, shares });
   }
   if (rows.length > 50) throw new ValidationError('The company has over 50 distinct persons; review capacity before sending');
+  for (const person of rows) {
+    // If someone has more than three roles, keep CEO in the structured fields
+    // so the CEO confirmation is never unnecessarily repeated.
+    const ceoIndex = person.positions.findIndex(position => position.role === 'CEO');
+    if (ceoIndex >= 3) {
+      const [ceo] = person.positions.splice(ceoIndex, 1);
+      person.positions.splice(2, 0, ceo);
+    }
+  }
   return rows;
 }
 

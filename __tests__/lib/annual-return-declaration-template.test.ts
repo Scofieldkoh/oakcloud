@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { addIsoDateMonths } from '@/lib/forms/relative-date';
+import { createEditableFormRevisionSettings, parseFormTemplateBinding } from '@/lib/form-templates';
 import { evaluateCondition } from '@/lib/form-utils';
 import {
   ARD_COMPANY_TYPES, buildSgAnnualReturnDeclarationFields,
@@ -25,6 +26,29 @@ const base = (type: string, extras: Record<string, unknown> = {}) => ({
   agm_member_request: 'No',
   agm_options: 'No',
   ...extras,
+});
+
+describe('published guided-form revisions', () => {
+  it('keeps the template binding while unlocking only an editable copy', () => {
+    const liveSettings = {
+      template: { key: 'sg_annual_return_declaration', version: 3,
+        installedAt: '2026-11-01T00:00:00Z', lockedAt: '2026-11-08T00:00:00Z',
+        definitionHash: 'def123' },
+      drafts: { enabled: true },
+    };
+    const draft = createEditableFormRevisionSettings(
+      liveSettings, 'form-old', 'annual-return-declaration', '2026-11-14T10:00:00Z',
+    );
+    expect(parseFormTemplateBinding(draft)).toMatchObject({
+      key: 'sg_annual_return_declaration', version: 3, lockedAt: null, definitionHash: null,
+    });
+    expect(draft.revision).toEqual({
+      sourceFormId: 'form-old', sourceSlug: 'annual-return-declaration',
+      createdAt: '2026-11-14T10:00:00Z',
+    });
+    expect(liveSettings.template.lockedAt).toBe('2026-11-08T00:00:00Z');
+    expect(draft.drafts).toEqual({ enabled: true });
+  });
 });
 
 describe('Annual Return Declaration guided template', () => {
@@ -56,7 +80,7 @@ describe('Annual Return Declaration guided template', () => {
     ).map((field) => field.key);
     expect(pageKeys).toEqual([
       'page_company_records', 'page_financial_statements', 'page_agm',
-      'page_director_statement', 'page_particulars', 'page_declaration',
+      'page_director_statement', 'page_declaration',
     ]);
     const capitalIndex = fields.findIndex((field) => field.key === 'share_capital_section');
     const peopleIndex = fields.findIndex((field) => field.key === 'people_section');
@@ -67,11 +91,34 @@ describe('Annual Return Declaration guided template', () => {
     expect(peopleRepeat?.validation).toMatchObject({ repeatCompactCards: true, repeatMinItems: 1 });
   });
 
-  it('uses the SSIC preset for both activity fields when configured', () => {
-    const id = '12345678-1234-4234-8234-123456789abc';
-    const prefilled = buildSgAnnualReturnDeclarationFields({ ssicPresetId: id });
-    expect(prefilled.find((field) => field.key === 'record_primary_activity')?.optionPresetId).toBe(id);
-    expect(prefilled.find((field) => field.key === 'record_secondary_activity')?.optionPresetId).toBe(id);
+  it('uses the SSIC, nationality and ISO currency presets when configured', () => {
+    const ssic = '12345678-1234-4234-8234-123456789abc';
+    const nationality = '33333333-3333-4333-8333-333333333333';
+    const currency = '44444444-4444-4444-8444-444444444444';
+    const prefilled = buildSgAnnualReturnDeclarationFields({
+      ssicPresetId: ssic, nationalityPresetId: nationality, currencyPresetId: currency,
+    });
+    expect(prefilled.find((field) => field.key === 'record_primary_activity')?.optionPresetId).toBe(ssic);
+    expect(prefilled.find((field) => field.key === 'record_secondary_activity')?.optionPresetId).toBe(ssic);
+    expect(prefilled.find((field) => field.key === 'person_nationality')?.optionPresetId).toBe(nationality);
+    expect(prefilled.find((field) => field.key === 'capital_currency')?.optionPresetId).toBe(currency);
+  });
+
+  it('uses dropdowns for bounded values and compact widths for short answers', () => {
+    const byKey = (key: string) => fields.find((field) => field.key === key)!;
+    for (const key of [
+      'company_type', 'company_status', 'company_solvency', 'record_entity_status', 'record_primary_activity',
+      'person_role_1', 'person_kind', 'person_nationality', 'capital_class',
+      'capital_currency', 'fs_audit_status', 'ceo_source',
+    ]) expect(byKey(key).type).toBe('DROPDOWN');
+    expect(byKey('capital_class').validation).toMatchObject({ allowCustomOption: true });
+    expect(byKey('capital_currency').layoutWidth).toBe(33);
+    expect(byKey('capital_shares').layoutWidth).toBe(50);
+    expect(byKey('person_role_date_1').layoutWidth).toBe(33);
+    expect(byKey('financial_year_end').layoutWidth).toBe(33);
+    expect(byKey('sign_date').layoutWidth).toBe(33);
+    expect(byKey('agm_time').inputType).toBe('time_timezone');
+    expect(byKey('person_address').layoutWidth).toBe(100);
   });
 
   it('offers CEO selection only when no listed person holds that role', () => {
@@ -79,11 +126,13 @@ describe('Annual Return Declaration guided template', () => {
     expect(visible('ceo_exists', data)).toBe(true);
     expect(visible('ceo_source', data)).toBe(true);
     const newPerson = { ...data, ceo_source: 'New individual' };
-    expect(visible('ceo_new_name', newPerson)).toBe(true);
-    expect(visible('ceo_new_appointment_date', newPerson)).toBe(true);
     expect(visible('ceo_new_kyccdd', newPerson)).toBe(true);
-    const existing = { ...data, ceo_source: 'Existing listed person' };
+    expect(visible('ceo_kyccdd_ack', newPerson)).toBe(true);
+    expect(fields.find((field) => field.key === 'ceo_new_name')).toBeUndefined();
+    expect(fields.find((field) => field.key === 'ceo_new_appointment_date')).toBeUndefined();
+    const existing = { ...data, ceo_source: 'Existing listed officer' };
     expect(visible('ceo_existing_person', existing)).toBe(true);
+    expect(visible('ceo_kyccdd_ack', existing)).toBe(false);
     const known = { ...data, ceo_role_listed: 'Yes' };
     expect(visible('ceo_exists', known)).toBe(false);
     expect(visible('ceo_already_recorded', known)).toBe(true);
@@ -172,7 +221,8 @@ describe('Annual Return Declaration guided template', () => {
   it('asks 2026 particulars and CEO questions, with limited guarantee member count', () => {
     const ordinary = base(ARD_COMPANY_TYPES.private, { ceo_exists: 'Yes', particulars_accurate: 'No' });
     expect(visible('ceo_exists', ordinary)).toBe(true);
-    expect(visible('ceo_details', ordinary)).toBe(true);
+    expect(visible('ceo_manual_kyccdd', ordinary)).toBe(true);
+    expect(fields.find((field) => field.key === 'ceo_details')).toBeUndefined();
     expect(visible('particulars_accurate', ordinary)).toBe(true);
     expect(visible('particulars_changes', ordinary)).toBe(true);
     expect(visible('guarantee_member_count', ordinary)).toBe(false);

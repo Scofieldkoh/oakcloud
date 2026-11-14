@@ -22,7 +22,7 @@ import type {
 import { toJsonInput } from './form-builder.helpers';
 import { resolvePresetOptionsForFields } from './form-option-preset.service';
 import { ValidationError } from '@/lib/errors';
-import { parseFormTemplateBinding, preserveFormTemplateBinding } from '@/lib/form-templates';
+import { createEditableFormRevisionSettings, parseFormTemplateBinding, preserveFormTemplateBinding } from '@/lib/form-templates';
 import { computeFormDefinitionHash } from './company-incorporation-intake.service';
 import { deleteUnusedFormBackgroundsSafely } from './form-background.service';
 
@@ -290,6 +290,9 @@ export async function updateForm(
   // A guided template instance is frozen when it is first published, so answers
   // keep the meaning of the questions they were given against.
   const binding = parseFormTemplateBinding(existing.settings);
+  if (existing.status === 'PUBLISHED' && binding?.lockedAt && nextStatus === 'DRAFT') {
+    throw new ValidationError('This published guided form cannot be unpublished for editing. Create an editable revision instead.');
+  }
   if (binding && !binding.lockedAt && nextStatus === 'PUBLISHED') {
     const fields = await prisma.formField.findMany({ where: { formId }, orderBy: { position: 'asc' } });
     const resolvedFields = await resolvePresetOptionsForFields(params.tenantId, fields);
@@ -443,7 +446,8 @@ export async function saveFormFields(
 export async function duplicateForm(
   formId: string,
   params: TenantAwareParams,
-  overrideTitle?: string
+  overrideTitle?: string,
+  asRevision = false,
 ): Promise<FormDetail> {
   const source = await prisma.form.findFirst({
     where: { id: formId, tenantId: params.tenantId, deletedAt: null },
@@ -457,9 +461,22 @@ export async function duplicateForm(
   if (!source) {
     throw new Error('Form not found');
   }
+  if (asRevision && source.status !== 'PUBLISHED') {
+    throw new ValidationError('Only published forms can have an editable revision');
+  }
 
   const slug = await generateUniqueFormSlug();
-  const title = overrideTitle?.trim() || `${source.title} (Copy)`;
+  const title = overrideTitle?.trim() || (asRevision
+    ? `${source.title} (Revision draft)`
+    : `${source.title} (Copy)`);
+  const sourceSettings = source.settings && typeof source.settings === 'object' && !Array.isArray(source.settings)
+    ? source.settings as Record<string, unknown>
+    : null;
+  // A published form is never edited in place. Only a new draft revision
+  // receives an unlocked copy of its guided-template binding.
+  const nextSettings: Record<string, unknown> | null = asRevision
+    ? createEditableFormRevisionSettings(source.settings, source.id, source.slug, new Date().toISOString())
+    : preserveFormTemplateBinding(sourceSettings, null) ?? null;
 
   const duplicated = await prisma.$transaction(async (tx) => {
     const form = await tx.form.create({
@@ -470,13 +487,9 @@ export async function duplicateForm(
         slug,
         status: 'DRAFT',
         tags: source.tags,
-        // A copy is an ordinary editable form, not a template instance.
-        settings: toJsonInput(preserveFormTemplateBinding(
-          source.settings && typeof source.settings === 'object' && !Array.isArray(source.settings)
-            ? source.settings as Record<string, unknown>
-            : null,
-          null
-        ) ?? null),
+        // An ordinary duplicate is template-free; a revision deliberately
+        // retains its template binding and clears only the definition lock.
+        settings: toJsonInput(nextSettings),
         createdById: params.userId,
         updatedById: params.userId,
       },
@@ -535,8 +548,10 @@ export async function duplicateForm(
     entityType: 'Form',
     entityId: duplicated.id,
     entityName: duplicated.title,
-    summary: `Duplicated form "${source.title}"`,
-    metadata: { sourceFormId: source.id },
+    summary: asRevision
+      ? `Created editable revision of published form "${source.title}"`
+      : `Duplicated form "${source.title}"`,
+    metadata: { sourceFormId: source.id, asRevision },
     changeSource: 'MANUAL',
   });
 

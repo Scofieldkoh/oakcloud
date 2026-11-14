@@ -615,6 +615,19 @@ export function getLocalizedNationalityPresetOptions(locale: string): LocalizedP
   });
 }
 
+// ISO 4217 currency codes, localized for search. Keep the ISO code as the saved
+// value rather than a localized currency name.
+const isoCurrencies = typeof Intl.supportedValuesOf === 'function'
+  ? Intl.supportedValuesOf('currency')
+  : ['SGD', 'USD', 'MYR', 'EUR', 'GBP', 'AUD', 'JPY', 'CNY', 'HKD'];
+const currencyNameFormatter = typeof Intl.DisplayNames === 'function'
+  ? new Intl.DisplayNames(['en'], { type: 'currency' }) : null;
+export const CURRENCY_PRESET_OPTION_ENTRIES: LocalizedPresetOption[] =
+  isoCurrencies.map((code) => ({
+    value: code,
+    label: `${code} - ${currencyNameFormatter?.of(code) || code}`,
+  }));
+
 export const DROPDOWN_PRESETS: DropdownPreset[] = [
   {
     id: 'countries',
@@ -627,5 +640,11 @@ export const DROPDOWN_PRESETS: DropdownPreset[] = [
     label: 'Nationalities',
     description: 'Nationality / demonym values (e.g. Singaporean, Malaysian).',
     options: [...NATIONALITY_PRESET_OPTIONS],
+  },
+  {
+    id: 'currencies',
+    label: 'ISO currencies',
+    description: 'ISO 4217 currency codes and currency names.',
+    options: CURRENCY_PRESET_OPTION_ENTRIES.map((entry) => entry.value),
   },
 ];

@@ -2253,6 +2253,7 @@ export default function PublicFormPage() {
                           {sectionField.type === 'DROPDOWN' && (
                             <SearchableSelect
                               options={sectionDropdownOptions.map((opt) => ({ value: opt.value, label: opt.label }))}
+                              allowCustomValue={parseObject(sectionField.validation)?.allowCustomOption === true}
                               value={typeof sectionValue === 'string' ? sectionValue : ''}
                               onChange={(val) => setRepeatFieldValue(sectionField.key, rowIndex, val)}
                               onBlur={() => handleFieldBlur(sectionField, getRepeatFieldValue(sectionField.key, rowIndex), getFieldErrorKey(sectionField.key, rowIndex), buildAnswerContext(answers, rowIndex))}
@@ -3229,6 +3230,7 @@ export default function PublicFormPage() {
               <>
                 <SearchableSelect
                   options={dropdownOptions}
+                  allowCustomValue={parseObject(field.validation)?.allowCustomOption === true}
                   value={typeof value === 'string' ? value : ''}
                   onChange={(val) => setFieldValue(field.key, val)}
                   placeholder={localizedField.placeholder || uiLabel('select_option_placeholder')}

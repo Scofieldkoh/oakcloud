@@ -69,9 +69,10 @@ function CompanyDetailContent({ id }: { id: string }) {
           .filter((candidate: { settings?: unknown }) =>
             parseFormTemplateBinding(candidate.settings)?.key === SG_ANNUAL_RETURN_DECLARATION_TEMPLATE_KEY
             && (parseFormTemplateBinding(candidate.settings)?.version ?? 0) >= 2)
-          .sort((a: { settings?: unknown }, b: { settings?: unknown }) =>
-            (parseFormTemplateBinding(b.settings)?.version ?? 0)
-            - (parseFormTemplateBinding(a.settings)?.version ?? 0))[0];
+          .sort((a: { settings?: unknown; updatedAt?: string }, b: { settings?: unknown; updatedAt?: string }) =>
+            ((parseFormTemplateBinding(b.settings)?.version ?? 0)
+              - (parseFormTemplateBinding(a.settings)?.version ?? 0))
+            || ((Date.parse(b.updatedAt || '') || 0) - (Date.parse(a.updatedAt || '') || 0)))[0];
         setAnnualReturnForm(published ? { id: published.id, tenantId: company.tenantId } : null);
       })
       .catch(() => { if (!cancelled) setAnnualReturnForm(null); });

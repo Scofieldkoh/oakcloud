@@ -21,6 +21,7 @@ import { extractSignatureDataUrl, isSignatureDataUrl } from '@/lib/signature-uti
 import { prisma } from '@/lib/prisma';
 import { getAppBaseUrl, sendEmail } from '@/lib/email';
 import { getPrefillChanges, getPrefillFieldState, readStoredPrefill } from '@/lib/forms/prefill-changes';
+import { resolveRepeatDropdownLabel } from '@/lib/form-response-display';
 import { StorageKeys } from '@/lib/storage';
 import { normalizeWorkspaceLogoUrl } from '@/lib/workspace-logo-url';
 import {
@@ -606,7 +607,7 @@ export function buildSubmissionPdfHtml(input: {
       }).join('');
     }
     if (field.type === 'SINGLE_CHOICE' || field.type === 'MULTIPLE_CHOICE' || field.type === 'DROPDOWN') {
-      const text = formatChoiceAnswer(value);
+      const text = resolveRepeatDropdownLabel(field, value, input.answers) || formatChoiceAnswer(value);
       return text ? esc(text) : `<span class="empty">\u2014</span>`;
     }
     const timeTimezoneText = formatTimeTimezoneAnswer(value);
@@ -723,7 +724,12 @@ export function buildSubmissionPdfHtml(input: {
         ${item.hint ? `<div class="repeat-hint">${esc(item.hint)}</div>` : ''}
         ${rowsHtml}
         ${prefillChanges?.removedRows.filter((row) => item.fields.some((f) => {
-          const sections = { officer_name: 'officers_section', capital_class: 'share_capital_section', shareholder_name: 'shareholders_section' };
+          const sections = {
+            officer_name: 'officers_section',
+            capital_class: 'share_capital_section',
+            shareholder_name: 'shareholders_section',
+            person_name: 'people_section',
+          };
           return sections[f.key as keyof typeof sections] === row.section;
         })).map((row) => `<div class="prefill-removed">Removed: ${esc(row.label)}</div>`).join('') || ''}
       </div>`;

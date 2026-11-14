@@ -82,7 +82,7 @@ export function protectPrefillAnswers(
     protectedAnswers.ceo_role_listed = roles.some(({ role, index }) =>
       role === 'CEO' && kinds[index] !== 'Corporate') ? 'Yes' : 'No';
     const selected = text(protectedAnswers.ceo_existing_person);
-    if (protectedAnswers.ceo_source === 'Existing listed person' && selected) {
+    if (['Existing listed person', 'Existing listed officer'].includes(text(protectedAnswers.ceo_source)) && selected) {
       const ids = asArray(protectedAnswers.person_record_id).map(text);
       const matchedIndex = ids.indexOf(selected);
       const newRowIndex = /^new-person:(\\d+)$/.exec(selected);

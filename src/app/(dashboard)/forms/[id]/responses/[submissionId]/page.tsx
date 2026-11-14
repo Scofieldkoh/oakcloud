@@ -113,9 +113,9 @@ function getSubmissionNameCheckResult(metadata: unknown, fieldKey: string): Name
   return results ? parseNameCheckResultValue(results[fieldKey]) : null;
 }
 
-function toCopyValue(field: FormField, value: unknown): string | null {
+function toCopyValue(field: FormField, value: unknown, answers?: Record<string, unknown>): string | null {
   if (value === null || value === undefined || field.type === 'SIGNATURE') return null;
-  return formatResponseFieldValue(field, value);
+  return formatResponseFieldValue(field, value, answers);
 }
 
 function toUploadIds(value: unknown): string[] {
@@ -713,7 +713,7 @@ export default function FormResponseDetailPage() {
         if (ids.length === 0) return null;
         return ids.map((id) => uploadsById.get(id)?.fileName || id).join('\n');
       })()
-      : toCopyValue(field, value);
+      : toCopyValue(field, value, submissionAnswers);
 
     return (
       <div key={fieldKey} className={`${widthClass}${prefillState.edited ? ' rounded-lg border border-amber-400 bg-amber-50/60 p-2 dark:bg-amber-950/30' : ''}`}>
@@ -756,22 +756,22 @@ export default function FormResponseDetailPage() {
               <span className="text-text-muted">-</span>
             ) : (
               field.type === 'SINGLE_CHOICE'
-                ? (formatResponseFieldValue(field, value) || <span className="text-text-muted">-</span>)
-                : (formatResponseFieldValue(field, value) || <span className="text-text-muted">-</span>)
+                ? (formatResponseFieldValue(field, value, submissionAnswers) || <span className="text-text-muted">-</span>)
+                : (formatResponseFieldValue(field, value, submissionAnswers) || <span className="text-text-muted">-</span>)
             )}
           </div>
         )}
 
         {field.type === 'LONG_TEXT' && (
           <div className="min-h-24 rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary whitespace-pre-wrap">
-            {formatResponseFieldValue(field, value) || <span className="text-text-muted">-</span>}
+            {formatResponseFieldValue(field, value, submissionAnswers) || <span className="text-text-muted">-</span>}
           </div>
         )}
 
         {field.type === 'MULTIPLE_CHOICE' && (
           <div className="min-h-10 rounded-lg border border-border-primary bg-background-primary px-3 py-2">
-            {formatResponseFieldValue(field, value) ? (
-              <span className="text-sm text-text-primary">{formatResponseFieldValue(field, value)}</span>
+            {formatResponseFieldValue(field, value, submissionAnswers) ? (
+              <span className="text-sm text-text-primary">{formatResponseFieldValue(field, value, submissionAnswers)}</span>
             ) : (
               <span className="text-sm text-text-muted">-</span>
             )}
@@ -850,7 +850,7 @@ export default function FormResponseDetailPage() {
 
         {!['SHORT_TEXT', 'DROPDOWN', 'SINGLE_CHOICE', 'LONG_TEXT', 'MULTIPLE_CHOICE', 'FILE_UPLOAD', 'SIGNATURE', 'COMPANY_NAME_CHECK'].includes(field.type) && (
           <div className="rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary">
-            {formatResponseFieldValue(field, value) || <span className="text-text-muted">-</span>}
+            {formatResponseFieldValue(field, value, submissionAnswers) || <span className="text-text-muted">-</span>}
           </div>
         )}
 
@@ -859,7 +859,7 @@ export default function FormResponseDetailPage() {
           return (
             <div className="space-y-1.5">
               <div className="rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary">
-                {formatResponseFieldValue(field, value) || <span className="text-text-muted">-</span>}
+                {formatResponseFieldValue(field, value, submissionAnswers) || <span className="text-text-muted">-</span>}
               </div>
               {checkResult && (() => {
                 const described = describeNameCheckAssessment(checkResult.assessment);

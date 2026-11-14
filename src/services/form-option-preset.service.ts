@@ -3,6 +3,7 @@ import { createAuditLog } from '@/lib/audit';
 import {
   COUNTRY_PRESET_OPTION_ENTRIES,
   NATIONALITY_PRESET_OPTION_ENTRIES,
+  CURRENCY_PRESET_OPTION_ENTRIES,
 } from '@/lib/constants/form-option-presets';
 import ssic2025 from '@/lib/data/ssic-2025.json';
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '@/lib/errors';
@@ -44,6 +45,14 @@ const BUILT_IN_PRESETS = [
     isProtected: true,
     allowCsvReplace: false,
     options: NATIONALITY_PRESET_OPTION_ENTRIES,
+  },
+  {
+    name: 'ISO currencies',
+    normalizedKey: 'currencies',
+    builtInKey: 'currencies',
+    isProtected: true,
+    allowCsvReplace: false,
+    options: CURRENCY_PRESET_OPTION_ENTRIES,
   },
   {
     name: ssic2025.edition,

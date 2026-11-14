@@ -111,6 +111,7 @@ export type ValidationConfig = {
   repeatMaxItems?: number;
   repeatAddLabel?: string;
   repeatItemLabel?: string;
+  allowCustomOption?: boolean;
   repeatCompactCards?: boolean;
   repeatSummaryFieldKeys?: string[];
   optionsFromRepeatFieldKey?: string;
@@ -190,6 +191,35 @@ export interface BuilderField {
   showOnSummary: boolean;
   layoutWidth: 25 | 33 | 50 | 66 | 75 | 100;
   position: number;
+}
+
+/** Suggest a desktop grid width based on the expected length of the answer.
+ * This never overrides a field unless staff explicitly applies it.
+ */
+export function suggestFieldLayoutWidth(
+  field: Pick<BuilderField, 'type' | 'inputType' | 'key' | 'label' | 'options' | 'validation'>
+): BuilderField['layoutWidth'] {
+  if (['PAGE_BREAK', 'PARAGRAPH', 'HTML', 'SIGNATURE', 'FILE_UPLOAD', 'LONG_TEXT'].includes(field.type)) return 100;
+  const key = (field.key + ' ' + field.label).toLowerCase();
+  if (/address|description|notes|explanation|shareholding|resolution/.test(key)) return 100;
+  if (field.type === 'SHORT_TEXT') {
+    if (field.inputType === 'date' || field.inputType === 'number') return 33;
+    if (field.inputType === 'time_timezone' || field.inputType === 'phone') return 50;
+    if (/uen\b|currency|code|postal|count|share class/.test(key)) return 33;
+    if (/\bname\b|nationality|identity|identification|registered/.test(key)) return 66;
+    return field.validation?.maxLength && field.validation.maxLength <= 20 ? 33 : 66;
+  }
+  if (field.type === 'DROPDOWN') {
+    if (/ssic|activity|business type|company type/.test(key)) return 66;
+    if (/currency|status|kind|number/.test(key)) return 33;
+    if (/nationality|share class|position|role|ceo/.test(key)) return 50;
+    if (Math.max(0, ...field.options.map(o => o.label.length)) > 64) return 100;
+    return 50;
+  }
+  if (field.type === 'SINGLE_CHOICE') {
+    return field.validation?.choiceInlineRight ? 100 : field.options.length <= 3 ? 50 : 100;
+  }
+  return 100;
 }
 
 export function isFaqField(field: Pick<BuilderField, 'type' | 'inputType'>): boolean {

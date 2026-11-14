@@ -725,9 +725,13 @@ never modified by the seed.
 
 The guided Annual Return Declaration v3 remains an unpublished draft until staff
 review and publish it. The builder now uses one page for each company/filing
-topic: company identity, share capital and people, financial statements, AGM,
-directors' statement, CEO/particulars, and final declaration. Company details
-use the workspace SSIC 2025 preset, with the five-digit code as the answer value.
+topic: company identity, share capital and people (including CEO handling),
+financial statements, AGM, directors' statement, and final declaration.
+Company SSIC and nationality fields use the existing workspace presets;
+currency fields use the built-in searchable ISO 4217 currency preset.
+Common share classes use searchable dropdowns with custom entries enabled.
+Short dates, numbers, currency codes, identifiers and names use narrower grid
+widths; long addresses and multi-class shareholding remain full-width.
 
 The shared form engine supports compact repeat cards through
 `repeatCompactCards` and `repeatSummaryFieldKeys` (expanded for new rows,
@@ -740,9 +744,10 @@ additional positions as optional text, and shareholding by class. Corporate
 shareholders never receive officer role inputs.
 
 If no listed individual has a CEO role, the respondent answers whether someone
-acts as CEO. A Yes response prompts selection of a unique existing officer
-record or entry of a new CEO name and appointment date, with a link to the
-existing individual KYC/CDD questionnaire. The private prefill baseline,
+acts as CEO on the people page. A Yes response prompts selection of a unique
+existing officer or directs a new individual to the separate KYC/CDD form,
+without duplicating name, identification or appointment particulars. The
+respondent confirms the separate form will be provided. The private prefill baseline,
 unforgeable source IDs, change tracking and staff/PDF comparisons are retained.
 Server-side comparison recalculates the CEO-role marker from the person rows
 and validates existing-officer selection; no underlying company records are
@@ -750,3 +755,23 @@ changed by respondent answers.
 
 Older published v2 forms and their responses stay intact. The company page
 prefers the highest published version for new prefilled drafts.
+
+### Form Builder quality-of-life changes and published revisions
+
+The shared SearchableSelect supports opt-in **custom dropdown values**. The
+field editor exposes the "Allow a custom option" switch and an opt-in
+"Suggest compact width" action, which recommends a grid fraction based on the
+field type and expected answer length. Neither setting silently changes other
+forms.
+
+For a published form, the Form Builder now offers **Create editable revision**.
+This POSTs to the existing `/api/forms/[id]/duplicate` route with
+`asRevision: true`, requiring document create and update permission. A revision
+is a separate editable DRAFT with a new form ID and slug; its original published
+form, URL and submissions are not changed. Guided-template revisions retain
+their template binding and version but clear the definition lock for draft
+editing. Publishing hashes and locks the new definition after persisting its
+fields. Manually edited revisions are excluded from automatic seed-draft
+selection, so reseeding cannot overwrite them. New revision links are distinct
+from older published links; company prefill chooses the latest published form
+among versions with the same template key.
