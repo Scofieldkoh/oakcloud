@@ -94,8 +94,8 @@ describe('Annual Return Declaration guided template', () => {
     expect(fields.find((field) => field.key === 'share_capital_section')?.validation?.repeatCompactCards).not.toBe(true);
   });
 
-  it('defines structured person holdings and expandable additional positions in version 5', () => {
-    expect(SG_ANNUAL_RETURN_DECLARATION_TEMPLATE_VERSION).toBe(5);
+  it('defines structured person holdings and expandable additional positions in version 6', () => {
+    expect(SG_ANNUAL_RETURN_DECLARATION_TEMPLATE_VERSION).toBe(6);
     const field = fields.find((entry) => entry.key === 'person_shareholding');
     expect(field).toMatchObject({
       type: 'SHORT_TEXT', inputType: 'shareholding_list', layoutWidth: 100,
@@ -107,6 +107,35 @@ describe('Annual Return Declaration guided template', () => {
     });
     expect(fields.find((entry) => entry.key === 'people_help')).toBeUndefined();
     expect(fields.find((entry) => entry.key === 'person_positions_heading')).toBeUndefined();
+  });
+
+  it('explains the source and consequences of changes to prefilled ACRA records', () => {
+    const notice = fields.find((field) => field.key === 'acra_prefill_notice')!;
+    expect(notice).toMatchObject({
+      type: 'PARAGRAPH', inputType: 'info_text',
+      validation: { infoInlineCard: true },
+    });
+    expect(notice.subtext).toContain('ACRA data records held in our system');
+    expect(notice.subtext).toContain('accurate and complete');
+    expect(notice.subtext).toContain('Any edit, addition or removal');
+    expect(notice.subtext).toContain('board resolutions');
+    const firstPage = fields.map((field) => field.key);
+    expect(firstPage.indexOf('part_company')).toBeLessThan(firstPage.indexOf('acra_prefill_notice'));
+    expect(firstPage.indexOf('acra_prefill_notice')).toBeLessThan(firstPage.indexOf('company_name'));
+    expect(visible('acra_prefill_notice', { prefill_source: 'company_record' })).toBe(true);
+    expect(visible('acra_prefill_notice', {})).toBe(false);
+  });
+
+  it('places the statement signing date and audit status on different full-width rows', () => {
+    const statementDate = fields.find((field) => field.key === 'date_of_financial_statement')!;
+    const auditStatus = fields.find((field) => field.key === 'fs_audit_status')!;
+    expect(statementDate.layoutWidth).toBe(100);
+    expect(auditStatus.layoutWidth).toBe(100);
+    expect(fields.findIndex((field) => field.key === statementDate.key))
+      .toBeLessThan(fields.findIndex((field) => field.key === auditStatus.key));
+    expect(statementDate.validation).toMatchObject({
+      minDateFieldKey: 'financial_year_end', maxDate: 'today',
+    });
   });
 
   it('uses the SSIC, nationality and ISO currency presets when configured', () => {

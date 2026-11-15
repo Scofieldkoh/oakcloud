@@ -44,6 +44,7 @@ import { PersonShareholdingsEditor } from '@/components/forms/person-shareholdin
 import { AdditionalPositionsEditor } from '@/components/forms/additional-positions-editor';
 import { additionalPositionsError, formatAdditionalPositions } from '@/lib/forms/additional-positions';
 import { getDirectorReelectionOptions, isReelectionMatterSelected, personHasRole } from '@/lib/forms/annual-return-directors';
+import { getPeopleCardVariantClass, shouldShowLongDropdownSelection } from '@/lib/forms/annual-return-form-display';
 import { SG_ANNUAL_RETURN_DECLARATION_TEMPLATE_KEY } from '@/lib/form-templates/sg-annual-return-declaration';
 import { formatPersonShareholdings, personShareholdingError } from '@/lib/forms/person-shareholdings';
 import {
@@ -2026,6 +2027,9 @@ export default function PublicFormPage() {
                 const canRemoveRow = rowCount > sectionConfig.minItems || (!!prefillBaseline && !!currentRecordId);
                 const expandedKey = `${sectionId}:${currentRecordId || `new-row-${rowIndex}`}`;
                 const expanded = expandedRepeatCards[expandedKey] ?? !currentRecordId;
+                const isPeopleCard = field.key === 'people_section';
+                const personName = isPeopleCard && typeof rowAnswers.person_name === 'string'
+                  ? rowAnswers.person_name.trim() : '';
                 const rowWasAdded = !!prefillBaseline && !!baselineSection
                   && !currentRecordId
                   && baselineSection.fields.some((key) =>
@@ -2039,21 +2043,26 @@ export default function PublicFormPage() {
                       cardMode
                         ? 'rounded-xl border border-border-primary/60 bg-white p-3 shadow-sm sm:p-4'
                         : rowIndex > 0 && 'border-t border-border-primary/40 pt-4',
+                      isPeopleCard && getPeopleCardVariantClass(rowIndex),
                       rowWasAdded && EDITED_VALUE_CLASS
                     )}
                     role={cardMode ? 'group' : undefined}
-                    aria-label={cardMode ? `${sectionConfig.itemLabel} ${rowIndex + 1}` : undefined}
+                    aria-label={cardMode
+                      ? `${sectionConfig.itemLabel} ${rowIndex + 1}${personName ? ': ' + personName : ''}`
+                      : undefined}
                   >
                     {cardMode && (
                       <div className="mb-3 flex items-center justify-between gap-3">
                         <p className="text-sm font-semibold text-text-primary">
-                          {sectionConfig.itemLabel} {rowIndex + 1}
+                          <span>{sectionConfig.itemLabel} {rowIndex + 1}</span>
+                          {isPeopleCard
+                            ? personName && <strong className="ml-2 text-base font-semibold text-text-primary"> · {personName}</strong>
+                            : (() => {
+                              const nameField = sectionFields.find((candidate) => candidate.type === 'SHORT_TEXT' && (candidate.inputType === 'text' || !candidate.inputType));
+                              const nameValue = nameField && typeof rowAnswers[nameField.key] === 'string' ? (rowAnswers[nameField.key] as string).trim() : '';
+                              return nameValue ? <span className="font-normal text-text-secondary"> · {nameValue}</span> : null;
+                            })()}
                           {rowWasAdded && <span className="ml-2 text-xs font-medium text-amber-800" aria-label="Added row">Added</span>}
-                          {(() => {
-                            const nameField = sectionFields.find((candidate) => candidate.type === 'SHORT_TEXT' && (candidate.inputType === 'text' || !candidate.inputType));
-                            const nameValue = nameField && typeof rowAnswers[nameField.key] === 'string' ? (rowAnswers[nameField.key] as string).trim() : '';
-                            return nameValue ? <span className="font-normal text-text-secondary"> · {nameValue}</span> : null;
-                          })()}
                         </p>
                         {compactCards && (
                           <button type="button" aria-expanded={expanded} aria-label={`${expanded ? 'Collapse' : 'Expand'} ${sectionConfig.itemLabel} ${rowIndex + 1}`}
@@ -3275,7 +3284,7 @@ export default function PublicFormPage() {
               onBlur={() => handleFieldBlur(field, answers[field.key], getFieldErrorKey(field.key), answers)}
               minDate={dateValidationRange.minDate}
               maxDate={dateValidationRange.maxDate}
-              className="w-full"
+              className={cn('w-full', field.key === 'date_of_financial_statement' && 'max-w-sm')}
             />
           )}
 
@@ -3339,10 +3348,10 @@ export default function PublicFormPage() {
                   ariaLabel={accessibleLabel}
                   clearable={!field.isReadOnly}
                   showKeyboardHints={false}
-                  containerClassName={cn('h-10', errorText && ERROR_FIELD_CLASS)}
+                  containerClassName={cn('h-10', field.key === 'fs_audit_status' && 'max-w-lg', errorText && ERROR_FIELD_CLASS)}
                   onBlur={() => handleFieldBlur(field, answers[field.key], getFieldErrorKey(field.key), answers)}
                 />
-                {selectedLabel && selectedLabel.length > 48 && (
+                {shouldShowLongDropdownSelection(field.key, selectedLabel) && (
                   <p className="mt-1.5 break-words text-sm text-text-primary">
                     <span className="text-text-secondary">Selected: </span>{selectedLabel}
                   </p>

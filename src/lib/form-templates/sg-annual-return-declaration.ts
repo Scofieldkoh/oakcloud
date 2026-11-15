@@ -1,8 +1,8 @@
-/** Singapore Annual Return Declaration guided form, version 5: expanded people, directors and statement flow. */
+/** Singapore Annual Return Declaration guided form, version 6: clearer ACRA review, people cards and financial layout. */
 import type { FieldConditionInput, FormFieldInput } from '@/lib/validations/form-builder';
 
 export const SG_ANNUAL_RETURN_DECLARATION_TEMPLATE_KEY = 'sg_annual_return_declaration';
-export const SG_ANNUAL_RETURN_DECLARATION_TEMPLATE_VERSION = 5;
+export const SG_ANNUAL_RETURN_DECLARATION_TEMPLATE_VERSION = 6;
 export const SG_ANNUAL_RETURN_DECLARATION_TITLE = 'Annual Return Declaration';
 
 export const ANNUAL_RETURN_KEYS = {
@@ -138,6 +138,8 @@ function drafts(input: AnnualReturnBuildOptions): Draft[] {
       validation: { faqDefaultState: 'collapsed', faqSearchEnabled: false },
     },
     heading('part_company', 'Part 1: Company information'),
+    info('acra_prefill_notice', 'Verify prefilled company records',
+      'Company particulars, officers, share capital and shareholder information have been prefilled from the ACRA data records held in our system. Please verify that all details are accurate and complete. Any edit, addition or removal will require supporting documentation, such as board resolutions, before we can update the relevant records or proceed with filing.', prefilled),
     text(K.companyName, 'Company Name', { layoutWidth: 66 }),
     text(K.companyUen, 'UEN', { layoutWidth: 33, validation: { maxLength: 30 } }),
     { type: 'DROPDOWN', key: K.companyType, label: 'Company Type', isRequired: true,
@@ -278,14 +280,14 @@ function drafts(input: AnnualReturnBuildOptions): Draft[] {
     { type: 'FILE_UPLOAD', key: 'attachment_fs_ds', label: "Financial statements and directors' statement",
       isRequired: true, condition: ready,
       validation: { maxFileSizeMb: 50, allowMultipleFiles: true, allowedMimeTypes: ['application/pdf', 'image/jpeg', 'image/png'] } },
-    date(K.fsDate, "Date of the directors' statement", { condition: ready, layoutWidth: 33,
+    date(K.fsDate, "Date of the directors' statement", { condition: ready, layoutWidth: 100,
       subtext: 'The date the directors signed the statement that accompanies the financial statements.',
       validation: { minDateFieldKey: K.financialYearEnd, minDateOffsetDays: 0, maxDate: 'today' } }),
     date('date_fs_ds', 'Estimated date of completion', {
       condition: all(prepare, eq(K.fsReady, NO)), layoutWidth: 33, validation: { minDate: 'today' },
     }),
     { type: 'DROPDOWN', key: K.fsAuditStatus, label: 'Are the financial statements audited?',
-      isRequired: true, condition: prepare, layoutWidth: 66, options: [
+      isRequired: true, condition: prepare, layoutWidth: 100, options: [
         { label: 'Audited', value: 'Audited' },
         { label: 'Not audited (small company exemption)', value: 'Not audited (small company exemption)', condition: privateType },
         { label: 'Not audited (dormant company exemption)', value: 'Not audited (dormant company exemption)', condition: dormant },

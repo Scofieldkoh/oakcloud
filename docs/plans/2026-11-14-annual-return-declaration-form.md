@@ -410,3 +410,27 @@ version 4 definition or existing response snapshots.
 
 Regression tests cover the template contract, structured position persistence,
 director selection integrity, consent gating and per-person role mapping.
+
+## 8. Version 6 presentation refinements (2026-11-15)
+
+This revision keeps previously published form definitions intact and creates a
+new editable guided-form draft when seeded.
+
+- Suppress the extra "Selected: ..." line for both SSIC 2025 dropdowns; the
+  selected description is already present in the dropdown. Other long-choice
+  dropdowns keep their existing help behavior.
+- Add a prefilled-record notice at the beginning of Part 1 explaining that
+  company particulars are derived from ACRA records held in our system,
+  requiring verification of accuracy/completeness and supporting documentation
+  (for example, board resolutions) for changes, additions or removals.
+  This notice is shown only for prefilled company-record declarations.
+- Present individual People cards with alternating low-intensity teal,
+  sky-blue and violet backgrounds and a left border; show each person's name
+  prominently in the card header and screen-reader group label. The added/
+  edited highlight remains visually distinct.
+- Place the directors' statement date and financial-statement audit status on
+  separate 100%-width form rows, while keeping their input controls to
+  comfortable reading widths.
+- Seed this as version 6 using the existing Annual Return seed script and
+  publish the draft after review. Rebuilding the application alone does not
+  rewrite a published form's stored field widths or add its new notice.
