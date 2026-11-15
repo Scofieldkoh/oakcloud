@@ -15,6 +15,7 @@ import {
 } from '@/lib/form-utils';
 import { SIGNATURE_DATA_URL_MAX_LENGTH, extractSignatureDataUrl } from '@/lib/signature-utils';
 import { parseNameCheckResultMap } from '@/lib/forms/name-check-result';
+import { sanitizePersonShareholdings } from '@/lib/forms/person-shareholdings';
 import { prisma } from '@/lib/prisma';
 import { storage } from '@/lib/storage';
 import { getAppBaseUrl, sendEmail } from '@/lib/email';
@@ -399,6 +400,17 @@ function sanitizePublicAnswers(
   const validKeys = new Set(fields.map((field) => field.key));
   const fieldsByKey = new Map(fields.map((field) => [field.key, field]));
   const sanitizedAnswers: Record<string, unknown> = {};
+  // Repeated person rows contain an array of shareholding arrays; a single
+  // shareholding-list field contains only one array of shareholding objects.
+  const repeatShareholdingKeys = new Set<string>();
+  let insideRepeat = false;
+  for (const field of fields) {
+    if (field.type === 'PAGE_BREAK' && field.inputType === 'repeat_start') insideRepeat = true;
+    else if (field.type === 'PAGE_BREAK' && field.inputType === 'repeat_end') insideRepeat = false;
+    else if (insideRepeat && field.type === 'SHORT_TEXT' && field.inputType === 'shareholding_list') {
+      repeatShareholdingKeys.add(field.key);
+    }
+  }
 
   for (const [key, value] of Object.entries(answers)) {
     if (!validKeys.has(key)) continue;
@@ -408,6 +420,18 @@ function sanitizePublicAnswers(
 
     switch (field.type) {
       case 'SHORT_TEXT':
+        if (field.inputType === 'shareholding_list') {
+          if (!Array.isArray(value)) {
+            throw new Error(`${field.label || field.key} must contain structured shareholding rows.`);
+          }
+          if (repeatShareholdingKeys.has(key)) {
+            if (value.length > 50) throw new Error('Too many people in the shareholding section.');
+            sanitizedAnswers[key] = value.map((row) => sanitizePersonShareholdings(row ?? []));
+          } else {
+            sanitizedAnswers[key] = sanitizePersonShareholdings(value);
+          }
+          break;
+        }
         if (field.inputType === 'time_timezone') {
           if (Array.isArray(value)) {
             sanitizedAnswers[key] = value
@@ -521,10 +545,13 @@ export async function createPrefilledFormDraft(
     include: { fields: { orderBy: { position: 'asc' } } },
   });
   const binding = parseFormTemplateBinding(form?.settings);
+  // v2 used separate officer rows. v3+ combines officers and shareholders
+  // into people_section. A v4 form should not be rejected for missing v2 fields.
+  const requiredSection = binding?.version === 2 ? 'officers_section' : 'people_section';
   if (!form || binding?.key !== SG_ANNUAL_RETURN_DECLARATION_TEMPLATE_KEY
     || binding.version < 2
-    || !form.fields.some((field) => field.key === 'officers_section')) {
-    throw new Error('Publish the version 2 Annual Return Declaration form before creating prefilled drafts');
+    || !form.fields.some((field) => field.key === requiredSection)) {
+    throw new Error('Publish a compatible Annual Return Declaration form before creating prefilled drafts');
   }
   const draftSettings = parseFormDraftSettings(form.settings);
   if (!draftSettings.enabled) throw new Error('Draft saving must be enabled for this form');
