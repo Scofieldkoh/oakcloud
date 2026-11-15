@@ -2,6 +2,7 @@
 
 import { readAdditionalPositions } from '@/lib/forms/additional-positions';
 import { readPersonShareholdings } from '@/lib/forms/person-shareholdings';
+import { ANNUAL_RETURN_READ_ONLY_FIELD_CLASSES, formatRecordedShareQuantity } from '@/lib/forms/annual-return-form-display';
 
 export function formatRecordedAppointmentDate(value: string): string {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return value.trim() || 'Not recorded';
@@ -22,14 +23,14 @@ export function RecordedAdditionalPositions({ value }: { value: unknown }) {
           <div>
             <p className="mb-1 text-xs font-medium text-text-secondary">Position {index + 4}</p>
             <div role="textbox" aria-readonly="true" aria-label={`Position ${index + 4}`}
-              className="rounded-lg border border-border-primary bg-background-secondary px-3 py-2 text-sm text-text-primary">
+              className={`rounded-lg border px-3 py-2 text-sm text-text-primary ${ANNUAL_RETURN_READ_ONLY_FIELD_CLASSES}`}>
               {position.role || 'Not recorded'}
             </div>
           </div>
           <div>
             <p className="mb-1 text-xs font-medium text-text-secondary">Appointment date {index + 4}</p>
             <div role="textbox" aria-readonly="true" aria-label={`Appointment date ${index + 4}`}
-              className="rounded-lg border border-border-primary bg-background-secondary px-3 py-2 text-sm text-text-primary">
+              className={`rounded-lg border px-3 py-2 text-sm text-text-primary ${ANNUAL_RETURN_READ_ONLY_FIELD_CLASSES}`}>
               {formatRecordedAppointmentDate(position.date)}
             </div>
           </div>
@@ -52,15 +53,15 @@ export function RecordedShareholdings({ value }: { value: unknown }) {
           <div>
             <p className="mb-1 text-xs font-medium text-text-secondary">Share class {index + 1}</p>
             <div role="textbox" aria-readonly="true" aria-label={`Share class ${index + 1}`}
-              className="rounded-lg border border-border-primary bg-background-secondary px-3 py-2 text-sm text-text-primary">
+              className={`rounded-lg border px-3 py-2 text-sm text-text-primary ${ANNUAL_RETURN_READ_ONLY_FIELD_CLASSES}`}>
               {holding.shareClass}
             </div>
           </div>
           <div>
             <p className="mb-1 text-xs font-medium text-text-secondary">Number of shares</p>
             <div role="textbox" aria-readonly="true" aria-label={`Number of shares for class ${index + 1}`}
-              className="rounded-lg border border-border-primary bg-background-secondary px-3 py-2 text-sm tabular-nums text-text-primary">
-              {holding.shares}
+              className={`rounded-lg border px-3 py-2 text-sm tabular-nums text-text-primary ${ANNUAL_RETURN_READ_ONLY_FIELD_CLASSES}`}>
+              {formatRecordedShareQuantity(holding.shares)}
             </div>
           </div>
         </div>

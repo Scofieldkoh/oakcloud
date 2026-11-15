@@ -44,7 +44,8 @@ import { PersonShareholdingsEditor } from '@/components/forms/person-shareholdin
 import { AdditionalPositionsEditor } from '@/components/forms/additional-positions-editor';
 import { additionalPositionsError, formatAdditionalPositions } from '@/lib/forms/additional-positions';
 import { getDirectorReelectionOptions, isReelectionMatterSelected, personHasRole } from '@/lib/forms/annual-return-directors';
-import { getPeopleCardVariantClass, orderRecordedPositionFields, shouldShowLongDropdownSelection } from '@/lib/forms/annual-return-form-display';
+import { ANNUAL_RETURN_READ_ONLY_FIELD_CLASSES, formatRecordedShareQuantity, getPeopleCardVariantClass, orderRecordedPositionFields, shouldShowLongDropdownSelection } from '@/lib/forms/annual-return-form-display';
+import { readAdditionalPositions } from '@/lib/forms/additional-positions';
 import { RecordedAdditionalPositions, RecordedShareholdings, formatRecordedAppointmentDate } from '@/components/forms/annual-return-verification-details';
 import { SG_ANNUAL_RETURN_DECLARATION_TEMPLATE_KEY } from '@/lib/form-templates/sg-annual-return-declaration';
 import { formatPersonShareholdings, personShareholdingError } from '@/lib/forms/person-shareholdings';
@@ -2113,6 +2114,9 @@ export default function PublicFormPage() {
                       const sectionWidthClass = WIDTH_CLASS[readonlyPositionPair ? 50 : sectionField.layoutWidth] || WIDTH_CLASS[100];
                       const isReadOnlyCapitalField = isVerificationCapitalSection
                         && ['capital_class', 'capital_shares', 'capital_currency', 'capital_amount', 'capital_paid_up'].includes(sectionField.key);
+                      const isVerificationExtraPositions = isAnnualReturnTemplate && isPeopleCard
+                        && sectionField.key === 'person_additional_positions';
+                      const isAddressField = isAnnualReturnTemplate && sectionField.key === 'person_address';
                       const sectionValue = getRepeatFieldValue(sectionField.key, rowIndex);
                       const sectionPrefill = getPrefillFieldState(sectionField.key, sectionValue, prefillBaseline, answers, rowIndex);
 
@@ -2157,6 +2161,7 @@ export default function PublicFormPage() {
                         : '';
 
                       if (sectionField.type === 'HIDDEN') return null;
+                      if (isVerificationExtraPositions && readAdditionalPositions(sectionValue).length === 0) return null;
                       if (isRecordedPositionField && !(typeof sourcePositionRole === 'string' && sourcePositionRole.trim())) {
                         return null;
                       }
@@ -2169,7 +2174,7 @@ export default function PublicFormPage() {
                             sectionPendingRequired && pendingRequiredStyle)}
                           title={sectionPrefill.edited ? `Original: ${sectionField.inputType === 'shareholding_list' ? formatPersonShareholdings(sectionPrefill.original) || '(blank)' : sectionField.inputType === 'position_list' ? formatAdditionalPositions(sectionPrefill.original) || '(blank)' : String(sectionPrefill.original ?? '(blank)')}` : undefined}
                         >
-                          {!sectionField.hideLabel && !sectionChoiceInlineRight && sectionField.type !== 'PARAGRAPH' && (
+                          {!sectionField.hideLabel && !isVerificationExtraPositions && !sectionChoiceInlineRight && sectionField.type !== 'PARAGRAPH' && (
                             <label
                               htmlFor={sectionControlId}
                               id={sectionLabelId}
@@ -2236,21 +2241,30 @@ export default function PublicFormPage() {
                           )}
 
                           {sectionField.type === 'SHORT_TEXT' && sectionField.inputType !== 'shareholding_list' && sectionField.inputType !== 'position_list' && !sectionUseDateSelector && !sectionUseSplitPhoneInput && !sectionUseTimeTimezoneInput && (
-                            <input
-                              id={sectionControlId}
-                              type={sectionField.inputType === 'phone' ? 'tel' : sectionField.inputType || 'text'}
-                              value={typeof sectionValue === 'string' ? sectionValue : ''}
-                              onChange={(e) => setRepeatFieldValue(sectionField.key, rowIndex, e.target.value)}
-                              onBlur={() => handleFieldBlur(sectionField, getRepeatFieldValue(sectionField.key, rowIndex), getFieldErrorKey(sectionField.key, rowIndex), buildAnswerContext(answers, rowIndex))}
-                              placeholder={localizedSectionField.placeholder || ''}
-                              readOnly={sectionField.isReadOnly || isReadOnlyCapitalField}
-                              aria-invalid={sectionErrorText ? 'true' : undefined}
-                              aria-describedby={sectionDescribedBy}
-                              className={cn(
-                                'w-full rounded-lg border border-[#D8E3DF] bg-[#F4F7F6] px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-[#294D44]/20 focus:border-[#294D44] transition-all duration-150',
-                                sectionErrorText && ERROR_FIELD_CLASS
-                              )}
-                            />
+                            isReadOnlyCapitalField && sectionField.key === 'capital_shares' ? (
+                              <div id={sectionControlId} role="textbox" aria-label={sectionLabel} aria-readonly="true"
+                                className={cn('w-full rounded-lg border px-3 py-2 text-sm tabular-nums text-text-primary',
+                                  ANNUAL_RETURN_READ_ONLY_FIELD_CLASSES)}>
+                                {formatRecordedShareQuantity(sectionValue)}
+                              </div>
+                            ) : (
+                              <input
+                                id={sectionControlId}
+                                type={sectionField.inputType === 'phone' ? 'tel' : sectionField.inputType || 'text'}
+                                value={typeof sectionValue === 'string' ? sectionValue : ''}
+                                onChange={(e) => setRepeatFieldValue(sectionField.key, rowIndex, e.target.value)}
+                                onBlur={() => handleFieldBlur(sectionField, getRepeatFieldValue(sectionField.key, rowIndex), getFieldErrorKey(sectionField.key, rowIndex), buildAnswerContext(answers, rowIndex))}
+                                placeholder={localizedSectionField.placeholder || ''}
+                                readOnly={sectionField.isReadOnly || isReadOnlyCapitalField}
+                                aria-invalid={sectionErrorText ? 'true' : undefined}
+                                aria-describedby={sectionDescribedBy}
+                                className={cn(
+                                  'w-full rounded-lg border border-[#D8E3DF] bg-[#F4F7F6] px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-[#294D44]/20 focus:border-[#294D44] transition-all duration-150',
+                                  isAnnualReturnTemplate && (sectionField.isReadOnly || isReadOnlyCapitalField) && ANNUAL_RETURN_READ_ONLY_FIELD_CLASSES,
+                                  sectionErrorText && ERROR_FIELD_CLASS
+                                )}
+                              />
+                            )
                           )}
 
                           {sectionUseTimeTimezoneInput && sectionTimeTimezoneParts && (
@@ -2328,7 +2342,7 @@ export default function PublicFormPage() {
                           {sectionUseDateSelector && (
                             isRecordedDateField ? (
                               <div id={sectionControlId} role="textbox" aria-label={sectionLabel} aria-readonly="true"
-                                className="rounded-lg border border-border-primary bg-background-secondary px-3 py-2 text-sm text-text-primary">
+                                className={cn('rounded-lg border px-3 py-2 text-sm text-text-primary', ANNUAL_RETURN_READ_ONLY_FIELD_CLASSES)}>
                                 {formatRecordedAppointmentDate(typeof sectionValue === 'string' ? sectionValue : '')}
                               </div>
                             ) : (
@@ -2356,10 +2370,14 @@ export default function PublicFormPage() {
                               onBlur={() => handleFieldBlur(sectionField, getRepeatFieldValue(sectionField.key, rowIndex), getFieldErrorKey(sectionField.key, rowIndex), buildAnswerContext(answers, rowIndex))}
                               placeholder={localizedSectionField.placeholder || ''}
                               readOnly={sectionField.isReadOnly}
+                              rows={isAddressField ? 2 : undefined}
+                              wrap="soft"
                               aria-invalid={sectionErrorText ? 'true' : undefined}
                               aria-describedby={sectionDescribedBy}
                               className={cn(
-                                'w-full min-h-24 rounded-lg border border-[#D8E3DF] bg-[#F4F7F6] px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-[#294D44]/20 focus:border-[#294D44] transition-all duration-150',
+                                'w-full rounded-lg border border-[#D8E3DF] bg-[#F4F7F6] px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-[#294D44]/20 focus:border-[#294D44] transition-all duration-150',
+                                isAddressField ? 'min-h-12 max-h-48 overflow-y-auto resize-y [field-sizing:content]' : 'min-h-24',
+                                isAnnualReturnTemplate && sectionField.isReadOnly && ANNUAL_RETURN_READ_ONLY_FIELD_CLASSES,
                                 sectionErrorText && ERROR_FIELD_CLASS
                               )}
                             />
@@ -2368,7 +2386,7 @@ export default function PublicFormPage() {
                           {sectionField.type === 'DROPDOWN' && (
                             isRecordedRoleField || isReadOnlyCapitalField ? (
                               <div id={sectionControlId} role="textbox"
-                                className="rounded-lg border border-border-primary bg-background-secondary px-3 py-2 text-sm text-text-primary"
+                                className={cn('rounded-lg border px-3 py-2 text-sm text-text-primary', ANNUAL_RETURN_READ_ONLY_FIELD_CLASSES)}
                                 aria-label={sectionLabel} aria-readonly="true">
                                 {typeof sectionValue === 'string' ? sectionValue : ''}
                               </div>
@@ -3120,7 +3138,9 @@ export default function PublicFormPage() {
                 'w-full rounded-lg border border-[#D8E3DF] bg-[#F4F7F6] px-3.5 py-2.5 text-sm text-text-primary placeholder:text-text-secondary/50',
                 'focus:outline-none focus:ring-2 focus:ring-[#294D44]/20 focus:border-[#294D44] transition-all duration-150',
                 errorText && ERROR_FIELD_CLASS,
-                field.isReadOnly && 'bg-[#EDE9E5] cursor-not-allowed opacity-70'
+                isAnnualReturnTemplate && field.isReadOnly
+                  ? ANNUAL_RETURN_READ_ONLY_FIELD_CLASSES
+                  : field.isReadOnly && 'bg-[#EDE9E5] cursor-not-allowed opacity-70'
               )}
             />
           )}
@@ -3327,6 +3347,8 @@ export default function PublicFormPage() {
               onBlur={() => handleFieldBlur(field, answers[field.key], getFieldErrorKey(field.key), answers)}
               minDate={dateValidationRange.minDate}
               maxDate={dateValidationRange.maxDate}
+              controlClassName={isAnnualReturnTemplate && field.isReadOnly
+                ? ANNUAL_RETURN_READ_ONLY_FIELD_CLASSES : undefined}
               className={cn('w-full', field.key === 'date_of_financial_statement' && 'max-w-sm')}
             />
           )}
@@ -3341,14 +3363,21 @@ export default function PublicFormPage() {
               placeholder={localizedField.placeholder || ''}
               readOnly={field.isReadOnly}
               required={field.isRequired}
+              rows={isAnnualReturnTemplate && field.key === 'record_registered_office' ? 2 : undefined}
+              wrap="soft"
               aria-label={field.hideLabel ? accessibleLabel : undefined}
               aria-invalid={errorText ? 'true' : undefined}
               aria-describedby={describedBy}
               className={cn(
-                'w-full min-h-24 rounded-lg border border-[#D8E3DF] bg-[#F4F7F6] px-3.5 py-2.5 text-sm text-text-primary placeholder:text-text-secondary/50',
+                'w-full rounded-lg border border-[#D8E3DF] bg-[#F4F7F6] px-3.5 py-2.5 text-sm text-text-primary placeholder:text-text-secondary/50',
                 'focus:outline-none focus:ring-2 focus:ring-oak-primary/20 focus:border-oak-primary transition-all duration-150 resize-y',
+                isAnnualReturnTemplate && field.key === 'record_registered_office'
+                  ? 'min-h-12 max-h-48 overflow-y-auto [field-sizing:content]'
+                  : 'min-h-24',
                 errorText && ERROR_FIELD_CLASS,
-                field.isReadOnly && 'bg-[#EDE9E5] cursor-not-allowed opacity-70'
+                isAnnualReturnTemplate && field.isReadOnly
+                  ? ANNUAL_RETURN_READ_ONLY_FIELD_CLASSES
+                  : field.isReadOnly && 'bg-[#EDE9E5] cursor-not-allowed opacity-70'
               )}
             />
           )}
@@ -3382,6 +3411,13 @@ export default function PublicFormPage() {
               : null;
             return (
               <>
+                {isAnnualReturnTemplate && field.isReadOnly ? (
+                  <div id={controlId} role="textbox" aria-label={accessibleLabel} aria-readonly="true"
+                    className={cn('rounded-lg border px-3 py-2 text-sm text-text-primary',
+                      ANNUAL_RETURN_READ_ONLY_FIELD_CLASSES)}>
+                    {selectedLabel || (typeof value === 'string' ? value : '')}
+                  </div>
+                ) : (
                 <SearchableSelect
                   options={dropdownOptions}
                   allowCustomValue={parseObject(field.validation)?.allowCustomOption === true}
@@ -3394,6 +3430,7 @@ export default function PublicFormPage() {
                   containerClassName={cn('h-10', field.key === 'fs_audit_status' && 'max-w-lg', errorText && ERROR_FIELD_CLASS)}
                   onBlur={() => handleFieldBlur(field, answers[field.key], getFieldErrorKey(field.key), answers)}
                 />
+                )}
                 {shouldShowLongDropdownSelection(field.key, selectedLabel) && (
                   <p className="mt-1.5 break-words text-sm text-text-primary">
                     <span className="text-text-secondary">Selected: </span>{selectedLabel}

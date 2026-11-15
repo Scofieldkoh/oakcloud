@@ -43,3 +43,15 @@ export function orderRecordedPositionFields<T extends { key: string }>(fields: T
   }
   return ordered;
 }
+
+/** Display only: never round large share quantities or alter stored values. */
+export function formatRecordedShareQuantity(value: unknown): string {
+  const raw = typeof value === 'string' ? value.trim()
+    : typeof value === 'number' && Number.isSafeInteger(value) ? String(value) : '';
+  if (!/^\d+$/.test(raw)) return raw;
+  return BigInt(raw).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
+
+/** Neutral grey distinguishes ACRA-sourced, verification-only fields. */
+export const ANNUAL_RETURN_READ_ONLY_FIELD_CLASSES =
+  'border-[#B6C1BF] bg-[#D9DFDE] dark:border-[#4F625C] dark:bg-[#34433F]';

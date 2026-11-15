@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   PEOPLE_CARD_VARIANT_CLASSES,
+  ANNUAL_RETURN_READ_ONLY_FIELD_CLASSES,
+  formatRecordedShareQuantity,
   getPeopleCardVariantClass,
   orderRecordedPositionFields,
   shouldShowLongDropdownSelection,
@@ -43,6 +45,21 @@ describe('Annual Return public form presentation', () => {
       'person_additional_positions', 'person_shareholding',
     ]);
     expect(orderRecordedPositionFields(fields)[1]).toBe(fields[1]);
+  });
+
+  it('formats shares with thousands separators without losing integer precision', () => {
+    expect(formatRecordedShareQuantity('10000')).toBe('10,000');
+    expect(formatRecordedShareQuantity('12345678901234567890')).toBe('12,345,678,901,234,567,890');
+    expect(formatRecordedShareQuantity('00050')).toBe('50');
+    expect(formatRecordedShareQuantity(123456)).toBe('123,456');
+    expect(formatRecordedShareQuantity('')).toBe('');
+    expect(formatRecordedShareQuantity('not a number')).toBe('not a number');
+    expect(formatRecordedShareQuantity('10.25')).toBe('10.25');
+  });
+
+  it('uses a noticeably darker grey for verification-only fields', () => {
+    expect(ANNUAL_RETURN_READ_ONLY_FIELD_CLASSES).toContain('bg-[#D9DFDE]');
+    expect(ANNUAL_RETURN_READ_ONLY_FIELD_CLASSES).toContain('dark:bg-');
   });
 
 });

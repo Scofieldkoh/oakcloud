@@ -29,11 +29,12 @@ describe('Annual Return verification details', () => {
       { shareClass: 'PREFERENCE', shares: '50' },
     ]} />);
     expect(screen.getByText('ORDINARY')).toBeTruthy();
-    expect(screen.getByText('10000')).toBeTruthy();
+    expect(screen.getByText('10,000')).toBeTruthy();
     expect(screen.getByText('PREFERENCE')).toBeTruthy();
     expect(screen.queryByRole('button')).toBeNull();
     expect(screen.queryByRole('combobox')).toBeNull();
     expect(screen.queryByRole('spinbutton')).toBeNull();
+    expect(screen.getAllByRole('textbox').every((element) => element.className.includes('bg-[#D9DFDE]'))).toBe(true);
     rerender(<RecordedShareholdings value={[]} />);
     expect(screen.getByText('No shares recorded for this person.')).toBeTruthy();
   });

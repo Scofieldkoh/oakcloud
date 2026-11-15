@@ -485,3 +485,20 @@ definition or any previous submission/draft.
   Historical v7 drafts retain their prior backend compatibility.
 - Seed and publish v8 to replace the published definition. The UI and
   saved-draft row-count fixes also improve compatible existing draft displays.
+
+## 11. Verification-only form display refinements (2026-11-15)
+
+No new template version is required for these presentation-only changes.
+
+- Display recorded number-of-shares quantities with thousands grouping
+  (e.g. `10000` → `10,000`), preserving their original stored decimal strings
+  and precision. This applies to both share capital and each shareholder's
+  class-and-quantity records.
+- Make read-only Annual Return controls visibly neutral-grey, distinct from
+  lighter editable fields, including role/date and capital/shareholding displays.
+- Auto-size registered-office and person-address multiline text areas to the
+  wrapped prefilled text instead of a tall fixed-height default. The areas
+  remain editable where permitted.
+- Suppress the "Additional positions" section label for the end-user. Where
+  recorded fourth-and-later appointments exist, show their direct position
+  and appointment-date rows; omit the empty section entirely otherwise.
