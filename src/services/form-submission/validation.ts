@@ -1,4 +1,5 @@
 import { addIsoDateMonths } from '@/lib/forms/relative-date';
+import { sanitizePersonShareholdings } from '@/lib/forms/person-shareholdings';
 /** Validation and sanitising of public form answers and submission metadata. */
 
 import { Prisma, type FormField } from '@/generated/prisma';
@@ -598,6 +599,15 @@ export function sanitizePublicAnswers(
   const validKeys = new Set(fields.map((field) => field.key));
   const fieldsByKey = new Map(fields.map((field) => [field.key, field]));
   const sanitizedAnswers: Record<string, unknown> = {};
+  const repeatShareholdingKeys = new Set<string>();
+  let insideRepeat = false;
+  for (const field of fields) {
+    if (isRepeatStartMarker(field)) insideRepeat = true;
+    else if (isRepeatEndMarker(field)) insideRepeat = false;
+    else if (insideRepeat && field.type === 'SHORT_TEXT' && field.inputType === 'shareholding_list') {
+      repeatShareholdingKeys.add(field.key);
+    }
+  }
 
   for (const [key, value] of Object.entries(answers)) {
     if (!validKeys.has(key)) continue;
@@ -607,6 +617,20 @@ export function sanitizePublicAnswers(
 
     switch (field.type) {
       case 'SHORT_TEXT':
+        if (field.inputType === 'shareholding_list') {
+          // Use the form definition, not a client-supplied array shape, to
+          // distinguish one person's holdings from a nested repeated section.
+          if (!Array.isArray(value)) {
+            throw new Error(`${field.label || field.key} must contain structured shareholding rows.`);
+          }
+          if (repeatShareholdingKeys.has(key)) {
+            if (value.length > 50) throw new Error('Too many people in the shareholding section.');
+            sanitizedAnswers[key] = value.map((row) => sanitizePersonShareholdings(row ?? []));
+          } else {
+            sanitizedAnswers[key] = sanitizePersonShareholdings(value);
+          }
+          break;
+        }
         if (field.inputType === 'time_timezone') {
           const sanitizeOne = (item: unknown) => sanitizeTimeTimezoneValue(item);
           if (Array.isArray(value)) {
@@ -836,6 +860,7 @@ export function sanitizeSubmissionMetadata(
   delete nextMetadata.companyIncorporation;
   delete nextMetadata.companyIncorporationReview;
   delete nextMetadata.responseReviewStatus;
+  delete nextMetadata.ceoKycReview;
   delete nextMetadata.aiReview;
   delete nextMetadata.responseTags;
   if (Object.keys(sanitizedResults).length > 0) {

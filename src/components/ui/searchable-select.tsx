@@ -60,6 +60,8 @@ export interface SearchableSelectProps {
   popoverMinWidth?: number;
   /** Blur callback — fires when focus leaves the select input */
   onBlur?: () => void;
+  /** Accept a typed value that is not in the supplied options. */
+  allowCustomValue?: boolean;
   /** Error message associated with the select input */
   error?: string;
 }
@@ -83,6 +85,7 @@ export function SearchableSelect({
   popoverMinWidth,
   ariaLabel,
   onBlur,
+  allowCustomValue = false,
   error,
 }: SearchableSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -158,6 +161,10 @@ export function SearchableSelect({
       setHighlightedIndex(-1);
     }
   }, [isOpen]);
+
+  const customValue = search.trim();
+  const canCreateCustom = allowCustomValue && customValue.length > 0 &&
+    !options.some((option) => option.value.toLocaleLowerCase('en') === customValue.toLocaleLowerCase('en'));
 
   // Handle click outside
   useEffect(() => {
@@ -258,14 +265,17 @@ export function SearchableSelect({
           e.preventDefault();
           if (isOpen && filteredOptions[highlightedIndex]) {
             handleSelect(filteredOptions[highlightedIndex].value);
+          } else if (isOpen && canCreateCustom) {
+            handleSelect(customValue);
           } else if (!isOpen) {
             setIsOpen(true);
           }
           break;
         case 'Tab':
           // Typing until one option is left, then Tab, picks it (focus still moves on).
-          if (isOpen && search.trim() && filteredOptions.length === 1) {
-            handleSelect(filteredOptions[0].value);
+          if (isOpen && search.trim()) {
+            if (filteredOptions.length === 1) handleSelect(filteredOptions[0].value);
+            else if (canCreateCustom) handleSelect(customValue);
           }
           setIsOpen(false);
           break;
@@ -274,7 +284,7 @@ export function SearchableSelect({
           break;
       }
     },
-    [isOpen, filteredOptions, highlightedIndex, handleSelect, search]
+    [isOpen, filteredOptions, highlightedIndex, handleSelect, search, canCreateCustom, customValue]
   );
 
   const sizeClasses = {
@@ -285,7 +295,7 @@ export function SearchableSelect({
   const triggerSizeClasses = variant === 'table-filter' ? '' : sizeClasses[size];
 
   // Display value in input: show search when typing, otherwise show selected label
-  const inputValue = isOpen ? search : (selectedOption?.label || '');
+  const inputValue = isOpen ? search : (selectedOption?.label || (allowCustomValue ? value : ''));
 
   const getOptionId = useCallback(
     (index: number) => `${baseId}-option-${index}`,
@@ -418,6 +428,14 @@ export function SearchableSelect({
               maxHeight: 280,
             }}
           >
+            {canCreateCustom && (
+              <button type="button" className="border-b border-border-primary px-3 py-2 text-left text-sm font-medium text-oak-primary hover:bg-background-secondary"
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={() => handleSelect(customValue)}
+              >
+                Use custom value: {customValue}
+              </button>
+            )}
             {/* Options List */}
             <div
               ref={listRef}

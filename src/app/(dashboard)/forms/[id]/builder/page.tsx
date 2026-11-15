@@ -2,7 +2,7 @@
 
 import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import {
   closestCenter,
   DndContext,
@@ -415,6 +415,7 @@ type TranslationSourceItem = {
 
 export default function FormBuilderPage() {
   const params = useParams<{ id: string }>();
+  const router = useRouter();
   const { success, error: showError } = useToast();
   const formId = params.id;
 
@@ -422,6 +423,7 @@ export default function FormBuilderPage() {
   const { data: urlHealthDetails } = useFormUrlHealthDetails(formId);
   const updateForm = useUpdateForm(formId);
 
+  const [isCreatingRevision, setIsCreatingRevision] = useState(false);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [slug, setSlug] = useState('');
@@ -1643,6 +1645,28 @@ export default function FormBuilderPage() {
     await persistForm('PUBLISHED', 'Form published');
   }
 
+  async function handleCreateEditableRevision() {
+    if (!form || form.status !== 'PUBLISHED' || isDirty || isCreatingRevision) return;
+    setIsCreatingRevision(true);
+    try {
+      const response = await fetch(`/api/forms/${encodeURIComponent(form.id)}/duplicate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tenantId: form.tenantId, asRevision: true }),
+      });
+      const payload = await response.json();
+      if (!response.ok || !payload?.id) {
+        throw new Error(payload?.error || 'Could not create an editable revision');
+      }
+      success('Editable draft revision created. The published form remains live.');
+      router.push(`/forms/${encodeURIComponent(payload.id)}/builder`);
+    } catch (error) {
+      showError(error instanceof Error ? error.message : 'Failed to create a form revision');
+    } finally {
+      setIsCreatingRevision(false);
+    }
+  }
+
   async function handleCopyPublicLink() {
     if (!form) return;
 
@@ -1786,6 +1810,13 @@ export default function FormBuilderPage() {
             <Button variant="secondary" size="sm" onClick={() => navigationGuard.requestNavigation(`/forms/${form.id}/responses`)}>
               Responses
             </Button>
+            {form.status === 'PUBLISHED' && (
+              <Button variant="secondary" size="sm" onClick={() => void handleCreateEditableRevision()}
+                isLoading={isCreatingRevision} disabled={isDirty}
+                title={isDirty ? 'Save or discard unsaved settings before creating a revision' : 'Create an editable copy while this published version remains live'}>
+                Create editable revision
+              </Button>
+            )}
             {!isPublished && (
               <Button variant="primary" size="sm" onClick={handlePublish} isLoading={updateForm.isPending}>
                 Publish
@@ -1830,7 +1861,7 @@ export default function FormBuilderPage() {
         <div className="p-4 sm:p-6">
         {isFieldsLocked && (
           <Alert variant="info" title="Questions are locked" className="mb-4">
-            This form was published from the {templateBinding?.key === 'sg_company_incorporation' ? 'Singapore Company Incorporation' : 'guided'} template, so its questions can no longer change and every response matches the same definition. You can still edit the title, settings and translations. To change questions, duplicate the form; the copy is an ordinary form without the template checks.
+            Questions in this published guided template are locked to protect existing responses. To change them, select <strong>Create editable revision</strong>. The draft retains the guided-template binding; publishing it creates a new public link while this version and its responses remain available.
           </Alert>
         )}
         {(publishReadiness.blockers.length > 0 || publishReadiness.warnings.length > 0) && (
@@ -1893,7 +1924,7 @@ export default function FormBuilderPage() {
                     onChange={(e) => setStatus(e.target.value as 'DRAFT' | 'PUBLISHED' | 'ARCHIVED')}
                     className="w-full rounded-lg border border-border-primary bg-background-secondary px-3 py-2 text-sm text-text-primary"
                   >
-                    <option value="DRAFT">Draft</option>
+                    <option value="DRAFT" disabled={form.status === 'PUBLISHED' && isFieldsLocked}>Draft</option>
                     <option value="PUBLISHED">Published</option>
                     <option value="ARCHIVED">Archived</option>
                   </select>

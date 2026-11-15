@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils';
 import { useFormOptionPresets } from '@/hooks/use-form-option-presets';
 import { isSummaryEligibleFieldType } from '@/lib/form-utils';
 import { getConditionDependents } from './builder-analysis';
-import { FIELD_TYPE_OPTIONS, WIDTH_OPTIONS, normalizeKey, isRepeatMarkerInputType, isBlockDividerInputType, isFaqField, newClientId } from './builder-utils';
+import { FIELD_TYPE_OPTIONS, WIDTH_OPTIONS, normalizeKey, isRepeatMarkerInputType, isBlockDividerInputType, isFaqField, newClientId, suggestFieldLayoutWidth } from './builder-utils';
 import type { BuilderField, ShortInputType } from './builder-utils';
 import type { FormUrlHealthDetail } from '@/hooks/use-form-url-health';
 
@@ -361,6 +361,7 @@ export function FieldGeneralTab({
             <option value="number">Number</option>
             <option value="date">Datepicker</option>
             <option value="time_timezone">Time + timezone</option>
+            <option value="shareholding_list">Shareholdings by class (repeat section)</option>
           </select>
         </div>
       )}
@@ -1266,6 +1267,16 @@ export function FieldGeneralTab({
               placeholder="One option per line"
             />
           </div>
+          <Toggle
+            checked={field.validation?.allowCustomOption === true}
+            onChange={(checked) => onChange({
+              ...field,
+              validation: { ...(field.validation || {}), allowCustomOption: checked || undefined },
+            })}
+            label="Allow a custom option"
+            description="Respondents can type a value not listed in the dropdown. Useful for uncommon share classes or currencies."
+            size="sm"
+          />
           {field.optionPresetId ? (
             <div className="rounded-lg border border-border-primary bg-background-primary p-3 text-xs text-text-secondary">
               Options are managed by the linked preset. Choose Custom options to make an editable copy of the current list.
@@ -1284,7 +1295,14 @@ export function FieldGeneralTab({
             onChange={(e) => onChange({ ...field, placeholder: e.target.value })}
           />
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-text-secondary">Width</label>
+            <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2">
+              <label className="text-xs font-medium text-text-secondary">Width</label>
+              <button type="button"
+                onClick={() => onChange({ ...field, layoutWidth: suggestFieldLayoutWidth(field) })}
+                className="text-xs font-medium text-oak-primary underline hover:opacity-80">
+                Suggest compact width
+              </button>
+            </div>
             <WidthSelector
               value={field.layoutWidth}
               onChange={(v) => onChange({ ...field, layoutWidth: v })}

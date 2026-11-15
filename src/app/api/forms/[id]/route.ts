@@ -52,36 +52,24 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
     const formPatchCandidate: Record<string, unknown> = {};
     for (const key of ['title', 'description', 'status', 'tags', 'slug', 'settings']) {
-      if (key in body) {
-        formPatchCandidate[key] = body[key];
-      }
+      if (key in body) formPatchCandidate[key] = body[key];
     }
+    // Validate both payloads before making any changes. Fields must be persisted
+    // BEFORE a guided draft is published, because publication hashes and locks
+    // its field definition. Updating status first would lock the old fields.
+    const formPatch = Object.keys(formPatchCandidate).length > 0
+      ? updateFormSchema.parse(formPatchCandidate)
+      : null;
+    const parsedFields = Array.isArray(body.fields)
+      ? saveFormFieldsSchema.parse({ fields: body.fields }).fields
+      : null;
 
-    if (Object.keys(formPatchCandidate).length > 0) {
-      const updateInput = updateFormSchema.parse(formPatchCandidate);
-      await updateForm(
-        id,
-        updateInput,
-        {
-          tenantId,
-          userId: session.id,
-        },
-        reason
-      );
+    if (parsedFields) {
+      await saveFormFields(id, parsedFields, { tenantId, userId: session.id }, reason);
       updatedAny = true;
     }
-
-    if (Array.isArray(body.fields)) {
-      const parsed = saveFormFieldsSchema.parse({ fields: body.fields });
-      await saveFormFields(
-        id,
-        parsed.fields,
-        {
-          tenantId,
-          userId: session.id,
-        },
-        reason
-      );
+    if (formPatch) {
+      await updateForm(id, formPatch, { tenantId, userId: session.id }, reason);
       updatedAny = true;
     }
 

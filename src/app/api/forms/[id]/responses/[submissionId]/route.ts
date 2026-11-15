@@ -9,6 +9,8 @@ import {
   updateFormResponseTags,
 } from '@/services/form-builder.service';
 import { FORM_RESPONSE_REVIEW_STATUS_OPTIONS, type FormResponseReviewStatus } from '@/lib/form-utils';
+import { updateCeoKycReview, type CeoKycReviewAction } from '@/services/form-submission/ceo-kyc';
+import { ValidationError } from '@/lib/errors';
 
 interface RouteParams {
   params: Promise<{
@@ -42,6 +44,18 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     const { searchParams } = new URL(request.url);
     const tenantId = resolveWorkspaceId(session, searchParams.get('tenantId'));
     const body = await request.json().catch(() => ({}));
+    if (body && typeof body === 'object' && Object.prototype.hasOwnProperty.call(body, 'ceoKyc')) {
+      const command = body.ceoKyc;
+      if (!command || typeof command !== 'object' ||
+        !['LINK', 'REVIEW', 'CLEAR'].includes(command.action) ||
+        (command.action === 'LINK' && (typeof command.reference !== 'string' || command.reference.length > 2048))) {
+        throw new ValidationError('Invalid CEO KYC/CDD review request');
+      }
+      const result = await updateCeoKycReview(id, submissionId, command as CeoKycReviewAction, {
+        tenantId, userId: session.id,
+      });
+      return NextResponse.json(result);
+    }
     const reviewStatus = typeof body.reviewStatus === 'string' &&
       FORM_RESPONSE_REVIEW_STATUS_OPTIONS.some((option) => option.value === body.reviewStatus)
       ? body.reviewStatus as FormResponseReviewStatus

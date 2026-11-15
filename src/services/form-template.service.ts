@@ -57,7 +57,12 @@ async function seedGuidedForm(input: {
   ]);
   const existing = candidates.find((candidate) => {
     const binding = parseFormTemplateBinding(candidate.settings);
-    return binding?.key === input.key && !binding.lockedAt;
+    // A manually edited revision should never be overwritten by running the
+    // seed command again; only the ordinary seed draft can be refreshed.
+    const revision = settingsObject(candidate.settings).revision;
+    const isRevision = !!revision && typeof revision === 'object' && !Array.isArray(revision)
+      && typeof (revision as Record<string, unknown>).sourceFormId === 'string';
+    return binding?.key === input.key && !binding.lockedAt && !isRevision;
   });
   const form = existing ? { id: existing.id } : await createForm({
     title: input.title, tags: [input.tag], status: 'DRAFT',
@@ -127,6 +132,17 @@ export async function seedCompanyIncorporationForm(params: TenantAwareParams): P
 
 /** Seed revised Annual Return Declaration as a draft; leave the live form untouched. */
 export async function seedAnnualReturnDeclarationForm(params: TenantAwareParams): Promise<SeedFormResult> {
+  await ensureBuiltInFormOptionPresets(params.tenantId, params.userId);
+  const lookup = (builtInKey: string) => prisma.formOptionPreset.findUnique({
+    where: { tenantId_builtInKey: { tenantId: params.tenantId, builtInKey } },
+    select: { id: true },
+  });
+  const [ssicPreset, nationalityPreset, currencyPreset] = await Promise.all([
+    lookup('ssic'), lookup('nationalities'), lookup('currencies'),
+  ]);
+  if (!ssicPreset || !nationalityPreset || !currencyPreset) {
+    throw new ValidationError('The SSIC, nationality or currency preset list is unavailable in this workspace');
+  }
   return seedGuidedForm({
     params,
     key: SG_ANNUAL_RETURN_DECLARATION_TEMPLATE_KEY,
@@ -134,7 +150,7 @@ export async function seedAnnualReturnDeclarationForm(params: TenantAwareParams)
     title: SG_ANNUAL_RETURN_DECLARATION_TITLE,
     tag: 'annual-return',
     description: 'Declaration form for ACRA annual return filing',
-    fields: buildSgAnnualReturnDeclarationFields(),
+    fields: buildSgAnnualReturnDeclarationFields({ ssicPresetId: ssicPreset.id, nationalityPresetId: nationalityPreset.id, currencyPresetId: currencyPreset.id }),
     defaultSettings: buildSgAnnualReturnDeclarationSettings(),
     liveSettingsSlug: 'annual-return-declaration',
   });
