@@ -8,11 +8,11 @@ export function shouldShowLongDropdownSelection(fieldKey: string, selectedLabel:
     && fieldKey !== 'record_secondary_activity';
 }
 
-/** Soft colour rotation, with a stronger leading edge for visual row separation. */
+/** Gentle background rotation to separate people without an accent bar. */
 export const PEOPLE_CARD_VARIANT_CLASSES = [
-  'border-teal-200 border-l-4 border-l-teal-500 bg-teal-50/60 dark:border-teal-900 dark:border-l-teal-500 dark:bg-teal-950/20',
-  'border-sky-200 border-l-4 border-l-sky-500 bg-sky-50/60 dark:border-sky-900 dark:border-l-sky-500 dark:bg-sky-950/20',
-  'border-violet-200 border-l-4 border-l-violet-500 bg-violet-50/55 dark:border-violet-900 dark:border-l-violet-500 dark:bg-violet-950/20',
+  'bg-teal-50/60 dark:bg-teal-950/20',
+  'bg-sky-50/60 dark:bg-sky-950/20',
+  'bg-violet-50/55 dark:bg-violet-950/20',
 ] as const;
 
 export function getPeopleCardVariantClass(index: number): string {

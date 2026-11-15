@@ -1,8 +1,8 @@
-/** Singapore Annual Return Declaration guided form, version 6: clearer ACRA review, people cards and financial layout. */
+/** Singapore Annual Return Declaration guided form, version 7: read-only recorded positions and share reconciliation. */
 import type { FieldConditionInput, FormFieldInput } from '@/lib/validations/form-builder';
 
 export const SG_ANNUAL_RETURN_DECLARATION_TEMPLATE_KEY = 'sg_annual_return_declaration';
-export const SG_ANNUAL_RETURN_DECLARATION_TEMPLATE_VERSION = 6;
+export const SG_ANNUAL_RETURN_DECLARATION_TEMPLATE_VERSION = 7;
 export const SG_ANNUAL_RETURN_DECLARATION_TITLE = 'Annual Return Declaration';
 
 export const ANNUAL_RETURN_KEYS = {
@@ -187,6 +187,7 @@ function drafts(input: AnnualReturnBuildOptions): Draft[] {
     pageBreak('page_company_records', 'Share capital and people', prefilled),
     heading('part_records', 'Share capital and people', prefilled),
     text('record_as_at', 'Record snapshot', { isReadOnly: true, isRequired: false, condition: prefilled }),
+    { type: 'HIDDEN', key: 'position_record_policy', label: 'Position record policy', condition: prefilled },
     heading('part_capital', 'Share capital', prefilledShares),
     { type: 'PAGE_BREAK', inputType: 'repeat_start', key: 'share_capital_section', label: 'Share capital',
       condition: prefilledShares,
@@ -237,6 +238,10 @@ function drafts(input: AnnualReturnBuildOptions): Draft[] {
       isRequired: false, layoutWidth: 33 }),
     date('person_role_date_3', 'Appointment date 3', { condition: all(prefilled, eq('person_kind', 'Individual')),
       isRequired: false, layoutWidth: 33 }),
+    // Stored alongside each prefilled position; checkboxes appear beside the date in the public form.
+    { type: 'HIDDEN', key: 'person_role_remove_1', label: 'Position 1 to remove', condition: prefilled },
+    { type: 'HIDDEN', key: 'person_role_remove_2', label: 'Position 2 to remove', condition: prefilled },
+    { type: 'HIDDEN', key: 'person_role_remove_3', label: 'Position 3 to remove', condition: prefilled },
     { type: 'SHORT_TEXT', inputType: 'position_list', key: 'person_additional_positions',
       label: 'Additional positions', condition: all(prefilled, eq('person_kind', 'Individual')),
       isRequired: false, layoutWidth: 100, options: options(POSITION_OPTIONS) },

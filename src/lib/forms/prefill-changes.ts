@@ -1,7 +1,8 @@
 /** Generic form prefill comparison. Repeat rows are matched by stable record IDs, not position. */
 import { AR_RECORD_SECTIONS } from '@/lib/forms/annual-return-prefill';
-import { formatPersonShareholdings } from '@/lib/forms/person-shareholdings';
-import { formatAdditionalPositions } from '@/lib/forms/additional-positions';
+import { ValidationError } from '@/lib/errors';
+import { formatPersonShareholdings, readPersonShareholdings } from '@/lib/forms/person-shareholdings';
+import { additionalPositionsError, formatAdditionalPositions, readAdditionalPositions } from '@/lib/forms/additional-positions';
 import { getDirectorReelectionOptions, personHasRole } from '@/lib/forms/annual-return-directors';
 
 export const OAK_PREFILL_METADATA_KEY = '__oak_prefill';
@@ -42,11 +43,46 @@ const normalized = (value: unknown): string => {
 export const valuesDifferFromPrefill = (original: unknown, current: unknown): boolean =>
   normalized(original) !== normalized(current);
 
+const classKey = (name: string) => name.trim().replace(/\s+/g, ' ').toLocaleUpperCase('en');
+function canonicalShareholdings(value: unknown): string | null {
+  if (value === undefined || value === null) return '[]';
+  if (!Array.isArray(value)) return null;
+  const rows = readPersonShareholdings(value);
+  if (rows.length !== value.length) return null;
+  return JSON.stringify(rows.map((row) => ({
+    shareClass: classKey(row.shareClass),
+    shares: /^\d{1,30}$/.test(row.shares.trim()) ? BigInt(row.shares.trim()).toString() : row.shares.trim(),
+  })).sort((a, b) => a.shareClass.localeCompare(b.shareClass)));
+}
+function valuesDifferForField(key: string, original: unknown, current: unknown): boolean {
+  if (key === 'person_shareholding') {
+    const a = canonicalShareholdings(original);
+    const b = canonicalShareholdings(current);
+    return a === null || b === null ? valuesDifferFromPrefill(original, current) : a !== b;
+  }
+  if (key === 'person_additional_positions') {
+    const a = readAdditionalPositions(original);
+    const b = readAdditionalPositions(current);
+    if ((Array.isArray(original) && a.length !== original.length)
+      || (Array.isArray(current) && b.length !== current.length)) {
+      return valuesDifferFromPrefill(original, current);
+    }
+    return JSON.stringify(a) !== JSON.stringify(b);
+  }
+  return valuesDifferFromPrefill(original, current);
+}
+
+export function formatOriginalPrefillValue(key: string, value: unknown): string {
+  if (key === 'person_shareholding') return formatPersonShareholdings(value) || '(no shares)';
+  if (key === 'person_additional_positions') return formatAdditionalPositions(value) || '(no additional positions)';
+  return value === undefined || value === null || value === '' ? '(blank)' : String(value);
+}
+
 const text = (value: unknown) => value === undefined || value === null ? '' : String(value);
 const changedText = (key: string, value: unknown) =>
   key === 'person_shareholding' ? formatPersonShareholdings(value) || ''
     : key === 'person_additional_positions' ? formatAdditionalPositions(value) || ''
-    : text(value);
+    : key.startsWith('person_role_remove_') ? (value === 'Yes' ? 'To remove' : 'Keep') : text(value);
 const asArray = (value: unknown): unknown[] => Array.isArray(value) ? value : [];
 const asObject = (value: unknown): Record<string, unknown> | null =>
   value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : null;
@@ -81,6 +117,56 @@ export function protectPrefillAnswers(
     protectedAnswers[section.id] = ids;
   }
   if (Object.prototype.hasOwnProperty.call(baseline, 'person_record_id')) {
+    if (baseline.position_record_policy === 'read_only_with_removal') {
+      // A user can request that a source appointment be removed, but cannot
+      // change its role/date or delete an existing extra position directly.
+      protectedAnswers.position_record_policy = baseline.position_record_policy;
+      const oldIds = asArray(baseline.person_record_id).map(text);
+      const newIds = asArray(protectedAnswers.person_record_id).map(text);
+      for (const [row, id] of newIds.entries()) {
+        const originalIndex = oldIds.indexOf(id);
+        if (!id || originalIndex === -1) {
+          for (const number of [1, 2, 3]) {
+            if (asArray(protectedAnswers[`person_role_remove_${number}`])[row] === 'Yes') {
+              throw new ValidationError('Only existing recorded appointments can be marked To remove.');
+            }
+          }
+          if (readAdditionalPositions(asArray(protectedAnswers.person_additional_positions)[row])
+            .some((position) => position.toRemove)) {
+            throw new ValidationError('New appointments cannot be marked To remove.');
+          }
+          continue;
+        }
+        for (const number of [1, 2, 3]) {
+          const roleKey = `person_role_${number}`;
+          const dateKey = `person_role_date_${number}`;
+          for (const key of [roleKey, dateKey]) {
+            const previous = text(asArray(baseline[key])[originalIndex]);
+            const current = text(asArray(protectedAnswers[key])[row]);
+            if (previous !== current) throw new ValidationError('Recorded appointments cannot be edited. Tick To remove instead.');
+          }
+          const removal = asArray(protectedAnswers[`person_role_remove_${number}`])[row];
+          if (removal !== undefined && removal !== '' && removal !== 'Yes') {
+            throw new ValidationError('Invalid appointment removal selection.');
+          }
+          if (removal === 'Yes' && !text(asArray(baseline[roleKey])[originalIndex]).trim()) {
+            throw new ValidationError('Cannot remove a position that is not recorded.');
+          }
+        }
+        const baselineExtra = readAdditionalPositions(asArray(baseline.person_additional_positions)[originalIndex]);
+        const suppliedExtraRaw = asArray(protectedAnswers.person_additional_positions)[row] ?? [];
+        if (additionalPositionsError(suppliedExtraRaw)) throw new ValidationError('Invalid additional appointments.');
+        const currentExtra = readAdditionalPositions(suppliedExtraRaw);
+        if (currentExtra.length < baselineExtra.length
+          || baselineExtra.some((old, index) =>
+            old.role !== currentExtra[index].role || old.date !== currentExtra[index].date)) {
+          throw new ValidationError('Recorded additional appointments cannot be edited. Tick To remove instead.');
+        }
+        if (currentExtra.slice(baselineExtra.length).some((position) => position.toRemove)) {
+          throw new ValidationError('New appointments cannot be marked To remove.');
+        }
+      }
+    }
     const kinds = asArray(protectedAnswers.person_kind);
     const people = asArray(protectedAnswers.person_name);
     protectedAnswers.ceo_role_listed = people.some((_, index) =>
@@ -98,7 +184,7 @@ export function protectPrefillAnswers(
     if (['Existing listed person', 'Existing listed officer'].includes(text(protectedAnswers.ceo_source)) && selected) {
       const ids = asArray(protectedAnswers.person_record_id).map(text);
       const matchedIndex = ids.indexOf(selected);
-      const newRowIndex = /^new-person:(\\d+)$/.exec(selected);
+      const newRowIndex = /^new-person:(\d+)$/.exec(selected);
       const rowIndex = matchedIndex >= 0 ? matchedIndex : newRowIndex ? Number(newRowIndex[1]) : -1;
       const isExistingOfficer = [1, 2, 3].some((number) =>
         text(asArray(protectedAnswers[`person_role_${number}`])[rowIndex]).trim().length > 0)
@@ -123,7 +209,7 @@ export function getPrefillFieldState(
 ): { edited: boolean; original: unknown; added: boolean } {
   if (!baseline) return { edited: false, original: undefined, added: false };
   if (rowIndex === undefined) {
-    return { edited: Object.prototype.hasOwnProperty.call(baseline, key) && valuesDifferFromPrefill(baseline[key], current),
+    return { edited: Object.prototype.hasOwnProperty.call(baseline, key) && valuesDifferForField(key, baseline[key], current),
       original: baseline[key], added: false };
   }
   const section = AR_RECORD_SECTIONS.find(s => s.fields.includes(key as never));
@@ -134,7 +220,7 @@ export function getPrefillFieldState(
   const index = baselineIds.indexOf(id);
   if (index === -1) return { edited: true, original: undefined, added: true };
   const original = asArray(baseline[key])[index];
-  return { edited: valuesDifferFromPrefill(original, current), original, added: false };
+  return { edited: valuesDifferForField(key, original, current), original, added: false };
 }
 
 export function getPrefillChanges(
@@ -164,7 +250,7 @@ export function getPrefillChanges(
       for (const key of section.fields) {
         const previous = asArray(baseline[key])[oldIndex];
         const current = asArray(answers[key])[row];
-        if (valuesDifferFromPrefill(previous, current)) {
+        if (valuesDifferForField(key, previous, current)) {
           result.fields.push({ key, section: section.section, recordId: id, previous: changedText(key, previous), current: changedText(key, current) });
         }
       }

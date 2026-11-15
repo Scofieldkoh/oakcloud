@@ -46,7 +46,7 @@ import { additionalPositionsError, formatAdditionalPositions } from '@/lib/forms
 import { getDirectorReelectionOptions, isReelectionMatterSelected, personHasRole } from '@/lib/forms/annual-return-directors';
 import { getPeopleCardVariantClass, shouldShowLongDropdownSelection } from '@/lib/forms/annual-return-form-display';
 import { SG_ANNUAL_RETURN_DECLARATION_TEMPLATE_KEY } from '@/lib/form-templates/sg-annual-return-declaration';
-import { formatPersonShareholdings, personShareholdingError } from '@/lib/forms/person-shareholdings';
+import { formatPersonShareholdings, personShareholdingError, readPersonShareholdings } from '@/lib/forms/person-shareholdings';
 import {
   DEFAULT_PHONE_COUNTRY_CODE,
   getPhoneCountryCodeOptions,
@@ -152,7 +152,8 @@ import {
   formatDataAsOf,
   parseNameCheckResults,
 } from './_lib/field-config';
-import { EDITED_VALUE_CLASS, getPrefillChanges, getPrefillFieldState, undoRemovedPrefillRow } from '@/lib/forms/prefill-changes';
+import { EDITED_VALUE_CLASS, formatOriginalPrefillValue, getPrefillChanges, getPrefillFieldState, undoRemovedPrefillRow } from '@/lib/forms/prefill-changes';
+import { getAnnualReturnShareReconciliation } from '@/lib/forms/annual-return-share-reconciliation';
 import { AR_RECORD_SECTIONS } from '@/lib/forms/annual-return-prefill';
 import { FieldHint } from './_components/field-hint';
 import { FaqField } from './_components/faq-field';
@@ -384,6 +385,13 @@ export default function PublicFormPage() {
   }, [form]);
 
   const conditionEvaluationOptions = useMemo(() => ({ fields: orderedFields }), [orderedFields]);
+  const shareReconciliation = useMemo(() =>
+    isAnnualReturnTemplate && orderedFields.some((field) => field.key === 'capital_shares')
+      && orderedFields.some((field) => field.key === 'person_shareholding')
+      ? getAnnualReturnShareReconciliation(answers)
+      : null,
+    [isAnnualReturnTemplate, orderedFields, answers],
+  );
 
   const detectedEmailFromForm = useMemo(() => {
     return inferRespondentEmail(orderedFields, answers) ?? '';
@@ -1388,7 +1396,13 @@ export default function PublicFormPage() {
       }
     }
 
-    const pageMessages = Object.keys(nextErrors).length === 0 ? collectIncorporationPageErrors(pageFields, nextErrors) : [];
+    const shareMessages = shareReconciliation && !shareReconciliation.valid
+      && pageFields.some((field) => field.key === 'people_section')
+      ? shareReconciliation.issues : [];
+    const pageMessages = [
+      ...(Object.keys(nextErrors).length === 0 ? collectIncorporationPageErrors(pageFields, nextErrors) : []),
+      ...shareMessages,
+    ];
     setFieldErrors(nextErrors);
     setPageIssueMessages(pageMessages);
     return Object.keys(nextErrors).length === 0 && pageMessages.length === 0;
@@ -1656,6 +1670,14 @@ export default function PublicFormPage() {
 
     if (isPreview) {
       setError(uiLabel('preview_submit_notice'));
+      return;
+    }
+    if (shareReconciliation && !shareReconciliation.valid) {
+      setPageIssueMessages(shareReconciliation.issues);
+      const peoplePage = findPageIndexForField('people_section');
+      if (peoplePage !== null) setCurrentPage(peoplePage);
+      setIsReviewing(false);
+      scrollToFormTop();
       return;
     }
 
@@ -2028,6 +2050,11 @@ export default function PublicFormPage() {
                 const expandedKey = `${sectionId}:${currentRecordId || `new-row-${rowIndex}`}`;
                 const expanded = expandedRepeatCards[expandedKey] ?? !currentRecordId;
                 const isPeopleCard = field.key === 'people_section';
+                const immutableRecordedPositions = isPeopleCard
+                  && prefillBaseline?.position_record_policy === 'read_only_with_removal'
+                  && !!currentRecordId
+                  && Array.isArray(prefillBaseline.person_record_id)
+                  && prefillBaseline.person_record_id.includes(currentRecordId);
                 const personName = isPeopleCard && typeof rowAnswers.person_name === 'string'
                   ? rowAnswers.person_name.trim() : '';
                 const rowWasAdded = !!prefillBaseline && !!baselineSection
@@ -2121,6 +2148,11 @@ export default function PublicFormPage() {
                       const sectionErrorId = sectionErrorText ? `${sectionFieldDomId}-error` : undefined;
                       const sectionDescribedBy = [sectionHintId, sectionErrorId].filter(Boolean).join(' ') || undefined;
                       const sectionLabel = localizedSectionField.label || sectionField.key;
+                      const roleNumber = /^person_role_(?:date_)?([123])$/.exec(sectionField.key)?.[1] || null;
+                      const isRecordedPositionField = immutableRecordedPositions && roleNumber !== null;
+                      const isRecordedRoleField = isRecordedPositionField && /^person_role_[123]$/.test(sectionField.key);
+                      const isRecordedDateField = isRecordedPositionField && /^person_role_date_[123]$/.test(sectionField.key);
+                      const sourcePositionRole = roleNumber ? rowAnswers[`person_role_${roleNumber}`] : null;
                       const sectionUseDateSelector = sectionField.type === 'SHORT_TEXT' && sectionField.inputType === 'date';
                       const sectionDateValidationRange = sectionUseDateSelector ? getDateValidationRange(sectionField, rowAnswers) : {};
                       const sectionUseSplitPhoneInput = sectionField.type === 'SHORT_TEXT' && sectionField.inputType === 'phone' && isSplitPhoneCountryCodeEnabled(sectionField);
@@ -2145,6 +2177,9 @@ export default function PublicFormPage() {
                         : '';
 
                       if (sectionField.type === 'HIDDEN') return null;
+                      if (isRecordedPositionField && !(typeof sourcePositionRole === 'string' && sourcePositionRole.trim())) {
+                        return null;
+                      }
 
                       return (
                         <div
@@ -2190,6 +2225,8 @@ export default function PublicFormPage() {
                               disabled={sectionField.isReadOnly}
                               error={sectionErrorText}
                               idPrefix={sectionFieldDomId}
+                              baselineValue={sectionPrefill.original}
+                              lockExisting={!!immutableRecordedPositions}
                             />
                           )}
                           {sectionField.type === 'SHORT_TEXT' && sectionField.inputType === 'shareholding_list' && (
@@ -2301,19 +2338,33 @@ export default function PublicFormPage() {
                           )}
 
                           {sectionUseDateSelector && (
-                            <SingleDateInput
-                              value={resolvedSectionDateValue}
-                              onChange={(next) => setRepeatFieldValue(sectionField.key, rowIndex, next)}
-                              onBlur={() => handleFieldBlur(sectionField, getRepeatFieldValue(sectionField.key, rowIndex), getFieldErrorKey(sectionField.key, rowIndex), buildAnswerContext(answers, rowIndex))}
-                              placeholder={localizedSectionField.placeholder || uiLabel('date_placeholder')}
-                              disabled={sectionField.isReadOnly}
-                              required={sectionField.isRequired}
-                              error={sectionErrorText}
-                              ariaLabel={sectionField.hideLabel ? sectionLabel : undefined}
-                              minDate={sectionDateValidationRange.minDate}
-                              maxDate={sectionDateValidationRange.maxDate}
-                              className="w-full"
-                            />
+                            <>
+                              <SingleDateInput
+                                value={resolvedSectionDateValue}
+                                onChange={(next) => setRepeatFieldValue(sectionField.key, rowIndex, next)}
+                                onBlur={() => handleFieldBlur(sectionField, getRepeatFieldValue(sectionField.key, rowIndex), getFieldErrorKey(sectionField.key, rowIndex), buildAnswerContext(answers, rowIndex))}
+                                placeholder={localizedSectionField.placeholder || uiLabel('date_placeholder')}
+                                disabled={sectionField.isReadOnly || !!isRecordedDateField}
+                                required={sectionField.isRequired}
+                                error={sectionErrorText}
+                                ariaLabel={sectionField.hideLabel ? sectionLabel : undefined}
+                                minDate={sectionDateValidationRange.minDate}
+                                maxDate={sectionDateValidationRange.maxDate}
+                                className="w-full"
+                              />
+                              {isRecordedDateField && roleNumber && (
+                                <label className="mt-2 flex items-center gap-2 text-xs text-text-secondary">
+                                  <input type="checkbox"
+                                    checked={rowAnswers[`person_role_remove_${roleNumber}`] === 'Yes'}
+                                    onChange={(event) => setRepeatFieldValue(
+                                      `person_role_remove_${roleNumber}`, rowIndex,
+                                      event.target.checked ? 'Yes' : '',
+                                    )}
+                                    aria-label={`To remove position ${roleNumber}`} />
+                                  To remove
+                                </label>
+                              )}
+                            </>
                           )}
 
                           {sectionField.type === 'LONG_TEXT' && (
@@ -2334,17 +2385,25 @@ export default function PublicFormPage() {
                           )}
 
                           {sectionField.type === 'DROPDOWN' && (
-                            <SearchableSelect
-                              options={sectionDropdownOptions.map((opt) => ({ value: opt.value, label: opt.label }))}
-                              allowCustomValue={parseObject(sectionField.validation)?.allowCustomOption === true}
-                              value={typeof sectionValue === 'string' ? sectionValue : ''}
-                              onChange={(val) => setRepeatFieldValue(sectionField.key, rowIndex, val)}
-                              onBlur={() => handleFieldBlur(sectionField, getRepeatFieldValue(sectionField.key, rowIndex), getFieldErrorKey(sectionField.key, rowIndex), buildAnswerContext(answers, rowIndex))}
-                              placeholder={localizedSectionField.placeholder || uiLabel('select_option_placeholder')}
-                              clearable={false}
-                              showKeyboardHints={false}
-                              containerClassName={cn('h-10', sectionErrorText && ERROR_FIELD_CLASS)}
-                            />
+                            isRecordedRoleField ? (
+                              <div id={sectionControlId} role="textbox"
+                                className="rounded-lg border border-border-primary bg-background-secondary px-3 py-2 text-sm text-text-primary"
+                                aria-label={sectionLabel} aria-readonly="true">
+                                {typeof sectionValue === 'string' ? sectionValue : ''}
+                              </div>
+                            ) : (
+                              <SearchableSelect
+                                options={sectionDropdownOptions.map((opt) => ({ value: opt.value, label: opt.label }))}
+                                allowCustomValue={parseObject(sectionField.validation)?.allowCustomOption === true}
+                                value={typeof sectionValue === 'string' ? sectionValue : ''}
+                                onChange={(val) => setRepeatFieldValue(sectionField.key, rowIndex, val)}
+                                onBlur={() => handleFieldBlur(sectionField, getRepeatFieldValue(sectionField.key, rowIndex), getFieldErrorKey(sectionField.key, rowIndex), buildAnswerContext(answers, rowIndex))}
+                                placeholder={localizedSectionField.placeholder || uiLabel('select_option_placeholder')}
+                                clearable={false}
+                                showKeyboardHints={false}
+                                containerClassName={cn('h-10', sectionErrorText && ERROR_FIELD_CLASS)}
+                              />
+                            )
                           )}
 
                           {sectionChoiceChips && (
@@ -2646,9 +2705,18 @@ export default function PublicFormPage() {
                             </div>
                           )}
 
-                          {sectionPrefill.edited && <p className="mb-1 text-xs font-semibold text-amber-800 dark:text-amber-300" aria-label="Edited value">
-                            {sectionPrefill.added ? 'Added' : 'Edited'}{!sectionPrefill.added ? ` · Originally: ${String(sectionPrefill.original ?? '(blank)')}` : ''}
+                          {sectionPrefill.edited && <p className="mb-1 whitespace-pre-line text-xs font-semibold text-amber-800 dark:text-amber-300" aria-label="Edited value">
+                            {sectionPrefill.added ? 'Added' : 'Edited'}
+                            {!sectionPrefill.added && (
+                              <> · Originally: {formatOriginalPrefillValue(sectionField.key, sectionPrefill.original)}</>
+                            )}
                           </p>}
+                          {sectionPrefill.edited && !sectionPrefill.added && sectionField.key === 'person_shareholding' && (
+                            <button type="button" className="mb-1 text-xs font-semibold text-amber-900 underline underline-offset-2 dark:text-amber-200"
+                              onClick={() => setRepeatFieldValue(sectionField.key, rowIndex, readPersonShareholdings(sectionPrefill.original))}>
+                              Restore original shareholdings
+                            </button>
+                          )}
                           {sectionErrorText && !sectionUseDateSelector && !sectionUseTimeTimezoneInput && (
                             <p id={sectionErrorId} className="mt-1 text-xs text-status-error">{sectionErrorText}</p>
                           )}
@@ -2677,6 +2745,45 @@ export default function PublicFormPage() {
                 );
               })}
             </div>
+            {field.key === 'people_section' && shareReconciliation && (
+              <section className={cn('mt-4 rounded-lg border p-3 text-sm',
+                shareReconciliation.valid
+                  ? 'border-emerald-200 bg-emerald-50/50 dark:border-emerald-900 dark:bg-emerald-950/20'
+                  : 'border-amber-300 bg-amber-50/70 dark:border-amber-800 dark:bg-amber-950/20')}
+                aria-label="Share capital reconciliation" aria-live="polite">
+                <h4 className="font-semibold text-text-primary">Shareholding totals by class</h4>
+                <p className="mt-1 text-xs text-text-secondary">
+                  All shareholders&apos; shares must equal the issued share capital for each share class.
+                </p>
+                <div className="mt-2 overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead><tr className="border-b border-border-primary/60">
+                      <th className="py-1 pr-3">Share class</th>
+                      <th className="py-1 pr-3 text-right">Issued</th>
+                      <th className="py-1 pr-3 text-right">People</th>
+                      <th className="py-1 text-right">Difference</th>
+                    </tr></thead>
+                    <tbody>
+                      {shareReconciliation.rows.map((row) => (
+                        <tr key={row.shareClass} className="border-b border-border-primary/30 last:border-0">
+                          <td className="py-1 pr-3">{row.shareClass}</td>
+                          <td className="py-1 pr-3 text-right tabular-nums">{row.issued}</td>
+                          <td className="py-1 pr-3 text-right tabular-nums">{row.held}</td>
+                          <td className={cn('py-1 text-right tabular-nums', !row.matches && 'font-semibold text-amber-900 dark:text-amber-300')}>
+                            {row.difference}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                {shareReconciliation.valid
+                  ? <p className="mt-2 text-xs font-medium text-emerald-800 dark:text-emerald-300">All share classes reconcile.</p>
+                  : <ul className="mt-2 list-disc space-y-1 pl-4 text-xs text-amber-900 dark:text-amber-300">
+                    {shareReconciliation.issues.map((issue) => <li key={issue}>{issue}</li>)}
+                  </ul>}
+              </section>
+            )}
             {prefillChanges?.removedRows.filter((item) => item.section === field.key).map((item) => (
               <div key={item.recordId} className="mt-2 flex items-center justify-between rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900" role="status">
                 <span>Removed: {item.label}</span>

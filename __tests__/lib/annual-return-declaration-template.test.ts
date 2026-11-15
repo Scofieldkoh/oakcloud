@@ -86,7 +86,7 @@ describe('Annual Return Declaration guided template', () => {
     const capitalIndex = fields.findIndex((field) => field.key === 'share_capital_section');
     const peopleIndex = fields.findIndex((field) => field.key === 'people_section');
     expect(capitalIndex).toBeLessThan(peopleIndex);
-    const recordFields = fields.filter((field) => field.key?.startsWith('person_role_'));
+    const recordFields = fields.filter((field) => /^person_role_(?:date_)?[123]$/.test(field.key || ''));
     expect(recordFields).toHaveLength(6);
     const peopleRepeat = fields.find((field) => field.key === 'people_section');
     expect(peopleRepeat?.validation).toMatchObject({ repeatMinItems: 1 });
@@ -94,8 +94,8 @@ describe('Annual Return Declaration guided template', () => {
     expect(fields.find((field) => field.key === 'share_capital_section')?.validation?.repeatCompactCards).not.toBe(true);
   });
 
-  it('defines structured person holdings and expandable additional positions in version 6', () => {
-    expect(SG_ANNUAL_RETURN_DECLARATION_TEMPLATE_VERSION).toBe(6);
+  it('defines structured person holdings and expandable additional positions in version 7', () => {
+    expect(SG_ANNUAL_RETURN_DECLARATION_TEMPLATE_VERSION).toBe(7);
     const field = fields.find((entry) => entry.key === 'person_shareholding');
     expect(field).toMatchObject({
       type: 'SHORT_TEXT', inputType: 'shareholding_list', layoutWidth: 100,
@@ -195,6 +195,15 @@ describe('Annual Return Declaration guided template', () => {
     expect(fields.find((field) => field.key === 'record_auditor')?.layoutWidth).toBe(66);
     expect(fields.find((field) => field.key === 'record_primary_activity')?.layoutWidth).toBe(100);
     expect(fields.find((field) => field.key === 'record_secondary_activity')?.layoutWidth).toBe(100);
+  });
+
+  it('stores immutable recorded-position policy and a To remove flag for each of the first three positions', () => {
+    expect(fields.find((field) => field.key === 'position_record_policy')?.type).toBe('HIDDEN');
+    for (const number of [1, 2, 3]) {
+      const field = fields.find((candidate) => candidate.key === `person_role_remove_${number}`);
+      expect(field?.type).toBe('HIDDEN');
+      expect(field?.isRequired).not.toBe(true);
+    }
   });
 
   it('offers current-director checkboxes instead of a re-election text area', () => {

@@ -10,7 +10,8 @@ export const AR_RECORD_SECTIONS = [
     fields: ['person_kind', 'person_name', 'person_id_number', 'person_nationality',
       'person_address', 'person_role_1', 'person_role_2', 'person_role_3',
       'person_role_date_1', 'person_role_date_2', 'person_role_date_3',
-      'person_additional_positions', 'person_shareholding'] },
+      'person_additional_positions', 'person_shareholding',
+      'person_role_remove_1', 'person_role_remove_2', 'person_role_remove_3'] },
   // Recognise v2 snapshots on existing submissions and drafts. Do not discard
   // legacy records during a v3 rollout.
   { section: 'officers_section', id: 'officer_record_id', label: 'officer_name',
@@ -202,6 +203,7 @@ export function buildAnnualReturnPrefill(company: AnnualReturnCompanyRecord, now
   const people = combinedPeople(officers, shareholders);
   const answers: Record<string, unknown> = {
     prefill_source: 'company_record',
+    position_record_policy: 'read_only_with_removal',
     company_name: record.name,
     company_uen: record.uen,
     company_type: companyType,
@@ -237,6 +239,7 @@ export function buildAnnualReturnPrefill(company: AnnualReturnCompanyRecord, now
   for (const n of [1, 2, 3]) {
     answers[`person_role_${n}`] = people.map(p => p.positions[n - 1]?.role || '');
     answers[`person_role_date_${n}`] = people.map(p => p.positions[n - 1]?.date || '');
+    answers[`person_role_remove_${n}`] = people.map(() => '');
   }
   answers.person_additional_positions = people.map(p =>
     p.positions.slice(3).map(position => ({ role: position.role, date: position.date })),

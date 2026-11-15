@@ -2,6 +2,8 @@
 export interface AdditionalPosition {
   role: string;
   date: string;
+  /** A proposal to remove an existing recorded appointment, not a deletion. */
+  toRemove?: boolean;
 }
 
 export const MAX_ADDITIONAL_POSITIONS = 20;
@@ -13,6 +15,7 @@ export function readAdditionalPositions(value: unknown): AdditionalPosition[] {
     .map((item) => ({
       role: typeof item.role === 'string' ? item.role : '',
       date: typeof item.date === 'string' ? item.date : '',
+      ...(item.toRemove === true ? { toRemove: true } : {}),
     }));
 }
 
@@ -23,6 +26,9 @@ export function additionalPositionsError(value: unknown): string | null {
   for (const [index, item] of value.entries()) {
     if (!item || typeof item !== 'object' || Array.isArray(item)) {
       return `Position ${index + 4} is invalid.`;
+    }
+    if ('toRemove' in item && typeof item.toRemove !== 'boolean') {
+      return `Position ${index + 4} removal flag is invalid.`;
     }
     const role = typeof item.role === 'string' ? item.role.trim() : '';
     const date = typeof item.date === 'string' ? item.date.trim() : '';
@@ -42,6 +48,7 @@ export function sanitizeAdditionalPositions(value: unknown): AdditionalPosition[
   if (error) throw new Error(error);
   return readAdditionalPositions(value).map((item) => ({
     role: item.role.trim(), date: item.date.trim(),
+    ...(item.toRemove === true ? { toRemove: true } : {}),
   }));
 }
 
@@ -50,5 +57,5 @@ export function formatAdditionalPositions(value: unknown): string | null {
   if (typeof value === 'string') return value.trim() || null;
   const rows = readAdditionalPositions(value);
   return rows.length ? rows.map((item, index) =>
-    `Position ${index + 4}: ${item.role}${item.date ? ` (${item.date})` : ''}`).join('\n') : null;
+    `Position ${index + 4}: ${item.role}${item.date ? ` (${item.date})` : ''}${item.toRemove ? ' — To remove' : ''}`).join('\n') : null;
 }

@@ -41,7 +41,26 @@ describe('additional officer positions editor', () => {
     fireEvent.change(screen.getByLabelText('Appointment date for position 5'), { target: { value: '2024-03-01' } });
     expect((screen.getByLabelText('Position 5 role') as HTMLSelectElement).value).toBe('CEO');
     expect((screen.getByLabelText('Appointment date for position 5') as HTMLInputElement).value).toBe('2024-03-01');
-    fireEvent.click(screen.getByRole('button', { name: 'Remove position 5' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Remove proposed position 5' }));
     expect(screen.queryByText('Position 6')).toBeNull();
+  });
+
+  it('locks prefilled appointments but allows a separate To remove checkbox', () => {
+    const initial = [{ role: 'CEO', date: '2025-01-01' }];
+    function LockedHarness() {
+      const [rows, setRows] = useState<AdditionalPosition[]>(initial);
+      return <AdditionalPositionsEditor
+        value={rows} onChange={setRows} baselineValue={initial} lockExisting
+        idPrefix="locked-test" options={[{ value: 'CEO', label: 'CEO' }]}
+      />;
+    }
+    render(<LockedHarness />);
+    expect(screen.getByLabelText('Position 4 role').textContent).toContain('CEO');
+    expect((screen.getByLabelText('Appointment date for position 4') as HTMLInputElement).disabled).toBe(true);
+    expect(screen.queryByRole('button', { name: 'Remove proposed position 4' })).toBeNull();
+    fireEvent.click(screen.getByRole('checkbox', { name: 'To remove position 4' }));
+    expect((screen.getByRole('checkbox', { name: 'To remove position 4' }) as HTMLInputElement).checked).toBe(true);
+    fireEvent.click(screen.getByRole('button', { name: 'Add proposed position' }));
+    expect(screen.getByText('Position 5')).toBeTruthy();
   });
 });

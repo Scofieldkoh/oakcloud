@@ -22,7 +22,8 @@ describe('Annual Return public form presentation', () => {
     expect(getPeopleCardVariantClass(3)).toBe(getPeopleCardVariantClass(0));
     expect(getPeopleCardVariantClass(49)).toBe(getPeopleCardVariantClass(1));
     for (const className of PEOPLE_CARD_VARIANT_CLASSES) {
-      expect(className).toContain('border-l-4');
+      expect(className).not.toContain('border-l-');
+      expect(className).not.toContain('dark:border-l-');
       expect(className).toContain('dark:');
       expect(className).toContain('bg-');
     }

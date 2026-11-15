@@ -30,6 +30,8 @@ import { applyDefaultTodayAnswers, getTenantTimeZone, toJsonInput } from '@/serv
 import { resolveSubmissionUploadFileNames } from '@/services/form-pdf.service';
 import { loadDraftByAccess } from '@/services/form-draft.service';
 import { OAK_PREFILL_METADATA_KEY, getPrefillChanges, protectPrefillAnswers, readStoredPrefill } from '@/lib/forms/prefill-changes';
+import { isAnnualReturnDeclarationForm } from '@/lib/form-templates';
+import { validateAnnualReturnSharesOnSubmission } from '@/lib/forms/annual-return-share-reconciliation';
 import {
   evaluateCompanyIncorporationSubmission,
   recheckAdvisoryCompanyNames,
@@ -228,6 +230,13 @@ export async function createPublicSubmission(
   validateCompanyNameCheckResults(form.fields, answers, input.metadata);
 
   const sanitizedAnswers = sanitizePublicAnswers(form.fields, answers, uploadIdSet);
+  // Validate submitted figures independently of the browser. Draft saves may
+  // remain incomplete, but no final Annual Return can contain mismatched shares.
+  if (isAnnualReturnDeclarationForm(form.settings)
+    && form.fields.some((field) => field.key === 'capital_shares')
+    && form.fields.some((field) => field.key === 'person_shareholding')) {
+    validateAnnualReturnSharesOnSubmission(sanitizedAnswers);
+  }
   // Bounded server recheck for advisory name checks, before any transaction opens.
   const serverNameChecks = await recheckAdvisoryCompanyNames(form.fields, sanitizedAnswers);
   const companyIncorporation = evaluateCompanyIncorporationSubmission({

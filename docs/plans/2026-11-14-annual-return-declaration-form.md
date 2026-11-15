@@ -434,3 +434,29 @@ new editable guided-form draft when seeded.
 - Seed this as version 6 using the existing Annual Return seed script and
   publish the draft after review. Rebuilding the application alone does not
   rewrite a published form's stored field widths or add its new notice.
+
+## 9. Version 7: position removals, share totals and changed-value feedback
+
+This is a new seedable draft and does not rewrite the currently published
+definition or any previous submission/draft.
+
+- Remove the coloured left accent strip from People cards; retain alternating
+  subtle background fills and the person's clear name in the header.
+- For existing prefilled people, the recorded first three positions and their
+  appointment dates are read-only. Each appointment-date cell has its own
+  **To remove** checkbox. The values are retained; the checkbox is a proposed
+  removal recorded separately, not an automatic corporate-register change.
+- Recorded positions four and onward are also read-only with a **To remove**
+  checkbox. New proposed positions remain separately editable. Submission
+  and prefilled-draft APIs reject tampering with existing position/date values.
+- The original structured shareholdings are shown as readable class-and-quantity
+  text instead of JavaScript object representations. A restored original
+  shareholding clears the Edited indicator, including equivalent casing,
+  ordering and leading-zero integer input.
+- The People page shows a live per-share-class reconciliation table of
+  total shares issued against total shareholder holdings (individuals and
+  companies combined). Any mismatch blocks Continue and final Submit. The
+  server independently applies the same class-by-class validation to final
+  submissions; incomplete drafts remain saveable.
+- Seed and review Annual Return Declaration v7, then publish. V6 and earlier
+  published forms remain immutable; new form definitions use version 7.

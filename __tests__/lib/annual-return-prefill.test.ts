@@ -167,9 +167,9 @@ describe('Generic prefilled-answer change tracking', () => {
     expect(getPrefillChanges(baseline, restored).removedRows).toEqual([]);
   });
   it('derives CEO presence from current positions and validates existing-person selections', () => {
-    const amended = { ...baseline, person_role_1: ['Director', 'Secretary'], ceo_role_listed: 'Yes' };
+    const amended = { ...baseline, ceo_role_listed: 'No' };
     const protectedAnswers = protectPrefillAnswers(amended, baseline);
-    expect(protectedAnswers.ceo_role_listed).toBe('No');
+    expect(protectedAnswers.ceo_role_listed).toBe('Yes');
     const selected = {
       ...amended,
       ceo_source: 'Existing listed officer',
