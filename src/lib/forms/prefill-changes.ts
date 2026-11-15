@@ -117,6 +117,55 @@ export function protectPrefillAnswers(
     protectedAnswers[section.id] = ids;
   }
   if (Object.prototype.hasOwnProperty.call(baseline, 'person_record_id')) {
+    if (baseline.position_record_policy === 'verification_only') {
+      // Share capital, holdings and appointments represent records to review,
+      // never proposed changes. Do not trust browser disabled/read-only controls.
+      protectedAnswers.position_record_policy = 'verification_only';
+      const baselineCapitalIds = asArray(baseline.capital_record_id).map(text);
+      const currentCapitalIds = asArray(protectedAnswers.capital_record_id).map(text);
+      if (baselineCapitalIds.length !== currentCapitalIds.length
+        || baselineCapitalIds.some((id, index) => currentCapitalIds[index] !== id)) {
+        throw new ValidationError('Share capital records are verification-only and cannot be added or removed.');
+      }
+      const readonlyCapitalKeys = [
+        'capital_class', 'capital_shares', 'capital_currency', 'capital_amount', 'capital_paid_up',
+      ];
+      for (const [index] of currentCapitalIds.entries()) {
+        for (const key of readonlyCapitalKeys) {
+          if (valuesDifferForField(key, asArray(baseline[key])[index], asArray(protectedAnswers[key])[index])) {
+            throw new ValidationError('Share capital records are verification-only and cannot be edited.');
+          }
+        }
+      }
+
+      const baselinePersonIds = asArray(baseline.person_record_id).map(text);
+      const currentPersonIds = asArray(protectedAnswers.person_record_id).map(text);
+      const immutableKeys = [
+        'person_role_1', 'person_role_2', 'person_role_3',
+        'person_role_date_1', 'person_role_date_2', 'person_role_date_3',
+        'person_additional_positions', 'person_shareholding',
+      ];
+      for (const [row, recordId] of currentPersonIds.entries()) {
+        const sourceIndex = recordId ? baselinePersonIds.indexOf(recordId) : -1;
+        for (const key of immutableKeys) {
+          const previous = sourceIndex >= 0 ? asArray(baseline[key])[sourceIndex] : undefined;
+          const next = asArray(protectedAnswers[key])[row];
+          const isEmptyNew = sourceIndex < 0 && (
+            next === undefined || next === '' || (Array.isArray(next) && next.length === 0)
+          );
+          if (!isEmptyNew && valuesDifferForField(key, previous, next)) {
+            throw new ValidationError('Recorded appointments and shareholdings are verification-only and cannot be edited.');
+          }
+        }
+        // Legacy v7 removal flags may exist in source snapshots, but v8
+        // declarations never accept them, including forged API requests.
+        for (const number of [1, 2, 3]) {
+          if (text(asArray(protectedAnswers[`person_role_remove_${number}`])[row]).trim()) {
+            throw new ValidationError('Appointment removal requests are not allowed in this declaration.');
+          }
+        }
+      }
+    }
     if (baseline.position_record_policy === 'read_only_with_removal') {
       // A user can request that a source appointment be removed, but cannot
       // change its role/date or delete an existing extra position directly.

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   PEOPLE_CARD_VARIANT_CLASSES,
   getPeopleCardVariantClass,
+  orderRecordedPositionFields,
   shouldShowLongDropdownSelection,
 } from '@/lib/forms/annual-return-form-display';
 
@@ -28,4 +29,20 @@ describe('Annual Return public form presentation', () => {
       expect(className).toContain('bg-');
     }
   });
+  it('pairs positions 1–3 with their appointment dates even in older stored v7 field order', () => {
+    const fields = [
+      'person_name', 'person_role_1', 'person_role_2', 'person_role_3',
+      'person_role_date_1', 'person_role_date_2', 'person_role_date_3',
+      'person_additional_positions', 'person_shareholding',
+    ].map((key) => ({ key, value: 'existing' }));
+    expect(orderRecordedPositionFields(fields).map((field) => field.key)).toEqual([
+      'person_name',
+      'person_role_1', 'person_role_date_1',
+      'person_role_2', 'person_role_date_2',
+      'person_role_3', 'person_role_date_3',
+      'person_additional_positions', 'person_shareholding',
+    ]);
+    expect(orderRecordedPositionFields(fields)[1]).toBe(fields[1]);
+  });
+
 });

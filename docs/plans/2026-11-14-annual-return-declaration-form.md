@@ -460,3 +460,28 @@ definition or any previous submission/draft.
   submissions; incomplete drafts remain saveable.
 - Seed and review Annual Return Declaration v7, then publish. V6 and earlier
   published forms remain immutable; new form definitions use version 7.
+
+## 10. Version 8: verify existing positions and share records only
+
+- Fix the mismatch between stable repeat-section keys and generated field IDs.
+  Staff-generated prefilled drafts now restore **every** existing person and
+  share capital class from saved counts or answer arrays, rather than only
+  displaying the minimum row count. Existing drafts do not need to be recreated.
+- Existing positions 1–3 and appointment dates are paired row-by-row
+  (Position 1 | Appointment date 1, etc.), each column taking half the row.
+  The public renderer also pairs fields for previously published templates.
+- Positions 4 onward are displayed as additional two-column read-only pairs.
+  Appointment dates use day/month/year readable labels. There are no removal
+  checkboxes, proposed-position buttons or editable role/date controls.
+- The people/shareholder holdings display is read-only by share class and
+  quantity, with no Add share class or row-removal controls. All share-capital
+  records are also read-only and cannot be added or removed in the public form.
+- The share-total reconciliation panel, page progression blocker and submission
+  validation have been removed: the form is now for verifying recorded shares,
+  not for creating proposed share-capital changes.
+- For v8 prefills the server's verification-only policy disallows forged
+  position/date, shareholding and capital modifications or removal requests,
+  while continuing to permit corrections to other personal particulars.
+  Historical v7 drafts retain their prior backend compatibility.
+- Seed and publish v8 to replace the published definition. The UI and
+  saved-draft row-count fixes also improve compatible existing draft displays.

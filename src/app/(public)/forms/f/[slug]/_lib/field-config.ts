@@ -405,6 +405,47 @@ export function getRepeatSectionConfig(startField: PublicField): RepeatSectionCo
   };
 }
 
+/**
+ * Restore repeat-row counts from either the published field's generated ID
+ * (normal public drafts) or its stable key (staff-created company prefills).
+ *
+ * Prefer the larger of saved counts and actual answer-array lengths. This
+ * preserves untouched blank rows while ensuring a stale/missing count cannot
+ * hide officers and shareholders whose answers have already been stored.
+ */
+export function resolveRestoredRepeatSectionCounts(
+  fields: PublicField[],
+  answers: Record<string, unknown>,
+  rawSavedCounts: unknown,
+): Record<string, number> {
+  const savedCounts = parseObject(rawSavedCounts);
+  const resolved: Record<string, number> = {};
+
+  for (let index = 0; index < fields.length; index += 1) {
+    const start = fields[index];
+    if (!isRepeatStartMarker(start)) continue;
+    const config = getRepeatSectionConfig(start);
+    let answeredRows = 0;
+    let cursor = index + 1;
+    while (cursor < fields.length && !isRepeatEndMarker(fields[cursor])) {
+      const item = fields[cursor];
+      if (Array.isArray(answers[item.key])) {
+        answeredRows = Math.max(answeredRows, (answers[item.key] as unknown[]).length);
+      }
+      cursor += 1;
+    }
+    const countById = savedCounts?.[config.id];
+    const countByKey = savedCounts?.[start.key];
+    const validCount = (value: unknown) =>
+      typeof value === 'number' && Number.isFinite(value) ? Math.trunc(value) : 0;
+    const wanted = Math.max(config.minItems, answeredRows, validCount(countById), validCount(countByKey));
+    resolved[config.id] = Math.min(config.maxItems ?? 50, wanted);
+    index = cursor;
+  }
+
+  return resolved;
+}
+
 export function getFieldErrorKey(fieldKey: string, rowIndex?: number): string {
   return rowIndex === undefined ? fieldKey : `${fieldKey}__${rowIndex}`;
 }

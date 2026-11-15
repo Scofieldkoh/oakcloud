@@ -203,7 +203,7 @@ export function buildAnnualReturnPrefill(company: AnnualReturnCompanyRecord, now
   const people = combinedPeople(officers, shareholders);
   const answers: Record<string, unknown> = {
     prefill_source: 'company_record',
-    position_record_policy: 'read_only_with_removal',
+    position_record_policy: 'verification_only',
     company_name: record.name,
     company_uen: record.uen,
     company_type: companyType,

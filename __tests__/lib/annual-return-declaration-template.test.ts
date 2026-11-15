@@ -94,8 +94,8 @@ describe('Annual Return Declaration guided template', () => {
     expect(fields.find((field) => field.key === 'share_capital_section')?.validation?.repeatCompactCards).not.toBe(true);
   });
 
-  it('defines structured person holdings and expandable additional positions in version 7', () => {
-    expect(SG_ANNUAL_RETURN_DECLARATION_TEMPLATE_VERSION).toBe(7);
+  it('defines structured person holdings and expandable additional positions in version 8', () => {
+    expect(SG_ANNUAL_RETURN_DECLARATION_TEMPLATE_VERSION).toBe(8);
     const field = fields.find((entry) => entry.key === 'person_shareholding');
     expect(field).toMatchObject({
       type: 'SHORT_TEXT', inputType: 'shareholding_list', layoutWidth: 100,
@@ -161,7 +161,7 @@ describe('Annual Return Declaration guided template', () => {
     expect(byKey('capital_class').validation).toMatchObject({ allowCustomOption: true });
     expect(byKey('capital_currency').layoutWidth).toBe(33);
     expect(byKey('capital_shares').layoutWidth).toBe(50);
-    expect(byKey('person_role_date_1').layoutWidth).toBe(33);
+    expect(byKey('person_role_date_1').layoutWidth).toBe(50);
     expect(byKey('financial_year_end').layoutWidth).toBe(33);
     expect(byKey('sign_date').layoutWidth).toBe(33);
     expect(byKey('agm_time').inputType).toBe('time_timezone');
@@ -197,13 +197,23 @@ describe('Annual Return Declaration guided template', () => {
     expect(fields.find((field) => field.key === 'record_secondary_activity')?.layoutWidth).toBe(100);
   });
 
-  it('stores immutable recorded-position policy and a To remove flag for each of the first three positions', () => {
+  it('pairs each read-only recorded position with its appointment date and omits removal fields', () => {
+    const keys = fields.map((field) => field.key);
     expect(fields.find((field) => field.key === 'position_record_policy')?.type).toBe('HIDDEN');
     for (const number of [1, 2, 3]) {
-      const field = fields.find((candidate) => candidate.key === `person_role_remove_${number}`);
-      expect(field?.type).toBe('HIDDEN');
-      expect(field?.isRequired).not.toBe(true);
+      const role = fields.find((field) => field.key === `person_role_${number}`)!;
+      const date = fields.find((field) => field.key === `person_role_date_${number}`)!;
+      expect(role).toMatchObject({ isReadOnly: true, layoutWidth: 50 });
+      expect(date).toMatchObject({ isReadOnly: true, layoutWidth: 50 });
+      expect(keys.indexOf(date.key)).toBe(keys.indexOf(role.key) + 1);
+      expect(fields.find((field) => field.key === `person_role_remove_${number}`)).toBeUndefined();
     }
+    for (const key of ['capital_class', 'capital_shares', 'capital_currency', 'capital_amount',
+      'capital_paid_up', 'person_additional_positions', 'person_shareholding']) {
+      expect(fields.find((field) => field.key === key)?.isReadOnly).toBe(true);
+    }
+    expect(fields.find((field) => field.key === 'person_shareholding')?.helpText)
+      .not.toContain('Add a row');
   });
 
   it('offers current-director checkboxes instead of a re-election text area', () => {
