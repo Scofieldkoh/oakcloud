@@ -4,8 +4,11 @@ import {
   isEmptyValue,
 } from '@/lib/form-utils';
 import { formatPersonShareholdings } from '@/lib/forms/person-shareholdings';
+import { formatAdditionalPositions } from '@/lib/forms/additional-positions';
+import { getDirectorReelectionOptions } from '@/lib/forms/annual-return-directors';
 
 type ResponseFieldLike = {
+  key?: string;
   type: string;
   inputType?: string | null;
   validation?: unknown;
@@ -53,6 +56,13 @@ export function formatResponseFieldValue(
 
   if (field.type === 'SHORT_TEXT' && field.inputType === 'shareholding_list') {
     return formatPersonShareholdings(value);
+  }
+  if (field.type === 'SHORT_TEXT' && field.inputType === 'position_list') {
+    return formatAdditionalPositions(value);
+  }
+  if (field.key === 'reelection_directors' && answers && Array.isArray(value)) {
+    const names = new Map(getDirectorReelectionOptions(answers).map((item) => [item.value, item.label]));
+    return (value as unknown[]).map((item) => names.get(String(item))).filter(Boolean).join(', ') || null;
   }
 
   if (field.type === 'SHORT_TEXT' && field.inputType === 'time_timezone') {

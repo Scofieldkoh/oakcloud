@@ -41,6 +41,10 @@ import {
 } from '@/lib/form-utils';
 import { SearchableSelect } from '@/components/ui/searchable-select';
 import { PersonShareholdingsEditor } from '@/components/forms/person-shareholdings-editor';
+import { AdditionalPositionsEditor } from '@/components/forms/additional-positions-editor';
+import { additionalPositionsError, formatAdditionalPositions } from '@/lib/forms/additional-positions';
+import { getDirectorReelectionOptions, isReelectionMatterSelected, personHasRole } from '@/lib/forms/annual-return-directors';
+import { SG_ANNUAL_RETURN_DECLARATION_TEMPLATE_KEY } from '@/lib/form-templates/sg-annual-return-declaration';
 import { formatPersonShareholdings, personShareholdingError } from '@/lib/forms/person-shareholdings';
 import {
   DEFAULT_PHONE_COUNTRY_CODE,
@@ -204,22 +208,45 @@ export default function PublicFormPage() {
   const [draftEmailSent, setDraftEmailSent] = useState(false);
   const [repeatSectionCounts, setRepeatSectionCounts] = useState<Record<string, number>>({});
   const [expandedRepeatCards, setExpandedRepeatCards] = useState<Record<string, boolean>>({});
-  // Keep the marker used by the CEO question in sync with the three role
-  // selectors. A respondent removing or adding a CEO immediately changes the path.
+  // Preserve live CEO visibility as people and their additional positions are edited.
   useEffect(() => {
     if (answers.prefill_source !== 'company_record' || !Array.isArray(answers.person_name)) return;
-    const assigned = [1, 2, 3].some((number) => (
-      Array.isArray(answers[`person_role_${number}`])
-      && (answers[`person_role_${number}`] as unknown[]).some((role, index) =>
-        role === 'CEO' && (!Array.isArray(answers.person_kind) || answers.person_kind[index] !== 'Corporate'))
-    ));
+    const assigned = answers.person_name.some((_, index) =>
+      (!Array.isArray(answers.person_kind) || answers.person_kind[index] !== 'Corporate')
+        && personHasRole(answers, index, 'CEO'));
     const marker = assigned ? 'Yes' : 'No';
     if (answers.ceo_role_listed !== marker) {
       setAnswers((prev) => ({
         ...prev,
         ceo_role_listed: marker,
-        ...(marker === 'No' ? { ceo_exists: undefined, ceo_source: undefined, ceo_existing_person: undefined } : {}),
+        ...(marker === 'Yes'
+          ? { ceo_exists: undefined, ceo_source: undefined, ceo_existing_person: undefined }
+          : {}),
       }));
+    }
+  }, [answers]);
+
+  // The director checkboxes are populated when re-election is chosen. A
+  // deliberate untick remains unchecked; newly added directors default checked.
+  const knownDirectorIds = useRef<Set<string> | null>(null);
+  useEffect(() => {
+    if (answers.prefill_source !== 'company_record') return;
+    const available = getDirectorReelectionOptions(answers);
+    const allowed = new Set(available.map((item) => item.value));
+    const previousIds = knownDirectorIds.current;
+    knownDirectorIds.current = allowed;
+    if (!isReelectionMatterSelected(answers)) return;
+    const selected = Array.isArray(answers.reelection_directors) ? answers.reelection_directors : null;
+    const next = selected === null
+      ? available.map((item) => item.value)
+      : selected.filter((value): value is string => typeof value === 'string' && allowed.has(value));
+    if (selected && previousIds) {
+      for (const director of available) {
+        if (!previousIds.has(director.value) && !next.includes(director.value)) next.push(director.value);
+      }
+    }
+    if (selected === null || next.length !== selected.length) {
+      setAnswers((prev) => ({ ...prev, reelection_directors: next }));
     }
   }, [answers]);
   const prefillChanges = useMemo(
@@ -253,6 +280,11 @@ export default function PublicFormPage() {
     const template = parseObject(parseObject(form?.settings)?.template);
     return template?.key === SG_COMPANY_INCORPORATION_TEMPLATE_KEY;
   }, [form?.settings]);
+  const isAnnualReturnTemplate = useMemo(() => {
+    const template = parseObject(parseObject(form?.settings)?.template);
+    return template?.key === SG_ANNUAL_RETURN_DECLARATION_TEMPLATE_KEY;
+  }, [form?.settings]);
+  const pendingRequiredStyle = 'rounded-lg border border-sky-200/90 bg-sky-50/70 p-2 dark:border-sky-800/70 dark:bg-sky-950/25';
 
   // A page-level message describes the answers at the last Continue; any edit clears it.
   useEffect(() => {
@@ -1088,6 +1120,9 @@ export default function PublicFormPage() {
     }
     if (field.type === 'SHORT_TEXT' && field.inputType === 'shareholding_list') {
       return personShareholdingError(value);
+    }
+    if (field.type === 'SHORT_TEXT' && field.inputType === 'position_list') {
+      return additionalPositionsError(value);
     }
 
     if (
@@ -2066,6 +2101,8 @@ export default function PublicFormPage() {
                       const sectionPrefill = getPrefillFieldState(sectionField.key, sectionValue, prefillBaseline, answers, rowIndex);
 
                       const sectionErrorText = fieldErrors[getFieldErrorKey(sectionField.key, rowIndex)];
+                      const sectionPendingRequired = isAnnualReturnTemplate && sectionField.isRequired
+                        && !hasRequiredValue(sectionField, sectionValue) && !sectionErrorText && !sectionPrefill.edited;
                       const sectionDropdownOptions = parseChoiceOptions(localizedSectionField.options);
                       const sectionChoiceOptions = parseChoiceOptions(localizedSectionField.options);
                       const sectionFieldDomId = `repeat-${toDomSafeId(sectionId)}-${rowIndex}-${toDomSafeId(sectionField.id || sectionField.key)}`;
@@ -2104,8 +2141,9 @@ export default function PublicFormPage() {
                         <div
                           key={`${sectionField.id}-${rowIndex}`}
                           className={cn(sectionWidthClass, isLayoutBreakBeforeEnabled(sectionField) && 'md:col-start-1',
-                            sectionPrefill.edited && 'rounded-lg border border-amber-400/60 bg-amber-50/60 p-2 dark:bg-amber-950/30')}
-                          title={sectionPrefill.edited ? `Original: ${sectionField.inputType === 'shareholding_list' ? formatPersonShareholdings(sectionPrefill.original) || '(blank)' : String(sectionPrefill.original ?? '(blank)')}` : undefined}
+                            sectionPrefill.edited && 'rounded-lg border border-amber-400/60 bg-amber-50/60 p-2 dark:bg-amber-950/30',
+                            sectionPendingRequired && pendingRequiredStyle)}
+                          title={sectionPrefill.edited ? `Original: ${sectionField.inputType === 'shareholding_list' ? formatPersonShareholdings(sectionPrefill.original) || '(blank)' : sectionField.inputType === 'position_list' ? formatAdditionalPositions(sectionPrefill.original) || '(blank)' : String(sectionPrefill.original ?? '(blank)')}` : undefined}
                         >
                           {!sectionField.hideLabel && !sectionChoiceInlineRight && sectionField.type !== 'PARAGRAPH' && (
                             <label
@@ -2134,6 +2172,17 @@ export default function PublicFormPage() {
                             </div>
                           )}
 
+                          {sectionField.type === 'SHORT_TEXT' && sectionField.inputType === 'position_list' && (
+                            <AdditionalPositionsEditor
+                              value={sectionValue}
+                              onChange={(rows) => setRepeatFieldValue(sectionField.key, rowIndex, rows)}
+                              onBlur={() => handleFieldBlur(sectionField, getRepeatFieldValue(sectionField.key, rowIndex), getFieldErrorKey(sectionField.key, rowIndex), buildAnswerContext(answers, rowIndex))}
+                              options={sectionDropdownOptions.map((option) => ({ value: option.value, label: option.label }))}
+                              disabled={sectionField.isReadOnly}
+                              error={sectionErrorText}
+                              idPrefix={sectionFieldDomId}
+                            />
+                          )}
                           {sectionField.type === 'SHORT_TEXT' && sectionField.inputType === 'shareholding_list' && (
                             <PersonShareholdingsEditor
                               value={sectionValue}
@@ -2152,7 +2201,7 @@ export default function PublicFormPage() {
                             />
                           )}
 
-                          {sectionField.type === 'SHORT_TEXT' && sectionField.inputType !== 'shareholding_list' && !sectionUseDateSelector && !sectionUseSplitPhoneInput && !sectionUseTimeTimezoneInput && (
+                          {sectionField.type === 'SHORT_TEXT' && sectionField.inputType !== 'shareholding_list' && sectionField.inputType !== 'position_list' && !sectionUseDateSelector && !sectionUseSplitPhoneInput && !sectionUseTimeTimezoneInput && (
                             <input
                               id={sectionControlId}
                               type={sectionField.inputType === 'phone' ? 'tel' : sectionField.inputType || 'text'}
@@ -2707,6 +2756,8 @@ export default function PublicFormPage() {
     const value = answers[field.key];
     const prefillState = getPrefillFieldState(field.key, value, prefillBaseline, answers);
     const errorText = fieldErrors[getFieldErrorKey(field.key)];
+    const pendingRequired = isAnnualReturnTemplate && field.isRequired
+      && !hasRequiredValue(field, value) && !errorText && !prefillState.edited;
     const fieldDomId = `form-field-${toDomSafeId(field.id || field.key)}`;
     const controlId = `${fieldDomId}-control`;
     const labelId = `${fieldDomId}-label`;
@@ -2716,7 +2767,9 @@ export default function PublicFormPage() {
     const accessibleLabel = localizedField.label || field.key;
     const choiceInlineRight = isChoiceInlineRightEnabled(field);
     const choiceChips = isChoiceChipsEnabled(field);
-    const choiceOptions = parseChoiceOptions(localizedField.options);
+    const choiceOptions = field.key === 'reelection_directors'
+      ? parseChoiceOptions(getDirectorReelectionOptions(answers))
+      : parseChoiceOptions(localizedField.options);
     const choiceDetailErrorValues = (field.type === 'SINGLE_CHOICE' || field.type === 'MULTIPLE_CHOICE')
       ? getChoiceDetailErrorValues(choiceOptions, value)
       : new Set<string>();
@@ -2938,7 +2991,8 @@ export default function PublicFormPage() {
     return (
       <React.Fragment key={field.id}>
         <div className={cn(widthClass, isLayoutBreakBeforeEnabled(field) && 'md:col-start-1',
-          prefillState.edited && 'rounded-lg border border-amber-400/60 bg-amber-50/60 p-2 dark:bg-amber-950/30')}
+          prefillState.edited && 'rounded-lg border border-amber-400/60 bg-amber-50/60 p-2 dark:bg-amber-950/30',
+          pendingRequired && pendingRequiredStyle)}
           title={prefillState.edited ? `Original: ${String(prefillState.original ?? '(blank)')}` : undefined}>
           {/* Label */}
           {!field.hideLabel && !choiceInlineRight && (
@@ -2974,6 +3028,17 @@ export default function PublicFormPage() {
           {inlineTooltipBlock}
 
           {/* SHORT_TEXT */}
+          {field.type === 'SHORT_TEXT' && field.inputType === 'position_list' && (
+            <AdditionalPositionsEditor
+              value={value}
+              onChange={(rows) => setFieldValue(field.key, rows)}
+              onBlur={() => handleFieldBlur(field, answers[field.key], getFieldErrorKey(field.key), answers)}
+              options={parseChoiceOptions(localizedField.options).map((option) => ({ value: option.value, label: option.label }))}
+              disabled={field.isReadOnly}
+              error={errorText}
+              idPrefix={fieldDomId}
+            />
+          )}
           {field.type === 'SHORT_TEXT' && field.inputType === 'shareholding_list' && (
             <PersonShareholdingsEditor
               value={value}
@@ -2986,7 +3051,7 @@ export default function PublicFormPage() {
               idPrefix={fieldDomId}
             />
           )}
-          {field.type === 'SHORT_TEXT' && field.inputType !== 'shareholding_list' && !useDateSelector && !useSplitPhoneInput && !useTimeTimezoneInput && (
+          {field.type === 'SHORT_TEXT' && field.inputType !== 'shareholding_list' && field.inputType !== 'position_list' && !useDateSelector && !useSplitPhoneInput && !useTimeTimezoneInput && (
             <input
               id={controlId}
               type={field.inputType === 'phone' ? 'tel' : field.inputType || 'text'}
@@ -3410,6 +3475,11 @@ export default function PublicFormPage() {
           )}
 
           {/* MULTIPLE_CHOICE */}
+          {field.key === 'reelection_directors' && choiceOptions.length === 0 && (
+            <p className="rounded-lg border border-border-primary bg-background-secondary px-3 py-2 text-sm text-text-secondary">
+              No directors are listed in the current people records. Add a director above to select them for re-election.
+            </p>
+          )}
           {field.type === 'MULTIPLE_CHOICE' && !choiceChips && (
             <fieldset
               className={cn('space-y-2 rounded-lg', highlightChoiceGroup && 'ring-1 ring-status-error/20')}

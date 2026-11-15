@@ -1,6 +1,8 @@
 /** Generic form prefill comparison. Repeat rows are matched by stable record IDs, not position. */
 import { AR_RECORD_SECTIONS } from '@/lib/forms/annual-return-prefill';
 import { formatPersonShareholdings } from '@/lib/forms/person-shareholdings';
+import { formatAdditionalPositions } from '@/lib/forms/additional-positions';
+import { getDirectorReelectionOptions, personHasRole } from '@/lib/forms/annual-return-directors';
 
 export const OAK_PREFILL_METADATA_KEY = '__oak_prefill';
 
@@ -42,7 +44,9 @@ export const valuesDifferFromPrefill = (original: unknown, current: unknown): bo
 
 const text = (value: unknown) => value === undefined || value === null ? '' : String(value);
 const changedText = (key: string, value: unknown) =>
-  key === 'person_shareholding' ? formatPersonShareholdings(value) || '' : text(value);
+  key === 'person_shareholding' ? formatPersonShareholdings(value) || ''
+    : key === 'person_additional_positions' ? formatAdditionalPositions(value) || ''
+    : text(value);
 const asArray = (value: unknown): unknown[] => Array.isArray(value) ? value : [];
 const asObject = (value: unknown): Record<string, unknown> | null =>
   value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : null;
@@ -77,13 +81,19 @@ export function protectPrefillAnswers(
     protectedAnswers[section.id] = ids;
   }
   if (Object.prototype.hasOwnProperty.call(baseline, 'person_record_id')) {
-    const roles = [1, 2, 3].flatMap((number) => {
-      const rows = asArray(protectedAnswers[`person_role_${number}`]);
-      return rows.map((role, index) => ({ role, index }));
-    });
     const kinds = asArray(protectedAnswers.person_kind);
-    protectedAnswers.ceo_role_listed = roles.some(({ role, index }) =>
-      role === 'CEO' && kinds[index] !== 'Corporate') ? 'Yes' : 'No';
+    const people = asArray(protectedAnswers.person_name);
+    protectedAnswers.ceo_role_listed = people.some((_, index) =>
+      kinds[index] !== 'Corporate' && personHasRole(protectedAnswers, index, 'CEO')) ? 'Yes' : 'No';
+    if (Object.prototype.hasOwnProperty.call(protectedAnswers, 'reelection_directors')) {
+      const choices = getDirectorReelectionOptions(protectedAnswers);
+      const allowedDirectors = new Set(choices.map((director) => director.value));
+      const selected = protectedAnswers.reelection_directors;
+      if (!Array.isArray(selected) || selected.some((id) => typeof id !== 'string' || !allowedDirectors.has(id))
+        || new Set(selected).size !== selected.length) {
+        throw new Error('Invalid director re-election selection');
+      }
+    }
     const selected = text(protectedAnswers.ceo_existing_person);
     if (['Existing listed person', 'Existing listed officer'].includes(text(protectedAnswers.ceo_source)) && selected) {
       const ids = asArray(protectedAnswers.person_record_id).map(text);
@@ -91,7 +101,9 @@ export function protectPrefillAnswers(
       const newRowIndex = /^new-person:(\\d+)$/.exec(selected);
       const rowIndex = matchedIndex >= 0 ? matchedIndex : newRowIndex ? Number(newRowIndex[1]) : -1;
       const isExistingOfficer = [1, 2, 3].some((number) =>
-        text(asArray(protectedAnswers[`person_role_${number}`])[rowIndex]).trim().length > 0);
+        text(asArray(protectedAnswers[`person_role_${number}`])[rowIndex]).trim().length > 0)
+        || asArray(protectedAnswers.person_additional_positions)[rowIndex] instanceof Array
+          && (asArray(protectedAnswers.person_additional_positions)[rowIndex] as unknown[]).length > 0;
       if (rowIndex < 0 || rowIndex >= ids.length ||
         (newRowIndex && ids[rowIndex] !== '') || kinds[rowIndex] === 'Corporate' ||
         !text(asArray(protectedAnswers.person_name)[rowIndex]).trim() || !isExistingOfficer) {

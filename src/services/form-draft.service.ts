@@ -16,6 +16,7 @@ import {
 import { SIGNATURE_DATA_URL_MAX_LENGTH, extractSignatureDataUrl } from '@/lib/signature-utils';
 import { parseNameCheckResultMap } from '@/lib/forms/name-check-result';
 import { sanitizePersonShareholdings } from '@/lib/forms/person-shareholdings';
+import { sanitizeAdditionalPositions } from '@/lib/forms/additional-positions';
 import { prisma } from '@/lib/prisma';
 import { storage } from '@/lib/storage';
 import { getAppBaseUrl, sendEmail } from '@/lib/email';
@@ -403,12 +404,15 @@ function sanitizePublicAnswers(
   // Repeated person rows contain an array of shareholding arrays; a single
   // shareholding-list field contains only one array of shareholding objects.
   const repeatShareholdingKeys = new Set<string>();
+  const repeatPositionKeys = new Set<string>();
   let insideRepeat = false;
   for (const field of fields) {
     if (field.type === 'PAGE_BREAK' && field.inputType === 'repeat_start') insideRepeat = true;
     else if (field.type === 'PAGE_BREAK' && field.inputType === 'repeat_end') insideRepeat = false;
     else if (insideRepeat && field.type === 'SHORT_TEXT' && field.inputType === 'shareholding_list') {
       repeatShareholdingKeys.add(field.key);
+    } else if (insideRepeat && field.type === 'SHORT_TEXT' && field.inputType === 'position_list') {
+      repeatPositionKeys.add(field.key);
     }
   }
 
@@ -420,6 +424,13 @@ function sanitizePublicAnswers(
 
     switch (field.type) {
       case 'SHORT_TEXT':
+        if (field.inputType === 'position_list') {
+          if (!Array.isArray(value)) throw new Error(`${field.label || field.key} must contain structured position rows.`);
+          sanitizedAnswers[key] = repeatPositionKeys.has(key)
+            ? value.slice(0, 50).map((row) => sanitizeAdditionalPositions(row ?? []))
+            : sanitizeAdditionalPositions(value);
+          break;
+        }
         if (field.inputType === 'shareholding_list') {
           if (!Array.isArray(value)) {
             throw new Error(`${field.label || field.key} must contain structured shareholding rows.`);

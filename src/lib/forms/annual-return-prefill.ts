@@ -214,7 +214,7 @@ export function buildAnnualReturnPrefill(company: AnnualReturnCompanyRecord, now
     record_registered_office: (record.addresses || []).find(
       row => row.isCurrent && row.addressType === 'REGISTERED_OFFICE',
     )?.fullAddress || '',
-    record_auditor: tidy(record.auditor?.name),
+    record_auditor: tidy(record.auditor?.name) || 'NA',
     ceo_role_listed: people.some(row => row.positions.some(p => p.role === 'CEO')) ? 'Yes' : 'No',
   };
 
@@ -239,7 +239,7 @@ export function buildAnnualReturnPrefill(company: AnnualReturnCompanyRecord, now
     answers[`person_role_date_${n}`] = people.map(p => p.positions[n - 1]?.date || '');
   }
   answers.person_additional_positions = people.map(p =>
-    p.positions.slice(3).map(position => position.role + (position.date ? ' (' + position.date + ')' : '')).join('\\n'),
+    p.positions.slice(3).map(position => ({ role: position.role, date: position.date })),
   );
   answers.person_shareholding = people.map(p =>
     p.holdings.map(holding => ({ shareClass: holding.shareClass, shares: holding.shares })),

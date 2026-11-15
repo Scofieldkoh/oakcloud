@@ -374,3 +374,39 @@ This is new form-engine behaviour and should be generic, not specific to this fo
 2. Phase 1: template file, registry entry, seed service, script, tests, docs.
 3. Staff review the seeded draft in the builder, publish it, archive the live form.
 4. Phase 2: prefill function, draft service changes, edited-value highlighting, submission link, API, staff screens.
+
+## 7. Version 5 follow-up (2026-11-15)
+
+Version 5 is a separate publishable guided-form draft. Do not mutate the published
+version 4 definition or existing response snapshots.
+
+- Registered particulars show entity status and auditor in the first row, then
+  primary and secondary SSIC selectors in separate full-width rows. A missing
+  auditor is prefilled as `NA`, rather than leaving its value ambiguous.
+- Required unanswered fields receive a subtle blue pending-input treatment;
+  red remains for validation errors, amber for changed prefills, and normal
+  styling for completed or optional fields.
+- Share capital and people are always displayed in their expanded repeat-card
+  editing layout. Remove the introductory people and "Positions (up to 3)"
+  remarks.
+- Positions 1–3 keep their separate editable selectors and dates. Positions
+  4 onward use a structured `position_list` (role and appointment date), with
+  three additional position cards per desktop row and a defined maximum. Both
+  draft and final-submission sanitation preserve the nested values.
+- The CEO heading and informational message disappear entirely if any current
+  individual holds a CEO position. Changes to positions recalculate this marker
+  in the browser and on the server.
+- Selecting "Re-election of directors" in the AGM agenda or written-resolution
+  matters displays a checkbox for each current director in a company-prefilled
+  form. All are checked when the matter is first selected. Persist stable
+  record IDs; display names in staff review and PDF rendering.
+- In Part 5 ask exactly: "Does the directors' statement include the directors'
+  interests in shares or debentures?" Only when the answer is No ask whether
+  shareholders agreed to omit the interests from the statement.
+- To deploy the new template, run the existing
+  `db:seed-annual-return-declaration` script using an active user's `--email`,
+  review the v5 draft under Forms and publish it. The staff company-prefill
+  action already prefers the highest published template version.
+
+Regression tests cover the template contract, structured position persistence,
+director selection integrity, consent gating and per-person role mapping.

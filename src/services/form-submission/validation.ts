@@ -1,5 +1,6 @@
 import { addIsoDateMonths } from '@/lib/forms/relative-date';
 import { sanitizePersonShareholdings } from '@/lib/forms/person-shareholdings';
+import { sanitizeAdditionalPositions } from '@/lib/forms/additional-positions';
 /** Validation and sanitising of public form answers and submission metadata. */
 
 import { Prisma, type FormField } from '@/generated/prisma';
@@ -600,12 +601,15 @@ export function sanitizePublicAnswers(
   const fieldsByKey = new Map(fields.map((field) => [field.key, field]));
   const sanitizedAnswers: Record<string, unknown> = {};
   const repeatShareholdingKeys = new Set<string>();
+  const repeatPositionKeys = new Set<string>();
   let insideRepeat = false;
   for (const field of fields) {
     if (isRepeatStartMarker(field)) insideRepeat = true;
     else if (isRepeatEndMarker(field)) insideRepeat = false;
     else if (insideRepeat && field.type === 'SHORT_TEXT' && field.inputType === 'shareholding_list') {
       repeatShareholdingKeys.add(field.key);
+    } else if (insideRepeat && field.type === 'SHORT_TEXT' && field.inputType === 'position_list') {
+      repeatPositionKeys.add(field.key);
     }
   }
 
@@ -617,6 +621,13 @@ export function sanitizePublicAnswers(
 
     switch (field.type) {
       case 'SHORT_TEXT':
+        if (field.inputType === 'position_list') {
+          if (!Array.isArray(value)) throw new Error(`${field.label || field.key} must contain structured position rows.`);
+          sanitizedAnswers[key] = repeatPositionKeys.has(key)
+            ? value.slice(0, 50).map((row) => sanitizeAdditionalPositions(row ?? []))
+            : sanitizeAdditionalPositions(value);
+          break;
+        }
         if (field.inputType === 'shareholding_list') {
           // Use the form definition, not a client-supplied array shape, to
           // distinguish one person's holdings from a nested repeated section.

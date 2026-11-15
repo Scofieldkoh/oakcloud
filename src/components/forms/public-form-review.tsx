@@ -9,6 +9,8 @@ import {
   type PublicFormField,
 } from '@/lib/form-utils';
 import type { IncorporationIssue } from '@/lib/forms/company-incorporation-profile';
+import { formatAdditionalPositions } from '@/lib/forms/additional-positions';
+import { getDirectorReelectionOptions } from '@/lib/forms/annual-return-directors';
 import { cn } from '@/lib/utils';
 
 export interface ReviewUpload {
@@ -73,10 +75,18 @@ function isTickBox(field: PublicFormField): boolean {
 export function formatReviewValue(
   field: PublicFormField,
   value: unknown,
-  uploadsById: Map<string, ReviewUpload>
+  uploadsById: Map<string, ReviewUpload>,
+  answers?: Record<string, unknown>,
 ): string | null {
   if (isTickBox(field)) return isEmptyValue(value) || (Array.isArray(value) && value.length === 0) ? 'No' : 'Yes';
   if (isEmptyValue(value)) return null;
+  if (field.type === 'SHORT_TEXT' && field.inputType === 'position_list') {
+    return formatAdditionalPositions(value);
+  }
+  if (field.key === 'reelection_directors' && answers && Array.isArray(value)) {
+    const labels = new Map(getDirectorReelectionOptions(answers).map((item) => [item.value, item.label]));
+    return value.map((item) => labels.get(String(item)) || '').filter(Boolean).join(', ') || null;
+  }
 
   if (field.type === 'SINGLE_CHOICE' || field.type === 'MULTIPLE_CHOICE' || field.type === 'DROPDOWN') {
     const labels = new Map(parseChoiceOptions(field.options).map((option) => [option.value, option.label]));
@@ -170,7 +180,7 @@ export function buildReviewSections(input: {
           const row: ReviewEntry[] = [];
           for (const sectionField of sectionFields) {
             if (!evaluateCondition(sectionField.condition, context, { fields: sectionFields })) continue;
-            const text = formatReviewValue(sectionField, context[sectionField.key], uploadsById);
+            const text = formatReviewValue(sectionField, context[sectionField.key], uploadsById, answers);
             if (!text) continue;
             row.push({ key: sectionField.key, label: localize(sectionField).label || sectionField.key, value: text });
           }
@@ -183,7 +193,7 @@ export function buildReviewSections(input: {
 
       if (NON_ANSWER_TYPES.has(field.type)) continue;
       if (!evaluateCondition(field.condition, answers, { fields: allFields })) continue;
-      const text = formatReviewValue(field, answers[field.key], uploadsById);
+      const text = formatReviewValue(field, answers[field.key], uploadsById, answers);
       const localized = localize(field);
       entries.push({
         key: field.key,

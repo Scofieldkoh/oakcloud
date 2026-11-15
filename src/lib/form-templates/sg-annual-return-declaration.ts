@@ -1,8 +1,8 @@
-/** Singapore Annual Return Declaration guided form, version 3: compact person-centred declaration. */
+/** Singapore Annual Return Declaration guided form, version 5: expanded people, directors and statement flow. */
 import type { FieldConditionInput, FormFieldInput } from '@/lib/validations/form-builder';
 
 export const SG_ANNUAL_RETURN_DECLARATION_TEMPLATE_KEY = 'sg_annual_return_declaration';
-export const SG_ANNUAL_RETURN_DECLARATION_TEMPLATE_VERSION = 4;
+export const SG_ANNUAL_RETURN_DECLARATION_TEMPLATE_VERSION = 5;
 export const SG_ANNUAL_RETURN_DECLARATION_TITLE = 'Annual Return Declaration';
 
 export const ANNUAL_RETURN_KEYS = {
@@ -50,6 +50,7 @@ type Draft = Omit<FormFieldInput, 'position' | 'isRequired' | 'hideLabel' | 'isR
 };
 const eq = (fieldKey: string, value: string): FieldConditionInput => ({ fieldKey, operator: 'equals', value });
 const not = (fieldKey: string, value: string): FieldConditionInput => ({ fieldKey, operator: 'not_equals', value });
+const includes = (fieldKey: string, value: string): FieldConditionInput => ({ fieldKey, operator: 'contains', value });
 const all = (...rules: FieldConditionInput[]): FieldConditionInput => ({ logic: 'and', rules });
 const any = (...rules: FieldConditionInput[]): FieldConditionInput => ({ logic: 'or', rules });
 const options = (values: string[]) => values.map((label) => ({ label, value: label }));
@@ -77,7 +78,7 @@ const tick = (key: string, label: string, condition?: FieldConditionInput): Draf
   options: [{ label, value: YES, requiredSelected: true }], condition,
 });
 const matters = [
-  { value: 'Re-election of directors', label: 'Re-election of directors', allowTextInput: true, textInputLabel: 'Director(s) to be re-elected' },
+  { value: 'Re-election of directors', label: 'Re-election of directors' },
   { value: 'Election or re-election of auditors', label: 'Election or re-election of auditors', allowTextInput: true, textInputLabel: 'Auditor details' },
   { value: 'Directors fees', label: "Directors' fees", allowTextInput: true, textInputLabel: 'Amount and period' },
   { value: 'Dividends', label: 'Dividends', allowTextInput: true, textInputLabel: 'Dividend details' },
@@ -119,6 +120,11 @@ function drafts(input: AnnualReturnBuildOptions): Draft[] {
   const prefilled = eq(K.prefillSource, 'company_record');
   const prefilledShares = all(prefilled, not(K.companyType, ARD_COMPANY_TYPES.publicGuarantee));
   const notPrefilled = { fieldKey: K.prefillSource, operator: 'is_empty' as const };
+  const needsCeoDetails = any(notPrefilled, all(prefilled, eq(K.ceoRoleListed, NO)));
+  const reelectionSelected = any(
+    all(agmHeld, includes(K.agmAgenda, 'Re-election of directors')),
+    all(noAgm, includes(K.resolutionMatters, 'Re-election of directors')),
+  );
 
   return [
     { type: 'HIDDEN', key: K.prefillSource, label: 'Prefill source' },
@@ -165,18 +171,17 @@ function drafts(input: AnnualReturnBuildOptions): Draft[] {
         'Live', 'Struck Off', 'Winding Up', 'Dissolved', 'In Liquidation',
         'In Receivership', 'Amalgamated', 'Converted', 'Other',
       ]) },
+    text('record_auditor', 'Auditor / audit firm', { condition: prefilled, isRequired: false, layoutWidth: 66 }),
     { type: 'DROPDOWN', key: 'record_primary_activity', label: 'Primary SSIC 2025 activity',
       isRequired: true, condition: prefilled, optionPresetId: input.ssicPresetId,
-      placeholder: 'Search SSIC activity or 5-digit code', layoutWidth: 50 },
+      placeholder: 'Search SSIC activity or 5-digit code', layoutWidth: 100 },
     { type: 'DROPDOWN', key: 'record_secondary_activity', label: 'Secondary SSIC 2025 activity',
       condition: prefilled, optionPresetId: input.ssicPresetId, isRequired: false,
-      placeholder: 'Optional: search SSIC activity or code', layoutWidth: 50 },
-    text('record_auditor', 'Auditor / audit firm', { condition: prefilled, isRequired: false, layoutWidth: 66 }),
+      placeholder: 'Optional: search SSIC activity or code', layoutWidth: 100 },
     { type: 'LONG_TEXT', key: 'record_registered_office', label: 'Registered office address',
       condition: prefilled, isRequired: true },
 
-    // Page 2 — an at-a-glance share capital grid, followed by one row per person
-    // or corporate shareholder. Each row can be expanded for full particulars.
+    // Page 2 — always-expanded share capital and one row per person or corporate shareholder.
     pageBreak('page_company_records', 'Share capital and people', prefilled),
     heading('part_records', 'Share capital and people', prefilled),
     text('record_as_at', 'Record snapshot', { isReadOnly: true, isRequired: false, condition: prefilled }),
@@ -184,8 +189,7 @@ function drafts(input: AnnualReturnBuildOptions): Draft[] {
     { type: 'PAGE_BREAK', inputType: 'repeat_start', key: 'share_capital_section', label: 'Share capital',
       condition: prefilledShares,
       validation: { repeatMinItems: 1, repeatMaxItems: 50, repeatItemLabel: 'Share class',
-        repeatAddLabel: 'Add share class', repeatCompactCards: true,
-        repeatSummaryFieldKeys: ['capital_class', 'capital_shares', 'capital_currency', 'capital_amount', 'capital_paid_up'] } },
+        repeatAddLabel: 'Add share class' } },
     { type: 'HIDDEN', key: 'capital_record_id', label: 'Capital record ID', condition: prefilledShares },
     { type: 'DROPDOWN', key: 'capital_class', label: 'Share class',
       condition: prefilledShares, isRequired: true, layoutWidth: 50,
@@ -205,12 +209,9 @@ function drafts(input: AnnualReturnBuildOptions): Draft[] {
     { type: 'PAGE_BREAK', inputType: 'repeat_end', key: 'capital_end', label: 'End share capital', condition: prefilledShares },
 
     heading('part_people', 'People and shareholders', prefilled),
-    info('people_help', 'Edit people',
-      'Each person appears once, even if they have several positions or share classes. Expand a row to edit their particulars, up to three positions and dates, and structured shareholdings by class and quantity. Add missing people separately.', prefilled),
     { type: 'PAGE_BREAK', inputType: 'repeat_start', key: 'people_section', label: 'People and shareholders',
       condition: prefilled, validation: { repeatMinItems: 1, repeatMaxItems: 50, repeatItemLabel: 'Person',
-        repeatAddLabel: 'Add person / shareholder', repeatCompactCards: true,
-        repeatSummaryFieldKeys: ['person_role_1', 'person_role_2', 'person_role_3', 'person_shareholding'] } },
+        repeatAddLabel: 'Add person / shareholder' } },
     { type: 'HIDDEN', key: 'person_record_id', label: 'Person source ID', condition: prefilled },
     { type: 'DROPDOWN', key: 'person_kind', label: 'Person / organisation',
       condition: prefilled, isRequired: true, layoutWidth: 33, options: options(['Individual', 'Corporate']) },
@@ -222,8 +223,6 @@ function drafts(input: AnnualReturnBuildOptions): Draft[] {
       placeholder: 'Select nationality', validation: { allowCustomOption: true } },
     { type: 'LONG_TEXT', key: 'person_address', label: 'Residential / registered address',
       condition: prefilled, isRequired: false, layoutWidth: 100 },
-    { type: 'PARAGRAPH', inputType: 'info_heading_3', key: 'person_positions_heading',
-      label: 'Positions (up to 3)', condition: all(prefilled, eq('person_kind', 'Individual')) },
     { type: 'DROPDOWN', key: 'person_role_1', label: 'Position 1', condition: all(prefilled, eq('person_kind', 'Individual')),
       isRequired: false, layoutWidth: 33, options: options(POSITION_OPTIONS) },
     { type: 'DROPDOWN', key: 'person_role_2', label: 'Position 2', condition: all(prefilled, eq('person_kind', 'Individual')),
@@ -236,9 +235,9 @@ function drafts(input: AnnualReturnBuildOptions): Draft[] {
       isRequired: false, layoutWidth: 33 }),
     date('person_role_date_3', 'Appointment date 3', { condition: all(prefilled, eq('person_kind', 'Individual')),
       isRequired: false, layoutWidth: 33 }),
-    { type: 'LONG_TEXT', key: 'person_additional_positions', label: 'Additional positions (beyond first 3)',
-      condition: all(prefilled, eq('person_kind', 'Individual')), isRequired: false, layoutWidth: 100,
-      helpText: 'If the individual holds more than three positions, list remaining appointments and dates here.' },
+    { type: 'SHORT_TEXT', inputType: 'position_list', key: 'person_additional_positions',
+      label: 'Additional positions', condition: all(prefilled, eq('person_kind', 'Individual')),
+      isRequired: false, layoutWidth: 100, options: options(POSITION_OPTIONS) },
     { type: 'SHORT_TEXT', inputType: 'shareholding_list', key: 'person_shareholding',
       label: 'Shareholdings by class', condition: prefilledShares, layoutWidth: 100,
       isRequired: false, options: options(['ORDINARY', 'PREFERENCE', 'REDEEMABLE PREFERENCE', 'NON-VOTING']),
@@ -246,10 +245,7 @@ function drafts(input: AnnualReturnBuildOptions): Draft[] {
       helpText: 'Add a row for each class this person holds, with its whole-number quantity. Leave empty for a non-shareholder.' },
     { type: 'PAGE_BREAK', inputType: 'repeat_end', key: 'people_end', label: 'End people', condition: prefilled },
 
-    heading('part_ceo', 'Chief executive officer', prefilled),
-    info('ceo_already_recorded', 'CEO already listed',
-      'A person with a CEO role is included above. Review the appointment and make any corrections in that individual\'s positions.',
-      all(prefilled, eq(K.ceoRoleListed, YES))),
+    heading('part_ceo', 'Chief executive officer', needsCeoDetails),
     yesNo(K.ceoExists, 'Does someone act as CEO, even if that is not their job title?', {
       condition: any(notPrefilled, all(prefilled, eq(K.ceoRoleListed, NO))),
       helpText: 'If someone is acting as CEO, select an existing officer or complete the separate individual KYC/CDD form for a new person.' }),
@@ -328,14 +324,24 @@ function drafts(input: AnnualReturnBuildOptions): Draft[] {
       condition: agmHeld, options: [{ value: 'Receive and adopt the Financial Statement', label: 'Receive and adopt the Financial Statement' }, ...matters] },
     { type: 'MULTIPLE_CHOICE', key: K.resolutionMatters, label: 'Matters to be approved by written resolution',
       condition: noAgm, options: matters },
+    { type: 'MULTIPLE_CHOICE', key: 'reelection_directors',
+      label: 'Directors proposed for re-election', condition: all(prefilled, reelectionSelected),
+      isRequired: true, options: [], layoutWidth: 100,
+      helpText: 'All current directors are selected by default. Untick anyone not proposed for re-election.' },
 
     pageBreak('page_director_statement', "Directors' statement", prepare),
     heading('part_director_statement', "Part 5: Directors' statement", prepare),
     info('director_statement', "Directors' statement",
       'The directors statement accompanying the financial statements is signed by two directors, or by the sole director where there is only one.', prepare),
-    yesNo('director_statement_consent', "Have the shareholders agreed to omit directors' interests from the directors' statement?", { condition: prepare }),
-    info('director_statement_consent_msg', 'Directors interests disclosure', 'Please provide the shareholders consent and supporting records for the directors interests disclosure.', all(prepare, eq('director_statement_consent', YES))),
-    info('director_statement_consent_block', 'Directors interests disclosure pending', 'Please contact us if the company requires assistance with directors interests disclosure.', all(prepare, eq('director_statement_consent', NO))),
+    yesNo('director_interests_included', "Does the directors' statement include the directors' interests in shares or debentures?", { condition: prepare }),
+    yesNo('director_statement_consent', "Have the shareholders agreed to omit directors' interests from the directors' statement?", {
+      condition: all(prepare, eq('director_interests_included', NO)) }),
+    info('director_statement_consent_msg', 'Directors interests disclosure',
+      'Please provide the shareholders consent and supporting records for omitting directors interests.',
+      all(prepare, eq('director_interests_included', NO), eq('director_statement_consent', YES))),
+    info('director_statement_consent_block', 'Directors interests disclosure pending',
+      'Please contact us if the company requires assistance with directors interests disclosure.',
+      all(prepare, eq('director_interests_included', NO), eq('director_statement_consent', NO))),
 
     pageBreak('page_declaration', 'Declaration'),
     heading('part_declaration', 'Declaration'),

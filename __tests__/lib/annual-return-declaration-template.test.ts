@@ -89,19 +89,24 @@ describe('Annual Return Declaration guided template', () => {
     const recordFields = fields.filter((field) => field.key?.startsWith('person_role_'));
     expect(recordFields).toHaveLength(6);
     const peopleRepeat = fields.find((field) => field.key === 'people_section');
-    expect(peopleRepeat?.validation).toMatchObject({ repeatCompactCards: true, repeatMinItems: 1 });
+    expect(peopleRepeat?.validation).toMatchObject({ repeatMinItems: 1 });
+    expect(peopleRepeat?.validation?.repeatCompactCards).not.toBe(true);
+    expect(fields.find((field) => field.key === 'share_capital_section')?.validation?.repeatCompactCards).not.toBe(true);
   });
 
-  it('defines structured per-person shareholding rows in version 4', () => {
-    expect(SG_ANNUAL_RETURN_DECLARATION_TEMPLATE_VERSION).toBe(4);
+  it('defines structured person holdings and expandable additional positions in version 5', () => {
+    expect(SG_ANNUAL_RETURN_DECLARATION_TEMPLATE_VERSION).toBe(5);
     const field = fields.find((entry) => entry.key === 'person_shareholding');
     expect(field).toMatchObject({
       type: 'SHORT_TEXT', inputType: 'shareholding_list', layoutWidth: 100,
       validation: { allowCustomOption: true },
     });
     expect(fields.filter((entry) => entry.key === 'person_shareholding')).toHaveLength(1);
-    expect(fields.find((entry) => entry.key === 'people_section')?.validation)
-      .toMatchObject({ repeatSummaryFieldKeys: expect.arrayContaining(['person_shareholding']) });
+    expect(fields.find((entry) => entry.key === 'person_additional_positions')).toMatchObject({
+      type: 'SHORT_TEXT', inputType: 'position_list', layoutWidth: 100,
+    });
+    expect(fields.find((entry) => entry.key === 'people_help')).toBeUndefined();
+    expect(fields.find((entry) => entry.key === 'person_positions_heading')).toBeUndefined();
   });
 
   it('uses the SSIC, nationality and ISO currency presets when configured', () => {
@@ -148,7 +153,45 @@ describe('Annual Return Declaration guided template', () => {
     expect(visible('ceo_kyccdd_ack', existing)).toBe(false);
     const known = { ...data, ceo_role_listed: 'Yes' };
     expect(visible('ceo_exists', known)).toBe(false);
-    expect(visible('ceo_already_recorded', known)).toBe(true);
+    expect(visible('part_ceo', known)).toBe(false);
+    expect(fields.find((field) => field.key === 'ceo_already_recorded')).toBeUndefined();
+  });
+
+  it('uses the requested particulars layout and keeps blank auditor values editable', () => {
+    const keys = fields.map((field) => field.key);
+    expect(keys.indexOf('record_entity_status')).toBeLessThan(keys.indexOf('record_auditor'));
+    expect(keys.indexOf('record_auditor')).toBeLessThan(keys.indexOf('record_primary_activity'));
+    expect(keys.indexOf('record_primary_activity')).toBeLessThan(keys.indexOf('record_secondary_activity'));
+    expect(fields.find((field) => field.key === 'record_entity_status')?.layoutWidth).toBe(33);
+    expect(fields.find((field) => field.key === 'record_auditor')?.layoutWidth).toBe(66);
+    expect(fields.find((field) => field.key === 'record_primary_activity')?.layoutWidth).toBe(100);
+    expect(fields.find((field) => field.key === 'record_secondary_activity')?.layoutWidth).toBe(100);
+  });
+
+  it('offers current-director checkboxes instead of a re-election text area', () => {
+    const reelection = fields.find((field) => field.key === 'reelection_directors')!;
+    expect(reelection).toMatchObject({ type: 'MULTIPLE_CHOICE', layoutWidth: 100 });
+    const resolution = fields.find((field) => field.key === 'resolution_matters')!;
+    const option = resolution.options?.find((item) => typeof item === 'object'
+      && item.value === 'Re-election of directors');
+    expect(option && typeof option === 'object' ? option.allowTextInput : undefined).not.toBe(true);
+    const prefill = base(ARD_COMPANY_TYPES.private, {
+      prefill_source: 'company_record',
+      exemption_check_fs_circulation: 'Yes',
+      resolution_matters: ['Re-election of directors'],
+    });
+    expect(visible('reelection_directors', prefill)).toBe(true);
+    expect(visible('reelection_directors', { ...prefill, resolution_matters: [] })).toBe(false);
+  });
+
+  it('uses the exact directors interests wording and asks omission only when not included', () => {
+    const first = fields.find((field) => field.key === 'director_interests_included')!;
+    expect(first.label).toBe("Does the directors' statement include the directors' interests in shares or debentures?");
+    const prepared = base(ARD_COMPANY_TYPES.private);
+    expect(visible('director_interests_included', prepared)).toBe(true);
+    expect(visible('director_statement_consent', prepared)).toBe(false);
+    expect(visible('director_statement_consent', { ...prepared, director_interests_included: 'Yes' })).toBe(false);
+    expect(visible('director_statement_consent', { ...prepared, director_interests_included: 'No' })).toBe(true);
   });
 
   it('does not offer written dispensation of an AGM anywhere', () => {

@@ -75,6 +75,27 @@ describe('Annual Return v4 company snapshot mapping', () => {
     expect(answers.person_shareholding).toEqual([[{ shareClass: 'ORDINARY', shares: '100' }]]);
     expect(repeatSectionCounts.people_section).toBe(1);
   });
+  it('sets NA when no auditor and stores positions four onward as editable rows', () => {
+    const source = company({
+      auditor: null,
+      officers: [
+        { id: 'a1', contactId: 'same', name: 'Alice', role: 'DIRECTOR', isCurrent: true, appointmentDate: new Date('2020-01-01') },
+        { id: 'a2', contactId: 'same', name: 'Alice', role: 'SECRETARY', isCurrent: true, appointmentDate: new Date('2021-01-01') },
+        { id: 'a3', contactId: 'same', name: 'Alice', role: 'CFO', isCurrent: true, appointmentDate: new Date('2022-01-01') },
+        { id: 'a4', contactId: 'same', name: 'Alice', role: 'AUDITOR', isCurrent: true, appointmentDate: new Date('2023-01-01') },
+        { id: 'a5', contactId: 'same', name: 'Alice', role: 'LIQUIDATOR', isCurrent: true, appointmentDate: new Date('2024-01-01') },
+        { id: 'a6', contactId: 'same', name: 'Alice', role: 'RECEIVER', isCurrent: true, appointmentDate: new Date('2025-01-01') },
+      ],
+      shareholders: [],
+    });
+    const { answers } = buildAnnualReturnPrefill(source);
+    expect(answers.record_auditor).toBe('NA');
+    expect(answers.person_additional_positions).toEqual([[
+      { role: 'Auditor', date: '2023-01-01' },
+      { role: 'Liquidator', date: '2024-01-01' },
+      { role: 'Receiver', date: '2025-01-01' },
+    ]]);
+  });
   it('does not merge different people with the same name without matching identity evidence', () => {
     const source = company({ officers: [
       { id: 'd1', name: 'Alex', address: '1 First Street', role: 'DIRECTOR', isCurrent: true },
