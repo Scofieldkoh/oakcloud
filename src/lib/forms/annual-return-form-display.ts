@@ -68,6 +68,19 @@ export function formatRecordedShareQuantity(value: unknown): string {
   return BigInt(raw).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 }
 
+/**
+ * Format recorded issued and paid-up amounts without changing the stored
+ * decimal precision (or converting a large source string to a JS number).
+ */
+export function formatRecordedCapitalAmount(value: unknown): string {
+  const raw = typeof value === 'string' ? value.trim()
+    : typeof value === 'number' && Number.isFinite(value) ? String(value) : '';
+  const match = /^(\d+)(\.\d+)?$/.exec(raw);
+  if (!match) return raw;
+  const whole = match[1].replace(/^0+(?=\d)/, '').replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  return `${whole}${match[2] ?? ''}`;
+}
+
 /** Neutral grey distinguishes ACRA-sourced, verification-only fields. */
 export const ANNUAL_RETURN_READ_ONLY_FIELD_CLASSES =
   'border-[#B6C1BF] bg-[#D9DFDE] dark:border-[#4F625C] dark:bg-[#34433F]';

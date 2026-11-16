@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   PEOPLE_CARD_VARIANT_CLASSES,
   ANNUAL_RETURN_READ_ONLY_FIELD_CLASSES,
+  formatRecordedCapitalAmount,
   formatRecordedShareQuantity,
   getPeopleCardVariantClass,
   orderRecordedPositionFields,
@@ -55,6 +56,19 @@ describe('Annual Return public form presentation', () => {
     expect(formatRecordedShareQuantity('')).toBe('');
     expect(formatRecordedShareQuantity('not a number')).toBe('not a number');
     expect(formatRecordedShareQuantity('10.25')).toBe('10.25');
+  });
+
+  it('formats issued and paid-up amounts with thousands separators and exact decimals', () => {
+    expect(formatRecordedCapitalAmount('10000')).toBe('10,000');
+    expect(formatRecordedCapitalAmount('10000.50')).toBe('10,000.50');
+    expect(formatRecordedCapitalAmount('1234567.000')).toBe('1,234,567.000');
+    expect(formatRecordedCapitalAmount('000050.30')).toBe('50.30');
+    expect(formatRecordedCapitalAmount('0')).toBe('0');
+    expect(formatRecordedCapitalAmount('0.00')).toBe('0.00');
+    expect(formatRecordedCapitalAmount('12345678901234567890.123456')).toBe('12,345,678,901,234,567,890.123456');
+    expect(formatRecordedCapitalAmount(10000.5)).toBe('10,000.5');
+    expect(formatRecordedCapitalAmount('')).toBe('');
+    expect(formatRecordedCapitalAmount('not a number')).toBe('not a number');
   });
 
   it('uses a noticeably darker grey for verification-only fields', () => {

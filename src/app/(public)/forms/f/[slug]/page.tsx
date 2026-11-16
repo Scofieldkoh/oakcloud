@@ -44,7 +44,7 @@ import { PersonShareholdingsEditor } from '@/components/forms/person-shareholdin
 import { AdditionalPositionsEditor } from '@/components/forms/additional-positions-editor';
 import { additionalPositionsError, formatAdditionalPositions } from '@/lib/forms/additional-positions';
 import { getDirectorReelectionOptions, isReelectionMatterSelected, personHasRole } from '@/lib/forms/annual-return-directors';
-import { ANNUAL_RETURN_READ_ONLY_FIELD_CLASSES, formatRecordedShareQuantity, getPeopleCardVariantClass, getAnnualReturnAgendaLabel, orderRecordedPositionFields, shouldShowLongDropdownSelection } from '@/lib/forms/annual-return-form-display';
+import { ANNUAL_RETURN_READ_ONLY_FIELD_CLASSES, formatRecordedCapitalAmount, formatRecordedShareQuantity, getPeopleCardVariantClass, getAnnualReturnAgendaLabel, orderRecordedPositionFields, shouldShowLongDropdownSelection } from '@/lib/forms/annual-return-form-display';
 import { readAdditionalPositions } from '@/lib/forms/additional-positions';
 import { RecordedAdditionalPositions, RecordedShareholdings, formatRecordedAppointmentDate } from '@/components/forms/annual-return-verification-details';
 import { SG_ANNUAL_RETURN_DECLARATION_TEMPLATE_KEY } from '@/lib/form-templates/sg-annual-return-declaration';
@@ -2270,11 +2270,11 @@ export default function PublicFormPage() {
                           )}
 
                           {sectionField.type === 'SHORT_TEXT' && sectionField.inputType !== 'shareholding_list' && sectionField.inputType !== 'position_list' && !sectionUseDateSelector && !sectionUseSplitPhoneInput && !sectionUseTimeTimezoneInput && (
-                            isReadOnlyCapitalField && sectionField.key === 'capital_shares' ? (
+                            isReadOnlyCapitalField && ['capital_shares', 'capital_amount', 'capital_paid_up'].includes(sectionField.key) ? (
                               <div id={sectionControlId} role="textbox" aria-label={sectionLabel} aria-readonly="true"
                                 className={cn('w-full rounded-lg border px-3 py-2 text-sm tabular-nums text-text-primary',
                                   ANNUAL_RETURN_READ_ONLY_FIELD_CLASSES)}>
-                                {formatRecordedShareQuantity(sectionValue)}
+                                {sectionField.key === 'capital_shares' ? formatRecordedShareQuantity(sectionValue) : formatRecordedCapitalAmount(sectionValue)}
                               </div>
                             ) : (
                               <input
