@@ -1,8 +1,8 @@
-/** Singapore Annual Return Declaration guided form, version 10: accessible AGM and financial statement guidance. */
+/** Singapore Annual Return Declaration guided form, version 11: required audit exemption checklists. */
 import type { FieldConditionInput, FormFieldInput } from '@/lib/validations/form-builder';
 
 export const SG_ANNUAL_RETURN_DECLARATION_TEMPLATE_KEY = 'sg_annual_return_declaration';
-export const SG_ANNUAL_RETURN_DECLARATION_TEMPLATE_VERSION = 10;
+export const SG_ANNUAL_RETURN_DECLARATION_TEMPLATE_VERSION = 11;
 export const SG_ANNUAL_RETURN_DECLARATION_TITLE = 'Annual Return Declaration';
 
 export const ANNUAL_RETURN_KEYS = {
@@ -102,6 +102,9 @@ function drafts(input: AnnualReturnBuildOptions): Draft[] {
   const noFiling = all(exemptPrivate, eq(K.companySolvency, 'Solvent'), prepare);
   const filing = all(prepare, any(not(K.companyType, ARD_COMPANY_TYPES.exemptPrivate), eq(K.companySolvency, 'Insolvent')));
   const ready = all(prepare, eq(K.fsReady, YES));
+  const smallAuditExemption = eq(K.fsAuditStatus, 'Not audited (small company exemption)');
+  const dormantAuditExemption = eq(K.fsAuditStatus, 'Not audited (dormant company exemption)');
+  const smallGroupAuditExemption = all(smallAuditExemption, eq('fs_small_company_in_group', YES));
   const circulationYes = eq(K.fsExemption, YES);
   const circulationPending = eq(K.fsExemption, PENDING_CIRCULATION);
   const circulationRoute = all(privateType, prepare, any(circulationYes, circulationPending));
@@ -320,6 +323,90 @@ function drafts(input: AnnualReturnBuildOptions): Draft[] {
         { label: 'Not audited (small company exemption)', value: 'Not audited (small company exemption)', condition: privateType },
         { label: 'Not audited (dormant company exemption)', value: 'Not audited (dormant company exemption)', condition: dormant },
       ] },
+
+    info(
+      'fs_small_audit_guidance', 'Small company audit exemption — confirm eligibility',
+      'This exemption applies only to private companies. Tick the conditions you can confirm from company records. <strong>Any 2 of the 3 financial or staff tests</strong> must be met for the applicable financial years. New companies and companies already qualified may have different year-by-year rules. If you are unsure, check with us before choosing this exemption. <a href="https://www.acra.gov.sg/manage/companies/legal-requirements-common-offences/preparing-financial-statements/audit-exemptions/" target="_blank" rel="noopener noreferrer">Read ACRA guidance</a>.',
+      smallAuditExemption
+    ),
+    {
+      type: 'MULTIPLE_CHOICE', key: 'fs_small_company_thresholds',
+      label: 'Small company — select at least 2 of the following 3 conditions',
+      condition: smallAuditExemption, isRequired: true, layoutWidth: 100,
+      options: options([
+        'Annual revenue is S$10 million or less',
+        'Total assets are S$10 million or less',
+        'There are 50 or fewer full-time employees at the financial year-end',
+      ]),
+      validation: { minSelectedOptions: 2 },
+      helpText: 'These are alternatives: you do not have to meet all three. Check the applicable financial years, including the prior-year rules. If the qualifying combination differed between years, ask us to verify the exemption.',
+    },
+    {
+      type: 'MULTIPLE_CHOICE', key: 'fs_small_company_declarations',
+      label: 'Small company — confirm all of the following statements',
+      condition: smallAuditExemption, isRequired: true, layoutWidth: 100,
+      options: options([
+        'The company was a private company during the relevant financial year.',
+        'I have checked that the company qualifies for the relevant financial years, including the first-year or continuing-qualification rules where applicable.',
+        'The company has not received a valid request from a member to have these financial statements audited.',
+        'The company has maintained the accounting and other records required by the Companies Act.',
+      ]),
+      validation: { minSelectedOptions: 4 },
+      helpText: 'These are additional mandatory confirmations, not alternatives. Only tick a statement if it is true. Please contact us if you cannot confirm one.',
+    },
+    {
+      type: 'SINGLE_CHOICE', key: 'fs_small_company_in_group',
+      label: 'Is the company part of a group (including an overseas parent company)?',
+      condition: smallAuditExemption, isRequired: true, layoutWidth: 100,
+      options: options([YES, NO]), validation: { choiceInlineRight: true },
+      helpText: 'A company owned or controlled by another entity may belong to a group even if it does not prepare consolidated financial statements. If unsure, contact us.',
+    },
+    {
+      type: 'MULTIPLE_CHOICE', key: 'fs_small_group_thresholds',
+      label: 'Small group — select at least 2 of the following 3 conditions',
+      condition: smallGroupAuditExemption, isRequired: true, layoutWidth: 100,
+      options: options([
+        'Consolidated group annual revenue is S$10 million or less',
+        'Consolidated group total assets are S$10 million or less',
+        'The group has 50 or fewer full-time employees at the financial year-end',
+      ]),
+      validation: { minSelectedOptions: 2 },
+      helpText: 'Assess the whole group, including overseas companies, using consolidated figures for the applicable financial years. Different companies cannot be assessed separately for this test.',
+    },
+    {
+      type: 'MULTIPLE_CHOICE', key: 'fs_small_group_declaration',
+      label: 'Small group — confirm the historical assessment',
+      condition: smallGroupAuditExemption, isRequired: true, layoutWidth: 100,
+      options: options([
+        'I confirm the whole group qualifies as a small group under the applicable financial-year rules.',
+      ]),
+      validation: { minSelectedOptions: 1 },
+      helpText: 'This declaration is in addition to the two-out-of-three consolidated thresholds above.',
+    },
+    info(
+      'fs_dormant_audit_guidance', 'Dormant company audit exemption — confirm eligibility',
+      'A company may be exempt from audit if it has been dormant from incorporation or since the end of its previous financial year, with no accounting transactions except those the Companies Act expressly disregards. This <strong>does not automatically exempt it from preparing financial statements</strong>; the separate dormant relevant company rules (including an S$500,000 asset test) apply to that question.',
+      dormantAuditExemption
+    ),
+    {
+      type: 'SINGLE_CHOICE', key: 'fs_dormant_audit_since',
+      label: 'The company has been dormant since which point?',
+      condition: dormantAuditExemption, isRequired: true, layoutWidth: 100,
+      options: options(['The date the company was incorporated', 'The end of the previous financial year']),
+      helpText: 'Select the point from which the company had no accounting transactions, other than transactions expressly disregarded under section 205B of the Companies Act.',
+    },
+    {
+      type: 'MULTIPLE_CHOICE', key: 'fs_dormant_audit_declarations',
+      label: 'Dormant company — confirm all of the following statements',
+      condition: dormantAuditExemption, isRequired: true, layoutWidth: 100,
+      options: options([
+        'No accounting transactions occurred during the dormancy period, other than those expressly disregarded under the Companies Act.',
+        'The company has received no notice requiring an audit under section 205B(6) for this financial year.',
+        'The company has kept the accounting and other records required by the Companies Act.',
+      ]),
+      validation: { minSelectedOptions: 3 },
+      helpText: 'Having no sales does not necessarily mean the company is dormant. Ordinary expenses, purchases or other accounting transactions can disqualify it. Check with us if unsure.',
+    },
 
     pageBreak('page_agm', 'AGM matters'),
     heading('part_agm', 'Part 4: AGM matters'),

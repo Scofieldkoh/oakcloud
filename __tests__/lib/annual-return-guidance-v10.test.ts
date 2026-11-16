@@ -23,7 +23,7 @@ const visible = (key: string, answers: Record<string, unknown>) =>
 
 describe('Annual Return v10 respondent guidance', () => {
   it('has valid fields, separate financial statement and AGM FAQs, and links to ACRA concepts', () => {
-    expect(SG_ANNUAL_RETURN_DECLARATION_TEMPLATE_VERSION).toBe(10);
+    expect(SG_ANNUAL_RETURN_DECLARATION_TEMPLATE_VERSION).toBe(11);
     expect(saveFormFieldsSchema.safeParse({ fields }).success).toBe(true);
     const financial = byKey('financial_statements_faq');
     const agm = byKey('agm_faq');
