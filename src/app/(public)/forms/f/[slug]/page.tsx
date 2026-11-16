@@ -44,7 +44,7 @@ import { PersonShareholdingsEditor } from '@/components/forms/person-shareholdin
 import { AdditionalPositionsEditor } from '@/components/forms/additional-positions-editor';
 import { additionalPositionsError, formatAdditionalPositions } from '@/lib/forms/additional-positions';
 import { getDirectorReelectionOptions, isReelectionMatterSelected, personHasRole } from '@/lib/forms/annual-return-directors';
-import { ANNUAL_RETURN_READ_ONLY_FIELD_CLASSES, formatRecordedShareQuantity, getPeopleCardVariantClass, orderRecordedPositionFields, shouldShowLongDropdownSelection } from '@/lib/forms/annual-return-form-display';
+import { ANNUAL_RETURN_READ_ONLY_FIELD_CLASSES, formatRecordedShareQuantity, getPeopleCardVariantClass, getAnnualReturnAgendaLabel, orderRecordedPositionFields, shouldShowLongDropdownSelection } from '@/lib/forms/annual-return-form-display';
 import { readAdditionalPositions } from '@/lib/forms/additional-positions';
 import { RecordedAdditionalPositions, RecordedShareholdings, formatRecordedAppointmentDate } from '@/components/forms/annual-return-verification-details';
 import { SG_ANNUAL_RETURN_DECLARATION_TEMPLATE_KEY } from '@/lib/form-templates/sg-annual-return-declaration';
@@ -685,7 +685,7 @@ export default function PublicFormPage() {
                 continue;
               }
 
-              if (sectionField.type === 'MULTIPLE_CHOICE' && isEmptyValue(rowValue)) {
+              if (sectionField.type === 'MULTIPLE_CHOICE' && isEmptyValue(rowValue) && !(rowIndex in existingRows)) {
                 const defaultValue = getDefaultMultipleChoiceValue(sectionField);
                 if (defaultValue.length === 0) continue;
                 existingRows[rowIndex] = defaultValue;
@@ -736,7 +736,7 @@ export default function PublicFormPage() {
           continue;
         }
 
-        if (field.type === 'MULTIPLE_CHOICE' && isEmptyValue(existingValue)) {
+        if (field.type === 'MULTIPLE_CHOICE' && isEmptyValue(existingValue) && !(field.key in next)) {
           const defaultValue = getDefaultMultipleChoiceValue(field);
           if (defaultValue.length === 0) continue;
           next[field.key] = defaultValue;
@@ -929,7 +929,7 @@ export default function PublicFormPage() {
               continue;
             }
 
-            if (sectionField.type === 'MULTIPLE_CHOICE' && isEmptyValue(rowValue)) {
+            if (sectionField.type === 'MULTIPLE_CHOICE' && isEmptyValue(rowValue) && !(rowIndex in existingRows)) {
               const defaultValue = getDefaultMultipleChoiceValue(sectionField);
               if (defaultValue.length === 0) continue;
               existingRows[rowIndex] = defaultValue;
@@ -974,7 +974,7 @@ export default function PublicFormPage() {
         continue;
       }
 
-      if (field.type === 'MULTIPLE_CHOICE' && isEmptyValue(existingValue)) {
+      if (field.type === 'MULTIPLE_CHOICE' && isEmptyValue(existingValue) && !(field.key in next)) {
         const defaultValue = getDefaultMultipleChoiceValue(field);
         if (defaultValue.length === 0) continue;
         next[field.key] = defaultValue;
@@ -1880,6 +1880,33 @@ export default function PublicFormPage() {
       );
     }
 
+    // Display the registered office already verified on page 1; never store a duplicate answer.
+    if (isAnnualReturnTemplate && field.key === 'agm_venue_registered_address') {
+      const registeredOffice = typeof answers.record_registered_office === 'string'
+        ? answers.record_registered_office.trim() : '';
+      return (
+        <div key={field.id} className={cn(widthClass, 'md:col-start-1')}>
+          <p className="mb-1.5 text-sm font-medium text-text-secondary">Company registered address (from page 1)</p>
+          <div
+            role="textbox"
+            aria-label="Company registered address"
+            aria-readonly="true"
+            className={cn(
+              'min-h-16 whitespace-pre-wrap break-words rounded-lg border px-3.5 py-2.5 text-sm text-text-primary',
+              ANNUAL_RETURN_READ_ONLY_FIELD_CLASSES
+            )}
+          >
+            {registeredOffice || 'No registered address is available in the company particulars.'}
+          </div>
+          {!registeredOffice && (
+            <p className="mt-1.5 text-xs text-text-secondary">
+              Please check the registered office details on page 1, or choose Others and supply a venue.
+            </p>
+          )}
+        </div>
+      );
+    }
+
     // info_image
     if (localizedField.type === 'PARAGRAPH' && localizedField.inputType === 'info_image') {
       const imageUrl = isValidHttpUrl(localizedField.placeholder?.trim() || null) ? localizedField.placeholder!.trim() : null;
@@ -2028,10 +2055,12 @@ export default function PublicFormPage() {
                 const currentRecordId = baselineSection && Array.isArray(answers[baselineSection.id])
                   ? (answers[baselineSection.id] as unknown[])[rowIndex]
                   : null;
-                const canRemoveRow = !isVerificationCapitalSection && (rowCount > sectionConfig.minItems || (!!prefillBaseline && !!currentRecordId));
+                const isPeopleCard = field.key === 'people_section';
+                const canRemoveRow = !isVerificationCapitalSection
+                  && !(isAnnualReturnTemplate && isPeopleCard)
+                  && (rowCount > sectionConfig.minItems || (!!prefillBaseline && !!currentRecordId));
                 const expandedKey = `${sectionId}:${currentRecordId || `new-row-${rowIndex}`}`;
                 const expanded = expandedRepeatCards[expandedKey] ?? !currentRecordId;
-                const isPeopleCard = field.key === 'people_section';
                 const personName = isPeopleCard && typeof rowAnswers.person_name === 'string'
                   ? rowAnswers.person_name.trim() : '';
                 const rowWasAdded = !!prefillBaseline && !!baselineSection
@@ -2045,9 +2074,9 @@ export default function PublicFormPage() {
                     key={`${sectionId}-row-${rowIndex}`}
                     className={cn(
                       cardMode
-                        ? 'rounded-xl border border-border-primary/60 bg-white p-3 shadow-sm sm:p-4'
+                        ? 'rounded-xl border border-border-primary/60 p-3 shadow-sm sm:p-4'
                         : rowIndex > 0 && 'border-t border-border-primary/40 pt-4',
-                      isPeopleCard && getPeopleCardVariantClass(rowIndex),
+                      isPeopleCard ? getPeopleCardVariantClass(rowIndex) : cardMode && 'bg-white',
                       rowWasAdded && EDITED_VALUE_CLASS
                     )}
                     role={cardMode ? 'group' : undefined}
@@ -2834,7 +2863,9 @@ export default function PublicFormPage() {
     const hintId = localizedField.subtext ? `${fieldDomId}-hint` : undefined;
     const errorId = errorText ? `${fieldDomId}-error` : undefined;
     const describedBy = [hintId, errorId].filter(Boolean).join(' ') || undefined;
-    const accessibleLabel = localizedField.label || field.key;
+    const accessibleLabel = isAnnualReturnTemplate && field.key === 'agm_agenda'
+      ? getAnnualReturnAgendaLabel(value)
+      : (localizedField.label || field.key);
     const choiceInlineRight = isChoiceInlineRightEnabled(field);
     const choiceChips = isChoiceChipsEnabled(field);
     const choiceOptions = field.key === 'reelection_directors'
