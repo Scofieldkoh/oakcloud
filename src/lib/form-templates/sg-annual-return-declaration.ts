@@ -1,8 +1,8 @@
-/** Singapore Annual Return Declaration guided form, version 8: verification-only appointments and shares. */
+/** Singapore Annual Return Declaration guided form, version 9: conditional AGM short-notice dates. */
 import type { FieldConditionInput, FormFieldInput } from '@/lib/validations/form-builder';
 
 export const SG_ANNUAL_RETURN_DECLARATION_TEMPLATE_KEY = 'sg_annual_return_declaration';
-export const SG_ANNUAL_RETURN_DECLARATION_TEMPLATE_VERSION = 8;
+export const SG_ANNUAL_RETURN_DECLARATION_TEMPLATE_VERSION = 9;
 export const SG_ANNUAL_RETURN_DECLARATION_TITLE = 'Annual Return Declaration';
 
 export const ANNUAL_RETURN_KEYS = {
@@ -316,9 +316,15 @@ function drafts(input: AnnualReturnBuildOptions): Draft[] {
     info('label_agm_msg', 'AGM required', 'The company is required to hold an AGM.', requiredAgm),
     yesNo('short_notice_consent', 'Have all members entitled to attend and vote agreed to shorter notice?', { condition: agmHeld }),
     date('agm_notice_date', 'Date of AGM notice', {
-      condition: agmHeld, layoutWidth: 33, validation: { maxDateFieldKey: K.agmDate, maxDateOffsetDays: -14 } }),
+      condition: agmHeld, layoutWidth: 33, validation: {
+        maxDateFieldKey: K.agmDate, maxDateOffsetDays: -14,
+        maxDateOffsetDaysWhen: { fieldKey: 'short_notice_consent', equals: YES, offsetDays: 0 },
+      } }),
     date(K.agmDate, 'Proposed AGM date', {
-      condition: agmHeld, layoutWidth: 33, validation: { minDate: 'today' },
+      condition: agmHeld, layoutWidth: 33, validation: {
+        minDate: 'today', minDateFieldKey: 'agm_notice_date', minDateOffsetDays: 14,
+        minDateOffsetDaysWhen: { fieldKey: 'short_notice_consent', equals: YES, offsetDays: 0 },
+      },
       helpText: 'For companies that are not listed, the AGM is normally due within six months after financial year-end. Contact us if it is late.' }),
     { type: 'SHORT_TEXT', inputType: 'time_timezone', key: 'agm_time', label: 'Proposed AGM time', condition: agmHeld, isRequired: true, layoutWidth: 50, validation: { timezoneDefault: 'Asia/Singapore' } },
     text('proposed_agm_venue', 'Proposed AGM venue', { condition: agmHeld, layoutWidth: 50 }),

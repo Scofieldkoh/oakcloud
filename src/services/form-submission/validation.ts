@@ -1,4 +1,4 @@
-import { addIsoDateMonths } from '@/lib/forms/relative-date';
+import { addIsoDateMonths, getRelativeDateOffsetDays } from '@/lib/forms/relative-date';
 import { sanitizePersonShareholdings } from '@/lib/forms/person-shareholdings';
 import { sanitizeAdditionalPositions } from '@/lib/forms/additional-positions';
 /** Validation and sanitising of public form answers and submission metadata. */
@@ -153,8 +153,7 @@ function resolveRelativeDateBoundary(
     return undefined;
   }
 
-  const rawOffset = validation?.[offsetName];
-  const offsetDays = typeof rawOffset === 'number' && Number.isFinite(rawOffset) ? Math.trunc(rawOffset) : 0;
+  const offsetDays = getRelativeDateOffsetDays(validation, offsetName, answersRecord);
   const rawMonths = validation?.[offsetName === 'minDateOffsetDays' ? 'minDateOffsetMonths' : 'maxDateOffsetMonths'];
   const offsetMonths = typeof rawMonths === 'number' && Number.isFinite(rawMonths) ? Math.trunc(rawMonths) : 0;
   const withMonths = addIsoDateMonths(referencedValue.trim(), offsetMonths);
