@@ -1,8 +1,8 @@
-/** Singapore Annual Return Declaration guided form, version 8: verification-only appointments and shares. */
+/** Singapore Annual Return Declaration guided form, version 10: accessible AGM and financial statement guidance. */
 import type { FieldConditionInput, FormFieldInput } from '@/lib/validations/form-builder';
 
 export const SG_ANNUAL_RETURN_DECLARATION_TEMPLATE_KEY = 'sg_annual_return_declaration';
-export const SG_ANNUAL_RETURN_DECLARATION_TEMPLATE_VERSION = 8;
+export const SG_ANNUAL_RETURN_DECLARATION_TEMPLATE_VERSION = 10;
 export const SG_ANNUAL_RETURN_DECLARATION_TITLE = 'Annual Return Declaration';
 
 export const ANNUAL_RETURN_KEYS = {
@@ -273,6 +273,34 @@ function drafts(input: AnnualReturnBuildOptions): Draft[] {
 
     pageBreak('page_financial_statements', 'Financial statements'),
     heading('part_financial_statements', 'Part 3: Financial statements'),
+    {
+      type: 'PARAGRAPH', inputType: 'info_faq', key: 'financial_statements_faq',
+      label: 'Financial statements and audit: common questions',
+      layoutWidth: 100,
+      options: [
+        {
+          label: 'Does my company need financial statements even if it has very little business?',
+          bodyHtml: '<p>Usually, yes. A Singapore company normally prepares annual financial statements under the applicable accounting standards even when it makes a loss, has no sales or is exempt from audit. Only a company meeting the specific <strong>dormant relevant company</strong> exemption may be exempt from preparing them. ACRA filing and an external audit are separate requirements.</p>',
+        },
+        {
+          label: 'Do financial statements have to be audited?',
+          bodyHtml: '<p>Not always. An <strong>audit</strong> means an independent auditor checks the financial statements and issues an audit report. Private companies that qualify as small companies and dormant companies that meet the statutory conditions can be exempt. An audit exemption does <strong>not</strong> by itself remove the duty to prepare financial statements or decide whether they must be filed with ACRA.</p>',
+        },
+        {
+          label: 'What is a small company for audit exemption?',
+          bodyHtml: '<p>The company must be private and meet at least <strong>two of three</strong> tests: annual revenue of S$10 million or less; total assets of S$10 million or less; and 50 or fewer full-time employees. Normally it must qualify for the <strong>two immediately preceding financial years</strong>. A newly incorporated company can assess its current financial year. If the company belongs to a group, the <strong>entire group must also qualify as a small group</strong> on a consolidated basis. Ask us to check if you are unsure.</p>',
+        },
+        {
+          label: 'What does dormant mean? Can a dormant company skip both preparation and audit?',
+          bodyHtml: '<p>A dormant company has no significant accounting transactions during the relevant period; simply having no income is not enough. A dormant company may be exempt from an audit under the dormant-company rules. To skip <strong>preparing financial statements</strong>, it must also satisfy the stricter dormant relevant company rules, including dormancy from incorporation or the end of the previous financial year, not being listed or a subsidiary of a listed company, and assets not exceeding S$500,000 at any time during the year (consolidated where applicable). Other statutory conditions and declarations also apply. Keep accounting records even when exempt.</p>',
+        },
+        {
+          label: 'If my company does not need an audit, does it still need to file accounts with ACRA?',
+          bodyHtml: '<p>Possibly. Audit, preparation and filing are three different obligations. A <strong>solvent exempt private company</strong> usually prepares financial statements but need not file them with ACRA. A qualifying dormant relevant company need not prepare or file them. Other companies generally file the required financial statements. Contact us if you are uncertain which category applies.</p>',
+        },
+      ],
+      validation: { faqDefaultState: 'collapsed', faqSearchEnabled: false },
+    },
     info('fs_not_required_msg', 'Financial statements exemption', 'The company is exempt from preparing financial statements.', exemptDormant),
     info('fs_prepare_only_msg', 'Preparation without filing', 'The company must prepare financial statements and send them to its members. As a solvent exempt private company it need not file them with ACRA.', noFiling),
     info('label_fs_ds', 'Financial statements filing', 'The company must prepare financial statements, send them to its members and file them with ACRA.', filing),
@@ -295,6 +323,34 @@ function drafts(input: AnnualReturnBuildOptions): Draft[] {
 
     pageBreak('page_agm', 'AGM matters'),
     heading('part_agm', 'Part 4: AGM matters'),
+    {
+      type: 'PARAGRAPH', inputType: 'info_faq', key: 'agm_faq',
+      label: 'AGM: common questions',
+      layoutWidth: 100,
+      options: [
+        {
+          label: 'What is an AGM, and why is it held?',
+          bodyHtml: '<p>An <strong>Annual General Meeting (AGM)</strong> is a meeting of members (shareholders) to receive the company’s annual financial information, ask questions and decide matters that require their approval. If an AGM is required, an unlisted company generally holds it within six months after its financial year-end; a listed company generally has four months.</p>',
+        },
+        {
+          label: 'Can my private company skip an AGM?',
+          bodyHtml: '<p>Often, yes. A private company may qualify for an AGM exemption by sending its financial statements to members within five months after financial year-end, or by qualifying as a dormant relevant company. A private company may also pass a members’ resolution not to hold AGMs, subject to the statutory rules. Members and auditors have statutory rights to request meetings in certain circumstances, even if an exemption applies. An annual return still needs to be filed.</p>',
+        },
+        {
+          label: 'What is normally dealt with at an AGM?',
+          bodyHtml: '<p>Usual matters include <strong>receiving the annual financial statements</strong>; re-election or retirement of directors <strong>when required by the constitution</strong>; appointment or reappointment of auditors (if applicable); approval of directors’ fees where required; and declaration of a final dividend if proposed. Some items are not needed every year. We will check what your company actually needs before preparing resolutions.</p>',
+        },
+        {
+          label: 'Who attends and how can we hold the AGM?',
+          bodyHtml: '<p>Members entitled to attend and vote receive notice, and directors or the company secretary commonly assist. The meeting may be held physically or using suitable electronic arrangements if the applicable law and company constitution allow it. For an online meeting, tell us the platform so we can confirm access, participation, voting and record-keeping arrangements.</p>',
+        },
+        {
+          label: 'What is shorter notice?',
+          bodyHtml: '<p>Normally, a minimum notice period applies before an AGM. <strong>Shorter notice</strong> means holding it sooner because the members entitled to attend and vote have actually agreed to waive the usual period. Selecting Yes is a declaration of that agreement, not a request for consent or proof that it has been obtained. Special resolutions and company-specific rules may require additional formalities. Contact us if anyone has not agreed.</p>',
+        },
+      ],
+      validation: { faqDefaultState: 'collapsed', faqSearchEnabled: false },
+    },
     { type: 'DROPDOWN', key: K.fsExemption,
       label: 'Have the financial statements been sent to all members within five months after the financial year-end?',
       isRequired: true, layoutWidth: 100, condition: all(privateType, prepare),
@@ -314,16 +370,56 @@ function drafts(input: AnnualReturnBuildOptions): Draft[] {
       condition: all(route, eq(K.agmMemberRequest, NO)),
       helpText: 'An AGM is due within six months after the financial year-end for a company that is not listed.' }),
     info('label_agm_msg', 'AGM required', 'The company is required to hold an AGM.', requiredAgm),
-    yesNo('short_notice_consent', 'Have all members entitled to attend and vote agreed to shorter notice?', { condition: agmHeld }),
+    yesNo('short_notice_consent', 'Have all members entitled to attend and vote agreed to shorter notice?', {
+      condition: agmHeld,
+      options: [
+        { label: YES, value: YES, defaultSelected: true },
+        { label: NO, value: NO },
+      ],
+      helpText: 'Shorter notice means holding the AGM with fewer than the normal days of advance notice. Select Yes only if every member entitled to attend and vote has actually agreed. This answer does not collect consent or override any requirements for special resolutions. If unsure, select No and contact us.',
+      validation: { choiceInlineRight: true, tooltipEnabled: true, tooltipMode: 'hover' },
+    }),
     date('agm_notice_date', 'Date of AGM notice', {
-      condition: agmHeld, layoutWidth: 33, validation: { maxDateFieldKey: K.agmDate, maxDateOffsetDays: -14 } }),
+      condition: agmHeld, layoutWidth: 33, validation: {
+        maxDateFieldKey: K.agmDate, maxDateOffsetDays: -14,
+        maxDateOffsetDaysWhen: { fieldKey: 'short_notice_consent', equals: YES, offsetDays: 0 },
+      } }),
     date(K.agmDate, 'Proposed AGM date', {
-      condition: agmHeld, layoutWidth: 33, validation: { minDate: 'today' },
+      condition: agmHeld, layoutWidth: 33, validation: {
+        minDate: 'today', minDateFieldKey: 'agm_notice_date', minDateOffsetDays: 14,
+        minDateOffsetDaysWhen: { fieldKey: 'short_notice_consent', equals: YES, offsetDays: 0 },
+      },
       helpText: 'For companies that are not listed, the AGM is normally due within six months after financial year-end. Contact us if it is late.' }),
     { type: 'SHORT_TEXT', inputType: 'time_timezone', key: 'agm_time', label: 'Proposed AGM time', condition: agmHeld, isRequired: true, layoutWidth: 50, validation: { timezoneDefault: 'Asia/Singapore' } },
-    text('proposed_agm_venue', 'Proposed AGM venue', { condition: agmHeld, layoutWidth: 50 }),
-    { type: 'MULTIPLE_CHOICE', key: K.agmAgenda, label: 'Matters to be included in AGM agenda',
-      condition: agmHeld, options: [{ value: 'Receive and adopt the Financial Statement', label: 'Receive and adopt the Financial Statement' }, ...matters] },
+    {
+      type: 'DROPDOWN', key: 'proposed_agm_venue', label: 'Proposed AGM venue',
+      condition: agmHeld, isRequired: true, layoutWidth: 50,
+      options: options(['Company registered address', 'Zoom', 'Teams', 'Google Meet', 'Slack', 'Others']),
+      helpText: 'Select a physical meeting place or the online meeting platform. We will confirm suitability and meeting arrangements.',
+    },
+    {
+      type: 'PARAGRAPH', inputType: 'info_text', key: 'agm_venue_registered_address',
+      label: 'Company registered address', layoutWidth: 100,
+      condition: all(agmHeld, eq('proposed_agm_venue', 'Company registered address')),
+      validation: { infoBareStyle: true, infoInlineCard: true },
+    },
+    text('proposed_agm_venue_other', 'Please specify the AGM venue or platform', {
+      condition: all(agmHeld, eq('proposed_agm_venue', 'Others')),
+      isRequired: true, layoutWidth: 100,
+      placeholder: 'Enter the meeting location or platform name',
+    }),
+    {
+      type: 'MULTIPLE_CHOICE', key: K.agmAgenda, label: 'Matters to be included in AGM agenda',
+      condition: agmHeld,
+      helpText: 'The two items ticked initially are suggestions, not mandatory items. Re-election depends on your company constitution. Select or untick matters according to what the company needs; we will verify the agenda before documents are prepared.',
+      options: [
+        {
+          value: 'Receive and adopt the Financial Statement',
+          label: 'Receive and adopt the Financial Statement', defaultSelected: true,
+        },
+        ...matters.map((item) => ({ ...item, ...(item.value === 'Re-election of directors' ? { defaultSelected: true } : {}) })),
+      ],
+    },
     { type: 'MULTIPLE_CHOICE', key: K.resolutionMatters, label: 'Matters to be approved by written resolution',
       condition: noAgm, options: matters },
     { type: 'MULTIPLE_CHOICE', key: 'reelection_directors',

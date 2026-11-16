@@ -8,16 +8,32 @@ export function shouldShowLongDropdownSelection(fieldKey: string, selectedLabel:
     && fieldKey !== 'record_secondary_activity';
 }
 
-/** Gentle background rotation to separate people without an accent bar. */
+/** Slightly deeper, subtle tints distinguish people without any accent bar. */
 export const PEOPLE_CARD_VARIANT_CLASSES = [
-  'bg-teal-50/60 dark:bg-teal-950/20',
-  'bg-sky-50/60 dark:bg-sky-950/20',
-  'bg-violet-50/55 dark:bg-violet-950/20',
+  'bg-teal-100/75 dark:bg-teal-950/45',
+  'bg-sky-100/75 dark:bg-sky-950/45',
+  'bg-violet-100/75 dark:bg-violet-950/45',
 ] as const;
 
 export function getPeopleCardVariantClass(index: number): string {
   const row = Math.max(0, Math.trunc(index));
   return PEOPLE_CARD_VARIANT_CLASSES[row % PEOPLE_CARD_VARIANT_CLASSES.length];
+}
+
+/** The badge reflects the exact selection, not whether defaults were ever offered. */
+export function getAnnualReturnAgendaLabel(value: unknown): string {
+  const selected = Array.isArray(value) ? value.map((entry) => {
+    if (typeof entry === 'string') return entry.trim();
+    if (entry && typeof entry === 'object' && !Array.isArray(entry) && 'value' in entry) {
+      return typeof entry.value === 'string' ? entry.value.trim() : '';
+    }
+    return '';
+  }).filter(Boolean) : [];
+  const defaults = ['Receive and adopt the Financial Statement', 'Re-election of directors'];
+  const isDefault = selected.length === defaults.length
+    && new Set(selected).size === defaults.length
+    && defaults.every((option) => selected.includes(option));
+  return `Matters to be included in AGM agenda (Current: ${isDefault ? 'Default' : 'Custom'})`;
 }
 
 /** Pair each appointment with its date, even for older published form templates. */

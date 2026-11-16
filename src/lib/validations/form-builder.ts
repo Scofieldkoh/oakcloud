@@ -58,6 +58,12 @@ export const shortInputTypeSchema = z.enum([
   'block_divider',
 ]);
 
+const conditionalDateOffsetSchema = z.object({
+  fieldKey: z.string().min(1).max(FORM_FIELD_KEY_MAX_LENGTH),
+  equals: z.string().min(1).max(200),
+  offsetDays: z.number().int().min(-3650).max(3650),
+});
+
 export const fieldValidationSchema = z
   .object({
     minLength: z.number().int().min(0).max(5000).optional(),
@@ -72,9 +78,11 @@ export const fieldValidationSchema = z
     maxDate: z.string().regex(DATE_BOUND_PATTERN).optional(),
     minDateFieldKey: z.string().min(1).max(FORM_FIELD_KEY_MAX_LENGTH).optional(),
     minDateOffsetDays: z.number().int().min(-3650).max(3650).optional(),
+    minDateOffsetDaysWhen: conditionalDateOffsetSchema.optional(),
     minDateOffsetMonths: z.number().int().min(-120).max(120).optional(),
     maxDateFieldKey: z.string().min(1).max(FORM_FIELD_KEY_MAX_LENGTH).optional(),
     maxDateOffsetDays: z.number().int().min(-3650).max(3650).optional(),
+    maxDateOffsetDaysWhen: conditionalDateOffsetSchema.optional(),
     maxDateOffsetMonths: z.number().int().min(-120).max(120).optional(),
     startsWith: z.string().max(200).optional(),
     containsText: z.string().max(200).optional(),
@@ -159,6 +167,12 @@ export const fieldValidationSchema = z
     }
     if (value.minDateOffsetDays !== undefined && value.minDateFieldKey === undefined) {
       ctx.addIssue({ code: 'custom', message: 'minDateFieldKey is required when minDateOffsetDays is set', path: ['minDateFieldKey'] });
+    }
+    if (value.minDateOffsetDaysWhen && value.minDateFieldKey === undefined) {
+      ctx.addIssue({ code: 'custom', message: 'minDateFieldKey is required for conditional min date offsets', path: ['minDateFieldKey'] });
+    }
+    if (value.maxDateOffsetDaysWhen && value.maxDateFieldKey === undefined) {
+      ctx.addIssue({ code: 'custom', message: 'maxDateFieldKey is required for conditional max date offsets', path: ['maxDateFieldKey'] });
     }
     if (value.maxDateOffsetDays !== undefined && value.maxDateFieldKey === undefined) {
       ctx.addIssue({ code: 'custom', message: 'maxDateFieldKey is required when maxDateOffsetDays is set', path: ['maxDateFieldKey'] });
