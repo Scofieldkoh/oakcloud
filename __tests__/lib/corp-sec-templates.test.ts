@@ -20,6 +20,7 @@ import {
   type CorpSecResolutionTemplate,
 } from '@/content/secretarial/corp-sec-resolutions';
 import { AGM_PARTIALS, AGM_RESOLUTION_TEMPLATES } from '@/content/secretarial/agm-resolutions';
+import { CONVENING_AGM_BOARD_TEMPLATE, CONVENING_AGM_PARTIALS } from '@/content/secretarial/convening-agm-board-resolution';
 import { AUDIT_EXEMPTION_OPTIONS, DORMANT_SINCE_OPTIONS, FS_OPTIONS, SOLVENCY_NOT_APPLICABLE } from '@/content/secretarial/corp-sec-fields';
 import {
   buildOakDocResolutionDates,
@@ -425,7 +426,11 @@ describe('corporate secretarial generation', () => {
 
 describe('board resolution convening an AGM', () => {
   it('shares AGM fields and re-election directors with the AGM notice and keeps the constitutional article optional', () => {
-    const template = AGM_RESOLUTION_TEMPLATES.find((entry) => entry.name === 'Board Resolution - Convening of AGM')!;
+    const template = CONVENING_AGM_BOARD_TEMPLATE;
+    expect(template.name).toBe('Board Resolution - Convening of AGM');
+    expect(CONVENING_AGM_PARTIALS).toEqual(template.partials);
+    expect(AGM_RESOLUTION_TEMPLATES).not.toContain(template);
+    expect(AGM_PARTIALS.every((partial) => !CONVENING_AGM_PARTIALS.includes(partial))).toBe(true);
     expect(template.partials.map((partial) => partial.header)).toEqual([
       'CONVENING OF ANNUAL GENERAL MEETING',
       'NOTIFICATION AND LODGEMENT',
@@ -472,6 +477,12 @@ describe('board resolution convening an AGM', () => {
     });
     expect(noArticle).not.toContain('Article 28');
     expect(noArticle).not.toContain('The foregoing re-election is subject to');
+    const withFees = generate(bytes, {
+      custom: { ...custom, directors_fees: '1000' },
+      placeholders,
+      repeaters: { selectedDirectorIds: ['d1'] },
+    });
+    expect(withFees).toContain('To approve Directors’ fees of S$1,000.00 for the financial year ended 31 March 2026.');
   });
 });
 
