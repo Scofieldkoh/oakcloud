@@ -63,7 +63,8 @@ class TaskScheduler {
     const cronEnvVar = registration.cronEnvVar || `SCHEDULER_${taskIdUpper}_CRON`;
 
     // Check if task is enabled
-    const enabled = process.env[enabledEnvVar] === 'true';
+    const enabledValue = process.env[enabledEnvVar];
+    const enabled = registration.enabledByDefault ? enabledValue !== 'false' : enabledValue === 'true';
     const cronPattern = process.env[cronEnvVar] || registration.defaultCronPattern;
 
     const task: ScheduledTask = {

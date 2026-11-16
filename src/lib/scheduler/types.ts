@@ -61,6 +61,12 @@ export interface TaskRegistration {
   /** Environment variable to check for enabled state (default: SCHEDULER_{ID}_ENABLED) */
   enabledEnvVar?: string;
 
+  /**
+   * Run whenever the scheduler is on unless the enabled variable is "false"
+   * (default: only when it is "true"). For tasks switched on from the app.
+   */
+  enabledByDefault?: boolean;
+
   /** Environment variable for cron pattern (default: SCHEDULER_{ID}_CRON) */
   cronEnvVar?: string;
 

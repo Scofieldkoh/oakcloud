@@ -211,7 +211,7 @@ The in-process scheduler is started by the app and can be configured per task.
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `SCHEDULER_ENABLED` | `true` | Master switch for the scheduler |
-| `SCHEDULER_BACKUP_ENABLED` | `true` | Enable the scheduled full backup |
+| `SCHEDULER_BACKUP_ENABLED` | `true` | Scheduled full backups run whenever the scheduler is on (the schedule is switched on from the Backup page); set `false` to stop them on this install |
 | `SCHEDULER_BACKUP_CRON` | `0,15,30,45 * * * *` | Backup polling cadence |
 | `SCHEDULER_CLEANUP_ENABLED` | `true` | Enable cleanup processing |
 | `SCHEDULER_CLEANUP_CRON` | `0 2 * * *` | Cleanup schedule |
