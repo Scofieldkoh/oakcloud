@@ -102,6 +102,7 @@ export const fieldValidationSchema = z
     tooltipInfoPaddingBottomPx: z.number().int().min(0).max(80).optional(),
     tooltipInfoPaddingLeftPx: z.number().int().min(0).max(80).optional(),
     choiceInlineRight: z.boolean().optional(),
+    minSelectedOptions: z.number().int().min(1).max(MAX_FIELD_OPTIONS).optional(),
     choiceLayout: z.enum(['list', 'chips']).optional(),
     defaultValue: z.string().max(5000).optional(),
     defaultToday: z.boolean().optional(),
@@ -258,6 +259,16 @@ export const formFieldSchema = z.object({
   layoutWidth: layoutWidthSchema.optional().default(100),
   position: z.number().int().min(0),
 }).superRefine((field, ctx) => {
+  if (field.type === 'MULTIPLE_CHOICE' && field.validation?.minSelectedOptions) {
+    const optionCount = field.options?.length ?? 0;
+    if (field.validation.minSelectedOptions > optionCount) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'Minimum selected options cannot exceed the number of choices',
+        path: ['validation', 'minSelectedOptions'],
+      });
+    }
+  }
   if (field.type !== 'PARAGRAPH' || field.inputType !== 'info_faq') return;
 
   const options = Array.isArray(field.options) ? field.options : [];

@@ -1,4 +1,5 @@
 import { addIsoDateMonths, getRelativeDateOffsetDays } from '@/lib/forms/relative-date';
+import { getMinSelectedChoicesError } from '@/lib/forms/choice-validation';
 import { sanitizePersonShareholdings } from '@/lib/forms/person-shareholdings';
 import { sanitizeAdditionalPositions } from '@/lib/forms/additional-positions';
 /** Validation and sanitising of public form answers and submission metadata. */
@@ -484,6 +485,8 @@ function validateRequiredFieldValue(
   if (!field.isRequired) return;
 
   const value = answers[field.key];
+  const minChoicesError = getMinSelectedChoicesError(field, value);
+  if (minChoicesError) throw new Error(minChoicesError);
   const rowSuffix = rowIndex === undefined ? '' : ` (row ${rowIndex + 1})`;
 
   if (field.type === 'FILE_UPLOAD') {

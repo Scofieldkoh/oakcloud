@@ -157,6 +157,7 @@ import {
 } from './_lib/field-config';
 import { EDITED_VALUE_CLASS, formatOriginalPrefillValue, getPrefillChanges, getPrefillFieldState, undoRemovedPrefillRow } from '@/lib/forms/prefill-changes';
 import { AR_RECORD_SECTIONS } from '@/lib/forms/annual-return-prefill';
+import { getMinSelectedChoicesError } from '@/lib/forms/choice-validation';
 import { FieldHint } from './_components/field-hint';
 import { FaqField } from './_components/faq-field';
 
@@ -1119,6 +1120,9 @@ export default function PublicFormPage() {
     if (field.isRequired && !hasRequiredValue(field, value)) {
       return uiLabel('validation_required', { field: fieldLabel });
     }
+    const minChoicesError = getMinSelectedChoicesError(field, value);
+    if (minChoicesError) return minChoicesError;
+
     if (field.type === 'SHORT_TEXT' && field.inputType === 'shareholding_list') {
       return personShareholdingError(value);
     }
