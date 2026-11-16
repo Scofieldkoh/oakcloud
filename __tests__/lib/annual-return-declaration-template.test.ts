@@ -94,8 +94,8 @@ describe('Annual Return Declaration guided template', () => {
     expect(fields.find((field) => field.key === 'share_capital_section')?.validation?.repeatCompactCards).not.toBe(true);
   });
 
-  it('defines structured person holdings and expandable additional positions in version 11', () => {
-    expect(SG_ANNUAL_RETURN_DECLARATION_TEMPLATE_VERSION).toBe(11);
+  it('defines structured person holdings and expandable additional positions in version 12', () => {
+    expect(SG_ANNUAL_RETURN_DECLARATION_TEMPLATE_VERSION).toBe(12);
     const field = fields.find((entry) => entry.key === 'person_shareholding');
     expect(field).toMatchObject({
       type: 'SHORT_TEXT', inputType: 'shareholding_list', layoutWidth: 100,

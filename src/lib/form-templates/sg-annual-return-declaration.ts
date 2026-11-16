@@ -1,8 +1,8 @@
-/** Singapore Annual Return Declaration guided form, version 11: required audit exemption checklists. */
+/** Singapore Annual Return Declaration guided form, version 12: simplified audit exemption confirmations. */
 import type { FieldConditionInput, FormFieldInput } from '@/lib/validations/form-builder';
 
 export const SG_ANNUAL_RETURN_DECLARATION_TEMPLATE_KEY = 'sg_annual_return_declaration';
-export const SG_ANNUAL_RETURN_DECLARATION_TEMPLATE_VERSION = 11;
+export const SG_ANNUAL_RETURN_DECLARATION_TEMPLATE_VERSION = 12;
 export const SG_ANNUAL_RETURN_DECLARATION_TITLE = 'Annual Return Declaration';
 
 export const ANNUAL_RETURN_KEYS = {
@@ -342,19 +342,6 @@ function drafts(input: AnnualReturnBuildOptions): Draft[] {
       helpText: 'These are alternatives: you do not have to meet all three. Check the applicable financial years, including the prior-year rules. If the qualifying combination differed between years, ask us to verify the exemption.',
     },
     {
-      type: 'MULTIPLE_CHOICE', key: 'fs_small_company_declarations',
-      label: 'Small company — confirm all of the following statements',
-      condition: smallAuditExemption, isRequired: true, layoutWidth: 100,
-      options: options([
-        'The company was a private company during the relevant financial year.',
-        'I have checked that the company qualifies for the relevant financial years, including the first-year or continuing-qualification rules where applicable.',
-        'The company has not received a valid request from a member to have these financial statements audited.',
-        'The company has maintained the accounting and other records required by the Companies Act.',
-      ]),
-      validation: { minSelectedOptions: 4 },
-      helpText: 'These are additional mandatory confirmations, not alternatives. Only tick a statement if it is true. Please contact us if you cannot confirm one.',
-    },
-    {
       type: 'SINGLE_CHOICE', key: 'fs_small_company_in_group',
       label: 'Is the company part of a group (including an overseas parent company)?',
       condition: smallAuditExemption, isRequired: true, layoutWidth: 100,
@@ -394,18 +381,6 @@ function drafts(input: AnnualReturnBuildOptions): Draft[] {
       condition: dormantAuditExemption, isRequired: true, layoutWidth: 100,
       options: options(['The date the company was incorporated', 'The end of the previous financial year']),
       helpText: 'Select the point from which the company had no accounting transactions, other than transactions expressly disregarded under section 205B of the Companies Act.',
-    },
-    {
-      type: 'MULTIPLE_CHOICE', key: 'fs_dormant_audit_declarations',
-      label: 'Dormant company — confirm all of the following statements',
-      condition: dormantAuditExemption, isRequired: true, layoutWidth: 100,
-      options: options([
-        'No accounting transactions occurred during the dormancy period, other than those expressly disregarded under the Companies Act.',
-        'The company has received no notice requiring an audit under section 205B(6) for this financial year.',
-        'The company has kept the accounting and other records required by the Companies Act.',
-      ]),
-      validation: { minSelectedOptions: 3 },
-      helpText: 'Having no sales does not necessarily mean the company is dormant. Ordinary expenses, purchases or other accounting transactions can disqualify it. Check with us if unsure.',
     },
 
     pageBreak('page_agm', 'AGM matters'),
