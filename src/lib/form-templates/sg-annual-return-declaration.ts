@@ -334,7 +334,7 @@ function drafts(input: AnnualReturnBuildOptions): Draft[] {
         },
         {
           label: 'Can my private company skip an AGM?',
-          bodyHtml: '<p>Often, yes. A private company may qualify for an AGM exemption by sending its financial statements to members within five months after financial year-end, or by qualifying as a dormant relevant company. A private company may also formally dispense with AGMs by members’ resolution. Members and auditors have statutory rights to request meetings in certain circumstances, even if an exemption applies. An annual return still needs to be filed.</p>',
+          bodyHtml: '<p>Often, yes. A private company may qualify for an AGM exemption by sending its financial statements to members within five months after financial year-end, or by qualifying as a dormant relevant company. A private company may also pass a members’ resolution not to hold AGMs, subject to the statutory rules. Members and auditors have statutory rights to request meetings in certain circumstances, even if an exemption applies. An annual return still needs to be filed.</p>',
         },
         {
           label: 'What is normally dealt with at an AGM?',
