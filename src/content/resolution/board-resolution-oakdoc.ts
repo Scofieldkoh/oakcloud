@@ -132,6 +132,8 @@ export interface ResolutionMasterOptions {
   extraStyles?: string;
   /** Typeface of the whole master; Times New Roman 11 pt by default. */
   typeface?: Typeface;
+  /** Optional document-specific resolution title; the generic master stays unchanged. */
+  title?: string;
 }
 
 /** The directors' layout with extra blocks, for masters built on it (First Resolution). */
@@ -157,7 +159,7 @@ function buildResolutionMaster(
     paragraph(run('(Incorporated in the Republic of Singapore)'), center),
     paragraph(run('(“Company”)', { bold: true }), { align: 'center', after: 360 }),
     paragraph(
-      run(variant.title, { bold: true }),
+      run(options.title ?? variant.title, { bold: true }),
       { bottomBorder: true, after: 240, keepNext: true },
     ),
     paragraph(

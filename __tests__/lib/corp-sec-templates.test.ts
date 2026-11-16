@@ -423,6 +423,58 @@ describe('corporate secretarial generation', () => {
   });
 });
 
+describe('board resolution convening an AGM', () => {
+  it('shares AGM fields and re-election directors with the AGM notice and keeps the constitutional article optional', () => {
+    const template = AGM_RESOLUTION_TEMPLATES.find((entry) => entry.name === 'Board Resolution - Convening of AGM')!;
+    expect(template.partials.map((partial) => partial.header)).toEqual([
+      'CONVENING OF ANNUAL GENERAL MEETING',
+      'NOTIFICATION AND LODGEMENT',
+    ]);
+    const { bytes, placeholders } = composeTemplate(template);
+    expect(() => inspectOakDocPackage(template.build(), 'master')).not.toThrow();
+    const fields = definedKeys(placeholders);
+    expect(fields).toEqual(expect.arrayContaining([
+      'resolution_date', 'agm_date', 'agm_time', 'agm_venue', 'fs_documents',
+      'fs_period_end', 'agm_auditor_item', 'agm_re_election_article',
+    ]));
+    expect(placeholders.find((field) => field.key === 'custom.agm_re_election_article')?.required).toBe(false);
+    const custom = {
+      agm_date: '2026-09-10',
+      agm_time: '4:00 P.M.',
+      agm_venue: '11 Cavenagh Road, Holiday Inn Singapore Orchard City Centre',
+      fs_documents: FS_OPTIONS[1],
+      fs_period_end: '2026-03-31',
+      agm_auditor_item: 'To note that the Company is exempt from audit.',
+      agm_re_election_article: 'Article 28',
+      directors_fees: '',
+    };
+    const text = generate(bytes, {
+      custom,
+      placeholders,
+      repeaters: { selectedDirectorIds: ['d1'] },
+    });
+    expect(text).toContain('DIRECTORS’ RESOLUTIONS IN WRITING PURSUANT TO THE COMPANY’S CONSTITUTION');
+    expect(text).toContain('CONVENING OF ANNUAL GENERAL MEETING');
+    expect(text).toContain('10 September 2026');
+    expect(text).toContain('4:00 P.M. Singapore Time (UTC+08:00)');
+    expect(text).toContain('11 Cavenagh Road, Holiday Inn Singapore Orchard City Centre');
+    expect(text).toContain('31 March 2026');
+    expect(text).toContain('YULY MIRAWATI');
+    expect(text).not.toContain('•\\tLIANG JOO HEONG');
+    expect(text).toContain('Article 28 of the Company’s Constitution');
+    expect(text).toContain('NOTIFICATION AND LODGEMENT');
+    expect(text).toContain('where required, lodged with the Accounting and Corporate Regulatory Authority');
+    expect(text).not.toContain('To approve Directors’ fees');
+    const noArticle = generate(bytes, {
+      custom: { ...custom, agm_re_election_article: '' },
+      placeholders,
+      repeaters: { selectedDirectorIds: ['d1'] },
+    });
+    expect(noArticle).not.toContain('Article 28');
+    expect(noArticle).not.toContain('The foregoing re-election is subject to');
+  });
+});
+
 describe('resolutions for a year without an AGM', () => {
   it('adds partials of their own and presets only partials they add or the corporate secretarial seed has', () => {
     const corpSecNames = new Set(CORP_SEC_PARTIALS.map((partial) => partial.name));

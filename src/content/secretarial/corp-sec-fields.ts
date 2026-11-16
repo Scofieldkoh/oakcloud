@@ -80,6 +80,8 @@ export const AGM_DATE = custom('agm_date', 'Meeting date', 'date', '30 June 2027
 export const AGM_TIME = custom('agm_time', 'Meeting time', 'text', '10.00 a.m.');
 export const AGM_VENUE = custom('agm_venue', 'Meeting venue', 'text', '21 Bukit Batok Crescent, #25-72, WCEGA Tower, Singapore 658065');
 export const NOTICE_DATE = custom('notice_date', 'Date of notice', 'date', '1 June 2027', { dateFormat: LONG_DATE });
+// Each company's Constitution may use a different article number, or have no rotation requirement.
+export const AGM_RE_ELECTION_ARTICLE = custom('agm_re_election_article', 'Article of Constitution for re-election (optional)', 'text', 'Article 28', { required: false });
 export const AUDIT_EXEMPTION_OPTIONS = [
   'a small company within the meaning of Section 205C of, and the Thirteenth Schedule to, the Companies Act 1967',
   'a dormant company within the meaning of Section 205B of the Companies Act 1967',
