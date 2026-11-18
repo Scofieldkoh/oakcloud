@@ -9,6 +9,7 @@ import {
 import {
   FIXTURE_CASES,
   accordionTitles,
+  cloneFixtureJson,
   fixtureText,
   loadCase,
   type FixtureCase,
@@ -403,6 +404,37 @@ describe('parseSentrowebResult: an individual searched by name only (no FATF hea
     const c = clearEntity();
     c.titles = [];
     expect(parse(c).status).toBe('ERROR');
+  });
+});
+
+describe('parseSentrowebResult: the individual result recorded live for a name-only search', () => {
+  // Recorded from the real site for the test name, searched without a country: the page shows only
+  // the PEP and SIP headings, and the response still carries an empty fatfCountries array.
+  const liveTitles = [
+    'Politically Exposed Persons (PEP)/ Relative or Close Associate of PEP/SIP [0 matches]',
+    'Special Interest Persons [0 matches]',
+  ];
+  const live = () => ({
+    searchType: 'INDIVIDUAL' as const,
+    name: 'Zzqx Testname Qwv',
+    json: cloneFixtureJson<Array<Record<string, unknown>>>('search-individual-clear-name-only.json'),
+    titles: [...liveTitles],
+  });
+
+  it('is CLEAR', () => {
+    expect(parse(live())).toMatchObject({ status: 'CLEAR', matchCount: 0, categoryCounts: { FATF: 0, PEP: 0, SIP: 0 } });
+  });
+
+  it('a hit in the response is a possible match even though the headings show zero', () => {
+    const c = live();
+    c.json[0].pepPersons = [{ forename: 'X', surname: 'Y' }];
+    expect(parse(c).status).toBe('POSSIBLE_MATCH');
+  });
+
+  it('a heading with a hit is a possible match even though the response is empty', () => {
+    const c = live();
+    c.titles[1] = 'Special Interest Persons [1 matches]';
+    expect(parse(c)).toMatchObject({ status: 'POSSIBLE_MATCH', matchCount: 1 });
   });
 });
 

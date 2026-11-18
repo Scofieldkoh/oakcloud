@@ -27,6 +27,7 @@ describe('Sentroweb fixture hygiene', () => {
       'result-individual-match.html',
       'search-entity-clear.json',
       'search-entity-match.json',
+      'search-individual-clear-name-only.json',
       'search-individual-clear.json',
       'search-individual-match.json',
     ]);
