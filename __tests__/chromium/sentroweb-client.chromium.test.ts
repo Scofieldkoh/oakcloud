@@ -252,6 +252,59 @@ describe('Sentroweb client against a fake Sentroweb', () => {
     }
   });
 
+  describe('the SEARCH click call itself fails', () => {
+    const SUBMIT = 'form button.search-button';
+    let restore: (() => void) | null = null;
+    afterEach(() => restore?.());
+
+    /** Makes `page.click(SUBMIT)` reject: after really clicking (a lost answer), or without clicking. */
+    async function failSubmitClick(clickFirst: boolean) {
+      const puppeteer = await import('puppeteer-core');
+      const proto = puppeteer.Page.prototype as unknown as { click: (selector: string, ...rest: unknown[]) => Promise<void> };
+      const original = proto.click;
+      proto.click = async function (this: unknown, selector: string, ...rest: unknown[]) {
+        if (selector !== SUBMIT) return original.call(this, selector, ...rest);
+        if (clickFirst) await original.call(this, selector, ...rest);
+        throw new Error('injected transport fault');
+      };
+      restore = () => {
+        proto.click = original;
+      };
+    }
+
+    it('after the click reached the page and it searched by itself, the search is submitted (cooldown, no retry)', async () => {
+      const server = await start({ freeRepeats: true });
+      const session = await open(server, { requiredCredits: 1 });
+      await session.search({ name: CLEAR_ENTITY, searchType: 'ENTITY' }); // seeds the name, so the repeat is automatic
+      await failSubmitClick(true);
+      const error = await failureOf(session.search({ name: CLEAR_ENTITY, searchType: 'ENTITY' }));
+      expect(error.searchSubmitted).toBe(true);
+      expect(error.creditsCharged).toBeUndefined();
+      expect(server.count('search')).toBe(2);
+    });
+
+    it('when the click never reached the page, nothing was submitted', async () => {
+      const server = await start();
+      const session = await open(server);
+      await failSubmitClick(false);
+      const started = Date.now();
+      const error = await failureOf(session.search({ name: CLEAR_ENTITY, searchType: 'ENTITY' }));
+      expect(error.searchSubmitted).toBe(false);
+      expect(Date.now() - started).toBeGreaterThanOrEqual(900); // the short grace was waited out
+      expect(server.count('search')).toBe(0);
+      expect(server.count('checkquota')).toBe(0);
+    });
+
+    it('a paid search whose click reached the page only opens the dialog: not submitted, never confirmed', async () => {
+      const server = await start();
+      const session = await open(server);
+      await failSubmitClick(true);
+      const error = await failureOf(session.search({ name: CLEAR_ENTITY, searchType: 'ENTITY' }));
+      expect(error.searchSubmitted).toBe(false);
+      expect(server.count('search')).toBe(0);
+    });
+  });
+
   it('a verified free repeat whose search call fails reports zero credits and stays submitted', async () => {
     const server = await start({ freeRepeats: true, failRepeatSearches: true });
     const session = await open(server, { requiredCredits: 1 });

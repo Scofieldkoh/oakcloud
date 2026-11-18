@@ -51,6 +51,9 @@ const PAGE_IDLE_MAX_MS = 10_000;
 /** Clicks allowed per checkbox before the form is declared unusable (state is re-read before each). */
 const CHECKBOX_ATTEMPTS = 3;
 const CHECKBOX_SETTLE_MS = 400;
+/** After a failed SEARCH click: longest wait for the page's search request, and the wait when the page showed no sign at all. */
+const CLICK_FAULT_MAX_MS = 4_000;
+const CLICK_FAULT_NO_SIGN_MS = 1_000;
 const CLOSE_STEP_TIMEOUT_MS = 5_000;
 
 export interface SentrowebSearchRequest {
@@ -169,6 +172,8 @@ interface PageState {
    * it holds whether or not the quota answer was accepted, a dialog showed, or a response came.
    */
   searchDispatched: boolean;
+  /** The page sent its quota request for the current attempt: the SEARCH click reached it. */
+  quotaRequested: boolean;
   /** The last few XHR calls as `METHOD label status` (allow-listed labels only), for the failure log. */
   recentCalls: string[];
 }
@@ -347,6 +352,7 @@ class Session implements SentrowebSession {
 
     state.quota = null;
     state.searchDispatched = false;
+    state.quotaRequested = false;
     await this.phase('type-name', async () => {
       await page.type(selectors.search.nameInput, request.name);
       // The name must still be what was typed (a late redraw of the form can clear it).
@@ -363,21 +369,29 @@ class Session implements SentrowebSession {
         onTimeout: () => new SentrowebError('LAYOUT_CHANGED'),
       });
     });
-    await this.phase('click-search', () => page.click(selectors.search.submit));
-
+    // From the click on, the page may send the search by itself (a free repeat) or after a dialog.
+    // Whatever then goes wrong here (the click call failing, the quota answer being rejected, a
+    // timeout, an abort), a search the page really sent is submitted: it keeps the cooldown, is
+    // never retried, and its charge is unknown.
     let gate: ConfirmGate;
     try {
+      try {
+        await this.phase('click-search', () => page.click(selectors.search.submit));
+      } catch (clickError) {
+        // The click call failed, but its mouse events may already have reached the page, which
+        // then sends the search a moment later. Give that a short, bounded time to show itself.
+        await this.settleAfterFailedClick();
+        throw clickError;
+      }
       gate = await this.phase('confirm-modal', () => this.awaitConfirmOrFree(signal));
     } catch (error) {
-      // If the page already sent the search (an automatic search whose quota answer we did not
-      // accept, or an abort while waiting), it is submitted whatever we think of the answer: the
-      // charge is unknown, and nothing may submit it again.
       if (state.searchDispatched) {
         throw new SentrowebError(error instanceof SentrowebError ? error.code : 'LAYOUT_CHANGED', {
           searchSubmitted: true,
         });
       }
-      throw error;
+      // Nothing was sent: a plain failure, never a raw browser error.
+      throw error instanceof SentrowebError ? error : new SentrowebError('LAYOUT_CHANGED', { cause: error });
     }
     // The search may be sent (and a credit spent) from the very next instruction on.
     const submitted = { searchSubmitted: true };
@@ -418,6 +432,22 @@ class Session implements SentrowebSession {
         ...submitted,
         ...known,
       });
+    }
+  }
+
+  /**
+   * After a failed click: wait until the page's own search request shows up, but only as long as
+   * there is a sign the click reached the page (its quota request). No sign within the grace means
+   * the click did nothing and the search can be treated as not submitted.
+   */
+  private async settleAfterFailedClick(): Promise<void> {
+    const { state } = this;
+    const started = Date.now();
+    while (!state.searchDispatched) {
+      const waited = Date.now() - started;
+      if (waited >= CLICK_FAULT_MAX_MS) return;
+      if (!state.quotaRequested && waited >= CLICK_FAULT_NO_SIGN_MS) return;
+      await sleep(POLL_INTERVAL_MS);
     }
   }
 
@@ -925,11 +955,13 @@ export const sentrowebClient: SentrowebClient = {
       page.setDefaultNavigationTimeout(config.timeouts.stepMs);
       await page.setViewport({ width: 1400, height: 1000 });
 
-      const state: PageState = { authCount: 0, authStatus: null, search: null, appInitialized: false, quota: null, searchDispatched: false, recentCalls: [] };
+      const state: PageState = { authCount: 0, authStatus: null, search: null, appInitialized: false, quota: null, searchDispatched: false, quotaRequested: false, recentCalls: [] };
       page.on('request', (request) => {
         try {
-          if (request.method() === 'POST' && new URL(request.url()).pathname.endsWith(SENTROWEB_XHR.search)) {
-            state.searchDispatched = true;
+          if (request.method() === 'POST') {
+            const pathname = new URL(request.url()).pathname;
+            if (pathname.endsWith(SENTROWEB_XHR.search)) state.searchDispatched = true;
+            if (pathname.endsWith(SENTROWEB_XHR.checkQuota)) state.quotaRequested = true;
           }
         } catch {
           // An unreadable request is not the search request.
