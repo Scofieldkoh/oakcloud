@@ -13,6 +13,7 @@
 
 import {
   SENTROWEB_CATEGORY_TITLES,
+  SENTROWEB_DOM_OPTIONAL_CATEGORIES,
   SENTROWEB_EXPECTED_CATEGORIES,
   SENTROWEB_JSON_ARRAYS,
   SENTROWEB_PATTERNS,
@@ -170,6 +171,7 @@ export function parseSentrowebResult(
   options: ParseOptions = {},
 ): ParsedSentrowebResult {
   const expected = SENTROWEB_EXPECTED_CATEGORIES[searchType] as readonly SentrowebCategory[];
+  const domOptional = SENTROWEB_DOM_OPTIONAL_CATEGORIES[searchType] as readonly SentrowebCategory[];
 
   // --- JSON source -----------------------------------------------------------------------------
   // Observed shape: an array with exactly one object. Anything else is a layout change.
@@ -216,7 +218,9 @@ export function parseSentrowebResult(
   const domTitles = Array.isArray(domCategoryTitles) ? domCategoryTitles : [];
   const dom = parseDomTitles(domTitles);
   const domSeen = Object.keys(dom.counts) as SentrowebCategory[];
-  const domHasAllExpected = expected.every((category) => Object.hasOwn(dom.counts, category));
+  const domHasAllExpected = expected.every(
+    (category) => domOptional.includes(category) || Object.hasOwn(dom.counts, category),
+  );
   const domHasOnlyExpected = domSeen.every((category) => expected.includes(category));
   const domOk = domTitles.length > 0 && !dom.malformed && domHasAllExpected && domHasOnlyExpected;
 
@@ -251,7 +255,11 @@ export function parseSentrowebResult(
   // Both sources are well-formed and show zero for every expected category. The explicit
   // agreement check below is deliberately redundant with matchCount === 0: it keeps CLEAR
   // unreachable if the counting above is ever changed.
-  const sourcesAgree = expected.every((category) => jsonCounts[category] === 0 && dom.counts[category] === 0);
+  const sourcesAgree = expected.every(
+    (category) =>
+      jsonCounts[category] === 0 &&
+      (dom.counts[category] === 0 || (dom.counts[category] === undefined && domOptional.includes(category))),
+  );
   if (!sourcesAgree) return error('RESULT_MISMATCH', base);
 
   return { ...base, status: 'CLEAR' };

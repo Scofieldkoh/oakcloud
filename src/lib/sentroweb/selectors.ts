@@ -126,3 +126,15 @@ export const SENTROWEB_EXPECTED_CATEGORIES = {
   ENTITY: ['SIE'],
   INDIVIDUAL: ['FATF', 'PEP', 'SIP'],
 } as const satisfies Record<'ENTITY' | 'INDIVIDUAL', readonly SentrowebCategory[]>;
+
+/**
+ * Categories whose JSON array must be present (and empty for CLEAR) but whose page heading may be
+ * absent. The "FATF Country/ Region" heading is shown only when a country was part of the search;
+ * Oakcloud searches by name only, so an individual's result shows just the PEP and SIP headings
+ * (seen on the real site). A FATF heading that is present still counts, and a hit in either source
+ * still wins.
+ */
+export const SENTROWEB_DOM_OPTIONAL_CATEGORIES = {
+  ENTITY: [],
+  INDIVIDUAL: ['FATF'],
+} as const satisfies Record<'ENTITY' | 'INDIVIDUAL', readonly SentrowebCategory[]>;

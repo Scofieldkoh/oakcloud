@@ -249,7 +249,9 @@ describe('parseSentrowebResult: nothing but a proven clear is CLEAR', () => {
     }
     const titleCount = FIXTURE_CASES[key].searchType === 'ENTITY' ? 1 : 3;
     for (let index = 0; index < titleCount; index += 1) {
-      mutations.push({ label: `remove title ${index}`, apply: (c) => c.titles.splice(index, 1) });
+      // Only the FATF heading of an individual may be absent (country-only section); covered by its own tests.
+      const optional = FIXTURE_CASES[key].searchType === 'INDIVIDUAL' && loadCase(key).titles[index]?.startsWith('FATF');
+      if (!optional) mutations.push({ label: `remove title ${index}`, apply: (c) => c.titles.splice(index, 1) });
       mutations.push({
         label: `title ${index} shows 1 match`,
         apply: (c) => (c.titles[index] = c.titles[index].replace(/\[\d+ matches\]/, '[1 matches]')),
@@ -351,6 +353,55 @@ describe('parseSentrowebResult: prototype names and repeated headings', () => {
   it('an unrecognised heading with zero hits is still an error, not clear', () => {
     const c = clearIndividual();
     c.titles = [...c.titles, 'Adverse Media [0 matches]'];
+    expect(parse(c).status).toBe('ERROR');
+  });
+});
+
+describe('parseSentrowebResult: an individual searched by name only (no FATF heading)', () => {
+  const withoutFatf = (titles: string[]) => titles.filter((title) => !title.startsWith('FATF'));
+
+  it('is CLEAR with the PEP and SIP headings only, as the real site shows without a country', () => {
+    const c = clearIndividual();
+    c.titles = withoutFatf(c.titles);
+    expect(c.titles).toHaveLength(2);
+    expect(parse(c)).toMatchObject({ status: 'CLEAR', matchCount: 0, categoryCounts: { FATF: 0, PEP: 0, SIP: 0 } });
+  });
+
+  it('is still CLEAR when a FATF heading with zero hits is shown', () => {
+    expect(parse(clearIndividual()).status).toBe('CLEAR');
+  });
+
+  it('is ERROR when the PEP or the SIP heading is missing (only FATF may be absent)', () => {
+    for (const missing of ['Politically Exposed Persons', 'Special Interest Persons']) {
+      const c = clearIndividual();
+      c.titles = withoutFatf(c.titles).filter((title) => !title.startsWith(missing));
+      expect(parse(c).status).toBe('ERROR');
+    }
+  });
+
+  it('is ERROR when the FATF array is missing from the JSON, even without a FATF heading', () => {
+    const c = clearIndividual();
+    c.titles = withoutFatf(c.titles);
+    delete c.json[0].fatfCountries;
+    expect(parse(c)).toMatchObject({ status: 'ERROR', errorCode: 'LAYOUT_CHANGED' });
+  });
+
+  it('is POSSIBLE_MATCH when the JSON FATF array has an entry, even without a FATF heading', () => {
+    const c = clearIndividual();
+    c.titles = withoutFatf(c.titles);
+    c.json[0].fatfCountries = [{ name: 'Somewhere' }];
+    expect(parse(c)).toMatchObject({ status: 'POSSIBLE_MATCH', matchCount: 1 });
+  });
+
+  it('is POSSIBLE_MATCH when a FATF heading shows a count and the JSON is empty', () => {
+    const c = clearIndividual();
+    c.titles = c.titles.map((title) => (title.startsWith('FATF') ? 'FATF Country/ Region [1 matches]' : title));
+    expect(parse(c)).toMatchObject({ status: 'POSSIBLE_MATCH', matchCount: 1 });
+  });
+
+  it('an entity still needs its SIE heading', () => {
+    const c = clearEntity();
+    c.titles = [];
     expect(parse(c).status).toBe('ERROR');
   });
 });
