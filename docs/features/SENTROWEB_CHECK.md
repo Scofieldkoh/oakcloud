@@ -51,8 +51,12 @@ confirmation (**Run again anyway**). Only one run per company can be queued or r
   abort or timeout follows, or the SEARCH click call itself fails, the name stays submitted (cooldown, never retried) and its charge is
   unknown, so it counts as one credit. Before a failed attempt is called "not submitted" the client
   reloads the search page, which drops the old page's pending calls, so a slow quota answer cannot
-  start a search after the fact; if that reload itself fails and the page had asked for a quota, the
-  attempt is treated as submitted. Only a search Sentroweb itself said was free is counted as
+  start a search after the fact; if that reload itself fails (a lost connection, a hung page), nothing
+  can be proven and the attempt is treated as submitted, whatever events were observed. Even after a
+  clean reload a missing request event proves nothing (a request cancelled by the reload can still
+  have reached the server), so "not submitted" is only reported when the page never asked for a
+  quota, or its quota answer asked for credits (the page then waits for a CONFIRM we never click).
+  A quota that is unanswered, free or unreadable stays submitted. Only a search Sentroweb itself said was free is counted as
   zero when it fails afterwards.
   Exporting the PDF appeared free in discovery (balance unchanged), but that was inferred from the
   balance only.

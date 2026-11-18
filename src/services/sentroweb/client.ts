@@ -51,6 +51,8 @@ const PAGE_IDLE_MAX_MS = 10_000;
 /** Clicks allowed per checkbox before the form is declared unusable (state is re-read before each). */
 const CHECKBOX_ATTEMPTS = 3;
 const CHECKBOX_SETTLE_MS = 400;
+/** After the reload that stops a given-up attempt: time for in-flight request events to arrive. */
+const QUIESCE_SETTLE_MS = 800;
 const CLOSE_STEP_TIMEOUT_MS = 5_000;
 
 export interface SentrowebSearchRequest {
@@ -378,8 +380,8 @@ class Session implements SentrowebSession {
       // Not sent yet does not mean it never will be: a slow quota answer can still make the page
       // search a moment from now. Reload the page first (that drops its pending calls) and only
       // then decide, so a search that goes out later cannot be recorded as "not submitted".
-      if (!state.searchDispatched && !(await this.quiescePage())) state.searchDispatched = true;
-      if (state.searchDispatched) {
+      const quiet = state.searchDispatched ? true : await this.quiescePage();
+      if (state.searchDispatched || !quiet || this.searchMaybeSent()) {
         throw new SentrowebError(error instanceof SentrowebError ? error.code : 'LAYOUT_CHANGED', {
           searchSubmitted: true,
         });
@@ -430,17 +432,38 @@ class Session implements SentrowebSession {
   }
 
   /**
+   * Could the page have sent the search without a request event that we saw? A request cancelled
+   * by the reload can still have reached the server, so a missing event proves nothing. Not
+   * submitted is only certain when the page never asked for a quota (the click did not reach it),
+   * or when its quota answer asked for credits (the page then waits for a CONFIRM that we never
+   * click). Every other case, including a quota still unanswered, stays uncertain.
+   */
+  private searchMaybeSent(): boolean {
+    const { state } = this;
+    if (state.searchDispatched) return true;
+    if (!state.quotaRequested) return false;
+    const quota = state.quota as PageState['quota'];
+    return !(quota && quota.status === 200 && quota.deductCredit === true);
+  }
+
+  /**
    * Stops the page from sending a search after we gave up on it: loads the search page afresh,
    * which drops the old page's pending calls, then lets the caller read the request latch.
-   * Returns true when that is certain. If the reload itself fails, the page may still be alive; it
-   * is certain only if the page never even sent its quota request.
+   * Returns true when that is certain. If the reload itself fails (a lost connection, a hung page)
+   * nothing is certain, whatever events were or were not observed, so the caller must treat the
+   * attempt as submitted.
    */
   private async quiescePage(): Promise<boolean> {
     try {
       await this.page.goto(this.url(SENTROWEB_PATHS.search), { waitUntil: 'domcontentloaded', timeout: CLOSE_STEP_TIMEOUT_MS });
+      // A request sent in the instant before the reload reports itself a little later than the
+      // navigation result; let those events land before anyone reads the latch.
+      await sleep(QUIESCE_SETTLE_MS);
       return true;
     } catch {
-      return !this.state.quotaRequested;
+      // The old page may still be alive (or the browser gone with the search already sent), and
+      // nothing we observed can prove otherwise: an absent event is not proof. Stay uncertain.
+      return false;
     }
   }
 

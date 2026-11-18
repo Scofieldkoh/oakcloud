@@ -239,9 +239,9 @@ describe('Sentroweb client against a fake Sentroweb', () => {
     await session.search({ name: CLEAR_ENTITY, searchType: 'ENTITY' });
     const error = await failureOf(session.search({ name: CLEAR_ENTITY, searchType: 'ENTITY' }));
     expect(error.code).toBe('LAYOUT_CHANGED');
-    expect(error.searchSubmitted).toBe(false);
+    expect(error.searchSubmitted).toBe(true); // quota asked, no answer: uncertain, so submitted
     await new Promise((resolve) => setTimeout(resolve, 4_500));
-    expect(server.count('search')).toBe(1);
+    expect(server.count('search')).toBe(1); // and the late answer started nothing
   });
 
   it('an abort while waiting for the dialog, after the page searched on its own, is submitted too', async () => {
@@ -269,13 +269,14 @@ describe('Sentroweb client against a fake Sentroweb', () => {
     afterEach(() => restore?.());
 
     /** Makes `page.click(SUBMIT)` reject: after really clicking (a lost answer), or without clicking. */
-    async function failSubmitClick(clickFirst: boolean) {
+    async function failSubmitClick(clickFirst: boolean, afterClickMs = 0) {
       const puppeteer = await import('puppeteer-core');
       const proto = puppeteer.Page.prototype as unknown as { click: (selector: string, ...rest: unknown[]) => Promise<void> };
       const original = proto.click;
       proto.click = async function (this: unknown, selector: string, ...rest: unknown[]) {
         if (selector !== SUBMIT) return original.call(this, selector, ...rest);
         if (clickFirst) await original.call(this, selector, ...rest);
+        if (afterClickMs > 0) await new Promise((resolve) => setTimeout(resolve, afterClickMs));
         throw new Error('injected transport fault');
       };
       restore = () => {
@@ -290,25 +291,48 @@ describe('Sentroweb client against a fake Sentroweb', () => {
       await failSubmitClick(true);
       const error = await failureOf(session.search({ name: CLEAR_ENTITY, searchType: 'ENTITY' }));
       await new Promise((resolve) => setTimeout(resolve, 1_500)); // let anything still in flight land
-      // Either the page's search went out first (submitted, cooldown, charge unknown) or the page
-      // was reloaded before it could (not submitted and nothing arrived later).
-      if (error.searchSubmitted) {
-        expect(error.creditsCharged).toBeUndefined();
-        expect(server.count('search')).toBe(2);
-      } else {
-        expect(server.count('search')).toBe(1);
-      }
+      // The page had seen the click and its quota was a free repeat (or unanswered): that is never
+      // reported as "not submitted", whether or not its search reached the fake before the reload.
+      expect(error.searchSubmitted).toBe(true);
+      expect(error.creditsCharged).toBeUndefined();
+      expect(server.count('search')).toBeGreaterThanOrEqual(1);
     });
 
-    it('a slow quota answer cannot start a search after the attempt was declared not submitted', async () => {
+    it('a slow quota answer neither starts a late search nor lets the attempt be called not submitted', async () => {
       const server = await start({ freeRepeats: true, repeatQuotaDelayMs: 3_000 });
       const session = await open(server, { requiredCredits: 1 });
       await session.search({ name: CLEAR_ENTITY, searchType: 'ENTITY' });
       await failSubmitClick(true);
       const error = await failureOf(session.search({ name: CLEAR_ENTITY, searchType: 'ENTITY' }));
-      expect(error.searchSubmitted).toBe(false);
+      // The page had asked for a quota and had no answer yet: whether it would have searched is
+      // unknown, so the attempt stays submitted (cooldown, no retry) ...
+      expect(error.searchSubmitted).toBe(true);
       await new Promise((resolve) => setTimeout(resolve, 4_500)); // longer than the quota delay
-      expect(server.count('search')).toBe(1); // the page was reloaded: its late search never went out
+      // ... and the reload meant the late answer started nothing.
+      expect(server.count('search')).toBe(1);
+    });
+
+    it('a lost browser connection keeps the attempt submitted: absent events are no proof of non-submission', async () => {
+      const server = await start({ freeRepeats: true });
+      const session = await open(server, { requiredCredits: 1 });
+      await session.search({ name: CLEAR_ENTITY, searchType: 'ENTITY' });
+      const puppeteer = await import('puppeteer-core');
+      const proto = puppeteer.Page.prototype as unknown as { click: (selector: string, ...rest: unknown[]) => Promise<void> };
+      const original = proto.click;
+      proto.click = async function (this: unknown, selector: string, ...rest: unknown[]) {
+        if (selector !== SUBMIT) return original.call(this, selector, ...rest);
+        // The click is sent, then the browser dies before any event can be observed.
+        const pending = original.call(this, selector, ...rest).catch(() => undefined);
+        process.kill(pids[0] as number, 'SIGKILL');
+        await pending;
+        throw new Error('connection lost');
+      };
+      restore = () => {
+        proto.click = original;
+      };
+      const error = await failureOf(session.search({ name: CLEAR_ENTITY, searchType: 'ENTITY' }));
+      expect(error.searchSubmitted).toBe(true);
+      expect(error.creditsCharged).toBeUndefined();
     });
 
     it('when the click never reached the page, nothing was submitted', async () => {
@@ -324,11 +348,13 @@ describe('Sentroweb client against a fake Sentroweb', () => {
     it('a paid search whose click reached the page only opens the dialog: not submitted, never confirmed', async () => {
       const server = await start();
       const session = await open(server);
-      await failSubmitClick(true);
+      // The fault comes after the quota answer (asking for credits) has been seen.
+      await failSubmitClick(true, 1_000);
       const error = await failureOf(session.search({ name: CLEAR_ENTITY, searchType: 'ENTITY' }));
       expect(error.searchSubmitted).toBe(false);
       expect(server.count('search')).toBe(0);
     });
+
   });
 
   it('a verified free repeat whose search call fails reports zero credits and stays submitted', async () => {
