@@ -1,15 +1,11 @@
 // @vitest-environment node
 import { randomUUID } from 'node:crypto';
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { SentrowebConfig } from '@/lib/sentroweb/config';
-import type {
-  SentrowebClient,
-  SentrowebSearchOutcome,
-  SentrowebSearchRequest,
-  SentrowebSession,
-} from '@/services/sentroweb/client';
+import type { SentrowebSession } from '@/services/sentroweb/client';
 import { SentrowebError } from '@/services/sentroweb/errors';
-import { FIXTURE_CASES, loadCase, type FixtureCase } from '../helpers/sentroweb-fixtures';
+import { makeClient } from '../helpers/fake-sentroweb-client';
+import { loadCase } from '../helpers/sentroweb-fixtures';
 
 /**
  * Sentroweb check service against a real PostgreSQL (oakcloud_test) with the browser client
@@ -74,63 +70,6 @@ const CONFIG: SentrowebConfig = {
 
 /** The ID number of the most recent `makeFullCompany` director (unique per tenant). */
 let lastNric = '';
-
-// --- scripted client ---------------------------------------------------------------------------
-
-type Script =
-  | { fixture: FixtureCase; pdf?: boolean; png?: boolean }
-  | { throws: SentrowebError }
-  | { outcome: SentrowebSearchOutcome };
-
-interface FakeClient {
-  openSession: Mock<SentrowebClient['openSession']>;
-  searches: SentrowebSearchRequest[];
-  closeCalls: number;
-  scripts: Map<string, Script>;
-  openError: SentrowebError | null;
-  balance: number;
-}
-
-function makeClient(): FakeClient {
-  const client = {
-    searches: [] as SentrowebSearchRequest[],
-    closeCalls: 0,
-    scripts: new Map<string, Script>(),
-    openError: null as SentrowebError | null,
-    balance: 100,
-  } as FakeClient;
-
-  client.openSession = vi.fn<SentrowebClient['openSession']>(async (_config, options) => {
-    if (client.openError) throw client.openError;
-    if (options?.requiredCredits !== undefined && client.balance < options.requiredCredits) {
-      throw new SentrowebError('INSUFFICIENT_CREDITS');
-    }
-    const session: SentrowebSession = {
-      balance: client.balance,
-      async search(request) {
-        client.searches.push(request);
-        const script =
-          client.scripts.get(request.name) ??
-          ({ fixture: request.searchType === 'ENTITY' ? 'entity-clear' : 'individual-clear' } as Script);
-        if ('throws' in script) throw script.throws;
-        if ('outcome' in script) return script.outcome;
-        const loaded = loadCase(script.fixture);
-        loaded.json[0].name = request.name;
-        return {
-          json: loaded.json,
-          domTitles: loaded.titles,
-          pdf: script.pdf === false ? null : Buffer.from(`%PDF-1.4\n% report for test\n${'x'.repeat(200)}`),
-          png: script.png === false ? null : Buffer.from('89504e470d0a1a0a', 'hex'),
-        };
-      },
-      async close() {
-        client.closeCalls += 1;
-      },
-    };
-    return session;
-  });
-  return client;
-}
 
 // --- fixtures ----------------------------------------------------------------------------------
 
