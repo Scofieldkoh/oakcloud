@@ -316,24 +316,28 @@ class Session implements SentrowebSession {
 
     // Before the first click on CONFIRM nothing has been spent, so everything up to there may
     // re-login once and start again.
-    await this.openSearchForm(signal);
+    await this.phase('open-form', () => this.openSearchForm(signal));
     state.search = null;
 
-    await page.type(selectors.search.nameInput, request.name);
-    // The name must still be what was typed (a late redraw of the form can clear it).
-    const typed = await page.$eval(selectors.search.nameInput, (input) => (input as HTMLInputElement).value);
-    if (typed !== request.name) throw new SentrowebError('LAYOUT_CHANGED');
-    await this.setSearchType(request.searchType, signal);
-    const typedAfter = await page.$eval(selectors.search.nameInput, (input) => (input as HTMLInputElement).value);
-    if (typedAfter !== request.name) throw new SentrowebError('LAYOUT_CHANGED');
-    await pollUntil(async () => (await page.$(selectors.search.submitEnabled)) !== null, {
-      timeoutMs: this.stepMs,
-      signal,
-      onTimeout: () => new SentrowebError('LAYOUT_CHANGED'),
+    await this.phase('type-name', async () => {
+      await page.type(selectors.search.nameInput, request.name);
+      // The name must still be what was typed (a late redraw of the form can clear it).
+      const typed = await page.$eval(selectors.search.nameInput, (input) => (input as HTMLInputElement).value);
+      if (typed !== request.name) throw new SentrowebError('LAYOUT_CHANGED');
     });
-    await page.click(selectors.search.submit);
+    await this.phase('tick-type', () => this.setSearchType(request.searchType, signal));
+    await this.phase('submit-enabled', async () => {
+      const typedAfter = await page.$eval(selectors.search.nameInput, (input) => (input as HTMLInputElement).value);
+      if (typedAfter !== request.name) throw new SentrowebError('LAYOUT_CHANGED');
+      await pollUntil(async () => (await page.$(selectors.search.submitEnabled)) !== null, {
+        timeoutMs: this.stepMs,
+        signal,
+        onTimeout: () => new SentrowebError('LAYOUT_CHANGED'),
+      });
+    });
+    await this.phase('click-search', () => page.click(selectors.search.submit));
 
-    const cost = await this.readConfirmCost(signal);
+    const cost = await this.phase('confirm-modal', () => this.readConfirmCost(signal));
     if (cost !== SENTROWEB_CREDITS_PER_SEARCH) {
       await this.clickModalButton(selectors.confirmModal.root, selectors.confirmModal.cancel).catch(() => undefined);
       throw new SentrowebError('UNEXPECTED_CREDIT_COST');
@@ -391,6 +395,41 @@ class Session implements SentrowebSession {
     log.warn('Sentroweb session expired between searches; logging in once more');
     await this.login(signal);
     if (!(await open())) throw new SentrowebError('SESSION_EXPIRED');
+  }
+
+  /**
+   * Runs one step of the search before CONFIRM. A failure is logged with the step name, the error
+   * code and the structure of the form (class names, counts: never text), so a changed page can be
+   * diagnosed from the log without a second paid search. Nothing is swallowed.
+   */
+  private async phase<T>(name: string, work: () => Promise<T>): Promise<T> {
+    try {
+      return await work();
+    } catch (error) {
+      const code = error instanceof SentrowebError ? error.code : 'UNEXPECTED_ERROR';
+      log.warn('Sentroweb search: a step failed before CONFIRM', { phase: name, code, form: await this.describeForm() });
+      throw error;
+    }
+  }
+
+  private async describeForm(): Promise<unknown> {
+    const { checkbox, submit, nameInput } = SENTROWEB_SELECTORS.search;
+    try {
+      return await this.page.evaluate(
+        (checkboxSelector, submitSelector, inputSelector) => ({
+          path: location.pathname,
+          modals: Array.from(document.querySelectorAll('.modal')).map((element) => String(element.className).slice(0, 120)),
+          checkboxes: Array.from(document.querySelectorAll(checkboxSelector)).map((element) => String(element.className).slice(0, 80)),
+          submit: String(document.querySelector(submitSelector)?.className ?? 'none').slice(0, 80),
+          nameLength: (document.querySelector(inputSelector) as HTMLInputElement | null)?.value.length ?? -1,
+        }),
+        checkbox,
+        submit,
+        nameInput,
+      );
+    } catch {
+      return 'unreadable';
+    }
   }
 
   /**
