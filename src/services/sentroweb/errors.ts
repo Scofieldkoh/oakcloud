@@ -17,12 +17,22 @@ export class SentrowebError extends Error {
    * nothing may submit that search again.
    */
   readonly searchSubmitted: boolean;
+  /**
+   * Credits this search is known to have cost when it failed after being sent. Only set when
+   * Sentroweb itself said nothing is deducted (0). Absent means unknown, and the search is counted
+   * as one credit.
+   */
+  readonly creditsCharged: number | undefined;
 
-  constructor(code: SentrowebErrorCode, options: { searchSubmitted?: boolean; cause?: unknown } = {}) {
+  constructor(
+    code: SentrowebErrorCode,
+    options: { searchSubmitted?: boolean; creditsCharged?: number; cause?: unknown } = {},
+  ) {
     super(SENTROWEB_ERROR_MESSAGES[code], options.cause === undefined ? undefined : { cause: options.cause });
     this.name = 'SentrowebError';
     this.code = code;
     this.searchSubmitted = options.searchSubmitted ?? false;
+    this.creditsCharged = options.creditsCharged;
   }
 }
 

@@ -452,7 +452,7 @@ async function processEntity(context: EntityContext): Promise<SentrowebErrorCode
       if (failure.searchSubmitted) {
         await tx.sentrowebCheckRun.update({
           where: { id: run.id },
-          data: { creditsUsed: { increment: SENTROWEB_CREDITS_PER_SEARCH } },
+          data: { creditsUsed: { increment: failure.creditsCharged ?? SENTROWEB_CREDITS_PER_SEARCH } },
         });
       }
     });

@@ -46,6 +46,11 @@ confirmation (**Run again anyway**). Only one run per company can be queued or r
   (`creditsUsed` counts what Sentroweb reports, so it can be lower than the number of names). A
   quota answer that asks for credits but shows no box fails closed with `LAYOUT_CHANGED`, nothing
   submitted. A free search still counts as submitted for the cooldown.
+  Whether a search was submitted is latched from the page's own search request, not from our
+  reading of the quota answer: if the page searched on its own and we then reject the answer, or an
+  abort or timeout follows, the name stays submitted (cooldown, never retried) and its charge is
+  unknown, so it counts as one credit. Only a search Sentroweb itself said was free is counted as
+  zero when it fails afterwards.
   Exporting the PDF appeared free in discovery (balance unchanged), but that was inferred from the
   balance only.
 - **Ongoing monitoring:** every Sentroweb search adds the name to the account's ongoing monitoring,
@@ -91,6 +96,11 @@ Stored and shown as fixed messages (`src/lib/sentroweb/error-codes.ts`), never r
 - Chrome is started with an allow-listed environment (no Sentroweb credentials, no database URL) and
   downloads by GUID name, so the account number that Sentroweb puts in its PDF file name never
   reaches disk or logs.
+- When a step fails before CONFIRM, the client logs the step name, the error code, a page label
+  (`main`, `login`, `other`), short lowercase class-name tokens of the form, the length of the typed
+  name and the last calls as `METHOD label status`, where the label comes from a fixed list
+  (`authenticate`, `initializeApp`, `checkQuota`, `search`) and every other path is just `other`.
+  No path, name, id or page text is logged.
 
 ### Recovery
 

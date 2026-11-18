@@ -149,6 +149,9 @@ interface CapturedSearch {
   body: string | null;
 }
 
+/** What the page showed after SEARCH: the confirm box with its cost, or a free repeat (no box). */
+type ConfirmGate = { kind: 'modal'; cost: number } | { kind: 'free' };
+
 interface PageState {
   authCount: number;
   authStatus: number | null;
@@ -161,7 +164,12 @@ interface PageState {
    * searches without a confirm dialog.
    */
   quota: { status: number; free: boolean; deductCredit: boolean | null; uniqueNames: number | null } | null;
-  /** The last few XHR calls as `METHOD path status` (ids masked), for the failure log only. */
+  /**
+   * The page sent the search request for the current attempt. Latched from the request itself, so
+   * it holds whether or not the quota answer was accepted, a dialog showed, or a response came.
+   */
+  searchDispatched: boolean;
+  /** The last few XHR calls as `METHOD label status` (allow-listed labels only), for the failure log. */
   recentCalls: string[];
 }
 
@@ -338,6 +346,7 @@ class Session implements SentrowebSession {
     state.search = null;
 
     state.quota = null;
+    state.searchDispatched = false;
     await this.phase('type-name', async () => {
       await page.type(selectors.search.nameInput, request.name);
       // The name must still be what was typed (a late redraw of the form can clear it).
@@ -356,7 +365,20 @@ class Session implements SentrowebSession {
     });
     await this.phase('click-search', () => page.click(selectors.search.submit));
 
-    const gate = await this.phase('confirm-modal', () => this.awaitConfirmOrFree(signal));
+    let gate: ConfirmGate;
+    try {
+      gate = await this.phase('confirm-modal', () => this.awaitConfirmOrFree(signal));
+    } catch (error) {
+      // If the page already sent the search (an automatic search whose quota answer we did not
+      // accept, or an abort while waiting), it is submitted whatever we think of the answer: the
+      // charge is unknown, and nothing may submit it again.
+      if (state.searchDispatched) {
+        throw new SentrowebError(error instanceof SentrowebError ? error.code : 'LAYOUT_CHANGED', {
+          searchSubmitted: true,
+        });
+      }
+      throw error;
+    }
     // The search may be sent (and a credit spent) from the very next instruction on.
     const submitted = { searchSubmitted: true };
     let creditsCharged: number = SENTROWEB_CREDITS_PER_SEARCH;
@@ -389,12 +411,13 @@ class Session implements SentrowebSession {
       const pdf = await this.exportPdf(signal);
       return { json, domTitles, pdf, png, creditsCharged };
     } catch (error) {
-      // From CONFIRM on, every failure carries the flag so nothing submits this search again.
-      throw error instanceof SentrowebError
-        ? error.searchSubmitted
-          ? error
-          : new SentrowebError(error.code, submitted)
-        : new SentrowebError('LAYOUT_CHANGED', submitted);
+      // From CONFIRM on, every failure carries the flag so nothing submits this search again. A
+      // search Sentroweb itself said is free keeps that: the failure then costs nothing.
+      const known = creditsCharged === 0 ? { creditsCharged: 0 } : {};
+      throw new SentrowebError(error instanceof SentrowebError ? error.code : 'LAYOUT_CHANGED', {
+        ...submitted,
+        ...known,
+      });
     }
   }
 
@@ -450,21 +473,38 @@ class Session implements SentrowebSession {
     }
   }
 
+  /**
+   * The structure of the search form for the failure log: a page label, class-name tokens (only
+   * short lowercase words) and a length. No text, no values, no paths.
+   */
   private async describeForm(): Promise<unknown> {
     const { checkbox, submit, nameInput } = SENTROWEB_SELECTORS.search;
     try {
-      return await this.page.evaluate(
+      const raw = await this.page.evaluate(
         (checkboxSelector, submitSelector, inputSelector) => ({
           path: location.pathname,
-          modals: Array.from(document.querySelectorAll('.modal')).map((element) => String(element.className).slice(0, 120)),
-          checkboxes: Array.from(document.querySelectorAll(checkboxSelector)).map((element) => String(element.className).slice(0, 80)),
-          submit: String(document.querySelector(submitSelector)?.className ?? 'none').slice(0, 80),
+          modals: Array.from(document.querySelectorAll('.modal')).map((element) => String(element.className)),
+          checkboxes: Array.from(document.querySelectorAll(checkboxSelector)).map((element) => String(element.className)),
+          submit: String(document.querySelector(submitSelector)?.className ?? 'none'),
           nameLength: (document.querySelector(inputSelector) as HTMLInputElement | null)?.value.length ?? -1,
         }),
         checkbox,
         submit,
         nameInput,
       );
+      const classes = (value: string) =>
+        value
+          .split(/\s+/)
+          .filter((token) => /^[a-z][a-z-]{0,23}$/.test(token))
+          .slice(0, 12)
+          .join(' ');
+      return {
+        page: pageLabel(raw.path),
+        modals: raw.modals.slice(0, 4).map(classes),
+        checkboxes: raw.checkboxes.slice(0, 6).map(classes),
+        submit: classes(raw.submit),
+        nameLength: raw.nameLength,
+      };
     } catch {
       return 'unreadable';
     }
@@ -567,9 +607,7 @@ class Session implements SentrowebSession {
    * searches at once. The free path is taken only on that exact answer; a quota that asks for
    * credits but shows no dialog, or any other answer, is a changed page and fails closed.
    */
-  private async awaitConfirmOrFree(
-    signal?: AbortSignal,
-  ): Promise<{ kind: 'modal'; cost: number } | { kind: 'free' }> {
+  private async awaitConfirmOrFree(signal?: AbortSignal): Promise<ConfirmGate> {
     const { root, header, content, headerText } = SENTROWEB_SELECTORS.confirmModal;
     const seen = await pollUntil(
       async () => {
@@ -799,12 +837,30 @@ async function shutdown(browser: Browser, context: BrowserContext | null, downlo
   await rm(downloadDir, { recursive: true, force: true }).catch(() => undefined);
 }
 
+/**
+ * A fixed label for the few endpoints the client knows. Every other path is just `other`: a path
+ * can carry an account id, a name or a report id of any length, so none of it is ever logged.
+ */
+function xhrLabel(pathname: string): string {
+  for (const [label, endpoint] of Object.entries(SENTROWEB_XHR)) {
+    if (pathname.endsWith(endpoint)) return label;
+  }
+  return 'other';
+}
+
+function pageLabel(pathname: string): string {
+  const lower = pathname.toLowerCase();
+  if (lower.startsWith(SENTROWEB_PATHS.mainPrefix.toLowerCase())) return 'main';
+  if (lower.startsWith(SENTROWEB_PATHS.loginPrefix.toLowerCase())) return 'login';
+  return 'other';
+}
+
 async function captureResponse(state: PageState, response: HTTPResponse): Promise<void> {
   try {
     const resourceType = response.request().resourceType();
     if (resourceType === 'xhr' || resourceType === 'fetch') {
-      const masked = new URL(response.url()).pathname.replace(/[A-Za-z0-9_-]{20,}/g, '<id>');
-      state.recentCalls = [...state.recentCalls, `${response.request().method()} ${masked} ${response.status()}`].slice(-8);
+      const label = xhrLabel(new URL(response.url()).pathname);
+      state.recentCalls = [...state.recentCalls, `${response.request().method()} ${label} ${response.status()}`].slice(-8);
     }
     if (response.request().method() !== 'POST') return;
     const pathname = new URL(response.url()).pathname;
@@ -869,7 +925,16 @@ export const sentrowebClient: SentrowebClient = {
       page.setDefaultNavigationTimeout(config.timeouts.stepMs);
       await page.setViewport({ width: 1400, height: 1000 });
 
-      const state: PageState = { authCount: 0, authStatus: null, search: null, appInitialized: false, quota: null, recentCalls: [] };
+      const state: PageState = { authCount: 0, authStatus: null, search: null, appInitialized: false, quota: null, searchDispatched: false, recentCalls: [] };
+      page.on('request', (request) => {
+        try {
+          if (request.method() === 'POST' && new URL(request.url()).pathname.endsWith(SENTROWEB_XHR.search)) {
+            state.searchDispatched = true;
+          }
+        } catch {
+          // An unreadable request is not the search request.
+        }
+      });
       page.on('response', (response) => {
         void captureResponse(state, response);
       });

@@ -698,6 +698,27 @@ describePostgres('Sentroweb check service (PostgreSQL)', () => {
       await expect(queue(companyId)).rejects.toMatchObject({ code: 'COOLDOWN' });
     });
 
+    it('a submitted failure counts the credit unless Sentroweb said the search was free, and both keep the cooldown', async () => {
+      const companyId = await makeFullCompany();
+      const client = makeClient();
+      client.scripts.set('Jane Director', { throws: new SentrowebError('RESULT_MISMATCH', { searchSubmitted: true, creditsCharged: 0 }) });
+      const { runId } = await queue(companyId, ['Jane Director']);
+      await service.processRun(runId, { client, config: CONFIG });
+      let run = await prisma.sentrowebCheckRun.findUniqueOrThrow({ where: { id: runId }, include: { results: true } });
+      expect(run).toMatchObject({ status: 'FAILED', errorCode: 'RESULT_MISMATCH', creditsUsed: 0 });
+      expect(run.results[0].searchSubmittedAt).not.toBeNull();
+      await expect(queue(companyId)).rejects.toMatchObject({ code: 'COOLDOWN' });
+
+      const otherCompany = await makeFullCompany();
+      const paid = makeClient();
+      paid.scripts.set('Jane Director', { throws: new SentrowebError('RESULT_MISMATCH', { searchSubmitted: true }) });
+      const second = await queue(otherCompany, ['Jane Director']);
+      await service.processRun(second.runId, { client: paid, config: CONFIG });
+      run = await prisma.sentrowebCheckRun.findUniqueOrThrow({ where: { id: second.runId }, include: { results: true } });
+      expect(run).toMatchObject({ status: 'FAILED', creditsUsed: 1 });
+      await expect(queue(otherCompany)).rejects.toMatchObject({ code: 'COOLDOWN' });
+    });
+
     it('turns a would-be CLEAR without the PDF into ERROR EVIDENCE_MISSING and carries on', async () => {
       const companyId = await makeFullCompany();
       const client = makeClient();

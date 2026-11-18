@@ -39,6 +39,12 @@ export interface FakeOptions {
   freeRepeats: boolean;
   /** The quota answers `deductCredit: true` but the page shows no dialog (a changed page). */
   suppressModal: boolean;
+  /** With `freeRepeats`: names listed in a repeat's quota answer (a shape the client must not accept as free). */
+  repeatQuotaUniqueNames: string[];
+  /** With `freeRepeats`: a repeated name's search call answers HTTP 500 (the first search succeeds). */
+  failRepeatSearches: boolean;
+  /** The page also fetches this path when SEARCH is clicked (to test what the diagnostics log). */
+  diagnosticFetchPath: string | null;
   /** Delay before the search endpoint answers. */
   searchDelayMs: number;
   /** Status of the PDF download endpoint. */
@@ -63,6 +69,9 @@ const DEFAULTS: FakeOptions = {
   searchDelayMs: 0,
   freeRepeats: false,
   suppressModal: false,
+  repeatQuotaUniqueNames: [],
+  failRepeatSearches: false,
+  diagnosticFetchPath: null,
   initDelayMs: 400,
   initStatus: 200,
   pdfStatus: 200,
@@ -204,6 +213,7 @@ function mainPage(options: FakeOptions): string {
 
   submit.addEventListener('click', async (event) => {
     event.preventDefault();
+    if (${JSON.stringify(options.diagnosticFetchPath)}) fetch(${JSON.stringify(options.diagnosticFetchPath)}).catch(() => {});
     const response = await fetch('/sentroweb-service/account/private/checkquota', {
       method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(query()) });
     const quota = await response.json();
@@ -313,7 +323,11 @@ export async function startFakeSentroweb(overrides: Partial<FakeOptions> = {}): 
         const quotaBody = JSON.parse(quotaRaw) as { queries: Array<Record<string, unknown>> };
         const quotaName = String(quotaBody.queries[0]?.name ?? '');
         if (options.freeRepeats && searchedNames.has(quotaName)) {
-          return json(response, { deductCredit: false, currentBalance: options.balance, uniqueNames: [] });
+          return json(response, {
+            deductCredit: false,
+            currentBalance: options.balance,
+            uniqueNames: options.repeatQuotaUniqueNames,
+          });
         }
         const modalHtml = fixtureText('confirm-modal.html').replace('1 credit(s)', `${options.modalCost} credit(s)`);
         return json(response, {
@@ -337,7 +351,9 @@ export async function startFakeSentroweb(overrides: Partial<FakeOptions> = {}): 
           fuzzy: query.fuzzy === true,
         });
         events.push({ type: 'search', detail: name });
+        const repeated = searchedNames.has(name);
         searchedNames.add(name);
+        if (repeated && options.failRepeatSearches) return json(response, { error: 'boom' }, 500);
         if (options.searchDelayMs > 0) await sleep(options.searchDelayMs);
         if (options.searchStatus !== 200) return json(response, { error: 'boom' }, options.searchStatus);
         const payload = cloneFixtureJson<Array<Record<string, unknown>>>(

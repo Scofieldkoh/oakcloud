@@ -222,6 +222,81 @@ describe('Sentroweb client against a fake Sentroweb', () => {
     expect(server.count('search')).toBe(2);
   });
 
+  it('a repeat whose quota answer is not the exact free shape is still SUBMITTED when the page searched on its own', async () => {
+    const server = await start({ freeRepeats: true, repeatQuotaUniqueNames: ['unexpected-name'] });
+    const session = await open(server, { requiredCredits: 1, timeouts: { stepMs: 2_500 } });
+    await session.search({ name: CLEAR_ENTITY, searchType: 'ENTITY' }); // seeds the name (paid, confirmed)
+    const error = await failureOf(session.search({ name: CLEAR_ENTITY, searchType: 'ENTITY' }));
+    expect(error.code).toBe('LAYOUT_CHANGED');
+    expect(error.searchSubmitted).toBe(true); // the page's search request went out
+    expect(error.creditsCharged).toBeUndefined(); // the charge is unknown: counted conservatively
+    expect(server.count('search')).toBe(2);
+  });
+
+  it('an abort while waiting for the dialog, after the page searched on its own, is submitted too', async () => {
+    const server = await start({ freeRepeats: true, repeatQuotaUniqueNames: ['unexpected-name'] });
+    const session = await open(server, { requiredCredits: 1, timeouts: { stepMs: 30_000 } });
+    await session.search({ name: CLEAR_ENTITY, searchType: 'ENTITY' });
+    const controller = new AbortController();
+    const watcher = setInterval(() => {
+      if (server.count('search') >= 2) controller.abort();
+    }, 50);
+    try {
+      const error = await failureOf(
+        session.search({ name: CLEAR_ENTITY, searchType: 'ENTITY' }, { signal: controller.signal }),
+      );
+      expect(error.code).toBe('TIMEOUT');
+      expect(error.searchSubmitted).toBe(true);
+    } finally {
+      clearInterval(watcher);
+    }
+  });
+
+  it('a verified free repeat whose search call fails reports zero credits and stays submitted', async () => {
+    const server = await start({ freeRepeats: true, failRepeatSearches: true });
+    const session = await open(server, { requiredCredits: 1 });
+    await session.search({ name: CLEAR_ENTITY, searchType: 'ENTITY' });
+    const error = await failureOf(session.search({ name: CLEAR_ENTITY, searchType: 'ENTITY' }));
+    expect(error.code).toBe('RESULT_MISMATCH');
+    expect(error.searchSubmitted).toBe(true);
+    expect(error.creditsCharged).toBe(0);
+    expect(server.count('search')).toBe(2);
+  });
+
+  it('a paid search whose call fails after CONFIRM is submitted with an unknown (not zero) charge', async () => {
+    const server = await start({ searchStatus: 500 });
+    const session = await open(server);
+    const error = await failureOf(session.search({ name: CLEAR_ENTITY, searchType: 'ENTITY' }));
+    expect(error.searchSubmitted).toBe(true);
+    expect(error.creditsCharged).toBeUndefined();
+  });
+
+  it('the pre-confirm failure log carries no account id, name or path text (structured arguments checked)', async () => {
+    const calls: unknown[][] = [];
+    const spies = (['log', 'info', 'warn', 'error', 'debug'] as const).map((method) =>
+      vi.spyOn(console, method).mockImplementation((...args: unknown[]) => void calls.push(args)),
+    );
+    try {
+      const server = await start({ suppressModal: true, diagnosticFetchPath: `/diagnostics/${FAKE_ACCOUNT_ID}/${FAKE_USERNAME}` });
+      const session = await open(server, { timeouts: { stepMs: 2_500 } });
+      await failureOf(session.search({ name: CLEAR_ENTITY, searchType: 'ENTITY' }));
+    } finally {
+      spies.forEach((spy) => spy.mockRestore());
+    }
+    const failure = calls.find((args) => String(args[0]).includes('a step failed before CONFIRM'));
+    expect(failure).toBeDefined();
+    const all = JSON.stringify(calls);
+    for (const secret of [FAKE_ACCOUNT_ID, FAKE_USERNAME, FAKE_PASSWORD, CLEAR_ENTITY, 'diagnostics', 'ACCT', 'sentroweb-service']) {
+      expect(all.includes(secret), secret).toBe(false);
+    }
+    // What is logged is structure: a phase, a code, allow-listed call labels and class names.
+    const payload = failure![1] as { phase: string; recentCalls: string[]; form: { page: string } };
+    expect(payload.phase).toBe('confirm-modal');
+    expect(payload.form.page).toBe('main');
+    expect(payload.recentCalls.some((call) => call.includes('other'))).toBe(true);
+    for (const call of payload.recentCalls) expect(call).toMatch(/^(GET|POST) (authenticate|initializeApp|checkQuota|search|other) \d{3}$/);
+  });
+
   it('fails closed (LAYOUT_CHANGED, not submitted) when credits are due but no dialog appears', async () => {
     const server = await start({ suppressModal: true });
     const session = await open(server, { timeouts: { stepMs: 2_500 } });
