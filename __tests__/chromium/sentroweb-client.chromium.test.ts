@@ -203,6 +203,25 @@ describe('Sentroweb client against a fake Sentroweb', () => {
     expect(server.count('cancel-clicked')).toBe(0);
   });
 
+  it('maxCredits 0 cancels the confirm box of a paid search and never confirms', async () => {
+    const server = await start({ freeRepeats: true });
+    const session = await open(server, { requiredCredits: 1 });
+    const error = await failureOf(session.search({ name: CLEAR_ENTITY, searchType: 'ENTITY', maxCredits: 0 }));
+    expect(error.code).toBe('UNEXPECTED_CREDIT_COST');
+    expect(error.searchSubmitted).toBe(false);
+    expect(server.count('cancel-clicked')).toBe(1);
+    expect(server.count('search')).toBe(0);
+  });
+
+  it('maxCredits 0 still lets a free repeat through', async () => {
+    const server = await start({ freeRepeats: true });
+    const session = await open(server, { requiredCredits: 1 });
+    await session.search({ name: CLEAR_ENTITY, searchType: 'ENTITY' });
+    const again = await session.search({ name: CLEAR_ENTITY, searchType: 'ENTITY', maxCredits: 0 });
+    expect(again.creditsCharged).toBe(0);
+    expect(server.count('search')).toBe(2);
+  });
+
   it('fails closed (LAYOUT_CHANGED, not submitted) when credits are due but no dialog appears', async () => {
     const server = await start({ suppressModal: true });
     const session = await open(server, { timeouts: { stepMs: 2_500 } });

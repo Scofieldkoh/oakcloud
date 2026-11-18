@@ -56,6 +56,11 @@ const CLOSE_STEP_TIMEOUT_MS = 5_000;
 export interface SentrowebSearchRequest {
   name: string;
   searchType: SentrowebSearchTypeValue;
+  /**
+   * The most credits this search may cost. Defaults to the fixed 1 per search. With 0 the search
+   * is cancelled at the confirm box (UNEXPECTED_CREDIT_COST) and only a free repeat goes through.
+   */
+  maxCredits?: number;
 }
 
 export interface SentrowebSearchOutcome {
@@ -361,7 +366,8 @@ class Session implements SentrowebSession {
       creditsCharged = 0;
       log.info('Sentroweb search: a repeated name, nothing is deducted (no confirm dialog)');
     } else {
-      if (gate.cost !== SENTROWEB_CREDITS_PER_SEARCH) {
+      const allowed = request.maxCredits ?? SENTROWEB_CREDITS_PER_SEARCH;
+      if (gate.cost !== SENTROWEB_CREDITS_PER_SEARCH || gate.cost > allowed) {
         await this.clickModalButton(selectors.confirmModal.root, selectors.confirmModal.cancel).catch(() => undefined);
         throw new SentrowebError('UNEXPECTED_CREDIT_COST');
       }
