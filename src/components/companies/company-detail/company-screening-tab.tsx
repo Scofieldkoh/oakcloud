@@ -32,9 +32,9 @@ interface CompanyScreeningTabProps {
   initialRunId?: string | null;
 }
 
-/** "5 searches, 5 credits used". */
+/** "5 names, 5 credits used" (names chosen for the run; credits are what Sentroweb charged). */
 function runCountsText(run: Pick<SentrowebRunDto, 'entityCount' | 'creditsUsed'>): string {
-  const searches = run.entityCount === 1 ? '1 search' : `${run.entityCount} searches`;
+  const searches = run.entityCount === 1 ? '1 name' : `${run.entityCount} names`;
   const credits = run.creditsUsed === 1 ? '1 credit' : `${run.creditsUsed} credits`;
   return `${searches}, ${credits} used`;
 }

@@ -216,13 +216,14 @@ function SentrowebCheckDialogBody({
 
         {data && candidates.length > 0 ? (
           <p className="text-sm font-medium text-text-primary" aria-live="polite">
-            This will use {pluralise(credits, 'Sentroweb credit')}
+            This will use up to {pluralise(credits, 'Sentroweb credit')}
             {creditsPerSearch !== 1 ? ` (${creditsPerSearch} per search)` : ''}
           </p>
         ) : null}
 
         <p className="text-xs text-text-secondary">
           Every name searched is added to Sentroweb ongoing monitoring, the same as a manual search.
+          A name Sentroweb has searched before is not charged again.
         </p>
 
         {submitError ? <Alert variant="error">{submitError}</Alert> : null}

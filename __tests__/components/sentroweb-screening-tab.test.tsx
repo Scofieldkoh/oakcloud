@@ -111,7 +111,7 @@ describe('CompanyScreeningTab', () => {
     expect(within(table).getByText('Entity')).toBeInTheDocument();
     expect(screen.getAllByText('Clear').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Run by Sam Lee').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('2 searches, 2 credits used').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('2 names, 2 credits used').length).toBeGreaterThan(0);
   });
 
   it('expands a row to show match details and links to the PDF and screenshot', async () => {
@@ -231,7 +231,7 @@ describe('CompanyScreeningTab', () => {
     renderTab();
     expect(await screen.findByText('Queued')).toBeInTheDocument();
     expect(screen.getAllByText('In progress').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('3 searches, 0 credits used').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('3 names, 0 credits used').length).toBeGreaterThan(0);
   });
 
   it('shows the run that was just started even before the list includes it', async () => {

@@ -12,8 +12,8 @@ A possible match, an error or anything uncertain is **never** shown as clear.
 
 1. Open a company and click **Sentroweb check** (shortcut `F4`; needs permission to edit the company).
 2. The dialog lists the company, its current directors and its current shareholders. Tick up to 10
-   names. It shows how many Sentroweb credits the run will use (1 per name) and says that each name
-   is added to Sentroweb ongoing monitoring.
+   names. It shows the most Sentroweb credits the run can use (1 per name; a name Sentroweb has
+   searched before is free) and says that each name is added to Sentroweb ongoing monitoring.
 3. **Run check** queues the run and opens the **Screening** tab, which refreshes every 3 seconds
    while the run is queued or running.
 4. Each name ends as **Clear**, **Possible match**, **Error** or **Not run**. Possible matches can be

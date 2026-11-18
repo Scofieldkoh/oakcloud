@@ -84,15 +84,15 @@ describe('SentrowebCheckDialog', () => {
     expect(screen.getByText('Shareholder')).toBeInTheDocument();
     expect(screen.getByText('Entity')).toBeInTheDocument();
     expect(screen.getAllByText('Individual')).toHaveLength(2);
-    expect(screen.getByText('This will use 3 Sentroweb credits')).toBeInTheDocument();
+    expect(screen.getByText('This will use up to 3 Sentroweb credits')).toBeInTheDocument();
     expect(screen.getByText(/added to Sentroweb ongoing monitoring/)).toBeInTheDocument();
     expect(runButton()).toBeEnabled();
 
     fireEvent.click(screen.getByRole('checkbox', { name: 'Bob Lim' }));
-    expect(screen.getByText('This will use 2 Sentroweb credits')).toBeInTheDocument();
+    expect(screen.getByText('This will use up to 2 Sentroweb credits')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('checkbox', { name: 'Alice Tan' }));
     fireEvent.click(screen.getByRole('checkbox', { name: 'Acme Holdings Pte Ltd' }));
-    expect(screen.getByText('This will use 0 Sentroweb credits')).toBeInTheDocument();
+    expect(screen.getByText('This will use up to 0 Sentroweb credits')).toBeInTheDocument();
     expect(runButton()).toBeDisabled();
   });
 
@@ -104,14 +104,14 @@ describe('SentrowebCheckDialog', () => {
     expect(personCheckboxes()).toHaveLength(12);
     expect(personCheckboxes().every((box) => !box.checked)).toBe(true);
     expect(runButton()).toBeDisabled();
-    expect(screen.getByText('This will use 0 Sentroweb credits')).toBeInTheDocument();
+    expect(screen.getByText('This will use up to 0 Sentroweb credits')).toBeInTheDocument();
 
     for (let index = 1; index <= 11; index += 1) {
       fireEvent.click(screen.getByRole('checkbox', { name: `Person ${index}` }));
     }
     expect(screen.getByText('Choose at most 10')).toBeInTheDocument();
     expect(runButton()).toBeDisabled();
-    expect(screen.getByText('This will use 11 Sentroweb credits')).toBeInTheDocument();
+    expect(screen.getByText('This will use up to 11 Sentroweb credits')).toBeInTheDocument();
     fireEvent.click(runButton());
     expect(startBodies).toHaveLength(0);
 
