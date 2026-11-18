@@ -29,6 +29,8 @@ import {
   CompanyProfileTab,
   ContactDetailsTab,
   CompanyServicesTab,
+  CompanyScreeningTab,
+  SentrowebCheckAction,
   CompanyTabs,
   useTabState,
 } from '@/components/companies/company-detail';
@@ -47,6 +49,8 @@ function CompanyDetailContent({ id }: { id: string }) {
   const { can } = usePermissions(id);
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [sentrowebDialogOpen, setSentrowebDialogOpen] = useState(false);
+  const [startedSentrowebRunId, setStartedSentrowebRunId] = useState<string | null>(null);
   const { data: bizFileInfo } = useCompanyBizFile(id);
 
   // URL-persisted tab state
@@ -164,12 +168,17 @@ function CompanyDetailContent({ id }: { id: string }) {
       description: 'Retrieve ACRA',
     }] : []),
     ...(can.updateCompany ? [{
+      key: 'F4',
+      handler: () => setSentrowebDialogOpen(true),
+      description: 'Sentroweb check',
+    }] : []),
+    ...(can.updateCompany ? [{
       key: 'e',
       ctrl: true,
       handler: () => router.push(`/companies/${id}/edit`),
       description: 'Edit company',
     }] : []),
-  ], !deleteDialogOpen && !isRetrievingAcra);
+  ], !deleteDialogOpen && !isRetrievingAcra && !sentrowebDialogOpen);
 
   if (isLoading) {
     return (
@@ -250,6 +259,16 @@ function CompanyDetailContent({ id }: { id: string }) {
               Update via BizFile
             </Link>
           )}
+          <SentrowebCheckAction
+            companyId={id}
+            canUpdate={can.updateCompany}
+            isOpen={sentrowebDialogOpen}
+            onOpenChange={setSentrowebDialogOpen}
+            onStarted={(runId) => {
+              setStartedSentrowebRunId(runId);
+              setActiveTab('screening');
+            }}
+          />
           {can.updateCompany && <Link href={`/companies/${id}/edit`} className="btn-primary btn-sm flex items-center gap-2 whitespace-nowrap" title="Edit (Ctrl+E)"><Pencil className="h-3.5 w-3.5" />Edit</Link>}
           {can.deleteCompany && (
             <button
@@ -290,6 +309,13 @@ function CompanyDetailContent({ id }: { id: string }) {
       )}
       {activeTab === 'services' && (
         <CompanyServicesTab companyId={id} canEdit={can.updateCompany} />
+      )}
+      {activeTab === 'screening' && (
+        <CompanyScreeningTab
+          key={startedSentrowebRunId ?? 'latest'}
+          companyId={id}
+          initialRunId={startedSentrowebRunId}
+        />
       )}
 
       {/* Internal Notes - Full Width */}
