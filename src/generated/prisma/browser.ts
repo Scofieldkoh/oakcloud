@@ -790,3 +790,13 @@ export type BizFileOperationEvidence = Prisma.BizFileOperationEvidenceModel
  *
  */
 export type BizFileOperationEffectIntent = Prisma.BizFileOperationEffectIntentModel
+/**
+ * Model SentrowebCheckRun
+ *
+ */
+export type SentrowebCheckRun = Prisma.SentrowebCheckRunModel
+/**
+ * Model SentrowebCheckResult
+ *
+ */
+export type SentrowebCheckResult = Prisma.SentrowebCheckResultModel

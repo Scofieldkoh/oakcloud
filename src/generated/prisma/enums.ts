@@ -1701,3 +1701,49 @@ export const BizFileOperationEffectState = {
 } as const
 
 export type BizFileOperationEffectState = (typeof BizFileOperationEffectState)[keyof typeof BizFileOperationEffectState]
+
+
+export const SentrowebCheckRunStatus = {
+  QUEUED: 'QUEUED',
+  RUNNING: 'RUNNING',
+  COMPLETED: 'COMPLETED',
+  FAILED: 'FAILED'
+} as const
+
+export type SentrowebCheckRunStatus = (typeof SentrowebCheckRunStatus)[keyof typeof SentrowebCheckRunStatus]
+
+
+export const SentrowebCheckOverallResult = {
+  CLEAR: 'CLEAR',
+  POSSIBLE_MATCH: 'POSSIBLE_MATCH',
+  INCOMPLETE: 'INCOMPLETE'
+} as const
+
+export type SentrowebCheckOverallResult = (typeof SentrowebCheckOverallResult)[keyof typeof SentrowebCheckOverallResult]
+
+
+export const SentrowebEntityKind = {
+  COMPANY: 'COMPANY',
+  INDIVIDUAL: 'INDIVIDUAL',
+  CORPORATE: 'CORPORATE'
+} as const
+
+export type SentrowebEntityKind = (typeof SentrowebEntityKind)[keyof typeof SentrowebEntityKind]
+
+
+export const SentrowebSearchType = {
+  INDIVIDUAL: 'INDIVIDUAL',
+  ENTITY: 'ENTITY'
+} as const
+
+export type SentrowebSearchType = (typeof SentrowebSearchType)[keyof typeof SentrowebSearchType]
+
+
+export const SentrowebResultStatus = {
+  CLEAR: 'CLEAR',
+  POSSIBLE_MATCH: 'POSSIBLE_MATCH',
+  ERROR: 'ERROR',
+  NOT_RUN: 'NOT_RUN'
+} as const
+
+export type SentrowebResultStatus = (typeof SentrowebResultStatus)[keyof typeof SentrowebResultStatus]

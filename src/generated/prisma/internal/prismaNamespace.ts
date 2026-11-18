@@ -548,7 +548,9 @@ export const ModelName = {
   BusinessAssistantCapacitySlot: 'BusinessAssistantCapacitySlot',
   BizFileOperationReceipt: 'BizFileOperationReceipt',
   BizFileOperationEvidence: 'BizFileOperationEvidence',
-  BizFileOperationEffectIntent: 'BizFileOperationEffectIntent'
+  BizFileOperationEffectIntent: 'BizFileOperationEffectIntent',
+  SentrowebCheckRun: 'SentrowebCheckRun',
+  SentrowebCheckResult: 'SentrowebCheckResult'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -564,7 +566,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "workspace" | "role" | "permission" | "rolePermission" | "userRoleAssignment" | "user" | "userPreference" | "performanceMeasurement" | "userCompanyAssignment" | "company" | "companySharePointFolder" | "companyFormerName" | "companyAddress" | "contact" | "companyContact" | "contactDetail" | "companyOfficer" | "shareCapital" | "companyAuditor" | "companyShareholder" | "companyCharge" | "document" | "auditLog" | "connector" | "workspaceConnectorAccess" | "connectorUsageLog" | "connectorModelConfig" | "noteTab" | "documentTemplate" | "generatedDocument" | "documentGenerationBatch" | "documentGenerationBatchItem" | "documentSection" | "workspaceLetterhead" | "documentComment" | "documentDraft" | "templatePartial" | "serviceFamily" | "serviceVariant" | "serviceVariantFeeTemplate" | "serviceAgreement" | "serviceAgreementEntity" | "serviceAgreementItem" | "serviceAgreementItemEntity" | "serviceAgreementFeeLine" | "clientService" | "clientServiceFeeLine" | "billingOccurrence" | "billingCoverageIssue" | "deadlineRule" | "deadlineRuleVersion" | "deadlineRuleParameterDefinition" | "deadlineMilestoneTemplate" | "serviceVariantDeadlineRule" | "clientServiceDeadlineRule" | "businessCalendar" | "businessHoliday" | "publicHolidaySourceRecord" | "publicHolidaySyncState" | "serviceCycle" | "deadlineOccurrence" | "companyFinancialPeriod" | "companyMonitoringCoverage" | "clientServiceObligationScope" | "deadlineOccurrenceCoverageLink" | "deadlineResponsibilityChange" | "companyComplianceIssue" | "serviceScheduleReconciliationRequest" | "aiConversation" | "esigningEnvelope" | "esigningEnvelopeDocument" | "esigningIssuedArtifact" | "esigningSharePointFiling" | "esigningEnvelopeRecipient" | "esigningDocumentFieldDefinition" | "esigningDocumentFieldValue" | "esigningEnvelopeEvent" | "esigningEmailDelivery" | "esigningEmailDeliveryAttempt" | "processingDocument" | "documentLink" | "documentTag" | "processingDocumentTag" | "documentPage" | "documentExtraction" | "documentRevision" | "documentRevisionLineItem" | "vendorAlias" | "customerAlias" | "contactDuplicateDecision" | "contactMergeOperation" | "duplicateDecision" | "processingAttempt" | "processingCheckpoint" | "splitPlan" | "documentStateEvent" | "documentDerivedFile" | "idempotencyRecord" | "webhookSubscription" | "exchangeRate" | "bankAccount" | "bankTransaction" | "matchGroup" | "matchGroupItem" | "reconciliationPeriod" | "form" | "formField" | "formOptionPreset" | "formUrlHealth" | "formSubmission" | "formDraft" | "formUpload" | "clientPortalUser" | "clientRequest" | "communication" | "accountingIntegration" | "externalPosting" | "fieldMapping" | "workspaceBackup" | "backupSchedule" | "systemBackup" | "backupSettings" | "chartOfAccount" | "chartOfAccountsMapping" | "taskPipeline" | "taskPipelineVersion" | "taskPipelineStage" | "task" | "taskStage" | "taskStageChecklistItem" | "taskStageOutcome" | "taskEsigningPreparation" | "taskCompanyRecoveryContext" | "acraEntity" | "acraSyncState" | "businessAssistantConversation" | "businessAssistantMessage" | "businessAssistantRun" | "businessAssistantRunItem" | "businessAssistantRunStep" | "businessAssistantProposal" | "businessAssistantApproval" | "businessAssistantReview" | "businessAssistantFeedback" | "businessAssistantMemory" | "businessAssistantLearningChange" | "businessAssistantLearningActiveTarget" | "businessAssistantActionRequest" | "businessAssistantCapacitySlot" | "bizFileOperationReceipt" | "bizFileOperationEvidence" | "bizFileOperationEffectIntent"
+    modelProps: "workspace" | "role" | "permission" | "rolePermission" | "userRoleAssignment" | "user" | "userPreference" | "performanceMeasurement" | "userCompanyAssignment" | "company" | "companySharePointFolder" | "companyFormerName" | "companyAddress" | "contact" | "companyContact" | "contactDetail" | "companyOfficer" | "shareCapital" | "companyAuditor" | "companyShareholder" | "companyCharge" | "document" | "auditLog" | "connector" | "workspaceConnectorAccess" | "connectorUsageLog" | "connectorModelConfig" | "noteTab" | "documentTemplate" | "generatedDocument" | "documentGenerationBatch" | "documentGenerationBatchItem" | "documentSection" | "workspaceLetterhead" | "documentComment" | "documentDraft" | "templatePartial" | "serviceFamily" | "serviceVariant" | "serviceVariantFeeTemplate" | "serviceAgreement" | "serviceAgreementEntity" | "serviceAgreementItem" | "serviceAgreementItemEntity" | "serviceAgreementFeeLine" | "clientService" | "clientServiceFeeLine" | "billingOccurrence" | "billingCoverageIssue" | "deadlineRule" | "deadlineRuleVersion" | "deadlineRuleParameterDefinition" | "deadlineMilestoneTemplate" | "serviceVariantDeadlineRule" | "clientServiceDeadlineRule" | "businessCalendar" | "businessHoliday" | "publicHolidaySourceRecord" | "publicHolidaySyncState" | "serviceCycle" | "deadlineOccurrence" | "companyFinancialPeriod" | "companyMonitoringCoverage" | "clientServiceObligationScope" | "deadlineOccurrenceCoverageLink" | "deadlineResponsibilityChange" | "companyComplianceIssue" | "serviceScheduleReconciliationRequest" | "aiConversation" | "esigningEnvelope" | "esigningEnvelopeDocument" | "esigningIssuedArtifact" | "esigningSharePointFiling" | "esigningEnvelopeRecipient" | "esigningDocumentFieldDefinition" | "esigningDocumentFieldValue" | "esigningEnvelopeEvent" | "esigningEmailDelivery" | "esigningEmailDeliveryAttempt" | "processingDocument" | "documentLink" | "documentTag" | "processingDocumentTag" | "documentPage" | "documentExtraction" | "documentRevision" | "documentRevisionLineItem" | "vendorAlias" | "customerAlias" | "contactDuplicateDecision" | "contactMergeOperation" | "duplicateDecision" | "processingAttempt" | "processingCheckpoint" | "splitPlan" | "documentStateEvent" | "documentDerivedFile" | "idempotencyRecord" | "webhookSubscription" | "exchangeRate" | "bankAccount" | "bankTransaction" | "matchGroup" | "matchGroupItem" | "reconciliationPeriod" | "form" | "formField" | "formOptionPreset" | "formUrlHealth" | "formSubmission" | "formDraft" | "formUpload" | "clientPortalUser" | "clientRequest" | "communication" | "accountingIntegration" | "externalPosting" | "fieldMapping" | "workspaceBackup" | "backupSchedule" | "systemBackup" | "backupSettings" | "chartOfAccount" | "chartOfAccountsMapping" | "taskPipeline" | "taskPipelineVersion" | "taskPipelineStage" | "task" | "taskStage" | "taskStageChecklistItem" | "taskStageOutcome" | "taskEsigningPreparation" | "taskCompanyRecoveryContext" | "acraEntity" | "acraSyncState" | "businessAssistantConversation" | "businessAssistantMessage" | "businessAssistantRun" | "businessAssistantRunItem" | "businessAssistantRunStep" | "businessAssistantProposal" | "businessAssistantApproval" | "businessAssistantReview" | "businessAssistantFeedback" | "businessAssistantMemory" | "businessAssistantLearningChange" | "businessAssistantLearningActiveTarget" | "businessAssistantActionRequest" | "businessAssistantCapacitySlot" | "bizFileOperationReceipt" | "bizFileOperationEvidence" | "bizFileOperationEffectIntent" | "sentrowebCheckRun" | "sentrowebCheckResult"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -11816,6 +11818,154 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    SentrowebCheckRun: {
+      payload: Prisma.$SentrowebCheckRunPayload<ExtArgs>
+      fields: Prisma.SentrowebCheckRunFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.SentrowebCheckRunFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SentrowebCheckRunPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.SentrowebCheckRunFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SentrowebCheckRunPayload>
+        }
+        findFirst: {
+          args: Prisma.SentrowebCheckRunFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SentrowebCheckRunPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.SentrowebCheckRunFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SentrowebCheckRunPayload>
+        }
+        findMany: {
+          args: Prisma.SentrowebCheckRunFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SentrowebCheckRunPayload>[]
+        }
+        create: {
+          args: Prisma.SentrowebCheckRunCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SentrowebCheckRunPayload>
+        }
+        createMany: {
+          args: Prisma.SentrowebCheckRunCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.SentrowebCheckRunCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SentrowebCheckRunPayload>[]
+        }
+        delete: {
+          args: Prisma.SentrowebCheckRunDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SentrowebCheckRunPayload>
+        }
+        update: {
+          args: Prisma.SentrowebCheckRunUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SentrowebCheckRunPayload>
+        }
+        deleteMany: {
+          args: Prisma.SentrowebCheckRunDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.SentrowebCheckRunUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.SentrowebCheckRunUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SentrowebCheckRunPayload>[]
+        }
+        upsert: {
+          args: Prisma.SentrowebCheckRunUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SentrowebCheckRunPayload>
+        }
+        aggregate: {
+          args: Prisma.SentrowebCheckRunAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateSentrowebCheckRun>
+        }
+        groupBy: {
+          args: Prisma.SentrowebCheckRunGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.SentrowebCheckRunGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.SentrowebCheckRunCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.SentrowebCheckRunCountAggregateOutputType> | number
+        }
+      }
+    }
+    SentrowebCheckResult: {
+      payload: Prisma.$SentrowebCheckResultPayload<ExtArgs>
+      fields: Prisma.SentrowebCheckResultFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.SentrowebCheckResultFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SentrowebCheckResultPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.SentrowebCheckResultFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SentrowebCheckResultPayload>
+        }
+        findFirst: {
+          args: Prisma.SentrowebCheckResultFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SentrowebCheckResultPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.SentrowebCheckResultFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SentrowebCheckResultPayload>
+        }
+        findMany: {
+          args: Prisma.SentrowebCheckResultFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SentrowebCheckResultPayload>[]
+        }
+        create: {
+          args: Prisma.SentrowebCheckResultCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SentrowebCheckResultPayload>
+        }
+        createMany: {
+          args: Prisma.SentrowebCheckResultCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.SentrowebCheckResultCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SentrowebCheckResultPayload>[]
+        }
+        delete: {
+          args: Prisma.SentrowebCheckResultDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SentrowebCheckResultPayload>
+        }
+        update: {
+          args: Prisma.SentrowebCheckResultUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SentrowebCheckResultPayload>
+        }
+        deleteMany: {
+          args: Prisma.SentrowebCheckResultDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.SentrowebCheckResultUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.SentrowebCheckResultUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SentrowebCheckResultPayload>[]
+        }
+        upsert: {
+          args: Prisma.SentrowebCheckResultUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SentrowebCheckResultPayload>
+        }
+        aggregate: {
+          args: Prisma.SentrowebCheckResultAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateSentrowebCheckResult>
+        }
+        groupBy: {
+          args: Prisma.SentrowebCheckResultGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.SentrowebCheckResultGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.SentrowebCheckResultCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.SentrowebCheckResultCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -15024,6 +15174,57 @@ export const BizFileOperationEffectIntentScalarFieldEnum = {
 export type BizFileOperationEffectIntentScalarFieldEnum = (typeof BizFileOperationEffectIntentScalarFieldEnum)[keyof typeof BizFileOperationEffectIntentScalarFieldEnum]
 
 
+export const SentrowebCheckRunScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  companyId: 'companyId',
+  requestedById: 'requestedById',
+  status: 'status',
+  overallResult: 'overallResult',
+  errorCode: 'errorCode',
+  entityCount: 'entityCount',
+  creditsUsed: 'creditsUsed',
+  balanceBefore: 'balanceBefore',
+  claimToken: 'claimToken',
+  leaseExpiresAt: 'leaseExpiresAt',
+  startedAt: 'startedAt',
+  finishedAt: 'finishedAt',
+  createdAt: 'createdAt'
+} as const
+
+export type SentrowebCheckRunScalarFieldEnum = (typeof SentrowebCheckRunScalarFieldEnum)[keyof typeof SentrowebCheckRunScalarFieldEnum]
+
+
+export const SentrowebCheckResultScalarFieldEnum = {
+  id: 'id',
+  runId: 'runId',
+  tenantId: 'tenantId',
+  companyId: 'companyId',
+  position: 'position',
+  entityKind: 'entityKind',
+  searchType: 'searchType',
+  roles: 'roles',
+  sourceRefs: 'sourceRefs',
+  contactId: 'contactId',
+  name: 'name',
+  identifierType: 'identifierType',
+  identifier: 'identifier',
+  status: 'status',
+  matchCount: 'matchCount',
+  categoryCounts: 'categoryCounts',
+  matches: 'matches',
+  sentrowebReportId: 'sentrowebReportId',
+  monitorEnabled: 'monitorEnabled',
+  searchSubmittedAt: 'searchSubmittedAt',
+  errorCode: 'errorCode',
+  documentId: 'documentId',
+  evidencePngKey: 'evidencePngKey',
+  checkedAt: 'checkedAt'
+} as const
+
+export type SentrowebCheckResultScalarFieldEnum = (typeof SentrowebCheckResultScalarFieldEnum)[keyof typeof SentrowebCheckResultScalarFieldEnum]
+
+
 export const SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -17268,6 +17469,76 @@ export type EnumBizFileOperationEffectStateFieldRefInput<$PrismaModel> = FieldRe
 export type ListEnumBizFileOperationEffectStateFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BizFileOperationEffectState[]'>
 
 
+
+/**
+ * Reference to a field of type 'SentrowebCheckRunStatus'
+ */
+export type EnumSentrowebCheckRunStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'SentrowebCheckRunStatus'>
+
+
+
+/**
+ * Reference to a field of type 'SentrowebCheckRunStatus[]'
+ */
+export type ListEnumSentrowebCheckRunStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'SentrowebCheckRunStatus[]'>
+
+
+
+/**
+ * Reference to a field of type 'SentrowebCheckOverallResult'
+ */
+export type EnumSentrowebCheckOverallResultFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'SentrowebCheckOverallResult'>
+
+
+
+/**
+ * Reference to a field of type 'SentrowebCheckOverallResult[]'
+ */
+export type ListEnumSentrowebCheckOverallResultFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'SentrowebCheckOverallResult[]'>
+
+
+
+/**
+ * Reference to a field of type 'SentrowebEntityKind'
+ */
+export type EnumSentrowebEntityKindFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'SentrowebEntityKind'>
+
+
+
+/**
+ * Reference to a field of type 'SentrowebEntityKind[]'
+ */
+export type ListEnumSentrowebEntityKindFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'SentrowebEntityKind[]'>
+
+
+
+/**
+ * Reference to a field of type 'SentrowebSearchType'
+ */
+export type EnumSentrowebSearchTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'SentrowebSearchType'>
+
+
+
+/**
+ * Reference to a field of type 'SentrowebSearchType[]'
+ */
+export type ListEnumSentrowebSearchTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'SentrowebSearchType[]'>
+
+
+
+/**
+ * Reference to a field of type 'SentrowebResultStatus'
+ */
+export type EnumSentrowebResultStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'SentrowebResultStatus'>
+
+
+
+/**
+ * Reference to a field of type 'SentrowebResultStatus[]'
+ */
+export type ListEnumSentrowebResultStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'SentrowebResultStatus[]'>
+
+
 /**
  * Batch Payload for updateMany & deleteMany & createMany
  */
@@ -17571,6 +17842,8 @@ export type GlobalOmitConfig = {
   bizFileOperationReceipt?: Prisma.BizFileOperationReceiptOmit
   bizFileOperationEvidence?: Prisma.BizFileOperationEvidenceOmit
   bizFileOperationEffectIntent?: Prisma.BizFileOperationEffectIntentOmit
+  sentrowebCheckRun?: Prisma.SentrowebCheckRunOmit
+  sentrowebCheckResult?: Prisma.SentrowebCheckResultOmit
 }
 
 /* Types for Logging */
@@ -17633,3 +17906,4 @@ export type PrismaAction =
  * `PrismaClient` proxy available in interactive transactions.
  */
 export type TransactionClient = Omit<DefaultPrismaClient, runtime.ITXClientDenyList>
+

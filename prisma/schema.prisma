@@ -49,6 +49,7 @@ model Workspace {
   forms                            Form[]
   generatedDocuments               GeneratedDocument[]
   esigningSharePointFilings        EsigningSharePointFiling[]
+  sentrowebCheckRuns               SentrowebCheckRun[]
   esigningEmailDeliveries          EsigningEmailDelivery[]
   esigningEnvelopes                EsigningEnvelope[]
   taskEsigningPreparations         TaskEsigningPreparation[]
@@ -240,6 +241,7 @@ model User {
   waivedBillingOccurrences             BillingOccurrence[]                    @relation("BillingOccurrenceWaiverActor")
   cancelledBillingOccurrences          BillingOccurrence[]                    @relation("BillingOccurrenceCancellationActor")
   requestedScheduleReconciliations     ServiceScheduleReconciliationRequest[] @relation("ScheduleReconciliationRequester")
+  sentrowebCheckRuns                   SentrowebCheckRun[]
 
   @@index([email])
   @@index([tenantId])
@@ -382,6 +384,7 @@ model Company {
   billingCoverageIssues       BillingCoverageIssue[]
   sharePointFolderMapping     CompanySharePointFolder?
   esigningSharePointFilings   EsigningSharePointFiling[]
+  sentrowebCheckRuns          SentrowebCheckRun[]
 
   @@unique([tenantId, uen])
   @@unique([tenantId, id], map: "companies_tenant_id_id_key")
@@ -731,6 +734,7 @@ model Document {
   uploadedBy         User                 @relation(fields: [uploadedById], references: [id])
   processingDocument ProcessingDocument?
   shareCapital       ShareCapital[]
+  sentrowebCheckResults SentrowebCheckResult[]
 
   @@index([tenantId])
   @@index([companyId])
@@ -5479,4 +5483,99 @@ enum BizFileOperationEffectState {
   COMPLETE
   FAILED_RETRYABLE
   FAILED_PERMANENT
+}
+
+// ============================================================================
+// Sentroweb screening (browser-automated AML/sanctions check of a company, its
+// directors and its shareholders). See docs/features/SENTROWEB_CHECK.md.
+// ============================================================================
+
+enum SentrowebCheckRunStatus {
+  QUEUED
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+enum SentrowebCheckOverallResult {
+  CLEAR
+  POSSIBLE_MATCH
+  INCOMPLETE
+}
+
+enum SentrowebEntityKind {
+  COMPANY
+  INDIVIDUAL
+  CORPORATE
+}
+
+enum SentrowebSearchType {
+  INDIVIDUAL
+  ENTITY
+}
+
+enum SentrowebResultStatus {
+  CLEAR
+  POSSIBLE_MATCH
+  ERROR
+  NOT_RUN
+}
+
+model SentrowebCheckRun {
+  id             String                       @id @default(uuid())
+  tenantId       String
+  companyId      String
+  requestedById  String
+  status         SentrowebCheckRunStatus      @default(QUEUED)
+  overallResult  SentrowebCheckOverallResult?
+  errorCode      String?                      @db.VarChar(64)
+  entityCount    Int
+  creditsUsed    Int                          @default(0)
+  balanceBefore  Int?
+  claimToken     String?                      @db.VarChar(36)
+  leaseExpiresAt DateTime?
+  startedAt      DateTime?
+  finishedAt     DateTime?
+  createdAt      DateTime                     @default(now())
+  tenant         Workspace                    @relation(fields: [tenantId], references: [id])
+  company        Company                      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  requestedBy    User                         @relation(fields: [requestedById], references: [id])
+  results        SentrowebCheckResult[]
+
+  @@index([tenantId, companyId, createdAt(sort: Desc)])
+  @@index([status, leaseExpiresAt])
+  @@map("sentroweb_check_runs")
+}
+
+model SentrowebCheckResult {
+  id                String                @id @default(uuid())
+  runId             String
+  tenantId          String
+  companyId         String
+  position          Int
+  entityKind        SentrowebEntityKind
+  searchType        SentrowebSearchType
+  roles             String[]
+  sourceRefs        Json                  @default("[]")
+  contactId         String?
+  name              String
+  identifierType    String?
+  identifier        String?
+  status            SentrowebResultStatus @default(NOT_RUN)
+  matchCount        Int                   @default(0)
+  categoryCounts    Json                  @default("{}")
+  matches           Json                  @default("[]")
+  sentrowebReportId String?
+  monitorEnabled    Boolean?
+  searchSubmittedAt DateTime?
+  errorCode         String?               @db.VarChar(64)
+  documentId        String?
+  evidencePngKey    String?
+  checkedAt         DateTime?
+  run               SentrowebCheckRun     @relation(fields: [runId], references: [id], onDelete: Cascade)
+  document          Document?             @relation(fields: [documentId], references: [id], onDelete: SetNull)
+
+  @@index([runId])
+  @@index([tenantId, companyId])
+  @@map("sentroweb_check_results")
 }

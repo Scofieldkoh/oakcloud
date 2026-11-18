@@ -202,7 +202,9 @@ export const ModelName = {
   BusinessAssistantCapacitySlot: 'BusinessAssistantCapacitySlot',
   BizFileOperationReceipt: 'BizFileOperationReceipt',
   BizFileOperationEvidence: 'BizFileOperationEvidence',
-  BizFileOperationEffectIntent: 'BizFileOperationEffectIntent'
+  BizFileOperationEffectIntent: 'BizFileOperationEffectIntent',
+  SentrowebCheckRun: 'SentrowebCheckRun',
+  SentrowebCheckResult: 'SentrowebCheckResult'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -3390,6 +3392,57 @@ export const BizFileOperationEffectIntentScalarFieldEnum = {
 export type BizFileOperationEffectIntentScalarFieldEnum = (typeof BizFileOperationEffectIntentScalarFieldEnum)[keyof typeof BizFileOperationEffectIntentScalarFieldEnum]
 
 
+export const SentrowebCheckRunScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  companyId: 'companyId',
+  requestedById: 'requestedById',
+  status: 'status',
+  overallResult: 'overallResult',
+  errorCode: 'errorCode',
+  entityCount: 'entityCount',
+  creditsUsed: 'creditsUsed',
+  balanceBefore: 'balanceBefore',
+  claimToken: 'claimToken',
+  leaseExpiresAt: 'leaseExpiresAt',
+  startedAt: 'startedAt',
+  finishedAt: 'finishedAt',
+  createdAt: 'createdAt'
+} as const
+
+export type SentrowebCheckRunScalarFieldEnum = (typeof SentrowebCheckRunScalarFieldEnum)[keyof typeof SentrowebCheckRunScalarFieldEnum]
+
+
+export const SentrowebCheckResultScalarFieldEnum = {
+  id: 'id',
+  runId: 'runId',
+  tenantId: 'tenantId',
+  companyId: 'companyId',
+  position: 'position',
+  entityKind: 'entityKind',
+  searchType: 'searchType',
+  roles: 'roles',
+  sourceRefs: 'sourceRefs',
+  contactId: 'contactId',
+  name: 'name',
+  identifierType: 'identifierType',
+  identifier: 'identifier',
+  status: 'status',
+  matchCount: 'matchCount',
+  categoryCounts: 'categoryCounts',
+  matches: 'matches',
+  sentrowebReportId: 'sentrowebReportId',
+  monitorEnabled: 'monitorEnabled',
+  searchSubmittedAt: 'searchSubmittedAt',
+  errorCode: 'errorCode',
+  documentId: 'documentId',
+  evidencePngKey: 'evidencePngKey',
+  checkedAt: 'checkedAt'
+} as const
+
+export type SentrowebCheckResultScalarFieldEnum = (typeof SentrowebCheckResultScalarFieldEnum)[keyof typeof SentrowebCheckResultScalarFieldEnum]
+
+
 export const SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -3436,3 +3489,4 @@ export const NullsOrder = {
 } as const
 
 export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder]
+
