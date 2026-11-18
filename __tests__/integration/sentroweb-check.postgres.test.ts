@@ -685,6 +685,19 @@ describePostgres('Sentroweb check service (PostgreSQL)', () => {
       expect(dto.results?.find((r) => r.name === 'Jane Director')?.matches[0]).toHaveProperty('name');
     });
 
+    it('counts the credits the client reports: a repeated name that Sentroweb did not charge adds none', async () => {
+      const companyId = await makeFullCompany();
+      const client = makeClient();
+      client.scripts.set('Jane Director', { fixture: 'individual-clear', creditsCharged: 0 });
+      const { runId } = await queue(companyId, ['Jane Director', 'Mike Managing']);
+      await service.processRun(runId, { client, config: CONFIG });
+      const run = await prisma.sentrowebCheckRun.findUniqueOrThrow({ where: { id: runId }, include: { results: { orderBy: { position: 'asc' } } } });
+      expect(run).toMatchObject({ status: 'COMPLETED', overallResult: 'CLEAR', creditsUsed: 1 });
+      expect(run.results.map((r) => r.status)).toEqual(['CLEAR', 'CLEAR']);
+      // Even a free search counts as submitted for the cooldown.
+      await expect(queue(companyId)).rejects.toMatchObject({ code: 'COOLDOWN' });
+    });
+
     it('turns a would-be CLEAR without the PDF into ERROR EVIDENCE_MISSING and carries on', async () => {
       const companyId = await makeFullCompany();
       const client = makeClient();

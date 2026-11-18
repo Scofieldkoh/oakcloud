@@ -40,6 +40,12 @@ confirmation (**Run again anyway**). Only one run per company can be queued or r
 - **Credits:** 1 per confirmed search. The client checks the balance before the first search and
   fails with `INSUFFICIENT_CREDITS` without searching. The confirm box must say exactly
   "1 credit(s)"; otherwise the client clicks CANCEL and records `UNEXPECTED_CREDIT_COST`.
+  **A name Sentroweb has searched before is not charged again.** Sentroweb's quota check then
+  answers `deductCredit: false` with no unique names and the page searches at once, with no
+  confirm box. The client takes that path only on that exact answer and records zero credits for it
+  (`creditsUsed` counts what Sentroweb reports, so it can be lower than the number of names). A
+  quota answer that asks for credits but shows no box fails closed with `LAYOUT_CHANGED`, nothing
+  submitted. A free search still counts as submitted for the cooldown.
   Exporting the PDF appeared free in discovery (balance unchanged), but that was inferred from the
   balance only.
 - **Ongoing monitoring:** every Sentroweb search adds the name to the account's ongoing monitoring,

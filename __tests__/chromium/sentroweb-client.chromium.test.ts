@@ -186,6 +186,32 @@ describe('Sentroweb client against a fake Sentroweb', () => {
     expect(server.count('search')).toBe(0);
   });
 
+  it('a name searched before is free: no confirm dialog, nothing cancelled, zero credits reported', async () => {
+    const server = await start({ freeRepeats: true });
+    const session = await open(server, { requiredCredits: 1 });
+    const first = await session.search({ name: CLEAR_ENTITY, searchType: 'ENTITY' });
+    expect(first.creditsCharged).toBe(1);
+    expect(server.count('cancel-clicked')).toBe(0);
+
+    const second = await session.search({ name: CLEAR_ENTITY, searchType: 'ENTITY' });
+    expect(second.creditsCharged).toBe(0);
+    expect(second.pdf?.subarray(0, 4).toString('latin1')).toBe('%PDF');
+    expect(second.domTitles.length).toBeGreaterThan(0);
+    expect(second.json).toBeTruthy();
+    expect(server.count('checkquota')).toBe(2);
+    expect(server.count('search')).toBe(2);
+    expect(server.count('cancel-clicked')).toBe(0);
+  });
+
+  it('fails closed (LAYOUT_CHANGED, not submitted) when credits are due but no dialog appears', async () => {
+    const server = await start({ suppressModal: true });
+    const session = await open(server, { timeouts: { stepMs: 2_500 } });
+    const error = await failureOf(session.search({ name: CLEAR_ENTITY, searchType: 'ENTITY' }));
+    expect(error.code).toBe('LAYOUT_CHANGED');
+    expect(error.searchSubmitted).toBe(false);
+    expect(server.count('search')).toBe(0);
+  });
+
   it('does not read the placeholder "Balance: 0" the page shows until initializeApp answers', async () => {
     const server = await start({ balance: 372, initDelayMs: 2_000 });
     const session = await open(server, { requiredCredits: 2 });

@@ -67,6 +67,11 @@ export interface SentrowebSearchOutcome {
   pdf: Buffer | null;
   /** Screenshot of the result block only, or null when it could not be taken. */
   png: Buffer | null;
+  /**
+   * Credits the search cost: 1 after the confirm dialog, 0 when Sentroweb itself answered that
+   * nothing is deducted (a name that was searched before). Absent means 1.
+   */
+  creditsCharged?: number;
 }
 
 export interface SentrowebSession {
@@ -145,6 +150,12 @@ interface PageState {
   search: CapturedSearch | null;
   /** The page's own `initializeApp` call answered 200: only then is the header balance real. */
   appInitialized: boolean;
+  /**
+   * The page's own quota check for the search that was just started. `free` only when Sentroweb
+   * answered 200 with `deductCredit: false` and no unique names: nothing is deducted and the page
+   * searches without a confirm dialog.
+   */
+  quota: { status: number; free: boolean; deductCredit: boolean | null; uniqueNames: number | null } | null;
   /** The last few XHR calls as `METHOD path status` (ids masked), for the failure log only. */
   recentCalls: string[];
 }
@@ -321,6 +332,7 @@ class Session implements SentrowebSession {
     await this.phase('open-form', () => this.openSearchForm(signal));
     state.search = null;
 
+    state.quota = null;
     await this.phase('type-name', async () => {
       await page.type(selectors.search.nameInput, request.name);
       // The name must still be what was typed (a late redraw of the form can clear it).
@@ -339,22 +351,29 @@ class Session implements SentrowebSession {
     });
     await this.phase('click-search', () => page.click(selectors.search.submit));
 
-    const cost = await this.phase('confirm-modal', () => this.readConfirmCost(signal));
-    if (cost !== SENTROWEB_CREDITS_PER_SEARCH) {
-      await this.clickModalButton(selectors.confirmModal.root, selectors.confirmModal.cancel).catch(() => undefined);
-      throw new SentrowebError('UNEXPECTED_CREDIT_COST');
-    }
-
-    // The credit may be spent from the very next instruction on.
+    const gate = await this.phase('confirm-modal', () => this.awaitConfirmOrFree(signal));
+    // The search may be sent (and a credit spent) from the very next instruction on.
     const submitted = { searchSubmitted: true };
-    try {
-      await this.clickModalButton(selectors.confirmModal.root, selectors.confirmModal.confirm);
-    } catch (error) {
-      throw error instanceof SentrowebError
-        ? new SentrowebError(error.code, submitted)
-        : new SentrowebError('LAYOUT_CHANGED', submitted);
+    let creditsCharged: number = SENTROWEB_CREDITS_PER_SEARCH;
+    if (gate.kind === 'free') {
+      // Sentroweb said nothing is deducted for this name and the page searches by itself. There is
+      // no dialog to confirm, and nothing to cancel: the search call is already on its way.
+      creditsCharged = 0;
+      log.info('Sentroweb search: a repeated name, nothing is deducted (no confirm dialog)');
+    } else {
+      if (gate.cost !== SENTROWEB_CREDITS_PER_SEARCH) {
+        await this.clickModalButton(selectors.confirmModal.root, selectors.confirmModal.cancel).catch(() => undefined);
+        throw new SentrowebError('UNEXPECTED_CREDIT_COST');
+      }
+      try {
+        await this.clickModalButton(selectors.confirmModal.root, selectors.confirmModal.confirm);
+      } catch (error) {
+        throw error instanceof SentrowebError
+          ? new SentrowebError(error.code, submitted)
+          : new SentrowebError('LAYOUT_CHANGED', submitted);
+      }
+      log.info('Sentroweb search: confirmed');
     }
-    log.info('Sentroweb search: confirmed');
 
     try {
       const domTitles = await this.waitForResult(signal);
@@ -362,7 +381,7 @@ class Session implements SentrowebSession {
       const json = this.parseCaptured(captured);
       const png = await this.screenshotResult();
       const pdf = await this.exportPdf(signal);
-      return { json, domTitles, pdf, png };
+      return { json, domTitles, pdf, png, creditsCharged };
     } catch (error) {
       // From CONFIRM on, every failure carries the flag so nothing submits this search again.
       throw error instanceof SentrowebError
@@ -414,6 +433,11 @@ class Session implements SentrowebSession {
         code,
         appInitialized: this.state.appInitialized,
         recentCalls: this.state.recentCalls,
+        quota: this.state.quota && {
+          status: this.state.quota.status,
+          deductCredit: this.state.quota.deductCredit,
+          uniqueNames: this.state.quota.uniqueNames,
+        },
         form: await this.describeForm(),
       });
       throw error;
@@ -530,9 +554,18 @@ class Session implements SentrowebSession {
     }
   }
 
-  private async readConfirmCost(signal?: AbortSignal): Promise<number> {
+  /**
+   * After SEARCH, Sentroweb answers one of two ways. Normally the confirm dialog ("Credit
+   * Deduction", with the cost) opens and nothing happens until CONFIRM. For a name that was searched
+   * before, the page's quota check says `deductCredit: false` with no unique names and the page
+   * searches at once. The free path is taken only on that exact answer; a quota that asks for
+   * credits but shows no dialog, or any other answer, is a changed page and fails closed.
+   */
+  private async awaitConfirmOrFree(
+    signal?: AbortSignal,
+  ): Promise<{ kind: 'modal'; cost: number } | { kind: 'free' }> {
     const { root, header, content, headerText } = SENTROWEB_SELECTORS.confirmModal;
-    const modal = await pollUntil(
+    const seen = await pollUntil(
       async () => {
         const found = await this.page.evaluate(
           (rootSelector, headerSelector, contentSelector) => {
@@ -547,14 +580,17 @@ class Session implements SentrowebSession {
           header,
           content,
         );
-        return found && found.content ? found : null;
+        if (found && found.content) return { kind: 'modal' as const, modal: found };
+        if (this.state.quota?.free) return { kind: 'free' as const };
+        return null;
       },
       { timeoutMs: this.stepMs, signal, onTimeout: () => new SentrowebError('LAYOUT_CHANGED') },
     );
-    if (!normalise(modal.header).includes(headerText)) throw new SentrowebError('LAYOUT_CHANGED');
-    const match = SENTROWEB_PATTERNS.creditCost.exec(modal.content);
+    if (seen.kind === 'free') return { kind: 'free' };
+    if (!normalise(seen.modal.header).includes(headerText)) throw new SentrowebError('LAYOUT_CHANGED');
+    const match = SENTROWEB_PATTERNS.creditCost.exec(seen.modal.content);
     // A modal we cannot read is not "1 credit(s)": treat it as an unexpected cost and cancel.
-    return match ? Number.parseInt(match[1], 10) : -1;
+    return { kind: 'modal', cost: match ? Number.parseInt(match[1], 10) : -1 };
   }
 
   private async clickModalButton(rootSelector: string, buttonSelector: string): Promise<void> {
@@ -769,6 +805,22 @@ async function captureResponse(state: PageState, response: HTTPResponse): Promis
     if (pathname.endsWith(SENTROWEB_XHR.authenticate)) {
       state.authCount += 1;
       state.authStatus = response.status();
+    } else if (pathname.endsWith(SENTROWEB_XHR.checkQuota)) {
+      type QuotaBody = { deductCredit?: unknown; uniqueNames?: unknown };
+      let parsed: QuotaBody | null;
+      try {
+        parsed = JSON.parse(await response.text()) as QuotaBody;
+      } catch {
+        parsed = null;
+      }
+      const deductCredit = typeof parsed?.deductCredit === 'boolean' ? parsed.deductCredit : null;
+      const uniqueNames = Array.isArray(parsed?.uniqueNames) ? parsed.uniqueNames.length : null;
+      state.quota = {
+        status: response.status(),
+        deductCredit,
+        uniqueNames,
+        free: response.status() === 200 && deductCredit === false && uniqueNames === 0,
+      };
     } else if (pathname.endsWith(SENTROWEB_XHR.initializeApp)) {
       if (response.status() === 200) state.appInitialized = true;
     } else if (pathname.endsWith(SENTROWEB_XHR.search)) {
@@ -811,7 +863,7 @@ export const sentrowebClient: SentrowebClient = {
       page.setDefaultNavigationTimeout(config.timeouts.stepMs);
       await page.setViewport({ width: 1400, height: 1000 });
 
-      const state: PageState = { authCount: 0, authStatus: null, search: null, appInitialized: false, recentCalls: [] };
+      const state: PageState = { authCount: 0, authStatus: null, search: null, appInitialized: false, quota: null, recentCalls: [] };
       page.on('response', (response) => {
         void captureResponse(state, response);
       });

@@ -16,7 +16,7 @@ import { loadCase, type FixtureCase } from './sentroweb-fixtures';
  */
 
 export type Script =
-  | { fixture: FixtureCase; pdf?: boolean; png?: boolean }
+  | { fixture: FixtureCase; pdf?: boolean; png?: boolean; creditsCharged?: number }
   | { throws: SentrowebError }
   | { outcome: SentrowebSearchOutcome };
 
@@ -67,6 +67,7 @@ export function makeClient(): FakeClient {
           domTitles: loaded.titles,
           pdf: script.pdf === false ? null : Buffer.from(`%PDF-1.4\n% report for test\n${'x'.repeat(200)}`),
           png: script.png === false ? null : Buffer.from('89504e470d0a1a0a', 'hex'),
+          ...(script.creditsCharged === undefined ? {} : { creditsCharged: script.creditsCharged }),
         };
       },
       async close() {

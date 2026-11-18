@@ -31,6 +31,14 @@ export interface FakeOptions {
    */
   initDelayMs: number;
   initStatus: number;
+  /**
+   * Like the real site: a name that was already searched is not charged again. The quota answer
+   * says `deductCredit: false` with no unique names, and the page searches at once, with no
+   * confirm dialog. Off by default so most tests see the dialog every time.
+   */
+  freeRepeats: boolean;
+  /** The quota answers `deductCredit: true` but the page shows no dialog (a changed page). */
+  suppressModal: boolean;
   /** Delay before the search endpoint answers. */
   searchDelayMs: number;
   /** Status of the PDF download endpoint. */
@@ -53,6 +61,8 @@ const DEFAULTS: FakeOptions = {
   requireOtp: false,
   unexpectedLanding: false,
   searchDelayMs: 0,
+  freeRepeats: false,
+  suppressModal: false,
   initDelayMs: 400,
   initStatus: 200,
   pdfStatus: 200,
@@ -197,11 +207,7 @@ function mainPage(options: FakeOptions): string {
     const response = await fetch('/sentroweb-service/account/private/checkquota', {
       method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(query()) });
     const quota = await response.json();
-    host.innerHTML = quota.modalHtml;
-    host.querySelector('button.negative').addEventListener('click', () => {
-      fetch('/__event?type=cancel-clicked'); host.innerHTML = '';
-    });
-    host.querySelector('button.positive').addEventListener('click', async () => {
+    const runSearch = async () => {
       host.innerHTML = '';
       const search = await fetch('/sentroweb-service/screening/private/search', {
         method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(query()) });
@@ -215,7 +221,14 @@ function mainPage(options: FakeOptions): string {
         document.querySelectorAll('#result ' + selector).forEach((el) =>
           el.addEventListener('click', () => fetch('/__forbidden?what=' + what)));
       }
+    };
+    if (quota.deductCredit === false) { await runSearch(); return; }
+    if (quota.noModal) return;
+    host.innerHTML = quota.modalHtml;
+    host.querySelector('button.negative').addEventListener('click', () => {
+      fetch('/__event?type=cancel-clicked'); host.innerHTML = '';
     });
+    host.querySelector('button.positive').addEventListener('click', runSearch);
   });
 
   form.querySelector('.right-export-button').addEventListener('click', async () => {
@@ -239,6 +252,7 @@ export async function startFakeSentroweb(overrides: Partial<FakeOptions> = {}): 
   const events: FakeEvent[] = [];
   const searches: FakeSentroweb['searches'] = [];
   let mainRequests = 0;
+  const searchedNames = new Set<string>();
 
   const hasSession = (request: IncomingMessage) => /(?:^|;\s*)sw_session=ok/.test(request.headers.cookie ?? '');
   const html = (response: ServerResponse, body: string, status = 200) => {
@@ -294,10 +308,21 @@ export async function startFakeSentroweb(overrides: Partial<FakeOptions> = {}): 
       }
 
       if (route === 'POST /sentroweb-service/account/private/checkquota') {
-        await readBody(request);
+        const quotaRaw = await readBody(request);
         events.push({ type: 'checkquota' });
+        const quotaBody = JSON.parse(quotaRaw) as { queries: Array<Record<string, unknown>> };
+        const quotaName = String(quotaBody.queries[0]?.name ?? '');
+        if (options.freeRepeats && searchedNames.has(quotaName)) {
+          return json(response, { deductCredit: false, currentBalance: options.balance, uniqueNames: [] });
+        }
         const modalHtml = fixtureText('confirm-modal.html').replace('1 credit(s)', `${options.modalCost} credit(s)`);
-        return json(response, { deductCredit: true, currentBalance: options.balance, uniqueNames: [], modalHtml });
+        return json(response, {
+          deductCredit: true,
+          currentBalance: options.balance,
+          uniqueNames: [quotaName],
+          modalHtml,
+          noModal: options.suppressModal,
+        });
       }
 
       if (route === 'POST /sentroweb-service/screening/private/search') {
@@ -312,6 +337,7 @@ export async function startFakeSentroweb(overrides: Partial<FakeOptions> = {}): 
           fuzzy: query.fuzzy === true,
         });
         events.push({ type: 'search', detail: name });
+        searchedNames.add(name);
         if (options.searchDelayMs > 0) await sleep(options.searchDelayMs);
         if (options.searchStatus !== 200) return json(response, { error: 'boom' }, options.searchStatus);
         const payload = cloneFixtureJson<Array<Record<string, unknown>>>(
