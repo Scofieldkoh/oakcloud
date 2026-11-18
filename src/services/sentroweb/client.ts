@@ -145,6 +145,8 @@ interface PageState {
   search: CapturedSearch | null;
   /** The page's own `initializeApp` call answered 200: only then is the header balance real. */
   appInitialized: boolean;
+  /** The last few XHR calls as `METHOD path status` (ids masked), for the failure log only. */
+  recentCalls: string[];
 }
 
 function normalise(text: string): string {
@@ -411,6 +413,7 @@ class Session implements SentrowebSession {
         phase: name,
         code,
         appInitialized: this.state.appInitialized,
+        recentCalls: this.state.recentCalls,
         form: await this.describeForm(),
       });
       throw error;
@@ -756,6 +759,11 @@ async function shutdown(browser: Browser, context: BrowserContext | null, downlo
 
 async function captureResponse(state: PageState, response: HTTPResponse): Promise<void> {
   try {
+    const resourceType = response.request().resourceType();
+    if (resourceType === 'xhr' || resourceType === 'fetch') {
+      const masked = new URL(response.url()).pathname.replace(/[A-Za-z0-9_-]{20,}/g, '<id>');
+      state.recentCalls = [...state.recentCalls, `${response.request().method()} ${masked} ${response.status()}`].slice(-8);
+    }
     if (response.request().method() !== 'POST') return;
     const pathname = new URL(response.url()).pathname;
     if (pathname.endsWith(SENTROWEB_XHR.authenticate)) {
@@ -803,7 +811,7 @@ export const sentrowebClient: SentrowebClient = {
       page.setDefaultNavigationTimeout(config.timeouts.stepMs);
       await page.setViewport({ width: 1400, height: 1000 });
 
-      const state: PageState = { authCount: 0, authStatus: null, search: null, appInitialized: false };
+      const state: PageState = { authCount: 0, authStatus: null, search: null, appInitialized: false, recentCalls: [] };
       page.on('response', (response) => {
         void captureResponse(state, response);
       });
