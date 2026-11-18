@@ -513,6 +513,21 @@ Delete a note.
 
 ---
 
+### Sentroweb checks
+
+Screening of the company, its current directors and its current shareholders on Sentroweb. Rules, error codes and side effects (credits, ongoing monitoring) are in [Sentroweb check](../features/SENTROWEB_CHECK.md). Reading needs `company:read`, starting a run needs `company:update`; a company outside the caller's workspace answers `404`. Error bodies are `{ error, code, details? }` with fixed messages.
+
+| Endpoint | Permission | Description |
+|----------|------------|-------------|
+| `GET /api/companies/[id]/sentroweb-checks/candidates` | `company:read` | Who can be screened (`key`, `name`, `searchType`, `roles`), `configured`, `maxEntities` (10), `creditsPerSearch` (1), `activeRunId`, `cooldownUntil` |
+| `POST /api/companies/[id]/sentroweb-checks` | `company:update` | Body `{ entityKeys: string[], force?: boolean }`. `202 { runId }`; `400` invalid body or keys no longer current; `409 ALREADY_RUNNING` or `COOLDOWN` (`details.cooldownUntil`); `422 TOO_MANY_ENTITIES` or `NO_ENTITIES_SELECTED`; `503 SENTROWEB_NOT_CONFIGURED` |
+| `GET /api/companies/[id]/sentroweb-checks` | `company:read` | Run history, newest first. Query: `limit` (1-50, default 10), `cursor` (opaque `(createdAt, id)` cursor). Returns `{ runs, nextCursor }` |
+| `GET /api/companies/[id]/sentroweb-checks/[runId]` | `company:read` | `{ run }` with per-entity `results` (status `CLEAR`, `POSSIBLE_MATCH`, `ERROR`, `NOT_RUN`, counts per category, whitelisted match details, `documentId` of the PDF report, `hasScreenshot`) |
+| `GET /api/companies/[id]/sentroweb-checks/[runId]/results/[resultId]/screenshot` | `company:read` | `image/png`; recorded as a `DOWNLOAD` audit entry |
+| `GET /api/companies/[id]/sentroweb-checks/[runId]/results/[resultId]/report` | `company:read` | `application/pdf`: Sentroweb's report, also filed as a company document of type `SENTROWEB_REPORT`; recorded as a `DOWNLOAD` audit entry. `404` when the result has no filed report |
+
+---
+
 ### POST /api/companies/bulk
 Bulk operations on companies.
 

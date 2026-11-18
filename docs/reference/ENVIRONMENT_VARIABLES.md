@@ -204,6 +204,28 @@ Generate a value with:
 openssl rand -hex 32
 ```
 
+## Sentroweb Check
+
+The company **Sentroweb check** drives the Sentroweb web app with a headless browser (see
+[Sentroweb check](../features/SENTROWEB_CHECK.md)). The credentials belong to one shared Sentroweb
+login and are read only from the environment; never commit them, log them or paste them into
+tickets. There is no one-time code. The feature is off unless `SENTROWEB_ENABLED=true` **and** the
+four required settings are present; otherwise the API answers `503 SENTROWEB_NOT_CONFIGURED`.
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `SENTROWEB_ENABLED` | Yes | off | `true` switches the feature on |
+| `SENTROWEB_BASE_URL` | Yes | - | Sentroweb address; only its origin is used. Must be `https` (plain `http` only for `127.0.0.1`/`localhost`, used by the tests) |
+| `SENTROWEB_ACCOUNT_ID` | Yes | - | Company registration number shown on the Sentroweb login page |
+| `SENTROWEB_USERNAME` | Yes | - | Sentroweb login name |
+| `SENTROWEB_PASSWORD` | Yes | - | Sentroweb password |
+| `SENTROWEB_STEP_TIMEOUT_MS` | No | `30000` | Limit for each navigation, click and short wait |
+| `SENTROWEB_RUN_TIMEOUT_MS` | No | `600000` | Limit for a whole run; the lease is this plus 2 minutes |
+| `SENTROWEB_SEARCH_DELAY_MS` | No | `2000` | Pause between two searches |
+
+Chrome must be installed (`CHROME_PATH` or the default locations), as for PDF export. Recovery of
+interrupted runs uses the scheduler (`SCHEDULER_ENABLED`).
+
 ## Task Scheduler
 
 The in-process scheduler is started by the app and can be configured per task.
