@@ -240,8 +240,11 @@ describe('Sentroweb client against a fake Sentroweb', () => {
     const server = await start({ searchDelayMs: 6_000 });
     const session = await open(server, { timeouts: { resultMs: 30_000 } });
     const controller = new AbortController();
-    setTimeout(() => controller.abort(), 1_200);
-    const error = await failureOf(session.search({ name: CLEAR_ENTITY, searchType: 'ENTITY' }, { signal: controller.signal }));
+    // Abort only once the search was really submitted (the form needs a moment to become usable).
+    const watcher = setInterval(() => {
+      if (server.count('search') > 0) controller.abort();
+    }, 50);
+    const error = await failureOf(session.search({ name: CLEAR_ENTITY, searchType: 'ENTITY' }, { signal: controller.signal })).finally(() => clearInterval(watcher));
     expect(error.code).toBe('TIMEOUT');
     expect(error.searchSubmitted).toBe(true);
     expect(server.count('search')).toBe(1);

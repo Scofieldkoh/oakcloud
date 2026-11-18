@@ -161,7 +161,9 @@ function mainPage(options: FakeOptions): string {
     submit.disabled = !ready;
     submit.classList.toggle('disabled', !ready);
   }
-  boxes.forEach((b) => b.addEventListener('click', () => {
+  // Like the real page, the checkboxes only react once the page's initializeApp call has answered:
+  // a click right after the form appears is ignored.
+  window.__armBoxes = () => boxes.forEach((b) => b.addEventListener('click', () => {
     const label = labelOf(b);
     b.classList.toggle('checked');
     if (b.classList.contains('checked') && label === 'Individual') box('Entity').classList.remove('checked');
@@ -174,6 +176,7 @@ function mainPage(options: FakeOptions): string {
     if (!response.ok) return;
     const body = await response.json();
     document.getElementById('balance').textContent = 'Balance: ' + body.balance;
+    window.__armBoxes();
   });
 
   const menu = document.getElementById('menu');

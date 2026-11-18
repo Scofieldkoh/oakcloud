@@ -45,6 +45,12 @@ const BROWSER_ENV_ALLOWLIST = ['PATH', 'HOME', 'LANG', 'LC_ALL', 'TMPDIR', 'TZ',
 const POLL_INTERVAL_MS = 150;
 /** How long the header balance must stay unchanged after `initializeApp` before it is trusted. */
 const BALANCE_SETTLE_MS = 900;
+/** Quiet time the network needs after `initializeApp` before the form is used, and its upper bound. */
+const PAGE_IDLE_MS = 800;
+const PAGE_IDLE_MAX_MS = 10_000;
+/** Clicks allowed per checkbox before the form is declared unusable (state is re-read before each). */
+const CHECKBOX_ATTEMPTS = 3;
+const CHECKBOX_SETTLE_MS = 400;
 const CLOSE_STEP_TIMEOUT_MS = 5_000;
 
 export interface SentrowebSearchRequest {
@@ -314,7 +320,12 @@ class Session implements SentrowebSession {
     state.search = null;
 
     await page.type(selectors.search.nameInput, request.name);
+    // The name must still be what was typed (a late redraw of the form can clear it).
+    const typed = await page.$eval(selectors.search.nameInput, (input) => (input as HTMLInputElement).value);
+    if (typed !== request.name) throw new SentrowebError('LAYOUT_CHANGED');
     await this.setSearchType(request.searchType, signal);
+    const typedAfter = await page.$eval(selectors.search.nameInput, (input) => (input as HTMLInputElement).value);
+    if (typedAfter !== request.name) throw new SentrowebError('LAYOUT_CHANGED');
     await pollUntil(async () => (await page.$(selectors.search.submitEnabled)) !== null, {
       timeoutMs: this.stepMs,
       signal,
@@ -359,6 +370,7 @@ class Session implements SentrowebSession {
   private async openSearchForm(signal?: AbortSignal): Promise<void> {
     const { page } = this;
     const open = async () => {
+      this.state.appInitialized = false;
       await this.goto(SENTROWEB_PATHS.search, signal);
       if (this.isOnLoginPage()) return false;
       await pollUntil(async () => (await page.$(SENTROWEB_SELECTORS.search.nameInput)) !== null || this.isOnLoginPage(), {
@@ -366,7 +378,9 @@ class Session implements SentrowebSession {
         signal,
         onTimeout: () => new SentrowebError('LAYOUT_CHANGED'),
       });
-      return !this.isOnLoginPage();
+      if (this.isOnLoginPage()) return false;
+      await this.awaitPageReady(signal);
+      return true;
     };
 
     if (await open()) return;
@@ -377,6 +391,24 @@ class Session implements SentrowebSession {
     log.warn('Sentroweb session expired between searches; logging in once more');
     await this.login(signal);
     if (!(await open())) throw new SentrowebError('SESSION_EXPIRED');
+  }
+
+  /**
+   * The form is drawn before the page is wired up: on the real site a click on a checkbox label
+   * right after the form appears is ignored. The page is ready once its own `initializeApp` call
+   * answered 200 and the network went quiet; without that, nothing is typed or clicked.
+   */
+  private async awaitPageReady(signal?: AbortSignal): Promise<void> {
+    await pollUntil(async () => this.state.appInitialized, {
+      timeoutMs: this.stepMs,
+      signal,
+      onTimeout: () => new SentrowebError('LAYOUT_CHANGED'),
+    });
+    // Best effort: a page that never goes quiet is still checked by the state verification below.
+    await this.page
+      .waitForNetworkIdle({ idleTime: PAGE_IDLE_MS, timeout: Math.min(this.stepMs, PAGE_IDLE_MAX_MS) })
+      .catch(() => undefined);
+    throwIfAborted(signal);
   }
 
   private async checkboxStates(): Promise<Array<{ label: string; checked: boolean }>> {
@@ -434,9 +466,13 @@ class Session implements SentrowebSession {
       const states = await this.checkboxStates();
       const current = states.find((state) => state.label === label);
       if (!current) throw new SentrowebError('LAYOUT_CHANGED');
-      if (current.checked !== wanted) {
+      // Re-read the box before every click, so a click that did register is never undone.
+      for (let attempt = 0; attempt < CHECKBOX_ATTEMPTS; attempt += 1) {
+        const now = (await this.checkboxStates()).find((state) => state.label === label);
+        if (!now) throw new SentrowebError('LAYOUT_CHANGED');
+        if (now.checked === wanted) break;
         await this.clickCheckboxLabel(label);
-        await sleep(100);
+        await sleep(CHECKBOX_SETTLE_MS);
       }
     }
 
