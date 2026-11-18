@@ -752,6 +752,32 @@ export async function getRun(tenantId: string, companyId: string, runId: string)
   return toRunDto(row, row.results);
 }
 
+/** The PDF report Sentroweb produced for a result, scoped by tenant, company and run. */
+export async function getResultReport(
+  tenantId: string,
+  companyId: string,
+  runId: string,
+  resultId: string,
+): Promise<{ pdf: Buffer; fileName: string; documentId: string }> {
+  const result = await prisma.sentrowebCheckResult.findFirst({
+    where: { id: resultId, runId, tenantId, companyId, documentId: { not: null } },
+    select: { documentId: true },
+  });
+  if (!result?.documentId) throw new NotFoundError('Report not found');
+  const document = await prisma.document.findFirst({
+    where: {
+      id: result.documentId,
+      tenantId,
+      companyId,
+      documentType: SENTROWEB_REPORT_DOCUMENT_TYPE,
+      deletedAt: null,
+    },
+    select: { id: true, storageKey: true, originalFileName: true },
+  });
+  if (!document) throw new NotFoundError('Report not found');
+  return { pdf: await storage.download(document.storageKey), fileName: document.originalFileName, documentId: document.id };
+}
+
 /** The result's screenshot bytes, scoped by tenant, company and run. */
 export async function getResultScreenshot(
   tenantId: string,

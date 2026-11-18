@@ -51,7 +51,7 @@ export interface SentrowebSearchRequest {
 }
 
 export interface SentrowebSearchOutcome {
-  /** The parsed `screening/private/search` response, or null when it was not captured. */
+  /** The parsed search response the page receives, or null when it was not captured. */
   json: unknown;
   /** The `<Category> [N matches]` accordion titles. */
   domTitles: string[];
@@ -534,7 +534,7 @@ class Session implements SentrowebSession {
     }
   }
 
-  /** EXPORT → "Report Generation Success" → the download link. Null when any step fails. */
+  /** EXPORT → the success box → the download link. Null when any step fails. */
   private async exportPdf(signal?: AbortSignal): Promise<Buffer | null> {
     const { exportButton, exportButtonText } = SENTROWEB_SELECTORS.search;
     const { root, successText, link } = SENTROWEB_SELECTORS.exportModal;

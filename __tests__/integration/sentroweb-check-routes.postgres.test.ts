@@ -84,6 +84,7 @@ describePostgres('Sentroweb check routes (PostgreSQL)', () => {
     candidates: typeof import('@/app/api/companies/[id]/sentroweb-checks/candidates/route');
     run: typeof import('@/app/api/companies/[id]/sentroweb-checks/[runId]/route');
     screenshot: typeof import('@/app/api/companies/[id]/sentroweb-checks/[runId]/results/[resultId]/screenshot/route');
+    report: typeof import('@/app/api/companies/[id]/sentroweb-checks/[runId]/results/[resultId]/report/route');
   };
   const savedEnv: Record<string, string | undefined> = {};
   const bodies: string[] = [];
@@ -149,6 +150,11 @@ describePostgres('Sentroweb check routes (PostgreSQL)', () => {
       params: Promise.resolve({ id: companyId, runId, resultId }),
     });
 
+  const report = (companyId: string, runId: string, resultId: string) =>
+    routes.report.GET(new NextRequest(url(companyId, `/${runId}/results/${resultId}/report`)), {
+      params: Promise.resolve({ id: companyId, runId, resultId }),
+    });
+
   async function waitForRun(runId: string, status: 'COMPLETED' | 'FAILED') {
     for (let i = 0; i < 200; i += 1) {
       const run = await prisma.sentrowebCheckRun.findUniqueOrThrow({ where: { id: runId } });
@@ -171,6 +177,7 @@ describePostgres('Sentroweb check routes (PostgreSQL)', () => {
       candidates: await import('@/app/api/companies/[id]/sentroweb-checks/candidates/route'),
       run: await import('@/app/api/companies/[id]/sentroweb-checks/[runId]/route'),
       screenshot: await import('@/app/api/companies/[id]/sentroweb-checks/[runId]/results/[resultId]/screenshot/route'),
+      report: await import('@/app/api/companies/[id]/sentroweb-checks/[runId]/results/[resultId]/report/route'),
     };
 
     suffix = randomUUID();
@@ -262,8 +269,9 @@ describePostgres('Sentroweb check routes (PostgreSQL)', () => {
         routes.candidates.GET(new NextRequest(url(companyId, '/candidates')), { params: Promise.resolve({ id: companyId }) }),
         detail(companyId, id),
         screenshot(companyId, id, id),
+        report(companyId, id, id),
       ]);
-      expect(responses.map((r) => r.status)).toEqual([401, 401, 401, 401, 401]);
+      expect(responses.map((r) => r.status)).toEqual([401, 401, 401, 401, 401, 401]);
     });
 
     it('answers 403 without company:read on every read route and without company:update on POST', async () => {
@@ -278,8 +286,9 @@ describePostgres('Sentroweb check routes (PostgreSQL)', () => {
         routes.candidates.GET(new NextRequest(url(companyId, '/candidates')), { params: Promise.resolve({ id: companyId }) }),
         detail(companyId, id),
         screenshot(companyId, id, id),
+        report(companyId, id, id),
       ]);
-      expect(denied.map((r) => r.status)).toEqual([403, 403, 403, 403, 403]);
+      expect(denied.map((r) => r.status)).toEqual([403, 403, 403, 403, 403, 403]);
 
       // company:read alone may look but not run
       as('reader');
@@ -299,8 +308,9 @@ describePostgres('Sentroweb check routes (PostgreSQL)', () => {
         routes.candidates.GET(new NextRequest(url(foreign, '/candidates')), { params: Promise.resolve({ id: foreign }) }),
         detail(foreign, id),
         screenshot(foreign, id, id),
+        report(foreign, id, id),
       ]);
-      expect(responses.map((r) => r.status)).toEqual([404, 404, 404, 404, 404]);
+      expect(responses.map((r) => r.status)).toEqual([404, 404, 404, 404, 404, 404]);
       expect(await prisma.sentrowebCheckRun.count({ where: { companyId: foreign } })).toBe(0);
     });
 
@@ -580,6 +590,60 @@ describePostgres('Sentroweb check routes (PostgreSQL)', () => {
       expect((await screenshot(otherCompany, runId, result.id)).status).toBe(404);
       expect((await screenshot(companyId, randomUUID(), result.id)).status).toBe(404);
       expect((await screenshot(companyId, runId, 'nope')).status).toBe(400);
+    });
+  });
+
+  // --- PDF reports ---------------------------------------------------------------------------------
+
+  describe('GET report', () => {
+    it('streams the filed PDF with safe headers and writes a DOWNLOAD audit row', async () => {
+      useClient();
+      const companyId = await makeCompany();
+      const keys = await candidateKeys(companyId);
+      as('updater');
+      const { runId } = await read(await post(companyId, { entityKeys: keys.slice(0, 1) }));
+      await waitForRun(runId, 'COMPLETED');
+      const result = await prisma.sentrowebCheckResult.findFirstOrThrow({ where: { runId } });
+      expect(result.documentId).not.toBeNull();
+
+      as('reader');
+      const response = await report(companyId, runId, result.id);
+      expect(response.status).toBe(200);
+      expect(response.headers.get('content-type')).toBe('application/pdf');
+      expect(response.headers.get('cache-control')).toBe('private, no-store');
+      expect(response.headers.get('content-disposition')).toMatch(/^inline;/);
+      expect(Buffer.from(await response.arrayBuffer()).subarray(0, 4).toString('latin1')).toBe('%PDF');
+
+      const audit = await prisma.auditLog.findMany({ where: { entityType: 'Document', entityId: result.documentId!, action: 'DOWNLOAD' } });
+      expect(audit).toHaveLength(1);
+      expect(audit[0]).toMatchObject({ userId: users.reader, companyId, tenantId });
+    });
+
+    it('answers 404 without a filed report, for a deleted Document and across runs and companies', async () => {
+      useClient((c) => {
+        c.scripts.set('Route Test Pte Ltd', { fixture: 'entity-clear', pdf: false });
+        c.scripts.set('Dan Director', { fixture: 'individual-clear' });
+      });
+      const companyId = await makeCompany();
+      const otherCompany = await makeCompany();
+      const keys = await candidateKeys(companyId);
+      as('updater');
+      const { runId } = await read(await post(companyId, { entityKeys: keys.slice(0, 2) }));
+      await waitForRun(runId, 'COMPLETED');
+      const results = await prisma.sentrowebCheckResult.findMany({ where: { runId }, orderBy: { position: 'asc' } });
+      const [withoutPdf, withPdf] = results;
+      expect(withoutPdf.documentId).toBeNull();
+      expect(withPdf.documentId).not.toBeNull();
+
+      as('reader');
+      expect((await report(companyId, runId, withoutPdf.id)).status).toBe(404);
+      expect((await report(otherCompany, runId, withPdf.id)).status).toBe(404);
+      expect((await report(companyId, randomUUID(), withPdf.id)).status).toBe(404);
+      expect((await report(companyId, runId, 'nope')).status).toBe(400);
+      expect((await report(companyId, runId, withPdf.id)).status).toBe(200);
+
+      await prisma.document.update({ where: { id: withPdf.documentId! }, data: { deletedAt: new Date() } });
+      expect((await report(companyId, runId, withPdf.id)).status).toBe(404);
     });
   });
 
