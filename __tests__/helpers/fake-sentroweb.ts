@@ -24,6 +24,13 @@ export interface FakeOptions {
   requireOtp: boolean;
   /** The main page loads without the search form (an unexpected post-login page). */
   unexpectedLanding: boolean;
+  /**
+   * The real header shows "Balance: 0" until the page's initializeApp call answers (then the real
+   * number). `initDelayMs` is how long that call takes; `initStatus` is its status (non-200 leaves
+   * the placeholder in place).
+   */
+  initDelayMs: number;
+  initStatus: number;
   /** Delay before the search endpoint answers. */
   searchDelayMs: number;
   /** Status of the PDF download endpoint. */
@@ -46,6 +53,8 @@ const DEFAULTS: FakeOptions = {
   requireOtp: false,
   unexpectedLanding: false,
   searchDelayMs: 0,
+  initDelayMs: 400,
+  initStatus: 200,
   pdfStatus: 200,
   pdfDelayMs: 0,
   searchStatus: 200,
@@ -122,7 +131,7 @@ function mainPage(options: FakeOptions): string {
   return `<!doctype html><html><head><title>Fake Sentroweb</title><style>${PAGE_STYLE}</style></head><body>
 <div id="header">
   <i class="bars icon" id="burger"></i>
-  <span>Balance: ${options.balance}</span>
+  <span id="balance">Balance: 0</span>
   <div class="ui menu" id="menu" style="display:none">
     <a class="item" id="menu-cdd">CDD Dashboard</a>
     <a class="item" id="menu-manage">Manage Ongoing Monitoring</a>
@@ -160,6 +169,12 @@ function mainPage(options: FakeOptions): string {
     refresh();
   }));
   nameInput.addEventListener('input', refresh);
+
+  fetch('/sentroweb-service/account/private/initializeApp', { method: 'POST' }).then(async (response) => {
+    if (!response.ok) return;
+    const body = await response.json();
+    document.getElementById('balance').textContent = 'Balance: ' + body.balance;
+  });
 
   const menu = document.getElementById('menu');
   document.getElementById('burger').addEventListener('click', () => { menu.style.display = menu.style.display === 'none' ? 'block' : 'none'; });
@@ -268,6 +283,12 @@ export async function startFakeSentroweb(overrides: Partial<FakeOptions> = {}): 
       }
 
       if (!hasSession(request) && url.pathname.startsWith('/sentroweb-service/')) return json(response, {}, 401);
+
+      if (route === 'POST /sentroweb-service/account/private/initializeApp') {
+        await sleep(options.initDelayMs);
+        if (options.initStatus !== 200) return json(response, { error: 'init failed' }, options.initStatus);
+        return json(response, { balance: options.balance });
+      }
 
       if (route === 'POST /sentroweb-service/account/private/checkquota') {
         await readBody(request);

@@ -43,6 +43,8 @@ const LAUNCH_ARGS = ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-
 const BROWSER_ENV_ALLOWLIST = ['PATH', 'HOME', 'LANG', 'LC_ALL', 'TMPDIR', 'TZ', 'DISPLAY', 'XDG_RUNTIME_DIR'];
 
 const POLL_INTERVAL_MS = 150;
+/** How long the header balance must stay unchanged after `initializeApp` before it is trusted. */
+const BALANCE_SETTLE_MS = 900;
 const CLOSE_STEP_TIMEOUT_MS = 5_000;
 
 export interface SentrowebSearchRequest {
@@ -135,6 +137,8 @@ interface PageState {
   authCount: number;
   authStatus: number | null;
   search: CapturedSearch | null;
+  /** The page's own `initializeApp` call answered 200: only then is the header balance real. */
+  appInitialized: boolean;
 }
 
 function normalise(text: string): string {
@@ -201,6 +205,7 @@ class Session implements SentrowebSession {
 
     state.authCount = 0;
     state.authStatus = null;
+    state.appInitialized = false;
     await page.type(selectors.accountId, this.config.accountId);
     await page.type(selectors.username, this.config.username);
     await page.type(selectors.password, this.config.password);
@@ -251,18 +256,35 @@ class Session implements SentrowebSession {
     }
   }
 
+  /**
+   * The header shows "Balance: 0" as a placeholder until the page's `initializeApp` call answers
+   * (seen on the real site), so a value is only trusted after that call returned 200 and the
+   * number then stayed the same for BALANCE_SETTLE_MS. A genuine 0 therefore still reads as 0.
+   * Without the call (or without a number) it fails closed with LAYOUT_CHANGED.
+   */
   private async readBalance(signal?: AbortSignal): Promise<number> {
-    const text = await pollUntil(
+    let last: number | null = null;
+    let since = 0;
+    const balance = await pollUntil(
       async () => {
+        if (!this.state.appInitialized) return null;
         const body = await this.page.evaluate(() => document.body?.innerText ?? '');
-        return SENTROWEB_PATTERNS.balance.test(body) ? body : null;
+        const match = SENTROWEB_PATTERNS.balance.exec(body);
+        const value = match ? Number.parseInt(match[1].replace(/,/g, ''), 10) : Number.NaN;
+        if (!Number.isFinite(value) || value < 0) {
+          last = null;
+          return null;
+        }
+        if (value !== last) {
+          last = value;
+          since = Date.now();
+          return null;
+        }
+        return Date.now() - since >= BALANCE_SETTLE_MS ? { value } : null;
       },
       { timeoutMs: this.stepMs, signal, onTimeout: () => new SentrowebError('LAYOUT_CHANGED') },
     );
-    const match = SENTROWEB_PATTERNS.balance.exec(text);
-    const balance = match ? Number.parseInt(match[1].replace(/,/g, ''), 10) : Number.NaN;
-    if (!Number.isFinite(balance) || balance < 0) throw new SentrowebError('LAYOUT_CHANGED');
-    return balance;
+    return balance.value;
   }
 
   private async goto(pathAndQuery: string, signal?: AbortSignal): Promise<void> {
@@ -659,6 +681,8 @@ async function captureResponse(state: PageState, response: HTTPResponse): Promis
     if (pathname.endsWith(SENTROWEB_XHR.authenticate)) {
       state.authCount += 1;
       state.authStatus = response.status();
+    } else if (pathname.endsWith(SENTROWEB_XHR.initializeApp)) {
+      if (response.status() === 200) state.appInitialized = true;
     } else if (pathname.endsWith(SENTROWEB_XHR.search)) {
       let body: string | null = null;
       try {
@@ -699,7 +723,7 @@ export const sentrowebClient: SentrowebClient = {
       page.setDefaultNavigationTimeout(config.timeouts.stepMs);
       await page.setViewport({ width: 1400, height: 1000 });
 
-      const state: PageState = { authCount: 0, authStatus: null, search: null };
+      const state: PageState = { authCount: 0, authStatus: null, search: null, appInitialized: false };
       page.on('response', (response) => {
         void captureResponse(state, response);
       });

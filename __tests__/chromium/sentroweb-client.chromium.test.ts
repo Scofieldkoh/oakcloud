@@ -186,6 +186,27 @@ describe('Sentroweb client against a fake Sentroweb', () => {
     expect(server.count('search')).toBe(0);
   });
 
+  it('does not read the placeholder "Balance: 0" the page shows until initializeApp answers', async () => {
+    const server = await start({ balance: 372, initDelayMs: 2_000 });
+    const session = await open(server, { requiredCredits: 2 });
+    expect(session.balance).toBe(372);
+    expect(server.count('search')).toBe(0);
+  });
+
+  it('a genuine zero balance is still INSUFFICIENT_CREDITS (after initializeApp), with no search', async () => {
+    const server = await start({ balance: 0, initDelayMs: 600 });
+    const error = await failureOf(open(server, { requiredCredits: 2 }));
+    expect(error.code).toBe('INSUFFICIENT_CREDITS');
+    expect(server.count('search')).toBe(0);
+  });
+
+  it('fails closed (LAYOUT_CHANGED) when initializeApp never succeeds, instead of trusting the placeholder', async () => {
+    const server = await start({ initStatus: 500 });
+    const error = await failureOf(open(server, { timeouts: { stepMs: 2_500 }, requiredCredits: 2 }));
+    expect(error.code).toBe('LAYOUT_CHANGED');
+    expect(server.count('search')).toBe(0);
+  });
+
   it('enough credits (balance equals the count) is allowed', async () => {
     const server = await start({ balance: 2 });
     const session = await open(server, { requiredCredits: 2 });

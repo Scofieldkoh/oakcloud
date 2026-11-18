@@ -20,6 +20,8 @@ export const SENTROWEB_PATHS = {
 export const SENTROWEB_XHR = {
   authenticate: '/sentroweb-service/auth/private/authenticate',
   checkQuota: '/sentroweb-service/account/private/checkquota',
+  /** The page shows "Balance: 0" until this call answers; the balance is only real after it. */
+  initializeApp: '/sentroweb-service/account/private/initializeApp',
   search: '/sentroweb-service/screening/private/search',
 } as const;
 
