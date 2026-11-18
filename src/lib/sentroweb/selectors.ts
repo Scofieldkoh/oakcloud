@@ -65,6 +65,8 @@ export const SENTROWEB_SELECTORS = {
   result: {
     /** One accordion title per category, in the format `<Category> [N matches]`. */
     title: '.accordion .search-result-div .title.search-title-div',
+    /** The result block that is screenshotted as evidence (titles only; no page header). */
+    area: '.accordion',
   },
   exportModal: {
     root: '.ui.modal.visible.active, .ui.modal.visible, .modal.visible',
@@ -91,6 +93,11 @@ export const SENTROWEB_PATTERNS = {
   creditCost: /^\s*(\d+)\s+credit\(s\)\s+will be deducted for this search\.?\s*$/i,
   /** An accordion title: `Special Interest Entities [0 matches]`. */
   categoryTitle: /^(.*?)\s*\[(\d+)\s+matches?\]\s*$/,
+  /**
+   * Page text that means Sentroweb wants a step we cannot do (one-time code, captcha...). The
+   * words "2FA" and "two-factor" are NOT listed: the normal main page advertises a 2FA upgrade.
+   */
+  mfaHint: /verification code|one[- ]time|\botp\b|captcha|authenticator|not a robot/i,
 } as const;
 
 /** Result categories, keyed the way the parser reports them. */
