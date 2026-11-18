@@ -336,6 +336,55 @@ describePostgres('Sentroweb check service (PostgreSQL)', () => {
         expect(await people(companyId)).toHaveLength(2);
       });
 
+      it.each([
+        ['alias sorts before the name-only record', 'Aa Alias', 'Zee Name'],
+        ['alias sorts after the name-only record', 'Zee Alias', 'Aa Name'],
+      ])('a late record bridges two groups into one person (%s)', async (_label, aliasName, plainName) => {
+        const companyId = await makeCompany();
+        await prisma.companyOfficer.create({
+          data: { companyId, role: 'DIRECTOR', name: aliasName, identificationType: 'NRIC', identificationNumber: 'S7654321B', isCurrent: true },
+        });
+        await prisma.companyOfficer.create({ data: { companyId, role: 'MANAGING_DIRECTOR', name: plainName, isCurrent: true } });
+        await prisma.companyShareholder.create({
+          data: { companyId, name: plainName, identificationType: 'NRIC', identificationNumber: 'S7654321B', numberOfShares: 1, isCurrent: true },
+        });
+        const found = await people(companyId);
+        expect(found).toHaveLength(1);
+        expect(found[0].roles.sort()).toEqual(['DIRECTOR', 'MANAGING_DIRECTOR', 'SHAREHOLDER']);
+
+        const client = makeClient();
+        const { runId } = await queue(companyId);
+        await service.processRun(runId, { client, config: CONFIG });
+        expect(client.searches).toHaveLength(2); // the company and the person, once
+      });
+
+      it('a late contact link bridges two groups that had no id number', async () => {
+        const companyId = await makeCompany();
+        const linked = await contact('Cora Contact', null);
+        await prisma.companyOfficer.create({ data: { companyId, contactId: linked.id, role: 'DIRECTOR', name: 'Cora Contact', isCurrent: true } });
+        await prisma.companyOfficer.create({ data: { companyId, role: 'NOMINEE_DIRECTOR', name: 'Cora C. Alias', isCurrent: true } });
+        await prisma.companyShareholder.create({ data: { companyId, contactId: linked.id, name: 'Cora C. Alias', numberOfShares: 1, isCurrent: true } });
+        const found = await people(companyId);
+        expect(found).toHaveLength(1);
+        expect(found[0].roles.sort()).toEqual(['DIRECTOR', 'NOMINEE_DIRECTOR', 'SHAREHOLDER']);
+      });
+
+      it('a bridge never joins groups whose id numbers differ: the name-only record joins exactly one', async () => {
+        const companyId = await makeCompany();
+        await prisma.companyOfficer.create({
+          data: { companyId, role: 'DIRECTOR', name: 'Kim Both', identificationType: 'NRIC', identificationNumber: 'S5555555E', isCurrent: true },
+        });
+        await prisma.companyOfficer.create({
+          data: { companyId, role: 'ALTERNATE_DIRECTOR', name: 'Kim Both', identificationType: 'NRIC', identificationNumber: 'S6666666F', isCurrent: true },
+        });
+        await prisma.companyShareholder.create({ data: { companyId, name: 'Kim Both', numberOfShares: 1, isCurrent: true } });
+        const found = await people(companyId);
+        expect(found).toHaveLength(2);
+        expect(found.flatMap((c) => c.roles).sort()).toEqual(['ALTERNATE_DIRECTOR', 'DIRECTOR', 'SHAREHOLDER']);
+        const keys = (await service.getCandidatesInfo(tenantId, companyId)).candidates.map((c) => c.key);
+        expect(new Set(keys).size).toBe(keys.length);
+      });
+
       it('does not merge an individual with a corporate holder of the same name', async () => {
         const companyId = await makeCompany();
         await prisma.companyOfficer.create({ data: { companyId, role: 'DIRECTOR', name: 'Alpha Beta', isCurrent: true } });

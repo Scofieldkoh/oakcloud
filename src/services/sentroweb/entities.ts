@@ -62,39 +62,68 @@ interface Group {
   names: Set<string>;
 }
 
-/**
- * Is `entry` the same person as the people already in `group`? (Decision D2, widened so that a
- * record linked to a contact and one that is not still merge.)
- *
- * - the same contact, or the same id type and number, is the same person;
- * - otherwise the same name and kind is the same person only if nothing conflicts: the two never
- *   carry different id numbers, and never belong to two different contacts.
- *
- * A group never ends up holding two different id numbers or two different contacts, so a chain of
- * name-only records cannot join two people who are known to be different.
- */
-function belongsTo(group: Group, entry: RawEntry): boolean {
-  const id = normaliseId(entry);
-  if (entry.contactId && group.contactIds.has(entry.contactId)) return true;
-  if (id && group.ids.has(id)) return true;
+const intersects = <T>(left: Set<T>, right: Set<T>) => [...left].some((value) => right.has(value));
 
-  const idConflict = id !== null && group.ids.size > 0;
-  const contactConflict = entry.contactId !== null && group.contactIds.size > 0;
-  if (idConflict || contactConflict) return false;
-  return group.names.has(`${entry.searchType}:${normaliseName(entry.name)}`);
+/** The same contact or the same id type and number: the same person, whatever the names say. */
+function sharesStrongIdentity(left: Group, right: Group): boolean {
+  return intersects(left.contactIds, right.contactIds) || intersects(left.ids, right.ids);
 }
 
+/**
+ * The same name and kind, and nothing contradicts it: the two never carry different id numbers
+ * and never belong to different contacts. A record without an id (or contact) is compatible with
+ * one that has it.
+ */
+function sharesNameWithoutConflict(left: Group, right: Group): boolean {
+  if (!intersects(left.names, right.names)) return false;
+  const idConflict = left.ids.size > 0 && right.ids.size > 0 && !intersects(left.ids, right.ids);
+  const contactConflict =
+    left.contactIds.size > 0 && right.contactIds.size > 0 && !intersects(left.contactIds, right.contactIds);
+  return !idConflict && !contactConflict;
+}
+
+function mergeInto(target: Group, source: Group): void {
+  target.entries.push(...source.entries);
+  for (const id of source.contactIds) target.contactIds.add(id);
+  for (const id of source.ids) target.ids.add(id);
+  for (const name of source.names) target.names.add(name);
+}
+
+/**
+ * Groups records into people (decision D2). Every record starts alone; groups are then joined
+ * until nothing more joins, so a later record that reveals two groups to be one person (a "late
+ * bridge") coalesces both. Strong identities (contact, id number) are applied before names are
+ * considered, and a name never joins two groups whose id numbers or contacts differ, so one
+ * name-only record cannot chain two known-different people together.
+ */
 function groupEntries(entries: RawEntry[]): Group[] {
-  const groups: Group[] = [];
-  for (const entry of entries) {
-    const group = groups.find((candidate) => belongsTo(candidate, entry));
-    const target: Group = group ?? { entries: [], contactIds: new Set(), ids: new Set(), names: new Set() };
-    if (!group) groups.push(target);
-    target.entries.push(entry);
-    if (entry.contactId) target.contactIds.add(entry.contactId);
+  const groups: Group[] = entries.map((entry) => {
     const id = normaliseId(entry);
-    if (id) target.ids.add(id);
-    target.names.add(`${entry.searchType}:${normaliseName(entry.name)}`);
+    return {
+      entries: [entry],
+      contactIds: new Set(entry.contactId ? [entry.contactId] : []),
+      ids: new Set(id ? [id] : []),
+      names: new Set([`${entry.searchType}:${normaliseName(entry.name)}`]),
+    };
+  });
+
+  const joinOnce = (joins: (left: Group, right: Group) => boolean): boolean => {
+    for (let i = 0; i < groups.length; i += 1) {
+      for (let j = i + 1; j < groups.length; j += 1) {
+        if (!joins(groups[i], groups[j])) continue;
+        mergeInto(groups[i], groups[j]);
+        groups.splice(j, 1);
+        return true;
+      }
+    }
+    return false;
+  };
+
+  let changed = true;
+  while (changed) {
+    changed = false;
+    while (joinOnce(sharesStrongIdentity)) changed = true;
+    if (joinOnce(sharesNameWithoutConflict)) changed = true;
   }
   return groups;
 }
