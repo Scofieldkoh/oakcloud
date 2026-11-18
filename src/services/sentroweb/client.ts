@@ -407,7 +407,12 @@ class Session implements SentrowebSession {
       return await work();
     } catch (error) {
       const code = error instanceof SentrowebError ? error.code : 'UNEXPECTED_ERROR';
-      log.warn('Sentroweb search: a step failed before CONFIRM', { phase: name, code, form: await this.describeForm() });
+      log.warn('Sentroweb search: a step failed before CONFIRM', {
+        phase: name,
+        code,
+        appInitialized: this.state.appInitialized,
+        form: await this.describeForm(),
+      });
       throw error;
     }
   }
