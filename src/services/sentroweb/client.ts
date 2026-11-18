@@ -573,8 +573,9 @@ class Session implements SentrowebSession {
 
       return await this.readDownloadedPdf(signal);
     } catch {
-      if (signal?.aborted) throw new SentrowebError('TIMEOUT', { searchSubmitted: true });
-      // The PDF is optional evidence here; the service decides what its absence means.
+      // The PDF is optional evidence here; the service decides what its absence means. This holds
+      // for a run abort too: the result is already read, so it is returned (a match is never
+      // thrown away) and the abort stops the run before the next search.
       return null;
     }
   }

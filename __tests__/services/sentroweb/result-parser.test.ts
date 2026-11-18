@@ -300,3 +300,58 @@ describe('parseSentrowebResult: nothing but a proven clear is CLEAR', () => {
     expect(parseSentrowebResult('ENTITY', individual.json, individual.titles).status).not.toBe('CLEAR');
   });
 });
+
+describe('parseSentrowebResult: prototype names and repeated headings', () => {
+  it.each(['constructor', 'toString', '__proto__', 'hasOwnProperty', 'valueOf'])(
+    'a non-empty array named %s in the payload is never CLEAR',
+    (key) => {
+      const c = clearEntity();
+      // JSON.parse makes `__proto__` an own property, as a hostile or odd response would.
+      const record = JSON.parse(JSON.stringify(c.json[0]).replace(/}$/, `,${JSON.stringify(key)}:[{"x":1}]}`));
+      c.json = [record];
+      expect(Object.hasOwn(record, key)).toBe(true);
+      const result = parse(c);
+      expect(result.status).not.toBe('CLEAR');
+      expect(result).toMatchObject({ status: 'ERROR', errorCode: 'LAYOUT_CHANGED' });
+    },
+  );
+
+  it('an EMPTY array under a prototype name is ignored', () => {
+    const c = clearEntity();
+    c.json = [JSON.parse(JSON.stringify(c.json[0]).replace(/}$/, ',"constructor":[],"__proto__":[]}'))];
+    expect(parse(c).status).toBe('CLEAR');
+  });
+
+  it.each(['constructor', 'toString', '__proto__'])('a heading called %s is not a category', (name) => {
+    const c = clearEntity();
+    c.titles = [...c.titles, `${name} [0 matches]`];
+    expect(parse(c).status).toBe('ERROR');
+    c.titles = [...clearEntity().titles, `${name} [2 matches]`];
+    expect(parse(c)).toMatchObject({ status: 'POSSIBLE_MATCH', matchCount: 2 });
+  });
+
+  it.each([
+    ['zero then positive', ['Special Interest Entities [0 matches]', 'Special Interest Entities [1 matches]']],
+    ['positive then zero', ['Special Interest Entities [1 matches]', 'Special Interest Entities [0 matches]']],
+    ['positive twice', ['Special Interest Entities [2 matches]', 'Special Interest Entities [1 matches]']],
+  ])('a repeated heading keeps the positive count (%s)', (_name, titles) => {
+    const c = clearEntity();
+    c.titles = titles;
+    const result = parse(c);
+    expect(result.status).toBe('POSSIBLE_MATCH');
+    expect(result.matchCount).toBe(Math.max(...titles.map((t) => Number(/\[(\d+)/.exec(t)![1]))));
+  });
+
+  it('a positive count under an unrecognised heading is a possible match, whatever else is wrong', () => {
+    const c = clearIndividual();
+    c.titles = [...c.titles, 'Adverse Media [3 matches]'];
+    expect(parse(c)).toMatchObject({ status: 'POSSIBLE_MATCH', matchCount: 3 });
+  });
+
+  it('an unrecognised heading with zero hits is still an error, not clear', () => {
+    const c = clearIndividual();
+    c.titles = [...c.titles, 'Adverse Media [0 matches]'];
+    expect(parse(c).status).toBe('ERROR');
+  });
+});
+

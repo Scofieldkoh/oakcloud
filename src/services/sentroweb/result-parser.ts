@@ -128,22 +128,39 @@ interface DomCounts {
   counts: Partial<Record<SentrowebCategory, number>>;
   /** Titles that did not parse, or repeat a category, or name an unknown category. */
   malformed: boolean;
+  /** Hits shown under a heading we do not recognise. They still count as hits. */
+  unknownHits: number;
+}
+
+/** Own-property lookup: `constructor`, `toString` and `__proto__` are never categories. */
+function lookupOwn<T>(table: Record<string, T>, key: string): T | undefined {
+  return Object.hasOwn(table, key) ? table[key] : undefined;
 }
 
 function parseDomTitles(titles: readonly string[]): DomCounts {
   const counts: Partial<Record<SentrowebCategory, number>> = {};
   let malformed = false;
+  let unknownHits = 0;
   for (const raw of titles) {
     const match = SENTROWEB_PATTERNS.categoryTitle.exec(normaliseTitle(raw));
-    const category = match ? SENTROWEB_CATEGORY_TITLES[normaliseTitle(match[1])] : undefined;
+    const category = match ? lookupOwn(SENTROWEB_CATEGORY_TITLES, normaliseTitle(match[1])) : undefined;
     const count = match ? Number.parseInt(match[2], 10) : Number.NaN;
-    if (!match || !category || !Number.isSafeInteger(count) || count < 0 || category in counts) {
+    const countOk = Number.isSafeInteger(count) && count >= 0;
+    if (!match || !category || !countOk) {
       malformed = true;
+      // A heading we cannot place can still report hits; never throw that evidence away.
+      if (match && countOk && !category) unknownHits += count;
+      continue;
+    }
+    if (Object.hasOwn(counts, category)) {
+      // A repeated heading is malformed, but the larger count is kept: a positive is never lost.
+      malformed = true;
+      counts[category] = Math.max(counts[category] ?? 0, count);
       continue;
     }
     counts[category] = count;
   }
-  return { counts, malformed };
+  return { counts, malformed, unknownHits };
 }
 
 export function parseSentrowebResult(
@@ -178,12 +195,12 @@ export function parseSentrowebResult(
         jsonStructureOk = false; // a known array is missing: cannot prove it is empty
         continue;
       }
-      const category = SENTROWEB_JSON_ARRAYS[key];
+      const category = SENTROWEB_JSON_ARRAYS[key]; // `key` comes from Object.keys: always own
       jsonCounts[category] = list.length;
       for (const entry of list.slice(0, MAX_MATCHES_PER_CATEGORY)) matches.push(toMatch(category, entry));
     }
     for (const [key, value] of Object.entries(record)) {
-      if (key in SENTROWEB_JSON_ARRAYS) continue;
+      if (Object.hasOwn(SENTROWEB_JSON_ARRAYS, key)) continue;
       if (Array.isArray(value) && value.length > 0) unknownArrayHasData = true;
     }
 
@@ -199,7 +216,7 @@ export function parseSentrowebResult(
   const domTitles = Array.isArray(domCategoryTitles) ? domCategoryTitles : [];
   const dom = parseDomTitles(domTitles);
   const domSeen = Object.keys(dom.counts) as SentrowebCategory[];
-  const domHasAllExpected = expected.every((category) => category in dom.counts);
+  const domHasAllExpected = expected.every((category) => Object.hasOwn(dom.counts, category));
   const domHasOnlyExpected = domSeen.every((category) => expected.includes(category));
   const domOk = domTitles.length > 0 && !dom.malformed && domHasAllExpected && domHasOnlyExpected;
 
@@ -216,6 +233,8 @@ export function parseSentrowebResult(
     categoryCounts[category] = count;
     matchCount += count;
   }
+
+  matchCount += dom.unknownHits;
 
   const base = { matchCount, categoryCounts, matches, sentrowebReportId, monitorEnabled };
 

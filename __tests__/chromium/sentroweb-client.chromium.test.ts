@@ -226,6 +226,27 @@ describe('Sentroweb client against a fake Sentroweb', () => {
     expect(server.count('search')).toBe(1);
   });
 
+  it('a run abort during the PDF export still returns the result that was read (a match is not thrown away)', async () => {
+    const server = await start({ pdfDelayMs: 8_000 });
+    const session = await open(server, { timeouts: { resultMs: 30_000, stepMs: 30_000 } });
+    const controller = new AbortController();
+    const watcher = setInterval(() => {
+      if (server.count('download') > 0) controller.abort();
+    }, 50);
+    try {
+      const outcome = await session.search(
+        { name: 'Rosneft Oil Company', searchType: 'ENTITY' },
+        { signal: controller.signal },
+      );
+      expect(controller.signal.aborted).toBe(true);
+      expect(outcome.pdf).toBeNull();
+      expect(outcome.domTitles.some((title) => /\[[1-9]\d* matches?\]/.test(title))).toBe(true);
+      expect(server.count('search')).toBe(1);
+    } finally {
+      clearInterval(watcher);
+    }
+  });
+
   it('LAYOUT_CHANGED (submitted) when the search answered but the page shows no category titles', async () => {
     const server = await start({ omitResultTitles: true });
     const session = await open(server, { timeouts: { stepMs: 1_500 } });

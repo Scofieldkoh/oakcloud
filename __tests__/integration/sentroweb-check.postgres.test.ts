@@ -253,6 +253,119 @@ describePostgres('Sentroweb check service (PostgreSQL)', () => {
       expect(candidates.find((c) => c.name === 'Dee Dup')?.roles.sort()).toEqual(['DIRECTOR', 'SHAREHOLDER']);
     });
 
+    describe('one person, one search (mixed linked and unlinked records)', () => {
+      async function contact(name: string, idNumber: string | null) {
+        return prisma.contact.create({
+          data: {
+            tenantId,
+            contactType: 'INDIVIDUAL',
+            fullName: name,
+            ...(idNumber ? { identificationType: 'NRIC' as const, identificationNumber: idNumber } : {}),
+          },
+        });
+      }
+      const nric = () => `S${Math.floor(1_000_000 + Math.random() * 8_999_999)}${'ABCDEFGHJK'[Math.floor(Math.random() * 10)]}`;
+      const people = async (companyId: string) =>
+        (await service.getCandidatesInfo(tenantId, companyId)).candidates.filter((c) => c.entityKind !== 'COMPANY');
+
+      it('merges a contact-linked director with an unlinked shareholder that has the same NRIC', async () => {
+        const companyId = await makeCompany();
+        const id = nric();
+        const linked = await contact('Lin Linked', id);
+        await prisma.companyOfficer.create({ data: { companyId, contactId: linked.id, role: 'DIRECTOR', name: 'Lin Linked', isCurrent: true } });
+        await prisma.companyShareholder.create({
+          data: { companyId, name: 'L. Linked (as on share register)', identificationType: 'NRIC', identificationNumber: ` ${id.toLowerCase()} `, numberOfShares: 1, isCurrent: true },
+        });
+        const found = await people(companyId);
+        expect(found).toHaveLength(1);
+        expect(found[0].roles.sort()).toEqual(['DIRECTOR', 'SHAREHOLDER']);
+      });
+
+      it('merges in either order and with the contact on the shareholder side', async () => {
+        const companyId = await makeCompany();
+        const id = nric();
+        const linked = await contact('Sue Shareholder', id);
+        await prisma.companyShareholder.create({ data: { companyId, contactId: linked.id, name: 'Sue Shareholder', numberOfShares: 1, isCurrent: true } });
+        await prisma.companyOfficer.create({
+          data: { companyId, role: 'MANAGING_DIRECTOR', name: 'Sue S.', identificationType: 'NRIC', identificationNumber: id, isCurrent: true },
+        });
+        const found = await people(companyId);
+        expect(found).toHaveLength(1);
+        expect(found[0].roles.sort()).toEqual(['MANAGING_DIRECTOR', 'SHAREHOLDER']);
+      });
+
+      it('merges an unlinked record with a linked one by name when no id number conflicts', async () => {
+        const companyId = await makeCompany();
+        const linked = await contact('Nan Nameonly', nric());
+        await prisma.companyOfficer.create({ data: { companyId, contactId: linked.id, role: 'DIRECTOR', name: 'Nan Nameonly', isCurrent: true } });
+        await prisma.companyShareholder.create({ data: { companyId, name: 'nan  nameonly', numberOfShares: 1, isCurrent: true } });
+        expect(await people(companyId)).toHaveLength(1);
+      });
+
+      it('keeps two people apart when their id numbers differ, even with the same name', async () => {
+        const companyId = await makeCompany();
+        await prisma.companyOfficer.create({
+          data: { companyId, role: 'DIRECTOR', name: 'Tan Wei', identificationType: 'NRIC', identificationNumber: 'S1111111A', isCurrent: true },
+        });
+        await prisma.companyShareholder.create({
+          data: { companyId, name: 'Tan Wei', identificationType: 'NRIC', identificationNumber: 'S2222222B', numberOfShares: 1, isCurrent: true },
+        });
+        expect(await people(companyId)).toHaveLength(2);
+      });
+
+      it('never chains two different people together through a name-only record', async () => {
+        const companyId = await makeCompany();
+        await prisma.companyOfficer.create({
+          data: { companyId, role: 'DIRECTOR', name: 'Lee Chain', identificationType: 'NRIC', identificationNumber: 'S3333333C', isCurrent: true },
+        });
+        await prisma.companyShareholder.create({ data: { companyId, name: 'Lee Chain', numberOfShares: 1, isCurrent: true } });
+        await prisma.companyOfficer.create({
+          data: { companyId, role: 'ALTERNATE_DIRECTOR', name: 'Lee Chain', identificationType: 'NRIC', identificationNumber: 'S4444444D', isCurrent: true },
+        });
+        const found = await people(companyId);
+        expect(found).toHaveLength(2);
+        expect(found.flatMap((c) => c.roles).sort()).toEqual(['ALTERNATE_DIRECTOR', 'DIRECTOR', 'SHAREHOLDER']);
+      });
+
+      it('keeps two different contacts with the same name apart', async () => {
+        const companyId = await makeCompany();
+        const one = await contact('Sam Same', null);
+        const two = await contact('Sam Same', null);
+        await prisma.companyOfficer.create({ data: { companyId, contactId: one.id, role: 'DIRECTOR', name: 'Sam Same', isCurrent: true } });
+        await prisma.companyShareholder.create({ data: { companyId, contactId: two.id, name: 'Sam Same', numberOfShares: 1, isCurrent: true } });
+        expect(await people(companyId)).toHaveLength(2);
+      });
+
+      it('does not merge an individual with a corporate holder of the same name', async () => {
+        const companyId = await makeCompany();
+        await prisma.companyOfficer.create({ data: { companyId, role: 'DIRECTOR', name: 'Alpha Beta', isCurrent: true } });
+        await prisma.companyShareholder.create({
+          data: { companyId, name: 'Alpha Beta', shareholderType: 'CORPORATE', numberOfShares: 1, isCurrent: true },
+        });
+        expect(await people(companyId)).toHaveLength(2);
+      });
+
+      it('gives the same keys for the same data, and a queue run searches the person once', async () => {
+        const companyId = await makeCompany();
+        const id = nric();
+        const linked = await contact('Una Once', id);
+        await prisma.companyOfficer.create({ data: { companyId, contactId: linked.id, role: 'DIRECTOR', name: 'Una Once', isCurrent: true } });
+        await prisma.companyShareholder.create({
+          data: { companyId, name: 'Una Once', identificationType: 'NRIC', identificationNumber: id, numberOfShares: 1, isCurrent: true },
+        });
+        const first = (await service.getCandidatesInfo(tenantId, companyId)).candidates.map((c) => c.key);
+        const second = (await service.getCandidatesInfo(tenantId, companyId)).candidates.map((c) => c.key);
+        expect(second).toEqual(first);
+        expect(new Set(first).size).toBe(first.length);
+
+        const client = makeClient();
+        const { runId } = await queue(companyId);
+        await service.processRun(runId, { client, config: CONFIG });
+        expect(client.searches.filter((search) => search.name === 'Una Once')).toHaveLength(1);
+        expect(client.searches).toHaveLength(2); // the company and Una
+      });
+    });
+
     it('does not find another tenant’s company', async () => {
       await expect(service.getCandidatesInfo(tenantId, otherCompanyId)).rejects.toMatchObject({ statusCode: 404 });
       await expect(
@@ -385,6 +498,39 @@ describePostgres('Sentroweb check service (PostgreSQL)', () => {
       await service.processRun(runId, { client: makeClient(), config: CONFIG });
       const later = () => new Date(Date.now() + 11 * 60 * 1000);
       await expect(queue(companyId, undefined, { now: later })).resolves.toHaveProperty('runId');
+    });
+
+    it('keeps the cooldown after a run whose first search was interrupted in flight (credit uncertain)', async () => {
+      const companyId = await makeFullCompany();
+      const { runId } = await queue(companyId, ['Jane Director']);
+      // The worker died after the search was marked submitted and before any credit was counted.
+      await prisma.sentrowebCheckRun.update({
+        where: { id: runId },
+        data: {
+          status: 'RUNNING',
+          claimToken: randomUUID(),
+          startedAt: new Date(Date.now() - 20 * 60 * 1000),
+          leaseExpiresAt: new Date(Date.now() - 60 * 1000),
+          creditsUsed: 0,
+        },
+      });
+      await prisma.sentrowebCheckResult.updateMany({ where: { runId }, data: { searchSubmittedAt: new Date() } });
+      await service.recoverStaleRuns();
+      const run = await prisma.sentrowebCheckRun.findUniqueOrThrow({ where: { id: runId } });
+      expect(run).toMatchObject({ status: 'FAILED', errorCode: 'INTERRUPTED', creditsUsed: 0 });
+
+      await expect(queue(companyId)).rejects.toMatchObject({ code: 'COOLDOWN', httpStatus: 409 });
+      expect((await service.getCandidatesInfo(tenantId, companyId)).cooldownUntil).not.toBeNull();
+      await expect(queue(companyId, undefined, { force: true })).resolves.toHaveProperty('runId');
+    });
+
+    it('keeps the cooldown after a submitted search that timed out (credit spent, no result)', async () => {
+      const companyId = await makeFullCompany();
+      const client = makeClient();
+      client.scripts.set('Jane Director', { throws: new SentrowebError('TIMEOUT', { searchSubmitted: true }) });
+      const { runId } = await queue(companyId, ['Jane Director']);
+      await service.processRun(runId, { client, config: CONFIG });
+      await expect(queue(companyId)).rejects.toMatchObject({ code: 'COOLDOWN' });
     });
 
     it('does not apply the cooldown after a run that spent no credits', async () => {
@@ -724,6 +870,58 @@ describePostgres('Sentroweb check service (PostgreSQL)', () => {
 
       const audit = await prisma.auditLog.findMany({ where: { entityType: 'SentrowebCheckRun', entityId: runId, action: 'UPDATE' } });
       expect(audit).toHaveLength(1);
+    });
+
+    describe('a worker that lost its run to recovery', () => {
+      async function expireLease(runId: string) {
+        await prisma.sentrowebCheckRun.update({ where: { id: runId }, data: { leaseExpiresAt: new Date(Date.now() - 60 * 1000) } });
+        const { recovered } = await service.recoverStaleRuns();
+        expect(recovered).toContain(runId);
+      }
+
+      it('cannot overwrite the recovered result or file a report once recovery has taken the run', async () => {
+        const companyId = await makeFullCompany();
+        const client = makeClient();
+        const { runId } = await queue(companyId, ['Jane Director', 'Mike Managing']);
+        let slow: Promise<unknown> | null = null;
+        client.duringSearch = async (request) => {
+          if (request.name !== 'Jane Director') return;
+          client.duringSearch = null;
+          await expireLease(runId); // the lease runs out while the search is still in flight
+        };
+        slow = service.processRun(runId, { client, config: CONFIG });
+        const outcome = await slow;
+        expect(outcome).toEqual({ status: 'stale-worker' });
+
+        const run = await prisma.sentrowebCheckRun.findUniqueOrThrow({ where: { id: runId }, include: { results: { orderBy: { position: 'asc' } } } });
+        expect(run).toMatchObject({ status: 'FAILED', errorCode: 'INTERRUPTED' });
+        expect(run.results.map((r) => [r.status, r.errorCode, r.documentId])).toEqual([
+          ['ERROR', 'INTERRUPTED', null],
+          ['NOT_RUN', null, null],
+        ]);
+        expect(client.searches.map((search) => search.name)).toEqual(['Jane Director']);
+        // No report row, no stored files, no run-completion audit from the stale worker.
+        expect(await prisma.document.count({ where: { companyId, documentType: 'SENTROWEB_REPORT' } })).toBe(0);
+        expect([...memory.files.keys()]).toEqual([]);
+        const audit = await prisma.auditLog.findMany({ where: { entityType: 'SentrowebCheckRun', entityId: runId, action: 'UPDATE' } });
+        expect(audit).toHaveLength(1);
+        expect(await prisma.sentrowebCheckRun.findUniqueOrThrow({ where: { id: runId } })).toMatchObject({ creditsUsed: 0 });
+      });
+
+      it('a worker that lost the run starts no further search', async () => {
+        const companyId = await makeFullCompany();
+        const client = makeClient();
+        client.scripts.set('Jane Director', { throws: new SentrowebError('RESULT_MISMATCH', { searchSubmitted: true }) });
+        const { runId } = await queue(companyId, ['Jane Director', 'Mike Managing']);
+        client.duringSearch = async () => {
+          client.duringSearch = null;
+          await expireLease(runId);
+        };
+        expect(await service.processRun(runId, { client, config: CONFIG })).toEqual({ status: 'stale-worker' });
+        expect(client.searches).toHaveLength(1);
+        const run = await prisma.sentrowebCheckRun.findUniqueOrThrow({ where: { id: runId } });
+        expect(run).toMatchObject({ status: 'FAILED', errorCode: 'INTERRUPTED', creditsUsed: 0 });
+      });
     });
 
     it('leaves a RUNNING run with a live lease alone', async () => {

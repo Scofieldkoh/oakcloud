@@ -29,11 +29,11 @@ confirmation (**Run again anyway**). Only one run per company can be queued or r
 | Rule | Detail |
 | --- | --- |
 | Inputs | Name plus the Individual/Entity tick only. Fuzzy matching off; no country or date of birth (`SENTROWEB_SEARCH_OPTIONS`). Sentroweb has no UEN or ID field, so UEN and ID numbers are Oakcloud metadata only. |
-| Who is screened | The company (Entity), current `DIRECTOR`, `MANAGING_DIRECTOR`, `ALTERNATE_DIRECTOR`, `NOMINEE_DIRECTOR` officers and current shareholders. Corporate holders are searched as Entities. Secretaries, the CEO and former officers are not screened. The same person in several roles is one search, deduplicated by contact, then ID type and number, then name. |
+| Who is screened | The company (Entity), current `DIRECTOR`, `MANAGING_DIRECTOR`, `ALTERNATE_DIRECTOR`, `NOMINEE_DIRECTOR` officers and current shareholders. Corporate holders are searched as Entities. Secretaries, the CEO and former officers are not screened. The same person in several roles is one search: records match when they share a contact, or an ID type and number, or (for records without either conflicting) the same name and kind. Two records with different ID numbers or different contacts are never merged, even with the same name. |
 | Classification | **Clear** only if the captured search response and the page's `<Category> [N matches]` titles both show 0 for every expected category (Entity: SIE; Individual: FATF, PEP, SIP), no other array in the response holds anything, the response describes the search we submitted, and the two sources agree. Any count above 0 in either source is a **Possible match**. Everything else is an **Error**. No path defaults to Clear (`src/services/sentroweb/result-parser.ts`). |
 | Evidence | A Clear result needs Sentroweb's PDF. Without it the result is an Error (`EVIDENCE_MISSING`). A Possible match without the PDF stays a Possible match and carries `EVIDENCE_MISSING`. |
 | Overall result | Any Possible match, otherwise anything Error/Not run or a failed run is **Incomplete**, otherwise **Clear**. |
-| Run limits | At most 10 names, one active run per company (database-enforced), 10-minute cooldown unless `force`. A run stops after any error except a missing PDF, because searching on after a layout change or an unexpected credit cost would spend credits on results we cannot read. |
+| Run limits | At most 10 names, one active run per company (database-enforced), 10-minute cooldown unless `force`. The cooldown follows any run that spent or may have spent credits, including an interrupted run whose in-flight search was submitted; only a run known to have submitted nothing (for example a failed login) is exempt. A run stops after any error except a missing PDF, because searching on after a layout change or an unexpected credit cost would spend credits on results we cannot read. |
 
 ### Side effects on Sentroweb
 
@@ -92,7 +92,9 @@ The `sentroweb-check` scheduler task (every minute, inherits `SCHEDULER_ENABLED`
 
 1. A `RUNNING` run whose lease expired is **not resumed**. It becomes `FAILED` with `INTERRUPTED`; a
    name that was mid-search becomes `ERROR`/`INTERRUPTED` (its credit may be spent), the rest stay
-   `NOT_RUN`. This never calls the Sentroweb client.
+   `NOT_RUN`. This never calls the Sentroweb client. A worker that is still alive but lost its run
+   this way can no longer write: every result, report and audit write checks, under a row lock,
+   that it still owns the run, and its uploaded files are removed.
 2. A `QUEUED` run older than 2 minutes (the in-process start was lost) is started.
 
 ## Configuration

@@ -29,6 +29,8 @@ export interface FakeClient {
   balance: number;
   /** When set, openSession waits for it before doing anything. */
   hold: Promise<void> | null;
+  /** Runs inside every search, after it is recorded and before it answers (to race recovery). */
+  duringSearch: ((request: SentrowebSearchRequest) => Promise<void>) | null;
 }
 
 export function makeClient(): FakeClient {
@@ -39,6 +41,7 @@ export function makeClient(): FakeClient {
     openError: null as SentrowebError | null,
     balance: 100,
     hold: null as Promise<void> | null,
+    duringSearch: null as FakeClient['duringSearch'],
   } as FakeClient;
 
   client.openSession = vi.fn<SentrowebClient['openSession']>(async (_config: SentrowebConfig, options) => {
@@ -51,6 +54,7 @@ export function makeClient(): FakeClient {
       balance: client.balance,
       async search(request) {
         client.searches.push(request);
+        if (client.duringSearch) await client.duringSearch(request);
         const script =
           client.scripts.get(request.name) ??
           ({ fixture: request.searchType === 'ENTITY' ? 'entity-clear' : 'individual-clear' } as Script);

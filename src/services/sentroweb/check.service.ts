@@ -121,6 +121,7 @@ function reportFileName(name: string, date: Date): string {
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
 async function pause(ms: number, signal: AbortSignal): Promise<void> {
+  if (signal.aborted) throw new SentrowebError('TIMEOUT');
   if (ms <= 0) return;
   await Promise.race([
     sleep(ms),
@@ -143,9 +144,19 @@ function countStatuses(statuses: readonly SentrowebResultStatus[]) {
 
 // --- candidates and queueing -------------------------------------------------------------------
 
+/**
+ * The latest run that spent, or may have spent, credits: it used credits, or at least one of its
+ * names was submitted to Sentroweb (`searchSubmittedAt`) and not cleared again. An interrupted
+ * run whose in-flight search may have been charged therefore keeps the cooldown; only runs known
+ * to have submitted nothing (a failed login, a cancelled confirm) are exempt.
+ */
 async function latestCreditSpendingRun(tenantId: string, companyId: string) {
   return prisma.sentrowebCheckRun.findFirst({
-    where: { tenantId, companyId, creditsUsed: { gt: 0 } },
+    where: {
+      tenantId,
+      companyId,
+      OR: [{ creditsUsed: { gt: 0 } }, { results: { some: { searchSubmittedAt: { not: null } } } }],
+    },
     orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
     select: { createdAt: true, finishedAt: true },
   });
@@ -300,9 +311,34 @@ export function processRun(runId: string, options: ServiceOptions = {}): Promise
   return runExclusive(() => processRunLocked(runId, options));
 }
 
-async function isClaimCurrent(runId: string, claimToken: string): Promise<boolean> {
-  const count = await prisma.sentrowebCheckRun.count({ where: { id: runId, claimToken, status: 'RUNNING' } });
-  return count === 1;
+/** This worker no longer owns the run (recovery took it). Nothing more may be written. */
+class StaleClaimError extends Error {
+  constructor() {
+    super('The run is no longer claimed by this worker');
+    this.name = 'StaleClaimError';
+  }
+}
+
+/**
+ * Runs `work` in a transaction that holds the run's row lock, after proving this worker still owns
+ * the run (same claim token, still RUNNING). Recovery flips the run with an UPDATE on the same
+ * row, so the two are serialised: a write either lands before recovery (and recovery sees it) or
+ * is refused with StaleClaimError and rolls back completely (no result change, no Document row, no
+ * audit row). Every result, Document and audit write of a run goes through here.
+ */
+async function withLiveClaim<T>(
+  runId: string,
+  claimToken: string,
+  work: (tx: Prisma.TransactionClient) => Promise<T>,
+): Promise<T> {
+  return prisma.$transaction(async (tx) => {
+    const owned = await tx.$queryRaw<Array<{ id: string }>>`
+      SELECT "id" FROM "sentroweb_check_runs"
+      WHERE "id" = ${runId} AND "claimToken" = ${claimToken} AND "status" = 'RUNNING'
+      FOR UPDATE`;
+    if (owned.length !== 1) throw new StaleClaimError();
+    return work(tx);
+  });
 }
 
 async function processRunLocked(runId: string, options: ServiceOptions): Promise<ProcessOutcome> {
@@ -346,17 +382,17 @@ async function processRunLocked(runId: string, options: ServiceOptions): Promise
     });
 
     for (const [index, result] of run.results.entries()) {
-      if (index > 0) await pause(config.timeouts.searchDelayMs, controller.signal);
-      if (!(await isClaimCurrent(runId, claimToken))) {
-        stale = true;
-        break;
-      }
-      fatal = await processEntity({ run, result, session, signal: controller.signal, now });
+      // The run's time is up: no new search starts, whatever the pause between searches is.
+      await pause(index > 0 ? config.timeouts.searchDelayMs : 0, controller.signal);
+      fatal = await processEntity({ run, result, session, signal: controller.signal, now, claimToken });
       if (fatal) break;
     }
   } catch (error) {
-    fatal = toSentrowebError(error).code;
-    if (!(error instanceof SentrowebError)) log.error('Sentroweb run hit an unexpected error', { runId });
+    if (error instanceof StaleClaimError) stale = true;
+    else {
+      fatal = toSentrowebError(error).code;
+      if (!(error instanceof SentrowebError)) log.error('Sentroweb run hit an unexpected error', { runId });
+    }
   } finally {
     clearTimeout(timer);
     await session?.close().catch(() => undefined);
@@ -372,40 +408,54 @@ interface EntityContext {
   session: SentrowebSession;
   signal: AbortSignal;
   now: () => Date;
+  claimToken: string;
 }
 
-/** Searches one entity and stores the outcome. Returns the code that stops the run, if any. */
-async function processEntity(context: EntityContext): Promise<SentrowebErrorCode | null> {
-  const { run, result, session, signal, now } = context;
+interface UploadedReport {
+  documentId: string;
+  fileName: string;
+  originalFileName: string;
+  storageKey: string;
+  size: number;
+}
 
-  // Marked before the call: if this process dies mid-search, recovery knows a credit may have
-  // been spent and never searches this name again.
-  await prisma.sentrowebCheckResult.update({
-    where: { id: result.id },
-    data: { searchSubmittedAt: now() },
-  });
+/**
+ * Searches one entity and stores the outcome. Returns the code that stops the run, if any.
+ * Throws StaleClaimError (and writes nothing) when recovery has taken the run.
+ */
+async function processEntity(context: EntityContext): Promise<SentrowebErrorCode | null> {
+  const { run, result, session, signal, now, claimToken } = context;
+
+  // Marked before the call, and only while this worker still owns the run: if this process dies
+  // mid-search, recovery knows a credit may have been spent and never searches this name again,
+  // and a worker that lost the run never starts another search.
+  await withLiveClaim(run.id, claimToken, (tx) =>
+    tx.sentrowebCheckResult.update({ where: { id: result.id }, data: { searchSubmittedAt: now() } }),
+  );
 
   let outcome: Awaited<ReturnType<SentrowebSession['search']>>;
   try {
     outcome = await session.search({ name: result.name, searchType: result.searchType }, { signal });
   } catch (error) {
     const failure = toSentrowebError(error);
-    await prisma.sentrowebCheckResult.update({
-      where: { id: result.id },
-      data: {
-        status: 'ERROR',
-        errorCode: failure.code,
-        checkedAt: now(),
-        // A search that was cancelled before CONFIRM spent nothing.
-        searchSubmittedAt: failure.searchSubmitted ? undefined : null,
-      },
-    });
-    if (failure.searchSubmitted) {
-      await prisma.sentrowebCheckRun.update({
-        where: { id: run.id },
-        data: { creditsUsed: { increment: SENTROWEB_CREDITS_PER_SEARCH } },
+    await withLiveClaim(run.id, claimToken, async (tx) => {
+      await tx.sentrowebCheckResult.update({
+        where: { id: result.id },
+        data: {
+          status: 'ERROR',
+          errorCode: failure.code,
+          checkedAt: now(),
+          // A search that was cancelled before CONFIRM spent nothing.
+          searchSubmittedAt: failure.searchSubmitted ? undefined : null,
+        },
       });
-    }
+      if (failure.searchSubmitted) {
+        await tx.sentrowebCheckRun.update({
+          where: { id: run.id },
+          data: { creditsUsed: { increment: SENTROWEB_CREDITS_PER_SEARCH } },
+        });
+      }
+    });
     return CONTINUE_AFTER.has(failure.code) ? null : failure.code;
   }
 
@@ -414,69 +464,96 @@ async function processEntity(context: EntityContext): Promise<SentrowebErrorCode
   });
   const checkedAt = now();
 
+  // Files first (they are only reachable through the rows written below), rows second, under the
+  // claim. A worker that lost the run removes what it uploaded.
+  const uploaded: string[] = [];
   let evidencePngKey: string | null = null;
   if (outcome.png) {
     const key = StorageKeys.sentrowebEvidence(run.tenantId, run.companyId, run.id, result.id);
     try {
       await storage.upload(key, outcome.png, { contentType: 'image/png' });
       evidencePngKey = key;
+      uploaded.push(key);
     } catch {
       log.warn('Sentroweb screenshot could not be stored', { runId: run.id });
     }
   }
 
-  let documentId: string | null = null;
+  let report: UploadedReport | null = null;
   if (outcome.pdf && parsed.status !== 'ERROR') {
     try {
-      documentId = await fileReport({ run, result, pdf: outcome.pdf, filedAt: checkedAt });
+      report = await uploadReport({ run, result, pdf: outcome.pdf, filedAt: checkedAt });
+      uploaded.push(report.storageKey);
     } catch {
-      log.error('Sentroweb report could not be filed', { runId: run.id });
+      log.error('Sentroweb report could not be stored', { runId: run.id });
     }
   }
 
-  let status: SentrowebResultStatus = parsed.status;
-  let errorCode: SentrowebErrorCode | null = parsed.status === 'ERROR' ? (parsed.errorCode ?? 'RESULT_MISMATCH') : null;
-  if (parsed.status === 'CLEAR' && !documentId) {
-    // Without Sentroweb's own report a clear result has no evidence behind it (decision D5).
-    status = 'ERROR';
-    errorCode = 'EVIDENCE_MISSING';
-  } else if (parsed.status === 'POSSIBLE_MATCH' && !documentId) {
-    errorCode = 'EVIDENCE_MISSING';
-  }
+  const publish = (filed: UploadedReport | null) =>
+    withLiveClaim(run.id, claimToken, async (tx) => {
+      let status: SentrowebResultStatus = parsed.status;
+      let errorCode: SentrowebErrorCode | null =
+        parsed.status === 'ERROR' ? (parsed.errorCode ?? 'RESULT_MISMATCH') : null;
+      if (filed) await recordReport(tx, { run, result, report: filed, filedAt: checkedAt });
+      if (parsed.status === 'CLEAR' && !filed) {
+        // Without Sentroweb's own report a clear result has no evidence behind it (decision D5).
+        status = 'ERROR';
+        errorCode = 'EVIDENCE_MISSING';
+      } else if (parsed.status === 'POSSIBLE_MATCH' && !filed) {
+        errorCode = 'EVIDENCE_MISSING';
+      }
+      await tx.sentrowebCheckResult.update({
+        where: { id: result.id },
+        data: {
+          status,
+          matchCount: parsed.matchCount,
+          categoryCounts: parsed.categoryCounts as Prisma.InputJsonValue,
+          matches: parsed.matches as unknown as Prisma.InputJsonValue,
+          sentrowebReportId: parsed.sentrowebReportId,
+          monitorEnabled: parsed.monitorEnabled,
+          errorCode,
+          documentId: filed?.documentId ?? null,
+          evidencePngKey,
+          checkedAt,
+        },
+      });
+      await tx.sentrowebCheckRun.update({
+        where: { id: run.id },
+        data: { creditsUsed: { increment: SENTROWEB_CREDITS_PER_SEARCH } },
+      });
+      return errorCode;
+    });
 
-  await prisma.sentrowebCheckResult.update({
-    where: { id: result.id },
-    data: {
-      status,
-      matchCount: parsed.matchCount,
-      categoryCounts: parsed.categoryCounts as Prisma.InputJsonValue,
-      matches: parsed.matches as unknown as Prisma.InputJsonValue,
-      sentrowebReportId: parsed.sentrowebReportId,
-      monitorEnabled: parsed.monitorEnabled,
-      errorCode,
-      documentId,
-      evidencePngKey,
-      checkedAt,
-    },
-  });
-  await prisma.sentrowebCheckRun.update({
-    where: { id: run.id },
-    data: { creditsUsed: { increment: SENTROWEB_CREDITS_PER_SEARCH } },
-  });
+  let errorCode: SentrowebErrorCode | null;
+  try {
+    try {
+      errorCode = await publish(report);
+    } catch (error) {
+      if (error instanceof StaleClaimError || !report) throw error;
+      // The Document could not be filed: keep the result, without a report (a would-be CLEAR
+      // becomes EVIDENCE_MISSING). The first attempt rolled back completely.
+      log.error('Sentroweb report could not be filed', { runId: run.id });
+      errorCode = await publish(null);
+    }
+  } catch (error) {
+    if (error instanceof StaleClaimError) {
+      await Promise.all(uploaded.map((key) => storage.delete(key).catch(() => undefined)));
+    }
+    throw error;
+  }
 
   return errorCode && !CONTINUE_AFTER.has(errorCode) ? errorCode : null;
 }
 
-/** Files Sentroweb's PDF as a company Document, the way e-signing files signed packages. */
-async function fileReport(input: {
+/** Stores Sentroweb's PDF the way e-signing stores signed packages (deterministic id and key). */
+async function uploadReport(input: {
   run: SentrowebCheckRun;
   result: SentrowebCheckResult;
   pdf: Buffer;
   filedAt: Date;
-}): Promise<string> {
+}): Promise<UploadedReport> {
   const { run, result, pdf, filedAt } = input;
   const documentId = uuidv5(`${run.id}:${result.id}:sentroweb-report`, REPORT_NAMESPACE);
-  const fileName = `${documentId}.pdf`;
   const originalFileName = reportFileName(result.name, filedAt);
   const storageKey = StorageKeys.documentOriginal(run.tenantId, run.companyId, documentId, '.pdf');
 
@@ -490,60 +567,49 @@ async function fileReport(input: {
       originalFileName,
     },
   });
+  return { documentId, fileName: `${documentId}.pdf`, originalFileName, storageKey, size: pdf.byteLength };
+}
 
-  await prisma.$transaction(async (tx) => {
-    await tx.document.upsert({
-      where: { id: documentId },
-      update: {
-        tenantId: run.tenantId,
-        companyId: run.companyId,
-        uploadedById: run.requestedById,
-        documentType: SENTROWEB_REPORT_DOCUMENT_TYPE,
-        fileName,
-        originalFileName,
-        storageKey,
-        fileSize: pdf.byteLength,
-        mimeType: 'application/pdf',
-        extractionStatus: 'COMPLETED',
-        extractedAt: filedAt,
-        isLatest: true,
-        deletedAt: null,
-        deletedReason: null,
-      },
-      create: {
-        id: documentId,
-        tenantId: run.tenantId,
-        companyId: run.companyId,
-        uploadedById: run.requestedById,
-        documentType: SENTROWEB_REPORT_DOCUMENT_TYPE,
-        fileName,
-        originalFileName,
-        storageKey,
-        fileSize: pdf.byteLength,
-        mimeType: 'application/pdf',
-        version: 1,
-        isLatest: true,
-        extractionStatus: 'COMPLETED',
-        extractedAt: filedAt,
-      },
-    });
-    await createAuditLog(
-      {
-        tenantId: run.tenantId,
-        userId: run.requestedById,
-        companyId: run.companyId,
-        action: 'UPLOAD',
-        entityType: 'Document',
-        entityId: documentId,
-        entityName: originalFileName,
-        summary: `Filed Sentroweb report "${originalFileName}"`,
-        changeSource: 'SYSTEM',
-        metadata: { sentrowebRunId: run.id, sentrowebResultId: result.id },
-      },
-      tx,
-    );
+/** Files the Document row and its audit entry (inside the claim transaction). */
+async function recordReport(
+  tx: Prisma.TransactionClient,
+  input: { run: SentrowebCheckRun; result: SentrowebCheckResult; report: UploadedReport; filedAt: Date },
+): Promise<void> {
+  const { run, result, report, filedAt } = input;
+  const fields = {
+    tenantId: run.tenantId,
+    companyId: run.companyId,
+    uploadedById: run.requestedById,
+    documentType: SENTROWEB_REPORT_DOCUMENT_TYPE,
+    fileName: report.fileName,
+    originalFileName: report.originalFileName,
+    storageKey: report.storageKey,
+    fileSize: report.size,
+    mimeType: 'application/pdf',
+    extractionStatus: 'COMPLETED',
+    extractedAt: filedAt,
+    isLatest: true,
+  };
+  await tx.document.upsert({
+    where: { id: report.documentId },
+    update: { ...fields, deletedAt: null, deletedReason: null },
+    create: { id: report.documentId, ...fields, version: 1 },
   });
-  return documentId;
+  await createAuditLog(
+    {
+      tenantId: run.tenantId,
+      userId: run.requestedById,
+      companyId: run.companyId,
+      action: 'UPLOAD',
+      entityType: 'Document',
+      entityId: report.documentId,
+      entityName: report.originalFileName,
+      summary: `Filed Sentroweb report "${report.originalFileName}"`,
+      changeSource: 'SYSTEM',
+      metadata: { sentrowebRunId: run.id, sentrowebResultId: result.id },
+    },
+    tx,
+  );
 }
 
 async function finishRun(
@@ -552,37 +618,51 @@ async function finishRun(
   errorCode: SentrowebErrorCode | null,
   finishedAt: Date,
 ): Promise<ProcessOutcome> {
-  const rows = await prisma.sentrowebCheckResult.findMany({ where: { runId: run.id }, select: { status: true } });
-  const statuses = rows.map((row) => row.status);
   const failed = errorCode !== null;
-  const overallResult = computeOverallResult(statuses, failed);
-
-  const updated = await prisma.sentrowebCheckRun.updateMany({
-    where: { id: run.id, claimToken, status: 'RUNNING' },
-    data: {
-      status: failed ? 'FAILED' : 'COMPLETED',
-      overallResult,
-      errorCode,
-      finishedAt,
-      claimToken: null,
-      leaseExpiresAt: null,
-    },
-  });
-  if (updated.count !== 1) return { status: 'stale-worker' };
-
-  await createAuditLog({
-    tenantId: run.tenantId,
-    userId: run.requestedById,
-    companyId: run.companyId,
-    action: 'UPDATE',
-    entityType: 'SentrowebCheckRun',
-    entityId: run.id,
-    entityName: run.company.name,
-    summary: `Sentroweb check ${failed ? 'failed' : 'completed'}: ${overallResult.replace('_', ' ').toLowerCase()}`,
-    changeSource: 'SYSTEM',
-    metadata: { overallResult, errorCode, ...countStatuses(statuses) },
-  });
-  return { status: failed ? 'failed' : 'completed', errorCode };
+  try {
+    await withLiveClaim(run.id, claimToken, async (tx) => {
+      // A name that was submitted but never got a result (an unexpected failure between the
+      // search and the write) must not look "not run": its credit may be spent.
+      await tx.sentrowebCheckResult.updateMany({
+        where: { runId: run.id, status: 'NOT_RUN', searchSubmittedAt: { not: null } },
+        data: { status: 'ERROR', errorCode: errorCode ?? 'UNEXPECTED_ERROR', checkedAt: finishedAt },
+      });
+      const rows = await tx.sentrowebCheckResult.findMany({ where: { runId: run.id }, select: { status: true } });
+      const statuses = rows.map((row) => row.status);
+      const overall = computeOverallResult(statuses, failed);
+      await tx.sentrowebCheckRun.update({
+        where: { id: run.id },
+        data: {
+          status: failed ? 'FAILED' : 'COMPLETED',
+          overallResult: overall,
+          errorCode,
+          finishedAt,
+          claimToken: null,
+          leaseExpiresAt: null,
+        },
+      });
+      await createAuditLog(
+        {
+          tenantId: run.tenantId,
+          userId: run.requestedById,
+          companyId: run.companyId,
+          action: 'UPDATE',
+          entityType: 'SentrowebCheckRun',
+          entityId: run.id,
+          entityName: run.company.name,
+          summary: `Sentroweb check ${failed ? 'failed' : 'completed'}: ${overall.replace('_', ' ').toLowerCase()}`,
+          changeSource: 'SYSTEM',
+          metadata: { overallResult: overall, errorCode, ...countStatuses(statuses) },
+        },
+        tx,
+      );
+      return overall;
+    });
+    return { status: failed ? 'failed' : 'completed', errorCode };
+  } catch (error) {
+    if (error instanceof StaleClaimError) return { status: 'stale-worker' };
+    throw error;
+  }
 }
 
 // --- recovery ----------------------------------------------------------------------------------

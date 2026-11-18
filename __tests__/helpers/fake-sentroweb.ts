@@ -28,6 +28,8 @@ export interface FakeOptions {
   searchDelayMs: number;
   /** Status of the PDF download endpoint. */
   pdfStatus: number;
+  /** Delay before the PDF download starts answering. */
+  pdfDelayMs: number;
   /** Status of the search endpoint. */
   searchStatus: number;
   /** Remove the accordion titles from the page after the search. */
@@ -45,6 +47,7 @@ const DEFAULTS: FakeOptions = {
   unexpectedLanding: false,
   searchDelayMs: 0,
   pdfStatus: 200,
+  pdfDelayMs: 0,
   searchStatus: 200,
   omitResultTitles: false,
   expireSessionOnMainRequest: null,
@@ -307,6 +310,7 @@ export async function startFakeSentroweb(overrides: Partial<FakeOptions> = {}): 
 
       if (route === 'GET /sentroweb-service/report/private/download') {
         events.push({ type: 'download' });
+        if (options.pdfDelayMs > 0) await new Promise((resolve) => setTimeout(resolve, options.pdfDelayMs));
         if (options.pdfStatus !== 200) return json(response, { error: 'no report' }, options.pdfStatus);
         const pdf = Buffer.from(`%PDF-1.4\n% fake report\n${'x'.repeat(2000)}\n%%EOF\n`, 'latin1');
         response.writeHead(200, {
