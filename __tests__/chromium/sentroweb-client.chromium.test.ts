@@ -233,6 +233,17 @@ describe('Sentroweb client against a fake Sentroweb', () => {
     expect(server.count('search')).toBe(2);
   });
 
+  it('a quota answer that arrives after the gate gave up cannot start a search either', async () => {
+    const server = await start({ freeRepeats: true, repeatQuotaDelayMs: 4_000 });
+    const session = await open(server, { requiredCredits: 1, timeouts: { stepMs: 2_000 } });
+    await session.search({ name: CLEAR_ENTITY, searchType: 'ENTITY' });
+    const error = await failureOf(session.search({ name: CLEAR_ENTITY, searchType: 'ENTITY' }));
+    expect(error.code).toBe('LAYOUT_CHANGED');
+    expect(error.searchSubmitted).toBe(false);
+    await new Promise((resolve) => setTimeout(resolve, 4_500));
+    expect(server.count('search')).toBe(1);
+  });
+
   it('an abort while waiting for the dialog, after the page searched on its own, is submitted too', async () => {
     const server = await start({ freeRepeats: true, repeatQuotaUniqueNames: ['unexpected-name'] });
     const session = await open(server, { requiredCredits: 1, timeouts: { stepMs: 30_000 } });
@@ -272,25 +283,40 @@ describe('Sentroweb client against a fake Sentroweb', () => {
       };
     }
 
-    it('after the click reached the page and it searched by itself, the search is submitted (cooldown, no retry)', async () => {
+    it('after the click reached the page, what is reported always matches what reached Sentroweb', async () => {
       const server = await start({ freeRepeats: true });
       const session = await open(server, { requiredCredits: 1 });
       await session.search({ name: CLEAR_ENTITY, searchType: 'ENTITY' }); // seeds the name, so the repeat is automatic
       await failSubmitClick(true);
       const error = await failureOf(session.search({ name: CLEAR_ENTITY, searchType: 'ENTITY' }));
-      expect(error.searchSubmitted).toBe(true);
-      expect(error.creditsCharged).toBeUndefined();
-      expect(server.count('search')).toBe(2);
+      await new Promise((resolve) => setTimeout(resolve, 1_500)); // let anything still in flight land
+      // Either the page's search went out first (submitted, cooldown, charge unknown) or the page
+      // was reloaded before it could (not submitted and nothing arrived later).
+      if (error.searchSubmitted) {
+        expect(error.creditsCharged).toBeUndefined();
+        expect(server.count('search')).toBe(2);
+      } else {
+        expect(server.count('search')).toBe(1);
+      }
+    });
+
+    it('a slow quota answer cannot start a search after the attempt was declared not submitted', async () => {
+      const server = await start({ freeRepeats: true, repeatQuotaDelayMs: 3_000 });
+      const session = await open(server, { requiredCredits: 1 });
+      await session.search({ name: CLEAR_ENTITY, searchType: 'ENTITY' });
+      await failSubmitClick(true);
+      const error = await failureOf(session.search({ name: CLEAR_ENTITY, searchType: 'ENTITY' }));
+      expect(error.searchSubmitted).toBe(false);
+      await new Promise((resolve) => setTimeout(resolve, 4_500)); // longer than the quota delay
+      expect(server.count('search')).toBe(1); // the page was reloaded: its late search never went out
     });
 
     it('when the click never reached the page, nothing was submitted', async () => {
       const server = await start();
       const session = await open(server);
       await failSubmitClick(false);
-      const started = Date.now();
       const error = await failureOf(session.search({ name: CLEAR_ENTITY, searchType: 'ENTITY' }));
       expect(error.searchSubmitted).toBe(false);
-      expect(Date.now() - started).toBeGreaterThanOrEqual(900); // the short grace was waited out
       expect(server.count('search')).toBe(0);
       expect(server.count('checkquota')).toBe(0);
     });

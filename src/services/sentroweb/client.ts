@@ -51,9 +51,6 @@ const PAGE_IDLE_MAX_MS = 10_000;
 /** Clicks allowed per checkbox before the form is declared unusable (state is re-read before each). */
 const CHECKBOX_ATTEMPTS = 3;
 const CHECKBOX_SETTLE_MS = 400;
-/** After a failed SEARCH click: longest wait for the page's search request, and the wait when the page showed no sign at all. */
-const CLICK_FAULT_MAX_MS = 4_000;
-const CLICK_FAULT_NO_SIGN_MS = 1_000;
 const CLOSE_STEP_TIMEOUT_MS = 5_000;
 
 export interface SentrowebSearchRequest {
@@ -375,16 +372,13 @@ class Session implements SentrowebSession {
     // never retried, and its charge is unknown.
     let gate: ConfirmGate;
     try {
-      try {
-        await this.phase('click-search', () => page.click(selectors.search.submit));
-      } catch (clickError) {
-        // The click call failed, but its mouse events may already have reached the page, which
-        // then sends the search a moment later. Give that a short, bounded time to show itself.
-        await this.settleAfterFailedClick();
-        throw clickError;
-      }
+      await this.phase('click-search', () => page.click(selectors.search.submit));
       gate = await this.phase('confirm-modal', () => this.awaitConfirmOrFree(signal));
     } catch (error) {
+      // Not sent yet does not mean it never will be: a slow quota answer can still make the page
+      // search a moment from now. Reload the page first (that drops its pending calls) and only
+      // then decide, so a search that goes out later cannot be recorded as "not submitted".
+      if (!state.searchDispatched && !(await this.quiescePage())) state.searchDispatched = true;
       if (state.searchDispatched) {
         throw new SentrowebError(error instanceof SentrowebError ? error.code : 'LAYOUT_CHANGED', {
           searchSubmitted: true,
@@ -436,18 +430,17 @@ class Session implements SentrowebSession {
   }
 
   /**
-   * After a failed click: wait until the page's own search request shows up, but only as long as
-   * there is a sign the click reached the page (its quota request). No sign within the grace means
-   * the click did nothing and the search can be treated as not submitted.
+   * Stops the page from sending a search after we gave up on it: loads the search page afresh,
+   * which drops the old page's pending calls, then lets the caller read the request latch.
+   * Returns true when that is certain. If the reload itself fails, the page may still be alive; it
+   * is certain only if the page never even sent its quota request.
    */
-  private async settleAfterFailedClick(): Promise<void> {
-    const { state } = this;
-    const started = Date.now();
-    while (!state.searchDispatched) {
-      const waited = Date.now() - started;
-      if (waited >= CLICK_FAULT_MAX_MS) return;
-      if (!state.quotaRequested && waited >= CLICK_FAULT_NO_SIGN_MS) return;
-      await sleep(POLL_INTERVAL_MS);
+  private async quiescePage(): Promise<boolean> {
+    try {
+      await this.page.goto(this.url(SENTROWEB_PATHS.search), { waitUntil: 'domcontentloaded', timeout: CLOSE_STEP_TIMEOUT_MS });
+      return true;
+    } catch {
+      return !this.state.quotaRequested;
     }
   }
 

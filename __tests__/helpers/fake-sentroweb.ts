@@ -43,6 +43,8 @@ export interface FakeOptions {
   repeatQuotaUniqueNames: string[];
   /** With `freeRepeats`: a repeated name's search call answers HTTP 500 (the first search succeeds). */
   failRepeatSearches: boolean;
+  /** With `freeRepeats`: a repeated name's quota answer is delayed by this long (the page searches after it). */
+  repeatQuotaDelayMs: number;
   /** The page also fetches this path when SEARCH is clicked (to test what the diagnostics log). */
   diagnosticFetchPath: string | null;
   /** Delay before the search endpoint answers. */
@@ -71,6 +73,7 @@ const DEFAULTS: FakeOptions = {
   suppressModal: false,
   repeatQuotaUniqueNames: [],
   failRepeatSearches: false,
+  repeatQuotaDelayMs: 0,
   diagnosticFetchPath: null,
   initDelayMs: 400,
   initStatus: 200,
@@ -323,6 +326,7 @@ export async function startFakeSentroweb(overrides: Partial<FakeOptions> = {}): 
         const quotaBody = JSON.parse(quotaRaw) as { queries: Array<Record<string, unknown>> };
         const quotaName = String(quotaBody.queries[0]?.name ?? '');
         if (options.freeRepeats && searchedNames.has(quotaName)) {
+          if (options.repeatQuotaDelayMs > 0) await sleep(options.repeatQuotaDelayMs);
           return json(response, {
             deductCredit: false,
             currentBalance: options.balance,

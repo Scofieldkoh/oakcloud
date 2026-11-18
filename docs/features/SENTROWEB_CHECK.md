@@ -48,9 +48,11 @@ confirmation (**Run again anyway**). Only one run per company can be queued or r
   submitted. A free search still counts as submitted for the cooldown.
   Whether a search was submitted is latched from the page's own search request, not from our
   reading of the quota answer: if the page searched on its own and we then reject the answer, or an
-  abort or timeout follows, or the SEARCH click call itself fails after its mouse events reached the
-  page (the client waits up to 4 seconds for the page's request to show itself), the name stays submitted (cooldown, never retried) and its charge is
-  unknown, so it counts as one credit. Only a search Sentroweb itself said was free is counted as
+  abort or timeout follows, or the SEARCH click call itself fails, the name stays submitted (cooldown, never retried) and its charge is
+  unknown, so it counts as one credit. Before a failed attempt is called "not submitted" the client
+  reloads the search page, which drops the old page's pending calls, so a slow quota answer cannot
+  start a search after the fact; if that reload itself fails and the page had asked for a quota, the
+  attempt is treated as submitted. Only a search Sentroweb itself said was free is counted as
   zero when it fails afterwards.
   Exporting the PDF appeared free in discovery (balance unchanged), but that was inferred from the
   balance only.
