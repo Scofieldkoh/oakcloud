@@ -82,6 +82,10 @@ Common configured model IDs in the codebase include:
 | `NODE_ENV` | `development` | Runtime mode |
 | `MAX_FILE_SIZE` | `10485760` | Max upload size in bytes for standard document and public form uploads |
 | `LOG_LEVEL` | `debug` in dev, `info` in prod | Logger verbosity |
+| `TRUSTED_PROXY` | `xff` | Which proxy in front of the app is trusted to report the client address, used by every IP-based rate limit. `xff`: the address is the entry `TRUSTED_PROXY_HOPS` places from the right of `X-Forwarded-For` (never the leftmost entry, which the client controls). `cloudflare`: the address is `CF-Connecting-IP`; use this behind Cloudflare or a Cloudflare tunnel. An invalid value is logged and the defaults are used. When neither variable is set the app behaves as `xff` with one hop and logs a warning once |
+| `TRUSTED_PROXY_HOPS` | `1` | Number of proxies in front of the app that append to `X-Forwarded-For` (1 to 5). Only read in `xff` mode. Fail closed: a request whose `X-Forwarded-For` has fewer entries than this number (it did not pass through every configured proxy), or whose selected entry is not an address, gets the client address `unknown`, and all such requests share one allowance. Set it to the exact number of proxies in front of the app: too low selects an inner proxy address (shared and stricter); too high lets a client pad `X-Forwarded-For` with extra entries so that the selected position is one it wrote, so the address is not trustworthy |
+
+With no proxy in front of the app, no trustworthy client address exists (a client can send any `X-Forwarded-For`). The e-signing limits that must hold regardless do not depend on it: access-code attempts per recipient and the per-recipient limits on a signing session. Rate-limit budgets are kept for their whole window (for example 15 minutes for access-code attempts and 10 minutes for the certificate lookup aggregate); the in-memory store is cleared on restart.
 
 ## Public Forms
 
@@ -203,6 +207,28 @@ Generate a value with:
 ```bash
 openssl rand -hex 32
 ```
+
+## Sentroweb Check
+
+The company **Sentroweb check** drives the Sentroweb web app with a headless browser (see
+[Sentroweb check](../features/SENTROWEB_CHECK.md)). The credentials belong to one shared Sentroweb
+login and are read only from the environment; never commit them, log them or paste them into
+tickets. There is no one-time code. The feature is off unless `SENTROWEB_ENABLED=true` **and** the
+four required settings are present; otherwise the API answers `503 SENTROWEB_NOT_CONFIGURED`.
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `SENTROWEB_ENABLED` | Yes | off | `true` switches the feature on |
+| `SENTROWEB_BASE_URL` | Yes | - | Sentroweb address; only its origin is used. Must be `https` (plain `http` only for `127.0.0.1`/`localhost`, used by the tests) |
+| `SENTROWEB_ACCOUNT_ID` | Yes | - | Company registration number shown on the Sentroweb login page |
+| `SENTROWEB_USERNAME` | Yes | - | Sentroweb login name |
+| `SENTROWEB_PASSWORD` | Yes | - | Sentroweb password |
+| `SENTROWEB_STEP_TIMEOUT_MS` | No | `30000` | Limit for each navigation, click and short wait |
+| `SENTROWEB_RUN_TIMEOUT_MS` | No | `600000` | Limit for a whole run; the lease is this plus 2 minutes |
+| `SENTROWEB_SEARCH_DELAY_MS` | No | `2000` | Pause between two searches |
+
+Chrome must be installed (`CHROME_PATH` or the default locations), as for PDF export. Recovery of
+interrupted runs uses the scheduler (`SCHEDULER_ENABLED`).
 
 ## Task Scheduler
 

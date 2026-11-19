@@ -100,6 +100,7 @@ Return a JSON object with the following structure (include only fields that have
     "identificationType": "NRIC | FIN | PASSPORT | UEN | OTHER",
     "identificationNumber": "string",
     "nationality": "string",
+    "dateOfBirth": "YYYY-MM-DD - ONLY if a date of birth is explicitly printed for this individual; otherwise omit the key. Never derive it from the ID number",
     "placeOfOrigin": "string - For corporate shareholders",
     "address": "string - Full address",
     "shareClass": "ORDINARY",
@@ -113,6 +114,7 @@ Return a JSON object with the following structure (include only fields that have
     "identificationType": "NRIC | FIN | PASSPORT",
     "identificationNumber": "string",
     "nationality": "string",
+    "dateOfBirth": "YYYY-MM-DD - ONLY if a date of birth is explicitly printed for this person; otherwise omit the key. Never derive it from the ID number",
     "address": "string - Full address",
     "appointmentDate": "YYYY-MM-DD",
     "cessationDate": "YYYY-MM-DD or null if current"
@@ -154,6 +156,7 @@ Important:
 - Parse all dates in YYYY-MM-DD format
 - Include all officers (current and ceased)
 - Include all shareholders with their nationality and address
+- Include dateOfBirth for an officer or individual shareholder ONLY when the document explicitly prints a date of birth for that person. Omit it when it is not printed. Never infer or calculate a date of birth from an NRIC/FIN or any other number
 - Extract share capital structure completely including treasury shares
 - For every share-capital row, extract totalValue directly from the document's printed class total (for example, "150,000 shares of SGD 1.00 each" has totalValue 150,000) - never use the per-share value as the total. Do not extract or calculate parValue; the system strictly recalculates it as totalValue divided by numberOfShares (for example, 168 SGD / 168 shares = 1 SGD per share)
 - IMPORTANT: Extract paidUpCapital and issuedCapital amounts directly from the "PAID-UP CAPITAL" and "ISSUED/REGISTERED CAPITAL" sections in the document - do NOT calculate from share capital

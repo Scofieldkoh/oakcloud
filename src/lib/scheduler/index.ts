@@ -68,6 +68,7 @@ import {
   formUrlHealthTask,
   processingRevisionBackfillTask,
   publicHolidaySyncTask,
+  sentrowebCheckTask,
   summaryCountRefreshTask,
   serviceAgreementActivationTask,
   serviceScheduleReconciliationTask,
@@ -95,6 +96,7 @@ export async function initializeScheduler(): Promise<void> {
   scheduler.registerTask(formUrlHealthTask);
   scheduler.registerTask(processingRevisionBackfillTask);
   scheduler.registerTask(publicHolidaySyncTask);
+  scheduler.registerTask(sentrowebCheckTask);
   scheduler.registerTask(summaryCountRefreshTask);
   scheduler.registerTask(serviceAgreementActivationTask);
   scheduler.registerTask(serviceScheduleReconciliationTask);

@@ -645,6 +645,7 @@ export type CompanyWhereInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueListRelationFilter
   sharePointFolderMapping?: Prisma.XOR<Prisma.CompanySharePointFolderNullableScalarRelationFilter, Prisma.CompanySharePointFolderWhereInput> | null
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingListRelationFilter
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunListRelationFilter
 }
 
 export type CompanyOrderByWithRelationInput = {
@@ -735,6 +736,7 @@ export type CompanyOrderByWithRelationInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueOrderByRelationAggregateInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderOrderByWithRelationInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingOrderByRelationAggregateInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunOrderByRelationAggregateInput
 }
 
 export type CompanyWhereUniqueInput = Prisma.AtLeast<{
@@ -830,6 +832,7 @@ export type CompanyWhereUniqueInput = Prisma.AtLeast<{
   billingCoverageIssues?: Prisma.BillingCoverageIssueListRelationFilter
   sharePointFolderMapping?: Prisma.XOR<Prisma.CompanySharePointFolderNullableScalarRelationFilter, Prisma.CompanySharePointFolderWhereInput> | null
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingListRelationFilter
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunListRelationFilter
 }, "id" | "tenantId_uen" | "tenantId_id">
 
 export type CompanyOrderByWithAggregationInput = {
@@ -1033,6 +1036,7 @@ export type CompanyCreateInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutCompanyInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderCreateNestedOneWithoutCompanyInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutCompanyInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateInput = {
@@ -1122,6 +1126,7 @@ export type CompanyUncheckedCreateInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutCompanyInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUncheckedCreateNestedOneWithoutCompanyInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutCompanyInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUpdateInput = {
@@ -1211,6 +1216,7 @@ export type CompanyUpdateInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutCompanyNestedInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUpdateOneWithoutCompanyNestedInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutCompanyNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateInput = {
@@ -1300,6 +1306,7 @@ export type CompanyUncheckedUpdateInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutCompanyNestedInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUncheckedUpdateOneWithoutCompanyNestedInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutCompanyNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateManyInput = {
@@ -2271,6 +2278,20 @@ export type CompanyUpdateOneWithoutTaskRecoveryContextsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.CompanyUpdateToOneWithWhereWithoutTaskRecoveryContextsInput, Prisma.CompanyUpdateWithoutTaskRecoveryContextsInput>, Prisma.CompanyUncheckedUpdateWithoutTaskRecoveryContextsInput>
 }
 
+export type CompanyCreateNestedOneWithoutSentrowebCheckRunsInput = {
+  create?: Prisma.XOR<Prisma.CompanyCreateWithoutSentrowebCheckRunsInput, Prisma.CompanyUncheckedCreateWithoutSentrowebCheckRunsInput>
+  connectOrCreate?: Prisma.CompanyCreateOrConnectWithoutSentrowebCheckRunsInput
+  connect?: Prisma.CompanyWhereUniqueInput
+}
+
+export type CompanyUpdateOneRequiredWithoutSentrowebCheckRunsNestedInput = {
+  create?: Prisma.XOR<Prisma.CompanyCreateWithoutSentrowebCheckRunsInput, Prisma.CompanyUncheckedCreateWithoutSentrowebCheckRunsInput>
+  connectOrCreate?: Prisma.CompanyCreateOrConnectWithoutSentrowebCheckRunsInput
+  upsert?: Prisma.CompanyUpsertWithoutSentrowebCheckRunsInput
+  connect?: Prisma.CompanyWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.CompanyUpdateToOneWithWhereWithoutSentrowebCheckRunsInput, Prisma.CompanyUpdateWithoutSentrowebCheckRunsInput>, Prisma.CompanyUncheckedUpdateWithoutSentrowebCheckRunsInput>
+}
+
 export type CompanyCreateWithoutTenantInput = {
   id?: string
   uen: string
@@ -2357,6 +2378,7 @@ export type CompanyCreateWithoutTenantInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutCompanyInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderCreateNestedOneWithoutCompanyInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutCompanyInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutTenantInput = {
@@ -2445,6 +2467,7 @@ export type CompanyUncheckedCreateWithoutTenantInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutCompanyInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUncheckedCreateNestedOneWithoutCompanyInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutCompanyInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutTenantInput = {
@@ -2615,6 +2638,7 @@ export type CompanyCreateWithoutRoleAssignmentsInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutCompanyInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderCreateNestedOneWithoutCompanyInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutCompanyInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutRoleAssignmentsInput = {
@@ -2703,6 +2727,7 @@ export type CompanyUncheckedCreateWithoutRoleAssignmentsInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutCompanyInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUncheckedCreateNestedOneWithoutCompanyInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutCompanyInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutRoleAssignmentsInput = {
@@ -2807,6 +2832,7 @@ export type CompanyUpdateWithoutRoleAssignmentsInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutCompanyNestedInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUpdateOneWithoutCompanyNestedInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutCompanyNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutRoleAssignmentsInput = {
@@ -2895,6 +2921,7 @@ export type CompanyUncheckedUpdateWithoutRoleAssignmentsInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutCompanyNestedInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUncheckedUpdateOneWithoutCompanyNestedInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutCompanyNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutUserAssignmentsInput = {
@@ -2983,6 +3010,7 @@ export type CompanyCreateWithoutUserAssignmentsInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutCompanyInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderCreateNestedOneWithoutCompanyInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutCompanyInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutUserAssignmentsInput = {
@@ -3071,6 +3099,7 @@ export type CompanyUncheckedCreateWithoutUserAssignmentsInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutCompanyInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUncheckedCreateNestedOneWithoutCompanyInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutCompanyInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutUserAssignmentsInput = {
@@ -3175,6 +3204,7 @@ export type CompanyUpdateWithoutUserAssignmentsInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutCompanyNestedInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUpdateOneWithoutCompanyNestedInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutCompanyNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutUserAssignmentsInput = {
@@ -3263,6 +3293,7 @@ export type CompanyUncheckedUpdateWithoutUserAssignmentsInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutCompanyNestedInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUncheckedUpdateOneWithoutCompanyNestedInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutCompanyNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutSharePointFolderMappingInput = {
@@ -3351,6 +3382,7 @@ export type CompanyCreateWithoutSharePointFolderMappingInput = {
   billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutCompanyInput
   billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutCompanyInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutCompanyInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutSharePointFolderMappingInput = {
@@ -3439,6 +3471,7 @@ export type CompanyUncheckedCreateWithoutSharePointFolderMappingInput = {
   billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
   billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutCompanyInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutCompanyInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutSharePointFolderMappingInput = {
@@ -3543,6 +3576,7 @@ export type CompanyUpdateWithoutSharePointFolderMappingInput = {
   billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutCompanyNestedInput
   billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutCompanyNestedInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutCompanyNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutSharePointFolderMappingInput = {
@@ -3631,6 +3665,7 @@ export type CompanyUncheckedUpdateWithoutSharePointFolderMappingInput = {
   billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
   billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutCompanyNestedInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutCompanyNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutFormerNamesInput = {
@@ -3719,6 +3754,7 @@ export type CompanyCreateWithoutFormerNamesInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutCompanyInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderCreateNestedOneWithoutCompanyInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutCompanyInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutFormerNamesInput = {
@@ -3807,6 +3843,7 @@ export type CompanyUncheckedCreateWithoutFormerNamesInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutCompanyInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUncheckedCreateNestedOneWithoutCompanyInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutCompanyInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutFormerNamesInput = {
@@ -3911,6 +3948,7 @@ export type CompanyUpdateWithoutFormerNamesInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutCompanyNestedInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUpdateOneWithoutCompanyNestedInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutCompanyNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutFormerNamesInput = {
@@ -3999,6 +4037,7 @@ export type CompanyUncheckedUpdateWithoutFormerNamesInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutCompanyNestedInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUncheckedUpdateOneWithoutCompanyNestedInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutCompanyNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutAddressesInput = {
@@ -4087,6 +4126,7 @@ export type CompanyCreateWithoutAddressesInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutCompanyInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderCreateNestedOneWithoutCompanyInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutCompanyInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutAddressesInput = {
@@ -4175,6 +4215,7 @@ export type CompanyUncheckedCreateWithoutAddressesInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutCompanyInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUncheckedCreateNestedOneWithoutCompanyInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutCompanyInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutAddressesInput = {
@@ -4279,6 +4320,7 @@ export type CompanyUpdateWithoutAddressesInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutCompanyNestedInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUpdateOneWithoutCompanyNestedInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutCompanyNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutAddressesInput = {
@@ -4367,6 +4409,7 @@ export type CompanyUncheckedUpdateWithoutAddressesInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutCompanyNestedInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUncheckedUpdateOneWithoutCompanyNestedInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutCompanyNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutContactsInput = {
@@ -4455,6 +4498,7 @@ export type CompanyCreateWithoutContactsInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutCompanyInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderCreateNestedOneWithoutCompanyInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutCompanyInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutContactsInput = {
@@ -4543,6 +4587,7 @@ export type CompanyUncheckedCreateWithoutContactsInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutCompanyInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUncheckedCreateNestedOneWithoutCompanyInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutCompanyInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutContactsInput = {
@@ -4647,6 +4692,7 @@ export type CompanyUpdateWithoutContactsInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutCompanyNestedInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUpdateOneWithoutCompanyNestedInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutCompanyNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutContactsInput = {
@@ -4735,6 +4781,7 @@ export type CompanyUncheckedUpdateWithoutContactsInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutCompanyNestedInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUncheckedUpdateOneWithoutCompanyNestedInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutCompanyNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutContactDetailsInput = {
@@ -4823,6 +4870,7 @@ export type CompanyCreateWithoutContactDetailsInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutCompanyInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderCreateNestedOneWithoutCompanyInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutCompanyInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutContactDetailsInput = {
@@ -4911,6 +4959,7 @@ export type CompanyUncheckedCreateWithoutContactDetailsInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutCompanyInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUncheckedCreateNestedOneWithoutCompanyInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutCompanyInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutContactDetailsInput = {
@@ -5015,6 +5064,7 @@ export type CompanyUpdateWithoutContactDetailsInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutCompanyNestedInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUpdateOneWithoutCompanyNestedInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutCompanyNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutContactDetailsInput = {
@@ -5103,6 +5153,7 @@ export type CompanyUncheckedUpdateWithoutContactDetailsInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutCompanyNestedInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUncheckedUpdateOneWithoutCompanyNestedInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutCompanyNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutOfficersInput = {
@@ -5191,6 +5242,7 @@ export type CompanyCreateWithoutOfficersInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutCompanyInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderCreateNestedOneWithoutCompanyInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutCompanyInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutOfficersInput = {
@@ -5279,6 +5331,7 @@ export type CompanyUncheckedCreateWithoutOfficersInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutCompanyInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUncheckedCreateNestedOneWithoutCompanyInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutCompanyInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutOfficersInput = {
@@ -5383,6 +5436,7 @@ export type CompanyUpdateWithoutOfficersInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutCompanyNestedInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUpdateOneWithoutCompanyNestedInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutCompanyNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutOfficersInput = {
@@ -5471,6 +5525,7 @@ export type CompanyUncheckedUpdateWithoutOfficersInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutCompanyNestedInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUncheckedUpdateOneWithoutCompanyNestedInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutCompanyNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutShareCapitalInput = {
@@ -5559,6 +5614,7 @@ export type CompanyCreateWithoutShareCapitalInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutCompanyInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderCreateNestedOneWithoutCompanyInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutCompanyInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutShareCapitalInput = {
@@ -5647,6 +5703,7 @@ export type CompanyUncheckedCreateWithoutShareCapitalInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutCompanyInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUncheckedCreateNestedOneWithoutCompanyInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutCompanyInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutShareCapitalInput = {
@@ -5751,6 +5808,7 @@ export type CompanyUpdateWithoutShareCapitalInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutCompanyNestedInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUpdateOneWithoutCompanyNestedInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutCompanyNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutShareCapitalInput = {
@@ -5839,6 +5897,7 @@ export type CompanyUncheckedUpdateWithoutShareCapitalInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutCompanyNestedInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUncheckedUpdateOneWithoutCompanyNestedInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutCompanyNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutAuditorInput = {
@@ -5927,6 +5986,7 @@ export type CompanyCreateWithoutAuditorInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutCompanyInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderCreateNestedOneWithoutCompanyInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutCompanyInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutAuditorInput = {
@@ -6015,6 +6075,7 @@ export type CompanyUncheckedCreateWithoutAuditorInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutCompanyInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUncheckedCreateNestedOneWithoutCompanyInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutCompanyInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutAuditorInput = {
@@ -6119,6 +6180,7 @@ export type CompanyUpdateWithoutAuditorInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutCompanyNestedInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUpdateOneWithoutCompanyNestedInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutCompanyNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutAuditorInput = {
@@ -6207,6 +6269,7 @@ export type CompanyUncheckedUpdateWithoutAuditorInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutCompanyNestedInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUncheckedUpdateOneWithoutCompanyNestedInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutCompanyNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutShareholdersInput = {
@@ -6295,6 +6358,7 @@ export type CompanyCreateWithoutShareholdersInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutCompanyInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderCreateNestedOneWithoutCompanyInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutCompanyInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutShareholdersInput = {
@@ -6383,6 +6447,7 @@ export type CompanyUncheckedCreateWithoutShareholdersInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutCompanyInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUncheckedCreateNestedOneWithoutCompanyInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutCompanyInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutShareholdersInput = {
@@ -6487,6 +6552,7 @@ export type CompanyUpdateWithoutShareholdersInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutCompanyNestedInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUpdateOneWithoutCompanyNestedInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutCompanyNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutShareholdersInput = {
@@ -6575,6 +6641,7 @@ export type CompanyUncheckedUpdateWithoutShareholdersInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutCompanyNestedInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUncheckedUpdateOneWithoutCompanyNestedInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutCompanyNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutChargesInput = {
@@ -6663,6 +6730,7 @@ export type CompanyCreateWithoutChargesInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutCompanyInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderCreateNestedOneWithoutCompanyInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutCompanyInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutChargesInput = {
@@ -6751,6 +6819,7 @@ export type CompanyUncheckedCreateWithoutChargesInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutCompanyInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUncheckedCreateNestedOneWithoutCompanyInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutCompanyInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutChargesInput = {
@@ -6855,6 +6924,7 @@ export type CompanyUpdateWithoutChargesInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutCompanyNestedInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUpdateOneWithoutCompanyNestedInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutCompanyNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutChargesInput = {
@@ -6943,6 +7013,7 @@ export type CompanyUncheckedUpdateWithoutChargesInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutCompanyNestedInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUncheckedUpdateOneWithoutCompanyNestedInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutCompanyNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutDocumentsInput = {
@@ -7031,6 +7102,7 @@ export type CompanyCreateWithoutDocumentsInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutCompanyInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderCreateNestedOneWithoutCompanyInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutCompanyInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutDocumentsInput = {
@@ -7119,6 +7191,7 @@ export type CompanyUncheckedCreateWithoutDocumentsInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutCompanyInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUncheckedCreateNestedOneWithoutCompanyInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutCompanyInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutDocumentsInput = {
@@ -7223,6 +7296,7 @@ export type CompanyUpdateWithoutDocumentsInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutCompanyNestedInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUpdateOneWithoutCompanyNestedInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutCompanyNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutDocumentsInput = {
@@ -7311,6 +7385,7 @@ export type CompanyUncheckedUpdateWithoutDocumentsInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutCompanyNestedInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUncheckedUpdateOneWithoutCompanyNestedInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutCompanyNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutAuditLogsInput = {
@@ -7399,6 +7474,7 @@ export type CompanyCreateWithoutAuditLogsInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutCompanyInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderCreateNestedOneWithoutCompanyInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutCompanyInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutAuditLogsInput = {
@@ -7487,6 +7563,7 @@ export type CompanyUncheckedCreateWithoutAuditLogsInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutCompanyInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUncheckedCreateNestedOneWithoutCompanyInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutCompanyInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutAuditLogsInput = {
@@ -7591,6 +7668,7 @@ export type CompanyUpdateWithoutAuditLogsInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutCompanyNestedInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUpdateOneWithoutCompanyNestedInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutCompanyNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutAuditLogsInput = {
@@ -7679,6 +7757,7 @@ export type CompanyUncheckedUpdateWithoutAuditLogsInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutCompanyNestedInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUncheckedUpdateOneWithoutCompanyNestedInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutCompanyNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutNoteTabsInput = {
@@ -7767,6 +7846,7 @@ export type CompanyCreateWithoutNoteTabsInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutCompanyInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderCreateNestedOneWithoutCompanyInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutCompanyInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutNoteTabsInput = {
@@ -7855,6 +7935,7 @@ export type CompanyUncheckedCreateWithoutNoteTabsInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutCompanyInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUncheckedCreateNestedOneWithoutCompanyInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutCompanyInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutNoteTabsInput = {
@@ -7959,6 +8040,7 @@ export type CompanyUpdateWithoutNoteTabsInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutCompanyNestedInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUpdateOneWithoutCompanyNestedInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutCompanyNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutNoteTabsInput = {
@@ -8047,6 +8129,7 @@ export type CompanyUncheckedUpdateWithoutNoteTabsInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutCompanyNestedInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUncheckedUpdateOneWithoutCompanyNestedInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutCompanyNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutGeneratedDocumentsInput = {
@@ -8135,6 +8218,7 @@ export type CompanyCreateWithoutGeneratedDocumentsInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutCompanyInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderCreateNestedOneWithoutCompanyInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutCompanyInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutGeneratedDocumentsInput = {
@@ -8223,6 +8307,7 @@ export type CompanyUncheckedCreateWithoutGeneratedDocumentsInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutCompanyInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUncheckedCreateNestedOneWithoutCompanyInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutCompanyInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutGeneratedDocumentsInput = {
@@ -8327,6 +8412,7 @@ export type CompanyUpdateWithoutGeneratedDocumentsInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutCompanyNestedInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUpdateOneWithoutCompanyNestedInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutCompanyNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutGeneratedDocumentsInput = {
@@ -8415,6 +8501,7 @@ export type CompanyUncheckedUpdateWithoutGeneratedDocumentsInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutCompanyNestedInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUncheckedUpdateOneWithoutCompanyNestedInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutCompanyNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutPrimaryGenerationBatchesInput = {
@@ -8503,6 +8590,7 @@ export type CompanyCreateWithoutPrimaryGenerationBatchesInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutCompanyInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderCreateNestedOneWithoutCompanyInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutCompanyInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutPrimaryGenerationBatchesInput = {
@@ -8591,6 +8679,7 @@ export type CompanyUncheckedCreateWithoutPrimaryGenerationBatchesInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutCompanyInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUncheckedCreateNestedOneWithoutCompanyInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutCompanyInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutPrimaryGenerationBatchesInput = {
@@ -8695,6 +8784,7 @@ export type CompanyUpdateWithoutPrimaryGenerationBatchesInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutCompanyNestedInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUpdateOneWithoutCompanyNestedInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutCompanyNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutPrimaryGenerationBatchesInput = {
@@ -8783,6 +8873,7 @@ export type CompanyUncheckedUpdateWithoutPrimaryGenerationBatchesInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutCompanyNestedInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUncheckedUpdateOneWithoutCompanyNestedInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutCompanyNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutPrimaryServiceAgreementsInput = {
@@ -8871,6 +8962,7 @@ export type CompanyCreateWithoutPrimaryServiceAgreementsInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutCompanyInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderCreateNestedOneWithoutCompanyInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutCompanyInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutPrimaryServiceAgreementsInput = {
@@ -8959,6 +9051,7 @@ export type CompanyUncheckedCreateWithoutPrimaryServiceAgreementsInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutCompanyInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUncheckedCreateNestedOneWithoutCompanyInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutCompanyInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutPrimaryServiceAgreementsInput = {
@@ -9063,6 +9156,7 @@ export type CompanyUpdateWithoutPrimaryServiceAgreementsInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutCompanyNestedInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUpdateOneWithoutCompanyNestedInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutCompanyNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutPrimaryServiceAgreementsInput = {
@@ -9151,6 +9245,7 @@ export type CompanyUncheckedUpdateWithoutPrimaryServiceAgreementsInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutCompanyNestedInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUncheckedUpdateOneWithoutCompanyNestedInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutCompanyNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutServiceAgreementEntitiesInput = {
@@ -9239,6 +9334,7 @@ export type CompanyCreateWithoutServiceAgreementEntitiesInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutCompanyInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderCreateNestedOneWithoutCompanyInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutCompanyInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutServiceAgreementEntitiesInput = {
@@ -9327,6 +9423,7 @@ export type CompanyUncheckedCreateWithoutServiceAgreementEntitiesInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutCompanyInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUncheckedCreateNestedOneWithoutCompanyInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutCompanyInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutServiceAgreementEntitiesInput = {
@@ -9431,6 +9528,7 @@ export type CompanyUpdateWithoutServiceAgreementEntitiesInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutCompanyNestedInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUpdateOneWithoutCompanyNestedInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutCompanyNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutServiceAgreementEntitiesInput = {
@@ -9519,6 +9617,7 @@ export type CompanyUncheckedUpdateWithoutServiceAgreementEntitiesInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutCompanyNestedInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUncheckedUpdateOneWithoutCompanyNestedInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutCompanyNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutClientServicesInput = {
@@ -9607,6 +9706,7 @@ export type CompanyCreateWithoutClientServicesInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutCompanyInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderCreateNestedOneWithoutCompanyInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutCompanyInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutClientServicesInput = {
@@ -9695,6 +9795,7 @@ export type CompanyUncheckedCreateWithoutClientServicesInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutCompanyInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUncheckedCreateNestedOneWithoutCompanyInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutCompanyInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutClientServicesInput = {
@@ -9799,6 +9900,7 @@ export type CompanyUpdateWithoutClientServicesInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutCompanyNestedInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUpdateOneWithoutCompanyNestedInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutCompanyNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutClientServicesInput = {
@@ -9887,6 +9989,7 @@ export type CompanyUncheckedUpdateWithoutClientServicesInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutCompanyNestedInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUncheckedUpdateOneWithoutCompanyNestedInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutCompanyNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutBillingOccurrencesInput = {
@@ -9975,6 +10078,7 @@ export type CompanyCreateWithoutBillingOccurrencesInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutCompanyInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderCreateNestedOneWithoutCompanyInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutCompanyInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutBillingOccurrencesInput = {
@@ -10063,6 +10167,7 @@ export type CompanyUncheckedCreateWithoutBillingOccurrencesInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutCompanyInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUncheckedCreateNestedOneWithoutCompanyInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutCompanyInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutBillingOccurrencesInput = {
@@ -10167,6 +10272,7 @@ export type CompanyUpdateWithoutBillingOccurrencesInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutCompanyNestedInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUpdateOneWithoutCompanyNestedInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutCompanyNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutBillingOccurrencesInput = {
@@ -10255,6 +10361,7 @@ export type CompanyUncheckedUpdateWithoutBillingOccurrencesInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutCompanyNestedInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUncheckedUpdateOneWithoutCompanyNestedInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutCompanyNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutBillingCoverageIssuesInput = {
@@ -10343,6 +10450,7 @@ export type CompanyCreateWithoutBillingCoverageIssuesInput = {
   billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutCompanyInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderCreateNestedOneWithoutCompanyInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutCompanyInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutBillingCoverageIssuesInput = {
@@ -10431,6 +10539,7 @@ export type CompanyUncheckedCreateWithoutBillingCoverageIssuesInput = {
   billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUncheckedCreateNestedOneWithoutCompanyInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutCompanyInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutBillingCoverageIssuesInput = {
@@ -10535,6 +10644,7 @@ export type CompanyUpdateWithoutBillingCoverageIssuesInput = {
   billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutCompanyNestedInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUpdateOneWithoutCompanyNestedInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutCompanyNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutBillingCoverageIssuesInput = {
@@ -10623,6 +10733,7 @@ export type CompanyUncheckedUpdateWithoutBillingCoverageIssuesInput = {
   billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUncheckedUpdateOneWithoutCompanyNestedInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutCompanyNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutServiceCyclesInput = {
@@ -10711,6 +10822,7 @@ export type CompanyCreateWithoutServiceCyclesInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutCompanyInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderCreateNestedOneWithoutCompanyInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutCompanyInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutServiceCyclesInput = {
@@ -10799,6 +10911,7 @@ export type CompanyUncheckedCreateWithoutServiceCyclesInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutCompanyInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUncheckedCreateNestedOneWithoutCompanyInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutCompanyInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutServiceCyclesInput = {
@@ -10903,6 +11016,7 @@ export type CompanyUpdateWithoutServiceCyclesInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutCompanyNestedInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUpdateOneWithoutCompanyNestedInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutCompanyNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutServiceCyclesInput = {
@@ -10991,6 +11105,7 @@ export type CompanyUncheckedUpdateWithoutServiceCyclesInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutCompanyNestedInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUncheckedUpdateOneWithoutCompanyNestedInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutCompanyNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutDeadlineOccurrencesInput = {
@@ -11079,6 +11194,7 @@ export type CompanyCreateWithoutDeadlineOccurrencesInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutCompanyInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderCreateNestedOneWithoutCompanyInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutCompanyInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutDeadlineOccurrencesInput = {
@@ -11167,6 +11283,7 @@ export type CompanyUncheckedCreateWithoutDeadlineOccurrencesInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutCompanyInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUncheckedCreateNestedOneWithoutCompanyInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutCompanyInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutDeadlineOccurrencesInput = {
@@ -11271,6 +11388,7 @@ export type CompanyUpdateWithoutDeadlineOccurrencesInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutCompanyNestedInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUpdateOneWithoutCompanyNestedInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutCompanyNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutDeadlineOccurrencesInput = {
@@ -11359,6 +11477,7 @@ export type CompanyUncheckedUpdateWithoutDeadlineOccurrencesInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutCompanyNestedInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUncheckedUpdateOneWithoutCompanyNestedInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutCompanyNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutFinancialPeriodsInput = {
@@ -11447,6 +11566,7 @@ export type CompanyCreateWithoutFinancialPeriodsInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutCompanyInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderCreateNestedOneWithoutCompanyInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutCompanyInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutFinancialPeriodsInput = {
@@ -11535,6 +11655,7 @@ export type CompanyUncheckedCreateWithoutFinancialPeriodsInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutCompanyInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUncheckedCreateNestedOneWithoutCompanyInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutCompanyInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutFinancialPeriodsInput = {
@@ -11639,6 +11760,7 @@ export type CompanyUpdateWithoutFinancialPeriodsInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutCompanyNestedInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUpdateOneWithoutCompanyNestedInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutCompanyNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutFinancialPeriodsInput = {
@@ -11727,6 +11849,7 @@ export type CompanyUncheckedUpdateWithoutFinancialPeriodsInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutCompanyNestedInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUncheckedUpdateOneWithoutCompanyNestedInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutCompanyNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutMonitoringCoveragesInput = {
@@ -11815,6 +11938,7 @@ export type CompanyCreateWithoutMonitoringCoveragesInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutCompanyInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderCreateNestedOneWithoutCompanyInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutCompanyInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutMonitoringCoveragesInput = {
@@ -11903,6 +12027,7 @@ export type CompanyUncheckedCreateWithoutMonitoringCoveragesInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutCompanyInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUncheckedCreateNestedOneWithoutCompanyInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutCompanyInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutMonitoringCoveragesInput = {
@@ -12007,6 +12132,7 @@ export type CompanyUpdateWithoutMonitoringCoveragesInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutCompanyNestedInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUpdateOneWithoutCompanyNestedInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutCompanyNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutMonitoringCoveragesInput = {
@@ -12095,6 +12221,7 @@ export type CompanyUncheckedUpdateWithoutMonitoringCoveragesInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutCompanyNestedInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUncheckedUpdateOneWithoutCompanyNestedInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutCompanyNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutObligationScopesInput = {
@@ -12183,6 +12310,7 @@ export type CompanyCreateWithoutObligationScopesInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutCompanyInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderCreateNestedOneWithoutCompanyInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutCompanyInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutObligationScopesInput = {
@@ -12271,6 +12399,7 @@ export type CompanyUncheckedCreateWithoutObligationScopesInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutCompanyInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUncheckedCreateNestedOneWithoutCompanyInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutCompanyInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutObligationScopesInput = {
@@ -12375,6 +12504,7 @@ export type CompanyUpdateWithoutObligationScopesInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutCompanyNestedInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUpdateOneWithoutCompanyNestedInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutCompanyNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutObligationScopesInput = {
@@ -12463,6 +12593,7 @@ export type CompanyUncheckedUpdateWithoutObligationScopesInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutCompanyNestedInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUncheckedUpdateOneWithoutCompanyNestedInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutCompanyNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutComplianceIssuesInput = {
@@ -12551,6 +12682,7 @@ export type CompanyCreateWithoutComplianceIssuesInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutCompanyInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderCreateNestedOneWithoutCompanyInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutCompanyInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutComplianceIssuesInput = {
@@ -12639,6 +12771,7 @@ export type CompanyUncheckedCreateWithoutComplianceIssuesInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutCompanyInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUncheckedCreateNestedOneWithoutCompanyInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutCompanyInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutComplianceIssuesInput = {
@@ -12743,6 +12876,7 @@ export type CompanyUpdateWithoutComplianceIssuesInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutCompanyNestedInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUpdateOneWithoutCompanyNestedInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutCompanyNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutComplianceIssuesInput = {
@@ -12831,6 +12965,7 @@ export type CompanyUncheckedUpdateWithoutComplianceIssuesInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutCompanyNestedInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUncheckedUpdateOneWithoutCompanyNestedInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutCompanyNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutEsigningEnvelopesInput = {
@@ -12919,6 +13054,7 @@ export type CompanyCreateWithoutEsigningEnvelopesInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutCompanyInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderCreateNestedOneWithoutCompanyInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutCompanyInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutEsigningEnvelopesInput = {
@@ -13007,6 +13143,7 @@ export type CompanyUncheckedCreateWithoutEsigningEnvelopesInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutCompanyInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUncheckedCreateNestedOneWithoutCompanyInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutCompanyInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutEsigningEnvelopesInput = {
@@ -13111,6 +13248,7 @@ export type CompanyUpdateWithoutEsigningEnvelopesInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutCompanyNestedInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUpdateOneWithoutCompanyNestedInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutCompanyNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutEsigningEnvelopesInput = {
@@ -13199,6 +13337,7 @@ export type CompanyUncheckedUpdateWithoutEsigningEnvelopesInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutCompanyNestedInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUncheckedUpdateOneWithoutCompanyNestedInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutCompanyNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutEsigningSharePointFilingsInput = {
@@ -13287,6 +13426,7 @@ export type CompanyCreateWithoutEsigningSharePointFilingsInput = {
   billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutCompanyInput
   billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutCompanyInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderCreateNestedOneWithoutCompanyInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutEsigningSharePointFilingsInput = {
@@ -13375,6 +13515,7 @@ export type CompanyUncheckedCreateWithoutEsigningSharePointFilingsInput = {
   billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
   billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutCompanyInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUncheckedCreateNestedOneWithoutCompanyInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutEsigningSharePointFilingsInput = {
@@ -13479,6 +13620,7 @@ export type CompanyUpdateWithoutEsigningSharePointFilingsInput = {
   billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutCompanyNestedInput
   billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutCompanyNestedInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUpdateOneWithoutCompanyNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutEsigningSharePointFilingsInput = {
@@ -13567,6 +13709,7 @@ export type CompanyUncheckedUpdateWithoutEsigningSharePointFilingsInput = {
   billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
   billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutCompanyNestedInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUncheckedUpdateOneWithoutCompanyNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutDocumentTagsInput = {
@@ -13655,6 +13798,7 @@ export type CompanyCreateWithoutDocumentTagsInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutCompanyInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderCreateNestedOneWithoutCompanyInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutCompanyInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutDocumentTagsInput = {
@@ -13743,6 +13887,7 @@ export type CompanyUncheckedCreateWithoutDocumentTagsInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutCompanyInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUncheckedCreateNestedOneWithoutCompanyInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutCompanyInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutDocumentTagsInput = {
@@ -13847,6 +13992,7 @@ export type CompanyUpdateWithoutDocumentTagsInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutCompanyNestedInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUpdateOneWithoutCompanyNestedInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutCompanyNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutDocumentTagsInput = {
@@ -13935,6 +14081,7 @@ export type CompanyUncheckedUpdateWithoutDocumentTagsInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutCompanyNestedInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUncheckedUpdateOneWithoutCompanyNestedInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutCompanyNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutChartOfAccountsInput = {
@@ -14023,6 +14170,7 @@ export type CompanyCreateWithoutChartOfAccountsInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutCompanyInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderCreateNestedOneWithoutCompanyInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutCompanyInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutChartOfAccountsInput = {
@@ -14111,6 +14259,7 @@ export type CompanyUncheckedCreateWithoutChartOfAccountsInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutCompanyInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUncheckedCreateNestedOneWithoutCompanyInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutCompanyInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutChartOfAccountsInput = {
@@ -14215,6 +14364,7 @@ export type CompanyUpdateWithoutChartOfAccountsInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutCompanyNestedInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUpdateOneWithoutCompanyNestedInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutCompanyNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutChartOfAccountsInput = {
@@ -14303,6 +14453,7 @@ export type CompanyUncheckedUpdateWithoutChartOfAccountsInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutCompanyNestedInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUncheckedUpdateOneWithoutCompanyNestedInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutCompanyNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutAccountMappingsInput = {
@@ -14391,6 +14542,7 @@ export type CompanyCreateWithoutAccountMappingsInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutCompanyInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderCreateNestedOneWithoutCompanyInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutCompanyInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutAccountMappingsInput = {
@@ -14479,6 +14631,7 @@ export type CompanyUncheckedCreateWithoutAccountMappingsInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutCompanyInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUncheckedCreateNestedOneWithoutCompanyInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutCompanyInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutAccountMappingsInput = {
@@ -14583,6 +14736,7 @@ export type CompanyUpdateWithoutAccountMappingsInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutCompanyNestedInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUpdateOneWithoutCompanyNestedInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutCompanyNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutAccountMappingsInput = {
@@ -14671,6 +14825,7 @@ export type CompanyUncheckedUpdateWithoutAccountMappingsInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutCompanyNestedInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUncheckedUpdateOneWithoutCompanyNestedInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutCompanyNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutTasksInput = {
@@ -14759,6 +14914,7 @@ export type CompanyCreateWithoutTasksInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutCompanyInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderCreateNestedOneWithoutCompanyInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutCompanyInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutTasksInput = {
@@ -14847,6 +15003,7 @@ export type CompanyUncheckedCreateWithoutTasksInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutCompanyInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUncheckedCreateNestedOneWithoutCompanyInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutCompanyInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutTasksInput = {
@@ -14951,6 +15108,7 @@ export type CompanyUpdateWithoutTasksInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutCompanyNestedInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUpdateOneWithoutCompanyNestedInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutCompanyNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutTasksInput = {
@@ -15039,6 +15197,7 @@ export type CompanyUncheckedUpdateWithoutTasksInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutCompanyNestedInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUncheckedUpdateOneWithoutCompanyNestedInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutCompanyNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutTaskStageOutcomesInput = {
@@ -15127,6 +15286,7 @@ export type CompanyCreateWithoutTaskStageOutcomesInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutCompanyInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderCreateNestedOneWithoutCompanyInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutCompanyInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutTaskStageOutcomesInput = {
@@ -15215,6 +15375,7 @@ export type CompanyUncheckedCreateWithoutTaskStageOutcomesInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutCompanyInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUncheckedCreateNestedOneWithoutCompanyInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutCompanyInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutTaskStageOutcomesInput = {
@@ -15319,6 +15480,7 @@ export type CompanyUpdateWithoutTaskStageOutcomesInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutCompanyNestedInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUpdateOneWithoutCompanyNestedInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutCompanyNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutTaskStageOutcomesInput = {
@@ -15407,6 +15569,7 @@ export type CompanyUncheckedUpdateWithoutTaskStageOutcomesInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutCompanyNestedInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUncheckedUpdateOneWithoutCompanyNestedInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutCompanyNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyCreateWithoutTaskRecoveryContextsInput = {
@@ -15495,6 +15658,7 @@ export type CompanyCreateWithoutTaskRecoveryContextsInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutCompanyInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderCreateNestedOneWithoutCompanyInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutCompanyInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyUncheckedCreateWithoutTaskRecoveryContextsInput = {
@@ -15583,6 +15747,7 @@ export type CompanyUncheckedCreateWithoutTaskRecoveryContextsInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutCompanyInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUncheckedCreateNestedOneWithoutCompanyInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutCompanyInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedCreateNestedManyWithoutCompanyInput
 }
 
 export type CompanyCreateOrConnectWithoutTaskRecoveryContextsInput = {
@@ -15687,6 +15852,7 @@ export type CompanyUpdateWithoutTaskRecoveryContextsInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutCompanyNestedInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUpdateOneWithoutCompanyNestedInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutCompanyNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutTaskRecoveryContextsInput = {
@@ -15762,6 +15928,379 @@ export type CompanyUncheckedUpdateWithoutTaskRecoveryContextsInput = {
   roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
   tasks?: Prisma.TaskUncheckedUpdateManyWithoutCompanyNestedInput
   taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutCompanyNestedInput
+  primaryServiceAgreements?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
+  serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedUpdateManyWithoutCompanyNestedInput
+  primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCompanyNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
+  financialPeriods?: Prisma.CompanyFinancialPeriodUncheckedUpdateManyWithoutCompanyNestedInput
+  monitoringCoverages?: Prisma.CompanyMonitoringCoverageUncheckedUpdateManyWithoutCompanyNestedInput
+  obligationScopes?: Prisma.ClientServiceObligationScopeUncheckedUpdateManyWithoutCompanyNestedInput
+  complianceIssues?: Prisma.CompanyComplianceIssueUncheckedUpdateManyWithoutCompanyNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutCompanyNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutCompanyNestedInput
+  sharePointFolderMapping?: Prisma.CompanySharePointFolderUncheckedUpdateOneWithoutCompanyNestedInput
+  esigningSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutCompanyNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedUpdateManyWithoutCompanyNestedInput
+}
+
+export type CompanyCreateWithoutSentrowebCheckRunsInput = {
+  id?: string
+  uen: string
+  name: string
+  displayAlias?: string | null
+  formerName?: string | null
+  dateOfNameChange?: Date | string | null
+  entityType?: $Enums.EntityType
+  status?: $Enums.CompanyStatus
+  statusDate?: Date | string | null
+  incorporationDate?: Date | string | null
+  registrationDate?: Date | string | null
+  dateOfAddress?: Date | string | null
+  primarySsicCode?: string | null
+  primarySsicDescription?: string | null
+  secondarySsicCode?: string | null
+  secondarySsicDescription?: string | null
+  financialYearEndDay?: number | null
+  financialYearEndMonth?: number | null
+  fyeAsAtLastAr?: Date | string | null
+  homeCurrency?: string | null
+  lastAgmDate?: Date | string | null
+  lastArFiledDate?: Date | string | null
+  accountsDueDate?: Date | string | null
+  paidUpCapitalCurrency?: string | null
+  paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  issuedCapitalCurrency?: string | null
+  issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCharges?: boolean
+  currentOfficerCount?: number
+  currentShareholderCount?: number
+  activeChargeCount?: number
+  documentCount?: number
+  hasPoc?: boolean
+  isGstRegistered?: boolean
+  gstRegistrationNumber?: string | null
+  gstRegistrationDate?: Date | string | null
+  isRegisteredCharity?: boolean
+  charityRegistrationDate?: Date | string | null
+  charityUEN?: string | null
+  isIPC?: boolean
+  ipcEffectiveDate?: Date | string | null
+  ipcExpiryDate?: Date | string | null
+  annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  aggregateRevision?: number
+  deletedAt?: Date | string | null
+  deletedReason?: string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutCompanyInput
+  chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutCompanyInput
+  accountMappings?: Prisma.ChartOfAccountsMappingCreateNestedManyWithoutCompanyInput
+  tenant: Prisma.WorkspaceCreateNestedOneWithoutCompaniesInput
+  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutCompanyInput
+  addresses?: Prisma.CompanyAddressCreateNestedManyWithoutCompanyInput
+  auditor?: Prisma.CompanyAuditorCreateNestedOneWithoutCompanyInput
+  charges?: Prisma.CompanyChargeCreateNestedManyWithoutCompanyInput
+  contacts?: Prisma.CompanyContactCreateNestedManyWithoutCompanyInput
+  formerNames?: Prisma.CompanyFormerNameCreateNestedManyWithoutCompanyInput
+  officers?: Prisma.CompanyOfficerCreateNestedManyWithoutCompanyInput
+  shareholders?: Prisma.CompanyShareholderCreateNestedManyWithoutCompanyInput
+  contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutCompanyInput
+  documentTags?: Prisma.DocumentTagCreateNestedManyWithoutCompanyInput
+  documents?: Prisma.DocumentCreateNestedManyWithoutCompanyInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutCompanyInput
+  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCompanyInput
+  noteTabs?: Prisma.NoteTabCreateNestedManyWithoutCompanyInput
+  shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutCompanyInput
+  userAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutCompanyInput
+  roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutCompanyInput
+  tasks?: Prisma.TaskCreateNestedManyWithoutCompanyInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutCompanyInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutCompanyInput
+  primaryServiceAgreements?: Prisma.ServiceAgreementCreateNestedManyWithoutPrimaryCompanyInput
+  serviceAgreementEntities?: Prisma.ServiceAgreementEntityCreateNestedManyWithoutCompanyInput
+  primaryGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutPrimaryCompanyInput
+  serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCompanyInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompanyInput
+  financialPeriods?: Prisma.CompanyFinancialPeriodCreateNestedManyWithoutCompanyInput
+  monitoringCoverages?: Prisma.CompanyMonitoringCoverageCreateNestedManyWithoutCompanyInput
+  obligationScopes?: Prisma.ClientServiceObligationScopeCreateNestedManyWithoutCompanyInput
+  complianceIssues?: Prisma.CompanyComplianceIssueCreateNestedManyWithoutCompanyInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutCompanyInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutCompanyInput
+  sharePointFolderMapping?: Prisma.CompanySharePointFolderCreateNestedOneWithoutCompanyInput
+  esigningSharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutCompanyInput
+}
+
+export type CompanyUncheckedCreateWithoutSentrowebCheckRunsInput = {
+  id?: string
+  tenantId: string
+  uen: string
+  name: string
+  displayAlias?: string | null
+  formerName?: string | null
+  dateOfNameChange?: Date | string | null
+  entityType?: $Enums.EntityType
+  status?: $Enums.CompanyStatus
+  statusDate?: Date | string | null
+  incorporationDate?: Date | string | null
+  registrationDate?: Date | string | null
+  dateOfAddress?: Date | string | null
+  primarySsicCode?: string | null
+  primarySsicDescription?: string | null
+  secondarySsicCode?: string | null
+  secondarySsicDescription?: string | null
+  financialYearEndDay?: number | null
+  financialYearEndMonth?: number | null
+  fyeAsAtLastAr?: Date | string | null
+  homeCurrency?: string | null
+  lastAgmDate?: Date | string | null
+  lastArFiledDate?: Date | string | null
+  accountsDueDate?: Date | string | null
+  paidUpCapitalCurrency?: string | null
+  paidUpCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  issuedCapitalCurrency?: string | null
+  issuedCapitalAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCharges?: boolean
+  currentOfficerCount?: number
+  currentShareholderCount?: number
+  activeChargeCount?: number
+  documentCount?: number
+  hasPoc?: boolean
+  isGstRegistered?: boolean
+  gstRegistrationNumber?: string | null
+  gstRegistrationDate?: Date | string | null
+  isRegisteredCharity?: boolean
+  charityRegistrationDate?: Date | string | null
+  charityUEN?: string | null
+  isIPC?: boolean
+  ipcEffectiveDate?: Date | string | null
+  ipcExpiryDate?: Date | string | null
+  annualReceiptsOrExpenditure?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  aggregateRevision?: number
+  deletedAt?: Date | string | null
+  deletedReason?: string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutCompanyInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutCompanyInput
+  accountMappings?: Prisma.ChartOfAccountsMappingUncheckedCreateNestedManyWithoutCompanyInput
+  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutCompanyInput
+  addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutCompanyInput
+  auditor?: Prisma.CompanyAuditorUncheckedCreateNestedOneWithoutCompanyInput
+  charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutCompanyInput
+  contacts?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutCompanyInput
+  formerNames?: Prisma.CompanyFormerNameUncheckedCreateNestedManyWithoutCompanyInput
+  officers?: Prisma.CompanyOfficerUncheckedCreateNestedManyWithoutCompanyInput
+  shareholders?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutCompanyInput
+  contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutCompanyInput
+  documentTags?: Prisma.DocumentTagUncheckedCreateNestedManyWithoutCompanyInput
+  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutCompanyInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutCompanyInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCompanyInput
+  noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutCompanyInput
+  shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutCompanyInput
+  userAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutCompanyInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutCompanyInput
+  tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutCompanyInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutCompanyInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutCompanyInput
+  primaryServiceAgreements?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutPrimaryCompanyInput
+  serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedCreateNestedManyWithoutCompanyInput
+  primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutPrimaryCompanyInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCompanyInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
+  financialPeriods?: Prisma.CompanyFinancialPeriodUncheckedCreateNestedManyWithoutCompanyInput
+  monitoringCoverages?: Prisma.CompanyMonitoringCoverageUncheckedCreateNestedManyWithoutCompanyInput
+  obligationScopes?: Prisma.ClientServiceObligationScopeUncheckedCreateNestedManyWithoutCompanyInput
+  complianceIssues?: Prisma.CompanyComplianceIssueUncheckedCreateNestedManyWithoutCompanyInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutCompanyInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutCompanyInput
+  sharePointFolderMapping?: Prisma.CompanySharePointFolderUncheckedCreateNestedOneWithoutCompanyInput
+  esigningSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutCompanyInput
+}
+
+export type CompanyCreateOrConnectWithoutSentrowebCheckRunsInput = {
+  where: Prisma.CompanyWhereUniqueInput
+  create: Prisma.XOR<Prisma.CompanyCreateWithoutSentrowebCheckRunsInput, Prisma.CompanyUncheckedCreateWithoutSentrowebCheckRunsInput>
+}
+
+export type CompanyUpsertWithoutSentrowebCheckRunsInput = {
+  update: Prisma.XOR<Prisma.CompanyUpdateWithoutSentrowebCheckRunsInput, Prisma.CompanyUncheckedUpdateWithoutSentrowebCheckRunsInput>
+  create: Prisma.XOR<Prisma.CompanyCreateWithoutSentrowebCheckRunsInput, Prisma.CompanyUncheckedCreateWithoutSentrowebCheckRunsInput>
+  where?: Prisma.CompanyWhereInput
+}
+
+export type CompanyUpdateToOneWithWhereWithoutSentrowebCheckRunsInput = {
+  where?: Prisma.CompanyWhereInput
+  data: Prisma.XOR<Prisma.CompanyUpdateWithoutSentrowebCheckRunsInput, Prisma.CompanyUncheckedUpdateWithoutSentrowebCheckRunsInput>
+}
+
+export type CompanyUpdateWithoutSentrowebCheckRunsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  uen?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  displayAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
+  status?: Prisma.EnumCompanyStatusFieldUpdateOperationsInput | $Enums.CompanyStatus
+  statusDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  incorporationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  registrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  dateOfAddress?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  primarySsicCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primarySsicDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  secondarySsicCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  secondarySsicDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  financialYearEndDay?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  financialYearEndMonth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  fyeAsAtLastAr?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  currentOfficerCount?: Prisma.IntFieldUpdateOperationsInput | number
+  currentShareholderCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activeChargeCount?: Prisma.IntFieldUpdateOperationsInput | number
+  documentCount?: Prisma.IntFieldUpdateOperationsInput | number
+  hasPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  isRegisteredCharity?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  charityRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  charityUEN?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isIPC?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  ipcEffectiveDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  ipcExpiryDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aggregateRevision?: Prisma.IntFieldUpdateOperationsInput | number
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutCompanyNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutCompanyNestedInput
+  accountMappings?: Prisma.ChartOfAccountsMappingUpdateManyWithoutCompanyNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutCompaniesNestedInput
+  clientServices?: Prisma.ClientServiceUpdateManyWithoutCompanyNestedInput
+  addresses?: Prisma.CompanyAddressUpdateManyWithoutCompanyNestedInput
+  auditor?: Prisma.CompanyAuditorUpdateOneWithoutCompanyNestedInput
+  charges?: Prisma.CompanyChargeUpdateManyWithoutCompanyNestedInput
+  contacts?: Prisma.CompanyContactUpdateManyWithoutCompanyNestedInput
+  formerNames?: Prisma.CompanyFormerNameUpdateManyWithoutCompanyNestedInput
+  officers?: Prisma.CompanyOfficerUpdateManyWithoutCompanyNestedInput
+  shareholders?: Prisma.CompanyShareholderUpdateManyWithoutCompanyNestedInput
+  contactDetails?: Prisma.ContactDetailUpdateManyWithoutCompanyNestedInput
+  documentTags?: Prisma.DocumentTagUpdateManyWithoutCompanyNestedInput
+  documents?: Prisma.DocumentUpdateManyWithoutCompanyNestedInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutCompanyNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCompanyNestedInput
+  noteTabs?: Prisma.NoteTabUpdateManyWithoutCompanyNestedInput
+  shareCapital?: Prisma.ShareCapitalUpdateManyWithoutCompanyNestedInput
+  userAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutCompanyNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutCompanyNestedInput
+  tasks?: Prisma.TaskUpdateManyWithoutCompanyNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutCompanyNestedInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutCompanyNestedInput
+  primaryServiceAgreements?: Prisma.ServiceAgreementUpdateManyWithoutPrimaryCompanyNestedInput
+  serviceAgreementEntities?: Prisma.ServiceAgreementEntityUpdateManyWithoutCompanyNestedInput
+  primaryGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutPrimaryCompanyNestedInput
+  serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutCompanyNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompanyNestedInput
+  financialPeriods?: Prisma.CompanyFinancialPeriodUpdateManyWithoutCompanyNestedInput
+  monitoringCoverages?: Prisma.CompanyMonitoringCoverageUpdateManyWithoutCompanyNestedInput
+  obligationScopes?: Prisma.ClientServiceObligationScopeUpdateManyWithoutCompanyNestedInput
+  complianceIssues?: Prisma.CompanyComplianceIssueUpdateManyWithoutCompanyNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutCompanyNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutCompanyNestedInput
+  sharePointFolderMapping?: Prisma.CompanySharePointFolderUpdateOneWithoutCompanyNestedInput
+  esigningSharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutCompanyNestedInput
+}
+
+export type CompanyUncheckedUpdateWithoutSentrowebCheckRunsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  uen?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  displayAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  formerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  dateOfNameChange?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  entityType?: Prisma.EnumEntityTypeFieldUpdateOperationsInput | $Enums.EntityType
+  status?: Prisma.EnumCompanyStatusFieldUpdateOperationsInput | $Enums.CompanyStatus
+  statusDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  incorporationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  registrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  dateOfAddress?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  primarySsicCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primarySsicDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  secondarySsicCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  secondarySsicDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  financialYearEndDay?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  financialYearEndMonth?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  fyeAsAtLastAr?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  homeCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lastAgmDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastArFiledDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  accountsDueDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  paidUpCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paidUpCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  issuedCapitalCurrency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  issuedCapitalAmount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  hasCharges?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  currentOfficerCount?: Prisma.IntFieldUpdateOperationsInput | number
+  currentShareholderCount?: Prisma.IntFieldUpdateOperationsInput | number
+  activeChargeCount?: Prisma.IntFieldUpdateOperationsInput | number
+  documentCount?: Prisma.IntFieldUpdateOperationsInput | number
+  hasPoc?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isGstRegistered?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  gstRegistrationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  gstRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  isRegisteredCharity?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  charityRegistrationDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  charityUEN?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isIPC?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  ipcEffectiveDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  ipcExpiryDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  annualReceiptsOrExpenditure?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  aggregateRevision?: Prisma.IntFieldUpdateOperationsInput | number
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  taskIntegrationContext?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutCompanyNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutCompanyNestedInput
+  accountMappings?: Prisma.ChartOfAccountsMappingUncheckedUpdateManyWithoutCompanyNestedInput
+  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutCompanyNestedInput
+  addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutCompanyNestedInput
+  auditor?: Prisma.CompanyAuditorUncheckedUpdateOneWithoutCompanyNestedInput
+  charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutCompanyNestedInput
+  contacts?: Prisma.CompanyContactUncheckedUpdateManyWithoutCompanyNestedInput
+  formerNames?: Prisma.CompanyFormerNameUncheckedUpdateManyWithoutCompanyNestedInput
+  officers?: Prisma.CompanyOfficerUncheckedUpdateManyWithoutCompanyNestedInput
+  shareholders?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutCompanyNestedInput
+  contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutCompanyNestedInput
+  documentTags?: Prisma.DocumentTagUncheckedUpdateManyWithoutCompanyNestedInput
+  documents?: Prisma.DocumentUncheckedUpdateManyWithoutCompanyNestedInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutCompanyNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCompanyNestedInput
+  noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutCompanyNestedInput
+  shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutCompanyNestedInput
+  userAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutCompanyNestedInput
+  tasks?: Prisma.TaskUncheckedUpdateManyWithoutCompanyNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutCompanyNestedInput
+  taskRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutCompanyNestedInput
   primaryServiceAgreements?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
   serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedUpdateManyWithoutCompanyNestedInput
   primaryGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutPrimaryCompanyNestedInput
@@ -15915,6 +16454,7 @@ export type CompanyUpdateWithoutTenantInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutCompanyNestedInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUpdateOneWithoutCompanyNestedInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutCompanyNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateWithoutTenantInput = {
@@ -16003,6 +16543,7 @@ export type CompanyUncheckedUpdateWithoutTenantInput = {
   billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutCompanyNestedInput
   sharePointFolderMapping?: Prisma.CompanySharePointFolderUncheckedUpdateOneWithoutCompanyNestedInput
   esigningSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutCompanyNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedUpdateManyWithoutCompanyNestedInput
 }
 
 export type CompanyUncheckedUpdateManyWithoutTenantInput = {
@@ -16097,6 +16638,7 @@ export type CompanyCountOutputType = {
   billingOccurrences: number
   billingCoverageIssues: number
   esigningSharePointFilings: number
+  sentrowebCheckRuns: number
 }
 
 export type CompanyCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -16134,6 +16676,7 @@ export type CompanyCountOutputTypeSelect<ExtArgs extends runtime.Types.Extension
   billingOccurrences?: boolean | CompanyCountOutputTypeCountBillingOccurrencesArgs
   billingCoverageIssues?: boolean | CompanyCountOutputTypeCountBillingCoverageIssuesArgs
   esigningSharePointFilings?: boolean | CompanyCountOutputTypeCountEsigningSharePointFilingsArgs
+  sentrowebCheckRuns?: boolean | CompanyCountOutputTypeCountSentrowebCheckRunsArgs
 }
 
 /**
@@ -16384,6 +16927,13 @@ export type CompanyCountOutputTypeCountEsigningSharePointFilingsArgs<ExtArgs ext
   where?: Prisma.EsigningSharePointFilingWhereInput
 }
 
+/**
+ * CompanyCountOutputType without action
+ */
+export type CompanyCountOutputTypeCountSentrowebCheckRunsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.SentrowebCheckRunWhereInput
+}
+
 
 export type CompanySelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -16473,6 +17023,7 @@ export type CompanySelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   billingCoverageIssues?: boolean | Prisma.Company$billingCoverageIssuesArgs<ExtArgs>
   sharePointFolderMapping?: boolean | Prisma.Company$sharePointFolderMappingArgs<ExtArgs>
   esigningSharePointFilings?: boolean | Prisma.Company$esigningSharePointFilingsArgs<ExtArgs>
+  sentrowebCheckRuns?: boolean | Prisma.Company$sentrowebCheckRunsArgs<ExtArgs>
   _count?: boolean | Prisma.CompanyCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["company"]>
 
@@ -16676,6 +17227,7 @@ export type CompanyInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs
   billingCoverageIssues?: boolean | Prisma.Company$billingCoverageIssuesArgs<ExtArgs>
   sharePointFolderMapping?: boolean | Prisma.Company$sharePointFolderMappingArgs<ExtArgs>
   esigningSharePointFilings?: boolean | Prisma.Company$esigningSharePointFilingsArgs<ExtArgs>
+  sentrowebCheckRuns?: boolean | Prisma.Company$sentrowebCheckRunsArgs<ExtArgs>
   _count?: boolean | Prisma.CompanyCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type CompanyIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -16725,6 +17277,7 @@ export type $CompanyPayload<ExtArgs extends runtime.Types.Extensions.InternalArg
     billingCoverageIssues: Prisma.$BillingCoverageIssuePayload<ExtArgs>[]
     sharePointFolderMapping: Prisma.$CompanySharePointFolderPayload<ExtArgs> | null
     esigningSharePointFilings: Prisma.$EsigningSharePointFilingPayload<ExtArgs>[]
+    sentrowebCheckRuns: Prisma.$SentrowebCheckRunPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -17208,6 +17761,7 @@ export interface Prisma__CompanyClient<T, Null = never, ExtArgs extends runtime.
   billingCoverageIssues<T extends Prisma.Company$billingCoverageIssuesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$billingCoverageIssuesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$BillingCoverageIssuePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   sharePointFolderMapping<T extends Prisma.Company$sharePointFolderMappingArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$sharePointFolderMappingArgs<ExtArgs>>): Prisma.Prisma__CompanySharePointFolderClient<runtime.Types.Result.GetResult<Prisma.$CompanySharePointFolderPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   esigningSharePointFilings<T extends Prisma.Company$esigningSharePointFilingsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$esigningSharePointFilingsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$EsigningSharePointFilingPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  sentrowebCheckRuns<T extends Prisma.Company$sentrowebCheckRunsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Company$sentrowebCheckRunsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$SentrowebCheckRunPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -18539,6 +19093,30 @@ export type Company$esigningSharePointFilingsArgs<ExtArgs extends runtime.Types.
   take?: number
   skip?: number
   distinct?: Prisma.EsigningSharePointFilingScalarFieldEnum | Prisma.EsigningSharePointFilingScalarFieldEnum[]
+}
+
+/**
+ * Company.sentrowebCheckRuns
+ */
+export type Company$sentrowebCheckRunsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the SentrowebCheckRun
+   */
+  select?: Prisma.SentrowebCheckRunSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the SentrowebCheckRun
+   */
+  omit?: Prisma.SentrowebCheckRunOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.SentrowebCheckRunInclude<ExtArgs> | null
+  where?: Prisma.SentrowebCheckRunWhereInput
+  orderBy?: Prisma.SentrowebCheckRunOrderByWithRelationInput | Prisma.SentrowebCheckRunOrderByWithRelationInput[]
+  cursor?: Prisma.SentrowebCheckRunWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.SentrowebCheckRunScalarFieldEnum | Prisma.SentrowebCheckRunScalarFieldEnum[]
 }
 
 /**

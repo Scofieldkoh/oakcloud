@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createErrorResponse } from '@/lib/api-helpers';
 import { RATE_LIMIT_CONFIGS, getClientIp } from '@/lib/rate-limit';
-import { enforceEsigningRateLimit, requireEsigningSameOrigin } from '@/lib/esigning-public-route';
+import { enforceEsigningSessionRateLimit, requireEsigningSameOrigin } from '@/lib/esigning-public-route';
 import { recordEsigningConsentSchema } from '@/lib/validations/esigning';
 import { ESIGNING_PAYLOAD_LIMITS } from '@/lib/esigning-payload-limits';
 import { readLimitedJson } from '@/lib/esigning-request-body';
@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
     return sameOriginError;
   }
 
-  const rateLimit = enforceEsigningRateLimit(
+  const rateLimit = await enforceEsigningSessionRateLimit(
     request,
     'esigning_sign_save',
     'session-consent',

@@ -24,6 +24,7 @@ import {
 import { RepeatingRecordEditor } from "./repeating-record-editor";
 import { canonicalizeCompanyStatus, canonicalizeEntityType, canonicalizeIdentificationType, canonicalizeOfficerRole } from "@/services/bizfile/canonical-values";
 import { isExactIdentifierContactMatch } from "@/services/bizfile/contact-match-preview.client";
+import { formatDateOnlyDisplay, plausibleDateOfBirth } from "@/lib/date-only";
 
 type Props = {
   draft: BizFileReviewDraft;
@@ -531,6 +532,55 @@ export function CapitalSection({ draft, onChange, issues }: Props) {
   );
 }
 
+/**
+ * A date of birth the document printed. When the matched contact already has a different one, the
+ * reviewer sees both dates and must tick "Replace" for that exact saved date before saving; without the
+ * tick the review will not save. A person matched by name alone keeps the saved date.
+ */
+function DateOfBirthReviewField({
+  id, path, value, replaces, onChange, onReplacesChange, error, match, resolution,
+}: {
+  id: string;
+  path: string;
+  value: string | undefined;
+  replaces: string | undefined;
+  onChange: (value: string) => void;
+  onReplacesChange: (saved: string | undefined) => void;
+  error?: BizFileReviewIssue;
+  match?: ContactMatchPreview | null;
+  resolution?: ContactResolutionDecision;
+}) {
+  const incoming = plausibleDateOfBirth(value);
+  const saved = match?.contact?.dateOfBirth ?? null;
+  const differs = Boolean(saved && incoming && saved !== incoming && resolution?.action !== 'CREATE_SEPARATE');
+  const certain = (resolution?.action === "REUSE" && resolution.contactId === match?.contactId)
+    || Boolean(match?.reasons.includes('IDENTIFIER'));
+  return (
+    <div>
+      <ReviewField id={id} label="Date of birth" type="date" value={value ?? ""}
+        hint="From 1 Jan 1900 to today; used for Sentroweb screening."
+        onChange={(e) => onChange(e.target.value)} error={error} />
+      {differs && saved ? (
+        certain ? (
+          <div role="status" className="mt-1 space-y-1 text-xs text-status-warning">
+            <p>The matched contact has {formatDateOnlyDisplay(saved)}; this document says {formatDateOnlyDisplay(incoming)}.</p>
+            <label className="flex items-center gap-2">
+              <input type="checkbox" data-field-path={path} checked={replaces === saved}
+                onChange={(e) => onReplacesChange(e.target.checked ? saved : undefined)} />
+              <span>Replace the saved date of birth ({formatDateOnlyDisplay(saved)}) with {formatDateOnlyDisplay(incoming)}</span>
+            </label>
+            <p>Not replacing: clear this date, and the saved one is kept.</p>
+          </div>
+        ) : (
+          <p role="status" className="mt-1 text-xs text-status-warning">
+            {`The matched contact has ${formatDateOnlyDisplay(saved)}. It is kept, because this person is matched by name only.`}
+          </p>
+        )
+      ) : null}
+    </div>
+  );
+}
+
 const identificationOptions = (
   <>
     <option value="">Select</option>
@@ -648,6 +698,17 @@ export function OfficersSection({ draft, onChange, issues, matchPreviews = {} }:
               onChange={(e) => update({ ...item, nationality: e.target.value })}
               error={issue(issues, `officers.${i}.nationality`)}
             />
+            <DateOfBirthReviewField
+              id={`officer-dob-${i}`}
+              value={item.dateOfBirth}
+              path={`officers.${i}.dateOfBirth`}
+              replaces={item.dateOfBirthReplaces}
+              onChange={(dateOfBirth) => update({ ...item, dateOfBirth: dateOfBirth || undefined, dateOfBirthReplaces: undefined })}
+              onReplacesChange={(dateOfBirthReplaces) => update({ ...item, dateOfBirthReplaces })}
+              error={issue(issues, `officers.${i}.dateOfBirth`)}
+              match={matchPreviews[`officers.${i}`]}
+              resolution={item.contactResolution}
+            />
             <ReviewTextarea
               id={`officer-address-${i}`}
               label="Address"
@@ -679,7 +740,7 @@ export function OfficersSection({ draft, onChange, issues, matchPreviews = {} }:
               path={`officers.${i}`} match={matchPreviews[`officers.${i}`]!}
               recordName={item.name}
               resolution={item.contactResolution}
-              onChange={(contactResolution) => update({ ...item, contactResolution })}
+              onChange={(contactResolution) => update({ ...item, contactResolution, dateOfBirthReplaces: undefined })}
               error={issue(issues, `officers.${i}.contactResolution`) ?? issue(issues, `officers.${i}.contactResolution.reason`)}
             /> : null}
           </div>
@@ -764,6 +825,17 @@ export function ShareholdersSection({ draft, onChange, issues, matchPreviews = {
                 error={issue(issues, `shareholders.${i}.${field}`)}
               />
             ))}
+            {item.type === "INDIVIDUAL" ? <DateOfBirthReviewField
+              id={`holder-dob-${i}`}
+              value={item.dateOfBirth}
+              path={`shareholders.${i}.dateOfBirth`}
+              replaces={item.dateOfBirthReplaces}
+              onChange={(dateOfBirth) => update({ ...item, dateOfBirth: dateOfBirth || undefined, dateOfBirthReplaces: undefined })}
+              onReplacesChange={(dateOfBirthReplaces) => update({ ...item, dateOfBirthReplaces })}
+              error={issue(issues, `shareholders.${i}.dateOfBirth`)}
+              match={matchPreviews[`shareholders.${i}`]}
+              resolution={item.contactResolution}
+            /> : null}
             <ReviewField
               id={`holder-shares-${i}`}
               label="Number of shares"
@@ -798,7 +870,7 @@ export function ShareholdersSection({ draft, onChange, issues, matchPreviews = {
               path={`shareholders.${i}`} match={matchPreviews[`shareholders.${i}`]!}
               recordName={item.name}
               resolution={item.contactResolution}
-              onChange={(contactResolution) => update({ ...item, contactResolution })}
+              onChange={(contactResolution) => update({ ...item, contactResolution, dateOfBirthReplaces: undefined })}
               error={issue(issues, `shareholders.${i}.contactResolution`) ?? issue(issues, `shareholders.${i}.contactResolution.reason`)}
             /> : null}
           </div>

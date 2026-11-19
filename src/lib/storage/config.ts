@@ -142,6 +142,14 @@ export const StorageKeys = {
   },
 
   /**
+   * Screenshot of one Sentroweb check result (evidence next to Sentroweb's own PDF report).
+   * Not filed as a company Document.
+   */
+  sentrowebEvidence(tenantId: string, companyId: string, runId: string, resultId: string): string {
+    return `${tenantId}/companies/${companyId}/sentroweb/${runId}/${resultId}.png`;
+  },
+
+  /**
    * Get prefix for all files belonging to a tenant
    */
   tenantPrefix(tenantId: string): string {

@@ -21,6 +21,7 @@ function contact(overrides: Partial<Contact> = {}): Contact {
     identificationNumber: 'SYNTHETIC-ID',
     nationality: 'Example',
     dateOfBirth: null,
+    gender: null,
     corporateName: null,
     corporateUen: null,
     fullAddress: 'Synthetic address',

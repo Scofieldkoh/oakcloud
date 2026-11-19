@@ -587,6 +587,19 @@ export type FormDraft = Prisma.FormDraftModel
  */
 export type FormUpload = Prisma.FormUploadModel
 /**
+ * Model ContactFormLink
+ * A KYC/CDD form response person (one repeat row, or the whole response) linked to a Contact.
+ * The row is bound by its index AND a fingerprint of its kind, name and ID taken at link time; it is
+ * never re-bound to another row. Unlinking is soft. Partial unique indexes (see the migration)
+ * keep one active link per contact+row and per row.
+ */
+export type ContactFormLink = Prisma.ContactFormLinkModel
+/**
+ * Model ContactFormSuggestionDismissal
+ * A suggested field value the user dismissed for a link; it stays hidden until the form answer changes.
+ */
+export type ContactFormSuggestionDismissal = Prisma.ContactFormSuggestionDismissalModel
+/**
  * Model ClientPortalUser
  *
  */
@@ -790,3 +803,13 @@ export type BizFileOperationEvidence = Prisma.BizFileOperationEvidenceModel
  *
  */
 export type BizFileOperationEffectIntent = Prisma.BizFileOperationEffectIntentModel
+/**
+ * Model SentrowebCheckRun
+ *
+ */
+export type SentrowebCheckRun = Prisma.SentrowebCheckRunModel
+/**
+ * Model SentrowebCheckResult
+ *
+ */
+export type SentrowebCheckResult = Prisma.SentrowebCheckResultModel

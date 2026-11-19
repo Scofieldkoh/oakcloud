@@ -1,0 +1,430 @@
+[
+  {
+    "amlReportId": "131",
+    "monitorEnabled": true,
+    "name": "Vladimir Putin",
+    "country": "",
+    "searchEntity": false,
+    "searchIndividual": true,
+    "fuzzyValue": false,
+    "orderType": "ACURIS",
+    "legacy": false,
+    "fatfCountries": [],
+    "pepPersons": [
+      {
+        "uniqueID": "I1354617",
+        "title": "",
+        "forename": "Vladimir",
+        "middlename": "Spiridonovich",
+        "surname": "Putin",
+        "dateOfBirth": "1911",
+        "yearOfBirth": 1911,
+        "gender": "Male",
+        "nationality": "Russia",
+        "source": "PEP",
+        "category": "",
+        "aliases": [
+          {
+            "aliasID": null,
+            "title": null,
+            "alternateTitle": null,
+            "forename": "Владимир",
+            "middleName": "Спиридонович",
+            "surname": "Путин",
+            "businessName": null,
+            "softDelete": null,
+            "id": 12005966
+          }
+        ],
+        "id": 191953,
+        "addresses": [
+          {
+            "townCity": "Sample City",
+            "country": "Russia",
+            "isoCountry": "RU"
+          }
+        ],
+        "picture": "https://example.invalid/picture.jpg",
+        "notes": [
+          {
+            "sourceOfNotes": "x",
+            "notes": "trimmed note"
+          }
+        ],
+        "articles": [
+          {
+            "originalURL": "https://example.invalid/article"
+          }
+        ],
+        "individualAssociations": [],
+        "businessAssociations": [],
+        "email": "trimmed@example.invalid"
+      },
+      {
+        "uniqueID": "I116301",
+        "title": "",
+        "forename": "Vladimir",
+        "middlename": "Vladimirovich",
+        "surname": "Putin",
+        "dateOfBirth": "1952-10-07",
+        "yearOfBirth": 1952,
+        "gender": "Male",
+        "nationality": "Russia",
+        "source": "PEP, Current Sanctions",
+        "category": "",
+        "aliases": [
+          {
+            "aliasID": null,
+            "title": null,
+            "alternateTitle": null,
+            "forename": "Vladimir",
+            "middleName": "",
+            "surname": "Putin",
+            "businessName": null,
+            "softDelete": null,
+            "id": 12335041
+          },
+          {
+            "aliasID": null,
+            "title": null,
+            "alternateTitle": null,
+            "forename": "Volodymyr",
+            "middleName": "Volodymyrovych",
+            "surname": "Putin",
+            "businessName": null,
+            "softDelete": null,
+            "id": 12335042
+          },
+          {
+            "aliasID": null,
+            "title": null,
+            "alternateTitle": null,
+            "forename": "",
+            "middleName": "",
+            "surname": "Putin",
+            "businessName": null,
+            "softDelete": null,
+            "id": 12335043
+          },
+          {
+            "aliasID": null,
+            "title": null,
+            "alternateTitle": null,
+            "forename": "Vladimir",
+            "middleName": "Ovich",
+            "surname": "Putin",
+            "businessName": null,
+            "softDelete": null,
+            "id": 12335044
+          },
+          {
+            "aliasID": null,
+            "title": null,
+            "alternateTitle": null,
+            "forename": "Влади́мир",
+            "middleName": "Влади́мирович",
+            "surname": "ПУ́ТИН",
+            "businessName": null,
+            "softDelete": null,
+            "id": 12335045
+          },
+          {
+            "aliasID": null,
+            "title": null,
+            "alternateTitle": null,
+            "forename": "Vladimir",
+            "middleName": "",
+            "surname": "Poetin",
+            "businessName": null,
+            "softDelete": null,
+            "id": 12335046
+          },
+          {
+            "aliasID": null,
+            "title": null,
+            "alternateTitle": null,
+            "forename": "Vladimir",
+            "middleName": "",
+            "surname": "Poutine",
+            "businessName": null,
+            "softDelete": null,
+            "id": 12335047
+          },
+          {
+            "aliasID": null,
+            "title": null,
+            "alternateTitle": null,
+            "forename": "",
+            "middleName": "",
+            "surname": "ウラジーミル・プーチン",
+            "businessName": null,
+            "softDelete": null,
+            "id": 12335048
+          },
+          {
+            "aliasID": null,
+            "title": null,
+            "alternateTitle": null,
+            "forename": "Vladimir",
+            "middleName": "Vladimirovitj",
+            "surname": "Putin",
+            "businessName": null,
+            "softDelete": null,
+            "id": 12335049
+          },
+          {
+            "aliasID": null,
+            "title": null,
+            "alternateTitle": null,
+            "forename": "Володимир",
+            "middleName": "Володимирович",
+            "surname": "Путін",
+            "businessName": null,
+            "softDelete": null,
+            "id": 12335050
+          },
+          {
+            "aliasID": null,
+            "title": null,
+            "alternateTitle": null,
+            "forename": "Владимир",
+            "middleName": "Владимирович",
+            "surname": "Путин",
+            "businessName": null,
+            "softDelete": null,
+            "id": 12335051
+          },
+          {
+            "aliasID": null,
+            "title": null,
+            "alternateTitle": null,
+            "forename": "Vladimir",
+            "middleName": "Vladimirovich",
+            "surname": "Poutine",
+            "businessName": null,
+            "softDelete": null,
+            "id": 12335052
+          },
+          {
+            "aliasID": null,
+            "title": null,
+            "alternateTitle": null,
+            "forename": "Vladimir",
+            "middleName": "Vladimirovich",
+            "surname": "Putin",
+            "businessName": null,
+            "softDelete": null,
+            "id": 12335053
+          }
+        ],
+        "id": 4049715,
+        "addresses": [
+          {
+            "townCity": "Sample City",
+            "country": "Russia",
+            "isoCountry": "RU"
+          }
+        ],
+        "picture": "https://example.invalid/picture.jpg",
+        "notes": [
+          {
+            "sourceOfNotes": "x",
+            "notes": "trimmed note"
+          }
+        ],
+        "articles": [
+          {
+            "originalURL": "https://example.invalid/article"
+          }
+        ],
+        "individualAssociations": [],
+        "businessAssociations": [],
+        "email": "trimmed@example.invalid"
+      }
+    ],
+    "sipPersons": [
+      {
+        "uniqueID": "I116301",
+        "title": "",
+        "forename": "Vladimir",
+        "middlename": "Vladimirovich",
+        "surname": "Putin",
+        "dateOfBirth": "1952-10-07",
+        "yearOfBirth": 1952,
+        "gender": "Male",
+        "nationality": "Russia",
+        "source": "PEP, Current Sanctions",
+        "category": "",
+        "aliases": [
+          {
+            "aliasID": null,
+            "title": null,
+            "alternateTitle": null,
+            "forename": "Vladimir",
+            "middleName": "",
+            "surname": "Putin",
+            "businessName": null,
+            "softDelete": null,
+            "id": 12335041
+          },
+          {
+            "aliasID": null,
+            "title": null,
+            "alternateTitle": null,
+            "forename": "Volodymyr",
+            "middleName": "Volodymyrovych",
+            "surname": "Putin",
+            "businessName": null,
+            "softDelete": null,
+            "id": 12335042
+          },
+          {
+            "aliasID": null,
+            "title": null,
+            "alternateTitle": null,
+            "forename": "",
+            "middleName": "",
+            "surname": "Putin",
+            "businessName": null,
+            "softDelete": null,
+            "id": 12335043
+          },
+          {
+            "aliasID": null,
+            "title": null,
+            "alternateTitle": null,
+            "forename": "Vladimir",
+            "middleName": "Ovich",
+            "surname": "Putin",
+            "businessName": null,
+            "softDelete": null,
+            "id": 12335044
+          },
+          {
+            "aliasID": null,
+            "title": null,
+            "alternateTitle": null,
+            "forename": "Влади́мир",
+            "middleName": "Влади́мирович",
+            "surname": "ПУ́ТИН",
+            "businessName": null,
+            "softDelete": null,
+            "id": 12335045
+          },
+          {
+            "aliasID": null,
+            "title": null,
+            "alternateTitle": null,
+            "forename": "Vladimir",
+            "middleName": "",
+            "surname": "Poetin",
+            "businessName": null,
+            "softDelete": null,
+            "id": 12335046
+          },
+          {
+            "aliasID": null,
+            "title": null,
+            "alternateTitle": null,
+            "forename": "Vladimir",
+            "middleName": "",
+            "surname": "Poutine",
+            "businessName": null,
+            "softDelete": null,
+            "id": 12335047
+          },
+          {
+            "aliasID": null,
+            "title": null,
+            "alternateTitle": null,
+            "forename": "",
+            "middleName": "",
+            "surname": "ウラジーミル・プーチン",
+            "businessName": null,
+            "softDelete": null,
+            "id": 12335048
+          },
+          {
+            "aliasID": null,
+            "title": null,
+            "alternateTitle": null,
+            "forename": "Vladimir",
+            "middleName": "Vladimirovitj",
+            "surname": "Putin",
+            "businessName": null,
+            "softDelete": null,
+            "id": 12335049
+          },
+          {
+            "aliasID": null,
+            "title": null,
+            "alternateTitle": null,
+            "forename": "Володимир",
+            "middleName": "Володимирович",
+            "surname": "Путін",
+            "businessName": null,
+            "softDelete": null,
+            "id": 12335050
+          },
+          {
+            "aliasID": null,
+            "title": null,
+            "alternateTitle": null,
+            "forename": "Владимир",
+            "middleName": "Владимирович",
+            "surname": "Путин",
+            "businessName": null,
+            "softDelete": null,
+            "id": 12335051
+          },
+          {
+            "aliasID": null,
+            "title": null,
+            "alternateTitle": null,
+            "forename": "Vladimir",
+            "middleName": "Vladimirovich",
+            "surname": "Poutine",
+            "businessName": null,
+            "softDelete": null,
+            "id": 12335052
+          },
+          {
+            "aliasID": null,
+            "title": null,
+            "alternateTitle": null,
+            "forename": "Vladimir",
+            "middleName": "Vladimirovich",
+            "surname": "Putin",
+            "businessName": null,
+            "softDelete": null,
+            "id": 12335053
+          }
+        ],
+        "id": 4049715,
+        "addresses": [
+          {
+            "townCity": "Sample City",
+            "country": "Russia",
+            "isoCountry": "RU"
+          }
+        ],
+        "picture": "https://example.invalid/picture.jpg",
+        "notes": [
+          {
+            "sourceOfNotes": "x",
+            "notes": "trimmed note"
+          }
+        ],
+        "articles": [
+          {
+            "originalURL": "https://example.invalid/article"
+          }
+        ],
+        "individualAssociations": [],
+        "businessAssociations": [],
+        "email": "trimmed@example.invalid"
+      }
+    ],
+    "sieEntities": []
+  }
+]

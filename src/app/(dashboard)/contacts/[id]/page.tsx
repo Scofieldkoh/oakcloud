@@ -27,9 +27,11 @@ import { ContactDetailsSection } from '@/components/contacts/contact-details-sec
 import { CompanyAccentSection, CompanyAccentButton, CompanyFieldLabel } from '@/components/companies/company-accent-section';
 import { ContactAliasesModal } from '@/components/contacts/contact-aliases-modal';
 import { InternalNotes } from '@/components/notes/internal-notes';
+import { ContactFormLinksSection } from '@/components/contacts/contact-form-links';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import { getSafeListReturnUrl } from '@/lib/list-navigation';
-import type { ContactType, IdentificationType } from '@/generated/prisma';
+import type { ContactGender, ContactType, IdentificationType } from '@/generated/prisma';
+import { formatDateOnlyDisplay } from '@/lib/date-only';
 
 // Company option type for AsyncSearchSelect
 interface CompanyOption extends AsyncSearchSelectOption {
@@ -46,6 +48,12 @@ const idTypeLabels: Record<IdentificationType, string> = {
   FIN: 'FIN',
   PASSPORT: 'Passport',
   UEN: 'UEN',
+  OTHER: 'Other',
+};
+
+const genderLabels: Record<ContactGender, string> = {
+  MALE: 'Male',
+  FEMALE: 'Female',
   OTHER: 'Other',
 };
 
@@ -468,6 +476,14 @@ export default function ContactDetailPage({
                     <p className="text-text-primary">{contact.nationality || '-'}</p>
                   </div>
                   <div>
+                    <CompanyFieldLabel>Gender</CompanyFieldLabel>
+                    <p className="text-text-primary">{contact.gender ? genderLabels[contact.gender] : '-'}</p>
+                  </div>
+                  <div>
+                    <CompanyFieldLabel>Date of birth</CompanyFieldLabel>
+                    <p className="text-text-primary">{formatDateOnlyDisplay(contact.dateOfBirth) || '-'}</p>
+                  </div>
+                  <div>
                     <CompanyFieldLabel>ID Type</CompanyFieldLabel>
                     <p className="text-text-primary">
                       {contact.identificationType
@@ -628,6 +644,11 @@ export default function ContactDetailPage({
           </CompanyAccentSection>
         </div>
       </div>
+
+      {/* KYC/CDD forms: needs contact:read and document:read (the API refuses the rest) */}
+      {can.readContact && can.readDocument && (
+        <ContactFormLinksSection contactId={id} canEdit={can.updateContact} />
+      )}
 
       {/* Internal Notes - Full Width */}
       <InternalNotes
