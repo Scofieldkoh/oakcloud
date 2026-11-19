@@ -73,9 +73,25 @@ describe('TRUSTED_PROXY_HOPS', () => {
     expect(getClientIp(requestWith({ 'x-forwarded-for': '9.9.9.9, 203.0.113.9, 10.0.0.2' }))).toBe('203.0.113.9');
   });
 
-  it('uses the nearest entry when the request passed through fewer proxies than expected', () => {
+  it('answers unknown, not the nearest entry, when the request has fewer entries than the configured hops', () => {
     process.env.TRUSTED_PROXY_HOPS = '3';
-    expect(getClientIp(requestWith({ 'x-forwarded-for': '203.0.113.9' }))).toBe('203.0.113.9');
+    expect(getClientIp(requestWith({ 'x-forwarded-for': '203.0.113.9' }))).toBe('unknown');
+    expect(getClientIp(requestWith({ 'x-forwarded-for': '198.51.100.1, 203.0.113.9' }))).toBe('unknown');
+    // A complete chain still resolves the entry the outermost trusted proxy wrote.
+    expect(getClientIp(requestWith({ 'x-forwarded-for': '203.0.113.9, 10.0.0.1, 10.0.0.2' }))).toBe('203.0.113.9');
+  });
+
+  it('a chain one entry short of two hops is not trusted, whatever the one entry says', () => {
+    process.env.TRUSTED_PROXY_HOPS = '2';
+    expect(getClientIp(requestWith({ 'x-forwarded-for': '203.0.113.9' }))).toBe('unknown');
+    expect(getClientIp(requestWith({ 'x-forwarded-for': '203.0.113.9, 10.0.0.1' }))).toBe('203.0.113.9');
+  });
+
+  it('a short chain cannot be used to pick a client address: every spoofed single entry is the same unknown', () => {
+    process.env.TRUSTED_PROXY_HOPS = '2';
+    const a = getClientIp(requestWith({ 'x-forwarded-for': '1.1.1.1' }));
+    const b = getClientIp(requestWith({ 'x-forwarded-for': '2.2.2.2' }));
+    expect([a, b]).toEqual(['unknown', 'unknown']);
   });
 
   it.each(['0', '6', '-1', '1.5', 'two', ''])('falls back to the defaults and logs an error for %j', (hops) => {

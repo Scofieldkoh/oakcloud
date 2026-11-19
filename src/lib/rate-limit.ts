@@ -29,6 +29,8 @@ interface RateLimitEntry {
   count: number;
   /** Window start timestamp */
   windowStart: number;
+  /** Length of this entry's window; cleanup must not drop the entry before it ends */
+  windowMs: number;
   /** Number of consecutive failures (for lockout tracking) */
   failures: number;
   /** Lockout expiry timestamp (if locked out) */
@@ -72,8 +74,10 @@ function startCleanup() {
     let cleaned = 0;
 
     for (const [key, entry] of rateLimitStore.entries()) {
-      // Remove entries that have expired and are not locked out
-      const isExpired = now - entry.windowStart > CLEANUP_INTERVAL_MS;
+      // Remove entries whose own window has ended and that are not locked out. Using the cleanup
+      // interval here instead would reset budgets longer than five minutes (access-code and
+      // certificate-lookup limits) before their window is over.
+      const isExpired = now - entry.windowStart >= entry.windowMs;
       const isLockedOut = entry.lockedUntil && entry.lockedUntil > now;
 
       if (isExpired && !isLockedOut) {
@@ -275,6 +279,7 @@ export function checkRateLimit(key: string, config: RateLimitConfig): RateLimitR
     rateLimitStore.set(key, {
       count: 1,
       windowStart: now,
+      windowMs: config.windowMs,
       failures: entry?.failures ?? 0, // Preserve failure count across windows
     });
 
@@ -321,6 +326,7 @@ export function recordFailure(key: string, config: RateLimitConfig): void {
     rateLimitStore.set(key, {
       count: 0,
       windowStart: now,
+      windowMs: config.windowMs,
       failures: 1,
     });
     return;
@@ -412,6 +418,11 @@ export function getRateLimitStatus(key: string, config: RateLimitConfig): RateLi
  * `X-Real-IP` is not read. With no proxy at all there is no trustworthy address: a client can send any
  * `X-Forwarded-For`, so limits that must hold regardless (per recipient, per certificate lookup
  * aggregate) do not rely on it.
+ *
+ * Fail closed: `X-Forwarded-For` with fewer entries than `TRUSTED_PROXY_HOPS`, or a trusted entry that is
+ * not an address, gives `unknown`. Every request that cannot be attributed shares one `unknown` allowance.
+ * `TRUSTED_PROXY_HOPS` must equal the real number of proxies: a larger value lets a client pad the header
+ * so the selected position is an entry it wrote.
  */
 export type TrustedProxyMode = 'xff' | 'cloudflare';
 
@@ -483,10 +494,13 @@ export function getClientIp(request: Request): string {
   }
 
   const entries = forwardedFor.split(',').map((entry) => entry.trim());
-  // Fewer entries than hops means a request that did not pass through every expected proxy; take the
-  // nearest entry we have rather than trusting a position that does not exist.
-  const entry = entries[Math.max(entries.length - config.hops, 0)];
-  return plausibleIp(entry) ?? 'unknown';
+  // The configured number of trusted proxies must all have appended an entry. Fewer entries means the
+  // request did not pass through the whole chain (or the chain is configured wrongly), and the entries
+  // that are there may be what the client sent: fail closed instead of taking the nearest one.
+  if (entries.length < config.hops) {
+    return 'unknown';
+  }
+  return plausibleIp(entries[entries.length - config.hops]) ?? 'unknown';
 }
 
 /** For tests: forget that a proxy configuration warning was already logged. */
