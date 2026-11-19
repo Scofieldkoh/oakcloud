@@ -3,6 +3,7 @@ import {
   finalizeEsigningEnvelopeCompletion,
   getEsigningSigningSessionStatus,
   loadEsigningSigningSession,
+  completeEsigningSigningSession,
   saveEsigningSigningFieldValues,
 } from '@/services/esigning-signing.service';
 import { getEsigningPostCompletionSummary } from '@/services/esigning-completion.service';
@@ -46,7 +47,11 @@ vi.mock('@/services/service-agreement', () => serviceAgreementMock);
 vi.mock('@/lib/esigning-session', () => sessionMocks);
 vi.mock('@/lib/storage', () => ({ storage: storageMocks }));
 vi.mock('@/lib/audit', () => ({ createAuditLog: vi.fn() }));
-vi.mock('@/lib/rbac', () => ({ hasPermission: rbacMocks.hasPermission }));
+vi.mock('@/lib/rbac', () => ({
+  hasPermission: rbacMocks.hasPermission,
+  hasTenantWidePermission: (userId: string, resource: string, action: string) =>
+    rbacMocks.hasPermission(userId, resource, action),
+}));
 vi.mock('@/services/esigning-field.service', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/services/esigning-field.service')>();
   return {
@@ -655,6 +660,14 @@ describe('e-signing completion retry', () => {
     prismaMocks.transaction.mockImplementation(
       async (callback: (tx: unknown) => Promise<unknown>) => {
         return callback({
+          // The envelope row lock: the committed row matches what the first read saw.
+          $queryRaw: async () => [{
+            id: 'envelope-1',
+            tenantId: 'tenant-1',
+            status: 'COMPLETED',
+            companyId: 'company-1',
+            createdById: 'user-1',
+          }],
           esigningEnvelope: { updateMany: prismaMocks.envelopeUpdateMany },
           esigningEmailDelivery: { updateMany: prismaMocks.deliveryUpdateMany },
         });
@@ -921,5 +934,38 @@ describe('e-signing field-value save consent enforcement', () => {
         values: [{ fieldDefinitionId: 'field-1', value: 'value' }],
       })
     );
+  });
+
+  it.each([
+    ['bytes that are not an image', `data:image/png;base64,${Buffer.from('plain text, not an image').toString('base64')}`],
+    ['a truncated PNG header', 'data:image/png;base64,iVBORw0KGgo='],
+  ])('rejects a save carrying %s before anything is persisted', async (_name, signatureDataUrl) => {
+    const consentedAt = new Date('2026-08-11T08:00:00.000Z');
+    prismaMocks.findFirstEnvelope.mockResolvedValue(makeContextEnvelope(consentedAt));
+    prismaMocks.fieldValueFindMany.mockResolvedValue([]);
+
+    await expect(
+      saveEsigningSigningFieldValues([
+        { fieldDefinitionId: 'field-1', value: 'fine' },
+        { fieldDefinitionId: 'field-2', signatureDataUrl },
+      ])
+    ).rejects.toThrow(/not a valid PNG/);
+
+    expect(fieldServiceMocks.saveRecipientFieldValues).not.toHaveBeenCalled();
+  });
+
+  it('rejects completion carrying an invalid image before the transaction takes its lock', async () => {
+    const consentedAt = new Date('2026-08-11T08:00:00.000Z');
+    prismaMocks.findFirstEnvelope.mockResolvedValue(makeContextEnvelope(consentedAt));
+    prismaMocks.fieldValueFindMany.mockResolvedValue([]);
+
+    await expect(
+      completeEsigningSigningSession({
+        values: [{ fieldDefinitionId: 'field-1', signatureDataUrl: 'data:image/png;base64,iVBORw0KGgo=' }],
+      })
+    ).rejects.toThrow(/not a valid PNG/);
+
+    expect(prismaMocks.transaction).not.toHaveBeenCalled();
+    expect(fieldServiceMocks.saveRecipientFieldValues).not.toHaveBeenCalled();
   });
 });

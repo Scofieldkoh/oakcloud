@@ -337,6 +337,43 @@ describe('session payload handling', () => {
     expect(mocks.saveEsigningSigningFieldValues).not.toHaveBeenCalled();
   });
 
+  it.each([
+    ['fields', 'PUT', 'saveEsigningSigningFieldValues'],
+    ['complete', 'POST', 'completeEsigningSigningSession'],
+  ] as const)(
+    'rejects text the signed PDF cannot print on session/%s with a clear message',
+    async (segment, method, serviceName) => {
+      const route = await import(`@/app/api/esigning/sign/session/${segment}/route`);
+      const response = await route[method](
+        request('/x', { method, body: { values: [{ fieldDefinitionId: FIELD_ID, value: 'Happy 😀' }] } })
+      );
+
+      expect(response.status).toBe(400);
+      const body = await response.json();
+      expect(body.code).toBe('UNSUPPORTED_PDF_CHARACTERS');
+      expect(body.error).toContain('This field contains a character that cannot be printed on the signed document');
+      expect(body.error).toContain('"😀" (U+1F600)');
+      expect(mocks[serviceName]).not.toHaveBeenCalled();
+    }
+  );
+
+  it('passes Latin, Vietnamese, CJK and rupee text through, normalised to NFC', async () => {
+    mocks.saveEsigningSigningFieldValues.mockResolvedValue({ ok: true });
+    const { PUT } = await import('@/app/api/esigning/sign/session/fields/route');
+    const values = ['John Tan', 'Tan Wei Ming 陈伟明', 'Nguye\u0302\u0303n Va\u0306n A', '₹ 100'];
+    const response = await PUT(
+      request('/x', {
+        method: 'PUT',
+        body: { values: values.map((value) => ({ fieldDefinitionId: FIELD_ID, value })) },
+      })
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.saveEsigningSigningFieldValues).toHaveBeenCalledWith(
+      values.map((value) => expect.objectContaining({ value: value.normalize('NFC') }))
+    );
+  });
+
   it('returns success for a decline with a reason and 400 for a blank reason', async () => {
     const { POST } = await import('@/app/api/esigning/sign/session/decline/route');
 
@@ -361,6 +398,92 @@ describe('session payload handling', () => {
     expect(response.status).toBe(400);
     expect(await response.json()).toEqual({ error: 'Invalid request body' });
     expect(mocks.completeEsigningSigningSession).not.toHaveBeenCalled();
+  });
+
+  describe('payload limits', () => {
+    const MIB = 1024 * 1024;
+
+    it.each([
+      ['fields', 'PUT', 'saveEsigningSigningFieldValues'],
+      ['complete', 'POST', 'completeEsigningSigningSession'],
+    ] as const)('answers 413 for a session/%s body over 5 MiB without calling the service', async (segment, method, serviceName) => {
+      const route = await import(`@/app/api/esigning/sign/session/${segment}/route`);
+      const body = { values: [{ fieldDefinitionId: FIELD_ID, value: 'x'.repeat(5 * MIB) }] };
+
+      const response = await route[method](request('/x', { method, body }));
+
+      expect(response.status).toBe(413);
+      expect((await response.json()).code).toBe('PAYLOAD_TOO_LARGE');
+      expect(mocks[serviceName]).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      ['consent', 'POST', { consented: true, padding: 'x'.repeat(17 * 1024) }, 'recordEsigningSigningConsent'],
+      ['decline', 'POST', { reason: 'x'.repeat(17 * 1024) }, 'declineEsigningSigningSession'],
+      ['verify', 'POST', { accessCode: '1'.repeat(17 * 1024) }, 'verifyEsigningAccessCode'],
+    ] as const)('answers 413 for a session/%s body over 16 KiB', async (segment, method, body, serviceName) => {
+      const route = await import(`@/app/api/esigning/sign/session/${segment}/route`);
+
+      const response = await route[method](request('/x', { method, body }));
+
+      expect(response.status).toBe(413);
+      expect(mocks[serviceName]).not.toHaveBeenCalled();
+    });
+
+    it('refuses on the declared Content-Length before reading the body', async () => {
+      const { PUT } = await import('@/app/api/esigning/sign/session/fields/route');
+      const oversized = request('/x', {
+        method: 'PUT',
+        body: { values: [{ fieldDefinitionId: FIELD_ID, value: 'Jane' }] },
+        headers: { 'content-length': String(6 * MIB) },
+      });
+      const getReader = vi.spyOn(oversized.body as ReadableStream, 'getReader');
+
+      const response = await PUT(oversized);
+
+      expect(response.status).toBe(413);
+      expect(getReader).not.toHaveBeenCalled();
+    });
+
+    it('still accepts a full 500-value save of about 4.5 MiB', async () => {
+      const { PUT } = await import('@/app/api/esigning/sign/session/fields/route');
+      const values = Array.from({ length: 500 }, () => ({ fieldDefinitionId: FIELD_ID, value: 'x'.repeat(9_000) }));
+
+      const response = await PUT(request('/x', { method: 'PUT', body: { values } }));
+
+      expect(response.status).toBe(200);
+      expect(mocks.saveEsigningSigningFieldValues).toHaveBeenCalledTimes(1);
+    });
+
+    it.each([
+      ['fields', 'PUT', 'saveEsigningSigningFieldValues'],
+      ['complete', 'POST', 'completeEsigningSigningSession'],
+    ] as const)('rejects an oversized signature image on session/%s with a clear message', async (segment, method, serviceName) => {
+      const route = await import(`@/app/api/esigning/sign/session/${segment}/route`);
+      const signatureDataUrl = `data:image/png;base64,${'A'.repeat(1_400_000)}`;
+
+      const response = await route[method](
+        request('/x', { method, body: { values: [{ fieldDefinitionId: FIELD_ID, signatureDataUrl }] } })
+      );
+
+      expect(response.status).toBe(400);
+      const body = await response.json();
+      expect(body.code).toBe('ESIGNING_IMAGE_LIMIT');
+      expect(body.error).toContain('too large');
+      expect(mocks[serviceName]).not.toHaveBeenCalled();
+    });
+
+    it('rejects images that are within the limit one by one but over the total for the request', async () => {
+      const { PUT } = await import('@/app/api/esigning/sign/session/fields/route');
+      const image = `data:image/png;base64,${'A'.repeat(1_300_000)}`;
+      const values = ['a', 'b', 'c', 'd'].map(() => ({ fieldDefinitionId: FIELD_ID, signatureDataUrl: image }));
+
+      const response = await PUT(request('/x', { method: 'PUT', body: { values } }));
+
+      expect(response.status).toBe(400);
+      expect((await response.json()).error).toContain('too large together');
+      expect(mocks.saveEsigningSigningFieldValues).not.toHaveBeenCalled();
+    });
   });
 
   it('hides Prisma and runtime error details behind a generic 500', async () => {

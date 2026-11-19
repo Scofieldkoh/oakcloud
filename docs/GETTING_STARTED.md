@@ -53,9 +53,9 @@ S3_BUCKET="oakcloud"
 - MinIO API: `http://localhost:9000`
 - MinIO Console: `http://localhost:9001`
 
-**Default Login**
+**First Login**
 
-- Super Admin: `admin@oaktreesolutions.com.sg` / `Preparefortrouble!`
+`npm run db:seed` creates the Super Admin `admin@oaktreesolutions.com.sg` only if it does not exist yet. Its password is `SEED_ADMIN_PASSWORD` when you set it (at least 12 characters), for example `SEED_ADMIN_PASSWORD='<choose one>' npm run db:seed`. If you leave it unset, a random password is generated and printed once at the end of that first run. Re-running the seed never prints it again and never changes an existing administrator. If the password is lost, see [Recovering admin access](#recovering-admin-access).
 
 ## Local Data Services
 
@@ -102,7 +102,7 @@ npm run docker:down
 - `S3_ENDPOINT` should point at `http://localhost:9000` when you use the bundled MinIO container.
 - `MAX_FILE_SIZE` applies to document uploads and public form uploads.
 - Email configuration is optional in development, but required for password reset emails, form draft emails, and public form PDF email delivery.
-- Background E-signing preparation requires `SCHEDULER_ENABLED=true` and `SCHEDULER_ESIGNING_PREPARATION_ENABLED=true` for lease recovery and durable fallback processing. Immediate lifecycle triggers still reduce normal wait time.
+- Background E-signing preparation, expiry checks and reminders all run from the master `SCHEDULER_ENABLED=true` switch alone (no per-task `*_ENABLED` variable). Preparation provides lease recovery and durable fallback processing; immediate lifecycle triggers still reduce normal wait time. Without `SCHEDULER_ENABLED=true`, envelopes never expire and no reminders are sent. See `docs/reference/ENVIRONMENT_VARIABLES.md` for every `SCHEDULER_*` variable.
 - `SCHEDULER_ESIGNING_PREPARATION_CRON` overrides the default one-minute schedule.
 - `ESIGNING_PREPARATION_BATCH_SIZE` (default `10`, maximum `100`) and `ESIGNING_PREPARATION_CONCURRENCY` (default `2`, maximum `20`) bound each worker run. `ESIGNING_PREPARATION_LEASE_MS` controls abandoned-claim recovery (default `300000`, maximum `3600000`).
 
@@ -116,7 +116,9 @@ npm run docker:down
 | `npm run db:seed` | Bootstrap the default workspace and required system foundations |
 | `npm run db:studio` | Open Prisma Studio |
 
-The seed script is idempotent and can be run multiple times safely. On an empty
+The seed script is idempotent and can be run multiple times safely. It creates
+the bootstrap Super Admin only when none exists; an existing administrator's
+password, active flag, email and roles are never changed. On an empty
 database it creates an active `Oakcloud` workspace with the Services workspace
 and deadline/billing materialization enabled. For every non-deleted workspace it
 ensures system roles, default custom roles, the Singapore business calendar,
@@ -128,6 +130,27 @@ billing occurrences, deadline occurrences, uploads, or other business records.
 Existing workspace status and settings are preserved. Service catalog entries
 remain subject to administrator review and activation.
 
+### Recovering admin access
+
+Use this if the Super Admin password is lost. Run it on the server with the
+real `DATABASE_URL` in the environment (or `.env`):
+
+```bash
+ADMIN_NEW_PASSWORD='<new password, 12+ characters>' npx tsx scripts/reset-admin-password.ts
+# in Docker: docker compose exec -e ADMIN_NEW_PASSWORD='<new password>' app npx tsx scripts/reset-admin-password.ts
+```
+
+- Leave `ADMIN_NEW_PASSWORD` unset to get a random password printed once.
+- `--email <login>` resets another user instead of the default Super Admin.
+- `--reactivate` also sets a deactivated account active again. Without it, the
+  account's active flag is left as it is.
+- The script replaces only the password, requires a password change at next
+  sign-in and clears any pending reset token. It never changes roles, and it
+  does nothing if no matching non-deleted user exists.
+
+Do not use `npm run db:seed` for recovery: it deliberately leaves an existing
+administrator alone.
+
 ## Development Commands
 
 | Command | Description |
@@ -137,17 +160,71 @@ remain subject to administrator review and activation.
 | `npm run lint` | Run ESLint |
 | `npm run typecheck` | Run the TypeScript compiler without emitting files |
 | `npm run test:run` | Run the test suite once |
+| `npm run test:esigning` | Run only the e-signing unit tests (no database) |
+| `npm run test:esigning:postgres` | E-signing completion worker concurrency suite (needs `TEST_DATABASE_URL`) |
+| `npm run test:stage3:postgres` | Service agreement activation suite (needs `TEST_DATABASE_URL`) |
+| `npm run test:business-assistant:postgres` | Business Assistant and BizFile suites (needs a separate database, see below) |
 | `npm run test:chromium` | Verify Chromium PDF generation and PDF-to-PNG rasterisation |
 | `npm run test:coverage` | Run tests with coverage |
 
 `npm run test:chromium` requires an installed Chrome/Chromium executable. Set
 `CHROME_PATH` when the executable is not in one of Oakcloud's standard paths.
 
+### PostgreSQL test suites
+
+Every `*.postgres.test.ts` suite starts with `// @vitest-environment node`, because the default Vitest environment is jsdom and the Prisma client cannot load there. Keep that line when adding a Postgres suite.
+
+Most Postgres suites (`test:esigning:postgres`, `test:stage3:postgres`, `test:client-services:postgres`, `test:deadlines:postgres`, `test:billing:postgres`) read `TEST_DATABASE_URL` and skip when it is unset. Point it at a disposable database whose name contains `test`, migrated with `prisma migrate deploy`:
+
+```bash
+export TEST_DATABASE_URL=postgresql://<user>:<password>@127.0.0.1:5432/oakcloud_test
+DATABASE_URL="$TEST_DATABASE_URL" npx prisma migrate deploy
+npm run test:esigning:postgres
+```
+
+Run the plain unit suites (`npm run test:run`, `npm run test:esigning`) without the application's `.env` loaded into the shell: a production `NODE_ENV` breaks the jsdom suites.
+
+#### Business Assistant database (`test:business-assistant:postgres`)
+
+This script needs its own PostgreSQL 16 database and will not run against `oakcloud_test`. `scripts/require-business-assistant-test-env.mjs` and the BizFile suites require all of the following:
+
+- host `127.0.0.1`, port `55439`, database `business_assistant_test`, user `assistant_test`;
+- `DATABASE_URL` and `BUSINESS_ASSISTANT_TEST_DATABASE_URL` set to the same URL.
+
+Set it up with Docker (the same image and settings as CI):
+
+```bash
+docker run -d --name oakcloud-assistant-test -p 127.0.0.1:55439:5432 \
+  -e POSTGRES_USER=assistant_test -e POSTGRES_PASSWORD=assistant-test-only \
+  -e POSTGRES_DB=business_assistant_test postgres:16
+```
+
+Without Docker, run a second local cluster on that port:
+
+```bash
+export PATH=/usr/lib/postgresql/16/bin:$PATH
+echo assistant-test-only > /tmp/pg55439.pw
+initdb -D ~/pg55439 -U assistant_test --pwfile=/tmp/pg55439.pw --auth=scram-sha-256 -E UTF8
+pg_ctl -D ~/pg55439 -o "-p 55439 -c listen_addresses=127.0.0.1 -c unix_socket_directories=/tmp" -l ~/pg55439.log -w start
+PGPASSWORD=assistant-test-only createdb -h 127.0.0.1 -p 55439 -U assistant_test business_assistant_test
+```
+
+Then migrate and run the suites. The password above is for a throwaway local database only:
+
+```bash
+export DATABASE_URL=postgresql://assistant_test:assistant-test-only@127.0.0.1:55439/business_assistant_test
+export BUSINESS_ASSISTANT_TEST_DATABASE_URL="$DATABASE_URL"
+npx prisma migrate deploy
+npm run test:business-assistant:postgres
+```
+
+Never point either variable at the application database; the guard script rejects ports `5433` and `3000` and a database named `oakcloud`.
+
 ### Continuous integration
 
 GitHub Actions runs two workflows. It does not run the full test suite, so run `npm run test:run` locally before opening a PR.
 
-- `node24-compatibility.yml` runs on every PR and every push to `main`. It covers lint, typecheck, selected test suites, the production Next build, and the Business Assistant, BizFile and document-generation PostgreSQL suites on a disposable database.
+- `node24-compatibility.yml` runs on every PR and every push to `main`. It covers lint, typecheck, selected test suites (including `npm run test:esigning`, all e-signing unit tests), the production Next build, the e-signing PostgreSQL suite (`test:esigning:postgres`, in the `esigning-postgres` job on a disposable `postgres:16` service), and the Business Assistant, BizFile and document-generation PostgreSQL suites on a separate disposable database.
 - `production-image.yml` builds and smoke-tests the Docker image on every push to `main`. On PRs it runs only when the Dockerfile, package files, Next config, Prisma or the Chromium helpers change.
 
 Each suite runs once per workflow. When adding a suite to CI, list its file explicitly rather than a directory filter; `vitest run <path>` matches every test file whose path contains that text.
@@ -190,7 +267,7 @@ npm run db:push
 ## Moving Oakcloud To Another Machine
 
 1. On the old machine, open Administration > Backup > Full backups, set a backup password (keep it in your password manager), click Back up now, and download the `.oakbackup` file when it completes. Also copy your `.env` file.
-2. On the new machine, clone the repository, put the `.env` in place (a new `ENCRYPTION_KEY` also works; connectors are re-locked during the restore), start the stack, then run `docker compose exec app npx prisma migrate deploy` and `docker compose exec app npx tsx prisma/seed.ts` so you can sign in with the default admin.
+2. On the new machine, clone the repository, put the `.env` in place (a new `ENCRYPTION_KEY` also works; connectors are re-locked during the restore), start the stack, then run `docker compose exec app npx prisma migrate deploy` and `docker compose exec app npx tsx prisma/seed.ts` so you can sign in with the default admin (set `SEED_ADMIN_PASSWORD` for that run, or note the password the seed prints; the backup restore also brings your own accounts back).
 3. Open Administration > Backup > Full backups, click Upload backup file, then Restore. Enter the backup password, read the check, and type `RESTORE`.
 4. When the restore finishes, sign in with your own account from the backup and run `docker compose restart app`. Backups leave out the ACRA register, so open Administration > ACRA Records and click Sync now to download it again.
 

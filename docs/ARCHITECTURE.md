@@ -70,6 +70,21 @@ Core design principles:
 | In-memory rate limiter | Public endpoint throttling |
 | In-memory view counter buffer | Batches form view count writes every 30 seconds |
 
+### Public E-signing Request Limits
+
+The unauthenticated signing and verification routes cap what they accept (constants in `src/lib/esigning-payload-limits.ts`):
+
+| Input | Limit |
+|-------|-------|
+| JSON body of `sign/session/fields` and `complete` | 5 MiB (413 above) |
+| JSON body of `sign/session/consent`, `decline`, `verify` | 16 KiB (413 above) |
+| Signature or initials image | PNG only; data URL up to 1,400,000 characters; 1 MiB decoded; at most 4096 x 2048 and 4,194,304 pixels; 3 MiB of images per request |
+| Verify upload (`verify/[certificateId]/check`) | 30 MiB (413 above); larger packages are checked one document at a time |
+
+Bodies are read through `src/lib/esigning-request-body.ts`, which refuses on `Content-Length` and otherwise counts bytes while streaming. Images are decoded and re-encoded with `sharp` (`src/lib/esigning-signature-image.ts`) before they are stored, and invalid ones are refused before the signing transaction starts. The drawing pad caps its canvas pixel ratio at 2 and `src/lib/esigning-signature-raster.ts` scales any larger image down before it is sent, so high-density screens and browser zoom stay within the pixel limits.
+
+`src/middleware.ts` (the CSRF origin check) does not run for `/api/esigning/verify/<id>/check`. Next truncates the body of every request that passes through middleware to 10 MB, which would cut off verify uploads between 10 and 30 MiB. That route runs its own same-origin check before it reads the body.
+
 ## High-Level Layout
 
 ```text
@@ -651,6 +666,8 @@ Completion delivery is independent of the request access mode: any signer or CC 
 Public signing sessions keep the editable field definitions scoped to the active signer. They separately expose `signedSignatures`, a read-only projection of finalized signature and initials placements from other signed signer recipients in the same tenant and envelope, with short-lived storage preview URLs for rendering earlier marks.
 
 Outside tasks, "Send for e-signing" on a generated document (and "Send all for e-signing" on batch results) calls `POST /api/esigning/envelopes/from-documents`. After a confirmation it finalizes any drafts, creates one draft envelope for the documents' company, attaches them, and adds signers: everyone a directors or shareholders repeater prints (the ones ticked on Configure, or all), otherwise the selected director, shareholder and contacts. Signers with an email get `EMAIL_LINK`, others `MANUAL_LINK`. The user then places the signature fields and sends from the envelope page. Documents for different companies cannot share an envelope.
+
+E-signing envelope access follows company scope. The rule lives in `src/services/esigning-envelope.lib.ts` (`canReadEnvelope`, `canMutateEnvelope`, `canDeleteEnvelope`, `canManageEnvelope`, `assertCanCreateEnvelopeForCompany`, `buildEsigningEnvelopeReadWhere`); route handlers keep only a permission gate and never reason about companies (the mutation routes ask for their own action; the read routes - list, detail, events, document PDFs, package download - ask for any e-signing action through `requireEsigningReadEntry`, because a user holding only create, update or delete can still read no-company envelopes). An envelope in company C is open to an actor who holds the permission for C (company-specific roles override tenant-wide ones, as in `hasPermission(..., companyId)`), or who created it and still holds some e-signing permission for C. An envelope with no company can be read (list, totals, status counts, opening it, its documents) by every e-signing user of the tenant, never across tenants; changing, sending and deleting it still needs a tenant-wide grant (`hasTenantWidePermission`), admin rights or being its creator. Denied single-envelope requests return 403; the list, its total, status counts and company options use the same scoped filter. Changing a draft's company needs a real update grant on both companies (the creator exception covers ordinary edits only), and duplicating needs read on the source plus create for its company. A generated document attached to an envelope with no company gives it that document's company, so the actor needs update rights there too. Attaching several generated documents is all-or-nothing: the whole selection and the resulting company are authorized before any PDF is rendered or uploaded, and the rows are written in one transaction under one envelope lock, with uploaded objects deleted on failure. Every write re-checks access on the envelope row itself under a row lock (`lockEnvelopeForAuthorizedChange`) inside the writing transaction, so a company move that commits between the service's read and its write is refused without side effects.
 
 When E-signing is launched from a task, the stage modal can explicitly select any preceding finalized task-generated documents. The selected documents are attached to the new draft envelope as separate envelope documents; automatic preparation continues to use the nearest preceding finalized document.
 

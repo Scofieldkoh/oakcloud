@@ -7,6 +7,7 @@ import { NotFoundError } from '@/lib/errors';
 const mocks = vi.hoisted(() => ({
   checkRateLimit: vi.fn(),
   getEsigningVerificationData: vi.fn(),
+  findIssuedArtifactMatch: vi.fn(),
 }));
 
 vi.mock('@/lib/rate-limit', async (importOriginal) => ({
@@ -15,6 +16,7 @@ vi.mock('@/lib/rate-limit', async (importOriginal) => ({
 }));
 vi.mock('@/services/esigning-certificate.service', () => ({
   getEsigningVerificationData: mocks.getEsigningVerificationData,
+  findIssuedArtifactMatch: mocks.findIssuedArtifactMatch,
 }));
 
 const IP = '198.51.100.7';
@@ -48,6 +50,12 @@ beforeEach(() => {
   vi.clearAllMocks();
   mocks.checkRateLimit.mockReturnValue(allowed);
   mocks.getEsigningVerificationData.mockResolvedValue(verification);
+  mocks.findIssuedArtifactMatch.mockResolvedValue({
+    matched: false,
+    fileHash: 'unmatched-hash',
+    documentId: null,
+    artifact: null,
+  });
 });
 
 describe('GET /api/esigning/verify/[certificateId]', () => {
@@ -95,25 +103,61 @@ describe('POST /api/esigning/verify/[certificateId]/check', () => {
 
   const pdf = () => new File([PDF_BYTES], 'upload.pdf', { type: 'application/pdf' });
 
-  it('matches an uploaded file against the certificate document hashes', async () => {
+  it('matches an uploaded file against everything issued for the certificate', async () => {
+    const artifact = {
+      kind: 'DOCUMENT_WITH_CERTIFICATE',
+      version: 2,
+      issuedAt: '2026-10-31T00:00:00.000Z',
+      isCurrent: true,
+      source: 'ISSUED_ARTIFACT',
+    };
+    mocks.findIssuedArtifactMatch.mockResolvedValue({
+      matched: true,
+      fileHash: 'file-hash',
+      documentId: 'doc-1',
+      artifact,
+    });
     const response = await check(pdf(), { origin: 'http://localhost' });
 
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({
       matched: true,
-      fileHash: verification.documents[0].hash,
+      fileHash: 'file-hash',
       document: verification.documents[0],
+      artifact,
     });
+    const [certificateId, uploaded] = mocks.findIssuedArtifactMatch.mock.calls[0];
+    expect(certificateId).toBe(CERTIFICATE_ID);
+    expect(Buffer.from(uploaded).toString()).toBe(PDF_BYTES);
     expect(mocks.checkRateLimit).toHaveBeenCalledWith(`esigning_verify:${IP}:${CERTIFICATE_ID}`, expect.any(Object));
   });
 
+  it('reports a match for a certificate-only file with no document', async () => {
+    mocks.findIssuedArtifactMatch.mockResolvedValue({
+      matched: true,
+      fileHash: 'cert-hash',
+      documentId: null,
+      artifact: { kind: 'CERTIFICATE', version: 1, issuedAt: '2026-10-31T00:00:00.000Z', isCurrent: false, source: 'ISSUED_ARTIFACT' },
+    });
+    const body = await (await check(pdf())).json();
+
+    expect(body).toMatchObject({ matched: true, document: null, artifact: { kind: 'CERTIFICATE', isCurrent: false } });
+  });
+
   it('reports no match for a different file', async () => {
+    mocks.findIssuedArtifactMatch.mockResolvedValue({
+      matched: false,
+      fileHash: hashBlake3(Buffer.from('tampered')),
+      documentId: null,
+      artifact: null,
+    });
     const response = await check(new File(['tampered'], 'upload.pdf'));
 
     expect(await response.json()).toEqual({
       matched: false,
       fileHash: hashBlake3(Buffer.from('tampered')),
       document: null,
+      artifact: null,
     });
   });
 
@@ -139,6 +183,62 @@ describe('POST /api/esigning/verify/[certificateId]/check', () => {
     expect(response.status).toBe(400);
     expect(await response.json()).toEqual({ error: 'No file provided' });
     expect(mocks.getEsigningVerificationData).not.toHaveBeenCalled();
+  });
+
+  describe('upload size cap', () => {
+    const MIB = 1024 * 1024;
+
+    async function uploadOf(sizeBytes: number, headers: Record<string, string> = {}): Promise<NextRequest> {
+      const form = new FormData();
+      form.set('file', new File([new Uint8Array(sizeBytes)], 'big.pdf', { type: 'application/pdf' }));
+      // Serialise the multipart body so the request carries plain bytes; a Request built straight from
+      // FormData streams through undici, which logs an unhandled rejection when the reader cancels.
+      const serialised = new Response(form);
+      return new Request(`http://localhost/api/esigning/verify/${CERTIFICATE_ID}/check`, {
+        method: 'POST',
+        headers: {
+          'x-forwarded-for': IP,
+          'content-type': serialised.headers.get('content-type') as string,
+          ...headers,
+        },
+        body: new Uint8Array(await serialised.arrayBuffer()),
+      }) as NextRequest;
+    }
+
+    async function post(request: NextRequest) {
+      const { POST } = await import('@/app/api/esigning/verify/[certificateId]/check/route');
+      return POST(request, params);
+    }
+
+    it('answers 413 for an upload over 30 MiB without buffering it or looking anything up', async () => {
+      const response = await post(await uploadOf(31 * MIB));
+
+      expect(response.status).toBe(413);
+      const body = await response.json();
+      expect(body.code).toBe('PAYLOAD_TOO_LARGE');
+      expect(body.error).toContain('30 MiB');
+      expect(body.error).toContain('one document at a time');
+      expect(mocks.getEsigningVerificationData).not.toHaveBeenCalled();
+      expect(mocks.findIssuedArtifactMatch).not.toHaveBeenCalled();
+    });
+
+    it('refuses on the declared Content-Length before reading a byte of the body', async () => {
+      const request = await uploadOf(1024, { 'content-length': String(40 * MIB) });
+      const getReader = vi.spyOn(request.body as ReadableStream, 'getReader');
+
+      const response = await post(request);
+
+      expect(response.status).toBe(413);
+      expect(getReader).not.toHaveBeenCalled();
+    });
+
+    it('still accepts an upload just under the cap', async () => {
+      const response = await post(await uploadOf(29 * MIB));
+
+      expect(response.status).toBe(200);
+      expect(mocks.findIssuedArtifactMatch).toHaveBeenCalledTimes(1);
+      expect(mocks.findIssuedArtifactMatch.mock.calls[0][1].length).toBe(29 * MIB);
+    });
   });
 
   it('hides an internal lookup error behind a generic 500', async () => {

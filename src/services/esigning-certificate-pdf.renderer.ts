@@ -2,7 +2,12 @@ import { PDFDocument, type PDFPage, StandardFonts, rgb, type PDFFont } from 'pdf
 import { buildEsigningVerificationUrl } from '@/lib/esigning-session';
 import { ESIGNING_RECIPIENT_COLORS } from '@/lib/validations/esigning';
 import { generateCertificateQrMatrix } from '@/lib/qr-matrix';
+import { isEsigningPdfCodePointSupported, normalizeEsigningPdfText } from '@/lib/esigning-pdf-text';
+import { createEsigningPdfTextFonts, type EsigningPdfTextFonts } from '@/services/esigning-pdf-fonts';
 import { buildEsigningEventLabel, summarizeEsigningUserAgent } from '@/services/esigning-evidence';
+
+export const CERTIFICATE_VERIFICATION_COPY =
+  'This certificate records the signing process. Upload a copy at the link below to compare it with the fingerprints recorded at issue.';
 
 const MM = 72 / 25.4;
 const mm = (value: number) => value * MM;
@@ -81,18 +86,29 @@ type RichToken = RichSpan & { width: number };
 type SectionKind = 'recipient' | 'history' | 'document' | 'verification';
 type RecipientActivityAction = 'VIEWED' | 'CONSENTED' | 'SIGNED';
 
+// Text the standard Helvetica fonts can encode (WinAnsi subset). Anything else goes through the
+// bundled Unicode fonts registered for the font below, so names such as "陈伟明" or "Nguyễn" print.
+const HELVETICA_SAFE_TEXT = /^[\x20-\x7E\u00A0-\u00FF\u2022]*$/;
+const unicodeTextFonts = new WeakMap<PDFFont, EsigningPdfTextFonts>();
+
 function safe(value: string | null | undefined): string {
   if (!value) return '';
-  return value
+  return normalizeEsigningPdfText(value)
     .replace(/[\u2018\u2019]/g, "'")
     .replace(/[\u201C\u201D]/g, '"')
     .replace(/[\u2013\u2014]/g, '-')
     .replace(/[\r\n\t]+/g, ' ')
-    .replace(/[^\x20-\x7E\u00A0-\u00FF\u2022]/g, '?');
+    .replace(/[^\x20-\x7E\u00A0-\u00FF\u2022]/gu, (char) =>
+      isEsigningPdfCodePointSupported(char.codePointAt(0) as number) ? char : '?',
+    );
 }
 
 function widthOf(text: string, font: PDFFont, size: number): number {
-  return font.widthOfTextAtSize(safe(text), size);
+  const value = safe(text);
+  const unicodeFonts = unicodeTextFonts.get(font);
+  return unicodeFonts && !HELVETICA_SAFE_TEXT.test(value)
+    ? unicodeFonts.widthOfText(value, size, font)
+    : font.widthOfTextAtSize(value, size);
 }
 
 function yFromTop(top: number): number {
@@ -112,7 +128,14 @@ function centeredY(top: number, height: number, font: PDFFont, size: number): nu
 }
 
 function drawTextTop(page: PDFPage, text: string, x: number, top: number, size: number, font: PDFFont, color: ReturnType<typeof rgb>): void {
-  page.drawText(safe(text), { x, y: textTopY(top, font, size), size, font, color });
+  const value = safe(text);
+  const y = textTopY(top, font, size);
+  const unicodeFonts = unicodeTextFonts.get(font);
+  if (unicodeFonts && !HELVETICA_SAFE_TEXT.test(value)) {
+    unicodeFonts.drawLine(page, value, { x, y, size, color }, font);
+    return;
+  }
+  page.drawText(value, { x, y, size, font, color });
 }
 
 function drawRightTop(page: PDFPage, text: string, right: number, top: number, size: number, font: PDFFont, color: ReturnType<typeof rgb>): void {
@@ -373,6 +396,9 @@ export async function renderEsigningCertificatePdf(input: CertificatePdfRenderIn
   const regular = await pdf.embedFont(StandardFonts.Helvetica);
   const medium = regular;
   const semibold = await pdf.embedFont(StandardFonts.HelveticaBold);
+  const unicodeFonts = await createEsigningPdfTextFonts(pdf);
+  unicodeTextFonts.set(regular, unicodeFonts);
+  unicodeTextFonts.set(semibold, unicodeFonts);
   const pages: PDFPage[] = [];
   let page!: PDFPage;
   let cursorTop = 0;
@@ -657,9 +683,16 @@ export async function renderEsigningCertificatePdf(input: CertificatePdfRenderIn
   const verificationTop = dividerTop + mm(6.5);
   drawSectionHeading(page, 'verification', 'Verification', verificationTop, semibold);
   const copyTop = verificationTop + mm(9.4);
-  drawTextTop(page, 'This certificate is the tamper-evident audit record of the signing process.', STRUCT_RAIL, copyTop, 8.15, regular, C.secondary);
-  drawTextTop(page, visibleVerificationUrl, STRUCT_RAIL, copyTop + mm(5.4), 8.4, medium, C.green);
   const qrX = PW - STRUCT_RAIL - qrSize;
+  // The wording is a statement about what the check does, not a claim of tamper-evidence: an ordinary
+  // PDF can be edited, and the upload check compares the file with the fingerprints kept on record.
+  // The wording is kept short enough (about 461 of the 482 pt left of the QR code at 8.15 pt) to sit on
+  // one line; a test asserts that, so a longer sentence cannot silently wrap again.
+  const copyLines = wrapText(CERTIFICATE_VERIFICATION_COPY, regular, 8.15, qrX - STRUCT_RAIL - mm(4));
+  copyLines.forEach((line, lineIndex) => {
+    drawTextTop(page, line, STRUCT_RAIL, copyTop + lineIndex * 9.4, 8.15, regular, C.secondary);
+  });
+  drawTextTop(page, visibleVerificationUrl, STRUCT_RAIL, copyTop + Math.max(0, copyLines.length - 1) * 9.4 + mm(5.4), 8.4, medium, C.green);
   drawQr(page, verificationUrl, qrX, verificationTop - mm(0.5), qrSize);
   const qrLabel = 'SCAN TO VERIFY';
   const qrLabelSize = 5.75;
