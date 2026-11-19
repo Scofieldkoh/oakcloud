@@ -166,6 +166,8 @@ export interface DateOfBirthReplacement {
   section: "officers" | "shareholders";
   index: number;
   name: string;
+  /** The matched contact the saved date belongs to. */
+  contactId: string;
   saved: string;
   incoming: string;
 }
@@ -184,7 +186,7 @@ export function dateOfBirthReplacements(draft: BizFileReviewDraft, previews: Mat
       const resolution = record.contactResolution;
       const certain = resolution?.action === "REUSE" && resolution.contactId === preview?.contactId;
       if (!certain || !incoming || !saved || saved === incoming) return;
-      found.push({ path: `${section}.${index}.dateOfBirth`, section, index, name: record.name, saved, incoming });
+      found.push({ path: `${section}.${index}.dateOfBirth`, section, index, name: record.name, contactId: preview!.contactId, saved, incoming });
     });
   }
   return found;

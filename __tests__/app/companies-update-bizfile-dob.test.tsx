@@ -31,7 +31,7 @@ const reply = (body: unknown, status = 200) => Response.json(body, { status });
 afterEach(() => vi.unstubAllGlobals());
 
 /** Mounts the real Update-from-BizFile page against a scripted network and returns what it posted. */
-async function run(section: 'officers' | 'shareholders', saved: { current: string }) {
+async function run(section: 'officers' | 'shareholders', saved: { current: string }, who: { id: string } = { id }) {
   const record = section === 'officers'
     ? { ...person, role: 'DIRECTOR' }
     : { ...person, type: 'INDIVIDUAL', shareClass: 'ORDINARY', numberOfShares: 1 };
@@ -47,8 +47,8 @@ async function run(section: 'officers' | 'shareholders', saved: { current: strin
     }
     if (url.endsWith('/match-preview')) {
       return reply({ matches: { [`${section}.0`]: {
-        contactId: id, score: 1, automatic: true, blockedByIdentifierConflict: false, reasons: ['IDENTIFIER'], conflicts: [],
-        contact: { id, fullName: person.name, identificationType: 'NRIC', identificationNumber: person.identificationNumber,
+        contactId: who.id, score: 1, automatic: true, blockedByIdentifierConflict: false, reasons: ['IDENTIFIER'], conflicts: [],
+        contact: { id: who.id, fullName: person.name, identificationType: 'NRIC', identificationNumber: person.identificationNumber,
           corporateUen: null, companies: [], dateOfBirth: saved.current },
       } } });
     }
@@ -79,7 +79,11 @@ async function run(section: 'officers' | 'shareholders', saved: { current: strin
     fireEvent.click(general);
     fireEvent.click(screen.getByRole('button', { name: 'Confirm & Save 1 Change' }));
   };
-  return { fetchMock, review, applied, approve };
+  const upload = () => {
+    fireEvent.change(view.container.querySelector('input[type=file]')!, { target: { files: [new File(['pdf'], 'second.pdf', { type: 'application/pdf' })] } });
+    fireEvent.click(screen.getByRole('button', { name: 'Upload & Extract' }));
+  };
+  return { fetchMock, review, applied, approve, upload };
 }
 
 describe.each(['officers', 'shareholders'] as const)('Update from BizFile: date of birth replacement for %s', (section) => {
@@ -93,6 +97,41 @@ describe.each(['officers', 'shareholders'] as const)('Update from BizFile: date 
     await approve();
     await waitFor(() => expect(applied()).toBeDefined());
     expect(applied()).toMatchObject({ dateOfBirth: '1980-01-01', dateOfBirthReplaces: '1981-01-01', contactResolution: { action: 'REUSE', contactId: id } });
+  });
+
+  it('does not carry an approval to a different contact after switching files', async () => {
+    const saved = { current: '1981-01-01' };
+    const who = { id };
+    const { review, applied, approve, upload } = await run(section, saved, who);
+    fireEvent.click(screen.getByRole('checkbox', { name: /Synthetic Person: replace the saved date of birth \(1 Jan 1981\) with 1 Jan 1980/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Upload Different File/ }));
+    // Same saved date, same position, but another person's contact.
+    who.id = '00000000-0000-4000-8000-000000000002';
+    upload();
+    await screen.findByRole('button', { name: /Review proposed changes/i });
+    const second = await screen.findByRole('checkbox', { name: /Synthetic Person: replace the saved date of birth \(1 Jan 1981\) with 1 Jan 1980/i });
+    expect(second).not.toBeChecked();
+    fireEvent.click(screen.getByRole('button', { name: /Review proposed changes/i }));
+    await approve();
+    await waitFor(() => expect(applied()).toBeDefined());
+    expect(applied()).not.toHaveProperty('dateOfBirth');
+    expect(applied()).not.toHaveProperty('dateOfBirthReplaces');
+    expect(review).toBeDefined();
+  });
+
+  it('keeps the choice available after Back to review, and then sends the approval', async () => {
+    const saved = { current: '1981-01-01' };
+    const { review, applied, approve } = await run(section, saved);
+    fireEvent.click(review);
+    await screen.findByLabelText('I have reviewed these changes and contact decisions.');
+    fireEvent.click(screen.getByRole('button', { name: 'Back to review' }));
+    const tick = await screen.findByRole('checkbox', { name: /Synthetic Person: replace the saved date of birth \(1 Jan 1981\) with 1 Jan 1980/i });
+    expect(tick).not.toBeChecked();
+    fireEvent.click(tick);
+    fireEvent.click(screen.getByRole('button', { name: /Review proposed changes/i }));
+    await approve();
+    await waitFor(() => expect(applied()).toBeDefined());
+    expect(applied()).toMatchObject({ dateOfBirth: '1980-01-01', dateOfBirthReplaces: '1981-01-01' });
   });
 
   it('keeps the saved date when the replacement is not ticked, without losing the rest of the update', async () => {

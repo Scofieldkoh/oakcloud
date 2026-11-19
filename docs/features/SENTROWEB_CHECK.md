@@ -95,7 +95,9 @@ confirmation (**Run again anyway**). Only one run per company can be queued or r
   saved date of birth (old) with (new)". Ticked, the exact saved date is sent as the agreement. Unticked
   (the default), the proposed date is left out and the saved one is kept, while the person's other updates
   still apply. If a saved date changes after a box was ticked, applying is stopped, the tick is cleared
-  and the card shows the new date. The plan review before the final save also lists the person's change.
+  and the card shows the new date. A tick belongs to one file, person, matched contact and proposed date,
+  so it never carries over to another contact or after "Upload Different File", and the choice is still
+  there after "Back to review" from the plan dialog.
   Other sources only fill an empty date and report a difference as a conflict.
 - **No backfill, no automatic re-screening.** Past BizFile documents are not re-read, and a changed date
   affects only the next manual Sentroweb check.

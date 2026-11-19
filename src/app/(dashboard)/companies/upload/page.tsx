@@ -204,10 +204,15 @@ function AIExtractionMetadata({ metadata }: { metadata: AIMetadata | null }) {
  * exact saved date carries that approval, an unticked one drops the proposed date (the saved date is
  * kept), and a tick for a date the contact no longer has is stale and blocks the apply.
  */
+function dobApprovalKey(documentId: string | null, item: { path: string; contactId: string; incoming: string }): string {
+  return [documentId ?? '', item.path, item.contactId, item.incoming].join('|');
+}
+
 function resolveDateOfBirthDecisions(
   data: ExtractedBizFileData,
   previews: Record<string, ContactMatchPreview | null>,
   approvals: Record<string, string>,
+  documentId: string | null,
 ): { data: ExtractedBizFileData; staleApprovals: string[] } {
   const staleApprovals: string[] = [];
   const next = { ...data, officers: data.officers ? [...data.officers] : undefined, shareholders: data.shareholders ? [...data.shareholders] : undefined };
@@ -215,11 +220,12 @@ function resolveDateOfBirthDecisions(
     const records = next[item.section];
     const record = records?.[item.index];
     if (!records || !record) continue;
-    const approved = approvals[item.path];
+    const key = dobApprovalKey(documentId, item);
+    const approved = approvals[key];
     if (approved === item.saved) {
       records[item.index] = { ...record, dateOfBirthReplaces: item.saved };
     } else if (approved) {
-      staleApprovals.push(item.path);
+      staleApprovals.push(key);
     } else {
       records[item.index] = { ...record, dateOfBirth: undefined, dateOfBirthReplaces: undefined };
     }
@@ -251,7 +257,8 @@ export default function UploadBizFilePage() {
   const [aiMetadata, setAiMetadata] = useState<AIMetadata | null>(null);
   const [diffResult, setDiffResult] = useState<DiffResult | null>(null);
   const [contactMatchPreviews, setContactMatchPreviews] = useState<Record<string, ContactMatchPreview | null>>({});
-  // Approved date-of-birth replacements: person path -> the exact saved date the reviewer agreed to replace.
+  // Approved date-of-birth replacements: document + person + matched contact + proposed date -> the
+  // exact saved date the reviewer agreed to replace. A different file, contact or proposal never matches.
   const [dobApprovals, setDobApprovals] = useState<Record<string, string>>({});
   const [updatedFields, setUpdatedFields] = useState<string[]>([]);
   const [officerActions, setOfficerActions] = useState<OfficerAction[]>([]);
@@ -657,19 +664,22 @@ export default function UploadBizFilePage() {
     try {
       const latestMatches = approved ? {} : await requestContactMatchPreviews(extractedData);
       let resolvedData = approved ? approved.plan.reviewedData : applyAutomaticContactResolutions(extractedData, latestMatches);
+      // The review state keeps the reviewer's proposals (and so the date-of-birth choices) whatever is
+      // sent for approval: "Back to review" must still offer an unticked replacement.
+      const reviewState: ExtractedBizFileData | null = approved ? null : resolvedData;
       if (!approved) {
         // A different saved date of birth is replaced only for the exact date the reviewer ticked on
         // this page; otherwise the saved date is kept and the person's other updates still apply.
-        const outcome = resolveDateOfBirthDecisions(resolvedData, latestMatches, dobApprovals);
+        const outcome = resolveDateOfBirthDecisions(resolvedData, latestMatches, dobApprovals, documentId);
         if (outcome.staleApprovals.length > 0) {
-          setDobApprovals((current) => Object.fromEntries(Object.entries(current).filter(([path]) => !outcome.staleApprovals.includes(path))));
-          setExtractedData(outcome.data);
+          setDobApprovals((current) => Object.fromEntries(Object.entries(current).filter(([key]) => !outcome.staleApprovals.includes(key))));
+          setExtractedData(reviewState);
           setError('A saved date of birth changed since you reviewed it. Check the date of birth changes below, then apply again.');
           return;
         }
         resolvedData = outcome.data;
       }
-      setExtractedData(resolvedData);
+      if (reviewState) setExtractedData(reviewState);
       const unresolved = Object.entries(latestMatches).find(([path, match]) => {
         if (!match) return false;
         const [section, rawIndex] = path.split('.') as ['officers' | 'shareholders', string];
@@ -739,6 +749,7 @@ export default function UploadBizFilePage() {
     setSelectedStandardContexts([]);
     setDiffResult(null);
     setContactMatchPreviews({});
+    setDobApprovals({});
     setUpdatedFields([]);
     setOfficerActions([]);
     setCanonicalReview(null);
@@ -1185,10 +1196,11 @@ export default function UploadBizFilePage() {
                       <input
                         type="checkbox"
                         className="mt-1 h-4 w-4 accent-oak-primary"
-                        checked={dobApprovals[item.path] === item.saved}
+                        checked={dobApprovals[dobApprovalKey(documentId, item)] === item.saved}
                         onChange={(event) => setDobApprovals((current) => {
-                          const { [item.path]: _removed, ...rest } = current;
-                          return event.target.checked ? { ...rest, [item.path]: item.saved } : rest;
+                          const key = dobApprovalKey(documentId, item);
+                          const { [key]: _removed, ...rest } = current;
+                          return event.target.checked ? { ...rest, [key]: item.saved } : rest;
                         })}
                       />
                       <span>

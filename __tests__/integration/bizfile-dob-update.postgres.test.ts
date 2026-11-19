@@ -77,9 +77,10 @@ suite('Update-from-BizFile DOB replacement through the public apply-update route
       storageKey: `test/${suffix}.pdf`, mimeType: 'application/pdf', documentType: 'BIZFILE', fileSize: 0,
       extractionStatus: 'EXTRACTED', extractedData: reviewedData as object,
     } });
-    // Canonical sync compares the company's updatedAt through String(date), which drops milliseconds
-    // (existing behaviour, reported separately), so give the fixture a whole-second timestamp.
-    await db.$executeRaw`UPDATE companies SET "updatedAt" = date_trunc('second', "updatedAt") WHERE id = ${company.id}`;
+    // Deliberately not a whole second: a company's updatedAt normally carries milliseconds.
+    await db.$executeRaw`UPDATE companies SET "updatedAt" = date_trunc('second', "updatedAt") + interval '123 milliseconds' WHERE id = ${company.id}`;
+    const stamp = await db.company.findUniqueOrThrow({ where: { id: company.id }, select: { updatedAt: true } });
+    expect(stamp.updatedAt.getUTCMilliseconds()).not.toBe(0);
     const prepared = await prepareBizFileImportCommand({ documentId: document.id, tenantId, reviewedData, targetCompanyId: company.id });
     const { token } = issueBizFilePreparationToken({ actorId: userId, tenantId, documentId: document.id,
       planHash: prepared.plan.canonicalHash, contextHash: hashBizFileValue(null) });
