@@ -134,9 +134,14 @@ read the Male and Female boxes back before SEARCH, but that is our own page stat
 confirmation. A result that never ran, failed before SEARCH or ended in an error says "Requested, not
 confirmed as sent: ...", because nothing proves what reached Sentroweb.
 
-The browser client fills the country and the date of birth **first**, while SEARCH is still
-disabled (it enables once a name and a type are filled in), and types the name and ticks the type
-last. Nothing can submit the form while the country is being chosen, not even an Enter key in the
+The browser client sets the fields in this order: the country, the search type (Individual or
+Entity, plus Fuzzy Search and the gender box), the date of birth, and the name **last**. SEARCH stays
+disabled until a name and a type are filled in, so nothing can be submitted before the name. The order
+matters because the real form draws the **Male and Female boxes and the date of birth field only after
+Individual is ticked** (an empty form, or one with Entity ticked, has only Individual, Entity and Fuzzy
+Search). An entity search therefore has no gender boxes and no date field and none is expected; an
+individual search waits for the fields to appear after the tick and fails `LAYOUT_CHANGED` (before
+SEARCH, not submitted) if a wanted one never does. Nothing can submit the form while the country is being chosen, not even an Enter key in the
 dropdown (Enter is pressed only while SEARCH is disabled). If the page nevertheless asks for a quota
 or starts a search before our click, the attempt is recorded as submitted (cooldown, no retry, one
 credit counted) and the client stops. The client types the country to narrow the list, then takes the option whose text is
@@ -188,7 +193,7 @@ Stored and shown as fixed messages (`src/lib/sentroweb/error-codes.ts`), never r
 | `NO_ENTITIES_SELECTED` | Nothing selected (HTTP 422). |
 | `COOLDOWN` | The cooldown is running (HTTP 409; `details.cooldownUntil`). |
 | `ALREADY_RUNNING` | A run is queued or running for the company (HTTP 409). |
-| `UNEXPECTED_ERROR` | Anything else. Details are in the server log, without page text. |
+| `UNEXPECTED_ERROR` | Anything else. Details are in the server log, without page text: the step before CONFIRM that failed, an error class name and a fixed category word (`no-element-for-selector`, `not-clickable`, `timeout`, `page-changed`, `browser-closed`, `other`; never the message), the allow-listed recent calls, and the form structure (class names, whether the date field and the country dropdown exist, name length). |
 
 ## How it runs
 

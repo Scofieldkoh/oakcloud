@@ -66,6 +66,8 @@ export interface FakeOptions {
   countrySelection: 'works' | 'ignored' | 'wrong-option';
   /** The page rewrites a typed birth date (like a date picker that reformats it). */
   rewriteDateOfBirth: boolean;
+  /** Ticking Individual does not draw the date of birth field (`date`) or the Male and Female boxes (`gender`). */
+  omitIndividualFields: 'none' | 'date' | 'gender';
   /** What the search answer echoes as country / birth date instead of what was sent (null: nothing). */
   echoCountry: string | null | undefined;
   echoDateOfBirth: string | null | undefined;
@@ -98,6 +100,7 @@ const DEFAULTS: FakeOptions = {
   expireSessionOnMainRequest: null,
   countrySelection: 'works',
   rewriteDateOfBirth: false,
+  omitIndividualFields: 'none',
   echoCountry: undefined,
   echoDateOfBirth: undefined,
   echoFuzzy: undefined,
@@ -141,6 +144,13 @@ export interface FakeSentroweb {
   count(type: FakeEvent['type']): number;
   close(): Promise<void>;
 }
+
+/** The fields the real form draws only after Individual is ticked (Male, Female, Date of birth). */
+const INDIVIDUAL_FIELDS_HTML = (checkbox: (label: string) => string, omit: FakeOptions['omitIndividualFields']): string =>
+  (omit === 'gender' ? '' : `<div class="fields">${checkbox('Male')}${checkbox('Female')}</div>`) +
+  (omit === 'date'
+    ? ''
+    : '<div class="field"><label>Date of birth</label><input name="birthDate" placeholder="YYYY-MM-DD" type="text" value=""></div>');
 
 function countryDropdown(options: FakeOptions): string {
   const items = SENTROWEB_COUNTRIES.map(
@@ -205,8 +215,7 @@ function mainPage(options: FakeOptions): string {
   <div class="required field"><label>Search name</label><div class="ui input"><input placeholder="Search name" type="text" value=""></div></div>
   <div class="field"><label>Country/ Region</label>${countryDropdown(options)}</div>
   <div class="fields">${checkbox('Individual')}${checkbox('Entity')}</div>
-  <div class="fields">${checkbox('Male')}${checkbox('Female')}</div>
-  <div class="field"><label>Date of birth</label><input name="birthDate" placeholder="YYYY-MM-DD" type="text" value=""></div>
+  <div id="individual-fields"></div>
   <div class="fields">${checkbox('Fuzzy Search')}<button class="ui large disabled button search-button" disabled="" type="submit" tabindex="-1">SEARCH</button></div>
   <div class="fields"><button class="ui large button right-export-button" type="button">EXPORT</button></div>
 </form>
@@ -216,10 +225,37 @@ function mainPage(options: FakeOptions): string {
   const form = document.querySelector('form');
   const nameInput = form.querySelector('input[placeholder="Search name"]');
   const submit = form.querySelector('button.search-button');
-  const boxes = Array.from(form.querySelectorAll('.checkbox'));
+  // Like the real form, Male, Female and Date of birth exist only while Individual is ticked (the
+  // recorded empty form has three boxes; ticking Individual adds those fields).
+  const individualHtml = ${JSON.stringify(INDIVIDUAL_FIELDS_HTML(checkbox, options.omitIndividualFields))};
+  const individualFields = document.getElementById('individual-fields');
+  const allBoxes = () => Array.from(form.querySelectorAll('.checkbox'));
   const labelOf = (box) => box.querySelector('label').textContent.trim();
-  const box = (label) => boxes.find((b) => labelOf(b) === label);
-  const isChecked = (label) => box(label).classList.contains('checked');
+  const box = (label) => allBoxes().find((b) => labelOf(b) === label);
+  const isChecked = (label) => !!box(label)?.classList.contains('checked');
+  const dobInput = () => form.querySelector('input[name="birthDate"]');
+  const dobValue = () => dobInput()?.value ?? '';
+  let armed = false;
+  const wire = (b) => b.addEventListener('click', () => {
+    const label = labelOf(b);
+    b.classList.toggle('checked');
+    if (b.classList.contains('checked') && label === 'Individual') box('Entity').classList.remove('checked');
+    if (b.classList.contains('checked') && label === 'Entity') box('Individual').classList.remove('checked');
+    syncIndividualFields();
+    refresh();
+  });
+  function syncIndividualFields() {
+    if (isChecked('Individual')) {
+      if (individualFields.firstChild) return;
+      individualFields.innerHTML = individualHtml;
+      individualFields.querySelectorAll('.checkbox').forEach((b) => { if (armed) wire(b); });
+      dobInput()?.addEventListener('input', () => {
+        if (window.__rewriteDob) dobInput().value = dobInput().value.replace(/-/g, '/');
+      });
+    } else {
+      individualFields.innerHTML = '';
+    }
+  }
   function refresh() {
     const ready = nameInput.value.trim() !== '' && (isChecked('Individual') || isChecked('Entity'));
     submit.disabled = !ready;
@@ -227,20 +263,13 @@ function mainPage(options: FakeOptions): string {
   }
   // Like the real page, the checkboxes only react once the page's initializeApp call has answered:
   // a click right after the form appears is ignored.
-  window.__armBoxes = () => boxes.forEach((b) => b.addEventListener('click', () => {
-    const label = labelOf(b);
-    b.classList.toggle('checked');
-    if (b.classList.contains('checked') && label === 'Individual') box('Entity').classList.remove('checked');
-    if (b.classList.contains('checked') && label === 'Entity') box('Individual').classList.remove('checked');
-    refresh();
-  }));
+  window.__armBoxes = () => { armed = true; allBoxes().forEach(wire); };
   nameInput.addEventListener('input', refresh);
 
   // The country dropdown: a click opens it, typing filters, a click on an option shows its text.
   const dropdown = form.querySelector('.searchCountry');
   const filter = dropdown.querySelector('input.search');
   const shown = dropdown.querySelector(':scope > .text');
-  const dobInput = form.querySelector('input[name="birthDate"]');
   dropdown.addEventListener('click', () => { dropdown.classList.add('visible'); filter.focus(); });
   filter.addEventListener('input', () => {
     const term = filter.value.toLowerCase();
@@ -271,9 +300,6 @@ function mainPage(options: FakeOptions): string {
     const first = Array.from(dropdown.querySelectorAll('.menu .item')).find((item) => item.textContent.trim() !== '' && !item.classList.contains('filtered'));
     if (first) choose(first);
   });
-  dobInput.addEventListener('input', () => {
-    if (window.__rewriteDob) dobInput.value = dobInput.value.replace(/-/g, '/');
-  });
   const chosenCountry = () => (shown.classList.contains('default') ? '' : shown.textContent.trim());
 
   fetch('/sentroweb-service/account/private/initializeApp', { method: 'POST' }).then(async (response) => {
@@ -293,7 +319,7 @@ function mainPage(options: FakeOptions): string {
 
   const host = document.getElementById('modal-host');
   const query = () => ({ queries: [{
-    country: chosenCountry(), fuzzy: isChecked('Fuzzy Search'), name: nameInput.value, dateOfBirth: dobInput.value,
+    country: chosenCountry(), fuzzy: isChecked('Fuzzy Search'), name: nameInput.value, dateOfBirth: dobValue(),
     searchEntity: isChecked('Entity'), searchIndividual: isChecked('Individual'),
     // The value the real page sends for a ticked gender box is not known; the fake sends the box.
     gender: isChecked('Male') ? 'MALE' : isChecked('Female') ? 'FEMALE' : null }] });

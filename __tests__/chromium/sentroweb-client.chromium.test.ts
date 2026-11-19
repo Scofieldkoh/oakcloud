@@ -205,6 +205,71 @@ describe('Sentroweb client against a fake Sentroweb', () => {
       expect(server.count('search')).toBe(0);
     });
 
+    // The real form draws Male, Female and the date of birth only after Individual is ticked (the
+    // recorded empty form has three checkboxes). Staging failed with UNEXPECTED_ERROR in the first
+    // step because the client typed the date before ticking Individual, and an entity search failed
+    // because it looked for gender boxes that an entity form does not have.
+    describe('the form draws the individual-only fields after Individual is ticked', () => {
+      async function logsOf(run: () => Promise<unknown>): Promise<unknown[][]> {
+        const calls: unknown[][] = [];
+        const spies = (['log', 'info', 'warn', 'error', 'debug'] as const).map((method) =>
+          vi.spyOn(console, method).mockImplementation((...args: unknown[]) => void calls.push(args)),
+        );
+        try {
+          await run();
+        } finally {
+          spies.forEach((spy) => spy.mockRestore());
+        }
+        return calls;
+      }
+      const stepFailures = (calls: unknown[][]) =>
+        calls.filter((args) => String(args[0]).includes('a step failed before CONFIRM')).map((args) => args[1] as Record<string, unknown>);
+
+      it('searches an individual with country, date of birth and gender with no step failing', async () => {
+        const server = await start();
+        const session = await open(server);
+        const calls = await logsOf(() =>
+          session.search({ name: CLEAR_INDIVIDUAL, searchType: 'INDIVIDUAL', ...DETAILS, gender: 'MALE' }),
+        );
+        expect(stepFailures(calls)).toEqual([]);
+        expect(server.searches[0]).toMatchObject({ country: 'Singapore', dateOfBirth: '1980-01-01', gender: 'MALE', searchIndividual: true });
+      });
+
+      it('searches an entity on a form that has no gender boxes and no date field', async () => {
+        const server = await start();
+        const session = await open(server);
+        const calls = await logsOf(() => session.search({ name: CLEAR_ENTITY, searchType: 'ENTITY' }));
+        expect(stepFailures(calls)).toEqual([]);
+        expect(server.searches[0]).toMatchObject({ searchEntity: true, searchIndividual: false, dateOfBirth: '', gender: null });
+      });
+
+      it('a form that never draws the date field fails before SEARCH, named in the log, not UNEXPECTED_ERROR', async () => {
+        const server = await start({ omitIndividualFields: 'date' });
+        const session = await open(server, { timeouts: { stepMs: 2_500 } });
+        let error: SentrowebError | undefined;
+        const calls = await logsOf(async () => {
+          error = await failureOf(session.search({ name: CLEAR_INDIVIDUAL, searchType: 'INDIVIDUAL', ...DETAILS }));
+        });
+        expect(error?.code).toBe('LAYOUT_CHANGED');
+        expect(error?.searchSubmitted).toBeFalsy();
+        expect(server.count('checkquota')).toBe(0);
+        expect(server.count('search')).toBe(0);
+        expect(stepFailures(calls)).toMatchObject([{ phase: 'set-birth-date', code: 'LAYOUT_CHANGED', form: { hasDateOfBirthField: false, hasCountryDropdown: true } }]);
+      });
+
+      it('a wanted gender whose boxes are never drawn fails before SEARCH; an unwanted one does not matter', async () => {
+        const server = await start({ omitIndividualFields: 'gender' });
+        const session = await open(server, { timeouts: { stepMs: 2_500 } });
+        const error = await failureOf(session.search({ name: CLEAR_INDIVIDUAL, searchType: 'INDIVIDUAL', ...DETAILS, gender: 'FEMALE' }));
+        expect(error.code).toBe('LAYOUT_CHANGED');
+        expect(error.searchSubmitted).toBeFalsy();
+        expect(server.count('checkquota')).toBe(0);
+        const outcome = await session.search({ name: 'Zzqx Gamma Qwv', searchType: 'INDIVIDUAL', ...DETAILS });
+        expect(outcome).toBeDefined();
+        expect(server.searches.at(-1)).toMatchObject({ country: 'Singapore', dateOfBirth: '1980-01-01', gender: null });
+      });
+    });
+
     it('a page that shows another country than the one chosen fails before SEARCH', async () => {
       const server = await start({ countrySelection: 'wrong-option' });
       const session = await open(server);
