@@ -307,6 +307,7 @@
 
 - `ensureFilingJobsForCompletedEnvelope(tx, envelopeId, completedAt)` runs inside the completion transaction, applies both enablement gates and the `enabledAt` cutover, and upserts by envelope document.
 - `snapshotFilingRoute(tx, envelopeDocumentId)` returns intended/orphan destination, routing reason, connector/config/root/company/template snapshots, and safe naming inputs without making a Graph call.
+- Routing change (2026-11-19): a templated document whose template has no SharePoint subfolder (blank path) is filed in the mapped company folder root (`INTENDED`, reason `NO_TEMPLATE_PATH`) instead of the orphan folder. OakDoc templates have no subfolder setting, so the old rule sent every OakDoc-generated signed document to the unassigned folder. Only a missing/unusable company mapping or an invalid stored path still routes to the orphan folder. `scripts/refile-unassigned-signed-documents.ts --email <login> [--apply]` moves earlier misfiled documents.
 - `claimFilingJobs`, `completeClaim`, `failClaim`, and `releaseExpiredClaims` mirror established completion-worker lease semantics.
 - Preferred filename preserves the source document filename and appends `_signed` before `.pdf`. `reserveTargetFileName` atomically reserves the preferred name or controlled ` (1)` through ` (99)` suffix.
 

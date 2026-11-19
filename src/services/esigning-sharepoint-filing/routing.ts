@@ -29,7 +29,10 @@ export function snapshotFilingRoute(input: RouteSelectionInput): FilingRouteSnap
     return { ...orphan, destinationKind: 'INTENDED', routingReason: 'MANUAL_DOCUMENT', connectorId: input.connectorId, configVersion: input.configVersion, companyId: input.companyId ?? null, companyNameSnapshot: input.companyName ?? null, templateId: null, templateVersion: null, intendedCompanyDriveId: input.mapping.driveId, intendedCompanyFolderId: input.mapping.folderItemId, intendedRelativePath: null };
   }
   if (input.relativePath === null || input.relativePath === undefined || input.relativePath.trim() === '') {
-    return { ...orphan, destinationKind: 'ORPHAN', routingReason: 'NO_TEMPLATE_PATH', connectorId: input.connectorId, configVersion: input.configVersion, companyId: input.companyId ?? null, companyNameSnapshot: input.companyName ?? null, templateId: input.templateId, templateVersion: input.templateVersion ?? null, intendedCompanyDriveId: input.mapping.driveId, intendedCompanyFolderId: input.mapping.folderItemId, intendedRelativePath: null };
+    // A template without its own subfolder still belongs to the company: file it in the
+    // company's mapped folder, like a manually uploaded document. Only a missing or
+    // unusable company mapping sends a document to the unassigned folder.
+    return { ...orphan, destinationKind: 'INTENDED', routingReason: 'NO_TEMPLATE_PATH', connectorId: input.connectorId, configVersion: input.configVersion, companyId: input.companyId ?? null, companyNameSnapshot: input.companyName ?? null, templateId: input.templateId, templateVersion: input.templateVersion ?? null, intendedCompanyDriveId: input.mapping.driveId, intendedCompanyFolderId: input.mapping.folderItemId, intendedRelativePath: null };
   }
   try {
     const parsed = parseSharePointRelativeFolderPath(input.relativePath);
