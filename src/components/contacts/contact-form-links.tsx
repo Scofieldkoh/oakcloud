@@ -267,14 +267,23 @@ function LinkFormModal({ contactId, isOpen, onClose }: { contactId: string; isOp
     onClose();
   };
   const submit = async () => {
-    if (rowKey === null) return;
+    const chosen = persons.data?.persons?.find((person) => (person.rowIndex === null ? 'whole' : String(person.rowIndex)) === rowKey);
+    if (rowKey === null || !chosen) return;
     setFailure(null);
     try {
-      await link.mutateAsync({ formId, submissionId, personRowIndex: rowKey === 'whole' ? null : Number(rowKey) });
+      await link.mutateAsync({
+        formId,
+        submissionId,
+        personRowIndex: chosen.rowIndex,
+        expectedFingerprint: chosen.fingerprint,
+      });
       success('Form response linked');
       close();
     } catch (error) {
       setFailure(errorMessage(error));
+      // The response changed under the picker: show the people as they are now and ask again.
+      setRowKey(null);
+      void persons.refetch();
     }
   };
 

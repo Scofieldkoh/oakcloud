@@ -57,6 +57,8 @@ export interface ContactFormCandidatePerson {
   rowNumber: number;
   kind: 'individual' | 'organisation';
   name: string;
+  /** Sent back with the link request, so a response that changed after the person was chosen is refused. */
+  fingerprint: string;
   /** False when it cannot be linked to this contact, with the reason. */
   eligible: boolean;
   reason: string | null;

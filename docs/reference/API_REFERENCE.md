@@ -1244,7 +1244,7 @@ KYC/CDD form response people linked to a contact, each with `state` (`ACTIVE`, `
 No query: linkable forms (tagged `cdd` or `kyc`). `formId`: the form's responses. `formId` and `submissionId`: the people on the response, each `eligible` or not with a reason.
 
 ### POST /api/contacts/[id]/form-links
-Body `{ formId, submissionId, personRowIndex }` (`null` for a form without a repeat section). 201 `{ id }`. 422 for a form that is not tagged `cdd`/`kyc`, a person who is not on the response, or a kind that does not match the contact; 409 `details.reason: ALREADY_LINKED` when the row is linked already. Needs `contact:update` and `document:read`.
+Body `{ formId, submissionId, personRowIndex, expectedFingerprint }` (`personRowIndex` is `null` for a form without a repeat section; `expectedFingerprint` is the person's `fingerprint` from the candidates endpoint). 201 `{ id }`. 409 `details.reason: ROW_CHANGED` when that row is no longer the person that was chosen. 422 for a form that is not tagged `cdd`/`kyc`, a person who is not on the response, or a kind that does not match the contact; 409 `details.reason: ALREADY_LINKED` when the row is linked already. Needs `contact:update` and `document:read`.
 
 ### DELETE /api/contacts/[id]/form-links/[linkId]
 Soft unlink; allowed even when the response was deleted.

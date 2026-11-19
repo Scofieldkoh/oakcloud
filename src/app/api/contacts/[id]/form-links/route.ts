@@ -12,6 +12,8 @@ const linkBodySchema = z.object({
   formId: z.string().uuid(),
   submissionId: z.string().uuid(),
   personRowIndex: z.number().int().min(0).max(1000).nullable(),
+  /** The fingerprint the candidates endpoint gave for the chosen person. */
+  expectedFingerprint: z.string().length(64),
   tenantId: z.string().uuid().optional(),
 });
 

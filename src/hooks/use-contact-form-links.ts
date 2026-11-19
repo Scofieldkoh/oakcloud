@@ -84,7 +84,7 @@ export function useLinkFormPerson(contactId: string) {
   const { base, query } = useBase(contactId);
   const refresh = useRefreshAfter(contactId);
   return useMutation({
-    mutationFn: (input: { formId: string; submissionId: string; personRowIndex: number | null }) => send(`${base}${query}`, 'POST', input),
+    mutationFn: (input: { formId: string; submissionId: string; personRowIndex: number | null; expectedFingerprint: string }) => send(`${base}${query}`, 'POST', input),
     onSuccess: () => refresh(false),
   });
 }

@@ -52,6 +52,16 @@ function mountFetch() {
       if (!Array.isArray(script.links)) return Response.json({ error: 'Permission denied: document:read' }, { status: script.links.status });
       return Response.json({ links: script.links });
     }
+    if (method === 'GET' && url.includes('/candidates')) {
+      if (url.includes('submissionId=')) {
+        return Response.json({ persons: [
+          { rowIndex: 0, rowNumber: 1, kind: 'individual', name: 'Dina Tan', fingerprint: 'f'.repeat(64), eligible: true, reason: null },
+          { rowIndex: 1, rowNumber: 2, kind: 'organisation', name: 'Acme', fingerprint: 'e'.repeat(64), eligible: false, reason: 'A company cannot be linked to an individual contact' },
+        ] });
+      }
+      if (url.includes('formId=')) return Response.json({ submissions: [{ id: 'sub-9', submittedAt: '2026-11-01T00:00:00.000Z', respondentName: null, personCount: 2 }] });
+      return Response.json({ forms: [{ id: 'form-9', title: 'CDD form' }] });
+    }
     if (url.includes('/suggestions/accept')) return Response.json(script.accept?.body ?? { success: true }, { status: script.accept?.status ?? 200 });
     return Response.json({ success: true });
   }));
@@ -145,5 +155,22 @@ describe('KYC/CDD forms section on a contact', () => {
     await waitFor(() => expect(calls.length).toBeGreaterThan(0));
     await waitFor(() => expect(container).toBeEmptyDOMElement());
     expect(screen.queryByText('KYC/CDD forms')).not.toBeInTheDocument();
+  });
+
+  it('linking sends the person the picker showed, with its fingerprint, and offers no ineligible person', async () => {
+    script.links = [];
+    mount(true);
+    fireEvent.click(await screen.findByRole('button', { name: 'Link form' }));
+    fireEvent.change(await screen.findByLabelText('Form'), { target: { value: 'form-9' } });
+    fireEvent.change(await screen.findByLabelText('Response'), { target: { value: 'sub-9' } });
+    const dina = await screen.findByRole('radio', { name: /Person 1: Dina Tan/ });
+    expect(screen.getByRole('radio', { name: /Person 2: Acme/ })).toBeDisabled();
+    fireEvent.click(dina);
+    fireEvent.click(screen.getByRole('button', { name: 'Link' }));
+    await waitFor(() => expect(calls.some((c) => c.method === 'POST')).toBe(true));
+    expect(calls.find((c) => c.method === 'POST')).toMatchObject({
+      url: expect.stringContaining(`/api/contacts/${CONTACT}/form-links`),
+      body: { formId: 'form-9', submissionId: 'sub-9', personRowIndex: 0, expectedFingerprint: 'f'.repeat(64) },
+    });
   });
 });

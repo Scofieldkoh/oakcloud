@@ -13,6 +13,7 @@ Code: `src/services/contact-form-link.service.ts`, the pure helpers `src/lib/con
 - **Forms** that are not deleted and are tagged `cdd` or `kyc` (any case). The CDD template is a plain form tagged `cdd`.
 - **One link is one person of one response.** A CDD response lists several directors and shareholders in a repeat section: answers are parallel arrays per field key (`person_name[i]`, `person_id[i]`, ...). A form without a repeat section links as one whole-response person (row index null).
 - An `individual` row (or a row with no `person_kind`) links to an INDIVIDUAL contact; an `organisation` row to a CORPORATE contact; anything else is refused (422).
+- The picker returns each person's fingerprint and the link request sends it back (`expectedFingerprint`). If the response changed between choosing and saving, the row no longer matches and the link is refused with 409 `ROW_CHANGED`: a link is never created for a different person than the one chosen.
 - A row links to **one contact only**, and a contact links to a row once. Two partial unique indexes on active links (`unlinkedAt IS NULL`) enforce both. Unlinking is soft; relinking creates a new row.
 
 ## A link never jumps to another person
@@ -33,6 +34,7 @@ Mapping (one config, `contact-form-mapping.ts`): individuals: name, ID number (t
 - A value that fails contact validation (for example a date of birth that is not real or outside 1 Jan 1900 to today), an ID or UEN another contact already has, or an ID for a contact with no ID type is shown as "Can't apply".
 - **Accept** (`POST .../suggestions/accept`, one field per request) carries the value the user saw on the contact and the form value. In one transaction the contact row is locked, the link and the row are re-checked, both values are recomputed, and the single field is written through `contact.service` (validation and audit). Any difference answers **409** with `details.reason` `STALE_SUGGESTION` (or `ROW_CHANGED` / `RESPONSE_DELETED`) and writes nothing.
 - **Dismiss** stores (link, field, hash of the proposed value). It stays hidden until the form answer changes.
+- Accept, dismiss and link also hold the form and the response in place (a shared row lock) before reading them, so a response deleted while one of them runs is either seen as deleted (409 `RESPONSE_DELETED`) or the delete waits until the transaction ends: the contact is never written after the response is gone.
 - The date of birth is written as midnight UTC of the calendar date, like every other date of birth.
 
 ## Permissions and tenants
@@ -42,7 +44,7 @@ Mapping (one config, `contact-form-mapping.ts`): individuals: name, ID number (t
 | See the section, list links, pick a form/response/person | `contact:read` **and** `document:read`. Without `document:read` the API answers 403 and the page shows nothing (not even form titles) |
 | Link, unlink, accept, dismiss | `contact:update` **and** `document:read` |
 
-Every query is scoped by tenant: another tenant's contact, form or response is a 404. Files are **not copied**: the response page, the PDF and each attachment open through the existing Forms routes (`/api/forms/[id]/responses/[submissionId]/export/pdf` and `.../uploads/[uploadId]`, which need `document:read`), and only uploads that belong to that response and that person's row (plus the response-level uploads such as company documents) are listed. The PDF is the whole response, so it includes every person on the form; it is labelled that way.
+Every query is scoped by tenant: another tenant's contact, form or response is a 404. Files are **not copied**: the response page, the PDF and each attachment open through the existing Forms routes (`/api/forms/[id]/responses/[submissionId]/export/pdf` and `.../uploads/[uploadId]`, which need `document:read`), and only uploads that belong to that response and that person's row (plus the response-level uploads such as company documents, i.e. fields outside every repeat section) are listed. Upload fields in a *different* repeat section belong to that section's rows and are never listed. The PDF is the whole response, so it includes every person on the form; it is labelled that way.
 
 ## Audit
 

@@ -73,6 +73,29 @@ describe('form structure and people', () => {
   });
 });
 
+describe('a second repeat section', () => {
+  const withRefs = analyseFormFields([
+    ...FIELDS,
+    f('refs_section', 'PAGE_BREAK', 20, 'repeat_start'),
+    f('ref_name', 'SHORT_TEXT', 21),
+    f('ref_document', 'FILE_UPLOAD', 22, null, 'Reference letter'),
+    f('refs_section_end', 'PAGE_BREAK', 23, 'repeat_end'),
+  ]);
+  const both = { ...answers, ref_name: ['A', 'B', 'C'], ref_document: ['r1', 'r2', 'r3'] };
+
+  it('keeps its rows apart: they are not people, and its uploads are never a person\'s', () => {
+    expect([...withRefs.foreignRepeatKeys].sort()).toEqual(['ref_document', 'ref_name']);
+    expect(personRowCount(both, withRefs)).toBe(2);
+    expect(personUploadRefs(both, withRefs, 0).map((r) => r.uploadId)).toEqual(['u1', 'u2', 'c1']);
+    expect(personUploadRefs(both, withRefs, 1).map((r) => r.uploadId)).toEqual(['u3', 'c1']);
+  });
+
+  it('a form whose only repeat section is not the people section has no repeat people', () => {
+    const noPeople = analyseFormFields([f('refs_section', 'PAGE_BREAK', 1, 'repeat_start'), f('ref_name', 'SHORT_TEXT', 2), f('refs_end', 'PAGE_BREAK', 3, 'repeat_end')]);
+    expect(noPeople.personMode).toBe('none');
+  });
+});
+
 describe('fingerprint', () => {
   it('ignores case, spacing and ID punctuation, but not a different person or kind', () => {
     const a = readPerson(answers, structure, 0)!;

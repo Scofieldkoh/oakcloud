@@ -2,6 +2,7 @@
 import { randomUUID } from 'node:crypto';
 import { NextRequest } from 'next/server';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { analyseFormFields, personFingerprint, readPerson, type FormFieldLite } from '@/lib/contact-form-link';
 import { GET as listLinks, POST as createLink } from '@/app/api/contacts/[id]/form-links/route';
 import { GET as candidates } from '@/app/api/contacts/[id]/form-links/candidates/route';
 import { DELETE as deleteLink } from '@/app/api/contacts/[id]/form-links/[linkId]/route';
@@ -55,7 +56,7 @@ suite('Contact KYC/CDD form links (PostgreSQL, public route boundary)', () => {
   // --- fixtures ------------------------------------------------------------------------------
 
   const field = (key: string, type: string, position: number, extra: Record<string, unknown> = {}) => ({ key, type, position, ...extra });
-  const FIELDS = [
+  const FIELDS: Array<{ key: string; type: string; position: number; label?: string; inputType?: string }> = [
     field('company_name', 'SHORT_TEXT', 1),
     field('people_section', 'PAGE_BREAK', 2, { inputType: 'repeat_start' }),
     field('person_kind', 'SINGLE_CHOICE', 3),
@@ -69,6 +70,11 @@ suite('Contact KYC/CDD form links (PostgreSQL, public route boundary)', () => {
     field('person_identity_document', 'FILE_UPLOAD', 11, { label: 'Identity document' }),
     field('people_section_end', 'PAGE_BREAK', 12, { inputType: 'repeat_end' }),
     field('company_documents', 'FILE_UPLOAD', 13, { label: 'Company documents' }),
+    // A second repeat section: its rows are references, not people, and have uploads of their own.
+    field('refs_section', 'PAGE_BREAK', 14, { inputType: 'repeat_start' }),
+    field('ref_name', 'SHORT_TEXT', 15),
+    field('ref_document', 'FILE_UPLOAD', 16, { label: 'Reference letter' }),
+    field('refs_section_end', 'PAGE_BREAK', 17, { inputType: 'repeat_end' }),
   ];
 
   async function makeContact(overrides: Record<string, unknown> = {}) {
@@ -115,6 +121,7 @@ suite('Contact KYC/CDD form links (PostgreSQL, public route boundary)', () => {
     const rowUploads = [] as string[];
     for (const person of people) rowUploads.push((await upload(`${person.name} id.pdf`)).id);
     const companyDoc = await upload('constitution.pdf');
+    const refDocs = [(await upload('reference-0.pdf')).id, (await upload('reference-1.pdf')).id];
     const answers = {
       company_name: 'Acme',
       person_kind: people.map((p) => p.kind),
@@ -127,9 +134,11 @@ suite('Contact KYC/CDD form links (PostgreSQL, public route boundary)', () => {
       person_pep: people.map((p) => p.pep),
       person_identity_document: rowUploads,
       company_documents: [companyDoc.id],
+      ref_name: ['Ref A', 'Ref B'],
+      ref_document: refDocs,
     };
     await db.formSubmission.update({ where: { id: sub.id }, data: { answers } });
-    return { form, submission: sub, answers, rowUploads, companyDocId: companyDoc.id };
+    return { form, submission: sub, answers, rowUploads, companyDocId: companyDoc.id, refDocs };
   }
 
   const request = (path: string, method = 'GET', body?: unknown) =>
@@ -144,8 +153,23 @@ suite('Contact KYC/CDD form links (PostgreSQL, public route boundary)', () => {
   }
   const json = async (response: Response): Promise<Json> => response.json();
 
-  async function link(contactId: string, formId: string, submissionId: string, personRowIndex: number | null) {
-    return createLink(request(`/api/contacts/${contactId}/form-links`, 'POST', { formId, submissionId, personRowIndex }), ids(contactId));
+  const lite = (): FormFieldLite[] => FIELDS.map((f) => ({ key: f.key, type: f.type, position: f.position, inputType: f.inputType ?? null, label: f.label ?? null }));
+  /** The fingerprint the picker shows for a row of the response as it is stored now. */
+  async function fingerprintOf(submissionId: string, row: number | null): Promise<string> {
+    const stored = await db.formSubmission.findUnique({ where: { id: submissionId }, select: { answers: true } });
+    const person = stored ? readPerson(stored.answers, analyseFormFields(lite()), row) : null;
+    return person ? personFingerprint(person) : 'x'.repeat(64);
+  }
+  async function link(contactId: string, formId: string, submissionId: string, personRowIndex: number | null, expectedFingerprint?: string) {
+    return createLink(
+      request(`/api/contacts/${contactId}/form-links`, 'POST', {
+        formId,
+        submissionId,
+        personRowIndex,
+        expectedFingerprint: expectedFingerprint ?? (await fingerprintOf(submissionId, personRowIndex)),
+      }),
+      ids(contactId),
+    );
   }
   async function list(contactId: string): Promise<Json[]> {
     const response = await listLinks(request(`/api/contacts/${contactId}/form-links`), ids(contactId));
@@ -175,6 +199,85 @@ suite('Contact KYC/CDD form links (PostgreSQL, public route boundary)', () => {
     expect(entry.suggestions.map((s: Json) => s.field).sort()).toEqual(['corporateUen']);
     const unchanged = await db.contact.findUniqueOrThrow({ where: { id: company.id } });
     expect(unchanged.corporateUen).toBeNull();
+  });
+
+  it('lists no upload from another repeat section, whatever row it is on', async () => {
+    const fixture = await makeResponse();
+    const contact = await makeContact();
+    await link(contact.id, fixture.form.id, fixture.submission.id, 0);
+    const [entry] = await list(contact.id);
+    const listed = entry.attachments.map((a: Json) => a.id);
+    expect(listed.sort()).toEqual([fixture.rowUploads[0], fixture.companyDocId].sort());
+    for (const reference of fixture.refDocs) expect(listed).not.toContain(reference);
+    // The same for the other row.
+    const company = await makeContact({ contactType: 'CORPORATE', firstName: null, lastName: null, fullName: `Acme ${randomUUID()}`, canonicalName: `acme${randomUUID()}`, corporateName: 'Acme', identificationType: null, identificationNumber: null, nationality: null });
+    await link(company.id, fixture.form.id, fixture.submission.id, 1);
+    const [other] = await list(company.id);
+    expect(other.attachments.map((a: Json) => a.id).sort()).toEqual([fixture.rowUploads[1], fixture.companyDocId].sort());
+  });
+
+  it('refuses to link when the response changed after the person was chosen: no link, and the right person links with the new fingerprint', async () => {
+    const fixture = await makeResponse({
+      people: [
+        { kind: 'individual', name: 'Dina Tan', id: 'S1234567D', nationality: 'Malaysian', birth: '', address: '', pep: '' },
+        { kind: 'individual', name: 'Eli Lim', id: 'S7654321Z', nationality: 'Indian', birth: '', address: '', pep: '' },
+      ],
+    });
+    const contact = await makeContact();
+    // The picker showed row 0 as Dina Tan.
+    const shown = await json(
+      await candidates(request(`/api/contacts/${contact.id}/form-links/candidates?formId=${fixture.form.id}&submissionId=${fixture.submission.id}`), ids(contact.id)),
+    );
+    const dina = shown.persons[0];
+    expect(dina).toMatchObject({ rowNumber: 1, name: 'Dina Tan' });
+    expect(dina.fingerprint).toHaveLength(64);
+
+    // Before the user saved, the rows were swapped: row 0 is now Eli Lim.
+    const swapped = Object.fromEntries(
+      Object.entries(fixture.answers).map(([key, value]) => [key, Array.isArray(value) && key.startsWith('person_') ? [...value].reverse() : value]),
+    );
+    await db.formSubmission.update({ where: { id: fixture.submission.id }, data: { answers: swapped } });
+    const refused = await link(contact.id, fixture.form.id, fixture.submission.id, 0, dina.fingerprint);
+    expect(refused.status).toBe(409);
+    expect((await json(refused)).details).toMatchObject({ reason: 'ROW_CHANGED' });
+    expect(await list(contact.id)).toEqual([]);
+    expect(await db.contactFormLink.count({ where: { contactId: contact.id } })).toBe(0);
+
+    // The person the user meant is now row 1, and linking that row with its own fingerprint works.
+    expect((await link(contact.id, fixture.form.id, fixture.submission.id, 1, dina.fingerprint)).status).toBe(201);
+    expect((await list(contact.id))[0]).toMatchObject({ personRowIndex: 1, personName: 'Dina Tan' });
+  });
+
+  it('an accept running while the response is deleted either sees the delete or finishes first: it never writes after it', async () => {
+    const fixture = await makeResponse();
+    const contact = await makeContact();
+    await link(contact.id, fixture.form.id, fixture.submission.id, 0);
+    const [entry] = await list(contact.id);
+    const nationality = suggestionFor([entry], 'nationality');
+
+    // Another session deletes the response and has not committed yet when the accept starts.
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => { release = resolve; });
+    let deleted!: () => void;
+    const deletedWritten = new Promise<void>((resolve) => { deleted = resolve; });
+    const deleting = db.$transaction(
+      async (tx) => {
+        await tx.formSubmission.update({ where: { id: fixture.submission.id }, data: { deletedAt: new Date() } });
+        deleted();
+        await gate;
+      },
+      { timeout: 20_000 },
+    );
+    await deletedWritten;
+    const accepting = accept(contact.id, entry.id, { field: 'nationality', expectedCurrentValue: nationality.current, proposedValue: nationality.proposed });
+    await new Promise((resolve) => setTimeout(resolve, 600));
+    release();
+    await deleting;
+    const response = await accepting;
+    expect(response.status).toBe(409);
+    expect((await json(response)).details).toMatchObject({ reason: 'RESPONSE_DELETED' });
+    expect((await db.contact.findUniqueOrThrow({ where: { id: contact.id } })).nationality).toBe('Singaporean');
+    expect(await db.auditLog.count({ where: { tenantId, entityId: contact.id, action: 'UPDATE' } })).toBe(0);
   });
 
   // --- 2 ---------------------------------------------------------------------------------------

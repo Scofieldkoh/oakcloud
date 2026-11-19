@@ -65,6 +65,17 @@ async function lockContact(tx: Prisma.TransactionClient, tenantId: string, conta
   if (rows.length === 0) throw new NotFoundError('Contact not found');
 }
 
+/**
+ * Holds the form and the response in place for the rest of the transaction (a shared row lock): a
+ * delete of either must wait for this transaction to finish, or has already been committed and is
+ * seen by the reads that follow. Without it a response deleted while an accept is running could
+ * still be written from.
+ */
+async function lockResponse(tx: Prisma.TransactionClient, tenantId: string, formId: string, submissionId: string): Promise<void> {
+  await tx.$queryRaw`SELECT id FROM forms WHERE id = ${formId} AND tenant_id = ${tenantId} FOR SHARE`;
+  await tx.$queryRaw`SELECT id FROM form_submissions WHERE id = ${submissionId} AND form_id = ${formId} AND tenant_id = ${tenantId} FOR SHARE`;
+}
+
 async function loadStructures(db: Db, tenantId: string, formIds: string[]): Promise<Map<string, FormStructure>> {
   const result = new Map<string, FormStructure>();
   if (formIds.length === 0) return result;
@@ -344,7 +355,15 @@ export async function listLinkCandidates(
     else if (!kindMatchesContact(contact, person.kind)) {
       reason = person.kind === 'organisation' ? 'A company cannot be linked to an individual contact' : 'An individual cannot be linked to a company contact';
     }
-    persons.push({ rowIndex, rowNumber: index + 1, kind: person.kind, name: person.name || person.idNumber, eligible: reason === null, reason });
+    persons.push({
+      rowIndex,
+      rowNumber: index + 1,
+      kind: person.kind,
+      name: person.name || person.idNumber,
+      fingerprint: personFingerprint(person),
+      eligible: reason === null,
+      reason,
+    });
   }
   return { persons };
 }
@@ -353,13 +372,14 @@ export async function listLinkCandidates(
 
 export async function linkContactToFormPerson(
   contactId: string,
-  input: { formId: string; submissionId: string; personRowIndex: number | null },
+  input: { formId: string; submissionId: string; personRowIndex: number | null; expectedFingerprint: string },
   ctx: FormLinkContext,
 ): Promise<{ id: string }> {
   try {
     return await prisma.$transaction(async (tx) => {
       await lockContact(tx, ctx.tenantId, contactId);
       const contact = await requireContact(tx, ctx.tenantId, contactId);
+      await lockResponse(tx, ctx.tenantId, input.formId, input.submissionId);
 
       const form = await tx.form.findFirst({
         where: { id: input.formId, tenantId: ctx.tenantId, deletedAt: null },
@@ -376,6 +396,11 @@ export async function linkContactToFormPerson(
       const structure = (await loadStructures(tx, ctx.tenantId, [form.id])).get(form.id)!;
       const person = readPerson(submission.answers, structure, input.personRowIndex);
       if (!person) throw new UnprocessableEntityError('That person is not on the form response');
+      // The person the user picked must still be the person at that row: the response may have changed
+      // between choosing and saving, and the row must never silently become someone else.
+      if (personFingerprint(person) !== input.expectedFingerprint) {
+        throw conflict('The form response changed since you chose this person. Choose the person again.', 'ROW_CHANGED');
+      }
       if (!kindMatchesContact(contact, person.kind)) {
         throw new UnprocessableEntityError(
           person.kind === 'organisation'
@@ -447,6 +472,17 @@ export async function unlinkContactFormLink(contactId: string, linkId: string, c
 
 // --- accept / dismiss ---------------------------------------------------------------------------
 
+/** The active link with the response held (shared lock) before it is read, so a delete cannot slip in after the read. */
+async function loadLockedLink(tx: Prisma.TransactionClient, tenantId: string, contact: Contact, linkId: string): Promise<LoadedLink[]> {
+  const row = await tx.contactFormLink.findFirst({
+    where: { id: linkId, contactId: contact.id, tenantId, unlinkedAt: null },
+    select: { formId: true, submissionId: true },
+  });
+  if (!row) return [];
+  await lockResponse(tx, tenantId, row.formId, row.submissionId);
+  return loadLinks(tx, tenantId, contact, { id: linkId });
+}
+
 interface SuggestionRequest {
   field: SuggestionField;
   /** The contact's value the user saw (null when blank) and the form's value they accepted. */
@@ -463,7 +499,7 @@ async function currentSuggestion(
   request: SuggestionRequest,
 ): Promise<{ contact: Contact; link: LoadedLink['link']; suggestion: Suggestion }> {
   const contact = await requireContact(tx, ctx.tenantId, contactId);
-  const [loaded] = await loadLinks(tx, ctx.tenantId, contact, { id: linkId });
+  const [loaded] = await loadLockedLink(tx, ctx.tenantId, contact, linkId);
   if (!loaded) throw new NotFoundError('Form link not found');
   if (loaded.state === 'RESPONSE_DELETED') throw conflict('The form response was deleted', 'RESPONSE_DELETED');
   if (loaded.state !== 'ACTIVE' || !loaded.person) {
@@ -525,7 +561,7 @@ export async function dismissFormSuggestion(
   await prisma.$transaction(async (tx) => {
     await lockContact(tx, ctx.tenantId, contactId);
     const contact = await requireContact(tx, ctx.tenantId, contactId);
-    const [loaded] = await loadLinks(tx, ctx.tenantId, contact, { id: linkId });
+    const [loaded] = await loadLockedLink(tx, ctx.tenantId, contact, linkId);
     if (!loaded) throw new NotFoundError('Form link not found');
     if (loaded.state === 'RESPONSE_DELETED') throw conflict('The form response was deleted', 'RESPONSE_DELETED');
     if (loaded.state !== 'ACTIVE' || !loaded.person) {

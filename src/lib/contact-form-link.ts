@@ -24,8 +24,10 @@ export interface FormFieldLite {
 }
 
 export interface FormStructure {
-  /** Keys of the answer fields that sit inside a repeat section (their answers are arrays by row). */
+  /** Keys of the answer fields inside the repeat section that holds the people (their answers are arrays by person row). */
   repeatKeys: ReadonlySet<string>;
+  /** Keys inside any other repeat section: arrays by some other kind of row, never read as this person's. */
+  foreignRepeatKeys: ReadonlySet<string>;
   /** All FILE_UPLOAD field keys, and the label of every field by key. */
   fileKeys: readonly string[];
   labels: ReadonlyMap<string, string>;
@@ -37,28 +39,38 @@ const NON_ANSWER_TYPES = new Set(['PAGE_BREAK', 'PARAGRAPH', 'HTML']);
 
 export function analyseFormFields(fields: readonly FormFieldLite[]): FormStructure {
   const ordered = [...fields].sort((a, b) => a.position - b.position);
-  const repeatKeys = new Set<string>();
   const fileKeys: string[] = [];
   const labels = new Map<string, string>();
   const allKeys = new Set<string>();
-  let inRepeat = false;
+  // Each repeat section has its own rows: its keys are kept apart, and only the section that holds
+  // `person_name` is the people section.
+  const sections: Array<Set<string>> = [];
+  let current: Set<string> | null = null;
   for (const field of ordered) {
     if (field.type === 'PAGE_BREAK' && field.inputType === 'repeat_start') {
-      inRepeat = true;
+      current = new Set<string>();
+      sections.push(current);
       continue;
     }
     if (field.type === 'PAGE_BREAK' && field.inputType === 'repeat_end') {
-      inRepeat = false;
+      current = null;
       continue;
     }
     if (NON_ANSWER_TYPES.has(field.type)) continue;
     allKeys.add(field.key);
     labels.set(field.key, field.label ?? field.key);
-    if (inRepeat) repeatKeys.add(field.key);
+    current?.add(field.key);
     if (field.type === 'FILE_UPLOAD') fileKeys.push(field.key);
   }
-  const personMode = repeatKeys.has('person_name') ? 'row' : allKeys.has('person_name') ? 'whole' : 'none';
-  return { repeatKeys, fileKeys, labels, personMode };
+  const peopleSection = sections.find((section) => section.has('person_name'));
+  const repeatKeys = new Set<string>(peopleSection ?? []);
+  const foreignRepeatKeys = new Set<string>();
+  for (const section of sections) {
+    if (section === peopleSection) continue;
+    for (const key of section) foreignRepeatKeys.add(key);
+  }
+  const personMode = peopleSection ? 'row' : allKeys.has('person_name') ? 'whole' : 'none';
+  return { repeatKeys, foreignRepeatKeys, fileKeys, labels, personMode };
 }
 
 export type Answers = Record<string, unknown>;
@@ -81,6 +93,7 @@ export function personRowCount(answersValue: unknown, structure: FormStructure):
 
 function rawValue(answers: Answers, structure: FormStructure, key: string, rowIndex: number | null): unknown {
   const value = answers[key];
+  if (structure.foreignRepeatKeys.has(key)) return undefined;
   if (!structure.repeatKeys.has(key)) return value;
   if (rowIndex === null || !Array.isArray(value)) return undefined;
   return value[rowIndex];
@@ -179,8 +192,8 @@ export interface PersonUploadRef {
 }
 
 /**
- * The upload ids that belong to a person: the row's own FILE_UPLOAD answers (repeat fields) plus the
- * response-level FILE_UPLOAD answers (those outside the repeat section). Another row's uploads are
+ * The upload ids that belong to a person: the row's own FILE_UPLOAD answers (fields of the people repeat
+ * section) plus the response-level FILE_UPLOAD answers (those outside every repeat section). Another row's uploads are
  * never included. Ids appear once.
  */
 export function personUploadRefs(answersValue: unknown, structure: FormStructure, rowIndex: number | null): PersonUploadRef[] {
@@ -188,6 +201,8 @@ export function personUploadRefs(answersValue: unknown, structure: FormStructure
   const refs: PersonUploadRef[] = [];
   const seen = new Set<string>();
   for (const key of structure.fileKeys) {
+    // An upload field in another repeat section belongs to that section's rows, never to this person.
+    if (structure.foreignRepeatKeys.has(key)) continue;
     const isRepeat = structure.repeatKeys.has(key);
     if (isRepeat && rowIndex === null) continue;
     const value = isRepeat ? rawValue(answers, structure, key, rowIndex) : answers[key];
