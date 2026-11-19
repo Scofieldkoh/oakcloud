@@ -163,6 +163,17 @@ export type NoteTab = Prisma.NoteTabModel
  */
 export type DocumentTemplate = Prisma.DocumentTemplateModel
 /**
+ * Model DocumentTemplatePreset
+ * A named, ordered set of Word templates shared by a workspace. It only fills
+ * the Documents selection of a generation batch; generation is unchanged.
+ */
+export type DocumentTemplatePreset = Prisma.DocumentTemplatePresetModel
+/**
+ * Model DocumentTemplatePresetItem
+ * One member of a preset. The same template may appear more than once.
+ */
+export type DocumentTemplatePresetItem = Prisma.DocumentTemplatePresetItemModel
+/**
  * Model GeneratedDocument
  *
  */

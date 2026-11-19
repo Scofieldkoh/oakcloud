@@ -80,6 +80,8 @@ export const ModelName = {
   ConnectorModelConfig: 'ConnectorModelConfig',
   NoteTab: 'NoteTab',
   DocumentTemplate: 'DocumentTemplate',
+  DocumentTemplatePreset: 'DocumentTemplatePreset',
+  DocumentTemplatePresetItem: 'DocumentTemplatePresetItem',
   GeneratedDocument: 'GeneratedDocument',
   DocumentGenerationBatch: 'DocumentGenerationBatch',
   DocumentGenerationBatchItem: 'DocumentGenerationBatchItem',
@@ -785,6 +787,30 @@ export const DocumentTemplateScalarFieldEnum = {
 } as const
 
 export type DocumentTemplateScalarFieldEnum = (typeof DocumentTemplateScalarFieldEnum)[keyof typeof DocumentTemplateScalarFieldEnum]
+
+
+export const DocumentTemplatePresetScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  name: 'name',
+  normalizedName: 'normalizedName',
+  createdById: 'createdById',
+  updatedById: 'updatedById',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type DocumentTemplatePresetScalarFieldEnum = (typeof DocumentTemplatePresetScalarFieldEnum)[keyof typeof DocumentTemplatePresetScalarFieldEnum]
+
+
+export const DocumentTemplatePresetItemScalarFieldEnum = {
+  id: 'id',
+  presetId: 'presetId',
+  templateId: 'templateId',
+  displayOrder: 'displayOrder'
+} as const
+
+export type DocumentTemplatePresetItemScalarFieldEnum = (typeof DocumentTemplatePresetItemScalarFieldEnum)[keyof typeof DocumentTemplatePresetItemScalarFieldEnum]
 
 
 export const GeneratedDocumentScalarFieldEnum = {

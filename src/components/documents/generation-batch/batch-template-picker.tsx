@@ -16,6 +16,7 @@ import {
   X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { TemplatePresets } from './template-presets';
 import { CollapsibleSection } from '@/components/ui/collapsible-section';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Dropdown, DropdownItem, DropdownMenu, DropdownTrigger } from '@/components/ui/dropdown';
@@ -30,6 +31,7 @@ export interface BatchTemplatePickerProps {
   templates: DocumentTemplateSummary[];
   selected: EditableBatchItem[];
   onAdd: (template: DocumentTemplateSummary) => void;
+  onAddMany?: (templates: DocumentTemplateSummary[]) => void;
   onRemove: (itemId: string) => void;
   onReorder: (itemId: string, direction: -1 | 1) => void;
   /** Moves an item to an absolute position (drag and drop). */
@@ -52,6 +54,7 @@ export function BatchTemplatePicker({
   templates,
   selected,
   onAdd,
+  onAddMany,
   onRemove,
   onReorder,
   onMove,
@@ -347,6 +350,10 @@ export function BatchTemplatePicker({
               {selected.length} of {maxDocuments}
             </p>
           </header>
+
+          {onAddMany && (
+            <TemplatePresets templates={templates} selected={selected} onAddMany={onAddMany} disabled={disabled} maxDocuments={maxDocuments} />
+          )}
 
           {atLimit && (
             <p className="border-b border-border-secondary bg-status-warning/5 px-3 py-2 text-xs font-medium text-status-warning">

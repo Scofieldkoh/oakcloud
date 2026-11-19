@@ -128,6 +128,8 @@ jobs:
         env:
           TEST_DATABASE_URL: postgresql://assistant_test:assistant-test-only@127.0.0.1:55439/business_assistant_test
         run: npx vitest run __tests__/integration/document-generation-batch.postgres.test.ts --maxWorkers=1
+      - name: Test workspace-shared document template presets
+        run: TEST_DATABASE_URL="$DATABASE_URL" npm run test:template-presets:postgres
 
   esigning-postgres:
     name: E-signing PostgreSQL suite

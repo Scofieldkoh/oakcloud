@@ -333,6 +333,43 @@ describe('DocumentGenerationBatchWorkspace', () => {
     unmount();
   });
 
+  it('appends a four-template preset through the picker without changing existing inputs', async () => {
+    const user = userEvent.setup();
+    const initialBatch = batch([
+      { key: 'item-a', templateId: 'template-a', templateName: 'Engagement Letter', kind: 'STANDARD' },
+    ], { currentStage: 0, masterFieldValues: { reference: 'Keep this shared value' } });
+    initialBatch.items[0].configuration.title = 'My manually entered title';
+    initialBatch.items[0].configuration.itemValues = { reference: 'Keep this item value' };
+    initialBatch.items[0].editedContent = '<p>Keep my edits</p>';
+    const names = ['Board Resolution - Convening of AGM', 'Notice of Annual General Meeting', 'Minutes of Annual General Meeting', 'AGM Attendance List'];
+    const members = names.map((name, i) => {
+      const template = { ...templates[0], id: `agm-${i}`, name, engine: 'OAKDOC' as const };
+      return { templateId: template.id, resolvedTemplateId: template.id, templateName: name, available: true, template };
+    });
+    const originalFetch = vi.mocked(fetch).getMockImplementation()!;
+    vi.mocked(fetch).mockImplementation((input, init) => String(input).includes('/api/document-template-presets')
+      ? Promise.resolve(Response.json({ presets: [{ id: 'agm-pack', name: 'AGM pack', createdAt: '', updatedAt: '', items: members }] }))
+      : originalFetch(input, init));
+    render(<DocumentGenerationBatchWorkspace {...props({ initialBatch })} />);
+    await user.click(screen.getByRole('button', { name: 'Template presets' }));
+    await user.click(await screen.findByRole('menuitem', { name: /AGM pack/ }));
+    await waitFor(() => expect(screen.getByText('5 of 20')).toBeInTheDocument());
+    const panel = screen.getByRole('region', { name: 'Documents in this batch' });
+    expect(within(panel).getAllByRole('listitem').map((entry) => entry.textContent)).toEqual([
+      expect.stringContaining('Engagement Letter'), ...names.map((name) => expect.stringContaining(name)),
+    ]);
+    const saveButtons = screen.getAllByRole('button', { name: /save draft/i });
+    await user.click(saveButtons[saveButtons.length - 1]);
+    await waitFor(() => expect(apiMock.saveDocumentGenerationBatch).toHaveBeenCalled());
+    const saved = apiMock.saveDocumentGenerationBatch.mock.calls[0][1];
+    expect(saved.primaryCompanyId).toBe('company-1');
+    expect(saved.activeItemId).toBe('item-a');
+    expect(saved.masterFieldValues).toEqual(initialBatch.masterFieldValues);
+    expect(saved.items[0].configuration).toEqual(initialBatch.items[0].configuration);
+    expect(saved.items[0].editedContent).toBe('<p>Keep my edits</p>');
+    expect(saved.items.map((entry: { templateId: string }) => entry.templateId)).toEqual(['template-a', 'agm-0', 'agm-1', 'agm-2', 'agm-3']);
+  });
+
   it('saves the draft from the header action', () => {
     const initialBatch = batch([
       { key: 'item-a', templateId: 'template-a', templateName: 'Engagement Letter', kind: 'STANDARD' },

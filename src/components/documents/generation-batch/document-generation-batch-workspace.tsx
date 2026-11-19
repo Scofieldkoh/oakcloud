@@ -115,12 +115,18 @@ function formatClockTime(value: number | null): string | null {
 
 export function DocumentGenerationBatchWorkspace({
   initialBatch = null,
-  templates,
+  templates: initialTemplates,
   companies,
   contacts,
   backHref = '/generated-documents',
 }: DocumentGenerationBatchWorkspaceProps) {
   const { success, error: toastError } = useToast();
+  const [presetTemplates, setPresetTemplates] = useState<DocumentTemplateSummary[]>([]);
+  const templates = useMemo(() => {
+    const byId = new Map(initialTemplates.map((template) => [template.id, template]));
+    for (const template of presetTemplates) byId.set(template.id, template);
+    return [...byId.values()];
+  }, [initialTemplates, presetTemplates]);
   const {
     state,
     dispatch,
@@ -956,6 +962,11 @@ export function DocumentGenerationBatchWorkspace({
             templates={templates}
             selected={state.batch.items}
             onAdd={(template) => dispatch({ type: 'template/add', template })}
+            onAddMany={(additions) => {
+              if (!state.capabilities.canEditComposition) return;
+              setPresetTemplates((current) => [...current, ...additions]);
+              dispatch({ type: 'template/add-many', templates: additions });
+            }}
             onRemove={(itemId) => dispatch({ type: 'template/remove', itemId })}
             onReorder={(itemId, direction) => dispatch({
               type: 'template/reorder',

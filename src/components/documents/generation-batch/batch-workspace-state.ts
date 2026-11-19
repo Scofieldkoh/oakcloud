@@ -95,6 +95,7 @@ export interface BatchWorkspaceState {
 
 export type DocumentGenerationBatchAction =
   | { type: 'template/add'; template: DocumentTemplateSummary }
+  | { type: 'template/add-many'; templates: DocumentTemplateSummary[] }
   | { type: 'template/remove'; itemId: string }
   | { type: 'template/reorder'; itemId: string; direction: -1 | 1 }
   | { type: 'template/move'; itemId: string; toIndex: number }
@@ -543,6 +544,16 @@ function reduceBatchState(
         activeItemId: state.activeItemId ?? items[0].key,
         capabilities: deriveCapabilities(batch),
       };
+    }
+    case 'template/add-many': {
+      if (!state.capabilities.canEditComposition) return state;
+      const room = MAX_BATCH_ITEMS - state.batch.items.length;
+      const additions = action.templates.slice(0, Math.max(0, room));
+      if (additions.length === 0) return state;
+      // New items only: do not invalidate, rewrite or discard any existing input.
+      const items = [...state.batch.items, ...additions.map((template) => itemFromTemplate(template, newItemKey(template.id)))];
+      const batch = replaceBatchItems(state.batch, items);
+      return { ...state, batch, activeItemId: state.activeItemId ?? items[0].key, capabilities: deriveCapabilities(batch) };
     }
     case 'template/remove': {
       if (!state.capabilities.canEditComposition) return state;

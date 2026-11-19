@@ -56,6 +56,41 @@ This design covers:
 - responsive, accessible, light/dark document-generation UI replacement;
 - affected architecture, API, database, and work-tracking documentation.
 
+## Template presets: save and load a selection
+
+From Generated Documents → Generate → Documents, pick and order the Word
+templates in “This batch”, then open Presets → Save selection as preset… and
+enter a name. Presets are shared with the workspace. For example, select Board
+Resolution - Convening of AGM, Notice of Annual General Meeting, Minutes of
+Annual General Meeting and AGM Attendance List, in that order, and save “AGM
+pack”. These are ordinary templates, not a built-in or tenant-specific pack.
+
+To reuse it, open Presets and click its name once. Its templates append in saved
+order to the current selection, with repeats preserved. Existing company choices,
+field values, per-item configuration and draft edits are not cleared or rewritten.
+Only template references are saved: loading uses each template's current name,
+version and resolution defaults. Manual add, remove and reorder still work.
+
+Loading refreshes availability and resolves retired A4 references through the
+existing Word replacement resolver. Deleted, inactive, still-A4 and overflow
+members are skipped, with a persistent notice naming every skipped item and its
+reason. The selection never exceeds 20 documents and cannot be changed after any
+document has generated. Skipping does not modify the saved preset.
+
+Saving with an existing name (ignoring case and whitespace) asks before replacing
+that preset's templates. A stale replacement fails rather than overwriting a
+newer save. Presets → Manage presets… → the preset's delete button → Delete
+preset asks for confirmation; deleting a preset leaves templates and batches
+untouched. No generation or rendering behavior changes.
+
+The API uses the session workspace only. Listing/loading requires document read;
+saving/replacing templates requires document create; renaming through PATCH
+requires document update; deletion requires document delete. Mutations and their
+audit entries are transactional. Presets are hard-deleted with their child items,
+so a deleted name can be reused. Run `npm run test:template-presets:postgres` with
+`TEST_DATABASE_URL` pointing only to a disposable test database for persistence,
+permission, audit, concurrency and tenant-isolation coverage.
+
 ## Non-Goals
 
 - Combining multiple templates into one generated document or PDF.

@@ -82,7 +82,7 @@ const RULES: ModuleRule[] = [
     key: 'templates',
     label: 'Document templates and generated documents',
     description: 'Templates, partials, generated documents, drafts and comments',
-    tables: ['document_templates', 'template_partials', 'generated_documents', 'document_drafts', 'document_sections', 'document_comments'],
+    tables: ['document_template_presets', 'document_template_preset_items', 'document_templates', 'template_partials', 'generated_documents', 'document_drafts', 'document_sections', 'document_comments'],
     prefixes: ['document_generation_'],
   },
   {

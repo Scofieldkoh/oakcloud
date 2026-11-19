@@ -347,6 +347,7 @@ export type WorkspaceWhereInput = {
   exchangeRates?: Prisma.ExchangeRateListRelationFilter
   formFields?: Prisma.FormFieldListRelationFilter
   formOptionPresets?: Prisma.FormOptionPresetListRelationFilter
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetListRelationFilter
   formUrlHealth?: Prisma.FormUrlHealthListRelationFilter
   formDrafts?: Prisma.FormDraftListRelationFilter
   formSubmissions?: Prisma.FormSubmissionListRelationFilter
@@ -457,6 +458,7 @@ export type WorkspaceOrderByWithRelationInput = {
   exchangeRates?: Prisma.ExchangeRateOrderByRelationAggregateInput
   formFields?: Prisma.FormFieldOrderByRelationAggregateInput
   formOptionPresets?: Prisma.FormOptionPresetOrderByRelationAggregateInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetOrderByRelationAggregateInput
   formUrlHealth?: Prisma.FormUrlHealthOrderByRelationAggregateInput
   formDrafts?: Prisma.FormDraftOrderByRelationAggregateInput
   formSubmissions?: Prisma.FormSubmissionOrderByRelationAggregateInput
@@ -570,6 +572,7 @@ export type WorkspaceWhereUniqueInput = Prisma.AtLeast<{
   exchangeRates?: Prisma.ExchangeRateListRelationFilter
   formFields?: Prisma.FormFieldListRelationFilter
   formOptionPresets?: Prisma.FormOptionPresetListRelationFilter
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetListRelationFilter
   formUrlHealth?: Prisma.FormUrlHealthListRelationFilter
   formDrafts?: Prisma.FormDraftListRelationFilter
   formSubmissions?: Prisma.FormSubmissionListRelationFilter
@@ -732,6 +735,7 @@ export type WorkspaceCreateInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
@@ -842,6 +846,7 @@ export type WorkspaceUncheckedCreateInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
@@ -952,6 +957,7 @@ export type WorkspaceUpdateInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
@@ -1062,6 +1068,7 @@ export type WorkspaceUncheckedUpdateInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
@@ -1493,6 +1500,20 @@ export type WorkspaceUpdateOneRequiredWithoutDocumentTemplatesNestedInput = {
   upsert?: Prisma.WorkspaceUpsertWithoutDocumentTemplatesInput
   connect?: Prisma.WorkspaceWhereUniqueInput
   update?: Prisma.XOR<Prisma.XOR<Prisma.WorkspaceUpdateToOneWithWhereWithoutDocumentTemplatesInput, Prisma.WorkspaceUpdateWithoutDocumentTemplatesInput>, Prisma.WorkspaceUncheckedUpdateWithoutDocumentTemplatesInput>
+}
+
+export type WorkspaceCreateNestedOneWithoutDocumentTemplatePresetsInput = {
+  create?: Prisma.XOR<Prisma.WorkspaceCreateWithoutDocumentTemplatePresetsInput, Prisma.WorkspaceUncheckedCreateWithoutDocumentTemplatePresetsInput>
+  connectOrCreate?: Prisma.WorkspaceCreateOrConnectWithoutDocumentTemplatePresetsInput
+  connect?: Prisma.WorkspaceWhereUniqueInput
+}
+
+export type WorkspaceUpdateOneRequiredWithoutDocumentTemplatePresetsNestedInput = {
+  create?: Prisma.XOR<Prisma.WorkspaceCreateWithoutDocumentTemplatePresetsInput, Prisma.WorkspaceUncheckedCreateWithoutDocumentTemplatePresetsInput>
+  connectOrCreate?: Prisma.WorkspaceCreateOrConnectWithoutDocumentTemplatePresetsInput
+  upsert?: Prisma.WorkspaceUpsertWithoutDocumentTemplatePresetsInput
+  connect?: Prisma.WorkspaceWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.WorkspaceUpdateToOneWithWhereWithoutDocumentTemplatePresetsInput, Prisma.WorkspaceUpdateWithoutDocumentTemplatePresetsInput>, Prisma.WorkspaceUncheckedUpdateWithoutDocumentTemplatePresetsInput>
 }
 
 export type WorkspaceCreateNestedOneWithoutGeneratedDocumentsInput = {
@@ -2598,6 +2619,7 @@ export type WorkspaceCreateWithoutRolesInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
@@ -2707,6 +2729,7 @@ export type WorkspaceUncheckedCreateWithoutRolesInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
@@ -2832,6 +2855,7 @@ export type WorkspaceUpdateWithoutRolesInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
@@ -2941,6 +2965,7 @@ export type WorkspaceUncheckedUpdateWithoutRolesInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
@@ -3050,6 +3075,7 @@ export type WorkspaceCreateWithoutUsersInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
@@ -3159,6 +3185,7 @@ export type WorkspaceUncheckedCreateWithoutUsersInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
@@ -3284,6 +3311,7 @@ export type WorkspaceUpdateWithoutUsersInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
@@ -3393,6 +3421,7 @@ export type WorkspaceUncheckedUpdateWithoutUsersInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
@@ -3501,6 +3530,7 @@ export type WorkspaceCreateWithoutCompaniesInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
@@ -3610,6 +3640,7 @@ export type WorkspaceUncheckedCreateWithoutCompaniesInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
@@ -3735,6 +3766,7 @@ export type WorkspaceUpdateWithoutCompaniesInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
@@ -3844,6 +3876,7 @@ export type WorkspaceUncheckedUpdateWithoutCompaniesInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
@@ -3953,6 +3986,7 @@ export type WorkspaceCreateWithoutCompanySharePointFoldersInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
@@ -4062,6 +4096,7 @@ export type WorkspaceUncheckedCreateWithoutCompanySharePointFoldersInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
@@ -4187,6 +4222,7 @@ export type WorkspaceUpdateWithoutCompanySharePointFoldersInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
@@ -4296,6 +4332,7 @@ export type WorkspaceUncheckedUpdateWithoutCompanySharePointFoldersInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
@@ -4405,6 +4442,7 @@ export type WorkspaceCreateWithoutContactsInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
@@ -4514,6 +4552,7 @@ export type WorkspaceUncheckedCreateWithoutContactsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
@@ -4639,6 +4678,7 @@ export type WorkspaceUpdateWithoutContactsInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
@@ -4748,6 +4788,7 @@ export type WorkspaceUncheckedUpdateWithoutContactsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
@@ -4857,6 +4898,7 @@ export type WorkspaceCreateWithoutContactDetailsInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
@@ -4966,6 +5008,7 @@ export type WorkspaceUncheckedCreateWithoutContactDetailsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
@@ -5091,6 +5134,7 @@ export type WorkspaceUpdateWithoutContactDetailsInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
@@ -5200,6 +5244,7 @@ export type WorkspaceUncheckedUpdateWithoutContactDetailsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
@@ -5309,6 +5354,7 @@ export type WorkspaceCreateWithoutDocumentsInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
@@ -5418,6 +5464,7 @@ export type WorkspaceUncheckedCreateWithoutDocumentsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
@@ -5543,6 +5590,7 @@ export type WorkspaceUpdateWithoutDocumentsInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
@@ -5652,6 +5700,7 @@ export type WorkspaceUncheckedUpdateWithoutDocumentsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
@@ -5761,6 +5810,7 @@ export type WorkspaceCreateWithoutAuditLogsInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
@@ -5870,6 +5920,7 @@ export type WorkspaceUncheckedCreateWithoutAuditLogsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
@@ -5995,6 +6046,7 @@ export type WorkspaceUpdateWithoutAuditLogsInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
@@ -6104,6 +6156,7 @@ export type WorkspaceUncheckedUpdateWithoutAuditLogsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
@@ -6213,6 +6266,7 @@ export type WorkspaceCreateWithoutConnectorsInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
@@ -6322,6 +6376,7 @@ export type WorkspaceUncheckedCreateWithoutConnectorsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
@@ -6447,6 +6502,7 @@ export type WorkspaceUpdateWithoutConnectorsInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
@@ -6556,6 +6612,7 @@ export type WorkspaceUncheckedUpdateWithoutConnectorsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
@@ -6666,6 +6723,7 @@ export type WorkspaceCreateWithoutConnectorAccessInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
@@ -6775,6 +6833,7 @@ export type WorkspaceUncheckedCreateWithoutConnectorAccessInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
@@ -6900,6 +6959,7 @@ export type WorkspaceUpdateWithoutConnectorAccessInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
@@ -7009,6 +7069,7 @@ export type WorkspaceUncheckedUpdateWithoutConnectorAccessInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
@@ -7117,6 +7178,7 @@ export type WorkspaceCreateWithoutConnectorUsageLogsInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
@@ -7226,6 +7288,7 @@ export type WorkspaceUncheckedCreateWithoutConnectorUsageLogsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
@@ -7351,6 +7414,7 @@ export type WorkspaceUpdateWithoutConnectorUsageLogsInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
@@ -7460,6 +7524,7 @@ export type WorkspaceUncheckedUpdateWithoutConnectorUsageLogsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
@@ -7569,6 +7634,7 @@ export type WorkspaceCreateWithoutDocumentTemplatesInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
@@ -7678,6 +7744,7 @@ export type WorkspaceUncheckedCreateWithoutDocumentTemplatesInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
@@ -7803,6 +7870,7 @@ export type WorkspaceUpdateWithoutDocumentTemplatesInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
@@ -7908,6 +7976,463 @@ export type WorkspaceUncheckedUpdateWithoutDocumentTemplatesInput = {
   connectors?: Prisma.ConnectorUncheckedUpdateManyWithoutWorkspaceNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutTenantNestedInput
   contacts?: Prisma.ContactUncheckedUpdateManyWithoutTenantNestedInput
+  documents?: Prisma.DocumentUncheckedUpdateManyWithoutTenantNestedInput
+  exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
+  formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
+  formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedUpdateManyWithoutTenantNestedInput
+  formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
+  formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
+  formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
+  formUploads?: Prisma.FormUploadUncheckedUpdateManyWithoutTenantNestedInput
+  forms?: Prisma.FormUncheckedUpdateManyWithoutTenantNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  esigningSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutTenantNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedUpdateManyWithoutTenantNestedInput
+  contactFormLinks?: Prisma.ContactFormLinkUncheckedUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedUpdateManyWithoutTenantNestedInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutTenantNestedInput
+  taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutTenantNestedInput
+  roles?: Prisma.RoleUncheckedUpdateManyWithoutTenantNestedInput
+  templatePartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutTenantNestedInput
+  serviceFamilies?: Prisma.ServiceFamilyUncheckedUpdateManyWithoutTenantNestedInput
+  serviceVariants?: Prisma.ServiceVariantUncheckedUpdateManyWithoutTenantNestedInput
+  serviceVariantFeeTemplates?: Prisma.ServiceVariantFeeTemplateUncheckedUpdateManyWithoutTenantNestedInput
+  serviceAgreements?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutTenantNestedInput
+  serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedUpdateManyWithoutTenantNestedInput
+  serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedUpdateManyWithoutTenantNestedInput
+  serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedUpdateManyWithoutTenantNestedInput
+  serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUncheckedUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedUpdateManyWithoutTenantNestedInput
+  deadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutTenantNestedInput
+  deadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedUpdateManyWithoutTenantNestedInput
+  deadlineRuleParameterDefinitions?: Prisma.DeadlineRuleParameterDefinitionUncheckedUpdateManyWithoutTenantNestedInput
+  deadlineMilestoneTemplates?: Prisma.DeadlineMilestoneTemplateUncheckedUpdateManyWithoutTenantNestedInput
+  serviceVariantDeadlineRules?: Prisma.ServiceVariantDeadlineRuleUncheckedUpdateManyWithoutTenantNestedInput
+  clientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedUpdateManyWithoutTenantNestedInput
+  businessCalendars?: Prisma.BusinessCalendarUncheckedUpdateManyWithoutTenantNestedInput
+  businessHolidays?: Prisma.BusinessHolidayUncheckedUpdateManyWithoutTenantNestedInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutTenantNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  companyFinancialPeriods?: Prisma.CompanyFinancialPeriodUncheckedUpdateManyWithoutTenantNestedInput
+  companyMonitoringCoverages?: Prisma.CompanyMonitoringCoverageUncheckedUpdateManyWithoutTenantNestedInput
+  clientServiceObligationScopes?: Prisma.ClientServiceObligationScopeUncheckedUpdateManyWithoutTenantNestedInput
+  deadlineOccurrenceCoverageLinks?: Prisma.DeadlineOccurrenceCoverageLinkUncheckedUpdateManyWithoutTenantNestedInput
+  deadlineResponsibilityChanges?: Prisma.DeadlineResponsibilityChangeUncheckedUpdateManyWithoutTenantNestedInput
+  companyComplianceIssues?: Prisma.CompanyComplianceIssueUncheckedUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedUpdateManyWithoutTenantNestedInput
+  reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutTenantNestedInput
+  backups?: Prisma.WorkspaceBackupUncheckedUpdateManyWithoutTenantNestedInput
+  connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedUpdateManyWithoutWorkspaceNestedInput
+  letterhead?: Prisma.WorkspaceLetterheadUncheckedUpdateOneWithoutTenantNestedInput
+  users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
+  taskPipelines?: Prisma.TaskPipelineUncheckedUpdateManyWithoutTenantNestedInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUncheckedUpdateManyWithoutTenantNestedInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUncheckedUpdateManyWithoutTenantNestedInput
+  tasks?: Prisma.TaskUncheckedUpdateManyWithoutTenantNestedInput
+  taskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutTenantNestedInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedUpdateManyWithoutTenantNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedUpdateManyWithoutTenantNestedInput
+  taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedUpdateManyWithoutTenantNestedInput
+  businessAssistantConversations?: Prisma.BusinessAssistantConversationUncheckedUpdateManyWithoutTenantNestedInput
+  businessAssistantMessages?: Prisma.BusinessAssistantMessageUncheckedUpdateManyWithoutTenantNestedInput
+  businessAssistantRuns?: Prisma.BusinessAssistantRunUncheckedUpdateManyWithoutTenantNestedInput
+  businessAssistantRunItems?: Prisma.BusinessAssistantRunItemUncheckedUpdateManyWithoutTenantNestedInput
+  businessAssistantRunSteps?: Prisma.BusinessAssistantRunStepUncheckedUpdateManyWithoutTenantNestedInput
+  businessAssistantProposals?: Prisma.BusinessAssistantProposalUncheckedUpdateManyWithoutTenantNestedInput
+  businessAssistantApprovals?: Prisma.BusinessAssistantApprovalUncheckedUpdateManyWithoutTenantNestedInput
+  businessAssistantReviews?: Prisma.BusinessAssistantReviewUncheckedUpdateManyWithoutTenantNestedInput
+  businessAssistantFeedback?: Prisma.BusinessAssistantFeedbackUncheckedUpdateManyWithoutTenantNestedInput
+  businessAssistantMemories?: Prisma.BusinessAssistantMemoryUncheckedUpdateManyWithoutTenantNestedInput
+  businessAssistantLearningChanges?: Prisma.BusinessAssistantLearningChangeUncheckedUpdateManyWithoutTenantNestedInput
+  businessAssistantLearningTargets?: Prisma.BusinessAssistantLearningActiveTargetUncheckedUpdateManyWithoutTenantNestedInput
+  businessAssistantActionRequests?: Prisma.BusinessAssistantActionRequestUncheckedUpdateManyWithoutTenantNestedInput
+  bizFileOperationReceipts?: Prisma.BizFileOperationReceiptUncheckedUpdateManyWithoutTenantNestedInput
+  bizFileOperationEvidence?: Prisma.BizFileOperationEvidenceUncheckedUpdateManyWithoutTenantNestedInput
+  bizFileOperationEffects?: Prisma.BizFileOperationEffectIntentUncheckedUpdateManyWithoutTenantNestedInput
+}
+
+export type WorkspaceCreateWithoutDocumentTemplatePresetsInput = {
+  id?: string
+  name: string
+  slug: string
+  status?: $Enums.WorkspaceStatus
+  contactEmail?: string | null
+  contactPhone?: string | null
+  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  maxUsers?: number
+  maxCompanies?: number
+  maxStorageMb?: number
+  logoUrl?: string | null
+  primaryColor?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  deletedReason?: string | null
+  activatedAt?: Date | string | null
+  suspendedAt?: Date | string | null
+  suspendReason?: string | null
+  aiConversations?: Prisma.AiConversationCreateNestedManyWithoutTenantInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutTenantInput
+  backupSchedule?: Prisma.BackupScheduleCreateNestedOneWithoutTenantInput
+  chartOfAccounts?: Prisma.ChartOfAccountCreateNestedManyWithoutTenantInput
+  companies?: Prisma.CompanyCreateNestedManyWithoutTenantInput
+  companySharePointFolders?: Prisma.CompanySharePointFolderCreateNestedManyWithoutTenantInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutWorkspaceInput
+  connectors?: Prisma.ConnectorCreateNestedManyWithoutWorkspaceInput
+  contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutTenantInput
+  contacts?: Prisma.ContactCreateNestedManyWithoutTenantInput
+  documentTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutTenantInput
+  documents?: Prisma.DocumentCreateNestedManyWithoutTenantInput
+  exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
+  formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
+  formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
+  formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
+  formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
+  formUploads?: Prisma.FormUploadCreateNestedManyWithoutTenantInput
+  forms?: Prisma.FormCreateNestedManyWithoutTenantInput
+  generatedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutTenantInput
+  esigningSharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutTenantInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunCreateNestedManyWithoutTenantInput
+  contactFormLinks?: Prisma.ContactFormLinkCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryCreateNestedManyWithoutTenantInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutTenantInput
+  taskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutTenantInput
+  roles?: Prisma.RoleCreateNestedManyWithoutTenantInput
+  templatePartials?: Prisma.TemplatePartialCreateNestedManyWithoutTenantInput
+  serviceFamilies?: Prisma.ServiceFamilyCreateNestedManyWithoutTenantInput
+  serviceVariants?: Prisma.ServiceVariantCreateNestedManyWithoutTenantInput
+  serviceVariantFeeTemplates?: Prisma.ServiceVariantFeeTemplateCreateNestedManyWithoutTenantInput
+  serviceAgreements?: Prisma.ServiceAgreementCreateNestedManyWithoutTenantInput
+  serviceAgreementEntities?: Prisma.ServiceAgreementEntityCreateNestedManyWithoutTenantInput
+  serviceAgreementItems?: Prisma.ServiceAgreementItemCreateNestedManyWithoutTenantInput
+  serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityCreateNestedManyWithoutTenantInput
+  serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineCreateNestedManyWithoutTenantInput
+  deadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutTenantInput
+  deadlineRuleVersions?: Prisma.DeadlineRuleVersionCreateNestedManyWithoutTenantInput
+  deadlineRuleParameterDefinitions?: Prisma.DeadlineRuleParameterDefinitionCreateNestedManyWithoutTenantInput
+  deadlineMilestoneTemplates?: Prisma.DeadlineMilestoneTemplateCreateNestedManyWithoutTenantInput
+  serviceVariantDeadlineRules?: Prisma.ServiceVariantDeadlineRuleCreateNestedManyWithoutTenantInput
+  clientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleCreateNestedManyWithoutTenantInput
+  businessCalendars?: Prisma.BusinessCalendarCreateNestedManyWithoutTenantInput
+  businessHolidays?: Prisma.BusinessHolidayCreateNestedManyWithoutTenantInput
+  serviceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutTenantInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutTenantInput
+  companyFinancialPeriods?: Prisma.CompanyFinancialPeriodCreateNestedManyWithoutTenantInput
+  companyMonitoringCoverages?: Prisma.CompanyMonitoringCoverageCreateNestedManyWithoutTenantInput
+  clientServiceObligationScopes?: Prisma.ClientServiceObligationScopeCreateNestedManyWithoutTenantInput
+  deadlineOccurrenceCoverageLinks?: Prisma.DeadlineOccurrenceCoverageLinkCreateNestedManyWithoutTenantInput
+  deadlineResponsibilityChanges?: Prisma.DeadlineResponsibilityChangeCreateNestedManyWithoutTenantInput
+  companyComplianceIssues?: Prisma.CompanyComplianceIssueCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueCreateNestedManyWithoutTenantInput
+  reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutTenantInput
+  backups?: Prisma.WorkspaceBackupCreateNestedManyWithoutTenantInput
+  connectorAccess?: Prisma.WorkspaceConnectorAccessCreateNestedManyWithoutWorkspaceInput
+  letterhead?: Prisma.WorkspaceLetterheadCreateNestedOneWithoutTenantInput
+  users?: Prisma.UserCreateNestedManyWithoutTenantInput
+  taskPipelines?: Prisma.TaskPipelineCreateNestedManyWithoutTenantInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionCreateNestedManyWithoutTenantInput
+  taskPipelineStages?: Prisma.TaskPipelineStageCreateNestedManyWithoutTenantInput
+  tasks?: Prisma.TaskCreateNestedManyWithoutTenantInput
+  taskStages?: Prisma.TaskStageCreateNestedManyWithoutTenantInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemCreateNestedManyWithoutTenantInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeCreateNestedManyWithoutTenantInput
+  taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemCreateNestedManyWithoutTenantInput
+  businessAssistantConversations?: Prisma.BusinessAssistantConversationCreateNestedManyWithoutTenantInput
+  businessAssistantMessages?: Prisma.BusinessAssistantMessageCreateNestedManyWithoutTenantInput
+  businessAssistantRuns?: Prisma.BusinessAssistantRunCreateNestedManyWithoutTenantInput
+  businessAssistantRunItems?: Prisma.BusinessAssistantRunItemCreateNestedManyWithoutTenantInput
+  businessAssistantRunSteps?: Prisma.BusinessAssistantRunStepCreateNestedManyWithoutTenantInput
+  businessAssistantProposals?: Prisma.BusinessAssistantProposalCreateNestedManyWithoutTenantInput
+  businessAssistantApprovals?: Prisma.BusinessAssistantApprovalCreateNestedManyWithoutTenantInput
+  businessAssistantReviews?: Prisma.BusinessAssistantReviewCreateNestedManyWithoutTenantInput
+  businessAssistantFeedback?: Prisma.BusinessAssistantFeedbackCreateNestedManyWithoutTenantInput
+  businessAssistantMemories?: Prisma.BusinessAssistantMemoryCreateNestedManyWithoutTenantInput
+  businessAssistantLearningChanges?: Prisma.BusinessAssistantLearningChangeCreateNestedManyWithoutTenantInput
+  businessAssistantLearningTargets?: Prisma.BusinessAssistantLearningActiveTargetCreateNestedManyWithoutTenantInput
+  businessAssistantActionRequests?: Prisma.BusinessAssistantActionRequestCreateNestedManyWithoutTenantInput
+  bizFileOperationReceipts?: Prisma.BizFileOperationReceiptCreateNestedManyWithoutTenantInput
+  bizFileOperationEvidence?: Prisma.BizFileOperationEvidenceCreateNestedManyWithoutTenantInput
+  bizFileOperationEffects?: Prisma.BizFileOperationEffectIntentCreateNestedManyWithoutTenantInput
+}
+
+export type WorkspaceUncheckedCreateWithoutDocumentTemplatePresetsInput = {
+  id?: string
+  name: string
+  slug: string
+  status?: $Enums.WorkspaceStatus
+  contactEmail?: string | null
+  contactPhone?: string | null
+  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  maxUsers?: number
+  maxCompanies?: number
+  maxStorageMb?: number
+  logoUrl?: string | null
+  primaryColor?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  deletedReason?: string | null
+  activatedAt?: Date | string | null
+  suspendedAt?: Date | string | null
+  suspendReason?: string | null
+  aiConversations?: Prisma.AiConversationUncheckedCreateNestedManyWithoutTenantInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTenantInput
+  backupSchedule?: Prisma.BackupScheduleUncheckedCreateNestedOneWithoutTenantInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedCreateNestedManyWithoutTenantInput
+  companies?: Prisma.CompanyUncheckedCreateNestedManyWithoutTenantInput
+  companySharePointFolders?: Prisma.CompanySharePointFolderUncheckedCreateNestedManyWithoutTenantInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedCreateNestedManyWithoutWorkspaceInput
+  connectors?: Prisma.ConnectorUncheckedCreateNestedManyWithoutWorkspaceInput
+  contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutTenantInput
+  contacts?: Prisma.ContactUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutTenantInput
+  documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutTenantInput
+  exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
+  formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
+  formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
+  formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
+  formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
+  formUploads?: Prisma.FormUploadUncheckedCreateNestedManyWithoutTenantInput
+  forms?: Prisma.FormUncheckedCreateNestedManyWithoutTenantInput
+  generatedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutTenantInput
+  esigningSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutTenantInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedCreateNestedManyWithoutTenantInput
+  contactFormLinks?: Prisma.ContactFormLinkUncheckedCreateNestedManyWithoutTenantInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUncheckedCreateNestedManyWithoutTenantInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutTenantInput
+  taskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutTenantInput
+  roles?: Prisma.RoleUncheckedCreateNestedManyWithoutTenantInput
+  templatePartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutTenantInput
+  serviceFamilies?: Prisma.ServiceFamilyUncheckedCreateNestedManyWithoutTenantInput
+  serviceVariants?: Prisma.ServiceVariantUncheckedCreateNestedManyWithoutTenantInput
+  serviceVariantFeeTemplates?: Prisma.ServiceVariantFeeTemplateUncheckedCreateNestedManyWithoutTenantInput
+  serviceAgreements?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutTenantInput
+  serviceAgreementEntities?: Prisma.ServiceAgreementEntityUncheckedCreateNestedManyWithoutTenantInput
+  serviceAgreementItems?: Prisma.ServiceAgreementItemUncheckedCreateNestedManyWithoutTenantInput
+  serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUncheckedCreateNestedManyWithoutTenantInput
+  serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUncheckedCreateNestedManyWithoutTenantInput
+  clientServices?: Prisma.ClientServiceUncheckedCreateNestedManyWithoutTenantInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUncheckedCreateNestedManyWithoutTenantInput
+  deadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutTenantInput
+  deadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedCreateNestedManyWithoutTenantInput
+  deadlineRuleParameterDefinitions?: Prisma.DeadlineRuleParameterDefinitionUncheckedCreateNestedManyWithoutTenantInput
+  deadlineMilestoneTemplates?: Prisma.DeadlineMilestoneTemplateUncheckedCreateNestedManyWithoutTenantInput
+  serviceVariantDeadlineRules?: Prisma.ServiceVariantDeadlineRuleUncheckedCreateNestedManyWithoutTenantInput
+  clientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedCreateNestedManyWithoutTenantInput
+  businessCalendars?: Prisma.BusinessCalendarUncheckedCreateNestedManyWithoutTenantInput
+  businessHolidays?: Prisma.BusinessHolidayUncheckedCreateNestedManyWithoutTenantInput
+  serviceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutTenantInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  companyFinancialPeriods?: Prisma.CompanyFinancialPeriodUncheckedCreateNestedManyWithoutTenantInput
+  companyMonitoringCoverages?: Prisma.CompanyMonitoringCoverageUncheckedCreateNestedManyWithoutTenantInput
+  clientServiceObligationScopes?: Prisma.ClientServiceObligationScopeUncheckedCreateNestedManyWithoutTenantInput
+  deadlineOccurrenceCoverageLinks?: Prisma.DeadlineOccurrenceCoverageLinkUncheckedCreateNestedManyWithoutTenantInput
+  deadlineResponsibilityChanges?: Prisma.DeadlineResponsibilityChangeUncheckedCreateNestedManyWithoutTenantInput
+  companyComplianceIssues?: Prisma.CompanyComplianceIssueUncheckedCreateNestedManyWithoutTenantInput
+  billingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutTenantInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUncheckedCreateNestedManyWithoutTenantInput
+  reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutTenantInput
+  backups?: Prisma.WorkspaceBackupUncheckedCreateNestedManyWithoutTenantInput
+  connectorAccess?: Prisma.WorkspaceConnectorAccessUncheckedCreateNestedManyWithoutWorkspaceInput
+  letterhead?: Prisma.WorkspaceLetterheadUncheckedCreateNestedOneWithoutTenantInput
+  users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
+  taskPipelines?: Prisma.TaskPipelineUncheckedCreateNestedManyWithoutTenantInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUncheckedCreateNestedManyWithoutTenantInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUncheckedCreateNestedManyWithoutTenantInput
+  tasks?: Prisma.TaskUncheckedCreateNestedManyWithoutTenantInput
+  taskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutTenantInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUncheckedCreateNestedManyWithoutTenantInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUncheckedCreateNestedManyWithoutTenantInput
+  taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutTenantInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUncheckedCreateNestedManyWithoutTenantInput
+  businessAssistantConversations?: Prisma.BusinessAssistantConversationUncheckedCreateNestedManyWithoutTenantInput
+  businessAssistantMessages?: Prisma.BusinessAssistantMessageUncheckedCreateNestedManyWithoutTenantInput
+  businessAssistantRuns?: Prisma.BusinessAssistantRunUncheckedCreateNestedManyWithoutTenantInput
+  businessAssistantRunItems?: Prisma.BusinessAssistantRunItemUncheckedCreateNestedManyWithoutTenantInput
+  businessAssistantRunSteps?: Prisma.BusinessAssistantRunStepUncheckedCreateNestedManyWithoutTenantInput
+  businessAssistantProposals?: Prisma.BusinessAssistantProposalUncheckedCreateNestedManyWithoutTenantInput
+  businessAssistantApprovals?: Prisma.BusinessAssistantApprovalUncheckedCreateNestedManyWithoutTenantInput
+  businessAssistantReviews?: Prisma.BusinessAssistantReviewUncheckedCreateNestedManyWithoutTenantInput
+  businessAssistantFeedback?: Prisma.BusinessAssistantFeedbackUncheckedCreateNestedManyWithoutTenantInput
+  businessAssistantMemories?: Prisma.BusinessAssistantMemoryUncheckedCreateNestedManyWithoutTenantInput
+  businessAssistantLearningChanges?: Prisma.BusinessAssistantLearningChangeUncheckedCreateNestedManyWithoutTenantInput
+  businessAssistantLearningTargets?: Prisma.BusinessAssistantLearningActiveTargetUncheckedCreateNestedManyWithoutTenantInput
+  businessAssistantActionRequests?: Prisma.BusinessAssistantActionRequestUncheckedCreateNestedManyWithoutTenantInput
+  bizFileOperationReceipts?: Prisma.BizFileOperationReceiptUncheckedCreateNestedManyWithoutTenantInput
+  bizFileOperationEvidence?: Prisma.BizFileOperationEvidenceUncheckedCreateNestedManyWithoutTenantInput
+  bizFileOperationEffects?: Prisma.BizFileOperationEffectIntentUncheckedCreateNestedManyWithoutTenantInput
+}
+
+export type WorkspaceCreateOrConnectWithoutDocumentTemplatePresetsInput = {
+  where: Prisma.WorkspaceWhereUniqueInput
+  create: Prisma.XOR<Prisma.WorkspaceCreateWithoutDocumentTemplatePresetsInput, Prisma.WorkspaceUncheckedCreateWithoutDocumentTemplatePresetsInput>
+}
+
+export type WorkspaceUpsertWithoutDocumentTemplatePresetsInput = {
+  update: Prisma.XOR<Prisma.WorkspaceUpdateWithoutDocumentTemplatePresetsInput, Prisma.WorkspaceUncheckedUpdateWithoutDocumentTemplatePresetsInput>
+  create: Prisma.XOR<Prisma.WorkspaceCreateWithoutDocumentTemplatePresetsInput, Prisma.WorkspaceUncheckedCreateWithoutDocumentTemplatePresetsInput>
+  where?: Prisma.WorkspaceWhereInput
+}
+
+export type WorkspaceUpdateToOneWithWhereWithoutDocumentTemplatePresetsInput = {
+  where?: Prisma.WorkspaceWhereInput
+  data: Prisma.XOR<Prisma.WorkspaceUpdateWithoutDocumentTemplatePresetsInput, Prisma.WorkspaceUncheckedUpdateWithoutDocumentTemplatePresetsInput>
+}
+
+export type WorkspaceUpdateWithoutDocumentTemplatePresetsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumWorkspaceStatusFieldUpdateOperationsInput | $Enums.WorkspaceStatus
+  contactEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  contactPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  maxUsers?: Prisma.IntFieldUpdateOperationsInput | number
+  maxCompanies?: Prisma.IntFieldUpdateOperationsInput | number
+  maxStorageMb?: Prisma.IntFieldUpdateOperationsInput | number
+  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primaryColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  suspendedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  suspendReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiConversations?: Prisma.AiConversationUpdateManyWithoutTenantNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutTenantNestedInput
+  backupSchedule?: Prisma.BackupScheduleUpdateOneWithoutTenantNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUpdateManyWithoutTenantNestedInput
+  companies?: Prisma.CompanyUpdateManyWithoutTenantNestedInput
+  companySharePointFolders?: Prisma.CompanySharePointFolderUpdateManyWithoutTenantNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutWorkspaceNestedInput
+  connectors?: Prisma.ConnectorUpdateManyWithoutWorkspaceNestedInput
+  contactDetails?: Prisma.ContactDetailUpdateManyWithoutTenantNestedInput
+  contacts?: Prisma.ContactUpdateManyWithoutTenantNestedInput
+  documentTemplates?: Prisma.DocumentTemplateUpdateManyWithoutTenantNestedInput
+  documents?: Prisma.DocumentUpdateManyWithoutTenantNestedInput
+  exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
+  formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
+  formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
+  formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
+  formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
+  formUploads?: Prisma.FormUploadUpdateManyWithoutTenantNestedInput
+  forms?: Prisma.FormUpdateManyWithoutTenantNestedInput
+  generatedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutTenantNestedInput
+  esigningSharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutTenantNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUpdateManyWithoutTenantNestedInput
+  contactFormLinks?: Prisma.ContactFormLinkUpdateManyWithoutTenantNestedInput
+  esigningEmailDeliveries?: Prisma.EsigningEmailDeliveryUpdateManyWithoutTenantNestedInput
+  esigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutTenantNestedInput
+  taskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutTenantNestedInput
+  roles?: Prisma.RoleUpdateManyWithoutTenantNestedInput
+  templatePartials?: Prisma.TemplatePartialUpdateManyWithoutTenantNestedInput
+  serviceFamilies?: Prisma.ServiceFamilyUpdateManyWithoutTenantNestedInput
+  serviceVariants?: Prisma.ServiceVariantUpdateManyWithoutTenantNestedInput
+  serviceVariantFeeTemplates?: Prisma.ServiceVariantFeeTemplateUpdateManyWithoutTenantNestedInput
+  serviceAgreements?: Prisma.ServiceAgreementUpdateManyWithoutTenantNestedInput
+  serviceAgreementEntities?: Prisma.ServiceAgreementEntityUpdateManyWithoutTenantNestedInput
+  serviceAgreementItems?: Prisma.ServiceAgreementItemUpdateManyWithoutTenantNestedInput
+  serviceAgreementItemEntities?: Prisma.ServiceAgreementItemEntityUpdateManyWithoutTenantNestedInput
+  serviceAgreementFeeLines?: Prisma.ServiceAgreementFeeLineUpdateManyWithoutTenantNestedInput
+  clientServices?: Prisma.ClientServiceUpdateManyWithoutTenantNestedInput
+  clientServiceFeeLines?: Prisma.ClientServiceFeeLineUpdateManyWithoutTenantNestedInput
+  deadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutTenantNestedInput
+  deadlineRuleVersions?: Prisma.DeadlineRuleVersionUpdateManyWithoutTenantNestedInput
+  deadlineRuleParameterDefinitions?: Prisma.DeadlineRuleParameterDefinitionUpdateManyWithoutTenantNestedInput
+  deadlineMilestoneTemplates?: Prisma.DeadlineMilestoneTemplateUpdateManyWithoutTenantNestedInput
+  serviceVariantDeadlineRules?: Prisma.ServiceVariantDeadlineRuleUpdateManyWithoutTenantNestedInput
+  clientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUpdateManyWithoutTenantNestedInput
+  businessCalendars?: Prisma.BusinessCalendarUpdateManyWithoutTenantNestedInput
+  businessHolidays?: Prisma.BusinessHolidayUpdateManyWithoutTenantNestedInput
+  serviceCycles?: Prisma.ServiceCycleUpdateManyWithoutTenantNestedInput
+  deadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutTenantNestedInput
+  companyFinancialPeriods?: Prisma.CompanyFinancialPeriodUpdateManyWithoutTenantNestedInput
+  companyMonitoringCoverages?: Prisma.CompanyMonitoringCoverageUpdateManyWithoutTenantNestedInput
+  clientServiceObligationScopes?: Prisma.ClientServiceObligationScopeUpdateManyWithoutTenantNestedInput
+  deadlineOccurrenceCoverageLinks?: Prisma.DeadlineOccurrenceCoverageLinkUpdateManyWithoutTenantNestedInput
+  deadlineResponsibilityChanges?: Prisma.DeadlineResponsibilityChangeUpdateManyWithoutTenantNestedInput
+  companyComplianceIssues?: Prisma.CompanyComplianceIssueUpdateManyWithoutTenantNestedInput
+  billingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutTenantNestedInput
+  billingCoverageIssues?: Prisma.BillingCoverageIssueUpdateManyWithoutTenantNestedInput
+  reconciliationRequests?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutTenantNestedInput
+  backups?: Prisma.WorkspaceBackupUpdateManyWithoutTenantNestedInput
+  connectorAccess?: Prisma.WorkspaceConnectorAccessUpdateManyWithoutWorkspaceNestedInput
+  letterhead?: Prisma.WorkspaceLetterheadUpdateOneWithoutTenantNestedInput
+  users?: Prisma.UserUpdateManyWithoutTenantNestedInput
+  taskPipelines?: Prisma.TaskPipelineUpdateManyWithoutTenantNestedInput
+  taskPipelineVersions?: Prisma.TaskPipelineVersionUpdateManyWithoutTenantNestedInput
+  taskPipelineStages?: Prisma.TaskPipelineStageUpdateManyWithoutTenantNestedInput
+  tasks?: Prisma.TaskUpdateManyWithoutTenantNestedInput
+  taskStages?: Prisma.TaskStageUpdateManyWithoutTenantNestedInput
+  taskStageChecklistItems?: Prisma.TaskStageChecklistItemUpdateManyWithoutTenantNestedInput
+  taskStageOutcomes?: Prisma.TaskStageOutcomeUpdateManyWithoutTenantNestedInput
+  taskCompanyRecoveryContexts?: Prisma.TaskCompanyRecoveryContextUpdateManyWithoutTenantNestedInput
+  documentGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutTenantNestedInput
+  documentGenerationBatchItems?: Prisma.DocumentGenerationBatchItemUpdateManyWithoutTenantNestedInput
+  businessAssistantConversations?: Prisma.BusinessAssistantConversationUpdateManyWithoutTenantNestedInput
+  businessAssistantMessages?: Prisma.BusinessAssistantMessageUpdateManyWithoutTenantNestedInput
+  businessAssistantRuns?: Prisma.BusinessAssistantRunUpdateManyWithoutTenantNestedInput
+  businessAssistantRunItems?: Prisma.BusinessAssistantRunItemUpdateManyWithoutTenantNestedInput
+  businessAssistantRunSteps?: Prisma.BusinessAssistantRunStepUpdateManyWithoutTenantNestedInput
+  businessAssistantProposals?: Prisma.BusinessAssistantProposalUpdateManyWithoutTenantNestedInput
+  businessAssistantApprovals?: Prisma.BusinessAssistantApprovalUpdateManyWithoutTenantNestedInput
+  businessAssistantReviews?: Prisma.BusinessAssistantReviewUpdateManyWithoutTenantNestedInput
+  businessAssistantFeedback?: Prisma.BusinessAssistantFeedbackUpdateManyWithoutTenantNestedInput
+  businessAssistantMemories?: Prisma.BusinessAssistantMemoryUpdateManyWithoutTenantNestedInput
+  businessAssistantLearningChanges?: Prisma.BusinessAssistantLearningChangeUpdateManyWithoutTenantNestedInput
+  businessAssistantLearningTargets?: Prisma.BusinessAssistantLearningActiveTargetUpdateManyWithoutTenantNestedInput
+  businessAssistantActionRequests?: Prisma.BusinessAssistantActionRequestUpdateManyWithoutTenantNestedInput
+  bizFileOperationReceipts?: Prisma.BizFileOperationReceiptUpdateManyWithoutTenantNestedInput
+  bizFileOperationEvidence?: Prisma.BizFileOperationEvidenceUpdateManyWithoutTenantNestedInput
+  bizFileOperationEffects?: Prisma.BizFileOperationEffectIntentUpdateManyWithoutTenantNestedInput
+}
+
+export type WorkspaceUncheckedUpdateWithoutDocumentTemplatePresetsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumWorkspaceStatusFieldUpdateOperationsInput | $Enums.WorkspaceStatus
+  contactEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  contactPhone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  settings?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  maxUsers?: Prisma.IntFieldUpdateOperationsInput | number
+  maxCompanies?: Prisma.IntFieldUpdateOperationsInput | number
+  maxStorageMb?: Prisma.IntFieldUpdateOperationsInput | number
+  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  primaryColor?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  activatedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  suspendedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  suspendReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiConversations?: Prisma.AiConversationUncheckedUpdateManyWithoutTenantNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutTenantNestedInput
+  backupSchedule?: Prisma.BackupScheduleUncheckedUpdateOneWithoutTenantNestedInput
+  chartOfAccounts?: Prisma.ChartOfAccountUncheckedUpdateManyWithoutTenantNestedInput
+  companies?: Prisma.CompanyUncheckedUpdateManyWithoutTenantNestedInput
+  companySharePointFolders?: Prisma.CompanySharePointFolderUncheckedUpdateManyWithoutTenantNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedUpdateManyWithoutWorkspaceNestedInput
+  connectors?: Prisma.ConnectorUncheckedUpdateManyWithoutWorkspaceNestedInput
+  contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutTenantNestedInput
+  contacts?: Prisma.ContactUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutTenantNestedInput
   documents?: Prisma.DocumentUncheckedUpdateManyWithoutTenantNestedInput
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
@@ -8022,6 +8547,7 @@ export type WorkspaceCreateWithoutGeneratedDocumentsInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
@@ -8131,6 +8657,7 @@ export type WorkspaceUncheckedCreateWithoutGeneratedDocumentsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
@@ -8256,6 +8783,7 @@ export type WorkspaceUpdateWithoutGeneratedDocumentsInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
@@ -8365,6 +8893,7 @@ export type WorkspaceUncheckedUpdateWithoutGeneratedDocumentsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
@@ -8474,6 +9003,7 @@ export type WorkspaceCreateWithoutDocumentGenerationBatchesInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
@@ -8583,6 +9113,7 @@ export type WorkspaceUncheckedCreateWithoutDocumentGenerationBatchesInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
@@ -8708,6 +9239,7 @@ export type WorkspaceUpdateWithoutDocumentGenerationBatchesInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
@@ -8817,6 +9349,7 @@ export type WorkspaceUncheckedUpdateWithoutDocumentGenerationBatchesInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
@@ -8926,6 +9459,7 @@ export type WorkspaceCreateWithoutDocumentGenerationBatchItemsInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
@@ -9035,6 +9569,7 @@ export type WorkspaceUncheckedCreateWithoutDocumentGenerationBatchItemsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
@@ -9160,6 +9695,7 @@ export type WorkspaceUpdateWithoutDocumentGenerationBatchItemsInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
@@ -9269,6 +9805,7 @@ export type WorkspaceUncheckedUpdateWithoutDocumentGenerationBatchItemsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
@@ -9378,6 +9915,7 @@ export type WorkspaceCreateWithoutLetterheadInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
@@ -9487,6 +10025,7 @@ export type WorkspaceUncheckedCreateWithoutLetterheadInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
@@ -9612,6 +10151,7 @@ export type WorkspaceUpdateWithoutLetterheadInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
@@ -9721,6 +10261,7 @@ export type WorkspaceUncheckedUpdateWithoutLetterheadInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
@@ -9830,6 +10371,7 @@ export type WorkspaceCreateWithoutTemplatePartialsInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
@@ -9939,6 +10481,7 @@ export type WorkspaceUncheckedCreateWithoutTemplatePartialsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
@@ -10064,6 +10607,7 @@ export type WorkspaceUpdateWithoutTemplatePartialsInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
@@ -10173,6 +10717,7 @@ export type WorkspaceUncheckedUpdateWithoutTemplatePartialsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
@@ -10282,6 +10827,7 @@ export type WorkspaceCreateWithoutServiceFamiliesInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
@@ -10391,6 +10937,7 @@ export type WorkspaceUncheckedCreateWithoutServiceFamiliesInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
@@ -10516,6 +11063,7 @@ export type WorkspaceUpdateWithoutServiceFamiliesInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
@@ -10625,6 +11173,7 @@ export type WorkspaceUncheckedUpdateWithoutServiceFamiliesInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
@@ -10734,6 +11283,7 @@ export type WorkspaceCreateWithoutServiceVariantsInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
@@ -10843,6 +11393,7 @@ export type WorkspaceUncheckedCreateWithoutServiceVariantsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
@@ -10968,6 +11519,7 @@ export type WorkspaceUpdateWithoutServiceVariantsInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
@@ -11077,6 +11629,7 @@ export type WorkspaceUncheckedUpdateWithoutServiceVariantsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
@@ -11186,6 +11739,7 @@ export type WorkspaceCreateWithoutServiceVariantFeeTemplatesInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
@@ -11295,6 +11849,7 @@ export type WorkspaceUncheckedCreateWithoutServiceVariantFeeTemplatesInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
@@ -11420,6 +11975,7 @@ export type WorkspaceUpdateWithoutServiceVariantFeeTemplatesInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
@@ -11529,6 +12085,7 @@ export type WorkspaceUncheckedUpdateWithoutServiceVariantFeeTemplatesInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
@@ -11638,6 +12195,7 @@ export type WorkspaceCreateWithoutServiceAgreementsInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
@@ -11747,6 +12305,7 @@ export type WorkspaceUncheckedCreateWithoutServiceAgreementsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
@@ -11872,6 +12431,7 @@ export type WorkspaceUpdateWithoutServiceAgreementsInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
@@ -11981,6 +12541,7 @@ export type WorkspaceUncheckedUpdateWithoutServiceAgreementsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
@@ -12090,6 +12651,7 @@ export type WorkspaceCreateWithoutServiceAgreementEntitiesInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
@@ -12199,6 +12761,7 @@ export type WorkspaceUncheckedCreateWithoutServiceAgreementEntitiesInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
@@ -12324,6 +12887,7 @@ export type WorkspaceUpdateWithoutServiceAgreementEntitiesInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
@@ -12433,6 +12997,7 @@ export type WorkspaceUncheckedUpdateWithoutServiceAgreementEntitiesInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
@@ -12542,6 +13107,7 @@ export type WorkspaceCreateWithoutServiceAgreementItemsInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
@@ -12651,6 +13217,7 @@ export type WorkspaceUncheckedCreateWithoutServiceAgreementItemsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
@@ -12776,6 +13343,7 @@ export type WorkspaceUpdateWithoutServiceAgreementItemsInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
@@ -12885,6 +13453,7 @@ export type WorkspaceUncheckedUpdateWithoutServiceAgreementItemsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
@@ -12994,6 +13563,7 @@ export type WorkspaceCreateWithoutServiceAgreementItemEntitiesInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
@@ -13103,6 +13673,7 @@ export type WorkspaceUncheckedCreateWithoutServiceAgreementItemEntitiesInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
@@ -13228,6 +13799,7 @@ export type WorkspaceUpdateWithoutServiceAgreementItemEntitiesInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
@@ -13337,6 +13909,7 @@ export type WorkspaceUncheckedUpdateWithoutServiceAgreementItemEntitiesInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
@@ -13446,6 +14019,7 @@ export type WorkspaceCreateWithoutServiceAgreementFeeLinesInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
@@ -13555,6 +14129,7 @@ export type WorkspaceUncheckedCreateWithoutServiceAgreementFeeLinesInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
@@ -13680,6 +14255,7 @@ export type WorkspaceUpdateWithoutServiceAgreementFeeLinesInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
@@ -13789,6 +14365,7 @@ export type WorkspaceUncheckedUpdateWithoutServiceAgreementFeeLinesInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
@@ -13898,6 +14475,7 @@ export type WorkspaceCreateWithoutClientServicesInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
@@ -14007,6 +14585,7 @@ export type WorkspaceUncheckedCreateWithoutClientServicesInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
@@ -14132,6 +14711,7 @@ export type WorkspaceUpdateWithoutClientServicesInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
@@ -14241,6 +14821,7 @@ export type WorkspaceUncheckedUpdateWithoutClientServicesInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
@@ -14350,6 +14931,7 @@ export type WorkspaceCreateWithoutClientServiceFeeLinesInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
@@ -14459,6 +15041,7 @@ export type WorkspaceUncheckedCreateWithoutClientServiceFeeLinesInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
@@ -14584,6 +15167,7 @@ export type WorkspaceUpdateWithoutClientServiceFeeLinesInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
@@ -14693,6 +15277,7 @@ export type WorkspaceUncheckedUpdateWithoutClientServiceFeeLinesInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
@@ -14802,6 +15387,7 @@ export type WorkspaceCreateWithoutBillingOccurrencesInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
@@ -14911,6 +15497,7 @@ export type WorkspaceUncheckedCreateWithoutBillingOccurrencesInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
@@ -15036,6 +15623,7 @@ export type WorkspaceUpdateWithoutBillingOccurrencesInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
@@ -15145,6 +15733,7 @@ export type WorkspaceUncheckedUpdateWithoutBillingOccurrencesInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
@@ -15254,6 +15843,7 @@ export type WorkspaceCreateWithoutBillingCoverageIssuesInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
@@ -15363,6 +15953,7 @@ export type WorkspaceUncheckedCreateWithoutBillingCoverageIssuesInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
@@ -15488,6 +16079,7 @@ export type WorkspaceUpdateWithoutBillingCoverageIssuesInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
@@ -15597,6 +16189,7 @@ export type WorkspaceUncheckedUpdateWithoutBillingCoverageIssuesInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
@@ -15706,6 +16299,7 @@ export type WorkspaceCreateWithoutDeadlineRulesInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
@@ -15815,6 +16409,7 @@ export type WorkspaceUncheckedCreateWithoutDeadlineRulesInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
@@ -15940,6 +16535,7 @@ export type WorkspaceUpdateWithoutDeadlineRulesInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
@@ -16049,6 +16645,7 @@ export type WorkspaceUncheckedUpdateWithoutDeadlineRulesInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
@@ -16158,6 +16755,7 @@ export type WorkspaceCreateWithoutDeadlineRuleVersionsInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
@@ -16267,6 +16865,7 @@ export type WorkspaceUncheckedCreateWithoutDeadlineRuleVersionsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
@@ -16392,6 +16991,7 @@ export type WorkspaceUpdateWithoutDeadlineRuleVersionsInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
@@ -16501,6 +17101,7 @@ export type WorkspaceUncheckedUpdateWithoutDeadlineRuleVersionsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
@@ -16610,6 +17211,7 @@ export type WorkspaceCreateWithoutDeadlineRuleParameterDefinitionsInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
@@ -16719,6 +17321,7 @@ export type WorkspaceUncheckedCreateWithoutDeadlineRuleParameterDefinitionsInput
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
@@ -16844,6 +17447,7 @@ export type WorkspaceUpdateWithoutDeadlineRuleParameterDefinitionsInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
@@ -16953,6 +17557,7 @@ export type WorkspaceUncheckedUpdateWithoutDeadlineRuleParameterDefinitionsInput
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
@@ -17062,6 +17667,7 @@ export type WorkspaceCreateWithoutDeadlineMilestoneTemplatesInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
@@ -17171,6 +17777,7 @@ export type WorkspaceUncheckedCreateWithoutDeadlineMilestoneTemplatesInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
@@ -17296,6 +17903,7 @@ export type WorkspaceUpdateWithoutDeadlineMilestoneTemplatesInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
@@ -17405,6 +18013,7 @@ export type WorkspaceUncheckedUpdateWithoutDeadlineMilestoneTemplatesInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
@@ -17514,6 +18123,7 @@ export type WorkspaceCreateWithoutServiceVariantDeadlineRulesInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
@@ -17623,6 +18233,7 @@ export type WorkspaceUncheckedCreateWithoutServiceVariantDeadlineRulesInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
@@ -17748,6 +18359,7 @@ export type WorkspaceUpdateWithoutServiceVariantDeadlineRulesInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
@@ -17857,6 +18469,7 @@ export type WorkspaceUncheckedUpdateWithoutServiceVariantDeadlineRulesInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
@@ -17966,6 +18579,7 @@ export type WorkspaceCreateWithoutClientServiceDeadlineRulesInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
@@ -18075,6 +18689,7 @@ export type WorkspaceUncheckedCreateWithoutClientServiceDeadlineRulesInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
@@ -18200,6 +18815,7 @@ export type WorkspaceUpdateWithoutClientServiceDeadlineRulesInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
@@ -18309,6 +18925,7 @@ export type WorkspaceUncheckedUpdateWithoutClientServiceDeadlineRulesInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
@@ -18418,6 +19035,7 @@ export type WorkspaceCreateWithoutBusinessCalendarsInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
@@ -18527,6 +19145,7 @@ export type WorkspaceUncheckedCreateWithoutBusinessCalendarsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
@@ -18652,6 +19271,7 @@ export type WorkspaceUpdateWithoutBusinessCalendarsInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
@@ -18761,6 +19381,7 @@ export type WorkspaceUncheckedUpdateWithoutBusinessCalendarsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
@@ -18870,6 +19491,7 @@ export type WorkspaceCreateWithoutBusinessHolidaysInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
@@ -18979,6 +19601,7 @@ export type WorkspaceUncheckedCreateWithoutBusinessHolidaysInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
@@ -19104,6 +19727,7 @@ export type WorkspaceUpdateWithoutBusinessHolidaysInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
@@ -19213,6 +19837,7 @@ export type WorkspaceUncheckedUpdateWithoutBusinessHolidaysInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
@@ -19322,6 +19947,7 @@ export type WorkspaceCreateWithoutServiceCyclesInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
@@ -19431,6 +20057,7 @@ export type WorkspaceUncheckedCreateWithoutServiceCyclesInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
@@ -19556,6 +20183,7 @@ export type WorkspaceUpdateWithoutServiceCyclesInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
@@ -19665,6 +20293,7 @@ export type WorkspaceUncheckedUpdateWithoutServiceCyclesInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
@@ -19774,6 +20403,7 @@ export type WorkspaceCreateWithoutDeadlineOccurrencesInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
@@ -19883,6 +20513,7 @@ export type WorkspaceUncheckedCreateWithoutDeadlineOccurrencesInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
@@ -20008,6 +20639,7 @@ export type WorkspaceUpdateWithoutDeadlineOccurrencesInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
@@ -20117,6 +20749,7 @@ export type WorkspaceUncheckedUpdateWithoutDeadlineOccurrencesInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
@@ -20226,6 +20859,7 @@ export type WorkspaceCreateWithoutCompanyFinancialPeriodsInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
@@ -20335,6 +20969,7 @@ export type WorkspaceUncheckedCreateWithoutCompanyFinancialPeriodsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
@@ -20460,6 +21095,7 @@ export type WorkspaceUpdateWithoutCompanyFinancialPeriodsInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
@@ -20569,6 +21205,7 @@ export type WorkspaceUncheckedUpdateWithoutCompanyFinancialPeriodsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
@@ -20678,6 +21315,7 @@ export type WorkspaceCreateWithoutCompanyMonitoringCoveragesInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
@@ -20787,6 +21425,7 @@ export type WorkspaceUncheckedCreateWithoutCompanyMonitoringCoveragesInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
@@ -20912,6 +21551,7 @@ export type WorkspaceUpdateWithoutCompanyMonitoringCoveragesInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
@@ -21021,6 +21661,7 @@ export type WorkspaceUncheckedUpdateWithoutCompanyMonitoringCoveragesInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
@@ -21130,6 +21771,7 @@ export type WorkspaceCreateWithoutClientServiceObligationScopesInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
@@ -21239,6 +21881,7 @@ export type WorkspaceUncheckedCreateWithoutClientServiceObligationScopesInput = 
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
@@ -21364,6 +22007,7 @@ export type WorkspaceUpdateWithoutClientServiceObligationScopesInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
@@ -21473,6 +22117,7 @@ export type WorkspaceUncheckedUpdateWithoutClientServiceObligationScopesInput = 
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
@@ -21582,6 +22227,7 @@ export type WorkspaceCreateWithoutDeadlineOccurrenceCoverageLinksInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
@@ -21691,6 +22337,7 @@ export type WorkspaceUncheckedCreateWithoutDeadlineOccurrenceCoverageLinksInput 
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
@@ -21816,6 +22463,7 @@ export type WorkspaceUpdateWithoutDeadlineOccurrenceCoverageLinksInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
@@ -21925,6 +22573,7 @@ export type WorkspaceUncheckedUpdateWithoutDeadlineOccurrenceCoverageLinksInput 
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
@@ -22034,6 +22683,7 @@ export type WorkspaceCreateWithoutDeadlineResponsibilityChangesInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
@@ -22143,6 +22793,7 @@ export type WorkspaceUncheckedCreateWithoutDeadlineResponsibilityChangesInput = 
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
@@ -22268,6 +22919,7 @@ export type WorkspaceUpdateWithoutDeadlineResponsibilityChangesInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
@@ -22377,6 +23029,7 @@ export type WorkspaceUncheckedUpdateWithoutDeadlineResponsibilityChangesInput = 
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
@@ -22486,6 +23139,7 @@ export type WorkspaceCreateWithoutCompanyComplianceIssuesInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
@@ -22595,6 +23249,7 @@ export type WorkspaceUncheckedCreateWithoutCompanyComplianceIssuesInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
@@ -22720,6 +23375,7 @@ export type WorkspaceUpdateWithoutCompanyComplianceIssuesInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
@@ -22829,6 +23485,7 @@ export type WorkspaceUncheckedUpdateWithoutCompanyComplianceIssuesInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
@@ -22938,6 +23595,7 @@ export type WorkspaceCreateWithoutReconciliationRequestsInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
@@ -23047,6 +23705,7 @@ export type WorkspaceUncheckedCreateWithoutReconciliationRequestsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
@@ -23172,6 +23831,7 @@ export type WorkspaceUpdateWithoutReconciliationRequestsInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
@@ -23281,6 +23941,7 @@ export type WorkspaceUncheckedUpdateWithoutReconciliationRequestsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
@@ -23389,6 +24050,7 @@ export type WorkspaceCreateWithoutAiConversationsInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
@@ -23498,6 +24160,7 @@ export type WorkspaceUncheckedCreateWithoutAiConversationsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
@@ -23623,6 +24286,7 @@ export type WorkspaceUpdateWithoutAiConversationsInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
@@ -23732,6 +24396,7 @@ export type WorkspaceUncheckedUpdateWithoutAiConversationsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
@@ -23842,6 +24507,7 @@ export type WorkspaceCreateWithoutEsigningEnvelopesInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
@@ -23951,6 +24617,7 @@ export type WorkspaceUncheckedCreateWithoutEsigningEnvelopesInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
@@ -24076,6 +24743,7 @@ export type WorkspaceUpdateWithoutEsigningEnvelopesInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
@@ -24185,6 +24853,7 @@ export type WorkspaceUncheckedUpdateWithoutEsigningEnvelopesInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
@@ -24294,6 +24963,7 @@ export type WorkspaceCreateWithoutEsigningSharePointFilingsInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
@@ -24403,6 +25073,7 @@ export type WorkspaceUncheckedCreateWithoutEsigningSharePointFilingsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
@@ -24528,6 +25199,7 @@ export type WorkspaceUpdateWithoutEsigningSharePointFilingsInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
@@ -24637,6 +25309,7 @@ export type WorkspaceUncheckedUpdateWithoutEsigningSharePointFilingsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
@@ -24746,6 +25419,7 @@ export type WorkspaceCreateWithoutEsigningEmailDeliveriesInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
@@ -24855,6 +25529,7 @@ export type WorkspaceUncheckedCreateWithoutEsigningEmailDeliveriesInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
@@ -24980,6 +25655,7 @@ export type WorkspaceUpdateWithoutEsigningEmailDeliveriesInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
@@ -25089,6 +25765,7 @@ export type WorkspaceUncheckedUpdateWithoutEsigningEmailDeliveriesInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
@@ -25197,6 +25874,7 @@ export type WorkspaceCreateWithoutExchangeRatesInput = {
   documents?: Prisma.DocumentCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
@@ -25306,6 +25984,7 @@ export type WorkspaceUncheckedCreateWithoutExchangeRatesInput = {
   documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
@@ -25431,6 +26110,7 @@ export type WorkspaceUpdateWithoutExchangeRatesInput = {
   documents?: Prisma.DocumentUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
@@ -25540,6 +26220,7 @@ export type WorkspaceUncheckedUpdateWithoutExchangeRatesInput = {
   documents?: Prisma.DocumentUncheckedUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
@@ -25650,6 +26331,7 @@ export type WorkspaceCreateWithoutFormsInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
@@ -25759,6 +26441,7 @@ export type WorkspaceUncheckedCreateWithoutFormsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
@@ -25884,6 +26567,7 @@ export type WorkspaceUpdateWithoutFormsInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
@@ -25993,6 +26677,7 @@ export type WorkspaceUncheckedUpdateWithoutFormsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
@@ -26101,6 +26786,7 @@ export type WorkspaceCreateWithoutFormFieldsInput = {
   documents?: Prisma.DocumentCreateNestedManyWithoutTenantInput
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
@@ -26210,6 +26896,7 @@ export type WorkspaceUncheckedCreateWithoutFormFieldsInput = {
   documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutTenantInput
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
@@ -26335,6 +27022,7 @@ export type WorkspaceUpdateWithoutFormFieldsInput = {
   documents?: Prisma.DocumentUpdateManyWithoutTenantNestedInput
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
@@ -26444,6 +27132,7 @@ export type WorkspaceUncheckedUpdateWithoutFormFieldsInput = {
   documents?: Prisma.DocumentUncheckedUpdateManyWithoutTenantNestedInput
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
@@ -26553,6 +27242,7 @@ export type WorkspaceCreateWithoutFormOptionPresetsInput = {
   documents?: Prisma.DocumentCreateNestedManyWithoutTenantInput
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
@@ -26662,6 +27352,7 @@ export type WorkspaceUncheckedCreateWithoutFormOptionPresetsInput = {
   documents?: Prisma.DocumentUncheckedCreateNestedManyWithoutTenantInput
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
@@ -26787,6 +27478,7 @@ export type WorkspaceUpdateWithoutFormOptionPresetsInput = {
   documents?: Prisma.DocumentUpdateManyWithoutTenantNestedInput
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
@@ -26896,6 +27588,7 @@ export type WorkspaceUncheckedUpdateWithoutFormOptionPresetsInput = {
   documents?: Prisma.DocumentUncheckedUpdateManyWithoutTenantNestedInput
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
@@ -27006,6 +27699,7 @@ export type WorkspaceCreateWithoutFormUrlHealthInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
   formUploads?: Prisma.FormUploadCreateNestedManyWithoutTenantInput
@@ -27115,6 +27809,7 @@ export type WorkspaceUncheckedCreateWithoutFormUrlHealthInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
   formUploads?: Prisma.FormUploadUncheckedCreateNestedManyWithoutTenantInput
@@ -27240,6 +27935,7 @@ export type WorkspaceUpdateWithoutFormUrlHealthInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
   formUploads?: Prisma.FormUploadUpdateManyWithoutTenantNestedInput
@@ -27349,6 +28045,7 @@ export type WorkspaceUncheckedUpdateWithoutFormUrlHealthInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
   formUploads?: Prisma.FormUploadUncheckedUpdateManyWithoutTenantNestedInput
@@ -27458,6 +28155,7 @@ export type WorkspaceCreateWithoutFormSubmissionsInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
   formUploads?: Prisma.FormUploadCreateNestedManyWithoutTenantInput
@@ -27567,6 +28265,7 @@ export type WorkspaceUncheckedCreateWithoutFormSubmissionsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
   formUploads?: Prisma.FormUploadUncheckedCreateNestedManyWithoutTenantInput
@@ -27692,6 +28391,7 @@ export type WorkspaceUpdateWithoutFormSubmissionsInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
   formUploads?: Prisma.FormUploadUpdateManyWithoutTenantNestedInput
@@ -27801,6 +28501,7 @@ export type WorkspaceUncheckedUpdateWithoutFormSubmissionsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
   formUploads?: Prisma.FormUploadUncheckedUpdateManyWithoutTenantNestedInput
@@ -27910,6 +28611,7 @@ export type WorkspaceCreateWithoutFormDraftsInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
   formUploads?: Prisma.FormUploadCreateNestedManyWithoutTenantInput
@@ -28019,6 +28721,7 @@ export type WorkspaceUncheckedCreateWithoutFormDraftsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
   formUploads?: Prisma.FormUploadUncheckedCreateNestedManyWithoutTenantInput
@@ -28144,6 +28847,7 @@ export type WorkspaceUpdateWithoutFormDraftsInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
   formUploads?: Prisma.FormUploadUpdateManyWithoutTenantNestedInput
@@ -28253,6 +28957,7 @@ export type WorkspaceUncheckedUpdateWithoutFormDraftsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
   formUploads?: Prisma.FormUploadUncheckedUpdateManyWithoutTenantNestedInput
@@ -28362,6 +29067,7 @@ export type WorkspaceCreateWithoutFormUploadsInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
@@ -28471,6 +29177,7 @@ export type WorkspaceUncheckedCreateWithoutFormUploadsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
@@ -28596,6 +29303,7 @@ export type WorkspaceUpdateWithoutFormUploadsInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
@@ -28705,6 +29413,7 @@ export type WorkspaceUncheckedUpdateWithoutFormUploadsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
@@ -28814,6 +29523,7 @@ export type WorkspaceCreateWithoutContactFormLinksInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
@@ -28923,6 +29633,7 @@ export type WorkspaceUncheckedCreateWithoutContactFormLinksInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
@@ -29048,6 +29759,7 @@ export type WorkspaceUpdateWithoutContactFormLinksInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
@@ -29157,6 +29869,7 @@ export type WorkspaceUncheckedUpdateWithoutContactFormLinksInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
@@ -29266,6 +29979,7 @@ export type WorkspaceCreateWithoutBackupsInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
@@ -29375,6 +30089,7 @@ export type WorkspaceUncheckedCreateWithoutBackupsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
@@ -29500,6 +30215,7 @@ export type WorkspaceUpdateWithoutBackupsInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
@@ -29609,6 +30325,7 @@ export type WorkspaceUncheckedUpdateWithoutBackupsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
@@ -29717,6 +30434,7 @@ export type WorkspaceCreateWithoutBackupScheduleInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
@@ -29826,6 +30544,7 @@ export type WorkspaceUncheckedCreateWithoutBackupScheduleInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
@@ -29951,6 +30670,7 @@ export type WorkspaceUpdateWithoutBackupScheduleInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
@@ -30060,6 +30780,7 @@ export type WorkspaceUncheckedUpdateWithoutBackupScheduleInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
@@ -30169,6 +30890,7 @@ export type WorkspaceCreateWithoutChartOfAccountsInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
@@ -30278,6 +31000,7 @@ export type WorkspaceUncheckedCreateWithoutChartOfAccountsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
@@ -30403,6 +31126,7 @@ export type WorkspaceUpdateWithoutChartOfAccountsInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
@@ -30512,6 +31236,7 @@ export type WorkspaceUncheckedUpdateWithoutChartOfAccountsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
@@ -30622,6 +31347,7 @@ export type WorkspaceCreateWithoutTaskPipelinesInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
@@ -30731,6 +31457,7 @@ export type WorkspaceUncheckedCreateWithoutTaskPipelinesInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
@@ -30856,6 +31583,7 @@ export type WorkspaceUpdateWithoutTaskPipelinesInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
@@ -30965,6 +31693,7 @@ export type WorkspaceUncheckedUpdateWithoutTaskPipelinesInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
@@ -31074,6 +31803,7 @@ export type WorkspaceCreateWithoutTaskPipelineVersionsInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
@@ -31183,6 +31913,7 @@ export type WorkspaceUncheckedCreateWithoutTaskPipelineVersionsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
@@ -31308,6 +32039,7 @@ export type WorkspaceUpdateWithoutTaskPipelineVersionsInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
@@ -31417,6 +32149,7 @@ export type WorkspaceUncheckedUpdateWithoutTaskPipelineVersionsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
@@ -31526,6 +32259,7 @@ export type WorkspaceCreateWithoutTaskPipelineStagesInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
@@ -31635,6 +32369,7 @@ export type WorkspaceUncheckedCreateWithoutTaskPipelineStagesInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
@@ -31760,6 +32495,7 @@ export type WorkspaceUpdateWithoutTaskPipelineStagesInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
@@ -31869,6 +32605,7 @@ export type WorkspaceUncheckedUpdateWithoutTaskPipelineStagesInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
@@ -31978,6 +32715,7 @@ export type WorkspaceCreateWithoutTasksInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
@@ -32087,6 +32825,7 @@ export type WorkspaceUncheckedCreateWithoutTasksInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
@@ -32212,6 +32951,7 @@ export type WorkspaceUpdateWithoutTasksInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
@@ -32321,6 +33061,7 @@ export type WorkspaceUncheckedUpdateWithoutTasksInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
@@ -32430,6 +33171,7 @@ export type WorkspaceCreateWithoutTaskStagesInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
@@ -32539,6 +33281,7 @@ export type WorkspaceUncheckedCreateWithoutTaskStagesInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
@@ -32664,6 +33407,7 @@ export type WorkspaceUpdateWithoutTaskStagesInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
@@ -32773,6 +33517,7 @@ export type WorkspaceUncheckedUpdateWithoutTaskStagesInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
@@ -32882,6 +33627,7 @@ export type WorkspaceCreateWithoutTaskStageChecklistItemsInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
@@ -32991,6 +33737,7 @@ export type WorkspaceUncheckedCreateWithoutTaskStageChecklistItemsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
@@ -33116,6 +33863,7 @@ export type WorkspaceUpdateWithoutTaskStageChecklistItemsInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
@@ -33225,6 +33973,7 @@ export type WorkspaceUncheckedUpdateWithoutTaskStageChecklistItemsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
@@ -33334,6 +34083,7 @@ export type WorkspaceCreateWithoutTaskStageOutcomesInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
@@ -33443,6 +34193,7 @@ export type WorkspaceUncheckedCreateWithoutTaskStageOutcomesInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
@@ -33568,6 +34319,7 @@ export type WorkspaceUpdateWithoutTaskStageOutcomesInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
@@ -33677,6 +34429,7 @@ export type WorkspaceUncheckedUpdateWithoutTaskStageOutcomesInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
@@ -33786,6 +34539,7 @@ export type WorkspaceCreateWithoutTaskEsigningPreparationsInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
@@ -33895,6 +34649,7 @@ export type WorkspaceUncheckedCreateWithoutTaskEsigningPreparationsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
@@ -34020,6 +34775,7 @@ export type WorkspaceUpdateWithoutTaskEsigningPreparationsInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
@@ -34129,6 +34885,7 @@ export type WorkspaceUncheckedUpdateWithoutTaskEsigningPreparationsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
@@ -34238,6 +34995,7 @@ export type WorkspaceCreateWithoutTaskCompanyRecoveryContextsInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
@@ -34347,6 +35105,7 @@ export type WorkspaceUncheckedCreateWithoutTaskCompanyRecoveryContextsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
@@ -34472,6 +35231,7 @@ export type WorkspaceUpdateWithoutTaskCompanyRecoveryContextsInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
@@ -34581,6 +35341,7 @@ export type WorkspaceUncheckedUpdateWithoutTaskCompanyRecoveryContextsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
@@ -34690,6 +35451,7 @@ export type WorkspaceCreateWithoutBusinessAssistantConversationsInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
@@ -34799,6 +35561,7 @@ export type WorkspaceUncheckedCreateWithoutBusinessAssistantConversationsInput =
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
@@ -34924,6 +35687,7 @@ export type WorkspaceUpdateWithoutBusinessAssistantConversationsInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
@@ -35033,6 +35797,7 @@ export type WorkspaceUncheckedUpdateWithoutBusinessAssistantConversationsInput =
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
@@ -35142,6 +35907,7 @@ export type WorkspaceCreateWithoutBusinessAssistantMessagesInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
@@ -35251,6 +36017,7 @@ export type WorkspaceUncheckedCreateWithoutBusinessAssistantMessagesInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
@@ -35376,6 +36143,7 @@ export type WorkspaceUpdateWithoutBusinessAssistantMessagesInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
@@ -35485,6 +36253,7 @@ export type WorkspaceUncheckedUpdateWithoutBusinessAssistantMessagesInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
@@ -35594,6 +36363,7 @@ export type WorkspaceCreateWithoutBusinessAssistantRunsInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
@@ -35703,6 +36473,7 @@ export type WorkspaceUncheckedCreateWithoutBusinessAssistantRunsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
@@ -35828,6 +36599,7 @@ export type WorkspaceUpdateWithoutBusinessAssistantRunsInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
@@ -35937,6 +36709,7 @@ export type WorkspaceUncheckedUpdateWithoutBusinessAssistantRunsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
@@ -36046,6 +36819,7 @@ export type WorkspaceCreateWithoutBusinessAssistantRunItemsInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
@@ -36155,6 +36929,7 @@ export type WorkspaceUncheckedCreateWithoutBusinessAssistantRunItemsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
@@ -36280,6 +37055,7 @@ export type WorkspaceUpdateWithoutBusinessAssistantRunItemsInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
@@ -36389,6 +37165,7 @@ export type WorkspaceUncheckedUpdateWithoutBusinessAssistantRunItemsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
@@ -36498,6 +37275,7 @@ export type WorkspaceCreateWithoutBusinessAssistantRunStepsInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
@@ -36607,6 +37385,7 @@ export type WorkspaceUncheckedCreateWithoutBusinessAssistantRunStepsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
@@ -36732,6 +37511,7 @@ export type WorkspaceUpdateWithoutBusinessAssistantRunStepsInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
@@ -36841,6 +37621,7 @@ export type WorkspaceUncheckedUpdateWithoutBusinessAssistantRunStepsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
@@ -36950,6 +37731,7 @@ export type WorkspaceCreateWithoutBusinessAssistantProposalsInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
@@ -37059,6 +37841,7 @@ export type WorkspaceUncheckedCreateWithoutBusinessAssistantProposalsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
@@ -37184,6 +37967,7 @@ export type WorkspaceUpdateWithoutBusinessAssistantProposalsInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
@@ -37293,6 +38077,7 @@ export type WorkspaceUncheckedUpdateWithoutBusinessAssistantProposalsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
@@ -37402,6 +38187,7 @@ export type WorkspaceCreateWithoutBusinessAssistantApprovalsInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
@@ -37511,6 +38297,7 @@ export type WorkspaceUncheckedCreateWithoutBusinessAssistantApprovalsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
@@ -37636,6 +38423,7 @@ export type WorkspaceUpdateWithoutBusinessAssistantApprovalsInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
@@ -37745,6 +38533,7 @@ export type WorkspaceUncheckedUpdateWithoutBusinessAssistantApprovalsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
@@ -37854,6 +38643,7 @@ export type WorkspaceCreateWithoutBusinessAssistantReviewsInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
@@ -37963,6 +38753,7 @@ export type WorkspaceUncheckedCreateWithoutBusinessAssistantReviewsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
@@ -38088,6 +38879,7 @@ export type WorkspaceUpdateWithoutBusinessAssistantReviewsInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
@@ -38197,6 +38989,7 @@ export type WorkspaceUncheckedUpdateWithoutBusinessAssistantReviewsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
@@ -38306,6 +39099,7 @@ export type WorkspaceCreateWithoutBusinessAssistantFeedbackInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
@@ -38415,6 +39209,7 @@ export type WorkspaceUncheckedCreateWithoutBusinessAssistantFeedbackInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
@@ -38540,6 +39335,7 @@ export type WorkspaceUpdateWithoutBusinessAssistantFeedbackInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
@@ -38649,6 +39445,7 @@ export type WorkspaceUncheckedUpdateWithoutBusinessAssistantFeedbackInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
@@ -38758,6 +39555,7 @@ export type WorkspaceCreateWithoutBusinessAssistantMemoriesInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
@@ -38867,6 +39665,7 @@ export type WorkspaceUncheckedCreateWithoutBusinessAssistantMemoriesInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
@@ -38992,6 +39791,7 @@ export type WorkspaceUpdateWithoutBusinessAssistantMemoriesInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
@@ -39101,6 +39901,7 @@ export type WorkspaceUncheckedUpdateWithoutBusinessAssistantMemoriesInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
@@ -39210,6 +40011,7 @@ export type WorkspaceCreateWithoutBusinessAssistantLearningChangesInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
@@ -39319,6 +40121,7 @@ export type WorkspaceUncheckedCreateWithoutBusinessAssistantLearningChangesInput
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
@@ -39444,6 +40247,7 @@ export type WorkspaceUpdateWithoutBusinessAssistantLearningChangesInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
@@ -39553,6 +40357,7 @@ export type WorkspaceUncheckedUpdateWithoutBusinessAssistantLearningChangesInput
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
@@ -39662,6 +40467,7 @@ export type WorkspaceCreateWithoutBusinessAssistantLearningTargetsInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
@@ -39771,6 +40577,7 @@ export type WorkspaceUncheckedCreateWithoutBusinessAssistantLearningTargetsInput
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
@@ -39896,6 +40703,7 @@ export type WorkspaceUpdateWithoutBusinessAssistantLearningTargetsInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
@@ -40005,6 +40813,7 @@ export type WorkspaceUncheckedUpdateWithoutBusinessAssistantLearningTargetsInput
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
@@ -40114,6 +40923,7 @@ export type WorkspaceCreateWithoutBusinessAssistantActionRequestsInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
@@ -40223,6 +41033,7 @@ export type WorkspaceUncheckedCreateWithoutBusinessAssistantActionRequestsInput 
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
@@ -40348,6 +41159,7 @@ export type WorkspaceUpdateWithoutBusinessAssistantActionRequestsInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
@@ -40457,6 +41269,7 @@ export type WorkspaceUncheckedUpdateWithoutBusinessAssistantActionRequestsInput 
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
@@ -40566,6 +41379,7 @@ export type WorkspaceCreateWithoutBizFileOperationReceiptsInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
@@ -40675,6 +41489,7 @@ export type WorkspaceUncheckedCreateWithoutBizFileOperationReceiptsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
@@ -40800,6 +41615,7 @@ export type WorkspaceUpdateWithoutBizFileOperationReceiptsInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
@@ -40909,6 +41725,7 @@ export type WorkspaceUncheckedUpdateWithoutBizFileOperationReceiptsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
@@ -41018,6 +41835,7 @@ export type WorkspaceCreateWithoutBizFileOperationEvidenceInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
@@ -41127,6 +41945,7 @@ export type WorkspaceUncheckedCreateWithoutBizFileOperationEvidenceInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
@@ -41252,6 +42071,7 @@ export type WorkspaceUpdateWithoutBizFileOperationEvidenceInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
@@ -41361,6 +42181,7 @@ export type WorkspaceUncheckedUpdateWithoutBizFileOperationEvidenceInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
@@ -41470,6 +42291,7 @@ export type WorkspaceCreateWithoutBizFileOperationEffectsInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
@@ -41579,6 +42401,7 @@ export type WorkspaceUncheckedCreateWithoutBizFileOperationEffectsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
@@ -41704,6 +42527,7 @@ export type WorkspaceUpdateWithoutBizFileOperationEffectsInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
@@ -41813,6 +42637,7 @@ export type WorkspaceUncheckedUpdateWithoutBizFileOperationEffectsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
@@ -41922,6 +42747,7 @@ export type WorkspaceCreateWithoutSentrowebCheckRunsInput = {
   exchangeRates?: Prisma.ExchangeRateCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionCreateNestedManyWithoutTenantInput
@@ -42031,6 +42857,7 @@ export type WorkspaceUncheckedCreateWithoutSentrowebCheckRunsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedCreateNestedManyWithoutTenantInput
   formFields?: Prisma.FormFieldUncheckedCreateNestedManyWithoutTenantInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedCreateNestedManyWithoutTenantInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedCreateNestedManyWithoutTenantInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedCreateNestedManyWithoutTenantInput
   formDrafts?: Prisma.FormDraftUncheckedCreateNestedManyWithoutTenantInput
   formSubmissions?: Prisma.FormSubmissionUncheckedCreateNestedManyWithoutTenantInput
@@ -42156,6 +42983,7 @@ export type WorkspaceUpdateWithoutSentrowebCheckRunsInput = {
   exchangeRates?: Prisma.ExchangeRateUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUpdateManyWithoutTenantNestedInput
@@ -42265,6 +43093,7 @@ export type WorkspaceUncheckedUpdateWithoutSentrowebCheckRunsInput = {
   exchangeRates?: Prisma.ExchangeRateUncheckedUpdateManyWithoutTenantNestedInput
   formFields?: Prisma.FormFieldUncheckedUpdateManyWithoutTenantNestedInput
   formOptionPresets?: Prisma.FormOptionPresetUncheckedUpdateManyWithoutTenantNestedInput
+  documentTemplatePresets?: Prisma.DocumentTemplatePresetUncheckedUpdateManyWithoutTenantNestedInput
   formUrlHealth?: Prisma.FormUrlHealthUncheckedUpdateManyWithoutTenantNestedInput
   formDrafts?: Prisma.FormDraftUncheckedUpdateManyWithoutTenantNestedInput
   formSubmissions?: Prisma.FormSubmissionUncheckedUpdateManyWithoutTenantNestedInput
@@ -42359,6 +43188,7 @@ export type WorkspaceCountOutputType = {
   exchangeRates: number
   formFields: number
   formOptionPresets: number
+  documentTemplatePresets: number
   formUrlHealth: number
   formDrafts: number
   formSubmissions: number
@@ -42448,6 +43278,7 @@ export type WorkspaceCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensi
   exchangeRates?: boolean | WorkspaceCountOutputTypeCountExchangeRatesArgs
   formFields?: boolean | WorkspaceCountOutputTypeCountFormFieldsArgs
   formOptionPresets?: boolean | WorkspaceCountOutputTypeCountFormOptionPresetsArgs
+  documentTemplatePresets?: boolean | WorkspaceCountOutputTypeCountDocumentTemplatePresetsArgs
   formUrlHealth?: boolean | WorkspaceCountOutputTypeCountFormUrlHealthArgs
   formDrafts?: boolean | WorkspaceCountOutputTypeCountFormDraftsArgs
   formSubmissions?: boolean | WorkspaceCountOutputTypeCountFormSubmissionsArgs
@@ -42628,6 +43459,13 @@ export type WorkspaceCountOutputTypeCountFormFieldsArgs<ExtArgs extends runtime.
  */
 export type WorkspaceCountOutputTypeCountFormOptionPresetsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.FormOptionPresetWhereInput
+}
+
+/**
+ * WorkspaceCountOutputType without action
+ */
+export type WorkspaceCountOutputTypeCountDocumentTemplatePresetsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.DocumentTemplatePresetWhereInput
 }
 
 /**
@@ -43170,6 +44008,7 @@ export type WorkspaceSelect<ExtArgs extends runtime.Types.Extensions.InternalArg
   exchangeRates?: boolean | Prisma.Workspace$exchangeRatesArgs<ExtArgs>
   formFields?: boolean | Prisma.Workspace$formFieldsArgs<ExtArgs>
   formOptionPresets?: boolean | Prisma.Workspace$formOptionPresetsArgs<ExtArgs>
+  documentTemplatePresets?: boolean | Prisma.Workspace$documentTemplatePresetsArgs<ExtArgs>
   formUrlHealth?: boolean | Prisma.Workspace$formUrlHealthArgs<ExtArgs>
   formDrafts?: boolean | Prisma.Workspace$formDraftsArgs<ExtArgs>
   formSubmissions?: boolean | Prisma.Workspace$formSubmissionsArgs<ExtArgs>
@@ -43329,6 +44168,7 @@ export type WorkspaceInclude<ExtArgs extends runtime.Types.Extensions.InternalAr
   exchangeRates?: boolean | Prisma.Workspace$exchangeRatesArgs<ExtArgs>
   formFields?: boolean | Prisma.Workspace$formFieldsArgs<ExtArgs>
   formOptionPresets?: boolean | Prisma.Workspace$formOptionPresetsArgs<ExtArgs>
+  documentTemplatePresets?: boolean | Prisma.Workspace$documentTemplatePresetsArgs<ExtArgs>
   formUrlHealth?: boolean | Prisma.Workspace$formUrlHealthArgs<ExtArgs>
   formDrafts?: boolean | Prisma.Workspace$formDraftsArgs<ExtArgs>
   formSubmissions?: boolean | Prisma.Workspace$formSubmissionsArgs<ExtArgs>
@@ -43425,6 +44265,7 @@ export type $WorkspacePayload<ExtArgs extends runtime.Types.Extensions.InternalA
     exchangeRates: Prisma.$ExchangeRatePayload<ExtArgs>[]
     formFields: Prisma.$FormFieldPayload<ExtArgs>[]
     formOptionPresets: Prisma.$FormOptionPresetPayload<ExtArgs>[]
+    documentTemplatePresets: Prisma.$DocumentTemplatePresetPayload<ExtArgs>[]
     formUrlHealth: Prisma.$FormUrlHealthPayload<ExtArgs>[]
     formDrafts: Prisma.$FormDraftPayload<ExtArgs>[]
     formSubmissions: Prisma.$FormSubmissionPayload<ExtArgs>[]
@@ -43928,6 +44769,7 @@ export interface Prisma__WorkspaceClient<T, Null = never, ExtArgs extends runtim
   exchangeRates<T extends Prisma.Workspace$exchangeRatesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Workspace$exchangeRatesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ExchangeRatePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   formFields<T extends Prisma.Workspace$formFieldsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Workspace$formFieldsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$FormFieldPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   formOptionPresets<T extends Prisma.Workspace$formOptionPresetsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Workspace$formOptionPresetsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$FormOptionPresetPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  documentTemplatePresets<T extends Prisma.Workspace$documentTemplatePresetsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Workspace$documentTemplatePresetsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DocumentTemplatePresetPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   formUrlHealth<T extends Prisma.Workspace$formUrlHealthArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Workspace$formUrlHealthArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$FormUrlHealthPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   formDrafts<T extends Prisma.Workspace$formDraftsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Workspace$formDraftsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$FormDraftPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   formSubmissions<T extends Prisma.Workspace$formSubmissionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Workspace$formSubmissionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$FormSubmissionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
@@ -44794,6 +45636,30 @@ export type Workspace$formOptionPresetsArgs<ExtArgs extends runtime.Types.Extens
   take?: number
   skip?: number
   distinct?: Prisma.FormOptionPresetScalarFieldEnum | Prisma.FormOptionPresetScalarFieldEnum[]
+}
+
+/**
+ * Workspace.documentTemplatePresets
+ */
+export type Workspace$documentTemplatePresetsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the DocumentTemplatePreset
+   */
+  select?: Prisma.DocumentTemplatePresetSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the DocumentTemplatePreset
+   */
+  omit?: Prisma.DocumentTemplatePresetOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.DocumentTemplatePresetInclude<ExtArgs> | null
+  where?: Prisma.DocumentTemplatePresetWhereInput
+  orderBy?: Prisma.DocumentTemplatePresetOrderByWithRelationInput | Prisma.DocumentTemplatePresetOrderByWithRelationInput[]
+  cursor?: Prisma.DocumentTemplatePresetWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.DocumentTemplatePresetScalarFieldEnum | Prisma.DocumentTemplatePresetScalarFieldEnum[]
 }
 
 /**

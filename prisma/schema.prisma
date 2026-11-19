@@ -42,6 +42,7 @@ model Workspace {
   exchangeRates                    ExchangeRate[]
   formFields                       FormField[]
   formOptionPresets                FormOptionPreset[]
+  documentTemplatePresets          DocumentTemplatePreset[]
   formUrlHealth                    FormUrlHealth[]
   formDrafts                       FormDraft[]
   formSubmissions                  FormSubmission[]
@@ -921,12 +922,47 @@ model DocumentTemplate {
   generatedDocuments   GeneratedDocument[]
   generationBatchItems DocumentGenerationBatchItem[]
   sharePointFilings   EsigningSharePointFiling[]
+  presetItems          DocumentTemplatePresetItem[]
 
   @@index([tenantId])
   @@index([category])
   @@index([isActive])
   @@index([tenantId, deletedAt])
   @@map("document_templates")
+}
+
+/// A named, ordered set of Word templates shared by a workspace. It only fills
+/// the Documents selection of a generation batch; generation is unchanged.
+model DocumentTemplatePreset {
+  id             String                       @id @default(uuid())
+  tenantId       String                       @map("tenant_id")
+  name           String                       @db.VarChar(100)
+  /// Lower-cased, whitespace-collapsed name: one preset per name per workspace.
+  normalizedName String                       @map("normalized_name") @db.VarChar(100)
+  createdById    String?                      @map("created_by_id")
+  updatedById    String?                      @map("updated_by_id")
+  createdAt      DateTime                     @default(now()) @map("created_at")
+  updatedAt      DateTime                     @updatedAt @map("updated_at")
+  tenant         Workspace                    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  items          DocumentTemplatePresetItem[]
+
+  @@unique([tenantId, normalizedName])
+  @@index([tenantId, updatedAt])
+  @@map("document_template_presets")
+}
+
+/// One member of a preset. The same template may appear more than once.
+model DocumentTemplatePresetItem {
+  id           String                 @id @default(uuid())
+  presetId     String                 @map("preset_id")
+  templateId   String                 @map("template_id")
+  displayOrder Int                    @map("display_order")
+  preset       DocumentTemplatePreset @relation(fields: [presetId], references: [id], onDelete: Cascade)
+  template     DocumentTemplate       @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@unique([presetId, displayOrder])
+  @@index([templateId])
+  @@map("document_template_preset_items")
 }
 
 model GeneratedDocument {
@@ -4195,6 +4231,9 @@ enum AuditAction {
   DOCUMENT_TEMPLATE_UPDATED
   DOCUMENT_TEMPLATE_DELETED
   DOCUMENT_TEMPLATE_DUPLICATED
+  DOCUMENT_TEMPLATE_PRESET_CREATED
+  DOCUMENT_TEMPLATE_PRESET_UPDATED
+  DOCUMENT_TEMPLATE_PRESET_DELETED
   DOCUMENT_GENERATED
   DOCUMENT_FINALIZED
   DOCUMENT_UNFINALIZED

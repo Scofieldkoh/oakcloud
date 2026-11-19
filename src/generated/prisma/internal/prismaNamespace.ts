@@ -426,6 +426,8 @@ export const ModelName = {
   ConnectorModelConfig: 'ConnectorModelConfig',
   NoteTab: 'NoteTab',
   DocumentTemplate: 'DocumentTemplate',
+  DocumentTemplatePreset: 'DocumentTemplatePreset',
+  DocumentTemplatePresetItem: 'DocumentTemplatePresetItem',
   GeneratedDocument: 'GeneratedDocument',
   DocumentGenerationBatch: 'DocumentGenerationBatch',
   DocumentGenerationBatchItem: 'DocumentGenerationBatchItem',
@@ -568,7 +570,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "workspace" | "role" | "permission" | "rolePermission" | "userRoleAssignment" | "user" | "userPreference" | "performanceMeasurement" | "userCompanyAssignment" | "company" | "companySharePointFolder" | "companyFormerName" | "companyAddress" | "contact" | "companyContact" | "contactDetail" | "companyOfficer" | "shareCapital" | "companyAuditor" | "companyShareholder" | "companyCharge" | "document" | "auditLog" | "connector" | "workspaceConnectorAccess" | "connectorUsageLog" | "connectorModelConfig" | "noteTab" | "documentTemplate" | "generatedDocument" | "documentGenerationBatch" | "documentGenerationBatchItem" | "documentSection" | "workspaceLetterhead" | "documentComment" | "documentDraft" | "templatePartial" | "serviceFamily" | "serviceVariant" | "serviceVariantFeeTemplate" | "serviceAgreement" | "serviceAgreementEntity" | "serviceAgreementItem" | "serviceAgreementItemEntity" | "serviceAgreementFeeLine" | "clientService" | "clientServiceFeeLine" | "billingOccurrence" | "billingCoverageIssue" | "deadlineRule" | "deadlineRuleVersion" | "deadlineRuleParameterDefinition" | "deadlineMilestoneTemplate" | "serviceVariantDeadlineRule" | "clientServiceDeadlineRule" | "businessCalendar" | "businessHoliday" | "publicHolidaySourceRecord" | "publicHolidaySyncState" | "serviceCycle" | "deadlineOccurrence" | "companyFinancialPeriod" | "companyMonitoringCoverage" | "clientServiceObligationScope" | "deadlineOccurrenceCoverageLink" | "deadlineResponsibilityChange" | "companyComplianceIssue" | "serviceScheduleReconciliationRequest" | "aiConversation" | "esigningEnvelope" | "esigningEnvelopeDocument" | "esigningIssuedArtifact" | "esigningSharePointFiling" | "esigningEnvelopeRecipient" | "esigningDocumentFieldDefinition" | "esigningDocumentFieldValue" | "esigningEnvelopeEvent" | "esigningEmailDelivery" | "esigningEmailDeliveryAttempt" | "processingDocument" | "documentLink" | "documentTag" | "processingDocumentTag" | "documentPage" | "documentExtraction" | "documentRevision" | "documentRevisionLineItem" | "vendorAlias" | "customerAlias" | "contactDuplicateDecision" | "contactMergeOperation" | "duplicateDecision" | "processingAttempt" | "processingCheckpoint" | "splitPlan" | "documentStateEvent" | "documentDerivedFile" | "idempotencyRecord" | "webhookSubscription" | "exchangeRate" | "bankAccount" | "bankTransaction" | "matchGroup" | "matchGroupItem" | "reconciliationPeriod" | "form" | "formField" | "formOptionPreset" | "formUrlHealth" | "formSubmission" | "formDraft" | "formUpload" | "contactFormLink" | "contactFormSuggestionDismissal" | "clientPortalUser" | "clientRequest" | "communication" | "accountingIntegration" | "externalPosting" | "fieldMapping" | "workspaceBackup" | "backupSchedule" | "systemBackup" | "backupSettings" | "chartOfAccount" | "chartOfAccountsMapping" | "taskPipeline" | "taskPipelineVersion" | "taskPipelineStage" | "task" | "taskStage" | "taskStageChecklistItem" | "taskStageOutcome" | "taskEsigningPreparation" | "taskCompanyRecoveryContext" | "acraEntity" | "acraSyncState" | "businessAssistantConversation" | "businessAssistantMessage" | "businessAssistantRun" | "businessAssistantRunItem" | "businessAssistantRunStep" | "businessAssistantProposal" | "businessAssistantApproval" | "businessAssistantReview" | "businessAssistantFeedback" | "businessAssistantMemory" | "businessAssistantLearningChange" | "businessAssistantLearningActiveTarget" | "businessAssistantActionRequest" | "businessAssistantCapacitySlot" | "bizFileOperationReceipt" | "bizFileOperationEvidence" | "bizFileOperationEffectIntent" | "sentrowebCheckRun" | "sentrowebCheckResult"
+    modelProps: "workspace" | "role" | "permission" | "rolePermission" | "userRoleAssignment" | "user" | "userPreference" | "performanceMeasurement" | "userCompanyAssignment" | "company" | "companySharePointFolder" | "companyFormerName" | "companyAddress" | "contact" | "companyContact" | "contactDetail" | "companyOfficer" | "shareCapital" | "companyAuditor" | "companyShareholder" | "companyCharge" | "document" | "auditLog" | "connector" | "workspaceConnectorAccess" | "connectorUsageLog" | "connectorModelConfig" | "noteTab" | "documentTemplate" | "documentTemplatePreset" | "documentTemplatePresetItem" | "generatedDocument" | "documentGenerationBatch" | "documentGenerationBatchItem" | "documentSection" | "workspaceLetterhead" | "documentComment" | "documentDraft" | "templatePartial" | "serviceFamily" | "serviceVariant" | "serviceVariantFeeTemplate" | "serviceAgreement" | "serviceAgreementEntity" | "serviceAgreementItem" | "serviceAgreementItemEntity" | "serviceAgreementFeeLine" | "clientService" | "clientServiceFeeLine" | "billingOccurrence" | "billingCoverageIssue" | "deadlineRule" | "deadlineRuleVersion" | "deadlineRuleParameterDefinition" | "deadlineMilestoneTemplate" | "serviceVariantDeadlineRule" | "clientServiceDeadlineRule" | "businessCalendar" | "businessHoliday" | "publicHolidaySourceRecord" | "publicHolidaySyncState" | "serviceCycle" | "deadlineOccurrence" | "companyFinancialPeriod" | "companyMonitoringCoverage" | "clientServiceObligationScope" | "deadlineOccurrenceCoverageLink" | "deadlineResponsibilityChange" | "companyComplianceIssue" | "serviceScheduleReconciliationRequest" | "aiConversation" | "esigningEnvelope" | "esigningEnvelopeDocument" | "esigningIssuedArtifact" | "esigningSharePointFiling" | "esigningEnvelopeRecipient" | "esigningDocumentFieldDefinition" | "esigningDocumentFieldValue" | "esigningEnvelopeEvent" | "esigningEmailDelivery" | "esigningEmailDeliveryAttempt" | "processingDocument" | "documentLink" | "documentTag" | "processingDocumentTag" | "documentPage" | "documentExtraction" | "documentRevision" | "documentRevisionLineItem" | "vendorAlias" | "customerAlias" | "contactDuplicateDecision" | "contactMergeOperation" | "duplicateDecision" | "processingAttempt" | "processingCheckpoint" | "splitPlan" | "documentStateEvent" | "documentDerivedFile" | "idempotencyRecord" | "webhookSubscription" | "exchangeRate" | "bankAccount" | "bankTransaction" | "matchGroup" | "matchGroupItem" | "reconciliationPeriod" | "form" | "formField" | "formOptionPreset" | "formUrlHealth" | "formSubmission" | "formDraft" | "formUpload" | "contactFormLink" | "contactFormSuggestionDismissal" | "clientPortalUser" | "clientRequest" | "communication" | "accountingIntegration" | "externalPosting" | "fieldMapping" | "workspaceBackup" | "backupSchedule" | "systemBackup" | "backupSettings" | "chartOfAccount" | "chartOfAccountsMapping" | "taskPipeline" | "taskPipelineVersion" | "taskPipelineStage" | "task" | "taskStage" | "taskStageChecklistItem" | "taskStageOutcome" | "taskEsigningPreparation" | "taskCompanyRecoveryContext" | "acraEntity" | "acraSyncState" | "businessAssistantConversation" | "businessAssistantMessage" | "businessAssistantRun" | "businessAssistantRunItem" | "businessAssistantRunStep" | "businessAssistantProposal" | "businessAssistantApproval" | "businessAssistantReview" | "businessAssistantFeedback" | "businessAssistantMemory" | "businessAssistantLearningChange" | "businessAssistantLearningActiveTarget" | "businessAssistantActionRequest" | "businessAssistantCapacitySlot" | "bizFileOperationReceipt" | "bizFileOperationEvidence" | "bizFileOperationEffectIntent" | "sentrowebCheckRun" | "sentrowebCheckResult"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -2715,6 +2717,154 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.DocumentTemplateCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.DocumentTemplateCountAggregateOutputType> | number
+        }
+      }
+    }
+    DocumentTemplatePreset: {
+      payload: Prisma.$DocumentTemplatePresetPayload<ExtArgs>
+      fields: Prisma.DocumentTemplatePresetFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.DocumentTemplatePresetFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentTemplatePresetPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.DocumentTemplatePresetFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentTemplatePresetPayload>
+        }
+        findFirst: {
+          args: Prisma.DocumentTemplatePresetFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentTemplatePresetPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.DocumentTemplatePresetFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentTemplatePresetPayload>
+        }
+        findMany: {
+          args: Prisma.DocumentTemplatePresetFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentTemplatePresetPayload>[]
+        }
+        create: {
+          args: Prisma.DocumentTemplatePresetCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentTemplatePresetPayload>
+        }
+        createMany: {
+          args: Prisma.DocumentTemplatePresetCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.DocumentTemplatePresetCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentTemplatePresetPayload>[]
+        }
+        delete: {
+          args: Prisma.DocumentTemplatePresetDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentTemplatePresetPayload>
+        }
+        update: {
+          args: Prisma.DocumentTemplatePresetUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentTemplatePresetPayload>
+        }
+        deleteMany: {
+          args: Prisma.DocumentTemplatePresetDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.DocumentTemplatePresetUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.DocumentTemplatePresetUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentTemplatePresetPayload>[]
+        }
+        upsert: {
+          args: Prisma.DocumentTemplatePresetUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentTemplatePresetPayload>
+        }
+        aggregate: {
+          args: Prisma.DocumentTemplatePresetAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateDocumentTemplatePreset>
+        }
+        groupBy: {
+          args: Prisma.DocumentTemplatePresetGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DocumentTemplatePresetGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.DocumentTemplatePresetCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DocumentTemplatePresetCountAggregateOutputType> | number
+        }
+      }
+    }
+    DocumentTemplatePresetItem: {
+      payload: Prisma.$DocumentTemplatePresetItemPayload<ExtArgs>
+      fields: Prisma.DocumentTemplatePresetItemFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.DocumentTemplatePresetItemFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentTemplatePresetItemPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.DocumentTemplatePresetItemFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentTemplatePresetItemPayload>
+        }
+        findFirst: {
+          args: Prisma.DocumentTemplatePresetItemFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentTemplatePresetItemPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.DocumentTemplatePresetItemFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentTemplatePresetItemPayload>
+        }
+        findMany: {
+          args: Prisma.DocumentTemplatePresetItemFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentTemplatePresetItemPayload>[]
+        }
+        create: {
+          args: Prisma.DocumentTemplatePresetItemCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentTemplatePresetItemPayload>
+        }
+        createMany: {
+          args: Prisma.DocumentTemplatePresetItemCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.DocumentTemplatePresetItemCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentTemplatePresetItemPayload>[]
+        }
+        delete: {
+          args: Prisma.DocumentTemplatePresetItemDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentTemplatePresetItemPayload>
+        }
+        update: {
+          args: Prisma.DocumentTemplatePresetItemUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentTemplatePresetItemPayload>
+        }
+        deleteMany: {
+          args: Prisma.DocumentTemplatePresetItemDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.DocumentTemplatePresetItemUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.DocumentTemplatePresetItemUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentTemplatePresetItemPayload>[]
+        }
+        upsert: {
+          args: Prisma.DocumentTemplatePresetItemUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DocumentTemplatePresetItemPayload>
+        }
+        aggregate: {
+          args: Prisma.DocumentTemplatePresetItemAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateDocumentTemplatePresetItem>
+        }
+        groupBy: {
+          args: Prisma.DocumentTemplatePresetItemGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DocumentTemplatePresetItemGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.DocumentTemplatePresetItemCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DocumentTemplatePresetItemCountAggregateOutputType> | number
         }
       }
     }
@@ -12717,6 +12867,30 @@ export const DocumentTemplateScalarFieldEnum = {
 export type DocumentTemplateScalarFieldEnum = (typeof DocumentTemplateScalarFieldEnum)[keyof typeof DocumentTemplateScalarFieldEnum]
 
 
+export const DocumentTemplatePresetScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  name: 'name',
+  normalizedName: 'normalizedName',
+  createdById: 'createdById',
+  updatedById: 'updatedById',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type DocumentTemplatePresetScalarFieldEnum = (typeof DocumentTemplatePresetScalarFieldEnum)[keyof typeof DocumentTemplatePresetScalarFieldEnum]
+
+
+export const DocumentTemplatePresetItemScalarFieldEnum = {
+  id: 'id',
+  presetId: 'presetId',
+  templateId: 'templateId',
+  displayOrder: 'displayOrder'
+} as const
+
+export type DocumentTemplatePresetItemScalarFieldEnum = (typeof DocumentTemplatePresetItemScalarFieldEnum)[keyof typeof DocumentTemplatePresetItemScalarFieldEnum]
+
+
 export const GeneratedDocumentScalarFieldEnum = {
   id: 'id',
   tenantId: 'tenantId',
@@ -17919,6 +18093,8 @@ export type GlobalOmitConfig = {
   connectorModelConfig?: Prisma.ConnectorModelConfigOmit
   noteTab?: Prisma.NoteTabOmit
   documentTemplate?: Prisma.DocumentTemplateOmit
+  documentTemplatePreset?: Prisma.DocumentTemplatePresetOmit
+  documentTemplatePresetItem?: Prisma.DocumentTemplatePresetItemOmit
   generatedDocument?: Prisma.GeneratedDocumentOmit
   documentGenerationBatch?: Prisma.DocumentGenerationBatchOmit
   documentGenerationBatchItem?: Prisma.DocumentGenerationBatchItemOmit
