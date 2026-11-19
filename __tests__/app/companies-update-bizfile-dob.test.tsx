@@ -31,7 +31,7 @@ const reply = (body: unknown, status = 200) => Response.json(body, { status });
 afterEach(() => vi.unstubAllGlobals());
 
 /** Mounts the real Update-from-BizFile page against a scripted network and returns what it posted. */
-async function run(section: 'officers' | 'shareholders', saved: { current: string }, who: { id: string } = { id }) {
+async function run(section: 'officers' | 'shareholders', saved: { current: string }, who: { id: string } = { id }, options: { skipCard?: boolean } = {}) {
   const record = section === 'officers'
     ? { ...person, role: 'DIRECTOR' }
     : { ...person, type: 'INDIVIDUAL', shareClass: 'ORDINARY', numberOfShares: 1 };
@@ -69,7 +69,7 @@ async function run(section: 'officers' | 'shareholders', saved: { current: strin
   fireEvent.change(view.container.querySelector('input[type=file]')!, { target: { files: [new File(['pdf'], 'synthetic.pdf', { type: 'application/pdf' })] } });
   fireEvent.click(screen.getByRole('button', { name: 'Upload & Extract' }));
   const review = await screen.findByRole('button', { name: /Review proposed changes/i });
-  await screen.findByTestId('dob-replacements');
+  if (!options.skipCard) await screen.findByTestId('dob-replacements');
   const applied = () => {
     const call = fetchMock.mock.calls.find(([url]) => url.endsWith('/apply-update'));
     return call ? JSON.parse(String(call[1]?.body)).extractedData[section][0] : undefined;
@@ -145,13 +145,38 @@ describe.each(['officers', 'shareholders'] as const)('Update from BizFile: date 
     expect(applied()).toMatchObject({ name: person.name, identificationNumber: person.identificationNumber, contactResolution: { action: 'REUSE', contactId: id } });
   });
 
+  it.each([
+    ['cleared by someone else', null],
+    ['now already equal to the proposal', '1980-01-01'],
+  ] as const)('blocks without sending anything when the ticked saved date is %s', async (_name, becomes) => {
+    const saved = { current: '1981-01-01' as string | null };
+    const { fetchMock, review, applied } = await run(section, saved as { current: string });
+    fireEvent.click(screen.getByRole('checkbox', { name: /Synthetic Person: replace the saved date of birth \(1 Jan 1981\) with 1 Jan 1980/i }));
+    saved.current = becomes;
+    fireEvent.click(review);
+    expect(await screen.findByText(/A saved date of birth changed since you approved replacing it/)).toBeInTheDocument();
+    expect(fetchMock.mock.calls.some(([url]) => url.endsWith('/prepare-import'))).toBe(false);
+    expect(applied()).toBeUndefined();
+  });
+
+  it('with no tick, a contact whose saved date is blank is a plain fill and is not blocked', async () => {
+    const saved = { current: null as string | null };
+    const { fetchMock, review } = await run(section, saved as { current: string }, { id }, { skipCard: true });
+    fireEvent.click(review);
+    await screen.findByLabelText('I have reviewed these changes and contact decisions.');
+    const call = fetchMock.mock.calls.find(([url]) => url.endsWith('/prepare-import'));
+    const sent = JSON.parse(String(call?.[1]?.body)).extractedData[section][0];
+    expect(sent).toMatchObject({ dateOfBirth: '1980-01-01' });
+    expect(sent).not.toHaveProperty('dateOfBirthReplaces');
+  });
+
   it('blocks and re-asks when the saved date changed after it was ticked', async () => {
     const saved = { current: '1981-01-01' };
     const { fetchMock, review, applied } = await run(section, saved);
     fireEvent.click(screen.getByRole('checkbox', { name: /Synthetic Person: replace the saved date of birth \(1 Jan 1981\) with 1 Jan 1980/i }));
     saved.current = '1982-02-02';
     fireEvent.click(review);
-    expect(await screen.findByText(/A saved date of birth changed since you reviewed it/)).toBeInTheDocument();
+    expect(await screen.findByText(/A saved date of birth changed since you approved replacing it/)).toBeInTheDocument();
     expect(fetchMock.mock.calls.some(([url]) => url.endsWith('/prepare-import'))).toBe(false);
     expect(applied()).toBeUndefined();
     const again = await screen.findByRole('checkbox', { name: /Synthetic Person: replace the saved date of birth \(2 Feb 1982\) with 1 Jan 1980/i });

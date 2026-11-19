@@ -36,7 +36,7 @@ import type { BizFileReviewIssue } from '@/lib/validations/bizfile-review';
 import type { ExtractedBizFileData } from '@/services/bizfile/types';
 import type { ContactMatchPreview, ContactResolutionDecision } from '@/types/contact-identity';
 import { fetchBizFileContactMatchPreviews } from '@/services/bizfile/contact-match-preview.client';
-import { formatDateOnlyDisplay } from '@/lib/date-only';
+import { formatDateOnlyDisplay, plausibleDateOfBirth } from '@/lib/date-only';
 import { BizFilePlanReview } from '@/components/companies/bizfile-review/bizfile-plan-review';
 import type { BizFileChangePlan } from '@/services/bizfile/change-plan';
 import {
@@ -229,6 +229,24 @@ function resolveDateOfBirthDecisions(
     } else {
       records[item.index] = { ...record, dateOfBirth: undefined, dateOfBirthReplaces: undefined };
     }
+  }
+  // A tick whose saved date is no longer a replacement (cleared by someone else, or now already equal to
+  // the proposal) is not in the list above. It must still stop the apply and ask again, never quietly
+  // turn into a fill of the proposed date.
+  const live = new Set(dateOfBirthReplacements(data, previews).map((item) => dobApprovalKey(documentId, item)));
+  for (const key of Object.keys(approvals)) {
+    if (live.has(key) || staleApprovals.includes(key)) continue;
+    const [keyDocument, path, contactId, incoming] = key.split('|');
+    if (keyDocument !== (documentId ?? '')) continue;
+    const [section, indexText] = path.split('.') as ['officers' | 'shareholders', string];
+    const record = data[section]?.[Number(indexText)];
+    const preview = previews[`${section}.${indexText}`];
+    const stillSameProposal =
+      record?.contactResolution?.action === 'REUSE' &&
+      record.contactResolution.contactId === contactId &&
+      preview?.contactId === contactId &&
+      plausibleDateOfBirth(record.dateOfBirth) === incoming;
+    if (stillSameProposal) staleApprovals.push(key);
   }
   return { data: next, staleApprovals };
 }
@@ -674,7 +692,7 @@ export default function UploadBizFilePage() {
         if (outcome.staleApprovals.length > 0) {
           setDobApprovals((current) => Object.fromEntries(Object.entries(current).filter(([key]) => !outcome.staleApprovals.includes(key))));
           setExtractedData(reviewState);
-          setError('A saved date of birth changed since you reviewed it. Check the date of birth changes below, then apply again.');
+          setError('A saved date of birth changed since you approved replacing it (it may now be blank or already match). Nothing was saved. Review the date of birth changes and the proposed updates, then apply again.');
           return;
         }
         resolvedData = outcome.data;
