@@ -15,9 +15,17 @@ describe('signed-document SharePoint routing', () => {
     intendedRelativePath: null,
   }));
 
+  it.each([null, '', '   '])('files a mapped templated document without a subfolder (%j) in the company folder root', (relativePath) => expect(snapshotFilingRoute({ connectorId: 'connector', configVersion: 2, companyId: 'company', companyName: 'Acme', mapping, templateId: 'template', templateVersion: 1, relativePath, orphanFolder: orphan })).toMatchObject({
+    destinationKind: 'INTENDED',
+    routingReason: 'NO_TEMPLATE_PATH',
+    intendedCompanyDriveId: 'drive',
+    intendedCompanyFolderId: 'company',
+    intendedRelativePath: null,
+  }));
+
   it.each([
     [{}, 'NO_COMPANY_MAPPING'],
-    [{ mapping, templateId: 'template', relativePath: null }, 'NO_TEMPLATE_PATH'],
+    [{ mapping: { ...mapping, connectorId: 'other' }, templateId: 'template', relativePath: null }, 'COMPANY_FOLDER_UNAVAILABLE'],
     [{ mapping, templateId: 'template', relativePath: 'bad:name' }, 'DESTINATION_PATH_INVALID'],
   ])('keeps %s on the orphan route', (input, reason) => expect(snapshotFilingRoute({ connectorId: 'connector', configVersion: 1, orphanFolder: orphan, ...(input as object) })).toMatchObject({ destinationKind: 'ORPHAN', routingReason: reason }));
 });
