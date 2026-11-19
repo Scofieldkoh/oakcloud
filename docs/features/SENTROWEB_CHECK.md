@@ -88,7 +88,11 @@ each name the confirm dialog says "Will send: name, country (Singapore), date of
 (Male)". The Screening tab says "Sent: ..." only for a result that was read back (clear or possible
 match) **and** whose answer echoed exactly the name, type, country, date of birth and fuzzy flag we
 sent (`searchEchoVerified`). A possible match is still shown as a possible match when the echo
-differs, but its details read "Requested, not confirmed as sent". A result that never ran, failed before SEARCH or ended in an error says "Requested, not
+differs, but its details read "Requested, not confirmed as sent". The gender is the exception even
+for a verified result: Sentroweb's answer does not echo it (the recorded responses carry no gender),
+so it always reads "Requested, not confirmed: gender (Male)" and never "Sent". The client does
+read the Male and Female boxes back before SEARCH, but that is our own page state, not Sentroweb's
+confirmation. A result that never ran, failed before SEARCH or ended in an error says "Requested, not
 confirmed as sent: ...", because nothing proves what reached Sentroweb.
 
 The browser client fills the country and the date of birth **first**, while SEARCH is still

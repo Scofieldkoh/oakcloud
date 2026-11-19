@@ -140,7 +140,7 @@ describe('CompanyScreeningTab', () => {
     setupApi(singleRunApi(detail));
     renderTab();
     const table = await screen.findByRole('table');
-    expect(within(table).getByText('Sent: name, country (Singapore), date of birth, gender (Female)')).toBeInTheDocument();
+    expect(within(table).getByText('Sent: name, country (Singapore), date of birth. Requested, not confirmed: gender (Female)')).toBeInTheDocument();
     expect(within(table).getByText('Sent: name. Not sent: country, date of birth, gender')).toBeInTheDocument();
     expect(within(table).getByText('Sent: name only')).toBeInTheDocument();
     expect(

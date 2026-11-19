@@ -16,13 +16,20 @@ describe('formatSentrowebSearchDetails', () => {
 
   it('lists what is included and what is left out, never the date itself', () => {
     expect(formatSentrowebSearchDetails(full, 'INDIVIDUAL', 'sent')).toBe(
-      'Sent: name, country (Singapore), date of birth, gender (Male)',
+      'Sent: name, country (Singapore), date of birth. Requested, not confirmed: gender (Male)',
     );
     expect(formatSentrowebSearchDetails({ country: 'Malaysia', dateOfBirth: false, gender: 'FEMALE' }, 'INDIVIDUAL', 'sent')).toBe(
-      'Sent: name, country (Malaysia), gender (Female). Not sent: date of birth',
+      'Sent: name, country (Malaysia). Not sent: date of birth. Requested, not confirmed: gender (Female)',
     );
     expect(formatSentrowebSearchDetails({ country: null, dateOfBirth: false, gender: null }, 'INDIVIDUAL', 'sent')).toBe(
       'Sent: name. Not sent: country, date of birth, gender',
+    );
+  });
+
+  it('never calls the gender sent: the answer does not echo it', () => {
+    expect(formatSentrowebSearchDetails(full, 'INDIVIDUAL', 'sent')).not.toMatch(/Sent:[^.]*gender/);
+    expect(formatSentrowebSearchDetails({ country: null, dateOfBirth: false, gender: 'MALE' }, 'INDIVIDUAL', 'sent')).toBe(
+      'Sent: name. Not sent: country, date of birth. Requested, not confirmed: gender (Male)',
     );
   });
 

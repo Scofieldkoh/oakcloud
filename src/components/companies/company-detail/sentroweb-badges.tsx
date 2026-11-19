@@ -121,8 +121,9 @@ const GENDER_LABELS: Record<string, string> = { MALE: 'Male', FEMALE: 'Female' }
 
 /**
  * What a search is sent with, for a line of small text under a name, for example
- * "Sent: name, country (Singapore), date of birth, gender (Male). Not sent: nothing else".
- * The date itself is never shown. A company reads "name only".
+ * "Sent: name, country (Singapore), date of birth. Requested, not confirmed: gender (Male)".
+ * The date itself is never shown. A company reads "name only". The gender is never called sent:
+ * Sentroweb's answer does not echo it.
  */
 export function formatSentrowebSearchDetails(
   details: SentrowebSearchDetailsDto | null | undefined,
@@ -137,7 +138,15 @@ export function formatSentrowebSearchDetails(
   else left.push('country');
   if (details?.dateOfBirth) included.push('date of birth');
   else left.push('date of birth');
-  if (details?.gender) included.push(`gender (${GENDER_LABELS[details.gender] ?? details.gender})`);
+  const gender = details?.gender ? `gender (${GENDER_LABELS[details.gender] ?? details.gender})` : null;
+  if (gender && mode === 'sent') {
+    // Sentroweb's answer does not echo the gender, so even for a result that was read back there is
+    // no proof it reached Sentroweb: it stays requested, not confirmed.
+    const sentText = `${words.yes}: ${included.join(', ')}`;
+    const notSent = left.length > 0 ? `. ${words.no}: ${left.join(', ')}` : '';
+    return `${sentText}${notSent}. Requested, not confirmed: ${gender}`;
+  }
+  if (gender) included.push(gender);
   else left.push('gender');
   return left.length > 0
     ? `${words.yes}: ${included.join(', ')}. ${words.no}: ${left.join(', ')}`
