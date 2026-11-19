@@ -159,6 +159,25 @@ describe.each(['officers', 'shareholders'] as const)('Update from BizFile: date 
     expect(applied()).toBeUndefined();
   });
 
+  it.each([
+    ['cleared by someone else', null],
+    ['now already equal to the proposal', '1980-01-01'],
+  ] as const)('leaves the date untouched when a shown, unticked replacement is %s before the final review', async (_name, becomes) => {
+    const saved = { current: '1981-01-01' as string | null };
+    const { fetchMock, review, applied, approve } = await run(section, saved as { current: string });
+    // The reviewer saw the card and did not tick it; then the saved date changes before the final review.
+    saved.current = becomes;
+    fireEvent.click(review);
+    await approve();
+    await waitFor(() => expect(applied()).toBeDefined());
+    const prepared = JSON.parse(String(fetchMock.mock.calls.find(([url]) => url.endsWith('/prepare-import'))?.[1]?.body)).extractedData[section][0];
+    for (const sent of [prepared, applied()]) {
+      expect(sent).not.toHaveProperty('dateOfBirth');
+      expect(sent).not.toHaveProperty('dateOfBirthReplaces');
+      expect(sent).toMatchObject({ name: person.name, contactResolution: { action: 'REUSE', contactId: id } });
+    }
+  });
+
   it('with no tick, a contact whose saved date is blank is a plain fill and is not blocked', async () => {
     const saved = { current: null as string | null };
     const { fetchMock, review } = await run(section, saved as { current: string }, { id }, { skipCard: true });

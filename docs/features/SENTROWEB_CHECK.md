@@ -99,7 +99,8 @@ confirmation (**Run again anyway**). Only one run per company can be queued or r
   so it never carries over to another contact or after "Upload Different File", and the choice is still
   there after "Back to review" from the plan dialog. If a ticked saved date has since
   been cleared or now equals the proposal, applying stops with a message instead of sending the date; applying
-  again after reviewing is a normal fill or no-op.
+  again after reviewing is a normal fill or no-op. A replacement that was shown and left unticked
+  is never sent as a date, even if the saved date is cleared or changed before the final review.
   Other sources only fill an empty date and report a difference as a conflict.
 - **No backfill, no automatic re-screening.** Past BizFile documents are not re-read, and a changed date
   affects only the next manual Sentroweb check.

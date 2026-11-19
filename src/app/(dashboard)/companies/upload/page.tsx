@@ -213,8 +213,10 @@ function resolveDateOfBirthDecisions(
   previews: Record<string, ContactMatchPreview | null>,
   approvals: Record<string, string>,
   documentId: string | null,
+  shown: ReadonlySet<string>,
 ): { data: ExtractedBizFileData; staleApprovals: string[] } {
   const staleApprovals: string[] = [];
+  const live = new Set(dateOfBirthReplacements(data, previews).map((item) => dobApprovalKey(documentId, item)));
   const next = { ...data, officers: data.officers ? [...data.officers] : undefined, shareholders: data.shareholders ? [...data.shareholders] : undefined };
   for (const item of dateOfBirthReplacements(data, previews)) {
     const records = next[item.section];
@@ -230,10 +232,29 @@ function resolveDateOfBirthDecisions(
       records[item.index] = { ...record, dateOfBirth: undefined, dateOfBirthReplaces: undefined };
     }
   }
+  // A replacement the reviewer was shown and left unticked means "keep the saved date". If that saved date
+  // has since been cleared (or now equals the proposal) it is no longer listed, but the proposal must still
+  // not be sent: that would fill a date another editor just cleared.
+  for (const key of shown) {
+    if (live.has(key) || approvals[key]) continue;
+    const [keyDocument, path, contactId, incoming] = key.split('|');
+    if (keyDocument !== (documentId ?? '')) continue;
+    const [section, indexText] = path.split('.') as ['officers' | 'shareholders', string];
+    const records = next[section];
+    const record = records?.[Number(indexText)];
+    if (
+      records && record &&
+      record.contactResolution?.action === 'REUSE' &&
+      record.contactResolution.contactId === contactId &&
+      plausibleDateOfBirth(record.dateOfBirth) === incoming
+    ) {
+      records[Number(indexText)] = { ...record, dateOfBirth: undefined, dateOfBirthReplaces: undefined };
+    }
+  }
+
   // A tick whose saved date is no longer a replacement (cleared by someone else, or now already equal to
   // the proposal) is not in the list above. It must still stop the apply and ask again, never quietly
   // turn into a fill of the proposed date.
-  const live = new Set(dateOfBirthReplacements(data, previews).map((item) => dobApprovalKey(documentId, item)));
   for (const key of Object.keys(approvals)) {
     if (live.has(key) || staleApprovals.includes(key)) continue;
     const [keyDocument, path, contactId, incoming] = key.split('|');
@@ -275,8 +296,17 @@ export default function UploadBizFilePage() {
   const [aiMetadata, setAiMetadata] = useState<AIMetadata | null>(null);
   const [diffResult, setDiffResult] = useState<DiffResult | null>(null);
   const [contactMatchPreviews, setContactMatchPreviews] = useState<Record<string, ContactMatchPreview | null>>({});
+  const shownDobReplacements = useMemo(
+    () => (extractedData ? dateOfBirthReplacements(applyAutomaticContactResolutions(extractedData, contactMatchPreviews), contactMatchPreviews) : []),
+    [extractedData, contactMatchPreviews],
+  );
+  useEffect(() => {
+    for (const item of shownDobReplacements) dobShownRef.current.add(dobApprovalKey(documentId, item));
+  }, [shownDobReplacements, documentId]);
   // Approved date-of-birth replacements: document + person + matched contact + proposed date -> the
   // exact saved date the reviewer agreed to replace. A different file, contact or proposal never matches.
+  // Replacements the reviewer has been shown on this page (same key as the approvals).
+  const dobShownRef = useRef<Set<string>>(new Set());
   const [dobApprovals, setDobApprovals] = useState<Record<string, string>>({});
   const [updatedFields, setUpdatedFields] = useState<string[]>([]);
   const [officerActions, setOfficerActions] = useState<OfficerAction[]>([]);
@@ -688,7 +718,7 @@ export default function UploadBizFilePage() {
       if (!approved) {
         // A different saved date of birth is replaced only for the exact date the reviewer ticked on
         // this page; otherwise the saved date is kept and the person's other updates still apply.
-        const outcome = resolveDateOfBirthDecisions(resolvedData, latestMatches, dobApprovals, documentId);
+        const outcome = resolveDateOfBirthDecisions(resolvedData, latestMatches, dobApprovals, documentId, dobShownRef.current);
         if (outcome.staleApprovals.length > 0) {
           setDobApprovals((current) => Object.fromEntries(Object.entries(current).filter(([key]) => !outcome.staleApprovals.includes(key))));
           setExtractedData(reviewState);
@@ -768,6 +798,7 @@ export default function UploadBizFilePage() {
     setDiffResult(null);
     setContactMatchPreviews({});
     setDobApprovals({});
+    dobShownRef.current = new Set();
     setUpdatedFields([]);
     setOfficerActions([]);
     setCanonicalReview(null);
@@ -1197,8 +1228,8 @@ export default function UploadBizFilePage() {
           </div>
 
           {(() => {
-            const replacements = dateOfBirthReplacements(applyAutomaticContactResolutions(extractedData, contactMatchPreviews), contactMatchPreviews);
-            if (replacements.length === 0) return null;
+            if (shownDobReplacements.length === 0) return null;
+            const replacements = shownDobReplacements;
             return (
               <div className="card" data-testid="dob-replacements">
                 <div className="p-4 border-b border-border-primary">
