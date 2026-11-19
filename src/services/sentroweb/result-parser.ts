@@ -52,6 +52,11 @@ export interface ParseOptions {
    */
   expectedCountry?: string | null;
   expectedDateOfBirth?: string | null;
+  /**
+   * Whether Fuzzy Search was ticked. Left undefined, the echo is not checked. When given, the
+   * response's `fuzzyValue` must say the same, otherwise it describes another search.
+   */
+  expectedFuzzy?: boolean;
 }
 
 type Json = Record<string, unknown>;
@@ -233,6 +238,9 @@ export function parseSentrowebResult(
     // What was sent besides the name must come back unchanged: a response for another country or
     // birth date is another search, and is never read as clear for this one.
     if (options.expectedCountry !== undefined && echoedText(record.country) !== (options.expectedCountry ?? '')) {
+      describesOurSearch = false;
+    }
+    if (options.expectedFuzzy !== undefined && record.fuzzyValue !== options.expectedFuzzy) {
       describesOurSearch = false;
     }
     if (

@@ -50,9 +50,12 @@ export interface SentrowebSearchDetailsDto {
   /** The exact Sentroweb country option, or null when the country is left blank. */
   country: string | null;
   dateOfBirth: boolean;
-  /** Always false: Oakcloud holds no gender for directors, shareholders or contacts. */
-  gender: false;
+  /** MALE or FEMALE from the contact record, or null when none is recorded (or it is OTHER). */
+  gender: SentrowebGender | null;
 }
+
+/** The two genders Sentroweb's search form has. */
+export type SentrowebGender = 'MALE' | 'FEMALE';
 
 export interface SentrowebCandidatesResponse {
   configured: boolean;
@@ -75,6 +78,11 @@ export interface SentrowebResultDto {
   identifier: string | null;
   /** What the search was sent with besides the name (a verified search sent exactly this). */
   searchDetails: SentrowebSearchDetailsDto;
+  /**
+   * True only when the search ran and its answer was read (a clear or possible-match result), so
+   * `searchDetails` are what reached Sentroweb. Otherwise they are only what was requested.
+   */
+  searchDetailsSent: boolean;
   status: SentrowebResultStatusValue;
   matchCount: number;
   categoryCounts: SentrowebCategoryCounts;
@@ -96,6 +104,8 @@ export interface SentrowebRunDto {
   errorCode: string | null;
   errorMessage: string | null;
   entityCount: number;
+  /** Fuzzy Search was ticked for every search of this run. */
+  fuzzy: boolean;
   creditsUsed: number;
   requestedBy: { id: string; name: string } | null;
   createdAt: string;

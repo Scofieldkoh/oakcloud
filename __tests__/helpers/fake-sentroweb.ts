@@ -69,6 +69,12 @@ export interface FakeOptions {
   /** What the search answer echoes as country / birth date instead of what was sent (null: nothing). */
   echoCountry: string | null | undefined;
   echoDateOfBirth: string | null | undefined;
+  /** What the answer echoes as `fuzzyValue` instead of what was sent. */
+  echoFuzzy: boolean | undefined;
+  /** false: the dropdown has no Enter handler, so Enter only does what the browser does in a form. */
+  dropdownEnterHandler: boolean;
+  /** A page that starts the search by itself as soon as a country is chosen (a form that submits itself). */
+  submitsWhenCountryChosen: boolean;
 }
 
 const DEFAULTS: FakeOptions = {
@@ -94,6 +100,9 @@ const DEFAULTS: FakeOptions = {
   rewriteDateOfBirth: false,
   echoCountry: undefined,
   echoDateOfBirth: undefined,
+  echoFuzzy: undefined,
+  dropdownEnterHandler: true,
+  submitsWhenCountryChosen: false,
   resolveCase: (name, searchType) => {
     const lower = name.toLowerCase();
     if (lower.includes('putin')) return 'individual-match';
@@ -138,7 +147,7 @@ function countryDropdown(options: FakeOptions): string {
     (country) =>
       `<div role=\"option\" class=\"item\"><i class=\"${country.code ?? ''} flag\"></i><span class=\"text\">${country.name}</span></div>`,
   ).join('');
-  return `<div role="combobox" aria-expanded="false" class="ui fluid search selection dropdown searchCountry"><input aria-autocomplete="list" autocomplete="off" class="search" tabindex="0" type="text" value=""><div aria-atomic="true" aria-live="polite" role="alert" class="divider default text">Country/ Region</div><i aria-hidden="true" class="dropdown icon"></i><div role="listbox" class="menu transition"><div role="option" class="active selected item"><span class="text"></span></div>${items}</div></div><script>window.__countrySelection = ${JSON.stringify(options.countrySelection)}; window.__rewriteDob = ${JSON.stringify(options.rewriteDateOfBirth)};</script>`;
+  return `<div role="combobox" aria-expanded="false" class="ui fluid search selection dropdown searchCountry"><input aria-autocomplete="list" autocomplete="off" class="search" tabindex="0" type="text" value=""><div aria-atomic="true" aria-live="polite" role="alert" class="divider default text">Country/ Region</div><i aria-hidden="true" class="dropdown icon"></i><div role="listbox" class="menu transition"><div role="option" class="active selected item"><span class="text"></span></div>${items}</div></div><script>window.__countrySelection = ${JSON.stringify(options.countrySelection)}; window.__rewriteDob = ${JSON.stringify(options.rewriteDateOfBirth)}; window.__dropdownEnterHandler = ${JSON.stringify(options.dropdownEnterHandler)}; window.__submitsWhenCountryChosen = ${JSON.stringify(options.submitsWhenCountryChosen)};</script>`;
 }
 
 const PAGE_STYLE = `
@@ -249,13 +258,14 @@ function mainPage(options: FakeOptions): string {
     shown.textContent = chosen;
     filter.value = '';
     dropdown.classList.remove('visible');
+    if (window.__submitsWhenCountryChosen) window.__onSubmit();
   };
   dropdown.querySelectorAll('.menu .item').forEach((item) => item.addEventListener('click', (event) => {
     event.stopPropagation();
     choose(item);
   }));
   // Enter takes the first option still listed, like the real dropdown.
-  filter.addEventListener('keydown', (event) => {
+  if (window.__dropdownEnterHandler) filter.addEventListener('keydown', (event) => {
     if (event.key !== 'Enter') return;
     event.preventDefault();
     const first = Array.from(dropdown.querySelectorAll('.menu .item')).find((item) => item.textContent.trim() !== '' && !item.classList.contains('filtered'));
@@ -284,10 +294,11 @@ function mainPage(options: FakeOptions): string {
   const host = document.getElementById('modal-host');
   const query = () => ({ queries: [{
     country: chosenCountry(), fuzzy: isChecked('Fuzzy Search'), name: nameInput.value, dateOfBirth: dobInput.value,
-    searchEntity: isChecked('Entity'), searchIndividual: isChecked('Individual'), gender: null }] });
+    searchEntity: isChecked('Entity'), searchIndividual: isChecked('Individual'),
+    // The value the real page sends for a ticked gender box is not known; the fake sends the box.
+    gender: isChecked('Male') ? 'MALE' : isChecked('Female') ? 'FEMALE' : null }] });
 
-  submit.addEventListener('click', async (event) => {
-    event.preventDefault();
+  const onSubmit = async () => {
     if (${JSON.stringify(options.diagnosticFetchPath)}) fetch(${JSON.stringify(options.diagnosticFetchPath)}).catch(() => {});
     const response = await fetch('/sentroweb-service/account/private/checkquota', {
       method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(query()) });
@@ -314,7 +325,9 @@ function mainPage(options: FakeOptions): string {
       fetch('/__event?type=cancel-clicked'); host.innerHTML = '';
     });
     host.querySelector('button.positive').addEventListener('click', runSearch);
-  });
+  };
+  submit.addEventListener('click', (event) => { event.preventDefault(); onSubmit(); });
+  window.__onSubmit = onSubmit;
 
   form.querySelector('.right-export-button').addEventListener('click', async () => {
     host.innerHTML = await (await fetch('/__export-modal')).text();
@@ -442,6 +455,7 @@ export async function startFakeSentroweb(overrides: Partial<FakeOptions> = {}): 
         payload[0].searchEntity = searchType === 'ENTITY';
         payload[0].searchIndividual = searchType === 'INDIVIDUAL';
         // Like the real answer, it echoes what the search was sent with.
+        payload[0].fuzzyValue = options.echoFuzzy !== undefined ? options.echoFuzzy : query.fuzzy === true;
         payload[0].country = options.echoCountry !== undefined ? (options.echoCountry ?? '') : String(query.country ?? '');
         payload[0].dateOfBirth =
           options.echoDateOfBirth !== undefined ? (options.echoDateOfBirth ?? '') : String(query.dateOfBirth ?? '');

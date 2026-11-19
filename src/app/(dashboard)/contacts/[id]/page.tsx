@@ -29,7 +29,7 @@ import { ContactAliasesModal } from '@/components/contacts/contact-aliases-modal
 import { InternalNotes } from '@/components/notes/internal-notes';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import { getSafeListReturnUrl } from '@/lib/list-navigation';
-import type { ContactType, IdentificationType } from '@/generated/prisma';
+import type { ContactGender, ContactType, IdentificationType } from '@/generated/prisma';
 
 // Company option type for AsyncSearchSelect
 interface CompanyOption extends AsyncSearchSelectOption {
@@ -46,6 +46,12 @@ const idTypeLabels: Record<IdentificationType, string> = {
   FIN: 'FIN',
   PASSPORT: 'Passport',
   UEN: 'UEN',
+  OTHER: 'Other',
+};
+
+const genderLabels: Record<ContactGender, string> = {
+  MALE: 'Male',
+  FEMALE: 'Female',
   OTHER: 'Other',
 };
 
@@ -466,6 +472,10 @@ export default function ContactDetailPage({
                   <div>
                     <CompanyFieldLabel>Nationality</CompanyFieldLabel>
                     <p className="text-text-primary">{contact.nationality || '-'}</p>
+                  </div>
+                  <div>
+                    <CompanyFieldLabel>Gender</CompanyFieldLabel>
+                    <p className="text-text-primary">{contact.gender ? genderLabels[contact.gender] : '-'}</p>
                   </div>
                   <div>
                     <CompanyFieldLabel>ID Type</CompanyFieldLabel>

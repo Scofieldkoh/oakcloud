@@ -47,6 +47,7 @@ export type SentrowebCheckRunMinAggregateOutputType = {
   overallResult: $Enums.SentrowebCheckOverallResult | null
   errorCode: string | null
   entityCount: number | null
+  fuzzy: boolean | null
   creditsUsed: number | null
   balanceBefore: number | null
   claimToken: string | null
@@ -65,6 +66,7 @@ export type SentrowebCheckRunMaxAggregateOutputType = {
   overallResult: $Enums.SentrowebCheckOverallResult | null
   errorCode: string | null
   entityCount: number | null
+  fuzzy: boolean | null
   creditsUsed: number | null
   balanceBefore: number | null
   claimToken: string | null
@@ -83,6 +85,7 @@ export type SentrowebCheckRunCountAggregateOutputType = {
   overallResult: number
   errorCode: number
   entityCount: number
+  fuzzy: number
   creditsUsed: number
   balanceBefore: number
   claimToken: number
@@ -115,6 +118,7 @@ export type SentrowebCheckRunMinAggregateInputType = {
   overallResult?: true
   errorCode?: true
   entityCount?: true
+  fuzzy?: true
   creditsUsed?: true
   balanceBefore?: true
   claimToken?: true
@@ -133,6 +137,7 @@ export type SentrowebCheckRunMaxAggregateInputType = {
   overallResult?: true
   errorCode?: true
   entityCount?: true
+  fuzzy?: true
   creditsUsed?: true
   balanceBefore?: true
   claimToken?: true
@@ -151,6 +156,7 @@ export type SentrowebCheckRunCountAggregateInputType = {
   overallResult?: true
   errorCode?: true
   entityCount?: true
+  fuzzy?: true
   creditsUsed?: true
   balanceBefore?: true
   claimToken?: true
@@ -256,6 +262,7 @@ export type SentrowebCheckRunGroupByOutputType = {
   overallResult: $Enums.SentrowebCheckOverallResult | null
   errorCode: string | null
   entityCount: number
+  fuzzy: boolean
   creditsUsed: number
   balanceBefore: number | null
   claimToken: string | null
@@ -297,6 +304,7 @@ export type SentrowebCheckRunWhereInput = {
   overallResult?: Prisma.EnumSentrowebCheckOverallResultNullableFilter<"SentrowebCheckRun"> | $Enums.SentrowebCheckOverallResult | null
   errorCode?: Prisma.StringNullableFilter<"SentrowebCheckRun"> | string | null
   entityCount?: Prisma.IntFilter<"SentrowebCheckRun"> | number
+  fuzzy?: Prisma.BoolFilter<"SentrowebCheckRun"> | boolean
   creditsUsed?: Prisma.IntFilter<"SentrowebCheckRun"> | number
   balanceBefore?: Prisma.IntNullableFilter<"SentrowebCheckRun"> | number | null
   claimToken?: Prisma.StringNullableFilter<"SentrowebCheckRun"> | string | null
@@ -319,6 +327,7 @@ export type SentrowebCheckRunOrderByWithRelationInput = {
   overallResult?: Prisma.SortOrderInput | Prisma.SortOrder
   errorCode?: Prisma.SortOrderInput | Prisma.SortOrder
   entityCount?: Prisma.SortOrder
+  fuzzy?: Prisma.SortOrder
   creditsUsed?: Prisma.SortOrder
   balanceBefore?: Prisma.SortOrderInput | Prisma.SortOrder
   claimToken?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -344,6 +353,7 @@ export type SentrowebCheckRunWhereUniqueInput = Prisma.AtLeast<{
   overallResult?: Prisma.EnumSentrowebCheckOverallResultNullableFilter<"SentrowebCheckRun"> | $Enums.SentrowebCheckOverallResult | null
   errorCode?: Prisma.StringNullableFilter<"SentrowebCheckRun"> | string | null
   entityCount?: Prisma.IntFilter<"SentrowebCheckRun"> | number
+  fuzzy?: Prisma.BoolFilter<"SentrowebCheckRun"> | boolean
   creditsUsed?: Prisma.IntFilter<"SentrowebCheckRun"> | number
   balanceBefore?: Prisma.IntNullableFilter<"SentrowebCheckRun"> | number | null
   claimToken?: Prisma.StringNullableFilter<"SentrowebCheckRun"> | string | null
@@ -366,6 +376,7 @@ export type SentrowebCheckRunOrderByWithAggregationInput = {
   overallResult?: Prisma.SortOrderInput | Prisma.SortOrder
   errorCode?: Prisma.SortOrderInput | Prisma.SortOrder
   entityCount?: Prisma.SortOrder
+  fuzzy?: Prisma.SortOrder
   creditsUsed?: Prisma.SortOrder
   balanceBefore?: Prisma.SortOrderInput | Prisma.SortOrder
   claimToken?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -392,6 +403,7 @@ export type SentrowebCheckRunScalarWhereWithAggregatesInput = {
   overallResult?: Prisma.EnumSentrowebCheckOverallResultNullableWithAggregatesFilter<"SentrowebCheckRun"> | $Enums.SentrowebCheckOverallResult | null
   errorCode?: Prisma.StringNullableWithAggregatesFilter<"SentrowebCheckRun"> | string | null
   entityCount?: Prisma.IntWithAggregatesFilter<"SentrowebCheckRun"> | number
+  fuzzy?: Prisma.BoolWithAggregatesFilter<"SentrowebCheckRun"> | boolean
   creditsUsed?: Prisma.IntWithAggregatesFilter<"SentrowebCheckRun"> | number
   balanceBefore?: Prisma.IntNullableWithAggregatesFilter<"SentrowebCheckRun"> | number | null
   claimToken?: Prisma.StringNullableWithAggregatesFilter<"SentrowebCheckRun"> | string | null
@@ -407,6 +419,7 @@ export type SentrowebCheckRunCreateInput = {
   overallResult?: $Enums.SentrowebCheckOverallResult | null
   errorCode?: string | null
   entityCount: number
+  fuzzy?: boolean
   creditsUsed?: number
   balanceBefore?: number | null
   claimToken?: string | null
@@ -429,6 +442,7 @@ export type SentrowebCheckRunUncheckedCreateInput = {
   overallResult?: $Enums.SentrowebCheckOverallResult | null
   errorCode?: string | null
   entityCount: number
+  fuzzy?: boolean
   creditsUsed?: number
   balanceBefore?: number | null
   claimToken?: string | null
@@ -445,6 +459,7 @@ export type SentrowebCheckRunUpdateInput = {
   overallResult?: Prisma.NullableEnumSentrowebCheckOverallResultFieldUpdateOperationsInput | $Enums.SentrowebCheckOverallResult | null
   errorCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   entityCount?: Prisma.IntFieldUpdateOperationsInput | number
+  fuzzy?: Prisma.BoolFieldUpdateOperationsInput | boolean
   creditsUsed?: Prisma.IntFieldUpdateOperationsInput | number
   balanceBefore?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   claimToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -467,6 +482,7 @@ export type SentrowebCheckRunUncheckedUpdateInput = {
   overallResult?: Prisma.NullableEnumSentrowebCheckOverallResultFieldUpdateOperationsInput | $Enums.SentrowebCheckOverallResult | null
   errorCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   entityCount?: Prisma.IntFieldUpdateOperationsInput | number
+  fuzzy?: Prisma.BoolFieldUpdateOperationsInput | boolean
   creditsUsed?: Prisma.IntFieldUpdateOperationsInput | number
   balanceBefore?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   claimToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -486,6 +502,7 @@ export type SentrowebCheckRunCreateManyInput = {
   overallResult?: $Enums.SentrowebCheckOverallResult | null
   errorCode?: string | null
   entityCount: number
+  fuzzy?: boolean
   creditsUsed?: number
   balanceBefore?: number | null
   claimToken?: string | null
@@ -501,6 +518,7 @@ export type SentrowebCheckRunUpdateManyMutationInput = {
   overallResult?: Prisma.NullableEnumSentrowebCheckOverallResultFieldUpdateOperationsInput | $Enums.SentrowebCheckOverallResult | null
   errorCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   entityCount?: Prisma.IntFieldUpdateOperationsInput | number
+  fuzzy?: Prisma.BoolFieldUpdateOperationsInput | boolean
   creditsUsed?: Prisma.IntFieldUpdateOperationsInput | number
   balanceBefore?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   claimToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -519,6 +537,7 @@ export type SentrowebCheckRunUncheckedUpdateManyInput = {
   overallResult?: Prisma.NullableEnumSentrowebCheckOverallResultFieldUpdateOperationsInput | $Enums.SentrowebCheckOverallResult | null
   errorCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   entityCount?: Prisma.IntFieldUpdateOperationsInput | number
+  fuzzy?: Prisma.BoolFieldUpdateOperationsInput | boolean
   creditsUsed?: Prisma.IntFieldUpdateOperationsInput | number
   balanceBefore?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   claimToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -547,6 +566,7 @@ export type SentrowebCheckRunCountOrderByAggregateInput = {
   overallResult?: Prisma.SortOrder
   errorCode?: Prisma.SortOrder
   entityCount?: Prisma.SortOrder
+  fuzzy?: Prisma.SortOrder
   creditsUsed?: Prisma.SortOrder
   balanceBefore?: Prisma.SortOrder
   claimToken?: Prisma.SortOrder
@@ -571,6 +591,7 @@ export type SentrowebCheckRunMaxOrderByAggregateInput = {
   overallResult?: Prisma.SortOrder
   errorCode?: Prisma.SortOrder
   entityCount?: Prisma.SortOrder
+  fuzzy?: Prisma.SortOrder
   creditsUsed?: Prisma.SortOrder
   balanceBefore?: Prisma.SortOrder
   claimToken?: Prisma.SortOrder
@@ -589,6 +610,7 @@ export type SentrowebCheckRunMinOrderByAggregateInput = {
   overallResult?: Prisma.SortOrder
   errorCode?: Prisma.SortOrder
   entityCount?: Prisma.SortOrder
+  fuzzy?: Prisma.SortOrder
   creditsUsed?: Prisma.SortOrder
   balanceBefore?: Prisma.SortOrder
   claimToken?: Prisma.SortOrder
@@ -763,6 +785,7 @@ export type SentrowebCheckRunCreateWithoutTenantInput = {
   overallResult?: $Enums.SentrowebCheckOverallResult | null
   errorCode?: string | null
   entityCount: number
+  fuzzy?: boolean
   creditsUsed?: number
   balanceBefore?: number | null
   claimToken?: string | null
@@ -783,6 +806,7 @@ export type SentrowebCheckRunUncheckedCreateWithoutTenantInput = {
   overallResult?: $Enums.SentrowebCheckOverallResult | null
   errorCode?: string | null
   entityCount: number
+  fuzzy?: boolean
   creditsUsed?: number
   balanceBefore?: number | null
   claimToken?: string | null
@@ -831,6 +855,7 @@ export type SentrowebCheckRunScalarWhereInput = {
   overallResult?: Prisma.EnumSentrowebCheckOverallResultNullableFilter<"SentrowebCheckRun"> | $Enums.SentrowebCheckOverallResult | null
   errorCode?: Prisma.StringNullableFilter<"SentrowebCheckRun"> | string | null
   entityCount?: Prisma.IntFilter<"SentrowebCheckRun"> | number
+  fuzzy?: Prisma.BoolFilter<"SentrowebCheckRun"> | boolean
   creditsUsed?: Prisma.IntFilter<"SentrowebCheckRun"> | number
   balanceBefore?: Prisma.IntNullableFilter<"SentrowebCheckRun"> | number | null
   claimToken?: Prisma.StringNullableFilter<"SentrowebCheckRun"> | string | null
@@ -846,6 +871,7 @@ export type SentrowebCheckRunCreateWithoutRequestedByInput = {
   overallResult?: $Enums.SentrowebCheckOverallResult | null
   errorCode?: string | null
   entityCount: number
+  fuzzy?: boolean
   creditsUsed?: number
   balanceBefore?: number | null
   claimToken?: string | null
@@ -866,6 +892,7 @@ export type SentrowebCheckRunUncheckedCreateWithoutRequestedByInput = {
   overallResult?: $Enums.SentrowebCheckOverallResult | null
   errorCode?: string | null
   entityCount: number
+  fuzzy?: boolean
   creditsUsed?: number
   balanceBefore?: number | null
   claimToken?: string | null
@@ -908,6 +935,7 @@ export type SentrowebCheckRunCreateWithoutCompanyInput = {
   overallResult?: $Enums.SentrowebCheckOverallResult | null
   errorCode?: string | null
   entityCount: number
+  fuzzy?: boolean
   creditsUsed?: number
   balanceBefore?: number | null
   claimToken?: string | null
@@ -928,6 +956,7 @@ export type SentrowebCheckRunUncheckedCreateWithoutCompanyInput = {
   overallResult?: $Enums.SentrowebCheckOverallResult | null
   errorCode?: string | null
   entityCount: number
+  fuzzy?: boolean
   creditsUsed?: number
   balanceBefore?: number | null
   claimToken?: string | null
@@ -970,6 +999,7 @@ export type SentrowebCheckRunCreateWithoutResultsInput = {
   overallResult?: $Enums.SentrowebCheckOverallResult | null
   errorCode?: string | null
   entityCount: number
+  fuzzy?: boolean
   creditsUsed?: number
   balanceBefore?: number | null
   claimToken?: string | null
@@ -991,6 +1021,7 @@ export type SentrowebCheckRunUncheckedCreateWithoutResultsInput = {
   overallResult?: $Enums.SentrowebCheckOverallResult | null
   errorCode?: string | null
   entityCount: number
+  fuzzy?: boolean
   creditsUsed?: number
   balanceBefore?: number | null
   claimToken?: string | null
@@ -1022,6 +1053,7 @@ export type SentrowebCheckRunUpdateWithoutResultsInput = {
   overallResult?: Prisma.NullableEnumSentrowebCheckOverallResultFieldUpdateOperationsInput | $Enums.SentrowebCheckOverallResult | null
   errorCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   entityCount?: Prisma.IntFieldUpdateOperationsInput | number
+  fuzzy?: Prisma.BoolFieldUpdateOperationsInput | boolean
   creditsUsed?: Prisma.IntFieldUpdateOperationsInput | number
   balanceBefore?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   claimToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1043,6 +1075,7 @@ export type SentrowebCheckRunUncheckedUpdateWithoutResultsInput = {
   overallResult?: Prisma.NullableEnumSentrowebCheckOverallResultFieldUpdateOperationsInput | $Enums.SentrowebCheckOverallResult | null
   errorCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   entityCount?: Prisma.IntFieldUpdateOperationsInput | number
+  fuzzy?: Prisma.BoolFieldUpdateOperationsInput | boolean
   creditsUsed?: Prisma.IntFieldUpdateOperationsInput | number
   balanceBefore?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   claimToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1060,6 +1093,7 @@ export type SentrowebCheckRunCreateManyTenantInput = {
   overallResult?: $Enums.SentrowebCheckOverallResult | null
   errorCode?: string | null
   entityCount: number
+  fuzzy?: boolean
   creditsUsed?: number
   balanceBefore?: number | null
   claimToken?: string | null
@@ -1075,6 +1109,7 @@ export type SentrowebCheckRunUpdateWithoutTenantInput = {
   overallResult?: Prisma.NullableEnumSentrowebCheckOverallResultFieldUpdateOperationsInput | $Enums.SentrowebCheckOverallResult | null
   errorCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   entityCount?: Prisma.IntFieldUpdateOperationsInput | number
+  fuzzy?: Prisma.BoolFieldUpdateOperationsInput | boolean
   creditsUsed?: Prisma.IntFieldUpdateOperationsInput | number
   balanceBefore?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   claimToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1095,6 +1130,7 @@ export type SentrowebCheckRunUncheckedUpdateWithoutTenantInput = {
   overallResult?: Prisma.NullableEnumSentrowebCheckOverallResultFieldUpdateOperationsInput | $Enums.SentrowebCheckOverallResult | null
   errorCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   entityCount?: Prisma.IntFieldUpdateOperationsInput | number
+  fuzzy?: Prisma.BoolFieldUpdateOperationsInput | boolean
   creditsUsed?: Prisma.IntFieldUpdateOperationsInput | number
   balanceBefore?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   claimToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1113,6 +1149,7 @@ export type SentrowebCheckRunUncheckedUpdateManyWithoutTenantInput = {
   overallResult?: Prisma.NullableEnumSentrowebCheckOverallResultFieldUpdateOperationsInput | $Enums.SentrowebCheckOverallResult | null
   errorCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   entityCount?: Prisma.IntFieldUpdateOperationsInput | number
+  fuzzy?: Prisma.BoolFieldUpdateOperationsInput | boolean
   creditsUsed?: Prisma.IntFieldUpdateOperationsInput | number
   balanceBefore?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   claimToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1130,6 +1167,7 @@ export type SentrowebCheckRunCreateManyRequestedByInput = {
   overallResult?: $Enums.SentrowebCheckOverallResult | null
   errorCode?: string | null
   entityCount: number
+  fuzzy?: boolean
   creditsUsed?: number
   balanceBefore?: number | null
   claimToken?: string | null
@@ -1145,6 +1183,7 @@ export type SentrowebCheckRunUpdateWithoutRequestedByInput = {
   overallResult?: Prisma.NullableEnumSentrowebCheckOverallResultFieldUpdateOperationsInput | $Enums.SentrowebCheckOverallResult | null
   errorCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   entityCount?: Prisma.IntFieldUpdateOperationsInput | number
+  fuzzy?: Prisma.BoolFieldUpdateOperationsInput | boolean
   creditsUsed?: Prisma.IntFieldUpdateOperationsInput | number
   balanceBefore?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   claimToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1165,6 +1204,7 @@ export type SentrowebCheckRunUncheckedUpdateWithoutRequestedByInput = {
   overallResult?: Prisma.NullableEnumSentrowebCheckOverallResultFieldUpdateOperationsInput | $Enums.SentrowebCheckOverallResult | null
   errorCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   entityCount?: Prisma.IntFieldUpdateOperationsInput | number
+  fuzzy?: Prisma.BoolFieldUpdateOperationsInput | boolean
   creditsUsed?: Prisma.IntFieldUpdateOperationsInput | number
   balanceBefore?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   claimToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1183,6 +1223,7 @@ export type SentrowebCheckRunUncheckedUpdateManyWithoutRequestedByInput = {
   overallResult?: Prisma.NullableEnumSentrowebCheckOverallResultFieldUpdateOperationsInput | $Enums.SentrowebCheckOverallResult | null
   errorCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   entityCount?: Prisma.IntFieldUpdateOperationsInput | number
+  fuzzy?: Prisma.BoolFieldUpdateOperationsInput | boolean
   creditsUsed?: Prisma.IntFieldUpdateOperationsInput | number
   balanceBefore?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   claimToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1200,6 +1241,7 @@ export type SentrowebCheckRunCreateManyCompanyInput = {
   overallResult?: $Enums.SentrowebCheckOverallResult | null
   errorCode?: string | null
   entityCount: number
+  fuzzy?: boolean
   creditsUsed?: number
   balanceBefore?: number | null
   claimToken?: string | null
@@ -1215,6 +1257,7 @@ export type SentrowebCheckRunUpdateWithoutCompanyInput = {
   overallResult?: Prisma.NullableEnumSentrowebCheckOverallResultFieldUpdateOperationsInput | $Enums.SentrowebCheckOverallResult | null
   errorCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   entityCount?: Prisma.IntFieldUpdateOperationsInput | number
+  fuzzy?: Prisma.BoolFieldUpdateOperationsInput | boolean
   creditsUsed?: Prisma.IntFieldUpdateOperationsInput | number
   balanceBefore?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   claimToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1235,6 +1278,7 @@ export type SentrowebCheckRunUncheckedUpdateWithoutCompanyInput = {
   overallResult?: Prisma.NullableEnumSentrowebCheckOverallResultFieldUpdateOperationsInput | $Enums.SentrowebCheckOverallResult | null
   errorCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   entityCount?: Prisma.IntFieldUpdateOperationsInput | number
+  fuzzy?: Prisma.BoolFieldUpdateOperationsInput | boolean
   creditsUsed?: Prisma.IntFieldUpdateOperationsInput | number
   balanceBefore?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   claimToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1253,6 +1297,7 @@ export type SentrowebCheckRunUncheckedUpdateManyWithoutCompanyInput = {
   overallResult?: Prisma.NullableEnumSentrowebCheckOverallResultFieldUpdateOperationsInput | $Enums.SentrowebCheckOverallResult | null
   errorCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   entityCount?: Prisma.IntFieldUpdateOperationsInput | number
+  fuzzy?: Prisma.BoolFieldUpdateOperationsInput | boolean
   creditsUsed?: Prisma.IntFieldUpdateOperationsInput | number
   balanceBefore?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   claimToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1302,6 +1347,7 @@ export type SentrowebCheckRunSelect<ExtArgs extends runtime.Types.Extensions.Int
   overallResult?: boolean
   errorCode?: boolean
   entityCount?: boolean
+  fuzzy?: boolean
   creditsUsed?: boolean
   balanceBefore?: boolean
   claimToken?: boolean
@@ -1325,6 +1371,7 @@ export type SentrowebCheckRunSelectCreateManyAndReturn<ExtArgs extends runtime.T
   overallResult?: boolean
   errorCode?: boolean
   entityCount?: boolean
+  fuzzy?: boolean
   creditsUsed?: boolean
   balanceBefore?: boolean
   claimToken?: boolean
@@ -1346,6 +1393,7 @@ export type SentrowebCheckRunSelectUpdateManyAndReturn<ExtArgs extends runtime.T
   overallResult?: boolean
   errorCode?: boolean
   entityCount?: boolean
+  fuzzy?: boolean
   creditsUsed?: boolean
   balanceBefore?: boolean
   claimToken?: boolean
@@ -1367,6 +1415,7 @@ export type SentrowebCheckRunSelectScalar = {
   overallResult?: boolean
   errorCode?: boolean
   entityCount?: boolean
+  fuzzy?: boolean
   creditsUsed?: boolean
   balanceBefore?: boolean
   claimToken?: boolean
@@ -1376,7 +1425,7 @@ export type SentrowebCheckRunSelectScalar = {
   createdAt?: boolean
 }
 
-export type SentrowebCheckRunOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "companyId" | "requestedById" | "status" | "overallResult" | "errorCode" | "entityCount" | "creditsUsed" | "balanceBefore" | "claimToken" | "leaseExpiresAt" | "startedAt" | "finishedAt" | "createdAt", ExtArgs["result"]["sentrowebCheckRun"]>
+export type SentrowebCheckRunOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "companyId" | "requestedById" | "status" | "overallResult" | "errorCode" | "entityCount" | "fuzzy" | "creditsUsed" | "balanceBefore" | "claimToken" | "leaseExpiresAt" | "startedAt" | "finishedAt" | "createdAt", ExtArgs["result"]["sentrowebCheckRun"]>
 export type SentrowebCheckRunInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
   company?: boolean | Prisma.CompanyDefaultArgs<ExtArgs>
@@ -1412,6 +1461,10 @@ export type $SentrowebCheckRunPayload<ExtArgs extends runtime.Types.Extensions.I
     overallResult: $Enums.SentrowebCheckOverallResult | null
     errorCode: string | null
     entityCount: number
+    /**
+     * Fuzzy Search ticked for every search of this run (chosen per run, off by default).
+     */
+    fuzzy: boolean
     creditsUsed: number
     balanceBefore: number | null
     claimToken: string | null
@@ -1854,6 +1907,7 @@ export interface SentrowebCheckRunFieldRefs {
   readonly overallResult: Prisma.FieldRef<"SentrowebCheckRun", 'SentrowebCheckOverallResult'>
   readonly errorCode: Prisma.FieldRef<"SentrowebCheckRun", 'String'>
   readonly entityCount: Prisma.FieldRef<"SentrowebCheckRun", 'Int'>
+  readonly fuzzy: Prisma.FieldRef<"SentrowebCheckRun", 'Boolean'>
   readonly creditsUsed: Prisma.FieldRef<"SentrowebCheckRun", 'Int'>
   readonly balanceBefore: Prisma.FieldRef<"SentrowebCheckRun", 'Int'>
   readonly claimToken: Prisma.FieldRef<"SentrowebCheckRun", 'String'>

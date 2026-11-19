@@ -389,6 +389,24 @@ describePostgres('Sentroweb check routes (PostgreSQL)', () => {
       expect(client.searches).toHaveLength(4);
     });
 
+    it('starts a fuzzy run only when the body says so, and shows it in the run detail', async () => {
+      useClient();
+      const companyId = await makeCompany();
+      const keys = await candidateKeys(companyId);
+      as('updater');
+      const plain = await post(companyId, { entityKeys: keys.slice(0, 1) });
+      const plainId = (await read(plain)).runId;
+      await waitForRun(plainId, 'COMPLETED');
+      const fuzzy = await post(companyId, { entityKeys: keys.slice(0, 1), fuzzy: true, force: true });
+      expect(fuzzy.status).toBe(202);
+      const fuzzyId = (await read(fuzzy)).runId;
+      await waitForRun(fuzzyId, 'COMPLETED');
+      as('reader');
+      expect((await read(await detail(companyId, plainId))).run.fuzzy).toBe(false);
+      expect((await read(await detail(companyId, fuzzyId))).run.fuzzy).toBe(true);
+      expect(client.searches.map((search) => search.fuzzy)).toEqual([false, true]);
+    });
+
     it('rejects a body that is not valid with 400 and creates nothing', async () => {
       useClient();
       const companyId = await makeCompany();
@@ -399,6 +417,7 @@ describePostgres('Sentroweb check routes (PostgreSQL)', () => {
         { entityKeys: [1, 2] },
         { entityKeys: [''] },
         { entityKeys: ['x'], force: 'yes' },
+        { entityKeys: ['x'], fuzzy: 'yes' },
         { entityKeys: Array.from({ length: 101 }, (_, i) => `k${i}`) },
         '{ not json',
       ]) {

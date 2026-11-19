@@ -489,6 +489,8 @@ model Contact {
   identificationNumber        String?
   nationality                 String?
   dateOfBirth                 DateTime?
+  /// Individuals only; null when not recorded. Sent to Sentroweb searches (MALE / FEMALE only).
+  gender                      ContactGender?
   corporateName               String?
   corporateUen                String?
   fullAddress                 String?
@@ -4074,6 +4076,12 @@ enum ContactType {
   CORPORATE
 }
 
+enum ContactGender {
+  MALE
+  FEMALE
+  OTHER
+}
+
 enum IdentificationType {
   NRIC
   FIN
@@ -5530,6 +5538,8 @@ model SentrowebCheckRun {
   overallResult  SentrowebCheckOverallResult?
   errorCode      String?                      @db.VarChar(64)
   entityCount    Int
+  /// Fuzzy Search ticked for every search of this run (chosen per run, off by default).
+  fuzzy          Boolean                      @default(false)
   creditsUsed    Int                          @default(0)
   balanceBefore  Int?
   claimToken     String?                      @db.VarChar(36)
@@ -5572,6 +5582,8 @@ model SentrowebCheckResult {
   requestedCountry  String?
   /// Date of birth in YYYY-MM-DD from the linked contact (null: none sent).
   requestedDateOfBirth String?
+  /// MALE or FEMALE from the linked contact (null: none sent). Never OTHER.
+  requestedGender   ContactGender?
   errorCode         String?               @db.VarChar(64)
   documentId        String?
   evidencePngKey    String?

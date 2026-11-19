@@ -55,6 +55,7 @@ export type SentrowebCheckResultMinAggregateOutputType = {
   searchSubmittedAt: Date | null
   requestedCountry: string | null
   requestedDateOfBirth: string | null
+  requestedGender: $Enums.ContactGender | null
   errorCode: string | null
   documentId: string | null
   evidencePngKey: string | null
@@ -80,6 +81,7 @@ export type SentrowebCheckResultMaxAggregateOutputType = {
   searchSubmittedAt: Date | null
   requestedCountry: string | null
   requestedDateOfBirth: string | null
+  requestedGender: $Enums.ContactGender | null
   errorCode: string | null
   documentId: string | null
   evidencePngKey: string | null
@@ -109,6 +111,7 @@ export type SentrowebCheckResultCountAggregateOutputType = {
   searchSubmittedAt: number
   requestedCountry: number
   requestedDateOfBirth: number
+  requestedGender: number
   errorCode: number
   documentId: number
   evidencePngKey: number
@@ -146,6 +149,7 @@ export type SentrowebCheckResultMinAggregateInputType = {
   searchSubmittedAt?: true
   requestedCountry?: true
   requestedDateOfBirth?: true
+  requestedGender?: true
   errorCode?: true
   documentId?: true
   evidencePngKey?: true
@@ -171,6 +175,7 @@ export type SentrowebCheckResultMaxAggregateInputType = {
   searchSubmittedAt?: true
   requestedCountry?: true
   requestedDateOfBirth?: true
+  requestedGender?: true
   errorCode?: true
   documentId?: true
   evidencePngKey?: true
@@ -200,6 +205,7 @@ export type SentrowebCheckResultCountAggregateInputType = {
   searchSubmittedAt?: true
   requestedCountry?: true
   requestedDateOfBirth?: true
+  requestedGender?: true
   errorCode?: true
   documentId?: true
   evidencePngKey?: true
@@ -316,6 +322,7 @@ export type SentrowebCheckResultGroupByOutputType = {
   searchSubmittedAt: Date | null
   requestedCountry: string | null
   requestedDateOfBirth: string | null
+  requestedGender: $Enums.ContactGender | null
   errorCode: string | null
   documentId: string | null
   evidencePngKey: string | null
@@ -368,6 +375,7 @@ export type SentrowebCheckResultWhereInput = {
   searchSubmittedAt?: Prisma.DateTimeNullableFilter<"SentrowebCheckResult"> | Date | string | null
   requestedCountry?: Prisma.StringNullableFilter<"SentrowebCheckResult"> | string | null
   requestedDateOfBirth?: Prisma.StringNullableFilter<"SentrowebCheckResult"> | string | null
+  requestedGender?: Prisma.EnumContactGenderNullableFilter<"SentrowebCheckResult"> | $Enums.ContactGender | null
   errorCode?: Prisma.StringNullableFilter<"SentrowebCheckResult"> | string | null
   documentId?: Prisma.StringNullableFilter<"SentrowebCheckResult"> | string | null
   evidencePngKey?: Prisma.StringNullableFilter<"SentrowebCheckResult"> | string | null
@@ -399,6 +407,7 @@ export type SentrowebCheckResultOrderByWithRelationInput = {
   searchSubmittedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   requestedCountry?: Prisma.SortOrderInput | Prisma.SortOrder
   requestedDateOfBirth?: Prisma.SortOrderInput | Prisma.SortOrder
+  requestedGender?: Prisma.SortOrderInput | Prisma.SortOrder
   errorCode?: Prisma.SortOrderInput | Prisma.SortOrder
   documentId?: Prisma.SortOrderInput | Prisma.SortOrder
   evidencePngKey?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -433,6 +442,7 @@ export type SentrowebCheckResultWhereUniqueInput = Prisma.AtLeast<{
   searchSubmittedAt?: Prisma.DateTimeNullableFilter<"SentrowebCheckResult"> | Date | string | null
   requestedCountry?: Prisma.StringNullableFilter<"SentrowebCheckResult"> | string | null
   requestedDateOfBirth?: Prisma.StringNullableFilter<"SentrowebCheckResult"> | string | null
+  requestedGender?: Prisma.EnumContactGenderNullableFilter<"SentrowebCheckResult"> | $Enums.ContactGender | null
   errorCode?: Prisma.StringNullableFilter<"SentrowebCheckResult"> | string | null
   documentId?: Prisma.StringNullableFilter<"SentrowebCheckResult"> | string | null
   evidencePngKey?: Prisma.StringNullableFilter<"SentrowebCheckResult"> | string | null
@@ -464,6 +474,7 @@ export type SentrowebCheckResultOrderByWithAggregationInput = {
   searchSubmittedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   requestedCountry?: Prisma.SortOrderInput | Prisma.SortOrder
   requestedDateOfBirth?: Prisma.SortOrderInput | Prisma.SortOrder
+  requestedGender?: Prisma.SortOrderInput | Prisma.SortOrder
   errorCode?: Prisma.SortOrderInput | Prisma.SortOrder
   documentId?: Prisma.SortOrderInput | Prisma.SortOrder
   evidencePngKey?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -501,6 +512,7 @@ export type SentrowebCheckResultScalarWhereWithAggregatesInput = {
   searchSubmittedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"SentrowebCheckResult"> | Date | string | null
   requestedCountry?: Prisma.StringNullableWithAggregatesFilter<"SentrowebCheckResult"> | string | null
   requestedDateOfBirth?: Prisma.StringNullableWithAggregatesFilter<"SentrowebCheckResult"> | string | null
+  requestedGender?: Prisma.EnumContactGenderNullableWithAggregatesFilter<"SentrowebCheckResult"> | $Enums.ContactGender | null
   errorCode?: Prisma.StringNullableWithAggregatesFilter<"SentrowebCheckResult"> | string | null
   documentId?: Prisma.StringNullableWithAggregatesFilter<"SentrowebCheckResult"> | string | null
   evidencePngKey?: Prisma.StringNullableWithAggregatesFilter<"SentrowebCheckResult"> | string | null
@@ -529,6 +541,7 @@ export type SentrowebCheckResultCreateInput = {
   searchSubmittedAt?: Date | string | null
   requestedCountry?: string | null
   requestedDateOfBirth?: string | null
+  requestedGender?: $Enums.ContactGender | null
   errorCode?: string | null
   evidencePngKey?: string | null
   checkedAt?: Date | string | null
@@ -559,6 +572,7 @@ export type SentrowebCheckResultUncheckedCreateInput = {
   searchSubmittedAt?: Date | string | null
   requestedCountry?: string | null
   requestedDateOfBirth?: string | null
+  requestedGender?: $Enums.ContactGender | null
   errorCode?: string | null
   documentId?: string | null
   evidencePngKey?: string | null
@@ -587,6 +601,7 @@ export type SentrowebCheckResultUpdateInput = {
   searchSubmittedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   requestedCountry?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   requestedDateOfBirth?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  requestedGender?: Prisma.NullableEnumContactGenderFieldUpdateOperationsInput | $Enums.ContactGender | null
   errorCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   evidencePngKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   checkedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -617,6 +632,7 @@ export type SentrowebCheckResultUncheckedUpdateInput = {
   searchSubmittedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   requestedCountry?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   requestedDateOfBirth?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  requestedGender?: Prisma.NullableEnumContactGenderFieldUpdateOperationsInput | $Enums.ContactGender | null
   errorCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   evidencePngKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -646,6 +662,7 @@ export type SentrowebCheckResultCreateManyInput = {
   searchSubmittedAt?: Date | string | null
   requestedCountry?: string | null
   requestedDateOfBirth?: string | null
+  requestedGender?: $Enums.ContactGender | null
   errorCode?: string | null
   documentId?: string | null
   evidencePngKey?: string | null
@@ -674,6 +691,7 @@ export type SentrowebCheckResultUpdateManyMutationInput = {
   searchSubmittedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   requestedCountry?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   requestedDateOfBirth?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  requestedGender?: Prisma.NullableEnumContactGenderFieldUpdateOperationsInput | $Enums.ContactGender | null
   errorCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   evidencePngKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   checkedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -702,6 +720,7 @@ export type SentrowebCheckResultUncheckedUpdateManyInput = {
   searchSubmittedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   requestedCountry?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   requestedDateOfBirth?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  requestedGender?: Prisma.NullableEnumContactGenderFieldUpdateOperationsInput | $Enums.ContactGender | null
   errorCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   evidencePngKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -741,6 +760,7 @@ export type SentrowebCheckResultCountOrderByAggregateInput = {
   searchSubmittedAt?: Prisma.SortOrder
   requestedCountry?: Prisma.SortOrder
   requestedDateOfBirth?: Prisma.SortOrder
+  requestedGender?: Prisma.SortOrder
   errorCode?: Prisma.SortOrder
   documentId?: Prisma.SortOrder
   evidencePngKey?: Prisma.SortOrder
@@ -771,6 +791,7 @@ export type SentrowebCheckResultMaxOrderByAggregateInput = {
   searchSubmittedAt?: Prisma.SortOrder
   requestedCountry?: Prisma.SortOrder
   requestedDateOfBirth?: Prisma.SortOrder
+  requestedGender?: Prisma.SortOrder
   errorCode?: Prisma.SortOrder
   documentId?: Prisma.SortOrder
   evidencePngKey?: Prisma.SortOrder
@@ -796,6 +817,7 @@ export type SentrowebCheckResultMinOrderByAggregateInput = {
   searchSubmittedAt?: Prisma.SortOrder
   requestedCountry?: Prisma.SortOrder
   requestedDateOfBirth?: Prisma.SortOrder
+  requestedGender?: Prisma.SortOrder
   errorCode?: Prisma.SortOrder
   documentId?: Prisma.SortOrder
   evidencePngKey?: Prisma.SortOrder
@@ -938,6 +960,7 @@ export type SentrowebCheckResultCreateWithoutDocumentInput = {
   searchSubmittedAt?: Date | string | null
   requestedCountry?: string | null
   requestedDateOfBirth?: string | null
+  requestedGender?: $Enums.ContactGender | null
   errorCode?: string | null
   evidencePngKey?: string | null
   checkedAt?: Date | string | null
@@ -967,6 +990,7 @@ export type SentrowebCheckResultUncheckedCreateWithoutDocumentInput = {
   searchSubmittedAt?: Date | string | null
   requestedCountry?: string | null
   requestedDateOfBirth?: string | null
+  requestedGender?: $Enums.ContactGender | null
   errorCode?: string | null
   evidencePngKey?: string | null
   checkedAt?: Date | string | null
@@ -1024,6 +1048,7 @@ export type SentrowebCheckResultScalarWhereInput = {
   searchSubmittedAt?: Prisma.DateTimeNullableFilter<"SentrowebCheckResult"> | Date | string | null
   requestedCountry?: Prisma.StringNullableFilter<"SentrowebCheckResult"> | string | null
   requestedDateOfBirth?: Prisma.StringNullableFilter<"SentrowebCheckResult"> | string | null
+  requestedGender?: Prisma.EnumContactGenderNullableFilter<"SentrowebCheckResult"> | $Enums.ContactGender | null
   errorCode?: Prisma.StringNullableFilter<"SentrowebCheckResult"> | string | null
   documentId?: Prisma.StringNullableFilter<"SentrowebCheckResult"> | string | null
   evidencePngKey?: Prisma.StringNullableFilter<"SentrowebCheckResult"> | string | null
@@ -1052,6 +1077,7 @@ export type SentrowebCheckResultCreateWithoutRunInput = {
   searchSubmittedAt?: Date | string | null
   requestedCountry?: string | null
   requestedDateOfBirth?: string | null
+  requestedGender?: $Enums.ContactGender | null
   errorCode?: string | null
   evidencePngKey?: string | null
   checkedAt?: Date | string | null
@@ -1080,6 +1106,7 @@ export type SentrowebCheckResultUncheckedCreateWithoutRunInput = {
   searchSubmittedAt?: Date | string | null
   requestedCountry?: string | null
   requestedDateOfBirth?: string | null
+  requestedGender?: $Enums.ContactGender | null
   errorCode?: string | null
   documentId?: string | null
   evidencePngKey?: string | null
@@ -1135,6 +1162,7 @@ export type SentrowebCheckResultCreateManyDocumentInput = {
   searchSubmittedAt?: Date | string | null
   requestedCountry?: string | null
   requestedDateOfBirth?: string | null
+  requestedGender?: $Enums.ContactGender | null
   errorCode?: string | null
   evidencePngKey?: string | null
   checkedAt?: Date | string | null
@@ -1162,6 +1190,7 @@ export type SentrowebCheckResultUpdateWithoutDocumentInput = {
   searchSubmittedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   requestedCountry?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   requestedDateOfBirth?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  requestedGender?: Prisma.NullableEnumContactGenderFieldUpdateOperationsInput | $Enums.ContactGender | null
   errorCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   evidencePngKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   checkedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1191,6 +1220,7 @@ export type SentrowebCheckResultUncheckedUpdateWithoutDocumentInput = {
   searchSubmittedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   requestedCountry?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   requestedDateOfBirth?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  requestedGender?: Prisma.NullableEnumContactGenderFieldUpdateOperationsInput | $Enums.ContactGender | null
   errorCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   evidencePngKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   checkedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1219,6 +1249,7 @@ export type SentrowebCheckResultUncheckedUpdateManyWithoutDocumentInput = {
   searchSubmittedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   requestedCountry?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   requestedDateOfBirth?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  requestedGender?: Prisma.NullableEnumContactGenderFieldUpdateOperationsInput | $Enums.ContactGender | null
   errorCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   evidencePngKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   checkedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1246,6 +1277,7 @@ export type SentrowebCheckResultCreateManyRunInput = {
   searchSubmittedAt?: Date | string | null
   requestedCountry?: string | null
   requestedDateOfBirth?: string | null
+  requestedGender?: $Enums.ContactGender | null
   errorCode?: string | null
   documentId?: string | null
   evidencePngKey?: string | null
@@ -1274,6 +1306,7 @@ export type SentrowebCheckResultUpdateWithoutRunInput = {
   searchSubmittedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   requestedCountry?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   requestedDateOfBirth?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  requestedGender?: Prisma.NullableEnumContactGenderFieldUpdateOperationsInput | $Enums.ContactGender | null
   errorCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   evidencePngKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   checkedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1302,6 +1335,7 @@ export type SentrowebCheckResultUncheckedUpdateWithoutRunInput = {
   searchSubmittedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   requestedCountry?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   requestedDateOfBirth?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  requestedGender?: Prisma.NullableEnumContactGenderFieldUpdateOperationsInput | $Enums.ContactGender | null
   errorCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   evidencePngKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1330,6 +1364,7 @@ export type SentrowebCheckResultUncheckedUpdateManyWithoutRunInput = {
   searchSubmittedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   requestedCountry?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   requestedDateOfBirth?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  requestedGender?: Prisma.NullableEnumContactGenderFieldUpdateOperationsInput | $Enums.ContactGender | null
   errorCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   documentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   evidencePngKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1361,6 +1396,7 @@ export type SentrowebCheckResultSelect<ExtArgs extends runtime.Types.Extensions.
   searchSubmittedAt?: boolean
   requestedCountry?: boolean
   requestedDateOfBirth?: boolean
+  requestedGender?: boolean
   errorCode?: boolean
   documentId?: boolean
   evidencePngKey?: boolean
@@ -1392,6 +1428,7 @@ export type SentrowebCheckResultSelectCreateManyAndReturn<ExtArgs extends runtim
   searchSubmittedAt?: boolean
   requestedCountry?: boolean
   requestedDateOfBirth?: boolean
+  requestedGender?: boolean
   errorCode?: boolean
   documentId?: boolean
   evidencePngKey?: boolean
@@ -1423,6 +1460,7 @@ export type SentrowebCheckResultSelectUpdateManyAndReturn<ExtArgs extends runtim
   searchSubmittedAt?: boolean
   requestedCountry?: boolean
   requestedDateOfBirth?: boolean
+  requestedGender?: boolean
   errorCode?: boolean
   documentId?: boolean
   evidencePngKey?: boolean
@@ -1454,13 +1492,14 @@ export type SentrowebCheckResultSelectScalar = {
   searchSubmittedAt?: boolean
   requestedCountry?: boolean
   requestedDateOfBirth?: boolean
+  requestedGender?: boolean
   errorCode?: boolean
   documentId?: boolean
   evidencePngKey?: boolean
   checkedAt?: boolean
 }
 
-export type SentrowebCheckResultOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "runId" | "tenantId" | "companyId" | "position" | "entityKind" | "searchType" | "roles" | "sourceRefs" | "contactId" | "name" | "identifierType" | "identifier" | "status" | "matchCount" | "categoryCounts" | "matches" | "sentrowebReportId" | "monitorEnabled" | "searchSubmittedAt" | "requestedCountry" | "requestedDateOfBirth" | "errorCode" | "documentId" | "evidencePngKey" | "checkedAt", ExtArgs["result"]["sentrowebCheckResult"]>
+export type SentrowebCheckResultOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "runId" | "tenantId" | "companyId" | "position" | "entityKind" | "searchType" | "roles" | "sourceRefs" | "contactId" | "name" | "identifierType" | "identifier" | "status" | "matchCount" | "categoryCounts" | "matches" | "sentrowebReportId" | "monitorEnabled" | "searchSubmittedAt" | "requestedCountry" | "requestedDateOfBirth" | "requestedGender" | "errorCode" | "documentId" | "evidencePngKey" | "checkedAt", ExtArgs["result"]["sentrowebCheckResult"]>
 export type SentrowebCheckResultInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   run?: boolean | Prisma.SentrowebCheckRunDefaultArgs<ExtArgs>
   document?: boolean | Prisma.SentrowebCheckResult$documentArgs<ExtArgs>
@@ -1509,6 +1548,10 @@ export type $SentrowebCheckResultPayload<ExtArgs extends runtime.Types.Extension
      * Date of birth in YYYY-MM-DD from the linked contact (null: none sent).
      */
     requestedDateOfBirth: string | null
+    /**
+     * MALE or FEMALE from the linked contact (null: none sent). Never OTHER.
+     */
+    requestedGender: $Enums.ContactGender | null
     errorCode: string | null
     documentId: string | null
     evidencePngKey: string | null
@@ -1960,6 +2003,7 @@ export interface SentrowebCheckResultFieldRefs {
   readonly searchSubmittedAt: Prisma.FieldRef<"SentrowebCheckResult", 'DateTime'>
   readonly requestedCountry: Prisma.FieldRef<"SentrowebCheckResult", 'String'>
   readonly requestedDateOfBirth: Prisma.FieldRef<"SentrowebCheckResult", 'String'>
+  readonly requestedGender: Prisma.FieldRef<"SentrowebCheckResult", 'ContactGender'>
   readonly errorCode: Prisma.FieldRef<"SentrowebCheckResult", 'String'>
   readonly documentId: Prisma.FieldRef<"SentrowebCheckResult", 'String'>
   readonly evidencePngKey: Prisma.FieldRef<"SentrowebCheckResult", 'String'>

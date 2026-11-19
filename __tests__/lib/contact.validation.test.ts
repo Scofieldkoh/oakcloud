@@ -21,6 +21,18 @@ describe('contact validation', () => {
     expect(parsed.identificationType).toBeNull();
   });
 
+  it('takes a gender of MALE, FEMALE or OTHER, treats a blank one as none, and rejects anything else', () => {
+    for (const gender of ['MALE', 'FEMALE', 'OTHER']) {
+      expect(createContactSchema.parse({ contactType: 'INDIVIDUAL', firstName: 'John', gender }).gender).toBe(gender);
+    }
+    expect(createContactSchema.parse({ contactType: 'INDIVIDUAL', firstName: 'John', gender: '' }).gender).toBeNull();
+    expect(createContactSchema.parse({ contactType: 'INDIVIDUAL', firstName: 'John' }).gender).toBeUndefined();
+    expect(updateContactSchema.parse({ id: '11111111-1111-1111-1111-111111111111', gender: '' }).gender).toBeNull();
+    for (const bad of ['male', 'M', 'unknown', 1]) {
+      expect(createContactSchema.safeParse({ contactType: 'INDIVIDUAL', firstName: 'John', gender: bad }).success, String(bad)).toBe(false);
+    }
+  });
+
   it('accepts an explicit reuse decision with a selected contact', () => {
     const parsed = createContactWithDetailsSchema.parse({
       contactType: 'INDIVIDUAL',

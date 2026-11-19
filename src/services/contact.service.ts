@@ -62,6 +62,7 @@ export async function createContact(
       identificationNumber,
       nationality: data.nationality,
       dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : null,
+      gender: data.gender ?? null,
       corporateName: data.corporateName,
       corporateUen,
       fullAddress: data.fullAddress,
@@ -111,6 +112,7 @@ export async function updateContact(
   if (data.identificationNumber !== undefined)
     updateData.identificationNumber = normalizeOptionalString(data.identificationNumber);
   if (data.nationality !== undefined) updateData.nationality = data.nationality;
+  if (data.gender !== undefined) updateData.gender = data.gender;
   if (data.dateOfBirth !== undefined)
     updateData.dateOfBirth = data.dateOfBirth ? new Date(data.dateOfBirth) : null;
   if (data.corporateName !== undefined) updateData.corporateName = data.corporateName;
@@ -167,6 +169,7 @@ export async function findOrCreateContact(
     corporateUen: data.corporateUen,
     nationality: data.nationality,
     dateOfBirth: data.dateOfBirth,
+    gender: data.gender,
     fullAddress: data.fullAddress,
   };
   const { resolveOrCreateContact } = await import('@/services/contact-identity.service');

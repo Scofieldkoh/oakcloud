@@ -105,24 +105,43 @@ export function sentrowebSearchTypeLabel(searchType: string): string {
 }
 
 /**
- * What a search is (or was) sent with, for a line of small text under a name:
- * "Sent: name, country (Singapore), date of birth. Not sent: gender". The date itself is never shown.
- * A company or a person with nothing else on record reads "Sent: name only".
+ * How certain it is that the details left for Sentroweb: `planned` (the confirm dialog), `sent` (the
+ * search ran and its answer was read) or `requested` (only what the search was asked to send: it
+ * was never run, failed before SEARCH, or ended in an error).
+ */
+export type SentrowebDetailsMode = 'planned' | 'sent' | 'requested';
+
+const DETAILS_WORDS: Record<SentrowebDetailsMode, { yes: string; no: string }> = {
+  planned: { yes: 'Will send', no: 'Will not send' },
+  sent: { yes: 'Sent', no: 'Not sent' },
+  requested: { yes: 'Requested, not confirmed as sent', no: 'Not requested' },
+};
+
+const GENDER_LABELS: Record<string, string> = { MALE: 'Male', FEMALE: 'Female' };
+
+/**
+ * What a search is sent with, for a line of small text under a name, for example
+ * "Sent: name, country (Singapore), date of birth, gender (Male). Not sent: nothing else".
+ * The date itself is never shown. A company reads "name only".
  */
 export function formatSentrowebSearchDetails(
   details: SentrowebSearchDetailsDto | null | undefined,
   searchType: string,
+  mode: SentrowebDetailsMode,
 ): string {
-  if (searchType !== 'INDIVIDUAL') return 'Sent: name only';
-  const sent = ['name'];
-  const notSent: string[] = [];
-  if (details?.country) sent.push(`country (${details.country})`);
-  else notSent.push('country');
-  if (details?.dateOfBirth) sent.push('date of birth');
-  else notSent.push('date of birth');
-  // Oakcloud holds no gender, so it is never sent.
-  notSent.push('gender');
-  return `Sent: ${sent.join(', ')}. Not sent: ${notSent.join(', ')}`;
+  const words = DETAILS_WORDS[mode];
+  if (searchType !== 'INDIVIDUAL') return `${words.yes}: name only`;
+  const included = ['name'];
+  const left: string[] = [];
+  if (details?.country) included.push(`country (${details.country})`);
+  else left.push('country');
+  if (details?.dateOfBirth) included.push('date of birth');
+  else left.push('date of birth');
+  if (details?.gender) included.push(`gender (${GENDER_LABELS[details.gender] ?? details.gender})`);
+  else left.push('gender');
+  return left.length > 0
+    ? `${words.yes}: ${included.join(', ')}. ${words.no}: ${left.join(', ')}`
+    : `${words.yes}: ${included.join(', ')}`;
 }
 
 export const SENTROWEB_CATEGORY_LABELS: Record<string, string> = {

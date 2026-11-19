@@ -241,6 +241,67 @@ describe('Sentroweb client against a fake Sentroweb', () => {
       }
     });
 
+    it('Enter in the country box cannot submit the form: nothing reaches Sentroweb before the click', async () => {
+      // No Enter handler on the dropdown: Enter then does only what the browser does in a form, and
+      // would click an enabled SEARCH. The name is already known to the fake, so a stray submit would
+      // be a free repeat that searches at once, with a blank country.
+      const server = await start({ dropdownEnterHandler: false, freeRepeats: true });
+      const first = await open(server);
+      await first.search({ name: CLEAR_INDIVIDUAL, searchType: 'INDIVIDUAL' });
+      await first.close();
+      const before = { quotas: server.count('checkquota'), searches: server.searches.length };
+
+      const session = await open(server);
+      // With no Enter handler the option is not chosen, so the attempt fails before SEARCH. What
+      // matters is that Enter itself sent nothing: not a quota check, not a search.
+      const error = await failureOf(session.search({ name: CLEAR_INDIVIDUAL, searchType: 'INDIVIDUAL', country: 'Singapore' }));
+      expect(error.code).toBe('LAYOUT_CHANGED');
+      expect(error.searchSubmitted).toBeFalsy();
+      expect(server.count('checkquota') - before.quotas).toBe(0);
+      expect(server.searches.length - before.searches).toBe(0);
+    });
+
+    it('a page that submits itself while a country is chosen is submitted, never retried, nothing confirmed', async () => {
+      const server = await start({ submitsWhenCountryChosen: true });
+      const session = await open(server);
+      const error = await failureOf(session.search({ name: CLEAR_INDIVIDUAL, searchType: 'INDIVIDUAL', ...DETAILS }));
+      expect(error.searchSubmitted).toBe(true);
+      expect(server.count('checkquota')).toBeGreaterThanOrEqual(1);
+      expect(server.count('search')).toBe(0); // its dialog was never confirmed
+    });
+
+    it('sends the gender as the ticked Male or Female box, for an individual only', async () => {
+      const server = await start();
+      const session = await open(server);
+      await session.search({ name: 'Zzqx Male Qwv', searchType: 'INDIVIDUAL', gender: 'MALE' });
+      await session.search({ name: 'Zzqx Female Qwv', searchType: 'INDIVIDUAL', gender: 'FEMALE' });
+      await session.search({ name: 'Zzqx None Qwv', searchType: 'INDIVIDUAL' });
+      await session.search({ name: 'Zzqx Entity Qwv Pte Ltd', searchType: 'ENTITY', gender: 'MALE' });
+      expect(server.searches.map((search) => search.gender)).toEqual(['MALE', 'FEMALE', null, null]);
+    });
+
+    it('ticks Fuzzy Search only when asked, and the answer must say the same', async () => {
+      const server = await start();
+      const session = await open(server);
+      const plain = await session.search({ name: 'Zzqx Plain Qwv', searchType: 'INDIVIDUAL' });
+      const fuzzy = await session.search({ name: 'Zzqx Fuzzy Qwv', searchType: 'INDIVIDUAL', fuzzy: true });
+      expect(server.searches.map((search) => search.fuzzy)).toEqual([false, true]);
+      const parse = (name: string, outcome: typeof plain, expectedFuzzy: boolean) =>
+        parseSentrowebResult('INDIVIDUAL', outcome.json, outcome.domTitles, { expectedName: name, expectedFuzzy });
+      expect(parse('Zzqx Plain Qwv', plain, false).status).toBe('CLEAR');
+      expect(parse('Zzqx Fuzzy Qwv', fuzzy, true).status).toBe('CLEAR');
+      // An answer for the other kind of search is never clear.
+      expect(parse('Zzqx Plain Qwv', plain, true)).toMatchObject({ status: 'ERROR', errorCode: 'RESULT_MISMATCH' });
+      expect(parse('Zzqx Fuzzy Qwv', fuzzy, false)).toMatchObject({ status: 'ERROR', errorCode: 'RESULT_MISMATCH' });
+    });
+
+    it('fuzzy applies to an entity search too', async () => {
+      const server = await start();
+      const session = await open(server);
+      await session.search({ name: CLEAR_ENTITY, searchType: 'ENTITY', fuzzy: true });
+      expect(server.searches[0]).toMatchObject({ fuzzy: true, searchEntity: true });
+    });
+
     it('a name-only individual search leaves the details blank and still reads CLEAR without a FATF heading', async () => {
       const server = await start();
       const session = await open(server);

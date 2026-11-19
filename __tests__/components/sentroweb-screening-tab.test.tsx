@@ -114,18 +114,48 @@ describe('CompanyScreeningTab', () => {
     expect(screen.getAllByText('2 names, 2 credits used').length).toBeGreaterThan(0);
   });
 
-  it('shows what each result was searched with', async () => {
+  it('says Sent only for a result that was read, and Requested for everything else', async () => {
     const detail = withResults([
-      result({ id: 'r1', name: 'Alice Tan', searchDetails: { country: 'Singapore', dateOfBirth: true, gender: false } }),
+      result({ id: 'r1', name: 'Alice Tan', searchDetails: { country: 'Singapore', dateOfBirth: true, gender: 'FEMALE' } }),
       result({ id: 'r2', position: 1, name: 'Bob Lim' }),
       result({ id: 'r3', position: 2, name: 'Acme Pte Ltd', searchType: 'ENTITY', entityKind: 'CORPORATE' }),
+      result({
+        id: 'r4',
+        position: 3,
+        name: 'Cara Ng',
+        status: 'NOT_RUN',
+        searchDetailsSent: false,
+        searchDetails: { country: 'Malaysia', dateOfBirth: true, gender: null },
+      }),
+      result({
+        id: 'r5',
+        position: 4,
+        name: 'Dan Ooi',
+        status: 'ERROR',
+        errorCode: 'LAYOUT_CHANGED',
+        searchDetailsSent: false,
+        searchDetails: { country: 'India', dateOfBirth: false, gender: 'MALE' },
+      }),
     ]);
     setupApi(singleRunApi(detail));
     renderTab();
     const table = await screen.findByRole('table');
-    expect(within(table).getByText('Sent: name, country (Singapore), date of birth. Not sent: gender')).toBeInTheDocument();
+    expect(within(table).getByText('Sent: name, country (Singapore), date of birth, gender (Female)')).toBeInTheDocument();
     expect(within(table).getByText('Sent: name. Not sent: country, date of birth, gender')).toBeInTheDocument();
     expect(within(table).getByText('Sent: name only')).toBeInTheDocument();
+    expect(
+      within(table).getByText('Requested, not confirmed as sent: name, country (Malaysia), date of birth. Not requested: gender'),
+    ).toBeInTheDocument();
+    expect(
+      within(table).getByText('Requested, not confirmed as sent: name, country (India), gender (Male). Not requested: date of birth'),
+    ).toBeInTheDocument();
+  });
+
+  it('marks a fuzzy run', async () => {
+    const detail = withResults([result()], { fuzzy: true });
+    setupApi(singleRunApi(detail));
+    renderTab();
+    expect((await screen.findAllByText('Fuzzy search')).length).toBeGreaterThan(0);
   });
 
   it('expands a row to show match details and links to the PDF and screenshot', async () => {

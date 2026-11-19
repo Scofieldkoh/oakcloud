@@ -38,6 +38,7 @@ export type ContactMinAggregateOutputType = {
   identificationNumber: string | null
   nationality: string | null
   dateOfBirth: Date | null
+  gender: $Enums.ContactGender | null
   corporateName: string | null
   corporateUen: string | null
   fullAddress: string | null
@@ -61,6 +62,7 @@ export type ContactMaxAggregateOutputType = {
   identificationNumber: string | null
   nationality: string | null
   dateOfBirth: Date | null
+  gender: $Enums.ContactGender | null
   corporateName: string | null
   corporateUen: string | null
   fullAddress: string | null
@@ -84,6 +86,7 @@ export type ContactCountAggregateOutputType = {
   identificationNumber: number
   nationality: number
   dateOfBirth: number
+  gender: number
   corporateName: number
   corporateUen: number
   fullAddress: number
@@ -109,6 +112,7 @@ export type ContactMinAggregateInputType = {
   identificationNumber?: true
   nationality?: true
   dateOfBirth?: true
+  gender?: true
   corporateName?: true
   corporateUen?: true
   fullAddress?: true
@@ -132,6 +136,7 @@ export type ContactMaxAggregateInputType = {
   identificationNumber?: true
   nationality?: true
   dateOfBirth?: true
+  gender?: true
   corporateName?: true
   corporateUen?: true
   fullAddress?: true
@@ -155,6 +160,7 @@ export type ContactCountAggregateInputType = {
   identificationNumber?: true
   nationality?: true
   dateOfBirth?: true
+  gender?: true
   corporateName?: true
   corporateUen?: true
   fullAddress?: true
@@ -251,6 +257,7 @@ export type ContactGroupByOutputType = {
   identificationNumber: string | null
   nationality: string | null
   dateOfBirth: Date | null
+  gender: $Enums.ContactGender | null
   corporateName: string | null
   corporateUen: string | null
   fullAddress: string | null
@@ -295,6 +302,7 @@ export type ContactWhereInput = {
   identificationNumber?: Prisma.StringNullableFilter<"Contact"> | string | null
   nationality?: Prisma.StringNullableFilter<"Contact"> | string | null
   dateOfBirth?: Prisma.DateTimeNullableFilter<"Contact"> | Date | string | null
+  gender?: Prisma.EnumContactGenderNullableFilter<"Contact"> | $Enums.ContactGender | null
   corporateName?: Prisma.StringNullableFilter<"Contact"> | string | null
   corporateUen?: Prisma.StringNullableFilter<"Contact"> | string | null
   fullAddress?: Prisma.StringNullableFilter<"Contact"> | string | null
@@ -325,6 +333,7 @@ export type ContactOrderByWithRelationInput = {
   identificationNumber?: Prisma.SortOrderInput | Prisma.SortOrder
   nationality?: Prisma.SortOrderInput | Prisma.SortOrder
   dateOfBirth?: Prisma.SortOrderInput | Prisma.SortOrder
+  gender?: Prisma.SortOrderInput | Prisma.SortOrder
   corporateName?: Prisma.SortOrderInput | Prisma.SortOrder
   corporateUen?: Prisma.SortOrderInput | Prisma.SortOrder
   fullAddress?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -359,6 +368,7 @@ export type ContactWhereUniqueInput = Prisma.AtLeast<{
   identificationNumber?: Prisma.StringNullableFilter<"Contact"> | string | null
   nationality?: Prisma.StringNullableFilter<"Contact"> | string | null
   dateOfBirth?: Prisma.DateTimeNullableFilter<"Contact"> | Date | string | null
+  gender?: Prisma.EnumContactGenderNullableFilter<"Contact"> | $Enums.ContactGender | null
   corporateName?: Prisma.StringNullableFilter<"Contact"> | string | null
   corporateUen?: Prisma.StringNullableFilter<"Contact"> | string | null
   fullAddress?: Prisma.StringNullableFilter<"Contact"> | string | null
@@ -389,6 +399,7 @@ export type ContactOrderByWithAggregationInput = {
   identificationNumber?: Prisma.SortOrderInput | Prisma.SortOrder
   nationality?: Prisma.SortOrderInput | Prisma.SortOrder
   dateOfBirth?: Prisma.SortOrderInput | Prisma.SortOrder
+  gender?: Prisma.SortOrderInput | Prisma.SortOrder
   corporateName?: Prisma.SortOrderInput | Prisma.SortOrder
   corporateUen?: Prisma.SortOrderInput | Prisma.SortOrder
   fullAddress?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -418,6 +429,7 @@ export type ContactScalarWhereWithAggregatesInput = {
   identificationNumber?: Prisma.StringNullableWithAggregatesFilter<"Contact"> | string | null
   nationality?: Prisma.StringNullableWithAggregatesFilter<"Contact"> | string | null
   dateOfBirth?: Prisma.DateTimeNullableWithAggregatesFilter<"Contact"> | Date | string | null
+  gender?: Prisma.EnumContactGenderNullableWithAggregatesFilter<"Contact"> | $Enums.ContactGender | null
   corporateName?: Prisma.StringNullableWithAggregatesFilter<"Contact"> | string | null
   corporateUen?: Prisma.StringNullableWithAggregatesFilter<"Contact"> | string | null
   fullAddress?: Prisma.StringNullableWithAggregatesFilter<"Contact"> | string | null
@@ -440,6 +452,7 @@ export type ContactCreateInput = {
   identificationNumber?: string | null
   nationality?: string | null
   dateOfBirth?: Date | string | null
+  gender?: $Enums.ContactGender | null
   corporateName?: string | null
   corporateUen?: string | null
   fullAddress?: string | null
@@ -470,6 +483,7 @@ export type ContactUncheckedCreateInput = {
   identificationNumber?: string | null
   nationality?: string | null
   dateOfBirth?: Date | string | null
+  gender?: $Enums.ContactGender | null
   corporateName?: string | null
   corporateUen?: string | null
   fullAddress?: string | null
@@ -498,6 +512,7 @@ export type ContactUpdateInput = {
   identificationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dateOfBirth?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  gender?: Prisma.NullableEnumContactGenderFieldUpdateOperationsInput | $Enums.ContactGender | null
   corporateName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   corporateUen?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   fullAddress?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -528,6 +543,7 @@ export type ContactUncheckedUpdateInput = {
   identificationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dateOfBirth?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  gender?: Prisma.NullableEnumContactGenderFieldUpdateOperationsInput | $Enums.ContactGender | null
   corporateName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   corporateUen?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   fullAddress?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -557,6 +573,7 @@ export type ContactCreateManyInput = {
   identificationNumber?: string | null
   nationality?: string | null
   dateOfBirth?: Date | string | null
+  gender?: $Enums.ContactGender | null
   corporateName?: string | null
   corporateUen?: string | null
   fullAddress?: string | null
@@ -579,6 +596,7 @@ export type ContactUpdateManyMutationInput = {
   identificationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dateOfBirth?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  gender?: Prisma.NullableEnumContactGenderFieldUpdateOperationsInput | $Enums.ContactGender | null
   corporateName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   corporateUen?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   fullAddress?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -602,6 +620,7 @@ export type ContactUncheckedUpdateManyInput = {
   identificationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dateOfBirth?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  gender?: Prisma.NullableEnumContactGenderFieldUpdateOperationsInput | $Enums.ContactGender | null
   corporateName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   corporateUen?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   fullAddress?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -641,6 +660,7 @@ export type ContactCountOrderByAggregateInput = {
   identificationNumber?: Prisma.SortOrder
   nationality?: Prisma.SortOrder
   dateOfBirth?: Prisma.SortOrder
+  gender?: Prisma.SortOrder
   corporateName?: Prisma.SortOrder
   corporateUen?: Prisma.SortOrder
   fullAddress?: Prisma.SortOrder
@@ -664,6 +684,7 @@ export type ContactMaxOrderByAggregateInput = {
   identificationNumber?: Prisma.SortOrder
   nationality?: Prisma.SortOrder
   dateOfBirth?: Prisma.SortOrder
+  gender?: Prisma.SortOrder
   corporateName?: Prisma.SortOrder
   corporateUen?: Prisma.SortOrder
   fullAddress?: Prisma.SortOrder
@@ -687,6 +708,7 @@ export type ContactMinOrderByAggregateInput = {
   identificationNumber?: Prisma.SortOrder
   nationality?: Prisma.SortOrder
   dateOfBirth?: Prisma.SortOrder
+  gender?: Prisma.SortOrder
   corporateName?: Prisma.SortOrder
   corporateUen?: Prisma.SortOrder
   fullAddress?: Prisma.SortOrder
@@ -754,6 +776,10 @@ export type EnumContactTypeFieldUpdateOperationsInput = {
 
 export type NullableEnumIdentificationTypeFieldUpdateOperationsInput = {
   set?: $Enums.IdentificationType | null
+}
+
+export type NullableEnumContactGenderFieldUpdateOperationsInput = {
+  set?: $Enums.ContactGender | null
 }
 
 export type ContactCreateNestedOneWithoutCompanyRelationsInput = {
@@ -863,6 +889,7 @@ export type ContactCreateWithoutTenantInput = {
   identificationNumber?: string | null
   nationality?: string | null
   dateOfBirth?: Date | string | null
+  gender?: $Enums.ContactGender | null
   corporateName?: string | null
   corporateUen?: string | null
   fullAddress?: string | null
@@ -891,6 +918,7 @@ export type ContactUncheckedCreateWithoutTenantInput = {
   identificationNumber?: string | null
   nationality?: string | null
   dateOfBirth?: Date | string | null
+  gender?: $Enums.ContactGender | null
   corporateName?: string | null
   corporateUen?: string | null
   fullAddress?: string | null
@@ -949,6 +977,7 @@ export type ContactScalarWhereInput = {
   identificationNumber?: Prisma.StringNullableFilter<"Contact"> | string | null
   nationality?: Prisma.StringNullableFilter<"Contact"> | string | null
   dateOfBirth?: Prisma.DateTimeNullableFilter<"Contact"> | Date | string | null
+  gender?: Prisma.EnumContactGenderNullableFilter<"Contact"> | $Enums.ContactGender | null
   corporateName?: Prisma.StringNullableFilter<"Contact"> | string | null
   corporateUen?: Prisma.StringNullableFilter<"Contact"> | string | null
   fullAddress?: Prisma.StringNullableFilter<"Contact"> | string | null
@@ -971,6 +1000,7 @@ export type ContactCreateWithoutCompanyRelationsInput = {
   identificationNumber?: string | null
   nationality?: string | null
   dateOfBirth?: Date | string | null
+  gender?: $Enums.ContactGender | null
   corporateName?: string | null
   corporateUen?: string | null
   fullAddress?: string | null
@@ -1000,6 +1030,7 @@ export type ContactUncheckedCreateWithoutCompanyRelationsInput = {
   identificationNumber?: string | null
   nationality?: string | null
   dateOfBirth?: Date | string | null
+  gender?: $Enums.ContactGender | null
   corporateName?: string | null
   corporateUen?: string | null
   fullAddress?: string | null
@@ -1043,6 +1074,7 @@ export type ContactUpdateWithoutCompanyRelationsInput = {
   identificationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dateOfBirth?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  gender?: Prisma.NullableEnumContactGenderFieldUpdateOperationsInput | $Enums.ContactGender | null
   corporateName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   corporateUen?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   fullAddress?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1072,6 +1104,7 @@ export type ContactUncheckedUpdateWithoutCompanyRelationsInput = {
   identificationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dateOfBirth?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  gender?: Prisma.NullableEnumContactGenderFieldUpdateOperationsInput | $Enums.ContactGender | null
   corporateName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   corporateUen?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   fullAddress?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1099,6 +1132,7 @@ export type ContactCreateWithoutContactDetailsInput = {
   identificationNumber?: string | null
   nationality?: string | null
   dateOfBirth?: Date | string | null
+  gender?: $Enums.ContactGender | null
   corporateName?: string | null
   corporateUen?: string | null
   fullAddress?: string | null
@@ -1128,6 +1162,7 @@ export type ContactUncheckedCreateWithoutContactDetailsInput = {
   identificationNumber?: string | null
   nationality?: string | null
   dateOfBirth?: Date | string | null
+  gender?: $Enums.ContactGender | null
   corporateName?: string | null
   corporateUen?: string | null
   fullAddress?: string | null
@@ -1171,6 +1206,7 @@ export type ContactUpdateWithoutContactDetailsInput = {
   identificationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dateOfBirth?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  gender?: Prisma.NullableEnumContactGenderFieldUpdateOperationsInput | $Enums.ContactGender | null
   corporateName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   corporateUen?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   fullAddress?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1200,6 +1236,7 @@ export type ContactUncheckedUpdateWithoutContactDetailsInput = {
   identificationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dateOfBirth?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  gender?: Prisma.NullableEnumContactGenderFieldUpdateOperationsInput | $Enums.ContactGender | null
   corporateName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   corporateUen?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   fullAddress?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1227,6 +1264,7 @@ export type ContactCreateWithoutOfficerPositionsInput = {
   identificationNumber?: string | null
   nationality?: string | null
   dateOfBirth?: Date | string | null
+  gender?: $Enums.ContactGender | null
   corporateName?: string | null
   corporateUen?: string | null
   fullAddress?: string | null
@@ -1256,6 +1294,7 @@ export type ContactUncheckedCreateWithoutOfficerPositionsInput = {
   identificationNumber?: string | null
   nationality?: string | null
   dateOfBirth?: Date | string | null
+  gender?: $Enums.ContactGender | null
   corporateName?: string | null
   corporateUen?: string | null
   fullAddress?: string | null
@@ -1299,6 +1338,7 @@ export type ContactUpdateWithoutOfficerPositionsInput = {
   identificationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dateOfBirth?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  gender?: Prisma.NullableEnumContactGenderFieldUpdateOperationsInput | $Enums.ContactGender | null
   corporateName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   corporateUen?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   fullAddress?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1328,6 +1368,7 @@ export type ContactUncheckedUpdateWithoutOfficerPositionsInput = {
   identificationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dateOfBirth?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  gender?: Prisma.NullableEnumContactGenderFieldUpdateOperationsInput | $Enums.ContactGender | null
   corporateName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   corporateUen?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   fullAddress?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1355,6 +1396,7 @@ export type ContactCreateWithoutShareholdingsInput = {
   identificationNumber?: string | null
   nationality?: string | null
   dateOfBirth?: Date | string | null
+  gender?: $Enums.ContactGender | null
   corporateName?: string | null
   corporateUen?: string | null
   fullAddress?: string | null
@@ -1384,6 +1426,7 @@ export type ContactUncheckedCreateWithoutShareholdingsInput = {
   identificationNumber?: string | null
   nationality?: string | null
   dateOfBirth?: Date | string | null
+  gender?: $Enums.ContactGender | null
   corporateName?: string | null
   corporateUen?: string | null
   fullAddress?: string | null
@@ -1427,6 +1470,7 @@ export type ContactUpdateWithoutShareholdingsInput = {
   identificationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dateOfBirth?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  gender?: Prisma.NullableEnumContactGenderFieldUpdateOperationsInput | $Enums.ContactGender | null
   corporateName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   corporateUen?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   fullAddress?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1456,6 +1500,7 @@ export type ContactUncheckedUpdateWithoutShareholdingsInput = {
   identificationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dateOfBirth?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  gender?: Prisma.NullableEnumContactGenderFieldUpdateOperationsInput | $Enums.ContactGender | null
   corporateName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   corporateUen?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   fullAddress?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1483,6 +1528,7 @@ export type ContactCreateWithoutChargeHoldingsInput = {
   identificationNumber?: string | null
   nationality?: string | null
   dateOfBirth?: Date | string | null
+  gender?: $Enums.ContactGender | null
   corporateName?: string | null
   corporateUen?: string | null
   fullAddress?: string | null
@@ -1512,6 +1558,7 @@ export type ContactUncheckedCreateWithoutChargeHoldingsInput = {
   identificationNumber?: string | null
   nationality?: string | null
   dateOfBirth?: Date | string | null
+  gender?: $Enums.ContactGender | null
   corporateName?: string | null
   corporateUen?: string | null
   fullAddress?: string | null
@@ -1555,6 +1602,7 @@ export type ContactUpdateWithoutChargeHoldingsInput = {
   identificationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dateOfBirth?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  gender?: Prisma.NullableEnumContactGenderFieldUpdateOperationsInput | $Enums.ContactGender | null
   corporateName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   corporateUen?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   fullAddress?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1584,6 +1632,7 @@ export type ContactUncheckedUpdateWithoutChargeHoldingsInput = {
   identificationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dateOfBirth?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  gender?: Prisma.NullableEnumContactGenderFieldUpdateOperationsInput | $Enums.ContactGender | null
   corporateName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   corporateUen?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   fullAddress?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1611,6 +1660,7 @@ export type ContactCreateWithoutNoteTabsInput = {
   identificationNumber?: string | null
   nationality?: string | null
   dateOfBirth?: Date | string | null
+  gender?: $Enums.ContactGender | null
   corporateName?: string | null
   corporateUen?: string | null
   fullAddress?: string | null
@@ -1640,6 +1690,7 @@ export type ContactUncheckedCreateWithoutNoteTabsInput = {
   identificationNumber?: string | null
   nationality?: string | null
   dateOfBirth?: Date | string | null
+  gender?: $Enums.ContactGender | null
   corporateName?: string | null
   corporateUen?: string | null
   fullAddress?: string | null
@@ -1683,6 +1734,7 @@ export type ContactUpdateWithoutNoteTabsInput = {
   identificationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dateOfBirth?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  gender?: Prisma.NullableEnumContactGenderFieldUpdateOperationsInput | $Enums.ContactGender | null
   corporateName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   corporateUen?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   fullAddress?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1712,6 +1764,7 @@ export type ContactUncheckedUpdateWithoutNoteTabsInput = {
   identificationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dateOfBirth?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  gender?: Prisma.NullableEnumContactGenderFieldUpdateOperationsInput | $Enums.ContactGender | null
   corporateName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   corporateUen?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   fullAddress?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1739,6 +1792,7 @@ export type ContactCreateManyTenantInput = {
   identificationNumber?: string | null
   nationality?: string | null
   dateOfBirth?: Date | string | null
+  gender?: $Enums.ContactGender | null
   corporateName?: string | null
   corporateUen?: string | null
   fullAddress?: string | null
@@ -1761,6 +1815,7 @@ export type ContactUpdateWithoutTenantInput = {
   identificationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dateOfBirth?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  gender?: Prisma.NullableEnumContactGenderFieldUpdateOperationsInput | $Enums.ContactGender | null
   corporateName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   corporateUen?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   fullAddress?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1789,6 +1844,7 @@ export type ContactUncheckedUpdateWithoutTenantInput = {
   identificationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dateOfBirth?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  gender?: Prisma.NullableEnumContactGenderFieldUpdateOperationsInput | $Enums.ContactGender | null
   corporateName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   corporateUen?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   fullAddress?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1817,6 +1873,7 @@ export type ContactUncheckedUpdateManyWithoutTenantInput = {
   identificationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   dateOfBirth?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  gender?: Prisma.NullableEnumContactGenderFieldUpdateOperationsInput | $Enums.ContactGender | null
   corporateName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   corporateUen?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   fullAddress?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1916,6 +1973,7 @@ export type ContactSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   identificationNumber?: boolean
   nationality?: boolean
   dateOfBirth?: boolean
+  gender?: boolean
   corporateName?: boolean
   corporateUen?: boolean
   fullAddress?: boolean
@@ -1947,6 +2005,7 @@ export type ContactSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Exten
   identificationNumber?: boolean
   nationality?: boolean
   dateOfBirth?: boolean
+  gender?: boolean
   corporateName?: boolean
   corporateUen?: boolean
   fullAddress?: boolean
@@ -1971,6 +2030,7 @@ export type ContactSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Exten
   identificationNumber?: boolean
   nationality?: boolean
   dateOfBirth?: boolean
+  gender?: boolean
   corporateName?: boolean
   corporateUen?: boolean
   fullAddress?: boolean
@@ -1995,6 +2055,7 @@ export type ContactSelectScalar = {
   identificationNumber?: boolean
   nationality?: boolean
   dateOfBirth?: boolean
+  gender?: boolean
   corporateName?: boolean
   corporateUen?: boolean
   fullAddress?: boolean
@@ -2004,7 +2065,7 @@ export type ContactSelectScalar = {
   deletedAt?: boolean
 }
 
-export type ContactOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "contactType" | "firstName" | "lastName" | "fullName" | "canonicalName" | "alias" | "canonicalAlias" | "identificationType" | "identificationNumber" | "nationality" | "dateOfBirth" | "corporateName" | "corporateUen" | "fullAddress" | "isActive" | "createdAt" | "updatedAt" | "deletedAt", ExtArgs["result"]["contact"]>
+export type ContactOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "contactType" | "firstName" | "lastName" | "fullName" | "canonicalName" | "alias" | "canonicalAlias" | "identificationType" | "identificationNumber" | "nationality" | "dateOfBirth" | "gender" | "corporateName" | "corporateUen" | "fullAddress" | "isActive" | "createdAt" | "updatedAt" | "deletedAt", ExtArgs["result"]["contact"]>
 export type ContactInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   chargeHoldings?: boolean | Prisma.Contact$chargeHoldingsArgs<ExtArgs>
   companyRelations?: boolean | Prisma.Contact$companyRelationsArgs<ExtArgs>
@@ -2047,6 +2108,10 @@ export type $ContactPayload<ExtArgs extends runtime.Types.Extensions.InternalArg
     identificationNumber: string | null
     nationality: string | null
     dateOfBirth: Date | null
+    /**
+     * Individuals only; null when not recorded. Sent to Sentroweb searches (MALE / FEMALE only).
+     */
+    gender: $Enums.ContactGender | null
     corporateName: string | null
     corporateUen: string | null
     fullAddress: string | null
@@ -2497,6 +2562,7 @@ export interface ContactFieldRefs {
   readonly identificationNumber: Prisma.FieldRef<"Contact", 'String'>
   readonly nationality: Prisma.FieldRef<"Contact", 'String'>
   readonly dateOfBirth: Prisma.FieldRef<"Contact", 'DateTime'>
+  readonly gender: Prisma.FieldRef<"Contact", 'ContactGender'>
   readonly corporateName: Prisma.FieldRef<"Contact", 'String'>
   readonly corporateUen: Prisma.FieldRef<"Contact", 'String'>
   readonly fullAddress: Prisma.FieldRef<"Contact", 'String'>

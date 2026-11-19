@@ -14,7 +14,7 @@ export function candidate(index: number, overrides: Partial<SentrowebCandidateDt
     roles: ['DIRECTOR'],
     identifierType: null,
     identifier: null,
-    searchDetails: { country: null, dateOfBirth: false, gender: false },
+    searchDetails: { country: null, dateOfBirth: false, gender: null },
     ...overrides,
   };
 }
@@ -44,7 +44,8 @@ export function result(overrides: Partial<SentrowebResultDto> = {}): SentrowebRe
     roles: ['DIRECTOR'],
     identifierType: null,
     identifier: null,
-    searchDetails: { country: null, dateOfBirth: false, gender: false },
+    searchDetails: { country: null, dateOfBirth: false, gender: null },
+    searchDetailsSent: true,
     status: 'CLEAR',
     matchCount: 0,
     categoryCounts: {},
@@ -68,6 +69,7 @@ export function run(overrides: Partial<SentrowebRunDto> = {}): SentrowebRunDto {
     errorCode: null,
     errorMessage: null,
     entityCount: 1,
+    fuzzy: false,
     creditsUsed: 1,
     requestedBy: { id: 'user-1', name: 'Sam Lee' },
     createdAt: '2026-11-18T01:00:00.000Z',

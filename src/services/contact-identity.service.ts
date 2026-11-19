@@ -465,6 +465,7 @@ function buildEnrichment(
     ['corporateUen', hasUsableCorporateUen(candidate) ? candidate.corporateUen : null, existing.corporateUen],
     ['nationality', candidate.nationality, existing.nationality],
     ['dateOfBirth', incomingDob, existing.dateOfBirth],
+    ['gender', candidate.gender, existing.gender],
     ['fullAddress', candidate.fullAddress, existing.fullAddress],
   ] as const;
   const conflictFields = new Set<ContactIdentityConflict['field']>([
@@ -591,6 +592,7 @@ async function createNewContact(
       identificationNumber: hasUsableIdentificationNumber(candidate) ? candidate.identificationNumber?.trim() || null : null,
       nationality: candidate.nationality,
       dateOfBirth: candidate.dateOfBirth ? new Date(candidate.dateOfBirth) : null,
+      gender: candidate.gender ?? null,
       corporateName: candidate.corporateName,
       corporateUen: hasUsableCorporateUen(candidate) ? candidate.corporateUen?.trim() || null : null,
       fullAddress: candidate.fullAddress,

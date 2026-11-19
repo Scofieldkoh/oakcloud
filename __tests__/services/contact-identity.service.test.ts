@@ -421,6 +421,21 @@ describe('contact identity service', () => {
     expect(tx.contact.update).not.toHaveBeenCalled();
   });
 
+  it('fills an empty gender and never overwrites a recorded one', async () => {
+    const base = { identificationType: 'NRIC' as const, identificationNumber: 'S1234567A' };
+    tx.contact.findMany.mockResolvedValue([existingContact({ ...base, gender: null })]);
+    const filled = await resolveOrCreateContact(candidate({ ...base, gender: 'FEMALE' }), { action: 'AUTO' }, params);
+    expect(tx.contact.update).toHaveBeenCalledWith(expect.objectContaining({ data: { gender: 'FEMALE' } }));
+    expect(filled.enrichedFields).toEqual(['gender']);
+    expect(filled.conflicts).toEqual([]);
+
+    tx.contact.update.mockClear();
+    tx.contact.findMany.mockResolvedValue([existingContact({ ...base, gender: 'MALE' })]);
+    const kept = await resolveOrCreateContact(candidate({ ...base, gender: 'FEMALE' }), { action: 'AUTO' }, params);
+    expect(tx.contact.update).not.toHaveBeenCalled();
+    expect(kept.enrichedFields).toEqual([]);
+  });
+
   it('fills empty fields without overwriting conflicting non-empty values', async () => {
     tx.contact.findMany.mockResolvedValue([
       existingContact({
@@ -449,6 +464,14 @@ describe('contact identity service', () => {
     expect(result.conflicts).toEqual([
       expect.objectContaining({ field: 'fullAddress', existingValue: 'Existing address' }),
     ]);
+  });
+
+  it('stores the gender of a new contact, and none when none was given', async () => {
+    tx.contact.findMany.mockResolvedValue([]);
+    await resolveOrCreateContact(candidate({ firstName: 'Gina', lastName: 'Gender', gender: 'FEMALE' }), { action: 'AUTO' }, params);
+    expect(tx.contact.create).toHaveBeenLastCalledWith(expect.objectContaining({ data: expect.objectContaining({ gender: 'FEMALE' }) }));
+    await resolveOrCreateContact(candidate({ firstName: 'Nora', lastName: 'Nogender' }), { action: 'AUTO' }, params);
+    expect(tx.contact.create).toHaveBeenLastCalledWith(expect.objectContaining({ data: expect.objectContaining({ gender: null }) }));
   });
 
   it('creates only distinct normalized contact details through the same transaction', async () => {

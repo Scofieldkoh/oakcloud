@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { agreedCountry, formatDateOfBirth, searchDetailsFor } from '@/services/sentroweb/entities';
+import { agreedCountry, formatDateOfBirth, searchDetailsFor, sentrowebGenderOf } from '@/services/sentroweb/entities';
 
 describe('formatDateOfBirth', () => {
   const now = new Date('2026-11-19T00:00:00Z');
@@ -30,8 +30,24 @@ describe('agreedCountry', () => {
 });
 
 describe('searchDetailsFor', () => {
-  it('reports the date as yes/no and never claims a gender', () => {
-    expect(searchDetailsFor({ country: 'Singapore', dateOfBirth: '1980-01-01' })).toEqual({ country: 'Singapore', dateOfBirth: true, gender: false });
-    expect(searchDetailsFor({ country: null, dateOfBirth: null })).toEqual({ country: null, dateOfBirth: false, gender: false });
+  it('reports the date as yes/no and the gender when one is held', () => {
+    expect(searchDetailsFor({ country: 'Singapore', dateOfBirth: '1980-01-01', gender: 'MALE' })).toEqual({
+      country: 'Singapore',
+      dateOfBirth: true,
+      gender: 'MALE',
+    });
+    expect(searchDetailsFor({ country: null, dateOfBirth: null, gender: null })).toEqual({
+      country: null,
+      dateOfBirth: false,
+      gender: null,
+    });
+  });
+});
+
+describe('sentrowebGenderOf', () => {
+  it('passes MALE and FEMALE, and nothing else (Sentroweb has two boxes only)', () => {
+    expect(sentrowebGenderOf('MALE')).toBe('MALE');
+    expect(sentrowebGenderOf('FEMALE')).toBe('FEMALE');
+    for (const value of ['OTHER', 'male', '', null, undefined]) expect(sentrowebGenderOf(value as string | null | undefined)).toBeNull();
   });
 });

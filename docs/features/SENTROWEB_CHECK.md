@@ -28,7 +28,7 @@ confirmation (**Run again anyway**). Only one run per company can be queued or r
 
 | Rule | Detail |
 | --- | --- |
-| Inputs | The name plus the Individual/Entity tick. An **individual** is also searched with the **country** and **date of birth** Oakcloud holds, when it holds them; an entity (the company, a corporate holder) is searched by name only. Gender is never sent (Oakcloud holds none; adding one is a separate change). Fuzzy matching is off (`SENTROWEB_SEARCH_OPTIONS`). Sentroweb has no UEN or ID field, so UEN and ID numbers are Oakcloud metadata only. See "Country and date of birth" below. |
+| Inputs | The name plus the Individual/Entity tick. An **individual** is also searched with the **country** and **date of birth** Oakcloud holds, when it holds them; an entity (the company, a corporate holder) is searched by name only. Gender (`MALE` or `FEMALE`) is sent when the linked contact has one. Fuzzy Search is off unless the person ticks it for the run. See "Country, date of birth and gender" and "Fuzzy search" below. Sentroweb has no UEN or ID field, so UEN and ID numbers are Oakcloud metadata only. See "Country and date of birth" below. |
 | Who is screened | The company (Entity), current `DIRECTOR`, `MANAGING_DIRECTOR`, `ALTERNATE_DIRECTOR`, `NOMINEE_DIRECTOR` officers and current shareholders. Corporate holders are searched as Entities. Secretaries, the CEO and former officers are not screened. The same person in several roles is one search: records match when they share a contact, or an ID type and number, or (for records without either conflicting) the same name and kind. Groups are joined repeatedly, so a later record that links two earlier groups merges them all (contact or ID number first, then name). Two records with different ID numbers or different contacts are never merged by name, so a name-only record joins exactly one person. |
 | Classification | **Clear** only if the captured search response and the page's `<Category> [N matches]` titles both show 0 for every expected category (Entity: SIE; Individual: FATF, PEP, SIP; the FATF heading is shown when a country was searched (both recorded country searches show it) and is then required; for a name-only individual search it may be absent, and the page then has just the PEP and SIP headings. The FATF array in the response must still be present and empty), the response echoes the country and date of birth that were sent (another or missing echo is `RESULT_MISMATCH`, never clear), no other array in the response holds anything, the response describes the search we submitted, and the two sources agree. Any count above 0 in either source is a **Possible match**. Everything else is an **Error**. No path defaults to Clear (`src/services/sentroweb/result-parser.ts`). |
 | Evidence | A Clear result needs Sentroweb's PDF. Without it the result is an Error (`EVIDENCE_MISSING`). A Possible match without the PDF stays a Possible match and carries `EVIDENCE_MISSING`. |
@@ -66,9 +66,9 @@ confirmation (**Run again anyway**). Only one run per company can be queued or r
   never clicks Match Yes/No, "All results are false match", Save or Cancel on a result.
 - **A submitted search is never submitted again** by the client, the service or recovery.
 
-## Country and date of birth
+## Country, date of birth and gender
 
-For an individual the run sends the country and the date of birth Oakcloud holds, so a common name
+For an individual the run sends the country, the date of birth and the gender Oakcloud holds, so a common name
 returns fewer unrelated hits. Nothing is guessed: a field Oakcloud cannot supply with certainty is
 left blank for that person, and the run carries on.
 
@@ -76,20 +76,28 @@ left blank for that person, and the run carries on.
 | --- | --- | --- |
 | Country | The linked contact's `nationality`, else the officer or shareholder row's `nationality` (the same precedence as the ID number). | Mapped to one exact option of Sentroweb's country list (`src/lib/sentroweb/countries.ts`): an exact country name, an upper-case two-letter flag code (`SG`, `MY`), a listed three-letter code (`SGP`), or a listed demonym or alternative name (`Singaporean`, `Hong Kong`). Ambiguous words (`Dominican`, `Guinean`, `Congolese`, `Korean`), unknown text and lower-case two-letter words map to nothing. |
 | Date of birth | The linked contact's `dateOfBirth` (officer and shareholder rows hold none). | Sent as `YYYY-MM-DD`. A date before 1900 or in the future is not sent. |
-| Gender | None: Oakcloud holds no gender for contacts, directors or shareholders. | Never sent; the Male and Female boxes must stay unticked. Needs its own change (a field on the contact). |
+| Gender | The linked contact's `gender` (Contacts page, optional: Male, Female, Other). Officer and shareholder rows hold none. | `MALE` and `FEMALE` tick the Male or Female box. `OTHER` and blank send nothing (Sentroweb has two boxes only), and both boxes stay unticked. |
 
 When one person has several records (a director and a shareholder), a field is sent only if every
 stated value agrees. Two different nationalities, or one that cannot be mapped next to one that
 can, leave the country blank.
 
-What is sent is stored on the result (`requestedCountry`, `requestedDateOfBirth`; the date is never
-returned by the API, only whether one was sent) and shown as "Sent: name, country (Singapore), date
-of birth. Not sent: gender" under each name in the confirm dialog and on the Screening tab.
+What is requested is stored on the result (`requestedCountry`, `requestedDateOfBirth`,
+`requestedGender`; the date is never returned by the API, only whether one was requested). Under
+each name the confirm dialog says "Will send: name, country (Singapore), date of birth, gender
+(Male)". The Screening tab says "Sent: ..." only for a result that was read back (clear or possible
+match). A result that never ran, failed before SEARCH or ended in an error says "Requested, not
+confirmed as sent: ...", because nothing proves what reached Sentroweb.
 
-The browser client types the country to narrow the list, then takes the option whose text is
+The browser client fills the country and the date of birth **first**, while SEARCH is still
+disabled (it enables once a name and a type are filled in), and types the name and ticks the type
+last. Nothing can submit the form while the country is being chosen, not even an Enter key in the
+dropdown (Enter is pressed only while SEARCH is disabled). If the page nevertheless asks for a quota
+or starts a search before our click, the attempt is recorded as submitted (cooldown, no retry, one
+credit counted) and the client stops. The client types the country to narrow the list, then takes the option whose text is
 exactly the wanted one (Enter when it is the first listed, as in the recorded flow; otherwise a click
 on that option, so "Guinea" never picks "Equatorial Guinea"), types the date, and reads back the
-country shown, the date typed, the search type and the unticked gender boxes just before SEARCH. If
+country shown, the date typed, the search type, the Fuzzy Search box and the Male and Female boxes just before SEARCH. If
 any field is not exactly what was wanted the attempt fails `LAYOUT_CHANGED` before SEARCH: not
 submitted, no credit, nothing sent. Sentroweb's answer must echo the same country and date of birth.
 
@@ -98,10 +106,21 @@ to Sentroweb even when the name was searched before. The cost is not verified: t
 "may count as a new name, at up to 1 credit each" and quotes no amount. Everything else about
 credits, the cooldown and de-duplication is unchanged.
 
+## Fuzzy search
+
+The confirm dialog has an unticked **Fuzzy search** box. Ticking it ticks Fuzzy Search on Sentroweb
+for every search of that run (the run stores `fuzzy`, shown as a badge on the Screening tab). The
+answer must echo `fuzzyValue` as asked, otherwise `RESULT_MISMATCH`. Fuzzy search finds spelling
+variants, so more possible matches are expected. They are all listed as **Possible match** for a
+person to review; Oakcloud never dismisses a hit as a false positive by itself and never turns a
+possible match into clear. Whether a fuzzy search costs a credit again is not verified; the dialog
+quotes no amount.
+
 **Not verified on the real site** (built from the recorded pages only; no live search was made for
-this change): that an option can be chosen by a click when it is not the first listed (the recorded
-flow typed and pressed Enter), that a typed date is accepted as typed without the calendar rewriting it,
-and whether Sentroweb charges again for a same-name search with new details.
+this change): the value Sentroweb receives for a ticked gender box, whether ticking Male or Female
+unticks the other, that fuzzy ticks and is echoed as `fuzzyValue`, that an option can be chosen by a
+click when it is not the first listed (the recorded flow typed and pressed Enter), that a typed date
+is accepted as typed without the calendar rewriting it, and whether Sentroweb charges again for a same-name search with new details.
 
 ## Error codes
 

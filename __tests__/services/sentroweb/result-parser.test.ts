@@ -509,3 +509,39 @@ describe('parseSentrowebResult: an individual searched with a country and a date
     expect(parseSentrowebResult(c.searchType, c.json, c.titles, { expectedName: c.name }).status).toBe('CLEAR');
   });
 });
+
+describe('parseSentrowebResult: Fuzzy Search echo', () => {
+  const run = (fuzzyValue: unknown, expectedFuzzy: boolean | undefined) => {
+    const c = clearIndividual();
+    c.json[0].fuzzyValue = fuzzyValue;
+    return parseSentrowebResult(c.searchType, c.json, c.titles, { expectedName: c.name, expectedFuzzy });
+  };
+
+  it('is CLEAR when the answer says the same as what was asked', () => {
+    expect(run(false, false).status).toBe('CLEAR');
+    expect(run(true, true).status).toBe('CLEAR');
+  });
+
+  it.each([
+    [true, false],
+    [false, true],
+    [undefined, true],
+    [undefined, false],
+    ['true', true],
+    [null, false],
+  ])('is ERROR RESULT_MISMATCH, never CLEAR, when the answer says %j and %j was asked', (answer, asked) => {
+    expect(run(answer, asked)).toMatchObject({ status: 'ERROR', errorCode: 'RESULT_MISMATCH' });
+  });
+
+  it('does not check the echo when nothing is expected', () => {
+    expect(run('anything', undefined).status).toBe('CLEAR');
+  });
+
+  it('a hit is still a possible match whatever the fuzzy echo says', () => {
+    const c = loadCase('individual-match');
+    c.json[0].fuzzyValue = true;
+    expect(
+      parseSentrowebResult(c.searchType, c.json, c.titles, { expectedName: c.name, expectedFuzzy: false }).status,
+    ).toBe('POSSIBLE_MATCH');
+  });
+});

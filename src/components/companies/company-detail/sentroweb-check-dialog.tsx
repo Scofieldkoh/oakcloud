@@ -78,6 +78,7 @@ function SentrowebCheckDialogBody({
   const start = useStartSentrowebCheck(companyId);
   const [ticked, setTicked] = useState<string[] | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [fuzzy, setFuzzy] = useState(false);
   const [cooldownFromError, setCooldownFromError] = useState<string | null>(null);
   const [alreadyRunningFromError, setAlreadyRunningFromError] = useState(false);
   const listId = useId();
@@ -122,7 +123,11 @@ function SentrowebCheckDialogBody({
 
     setSubmitError(null);
     try {
-      const result = await start.mutateAsync({ entityKeys, ...(inCooldown ? { force: true } : {}) });
+      const result = await start.mutateAsync({
+        entityKeys,
+        ...(inCooldown ? { force: true } : {}),
+        ...(fuzzy ? { fuzzy: true } : {}),
+      });
       success('Sentroweb check started');
       onClose();
       onStarted?.(result.runId);
@@ -214,6 +219,23 @@ function SentrowebCheckDialogBody({
           <p className="text-sm text-text-secondary">Tick the people and companies you want to check.</p>
         ) : null}
 
+        {candidates.length > 0 ? (
+          <div className="space-y-1">
+            <Checkbox
+              size="sm"
+              label="Fuzzy search"
+              checked={fuzzy}
+              disabled={start.isPending}
+              onChange={(event) => setFuzzy(event.target.checked)}
+            />
+            <p className="ml-6 text-xs text-text-secondary">
+              Also finds spelling variants of each name, so expect more possible matches. Every hit is
+              listed as a possible match for you to review; none is dismissed automatically. Applies to
+              every name in this run. Off by default.
+            </p>
+          </div>
+        ) : null}
+
         {data && candidates.length > 0 ? (
           <p className="text-sm font-medium text-text-primary" aria-live="polite">
             This will use up to {pluralise(credits, 'Sentroweb credit')}
@@ -273,7 +295,7 @@ function CandidateRow({
           onChange={(event) => onChange(event.target.checked)}
         />
         <p className="ml-6 text-xs text-text-muted">
-          {formatSentrowebSearchDetails(candidate.searchDetails, candidate.searchType)}
+          {formatSentrowebSearchDetails(candidate.searchDetails, candidate.searchType, 'planned')}
         </p>
       </div>
       <span id={detailId} className="flex flex-wrap items-center gap-1.5">

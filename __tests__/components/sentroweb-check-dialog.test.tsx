@@ -22,15 +22,15 @@ const START_URL = '/api/companies/company-1/sentroweb-checks?tenantId=tenant-1';
 
 interface FetchSetup {
   candidates: SentrowebCandidatesResponse;
-  start?: (body: { entityKeys: string[]; force?: boolean }) => Promise<Response> | Response;
+  start?: (body: { entityKeys: string[]; force?: boolean; fuzzy?: boolean }) => Promise<Response> | Response;
 }
 
 function setupFetch({ candidates, start }: FetchSetup) {
-  const startBodies: Array<{ entityKeys: string[]; force?: boolean }> = [];
+  const startBodies: Array<{ entityKeys: string[]; force?: boolean; fuzzy?: boolean }> = [];
   const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
     if (url === CANDIDATES_URL) return jsonResponse(candidates);
     if (url === START_URL && init?.method === 'POST') {
-      const body = JSON.parse(String(init.body)) as { entityKeys: string[]; force?: boolean };
+      const body = JSON.parse(String(init.body)) as { entityKeys: string[]; force?: boolean; fuzzy?: boolean };
       startBodies.push(body);
       return start ? start(body) : jsonResponse({ runId: 'run-new' }, 202);
     }
@@ -51,7 +51,8 @@ function renderDialog(onClose = vi.fn(), onStarted = vi.fn()) {
 }
 
 const runButton = () => screen.getByRole('button', { name: /^(Run check|Run again anyway)$/ });
-const personCheckboxes = () => screen.getAllByRole('checkbox') as HTMLInputElement[];
+const personCheckboxes = () =>
+  (screen.getAllByRole('checkbox') as HTMLInputElement[]).filter((box) => !box.labels?.[0]?.textContent?.includes('Fuzzy'));
 
 describe('SentrowebCheckDialog', () => {
   beforeEach(() => {
@@ -68,9 +69,9 @@ describe('SentrowebCheckDialog', () => {
     setupFetch({
       candidates: candidatesResponse(3, {
         candidates: [
-          { key: 'k1', name: 'Acme Holdings Pte Ltd', entityKind: 'CORPORATE', searchType: 'ENTITY', roles: ['SHAREHOLDER'], identifierType: null, identifier: null, searchDetails: { country: null, dateOfBirth: false, gender: false } },
-          { key: 'k2', name: 'Alice Tan', entityKind: 'INDIVIDUAL', searchType: 'INDIVIDUAL', roles: ['DIRECTOR', 'MANAGING_DIRECTOR'], identifierType: null, identifier: null, searchDetails: { country: null, dateOfBirth: false, gender: false } },
-          { key: 'k3', name: 'Bob Lim', entityKind: 'INDIVIDUAL', searchType: 'INDIVIDUAL', roles: ['NOMINEE_DIRECTOR'], identifierType: null, identifier: null, searchDetails: { country: null, dateOfBirth: false, gender: false } },
+          { key: 'k1', name: 'Acme Holdings Pte Ltd', entityKind: 'CORPORATE', searchType: 'ENTITY', roles: ['SHAREHOLDER'], identifierType: null, identifier: null, searchDetails: { country: null, dateOfBirth: false, gender: null } },
+          { key: 'k2', name: 'Alice Tan', entityKind: 'INDIVIDUAL', searchType: 'INDIVIDUAL', roles: ['DIRECTOR', 'MANAGING_DIRECTOR'], identifierType: null, identifier: null, searchDetails: { country: null, dateOfBirth: false, gender: null } },
+          { key: 'k3', name: 'Bob Lim', entityKind: 'INDIVIDUAL', searchType: 'INDIVIDUAL', roles: ['NOMINEE_DIRECTOR'], identifierType: null, identifier: null, searchDetails: { country: null, dateOfBirth: false, gender: null } },
         ],
       }),
     });
@@ -100,7 +101,7 @@ describe('SentrowebCheckDialog', () => {
     setupFetch({
       candidates: candidatesResponse(2, {
         candidates: [
-          candidate(1, { name: 'Alice Tan', searchDetails: { country: 'Singapore', dateOfBirth: true, gender: false } }),
+          candidate(1, { name: 'Alice Tan', searchDetails: { country: 'Singapore', dateOfBirth: true, gender: 'FEMALE' } }),
           candidate(2, { name: 'Bob Lim' }),
           candidate(3, { name: 'Acme Pte Ltd', entityKind: 'CORPORATE', searchType: 'ENTITY' }),
         ],
@@ -108,9 +109,10 @@ describe('SentrowebCheckDialog', () => {
     });
     renderDialog();
     await screen.findByRole('checkbox', { name: 'Alice Tan' });
-    expect(screen.getByText('Sent: name, country (Singapore), date of birth. Not sent: gender')).toBeInTheDocument();
-    expect(screen.getByText('Sent: name. Not sent: country, date of birth, gender')).toBeInTheDocument();
-    expect(screen.getByText('Sent: name only')).toBeInTheDocument();
+    expect(screen.getByText('Will send: name, country (Singapore), date of birth, gender (Female)')).toBeInTheDocument();
+    expect(screen.getByText('Will send: name. Will not send: country, date of birth, gender')).toBeInTheDocument();
+    expect(screen.getByText('Will send: name only')).toBeInTheDocument();
+    expect(document.body.textContent).not.toMatch(/\bSent:/);
     expect(screen.getByText(/different\s+details.*may count as a new name, at up to 1 credit each/)).toBeInTheDocument();
     expect(document.body.textContent).not.toMatch(/\b19\d\d-\d\d-\d\d\b/);
   });
@@ -202,6 +204,26 @@ describe('SentrowebCheckDialog', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Run check' }));
     await waitFor(() => expect(startBodies).toHaveLength(1));
     expect(startBodies[0]).toEqual({ entityKeys: ['key-1'] });
+  });
+
+  it('Fuzzy search is off by default and sends no flag; ticking it sends fuzzy for the whole run', async () => {
+    const { startBodies } = setupFetch({ candidates: candidatesResponse(2) });
+    renderDialog();
+    const fuzzy = await screen.findByRole('checkbox', { name: 'Fuzzy search' });
+    expect(fuzzy).not.toBeChecked();
+    expect(screen.getByText(/none is dismissed automatically/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Run check' }));
+    await waitFor(() => expect(startBodies).toHaveLength(1));
+    expect(startBodies[0]).toEqual({ entityKeys: ['key-1', 'key-2'] });
+  });
+
+  it('sends fuzzy: true when the person ticks Fuzzy search', async () => {
+    const { startBodies } = setupFetch({ candidates: candidatesResponse(2) });
+    renderDialog();
+    fireEvent.click(await screen.findByRole('checkbox', { name: 'Fuzzy search' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Run check' }));
+    await waitFor(() => expect(startBodies).toHaveLength(1));
+    expect(startBodies[0]).toEqual({ entityKeys: ['key-1', 'key-2'], fuzzy: true });
   });
 
   it('disables Run and explains when a check is already running', async () => {

@@ -168,6 +168,7 @@ function RunDetail({ companyId, run }: { companyId: string; run: SentrowebRunDto
         <span className="text-sm text-text-secondary">{formatDateTime(when)}</span>
         {run.requestedBy ? <span className="text-sm text-text-secondary">Run by {run.requestedBy.name}</span> : null}
         <span className="text-sm text-text-secondary">{runCountsText(run)}</span>
+        {run.fuzzy ? <span className="badge badge-neutral badge-sm">Fuzzy search</span> : null}
       </div>
 
       {runError ? <Alert variant="warning">{runError}</Alert> : null}
@@ -244,7 +245,7 @@ function ResultsTable({
                       <div>
                         <span className="font-medium text-text-primary">{result.name}</span>
                         <p className="mt-0.5 text-xs text-text-muted">
-                          {formatSentrowebSearchDetails(result.searchDetails, result.searchType)}
+                          {formatSentrowebSearchDetails(result.searchDetails, result.searchType, result.searchDetailsSent ? 'sent' : 'requested')}
                         </p>
                         {errorText ? <p className="mt-1 text-xs text-text-secondary">{errorText}</p> : null}
                       </div>
@@ -381,6 +382,7 @@ function RunHistory({
                 <span className="text-text-primary">{formatDateTime(item.createdAt)}</span>
                 <SentrowebOverallBadge run={item} />
                 <span className="text-text-secondary">{runCountsText(item)}</span>
+                {item.fuzzy ? <span className="badge badge-neutral badge-sm">Fuzzy</span> : null}
                 {item.requestedBy ? <span className="text-text-secondary">{item.requestedBy.name}</span> : null}
               </button>
             </li>

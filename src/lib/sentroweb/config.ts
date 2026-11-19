@@ -18,16 +18,6 @@ export const SENTROWEB_LEASE_GRACE_MS = 2 * 60 * 1000;
 /** Credits Sentroweb charges per confirmed search. The confirm modal must say exactly this. */
 export const SENTROWEB_CREDITS_PER_SEARCH = 1;
 
-/**
- * Search inputs (decision D1, extended). Fuzzy matching is off. An individual is searched with the
- * name and, when Oakcloud holds them, the exact Sentroweb country option and the date of birth
- * (see `entities.ts` and `countries.ts`); an entity with the name only. Gender is never sent:
- * Oakcloud holds none. Sentroweb has no UEN or ID field, so those stay Oakcloud metadata.
- */
-export const SENTROWEB_SEARCH_OPTIONS = {
-  fuzzy: false,
-} as const;
-
 export interface SentrowebTimeouts {
   /** Every navigation, click and short wait. */
   stepMs: number;

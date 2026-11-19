@@ -65,6 +65,7 @@ export function makeClient(): FakeClient {
         // Like the real answer, it echoes what the search was sent with.
         loaded.json[0].country = request.country ?? '';
         loaded.json[0].dateOfBirth = request.dateOfBirth ?? '';
+        loaded.json[0].fuzzyValue = request.fuzzy === true;
         return {
           json: loaded.json,
           domTitles: loaded.titles,

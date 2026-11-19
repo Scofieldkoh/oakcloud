@@ -411,6 +411,15 @@ export const ContactType = {
 export type ContactType = (typeof ContactType)[keyof typeof ContactType]
 
 
+export const ContactGender = {
+  MALE: 'MALE',
+  FEMALE: 'FEMALE',
+  OTHER: 'OTHER'
+} as const
+
+export type ContactGender = (typeof ContactGender)[keyof typeof ContactGender]
+
+
 export const IdentificationType = {
   NRIC: 'NRIC',
   FIN: 'FIN',

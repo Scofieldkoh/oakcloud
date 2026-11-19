@@ -21,6 +21,7 @@ type RouteParams = { params: Promise<{ id: string }> };
 const startSchema = z.object({
   entityKeys: z.array(z.string().min(1).max(64)).max(100),
   force: z.boolean().optional(),
+  fuzzy: z.boolean().optional(),
 });
 
 const listQuerySchema = z.object({
@@ -59,6 +60,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       userId: context.session.id,
       entityKeys: body.entityKeys,
       force: body.force,
+      fuzzy: body.fuzzy,
     });
     return NextResponse.json({ runId }, { status: 202 });
   } catch (error) {

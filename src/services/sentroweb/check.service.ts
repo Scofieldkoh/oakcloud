@@ -75,6 +75,8 @@ export interface QueueRunInput {
   userId: string;
   entityKeys: string[];
   force?: boolean;
+  /** Tick Fuzzy Search for every search of this run. Off unless asked for. */
+  fuzzy?: boolean;
 }
 
 export interface QueueRunOptions extends ServiceOptions {
@@ -187,9 +189,9 @@ export async function getCandidatesInfo(
     configured: isSentrowebConfigured(),
     maxEntities: SENTROWEB_MAX_ENTITIES_PER_RUN,
     creditsPerSearch: SENTROWEB_CREDITS_PER_SEARCH,
-    candidates: candidates.map(({ sourceRefs: _sourceRefs, contactId: _contactId, country, dateOfBirth, ...dto }) => ({
+    candidates: candidates.map(({ sourceRefs: _sourceRefs, contactId: _contactId, country, dateOfBirth, gender, ...dto }) => ({
       ...dto,
-      searchDetails: searchDetailsFor({ country, dateOfBirth }),
+      searchDetails: searchDetailsFor({ country, dateOfBirth, gender }),
     })),
     activeRunId: active?.id ?? null,
     cooldownUntil: until && until > now ? until.toISOString() : null,
@@ -251,6 +253,7 @@ export async function queueRun(
           requestedById: input.userId,
           status: 'QUEUED',
           entityCount: selected.length,
+          fuzzy: input.fuzzy === true,
           results: {
             create: selected.map((candidate, position) => ({
               tenantId: input.tenantId,
@@ -266,6 +269,7 @@ export async function queueRun(
               identifier: candidate.identifier,
               requestedCountry: candidate.country,
               requestedDateOfBirth: candidate.dateOfBirth,
+              requestedGender: candidate.gender,
             })),
           },
         },
@@ -281,7 +285,7 @@ export async function queueRun(
           entityId: run.id,
           entityName: company.name,
           summary: `Queued a Sentroweb check of ${selected.length} ${selected.length === 1 ? 'name' : 'names'}`,
-          metadata: { entityCount: selected.length, force: input.force === true },
+          metadata: { entityCount: selected.length, force: input.force === true, fuzzy: input.fuzzy === true },
         },
         tx,
       );
@@ -446,6 +450,8 @@ async function processEntity(context: EntityContext): Promise<SentrowebErrorCode
         searchType: result.searchType,
         country: result.requestedCountry,
         dateOfBirth: result.requestedDateOfBirth,
+        gender: result.requestedGender === 'MALE' || result.requestedGender === 'FEMALE' ? result.requestedGender : null,
+        fuzzy: run.fuzzy,
       },
       { signal },
     );
@@ -477,6 +483,7 @@ async function processEntity(context: EntityContext): Promise<SentrowebErrorCode
     // What the search was sent with must come back unchanged in Sentroweb's answer.
     expectedCountry: result.requestedCountry,
     expectedDateOfBirth: result.requestedDateOfBirth,
+    expectedFuzzy: run.fuzzy,
   });
   const checkedAt = now();
 
@@ -770,8 +777,12 @@ function toResultDto(row: SentrowebCheckResult): SentrowebResultDto {
     searchDetails: {
       country: row.requestedCountry,
       dateOfBirth: row.requestedDateOfBirth !== null,
-      gender: false,
+      gender: row.requestedGender === 'MALE' || row.requestedGender === 'FEMALE' ? row.requestedGender : null,
     },
+    // These are the details the search was requested with. They count as sent only for a result
+    // that was read back: a search that was never run, failed before SEARCH or ended in an error
+    // proves nothing about what reached Sentroweb.
+    searchDetailsSent: row.searchSubmittedAt !== null && (row.status === 'CLEAR' || row.status === 'POSSIBLE_MATCH'),
     status: row.status,
     matchCount: row.matchCount,
     categoryCounts: (row.categoryCounts ?? {}) as SentrowebCategoryCounts,
@@ -795,6 +806,7 @@ function toRunDto(row: RunRow, results?: SentrowebCheckResult[]): SentrowebRunDt
     errorCode: row.errorCode,
     errorMessage: sentrowebErrorMessage(row.errorCode),
     entityCount: row.entityCount,
+    fuzzy: row.fuzzy,
     creditsUsed: row.creditsUsed,
     requestedBy: row.requestedBy ? { id: row.requestedBy.id, name: name || 'Unknown user' } : null,
     createdAt: row.createdAt.toISOString(),

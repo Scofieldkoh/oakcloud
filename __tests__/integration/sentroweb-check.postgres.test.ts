@@ -445,7 +445,7 @@ describePostgres('Sentroweb check service (PostgreSQL)', () => {
           data: { companyId, contactId: contact.id, role: 'DIRECTOR', name: 'Dana Details', nationality: 'Malaysian', isCurrent: true },
         });
         // The contact wins over the officer row, like the identification number does.
-        expect(await detailsOf(companyId, 'Dana Details')).toEqual({ country: 'Singapore', dateOfBirth: true, gender: false });
+        expect(await detailsOf(companyId, 'Dana Details')).toEqual({ country: 'Singapore', dateOfBirth: true, gender: null });
         const info = await service.getCandidatesInfo(tenantId, companyId);
         expect(JSON.stringify(info)).not.toContain('1980');
         expect(JSON.stringify(info)).not.toContain('requestedDateOfBirth');
@@ -459,8 +459,8 @@ describePostgres('Sentroweb check service (PostgreSQL)', () => {
         await prisma.companyShareholder.create({
           data: { companyId, name: 'Sam Sharer', shareholderType: 'INDIVIDUAL', nationality: 'Indian', numberOfShares: 1, isCurrent: true },
         });
-        expect(await detailsOf(companyId, 'Rina Record')).toEqual({ country: 'Malaysia', dateOfBirth: false, gender: false });
-        expect(await detailsOf(companyId, 'Sam Sharer')).toEqual({ country: 'India', dateOfBirth: false, gender: false });
+        expect(await detailsOf(companyId, 'Rina Record')).toEqual({ country: 'Malaysia', dateOfBirth: false, gender: null });
+        expect(await detailsOf(companyId, 'Sam Sharer')).toEqual({ country: 'India', dateOfBirth: false, gender: null });
       });
 
       it('leaves the country blank when it cannot be mapped with certainty, and never fails', async () => {
@@ -469,7 +469,7 @@ describePostgres('Sentroweb check service (PostgreSQL)', () => {
           await prisma.companyOfficer.create({ data: { companyId, role: 'DIRECTOR', name, nationality, isCurrent: true } });
         }
         for (const name of ['Una Unknown', 'Dom Dominican', 'Eva Empty']) {
-          expect(await detailsOf(companyId, name)).toEqual({ country: null, dateOfBirth: false, gender: false });
+          expect(await detailsOf(companyId, name)).toEqual({ country: null, dateOfBirth: false, gender: null });
         }
       });
 
@@ -513,7 +513,7 @@ describePostgres('Sentroweb check service (PostgreSQL)', () => {
         for (const [contact, name] of [[future, 'Fay Future'], [ancient, 'Abe Ancient']] as const) {
           await prisma.companyOfficer.create({ data: { companyId, contactId: contact.id, role: 'DIRECTOR', name, isCurrent: true } });
         }
-        const none = { country: null, dateOfBirth: false, gender: false };
+        const none = { country: null, dateOfBirth: false, gender: null };
         expect(await detailsOf(companyId, 'Test Holdings Pte Ltd')).toEqual(none);
         expect(await detailsOf(companyId, 'Corp Holder Pte Ltd')).toEqual(none);
         expect(await detailsOf(companyId, 'Fay Future')).toEqual({ ...none, country: 'Singapore' });
@@ -538,8 +538,77 @@ describePostgres('Sentroweb check service (PostgreSQL)', () => {
 
         const detail = await service.getRun(tenantId, companyId, runId);
         const dto = detail.results?.find((r) => r.name === 'Gia Given');
-        expect(dto?.searchDetails).toEqual({ country: 'Singapore', dateOfBirth: true, gender: false });
+        expect(dto?.searchDetails).toEqual({ country: 'Singapore', dateOfBirth: true, gender: null });
         expect(JSON.stringify(detail)).not.toContain('1990-07-15');
+      });
+
+      it('takes MALE or FEMALE from the contact, never OTHER, never from a record without a contact', async () => {
+        const companyId = await makeCompany();
+        const male = await prisma.contact.create({ data: { tenantId, contactType: 'INDIVIDUAL', fullName: 'Max Male', gender: 'MALE' } });
+        const female = await prisma.contact.create({ data: { tenantId, contactType: 'INDIVIDUAL', fullName: 'Fay Female', gender: 'FEMALE' } });
+        const other = await prisma.contact.create({ data: { tenantId, contactType: 'INDIVIDUAL', fullName: 'Oli Other', gender: 'OTHER' } });
+        for (const [contact, name] of [[male, 'Max Male'], [female, 'Fay Female'], [other, 'Oli Other']] as const) {
+          await prisma.companyOfficer.create({ data: { companyId, contactId: contact.id, role: 'DIRECTOR', name, isCurrent: true } });
+        }
+        await prisma.companyOfficer.create({ data: { companyId, role: 'DIRECTOR', name: 'Una Unlinked', isCurrent: true } });
+        expect((await detailsOf(companyId, 'Max Male'))?.gender).toBe('MALE');
+        expect((await detailsOf(companyId, 'Fay Female'))?.gender).toBe('FEMALE');
+        expect((await detailsOf(companyId, 'Oli Other'))?.gender).toBeNull();
+        expect((await detailsOf(companyId, 'Una Unlinked'))?.gender).toBeNull();
+      });
+
+      it('stores the gender and the fuzzy choice with the run and passes both to the client', async () => {
+        const companyId = await makeCompany();
+        const contact = await prisma.contact.create({
+          data: { tenantId, contactType: 'INDIVIDUAL', fullName: 'Gus Gender', gender: 'FEMALE', nationality: 'Singaporean' },
+        });
+        await prisma.companyOfficer.create({ data: { companyId, contactId: contact.id, role: 'DIRECTOR', name: 'Gus Gender', isCurrent: true } });
+        const keys = await keysFor(companyId, ['Gus Gender']);
+        const { runId } = await service.queueRun({ tenantId, companyId, userId, entityKeys: keys, fuzzy: true }, { autoStart: false, config: CONFIG });
+        expect(await rowOf(runId, 'Gus Gender')).toMatchObject({ requestedGender: 'FEMALE', requestedCountry: 'Singapore' });
+        expect(await prisma.sentrowebCheckRun.findUniqueOrThrow({ where: { id: runId } })).toMatchObject({ fuzzy: true });
+
+        const client = makeClient();
+        await service.processRun(runId, { client, config: CONFIG });
+        expect(client.searches[0]).toMatchObject({ name: 'Gus Gender', gender: 'FEMALE', fuzzy: true });
+        const detail = await service.getRun(tenantId, companyId, runId);
+        expect(detail.fuzzy).toBe(true);
+        expect(detail.results?.[0].searchDetails).toEqual({ country: 'Singapore', dateOfBirth: false, gender: 'FEMALE' });
+        expect(detail.results?.[0].searchDetailsSent).toBe(true);
+      });
+
+      it('is not fuzzy unless asked, and a fuzzy answer for a plain search (or the reverse) is never CLEAR', async () => {
+        const companyId = await makeCompany();
+        await prisma.companyOfficer.create({ data: { companyId, role: 'DIRECTOR', name: 'Pat Plain', isCurrent: true } });
+        const { runId } = await queue(companyId, ['Pat Plain']);
+        expect(await prisma.sentrowebCheckRun.findUniqueOrThrow({ where: { id: runId } })).toMatchObject({ fuzzy: false });
+        const client = makeClient();
+        const loaded = loadCase('individual-clear');
+        loaded.json[0].name = 'Pat Plain';
+        loaded.json[0].fuzzyValue = true; // the answer says fuzzy, the run did not ask for it
+        client.scripts.set('Pat Plain', {
+          outcome: { json: loaded.json, domTitles: loaded.titles, pdf: Buffer.from('%PDF-1.4 x'), png: Buffer.from('89504e470d0a1a0a', 'hex') },
+        });
+        await service.processRun(runId, { client, config: CONFIG });
+        expect(client.searches[0].fuzzy).toBe(false);
+        expect(await rowOf(runId, 'Pat Plain')).toMatchObject({ status: 'ERROR', errorCode: 'RESULT_MISMATCH' });
+      });
+
+      it('shows requested details as unconfirmed for a result that never ran or ended in an error', async () => {
+        const companyId = await makeCompany();
+        const contact = await person('Nia NotRun', { nationality: 'Singaporean', dateOfBirth: new Date('1985-05-05T00:00:00Z') });
+        await prisma.companyOfficer.create({ data: { companyId, contactId: contact.id, role: 'DIRECTOR', name: 'Nia NotRun', isCurrent: true } });
+        const { runId } = await queue(companyId, ['Nia NotRun']);
+        const queued = await service.getRun(tenantId, companyId, runId);
+        expect(queued.results?.[0]).toMatchObject({ status: 'NOT_RUN', searchDetailsSent: false });
+        expect(queued.results?.[0].searchDetails).toMatchObject({ country: 'Singapore', dateOfBirth: true });
+
+        // A search cancelled before SEARCH ran sends nothing: still unconfirmed.
+        const client = makeClient();
+        client.scripts.set('Nia NotRun', { throws: new SentrowebError('LAYOUT_CHANGED') });
+        await service.processRun(runId, { client, config: CONFIG });
+        const failed = await service.getRun(tenantId, companyId, runId);
+        expect(failed.results?.[0]).toMatchObject({ status: 'ERROR', searchDetailsSent: false });
       });
 
       it('a response that echoes another country or birth date is ERROR RESULT_MISMATCH, never CLEAR', async () => {

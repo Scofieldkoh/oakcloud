@@ -1,4 +1,4 @@
-import type { ContactDetailType, IdentificationType } from '@/generated/prisma';
+import type { ContactDetailType, ContactGender, IdentificationType } from '@/generated/prisma';
 
 export type ContactIdentitySource =
   | 'MANUAL'
@@ -67,6 +67,7 @@ export interface ContactIdentityCandidate {
   corporateUen?: string | null;
   nationality?: string | null;
   dateOfBirth?: string | null;
+  gender?: ContactGender | null;
   fullAddress?: string | null;
   contactDetails?: ContactIdentityDetail[];
   confidence?: Partial<Record<ContactIdentityConfidenceField, number>>;

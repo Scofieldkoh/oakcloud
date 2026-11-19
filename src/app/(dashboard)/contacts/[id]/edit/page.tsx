@@ -70,6 +70,7 @@ export default function EditContactPage({
       identificationType: contact.identificationType || undefined,
       identificationNumber: contact.identificationNumber || undefined,
       nationality: contact.nationality || undefined,
+      gender: contact.gender || undefined,
       dateOfBirth: contact.dateOfBirth
         ? new Date(contact.dateOfBirth).toISOString()
         : undefined,
@@ -325,6 +326,18 @@ export default function EditContactPage({
                       placeholder="S1234567A"
                       className="input input-sm"
                     />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="label">Gender</label>
+                    <select {...register('gender')} className="input input-sm">
+                      <option value="">Not recorded</option>
+                      <option value="MALE">Male</option>
+                      <option value="FEMALE">Female</option>
+                      <option value="OTHER">Other</option>
+                    </select>
                   </div>
                 </div>
               </>

@@ -477,6 +477,18 @@ export default function NewContactPage() {
                     />
                   </div>
                 </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="label">Gender</label>
+                    <select {...register('gender')} className="input input-sm">
+                      <option value="">Not recorded</option>
+                      <option value="MALE">Male</option>
+                      <option value="FEMALE">Female</option>
+                      <option value="OTHER">Other</option>
+                    </select>
+                  </div>
+                </div>
               </>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

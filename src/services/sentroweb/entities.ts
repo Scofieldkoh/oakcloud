@@ -9,6 +9,7 @@ import { mapToSentrowebCountry } from '@/lib/sentroweb/countries';
 import { NotFoundError } from '@/lib/errors';
 import type {
   SentrowebCandidateDto,
+  SentrowebGender,
   SentrowebSearchDetailsDto,
   SentrowebEntityKindValue,
   SentrowebSearchTypeValue,
@@ -28,15 +29,23 @@ export interface CandidateEntity extends Omit<SentrowebCandidateDto, 'searchDeta
   /**
    * What an individual is searched with besides the name (never for companies or corporate
    * holders): the exact Sentroweb country option and the date of birth as YYYY-MM-DD. Null means
-   * that field is left blank. Gender is never held, so it is never sent.
+   * that field is left blank. Gender is MALE or FEMALE from the linked contact, else null.
    */
   country: string | null;
   dateOfBirth: string | null;
+  gender: SentrowebGender | null;
 }
 
-/** The booleans the confirm dialog shows (never the date itself). */
-export function searchDetailsFor(candidate: Pick<CandidateEntity, 'country' | 'dateOfBirth'>): SentrowebSearchDetailsDto {
-  return { country: candidate.country, dateOfBirth: candidate.dateOfBirth !== null, gender: false };
+/** What the confirm dialog and the results show (the date itself is never returned). */
+export function searchDetailsFor(
+  candidate: Pick<CandidateEntity, 'country' | 'dateOfBirth' | 'gender'>,
+): SentrowebSearchDetailsDto {
+  return { country: candidate.country, dateOfBirth: candidate.dateOfBirth !== null, gender: candidate.gender };
+}
+
+/** The gender Sentroweb can be given: only MALE and FEMALE exist there (OTHER is not sent). */
+export function sentrowebGenderOf(value: string | null | undefined): SentrowebGender | null {
+  return value === 'MALE' || value === 'FEMALE' ? value : null;
 }
 
 /**
@@ -93,6 +102,7 @@ interface RawEntry {
   /** The stored nationality text (contact first, then the record); mapped later. */
   nationality: string | null;
   dateOfBirth: string | null;
+  gender: SentrowebGender | null;
   source: CandidateEntity['sourceRefs'][number];
 }
 
@@ -213,6 +223,7 @@ export async function listCandidateEntities(tenantId: string, companyId: string)
               corporateUen: true,
               nationality: true,
               dateOfBirth: true,
+              gender: true,
               deletedAt: true,
             },
           },
@@ -240,6 +251,7 @@ export async function listCandidateEntities(tenantId: string, companyId: string)
               corporateUen: true,
               nationality: true,
               dateOfBirth: true,
+              gender: true,
               deletedAt: true,
             },
           },
@@ -260,6 +272,7 @@ export async function listCandidateEntities(tenantId: string, companyId: string)
       identifier: company.uen,
       nationality: null,
       dateOfBirth: null,
+      gender: null,
       source: { type: 'COMPANY', id: company.id },
     },
   ];
@@ -286,6 +299,7 @@ export async function listCandidateEntities(tenantId: string, companyId: string)
       identifier: contact?.identificationNumber ?? contact?.corporateUen ?? officer.identificationNumber ?? null,
       nationality: cleanName(contact?.nationality ?? officer.nationality) || null,
       dateOfBirth: formatDateOfBirth(contact?.dateOfBirth),
+      gender: sentrowebGenderOf(contact?.gender),
       source: { type: 'OFFICER', id: officer.id },
     });
   }
@@ -308,6 +322,7 @@ export async function listCandidateEntities(tenantId: string, companyId: string)
       identifier: contact?.identificationNumber ?? contact?.corporateUen ?? shareholder.identificationNumber ?? null,
       nationality: cleanName(contact?.nationality ?? shareholder.nationality) || null,
       dateOfBirth: formatDateOfBirth(contact?.dateOfBirth),
+      gender: sentrowebGenderOf(contact?.gender),
       source: { type: 'SHAREHOLDER', id: shareholder.id },
     });
   }
@@ -332,6 +347,7 @@ export async function listCandidateEntities(tenantId: string, companyId: string)
       contactId: null,
       country: null,
       dateOfBirth: null,
+      gender: null,
     },
   ];
   const usedKeys = new Set(merged.map((candidate) => candidate.key));
@@ -358,8 +374,9 @@ export async function listCandidateEntities(tenantId: string, companyId: string)
         ? {
             country: agreedCountry(group.entries.map((entry) => entry.nationality)),
             dateOfBirth: agreedValue(group.entries.map((entry) => entry.dateOfBirth)),
+            gender: agreedValue(group.entries.map((entry) => entry.gender)) as SentrowebGender | null,
           }
-        : { country: null, dateOfBirth: null }),
+        : { country: null, dateOfBirth: null, gender: null }),
     });
   }
 

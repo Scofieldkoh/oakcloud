@@ -130,6 +130,8 @@ export interface StartSentrowebCheckInput {
   entityKeys: string[];
   /** Run again although the company was checked recently. */
   force?: boolean;
+  /** Also find spelling variants of each name. Off unless the person ticks it. */
+  fuzzy?: boolean;
 }
 
 async function startCheck(
@@ -140,7 +142,11 @@ async function startCheck(
   const response = await fetch(withWorkspaceId(baseUrl(companyId), tenantId), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(input.force ? { entityKeys: input.entityKeys, force: true } : { entityKeys: input.entityKeys }),
+    body: JSON.stringify({
+      entityKeys: input.entityKeys,
+      ...(input.force ? { force: true } : {}),
+      ...(input.fuzzy ? { fuzzy: true } : {}),
+    }),
   });
   if (!response.ok) throw await toRequestError(response, 'Failed to start the Sentroweb check');
   return response.json();

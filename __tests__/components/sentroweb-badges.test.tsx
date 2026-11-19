@@ -12,21 +12,37 @@ import {
 import type { SentrowebRunDto } from '@/lib/sentroweb/types';
 
 describe('formatSentrowebSearchDetails', () => {
-  it('lists what was sent and what was not, never the date itself', () => {
-    expect(formatSentrowebSearchDetails({ country: 'Singapore', dateOfBirth: true, gender: false }, 'INDIVIDUAL')).toBe(
-      'Sent: name, country (Singapore), date of birth. Not sent: gender',
+  const full = { country: 'Singapore', dateOfBirth: true, gender: 'MALE' as const };
+
+  it('lists what is included and what is left out, never the date itself', () => {
+    expect(formatSentrowebSearchDetails(full, 'INDIVIDUAL', 'sent')).toBe(
+      'Sent: name, country (Singapore), date of birth, gender (Male)',
     );
-    expect(formatSentrowebSearchDetails({ country: 'Malaysia', dateOfBirth: false, gender: false }, 'INDIVIDUAL')).toBe(
-      'Sent: name, country (Malaysia). Not sent: date of birth, gender',
+    expect(formatSentrowebSearchDetails({ country: 'Malaysia', dateOfBirth: false, gender: 'FEMALE' }, 'INDIVIDUAL', 'sent')).toBe(
+      'Sent: name, country (Malaysia), gender (Female). Not sent: date of birth',
     );
-    expect(formatSentrowebSearchDetails({ country: null, dateOfBirth: false, gender: false }, 'INDIVIDUAL')).toBe(
+    expect(formatSentrowebSearchDetails({ country: null, dateOfBirth: false, gender: null }, 'INDIVIDUAL', 'sent')).toBe(
       'Sent: name. Not sent: country, date of birth, gender',
     );
   });
 
+  it('says "Will send" in the dialog and never "Sent" for what was only requested', () => {
+    expect(formatSentrowebSearchDetails(full, 'INDIVIDUAL', 'planned')).toBe(
+      'Will send: name, country (Singapore), date of birth, gender (Male)',
+    );
+    expect(formatSentrowebSearchDetails({ ...full, dateOfBirth: false }, 'INDIVIDUAL', 'requested')).toBe(
+      'Requested, not confirmed as sent: name, country (Singapore), gender (Male). Not requested: date of birth',
+    );
+    expect(formatSentrowebSearchDetails(full, 'INDIVIDUAL', 'requested')).not.toMatch(/^Sent/);
+  });
+
   it('reads name only for an entity, and for a record that predates the details', () => {
-    expect(formatSentrowebSearchDetails({ country: 'Singapore', dateOfBirth: true, gender: false }, 'ENTITY')).toBe('Sent: name only');
-    expect(formatSentrowebSearchDetails(undefined, 'INDIVIDUAL')).toBe('Sent: name. Not sent: country, date of birth, gender');
+    expect(formatSentrowebSearchDetails(full, 'ENTITY', 'sent')).toBe('Sent: name only');
+    expect(formatSentrowebSearchDetails(full, 'ENTITY', 'planned')).toBe('Will send: name only');
+    expect(formatSentrowebSearchDetails(full, 'ENTITY', 'requested')).toBe('Requested, not confirmed as sent: name only');
+    expect(formatSentrowebSearchDetails(undefined, 'INDIVIDUAL', 'planned')).toBe(
+      'Will send: name. Will not send: country, date of birth, gender',
+    );
   });
 });
 

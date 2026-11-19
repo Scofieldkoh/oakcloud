@@ -440,6 +440,13 @@ export type EnumIdentificationTypeNullableFilter<$PrismaModel = never> = {
   not?: Prisma.NestedEnumIdentificationTypeNullableFilter<$PrismaModel> | $Enums.IdentificationType | null
 }
 
+export type EnumContactGenderNullableFilter<$PrismaModel = never> = {
+  equals?: $Enums.ContactGender | Prisma.EnumContactGenderFieldRefInput<$PrismaModel> | null
+  in?: $Enums.ContactGender[] | Prisma.ListEnumContactGenderFieldRefInput<$PrismaModel> | null
+  notIn?: $Enums.ContactGender[] | Prisma.ListEnumContactGenderFieldRefInput<$PrismaModel> | null
+  not?: Prisma.NestedEnumContactGenderNullableFilter<$PrismaModel> | $Enums.ContactGender | null
+}
+
 export type EnumContactTypeWithAggregatesFilter<$PrismaModel = never> = {
   equals?: $Enums.ContactType | Prisma.EnumContactTypeFieldRefInput<$PrismaModel>
   in?: $Enums.ContactType[] | Prisma.ListEnumContactTypeFieldRefInput<$PrismaModel>
@@ -458,6 +465,16 @@ export type EnumIdentificationTypeNullableWithAggregatesFilter<$PrismaModel = ne
   _count?: Prisma.NestedIntNullableFilter<$PrismaModel>
   _min?: Prisma.NestedEnumIdentificationTypeNullableFilter<$PrismaModel>
   _max?: Prisma.NestedEnumIdentificationTypeNullableFilter<$PrismaModel>
+}
+
+export type EnumContactGenderNullableWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.ContactGender | Prisma.EnumContactGenderFieldRefInput<$PrismaModel> | null
+  in?: $Enums.ContactGender[] | Prisma.ListEnumContactGenderFieldRefInput<$PrismaModel> | null
+  notIn?: $Enums.ContactGender[] | Prisma.ListEnumContactGenderFieldRefInput<$PrismaModel> | null
+  not?: Prisma.NestedEnumContactGenderNullableWithAggregatesFilter<$PrismaModel> | $Enums.ContactGender | null
+  _count?: Prisma.NestedIntNullableFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumContactGenderNullableFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumContactGenderNullableFilter<$PrismaModel>
 }
 
 export type EnumContactDetailTypeFilter<$PrismaModel = never> = {
@@ -3523,6 +3540,13 @@ export type NestedEnumIdentificationTypeNullableFilter<$PrismaModel = never> = {
   not?: Prisma.NestedEnumIdentificationTypeNullableFilter<$PrismaModel> | $Enums.IdentificationType | null
 }
 
+export type NestedEnumContactGenderNullableFilter<$PrismaModel = never> = {
+  equals?: $Enums.ContactGender | Prisma.EnumContactGenderFieldRefInput<$PrismaModel> | null
+  in?: $Enums.ContactGender[] | Prisma.ListEnumContactGenderFieldRefInput<$PrismaModel> | null
+  notIn?: $Enums.ContactGender[] | Prisma.ListEnumContactGenderFieldRefInput<$PrismaModel> | null
+  not?: Prisma.NestedEnumContactGenderNullableFilter<$PrismaModel> | $Enums.ContactGender | null
+}
+
 export type NestedEnumContactTypeWithAggregatesFilter<$PrismaModel = never> = {
   equals?: $Enums.ContactType | Prisma.EnumContactTypeFieldRefInput<$PrismaModel>
   in?: $Enums.ContactType[] | Prisma.ListEnumContactTypeFieldRefInput<$PrismaModel>
@@ -3541,6 +3565,16 @@ export type NestedEnumIdentificationTypeNullableWithAggregatesFilter<$PrismaMode
   _count?: Prisma.NestedIntNullableFilter<$PrismaModel>
   _min?: Prisma.NestedEnumIdentificationTypeNullableFilter<$PrismaModel>
   _max?: Prisma.NestedEnumIdentificationTypeNullableFilter<$PrismaModel>
+}
+
+export type NestedEnumContactGenderNullableWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.ContactGender | Prisma.EnumContactGenderFieldRefInput<$PrismaModel> | null
+  in?: $Enums.ContactGender[] | Prisma.ListEnumContactGenderFieldRefInput<$PrismaModel> | null
+  notIn?: $Enums.ContactGender[] | Prisma.ListEnumContactGenderFieldRefInput<$PrismaModel> | null
+  not?: Prisma.NestedEnumContactGenderNullableWithAggregatesFilter<$PrismaModel> | $Enums.ContactGender | null
+  _count?: Prisma.NestedIntNullableFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumContactGenderNullableFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumContactGenderNullableFilter<$PrismaModel>
 }
 
 export type NestedEnumContactDetailTypeFilter<$PrismaModel = never> = {

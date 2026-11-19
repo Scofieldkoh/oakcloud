@@ -361,6 +361,7 @@ Unified contact management for individuals and corporates. Each contact belongs 
 | identification_number | VARCHAR(50) | Yes | ID number |
 | nationality | VARCHAR(100) | Yes | Nationality |
 | date_of_birth | DATE | Yes | Date of birth |
+| gender | ENUM | Yes | MALE, FEMALE, OTHER (individuals, optional; MALE and FEMALE are sent to Sentroweb searches) |
 | corporate_name | VARCHAR(200) | Yes | Corporate name |
 | corporate_uen | VARCHAR(10) | Yes | Corporate UEN |
 | full_address | VARCHAR(500) | Yes | Complete address |

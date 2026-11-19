@@ -12258,6 +12258,7 @@ export const ContactScalarFieldEnum = {
   identificationNumber: 'identificationNumber',
   nationality: 'nationality',
   dateOfBirth: 'dateOfBirth',
+  gender: 'gender',
   corporateName: 'corporateName',
   corporateUen: 'corporateUen',
   fullAddress: 'fullAddress',
@@ -15183,6 +15184,7 @@ export const SentrowebCheckRunScalarFieldEnum = {
   overallResult: 'overallResult',
   errorCode: 'errorCode',
   entityCount: 'entityCount',
+  fuzzy: 'fuzzy',
   creditsUsed: 'creditsUsed',
   balanceBefore: 'balanceBefore',
   claimToken: 'claimToken',
@@ -15218,6 +15220,7 @@ export const SentrowebCheckResultScalarFieldEnum = {
   searchSubmittedAt: 'searchSubmittedAt',
   requestedCountry: 'requestedCountry',
   requestedDateOfBirth: 'requestedDateOfBirth',
+  requestedGender: 'requestedGender',
   errorCode: 'errorCode',
   documentId: 'documentId',
   evidencePngKey: 'evidencePngKey',
@@ -15439,6 +15442,20 @@ export type EnumIdentificationTypeFieldRefInput<$PrismaModel> = FieldRefInputTyp
  * Reference to a field of type 'IdentificationType[]'
  */
 export type ListEnumIdentificationTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'IdentificationType[]'>
+
+
+
+/**
+ * Reference to a field of type 'ContactGender'
+ */
+export type EnumContactGenderFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ContactGender'>
+
+
+
+/**
+ * Reference to a field of type 'ContactGender[]'
+ */
+export type ListEnumContactGenderFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ContactGender[]'>
 
 
 

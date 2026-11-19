@@ -23,7 +23,6 @@ import { findChromePath } from '@/lib/chrome-executable';
 import { createLogger } from '@/lib/logger';
 import {
   SENTROWEB_CREDITS_PER_SEARCH,
-  SENTROWEB_SEARCH_OPTIONS,
   type SentrowebConfig,
 } from '@/lib/sentroweb/config';
 import {
@@ -71,6 +70,10 @@ export interface SentrowebSearchRequest {
    */
   country?: string | null;
   dateOfBirth?: string | null;
+  /** MALE or FEMALE ticks that box for an individual; null or absent leaves both unticked. */
+  gender?: 'MALE' | 'FEMALE' | null;
+  /** Tick Fuzzy Search for this search. Off unless the person asked for it. */
+  fuzzy?: boolean;
 }
 
 export interface SentrowebSearchOutcome {
@@ -117,17 +120,38 @@ function throwIfAborted(signal: AbortSignal | undefined, searchSubmitted = false
   if (signal?.aborted) throw new SentrowebError('TIMEOUT', { searchSubmitted });
 }
 
+interface BoxOptions {
+  fuzzy: boolean;
+  gender: 'MALE' | 'FEMALE' | null;
+}
+
+/** The wanted state of every checkbox of the form, by label. */
+function expectedBoxes(searchType: SentrowebSearchTypeValue, options: BoxOptions): Array<[string, boolean]> {
+  const { individualLabelText, entityLabelText, fuzzyLabelText, genderLabelTexts } = SENTROWEB_SELECTORS.search;
+  const wantIndividual = searchType === 'INDIVIDUAL';
+  const [maleLabel, femaleLabel] = genderLabelTexts;
+  return [
+    [wantIndividual ? individualLabelText : entityLabelText, true],
+    [wantIndividual ? entityLabelText : individualLabelText, false],
+    [fuzzyLabelText, options.fuzzy],
+    [maleLabel, options.gender === 'MALE'],
+    [femaleLabel, options.gender === 'FEMALE'],
+  ];
+}
+
 interface SearchDetails {
   country: string | null;
   dateOfBirth: string | null;
+  gender: 'MALE' | 'FEMALE' | null;
 }
 
 /** Only an individual is searched with details, and only with values of the exact expected shape. */
 function detailsFor(request: SentrowebSearchRequest): SearchDetails {
-  if (request.searchType !== 'INDIVIDUAL') return { country: null, dateOfBirth: null };
+  if (request.searchType !== 'INDIVIDUAL') return { country: null, dateOfBirth: null, gender: null };
   const country = request.country && isSentrowebCountry(request.country) ? request.country : null;
   const dateOfBirth = request.dateOfBirth && /^\d{4}-\d{2}-\d{2}$/.test(request.dateOfBirth) ? request.dateOfBirth : null;
-  return { country, dateOfBirth };
+  const gender = request.gender === 'MALE' || request.gender === 'FEMALE' ? request.gender : null;
+  return { country, dateOfBirth, gender };
 }
 
 async function pollUntil<T>(
@@ -373,28 +397,49 @@ class Session implements SentrowebSession {
     state.quota = null;
     state.searchDispatched = false;
     state.quotaRequested = false;
-    await this.phase('type-name', async () => {
-      await page.type(selectors.search.nameInput, request.name);
-      // The name must still be what was typed (a late redraw of the form can clear it).
-      const typed = await page.$eval(selectors.search.nameInput, (input) => (input as HTMLInputElement).value);
-      if (typed !== request.name) throw new SentrowebError('LAYOUT_CHANGED');
-    });
-    await this.phase('tick-type', () => this.setSearchType(request.searchType, signal));
     // Details only for an individual; an entity (or a person with nothing usable) leaves them blank.
     const details = detailsFor(request);
-    await this.phase('set-details', () => this.setDetails(details, signal));
-    await this.phase('submit-enabled', async () => {
-      const typedAfter = await page.$eval(selectors.search.nameInput, (input) => (input as HTMLInputElement).value);
-      if (typedAfter !== request.name) throw new SentrowebError('LAYOUT_CHANGED');
-      // The search must go out exactly as intended: every field is read back one last time.
-      await this.verifyDetails(details);
-      if (!(await this.searchTypeIsSet(request.searchType))) throw new SentrowebError('LAYOUT_CHANGED');
-      await pollUntil(async () => (await page.$(selectors.search.submitEnabled)) !== null, {
-        timeoutMs: this.stepMs,
-        signal,
-        onTimeout: () => new SentrowebError('LAYOUT_CHANGED'),
+    const fuzzy = request.fuzzy === true;
+    try {
+      // SEARCH stays disabled until a name and a search type are filled in. The country and the
+      // date of birth are therefore set first, while nothing can submit the form (not even an
+      // Enter key in the dropdown); the name and the type, which enable SEARCH, come last.
+      await this.phase('set-details', () => this.setDetails(details, signal));
+      await this.phase('type-name', async () => {
+        await page.type(selectors.search.nameInput, request.name);
+        // The name must still be what was typed (a late redraw of the form can clear it).
+        const typed = await page.$eval(selectors.search.nameInput, (input) => (input as HTMLInputElement).value);
+        if (typed !== request.name) throw new SentrowebError('LAYOUT_CHANGED');
       });
-    });
+      await this.phase('tick-type', () => this.setSearchType(request.searchType, { fuzzy, gender: details.gender }, signal));
+      await this.phase('submit-enabled', async () => {
+        const typedAfter = await page.$eval(selectors.search.nameInput, (input) => (input as HTMLInputElement).value);
+        if (typedAfter !== request.name) throw new SentrowebError('LAYOUT_CHANGED');
+        // The search must go out exactly as intended: every field is read back one last time.
+        await this.verifyDetails(details);
+        if (!(await this.optionsAreSet(request.searchType, { fuzzy, gender: details.gender }))) {
+          throw new SentrowebError('LAYOUT_CHANGED');
+        }
+        await pollUntil(async () => (await page.$(selectors.search.submitEnabled)) !== null, {
+          timeoutMs: this.stepMs,
+          signal,
+          onTimeout: () => new SentrowebError('LAYOUT_CHANGED'),
+        });
+        // Nothing may have been asked of Sentroweb yet: the click below is the only trigger.
+        this.assertNothingSent();
+      });
+    } catch (error) {
+      // A page that reacted to the form being filled in by asking for a quota (or searching) has
+      // already started a search we did not click for. Stop it, and keep the attempt submitted:
+      // cooldown, no retry, unknown charge.
+      if (state.quotaRequested || state.searchDispatched) {
+        if (!state.searchDispatched) await this.quiescePage();
+        throw new SentrowebError(error instanceof SentrowebError ? error.code : 'LAYOUT_CHANGED', {
+          searchSubmitted: true,
+        });
+      }
+      throw error;
+    }
     // From the click on, the page may send the search by itself (a free repeat) or after a dialog.
     // Whatever then goes wrong here (the click call failing, the quota answer being rejected, a
     // timeout, an abort), a search the page really sent is submitted: it keeps the cooldown, is
@@ -649,6 +694,11 @@ class Session implements SentrowebSession {
   private async setDetails(details: SearchDetails, signal?: AbortSignal): Promise<void> {
     const { page } = this;
     const search = SENTROWEB_SELECTORS.search;
+    // Nothing may be able to submit the form while it is being filled in: SEARCH must still be
+    // disabled (no name or type yet). If it is not, the page is not what this client was built for.
+    if ((details.country !== null || details.dateOfBirth !== null) && (await page.$(search.submitEnabled)) !== null) {
+      throw new SentrowebError('LAYOUT_CHANGED');
+    }
     if (details.country !== null) {
       throwIfAborted(signal);
       await page.click(search.countryDropdown);
@@ -670,7 +720,8 @@ class Session implements SentrowebSession {
         search.countryItem,
         search.countryItemText,
       );
-      if (firstListed === details.country) {
+      // Enter is pressed only while SEARCH is disabled, so it cannot submit the form on its own.
+      if (firstListed === details.country && (await page.$(search.submitEnabled)) === null) {
         await page.keyboard.press('Enter');
       } else {
         const option = await page.evaluateHandle(
@@ -696,6 +747,15 @@ class Session implements SentrowebSession {
       await sleep(CHECKBOX_SETTLE_MS);
     }
     await this.verifyDetails(details);
+    this.assertNothingSent();
+  }
+
+  /**
+   * The page may only be asked for a quota or a search by our click on SEARCH. If it has been
+   * before that (a form that submits itself), the attempt is already out of our hands.
+   */
+  private assertNothingSent(): void {
+    if (this.state.quotaRequested || this.state.searchDispatched) throw new SentrowebError('LAYOUT_CHANGED');
   }
 
   /** The country shown and the birth date typed must be exactly the wanted ones (blank when null). */
@@ -725,25 +785,13 @@ class Session implements SentrowebSession {
     }
   }
 
-  private async searchTypeIsSet(searchType: SentrowebSearchTypeValue): Promise<boolean> {
-    const { individualLabelText, entityLabelText } = SENTROWEB_SELECTORS.search;
-    const states = await this.checkboxStates();
-    const checked = (label: string) => states.find((state) => state.label === label)?.checked;
-    const wantIndividual = searchType === 'INDIVIDUAL';
-    return checked(individualLabelText) === wantIndividual && checked(entityLabelText) === !wantIndividual;
-  }
-
-  /** Ticks exactly the wanted search type, with fuzzy matching off, and verifies the result. */
-  private async setSearchType(searchType: SentrowebSearchTypeValue, signal?: AbortSignal): Promise<void> {
-    const { individualLabelText, entityLabelText, fuzzyLabelText } = SENTROWEB_SELECTORS.search;
-    const wantIndividual = searchType === 'INDIVIDUAL';
-    const expected: Array<[string, boolean]> = [
-      [wantIndividual ? individualLabelText : entityLabelText, true],
-      [wantIndividual ? entityLabelText : individualLabelText, false],
-      [fuzzyLabelText, SENTROWEB_SEARCH_OPTIONS.fuzzy],
-      // Gender is never sent: both boxes must stay unticked.
-      ...SENTROWEB_SELECTORS.search.genderLabelTexts.map((label): [string, boolean] => [label, false]),
-    ];
+  /** Ticks exactly the wanted type, fuzzy and gender boxes (all others off) and verifies the result. */
+  private async setSearchType(
+    searchType: SentrowebSearchTypeValue,
+    options: BoxOptions,
+    signal?: AbortSignal,
+  ): Promise<void> {
+    const expected = expectedBoxes(searchType, options);
 
     for (const [label, wanted] of expected) {
       throwIfAborted(signal);
@@ -760,11 +808,15 @@ class Session implements SentrowebSession {
       }
     }
 
-    const after = await this.checkboxStates();
-    for (const [label, wanted] of expected) {
-      const current = after.find((state) => state.label === label);
-      if (!current || current.checked !== wanted) throw new SentrowebError('LAYOUT_CHANGED');
-    }
+    if (!(await this.optionsAreSet(searchType, options))) throw new SentrowebError('LAYOUT_CHANGED');
+  }
+
+  /** Every checkbox (type, fuzzy, gender) is in exactly the wanted state. */
+  private async optionsAreSet(searchType: SentrowebSearchTypeValue, options: BoxOptions): Promise<boolean> {
+    const states = await this.checkboxStates();
+    return expectedBoxes(searchType, options).every(
+      ([label, wanted]) => states.find((state) => state.label === label)?.checked === wanted,
+    );
   }
 
   /**

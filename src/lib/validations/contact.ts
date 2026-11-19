@@ -4,6 +4,12 @@ import { contactDetailTypeEnum, contactPurposeEnum } from '@/lib/validations/con
 export const contactTypeEnum = z.enum(['INDIVIDUAL', 'CORPORATE']);
 
 export const identificationTypeEnum = z.enum(['NRIC', 'FIN', 'PASSPORT', 'UEN', 'OTHER']);
+export const contactGenderEnum = z.enum(['MALE', 'FEMALE', 'OTHER']);
+const optionalGenderSchema = z.preprocess(
+  (val) => (val === '' ? null : val),
+  contactGenderEnum.optional().nullable()
+);
+
 const optionalIdentificationTypeSchema = z.preprocess(
   (val) => (val === '' ? null : val),
   identificationTypeEnum.optional().nullable()
@@ -20,6 +26,7 @@ const contactBaseSchema = z.object({
   identificationType: optionalIdentificationTypeSchema,
   identificationNumber: z.string().max(50).optional().nullable(),
   nationality: z.string().max(100).optional().nullable(),
+  gender: optionalGenderSchema,
   dateOfBirth: z.preprocess(
     (val) => (val === '' ? null : val),
     z
