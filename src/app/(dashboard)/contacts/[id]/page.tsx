@@ -30,6 +30,7 @@ import { InternalNotes } from '@/components/notes/internal-notes';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import { getSafeListReturnUrl } from '@/lib/list-navigation';
 import type { ContactGender, ContactType, IdentificationType } from '@/generated/prisma';
+import { formatDateOnlyDisplay } from '@/lib/date-only';
 
 // Company option type for AsyncSearchSelect
 interface CompanyOption extends AsyncSearchSelectOption {
@@ -476,6 +477,10 @@ export default function ContactDetailPage({
                   <div>
                     <CompanyFieldLabel>Gender</CompanyFieldLabel>
                     <p className="text-text-primary">{contact.gender ? genderLabels[contact.gender] : '-'}</p>
+                  </div>
+                  <div>
+                    <CompanyFieldLabel>Date of birth</CompanyFieldLabel>
+                    <p className="text-text-primary">{formatDateOnlyDisplay(contact.dateOfBirth) || '-'}</p>
                   </div>
                   <div>
                     <CompanyFieldLabel>ID Type</CompanyFieldLabel>

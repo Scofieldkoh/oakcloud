@@ -12,6 +12,7 @@ import { usePermissions } from '@/hooks/use-permissions';
 import { useUnsavedNavigationGuard } from '@/hooks/use-unsaved-navigation-guard';
 import { useToast } from '@/components/ui/toast';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
+import { toDateOnlyString } from '@/lib/date-only';
 
 const contactTypes = [
   { value: 'INDIVIDUAL', label: 'Individual' },
@@ -48,6 +49,7 @@ export default function EditContactPage({
     register,
     handleSubmit,
     watch,
+    setValue,
     reset,
     formState: { errors, isSubmitting, isDirty },
   } = useForm<UpdateContactInput>({
@@ -71,9 +73,7 @@ export default function EditContactPage({
       identificationNumber: contact.identificationNumber || undefined,
       nationality: contact.nationality || undefined,
       gender: contact.gender || undefined,
-      dateOfBirth: contact.dateOfBirth
-        ? new Date(contact.dateOfBirth).toISOString()
-        : undefined,
+      dateOfBirth: toDateOnlyString(contact.dateOfBirth) ?? undefined,
       corporateName: contact.corporateName || undefined,
       corporateUen: contact.corporateUen || undefined,
       fullAddress: contact.fullAddress || undefined,
@@ -84,6 +84,11 @@ export default function EditContactPage({
   const navigationGuard = useUnsavedNavigationGuard((isDirty) && !isSubmitting);
 
   const contactType = watch('contactType');
+
+  // A corporate contact has no date of birth: drop anything typed before the type was switched.
+  useEffect(() => {
+    if (contactType === 'CORPORATE') setValue('dateOfBirth', null);
+  }, [contactType, setValue]);
 
   // Get the appropriate ID types based on contact type
   const availableIdTypes = contactType === 'CORPORATE' ? corporateIdTypes : individualIdTypes;
@@ -338,6 +343,18 @@ export default function EditContactPage({
                       <option value="FEMALE">Female</option>
                       <option value="OTHER">Other</option>
                     </select>
+                  </div>
+                  <div>
+                    <label className="label" htmlFor="contact-date-of-birth">Date of birth</label>
+                    <input
+                      id="contact-date-of-birth"
+                      type="date"
+                      {...register('dateOfBirth')}
+                      className={`input input-sm ${errors.dateOfBirth ? 'input-error' : ''}`}
+                    />
+                    {errors.dateOfBirth && (
+                      <p className="text-xs text-status-error mt-1.5">{errors.dateOfBirth.message}</p>
+                    )}
                   </div>
                 </div>
               </>

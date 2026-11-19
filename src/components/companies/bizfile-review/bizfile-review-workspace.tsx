@@ -11,6 +11,7 @@ import {
   type BizFileReviewIssue,
   type BizFileReviewSectionId,
 } from "@/lib/validations/bizfile-review";
+import { plausibleDateOfBirth } from "@/lib/date-only";
 import { mapIdentificationType, type ExtractedBizFileData } from "@/services/bizfile/types";
 import type { ContactIdentityCandidate, ContactMatchPreview } from "@/types/contact-identity";
 import { fetchBizFileContactMatchPreviews, isExactIdentifierContactMatch } from "@/services/bizfile/contact-match-preview.client";
@@ -89,6 +90,12 @@ export function applyAutomaticContactResolutions<T extends BizFileReviewDraft>(
   return next;
 }
 
+/** A reviewed date of birth for contact matching: only a real, plausible YYYY-MM-DD. */
+function birthDateOf(value: string | undefined): { dateOfBirth?: string } {
+  const date = plausibleDateOfBirth(value);
+  return date ? { dateOfBirth: date } : {};
+}
+
 export function buildBizFileContactIdentityCandidates(
   draft: BizFileReviewDraft,
   sections: Array<"officers" | "shareholders">,
@@ -103,6 +110,7 @@ export function buildBizFileContactIdentityCandidates(
         identificationType: mapIdentificationType(officer.identificationType) || undefined,
         identificationNumber: officer.identificationNumber,
         nationality: officer.nationality, fullAddress: officer.address,
+        ...birthDateOf(officer.dateOfBirth),
       });
     });
   }
@@ -123,6 +131,7 @@ export function buildBizFileContactIdentityCandidates(
         identificationType: mapIdentificationType(shareholder.identificationType) || undefined,
         identificationNumber: shareholder.identificationNumber,
         nationality: shareholder.nationality, fullAddress: shareholder.address,
+        ...birthDateOf(shareholder.dateOfBirth),
       });
     });
   }

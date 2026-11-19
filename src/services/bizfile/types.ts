@@ -87,6 +87,8 @@ export interface ExtractedBizFileData {
     identificationType?: string;
     identificationNumber?: string;
     nationality?: string;
+    /** YYYY-MM-DD, only when printed for this individual (never derived from the ID number). */
+    dateOfBirth?: string;
     placeOfOrigin?: string;
     address?: string;
     shareClass: string;
@@ -101,6 +103,8 @@ export interface ExtractedBizFileData {
     identificationType?: string;
     identificationNumber?: string;
     nationality?: string;
+    /** YYYY-MM-DD, only when printed for this person (never derived from the ID number). */
+    dateOfBirth?: string;
     address?: string;
     appointmentDate?: string;
     cessationDate?: string;
@@ -216,6 +220,7 @@ export interface ExtractedOfficerData {
   identificationType?: string;
   identificationNumber?: string;
   nationality?: string;
+  dateOfBirth?: string;
   address?: string;
   appointmentDate?: string;
   cessationDate?: string;
@@ -232,6 +237,7 @@ export interface ExtractedShareholderData {
   identificationType?: string;
   identificationNumber?: string;
   nationality?: string;
+  dateOfBirth?: string;
   placeOfOrigin?: string;
   address?: string;
   shareClass: string;

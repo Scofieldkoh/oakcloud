@@ -99,6 +99,8 @@ export interface ContactMatchPreview extends ContactMatchResult {
     identificationType: IdentificationType | null;
     identificationNumber: string | null;
     corporateUen: string | null;
+    /** YYYY-MM-DD of the saved date of birth (individuals), shown beside a different one in the review. */
+    dateOfBirth?: string | null;
     companies: Array<{ id: string; name: string; uen: string }>;
   } | null;
 }

@@ -1,5 +1,6 @@
 import { Prisma, type Contact } from '@/generated/prisma';
 import { createAuditLog } from '@/lib/audit';
+import { parseDateOnly, plausibleDateOfBirth, toDateOnlyString } from '@/lib/date-only';
 import { scoreContactIdentityMatch } from '@/lib/contact-identity-matching';
 import {
   buildContactIdentityFingerprint,
@@ -22,6 +23,7 @@ import type {
   ContactIdentityRecord,
   ContactMatchResult,
   ContactResolutionDecision,
+  ContactMatchReason,
 } from '@/types/contact-identity';
 
 export interface ResolveContactIdentityResult {
@@ -449,14 +451,46 @@ function comparable(field: ContactIdentityConflict['field'], value: unknown): st
   return canonicalizeContactName(text);
 }
 
+/**
+ * The date of birth a candidate may write: midnight UTC of a real, plausible calendar date, only for
+ * an individual. Anything else (missing, malformed, future, or for a corporate) is no value at all,
+ * so it can neither fill nor conflict, and never clears a stored date.
+ */
+function candidateDateOfBirth(candidate: Pick<ContactIdentityCandidate, 'contactType' | 'dateOfBirth'>): Date | null {
+  if (candidate.contactType !== 'INDIVIDUAL') return null;
+  const date = plausibleDateOfBirth(candidate.dateOfBirth);
+  return date ? parseDateOnly(date) : null;
+}
+
+/**
+ * How a date of birth may reach the matched contact. It is written only when the person is certain:
+ * matched by ID number, or chosen by the reviewer (a name-only automatic match writes none).
+ * Only a BizFile record, approved in the review, may replace a different saved date; every other
+ * source fills an empty one and reports a difference as a conflict.
+ */
+interface DateOfBirthPolicy {
+  allowed: boolean;
+  replace: boolean;
+}
+
+function dateOfBirthPolicy(
+  candidate: ContactIdentityCandidate,
+  decision: ContactResolutionDecision,
+  reasons: ContactMatchReason[],
+): DateOfBirthPolicy {
+  const certain = decision.action === 'REUSE' || reasons.includes('IDENTIFIER');
+  return { allowed: certain, replace: certain && candidate.source === 'BIZFILE' };
+}
+
 function buildEnrichment(
   candidate: ContactIdentityCandidate,
   existing: ContactWithIdentityRelations,
+  dob: DateOfBirthPolicy = { allowed: true, replace: false },
 ): { data: Prisma.ContactUpdateInput; fields: string[]; conflicts: ContactIdentityConflict[] } {
   const data: Prisma.ContactUpdateInput = {};
   const fields: string[] = [];
   const conflicts: ContactIdentityConflict[] = [];
-  const incomingDob = candidate.dateOfBirth ? new Date(candidate.dateOfBirth) : null;
+  const incomingDob = existing.contactType === 'INDIVIDUAL' && dob.allowed ? candidateDateOfBirth(candidate) : null;
   const values = [
     ['firstName', candidate.firstName, existing.firstName],
     ['lastName', candidate.lastName, existing.lastName],
@@ -474,6 +508,14 @@ function buildEnrichment(
 
   for (const [field, incoming, current] of values) {
     if (isBlank(incoming)) continue;
+    if (field === 'dateOfBirth' && !isBlank(current) && dob.replace) {
+      // An approved BizFile date replaces a different saved one (same calendar date: nothing to do).
+      if (comparable('dateOfBirth', incoming) !== comparable('dateOfBirth', current)) {
+        data.dateOfBirth = incoming as Date;
+        fields.push('dateOfBirth');
+      }
+      continue;
+    }
     if (isBlank(current)) {
       data[field] = incoming as never;
       fields.push(field);
@@ -591,7 +633,7 @@ async function createNewContact(
       identificationType: hasUsableIdentificationNumber(candidate) ? candidate.identificationType : null,
       identificationNumber: hasUsableIdentificationNumber(candidate) ? candidate.identificationNumber?.trim() || null : null,
       nationality: candidate.nationality,
-      dateOfBirth: candidate.dateOfBirth ? new Date(candidate.dateOfBirth) : null,
+      dateOfBirth: candidateDateOfBirth(candidate),
       gender: candidate.gender ?? null,
       corporateName: candidate.corporateName,
       corporateUen: hasUsableCorporateUen(candidate) ? candidate.corporateUen?.trim() || null : null,
@@ -865,7 +907,11 @@ async function resolveInTransaction(
     };
   }
 
-  const enrichment = buildEnrichment(candidate, selected.contact);
+  const enrichment = buildEnrichment(
+    candidate,
+    selected.contact,
+    dateOfBirthPolicy(candidate, decision, selected.match.reasons),
+  );
   if (
     enrichment.fields.includes('identificationType') ||
     enrichment.fields.includes('identificationNumber')
@@ -892,6 +938,16 @@ async function resolveInTransaction(
       entityName: updated.fullName,
       summary: `Enriched contact "${updated.fullName}" through identity resolution`,
       changeSource: sourceChangeSource(candidate.source),
+      ...(enrichment.fields.includes('dateOfBirth')
+        ? {
+            changes: {
+              dateOfBirth: {
+                old: toDateOnlyString(selected.contact.dateOfBirth),
+                new: toDateOnlyString(updated.dateOfBirth),
+              },
+            },
+          }
+        : {}),
       metadata: { source: candidate.source, sourceRecordId: candidate.sourceRecordId, enrichedFields },
     }, tx as Prisma.TransactionClient);
   }

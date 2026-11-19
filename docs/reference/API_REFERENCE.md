@@ -1196,6 +1196,8 @@ List contacts.
 ### POST /api/contacts
 Create a new contact.
 
+**Date of birth.** `dateOfBirth` is optional and for individuals only: `YYYY-MM-DD` (a full ISO date-time is still accepted and read as its UTC calendar date), blank or `null` for none. It must be a real date, not in the future and not over 150 years back; a corporate contact is refused one. It is stored as midnight UTC. `PUT /api/contacts/[id]` takes the same value, `null` clears it, an omitted field leaves it alone, and the change is written to the contact audit as `dateOfBirth: { old, new }`.
+
 **Auth:** `contact:create`. Manual and quick-create callers can preview identity first. A caller may explicitly choose `CREATE_SEPARATE` when two legitimate contacts share a name; deterministic identifier conflicts are still rejected.
 
 ---
@@ -1245,7 +1247,7 @@ Bulk operations on contacts.
 Identity operations are tenant-scoped. Names use Unicode NFKC normalization and case folding; deterministic matches use only validated, unmasked IDs/UENs. Low-confidence or masked values can inform review but never become deterministic match keys.
 
 ### POST /api/contacts/match-preview
-Preview matches for up to 100 contact candidates before a write. Requires `contact:read`. Each candidate supplies a unique `sourceRecordId`, a `source` (`MANUAL`, `COMPANY_QUICK_CREATE`, `BIZFILE`, or `DOCUMENT_VAULT`), contact type, name fields, and optional identifiers, address, details, and per-field confidence. The response is `{ "matches": { "<sourceRecordId>": matchOrNull } }`; a match includes reasons and the tenant contact summary.
+Preview matches for up to 100 contact candidates before a write. Requires `contact:read`. Each candidate supplies a unique `sourceRecordId`, a `source` (`MANUAL`, `COMPANY_QUICK_CREATE`, `BIZFILE`, or `DOCUMENT_VAULT`), contact type, name fields, and optional identifiers, address, details, and per-field confidence. The response is `{ "matches": { "<sourceRecordId>": matchOrNull } }`; a match includes reasons and the tenant contact summary (including the saved `dateOfBirth` as `YYYY-MM-DD`, shown beside a different date printed in a BizFile). A candidate may carry `dateOfBirth` (`YYYY-MM-DD`); an invalid one is ignored.
 
 ### GET /api/contacts/duplicates
 List bounded duplicate groups, ordered and paginated with `page` (default `1`) and `limit` (default `20`, maximum `100`). Requires `contact:read` and all-companies access. Recommendations combine canonical-name, normalized deterministic-identifier, and bounded trigram candidates, exclude inactive/deleted contacts, and suppress a rejected pair only while its reviewed fingerprints remain current.

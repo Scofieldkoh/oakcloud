@@ -33,6 +33,53 @@ describe('contact validation', () => {
     }
   });
 
+  describe('date of birth', () => {
+    const person = { contactType: 'INDIVIDUAL' as const, firstName: 'John' };
+    const dob = (value: unknown) => createContactSchema.safeParse({ ...person, dateOfBirth: value });
+
+    it('takes YYYY-MM-DD as typed', () => {
+      expect(createContactSchema.parse({ ...person, dateOfBirth: '1980-01-01' }).dateOfBirth).toBe('1980-01-01');
+      expect(createContactSchema.parse({ ...person, dateOfBirth: '2024-02-29' }).dateOfBirth).toBe('2024-02-29');
+    });
+
+    it('still takes a legacy ISO date-time, as the same UTC calendar date', () => {
+      expect(createContactSchema.parse({ ...person, dateOfBirth: '1980-01-01T00:00:00.000Z' }).dateOfBirth).toBe('1980-01-01');
+      expect(updateContactSchema.parse({ id: '11111111-1111-1111-1111-111111111111', dateOfBirth: '1980-12-31T23:59:59.000Z' }).dateOfBirth).toBe('1980-12-31');
+    });
+
+    it('treats blank as none and leaves a missing field missing', () => {
+      expect(createContactSchema.parse({ ...person, dateOfBirth: '' }).dateOfBirth).toBeNull();
+      expect(createContactSchema.parse({ ...person, dateOfBirth: null }).dateOfBirth).toBeNull();
+      expect(createContactSchema.parse(person).dateOfBirth).toBeUndefined();
+      expect(updateContactSchema.parse({ id: '11111111-1111-1111-1111-111111111111', dateOfBirth: '' }).dateOfBirth).toBeNull();
+      expect(updateContactSchema.parse({ id: '11111111-1111-1111-1111-111111111111' }).dateOfBirth).toBeUndefined();
+    });
+
+    it.each(['2023-02-29', '1980-13-01', '1980-02-30T00:00:00Z', 'not a date', '01/01/1980', '2999-01-01', '1850-01-01', 19800101])(
+      'rejects %j with a clear message',
+      (value) => {
+        const result = dob(value);
+        expect(result.success).toBe(false);
+        if (!result.success) expect(result.error.issues[0].path).toEqual(['dateOfBirth']);
+      },
+    );
+
+    it('rejects tomorrow, accepts today', () => {
+      const today = new Date().toISOString().slice(0, 10);
+      const tomorrow = new Date(Date.now() + 36 * 3600 * 1000).toISOString().slice(0, 10);
+      expect(dob(today).success).toBe(true);
+      expect(dob(tomorrow).success).toBe(false);
+    });
+
+    it('rejects a date of birth for a corporate contact, on create with or without details', () => {
+      const corporate = { contactType: 'CORPORATE' as const, corporateName: 'Acme Pte Ltd', dateOfBirth: '1980-01-01' };
+      expect(createContactSchema.safeParse(corporate).success).toBe(false);
+      expect(createContactWithDetailsSchema.safeParse(corporate).success).toBe(false);
+      expect(createContactSchema.safeParse({ ...corporate, dateOfBirth: null }).success).toBe(true);
+      expect(createContactSchema.safeParse({ ...corporate, dateOfBirth: '' }).success).toBe(true);
+    });
+  });
+
   it('accepts an explicit reuse decision with a selected contact', () => {
     const parsed = createContactWithDetailsSchema.parse({
       contactType: 'INDIVIDUAL',

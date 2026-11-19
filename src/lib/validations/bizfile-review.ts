@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { contactResolutionSchema } from '@/lib/validations/contact';
+import { normalizeDateOfBirthInput, plausibleDateOfBirth } from '@/lib/date-only';
 import type { ExtractedBizFileData } from '@/services/bizfile/types';
 import { COMPANY_ALIAS_MAX_LENGTH } from '@/lib/company-display-label';
 import { BIZFILE_ENTITY_TYPE_OPTIONS, BIZFILE_IDENTIFICATION_TYPE_OPTIONS, BIZFILE_OFFICER_ROLE_OPTIONS, BIZFILE_STATUS_OPTIONS, canonicalizeCompanyStatus, canonicalizeEntityType, canonicalizeIdentificationType, canonicalizeOfficerRole } from '@/services/bizfile/canonical-values';
@@ -51,6 +52,16 @@ const isoDate = z.string().trim().superRefine((value, context) => {
     context.addIssue({ code: z.ZodIssueCode.custom, message: 'Must be a valid calendar date' });
   }
 });
+/** A date of birth in the review form: blank, or a real YYYY-MM-DD that is not in the future. */
+const optionalBirthDate = z.preprocess(
+  (value) => (typeof value === 'string' && value.trim() === '' ? undefined : value),
+  z.string().trim().superRefine((value, context) => {
+    if (!plausibleDateOfBirth(value) || normalizeDateOfBirthInput(value) !== value) {
+      context.addIssue({ code: z.ZodIssueCode.custom, message: 'Must be a valid date of birth (YYYY-MM-DD, not in the future)' });
+    }
+  }).optional(),
+);
+
 const optionalDate = z.preprocess(
   (value) => value == null || (typeof value === 'string' && value.trim() === '') ? undefined : value,
   isoDate.optional(),
@@ -123,6 +134,7 @@ export const bizFileReviewSchema = z.object({
     identificationType: optionalAccepted(BIZFILE_IDENTIFICATION_TYPE_OPTIONS, canonicalizeIdentificationType),
     identificationNumber: optionalString,
     nationality: optionalString,
+    dateOfBirth: optionalBirthDate,
     placeOfOrigin: optionalString,
     address: optionalString,
     shareClass: reviewString,
@@ -141,6 +153,7 @@ export const bizFileReviewSchema = z.object({
     identificationType: optionalAccepted(BIZFILE_IDENTIFICATION_TYPE_OPTIONS, canonicalizeIdentificationType),
     identificationNumber: optionalString,
     nationality: optionalString,
+    dateOfBirth: optionalBirthDate,
     address: optionalString,
     appointmentDate: optionalDate,
     cessationDate: optionalDate,

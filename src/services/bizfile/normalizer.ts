@@ -6,6 +6,7 @@
 
 import { normalizeName, normalizeCompanyName, normalizeAddress } from '@/lib/utils';
 import { normalizeCompanyAlias } from '@/lib/company-display-label';
+import { plausibleDateOfBirth } from '@/lib/date-only';
 import type { ExtractedBizFileData } from './types';
 
 const CURRENCY_NAME_MAP: Record<string, string> = {
@@ -263,6 +264,8 @@ export function normalizeExtractedData(data: ExtractedBizFileData): ExtractedBiz
       ...officer,
       name: normalizeName(officer.name) || officer.name,
       nationality: officer.nationality ? normalizeCompanyName(officer.nationality) : undefined,
+      // A date of birth is kept only as a real, plausible YYYY-MM-DD; anything else is dropped.
+      dateOfBirth: plausibleDateOfBirth(officer.dateOfBirth) ?? undefined,
       address: officer.address ? normalizeAddress(officer.address) : undefined,
     }));
   }
@@ -275,6 +278,8 @@ export function normalizeExtractedData(data: ExtractedBizFileData): ExtractedBiz
         ? normalizeCompanyName(shareholder.name) || shareholder.name
         : normalizeName(shareholder.name) || shareholder.name,
       nationality: shareholder.nationality ? normalizeCompanyName(shareholder.nationality) : undefined,
+      // Individuals only, and only a real, plausible YYYY-MM-DD.
+      dateOfBirth: shareholder.type === 'CORPORATE' ? undefined : plausibleDateOfBirth(shareholder.dateOfBirth) ?? undefined,
       placeOfOrigin: shareholder.placeOfOrigin ? normalizeCompanyName(shareholder.placeOfOrigin) : undefined,
       address: shareholder.address ? normalizeAddress(shareholder.address) : undefined,
       currency: normalizeCurrency(shareholder.currency),

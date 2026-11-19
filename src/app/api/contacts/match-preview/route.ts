@@ -6,6 +6,7 @@ import { requirePermission } from '@/lib/rbac';
 import { previewContactIdentity } from '@/services/contact-identity.service';
 import { contactDetailTypeEnum, contactPurposeEnum } from '@/lib/validations/contact-detail';
 import { routeErrorResponse } from '@/lib/api-route-errors';
+import { toDateOnlyString } from '@/lib/date-only';
 
 const candidateSchema = z.object({
   source: z.enum(['MANUAL', 'COMPANY_QUICK_CREATE', 'BIZFILE', 'DOCUMENT_VAULT']),
@@ -83,6 +84,7 @@ export async function POST(request: NextRequest) {
         identificationType: true,
         identificationNumber: true,
         corporateUen: true,
+        dateOfBirth: true,
         companyRelations: {
           where: { deletedAt: null },
           select: { company: { select: { id: true, name: true, uen: true } } },
@@ -101,6 +103,7 @@ export async function POST(request: NextRequest) {
           identificationType: contact.identificationType,
           identificationNumber: contact.identificationNumber,
           corporateUen: contact.corporateUen,
+          dateOfBirth: toDateOnlyString(contact.dateOfBirth),
           companies: contact.companyRelations.map((relation) => relation.company),
         } : null,
       }];

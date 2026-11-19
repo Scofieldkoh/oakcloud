@@ -1,5 +1,6 @@
 // @vitest-environment node
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
+import { parseDateOnly } from '@/lib/date-only';
 import { agreedCountry, formatDateOfBirth, searchDetailsFor, sentrowebGenderOf } from '@/services/sentroweb/entities';
 
 describe('formatDateOfBirth', () => {
@@ -11,6 +12,22 @@ describe('formatDateOfBirth', () => {
     'gives null for a missing or implausible date (%s)',
     (value) => {
       expect(formatDateOfBirth(value as Date | null | undefined, now)).toBeNull();
+    },
+  );
+});
+
+describe('formatDateOfBirth reads what Contacts stores', () => {
+  const original = process.env.TZ;
+  afterEach(() => {
+    if (original === undefined) delete process.env.TZ;
+    else process.env.TZ = original;
+  });
+  it.each(['Asia/Singapore', 'America/Los_Angeles', 'Pacific/Kiritimati', 'UTC'])(
+    'a date saved as 1980-01-01 is sent as 1980-01-01 under TZ=%s',
+    (zone) => {
+      process.env.TZ = zone;
+      const saved = parseDateOnly('1980-01-01');
+      expect(formatDateOfBirth(saved, new Date('2026-11-19T00:00:00Z'))).toBe('1980-01-01');
     },
   );
 });

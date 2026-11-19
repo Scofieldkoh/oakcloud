@@ -66,6 +66,22 @@ confirmation (**Run again anyway**). Only one run per company can be queued or r
   never clicks Match Yes/No, "All results are false match", Save or Cancel on a result.
 - **A submitted search is never submitted again** by the client, the service or recovery.
 
+## Where the date of birth comes from
+
+- **Contacts page.** An individual contact has an optional **Date of birth** (new, edit, and a line on
+  the contact page). A real date, not in the future. A corporate contact has none.
+- **BizFile.** The extraction asks for a date of birth **only when the document explicitly prints one**
+  for an officer or an individual shareholder, and never works one out from the NRIC or FIN. ACRA
+  business profiles normally do not print it, so this rarely fills anything; a missing, malformed or
+  implausible value is dropped and **never clears** a saved date. A printed date shows as a field on the
+  person in the BizFile review (and makes that person a reviewable change). When the review is approved
+  it is written to the contact only if the person is the contact by **ID number**, was **created** from
+  the extract, or was **picked by the reviewer**; a match by name alone writes nothing. It **replaces**
+  a different saved date (the review says so first, with both dates) and is audited as old and new.
+  Other sources only fill an empty date and report a difference as a conflict.
+- **No backfill, no automatic re-screening.** Past BizFile documents are not re-read, and a changed date
+  affects only the next manual Sentroweb check.
+
 ## Country, date of birth and gender
 
 For an individual the run sends the country, the date of birth and the gender Oakcloud holds, so a common name
@@ -75,7 +91,7 @@ left blank for that person, and the run carries on.
 | Field | Source | Rule |
 | --- | --- | --- |
 | Country | The linked contact's `nationality`, else the officer or shareholder row's `nationality` (the same precedence as the ID number). | Mapped to one exact option of Sentroweb's country list (`src/lib/sentroweb/countries.ts`): an exact country name, an upper-case two-letter flag code (`SG`, `MY`), a listed three-letter code (`SGP`), or a listed demonym or alternative name (`Singaporean`, `Hong Kong`). Ambiguous words (`Dominican`, `Guinean`, `Congolese`, `Korean`), unknown text and lower-case two-letter words map to nothing. |
-| Date of birth | The linked contact's `dateOfBirth` (officer and shareholder rows hold none). | Sent as `YYYY-MM-DD`. A date before 1900 or in the future is not sent. |
+| Date of birth | The linked contact's `dateOfBirth` (officer and shareholder rows hold none). It is entered on the Contacts page (individuals), or filled and updated from a BizFile review; see the next section. It is stored as midnight UTC and sent as its UTC calendar date, so it never moves a day. | Sent as `YYYY-MM-DD`. A date before 1900 or in the future is not sent. |
 | Gender | The linked contact's `gender` (Contacts page, optional: Male, Female, Other). Officer and shareholder rows hold none. | `MALE` and `FEMALE` tick the Male or Female box. `OTHER` and blank send nothing (Sentroweb has two boxes only), and both boxes stay unticked. |
 
 When one person has several records (a director and a shareholder), a field is sent only if every

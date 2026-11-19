@@ -360,7 +360,7 @@ Unified contact management for individuals and corporates. Each contact belongs 
 | identification_type | ENUM | Yes | NRIC, FIN, PASSPORT, UEN, OTHER |
 | identification_number | VARCHAR(50) | Yes | ID number |
 | nationality | VARCHAR(100) | Yes | Nationality |
-| date_of_birth | DATE | Yes | Date of birth |
+| date_of_birth | TIMESTAMP | Yes | Date of birth (individuals only). A calendar date stored as **midnight UTC** and always read through UTC (`src/lib/date-only.ts`), so it is the same day in every time zone and is what Sentroweb receives |
 | gender | ENUM | Yes | MALE, FEMALE, OTHER (individuals, optional; MALE and FEMALE are sent to Sentroweb searches) |
 | corporate_name | VARCHAR(200) | Yes | Corporate name |
 | corporate_uen | VARCHAR(10) | Yes | Corporate UEN |

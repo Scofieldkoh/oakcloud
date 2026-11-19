@@ -542,6 +542,93 @@ describePostgres('Sentroweb check service (PostgreSQL)', () => {
         expect(JSON.stringify(detail)).not.toContain('1990-07-15');
       });
 
+      describe('date of birth kept on Contacts', () => {
+        const originalTz = process.env.TZ;
+        afterAll(() => {
+          if (originalTz === undefined) delete process.env.TZ;
+          else process.env.TZ = originalTz;
+        });
+        // Identity resolution refuses to run while a contact of the tenant has no canonical name, and
+        // sibling tests insert bare contacts: complete those first, as the production backfill does.
+        const completeCanonicalNames = (workspaceId: string) => prisma.$executeRaw`
+          UPDATE contacts SET "canonicalName" = lower("fullName") WHERE "tenantId" = ${workspaceId} AND "canonicalName" IS NULL
+        `;
+        const storedOf = async (contactId: string) => (await prisma.$queryRaw<Array<{ dob: string | null }>>`
+          SELECT to_char("dateOfBirth", 'YYYY-MM-DD"T"HH24:MI:SS') AS dob FROM contacts WHERE id = ${contactId}
+        `)[0]?.dob;
+
+        it.each(['Asia/Singapore', 'America/Los_Angeles', 'Pacific/Kiritimati'])(
+          'a date saved on the contact is stored at midnight UTC and reaches Sentroweb unchanged under TZ=%s',
+          async (zone) => {
+            process.env.TZ = zone;
+            const { createContact } = await import('@/services/contact.service');
+            const name = `Tia ${zone.split('/')[1]}`;
+            const contact = await createContact({ contactType: 'INDIVIDUAL', firstName: name, dateOfBirth: '1980-01-01' }, { tenantId, userId });
+            expect(await storedOf(contact.id)).toBe('1980-01-01T00:00:00');
+            const companyId = await makeCompany();
+            await prisma.companyOfficer.create({ data: { companyId, contactId: contact.id, role: 'DIRECTOR', name: contact.fullName, isCurrent: true } });
+            const { runId } = await queue(companyId, [contact.fullName]);
+            const client = makeClient();
+            await service.processRun(runId, { client, config: CONFIG });
+            expect(client.searches.find((search) => search.name === contact.fullName)).toMatchObject({ dateOfBirth: '1980-01-01' });
+          },
+        );
+
+        it('an approved BizFile date replaces it for the next run, and a missing or invalid one changes nothing', async () => {
+          const { createContact } = await import('@/services/contact.service');
+          const { resolveOrCreateContact } = await import('@/services/contact-identity.service');
+          await completeCanonicalNames(tenantId);
+          const id = `S${Math.floor(1_000_000 + Math.random() * 8_999_999)}Q`;
+          const contact = await createContact(
+            { contactType: 'INDIVIDUAL', firstName: 'Bea Bizfile', identificationType: 'NRIC', identificationNumber: id, dateOfBirth: '1980-01-01' },
+            { tenantId, userId },
+          );
+          const candidate = (dateOfBirth?: string) => ({
+            source: 'BIZFILE' as const, sourceRecordId: 'officers.0', contactType: 'INDIVIDUAL' as const,
+            firstName: 'Bea Bizfile', identificationType: 'NRIC' as const, identificationNumber: id, dateOfBirth,
+          });
+          for (const bad of [undefined, '', 'junk', '2999-01-01', '1980-02-30']) {
+            await resolveOrCreateContact(candidate(bad), { action: 'AUTO' }, { tenantId, userId });
+            expect(await storedOf(contact.id)).toBe('1980-01-01T00:00:00');
+          }
+          await resolveOrCreateContact(candidate('1981-02-03'), { action: 'AUTO' }, { tenantId, userId });
+          expect(await storedOf(contact.id)).toBe('1981-02-03T00:00:00');
+          const audits = await prisma.auditLog.findMany({
+            where: { tenantId, entityType: 'Contact', entityId: contact.id, changeSource: 'BIZFILE_UPLOAD' },
+          });
+          expect(audits.map((entry) => entry.changes).filter(Boolean)).toEqual([
+            { dateOfBirth: { old: '1980-01-01', new: '1981-02-03' } },
+          ]);
+
+          const companyId = await makeCompany();
+          await prisma.companyOfficer.create({ data: { companyId, contactId: contact.id, role: 'DIRECTOR', name: contact.fullName, isCurrent: true } });
+          const { runId } = await queue(companyId, [contact.fullName]);
+          const client = makeClient();
+          await service.processRun(runId, { client, config: CONFIG });
+          expect(client.searches.find((search) => search.name === contact.fullName)).toMatchObject({ dateOfBirth: '1981-02-03' });
+        });
+
+        it('never touches a contact of another tenant', async () => {
+          const { resolveOrCreateContact } = await import('@/services/contact-identity.service');
+          await completeCanonicalNames(tenantId);
+          const id = `S${Math.floor(1_000_000 + Math.random() * 8_999_999)}R`;
+          const foreign = await prisma.contact.create({
+            data: {
+              tenantId: otherTenantId, contactType: 'INDIVIDUAL', firstName: 'Fred Foreign', fullName: 'Fred Foreign',
+              canonicalName: 'fredforeign', identificationType: 'NRIC', identificationNumber: id,
+              dateOfBirth: new Date('1970-01-01T00:00:00Z'),
+            },
+          });
+          const result = await resolveOrCreateContact(
+            { source: 'BIZFILE', contactType: 'INDIVIDUAL', firstName: 'Fred Foreign', identificationType: 'NRIC', identificationNumber: id, dateOfBirth: '1999-09-09' },
+            { action: 'AUTO' },
+            { tenantId, userId },
+          );
+          expect(result.contact.id).not.toBe(foreign.id);
+          expect(await storedOf(foreign.id)).toBe('1970-01-01T00:00:00');
+        });
+      });
+
       it('takes MALE or FEMALE from the contact, never OTHER, never from a record without a contact', async () => {
         const companyId = await makeCompany();
         const male = await prisma.contact.create({ data: { tenantId, contactType: 'INDIVIDUAL', fullName: 'Max Male', gender: 'MALE' } });

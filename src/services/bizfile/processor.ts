@@ -30,6 +30,7 @@ import {
 } from '@/lib/storage/filename';
 import { storage } from '@/lib/storage';
 import { createLogger } from '@/lib/logger';
+import { plausibleDateOfBirth } from '@/lib/date-only';
 import type { TaskLaunchContext } from '@/services/tasks/types';
 import { acquireBusinessOperationBarrier } from '@/lib/business-operation-backup-barrier';
 import { evaluateFreshAuthorization } from '@/lib/fresh-authorization';
@@ -118,6 +119,15 @@ function splitIndividualName(name: string): { firstName: string; lastName?: stri
   return { firstName, ...(lastName ? { lastName } : {}) };
 }
 
+/**
+ * The date of birth a BizFile record may carry into contact resolution: only a real, plausible
+ * YYYY-MM-DD. A missing or invalid one adds nothing (and so can never clear a saved date).
+ */
+function birthDateFor(value: string | undefined): { dateOfBirth?: string } {
+  const date = plausibleDateOfBirth(value);
+  return date ? { dateOfBirth: date } : {};
+}
+
 function officerIdentityCandidate(officer: Officer, sourceRecordId: string): ContactIdentityCandidate {
   return {
     source: 'BIZFILE',
@@ -127,6 +137,7 @@ function officerIdentityCandidate(officer: Officer, sourceRecordId: string): Con
     identificationType: mapIdentificationType(officer.identificationType) || undefined,
     identificationNumber: officer.identificationNumber,
     nationality: officer.nationality,
+    ...birthDateFor(officer.dateOfBirth),
     fullAddress: officer.address,
   };
 }
@@ -153,6 +164,7 @@ function shareholderIdentityCandidate(
     identificationType: mapIdentificationType(shareholder.identificationType) || undefined,
     identificationNumber: shareholder.identificationNumber,
     nationality: shareholder.nationality,
+    ...birthDateFor(shareholder.dateOfBirth),
     fullAddress: shareholder.address,
   };
 }

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const previewRaw = vi.hoisted(() => vi.fn());
 
@@ -434,6 +434,99 @@ describe('contact identity service', () => {
     const kept = await resolveOrCreateContact(candidate({ ...base, gender: 'FEMALE' }), { action: 'AUTO' }, params);
     expect(tx.contact.update).not.toHaveBeenCalled();
     expect(kept.enrichedFields).toEqual([]);
+  });
+
+  describe('date of birth', () => {
+    const idMatch = { identificationType: 'NRIC' as const, identificationNumber: 'S1234567A' };
+    const stored = new Date('1980-01-01T00:00:00.000Z');
+    const dobUpdateCall = () => tx.contact.update.mock.calls[0]?.[0];
+    const dobAudit = () => vi.mocked(createAuditLog).mock.calls
+      .map(([entry]) => entry)
+      .find((entry) => (entry as { changes?: unknown }).changes);
+
+    it('fills an empty date of birth, as midnight UTC, for a person matched by ID number', async () => {
+      tx.contact.findMany.mockResolvedValue([existingContact({ ...idMatch, dateOfBirth: null })]);
+      const result = await resolveOrCreateContact(candidate({ ...idMatch, dateOfBirth: '1980-01-01' }), { action: 'AUTO' }, params);
+      expect(dobUpdateCall().data.dateOfBirth.toISOString()).toBe('1980-01-01T00:00:00.000Z');
+      expect(result.enrichedFields).toEqual(['dateOfBirth']);
+      expect(dobAudit()).toMatchObject({ changes: { dateOfBirth: { old: null, new: '1980-01-01' } } });
+    });
+
+    it('a BizFile date replaces a different saved one, and the audit records old and new', async () => {
+      tx.contact.findMany.mockResolvedValue([existingContact({ ...idMatch, dateOfBirth: stored })]);
+      const result = await resolveOrCreateContact(candidate({ ...idMatch, source: 'BIZFILE', dateOfBirth: '1981-02-03' }), { action: 'AUTO' }, params);
+      expect(dobUpdateCall().data.dateOfBirth.toISOString()).toBe('1981-02-03T00:00:00.000Z');
+      expect(result.enrichedFields).toContain('dateOfBirth');
+      expect(result.conflicts).toEqual([]);
+      expect(dobAudit()).toMatchObject({
+        changeSource: 'BIZFILE_UPLOAD',
+        changes: { dateOfBirth: { old: '1980-01-01', new: '1981-02-03' } },
+      });
+    });
+
+    it('the same date again writes nothing and adds no audit', async () => {
+      tx.contact.findMany.mockResolvedValue([existingContact({ ...idMatch, dateOfBirth: stored })]);
+      const result = await resolveOrCreateContact(candidate({ ...idMatch, source: 'BIZFILE', dateOfBirth: '1980-01-01' }), { action: 'AUTO' }, params);
+      expect(tx.contact.update).not.toHaveBeenCalled();
+      expect(result.enrichedFields).toEqual([]);
+      expect(dobAudit()).toBeUndefined();
+    });
+
+    it('a reviewer-chosen contact takes the BizFile date as well', async () => {
+      tx.contact.findFirst.mockResolvedValueOnce(null).mockResolvedValue(existingContact({ id: 'contact-9', dateOfBirth: stored }));
+      tx.contact.findMany.mockResolvedValue([existingContact({ id: 'contact-9', dateOfBirth: stored })]);
+      await resolveOrCreateContact(candidate({ source: 'BIZFILE', dateOfBirth: '1990-09-09' }), { action: 'REUSE', contactId: 'contact-9' }, params);
+      expect(dobUpdateCall()?.data.dateOfBirth.toISOString()).toBe('1990-09-09T00:00:00.000Z');
+    });
+
+    it.each([undefined, '', 'garbage', '2999-01-01', '1980-02-30', '1850-01-01'])(
+      'a missing or invalid BizFile date (%j) never clears or changes the saved one',
+      async (bad) => {
+        tx.contact.findMany.mockResolvedValue([existingContact({ ...idMatch, dateOfBirth: stored })]);
+        const result = await resolveOrCreateContact(candidate({ ...idMatch, source: 'BIZFILE', dateOfBirth: bad }), { action: 'AUTO' }, params);
+        expect(tx.contact.update).not.toHaveBeenCalled();
+        expect(result.enrichedFields).toEqual([]);
+        expect(result.conflicts).toEqual([]);
+      },
+    );
+
+    it('a different date from another source is reported as a conflict, not written', async () => {
+      tx.contact.findMany.mockResolvedValue([existingContact({ ...idMatch, dateOfBirth: stored })]);
+      const result = await resolveOrCreateContact(candidate({ ...idMatch, source: 'MANUAL', dateOfBirth: '1981-02-03' }), { action: 'AUTO' }, params);
+      expect(tx.contact.update).not.toHaveBeenCalled();
+      expect(result.conflicts).toEqual([expect.objectContaining({ field: 'dateOfBirth', existingValue: '1980-01-01T00:00:00.000Z' })]);
+    });
+
+    it('a corporate record carries no date of birth, and a corporate contact is never given one', async () => {
+      tx.contact.findMany.mockResolvedValue([]);
+      await resolveOrCreateContact(
+        candidate({ contactType: 'CORPORATE', firstName: undefined, corporateName: 'Acme Pte Ltd', corporateUen: '202400001A', dateOfBirth: '1980-01-01' }),
+        { action: 'AUTO' },
+        params,
+      );
+      expect(tx.contact.create).toHaveBeenLastCalledWith(expect.objectContaining({ data: expect.objectContaining({ dateOfBirth: null }) }));
+    });
+
+    it('a new contact created from the extract is stored with the date, and none when none is given', async () => {
+      tx.contact.findMany.mockResolvedValue([]);
+      await resolveOrCreateContact(candidate({ firstName: 'Dana', lastName: 'Date', dateOfBirth: '1980-01-01' }), { action: 'AUTO' }, params);
+      const data = tx.contact.create.mock.calls.at(-1)?.[0].data;
+      expect(data.dateOfBirth.toISOString()).toBe('1980-01-01T00:00:00.000Z');
+      await resolveOrCreateContact(candidate({ firstName: 'Nora', lastName: 'Nodate' }), { action: 'AUTO' }, params);
+      expect(tx.contact.create.mock.calls.at(-1)?.[0].data.dateOfBirth).toBeNull();
+    });
+
+    it('writes no date on a name-only automatic match', async () => {
+      tx.contact.findMany.mockResolvedValue([existingContact()]);
+      const result = await resolveOrCreateContact(
+        candidate({ ...idMatch, source: 'BIZFILE', dateOfBirth: '1980-01-01' }),
+        { action: 'AUTO' },
+        params,
+      );
+      expect(result.outcome).toBe('REUSED_NAME');
+      expect(dobUpdateCall().data).not.toHaveProperty('dateOfBirth');
+      expect(result.enrichedFields).not.toContain('dateOfBirth');
+    });
   });
 
   it('fills empty fields without overwriting conflicting non-empty values', async () => {
@@ -909,6 +1002,74 @@ describe('contact identity service', () => {
     ).rejects.toThrow('review match');
     expect(tx.contact.create).not.toHaveBeenCalled();
     expect(tx.contactDuplicateDecision.create).not.toHaveBeenCalled();
+  });
+
+  describe('manual date of birth', () => {
+    const ZONES = ['Asia/Singapore', 'America/Los_Angeles', 'Pacific/Kiritimati'];
+    const original = process.env.TZ;
+    afterEach(() => {
+      if (original === undefined) delete process.env.TZ;
+      else process.env.TZ = original;
+    });
+
+    it.each(ZONES)('create stores 1980-01-01 as midnight UTC under TZ=%s', async (zone) => {
+      process.env.TZ = zone;
+      vi.mocked(prisma.contact.create).mockResolvedValue(existingContact({ id: 'created' }) as never);
+      await createContact({ contactType: 'INDIVIDUAL', firstName: 'Dana', dateOfBirth: '1980-01-01' }, params);
+      const data = vi.mocked(prisma.contact.create).mock.calls.at(-1)?.[0].data as { dateOfBirth: Date };
+      expect(data.dateOfBirth.toISOString()).toBe('1980-01-01T00:00:00.000Z');
+    });
+
+    it('create ignores a date of birth for a corporate contact and stores none when blank', async () => {
+      vi.mocked(prisma.contact.create).mockResolvedValue(existingContact({ id: 'created' }) as never);
+      await createContact({ contactType: 'CORPORATE', corporateName: 'Acme', dateOfBirth: '1980-01-01' }, params);
+      expect((vi.mocked(prisma.contact.create).mock.calls.at(-1)?.[0].data as { dateOfBirth: unknown }).dateOfBirth).toBeNull();
+      await createContact({ contactType: 'INDIVIDUAL', firstName: 'Dana', dateOfBirth: null }, params);
+      expect((vi.mocked(prisma.contact.create).mock.calls.at(-1)?.[0].data as { dateOfBirth: unknown }).dateOfBirth).toBeNull();
+    });
+
+    it.each(['1980-02-30', '2999-01-01', 'soon'])('refuses %j instead of storing another day', async (bad) => {
+      await expect(createContact({ contactType: 'INDIVIDUAL', firstName: 'Dana', dateOfBirth: bad }, params)).rejects.toThrow(/date of birth/i);
+    });
+
+    it('update writes the new date, audits old and new, and a clear writes null', async () => {
+      tx.contact.findFirst.mockResolvedValue(existingContact({ dateOfBirth: new Date('1980-01-01T00:00:00.000Z') }));
+      tx.contact.update.mockResolvedValue(existingContact());
+      await updateContact({ id: 'contact-1', dateOfBirth: '1975-12-31' }, { ...params, tx: tx as never });
+      expect((tx.contact.update.mock.calls.at(-1)?.[0].data as { dateOfBirth: Date }).dateOfBirth.toISOString()).toBe('1975-12-31T00:00:00.000Z');
+      expect(createAuditLog).toHaveBeenLastCalledWith(
+        expect.objectContaining({ changes: { dateOfBirth: { old: '1980-01-01', new: '1975-12-31' } } }),
+        tx,
+      );
+
+      await updateContact({ id: 'contact-1', dateOfBirth: null }, { ...params, tx: tx as never });
+      expect((tx.contact.update.mock.calls.at(-1)?.[0].data as { dateOfBirth: unknown }).dateOfBirth).toBeNull();
+      expect(createAuditLog).toHaveBeenLastCalledWith(
+        expect.objectContaining({ changes: { dateOfBirth: { old: '1980-01-01', new: null } } }),
+        tx,
+      );
+    });
+
+    it('update leaves the date and the audit change alone when the field is not sent or is unchanged', async () => {
+      tx.contact.findFirst.mockResolvedValue(existingContact({ dateOfBirth: new Date('1980-01-01T00:00:00.000Z') }));
+      tx.contact.update.mockResolvedValue(existingContact());
+      await updateContact({ id: 'contact-1', firstName: 'Else' }, { ...params, tx: tx as never });
+      expect(tx.contact.update.mock.calls.at(-1)?.[0].data).not.toHaveProperty('dateOfBirth');
+      expect(vi.mocked(createAuditLog).mock.calls.at(-1)?.[0]).not.toHaveProperty('changes');
+
+      await updateContact({ id: 'contact-1', dateOfBirth: '1980-01-01' }, { ...params, tx: tx as never });
+      expect(vi.mocked(createAuditLog).mock.calls.at(-1)?.[0]).not.toHaveProperty('changes');
+    });
+
+    it('update refuses a date for a corporate contact and drops it when a contact becomes corporate', async () => {
+      tx.contact.findFirst.mockResolvedValue(existingContact({ contactType: 'CORPORATE', dateOfBirth: null }));
+      await expect(updateContact({ id: 'contact-1', dateOfBirth: '1980-01-01' }, { ...params, tx: tx as never })).rejects.toThrow(/individual/i);
+
+      tx.contact.findFirst.mockResolvedValue(existingContact({ dateOfBirth: new Date('1980-01-01T00:00:00.000Z') }));
+      tx.contact.update.mockResolvedValue(existingContact());
+      await updateContact({ id: 'contact-1', contactType: 'CORPORATE' }, { ...params, tx: tx as never });
+      expect((tx.contact.update.mock.calls.at(-1)?.[0].data as { dateOfBirth: unknown }).dateOfBirth).toBeNull();
+    });
   });
 
   it('uses a supplied transaction for updateContact lookup, mutation, and audit', async () => {

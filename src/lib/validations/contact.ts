@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { plausibleDateOfBirth } from '@/lib/date-only';
 import { contactDetailTypeEnum, contactPurposeEnum } from '@/lib/validations/contact-detail';
 
 export const contactTypeEnum = z.enum(['INDIVIDUAL', 'CORPORATE']);
@@ -8,6 +9,28 @@ export const contactGenderEnum = z.enum(['MALE', 'FEMALE', 'OTHER']);
 const optionalGenderSchema = z.preprocess(
   (val) => (val === '' ? null : val),
   contactGenderEnum.optional().nullable()
+);
+
+/**
+ * A date of birth as `YYYY-MM-DD` (what the date input sends), or, for older callers, a full ISO
+ * date-time whose UTC calendar date is used. Blank is none. The output is always the date-only text,
+ * which the service stores as midnight UTC. Real dates only, not in the future, not over 150 years back.
+ */
+const optionalDateOfBirthSchema = z.preprocess(
+  (val) => (val === '' ? null : val),
+  z
+    .string()
+    .nullable()
+    .optional()
+    .transform((val, ctx) => {
+      if (val === null || val === undefined) return val;
+      const date = plausibleDateOfBirth(val);
+      if (!date) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Date of birth must be valid and not in the future' });
+        return z.NEVER;
+      }
+      return date;
+    }),
 );
 
 const optionalIdentificationTypeSchema = z.preprocess(
@@ -27,28 +50,7 @@ const contactBaseSchema = z.object({
   identificationNumber: z.string().max(50).optional().nullable(),
   nationality: z.string().max(100).optional().nullable(),
   gender: optionalGenderSchema,
-  dateOfBirth: z.preprocess(
-    (val) => (val === '' ? null : val),
-    z
-      .string()
-      .datetime()
-      .optional()
-      .nullable()
-      .refine(
-        (val) => {
-          if (!val) return true;
-          const dob = new Date(val);
-          const today = new Date();
-          // Not in future
-          if (dob > today) return false;
-          // Not older than 150 years
-          const age = today.getFullYear() - dob.getFullYear();
-          if (age > 150) return false;
-          return true;
-        },
-        { message: 'Date of birth must be valid and not in the future' }
-      )
-  ),
+  dateOfBirth: optionalDateOfBirthSchema,
 
   // Corporate fields
   corporateName: z.string().max(200).optional().nullable(),
@@ -91,7 +93,10 @@ export const createContactSchema = contactBaseSchema.refine(
   {
     message: 'Individual contacts require a name; Corporate contacts require a corporate name',
   }
-);
+).refine((data) => data.contactType !== 'CORPORATE' || !data.dateOfBirth, {
+  message: 'Date of birth applies to individual contacts only',
+  path: ['dateOfBirth'],
+});
 
 const createContactDetailOnCreateSchema = z.object({
   detailType: contactDetailTypeEnum,
@@ -117,7 +122,10 @@ export const createContactWithDetailsSchema = contactBaseSchema.extend({
   {
     message: 'Individual contacts require a name; Corporate contacts require a corporate name',
   }
-);
+).refine((data) => data.contactType !== 'CORPORATE' || !data.dateOfBirth, {
+  message: 'Date of birth applies to individual contacts only',
+  path: ['dateOfBirth'],
+});
 
 export const updateContactSchema = contactBaseSchema.partial().extend({
   id: z.string().uuid(),

@@ -24,6 +24,7 @@ import {
 import { RepeatingRecordEditor } from "./repeating-record-editor";
 import { canonicalizeCompanyStatus, canonicalizeEntityType, canonicalizeIdentificationType, canonicalizeOfficerRole } from "@/services/bizfile/canonical-values";
 import { isExactIdentifierContactMatch } from "@/services/bizfile/contact-match-preview.client";
+import { formatDateOnlyDisplay, plausibleDateOfBirth } from "@/lib/date-only";
 
 type Props = {
   draft: BizFileReviewDraft;
@@ -531,6 +532,40 @@ export function CapitalSection({ draft, onChange, issues }: Props) {
   );
 }
 
+/**
+ * A date of birth the document printed. When the matched contact already has a different one, say
+ * plainly what approving does: an ID-number match or a contact you picked has its date replaced; a
+ * match by name alone is left as it is.
+ */
+function DateOfBirthReviewField({
+  id, value, onChange, error, match, resolution,
+}: {
+  id: string;
+  value: string | undefined;
+  onChange: (value: string) => void;
+  error?: BizFileReviewIssue;
+  match?: ContactMatchPreview | null;
+  resolution?: ContactResolutionDecision;
+}) {
+  const incoming = plausibleDateOfBirth(value);
+  const saved = match?.contact?.dateOfBirth ?? null;
+  const differs = Boolean(saved && incoming && saved !== incoming);
+  const certain = resolution?.action === "REUSE" || Boolean(match?.reasons.includes("IDENTIFIER"));
+  return (
+    <div>
+      <ReviewField id={id} label="Date of birth" type="date" value={value ?? ""}
+        onChange={(e) => onChange(e.target.value)} error={error} />
+      {differs ? (
+        <p role="status" className="mt-1 text-xs text-status-warning">
+          {certain
+            ? `The matched contact has ${formatDateOnlyDisplay(saved)}. Approving this review replaces it with ${formatDateOnlyDisplay(incoming)}.`
+            : `The matched contact has ${formatDateOnlyDisplay(saved)}. It is kept, because this person is matched by name only.`}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
 const identificationOptions = (
   <>
     <option value="">Select</option>
@@ -648,6 +683,14 @@ export function OfficersSection({ draft, onChange, issues, matchPreviews = {} }:
               onChange={(e) => update({ ...item, nationality: e.target.value })}
               error={issue(issues, `officers.${i}.nationality`)}
             />
+            <DateOfBirthReviewField
+              id={`officer-dob-${i}`}
+              value={item.dateOfBirth}
+              onChange={(dateOfBirth) => update({ ...item, dateOfBirth: dateOfBirth || undefined })}
+              error={issue(issues, `officers.${i}.dateOfBirth`)}
+              match={matchPreviews[`officers.${i}`]}
+              resolution={item.contactResolution}
+            />
             <ReviewTextarea
               id={`officer-address-${i}`}
               label="Address"
@@ -764,6 +807,14 @@ export function ShareholdersSection({ draft, onChange, issues, matchPreviews = {
                 error={issue(issues, `shareholders.${i}.${field}`)}
               />
             ))}
+            {item.type === "INDIVIDUAL" ? <DateOfBirthReviewField
+              id={`holder-dob-${i}`}
+              value={item.dateOfBirth}
+              onChange={(dateOfBirth) => update({ ...item, dateOfBirth: dateOfBirth || undefined })}
+              error={issue(issues, `shareholders.${i}.dateOfBirth`)}
+              match={matchPreviews[`shareholders.${i}`]}
+              resolution={item.contactResolution}
+            /> : null}
             <ReviewField
               id={`holder-shares-${i}`}
               label="Number of shares"

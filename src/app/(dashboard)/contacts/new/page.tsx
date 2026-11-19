@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Save, AlertCircle, Loader2, ShieldAlert, Mail, Building2, User } from 'lucide-react';
@@ -89,6 +89,7 @@ export default function NewContactPage() {
     register,
     handleSubmit,
     watch,
+    setValue,
     formState: { errors, isSubmitting, isDirty },
   } = useForm<CreateContactInput>({
     resolver: zodResolver(createContactSchema),
@@ -124,6 +125,11 @@ export default function NewContactPage() {
   const navigationGuard = useUnsavedNavigationGuard((isDirty || hasContactDetailChanges) && !isSubmitting);
 
   const contactType = watch('contactType');
+
+  // A corporate contact has no date of birth: drop anything typed before the type was switched.
+  useEffect(() => {
+    if (contactType === 'CORPORATE') setValue('dateOfBirth', null);
+  }, [contactType, setValue]);
 
   // Get the appropriate ID types based on contact type
   const availableIdTypes = contactType === 'CORPORATE' ? corporateIdTypes : individualIdTypes;
@@ -487,6 +493,18 @@ export default function NewContactPage() {
                       <option value="FEMALE">Female</option>
                       <option value="OTHER">Other</option>
                     </select>
+                  </div>
+                  <div>
+                    <label className="label" htmlFor="contact-date-of-birth">Date of birth</label>
+                    <input
+                      id="contact-date-of-birth"
+                      type="date"
+                      {...register('dateOfBirth')}
+                      className={`input input-sm ${errors.dateOfBirth ? 'input-error' : ''}`}
+                    />
+                    {errors.dateOfBirth && (
+                      <p className="text-xs text-status-error mt-1.5">{errors.dateOfBirth.message}</p>
+                    )}
                   </div>
                 </div>
               </>
