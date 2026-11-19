@@ -114,6 +114,15 @@ export function buildProcessingFilterChips(
   }
 
   // Vendor Name
+  if (params.companyName) {
+    chips.push({
+      key: 'companyName',
+      label: 'Company',
+      value: params.companyName,
+      onRemove: () => handleFiltersChange({ companyName: undefined }),
+    });
+  }
+
   if (params.vendorName) {
     chips.push({
       key: 'vendorName',

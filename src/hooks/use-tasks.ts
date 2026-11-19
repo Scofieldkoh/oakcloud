@@ -44,6 +44,8 @@ export interface TaskListParams {
   query?: string;
   title?: string;
   ownerQuery?: string;
+  /** Company name contains this text. */
+  companyQuery?: string;
   pipelineId?: string;
   companyId?: string;
   ownerId?: string;
@@ -109,6 +111,7 @@ export function taskListUrl(params: TaskListParams) {
     ['q', params.query],
     ['title', params.title],
     ['ownerQuery', params.ownerQuery],
+    ['companyQuery', params.companyQuery],
     ['pipeline', params.pipelineId],
     ['company', params.companyId],
     ['owner', params.ownerId],

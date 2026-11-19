@@ -420,6 +420,11 @@ export function CompanyTable({
               companyId: companyId || undefined,
               companyName: company?.name || undefined,
             })}
+            textFilter={inlineFilters.companyId ? undefined : inlineFilters.companyName}
+            onTextFilterChange={(text) => onInlineFilterChange({
+              companyId: undefined,
+              companyName: text || undefined,
+            })}
             placeholder="All companies"
             className="text-xs"
             variant="table-filter"

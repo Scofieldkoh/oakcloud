@@ -48,4 +48,15 @@ describe('task list filter contract', () => {
       }],
     });
   });
+
+  it('filters by partial company name from the company column text filter', () => {
+    const parsed = taskListQuerySchema.parse({ companyQuery: '  Aurion  ' });
+    expect(parsed).toMatchObject({ companyQuery: 'Aurion' });
+    expect(taskListUrl(parsed)).toContain('companyQuery=Aurion');
+    expect(buildTaskWhere('tenant-1', { companyQuery: 'Aurion' })).toEqual({
+      tenantId: 'tenant-1',
+      deletedAt: null,
+      AND: [{ company: { name: { contains: 'Aurion', mode: 'insensitive' } } }],
+    });
+  });
 });

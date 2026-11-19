@@ -49,9 +49,11 @@ vi.mock('@/components/ui/toast', () => ({
 }));
 vi.mock('@/components/notes/internal-notes', () => ({ InternalNotes: () => null }));
 vi.mock('@/components/companies/company-detail', async () => {
-  const action = await import('@/components/companies/company-detail/sentroweb-check-action');
+  const menu = await import('@/components/companies/company-detail/company-actions-menu');
+  const dialog = await import('@/components/companies/company-detail/sentroweb-check-dialog');
   return {
-    SentrowebCheckAction: action.SentrowebCheckAction,
+    CompanyActionsMenu: menu.CompanyActionsMenu,
+    SentrowebCheckDialog: dialog.SentrowebCheckDialog,
     CompanyProfileTab: () => <div>profile tab</div>,
     ContactDetailsTab: () => null,
     CompanyServicesTab: () => null,
@@ -93,7 +95,8 @@ describe('company detail page: Sentroweb check action', () => {
     await renderPage();
 
     expect(await screen.findByRole('link', { name: 'Back to Companies' })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Sentroweb check' })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Actions' }));
+    expect(screen.queryByRole('menuitem', { name: 'Sentroweb check' })).not.toBeInTheDocument();
     expect(mocks.shortcuts.find((shortcut) => shortcut.key === 'F4')).toBeUndefined();
   });
 
@@ -101,9 +104,10 @@ describe('company detail page: Sentroweb check action', () => {
     vi.stubGlobal('fetch', vi.fn(async () => jsonResponse(candidatesResponse(2))));
     await renderPage();
 
-    const button = await screen.findByRole('button', { name: 'Sentroweb check' });
+    fireEvent.click(await screen.findByRole('button', { name: 'Actions' }));
+    const item = await screen.findByRole('menuitem', { name: 'Sentroweb check' });
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
-    fireEvent.click(button);
+    fireEvent.click(item);
     expect(await screen.findByRole('dialog', { name: 'Sentroweb check' })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Close modal' }));
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
@@ -121,13 +125,26 @@ describe('company detail page: Sentroweb check action', () => {
     vi.stubGlobal('fetch', fetchMock);
     await renderPage();
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Sentroweb check' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Actions' }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Sentroweb check' }));
     await screen.findByRole('checkbox', { name: 'Person 1' });
     fireEvent.click(screen.getByRole('button', { name: 'Run check' }));
 
     await waitFor(() => expect(mocks.setActiveTab).toHaveBeenCalledWith('screening'));
     expect(mocks.success).toHaveBeenCalledWith('Sentroweb check started');
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+  });
+
+  it('groups the annual return, BizFile and Sentroweb actions under Actions', async () => {
+    await renderPage();
+
+    expect(screen.queryByRole('button', { name: /Update via BizFile/ })).not.toBeInTheDocument();
+    fireEvent.click(await screen.findByRole('button', { name: 'Actions' }));
+    expect(screen.getByRole('menuitem', { name: /Send annual return declaration/ })).toBeInTheDocument();
+    expect(screen.getByRole('menuitem', { name: 'Update via BizFile' })).toBeInTheDocument();
+    expect(screen.getByRole('menuitem', { name: 'Sentroweb check' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Update via BizFile' }));
+    expect(mocks.push).toHaveBeenCalledWith('/companies/upload?companyId=company-1');
   });
 
   it('renders the Screening tab when it is the active tab', async () => {

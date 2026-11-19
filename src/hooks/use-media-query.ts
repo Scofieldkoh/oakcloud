@@ -55,6 +55,15 @@ export function useIsDesktop(): boolean {
   return useMediaQuery('(min-width: 1024px)');
 }
 
+/**
+ * True below the `lg` breakpoint (phones and tablets), where the app shows the
+ * top header with the hamburger menu instead of the fixed sidebar. Matches the
+ * sidebar's `hidden lg:flex`, so there is never a width with no navigation.
+ */
+export function useIsCompactNavigation(): boolean {
+  return !useIsDesktop();
+}
+
 export function useIsLargeDesktop(): boolean {
   return useMediaQuery('(min-width: 1280px)');
 }

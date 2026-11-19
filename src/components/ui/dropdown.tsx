@@ -216,7 +216,7 @@ export function DropdownMenu({
   useEffect(() => {
     if (isOpen && triggerRef.current) {
       const rect = triggerRef.current.getBoundingClientRect();
-      const menuWidth = 180; // min-width of the menu
+      const menuWidth = menuRef.current?.offsetWidth || 180; // rendered width, else the min width
 
       let left: number;
       if (align === 'left') {
@@ -318,6 +318,8 @@ interface DropdownItemProps {
   disabled?: boolean;
   destructive?: boolean;
   icon?: ReactNode;
+  /** A muted second line, such as why the item is disabled. */
+  description?: ReactNode;
 }
 
 export function DropdownItem({
@@ -327,6 +329,7 @@ export function DropdownItem({
   disabled,
   destructive,
   icon,
+  description,
 }: DropdownItemProps) {
   const { close, registerMenuItem, menuItemsRef } = useDropdownContext();
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -369,8 +372,13 @@ export function DropdownItem({
         className
       )}
     >
-      {icon && <span className="w-4 h-4 flex-shrink-0" aria-hidden="true">{icon}</span>}
-      {children}
+      {icon && <span className={cn('w-4 h-4 flex-shrink-0', description && 'self-start mt-0.5')} aria-hidden="true">{icon}</span>}
+      {description ? (
+        <span className="flex min-w-0 flex-col">
+          <span>{children}</span>
+          <span className="text-xs text-text-muted">{description}</span>
+        </span>
+      ) : children}
     </button>
   );
 }

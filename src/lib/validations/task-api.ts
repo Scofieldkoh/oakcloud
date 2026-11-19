@@ -30,6 +30,7 @@ export const taskListQuerySchema = z.object({
   query: z.string().trim().min(1).max(300).optional(),
   title: z.string().trim().min(1).max(300).optional(),
   ownerQuery: z.string().trim().min(1).max(300).optional(),
+  companyQuery: z.string().trim().min(1).max(300).optional(),
   pipelineId: z.string().uuid().optional(),
   companyId: z.string().uuid().optional(),
   ownerId: z.string().uuid().optional(),

@@ -359,6 +359,7 @@ export const esigningListQuerySchema = paginationSchema.extend({
     z.array(esigningEnvelopeStatusSchema).min(1).optional()
   ),
   companyId: uuidString.optional(),
+  companyName: z.string().trim().max(255).optional(),
   documentName: z.string().trim().max(255).optional(),
   recipientQuery: z.string().trim().max(320).optional(),
   recipientStatus: esigningRecipientStatusSchema.optional(),

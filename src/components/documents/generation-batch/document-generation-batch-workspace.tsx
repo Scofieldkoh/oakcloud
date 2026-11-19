@@ -759,7 +759,7 @@ export function DocumentGenerationBatchWorkspace({
       data-testid="document-generation-batch-workspace"
       className={cn(
         'mx-auto flex w-full max-w-[2200px] flex-col p-3 sm:p-5',
-        isReviewStage && 'h-[calc(100dvh-3rem)] overflow-hidden lg:h-dvh',
+        isReviewStage && 'h-[calc(100dvh-3.5rem)] overflow-hidden lg:h-dvh',
       )}
     >
       <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border-secondary pb-3">

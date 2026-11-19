@@ -71,6 +71,14 @@ export interface AsyncSearchSelectProps<T extends AsyncSearchSelectOption> {
   allowReselect?: boolean;
   /** Canonical inline-table visual treatment. */
   variant?: 'default' | 'table-filter';
+  /**
+   * Text filter mode for list filters. When set, Enter with typed text calls
+   * this with the text (instead of picking the highlighted option, unless the
+   * user moved the highlight with the arrow keys). An empty string clears it.
+   */
+  onSearchSubmit?: (query: string) => void;
+  /** The applied text filter, shown in place of a selection while no option is selected. */
+  submittedSearch?: string;
 }
 
 export function AsyncSearchSelect<T extends AsyncSearchSelectOption>({
@@ -98,6 +106,8 @@ export function AsyncSearchSelect<T extends AsyncSearchSelectOption>({
   pagination,
   allowReselect = false,
   variant = 'default',
+  onSearchSubmit,
+  submittedSearch = '',
 }: AsyncSearchSelectProps<T>) {
   const [isOpen, setIsOpen] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(0);
@@ -115,6 +125,8 @@ export function AsyncSearchSelect<T extends AsyncSearchSelectOption>({
   const popoverRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const focusTargetRef = useRef<'selected' | 'input' | null>(null);
+  // Arrow-key navigation means Enter picks the highlighted option even in text filter mode.
+  const [hasNavigated, setHasNavigated] = useState(false);
   const { position, openAbove } = useSelectPopoverPosition(containerRef, isOpen, 320);
 
   // Mount check for portal
@@ -125,7 +137,8 @@ export function AsyncSearchSelect<T extends AsyncSearchSelectOption>({
   // Reset highlighted index when results change
   useEffect(() => {
     setHighlightedIndex(0);
-  }, [options.length]);
+    setHasNavigated(false);
+  }, [options.length, searchQuery]);
 
   // Keep the displayed selected item in sync when the parent controls value
   // from query results or default selections.
@@ -149,14 +162,14 @@ export function AsyncSearchSelect<T extends AsyncSearchSelectOption>({
   }, [isEditing, options, selectedItem?.id, value]);
 
   useEffect(() => {
-    if (focusTargetRef.current === 'selected' && selectedItem) {
+    if (focusTargetRef.current === 'selected' && (selectedItem || submittedSearch)) {
       selectedControlRef.current?.focus();
       focusTargetRef.current = null;
     } else if (focusTargetRef.current === 'input') {
       inputRef.current?.focus();
       focusTargetRef.current = null;
     }
-  }, [selectedItem]);
+  }, [selectedItem, submittedSearch, isEditing]);
 
   // Handle click outside
   useEffect(() => {
@@ -225,6 +238,41 @@ export function AsyncSearchSelect<T extends AsyncSearchSelectOption>({
     onSearchChange('');
   }, [onChange, onSearchChange]);
 
+  const handleSearchSubmit = useCallback((query: string) => {
+    if (!onSearchSubmit) return;
+    // The parent clears any selected value in the same update.
+    focusTargetRef.current = query ? 'selected' : 'input';
+    setSelectedItem(null);
+    setIsEditing(false);
+    setIsOpen(false);
+    onSearchChange('');
+    onSearchSubmit(query);
+  }, [onSearchChange, onSearchSubmit]);
+
+  const showTextFilter = Boolean(onSearchSubmit && submittedSearch && !selectedItem && !isEditing);
+
+  const handleClearTextFilter = useCallback(() => {
+    focusTargetRef.current = 'input';
+    onSearchSubmit?.('');
+  }, [onSearchSubmit]);
+
+  const handleEditTextFilter = useCallback(() => {
+    focusTargetRef.current = 'input';
+    onSearchChange(submittedSearch);
+    setIsEditing(true);
+    setIsOpen(true);
+  }, [onSearchChange, submittedSearch]);
+
+  const handleTextFilterKeyDown = useCallback((event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === 'Backspace' || event.key === 'Delete') {
+      event.preventDefault();
+      handleClearTextFilter();
+    } else if (event.key === 'Enter' || event.key === ' ' || event.key === 'ArrowDown') {
+      event.preventDefault();
+      handleEditTextFilter();
+    }
+  }, [handleClearTextFilter, handleEditTextFilter]);
+
   const handleSelectedKeyDown = useCallback((event: React.KeyboardEvent<HTMLDivElement>) => {
     if (event.key === 'Backspace' || event.key === 'Delete') {
       event.preventDefault();
@@ -249,13 +297,16 @@ export function AsyncSearchSelect<T extends AsyncSearchSelectOption>({
           const next = nextHighlightedIndex(e.key, highlightedIndex, options.length);
           if (next !== null) {
             e.preventDefault();
+            setHasNavigated(true);
             setHighlightedIndex(next);
           }
           break;
         }
         case 'Enter':
           e.preventDefault();
-          if (isOpen && options[highlightedIndex]) {
+          if (onSearchSubmit && searchQuery.trim() && !hasNavigated) {
+            handleSearchSubmit(searchQuery.trim());
+          } else if (isOpen && options[highlightedIndex]) {
             handleSelect(options[highlightedIndex]);
           } else if (!isOpen) {
             setIsOpen(true);
@@ -279,7 +330,7 @@ export function AsyncSearchSelect<T extends AsyncSearchSelectOption>({
           break;
       }
     },
-    [isOpen, isLoading, searchQuery, options, highlightedIndex, handleSelect, onChange, onSearchChange]
+    [isOpen, isLoading, searchQuery, options, highlightedIndex, handleSelect, handleSearchSubmit, hasNavigated, onSearchSubmit, onChange, onSearchChange]
   );
 
   const defaultRenderSelected = (item: T) => (
@@ -367,6 +418,33 @@ export function AsyncSearchSelect<T extends AsyncSearchSelectOption>({
           >
             {renderSelected ? renderSelected(selectedItem) : defaultRenderSelected(selectedItem)}
           </div>
+        ) : showTextFilter ? (
+          // Show the applied text filter; click to edit it
+          <div
+            ref={selectedControlRef}
+            id={inputId}
+            role="combobox"
+            aria-labelledby={label ? labelId : undefined}
+            aria-label={label ? undefined : `${placeholder}: contains ${submittedSearch}`}
+            aria-expanded="false"
+            aria-controls={listboxId}
+            aria-haspopup="listbox"
+            aria-disabled={disabled || undefined}
+            tabIndex={disabled ? -1 : 0}
+            title={`Contains "${submittedSearch}"`}
+            onKeyDown={disabled ? undefined : handleTextFilterKeyDown}
+            onClick={disabled ? undefined : handleEditTextFilter}
+            className={cn(
+              'flex min-w-0 flex-1 cursor-pointer items-center gap-1.5 rounded px-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-oak-primary/30',
+              variant === 'table-filter' ? 'h-9 min-h-9' : 'min-h-11',
+              controlClassName
+            )}
+          >
+            <Search className="h-3.5 w-3.5 shrink-0 text-text-muted" aria-hidden="true" />
+            <span className={cn('truncate text-xs text-text-primary', variant === 'table-filter' && 'font-normal')}>
+              {submittedSearch}
+            </span>
+          </div>
         ) : (
           // Show search input
           <>
@@ -405,11 +483,11 @@ export function AsyncSearchSelect<T extends AsyncSearchSelectOption>({
         )}
 
         {/* Clear button */}
-        {selectedItem && !disabled && (
+        {(selectedItem || showTextFilter) && !disabled && (
           <button
             type="button"
-            onClick={handleClear}
-            aria-label={label ? `Clear ${label}` : 'Clear selection'}
+            onClick={selectedItem ? handleClear : handleClearTextFilter}
+            aria-label={label ? `Clear ${label}` : selectedItem ? 'Clear selection' : 'Clear filter'}
             className={cn(
               'mr-1 flex items-center justify-center rounded p-1 transition-colors hover:bg-background-tertiary',
               variant === 'table-filter' ? 'h-7 w-7' : 'min-h-11 min-w-11',
@@ -502,7 +580,10 @@ export function AsyncSearchSelect<T extends AsyncSearchSelectOption>({
             )}
 
             {/* Footer hint */}
-            <SelectKeyboardHints openAbove={openAbove} />
+            <SelectKeyboardHints
+              openAbove={openAbove}
+              enterLabel={onSearchSubmit && searchQuery.trim() && !hasNavigated ? 'Filter by text' : 'Select'}
+            />
           </div>,
           document.body
         )}

@@ -5,12 +5,13 @@ import { Sidebar } from '@/components/ui/sidebar';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { NavigationProgress } from '@/components/ui/navigation-progress';
 import { useUIStore } from '@/stores/ui-store';
-import { useIsMobile } from '@/hooks/use-media-query';
+import { useIsCompactNavigation } from '@/hooks/use-media-query';
 import { cn } from '@/lib/utils';
 
 export function DashboardShell({ children }: { children: React.ReactNode }) {
   const { sidebarCollapsed } = useUIStore();
-  const isMobile = useIsMobile();
+  // Below lg the sidebar becomes a top header with a menu drawer.
+  const isCompactNavigation = useIsCompactNavigation();
 
   return (
     <>
@@ -30,7 +31,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           tabIndex={-1}
           className={cn(
             'min-h-screen transition-all duration-200 focus:outline-none',
-            isMobile ? 'pt-12' : sidebarCollapsed ? 'lg:ml-14' : 'lg:ml-56'
+            isCompactNavigation ? 'pt-14' : sidebarCollapsed ? 'lg:ml-14' : 'lg:ml-56'
           )}
         >
           <ErrorBoundary>{children}</ErrorBoundary>

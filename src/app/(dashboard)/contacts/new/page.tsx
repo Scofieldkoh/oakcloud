@@ -19,6 +19,7 @@ import { CompanySelect } from '@/components/ui/company-select';
 import type { CompanySearchOption } from '@/hooks/use-company-search';
 import { ContactMatchDialog } from '@/components/contacts/contact-match-dialog';
 import type { ContactMatchResult } from '@/types/contact-identity';
+import { ShortcutLabel } from '@/components/ui/shortcut-label';
 
 const contactTypes = [
   { value: 'INDIVIDUAL', label: 'Individual' },
@@ -712,8 +713,7 @@ export default function NewContactPage() {
         {/* Actions */}
         <div className="flex items-center justify-end gap-3 pt-2">
           <Link href="/contacts" className="btn-secondary btn-sm" title="Cancel (Ctrl+Backspace)">
-            <span className="hidden sm:inline">Cancel (Ctrl+Backspace)</span>
-            <span className="sm:hidden">Cancel</span>
+            <ShortcutLabel label="Cancel" shortcut="Ctrl+Backspace" />
           </Link>
           <button
             type="submit"
@@ -724,8 +724,7 @@ export default function NewContactPage() {
             <Save className="w-4 h-4" />
             {isSubmitting ? 'Creating...' : (
               <>
-                <span className="hidden sm:inline">Create Contact (Ctrl+S)</span>
-                <span className="sm:hidden">Create Contact</span>
+                <ShortcutLabel label="Create Contact" shortcut="Ctrl+S" />
               </>
             )}
           </button>

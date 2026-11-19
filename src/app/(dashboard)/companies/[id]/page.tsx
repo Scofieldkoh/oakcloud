@@ -8,9 +8,6 @@ import {
   AlertCircle,
   Pencil,
   Trash2,
-  Upload,
-  ExternalLink,
-  Send,
   Copy,
 } from 'lucide-react';
 import {
@@ -36,7 +33,8 @@ import {
   ContactDetailsTab,
   CompanyServicesTab,
   CompanyScreeningTab,
-  SentrowebCheckAction,
+  CompanyActionsMenu,
+  SentrowebCheckDialog,
   CompanyTabs,
   useTabState,
 } from '@/components/companies/company-detail';
@@ -309,33 +307,29 @@ function CompanyDetailContent({ id }: { id: string }) {
           <p className="mt-1 text-xs text-text-secondary">{getEntityTypeLabel(company.entityType, true)}</p>
         </div>
         <div className="flex flex-wrap items-center justify-end gap-2">
-          <button type="button" disabled={isCreatingAnnualReturn || !annualReturnForm} onClick={() => void createAnnualReturnDeclaration()}
-            title={!annualReturnForm ? 'Publish the guided Annual Return Declaration form in Forms first' : 'Prepare a private, company-prefilled declaration link'}
-            className="btn-secondary btn-sm flex items-center gap-2 whitespace-nowrap disabled:opacity-50">
-            <Send className="h-3.5 w-3.5" />
-            {isCreatingAnnualReturn ? 'Preparing...' : 'Send annual return declaration'}
-          </button>
-          {bizFileInfo ? <button type="button" onClick={() => window.open(bizFileInfo.pdfUrl, '_blank')} className="btn-secondary btn-sm flex items-center gap-2 whitespace-nowrap"><ExternalLink className="h-3.5 w-3.5" />View BizFile</button> : null}
-          {can.updateDocument && (
-            <Link
-              href={`/companies/upload?companyId=${id}`}
-              className="btn-secondary btn-sm flex items-center gap-2 whitespace-nowrap"
-              title="Update via BizFile (F2)"
-            >
-              <Upload className="h-3.5 w-3.5" />
-              Update via BizFile
-            </Link>
-          )}
-          <SentrowebCheckAction
+          <CompanyActionsMenu
             companyId={id}
-            canUpdate={can.updateCompany}
-            isOpen={sentrowebDialogOpen}
-            onOpenChange={setSentrowebDialogOpen}
-            onStarted={(runId) => {
-              setStartedSentrowebRunId(runId);
-              setActiveTab('screening');
+            annualReturn={{
+              available: !!annualReturnForm,
+              isPreparing: isCreatingAnnualReturn,
+              onSend: () => void createAnnualReturnDeclaration(),
             }}
+            bizFileUrl={bizFileInfo?.pdfUrl}
+            canUpdateDocument={can.updateDocument}
+            canUpdateCompany={can.updateCompany}
+            onOpenSentrowebCheck={() => setSentrowebDialogOpen(true)}
           />
+          {can.updateCompany ? (
+            <SentrowebCheckDialog
+              companyId={id}
+              isOpen={sentrowebDialogOpen}
+              onClose={() => setSentrowebDialogOpen(false)}
+              onStarted={(runId) => {
+                setStartedSentrowebRunId(runId);
+                setActiveTab('screening');
+              }}
+            />
+          ) : null}
           {can.updateCompany && <Link href={`/companies/${id}/edit`} className="btn-primary btn-sm flex items-center gap-2 whitespace-nowrap" title="Edit (Ctrl+E)"><Pencil className="h-3.5 w-3.5" />Edit</Link>}
           {can.deleteCompany && (
             <button

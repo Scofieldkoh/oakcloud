@@ -20,6 +20,9 @@ This guide is long; most UI changes only need this section. Open `/admin/compone
 | Text, date and toggle fields | `FormInput`, `SingleDateInput`, `Checkbox`, `Toggle` | Label above, hint or error below. |
 | Pick from a loaded list | `SearchableSelect` (`TableSelectFilter` in table filter rows) | See [SearchableSelect](#searchableselect). |
 | Pick from server search | `CompanySelect`, `ContactSearchSelect`, `AccountSearchSelect` (all on `AsyncSearchSelect`) | Pass the current value as `pinned` so it shows before any search. |
+| Company filter on a list | `CompanySelect` / `CompanySearchableSelect` with `textFilter` + `onTextFilterChange` | Enter on typed text filters by "name contains" (arrow keys then Enter still pick one company). The API needs a company-name filter. Not for fields that must hold one company. |
+| Secondary page-header actions | `ActionsMenu` with `DropdownItem`s | Keep Edit/Delete as buttons; group the rest under one "Actions" button. |
+| Header button text with a shortcut | `ShortcutLabel` | Shows "Refresh (Ctrl+R)" from `xl` up and "Refresh" on one line on tablets and phones. |
 | Messages | `Alert`, `useToast`, `LoadingState`, `ErrorState`, `StatusBadge` | Inline for local fixes, alerts for lasting issues, toasts for passing outcomes. |
 | Empty lists | `ListEmptyState`, `EmptyState` | See [Empty State Patterns](#empty-state-patterns). |
 | Active filters | `ActiveFilterBar`, `FilterChip` | Clear all must reset every filter, search included. |
@@ -844,7 +847,9 @@ When buttons have keyboard shortcuts, display them consistently:
 <Button variant="ghost">Upload [F1]</Button>
 ```
 
-**Recommendation**: Use parentheses format for simplicity: `Action (Key)`. Reserve badge format for complex shortcuts.
+**Recommendation**: Use parentheses format for simplicity: `Action (Key)`, through `ShortcutLabel` in page headers so tablets get the short label without wrapping. Reserve badge format for complex shortcuts.
+
+Navigation: below the `lg` breakpoint (phones and tablets) the sidebar is replaced by the top header and its menu drawer (`useIsCompactNavigation`). Do not gate navigation on `useIsMobile`, which ends at 768px.
 
 ##### Button Loading States
 

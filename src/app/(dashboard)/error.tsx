@@ -18,7 +18,7 @@ export default function DashboardError({
   }, [error]);
 
   return (
-    <div className="min-h-[calc(100vh-3rem)] flex items-center justify-center p-6">
+    <div className="min-h-[calc(100vh-3.5rem)] flex items-center justify-center p-6">
       <div className="max-w-md w-full text-center">
         <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-status-error/10 mb-6">
           <AlertTriangle className="w-8 h-8 text-status-error" />

@@ -148,6 +148,7 @@ export function EsigningListPage() {
         ? activeStatuses
         : undefined,
     companyId: companyId || undefined,
+    companyName: (!companyId && appliedFilters.companyName) || undefined,
     documentName: appliedFilters.documentName || undefined,
     recipientQuery: appliedFilters.recipientQuery || undefined,
     recipientStatus: appliedFilters.recipientStatus || undefined,
@@ -250,7 +251,7 @@ export function EsigningListPage() {
   const totalPages = Math.max(1, Math.ceil(totalResults / limit));
   const selectedCompanyName = companyOptions.find((company) => company.id === companyId)?.name ?? '';
   const advancedFilterCount = useMemo(() => {
-    let count = companyId ? 1 : 0;
+    let count = companyId || appliedFilters.companyName ? 1 : 0;
     if (appliedFilters.status) count += 1;
     if (appliedFilters.documentName) count += 1;
     if (appliedFilters.recipientQuery) count += 1;
@@ -289,6 +290,16 @@ export function EsigningListPage() {
   const handleCompanyChange = (nextCompanyId: string) => {
     setCompanyId(nextCompanyId);
     setDraftCompanyId(nextCompanyId);
+    setAppliedFilters((current) => ({ ...current, companyName: '' }));
+    setDraftFilters((current) => ({ ...current, companyName: '' }));
+    setPage(1);
+  };
+
+  const handleCompanyTextChange = (text: string) => {
+    setCompanyId('');
+    setDraftCompanyId('');
+    setAppliedFilters((current) => ({ ...current, companyName: text }));
+    setDraftFilters((current) => ({ ...current, companyName: text }));
     setPage(1);
   };
 
@@ -748,6 +759,8 @@ export function EsigningListPage() {
                 companies={companyOptions}
                 value={companyId}
                 onChange={handleCompanyChange}
+                textFilter={companyId ? undefined : appliedFilters.companyName}
+                onTextFilterChange={handleCompanyTextChange}
                 placeholder="Company"
                 clearable
                 size="lg"

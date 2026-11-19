@@ -2,42 +2,32 @@
 
 import { useIsMutating } from '@tanstack/react-query';
 import { ShieldCheck } from 'lucide-react';
+import { DropdownItem } from '@/components/ui/dropdown';
 import { sentrowebStartMutationKey } from '@/hooks/use-sentroweb-checks';
-import { SentrowebCheckDialog } from './sentroweb-check-dialog';
 
-interface SentrowebCheckActionProps {
-  companyId: string;
-  /** Only people who can update the company see the action. */
-  canUpdate: boolean;
-  isOpen: boolean;
-  onOpenChange: (open: boolean) => void;
-  onStarted?: (runId: string) => void;
+/** True while a Sentroweb check is being started for the company. */
+export function useSentrowebStartPending(companyId: string): boolean {
+  return useIsMutating({ mutationKey: sentrowebStartMutationKey(companyId) }) > 0;
 }
 
-/** The "Sentroweb check" button for the company actions, with its confirm dialog. */
-export function SentrowebCheckAction({ companyId, canUpdate, isOpen, onOpenChange, onStarted }: SentrowebCheckActionProps) {
-  const pendingStarts = useIsMutating({ mutationKey: sentrowebStartMutationKey(companyId) });
+interface SentrowebCheckMenuItemProps {
+  companyId: string;
+  /** Opens the Sentroweb check dialog, which the page renders outside the menu. */
+  onOpen: () => void;
+}
 
-  if (!canUpdate) return null;
+/** The "Sentroweb check" item in the company Actions menu (F4). */
+export function SentrowebCheckMenuItem({ companyId, onOpen }: SentrowebCheckMenuItemProps) {
+  const isStarting = useSentrowebStartPending(companyId);
 
   return (
-    <>
-      <button
-        type="button"
-        onClick={() => onOpenChange(true)}
-        disabled={pendingStarts > 0}
-        className="btn-secondary btn-sm flex items-center gap-2 whitespace-nowrap"
-        title="Sentroweb check (F4)"
-      >
-        <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
-        Sentroweb check
-      </button>
-      <SentrowebCheckDialog
-        companyId={companyId}
-        isOpen={isOpen}
-        onClose={() => onOpenChange(false)}
-        onStarted={onStarted}
-      />
-    </>
+    <DropdownItem
+      icon={<ShieldCheck className="h-4 w-4" />}
+      onClick={onOpen}
+      disabled={isStarting}
+      description={isStarting ? 'Starting a check...' : undefined}
+    >
+      Sentroweb check
+    </DropdownItem>
   );
 }

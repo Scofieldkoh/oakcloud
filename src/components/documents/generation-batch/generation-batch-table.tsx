@@ -200,6 +200,7 @@ export function GenerationBatchTable({
   isDiscarding = false,
 }: GenerationBatchTableProps) {
   const [companyFilterId, setCompanyFilterId] = useState('');
+  const [companyFilterText, setCompanyFilterText] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [createdByFilter, setCreatedByFilter] = useState('');
   const [updatedFrom, setUpdatedFrom] = useState<string | undefined>(undefined);
@@ -271,6 +272,10 @@ export function GenerationBatchTable({
   const filtered = useMemo(() => {
     return batches.filter((batch) => {
       if (companyFilterId && batch.primaryCompanyId !== companyFilterId) return false;
+      if (
+        companyFilterText
+        && !(batch.companyName ?? '').toLowerCase().includes(companyFilterText.toLowerCase())
+      ) return false;
       if (statusFilter && batch.status !== statusFilter) return false;
       if (createdByFilter) {
         const query = createdByFilter.trim().toLowerCase();
@@ -284,7 +289,7 @@ export function GenerationBatchTable({
       }
       return true;
     });
-  }, [batches, companyFilterId, statusFilter, createdByFilter, updatedFrom, updatedTo]);
+  }, [batches, companyFilterId, companyFilterText, statusFilter, createdByFilter, updatedFrom, updatedTo]);
 
   const sorted = useMemo(() => {
     const result = [...filtered];
@@ -407,7 +412,15 @@ export function GenerationBatchTable({
                   {columnId === 'company' ? (
                     <CompanySelect
                       value={companyFilterId}
-                      onChange={(companyId) => setCompanyFilterId(companyId || '')}
+                      onChange={(companyId) => {
+                        setCompanyFilterId(companyId || '');
+                        setCompanyFilterText('');
+                      }}
+                      textFilter={companyFilterId ? undefined : companyFilterText}
+                      onTextFilterChange={(text) => {
+                        setCompanyFilterId('');
+                        setCompanyFilterText(text);
+                      }}
                       placeholder="All companies"
                       className="text-xs"
                     />

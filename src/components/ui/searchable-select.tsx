@@ -64,6 +64,13 @@ export interface SearchableSelectProps {
   allowCustomValue?: boolean;
   /** Error message associated with the select input */
   error?: string;
+  /**
+   * Text filter mode for list filters. When set, Enter with typed text and no
+   * highlighted option calls this with the text. An empty string clears it.
+   */
+  onSearchSubmit?: (query: string) => void;
+  /** The applied text filter, shown while no option is selected. */
+  submittedSearch?: string;
 }
 
 export function SearchableSelect({
@@ -87,6 +94,8 @@ export function SearchableSelect({
   onBlur,
   allowCustomValue = false,
   error,
+  onSearchSubmit,
+  submittedSearch = '',
 }: SearchableSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
@@ -218,13 +227,16 @@ export function SearchableSelect({
     [onChange]
   );
 
+  const activeTextFilter = onSearchSubmit && !value ? submittedSearch : '';
+
   const handleClear = useCallback(
     (e: React.MouseEvent) => {
       e.stopPropagation();
-      onChange('');
+      if (activeTextFilter) onSearchSubmit?.('');
+      else onChange('');
       setSearch('');
     },
-    [onChange]
+    [activeTextFilter, onChange, onSearchSubmit]
   );
 
   const handleInputChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {
@@ -236,9 +248,10 @@ export function SearchableSelect({
 
   const handleInputFocus = useCallback(() => {
     if (!isOpen) {
+      if (activeTextFilter) setSearch(activeTextFilter);
       setIsOpen(true);
     }
-  }, [isOpen]);
+  }, [activeTextFilter, isOpen]);
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent<HTMLInputElement>) => {
@@ -263,7 +276,10 @@ export function SearchableSelect({
         }
         case 'Enter':
           e.preventDefault();
-          if (isOpen && filteredOptions[highlightedIndex]) {
+          if (onSearchSubmit && isOpen && search.trim() && highlightedIndex < 0) {
+            onSearchSubmit(search.trim());
+            setIsOpen(false);
+          } else if (isOpen && filteredOptions[highlightedIndex]) {
             handleSelect(filteredOptions[highlightedIndex].value);
           } else if (isOpen && canCreateCustom) {
             handleSelect(customValue);
@@ -284,7 +300,7 @@ export function SearchableSelect({
           break;
       }
     },
-    [isOpen, filteredOptions, highlightedIndex, handleSelect, search, canCreateCustom, customValue]
+    [isOpen, filteredOptions, highlightedIndex, handleSelect, search, canCreateCustom, customValue, onSearchSubmit]
   );
 
   const sizeClasses = {
@@ -295,7 +311,7 @@ export function SearchableSelect({
   const triggerSizeClasses = variant === 'table-filter' ? '' : sizeClasses[size];
 
   // Display value in input: show search when typing, otherwise show selected label
-  const inputValue = isOpen ? search : (selectedOption?.label || (allowCustomValue ? value : ''));
+  const inputValue = isOpen ? search : (selectedOption?.label || activeTextFilter || (allowCustomValue ? value : ''));
 
   const getOptionId = useCallback(
     (index: number) => `${baseId}-option-${index}`,
@@ -371,14 +387,14 @@ export function SearchableSelect({
             'flex-1 bg-transparent outline-none px-3 min-w-0',
             variant === 'table-filter'
               ? cn(
-                  value ? TABLE_FILTER_TEXT_CLASS : TABLE_FILTER_PLACEHOLDER_TEXT_CLASS,
+                  value || activeTextFilter ? TABLE_FILTER_TEXT_CLASS : TABLE_FILTER_PLACEHOLDER_TEXT_CLASS,
                   TABLE_FILTER_PLACEHOLDER_CLASS,
                 )
-              : cn('placeholder:text-text-muted', !value ? 'text-text-secondary' : 'text-text-primary'),
+              : cn('placeholder:text-text-muted', !value && !activeTextFilter ? 'text-text-secondary' : 'text-text-primary'),
             triggerSizeClasses
           )}
         />
-        {clearable && value && !disabled && (
+        {clearable && (value || activeTextFilter) && !disabled && (
           <button
             type="button"
             onClick={handleClear}
@@ -544,7 +560,12 @@ export function SearchableSelect({
             </div>
 
             {/* Footer hint */}
-            {showKeyboardHints && <SelectKeyboardHints openAbove={openAbove} />}
+            {showKeyboardHints && (
+              <SelectKeyboardHints
+                openAbove={openAbove}
+                enterLabel={onSearchSubmit && search.trim() && highlightedIndex < 0 ? 'Filter by text' : 'Select'}
+              />
+            )}
           </div>,
           document.body
         )}
