@@ -13,7 +13,7 @@ export default defineConfig({
     // Keep large jsdom suites from starving individual tests on high-core hosts.
     maxWorkers: 4,
     include: ['**/__tests__/**/*.test.{ts,tsx}', '**/*.test.{ts,tsx}'],
-    exclude: ['node_modules', '.next', 'dist', '**/.worktrees/**', '**/*.browser.test.*'],
+    exclude: ['node_modules', '.next', 'dist', '**/.worktrees/**', '**/*.browser.test.*', '**/*.chromium.test.*'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],

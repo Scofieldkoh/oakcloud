@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Save, AlertCircle, Loader2, ShieldAlert, Mail, Building2, User } from 'lucide-react';
@@ -89,6 +89,7 @@ export default function NewContactPage() {
     register,
     handleSubmit,
     watch,
+    setValue,
     formState: { errors, isSubmitting, isDirty },
   } = useForm<CreateContactInput>({
     resolver: zodResolver(createContactSchema),
@@ -124,6 +125,11 @@ export default function NewContactPage() {
   const navigationGuard = useUnsavedNavigationGuard((isDirty || hasContactDetailChanges) && !isSubmitting);
 
   const contactType = watch('contactType');
+
+  // A corporate contact has no date of birth: drop anything typed before the type was switched.
+  useEffect(() => {
+    if (contactType === 'CORPORATE') setValue('dateOfBirth', null);
+  }, [contactType, setValue]);
 
   // Get the appropriate ID types based on contact type
   const availableIdTypes = contactType === 'CORPORATE' ? corporateIdTypes : individualIdTypes;
@@ -475,6 +481,32 @@ export default function NewContactPage() {
                       placeholder="S1234567A"
                       className="input input-sm"
                     />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="label">Gender</label>
+                    <select {...register('gender')} className="input input-sm">
+                      <option value="">Not recorded</option>
+                      <option value="MALE">Male</option>
+                      <option value="FEMALE">Female</option>
+                      <option value="OTHER">Other</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="label" htmlFor="contact-date-of-birth">Date of birth</label>
+                    <input
+                      id="contact-date-of-birth"
+                      type="date"
+                      {...register('dateOfBirth')}
+                      aria-describedby="contact-date-of-birth-hint"
+                      className={`input input-sm ${errors.dateOfBirth ? 'input-error' : ''}`}
+                    />
+                    <p id="contact-date-of-birth-hint" className="text-xs text-text-muted mt-1.5">From 1 Jan 1900 to today; used for Sentroweb screening.</p>
+                    {errors.dateOfBirth && (
+                      <p className="text-xs text-status-error mt-1.5">{errors.dateOfBirth.message}</p>
+                    )}
                   </div>
                 </div>
               </>

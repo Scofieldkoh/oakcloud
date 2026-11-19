@@ -11,6 +11,7 @@ import {
   type BizFileReviewIssue,
   type BizFileReviewSectionId,
 } from "@/lib/validations/bizfile-review";
+import { formatDateOnlyDisplay, plausibleDateOfBirth } from "@/lib/date-only";
 import { mapIdentificationType, type ExtractedBizFileData } from "@/services/bizfile/types";
 import type { ContactIdentityCandidate, ContactMatchPreview } from "@/types/contact-identity";
 import { fetchBizFileContactMatchPreviews, isExactIdentifierContactMatch } from "@/services/bizfile/contact-match-preview.client";
@@ -82,11 +83,17 @@ export function applyAutomaticContactResolutions<T extends BizFileReviewDraft>(
         || record.contactResolution?.action === "CREATE_SEPARATE") return;
       if (record.contactResolution?.action === "REUSE" && record.contactResolution.contactId === preview.contactId) return;
       const records = [...(next[section] ?? [])];
-      records[index] = { ...records[index], contactResolution: { action: "REUSE", contactId: preview.contactId } };
+      records[index] = { ...records[index], dateOfBirthReplaces: undefined, contactResolution: { action: "REUSE", contactId: preview.contactId } };
       next = { ...next, [section]: records };
     });
   }
   return next;
+}
+
+/** A reviewed date of birth for contact matching: only a real, plausible YYYY-MM-DD. */
+function birthDateOf(value: string | undefined): { dateOfBirth?: string } {
+  const date = plausibleDateOfBirth(value);
+  return date ? { dateOfBirth: date } : {};
 }
 
 export function buildBizFileContactIdentityCandidates(
@@ -103,6 +110,7 @@ export function buildBizFileContactIdentityCandidates(
         identificationType: mapIdentificationType(officer.identificationType) || undefined,
         identificationNumber: officer.identificationNumber,
         nationality: officer.nationality, fullAddress: officer.address,
+        ...birthDateOf(officer.dateOfBirth),
       });
     });
   }
@@ -123,6 +131,7 @@ export function buildBizFileContactIdentityCandidates(
         identificationType: mapIdentificationType(shareholder.identificationType) || undefined,
         identificationNumber: shareholder.identificationNumber,
         nationality: shareholder.nationality, fullAddress: shareholder.address,
+        ...birthDateOf(shareholder.dateOfBirth),
       });
     });
   }
@@ -150,6 +159,51 @@ function unresolvedMatchIssues(draft: BizFileReviewDraft, previews: MatchPreview
     });
   }
   return issues;
+}
+
+export interface DateOfBirthReplacement {
+  path: string;
+  section: "officers" | "shareholders";
+  index: number;
+  name: string;
+  /** The matched contact the saved date belongs to. */
+  contactId: string;
+  saved: string;
+  incoming: string;
+}
+
+/**
+ * Each person whose reviewed date of birth would replace a different saved one: certain matches only
+ * (an explicit REUSE of the previewed contact), a real proposed date, and a saved date that differs.
+ */
+export function dateOfBirthReplacements(draft: BizFileReviewDraft, previews: MatchPreviews): DateOfBirthReplacement[] {
+  const found: DateOfBirthReplacement[] = [];
+  for (const section of ["officers", "shareholders"] as const) {
+    (draft[section] ?? []).forEach((record, index) => {
+      const preview = previews[`${section}.${index}`];
+      const incoming = plausibleDateOfBirth(record.dateOfBirth);
+      const saved = preview?.contact?.dateOfBirth ?? null;
+      const resolution = record.contactResolution;
+      const certain = resolution?.action === "REUSE" && resolution.contactId === preview?.contactId;
+      if (!certain || !incoming || !saved || saved === incoming) return;
+      found.push({ path: `${section}.${index}.dateOfBirth`, section, index, name: record.name, contactId: preview!.contactId, saved, incoming });
+    });
+  }
+  return found;
+}
+
+/**
+ * A saved date of birth the BizFile would replace must be seen and agreed to, for the date the contact
+ * has right now: a fresh preview that shows a different saved date than the one agreed asks again.
+ */
+export function unconfirmedDateOfBirthReplacements(draft: BizFileReviewDraft, previews: MatchPreviews): BizFileReviewIssue[] {
+  return dateOfBirthReplacements(draft, previews)
+    .filter(({ section, index, saved }) => draft[section]?.[index]?.dateOfBirthReplaces !== saved)
+    .map(({ path, section, saved }) => ({
+      path,
+      message: `Confirm replacing the saved date of birth (${formatDateOnlyDisplay(saved)}) or clear this date`,
+      section,
+    }));
 }
 
 function clone<T>(value: T): T {
@@ -295,6 +349,8 @@ export function BizFileReviewWorkspace({ initialData, sourcePanel, isSaving = fa
           .filter((item) => !item.path.endsWith(".contactResolution"))
           .map((item) => [item.path, item]));
         freshMatchIssues.forEach((item) => byPath.set(item.path, item));
+        unconfirmedDateOfBirthReplacements(draftForSave, { ...matchPreviews, ...latest })
+          .forEach((item) => byPath.set(item.path, item));
         currentIssues = Array.from(byPath.values());
       } catch {
         setSaveSummary("Save blocked: contact matches could not be checked. Please try again.");

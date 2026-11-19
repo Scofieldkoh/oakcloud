@@ -2,10 +2,10 @@
 
 import { useCallback } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
-import { Building2, BriefcaseBusiness, Contact, AlertTriangle } from 'lucide-react';
+import { Building2, BriefcaseBusiness, Contact, AlertTriangle, ShieldCheck } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
-export type TabId = 'profile' | 'contacts' | 'services';
+export type TabId = 'profile' | 'contacts' | 'services' | 'screening';
 
 interface Tab {
   id: TabId;
@@ -17,6 +17,7 @@ const tabs: Tab[] = [
   { id: 'profile', label: 'Company Profile', icon: Building2 },
   { id: 'contacts', label: 'Contact Details', icon: Contact },
   { id: 'services', label: 'Services', icon: BriefcaseBusiness },
+  { id: 'screening', label: 'Screening', icon: ShieldCheck },
 ];
 
 interface CompanyTabsProps {
@@ -78,7 +79,7 @@ export function useTabState(): [TabId, (tabId: TabId) => void] {
       ? 'profile'
       : tabParam;
   const currentTab = remappedTab as TabId | null;
-  const validTabs: TabId[] = ['profile', 'contacts', 'services'];
+  const validTabs: TabId[] = ['profile', 'contacts', 'services', 'screening'];
   const validTab: TabId = currentTab && validTabs.includes(currentTab) ? currentTab : 'profile';
 
   // Update URL when tab changes

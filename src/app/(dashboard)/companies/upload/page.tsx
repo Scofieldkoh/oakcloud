@@ -29,13 +29,14 @@ import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import { AIModelSelector, buildFullContext } from '@/components/ui/ai-model-selector';
 import { DocumentPageViewer, ResizableSplitView } from '@/components/processing';
 import { postFormDataWithFallback } from '@/lib/browser-upload';
-import { applyAutomaticContactResolutions, BizFileReviewWorkspace, buildBizFileContactIdentityCandidates } from '@/components/companies/bizfile-review/bizfile-review-workspace';
+import { applyAutomaticContactResolutions, BizFileReviewWorkspace, buildBizFileContactIdentityCandidates, dateOfBirthReplacements } from '@/components/companies/bizfile-review/bizfile-review-workspace';
 import { ContactMatchPanel } from '@/components/companies/bizfile-review/bizfile-review-sections';
 import { CompanyCreateSharePointField, type PendingSharePointSelection } from '@/components/companies/company-create-sharepoint-field';
 import type { BizFileReviewIssue } from '@/lib/validations/bizfile-review';
 import type { ExtractedBizFileData } from '@/services/bizfile/types';
 import type { ContactMatchPreview, ContactResolutionDecision } from '@/types/contact-identity';
 import { fetchBizFileContactMatchPreviews } from '@/services/bizfile/contact-match-preview.client';
+import { formatDateOnlyDisplay, plausibleDateOfBirth } from '@/lib/date-only';
 import { BizFilePlanReview } from '@/components/companies/bizfile-review/bizfile-plan-review';
 import type { BizFileChangePlan } from '@/services/bizfile/change-plan';
 import {
@@ -198,6 +199,79 @@ function AIExtractionMetadata({ metadata }: { metadata: AIMetadata | null }) {
   </div>;
 }
 
+/**
+ * Decide each date-of-birth replacement from what the reviewer ticked: a ticked replacement for the
+ * exact saved date carries that approval, an unticked one drops the proposed date (the saved date is
+ * kept), and a tick for a date the contact no longer has is stale and blocks the apply.
+ */
+function dobApprovalKey(documentId: string | null, item: { path: string; contactId: string; incoming: string }): string {
+  return [documentId ?? '', item.path, item.contactId, item.incoming].join('|');
+}
+
+function resolveDateOfBirthDecisions(
+  data: ExtractedBizFileData,
+  previews: Record<string, ContactMatchPreview | null>,
+  approvals: Record<string, string>,
+  documentId: string | null,
+  shown: ReadonlySet<string>,
+): { data: ExtractedBizFileData; staleApprovals: string[] } {
+  const staleApprovals: string[] = [];
+  const live = new Set(dateOfBirthReplacements(data, previews).map((item) => dobApprovalKey(documentId, item)));
+  const next = { ...data, officers: data.officers ? [...data.officers] : undefined, shareholders: data.shareholders ? [...data.shareholders] : undefined };
+  for (const item of dateOfBirthReplacements(data, previews)) {
+    const records = next[item.section];
+    const record = records?.[item.index];
+    if (!records || !record) continue;
+    const key = dobApprovalKey(documentId, item);
+    const approved = approvals[key];
+    if (approved === item.saved) {
+      records[item.index] = { ...record, dateOfBirthReplaces: item.saved };
+    } else if (approved) {
+      staleApprovals.push(key);
+    } else {
+      records[item.index] = { ...record, dateOfBirth: undefined, dateOfBirthReplaces: undefined };
+    }
+  }
+  // A replacement the reviewer was shown and left unticked means "keep the saved date". If that saved date
+  // has since been cleared (or now equals the proposal) it is no longer listed, but the proposal must still
+  // not be sent: that would fill a date another editor just cleared.
+  for (const key of shown) {
+    if (live.has(key) || approvals[key]) continue;
+    const [keyDocument, path, contactId, incoming] = key.split('|');
+    if (keyDocument !== (documentId ?? '')) continue;
+    const [section, indexText] = path.split('.') as ['officers' | 'shareholders', string];
+    const records = next[section];
+    const record = records?.[Number(indexText)];
+    if (
+      records && record &&
+      record.contactResolution?.action === 'REUSE' &&
+      record.contactResolution.contactId === contactId &&
+      plausibleDateOfBirth(record.dateOfBirth) === incoming
+    ) {
+      records[Number(indexText)] = { ...record, dateOfBirth: undefined, dateOfBirthReplaces: undefined };
+    }
+  }
+
+  // A tick whose saved date is no longer a replacement (cleared by someone else, or now already equal to
+  // the proposal) is not in the list above. It must still stop the apply and ask again, never quietly
+  // turn into a fill of the proposed date.
+  for (const key of Object.keys(approvals)) {
+    if (live.has(key) || staleApprovals.includes(key)) continue;
+    const [keyDocument, path, contactId, incoming] = key.split('|');
+    if (keyDocument !== (documentId ?? '')) continue;
+    const [section, indexText] = path.split('.') as ['officers' | 'shareholders', string];
+    const record = data[section]?.[Number(indexText)];
+    const preview = previews[`${section}.${indexText}`];
+    const stillSameProposal =
+      record?.contactResolution?.action === 'REUSE' &&
+      record.contactResolution.contactId === contactId &&
+      preview?.contactId === contactId &&
+      plausibleDateOfBirth(record.dateOfBirth) === incoming;
+    if (stillSameProposal) staleApprovals.push(key);
+  }
+  return { data: next, staleApprovals };
+}
+
 export default function UploadBizFilePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -222,6 +296,18 @@ export default function UploadBizFilePage() {
   const [aiMetadata, setAiMetadata] = useState<AIMetadata | null>(null);
   const [diffResult, setDiffResult] = useState<DiffResult | null>(null);
   const [contactMatchPreviews, setContactMatchPreviews] = useState<Record<string, ContactMatchPreview | null>>({});
+  const shownDobReplacements = useMemo(
+    () => (extractedData ? dateOfBirthReplacements(applyAutomaticContactResolutions(extractedData, contactMatchPreviews), contactMatchPreviews) : []),
+    [extractedData, contactMatchPreviews],
+  );
+  useEffect(() => {
+    for (const item of shownDobReplacements) dobShownRef.current.add(dobApprovalKey(documentId, item));
+  }, [shownDobReplacements, documentId]);
+  // Approved date-of-birth replacements: document + person + matched contact + proposed date -> the
+  // exact saved date the reviewer agreed to replace. A different file, contact or proposal never matches.
+  // Replacements the reviewer has been shown on this page (same key as the approvals).
+  const dobShownRef = useRef<Set<string>>(new Set());
+  const [dobApprovals, setDobApprovals] = useState<Record<string, string>>({});
   const [updatedFields, setUpdatedFields] = useState<string[]>([]);
   const [officerActions, setOfficerActions] = useState<OfficerAction[]>([]);
   const [canonicalReview, setCanonicalReview] = useState<CanonicalReview | null>(null);
@@ -625,8 +711,23 @@ export default function UploadBizFilePage() {
 
     try {
       const latestMatches = approved ? {} : await requestContactMatchPreviews(extractedData);
-      const resolvedData = approved ? approved.plan.reviewedData : applyAutomaticContactResolutions(extractedData, latestMatches);
-      setExtractedData(resolvedData);
+      let resolvedData = approved ? approved.plan.reviewedData : applyAutomaticContactResolutions(extractedData, latestMatches);
+      // The review state keeps the reviewer's proposals (and so the date-of-birth choices) whatever is
+      // sent for approval: "Back to review" must still offer an unticked replacement.
+      const reviewState: ExtractedBizFileData | null = approved ? null : resolvedData;
+      if (!approved) {
+        // A different saved date of birth is replaced only for the exact date the reviewer ticked on
+        // this page; otherwise the saved date is kept and the person's other updates still apply.
+        const outcome = resolveDateOfBirthDecisions(resolvedData, latestMatches, dobApprovals, documentId, dobShownRef.current);
+        if (outcome.staleApprovals.length > 0) {
+          setDobApprovals((current) => Object.fromEntries(Object.entries(current).filter(([key]) => !outcome.staleApprovals.includes(key))));
+          setExtractedData(reviewState);
+          setError('A saved date of birth changed since you approved replacing it (it may now be blank or already match). Nothing was saved. Review the date of birth changes and the proposed updates, then apply again.');
+          return;
+        }
+        resolvedData = outcome.data;
+      }
+      if (reviewState) setExtractedData(reviewState);
       const unresolved = Object.entries(latestMatches).find(([path, match]) => {
         if (!match) return false;
         const [section, rawIndex] = path.split('.') as ['officers' | 'shareholders', string];
@@ -696,6 +797,8 @@ export default function UploadBizFilePage() {
     setSelectedStandardContexts([]);
     setDiffResult(null);
     setContactMatchPreviews({});
+    setDobApprovals({});
+    dobShownRef.current = new Set();
     setUpdatedFields([]);
     setOfficerActions([]);
     setCanonicalReview(null);
@@ -1123,6 +1226,41 @@ export default function UploadBizFilePage() {
               )
             )}
           </div>
+
+          {(() => {
+            if (shownDobReplacements.length === 0) return null;
+            const replacements = shownDobReplacements;
+            return (
+              <div className="card" data-testid="dob-replacements">
+                <div className="p-4 border-b border-border-primary">
+                  <h2 className="font-medium text-text-primary">Date of birth changes</h2>
+                  <p className="text-sm text-text-tertiary mt-1">
+                    These people already have a different date of birth saved on their contact. A date is replaced only
+                    if you tick it; otherwise the saved date is kept and the other updates still apply.
+                  </p>
+                </div>
+                <div className="divide-y divide-border-primary">
+                  {replacements.map((item) => (
+                    <label key={item.path} className="flex items-start gap-3 p-4 text-sm">
+                      <input
+                        type="checkbox"
+                        className="mt-1 h-4 w-4 accent-oak-primary"
+                        checked={dobApprovals[dobApprovalKey(documentId, item)] === item.saved}
+                        onChange={(event) => setDobApprovals((current) => {
+                          const key = dobApprovalKey(documentId, item);
+                          const { [key]: _removed, ...rest } = current;
+                          return event.target.checked ? { ...rest, [key]: item.saved } : rest;
+                        })}
+                      />
+                      <span>
+                        <span className="font-medium">{item.name}</span>: replace the saved date of birth ({formatDateOnlyDisplay(item.saved)}) with {formatDateOnlyDisplay(item.incoming)}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
 
           {/* Officer Diffs */}
           {diffResult.officerDiffs && diffResult.officerDiffs.length > 0 && (

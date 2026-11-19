@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type {
   BizFileReviewDraft,
@@ -420,5 +420,85 @@ describe("BizFileReviewSections", () => {
     render(<Harness />);
     fireEvent.change(screen.getByLabelText("Identification type"), { target: { value: "" } });
     expect(screen.getByTestId("draft")).not.toHaveTextContent('"identificationType":""');
+  });
+
+  describe("date of birth", () => {
+    const preview = (dateOfBirth: string | null, reasons: string[] = ["IDENTIFIER"]) => ({
+      contactId: "contact-1", score: 100, automatic: true, blockedByIdentifierConflict: false,
+      reasons, conflicts: [],
+      contact: { id: "contact-1", fullName: "Alex Tan", identificationType: "NRIC", identificationNumber: "S1234567A", corporateUen: null, dateOfBirth, companies: [] },
+    }) as never;
+
+    function previewView(draft: BizFileReviewDraft, section: "officers" | "shareholders", match: unknown, onChange = vi.fn()) {
+      return render(
+        <BizFileReviewSections
+          draft={draft} onChange={onChange} activeSection={section} issues={[]}
+          matchPreviews={{ [`${section}.0`]: match as never }}
+        />,
+      );
+    }
+
+    it("is a date input on an officer, edits as typed and clears to none", () => {
+      const onChange = vi.fn();
+      view({ ...fullDraft, officers: [{ ...fullDraft.officers![0], dateOfBirth: "1980-01-01" }] }, "officers", onChange);
+      const input = screen.getByLabelText("Date of birth") as HTMLInputElement;
+      expect(input.type).toBe("date");
+      expect(input).toHaveValue("1980-01-01");
+      fireEvent.change(input, { target: { value: "1981-02-03" } });
+      expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ officers: [expect.objectContaining({ dateOfBirth: "1981-02-03" })] }));
+      fireEvent.change(input, { target: { value: "" } });
+      expect(onChange.mock.calls.at(-1)![0].officers[0].dateOfBirth).toBeUndefined();
+    });
+
+    it("is shown for an individual shareholder only", () => {
+      const holder = fullDraft.shareholders![0];
+      view({ ...fullDraft, shareholders: [{ ...holder, type: "INDIVIDUAL" }] }, "shareholders");
+      expect(screen.getByLabelText("Date of birth")).toBeInTheDocument();
+      cleanup();
+      view({ ...fullDraft, shareholders: [{ ...holder, type: "CORPORATE" }] }, "shareholders");
+      expect(screen.queryByLabelText("Date of birth")).not.toBeInTheDocument();
+    });
+
+    const withDob = { ...fullDraft, officers: [{ ...fullDraft.officers![0], dateOfBirth: "1981-02-03" }] };
+
+    it("says the saved date is replaced when the person is matched by ID number", () => {
+      previewView(withDob, "officers", preview("1980-01-01"));
+      expect(screen.getByRole("status")).toHaveTextContent("The matched contact has 1 Jan 1980; this document says 3 Feb 1981.");
+      expect(screen.getByRole('checkbox', { name: 'Replace the saved date of birth (1 Jan 1980) with 3 Feb 1981' })).not.toBeChecked();
+    });
+
+    it("says the saved date is replaced when the reviewer picked the contact", () => {
+      previewView({ ...withDob, officers: [{ ...withDob.officers![0], contactResolution: { action: "REUSE", contactId: "contact-1" } }] }, "officers", preview("1980-01-01", ["EXACT_CANONICAL_NAME"]));
+      expect(screen.getByRole('checkbox', { name: 'Replace the saved date of birth (1 Jan 1980) with 3 Feb 1981' })).not.toBeChecked();
+    });
+
+    it('clears approval when the proposed date is edited', () => {
+      function Harness() {
+        const [draft, setDraft] = useState<BizFileReviewDraft>({ ...withDob, officers: [{ ...withDob.officers![0],
+          dateOfBirthReplaces: '1980-01-01', contactResolution: { action: 'REUSE', contactId: 'contact-1' } }] });
+        return <BizFileReviewSections draft={draft} onChange={setDraft} activeSection="officers" issues={[]}
+          matchPreviews={{ 'officers.0': preview('1980-01-01') }} />;
+      }
+      render(<Harness />);
+      expect(screen.getByRole('checkbox', { name: 'Replace the saved date of birth (1 Jan 1980) with 3 Feb 1981' })).toBeChecked();
+      fireEvent.change(screen.getByLabelText('Date of birth'), { target: { value: '1982-02-02' } });
+      expect(screen.getByRole('checkbox', { name: 'Replace the saved date of birth (1 Jan 1980) with 2 Feb 1982' })).not.toBeChecked();
+    });
+
+    it("says the saved date is kept when the match is by name alone", () => {
+      previewView(withDob, "officers", preview("1980-01-01", ["EXACT_CANONICAL_NAME"]));
+      expect(screen.getByRole("status")).toHaveTextContent("It is kept, because this person is matched by name only.");
+    });
+
+    it("says nothing when the dates agree, the contact has none, or there is no match", () => {
+      previewView(withDob, "officers", preview("1981-02-03"));
+      expect(screen.queryByRole("status")).not.toBeInTheDocument();
+      cleanup();
+      previewView(withDob, "officers", preview(null));
+      expect(screen.queryByRole("status")).not.toBeInTheDocument();
+      cleanup();
+      view(withDob, "officers");
+      expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    });
   });
 });

@@ -1,0 +1,585 @@
+/**
+ * A local fake Sentroweb for browser tests of the client. It serves pages built from the
+ * recorded fixtures (login form, confirm modal, export modal, result accordions) plus the three
+ * XHR endpoints the real app uses, and it records every request and every click on a control
+ * the client must never touch (Manage Ongoing Monitoring, false match, Save, Cancel on a result).
+ *
+ * The page header (Balance) is synthetic and lives here, not in the fixtures.
+ */
+import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
+import type { AddressInfo } from 'node:net';
+import { SENTROWEB_COUNTRIES } from '@/lib/sentroweb/countries';
+import { cloneFixtureJson, fixtureText, type FixtureCase } from './sentroweb-fixtures';
+
+export const FAKE_ACCOUNT_ID = 'ACCT-FAKE-4242';
+export const FAKE_USERNAME = 'fake.user@example.invalid';
+export const FAKE_PASSWORD = 'fake-Pa55-w0rd-XYZ';
+/** A filename shaped like Sentroweb's, containing the (fake) account id. */
+export const FAKE_PDF_FILENAME = `report_${FAKE_ACCOUNT_ID}_77.pdf`;
+
+export interface FakeOptions {
+  balance: number;
+  /** Credits the confirm modal claims per search. */
+  modalCost: number;
+  /** The authenticate endpoint answers 2xx but the page asks for a one-time code. */
+  requireOtp: boolean;
+  /** The main page loads without the search form (an unexpected post-login page). */
+  unexpectedLanding: boolean;
+  /**
+   * The real header shows "Balance: 0" until the page's initializeApp call answers (then the real
+   * number). `initDelayMs` is how long that call takes; `initStatus` is its status (non-200 leaves
+   * the placeholder in place).
+   */
+  initDelayMs: number;
+  initStatus: number;
+  /**
+   * Like the real site: a name that was already searched is not charged again. The quota answer
+   * says `deductCredit: false` with no unique names, and the page searches at once, with no
+   * confirm dialog. Off by default so most tests see the dialog every time.
+   */
+  freeRepeats: boolean;
+  /** The quota answers `deductCredit: true` but the page shows no dialog (a changed page). */
+  suppressModal: boolean;
+  /** With `freeRepeats`: names listed in a repeat's quota answer (a shape the client must not accept as free). */
+  repeatQuotaUniqueNames: string[];
+  /** With `freeRepeats`: a repeated name's search call answers HTTP 500 (the first search succeeds). */
+  failRepeatSearches: boolean;
+  /** With `freeRepeats`: a repeated name's quota answer is delayed by this long (the page searches after it). */
+  repeatQuotaDelayMs: number;
+  /** The page also fetches this path when SEARCH is clicked (to test what the diagnostics log). */
+  diagnosticFetchPath: string | null;
+  /** Delay before the search endpoint answers. */
+  searchDelayMs: number;
+  /** Status of the PDF download endpoint. */
+  pdfStatus: number;
+  /** Delay before the PDF download starts answering. */
+  pdfDelayMs: number;
+  /** Status of the search endpoint. */
+  searchStatus: number;
+  /** Remove the accordion titles from the page after the search. */
+  omitResultTitles: boolean;
+  /** Serve the login page instead of the search page for the Nth main-page request (1-based). */
+  expireSessionOnMainRequest: number | null;
+  /** Maps a search to the fixture that answers it. */
+  resolveCase: (name: string, searchType: 'INDIVIDUAL' | 'ENTITY') => FixtureCase;
+  /** `ignored`: clicking a country option does nothing, so the dropdown keeps showing its placeholder. */
+  countrySelection: 'works' | 'ignored' | 'wrong-option';
+  /** The page rewrites a typed birth date (like a date picker that reformats it). */
+  rewriteDateOfBirth: boolean;
+  /** Ticking Individual does not draw the date of birth field (`date`) or the Male and Female boxes (`gender`). */
+  omitIndividualFields: 'none' | 'date' | 'gender';
+  /**
+   * The form keeps the Male and Female boxes drawn, Male ticked, whatever the type (a leftover from an
+   * earlier search): `ticked` lets a click clear it, `stuck` ignores clicks on it.
+   */
+  staleGender: 'none' | 'ticked' | 'stuck';
+  /**
+   * SEARCH enables `enableDelayMs` after the name and type are filled in, and just before it does the
+   * page changes a filter by itself: `gender` ticks Male, `country` shows another country.
+   */
+  enableDelayMs: number;
+  lateFilterChange: 'none' | 'gender' | 'country';
+  /** What the search answer echoes as country / birth date instead of what was sent (null: nothing). */
+  echoCountry: string | null | undefined;
+  echoDateOfBirth: string | null | undefined;
+  /** What the answer echoes as `fuzzyValue` instead of what was sent. */
+  echoFuzzy: boolean | undefined;
+  /** false: the dropdown has no Enter handler, so Enter only does what the browser does in a form. */
+  dropdownEnterHandler: boolean;
+  /** A page that starts the search by itself as soon as a country is chosen (a form that submits itself). */
+  submitsWhenCountryChosen: boolean;
+}
+
+const DEFAULTS: FakeOptions = {
+  balance: 372,
+  modalCost: 1,
+  requireOtp: false,
+  unexpectedLanding: false,
+  searchDelayMs: 0,
+  freeRepeats: false,
+  suppressModal: false,
+  repeatQuotaUniqueNames: [],
+  failRepeatSearches: false,
+  repeatQuotaDelayMs: 0,
+  diagnosticFetchPath: null,
+  initDelayMs: 400,
+  initStatus: 200,
+  pdfStatus: 200,
+  pdfDelayMs: 0,
+  searchStatus: 200,
+  omitResultTitles: false,
+  expireSessionOnMainRequest: null,
+  countrySelection: 'works',
+  rewriteDateOfBirth: false,
+  omitIndividualFields: 'none',
+  staleGender: 'none',
+  enableDelayMs: 0,
+  lateFilterChange: 'none',
+  echoCountry: undefined,
+  echoDateOfBirth: undefined,
+  echoFuzzy: undefined,
+  dropdownEnterHandler: true,
+  submitsWhenCountryChosen: false,
+  resolveCase: (name, searchType) => {
+    const lower = name.toLowerCase();
+    if (lower.includes('putin')) return 'individual-match';
+    if (lower.includes('rosneft')) return 'entity-match';
+    return searchType === 'ENTITY' ? 'entity-clear' : 'individual-clear';
+  },
+};
+
+export interface FakeEvent {
+  type:
+    | 'authenticate'
+    | 'checkquota'
+    | 'search'
+    | 'download'
+    | 'logout'
+    | 'cancel-clicked'
+    | 'forbidden-click'
+    | 'main-page';
+  detail?: string;
+}
+
+export interface FakeSentroweb {
+  baseUrl: string;
+  options: FakeOptions;
+  events: FakeEvent[];
+  /** Search requests the endpoint received: `{ name, searchEntity, searchIndividual, fuzzy }`. */
+  searches: Array<{
+    name: string;
+    searchEntity: boolean;
+    searchIndividual: boolean;
+    fuzzy: boolean;
+    country: string;
+    dateOfBirth: string;
+    gender: unknown;
+  }>;
+  count(type: FakeEvent['type']): number;
+  close(): Promise<void>;
+}
+
+/** The fields the real form draws only after Individual is ticked (Male, Female, Date of birth). */
+const INDIVIDUAL_FIELDS_HTML = (checkbox: (label: string) => string, omit: FakeOptions['omitIndividualFields']): string =>
+  (omit === 'gender' ? '' : `<div class="fields">${checkbox('Male')}${checkbox('Female')}</div>`) +
+  (omit === 'date'
+    ? ''
+    : '<div class="field"><label>Date of birth</label><input name="birthDate" placeholder="YYYY-MM-DD" type="text" value=""></div>');
+
+function countryDropdown(options: FakeOptions): string {
+  const items = SENTROWEB_COUNTRIES.map(
+    (country) =>
+      `<div role=\"option\" class=\"item\"><i class=\"${country.code ?? ''} flag\"></i><span class=\"text\">${country.name}</span></div>`,
+  ).join('');
+  return `<div role="combobox" aria-expanded="false" class="ui fluid search selection dropdown searchCountry"><input aria-autocomplete="list" autocomplete="off" class="search" tabindex="0" type="text" value=""><div aria-atomic="true" aria-live="polite" role="alert" class="divider default text">Country/ Region</div><i aria-hidden="true" class="dropdown icon"></i><div role="listbox" class="menu transition"><div role="option" class="active selected item"><span class="text"></span></div>${items}</div></div><script>window.__countrySelection = ${JSON.stringify(options.countrySelection)}; window.__rewriteDob = ${JSON.stringify(options.rewriteDateOfBirth)}; window.__dropdownEnterHandler = ${JSON.stringify(options.dropdownEnterHandler)}; window.__submitsWhenCountryChosen = ${JSON.stringify(options.submitsWhenCountryChosen)};</script>`;
+}
+
+const PAGE_STYLE = `
+  body { font-family: sans-serif; }
+  .modal { border: 1px solid #888; padding: 12px; margin: 12px; width: 420px; background: #fff; }
+  .checkbox label { cursor: pointer; padding: 4px; display: inline-block; }
+  .checkbox.checked label { font-weight: bold; }
+  i.icon { display: inline-block; width: 24px; height: 24px; background: #ccc; }
+  button { padding: 6px 12px; }
+  .menu .item { display: block; padding: 4px; }
+  .searchCountry { position: relative; border: 1px solid #888; padding: 4px; width: 320px; }
+  .searchCountry .menu.transition { display: none; max-height: 160px; overflow: auto; background: #fff; }
+  .searchCountry.visible .menu.transition { display: block; }
+  .searchCountry .menu .item.filtered { display: none; }
+`;
+
+function loginPage(): string {
+  return `<!doctype html><html><head><title>Fake Sentroweb login</title><style>${PAGE_STYLE}</style></head><body>
+${fixtureText('login-form.html')}
+<p id="message"></p>
+<script>
+  const button = document.querySelector('button');
+  button.addEventListener('click', async (event) => {
+    event.preventDefault();
+    const value = (name) => document.querySelector('input[name=' + name + ']').value;
+    const response = await fetch('/sentroweb-service/auth/private/authenticate', {
+      method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ accountId: value('accountId'), username: value('username'), password: value('password') }),
+    });
+    if (!response.ok) { document.getElementById('message').textContent = 'Login failed'; return; }
+    const body = await response.json();
+    if (body.otp) { document.getElementById('message').textContent = 'Enter the verification code we sent you'; return; }
+    window.location.href = '/SentroWeb/main?tab=search';
+  });
+</script></body></html>`;
+}
+
+function mainPage(options: FakeOptions): string {
+  if (options.unexpectedLanding) {
+    return '<!doctype html><html><body><h1>Welcome to the new Sentroweb</h1><p>Our new dashboard is here.</p></body></html>';
+  }
+  const checkbox = (label: string) =>
+    `<div class="field"><div class="ui checkbox cdd-checkbox pink-checkbox"><input class="hidden" readonly="" tabindex="0" type="checkbox" value=""><label>${label}</label></div></div>`;
+  return `<!doctype html><html><head><title>Fake Sentroweb</title><style>${PAGE_STYLE}</style></head><body>
+<div id="header">
+  <i class="bars icon" id="burger"></i>
+  <span id="balance">Balance: 0</span>
+  <div class="ui menu" id="menu" style="display:none">
+    <a class="item" id="menu-cdd">CDD Dashboard</a>
+    <a class="item" id="menu-manage">Manage Ongoing Monitoring</a>
+    <a class="item" id="menu-logout">Logout</a>
+  </div>
+</div>
+<form class="ui large error form" onsubmit="return false">
+  <div class="required field"><label>Search name</label><div class="ui input"><input placeholder="Search name" type="text" value=""></div></div>
+  <div class="field"><label>Country/ Region</label>${countryDropdown(options)}</div>
+  <div class="fields">${checkbox('Individual')}${checkbox('Entity')}</div>
+  ${options.staleGender === 'none' ? '' : `<div class="fields" id="stale-gender">${checkbox('Male').replace('ui checkbox', 'ui checked checkbox')}${checkbox('Female')}</div>`}
+  <div id="individual-fields"></div>
+  <div class="fields">${checkbox('Fuzzy Search')}<button class="ui large disabled button search-button" disabled="" type="submit" tabindex="-1">SEARCH</button></div>
+  <div class="fields"><button class="ui large button right-export-button" type="button">EXPORT</button></div>
+</form>
+<div class="twelve wide column"><div id="result"></div></div>
+<div id="modal-host"></div>
+<script>
+  const form = document.querySelector('form');
+  const nameInput = form.querySelector('input[placeholder="Search name"]');
+  const submit = form.querySelector('button.search-button');
+  // Like the real form, Male, Female and Date of birth exist only while Individual is ticked (the
+  // recorded empty form has three boxes; ticking Individual adds those fields).
+  const individualHtml = ${JSON.stringify(INDIVIDUAL_FIELDS_HTML(checkbox, options.staleGender === 'none' ? options.omitIndividualFields : 'gender'))};
+  const individualFields = document.getElementById('individual-fields');
+  const allBoxes = () => Array.from(form.querySelectorAll('.checkbox'));
+  const labelOf = (box) => box.querySelector('label').textContent.trim();
+  const box = (label) => allBoxes().find((b) => labelOf(b) === label);
+  const isChecked = (label) => !!box(label)?.classList.contains('checked');
+  const dobInput = () => form.querySelector('input[name="birthDate"]');
+  const dobValue = () => dobInput()?.value ?? '';
+  let armed = false;
+  const staleGender = ${JSON.stringify(options.staleGender)};
+  const wire = (b) => b.addEventListener('click', () => {
+    const label = labelOf(b);
+    if (staleGender === 'stuck' && label === 'Male') return;
+    b.classList.toggle('checked');
+    if (b.classList.contains('checked') && label === 'Individual') box('Entity').classList.remove('checked');
+    if (b.classList.contains('checked') && label === 'Entity') box('Individual').classList.remove('checked');
+    syncIndividualFields();
+    refresh();
+  });
+  function syncIndividualFields() {
+    if (isChecked('Individual')) {
+      if (individualFields.firstChild) return;
+      individualFields.innerHTML = individualHtml;
+      individualFields.querySelectorAll('.checkbox').forEach((b) => { if (armed) wire(b); });
+      dobInput()?.addEventListener('input', () => {
+        if (window.__rewriteDob) dobInput().value = dobInput().value.replace(/-/g, '/');
+      });
+    } else {
+      individualFields.innerHTML = '';
+    }
+  }
+  const enableDelayMs = ${JSON.stringify(options.enableDelayMs)};
+  const lateFilterChange = ${JSON.stringify(options.lateFilterChange)};
+  const lateGenderHtml = ${JSON.stringify(checkbox('Male').replace('ui checkbox', 'ui checked checkbox'))};
+  let enableTimer = null;
+  function setEnabled(on) {
+    submit.disabled = !on;
+    submit.classList.toggle('disabled', !on);
+  }
+  function refresh() {
+    const ready = nameInput.value.trim() !== '' && (isChecked('Individual') || isChecked('Entity'));
+    if (!ready) { clearTimeout(enableTimer); enableTimer = null; setEnabled(false); return; }
+    if (enableDelayMs === 0 && lateFilterChange === 'none') { setEnabled(true); return; }
+    if (enableTimer) return;
+    enableTimer = setTimeout(() => {
+      enableTimer = null;
+      if (lateFilterChange === 'gender') individualFields.insertAdjacentHTML('beforeend', lateGenderHtml);
+      if (lateFilterChange === 'country') {
+        const shownText = form.querySelector('.searchCountry > .text');
+        shownText.className = 'text';
+        shownText.textContent = 'Malaysia';
+      }
+      setEnabled(true);
+    }, enableDelayMs);
+  }
+  // Like the real page, the checkboxes only react once the page's initializeApp call has answered:
+  // a click right after the form appears is ignored.
+  window.__armBoxes = () => { armed = true; allBoxes().forEach(wire); };
+  nameInput.addEventListener('input', refresh);
+
+  // The country dropdown: a click opens it, typing filters, a click on an option shows its text.
+  const dropdown = form.querySelector('.searchCountry');
+  const filter = dropdown.querySelector('input.search');
+  const shown = dropdown.querySelector(':scope > .text');
+  dropdown.addEventListener('click', () => { dropdown.classList.add('visible'); filter.focus(); });
+  filter.addEventListener('input', () => {
+    const term = filter.value.toLowerCase();
+    dropdown.querySelectorAll('.menu .item').forEach((item) =>
+      item.classList.toggle('filtered', term !== '' && !item.textContent.toLowerCase().includes(term)));
+  });
+  const choose = (item) => {
+    if (window.__countrySelection === 'ignored') { dropdown.classList.remove('visible'); return; }
+    let chosen = item.textContent.trim();
+    if (window.__countrySelection === 'wrong-option') {
+      const items = Array.from(dropdown.querySelectorAll('.menu .item'));
+      chosen = items[(items.indexOf(item) + 1) % items.length].textContent.trim();
+    }
+    shown.className = 'text';
+    shown.textContent = chosen;
+    filter.value = '';
+    dropdown.classList.remove('visible');
+    if (window.__submitsWhenCountryChosen) window.__onSubmit();
+  };
+  dropdown.querySelectorAll('.menu .item').forEach((item) => item.addEventListener('click', (event) => {
+    event.stopPropagation();
+    choose(item);
+  }));
+  // Enter takes the first option still listed, like the real dropdown.
+  if (window.__dropdownEnterHandler) filter.addEventListener('keydown', (event) => {
+    if (event.key !== 'Enter') return;
+    event.preventDefault();
+    const first = Array.from(dropdown.querySelectorAll('.menu .item')).find((item) => item.textContent.trim() !== '' && !item.classList.contains('filtered'));
+    if (first) choose(first);
+  });
+  const chosenCountry = () => (shown.classList.contains('default') ? '' : shown.textContent.trim());
+
+  fetch('/sentroweb-service/account/private/initializeApp', { method: 'POST' }).then(async (response) => {
+    if (!response.ok) return;
+    const body = await response.json();
+    document.getElementById('balance').textContent = 'Balance: ' + body.balance;
+    window.__armBoxes();
+  });
+
+  const menu = document.getElementById('menu');
+  document.getElementById('burger').addEventListener('click', () => { menu.style.display = menu.style.display === 'none' ? 'block' : 'none'; });
+  document.getElementById('menu-manage').addEventListener('click', () => fetch('/__forbidden?what=manage-ongoing-monitoring'));
+  document.getElementById('menu-logout').addEventListener('click', async () => {
+    await fetch('/sentroweb-service/auth/private/logout', { method: 'POST' });
+    window.location.href = '/SentroWeb/login';
+  });
+
+  const host = document.getElementById('modal-host');
+  const query = () => ({ queries: [{
+    country: chosenCountry(), fuzzy: isChecked('Fuzzy Search'), name: nameInput.value, dateOfBirth: dobValue(),
+    searchEntity: isChecked('Entity'), searchIndividual: isChecked('Individual'),
+    // The value the real page sends for a ticked gender box is not known; the fake sends the box.
+    gender: isChecked('Male') ? 'MALE' : isChecked('Female') ? 'FEMALE' : null }] });
+
+  const onSubmit = async () => {
+    if (${JSON.stringify(options.diagnosticFetchPath)}) fetch(${JSON.stringify(options.diagnosticFetchPath)}).catch(() => {});
+    const response = await fetch('/sentroweb-service/account/private/checkquota', {
+      method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(query()) });
+    const quota = await response.json();
+    const runSearch = async () => {
+      host.innerHTML = '';
+      const search = await fetch('/sentroweb-service/screening/private/search', {
+        method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(query()) });
+      if (!search.ok) return;
+      await search.json();
+      const html = await (await fetch('/__result-html?name=' + encodeURIComponent(nameInput.value) +
+        '&entity=' + isChecked('Entity') + '&country=' + encodeURIComponent(chosenCountry()))).text();
+      document.getElementById('result').innerHTML = html;
+      for (const [selector, what] of [['.screening-result-save-button', 'save'], ['.screening-result-cancel-button', 'result-cancel'],
+        ['.cdd-checkbox label', 'false-match']]) {
+        document.querySelectorAll('#result ' + selector).forEach((el) =>
+          el.addEventListener('click', () => fetch('/__forbidden?what=' + what)));
+      }
+    };
+    if (quota.deductCredit === false) { await runSearch(); return; }
+    if (quota.noModal) return;
+    host.innerHTML = quota.modalHtml;
+    host.querySelector('button.negative').addEventListener('click', () => {
+      fetch('/__event?type=cancel-clicked'); host.innerHTML = '';
+    });
+    host.querySelector('button.positive').addEventListener('click', runSearch);
+  };
+  submit.addEventListener('click', (event) => { event.preventDefault(); onSubmit(); });
+  window.__onSubmit = onSubmit;
+
+  form.querySelector('.right-export-button').addEventListener('click', async () => {
+    host.innerHTML = await (await fetch('/__export-modal')).text();
+  });
+</script></body></html>`;
+}
+
+function readBody(request: IncomingMessage): Promise<string> {
+  return new Promise((resolve) => {
+    const chunks: Buffer[] = [];
+    request.on('data', (chunk: Buffer) => chunks.push(chunk));
+    request.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
+  });
+}
+
+const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+export async function startFakeSentroweb(overrides: Partial<FakeOptions> = {}): Promise<FakeSentroweb> {
+  const options: FakeOptions = { ...DEFAULTS, ...overrides };
+  const events: FakeEvent[] = [];
+  const searches: FakeSentroweb['searches'] = [];
+  let mainRequests = 0;
+  const searchedNames = new Set<string>();
+
+  const hasSession = (request: IncomingMessage) => /(?:^|;\s*)sw_session=ok/.test(request.headers.cookie ?? '');
+  const html = (response: ServerResponse, body: string, status = 200) => {
+    response.writeHead(status, { 'content-type': 'text/html; charset=utf-8' });
+    response.end(body);
+  };
+  const json = (response: ServerResponse, body: unknown, status = 200, headers: Record<string, string> = {}) => {
+    response.writeHead(status, { 'content-type': 'application/json', ...headers });
+    response.end(JSON.stringify(body));
+  };
+
+  const server: Server = createServer(async (request, response) => {
+    const url = new URL(request.url ?? '/', 'http://fake.local');
+    const route = `${request.method} ${url.pathname}`;
+    try {
+      if (route === 'GET /SentroWeb/login') return html(response, loginPage());
+
+      if (route === 'GET /SentroWeb/main') {
+        mainRequests += 1;
+        events.push({ type: 'main-page' });
+        const expired = options.expireSessionOnMainRequest === mainRequests;
+        if (!hasSession(request) || expired) {
+          response.writeHead(302, {
+            location: '/SentroWeb/login',
+            ...(expired ? { 'set-cookie': 'sw_session=; Path=/; Max-Age=0' } : {}),
+          });
+          return response.end();
+        }
+        return html(response, mainPage(options));
+      }
+
+      if (route === 'POST /sentroweb-service/auth/private/authenticate') {
+        const body = JSON.parse((await readBody(request)) || '{}') as Record<string, string>;
+        events.push({ type: 'authenticate' });
+        const ok = body.accountId === FAKE_ACCOUNT_ID && body.username === FAKE_USERNAME && body.password === FAKE_PASSWORD;
+        if (!ok) return json(response, { error: 'bad credentials' }, 401);
+        return json(response, { otp: options.requireOtp }, 200, {
+          'set-cookie': options.requireOtp ? 'sw_pending=1; Path=/' : 'sw_session=ok; Path=/; HttpOnly',
+        });
+      }
+
+      if (route === 'POST /sentroweb-service/auth/private/logout') {
+        events.push({ type: 'logout' });
+        return json(response, {}, 200, { 'set-cookie': 'sw_session=; Path=/; Max-Age=0' });
+      }
+
+      if (!hasSession(request) && url.pathname.startsWith('/sentroweb-service/')) return json(response, {}, 401);
+
+      if (route === 'POST /sentroweb-service/account/private/initializeApp') {
+        await sleep(options.initDelayMs);
+        if (options.initStatus !== 200) return json(response, { error: 'init failed' }, options.initStatus);
+        return json(response, { balance: options.balance });
+      }
+
+      if (route === 'POST /sentroweb-service/account/private/checkquota') {
+        const quotaRaw = await readBody(request);
+        events.push({ type: 'checkquota' });
+        const quotaBody = JSON.parse(quotaRaw) as { queries: Array<Record<string, unknown>> };
+        const quotaName = String(quotaBody.queries[0]?.name ?? '');
+        if (options.freeRepeats && searchedNames.has(quotaName)) {
+          if (options.repeatQuotaDelayMs > 0) await sleep(options.repeatQuotaDelayMs);
+          return json(response, {
+            deductCredit: false,
+            currentBalance: options.balance,
+            uniqueNames: options.repeatQuotaUniqueNames,
+          });
+        }
+        const modalHtml = fixtureText('confirm-modal.html').replace('1 credit(s)', `${options.modalCost} credit(s)`);
+        return json(response, {
+          deductCredit: true,
+          currentBalance: options.balance,
+          uniqueNames: [quotaName],
+          modalHtml,
+          noModal: options.suppressModal,
+        });
+      }
+
+      if (route === 'POST /sentroweb-service/screening/private/search') {
+        const body = JSON.parse(await readBody(request)) as { queries: Array<Record<string, unknown>> };
+        const query = body.queries[0];
+        const name = String(query.name);
+        const searchType = query.searchEntity === true ? 'ENTITY' : 'INDIVIDUAL';
+        searches.push({
+          name,
+          searchEntity: query.searchEntity === true,
+          searchIndividual: query.searchIndividual === true,
+          fuzzy: query.fuzzy === true,
+          country: String(query.country ?? ''),
+          dateOfBirth: String(query.dateOfBirth ?? ''),
+          gender: query.gender ?? null,
+        });
+        events.push({ type: 'search', detail: name });
+        const repeated = searchedNames.has(name);
+        searchedNames.add(name);
+        if (repeated && options.failRepeatSearches) return json(response, { error: 'boom' }, 500);
+        if (options.searchDelayMs > 0) await sleep(options.searchDelayMs);
+        if (options.searchStatus !== 200) return json(response, { error: 'boom' }, options.searchStatus);
+        const payload = cloneFixtureJson<Array<Record<string, unknown>>>(
+          `search-${options.resolveCase(name, searchType)}.json`,
+        );
+        payload[0].name = name;
+        payload[0].searchEntity = searchType === 'ENTITY';
+        payload[0].searchIndividual = searchType === 'INDIVIDUAL';
+        // Like the real answer, it echoes what the search was sent with.
+        payload[0].fuzzyValue = options.echoFuzzy !== undefined ? options.echoFuzzy : query.fuzzy === true;
+        payload[0].country = options.echoCountry !== undefined ? (options.echoCountry ?? '') : String(query.country ?? '');
+        payload[0].dateOfBirth =
+          options.echoDateOfBirth !== undefined ? (options.echoDateOfBirth ?? '') : String(query.dateOfBirth ?? '');
+        return json(response, payload);
+      }
+
+      if (route === 'GET /__result-html') {
+        const name = url.searchParams.get('name') ?? '';
+        const searchType = url.searchParams.get('entity') === 'true' ? 'ENTITY' : 'INDIVIDUAL';
+        if (options.omitResultTitles) return html(response, '<div class="accordion ui"></div>');
+        let page = fixtureText(`result-${options.resolveCase(name, searchType)}.html`);
+        // Like the real page: the FATF heading is only drawn for an individual searched with a country.
+        if (searchType === 'INDIVIDUAL' && !url.searchParams.get('country')) {
+          page = page.replace(/<div class="search-result-div"><div class="title search-title-div[^"]*"><i[^>]*><\/i>FATF[^<]*<\/div><\/div>/, '');
+        }
+        return html(response, page);
+      }
+
+      if (route === 'GET /__export-modal') return html(response, fixtureText('export-modal.html'));
+
+      if (route === 'GET /sentroweb-service/report/private/download') {
+        events.push({ type: 'download' });
+        if (options.pdfDelayMs > 0) await new Promise((resolve) => setTimeout(resolve, options.pdfDelayMs));
+        if (options.pdfStatus !== 200) return json(response, { error: 'no report' }, options.pdfStatus);
+        const pdf = Buffer.from(`%PDF-1.4\n% fake report\n${'x'.repeat(2000)}\n%%EOF\n`, 'latin1');
+        response.writeHead(200, {
+          'content-type': 'application/pdf',
+          'content-disposition': `attachment; filename="${FAKE_PDF_FILENAME}"`,
+          'content-length': String(pdf.length),
+        });
+        return response.end(pdf);
+      }
+
+      if (route === 'GET /__forbidden') {
+        events.push({ type: 'forbidden-click', detail: url.searchParams.get('what') ?? '' });
+        return json(response, {});
+      }
+      if (route === 'GET /__event') {
+        events.push({ type: url.searchParams.get('type') as FakeEvent['type'] });
+        return json(response, {});
+      }
+
+      response.writeHead(404);
+      response.end('not found');
+    } catch {
+      response.writeHead(500);
+      response.end('fake server error');
+    }
+  });
+
+  await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+  const { port } = server.address() as AddressInfo;
+
+  return {
+    baseUrl: `http://127.0.0.1:${port}`,
+    options,
+    events,
+    searches,
+    count: (type) => events.filter((event) => event.type === type).length,
+    close: () => new Promise<void>((resolve) => {
+      server.closeAllConnections();
+      server.close(() => resolve());
+    }),
+  };
+}

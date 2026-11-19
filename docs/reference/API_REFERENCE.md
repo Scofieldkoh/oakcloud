@@ -513,6 +513,21 @@ Delete a note.
 
 ---
 
+### Sentroweb checks
+
+Screening of the company, its current directors and its current shareholders on Sentroweb. Rules, error codes and side effects (credits, ongoing monitoring) are in [Sentroweb check](../features/SENTROWEB_CHECK.md). Reading needs `company:read`, starting a run needs `company:update`; a company outside the caller's workspace answers `404`. Error bodies are `{ error, code, details? }` with fixed messages.
+
+| Endpoint | Permission | Description |
+|----------|------------|-------------|
+| `GET /api/companies/[id]/sentroweb-checks/candidates` | `company:read` | Who can be screened (`key`, `name`, `searchType`, `roles`, `searchDetails`: the Sentroweb `country` option or `null`, `dateOfBirth` yes/no, `gender` `MALE`, `FEMALE` or `null`; the date itself is never returned), `configured`, `maxEntities` (10), `creditsPerSearch` (1), `activeRunId`, `cooldownUntil` |
+| `POST /api/companies/[id]/sentroweb-checks` | `company:update` | Body `{ entityKeys: string[], force?: boolean, fuzzy?: boolean }` (`fuzzy` ticks Fuzzy Search for every search of the run; off by default). `202 { runId }`; `400` invalid body or keys no longer current; `409 ALREADY_RUNNING` or `COOLDOWN` (`details.cooldownUntil`); `422 TOO_MANY_ENTITIES` or `NO_ENTITIES_SELECTED`; `503 SENTROWEB_NOT_CONFIGURED` |
+| `GET /api/companies/[id]/sentroweb-checks` | `company:read` | Run history, newest first. Query: `limit` (1-50, default 10), `cursor` (opaque `(createdAt, id)` cursor). Returns `{ runs, nextCursor }` |
+| `GET /api/companies/[id]/sentroweb-checks/[runId]` | `company:read` | `{ run }` with per-entity `results` (status `CLEAR`, `POSSIBLE_MATCH`, `ERROR`, `NOT_RUN`, counts per category, whitelisted match details, `documentId` of the PDF report, `hasScreenshot`, `searchDetails` as above, `searchDetailsSent` true only for a result that was read back; the run has `fuzzy`) |
+| `GET /api/companies/[id]/sentroweb-checks/[runId]/results/[resultId]/screenshot` | `company:read` | `image/png`; recorded as a `DOWNLOAD` audit entry |
+| `GET /api/companies/[id]/sentroweb-checks/[runId]/results/[resultId]/report` | `company:read` | `application/pdf`: Sentroweb's report, also filed as a company document of type `SENTROWEB_REPORT`; recorded as a `DOWNLOAD` audit entry. `404` when the result has no filed report |
+
+---
+
 ### POST /api/companies/bulk
 Bulk operations on companies.
 
@@ -1181,6 +1196,8 @@ List contacts.
 ### POST /api/contacts
 Create a new contact.
 
+**Date of birth.** `dateOfBirth` is optional and for individuals only: `YYYY-MM-DD` (a full ISO date-time with an explicit `Z` or numeric offset is still accepted and read as its UTC calendar date; an offsetless timestamp is rejected), blank or `null` for none. It must be a real date from 1 Jan 1900 to today, and not over 150 years back, matching the shared Sentroweb date rule; a corporate contact is refused one. It is stored as midnight UTC. `PUT /api/contacts/[id]` takes the same value, `null` clears it, an omitted field leaves it alone, and the change is written to the contact audit as `dateOfBirth: { old, new }`.
+
 **Auth:** `contact:create`. Manual and quick-create callers can preview identity first. A caller may explicitly choose `CREATE_SEPARATE` when two legitimate contacts share a name; deterministic identifier conflicts are still rejected.
 
 ---
@@ -1220,6 +1237,26 @@ Create an internal note.
 
 ---
 
+### GET /api/contacts/[id]/form-links
+KYC/CDD form response people linked to a contact, each with `state` (`ACTIVE`, `ROW_CHANGED`, `RESPONSE_DELETED`), the response, PDF and attachment URLs (existing Forms routes), the answers shown only, and per-field `suggestions`. Needs `contact:read` and `document:read` (403 without the latter). See [CONTACT_FORM_LINKS](../features/CONTACT_FORM_LINKS.md).
+
+### GET /api/contacts/[id]/form-links/candidates
+No query: linkable forms (tagged `cdd` or `kyc`). `formId`: the form's responses. `formId` and `submissionId`: the people on the response, each `eligible` or not with a reason.
+
+### POST /api/contacts/[id]/form-links
+Body `{ formId, submissionId, personRowIndex, expectedFingerprint }` (`personRowIndex` is `null` for a form without a repeat section; `expectedFingerprint` is the person's `fingerprint` from the candidates endpoint). 201 `{ id }`. 409 `details.reason: ROW_CHANGED` when that row is no longer the person that was chosen. 422 for a form that is not tagged `cdd`/`kyc`, a person who is not on the response, or a kind that does not match the contact; 409 `details.reason: ALREADY_LINKED` when the row is linked already. Needs `contact:update` and `document:read`.
+
+### DELETE /api/contacts/[id]/form-links/[linkId]
+Soft unlink; allowed even when the response was deleted.
+
+### POST /api/contacts/[id]/form-links/[linkId]/suggestions/accept
+Body `{ field, expectedCurrentValue, proposedValue }`: one field per request, applied in one transaction after re-checking the link, the row and both values. 409 with `details.reason` `STALE_SUGGESTION`, `ROW_CHANGED` or `RESPONSE_DELETED` writes nothing; 422 when the value cannot be applied.
+
+### POST /api/contacts/[id]/form-links/[linkId]/suggestions/dismiss
+Body `{ field, proposedValue }`: hides that suggestion until the form answer changes.
+
+---
+
 ### POST /api/contacts/bulk
 Bulk operations on contacts.
 
@@ -1230,7 +1267,7 @@ Bulk operations on contacts.
 Identity operations are tenant-scoped. Names use Unicode NFKC normalization and case folding; deterministic matches use only validated, unmasked IDs/UENs. Low-confidence or masked values can inform review but never become deterministic match keys.
 
 ### POST /api/contacts/match-preview
-Preview matches for up to 100 contact candidates before a write. Requires `contact:read`. Each candidate supplies a unique `sourceRecordId`, a `source` (`MANUAL`, `COMPANY_QUICK_CREATE`, `BIZFILE`, or `DOCUMENT_VAULT`), contact type, name fields, and optional identifiers, address, details, and per-field confidence. The response is `{ "matches": { "<sourceRecordId>": matchOrNull } }`; a match includes reasons and the tenant contact summary.
+Preview matches for up to 100 contact candidates before a write. Requires `contact:read`. Each candidate supplies a unique `sourceRecordId`, a `source` (`MANUAL`, `COMPANY_QUICK_CREATE`, `BIZFILE`, or `DOCUMENT_VAULT`), contact type, name fields, and optional identifiers, address, details, and per-field confidence. The response is `{ "matches": { "<sourceRecordId>": matchOrNull } }`; a match includes reasons and the tenant contact summary (including the saved `dateOfBirth` as `YYYY-MM-DD`, shown beside a different date printed in a BizFile). A candidate may carry `dateOfBirth` (`YYYY-MM-DD`); an invalid one is ignored.
 
 ### GET /api/contacts/duplicates
 List bounded duplicate groups, ordered and paginated with `page` (default `1`) and `limit` (default `20`, maximum `100`). Requires `contact:read` and all-companies access. Recommendations combine canonical-name, normalized deterministic-identifier, and bounded trigram candidates, exclude inactive/deleted contacts, and suppress a rejected pair only while its reviewed fingerprints remain current.
