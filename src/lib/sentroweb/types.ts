@@ -41,6 +41,17 @@ export interface SentrowebCandidateDto {
   roles: string[];
   identifierType: string | null;
   identifier: string | null;
+  /** What an individual would be searched with besides the name; companies never have any. */
+  searchDetails: SentrowebSearchDetailsDto;
+}
+
+/** What was (or would be) sent besides the name. The date itself is never returned. */
+export interface SentrowebSearchDetailsDto {
+  /** The exact Sentroweb country option, or null when the country is left blank. */
+  country: string | null;
+  dateOfBirth: boolean;
+  /** Always false: Oakcloud holds no gender for directors, shareholders or contacts. */
+  gender: false;
 }
 
 export interface SentrowebCandidatesResponse {
@@ -62,6 +73,8 @@ export interface SentrowebResultDto {
   roles: string[];
   identifierType: string | null;
   identifier: string | null;
+  /** What the search was sent with besides the name (a verified search sent exactly this). */
+  searchDetails: SentrowebSearchDetailsDto;
   status: SentrowebResultStatusValue;
   matchCount: number;
   categoryCounts: SentrowebCategoryCounts;

@@ -41,6 +41,18 @@ export const SENTROWEB_SELECTORS = {
   },
   search: {
     nameInput: 'form input[placeholder="Search name"]',
+    /** The Semantic UI country dropdown: a wrapper, its filter box, its shown text and its options. */
+    countryDropdown: 'form .searchCountry',
+    countryFilterInput: 'form .searchCountry input.search',
+    /** The text shown in the closed dropdown; it carries the class `default` while nothing is chosen. */
+    countryText: 'form .searchCountry > .text',
+    countryDefaultClass: 'default',
+    countryItem: 'form .searchCountry .menu .item',
+    countryItemText: '.text',
+    /** A plain text box that takes `YYYY-MM-DD`. */
+    dateOfBirthInput: 'form input[name="birthDate"]',
+    /** Gender is two checkboxes (Male / Female); the check never ticks them (no source field). */
+    genderLabelTexts: ['Male', 'Female'],
     /** Semantic UI checkbox wrappers; each holds one label and one hidden, read-only input. */
     checkbox: 'form .checkbox',
     checkboxLabel: 'label',

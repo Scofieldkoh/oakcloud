@@ -438,3 +438,74 @@ describe('parseSentrowebResult: the individual result recorded live for a name-o
   });
 });
 
+
+describe('parseSentrowebResult: an individual searched with a country and a date of birth', () => {
+  // Recorded live with the test name, country Singapore and 1980-01-01 (response trimmed to the
+  // fields the parser reads); the headings are the recorded ones, FATF included.
+  const sent = { expectedCountry: 'Singapore', expectedDateOfBirth: '1980-01-01' };
+  const withDetails = () => {
+    const c = clearIndividual();
+    c.json = cloneFixtureJson<Payload>('search-individual-clear-with-country.json');
+    return c;
+  };
+  const run = (c: ReturnType<typeof withDetails>, options: Record<string, string | null> = sent) =>
+    parseSentrowebResult(c.searchType, c.json, c.titles, { expectedName: c.name, ...options });
+
+  it('is CLEAR when the answer echoes what was sent and every heading, FATF included, shows zero', () => {
+    const c = withDetails();
+    expect(c.titles[0]).toMatch(/^FATF/);
+    expect(run(c)).toMatchObject({ status: 'CLEAR', matchCount: 0, categoryCounts: { FATF: 0, PEP: 0, SIP: 0 } });
+  });
+
+  it.each([
+    ['another country', { country: 'Malaysia' }],
+    ['no country', { country: '' }],
+    ['another birth date', { dateOfBirth: '1981-01-01' }],
+    ['no birth date', { dateOfBirth: '' }],
+    ['a country that is not text', { country: 5 }],
+  ])('is ERROR RESULT_MISMATCH, never CLEAR, when the answer echoes %s', (_label, change) => {
+    const c = withDetails();
+    Object.assign(c.json[0], change);
+    expect(run(c)).toMatchObject({ status: 'ERROR', errorCode: 'RESULT_MISMATCH' });
+  });
+
+  it('is ERROR when a country was sent but the FATF heading is missing', () => {
+    const c = withDetails();
+    c.titles = c.titles.filter((title) => !title.startsWith('FATF'));
+    expect(run(c).status).toBe('ERROR');
+    // The same page for a name-only search is fine.
+    c.json[0].country = '';
+    c.json[0].dateOfBirth = '';
+    expect(run(c, { expectedCountry: null, expectedDateOfBirth: null }).status).toBe('CLEAR');
+  });
+
+  it('is POSSIBLE_MATCH for a FATF hit, whether it shows in the response or in the heading', () => {
+    const inJson = withDetails();
+    inJson.json[0].fatfCountries = [{ name: 'Somewhere' }];
+    expect(run(inJson)).toMatchObject({ status: 'POSSIBLE_MATCH', categoryCounts: { FATF: 1 } });
+    const inHeading = withDetails();
+    inHeading.titles[0] = 'FATF Country/ Region [1 matches]';
+    expect(run(inHeading)).toMatchObject({ status: 'POSSIBLE_MATCH', categoryCounts: { FATF: 1 } });
+  });
+
+  it('keeps a recorded match a possible match even when the echo does not fit', () => {
+    const c = loadCase('individual-match');
+    c.json[0].country = 'Malaysia';
+    expect(
+      parseSentrowebResult(c.searchType, c.json, c.titles, { expectedName: c.name, expectedCountry: 'Russia', expectedDateOfBirth: null }).status,
+    ).toBe('POSSIBLE_MATCH');
+  });
+
+  it('treats a missing echo as blank: a name-only search needs no country in the answer', () => {
+    const c = clearIndividual();
+    delete c.json[0].country;
+    expect(run(c, { expectedCountry: null, expectedDateOfBirth: null }).status).toBe('CLEAR');
+    expect(run(c, sent).status).toBe('ERROR');
+  });
+
+  it('does not check the echo when the caller gave no expectation', () => {
+    const c = withDetails();
+    c.json[0].country = 'Anything';
+    expect(parseSentrowebResult(c.searchType, c.json, c.titles, { expectedName: c.name }).status).toBe('CLEAR');
+  });
+});

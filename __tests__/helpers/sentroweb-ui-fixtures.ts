@@ -14,6 +14,7 @@ export function candidate(index: number, overrides: Partial<SentrowebCandidateDt
     roles: ['DIRECTOR'],
     identifierType: null,
     identifier: null,
+    searchDetails: { country: null, dateOfBirth: false, gender: false },
     ...overrides,
   };
 }
@@ -43,6 +44,7 @@ export function result(overrides: Partial<SentrowebResultDto> = {}): SentrowebRe
     roles: ['DIRECTOR'],
     identifierType: null,
     identifier: null,
+    searchDetails: { country: null, dateOfBirth: false, gender: false },
     status: 'CLEAR',
     matchCount: 0,
     categoryCounts: {},

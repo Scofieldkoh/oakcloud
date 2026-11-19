@@ -3434,6 +3434,8 @@ export const SentrowebCheckResultScalarFieldEnum = {
   sentrowebReportId: 'sentrowebReportId',
   monitorEnabled: 'monitorEnabled',
   searchSubmittedAt: 'searchSubmittedAt',
+  requestedCountry: 'requestedCountry',
+  requestedDateOfBirth: 'requestedDateOfBirth',
   errorCode: 'errorCode',
   documentId: 'documentId',
   evidencePngKey: 'evidencePngKey',
@@ -3489,3 +3491,4 @@ export const NullsOrder = {
 } as const
 
 export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder]
+

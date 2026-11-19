@@ -62,6 +62,9 @@ export function makeClient(): FakeClient {
         if ('outcome' in script) return script.outcome;
         const loaded = loadCase(script.fixture);
         loaded.json[0].name = request.name;
+        // Like the real answer, it echoes what the search was sent with.
+        loaded.json[0].country = request.country ?? '';
+        loaded.json[0].dateOfBirth = request.dateOfBirth ?? '';
         return {
           json: loaded.json,
           domTitles: loaded.titles,

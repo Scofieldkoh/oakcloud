@@ -4,11 +4,31 @@ import {
   SentrowebOverallBadge,
   SentrowebResultBadge,
   formatSentrowebCategoryCounts,
+  formatSentrowebSearchDetails,
   sentrowebOverallBadge,
   sentrowebResultBadge,
   sentrowebRoleLabel,
 } from '@/components/companies/company-detail/sentroweb-badges';
 import type { SentrowebRunDto } from '@/lib/sentroweb/types';
+
+describe('formatSentrowebSearchDetails', () => {
+  it('lists what was sent and what was not, never the date itself', () => {
+    expect(formatSentrowebSearchDetails({ country: 'Singapore', dateOfBirth: true, gender: false }, 'INDIVIDUAL')).toBe(
+      'Sent: name, country (Singapore), date of birth. Not sent: gender',
+    );
+    expect(formatSentrowebSearchDetails({ country: 'Malaysia', dateOfBirth: false, gender: false }, 'INDIVIDUAL')).toBe(
+      'Sent: name, country (Malaysia). Not sent: date of birth, gender',
+    );
+    expect(formatSentrowebSearchDetails({ country: null, dateOfBirth: false, gender: false }, 'INDIVIDUAL')).toBe(
+      'Sent: name. Not sent: country, date of birth, gender',
+    );
+  });
+
+  it('reads name only for an entity, and for a record that predates the details', () => {
+    expect(formatSentrowebSearchDetails({ country: 'Singapore', dateOfBirth: true, gender: false }, 'ENTITY')).toBe('Sent: name only');
+    expect(formatSentrowebSearchDetails(undefined, 'INDIVIDUAL')).toBe('Sent: name. Not sent: country, date of birth, gender');
+  });
+});
 
 type OverallInput = Pick<SentrowebRunDto, 'status' | 'overallResult'>;
 

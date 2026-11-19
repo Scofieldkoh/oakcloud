@@ -24,6 +24,7 @@ import {
   formatSentrowebCategoryCounts,
   sentrowebRoleLabel,
   sentrowebSearchTypeLabel,
+  formatSentrowebSearchDetails,
 } from './sentroweb-badges';
 
 interface CompanyScreeningTabProps {
@@ -242,6 +243,9 @@ function ResultsTable({
                       ) : null}
                       <div>
                         <span className="font-medium text-text-primary">{result.name}</span>
+                        <p className="mt-0.5 text-xs text-text-muted">
+                          {formatSentrowebSearchDetails(result.searchDetails, result.searchType)}
+                        </p>
                         {errorText ? <p className="mt-1 text-xs text-text-secondary">{errorText}</p> : null}
                       </div>
                     </div>

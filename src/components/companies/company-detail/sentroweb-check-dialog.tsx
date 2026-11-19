@@ -16,7 +16,7 @@ import {
   useStartSentrowebCheck,
 } from '@/hooks/use-sentroweb-checks';
 import { formatDateTime } from '@/lib/utils';
-import { sentrowebRoleLabel, sentrowebSearchTypeLabel } from './sentroweb-badges';
+import { formatSentrowebSearchDetails, sentrowebRoleLabel, sentrowebSearchTypeLabel } from './sentroweb-badges';
 
 interface SentrowebCheckDialogProps {
   companyId: string;
@@ -223,7 +223,8 @@ function SentrowebCheckDialogBody({
 
         <p className="text-xs text-text-secondary">
           Every name searched is added to Sentroweb ongoing monitoring, the same as a manual search.
-          A name Sentroweb has searched before is not charged again.
+          A name Sentroweb has searched before is not charged again, but a search sent with different
+          details (a country or a date of birth) may count as a new name, at up to 1 credit each.
         </p>
 
         {submitError ? <Alert variant="error">{submitError}</Alert> : null}
@@ -262,14 +263,19 @@ function CandidateRow({
 
   return (
     <li className="flex flex-wrap items-center justify-between gap-2 px-3 py-2">
-      <Checkbox
-        size="sm"
-        label={candidate.name}
-        checked={checked}
-        disabled={disabled}
-        aria-describedby={detailId}
-        onChange={(event) => onChange(event.target.checked)}
-      />
+      <div className="min-w-0">
+        <Checkbox
+          size="sm"
+          label={candidate.name}
+          checked={checked}
+          disabled={disabled}
+          aria-describedby={detailId}
+          onChange={(event) => onChange(event.target.checked)}
+        />
+        <p className="ml-6 text-xs text-text-muted">
+          {formatSentrowebSearchDetails(candidate.searchDetails, candidate.searchType)}
+        </p>
+      </div>
       <span id={detailId} className="flex flex-wrap items-center gap-1.5">
         {roleLabels.map((role) => (
           <span key={role} className="badge badge-info badge-sm">

@@ -107,9 +107,9 @@ describe('Sentroweb client against a fake Sentroweb', () => {
     expect(outcome.png?.subarray(0, 8).toString('hex')).toBe('89504e470d0a1a0a');
     expect(parseSentrowebResult('ENTITY', outcome.json, outcome.domTitles, { expectedName: CLEAR_ENTITY }).status).toBe('CLEAR');
 
-    // The search form was filled exactly as decision D1 says: that type only, fuzzy off.
+    // An entity is searched by name and type only: fuzzy off, no country, birth date or gender.
     expect(server.searches).toEqual([
-      { name: CLEAR_ENTITY, searchEntity: true, searchIndividual: false, fuzzy: false },
+      { name: CLEAR_ENTITY, searchEntity: true, searchIndividual: false, fuzzy: false, country: '', dateOfBirth: '', gender: null },
     ]);
     expect(server.count('authenticate')).toBe(1);
     expect(server.count('checkquota')).toBe(1);
@@ -125,11 +125,135 @@ describe('Sentroweb client against a fake Sentroweb', () => {
     const session = await open(server);
     const outcome = await session.search({ name: 'Vladimir Putin', searchType: 'INDIVIDUAL' });
 
-    expect(outcome.domTitles).toHaveLength(3);
+    expect(outcome.domTitles).toHaveLength(2); // no country sent: no FATF heading
     const parsed = parseSentrowebResult('INDIVIDUAL', outcome.json, outcome.domTitles, { expectedName: 'Vladimir Putin' });
     expect(parsed).toMatchObject({ status: 'POSSIBLE_MATCH', categoryCounts: { FATF: 0, PEP: 2, SIP: 1 } });
     expect(outcome.pdf?.subarray(0, 4).toString('latin1')).toBe('%PDF');
     expect(server.searches[0]).toMatchObject({ searchIndividual: true, searchEntity: false, fuzzy: false });
+  });
+
+  describe('an individual searched with country and date of birth', () => {
+    const DETAILS = { country: 'Singapore', dateOfBirth: '1980-01-01' };
+
+    it('sends exactly the chosen country and typed birth date, no gender, and reads a clear result', async () => {
+      const server = await start();
+      const session = await open(server);
+      const outcome = await session.search({ name: CLEAR_INDIVIDUAL, searchType: 'INDIVIDUAL', ...DETAILS });
+
+      expect(server.searches).toHaveLength(1);
+      expect(server.searches[0]).toMatchObject({ country: 'Singapore', dateOfBirth: '1980-01-01', gender: null, fuzzy: false });
+      // With a country the FATF heading is drawn as well.
+      expect(outcome.domTitles).toHaveLength(3);
+      expect(outcome.domTitles[0]).toMatch(/^FATF/);
+      const parsed = parseSentrowebResult('INDIVIDUAL', outcome.json, outcome.domTitles, {
+        expectedName: CLEAR_INDIVIDUAL,
+        expectedCountry: 'Singapore',
+        expectedDateOfBirth: '1980-01-01',
+      });
+      expect(parsed).toMatchObject({ status: 'CLEAR', categoryCounts: { FATF: 0, PEP: 0, SIP: 0 } });
+    });
+
+    it('picks the exact option when several options contain the typed text (Guinea)', async () => {
+      const server = await start();
+      const session = await open(server);
+      await session.search({ name: CLEAR_INDIVIDUAL, searchType: 'INDIVIDUAL', country: 'Guinea' });
+      expect(server.searches[0].country).toBe('Guinea');
+    });
+
+    it('sends the country alone, or the birth date alone, when only one is held', async () => {
+      const server = await start();
+      const session = await open(server);
+      await session.search({ name: 'Zzqx Alpha Qwv', searchType: 'INDIVIDUAL', country: 'Malaysia' });
+      await session.search({ name: 'Zzqx Beta Qwv', searchType: 'INDIVIDUAL', dateOfBirth: '1975-12-31' });
+      expect(server.searches[0]).toMatchObject({ country: 'Malaysia', dateOfBirth: '' });
+      expect(server.searches[1]).toMatchObject({ country: '', dateOfBirth: '1975-12-31' });
+    });
+
+    it('a possible match with a country is still a possible match', async () => {
+      const server = await start();
+      const session = await open(server);
+      const outcome = await session.search({ name: 'Vladimir Putin', searchType: 'INDIVIDUAL', country: 'Russia' });
+      const parsed = parseSentrowebResult('INDIVIDUAL', outcome.json, outcome.domTitles, {
+        expectedName: 'Vladimir Putin',
+        expectedCountry: 'Russia',
+        expectedDateOfBirth: null,
+      });
+      expect(parsed.status).toBe('POSSIBLE_MATCH');
+    });
+
+    it('never sends details for an entity, even if some are passed', async () => {
+      const server = await start();
+      const session = await open(server);
+      await session.search({ name: CLEAR_ENTITY, searchType: 'ENTITY', ...DETAILS });
+      expect(server.searches[0]).toMatchObject({ country: '', dateOfBirth: '', searchEntity: true });
+    });
+
+    it('ignores values that are not exactly an option or YYYY-MM-DD (blank rather than a guess)', async () => {
+      const server = await start();
+      const session = await open(server);
+      await session.search({ name: CLEAR_INDIVIDUAL, searchType: 'INDIVIDUAL', country: 'Singaporean', dateOfBirth: '01/01/1980' });
+      expect(server.searches[0]).toMatchObject({ country: '', dateOfBirth: '' });
+    });
+
+    it('a country option that cannot be set fails before SEARCH: not submitted, nothing sent', async () => {
+      const server = await start({ countrySelection: 'ignored' });
+      const session = await open(server);
+      const error = await failureOf(session.search({ name: CLEAR_INDIVIDUAL, searchType: 'INDIVIDUAL', ...DETAILS }));
+      expect(error.code).toBe('LAYOUT_CHANGED');
+      expect(error.searchSubmitted).toBeFalsy();
+      expect(server.count('checkquota')).toBe(0);
+      expect(server.count('search')).toBe(0);
+    });
+
+    it('a page that shows another country than the one chosen fails before SEARCH', async () => {
+      const server = await start({ countrySelection: 'wrong-option' });
+      const session = await open(server);
+      const error = await failureOf(session.search({ name: CLEAR_INDIVIDUAL, searchType: 'INDIVIDUAL', ...DETAILS }));
+      expect(error.code).toBe('LAYOUT_CHANGED');
+      expect(error.searchSubmitted).toBeFalsy();
+      expect(server.count('checkquota')).toBe(0);
+    });
+
+    it('a birth date the page rewrites fails before SEARCH', async () => {
+      const server = await start({ rewriteDateOfBirth: true });
+      const session = await open(server);
+      const error = await failureOf(session.search({ name: CLEAR_INDIVIDUAL, searchType: 'INDIVIDUAL', ...DETAILS }));
+      expect(error.code).toBe('LAYOUT_CHANGED');
+      expect(error.searchSubmitted).toBeFalsy();
+      expect(server.count('checkquota')).toBe(0);
+    });
+
+    it('an answer that echoes another country or birth date is never CLEAR', async () => {
+      for (const echo of [{ echoCountry: 'Malaysia' }, { echoCountry: null }, { echoDateOfBirth: '1981-01-01' }, { echoDateOfBirth: null }]) {
+        const server = await start(echo);
+        const session = await open(server);
+        const outcome = await session.search({ name: CLEAR_INDIVIDUAL, searchType: 'INDIVIDUAL', ...DETAILS });
+        const parsed = parseSentrowebResult('INDIVIDUAL', outcome.json, outcome.domTitles, {
+          expectedName: CLEAR_INDIVIDUAL,
+          expectedCountry: 'Singapore',
+          expectedDateOfBirth: '1980-01-01',
+        });
+        expect(parsed.status, JSON.stringify(echo)).toBe('ERROR');
+        expect(parsed.errorCode).toBe('RESULT_MISMATCH');
+        await session.close();
+        await server.close();
+        fake = null;
+      }
+    });
+
+    it('a name-only individual search leaves the details blank and still reads CLEAR without a FATF heading', async () => {
+      const server = await start();
+      const session = await open(server);
+      const outcome = await session.search({ name: CLEAR_INDIVIDUAL, searchType: 'INDIVIDUAL' });
+      expect(server.searches[0]).toMatchObject({ country: '', dateOfBirth: '' });
+      expect(outcome.domTitles.some((title) => title.startsWith('FATF'))).toBe(false);
+      const parsed = parseSentrowebResult('INDIVIDUAL', outcome.json, outcome.domTitles, {
+        expectedName: CLEAR_INDIVIDUAL,
+        expectedCountry: null,
+        expectedDateOfBirth: null,
+      });
+      expect(parsed.status).toBe('CLEAR');
+    });
   });
 
   it('runs two searches in one session, each a fresh form, one login', async () => {
@@ -138,7 +262,7 @@ describe('Sentroweb client against a fake Sentroweb', () => {
     await session.search({ name: CLEAR_ENTITY, searchType: 'ENTITY' });
     const second = await session.search({ name: CLEAR_INDIVIDUAL, searchType: 'INDIVIDUAL' });
 
-    expect(second.domTitles).toHaveLength(3);
+    expect(second.domTitles).toHaveLength(2); // a name-only individual: PEP and SIP headings
     expect(server.searches.map((s) => s.name)).toEqual([CLEAR_ENTITY, CLEAR_INDIVIDUAL]);
     expect(server.searches[1]).toMatchObject({ searchIndividual: true, searchEntity: false });
     expect(server.count('authenticate')).toBe(1);
@@ -530,7 +654,7 @@ describe('Sentroweb client against a fake Sentroweb', () => {
     await session.search({ name: CLEAR_ENTITY, searchType: 'ENTITY' });
     const second = await session.search({ name: CLEAR_INDIVIDUAL, searchType: 'INDIVIDUAL' });
 
-    expect(second.domTitles).toHaveLength(3);
+    expect(second.domTitles).toHaveLength(2); // a name-only individual: PEP and SIP headings
     expect(server.count('authenticate')).toBe(2);
     expect(server.searches.map((s) => s.name)).toEqual([CLEAR_ENTITY, CLEAR_INDIVIDUAL]);
   });

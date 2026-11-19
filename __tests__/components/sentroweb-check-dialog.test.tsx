@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { candidatesResponse, jsonResponse } from '../helpers/sentroweb-ui-fixtures';
+import { candidate, candidatesResponse, jsonResponse } from '../helpers/sentroweb-ui-fixtures';
 import { SENTROWEB_ERROR_MESSAGES } from '@/lib/sentroweb/error-codes';
 import type { SentrowebCandidatesResponse } from '@/lib/sentroweb/types';
 
@@ -68,9 +68,9 @@ describe('SentrowebCheckDialog', () => {
     setupFetch({
       candidates: candidatesResponse(3, {
         candidates: [
-          { key: 'k1', name: 'Acme Holdings Pte Ltd', entityKind: 'CORPORATE', searchType: 'ENTITY', roles: ['SHAREHOLDER'], identifierType: null, identifier: null },
-          { key: 'k2', name: 'Alice Tan', entityKind: 'INDIVIDUAL', searchType: 'INDIVIDUAL', roles: ['DIRECTOR', 'MANAGING_DIRECTOR'], identifierType: null, identifier: null },
-          { key: 'k3', name: 'Bob Lim', entityKind: 'INDIVIDUAL', searchType: 'INDIVIDUAL', roles: ['NOMINEE_DIRECTOR'], identifierType: null, identifier: null },
+          { key: 'k1', name: 'Acme Holdings Pte Ltd', entityKind: 'CORPORATE', searchType: 'ENTITY', roles: ['SHAREHOLDER'], identifierType: null, identifier: null, searchDetails: { country: null, dateOfBirth: false, gender: false } },
+          { key: 'k2', name: 'Alice Tan', entityKind: 'INDIVIDUAL', searchType: 'INDIVIDUAL', roles: ['DIRECTOR', 'MANAGING_DIRECTOR'], identifierType: null, identifier: null, searchDetails: { country: null, dateOfBirth: false, gender: false } },
+          { key: 'k3', name: 'Bob Lim', entityKind: 'INDIVIDUAL', searchType: 'INDIVIDUAL', roles: ['NOMINEE_DIRECTOR'], identifierType: null, identifier: null, searchDetails: { country: null, dateOfBirth: false, gender: false } },
         ],
       }),
     });
@@ -94,6 +94,25 @@ describe('SentrowebCheckDialog', () => {
     fireEvent.click(screen.getByRole('checkbox', { name: 'Acme Holdings Pte Ltd' }));
     expect(screen.getByText('This will use up to 0 Sentroweb credits')).toBeInTheDocument();
     expect(runButton()).toBeDisabled();
+  });
+
+  it('shows what each person will be searched with, and warns that different details may count as a new name', async () => {
+    setupFetch({
+      candidates: candidatesResponse(2, {
+        candidates: [
+          candidate(1, { name: 'Alice Tan', searchDetails: { country: 'Singapore', dateOfBirth: true, gender: false } }),
+          candidate(2, { name: 'Bob Lim' }),
+          candidate(3, { name: 'Acme Pte Ltd', entityKind: 'CORPORATE', searchType: 'ENTITY' }),
+        ],
+      }),
+    });
+    renderDialog();
+    await screen.findByRole('checkbox', { name: 'Alice Tan' });
+    expect(screen.getByText('Sent: name, country (Singapore), date of birth. Not sent: gender')).toBeInTheDocument();
+    expect(screen.getByText('Sent: name. Not sent: country, date of birth, gender')).toBeInTheDocument();
+    expect(screen.getByText('Sent: name only')).toBeInTheDocument();
+    expect(screen.getByText(/different\s+details.*may count as a new name, at up to 1 credit each/)).toBeInTheDocument();
+    expect(document.body.textContent).not.toMatch(/\b19\d\d-\d\d-\d\d\b/);
   });
 
   it('ticks nobody when there are more than 10, blocks Run above 10 ticks and never sends more than 10 keys', async () => {

@@ -5,9 +5,11 @@
  */
 import { createHash } from 'node:crypto';
 import { prisma } from '@/lib/prisma';
+import { mapToSentrowebCountry } from '@/lib/sentroweb/countries';
 import { NotFoundError } from '@/lib/errors';
 import type {
   SentrowebCandidateDto,
+  SentrowebSearchDetailsDto,
   SentrowebEntityKindValue,
   SentrowebSearchTypeValue,
 } from '@/lib/sentroweb/types';
@@ -19,10 +21,52 @@ export const SCREENED_OFFICER_ROLES = [
   'NOMINEE_DIRECTOR',
 ] as const;
 
-export interface CandidateEntity extends SentrowebCandidateDto {
+export interface CandidateEntity extends Omit<SentrowebCandidateDto, 'searchDetails'> {
   /** Where the entry came from: the company, an officer row or a shareholder row. */
   sourceRefs: Array<{ type: 'COMPANY' | 'OFFICER' | 'SHAREHOLDER'; id: string }>;
   contactId: string | null;
+  /**
+   * What an individual is searched with besides the name (never for companies or corporate
+   * holders): the exact Sentroweb country option and the date of birth as YYYY-MM-DD. Null means
+   * that field is left blank. Gender is never held, so it is never sent.
+   */
+  country: string | null;
+  dateOfBirth: string | null;
+}
+
+/** The booleans the confirm dialog shows (never the date itself). */
+export function searchDetailsFor(candidate: Pick<CandidateEntity, 'country' | 'dateOfBirth'>): SentrowebSearchDetailsDto {
+  return { country: candidate.country, dateOfBirth: candidate.dateOfBirth !== null, gender: false };
+}
+
+/**
+ * The Sentroweb country for the nationalities held for one person: sent only when every stated
+ * nationality maps to the same option. A stated one that cannot be mapped counts as a
+ * disagreement, so the person is searched without a country rather than with a partial one.
+ */
+export function agreedCountry(nationalities: Array<string | null>): string | null {
+  const stated = nationalities.filter((value): value is string => typeof value === 'string' && value.trim() !== '');
+  const mapped = stated.map((value) => mapToSentrowebCountry(value));
+  if (mapped.length === 0 || mapped.some((value) => value === null)) return null;
+  return agreedValue(mapped);
+}
+
+/** YYYY-MM-DD of a stored date of birth, or null when it is missing or implausible. */
+export function formatDateOfBirth(value: Date | null | undefined, now: Date = new Date()): string | null {
+  if (!value || Number.isNaN(value.getTime())) return null;
+  const iso = value.toISOString().slice(0, 10);
+  const year = Number(iso.slice(0, 4));
+  if (year < 1900 || value.getTime() > now.getTime()) return null;
+  return iso;
+}
+
+/**
+ * One value for a person who appears in several records: the single distinct value, or null when
+ * the records disagree (the field is then left blank rather than picking one).
+ */
+function agreedValue(values: Array<string | null>): string | null {
+  const distinct = new Set(values.filter((value): value is string => value !== null));
+  return distinct.size === 1 ? [...distinct][0] : null;
 }
 
 function normaliseName(name: string): string {
@@ -46,6 +90,9 @@ interface RawEntry {
   contactId: string | null;
   identifierType: string | null;
   identifier: string | null;
+  /** The stored nationality text (contact first, then the record); mapped later. */
+  nationality: string | null;
+  dateOfBirth: string | null;
   source: CandidateEntity['sourceRefs'][number];
 }
 
@@ -153,6 +200,7 @@ export async function listCandidateEntities(tenantId: string, companyId: string)
           contactId: true,
           identificationType: true,
           identificationNumber: true,
+          nationality: true,
           contact: {
             select: {
               id: true,
@@ -163,6 +211,8 @@ export async function listCandidateEntities(tenantId: string, companyId: string)
               identificationType: true,
               identificationNumber: true,
               corporateUen: true,
+              nationality: true,
+              dateOfBirth: true,
               deletedAt: true,
             },
           },
@@ -177,6 +227,7 @@ export async function listCandidateEntities(tenantId: string, companyId: string)
           contactId: true,
           identificationType: true,
           identificationNumber: true,
+          nationality: true,
           contact: {
             select: {
               id: true,
@@ -187,6 +238,8 @@ export async function listCandidateEntities(tenantId: string, companyId: string)
               identificationType: true,
               identificationNumber: true,
               corporateUen: true,
+              nationality: true,
+              dateOfBirth: true,
               deletedAt: true,
             },
           },
@@ -205,6 +258,8 @@ export async function listCandidateEntities(tenantId: string, companyId: string)
       contactId: null,
       identifierType: 'UEN',
       identifier: company.uen,
+      nationality: null,
+      dateOfBirth: null,
       source: { type: 'COMPANY', id: company.id },
     },
   ];
@@ -229,6 +284,8 @@ export async function listCandidateEntities(tenantId: string, companyId: string)
       contactId: contact?.id ?? null,
       identifierType,
       identifier: contact?.identificationNumber ?? contact?.corporateUen ?? officer.identificationNumber ?? null,
+      nationality: cleanName(contact?.nationality ?? officer.nationality) || null,
+      dateOfBirth: formatDateOfBirth(contact?.dateOfBirth),
       source: { type: 'OFFICER', id: officer.id },
     });
   }
@@ -249,6 +306,8 @@ export async function listCandidateEntities(tenantId: string, companyId: string)
       contactId: contact?.id ?? null,
       identifierType,
       identifier: contact?.identificationNumber ?? contact?.corporateUen ?? shareholder.identificationNumber ?? null,
+      nationality: cleanName(contact?.nationality ?? shareholder.nationality) || null,
+      dateOfBirth: formatDateOfBirth(contact?.dateOfBirth),
       source: { type: 'SHAREHOLDER', id: shareholder.id },
     });
   }
@@ -271,6 +330,8 @@ export async function listCandidateEntities(tenantId: string, companyId: string)
       identifier: companyEntry.identifier,
       sourceRefs: [companyEntry.source],
       contactId: null,
+      country: null,
+      dateOfBirth: null,
     },
   ];
   const usedKeys = new Set(merged.map((candidate) => candidate.key));
@@ -291,6 +352,14 @@ export async function listCandidateEntities(tenantId: string, companyId: string)
       identifier: withId?.identifier ?? null,
       sourceRefs: group.entries.map((entry) => entry.source),
       contactId: [...group.contactIds].sort()[0] ?? null,
+      // Only an individual is searched with details. Where the records of one person disagree (two
+      // nationalities, two birth dates) that field is left blank instead of picking one.
+      ...(first.searchType === 'INDIVIDUAL' && !group.entries.some((entry) => entry.entityKind === 'CORPORATE')
+        ? {
+            country: agreedCountry(group.entries.map((entry) => entry.nationality)),
+            dateOfBirth: agreedValue(group.entries.map((entry) => entry.dateOfBirth)),
+          }
+        : { country: null, dateOfBirth: null }),
     });
   }
 

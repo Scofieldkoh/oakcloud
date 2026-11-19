@@ -15216,6 +15216,8 @@ export const SentrowebCheckResultScalarFieldEnum = {
   sentrowebReportId: 'sentrowebReportId',
   monitorEnabled: 'monitorEnabled',
   searchSubmittedAt: 'searchSubmittedAt',
+  requestedCountry: 'requestedCountry',
+  requestedDateOfBirth: 'requestedDateOfBirth',
   errorCode: 'errorCode',
   documentId: 'documentId',
   evidencePngKey: 'evidencePngKey',
@@ -17906,3 +17908,4 @@ export type PrismaAction =
  * `PrismaClient` proxy available in interactive transactions.
  */
 export type TransactionClient = Omit<DefaultPrismaClient, runtime.ITXClientDenyList>
+

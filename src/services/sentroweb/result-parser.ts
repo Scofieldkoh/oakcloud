@@ -45,6 +45,13 @@ export interface ParsedSentrowebResult {
 export interface ParseOptions {
   /** The name that was typed into the search box. A response for another name is an error. */
   expectedName?: string;
+  /**
+   * What the search was sent with (an individual's country option and YYYY-MM-DD birth date), null
+   * for "left blank". Left undefined, the echo is not checked. When given, Sentroweb's response
+   * must echo exactly that, otherwise it describes another search (RESULT_MISMATCH).
+   */
+  expectedCountry?: string | null;
+  expectedDateOfBirth?: string | null;
 }
 
 type Json = Record<string, unknown>;
@@ -164,6 +171,13 @@ function parseDomTitles(titles: readonly string[]): DomCounts {
   return { counts, malformed, unknownHits };
 }
 
+/** An echoed optional field: absent, null and "" all mean blank. Anything but a string is odd. */
+function echoedText(value: unknown): string | null {
+  if (value === undefined || value === null) return '';
+  if (typeof value !== 'string') return null;
+  return value.trim();
+}
+
 export function parseSentrowebResult(
   searchType: SentrowebSearchTypeValue,
   searchJson: unknown,
@@ -171,7 +185,11 @@ export function parseSentrowebResult(
   options: ParseOptions = {},
 ): ParsedSentrowebResult {
   const expected = SENTROWEB_EXPECTED_CATEGORIES[searchType] as readonly SentrowebCategory[];
-  const domOptional = SENTROWEB_DOM_OPTIONAL_CATEGORIES[searchType] as readonly SentrowebCategory[];
+  // Sentroweb draws the FATF heading for an individual searched with a country (both recorded
+  // country searches show it) and leaves it out for a name-only search. With a country sent every
+  // heading is therefore required; without one the FATF heading may be absent.
+  const countrySent = typeof options.expectedCountry === 'string' && options.expectedCountry !== '';
+  const domOptional = (countrySent ? [] : SENTROWEB_DOM_OPTIONAL_CATEGORIES[searchType]) as readonly SentrowebCategory[];
 
   // --- JSON source -----------------------------------------------------------------------------
   // Observed shape: an array with exactly one object. Anything else is a layout change.
@@ -211,6 +229,17 @@ export function parseSentrowebResult(
     if (options.expectedName !== undefined) {
       const echoed = text(record.name);
       if (!echoed || normaliseName(echoed) !== normaliseName(options.expectedName)) describesOurSearch = false;
+    }
+    // What was sent besides the name must come back unchanged: a response for another country or
+    // birth date is another search, and is never read as clear for this one.
+    if (options.expectedCountry !== undefined && echoedText(record.country) !== (options.expectedCountry ?? '')) {
+      describesOurSearch = false;
+    }
+    if (
+      options.expectedDateOfBirth !== undefined &&
+      echoedText(record.dateOfBirth) !== (options.expectedDateOfBirth ?? '')
+    ) {
+      describesOurSearch = false;
     }
   }
 

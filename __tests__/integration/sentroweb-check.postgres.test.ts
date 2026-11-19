@@ -415,6 +415,151 @@ describePostgres('Sentroweb check service (PostgreSQL)', () => {
       });
     });
 
+    describe('country and date of birth sent with an individual', () => {
+      async function person(
+        name: string,
+        data: { nationality?: string; dateOfBirth?: Date; idNumber?: string } = {},
+      ) {
+        return prisma.contact.create({
+          data: {
+            tenantId,
+            contactType: 'INDIVIDUAL',
+            fullName: name,
+            ...(data.nationality ? { nationality: data.nationality } : {}),
+            ...(data.dateOfBirth ? { dateOfBirth: data.dateOfBirth } : {}),
+            ...(data.idNumber ? { identificationType: 'NRIC' as const, identificationNumber: data.idNumber } : {}),
+          },
+        });
+      }
+      const detailsOf = async (companyId: string, name: string) => {
+        const candidates = await service.getCandidatesInfo(tenantId, companyId);
+        return candidates.candidates.find((c) => c.name === name)?.searchDetails;
+      };
+      const rowOf = async (runId: string, name: string) =>
+        prisma.sentrowebCheckResult.findFirstOrThrow({ where: { runId, name } });
+
+      it('takes the nationality and birth date of the linked contact, never returning the date itself', async () => {
+        const companyId = await makeCompany();
+        const contact = await person('Dana Details', { nationality: 'Singaporean', dateOfBirth: new Date('1980-02-29T00:00:00Z') });
+        await prisma.companyOfficer.create({
+          data: { companyId, contactId: contact.id, role: 'DIRECTOR', name: 'Dana Details', nationality: 'Malaysian', isCurrent: true },
+        });
+        // The contact wins over the officer row, like the identification number does.
+        expect(await detailsOf(companyId, 'Dana Details')).toEqual({ country: 'Singapore', dateOfBirth: true, gender: false });
+        const info = await service.getCandidatesInfo(tenantId, companyId);
+        expect(JSON.stringify(info)).not.toContain('1980');
+        expect(JSON.stringify(info)).not.toContain('requestedDateOfBirth');
+      });
+
+      it('falls back to the nationality on the record when there is no contact', async () => {
+        const companyId = await makeCompany();
+        await prisma.companyOfficer.create({
+          data: { companyId, role: 'DIRECTOR', name: 'Rina Record', nationality: 'MY', isCurrent: true },
+        });
+        await prisma.companyShareholder.create({
+          data: { companyId, name: 'Sam Sharer', shareholderType: 'INDIVIDUAL', nationality: 'Indian', numberOfShares: 1, isCurrent: true },
+        });
+        expect(await detailsOf(companyId, 'Rina Record')).toEqual({ country: 'Malaysia', dateOfBirth: false, gender: false });
+        expect(await detailsOf(companyId, 'Sam Sharer')).toEqual({ country: 'India', dateOfBirth: false, gender: false });
+      });
+
+      it('leaves the country blank when it cannot be mapped with certainty, and never fails', async () => {
+        const companyId = await makeCompany();
+        for (const [name, nationality] of [['Una Unknown', 'Atlantean'], ['Dom Dominican', 'Dominican'], ['Eva Empty', '  ']]) {
+          await prisma.companyOfficer.create({ data: { companyId, role: 'DIRECTOR', name, nationality, isCurrent: true } });
+        }
+        for (const name of ['Una Unknown', 'Dom Dominican', 'Eva Empty']) {
+          expect(await detailsOf(companyId, name)).toEqual({ country: null, dateOfBirth: false, gender: false });
+        }
+      });
+
+      it('leaves a field blank when the records of one person disagree', async () => {
+        const companyId = await makeCompany();
+        const id = `S${Math.floor(1_000_000 + Math.random() * 8_999_999)}K`;
+        await prisma.companyOfficer.create({
+          data: { companyId, role: 'DIRECTOR', name: 'Dee Disagree', identificationType: 'NRIC', identificationNumber: id, nationality: 'Singaporean', isCurrent: true },
+        });
+        await prisma.companyShareholder.create({
+          data: { companyId, name: 'Dee Disagree', shareholderType: 'INDIVIDUAL', identificationType: 'NRIC', identificationNumber: id, nationality: 'Malaysian', numberOfShares: 1, isCurrent: true },
+        });
+        // Agreeing records keep the value; a stated but unmappable one counts as a disagreement.
+        await prisma.companyOfficer.create({
+          data: { companyId, role: 'DIRECTOR', name: 'Ann Agree', identificationType: 'NRIC', identificationNumber: `${id.slice(0, -1)}A`, nationality: 'Singaporean', isCurrent: true },
+        });
+        await prisma.companyShareholder.create({
+          data: { companyId, name: 'Ann Agree', shareholderType: 'INDIVIDUAL', identificationType: 'NRIC', identificationNumber: `${id.slice(0, -1)}A`, nationality: 'SG', numberOfShares: 1, isCurrent: true },
+        });
+        await prisma.companyOfficer.create({
+          data: { companyId, role: 'DIRECTOR', name: 'Una Partial', identificationType: 'NRIC', identificationNumber: `${id.slice(0, -1)}B`, nationality: 'Singaporean', isCurrent: true },
+        });
+        await prisma.companyShareholder.create({
+          data: { companyId, name: 'Una Partial', shareholderType: 'INDIVIDUAL', identificationType: 'NRIC', identificationNumber: `${id.slice(0, -1)}B`, nationality: 'Atlantean', numberOfShares: 1, isCurrent: true },
+        });
+        expect((await detailsOf(companyId, 'Dee Disagree'))?.country).toBeNull();
+        expect((await detailsOf(companyId, 'Ann Agree'))?.country).toBe('Singapore');
+        expect((await detailsOf(companyId, 'Una Partial'))?.country).toBeNull();
+      });
+
+      it('never sends details for the company or a corporate shareholder, and ignores an implausible birth date', async () => {
+        const companyId = await makeCompany();
+        const corp = await prisma.contact.create({
+          data: { tenantId, contactType: 'CORPORATE', fullName: 'Corp Holder Pte Ltd', corporateName: 'Corp Holder Pte Ltd', corporateUen: `201${randomUUID().slice(0, 6)}Z`, nationality: 'Singaporean' },
+        });
+        await prisma.companyShareholder.create({
+          data: { companyId, contactId: corp.id, name: 'Corp Holder Pte Ltd', shareholderType: 'CORPORATE', numberOfShares: 1, isCurrent: true },
+        });
+        const future = await person('Fay Future', { nationality: 'Singaporean', dateOfBirth: new Date('2999-01-01T00:00:00Z') });
+        const ancient = await person('Abe Ancient', { dateOfBirth: new Date('1850-01-01T00:00:00Z') });
+        for (const [contact, name] of [[future, 'Fay Future'], [ancient, 'Abe Ancient']] as const) {
+          await prisma.companyOfficer.create({ data: { companyId, contactId: contact.id, role: 'DIRECTOR', name, isCurrent: true } });
+        }
+        const none = { country: null, dateOfBirth: false, gender: false };
+        expect(await detailsOf(companyId, 'Test Holdings Pte Ltd')).toEqual(none);
+        expect(await detailsOf(companyId, 'Corp Holder Pte Ltd')).toEqual(none);
+        expect(await detailsOf(companyId, 'Fay Future')).toEqual({ ...none, country: 'Singapore' });
+        expect(await detailsOf(companyId, 'Abe Ancient')).toEqual(none);
+      });
+
+      it('stores what the run will send, passes exactly that to the client, and the API shows only yes/no for the date', async () => {
+        const companyId = await makeCompany();
+        const contact = await person('Gia Given', { nationality: 'Singaporean', dateOfBirth: new Date('1990-07-15T00:00:00Z') });
+        await prisma.companyOfficer.create({ data: { companyId, contactId: contact.id, role: 'DIRECTOR', name: 'Gia Given', isCurrent: true } });
+        await prisma.companyOfficer.create({ data: { companyId, role: 'DIRECTOR', name: 'Nora Nameonly', isCurrent: true } });
+        const { runId } = await queue(companyId, ['Gia Given', 'Nora Nameonly']);
+        expect(await rowOf(runId, 'Gia Given')).toMatchObject({ requestedCountry: 'Singapore', requestedDateOfBirth: '1990-07-15' });
+        expect(await rowOf(runId, 'Nora Nameonly')).toMatchObject({ requestedCountry: null, requestedDateOfBirth: null });
+
+        const client = makeClient();
+        await service.processRun(runId, { client, config: CONFIG });
+        expect(client.searches.find((s) => s.name === 'Gia Given')).toMatchObject({ country: 'Singapore', dateOfBirth: '1990-07-15' });
+        expect(client.searches.find((s) => s.name === 'Nora Nameonly')).toMatchObject({ country: null, dateOfBirth: null });
+        const run = await prisma.sentrowebCheckRun.findUniqueOrThrow({ where: { id: runId }, include: { results: true } });
+        expect(run.overallResult).toBe('CLEAR');
+
+        const detail = await service.getRun(tenantId, companyId, runId);
+        const dto = detail.results?.find((r) => r.name === 'Gia Given');
+        expect(dto?.searchDetails).toEqual({ country: 'Singapore', dateOfBirth: true, gender: false });
+        expect(JSON.stringify(detail)).not.toContain('1990-07-15');
+      });
+
+      it('a response that echoes another country or birth date is ERROR RESULT_MISMATCH, never CLEAR', async () => {
+        const companyId = await makeCompany();
+        const contact = await person('Mia Mismatch', { nationality: 'Singaporean', dateOfBirth: new Date('1990-07-15T00:00:00Z') });
+        await prisma.companyOfficer.create({ data: { companyId, contactId: contact.id, role: 'DIRECTOR', name: 'Mia Mismatch', isCurrent: true } });
+        const { runId } = await queue(companyId, ['Mia Mismatch']);
+        const client = makeClient();
+        const loaded = loadCase('individual-clear');
+        loaded.json[0].name = 'Mia Mismatch';
+        loaded.json[0].country = 'Malaysia'; // not what was sent
+        loaded.json[0].dateOfBirth = '1990-07-15';
+        client.scripts.set('Mia Mismatch', {
+          outcome: { json: loaded.json, domTitles: loaded.titles, pdf: Buffer.from('%PDF-1.4 x'), png: Buffer.from('89504e470d0a1a0a', 'hex') },
+        });
+        await service.processRun(runId, { client, config: CONFIG });
+        expect(await rowOf(runId, 'Mia Mismatch')).toMatchObject({ status: 'ERROR', errorCode: 'RESULT_MISMATCH' });
+      });
+    });
+
     it('does not find another tenant’s company', async () => {
       await expect(service.getCandidatesInfo(tenantId, otherCompanyId)).rejects.toMatchObject({ statusCode: 404 });
       await expect(

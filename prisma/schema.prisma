@@ -5568,6 +5568,10 @@ model SentrowebCheckResult {
   sentrowebReportId String?
   monitorEnabled    Boolean?
   searchSubmittedAt DateTime?
+  /// Sentroweb country option chosen from the person's stored nationality (null: none sent).
+  requestedCountry  String?
+  /// Date of birth in YYYY-MM-DD from the linked contact (null: none sent).
+  requestedDateOfBirth String?
   errorCode         String?               @db.VarChar(64)
   documentId        String?
   evidencePngKey    String?

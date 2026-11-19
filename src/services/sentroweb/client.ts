@@ -32,6 +32,7 @@ import {
   SENTROWEB_SELECTORS,
   SENTROWEB_XHR,
 } from '@/lib/sentroweb/selectors';
+import { isSentrowebCountry } from '@/lib/sentroweb/countries';
 import type { SentrowebSearchTypeValue } from '@/lib/sentroweb/types';
 import { SentrowebError } from './errors';
 
@@ -63,6 +64,13 @@ export interface SentrowebSearchRequest {
    * is cancelled at the confirm box (UNEXPECTED_CREDIT_COST) and only a free repeat goes through.
    */
   maxCredits?: number;
+  /**
+   * An individual's details besides the name. Both are exactly what is typed or chosen: `country`
+   * is one option of Sentroweb's country list, `dateOfBirth` is YYYY-MM-DD. Null or absent leaves
+   * the field blank. Ignored for entities. Gender is never sent: Oakcloud holds none.
+   */
+  country?: string | null;
+  dateOfBirth?: string | null;
 }
 
 export interface SentrowebSearchOutcome {
@@ -107,6 +115,19 @@ const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve,
 
 function throwIfAborted(signal: AbortSignal | undefined, searchSubmitted = false): void {
   if (signal?.aborted) throw new SentrowebError('TIMEOUT', { searchSubmitted });
+}
+
+interface SearchDetails {
+  country: string | null;
+  dateOfBirth: string | null;
+}
+
+/** Only an individual is searched with details, and only with values of the exact expected shape. */
+function detailsFor(request: SentrowebSearchRequest): SearchDetails {
+  if (request.searchType !== 'INDIVIDUAL') return { country: null, dateOfBirth: null };
+  const country = request.country && isSentrowebCountry(request.country) ? request.country : null;
+  const dateOfBirth = request.dateOfBirth && /^\d{4}-\d{2}-\d{2}$/.test(request.dateOfBirth) ? request.dateOfBirth : null;
+  return { country, dateOfBirth };
 }
 
 async function pollUntil<T>(
@@ -359,9 +380,15 @@ class Session implements SentrowebSession {
       if (typed !== request.name) throw new SentrowebError('LAYOUT_CHANGED');
     });
     await this.phase('tick-type', () => this.setSearchType(request.searchType, signal));
+    // Details only for an individual; an entity (or a person with nothing usable) leaves them blank.
+    const details = detailsFor(request);
+    await this.phase('set-details', () => this.setDetails(details, signal));
     await this.phase('submit-enabled', async () => {
       const typedAfter = await page.$eval(selectors.search.nameInput, (input) => (input as HTMLInputElement).value);
       if (typedAfter !== request.name) throw new SentrowebError('LAYOUT_CHANGED');
+      // The search must go out exactly as intended: every field is read back one last time.
+      await this.verifyDetails(details);
+      if (!(await this.searchTypeIsSet(request.searchType))) throw new SentrowebError('LAYOUT_CHANGED');
       await pollUntil(async () => (await page.$(selectors.search.submitEnabled)) !== null, {
         timeoutMs: this.stepMs,
         signal,
@@ -614,6 +641,98 @@ class Session implements SentrowebSession {
     }
   }
 
+  /**
+   * Chooses the country and types the birth date, then reads both back. A field that cannot be set
+   * to exactly the wanted value fails the attempt here, before SEARCH, so a different search than
+   * intended is never submitted. Blank wanted values are left alone (and checked to be blank).
+   */
+  private async setDetails(details: SearchDetails, signal?: AbortSignal): Promise<void> {
+    const { page } = this;
+    const search = SENTROWEB_SELECTORS.search;
+    if (details.country !== null) {
+      throwIfAborted(signal);
+      await page.click(search.countryDropdown);
+      await sleep(CHECKBOX_SETTLE_MS);
+      // Typing narrows the list; the option is then picked by its exact text, never by "first".
+      await page.keyboard.type(details.country);
+      await sleep(CHECKBOX_SETTLE_MS);
+      // The recorded flow typed the name and pressed Enter, which takes the first listed option.
+      // That is used only when the first listed option is exactly the wanted one; otherwise (the
+      // text also narrows to other countries: "Guinea") the exact option is clicked.
+      const firstListed = await page.evaluate(
+        (itemSelector, textSelector) => {
+          const visible = Array.from(document.querySelectorAll(itemSelector)).filter((item) => {
+            const text = (item.querySelector(textSelector)?.textContent ?? '').trim();
+            return text !== '' && (item as HTMLElement).offsetParent !== null;
+          });
+          return (visible[0]?.querySelector(textSelector)?.textContent ?? '').replace(/\s+/g, ' ').trim();
+        },
+        search.countryItem,
+        search.countryItemText,
+      );
+      if (firstListed === details.country) {
+        await page.keyboard.press('Enter');
+      } else {
+        const option = await page.evaluateHandle(
+          (itemSelector, textSelector, wanted) => {
+            const matches = Array.from(document.querySelectorAll(itemSelector)).filter(
+              (item) => (item.querySelector(textSelector)?.textContent ?? '').replace(/\s+/g, ' ').trim() === wanted,
+            );
+            return matches.length === 1 ? matches[0] : null;
+          },
+          search.countryItem,
+          search.countryItemText,
+          details.country,
+        );
+        const element = option.asElement() as ElementHandle<Element> | null;
+        if (!element) throw new SentrowebError('LAYOUT_CHANGED');
+        await element.click();
+      }
+      await sleep(CHECKBOX_SETTLE_MS);
+    }
+    if (details.dateOfBirth !== null) {
+      throwIfAborted(signal);
+      await page.type(search.dateOfBirthInput, details.dateOfBirth);
+      await sleep(CHECKBOX_SETTLE_MS);
+    }
+    await this.verifyDetails(details);
+  }
+
+  /** The country shown and the birth date typed must be exactly the wanted ones (blank when null). */
+  private async verifyDetails(details: SearchDetails): Promise<void> {
+    const search = SENTROWEB_SELECTORS.search;
+    const current = await this.page
+      .evaluate(
+        (countrySelector, defaultClass, dobSelector) => {
+          const country = document.querySelector(countrySelector);
+          const dob = document.querySelector(dobSelector) as HTMLInputElement | null;
+          if (!country || !dob) return null;
+          return {
+            country: country.classList.contains(defaultClass)
+              ? ''
+              : (country.textContent ?? '').replace(/\s+/g, ' ').trim(),
+            dateOfBirth: dob.value,
+          };
+        },
+        search.countryText,
+        search.countryDefaultClass,
+        search.dateOfBirthInput,
+      )
+      .catch(() => null);
+    if (!current) throw new SentrowebError('LAYOUT_CHANGED');
+    if (current.country !== (details.country ?? '') || current.dateOfBirth !== (details.dateOfBirth ?? '')) {
+      throw new SentrowebError('LAYOUT_CHANGED');
+    }
+  }
+
+  private async searchTypeIsSet(searchType: SentrowebSearchTypeValue): Promise<boolean> {
+    const { individualLabelText, entityLabelText } = SENTROWEB_SELECTORS.search;
+    const states = await this.checkboxStates();
+    const checked = (label: string) => states.find((state) => state.label === label)?.checked;
+    const wantIndividual = searchType === 'INDIVIDUAL';
+    return checked(individualLabelText) === wantIndividual && checked(entityLabelText) === !wantIndividual;
+  }
+
   /** Ticks exactly the wanted search type, with fuzzy matching off, and verifies the result. */
   private async setSearchType(searchType: SentrowebSearchTypeValue, signal?: AbortSignal): Promise<void> {
     const { individualLabelText, entityLabelText, fuzzyLabelText } = SENTROWEB_SELECTORS.search;
@@ -622,6 +741,8 @@ class Session implements SentrowebSession {
       [wantIndividual ? individualLabelText : entityLabelText, true],
       [wantIndividual ? entityLabelText : individualLabelText, false],
       [fuzzyLabelText, SENTROWEB_SEARCH_OPTIONS.fuzzy],
+      // Gender is never sent: both boxes must stay unticked.
+      ...SENTROWEB_SELECTORS.search.genderLabelTexts.map((label): [string, boolean] => [label, false]),
     ];
 
     for (const [label, wanted] of expected) {

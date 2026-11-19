@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 import type {
   SentrowebCategoryCounts,
   SentrowebResultStatusValue,
+  SentrowebSearchDetailsDto,
   SentrowebRunDto,
 } from '@/lib/sentroweb/types';
 
@@ -101,6 +102,27 @@ export function sentrowebRoleLabel(role: string): string {
 
 export function sentrowebSearchTypeLabel(searchType: string): string {
   return searchType === 'INDIVIDUAL' ? 'Individual' : 'Entity';
+}
+
+/**
+ * What a search is (or was) sent with, for a line of small text under a name:
+ * "Sent: name, country (Singapore), date of birth. Not sent: gender". The date itself is never shown.
+ * A company or a person with nothing else on record reads "Sent: name only".
+ */
+export function formatSentrowebSearchDetails(
+  details: SentrowebSearchDetailsDto | null | undefined,
+  searchType: string,
+): string {
+  if (searchType !== 'INDIVIDUAL') return 'Sent: name only';
+  const sent = ['name'];
+  const notSent: string[] = [];
+  if (details?.country) sent.push(`country (${details.country})`);
+  else notSent.push('country');
+  if (details?.dateOfBirth) sent.push('date of birth');
+  else notSent.push('date of birth');
+  // Oakcloud holds no gender, so it is never sent.
+  notSent.push('gender');
+  return `Sent: ${sent.join(', ')}. Not sent: ${notSent.join(', ')}`;
 }
 
 export const SENTROWEB_CATEGORY_LABELS: Record<string, string> = {

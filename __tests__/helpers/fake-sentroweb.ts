@@ -8,6 +8,7 @@
  */
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 import type { AddressInfo } from 'node:net';
+import { SENTROWEB_COUNTRIES } from '@/lib/sentroweb/countries';
 import { cloneFixtureJson, fixtureText, type FixtureCase } from './sentroweb-fixtures';
 
 export const FAKE_ACCOUNT_ID = 'ACCT-FAKE-4242';
@@ -61,6 +62,13 @@ export interface FakeOptions {
   expireSessionOnMainRequest: number | null;
   /** Maps a search to the fixture that answers it. */
   resolveCase: (name: string, searchType: 'INDIVIDUAL' | 'ENTITY') => FixtureCase;
+  /** `ignored`: clicking a country option does nothing, so the dropdown keeps showing its placeholder. */
+  countrySelection: 'works' | 'ignored' | 'wrong-option';
+  /** The page rewrites a typed birth date (like a date picker that reformats it). */
+  rewriteDateOfBirth: boolean;
+  /** What the search answer echoes as country / birth date instead of what was sent (null: nothing). */
+  echoCountry: string | null | undefined;
+  echoDateOfBirth: string | null | undefined;
 }
 
 const DEFAULTS: FakeOptions = {
@@ -82,6 +90,10 @@ const DEFAULTS: FakeOptions = {
   searchStatus: 200,
   omitResultTitles: false,
   expireSessionOnMainRequest: null,
+  countrySelection: 'works',
+  rewriteDateOfBirth: false,
+  echoCountry: undefined,
+  echoDateOfBirth: undefined,
   resolveCase: (name, searchType) => {
     const lower = name.toLowerCase();
     if (lower.includes('putin')) return 'individual-match';
@@ -108,9 +120,25 @@ export interface FakeSentroweb {
   options: FakeOptions;
   events: FakeEvent[];
   /** Search requests the endpoint received: `{ name, searchEntity, searchIndividual, fuzzy }`. */
-  searches: Array<{ name: string; searchEntity: boolean; searchIndividual: boolean; fuzzy: boolean }>;
+  searches: Array<{
+    name: string;
+    searchEntity: boolean;
+    searchIndividual: boolean;
+    fuzzy: boolean;
+    country: string;
+    dateOfBirth: string;
+    gender: unknown;
+  }>;
   count(type: FakeEvent['type']): number;
   close(): Promise<void>;
+}
+
+function countryDropdown(options: FakeOptions): string {
+  const items = SENTROWEB_COUNTRIES.map(
+    (country) =>
+      `<div role=\"option\" class=\"item\"><i class=\"${country.code ?? ''} flag\"></i><span class=\"text\">${country.name}</span></div>`,
+  ).join('');
+  return `<div role="combobox" aria-expanded="false" class="ui fluid search selection dropdown searchCountry"><input aria-autocomplete="list" autocomplete="off" class="search" tabindex="0" type="text" value=""><div aria-atomic="true" aria-live="polite" role="alert" class="divider default text">Country/ Region</div><i aria-hidden="true" class="dropdown icon"></i><div role="listbox" class="menu transition"><div role="option" class="active selected item"><span class="text"></span></div>${items}</div></div><script>window.__countrySelection = ${JSON.stringify(options.countrySelection)}; window.__rewriteDob = ${JSON.stringify(options.rewriteDateOfBirth)};</script>`;
 }
 
 const PAGE_STYLE = `
@@ -121,6 +149,10 @@ const PAGE_STYLE = `
   i.icon { display: inline-block; width: 24px; height: 24px; background: #ccc; }
   button { padding: 6px 12px; }
   .menu .item { display: block; padding: 4px; }
+  .searchCountry { position: relative; border: 1px solid #888; padding: 4px; width: 320px; }
+  .searchCountry .menu.transition { display: none; max-height: 160px; overflow: auto; background: #fff; }
+  .searchCountry.visible .menu.transition { display: block; }
+  .searchCountry .menu .item.filtered { display: none; }
 `;
 
 function loginPage(): string {
@@ -162,6 +194,7 @@ function mainPage(options: FakeOptions): string {
 </div>
 <form class="ui large error form" onsubmit="return false">
   <div class="required field"><label>Search name</label><div class="ui input"><input placeholder="Search name" type="text" value=""></div></div>
+  <div class="field"><label>Country/ Region</label>${countryDropdown(options)}</div>
   <div class="fields">${checkbox('Individual')}${checkbox('Entity')}</div>
   <div class="fields">${checkbox('Male')}${checkbox('Female')}</div>
   <div class="field"><label>Date of birth</label><input name="birthDate" placeholder="YYYY-MM-DD" type="text" value=""></div>
@@ -194,6 +227,45 @@ function mainPage(options: FakeOptions): string {
   }));
   nameInput.addEventListener('input', refresh);
 
+  // The country dropdown: a click opens it, typing filters, a click on an option shows its text.
+  const dropdown = form.querySelector('.searchCountry');
+  const filter = dropdown.querySelector('input.search');
+  const shown = dropdown.querySelector(':scope > .text');
+  const dobInput = form.querySelector('input[name="birthDate"]');
+  dropdown.addEventListener('click', () => { dropdown.classList.add('visible'); filter.focus(); });
+  filter.addEventListener('input', () => {
+    const term = filter.value.toLowerCase();
+    dropdown.querySelectorAll('.menu .item').forEach((item) =>
+      item.classList.toggle('filtered', term !== '' && !item.textContent.toLowerCase().includes(term)));
+  });
+  const choose = (item) => {
+    if (window.__countrySelection === 'ignored') { dropdown.classList.remove('visible'); return; }
+    let chosen = item.textContent.trim();
+    if (window.__countrySelection === 'wrong-option') {
+      const items = Array.from(dropdown.querySelectorAll('.menu .item'));
+      chosen = items[(items.indexOf(item) + 1) % items.length].textContent.trim();
+    }
+    shown.className = 'text';
+    shown.textContent = chosen;
+    filter.value = '';
+    dropdown.classList.remove('visible');
+  };
+  dropdown.querySelectorAll('.menu .item').forEach((item) => item.addEventListener('click', (event) => {
+    event.stopPropagation();
+    choose(item);
+  }));
+  // Enter takes the first option still listed, like the real dropdown.
+  filter.addEventListener('keydown', (event) => {
+    if (event.key !== 'Enter') return;
+    event.preventDefault();
+    const first = Array.from(dropdown.querySelectorAll('.menu .item')).find((item) => item.textContent.trim() !== '' && !item.classList.contains('filtered'));
+    if (first) choose(first);
+  });
+  dobInput.addEventListener('input', () => {
+    if (window.__rewriteDob) dobInput.value = dobInput.value.replace(/-/g, '/');
+  });
+  const chosenCountry = () => (shown.classList.contains('default') ? '' : shown.textContent.trim());
+
   fetch('/sentroweb-service/account/private/initializeApp', { method: 'POST' }).then(async (response) => {
     if (!response.ok) return;
     const body = await response.json();
@@ -211,7 +283,7 @@ function mainPage(options: FakeOptions): string {
 
   const host = document.getElementById('modal-host');
   const query = () => ({ queries: [{
-    country: '', fuzzy: isChecked('Fuzzy Search'), name: nameInput.value, dateOfBirth: '',
+    country: chosenCountry(), fuzzy: isChecked('Fuzzy Search'), name: nameInput.value, dateOfBirth: dobInput.value,
     searchEntity: isChecked('Entity'), searchIndividual: isChecked('Individual'), gender: null }] });
 
   submit.addEventListener('click', async (event) => {
@@ -227,7 +299,7 @@ function mainPage(options: FakeOptions): string {
       if (!search.ok) return;
       await search.json();
       const html = await (await fetch('/__result-html?name=' + encodeURIComponent(nameInput.value) +
-        '&entity=' + isChecked('Entity'))).text();
+        '&entity=' + isChecked('Entity') + '&country=' + encodeURIComponent(chosenCountry()))).text();
       document.getElementById('result').innerHTML = html;
       for (const [selector, what] of [['.screening-result-save-button', 'save'], ['.screening-result-cancel-button', 'result-cancel'],
         ['.cdd-checkbox label', 'false-match']]) {
@@ -353,6 +425,9 @@ export async function startFakeSentroweb(overrides: Partial<FakeOptions> = {}): 
           searchEntity: query.searchEntity === true,
           searchIndividual: query.searchIndividual === true,
           fuzzy: query.fuzzy === true,
+          country: String(query.country ?? ''),
+          dateOfBirth: String(query.dateOfBirth ?? ''),
+          gender: query.gender ?? null,
         });
         events.push({ type: 'search', detail: name });
         const repeated = searchedNames.has(name);
@@ -366,6 +441,10 @@ export async function startFakeSentroweb(overrides: Partial<FakeOptions> = {}): 
         payload[0].name = name;
         payload[0].searchEntity = searchType === 'ENTITY';
         payload[0].searchIndividual = searchType === 'INDIVIDUAL';
+        // Like the real answer, it echoes what the search was sent with.
+        payload[0].country = options.echoCountry !== undefined ? (options.echoCountry ?? '') : String(query.country ?? '');
+        payload[0].dateOfBirth =
+          options.echoDateOfBirth !== undefined ? (options.echoDateOfBirth ?? '') : String(query.dateOfBirth ?? '');
         return json(response, payload);
       }
 
@@ -373,7 +452,12 @@ export async function startFakeSentroweb(overrides: Partial<FakeOptions> = {}): 
         const name = url.searchParams.get('name') ?? '';
         const searchType = url.searchParams.get('entity') === 'true' ? 'ENTITY' : 'INDIVIDUAL';
         if (options.omitResultTitles) return html(response, '<div class="accordion ui"></div>');
-        return html(response, fixtureText(`result-${options.resolveCase(name, searchType)}.html`));
+        let page = fixtureText(`result-${options.resolveCase(name, searchType)}.html`);
+        // Like the real page: the FATF heading is only drawn for an individual searched with a country.
+        if (searchType === 'INDIVIDUAL' && !url.searchParams.get('country')) {
+          page = page.replace(/<div class="search-result-div"><div class="title search-title-div[^"]*"><i[^>]*><\/i>FATF[^<]*<\/div><\/div>/, '');
+        }
+        return html(response, page);
       }
 
       if (route === 'GET /__export-modal') return html(response, fixtureText('export-modal.html'));

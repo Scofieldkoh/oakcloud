@@ -45,7 +45,7 @@ import type {
   SentrowebRunListResponse,
 } from '@/lib/sentroweb/types';
 import { sentrowebClient, type SentrowebClient, type SentrowebSession } from './client';
-import { listCandidateEntities, type CandidateEntity } from './entities';
+import { listCandidateEntities, searchDetailsFor, type CandidateEntity } from './entities';
 import { SentrowebError, SentrowebRequestError, toSentrowebError } from './errors';
 import { parseSentrowebResult } from './result-parser';
 
@@ -187,7 +187,10 @@ export async function getCandidatesInfo(
     configured: isSentrowebConfigured(),
     maxEntities: SENTROWEB_MAX_ENTITIES_PER_RUN,
     creditsPerSearch: SENTROWEB_CREDITS_PER_SEARCH,
-    candidates: candidates.map(({ sourceRefs: _sourceRefs, contactId: _contactId, ...dto }) => dto),
+    candidates: candidates.map(({ sourceRefs: _sourceRefs, contactId: _contactId, country, dateOfBirth, ...dto }) => ({
+      ...dto,
+      searchDetails: searchDetailsFor({ country, dateOfBirth }),
+    })),
     activeRunId: active?.id ?? null,
     cooldownUntil: until && until > now ? until.toISOString() : null,
   };
@@ -261,6 +264,8 @@ export async function queueRun(
               name: candidate.name,
               identifierType: candidate.identifierType,
               identifier: candidate.identifier,
+              requestedCountry: candidate.country,
+              requestedDateOfBirth: candidate.dateOfBirth,
             })),
           },
         },
@@ -435,7 +440,15 @@ async function processEntity(context: EntityContext): Promise<SentrowebErrorCode
 
   let outcome: Awaited<ReturnType<SentrowebSession['search']>>;
   try {
-    outcome = await session.search({ name: result.name, searchType: result.searchType }, { signal });
+    outcome = await session.search(
+      {
+        name: result.name,
+        searchType: result.searchType,
+        country: result.requestedCountry,
+        dateOfBirth: result.requestedDateOfBirth,
+      },
+      { signal },
+    );
   } catch (error) {
     const failure = toSentrowebError(error);
     await withLiveClaim(run.id, claimToken, async (tx) => {
@@ -461,6 +474,9 @@ async function processEntity(context: EntityContext): Promise<SentrowebErrorCode
 
   const parsed = parseSentrowebResult(result.searchType, outcome.json, outcome.domTitles, {
     expectedName: result.name,
+    // What the search was sent with must come back unchanged in Sentroweb's answer.
+    expectedCountry: result.requestedCountry,
+    expectedDateOfBirth: result.requestedDateOfBirth,
   });
   const checkedAt = now();
 
@@ -751,6 +767,11 @@ function toResultDto(row: SentrowebCheckResult): SentrowebResultDto {
     roles: row.roles,
     identifierType: row.identifierType,
     identifier: row.identifier,
+    searchDetails: {
+      country: row.requestedCountry,
+      dateOfBirth: row.requestedDateOfBirth !== null,
+      gender: false,
+    },
     status: row.status,
     matchCount: row.matchCount,
     categoryCounts: (row.categoryCounts ?? {}) as SentrowebCategoryCounts,

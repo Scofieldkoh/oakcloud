@@ -114,6 +114,20 @@ describe('CompanyScreeningTab', () => {
     expect(screen.getAllByText('2 names, 2 credits used').length).toBeGreaterThan(0);
   });
 
+  it('shows what each result was searched with', async () => {
+    const detail = withResults([
+      result({ id: 'r1', name: 'Alice Tan', searchDetails: { country: 'Singapore', dateOfBirth: true, gender: false } }),
+      result({ id: 'r2', position: 1, name: 'Bob Lim' }),
+      result({ id: 'r3', position: 2, name: 'Acme Pte Ltd', searchType: 'ENTITY', entityKind: 'CORPORATE' }),
+    ]);
+    setupApi(singleRunApi(detail));
+    renderTab();
+    const table = await screen.findByRole('table');
+    expect(within(table).getByText('Sent: name, country (Singapore), date of birth. Not sent: gender')).toBeInTheDocument();
+    expect(within(table).getByText('Sent: name. Not sent: country, date of birth, gender')).toBeInTheDocument();
+    expect(within(table).getByText('Sent: name only')).toBeInTheDocument();
+  });
+
   it('expands a row to show match details and links to the PDF and screenshot', async () => {
     const detail = withResults(
       [
