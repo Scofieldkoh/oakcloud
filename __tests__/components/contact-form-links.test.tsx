@@ -39,6 +39,8 @@ function link(overrides: Partial<ContactFormLinkDto> = {}): ContactFormLinkDto {
 interface Scripted {
   links: ContactFormLinkDto[] | { status: number };
   accept?: { status: number; body?: unknown };
+  /** What the picker is told about row 0 of the response (default: Dina Tan, fingerprint f...). */
+  firstPerson?: { name: string; fingerprint: string };
 }
 let script: Scripted;
 let calls: Array<{ url: string; method: string; body: unknown }>;
@@ -55,7 +57,7 @@ function mountFetch() {
     if (method === 'GET' && url.includes('/candidates')) {
       if (url.includes('submissionId=')) {
         return Response.json({ persons: [
-          { rowIndex: 0, rowNumber: 1, kind: 'individual', name: 'Dina Tan', fingerprint: 'f'.repeat(64), eligible: true, reason: null },
+          { rowIndex: 0, rowNumber: 1, kind: 'individual', name: script.firstPerson?.name ?? 'Dina Tan', fingerprint: script.firstPerson?.fingerprint ?? 'f'.repeat(64), eligible: true, reason: null },
           { rowIndex: 1, rowNumber: 2, kind: 'organisation', name: 'Acme', fingerprint: 'e'.repeat(64), eligible: false, reason: 'A company cannot be linked to an individual contact' },
         ] });
       }
@@ -67,10 +69,11 @@ function mountFetch() {
   }));
 }
 
+let queryClient: QueryClient;
 function mount(canEdit: boolean) {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
-    <QueryClientProvider client={client}>
+    <QueryClientProvider client={queryClient}>
       <ContactFormLinksSection contactId={CONTACT} canEdit={canEdit} />
     </QueryClientProvider>,
   );
@@ -171,6 +174,58 @@ describe('KYC/CDD forms section on a contact', () => {
     expect(calls.find((c) => c.method === 'POST')).toMatchObject({
       url: expect.stringContaining(`/api/contacts/${CONTACT}/form-links`),
       body: { formId: 'form-9', submissionId: 'sub-9', personRowIndex: 0, expectedFingerprint: 'f'.repeat(64) },
+    });
+  });
+
+  describe('the picker binds the click to the person that was clicked', () => {
+    async function pickDina() {
+      script.links = [];
+      mount(true);
+      fireEvent.click(await screen.findByRole('button', { name: 'Link form' }));
+      fireEvent.change(await screen.findByLabelText('Form'), { target: { value: 'form-9' } });
+      fireEvent.change(await screen.findByLabelText('Response'), { target: { value: 'sub-9' } });
+      const radio = await screen.findByRole('radio', { name: /Person 1: Dina Tan/ });
+      fireEvent.click(radio);
+      expect(await screen.findByRole('radio', { name: /Person 1: Dina Tan/ })).toBeChecked();
+    }
+    const refresh = () => queryClient.invalidateQueries({ queryKey: ['contact-form-links', CONTACT] });
+    const posts = () => calls.filter((c) => c.method === 'POST');
+
+    it('a refresh that puts someone else at the same row clears the choice: no request until the user picks again', async () => {
+      await pickDina();
+      script.firstPerson = { name: 'Eli Lim', fingerprint: 'a'.repeat(64) };
+      await refresh();
+      expect(await screen.findByRole('radio', { name: /Person 1: Eli Lim/ })).not.toBeChecked();
+      expect(await screen.findByText('The people on this response changed. Choose the person again.')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Link' })).toBeDisabled();
+      fireEvent.click(screen.getByRole('button', { name: 'Link' }));
+      expect(posts()).toHaveLength(0);
+
+      // An explicit new pick links the new person, with the new fingerprint.
+      fireEvent.click(screen.getByRole('radio', { name: /Person 1: Eli Lim/ }));
+      fireEvent.click(screen.getByRole('button', { name: 'Link' }));
+      await waitFor(() => expect(posts()).toHaveLength(1));
+      expect(posts()[0].body).toMatchObject({ personRowIndex: 0, expectedFingerprint: 'a'.repeat(64) });
+    });
+
+    it('a refresh that keeps the name but changes the fingerprint clears the choice too', async () => {
+      await pickDina();
+      script.firstPerson = { name: 'Dina Tan', fingerprint: 'b'.repeat(64) };
+      await refresh();
+      await waitFor(() => expect(screen.getByRole('radio', { name: /Person 1: Dina Tan/ })).not.toBeChecked());
+      fireEvent.click(screen.getByRole('button', { name: 'Link' }));
+      expect(posts()).toHaveLength(0);
+    });
+
+    it('an unchanged refresh keeps the choice and still links the person that was clicked', async () => {
+      await pickDina();
+      await refresh();
+      await waitFor(() => expect(calls.filter((c) => c.url.includes('submissionId=sub-9')).length).toBeGreaterThan(1));
+      expect(screen.getByRole('radio', { name: /Person 1: Dina Tan/ })).toBeChecked();
+      expect(screen.queryByText('The people on this response changed. Choose the person again.')).not.toBeInTheDocument();
+      fireEvent.click(screen.getByRole('button', { name: 'Link' }));
+      await waitFor(() => expect(posts()).toHaveLength(1));
+      expect(posts()[0].body).toMatchObject({ personRowIndex: 0, expectedFingerprint: 'f'.repeat(64) });
     });
   });
 });

@@ -14,6 +14,7 @@ Code: `src/services/contact-form-link.service.ts`, the pure helpers `src/lib/con
 - **One link is one person of one response.** A CDD response lists several directors and shareholders in a repeat section: answers are parallel arrays per field key (`person_name[i]`, `person_id[i]`, ...). A form without a repeat section links as one whole-response person (row index null).
 - An `individual` row (or a row with no `person_kind`) links to an INDIVIDUAL contact; an `organisation` row to a CORPORATE contact; anything else is refused (422).
 - The picker returns each person's fingerprint and the link request sends it back (`expectedFingerprint`). If the response changed between choosing and saving, the row no longer matches and the link is refused with 409 `ROW_CHANGED`: a link is never created for a different person than the one chosen.
+- In the picker, the click is bound to the person as it was clicked (row and fingerprint). If a refresh of the list changes or removes that person, the choice is cleared and the user must pick again; the request is never built from a refreshed list for an earlier click.
 - A row links to **one contact only**, and a contact links to a row once. Two partial unique indexes on active links (`unlinkedAt IS NULL`) enforce both. Unlinking is soft; relinking creates a new row.
 
 ## A link never jumps to another person

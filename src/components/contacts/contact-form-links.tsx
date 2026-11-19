@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { FileText, Paperclip, Link2, Unlink } from 'lucide-react';
 import { CompanyAccentButton, CompanyAccentSection } from '@/components/companies/company-accent-section';
@@ -244,11 +244,19 @@ export function ContactFormLinksSection({ contactId, canEdit }: ContactFormLinks
   );
 }
 
+interface SelectedPerson {
+  submissionId: string;
+  rowIndex: number | null;
+  fingerprint: string;
+}
+
 function LinkFormModal({ contactId, isOpen, onClose }: { contactId: string; isOpen: boolean; onClose: () => void }) {
   const { success } = useToast();
   const [formId, setFormId] = useState('');
   const [submissionId, setSubmissionId] = useState('');
-  const [rowKey, setRowKey] = useState<string | null>(null);
+  // The person the user clicked, as it was when clicked: row AND fingerprint. It is never rebuilt from a
+  // later refresh of the list, so a replacement at the same row is never linked by an old click.
+  const [selected, setSelected] = useState<SelectedPerson | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
   const link = useLinkFormPerson(contactId);
 
@@ -256,10 +264,25 @@ function LinkFormModal({ contactId, isOpen, onClose }: { contactId: string; isOp
   const submissions = useFormLinkCandidates(contactId, { formId }, isOpen && formId !== '');
   const persons = useFormLinkCandidates(contactId, { formId, submissionId }, isOpen && formId !== '' && submissionId !== '');
 
+  const offeredNow = (person: SelectedPerson | null): boolean =>
+    person !== null &&
+    (persons.data?.persons ?? []).some(
+      (candidate) => candidate.eligible && candidate.rowIndex === person.rowIndex && candidate.fingerprint === person.fingerprint,
+    );
+
+  // A refresh that changes or removes the chosen person drops the choice: the user must pick again.
+  useEffect(() => {
+    if (selected && persons.data && !offeredNow(selected)) {
+      setSelected(null);
+      setFailure('The people on this response changed. Choose the person again.');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [persons.data]);
+
   const reset = () => {
     setFormId('');
     setSubmissionId('');
-    setRowKey(null);
+    setSelected(null);
     setFailure(null);
   };
   const close = () => {
@@ -267,22 +290,26 @@ function LinkFormModal({ contactId, isOpen, onClose }: { contactId: string; isOp
     onClose();
   };
   const submit = async () => {
-    const chosen = persons.data?.persons?.find((person) => (person.rowIndex === null ? 'whole' : String(person.rowIndex)) === rowKey);
-    if (rowKey === null || !chosen) return;
+    if (!selected || selected.submissionId !== submissionId) return;
+    if (!offeredNow(selected)) {
+      setSelected(null);
+      setFailure('The people on this response changed. Choose the person again.');
+      return;
+    }
     setFailure(null);
     try {
       await link.mutateAsync({
         formId,
         submissionId,
-        personRowIndex: chosen.rowIndex,
-        expectedFingerprint: chosen.fingerprint,
+        personRowIndex: selected.rowIndex,
+        expectedFingerprint: selected.fingerprint,
       });
       success('Form response linked');
       close();
     } catch (error) {
       setFailure(errorMessage(error));
       // The response changed under the picker: show the people as they are now and ask again.
-      setRowKey(null);
+      setSelected(null);
       void persons.refetch();
     }
   };
@@ -297,7 +324,7 @@ function LinkFormModal({ contactId, isOpen, onClose }: { contactId: string; isOp
               id="form-link-form"
               className="input w-full"
               value={formId}
-              onChange={(event) => { setFormId(event.target.value); setSubmissionId(''); setRowKey(null); }}
+              onChange={(event) => { setFormId(event.target.value); setSubmissionId(''); setSelected(null); }}
             >
               <option value="">Select a form (tagged cdd or kyc)</option>
               {forms.data?.forms?.map((form) => <option key={form.id} value={form.id}>{form.title}</option>)}
@@ -311,7 +338,7 @@ function LinkFormModal({ contactId, isOpen, onClose }: { contactId: string; isOp
                 id="form-link-response"
                 className="input w-full"
                 value={submissionId}
-                onChange={(event) => { setSubmissionId(event.target.value); setRowKey(null); }}
+                onChange={(event) => { setSubmissionId(event.target.value); setSelected(null); }}
               >
                 <option value="">Select a response</option>
                 {submissions.data?.submissions?.map((submission) => (
@@ -334,8 +361,11 @@ function LinkFormModal({ contactId, isOpen, onClose }: { contactId: string; isOp
                         type="radio"
                         name="form-link-person"
                         disabled={!person.eligible}
-                        checked={rowKey === key}
-                        onChange={() => setRowKey(key)}
+                        checked={selected !== null && selected.rowIndex === person.rowIndex && selected.fingerprint === person.fingerprint}
+                        onChange={() => {
+                          setFailure(null);
+                          setSelected({ submissionId, rowIndex: person.rowIndex, fingerprint: person.fingerprint });
+                        }}
                       />
                       <span>
                         {person.rowIndex === null ? 'Whole response' : `Person ${person.rowNumber}`}: {person.name}
@@ -354,7 +384,7 @@ function LinkFormModal({ contactId, isOpen, onClose }: { contactId: string; isOp
       </ModalBody>
       <ModalFooter>
         <button type="button" className="btn-secondary btn-sm" onClick={close}>Cancel</button>
-        <button type="button" className="btn-primary btn-sm" onClick={submit} disabled={rowKey === null || link.isPending}>
+        <button type="button" className="btn-primary btn-sm" onClick={submit} disabled={selected === null || link.isPending}>
           Link
         </button>
       </ModalFooter>
