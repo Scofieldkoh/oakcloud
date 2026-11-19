@@ -6232,5 +6232,3 @@ export type NestedBoolNullableWithAggregatesFilter<$PrismaModel = never> = {
   _min?: Prisma.NestedBoolNullableFilter<$PrismaModel>
   _max?: Prisma.NestedBoolNullableFilter<$PrismaModel>
 }
-
-
