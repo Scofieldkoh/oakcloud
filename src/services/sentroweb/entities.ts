@@ -4,6 +4,7 @@
  * and former officers are not screened. The same person in two roles is one entry with both roles.
  */
 import { createHash } from 'node:crypto';
+import { plausibleDateOfBirth, toDateOnlyString } from '@/lib/date-only';
 import { prisma } from '@/lib/prisma';
 import { mapToSentrowebCountry } from '@/lib/sentroweb/countries';
 import { NotFoundError } from '@/lib/errors';
@@ -62,11 +63,8 @@ export function agreedCountry(nationalities: Array<string | null>): string | nul
 
 /** YYYY-MM-DD of a stored date of birth, or null when it is missing or implausible. */
 export function formatDateOfBirth(value: Date | null | undefined, now: Date = new Date()): string | null {
-  if (!value || Number.isNaN(value.getTime())) return null;
-  const iso = value.toISOString().slice(0, 10);
-  const year = Number(iso.slice(0, 4));
-  if (year < 1900 || value.getTime() > now.getTime()) return null;
-  return iso;
+  // The same rule Contacts enforces when the date is entered, so a saved date is always sent.
+  return plausibleDateOfBirth(toDateOnlyString(value), now);
 }
 
 /**

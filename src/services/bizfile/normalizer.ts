@@ -6,8 +6,13 @@
 
 import { normalizeName, normalizeCompanyName, normalizeAddress } from '@/lib/utils';
 import { normalizeCompanyAlias } from '@/lib/company-display-label';
-import { plausibleDateOfBirth } from '@/lib/date-only';
+import { parseDateOnly, plausibleDateOfBirth } from '@/lib/date-only';
 import type { ExtractedBizFileData } from './types';
+
+/** A strict YYYY-MM-DD (any real date: a saved legacy date may be older than a new one may be). */
+function dateOnlyOrUndefined(value: string | undefined): string | undefined {
+  return typeof value === 'string' && parseDateOnly(value) ? value.trim() : undefined;
+}
 
 const CURRENCY_NAME_MAP: Record<string, string> = {
   'SINGAPORE DOLLAR': 'SGD',
@@ -266,6 +271,7 @@ export function normalizeExtractedData(data: ExtractedBizFileData): ExtractedBiz
       nationality: officer.nationality ? normalizeCompanyName(officer.nationality) : undefined,
       // A date of birth is kept only as a real, plausible YYYY-MM-DD; anything else is dropped.
       dateOfBirth: plausibleDateOfBirth(officer.dateOfBirth) ?? undefined,
+      dateOfBirthReplaces: plausibleDateOfBirth(officer.dateOfBirth) ? dateOnlyOrUndefined(officer.dateOfBirthReplaces) : undefined,
       address: officer.address ? normalizeAddress(officer.address) : undefined,
     }));
   }
@@ -280,6 +286,8 @@ export function normalizeExtractedData(data: ExtractedBizFileData): ExtractedBiz
       nationality: shareholder.nationality ? normalizeCompanyName(shareholder.nationality) : undefined,
       // Individuals only, and only a real, plausible YYYY-MM-DD.
       dateOfBirth: shareholder.type === 'CORPORATE' ? undefined : plausibleDateOfBirth(shareholder.dateOfBirth) ?? undefined,
+      dateOfBirthReplaces: shareholder.type !== 'CORPORATE' && plausibleDateOfBirth(shareholder.dateOfBirth)
+        ? dateOnlyOrUndefined(shareholder.dateOfBirthReplaces) : undefined,
       placeOfOrigin: shareholder.placeOfOrigin ? normalizeCompanyName(shareholder.placeOfOrigin) : undefined,
       address: shareholder.address ? normalizeAddress(shareholder.address) : undefined,
       currency: normalizeCurrency(shareholder.currency),

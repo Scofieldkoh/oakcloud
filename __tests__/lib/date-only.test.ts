@@ -85,7 +85,7 @@ describe('plausible date of birth', () => {
   it('accepts a real past date, including today', () => {
     expect(isPlausibleDateOfBirth('1980-01-01', now)).toBe(true);
     expect(isPlausibleDateOfBirth('2026-11-19', now)).toBe(true);
-    expect(isPlausibleDateOfBirth('1876-11-19', now)).toBe(true); // exactly 150 years
+    expect(isPlausibleDateOfBirth('1900-01-01', now)).toBe(true); // shared Contacts/Screening lower bound
   });
 
   it.each(['2026-11-20', '2999-01-01', '1876-11-18', '1850-01-01', '2023-02-29', 'x'])('rejects %j', (value) => {

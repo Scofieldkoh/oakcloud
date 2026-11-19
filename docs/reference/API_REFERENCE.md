@@ -1196,7 +1196,7 @@ List contacts.
 ### POST /api/contacts
 Create a new contact.
 
-**Date of birth.** `dateOfBirth` is optional and for individuals only: `YYYY-MM-DD` (a full ISO date-time is still accepted and read as its UTC calendar date), blank or `null` for none. It must be a real date, not in the future and not over 150 years back; a corporate contact is refused one. It is stored as midnight UTC. `PUT /api/contacts/[id]` takes the same value, `null` clears it, an omitted field leaves it alone, and the change is written to the contact audit as `dateOfBirth: { old, new }`.
+**Date of birth.** `dateOfBirth` is optional and for individuals only: `YYYY-MM-DD` (a full ISO date-time with an explicit `Z` or numeric offset is still accepted and read as its UTC calendar date; an offsetless timestamp is rejected), blank or `null` for none. It must be a real date from 1 Jan 1900 to today, and not over 150 years back, matching the shared Sentroweb date rule; a corporate contact is refused one. It is stored as midnight UTC. `PUT /api/contacts/[id]` takes the same value, `null` clears it, an omitted field leaves it alone, and the change is written to the contact audit as `dateOfBirth: { old, new }`.
 
 **Auth:** `contact:create`. Manual and quick-create callers can preview identity first. A caller may explicitly choose `CREATE_SEPARATE` when two legitimate contacts share a name; deterministic identifier conflicts are still rejected.
 

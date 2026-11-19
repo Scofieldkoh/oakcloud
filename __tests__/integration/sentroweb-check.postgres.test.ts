@@ -591,7 +591,7 @@ describePostgres('Sentroweb check service (PostgreSQL)', () => {
             await resolveOrCreateContact(candidate(bad), { action: 'AUTO' }, { tenantId, userId });
             expect(await storedOf(contact.id)).toBe('1980-01-01T00:00:00');
           }
-          await resolveOrCreateContact(candidate('1981-02-03'), { action: 'AUTO' }, { tenantId, userId });
+          await resolveOrCreateContact({ ...candidate('1981-02-03'), replacesDateOfBirth: '1980-01-01' }, { action: 'AUTO' }, { tenantId, userId });
           expect(await storedOf(contact.id)).toBe('1981-02-03T00:00:00');
           const audits = await prisma.auditLog.findMany({
             where: { tenantId, entityType: 'Contact', entityId: contact.id, changeSource: 'BIZFILE_UPLOAD' },

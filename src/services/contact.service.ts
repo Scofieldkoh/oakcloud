@@ -42,7 +42,7 @@ function dateOfBirthForStorage(value: string | null | undefined): Date | null {
   if (value === undefined || value === null || value === '') return null;
   const date = plausibleDateOfBirth(value);
   const stored = date ? parseDateOnly(date) : null;
-  if (!stored) throw new ValidationError('Date of birth must be valid and not in the future');
+  if (!stored) throw new ValidationError('Date of birth must be a real date from 1 Jan 1900 to today');
   return stored;
 }
 

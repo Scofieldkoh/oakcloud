@@ -123,9 +123,10 @@ function splitIndividualName(name: string): { firstName: string; lastName?: stri
  * The date of birth a BizFile record may carry into contact resolution: only a real, plausible
  * YYYY-MM-DD. A missing or invalid one adds nothing (and so can never clear a saved date).
  */
-function birthDateFor(value: string | undefined): { dateOfBirth?: string } {
+function birthDateFor(value: string | undefined, replaces?: string): { dateOfBirth?: string; replacesDateOfBirth?: string } {
   const date = plausibleDateOfBirth(value);
-  return date ? { dateOfBirth: date } : {};
+  if (!date) return {};
+  return { dateOfBirth: date, ...(replaces ? { replacesDateOfBirth: replaces } : {}) };
 }
 
 function officerIdentityCandidate(officer: Officer, sourceRecordId: string): ContactIdentityCandidate {
@@ -137,7 +138,7 @@ function officerIdentityCandidate(officer: Officer, sourceRecordId: string): Con
     identificationType: mapIdentificationType(officer.identificationType) || undefined,
     identificationNumber: officer.identificationNumber,
     nationality: officer.nationality,
-    ...birthDateFor(officer.dateOfBirth),
+    ...birthDateFor(officer.dateOfBirth, officer.dateOfBirthReplaces),
     fullAddress: officer.address,
   };
 }
@@ -164,7 +165,7 @@ function shareholderIdentityCandidate(
     identificationType: mapIdentificationType(shareholder.identificationType) || undefined,
     identificationNumber: shareholder.identificationNumber,
     nationality: shareholder.nationality,
-    ...birthDateFor(shareholder.dateOfBirth),
+    ...birthDateFor(shareholder.dateOfBirth, shareholder.dateOfBirthReplaces),
     fullAddress: shareholder.address,
   };
 }
@@ -181,6 +182,7 @@ async function resolveBizfileContact(
   sourceIndex: number,
   context: { tenantId: string; userId: string; tx: PrismaTransactionClient },
   autoCreatedContactIds: Set<string>,
+  appliedBirthDates: Map<string, { before: string; after: string }>,
 ): Promise<string> {
   const sourceRecordId = `${kind === 'officer' ? 'officers' : 'shareholders'}.${sourceIndex}`;
   const candidate = kind === 'officer'
@@ -195,7 +197,17 @@ async function resolveBizfileContact(
     }
   }
 
+  // A person can be both officer and shareholder. An identical replacement already applied by
+  // this transaction is not an external stale edit: its first compare-and-set still holds the row
+  // lock. Only reuse that exact old/new approval for the same explicitly resolved contact.
+  const priorBirthDate = decision?.action === 'REUSE' ? appliedBirthDates.get(decision.contactId) : undefined;
+  if (priorBirthDate && candidate.replacesDateOfBirth === priorBirthDate.before && candidate.dateOfBirth === priorBirthDate.after) {
+    candidate.replacesDateOfBirth = priorBirthDate.after;
+  }
   const result = await resolveOrCreateContact(candidate, reviewedDecision(decision), context);
+  if (candidate.replacesDateOfBirth && candidate.dateOfBirth && result.enrichedFields.includes('dateOfBirth')) {
+    appliedBirthDates.set(result.contact.id, { before: candidate.replacesDateOfBirth, after: candidate.dateOfBirth });
+  }
   if (!decision && (result.outcome === 'CREATED' || result.outcome === 'RESTORED')) {
     autoCreatedContactIds.add(result.contact.id);
   }
@@ -351,6 +363,7 @@ async function applyReviewedData(
     // while a concurrent exclusive backup/restore holds the business lock.
     if (!changePlan) await acquireBusinessOperationBarrier(tx, tenantId, 'shared');
     const autoCreatedContactIds = new Set<string>();
+    const appliedBirthDates = new Map<string, { before: string; after: string }>();
     const operationRepository = operationContext?.operationRepository
       ?? (operationContext ? createBizFileOperationRepository() : null);
     let operationReceipt: Awaited<ReturnType<BizFileOperationRepository['begin']>> | null = null;
@@ -413,6 +426,7 @@ async function applyReviewedData(
         index,
         { tenantId, userId, tx },
         autoCreatedContactIds,
+        appliedBirthDates,
       );
       await createCompanyContactRelation(
         contactId,

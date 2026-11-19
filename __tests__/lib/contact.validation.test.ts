@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { afterEach, describe, it, expect } from 'vitest';
 import { createContactSchema, createContactWithDetailsSchema, updateContactSchema } from '@/lib/validations/contact';
 
 describe('contact validation', () => {
@@ -77,6 +77,38 @@ describe('contact validation', () => {
       expect(createContactWithDetailsSchema.safeParse(corporate).success).toBe(false);
       expect(createContactSchema.safeParse({ ...corporate, dateOfBirth: null }).success).toBe(true);
       expect(createContactSchema.safeParse({ ...corporate, dateOfBirth: '' }).success).toBe(true);
+    });
+  });
+
+  describe('DOB boundary is timezone-independent', () => {
+    const original = process.env.TZ;
+    afterEach(() => {
+      if (original === undefined) delete process.env.TZ;
+      else process.env.TZ = original;
+    });
+    it.each(['Asia/Singapore', 'America/Los_Angeles'])('rejects offsetless timestamps under TZ=%s at create and edit', (zone) => {
+      process.env.TZ = zone;
+      const person = { contactType: 'INDIVIDUAL' as const, firstName: 'Dana' };
+      for (const dateOfBirth of ['1980-01-01T00:00:00', '1980-01-01T00:00', '1980-01-01T00:00:00.000']) {
+        expect(createContactSchema.safeParse({ ...person, dateOfBirth }).success).toBe(false);
+        expect(updateContactSchema.safeParse({ id: '11111111-1111-4111-8111-111111111111', dateOfBirth }).success).toBe(false);
+      }
+      expect(createContactSchema.safeParse({ ...person, dateOfBirth: '1895-04-15' }).success).toBe(false);
+      expect(createContactSchema.parse({ ...person, dateOfBirth: '1980-01-01T00:00:00Z' }).dateOfBirth).toBe('1980-01-01');
+      expect(createContactSchema.parse({ ...person, dateOfBirth: '1980-01-01T00:00:00-08:00' }).dateOfBirth).toBe('1980-01-01');
+    });
+
+    it('Contacts accepts only dates Screening will send, including the exact lower bound', async () => {
+      const { formatDateOfBirth } = await import('@/services/sentroweb/entities');
+      const person = { contactType: 'INDIVIDUAL' as const, firstName: 'Dana' };
+      for (const value of ['1895-04-15', '1899-12-31']) {
+        expect(createContactSchema.safeParse({ ...person, dateOfBirth: value }).success).toBe(false);
+        expect(formatDateOfBirth(new Date(`${value}T00:00:00Z`))).toBeNull();
+      }
+      for (const value of ['1900-01-01', '1980-01-01', new Date().toISOString().slice(0, 10)]) {
+        expect(createContactSchema.parse({ ...person, dateOfBirth: value }).dateOfBirth).toBe(value);
+        expect(formatDateOfBirth(new Date(`${value}T00:00:00Z`))).toBe(value);
+      }
     });
   });
 

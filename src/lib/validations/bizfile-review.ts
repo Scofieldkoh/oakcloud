@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { contactResolutionSchema } from '@/lib/validations/contact';
-import { normalizeDateOfBirthInput, plausibleDateOfBirth } from '@/lib/date-only';
+import { normalizeDateOfBirthInput, parseDateOnly, plausibleDateOfBirth } from '@/lib/date-only';
 import type { ExtractedBizFileData } from '@/services/bizfile/types';
 import { COMPANY_ALIAS_MAX_LENGTH } from '@/lib/company-display-label';
 import { BIZFILE_ENTITY_TYPE_OPTIONS, BIZFILE_IDENTIFICATION_TYPE_OPTIONS, BIZFILE_OFFICER_ROLE_OPTIONS, BIZFILE_STATUS_OPTIONS, canonicalizeCompanyStatus, canonicalizeEntityType, canonicalizeIdentificationType, canonicalizeOfficerRole } from '@/services/bizfile/canonical-values';
@@ -57,9 +57,15 @@ const optionalBirthDate = z.preprocess(
   (value) => (typeof value === 'string' && value.trim() === '' ? undefined : value),
   z.string().trim().superRefine((value, context) => {
     if (!plausibleDateOfBirth(value) || normalizeDateOfBirthInput(value) !== value) {
-      context.addIssue({ code: z.ZodIssueCode.custom, message: 'Must be a valid date of birth (YYYY-MM-DD, not in the future)' });
+      context.addIssue({ code: z.ZodIssueCode.custom, message: 'Must be a real date of birth (YYYY-MM-DD) from 1 Jan 1900 to today' });
     }
   }).optional(),
+);
+
+/** The saved date the reviewer agreed to replace: blank, or a real YYYY-MM-DD. */
+const optionalReplacedDate = z.preprocess(
+  (value) => (typeof value === 'string' && value.trim() === '' ? undefined : value),
+  z.string().trim().refine((value) => parseDateOnly(value) !== null, 'Must be a real date (YYYY-MM-DD)').optional(),
 );
 
 const optionalDate = z.preprocess(
@@ -135,6 +141,7 @@ export const bizFileReviewSchema = z.object({
     identificationNumber: optionalString,
     nationality: optionalString,
     dateOfBirth: optionalBirthDate,
+    dateOfBirthReplaces: optionalReplacedDate,
     placeOfOrigin: optionalString,
     address: optionalString,
     shareClass: reviewString,
@@ -154,6 +161,7 @@ export const bizFileReviewSchema = z.object({
     identificationNumber: optionalString,
     nationality: optionalString,
     dateOfBirth: optionalBirthDate,
+    dateOfBirthReplaces: optionalReplacedDate,
     address: optionalString,
     appointmentDate: optionalDate,
     cessationDate: optionalDate,

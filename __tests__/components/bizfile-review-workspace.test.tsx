@@ -43,6 +43,19 @@ describe("BizFileReviewWorkspace", () => {
     });
   });
 
+  it('does not carry DOB approval to another automatically matched contact', () => {
+    const contactId = '00000000-0000-4000-8000-000000000002';
+    const resolved = applyAutomaticContactResolutions({ ...fixture, officers: [{ name: 'Dana Date', role: 'DIRECTOR',
+      dateOfBirth: '1980-01-01', dateOfBirthReplaces: '1981-01-01',
+      contactResolution: { action: 'REUSE' as const, contactId: '00000000-0000-4000-8000-000000000001' } }] }, {
+      'officers.0': { contactId, score: 1, automatic: true, blockedByIdentifierConflict: false, reasons: ['IDENTIFIER'], conflicts: [],
+        contact: { id: contactId, fullName: 'Dana Date', identificationType: 'NRIC', identificationNumber: 'S1234567A',
+          corporateUen: null, dateOfBirth: '1981-01-01', companies: [] } },
+    });
+    expect(resolved.officers?.[0].contactResolution.contactId).toBe(contactId);
+    expect(resolved.officers?.[0].dateOfBirthReplaces).toBeUndefined();
+  });
+
   it("does not prompt for an exact name-and-identifier contact match", async () => {
     const onConfirm = vi.fn();
     const exactFixture: ExtractedBizFileData = {
@@ -69,6 +82,39 @@ describe("BizFileReviewWorkspace", () => {
     await waitFor(() => expect(onConfirm).toHaveBeenCalledWith(expect.objectContaining({
       officers: [expect.objectContaining({ contactResolution: { action: "REUSE", contactId: exactMatch.contactId } })],
     })));
+  });
+
+  it.each(['SAVE', 'PREPARE'] as const)("requires visible approval of a fresh DOB replacement before %s, even without visiting Officers", async (confirmationStage) => {
+    const onConfirm = vi.fn();
+    let saved = '1981-01-01';
+    const contactId = '00000000-0000-4000-8000-000000000001';
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ matches: { 'officers.0': {
+      contactId, score: 1, automatic: true, blockedByIdentifierConflict: false, reasons: ['IDENTIFIER'], conflicts: [],
+      contact: { id: contactId, fullName: 'Dana Date', identificationType: 'NRIC', identificationNumber: 'S1234567A',
+        corporateUen: null, dateOfBirth: saved, companies: [] },
+    } } }), { status: 200, headers: { 'Content-Type': 'application/json' } })));
+    render(<BizFileReviewWorkspace initialData={{ ...fixture, officers: [{ name: 'Dana Date', role: 'DIRECTOR',
+      identificationType: 'NRIC', identificationNumber: 'S1234567A', dateOfBirth: '1980-01-01' }] }}
+      confirmationStage={confirmationStage} sourcePanel={<div>PDF source</div>}
+      onCancel={vi.fn()} onReset={vi.fn()} onConfirm={onConfirm} />);
+
+    const save = () => screen.getByRole('button', { name: confirmationStage === 'SAVE' ? 'Confirm & Save' : 'Review proposed changes' });
+    fireEvent.click(save());
+    const replace = await screen.findByRole('checkbox', { name: 'Replace the saved date of birth (1 Jan 1981) with 1 Jan 1980' });
+    expect(onConfirm).not.toHaveBeenCalled();
+    fireEvent.click(replace);
+
+    // Even a checked approval is invalidated if the fresh save preview discovers a changed date.
+    saved = '1982-02-02';
+    fireEvent.click(save());
+    const refreshed = await screen.findByRole('checkbox', { name: 'Replace the saved date of birth (2 Feb 1982) with 1 Jan 1980' });
+    expect(refreshed).not.toBeChecked();
+    expect(onConfirm).not.toHaveBeenCalled();
+    fireEvent.click(refreshed);
+    fireEvent.click(save());
+    await waitFor(() => expect(onConfirm).toHaveBeenCalledWith(expect.objectContaining({ officers: [expect.objectContaining({
+      dateOfBirth: '1980-01-01', dateOfBirthReplaces: '1982-02-02', contactResolution: { action: 'REUSE', contactId },
+    })] })));
   });
 
   it("shows extraction metadata in the bottom-left footer", () => {

@@ -463,12 +463,26 @@ describe("BizFileReviewSections", () => {
 
     it("says the saved date is replaced when the person is matched by ID number", () => {
       previewView(withDob, "officers", preview("1980-01-01"));
-      expect(screen.getByRole("status")).toHaveTextContent("The matched contact has 1 Jan 1980. Approving this review replaces it with 3 Feb 1981.");
+      expect(screen.getByRole("status")).toHaveTextContent("The matched contact has 1 Jan 1980; this document says 3 Feb 1981.");
+      expect(screen.getByRole('checkbox', { name: 'Replace the saved date of birth (1 Jan 1980) with 3 Feb 1981' })).not.toBeChecked();
     });
 
     it("says the saved date is replaced when the reviewer picked the contact", () => {
       previewView({ ...withDob, officers: [{ ...withDob.officers![0], contactResolution: { action: "REUSE", contactId: "contact-1" } }] }, "officers", preview("1980-01-01", ["EXACT_CANONICAL_NAME"]));
-      expect(screen.getByRole("status")).toHaveTextContent("replaces it with 3 Feb 1981");
+      expect(screen.getByRole('checkbox', { name: 'Replace the saved date of birth (1 Jan 1980) with 3 Feb 1981' })).not.toBeChecked();
+    });
+
+    it('clears approval when the proposed date is edited', () => {
+      function Harness() {
+        const [draft, setDraft] = useState<BizFileReviewDraft>({ ...withDob, officers: [{ ...withDob.officers![0],
+          dateOfBirthReplaces: '1980-01-01', contactResolution: { action: 'REUSE', contactId: 'contact-1' } }] });
+        return <BizFileReviewSections draft={draft} onChange={setDraft} activeSection="officers" issues={[]}
+          matchPreviews={{ 'officers.0': preview('1980-01-01') }} />;
+      }
+      render(<Harness />);
+      expect(screen.getByRole('checkbox', { name: 'Replace the saved date of birth (1 Jan 1980) with 3 Feb 1981' })).toBeChecked();
+      fireEvent.change(screen.getByLabelText('Date of birth'), { target: { value: '1982-02-02' } });
+      expect(screen.getByRole('checkbox', { name: 'Replace the saved date of birth (1 Jan 1980) with 2 Feb 1982' })).not.toBeChecked();
     });
 
     it("says the saved date is kept when the match is by name alone", () => {

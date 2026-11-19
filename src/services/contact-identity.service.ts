@@ -1,5 +1,6 @@
 import { Prisma, type Contact } from '@/generated/prisma';
 import { createAuditLog } from '@/lib/audit';
+import { ConflictError } from '@/lib/errors';
 import { parseDateOnly, plausibleDateOfBirth, toDateOnlyString } from '@/lib/date-only';
 import { scoreContactIdentityMatch } from '@/lib/contact-identity-matching';
 import {
@@ -465,8 +466,10 @@ function candidateDateOfBirth(candidate: Pick<ContactIdentityCandidate, 'contact
 /**
  * How a date of birth may reach the matched contact. It is written only when the person is certain:
  * matched by ID number, or chosen by the reviewer (a name-only automatic match writes none).
- * Only a BizFile record, approved in the review, may replace a different saved date; every other
- * source fills an empty one and reports a difference as a conflict.
+ * Only a BizFile record, approved in the review, may replace a different saved date, and only the
+ * very date the reviewer saw and agreed to replace (`replacesDateOfBirth`): a replacement without that
+ * agreement, or one whose agreed date is no longer the saved date, is refused outright. Every other
+ * source fills an empty date and reports a difference as a conflict.
  */
 interface DateOfBirthPolicy {
   allowed: boolean;
@@ -491,6 +494,15 @@ function buildEnrichment(
   const fields: string[] = [];
   const conflicts: ContactIdentityConflict[] = [];
   const incomingDob = existing.contactType === 'INDIVIDUAL' && dob.allowed ? candidateDateOfBirth(candidate) : null;
+  if (incomingDob && dob.replace) {
+    const saved = toDateOnlyString(existing.dateOfBirth);
+    if (candidate.replacesDateOfBirth && candidate.replacesDateOfBirth !== saved) {
+      throw new ConflictError('The saved date of birth changed after it was reviewed. Review the contact again before saving.');
+    }
+    if (saved && saved !== toDateOnlyString(incomingDob) && !candidate.replacesDateOfBirth) {
+      throw new ConflictError('Review and confirm the saved date of birth before replacing it.');
+    }
+  }
   const values = [
     ['firstName', candidate.firstName, existing.firstName],
     ['lastName', candidate.lastName, existing.lastName],
@@ -508,12 +520,11 @@ function buildEnrichment(
 
   for (const [field, incoming, current] of values) {
     if (isBlank(incoming)) continue;
-    if (field === 'dateOfBirth' && !isBlank(current) && dob.replace) {
-      // An approved BizFile date replaces a different saved one (same calendar date: nothing to do).
-      if (comparable('dateOfBirth', incoming) !== comparable('dateOfBirth', current)) {
-        data.dateOfBirth = incoming as Date;
-        fields.push('dateOfBirth');
-      }
+    if (field === 'dateOfBirth' && !isBlank(current) && dob.replace
+      && comparable('dateOfBirth', incoming) !== comparable('dateOfBirth', current)) {
+      // buildEnrichment has verified the reviewer's approval of this exact saved date above.
+      data.dateOfBirth = incoming as Date;
+      fields.push('dateOfBirth');
       continue;
     }
     if (isBlank(current)) {
@@ -921,6 +932,18 @@ async function resolveInTransaction(
       throw new Error(
         `Cannot assign ${identifierDuplicate.identificationType ?? 'UNKNOWN'}:${identifierDuplicate.identificationNumber ?? ''} to "${selected.contact.fullName}" because it already exists on contact "${identifierDuplicate.fullName}"`,
       );
+    }
+  }
+  if (candidate.source === 'BIZFILE' && enrichment.fields.includes('dateOfBirth')) {
+    // Manual contact edits do not take identity advisory locks. Compare-and-set under the row lock
+    // so a date changed after our read cannot be overwritten; the enclosing transaction also keeps
+    // this write atomic with the approved company changes and their audit.
+    const changed = await tx.contact.updateMany({
+      where: { id: selected.contact.id, tenantId: params.tenantId, dateOfBirth: selected.contact.dateOfBirth },
+      data: { dateOfBirth: enrichment.data.dateOfBirth as Date },
+    });
+    if (changed.count !== 1) {
+      throw new ConflictError('The saved date of birth changed after it was reviewed. Review the contact again before saving.');
     }
   }
   const updated = enrichment.fields.length > 0

@@ -69,7 +69,9 @@ confirmation (**Run again anyway**). Only one run per company can be queued or r
 ## Where the date of birth comes from
 
 - **Contacts page.** An individual contact has an optional **Date of birth** (new, edit, and a line on
-  the contact page). A real date, not in the future. A corporate contact has none.
+  the contact page). A real date from 1 Jan 1900 to today (also no more than 150 years back), the same
+  rule used by Sentroweb. A corporate contact has none. Legacy ISO timestamps must carry `Z` or an
+  explicit numeric offset; timestamps without a timezone are rejected rather than interpreted locally.
 - **BizFile.** The extraction asks for a date of birth **only when the document explicitly prints one**
   for an officer or an individual shareholder, and never works one out from the NRIC or FIN. ACRA
   business profiles normally do not print it, so this rarely fills anything; a missing, malformed or
@@ -77,7 +79,17 @@ confirmation (**Run again anyway**). Only one run per company can be queued or r
   person in the BizFile review (and makes that person a reviewable change). When the review is approved
   it is written to the contact only if the person is the contact by **ID number**, was **created** from
   the extract, or was **picked by the reviewer**; a match by name alone writes nothing. It **replaces**
-  a different saved date (the review says so first, with both dates) and is audited as old and new.
+  a different saved date only after an explicit **Replace the saved date of birth (…) with (…)**
+  checkbox is ticked. Saving refreshes contact matches first: a newly discovered replacement blocks
+  saving, opens that section, and shows both dates even if the section had never been visited. Editing
+  the proposed date or choosing another contact clears the agreement. The reviewed payload carries
+  `dateOfBirthReplaces` (the exact saved `YYYY-MM-DD`) into the prepared, signed plan. The server
+  returns **409 Conflict** if a replacement has no agreement or the saved date changed since review
+  (including being cleared); an atomic compare-and-set also catches changes between read and write.
+  The entire import rolls back on a stale replacement. Agreeing officer/shareholder entries for the
+  same contact share that transaction's first successful replacement (one replacement/audit), rather
+  than treating their own update as an external stale edit. Successful replacements are audited as old
+  and new. Clear the proposed DOB to keep the saved one without replacing it.
   Other sources only fill an empty date and report a difference as a conflict.
 - **No backfill, no automatic re-screening.** Past BizFile documents are not re-read, and a changed date
   affects only the next manual Sentroweb check.
@@ -91,7 +103,7 @@ left blank for that person, and the run carries on.
 | Field | Source | Rule |
 | --- | --- | --- |
 | Country | The linked contact's `nationality`, else the officer or shareholder row's `nationality` (the same precedence as the ID number). | Mapped to one exact option of Sentroweb's country list (`src/lib/sentroweb/countries.ts`): an exact country name, an upper-case two-letter flag code (`SG`, `MY`), a listed three-letter code (`SGP`), or a listed demonym or alternative name (`Singaporean`, `Hong Kong`). Ambiguous words (`Dominican`, `Guinean`, `Congolese`, `Korean`), unknown text and lower-case two-letter words map to nothing. |
-| Date of birth | The linked contact's `dateOfBirth` (officer and shareholder rows hold none). It is entered on the Contacts page (individuals), or filled and updated from a BizFile review; see the next section. It is stored as midnight UTC and sent as its UTC calendar date, so it never moves a day. | Sent as `YYYY-MM-DD`. A date before 1900 or in the future is not sent. |
+| Date of birth | The linked contact's `dateOfBirth` (officer and shareholder rows hold none). It is entered on the Contacts page (individuals), or filled and updated from a BizFile review; see the preceding section. It is stored as midnight UTC and sent as its UTC calendar date, so it never moves a day. | Sent as `YYYY-MM-DD` under the same rule as Contacts: from 1 Jan 1900 to today and no more than 150 years back. |
 | Gender | The linked contact's `gender` (Contacts page, optional: Male, Female, Other). Officer and shareholder rows hold none. | `MALE` and `FEMALE` tick the Male or Female box. `OTHER` and blank send nothing (Sentroweb has two boxes only), and both boxes stay unticked. |
 
 When one person has several records (a director and a shareholder), a field is sent only if every

@@ -350,8 +350,10 @@ export default function EditContactPage({
                       id="contact-date-of-birth"
                       type="date"
                       {...register('dateOfBirth')}
+                      aria-describedby="contact-date-of-birth-hint"
                       className={`input input-sm ${errors.dateOfBirth ? 'input-error' : ''}`}
                     />
+                    <p id="contact-date-of-birth-hint" className="text-xs text-text-muted mt-1.5">From 1 Jan 1900 to today; used for Sentroweb screening.</p>
                     {errors.dateOfBirth && (
                       <p className="text-xs text-status-error mt-1.5">{errors.dateOfBirth.message}</p>
                     )}

@@ -13,8 +13,8 @@ const optionalGenderSchema = z.preprocess(
 
 /**
  * A date of birth as `YYYY-MM-DD` (what the date input sends), or, for older callers, a full ISO
- * date-time whose UTC calendar date is used. Blank is none. The output is always the date-only text,
- * which the service stores as midnight UTC. Real dates only, not in the future, not over 150 years back.
+ * date-time with an explicit offset whose UTC calendar date is used. Blank is none. The output is always the date-only text,
+ * which the service stores as midnight UTC. Real dates only, from 1 Jan 1900 to today, not over 150 years back.
  */
 const optionalDateOfBirthSchema = z.preprocess(
   (val) => (val === '' ? null : val),
@@ -26,7 +26,7 @@ const optionalDateOfBirthSchema = z.preprocess(
       if (val === null || val === undefined) return val;
       const date = plausibleDateOfBirth(val);
       if (!date) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Date of birth must be valid and not in the future' });
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Date of birth must be a real date from 1 Jan 1900 to today' });
         return z.NEVER;
       }
       return date;

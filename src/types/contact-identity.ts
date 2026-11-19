@@ -67,6 +67,8 @@ export interface ContactIdentityCandidate {
   corporateUen?: string | null;
   nationality?: string | null;
   dateOfBirth?: string | null;
+  /** BizFile only: the saved date the reviewer agreed to replace. Without it a different saved date is kept. */
+  replacesDateOfBirth?: string | null;
   gender?: ContactGender | null;
   fullAddress?: string | null;
   contactDetails?: ContactIdentityDetail[];

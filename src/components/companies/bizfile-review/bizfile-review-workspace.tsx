@@ -11,7 +11,7 @@ import {
   type BizFileReviewIssue,
   type BizFileReviewSectionId,
 } from "@/lib/validations/bizfile-review";
-import { plausibleDateOfBirth } from "@/lib/date-only";
+import { formatDateOnlyDisplay, plausibleDateOfBirth } from "@/lib/date-only";
 import { mapIdentificationType, type ExtractedBizFileData } from "@/services/bizfile/types";
 import type { ContactIdentityCandidate, ContactMatchPreview } from "@/types/contact-identity";
 import { fetchBizFileContactMatchPreviews, isExactIdentifierContactMatch } from "@/services/bizfile/contact-match-preview.client";
@@ -83,7 +83,7 @@ export function applyAutomaticContactResolutions<T extends BizFileReviewDraft>(
         || record.contactResolution?.action === "CREATE_SEPARATE") return;
       if (record.contactResolution?.action === "REUSE" && record.contactResolution.contactId === preview.contactId) return;
       const records = [...(next[section] ?? [])];
-      records[index] = { ...records[index], contactResolution: { action: "REUSE", contactId: preview.contactId } };
+      records[index] = { ...records[index], dateOfBirthReplaces: undefined, contactResolution: { action: "REUSE", contactId: preview.contactId } };
       next = { ...next, [section]: records };
     });
   }
@@ -156,6 +156,30 @@ function unresolvedMatchIssues(draft: BizFileReviewDraft, previews: MatchPreview
           section,
         });
       }
+    });
+  }
+  return issues;
+}
+
+/**
+ * A saved date of birth the BizFile would replace must be seen and agreed to, for the date the contact
+ * has right now: a fresh preview that shows a different saved date than the one agreed asks again.
+ */
+export function unconfirmedDateOfBirthReplacements(draft: BizFileReviewDraft, previews: MatchPreviews): BizFileReviewIssue[] {
+  const issues: BizFileReviewIssue[] = [];
+  for (const section of ["officers", "shareholders"] as const) {
+    (draft[section] ?? []).forEach((record, index) => {
+      const preview = previews[`${section}.${index}`];
+      const incoming = plausibleDateOfBirth(record.dateOfBirth);
+      const saved = preview?.contact?.dateOfBirth ?? null;
+      const resolution = record.contactResolution;
+      const certain = resolution?.action === "REUSE" && resolution.contactId === preview?.contactId;
+      if (!certain || !incoming || !saved || saved === incoming || record.dateOfBirthReplaces === saved) return;
+      issues.push({
+        path: `${section}.${index}.dateOfBirth`,
+        message: `Confirm replacing the saved date of birth (${formatDateOnlyDisplay(saved)}) or clear this date`,
+        section,
+      });
     });
   }
   return issues;
@@ -304,6 +328,8 @@ export function BizFileReviewWorkspace({ initialData, sourcePanel, isSaving = fa
           .filter((item) => !item.path.endsWith(".contactResolution"))
           .map((item) => [item.path, item]));
         freshMatchIssues.forEach((item) => byPath.set(item.path, item));
+        unconfirmedDateOfBirthReplacements(draftForSave, { ...matchPreviews, ...latest })
+          .forEach((item) => byPath.set(item.path, item));
         currentIssues = Array.from(byPath.values());
       } catch {
         setSaveSummary("Save blocked: contact matches could not be checked. Please try again.");

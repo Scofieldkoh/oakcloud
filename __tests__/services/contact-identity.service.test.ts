@@ -10,6 +10,7 @@ const tx = {
     findFirst: vi.fn(),
     create: vi.fn(),
     update: vi.fn(),
+    updateMany: vi.fn(),
   },
   contactDetail: {
     findMany: vi.fn(),
@@ -101,6 +102,7 @@ describe('contact identity service', () => {
     tx.contact.findMany.mockResolvedValue([]);
     tx.$queryRaw.mockResolvedValue([]);
     tx.contact.findFirst.mockResolvedValue(null);
+    tx.contact.updateMany.mockResolvedValue({ count: 1 });
     tx.contactDetail.findMany.mockResolvedValue([]);
     tx.contactDetail.update.mockImplementation(async ({ where, data }) => ({
       id: where.id,
@@ -454,7 +456,7 @@ describe('contact identity service', () => {
 
     it('a BizFile date replaces a different saved one, and the audit records old and new', async () => {
       tx.contact.findMany.mockResolvedValue([existingContact({ ...idMatch, dateOfBirth: stored })]);
-      const result = await resolveOrCreateContact(candidate({ ...idMatch, source: 'BIZFILE', dateOfBirth: '1981-02-03' }), { action: 'AUTO' }, params);
+      const result = await resolveOrCreateContact(candidate({ ...idMatch, source: 'BIZFILE', dateOfBirth: '1981-02-03', replacesDateOfBirth: '1980-01-01' }), { action: 'AUTO' }, params);
       expect(dobUpdateCall().data.dateOfBirth.toISOString()).toBe('1981-02-03T00:00:00.000Z');
       expect(result.enrichedFields).toContain('dateOfBirth');
       expect(result.conflicts).toEqual([]);
@@ -462,6 +464,35 @@ describe('contact identity service', () => {
         changeSource: 'BIZFILE_UPLOAD',
         changes: { dateOfBirth: { old: '1980-01-01', new: '1981-02-03' } },
       });
+    });
+
+    it.each([null, new Date('1982-02-02T00:00:00Z'), new Date('1981-02-03T00:00:00Z')])(
+      'rejects an approved replacement when the saved date changed to %s, even if cleared or now equal to the proposal', async (dateOfBirth) => {
+        tx.contact.findMany.mockResolvedValue([existingContact({ ...idMatch, dateOfBirth })]);
+        await expect(resolveOrCreateContact(candidate({ ...idMatch, source: 'BIZFILE', dateOfBirth: '1981-02-03',
+          replacesDateOfBirth: '1980-01-01' }), { action: 'AUTO' }, params)).rejects.toThrow(/changed after it was reviewed/i);
+        expect(tx.contact.update).not.toHaveBeenCalled();
+      },
+    );
+
+    it('rejects a BizFile replacement with no saved-date approval', async () => {
+      tx.contact.findMany.mockResolvedValue([existingContact({ ...idMatch, dateOfBirth: stored })]);
+      await expect(resolveOrCreateContact(candidate({ ...idMatch, source: 'BIZFILE', dateOfBirth: '1981-02-03' }),
+        { action: 'AUTO' }, params)).rejects.toThrow(/review.*date of birth/i);
+      expect(tx.contact.update).not.toHaveBeenCalled();
+    });
+
+    it('rejects a DOB changed between the resolver read and the write using an atomic tenant-scoped comparison', async () => {
+      tx.contact.findMany.mockResolvedValue([existingContact({ ...idMatch, dateOfBirth: stored })]);
+      tx.contact.updateMany.mockResolvedValue({ count: 0 });
+      await expect(resolveOrCreateContact(candidate({ ...idMatch, source: 'BIZFILE', dateOfBirth: '1981-02-03',
+        replacesDateOfBirth: '1980-01-01' }), { action: 'AUTO' }, params)).rejects.toThrow(/changed after it was reviewed/i);
+      expect(tx.contact.updateMany).toHaveBeenCalledWith({
+        where: { id: 'contact-1', tenantId: 'tenant-1', dateOfBirth: stored },
+        data: { dateOfBirth: new Date('1981-02-03T00:00:00Z') },
+      });
+      expect(tx.contact.update).not.toHaveBeenCalled();
+      expect(createAuditLog).not.toHaveBeenCalled();
     });
 
     it('the same date again writes nothing and adds no audit', async () => {
@@ -475,7 +506,7 @@ describe('contact identity service', () => {
     it('a reviewer-chosen contact takes the BizFile date as well', async () => {
       tx.contact.findFirst.mockResolvedValueOnce(null).mockResolvedValue(existingContact({ id: 'contact-9', dateOfBirth: stored }));
       tx.contact.findMany.mockResolvedValue([existingContact({ id: 'contact-9', dateOfBirth: stored })]);
-      await resolveOrCreateContact(candidate({ source: 'BIZFILE', dateOfBirth: '1990-09-09' }), { action: 'REUSE', contactId: 'contact-9' }, params);
+      await resolveOrCreateContact(candidate({ source: 'BIZFILE', dateOfBirth: '1990-09-09', replacesDateOfBirth: '1980-01-01' }), { action: 'REUSE', contactId: 'contact-9' }, params);
       expect(dobUpdateCall()?.data.dateOfBirth.toISOString()).toBe('1990-09-09T00:00:00.000Z');
     });
 

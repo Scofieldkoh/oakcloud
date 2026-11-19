@@ -122,12 +122,13 @@ describe('contact date of birth in the forms', () => {
     expect(mocks.update.mock.calls[1][0].data.dateOfBirth).toBeNull();
   });
 
-  it('shows an error for a future date and does not save', async () => {
+  it.each(['2999-01-01', '1895-04-15'])('shows an error for an out-of-range date (%s) and does not save', async (dateOfBirth) => {
     render(<EditContactPage params={Promise.resolve({ id: '11111111-1111-4111-8111-111111111111' })} />);
     await waitFor(() => expect(dobInput()).toHaveValue('1980-01-01'));
-    fireEvent.change(dobInput(), { target: { value: '2999-01-01' } });
+    expect(screen.getByText('From 1 Jan 1900 to today; used for Sentroweb screening.')).toBeInTheDocument();
+    fireEvent.change(dobInput(), { target: { value: dateOfBirth } });
     fireEvent.click(screen.getByRole('button', { name: /save/i }));
-    expect(await screen.findByText('Date of birth must be valid and not in the future')).toBeInTheDocument();
+    expect(await screen.findByText('Date of birth must be a real date from 1 Jan 1900 to today')).toBeInTheDocument();
     expect(mocks.update).not.toHaveBeenCalled();
   });
 
