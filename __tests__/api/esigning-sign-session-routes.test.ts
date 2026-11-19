@@ -290,7 +290,10 @@ describe('POST /api/esigning/sign/session/verify', () => {
 
     expect(response.status).toBe(400);
     expect(await response.json()).toMatchObject({ error: 'Invalid payload' });
-    expect(mocks.recordFailure).toHaveBeenCalledTimes(1);
+    // One failure on the per-address key and one on the per-recipient key.
+    expect(mocks.recordFailure).toHaveBeenCalledTimes(2);
+    expect(mocks.recordFailure).toHaveBeenCalledWith(`esigning_sign_verify:${IP}:recipient-1`, expect.any(Object));
+    expect(mocks.recordFailure).toHaveBeenCalledWith('esigning_sign_verify_recipient:recipient-1', expect.any(Object));
     expect(mocks.verifyEsigningAccessCode).not.toHaveBeenCalled();
   });
 

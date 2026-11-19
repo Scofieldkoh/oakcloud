@@ -1,5 +1,7 @@
 import { Prisma, type Contact } from '@/generated/prisma';
 import { createAuditLog } from '@/lib/audit';
+import { ConflictError } from '@/lib/errors';
+import { parseDateOnly, plausibleDateOfBirth, toDateOnlyString } from '@/lib/date-only';
 import { scoreContactIdentityMatch } from '@/lib/contact-identity-matching';
 import {
   buildContactIdentityFingerprint,
@@ -22,6 +24,7 @@ import type {
   ContactIdentityRecord,
   ContactMatchResult,
   ContactResolutionDecision,
+  ContactMatchReason,
 } from '@/types/contact-identity';
 
 export interface ResolveContactIdentityResult {
@@ -449,14 +452,57 @@ function comparable(field: ContactIdentityConflict['field'], value: unknown): st
   return canonicalizeContactName(text);
 }
 
+/**
+ * The date of birth a candidate may write: midnight UTC of a real, plausible calendar date, only for
+ * an individual. Anything else (missing, malformed, future, or for a corporate) is no value at all,
+ * so it can neither fill nor conflict, and never clears a stored date.
+ */
+function candidateDateOfBirth(candidate: Pick<ContactIdentityCandidate, 'contactType' | 'dateOfBirth'>): Date | null {
+  if (candidate.contactType !== 'INDIVIDUAL') return null;
+  const date = plausibleDateOfBirth(candidate.dateOfBirth);
+  return date ? parseDateOnly(date) : null;
+}
+
+/**
+ * How a date of birth may reach the matched contact. It is written only when the person is certain:
+ * matched by ID number, or chosen by the reviewer (a name-only automatic match writes none).
+ * Only a BizFile record, approved in the review, may replace a different saved date, and only the
+ * very date the reviewer saw and agreed to replace (`replacesDateOfBirth`): a replacement without that
+ * agreement, or one whose agreed date is no longer the saved date, is refused outright. Every other
+ * source fills an empty date and reports a difference as a conflict.
+ */
+interface DateOfBirthPolicy {
+  allowed: boolean;
+  replace: boolean;
+}
+
+function dateOfBirthPolicy(
+  candidate: ContactIdentityCandidate,
+  decision: ContactResolutionDecision,
+  reasons: ContactMatchReason[],
+): DateOfBirthPolicy {
+  const certain = decision.action === 'REUSE' || reasons.includes('IDENTIFIER');
+  return { allowed: certain, replace: certain && candidate.source === 'BIZFILE' };
+}
+
 function buildEnrichment(
   candidate: ContactIdentityCandidate,
   existing: ContactWithIdentityRelations,
+  dob: DateOfBirthPolicy = { allowed: true, replace: false },
 ): { data: Prisma.ContactUpdateInput; fields: string[]; conflicts: ContactIdentityConflict[] } {
   const data: Prisma.ContactUpdateInput = {};
   const fields: string[] = [];
   const conflicts: ContactIdentityConflict[] = [];
-  const incomingDob = candidate.dateOfBirth ? new Date(candidate.dateOfBirth) : null;
+  const incomingDob = existing.contactType === 'INDIVIDUAL' && dob.allowed ? candidateDateOfBirth(candidate) : null;
+  if (incomingDob && dob.replace) {
+    const saved = toDateOnlyString(existing.dateOfBirth);
+    if (candidate.replacesDateOfBirth && candidate.replacesDateOfBirth !== saved) {
+      throw new ConflictError('The saved date of birth changed after it was reviewed. Review the contact again before saving.');
+    }
+    if (saved && saved !== toDateOnlyString(incomingDob) && !candidate.replacesDateOfBirth) {
+      throw new ConflictError('Review and confirm the saved date of birth before replacing it.');
+    }
+  }
   const values = [
     ['firstName', candidate.firstName, existing.firstName],
     ['lastName', candidate.lastName, existing.lastName],
@@ -465,6 +511,7 @@ function buildEnrichment(
     ['corporateUen', hasUsableCorporateUen(candidate) ? candidate.corporateUen : null, existing.corporateUen],
     ['nationality', candidate.nationality, existing.nationality],
     ['dateOfBirth', incomingDob, existing.dateOfBirth],
+    ['gender', candidate.gender, existing.gender],
     ['fullAddress', candidate.fullAddress, existing.fullAddress],
   ] as const;
   const conflictFields = new Set<ContactIdentityConflict['field']>([
@@ -473,6 +520,13 @@ function buildEnrichment(
 
   for (const [field, incoming, current] of values) {
     if (isBlank(incoming)) continue;
+    if (field === 'dateOfBirth' && !isBlank(current) && dob.replace
+      && comparable('dateOfBirth', incoming) !== comparable('dateOfBirth', current)) {
+      // buildEnrichment has verified the reviewer's approval of this exact saved date above.
+      data.dateOfBirth = incoming as Date;
+      fields.push('dateOfBirth');
+      continue;
+    }
     if (isBlank(current)) {
       data[field] = incoming as never;
       fields.push(field);
@@ -590,7 +644,8 @@ async function createNewContact(
       identificationType: hasUsableIdentificationNumber(candidate) ? candidate.identificationType : null,
       identificationNumber: hasUsableIdentificationNumber(candidate) ? candidate.identificationNumber?.trim() || null : null,
       nationality: candidate.nationality,
-      dateOfBirth: candidate.dateOfBirth ? new Date(candidate.dateOfBirth) : null,
+      dateOfBirth: candidateDateOfBirth(candidate),
+      gender: candidate.gender ?? null,
       corporateName: candidate.corporateName,
       corporateUen: hasUsableCorporateUen(candidate) ? candidate.corporateUen?.trim() || null : null,
       fullAddress: candidate.fullAddress,
@@ -863,7 +918,11 @@ async function resolveInTransaction(
     };
   }
 
-  const enrichment = buildEnrichment(candidate, selected.contact);
+  const enrichment = buildEnrichment(
+    candidate,
+    selected.contact,
+    dateOfBirthPolicy(candidate, decision, selected.match.reasons),
+  );
   if (
     enrichment.fields.includes('identificationType') ||
     enrichment.fields.includes('identificationNumber')
@@ -873,6 +932,18 @@ async function resolveInTransaction(
       throw new Error(
         `Cannot assign ${identifierDuplicate.identificationType ?? 'UNKNOWN'}:${identifierDuplicate.identificationNumber ?? ''} to "${selected.contact.fullName}" because it already exists on contact "${identifierDuplicate.fullName}"`,
       );
+    }
+  }
+  if (candidate.source === 'BIZFILE' && enrichment.fields.includes('dateOfBirth')) {
+    // Manual contact edits do not take identity advisory locks. Compare-and-set under the row lock
+    // so a date changed after our read cannot be overwritten; the enclosing transaction also keeps
+    // this write atomic with the approved company changes and their audit.
+    const changed = await tx.contact.updateMany({
+      where: { id: selected.contact.id, tenantId: params.tenantId, dateOfBirth: selected.contact.dateOfBirth },
+      data: { dateOfBirth: enrichment.data.dateOfBirth as Date },
+    });
+    if (changed.count !== 1) {
+      throw new ConflictError('The saved date of birth changed after it was reviewed. Review the contact again before saving.');
     }
   }
   const updated = enrichment.fields.length > 0
@@ -890,6 +961,16 @@ async function resolveInTransaction(
       entityName: updated.fullName,
       summary: `Enriched contact "${updated.fullName}" through identity resolution`,
       changeSource: sourceChangeSource(candidate.source),
+      ...(enrichment.fields.includes('dateOfBirth')
+        ? {
+            changes: {
+              dateOfBirth: {
+                old: toDateOnlyString(selected.contact.dateOfBirth),
+                new: toDateOnlyString(updated.dateOfBirth),
+              },
+            },
+          }
+        : {}),
       metadata: { source: candidate.source, sourceRecordId: candidate.sourceRecordId, enrichedFields },
     }, tx as Prisma.TransactionClient);
   }

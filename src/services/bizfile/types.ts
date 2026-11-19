@@ -87,6 +87,10 @@ export interface ExtractedBizFileData {
     identificationType?: string;
     identificationNumber?: string;
     nationality?: string;
+    /** YYYY-MM-DD, only when printed for this individual (never derived from the ID number). */
+    dateOfBirth?: string;
+    /** The saved date of birth the reviewer saw and agreed to replace (YYYY-MM-DD); the apply is refused if the contact's date has changed since. */
+    dateOfBirthReplaces?: string;
     placeOfOrigin?: string;
     address?: string;
     shareClass: string;
@@ -101,6 +105,10 @@ export interface ExtractedBizFileData {
     identificationType?: string;
     identificationNumber?: string;
     nationality?: string;
+    /** YYYY-MM-DD, only when printed for this person (never derived from the ID number). */
+    dateOfBirth?: string;
+    /** The saved date of birth the reviewer saw and agreed to replace (YYYY-MM-DD); the apply is refused if the contact's date has changed since. */
+    dateOfBirthReplaces?: string;
     address?: string;
     appointmentDate?: string;
     cessationDate?: string;
@@ -216,6 +224,9 @@ export interface ExtractedOfficerData {
   identificationType?: string;
   identificationNumber?: string;
   nationality?: string;
+  dateOfBirth?: string;
+  /** The saved date of birth the reviewer saw and agreed to replace (YYYY-MM-DD); the apply is refused if the contact's date has changed since. */
+  dateOfBirthReplaces?: string;
   address?: string;
   appointmentDate?: string;
   cessationDate?: string;
@@ -232,6 +243,9 @@ export interface ExtractedShareholderData {
   identificationType?: string;
   identificationNumber?: string;
   nationality?: string;
+  dateOfBirth?: string;
+  /** The saved date of birth the reviewer saw and agreed to replace (YYYY-MM-DD); the apply is refused if the contact's date has changed since. */
+  dateOfBirthReplaces?: string;
   placeOfOrigin?: string;
   address?: string;
   shareClass: string;

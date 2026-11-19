@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createErrorResponse } from '@/lib/api-helpers';
 import { RATE_LIMIT_CONFIGS } from '@/lib/rate-limit';
-import { enforceEsigningRateLimit } from '@/lib/esigning-public-route';
+import { enforceEsigningRateLimit, enforceEsigningLookupAggregateLimit } from '@/lib/esigning-public-route';
 import { getEsigningVerificationData } from '@/services/esigning-certificate.service';
 
 interface RouteParams {
@@ -18,6 +18,11 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   );
   if ('response' in rateLimit) {
     return rateLimit.response;
+  }
+
+  const lookupLimit = enforceEsigningLookupAggregateLimit(request);
+  if ('response' in lookupLimit) {
+    return lookupLimit.response;
   }
 
   try {

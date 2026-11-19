@@ -19,7 +19,7 @@ import type { ContactIdentityCandidate, ContactIdentityRecord, ContactMatchReaso
 
 const MERGE_FIELDS = [
   'firstName', 'lastName', 'alias', 'identificationType', 'identificationNumber',
-  'nationality', 'dateOfBirth', 'corporateName', 'corporateUen', 'fullAddress',
+  'nationality', 'dateOfBirth', 'gender', 'corporateName', 'corporateUen', 'fullAddress',
 ] as const;
 type MergeField = (typeof MERGE_FIELDS)[number];
 
@@ -51,6 +51,7 @@ type MergeContact = {
   firstName: string | null; lastName: string | null; fullName: string; canonicalName: string | null;
   alias: string | null; identificationType: 'NRIC' | 'FIN' | 'PASSPORT' | 'UEN' | 'OTHER' | null;
   identificationNumber: string | null; nationality: string | null; dateOfBirth: Date | null;
+  gender: 'MALE' | 'FEMALE' | 'OTHER' | null;
   corporateName: string | null; corporateUen: string | null; fullAddress: string | null;
   isActive: boolean; deletedAt: Date | null; createdAt: Date; updatedAt: Date;
   contactDetails: Array<{ detailType: 'EMAIL' | 'PHONE' | 'WEBSITE' | 'OTHER'; value: string; companyId: string | null }>;
@@ -78,7 +79,7 @@ type AliasDelegate = {
 const contactSelect = {
   id: true, tenantId: true, contactType: true, firstName: true, lastName: true, fullName: true,
   canonicalName: true, alias: true, identificationType: true, identificationNumber: true,
-  nationality: true, dateOfBirth: true, corporateName: true, corporateUen: true, fullAddress: true,
+  nationality: true, dateOfBirth: true, gender: true, corporateName: true, corporateUen: true, fullAddress: true,
   isActive: true, deletedAt: true, createdAt: true, updatedAt: true,
   contactDetails: { where: { deletedAt: null }, select: { detailType: true, value: true, companyId: true } },
 } as const;

@@ -260,6 +260,8 @@ function stripIdentity(value: Record<string, unknown>): Record<string, unknown> 
   delete result.updatedAt;
   delete result.sourceDocumentId;
   delete result.contactResolution;
+  // The reviewer's agreement to replace a saved date of birth is review state, not a row difference.
+  delete result.dateOfBirthReplaces;
   return result;
 }
 

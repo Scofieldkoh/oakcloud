@@ -37,8 +37,8 @@ const RULES: ModuleRule[] = [
   {
     key: 'companies',
     label: 'Companies',
-    description: 'Companies, officers, shareholders, addresses, notes and BizFile records',
-    tables: ['companies', 'share_capital', 'note_tabs'],
+    description: 'Companies, officers, shareholders, addresses, notes, BizFile records and Sentroweb checks',
+    tables: ['companies', 'share_capital', 'note_tabs', 'sentroweb_check_runs', 'sentroweb_check_results'],
     prefixes: ['company_', 'bizfile_'],
   },
   {

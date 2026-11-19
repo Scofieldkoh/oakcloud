@@ -5,6 +5,8 @@ import { Prisma } from '@/generated/prisma';
 import type { Contact, ContactType } from '@/generated/prisma';
 import type { ContactIdentityCandidate } from '@/types/contact-identity';
 import { canonicalizeContactAlias, canonicalizeContactName } from '@/lib/contact-identity-normalization';
+import { ValidationError } from '@/lib/errors';
+import { parseDateOnly, plausibleDateOfBirth, toDateOnlyString } from '@/lib/date-only';
 
 /**
  * Type for Prisma transaction client (interactive transaction)
@@ -30,6 +32,18 @@ function buildFullName(data: {
   }
   const parts = [data.firstName, data.lastName].filter(Boolean);
   return parts.length > 0 ? parts.join(' ') : 'Unknown';
+}
+
+/**
+ * A date of birth as it is stored: midnight UTC of its calendar date. Anything that is not a
+ * plausible date is refused rather than stored as a different day; blank is none.
+ */
+function dateOfBirthForStorage(value: string | null | undefined): Date | null {
+  if (value === undefined || value === null || value === '') return null;
+  const date = plausibleDateOfBirth(value);
+  const stored = date ? parseDateOnly(date) : null;
+  if (!stored) throw new ValidationError('Date of birth must be a real date from 1 Jan 1900 to today');
+  return stored;
 }
 
 function normalizeOptionalString(value?: string | null): string | null {
@@ -61,7 +75,9 @@ export async function createContact(
       identificationType: data.identificationType,
       identificationNumber,
       nationality: data.nationality,
-      dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : null,
+      // Individuals only: a corporate contact has no date of birth.
+      dateOfBirth: data.contactType === 'CORPORATE' ? null : dateOfBirthForStorage(data.dateOfBirth),
+      gender: data.gender ?? null,
       corporateName: data.corporateName,
       corporateUen,
       fullAddress: data.fullAddress,
@@ -83,11 +99,17 @@ export async function createContact(
   return contact;
 }
 
+/** Extra audit detail for an update that came from somewhere other than the contact form (for example a linked form response). */
+export interface ContactUpdateAudit {
+  summary?: string;
+  metadata?: Record<string, unknown>;
+}
+
 export async function updateContact(
   data: UpdateContactInput,
-  params: TenantAwareParams
+  params: TenantAwareParams & { audit?: ContactUpdateAudit }
 ): Promise<Contact> {
-  const { tenantId, userId, tx } = params;
+  const { tenantId, userId, tx, audit } = params;
   const db = tx ?? prisma;
 
   const existing = await db.contact.findFirst({
@@ -111,8 +133,23 @@ export async function updateContact(
   if (data.identificationNumber !== undefined)
     updateData.identificationNumber = normalizeOptionalString(data.identificationNumber);
   if (data.nationality !== undefined) updateData.nationality = data.nationality;
-  if (data.dateOfBirth !== undefined)
-    updateData.dateOfBirth = data.dateOfBirth ? new Date(data.dateOfBirth) : null;
+  if (data.gender !== undefined) updateData.gender = data.gender;
+  let dateOfBirthChange: { old: string | null; new: string | null } | null = null;
+  if (data.dateOfBirth !== undefined) {
+    const stored = dateOfBirthForStorage(data.dateOfBirth);
+    if (stored && (data.contactType ?? existing.contactType) === 'CORPORATE') {
+      throw new ValidationError('Date of birth applies to individual contacts only');
+    }
+    updateData.dateOfBirth = stored;
+  } else if (data.contactType === 'CORPORATE' && existing.dateOfBirth) {
+    // Switching a contact to corporate drops the date of birth: only individuals have one.
+    updateData.dateOfBirth = null;
+  }
+  if (updateData.dateOfBirth !== undefined) {
+    const oldValue = toDateOnlyString(existing.dateOfBirth);
+    const newValue = toDateOnlyString(updateData.dateOfBirth as Date | null);
+    if (oldValue !== newValue) dateOfBirthChange = { old: oldValue, new: newValue };
+  }
   if (data.corporateName !== undefined) updateData.corporateName = data.corporateName;
   if (data.corporateUen !== undefined)
     updateData.corporateUen = normalizeOptionalString(data.corporateUen);
@@ -141,8 +178,10 @@ export async function updateContact(
     entityType: 'Contact',
     entityId: contact.id,
     entityName: contact.fullName,
-    summary: `Updated contact "${contact.fullName}"`,
+    summary: audit?.summary ?? `Updated contact "${contact.fullName}"`,
     changeSource: 'MANUAL',
+    ...(audit?.metadata ? { metadata: audit.metadata } : {}),
+    ...(dateOfBirthChange ? { changes: { dateOfBirth: dateOfBirthChange } } : {}),
   }, tx as Prisma.TransactionClient | undefined);
 
   return contact;
@@ -167,6 +206,7 @@ export async function findOrCreateContact(
     corporateUen: data.corporateUen,
     nationality: data.nationality,
     dateOfBirth: data.dateOfBirth,
+    gender: data.gender,
     fullAddress: data.fullAddress,
   };
   const { resolveOrCreateContact } = await import('@/services/contact-identity.service');
