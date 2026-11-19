@@ -467,6 +467,14 @@ class Session implements SentrowebSession {
         if (typed !== request.name) throw new SentrowebError('LAYOUT_CHANGED');
       });
       await this.phase('submit-enabled', async () => {
+        // SEARCH may take a while to enable, and the form can redraw (a filter ticked or a country
+        // changed) while it does. Wait for it first, and only then read everything back, so the last
+        // read is of the form as it is when the click follows.
+        await pollUntil(async () => (await page.$(selectors.search.submitEnabled)) !== null, {
+          timeoutMs: this.stepMs,
+          signal,
+          onTimeout: () => new SentrowebError('LAYOUT_CHANGED'),
+        });
         const typedAfter = await page.$eval(selectors.search.nameInput, (input) => (input as HTMLInputElement).value);
         if (typedAfter !== request.name) throw new SentrowebError('LAYOUT_CHANGED');
         // The search must go out exactly as intended: every field is read back one last time.
@@ -474,11 +482,8 @@ class Session implements SentrowebSession {
         if (!(await this.optionsAreSet(request.searchType, { fuzzy, gender: details.gender }))) {
           throw new SentrowebError('LAYOUT_CHANGED');
         }
-        await pollUntil(async () => (await page.$(selectors.search.submitEnabled)) !== null, {
-          timeoutMs: this.stepMs,
-          signal,
-          onTimeout: () => new SentrowebError('LAYOUT_CHANGED'),
-        });
+        // SEARCH must still be enabled after the read-back (a redraw that disabled it is a changed form).
+        if ((await page.$(selectors.search.submitEnabled)) === null) throw new SentrowebError('LAYOUT_CHANGED');
         // Nothing may have been asked of Sentroweb yet: the click below is the only trigger.
         this.assertNothingSent();
       });

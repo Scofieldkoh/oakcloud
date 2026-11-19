@@ -257,6 +257,28 @@ describe('Sentroweb client against a fake Sentroweb', () => {
         expect(stepFailures(calls)).toMatchObject([{ phase: 'set-birth-date', code: 'LAYOUT_CHANGED', form: { hasDateOfBirthField: false, hasCountryDropdown: true } }]);
       });
 
+      it('a filter the page changes while SEARCH is still disabled is caught after it enables: nothing is sent', async () => {
+        for (const [label, options, search] of [
+          ['an Entity search that gets a ticked Male box', { lateFilterChange: 'gender' as const }, { name: CLEAR_ENTITY, searchType: 'ENTITY' as const }],
+          ['an individual search whose country changes', { lateFilterChange: 'country' as const }, { name: CLEAR_INDIVIDUAL, searchType: 'INDIVIDUAL' as const, ...DETAILS }],
+        ] as const) {
+          const server = await start({ enableDelayMs: 700, ...options });
+          const session = await open(server, { timeouts: { stepMs: 4_000 } });
+          const error = await failureOf(session.search(search));
+          expect(error.code, label).toBe('LAYOUT_CHANGED');
+          expect(error.searchSubmitted, label).toBeFalsy();
+          expect(server.count('checkquota'), label).toBe(0);
+          expect(server.count('search'), label).toBe(0);
+        }
+      });
+
+      it('a slow SEARCH enable with no change still searches exactly what was asked', async () => {
+        const server = await start({ enableDelayMs: 700 });
+        const session = await open(server, { timeouts: { stepMs: 4_000 } });
+        await session.search({ name: CLEAR_INDIVIDUAL, searchType: 'INDIVIDUAL', ...DETAILS, gender: 'MALE' });
+        expect(server.searches[0]).toMatchObject({ country: 'Singapore', dateOfBirth: '1980-01-01', gender: 'MALE' });
+      });
+
       it('an Entity search clears a gender box the form left ticked, and sends no gender filter', async () => {
         const server = await start({ staleGender: 'ticked' });
         const session = await open(server);

@@ -73,6 +73,12 @@ export interface FakeOptions {
    * earlier search): `ticked` lets a click clear it, `stuck` ignores clicks on it.
    */
   staleGender: 'none' | 'ticked' | 'stuck';
+  /**
+   * SEARCH enables `enableDelayMs` after the name and type are filled in, and just before it does the
+   * page changes a filter by itself: `gender` ticks Male, `country` shows another country.
+   */
+  enableDelayMs: number;
+  lateFilterChange: 'none' | 'gender' | 'country';
   /** What the search answer echoes as country / birth date instead of what was sent (null: nothing). */
   echoCountry: string | null | undefined;
   echoDateOfBirth: string | null | undefined;
@@ -107,6 +113,8 @@ const DEFAULTS: FakeOptions = {
   rewriteDateOfBirth: false,
   omitIndividualFields: 'none',
   staleGender: 'none',
+  enableDelayMs: 0,
+  lateFilterChange: 'none',
   echoCountry: undefined,
   echoDateOfBirth: undefined,
   echoFuzzy: undefined,
@@ -265,10 +273,29 @@ function mainPage(options: FakeOptions): string {
       individualFields.innerHTML = '';
     }
   }
+  const enableDelayMs = ${JSON.stringify(options.enableDelayMs)};
+  const lateFilterChange = ${JSON.stringify(options.lateFilterChange)};
+  const lateGenderHtml = ${JSON.stringify(checkbox('Male').replace('ui checkbox', 'ui checked checkbox'))};
+  let enableTimer = null;
+  function setEnabled(on) {
+    submit.disabled = !on;
+    submit.classList.toggle('disabled', !on);
+  }
   function refresh() {
     const ready = nameInput.value.trim() !== '' && (isChecked('Individual') || isChecked('Entity'));
-    submit.disabled = !ready;
-    submit.classList.toggle('disabled', !ready);
+    if (!ready) { clearTimeout(enableTimer); enableTimer = null; setEnabled(false); return; }
+    if (enableDelayMs === 0 && lateFilterChange === 'none') { setEnabled(true); return; }
+    if (enableTimer) return;
+    enableTimer = setTimeout(() => {
+      enableTimer = null;
+      if (lateFilterChange === 'gender') individualFields.insertAdjacentHTML('beforeend', lateGenderHtml);
+      if (lateFilterChange === 'country') {
+        const shownText = form.querySelector('.searchCountry > .text');
+        shownText.className = 'text';
+        shownText.textContent = 'Malaysia';
+      }
+      setEnabled(true);
+    }, enableDelayMs);
   }
   // Like the real page, the checkboxes only react once the page's initializeApp call has answered:
   // a click right after the form appears is ignored.

@@ -148,7 +148,7 @@ or starts a search before our click, the attempt is recorded as submitted (coold
 credit counted) and the client stops. The client types the country to narrow the list, then takes the option whose text is
 exactly the wanted one (Enter when it is the first listed, as in the recorded flow; otherwise a click
 on that option, so "Guinea" never picks "Equatorial Guinea"), types the date, and reads back the
-country shown, the date typed, the search type, the Fuzzy Search box and the Male and Female boxes just before SEARCH. If
+country shown, the date typed, the search type, the Fuzzy Search box and the Male and Female boxes just before SEARCH (after SEARCH has enabled, not before: the page can change a filter while it waits to enable). If
 any field is not exactly what was wanted the attempt fails `LAYOUT_CHANGED` before SEARCH: not
 submitted, no credit, nothing sent. Sentroweb's answer must echo the same country and date of birth.
 
