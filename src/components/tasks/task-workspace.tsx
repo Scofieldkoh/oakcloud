@@ -200,6 +200,18 @@ export function TaskWorkspace() {
         onRemove: () => setFilters((current) => ({ ...current, page: 1, ownerId: undefined })),
       });
     }
+    if (filters.companyQuery) {
+      chips.push({
+        key: 'companyQuery',
+        label: 'Company',
+        value: filters.companyQuery,
+        onRemove: () => setFilters((current) => ({
+          ...current,
+          page: 1,
+          companyQuery: undefined,
+        })),
+      });
+    }
     if (filters.ownerQuery) {
       chips.push({
         key: 'ownerQuery',

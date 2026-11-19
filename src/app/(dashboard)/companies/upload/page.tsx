@@ -43,6 +43,7 @@ import {
   readTaskLaunchContext,
   withTaskLaunchContext,
 } from '@/lib/task-launch-context';
+import { ShortcutLabel } from '@/components/ui/shortcut-label';
 
 type UploadStep = 'upload' | 'extracting' | 'preview' | 'diff-preview' | 'saving' | 'complete';
 
@@ -1101,8 +1102,7 @@ export default function UploadBizFilePage() {
 
           <div className="flex items-center justify-end gap-3">
             <Link href={returnHref} className="btn-secondary btn-sm" title="Cancel (Ctrl+Backspace)">
-              <span className="hidden sm:inline">Cancel (Ctrl+Backspace)</span>
-              <span className="sm:hidden">Cancel</span>
+              <ShortcutLabel label="Cancel" shortcut="Ctrl+Backspace" />
             </Link>
             <button
               onClick={handleUploadAndExtract}
@@ -1552,8 +1552,7 @@ export default function UploadBizFilePage() {
             </div>
             <div className="flex items-center gap-3">
               <Link href={`/companies/${companyId}`} className="btn-secondary btn-sm" title="Cancel (Ctrl+Backspace)">
-                <span className="hidden sm:inline">Cancel (Ctrl+Backspace)</span>
-                <span className="sm:hidden">Cancel</span>
+                <ShortcutLabel label="Cancel" shortcut="Ctrl+Backspace" />
               </Link>
               {(() => {
                 const companyChanges = diffResult.differences.length;
@@ -1571,13 +1570,11 @@ export default function UploadBizFilePage() {
                     <CheckCircle className="w-4 h-4" />
                     {hasAnyChanges ? (
                       <>
-                        <span className="hidden sm:inline">{`Review ${totalChanges} Change${totalChanges > 1 ? 's' : ''} (Ctrl+S)`}</span>
-                        <span className="sm:hidden">Review proposed changes</span>
+                        <ShortcutLabel label={`Review ${totalChanges} Change${totalChanges > 1 ? 's' : ''}`} shortcut="Ctrl+S" short="Review proposed changes" />
                       </>
                     ) : (
                       <>
-                        <span className="hidden sm:inline">Review Document Approval (Ctrl+S)</span>
-                        <span className="sm:hidden">Review document approval</span>
+                        <ShortcutLabel label="Review Document Approval" shortcut="Ctrl+S" short="Review document approval" />
                       </>
                     )}
                   </button>

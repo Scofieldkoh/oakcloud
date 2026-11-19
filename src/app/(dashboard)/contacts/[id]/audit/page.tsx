@@ -7,6 +7,7 @@ import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft, History, User, Pencil, Trash2, Plus, RotateCcw, Link2, RefreshCw } from 'lucide-react';
 import { formatDateTime } from '@/lib/utils';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
+import { ShortcutLabel } from '@/components/ui/shortcut-label';
 
 interface AuditLog {
   id: string;
@@ -121,13 +122,11 @@ export default function ContactAuditPage({
             disabled={isFetching}
           >
             <RefreshCw className={`w-4 h-4 ${isFetching ? 'animate-spin' : ''}`} />
-            <span className="hidden sm:inline">Refresh (Ctrl+R)</span>
-            <span className="sm:hidden">Refresh</span>
+            <ShortcutLabel label="Refresh" shortcut="Ctrl+R" />
           </button>
           <Link href="/contacts/new" className="btn-primary btn-sm flex items-center gap-2" title="Add Contact (F1)">
             <Plus className="w-4 h-4" />
-            <span className="hidden sm:inline">Add Contact (F1)</span>
-            <span className="sm:hidden">Add</span>
+            <ShortcutLabel label="Add Contact" shortcut="F1" short="Add" />
           </Link>
         </div>
       </div>

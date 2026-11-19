@@ -428,7 +428,9 @@ export function TaskList({
               <TableFilterCell>
                 <CompanySelect
                   value={filters.companyId ?? ''}
-                  onChange={(companyId) => updateFilters({ companyId: companyId || undefined })}
+                  onChange={(companyId) => updateFilters({ companyId: companyId || undefined, companyQuery: undefined })}
+                  textFilter={filters.companyId ? undefined : filters.companyQuery}
+                  onTextFilterChange={(text) => updateFilters({ companyId: undefined, companyQuery: text || undefined })}
                   placeholder="All companies"
                   className="text-xs"
                   variant="table-filter"

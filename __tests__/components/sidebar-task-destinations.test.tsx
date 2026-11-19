@@ -118,4 +118,18 @@ describe('Sidebar task workspace destinations', () => {
     expect(screen.getByRole('link', { name: 'Deadlines' })).toHaveAttribute('href', '/deadlines');
     expect(screen.getByRole('link', { name: 'Billing' })).toHaveAttribute('href', '/billing');
   });
+
+  it('shows the menu header on tablet widths, where the fixed sidebar is hidden', () => {
+    // A 900px tablet: at least 768px wide (not a phone) but under the 1024px lg breakpoint.
+    window.matchMedia = vi.fn().mockImplementation((query: string) => ({
+      matches: query === '(min-width: 768px)',
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    }));
+    render(<Sidebar />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open menu' }));
+    expect(screen.getByRole('dialog', { name: 'Navigation menu' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Tasks' })).toHaveAttribute('href', '/tasks');
+  });
 });

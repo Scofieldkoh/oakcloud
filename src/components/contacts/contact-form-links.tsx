@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { FileText, Paperclip, Link2, Unlink } from 'lucide-react';
+import { ClipboardCheck, FileText, Paperclip, Link2, Unlink } from 'lucide-react';
 import { CompanyAccentButton, CompanyAccentSection } from '@/components/companies/company-accent-section';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
@@ -97,16 +97,29 @@ export function ContactFormLinksSection({ contactId, canEdit }: ContactFormLinks
       ) : undefined}
     >
       <div className="divide-y divide-border-primary">
-        <p role="status" aria-live="polite" className={notice ? 'px-4 py-2 text-sm text-status-error' : 'sr-only'}>
+        <p role="status" aria-live="polite" className={notice ? 'p-3 text-sm text-status-error' : 'sr-only'}>
           {notice}
         </p>
-        {isLoading && <p className="px-4 py-3 text-sm text-text-secondary">Loading linked forms…</p>}
-        {error && !isLoading && <p className="px-4 py-3 text-sm text-status-error">{errorMessage(error)}</p>}
+        {isLoading && <p className="p-3 text-sm text-text-secondary">Loading linked forms…</p>}
+        {error && !isLoading && <p className="p-3 text-sm text-status-error">{errorMessage(error)}</p>}
         {!isLoading && !error && links?.length === 0 && (
-          <p className="px-4 py-3 text-sm text-text-secondary">No KYC/CDD form response is linked to this contact.</p>
+          <div className="px-3 py-6 text-center">
+            <ClipboardCheck className="mx-auto mb-2 h-6 w-6 text-text-muted" aria-hidden="true" />
+            <p className="text-sm text-text-muted">No KYC/CDD form response is linked to this contact.</p>
+            {canEdit && (
+              <button
+                type="button"
+                onClick={() => setShowLink(true)}
+                className="mt-2 inline-flex items-center gap-1 text-sm text-oak-light hover:text-oak-dark"
+              >
+                <Link2 className="h-4 w-4" aria-hidden="true" />
+                Link a form response
+              </button>
+            )}
+          </div>
         )}
         {links?.map((link) => (
-          <div key={link.id} className="space-y-3 px-4 py-3" data-testid={`form-link-${link.id}`}>
+          <div key={link.id} className="space-y-3 p-3" data-testid={`form-link-${link.id}`}>
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2 text-sm font-medium text-text-primary">
@@ -120,7 +133,7 @@ export function ContactFormLinksSection({ contactId, canEdit }: ContactFormLinks
                 </p>
               </div>
               {canEdit && (
-                <button type="button" className="btn-ghost btn-xs" onClick={() => setUnlinkTarget(link)} disabled={unlink.isPending}>
+                <button type="button" className="btn-ghost btn-xs flex items-center gap-1.5" onClick={() => setUnlinkTarget(link)} disabled={unlink.isPending}>
                   <Unlink className="h-3.5 w-3.5" aria-hidden="true" />
                   Unlink
                 </button>
@@ -164,10 +177,10 @@ export function ContactFormLinksSection({ contactId, canEdit }: ContactFormLinks
                   </ul>
                 )}
                 {link.readOnlyAnswers.length > 0 && (
-                  <dl className="grid gap-1 text-sm sm:grid-cols-2">
+                  <dl className="grid gap-x-8 gap-y-3 text-sm sm:grid-cols-2">
                     {link.readOnlyAnswers.map((row) => (
                       <div key={row.label}>
-                        <dt className="text-xs text-text-secondary">{row.label}</dt>
+                        <dt className="mb-1 text-[11px] font-medium uppercase tracking-wide text-text-secondary">{row.label}</dt>
                         <dd className="text-text-primary">{row.value}</dd>
                       </div>
                     ))}
@@ -315,14 +328,20 @@ function LinkFormModal({ contactId, isOpen, onClose }: { contactId: string; isOp
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={close} title="Link a KYC/CDD form response" size="lg">
+    <Modal
+      isOpen={isOpen}
+      onClose={close}
+      title="Link a KYC/CDD form response"
+      description="Pick a KYC or CDD form response and the person on it who is this contact."
+      size="lg"
+    >
       <ModalBody>
         <div className="space-y-4">
           <div>
             <label htmlFor="form-link-form" className="label">Form</label>
             <select
               id="form-link-form"
-              className="input w-full"
+              className="input input-sm w-full"
               value={formId}
               onChange={(event) => { setFormId(event.target.value); setSubmissionId(''); setSelected(null); }}
             >
@@ -336,7 +355,7 @@ function LinkFormModal({ contactId, isOpen, onClose }: { contactId: string; isOp
               <label htmlFor="form-link-response" className="label">Response</label>
               <select
                 id="form-link-response"
-                className="input w-full"
+                className="input input-sm w-full"
                 value={submissionId}
                 onChange={(event) => { setSubmissionId(event.target.value); setSelected(null); }}
               >
@@ -352,14 +371,19 @@ function LinkFormModal({ contactId, isOpen, onClose }: { contactId: string; isOp
           {submissionId !== '' && (
             <fieldset>
               <legend className="label">Person</legend>
-              <div className="space-y-1">
+              <div className="divide-y divide-border-primary overflow-hidden rounded-lg border border-border-primary">
+                {persons.isLoading && <p className="px-3 py-2 text-xs text-text-secondary">Loading people…</p>}
                 {persons.data?.persons?.map((person) => {
                   const key = person.rowIndex === null ? 'whole' : String(person.rowIndex);
                   return (
-                    <label key={key} className={`flex items-start gap-2 text-sm ${person.eligible ? '' : 'text-text-tertiary'}`}>
+                    <label
+                      key={key}
+                      className={`flex min-h-9 items-start gap-2 px-3 py-2 text-sm ${person.eligible ? 'cursor-pointer hover:bg-background-tertiary' : 'cursor-not-allowed text-text-tertiary'}`}
+                    >
                       <input
                         type="radio"
                         name="form-link-person"
+                        className="mt-0.5"
                         disabled={!person.eligible}
                         checked={selected !== null && selected.rowIndex === person.rowIndex && selected.fingerprint === person.fingerprint}
                         onChange={() => {
@@ -375,7 +399,7 @@ function LinkFormModal({ contactId, isOpen, onClose }: { contactId: string; isOp
                     </label>
                   );
                 })}
-                {persons.data?.persons?.length === 0 && <p className="text-xs text-text-secondary">No person with a name or ID on this response.</p>}
+                {persons.data?.persons?.length === 0 && <p className="px-3 py-2 text-xs text-text-secondary">No person with a name or ID on this response.</p>}
               </div>
             </fieldset>
           )}

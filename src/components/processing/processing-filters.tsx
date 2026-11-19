@@ -28,6 +28,8 @@ export interface ProcessingFilterValues {
   needsReview?: boolean;
   isContainer?: boolean;
   companyId?: string;
+  /** Company name contains this text. */
+  companyName?: string;
   uploadDatePreset?: 'TODAY';
   uploadDateFrom?: string;
   uploadDateTo?: string;
@@ -111,7 +113,7 @@ export function ProcessingFilters({
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState<ProcessingFilterValues>(initialFilters);
   const [searchQuery, setSearchQuery] = useState(initialSearch);
-  const [companyName, setCompanyName] = useState('');
+  const [selectedCompanyName, setSelectedCompanyName] = useState('');
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
 
   // Serialize initialFilters for comparison to avoid object reference issues
@@ -161,7 +163,7 @@ export function ProcessingFilters({
     if (filters.duplicateStatus) count++;
     if (filters.revisionStatus) count++;
     if (filters.isContainer !== undefined) count++;
-    if (filters.companyId) count++;
+    if (filters.companyId || filters.companyName) count++;
     if (filters.uploadDatePreset) count++;
     if (filters.uploadDateFrom || filters.uploadDateTo) count++;
     if (filters.documentDateFrom || filters.documentDateTo) count++;
@@ -176,6 +178,13 @@ export function ProcessingFilters({
 
   const handleFilterChange = useCallback((key: keyof ProcessingFilterValues, value: unknown) => {
     const newFilters = { ...filters, [key]: value || undefined };
+    setFilters(newFilters);
+    onFilterChange(newFilters);
+  }, [filters, onFilterChange]);
+
+  // Company is either one picked company or a "name contains" text, never both.
+  const handleCompanyFilterChange = useCallback((companyId?: string, companyName?: string) => {
+    const newFilters = { ...filters, companyId: companyId || undefined, companyName: companyName || undefined };
     setFilters(newFilters);
     onFilterChange(newFilters);
   }, [filters, onFilterChange]);
@@ -472,9 +481,11 @@ export function ProcessingFilters({
               <CompanySelect
                 value={filters.companyId || ''}
                 onChange={(id, company) => {
-                  handleFilterChange('companyId', id);
-                  setCompanyName(company?.name ?? '');
+                  handleCompanyFilterChange(id);
+                  setSelectedCompanyName(company?.name ?? '');
                 }}
+                textFilter={filters.companyId ? undefined : filters.companyName}
+                onTextFilterChange={(text) => handleCompanyFilterChange(undefined, text)}
                 placeholder="Search companies..."
               />
             </div>
@@ -669,13 +680,13 @@ export function ProcessingFilters({
               onRemove={() => clearFilter('isContainer')}
             />
           )}
-          {filters.companyId && (
+          {(filters.companyId || filters.companyName) && (
             <FilterChip
               label="Company"
-              value={companyName || filters.companyId}
+              value={filters.companyId ? selectedCompanyName || filters.companyId : filters.companyName ?? ''}
               onRemove={() => {
-                clearFilter('companyId');
-                setCompanyName('');
+                handleCompanyFilterChange();
+                setSelectedCompanyName('');
               }}
             />
           )}

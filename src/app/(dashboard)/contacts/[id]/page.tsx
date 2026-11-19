@@ -32,6 +32,7 @@ import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import { getSafeListReturnUrl } from '@/lib/list-navigation';
 import type { ContactGender, ContactType, IdentificationType } from '@/generated/prisma';
 import { formatDateOnlyDisplay } from '@/lib/date-only';
+import { ShortcutLabel } from '@/components/ui/shortcut-label';
 
 // Company option type for AsyncSearchSelect
 interface CompanyOption extends AsyncSearchSelectOption {
@@ -398,43 +399,40 @@ export default function ContactDetailPage({
             <span className={`badge ${currentTypeConfig.color}`}>{currentTypeConfig.label}</span>
           </div>
         </div>
-        <div className="flex items-center gap-2 sm:gap-3">
+        <div className="flex flex-wrap items-center gap-2 sm:justify-end">
           {can.createContact && (
             <Link
               href="/contacts/new"
-              className="btn-primary btn-sm flex items-center gap-2"
+              className="btn-primary btn-sm flex items-center gap-2 whitespace-nowrap"
               title="Add Contact (F1)"
             >
               <User className="w-4 h-4" />
-              <span className="hidden sm:inline">Add Contact (F1)</span>
-              <span className="sm:hidden">Add</span>
+              <ShortcutLabel label="Add Contact" shortcut="F1" />
             </Link>
           )}
           <button
             onClick={handleRefresh}
-            className="btn-secondary btn-sm flex items-center gap-2"
+            className="btn-secondary btn-sm flex items-center gap-2 whitespace-nowrap"
             title="Refresh (Ctrl+R)"
             disabled={isFetching}
           >
             <RefreshCw className={`w-4 h-4 ${isFetching ? 'animate-spin' : ''}`} />
-            <span className="hidden sm:inline">Refresh (Ctrl+R)</span>
-            <span className="sm:hidden">Refresh</span>
+            <ShortcutLabel label="Refresh" shortcut="Ctrl+R" />
           </button>
           {can.updateContact && (
             <Link
               href={`/contacts/${id}/edit`}
-              className="btn-secondary btn-sm flex items-center gap-2"
+              className="btn-secondary btn-sm flex items-center gap-2 whitespace-nowrap"
               title="Edit (Ctrl+E)"
             >
                 <Pencil className="w-4 h-4" />
-                <span className="hidden sm:inline">Edit (Ctrl+E)</span>
-                <span className="sm:hidden">Edit</span>
+                <ShortcutLabel label="Edit" shortcut="Ctrl+E" />
               </Link>
           )}
           {can.deleteContact && (
             <button
               onClick={() => setDeleteDialogOpen(true)}
-              className="btn-danger btn-sm flex items-center gap-2"
+              className="btn-danger btn-sm flex items-center gap-2 whitespace-nowrap"
             >
               <Trash2 className="w-4 h-4" />
               Delete
@@ -580,6 +578,11 @@ export default function ContactDetailPage({
               setEditShareholderModalOpen(true);
             }}
           />
+
+          {/* KYC/CDD forms: needs contact:read and document:read (the API refuses the rest) */}
+          {can.readContact && can.readDocument && (
+            <ContactFormLinksSection contactId={id} canEdit={can.updateContact} />
+          )}
         </div>
 
         {/* Sidebar */}
@@ -644,11 +647,6 @@ export default function ContactDetailPage({
           </CompanyAccentSection>
         </div>
       </div>
-
-      {/* KYC/CDD forms: needs contact:read and document:read (the API refuses the rest) */}
-      {can.readContact && can.readDocument && (
-        <ContactFormLinksSection contactId={id} canEdit={can.updateContact} />
-      )}
 
       {/* Internal Notes - Full Width */}
       <InternalNotes

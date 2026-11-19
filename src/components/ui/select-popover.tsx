@@ -116,8 +116,15 @@ export function SelectPopoverMessage({ kind, children, onRetry }: SelectPopoverM
 }
 
 /** Keyboard hint footer shared by the select popovers. */
-export function SelectKeyboardHints({ openAbove = false }: { openAbove?: boolean }) {
-  const hints: Array<[string, string]> = [['↑↓', 'Navigate'], ['Enter', 'Select'], ['Esc', 'Close']];
+export function SelectKeyboardHints({
+  openAbove = false,
+  enterLabel = 'Select',
+}: {
+  openAbove?: boolean;
+  /** What Enter does right now, such as "Filter" for typed text in a list filter. */
+  enterLabel?: string;
+}) {
+  const hints: Array<[string, string]> = [['↑↓', 'Navigate'], ['Enter', enterLabel], ['Esc', 'Close']];
   return (
     <div
       className={cn(

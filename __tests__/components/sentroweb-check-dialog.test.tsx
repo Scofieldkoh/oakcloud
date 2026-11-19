@@ -15,7 +15,8 @@ vi.mock('@/components/ui/toast', () => ({
 }));
 
 import { SentrowebCheckDialog } from '@/components/companies/company-detail/sentroweb-check-dialog';
-import { SentrowebCheckAction } from '@/components/companies/company-detail/sentroweb-check-action';
+import { SentrowebCheckMenuItem } from '@/components/companies/company-detail/sentroweb-check-action';
+import { Dropdown, DropdownMenu, DropdownTrigger } from '@/components/ui/dropdown';
 
 const CANDIDATES_URL = '/api/companies/company-1/sentroweb-checks/candidates?tenantId=tenant-1';
 const START_URL = '/api/companies/company-1/sentroweb-checks?tenantId=tenant-1';
@@ -304,48 +305,49 @@ describe('SentrowebCheckDialog', () => {
   });
 });
 
-describe('SentrowebCheckAction', () => {
+describe('SentrowebCheckMenuItem', () => {
   afterEach(() => {
     cleanup();
     vi.unstubAllGlobals();
   });
 
-  function renderAction(canUpdate: boolean, isOpen = false) {
+  function renderMenuItem(withDialog = false) {
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-    const onOpenChange = vi.fn();
+    const onOpen = vi.fn();
     render(
       <QueryClientProvider client={client}>
-        <SentrowebCheckAction companyId="company-1" canUpdate={canUpdate} isOpen={isOpen} onOpenChange={onOpenChange} />
+        <Dropdown>
+          <DropdownTrigger>Actions</DropdownTrigger>
+          <DropdownMenu>
+            <SentrowebCheckMenuItem companyId="company-1" onOpen={onOpen} />
+          </DropdownMenu>
+        </Dropdown>
+        {withDialog ? <SentrowebCheckDialog companyId="company-1" isOpen onClose={vi.fn()} /> : null}
       </QueryClientProvider>,
     );
-    return { onOpenChange };
+    fireEvent.click(screen.getByRole('button', { name: 'Actions' }));
+    return { onOpen };
   }
 
-  it('renders nothing without update permission', () => {
+  it('opens the dialog from the menu item', () => {
     setupFetch({ candidates: candidatesResponse(1) });
-    renderAction(false);
-    expect(screen.queryByRole('button', { name: 'Sentroweb check' })).not.toBeInTheDocument();
+    const { onOpen } = renderMenuItem();
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Sentroweb check' }));
+    expect(onOpen).toHaveBeenCalledTimes(1);
   });
 
-  it('opens the dialog from the button', () => {
-    setupFetch({ candidates: candidatesResponse(1) });
-    const { onOpenChange } = renderAction(true);
-    fireEvent.click(screen.getByRole('button', { name: 'Sentroweb check' }));
-    expect(onOpenChange).toHaveBeenCalledWith(true);
-  });
-
-  it('disables the action button while the start request is pending', async () => {
+  it('disables the menu item while the start request is pending', async () => {
     let resolveStart: (response: Response) => void = () => undefined;
     setupFetch({
       candidates: candidatesResponse(1),
       start: () => new Promise<Response>((resolve) => { resolveStart = resolve; }),
     });
-    renderAction(true, true);
+    renderMenuItem(true);
 
     await screen.findByRole('checkbox', { name: 'Person 1' });
-    expect(screen.getByRole('button', { name: 'Sentroweb check' })).toBeEnabled();
+    expect(screen.getByRole('menuitem', { name: 'Sentroweb check' })).toBeEnabled();
     fireEvent.click(screen.getByRole('button', { name: 'Run check' }));
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Sentroweb check' })).toBeDisabled());
+    await waitFor(() => expect(screen.getByRole('menuitem', { name: /Sentroweb check/ })).toBeDisabled());
 
     await act(async () => {
       resolveStart(jsonResponse({ runId: 'run-new' }, 202));

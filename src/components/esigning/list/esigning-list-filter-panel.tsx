@@ -50,7 +50,15 @@ export function EnvelopeFilterPanel({
             <CompanySearchableSelect
               companies={companyOptions}
               value={draftCompanyId}
-              onChange={onDraftCompanyChange}
+              onChange={(nextCompanyId) => {
+                onDraftCompanyChange(nextCompanyId);
+                setDraftFilters((current) => ({ ...current, companyName: '' }));
+              }}
+              textFilter={draftCompanyId ? undefined : draftFilters.companyName}
+              onTextFilterChange={(text) => {
+                onDraftCompanyChange('');
+                setDraftFilters((current) => ({ ...current, companyName: text }));
+              }}
               placeholder="All companies"
               label="Company"
               clearable

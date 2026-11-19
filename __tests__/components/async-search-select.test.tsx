@@ -258,4 +258,78 @@ describe('AsyncSearchSelect', () => {
       restoreScrollIntoView();
     }
   });
+
+  describe('text filter mode', () => {
+    function TextFilterHarness({ onChange, onSearchSubmit }: {
+      onChange: (id: string) => void;
+      onSearchSubmit: (text: string) => void;
+    }) {
+      const [value, setValue] = useState('');
+      const [searchQuery, setSearchQuery] = useState('');
+      const [text, setText] = useState('');
+      return (
+        <AsyncSearchSelect
+          label="Company"
+          value={value}
+          options={options.filter((option) => option.label.toLowerCase().includes(searchQuery.toLowerCase()))}
+          isLoading={false}
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          onChange={(id) => {
+            onChange(id);
+            setValue(id);
+            setText('');
+          }}
+          onSearchSubmit={(next) => {
+            onSearchSubmit(next);
+            setValue('');
+            setText(next);
+          }}
+          submittedSearch={text}
+        />
+      );
+    }
+
+    it('filters by the typed text on Enter instead of picking the highlighted option', () => {
+      const restoreScrollIntoView = mockScrollIntoView();
+      const onChange = vi.fn();
+      const onSearchSubmit = vi.fn();
+      try {
+        render(<TextFilterHarness onChange={onChange} onSearchSubmit={onSearchSubmit} />);
+        const input = screen.getByRole('combobox', { name: 'Company' });
+        fireEvent.focus(input);
+        fireEvent.change(input, { target: { value: ' acm ' } });
+        fireEvent.keyDown(input, { key: 'Enter' });
+
+        expect(onSearchSubmit).toHaveBeenCalledWith('acm');
+        expect(onChange).not.toHaveBeenCalled();
+        expect(screen.getByText('acm')).toBeInTheDocument();
+
+        fireEvent.click(screen.getByRole('button', { name: 'Clear Company' }));
+        expect(onSearchSubmit).toHaveBeenLastCalledWith('');
+        expect(screen.getByRole('combobox', { name: 'Company' })).toHaveValue('');
+      } finally {
+        restoreScrollIntoView();
+      }
+    });
+
+    it('still picks the highlighted option after arrow-key navigation', () => {
+      const restoreScrollIntoView = mockScrollIntoView();
+      const onChange = vi.fn();
+      const onSearchSubmit = vi.fn();
+      try {
+        render(<TextFilterHarness onChange={onChange} onSearchSubmit={onSearchSubmit} />);
+        const input = screen.getByRole('combobox', { name: 'Company' });
+        fireEvent.focus(input);
+        fireEvent.change(input, { target: { value: 'e' } });
+        fireEvent.keyDown(input, { key: 'ArrowDown' });
+        fireEvent.keyDown(input, { key: 'Enter' });
+
+        expect(onChange).toHaveBeenCalledWith('company-2');
+        expect(onSearchSubmit).not.toHaveBeenCalled();
+      } finally {
+        restoreScrollIntoView();
+      }
+    });
+  });
 });

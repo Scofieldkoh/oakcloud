@@ -114,6 +114,7 @@ export async function GET(request: NextRequest) {
     const documentDateTo = searchParams.get('documentDateTo');
     const search = searchParams.get('search');
     const vendorName = searchParams.get('vendorName');
+    const companyName = searchParams.get('companyName')?.trim();
     const documentNumber = searchParams.get('documentNumber');
     const fileName = searchParams.get('fileName');
     const documentCategory = searchParams.get('documentCategory') || undefined;
@@ -254,6 +255,7 @@ export async function GET(request: NextRequest) {
       documentDateTo: effectiveDocumentDateTo,
       search: search ?? undefined,
       vendorName: vendorName ?? undefined,
+      companyName: companyName || undefined,
       documentNumber: documentNumber ?? undefined,
       fileName: fileName ?? undefined,
       documentCategory: documentCategory ?? undefined,

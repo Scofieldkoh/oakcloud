@@ -57,6 +57,7 @@ export function GeneratedDocumentPicker({
   const [documents, setDocuments] = useState<GeneratedDocumentPickerItem[]>([]);
   const [search, setSearch] = useState('');
   const [companyId, setCompanyId] = useState('');
+  const [companyText, setCompanyText] = useState('');
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(false);
@@ -68,6 +69,7 @@ export function GeneratedDocumentPicker({
     setDocuments([]);
     setSearch('');
     setCompanyId('');
+    setCompanyText('');
     setSortOrder('desc');
     setSelectedIds(new Set());
     setError(null);
@@ -85,6 +87,7 @@ export function GeneratedDocumentPicker({
       limit: String(MAX_RESULTS),
     });
     if (companyId) params.set('companyId', companyId);
+    else if (companyText) params.set('companyName', companyText);
 
     async function loadDocuments() {
       setIsLoading(true);
@@ -111,7 +114,7 @@ export function GeneratedDocumentPicker({
 
     void loadDocuments();
     return () => controller.abort();
-  }, [companyId, isOpen, sortOrder, tenantId]);
+  }, [companyId, companyText, isOpen, sortOrder, tenantId]);
 
   const attachedIds = useMemo(() => new Set(attachedDocumentIds), [attachedDocumentIds]);
   const visibleDocuments = useMemo(() => {
@@ -198,7 +201,15 @@ export function GeneratedDocumentPicker({
 
             <CompanySelect
               value={companyId}
-              onChange={(nextCompanyId) => setCompanyId(nextCompanyId)}
+              onChange={(nextCompanyId) => {
+                setCompanyId(nextCompanyId);
+                setCompanyText('');
+              }}
+              textFilter={companyId ? undefined : companyText}
+              onTextFilterChange={(text) => {
+                setCompanyId('');
+                setCompanyText(text);
+              }}
               label="Filter by company"
               placeholder="All companies"
               disabled={isConfirming}

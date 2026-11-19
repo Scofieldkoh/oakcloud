@@ -22,6 +22,10 @@ interface CompanySearchableSelectProps {
   size?: 'sm' | 'md' | 'lg';
   clearable?: boolean;
   variant?: 'default' | 'table-filter';
+  /** List filters only: the applied "company name contains" text (see `CompanySelect`). */
+  textFilter?: string;
+  /** Called with the typed text on Enter ('' when cleared). */
+  onTextFilterChange?: (text: string) => void;
 }
 
 /**
@@ -43,6 +47,8 @@ export function CompanySearchableSelect({
   size = 'sm',
   clearable = true,
   variant = 'default',
+  textFilter,
+  onTextFilterChange,
 }: CompanySearchableSelectProps) {
   const options = useMemo<SelectOption[]>(
     () =>
@@ -68,6 +74,8 @@ export function CompanySearchableSelect({
       size={size}
       variant={variant}
       clearable={clearable}
+      onSearchSubmit={onTextFilterChange}
+      submittedSearch={textFilter}
     />
   );
 }

@@ -100,7 +100,9 @@ export function ProcessingDocumentTable({
                   ) : columnId === 'company' ? (
                     <CompanySelect
                       value={params.companyId || ''}
-                      onChange={(companyId) => handleFiltersChange({ companyId: companyId || undefined })}
+                      onChange={(companyId) => handleFiltersChange({ companyId: companyId || undefined, companyName: undefined })}
+                      textFilter={params.companyId ? undefined : params.companyName}
+                      onTextFilterChange={(text) => handleFiltersChange({ companyId: undefined, companyName: text || undefined })}
                       placeholder="All"
                       className="text-xs"
                       variant="table-filter"

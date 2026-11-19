@@ -142,6 +142,8 @@ export interface SearchTasksOptions {
   query?: string;
   title?: string;
   ownerQuery?: string;
+  /** Company name contains this text. */
+  companyQuery?: string;
   pipelineId?: string;
   companyId?: string;
   ownerId?: string;
@@ -258,6 +260,7 @@ export function buildTaskWhere(
   const query = options.query?.trim();
   const title = options.title?.trim();
   const ownerQuery = options.ownerQuery?.trim();
+  const companyQuery = options.companyQuery?.trim();
   const dueRange = dueDateRangeFilter(options.dueDateFrom, options.dueDateTo);
   const additionalFilters: Prisma.TaskWhereInput[] = [];
 
@@ -273,6 +276,11 @@ export function buildTaskWhere(
         { owner: { lastName: { contains: ownerQuery, mode: 'insensitive' } } },
         { owner: { email: { contains: ownerQuery, mode: 'insensitive' } } },
       ],
+    });
+  }
+  if (companyQuery) {
+    additionalFilters.push({
+      company: { name: { contains: companyQuery, mode: 'insensitive' } },
     });
   }
   if (query) {

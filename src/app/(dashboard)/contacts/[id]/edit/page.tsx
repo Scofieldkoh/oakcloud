@@ -13,6 +13,7 @@ import { useUnsavedNavigationGuard } from '@/hooks/use-unsaved-navigation-guard'
 import { useToast } from '@/components/ui/toast';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import { toDateOnlyString } from '@/lib/date-only';
+import { ShortcutLabel } from '@/components/ui/shortcut-label';
 
 const contactTypes = [
   { value: 'INDIVIDUAL', label: 'Individual' },
@@ -409,8 +410,7 @@ export default function EditContactPage({
         {/* Actions */}
         <div className="flex items-center justify-end gap-3 pt-2">
           <Link href={`/contacts/${id}`} className="btn-secondary btn-sm" title="Cancel (Ctrl+Backspace)">
-            <span className="hidden sm:inline">Cancel (Ctrl+Backspace)</span>
-            <span className="sm:hidden">Cancel</span>
+            <ShortcutLabel label="Cancel" shortcut="Ctrl+Backspace" />
           </Link>
           <button
             type="submit"
@@ -421,8 +421,7 @@ export default function EditContactPage({
             <Save className="w-4 h-4" />
             {isSubmitting ? 'Saving...' : (
               <>
-                <span className="hidden sm:inline">Save Changes (Ctrl+S)</span>
-                <span className="sm:hidden">Save Changes</span>
+                <ShortcutLabel label="Save Changes" shortcut="Ctrl+S" />
               </>
             )}
           </button>

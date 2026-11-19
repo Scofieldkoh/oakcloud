@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { TableBody, TableCell, TableEmptyState, TableHead, TableHeaderCell, TableHeaderRow, TableRoot, TableRow, TableShell, TableViewport } from '@/components/ui/data-table';
 import { Dropdown, DropdownItem, DropdownMenu, DropdownTrigger } from '@/components/ui/dropdown';
+import { ActionsMenu } from '@/components/ui/actions-menu';
 import { EmptyState, ListEmptyState } from '@/components/ui/empty-state';
 import { ErrorState } from '@/components/ui/error-state';
 import { FilterChip } from '@/components/ui/filter-chip';
@@ -292,6 +293,10 @@ export function ComponentShowcase() {
       <Section id="dialogs" title="Dialogs and menus" description="Use Modal for forms and ConfirmDialog (or useConfirmDialog) instead of browser pop-ups.">
         <div className="flex flex-wrap items-center gap-2">
           <Button size="sm" variant="secondary" onClick={() => setIsModalOpen(true)}>Open modal</Button>
+          <ActionsMenu>
+            <DropdownItem icon={<Pencil className="h-4 w-4" />}>Update details</DropdownItem>
+            <DropdownItem icon={<Trash2 className="h-4 w-4" />} disabled description="Shown when an action is unavailable">Unavailable action</DropdownItem>
+          </ActionsMenu>
           <Button
             size="sm"
             variant="secondary"

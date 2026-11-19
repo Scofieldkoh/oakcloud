@@ -37,6 +37,13 @@ export function EnvelopeFilterChips({
       {companyId && selectedCompanyName ? (
         <FilterChip label="Company" value={selectedCompanyName} onRemove={onClearCompany} />
       ) : null}
+      {!companyId && appliedFilters.companyName ? (
+        <FilterChip
+          label="Company"
+          value={appliedFilters.companyName}
+          onRemove={() => onRemove({ companyName: '' })}
+        />
+      ) : null}
       {appliedFilters.status && !isStatusDuplicatedByTab(appliedFilters.status, activeTab) ? (
         <FilterChip
           label="Status"

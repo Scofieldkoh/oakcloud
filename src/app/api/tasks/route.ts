@@ -19,6 +19,7 @@ export async function GET(request: NextRequest) {
       query: searchParams.get('q') || undefined,
       title: searchParams.get('title') || undefined,
       ownerQuery: searchParams.get('ownerQuery') || undefined,
+      companyQuery: searchParams.get('companyQuery') || undefined,
       pipelineId: searchParams.get('pipeline') || undefined,
       companyId: searchParams.get('company') || undefined,
       ownerId: searchParams.get('owner') || undefined,

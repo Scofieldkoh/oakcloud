@@ -600,6 +600,11 @@ export function DocumentTable({
                         companyId: companyId || undefined,
                         companyName: company?.name || undefined,
                       })}
+                      textFilter={filters.companyId ? undefined : filters.companyName}
+                      onTextFilterChange={(text) => onFilterChange?.({
+                        companyId: undefined,
+                        companyName: text || undefined,
+                      })}
                       placeholder="All companies"
                       className="text-xs"
                       variant="table-filter"

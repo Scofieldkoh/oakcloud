@@ -97,6 +97,8 @@ export const ESIGNING_TABLE_SORT_FIELDS: Record<EsigningTableColumnId, EnvelopeS
 
 export interface EnvelopeAdvancedFilters {
   status: StatusFilter | '';
+  /** Company name contains this text (used when no single company is picked). */
+  companyName: string;
   documentName: string;
   recipientQuery: string;
   recipientStatus: RecipientStatusFilter | '';
@@ -112,6 +114,7 @@ export interface EnvelopeAdvancedFilters {
 
 export const EMPTY_ADVANCED_FILTERS: EnvelopeAdvancedFilters = {
   status: '',
+  companyName: '',
   documentName: '',
   recipientQuery: '',
   recipientStatus: '',

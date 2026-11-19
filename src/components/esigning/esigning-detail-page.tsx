@@ -901,7 +901,7 @@ export function EsigningDetailPage({ envelopeId }: Props) {
         className={cn(
           'flex flex-col bg-background-primary',
           currentStep === 2 || currentStep === 3
-            ? 'h-[calc(100dvh-3rem)] overflow-hidden md:h-dvh'
+            ? 'h-[calc(100dvh-3.5rem)] overflow-hidden lg:h-dvh'
             : 'min-h-screen'
         )}
       >

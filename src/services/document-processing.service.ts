@@ -944,6 +944,8 @@ export async function listProcessingDocumentsPaged(options: {
   // Text search filters
   search?: string;
   vendorName?: string;
+  /** Company name contains this text. */
+  companyName?: string;
   documentNumber?: string;
   fileName?: string;
   // Category filters
@@ -1001,6 +1003,7 @@ export async function listProcessingDocumentsPaged(options: {
     documentDateTo,
     search,
     vendorName,
+    companyName,
     documentNumber,
     fileName,
     documentCategory,
@@ -1127,6 +1130,14 @@ export async function listProcessingDocumentsPaged(options: {
     const revisionFilter: Prisma.DocumentRevisionWhereInput = where.currentRevision as Prisma.DocumentRevisionWhereInput || {};
     revisionFilter.documentNumber = { contains: documentNumber, mode: 'insensitive' };
     where.currentRevision = revisionFilter;
+  }
+
+  // Company name contains filter
+  if (companyName) {
+    where.document = {
+      ...((where.document as Prisma.DocumentWhereInput) ?? {}),
+      company: { name: { contains: companyName, mode: 'insensitive' } },
+    };
   }
 
   // Specific file name filter

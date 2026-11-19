@@ -35,12 +35,25 @@ export interface CompanySelectProps {
   variant?: 'default' | 'table-filter';
   /** Lets users click the selected company to search for a replacement. */
   allowReselect?: boolean;
+  /**
+   * List filters only: the applied "company name contains" text. Pass it with
+   * `onTextFilterChange` so typing a partial name and pressing Enter filters by
+   * that text instead of picking the highlighted company.
+   */
+  textFilter?: string;
+  /**
+   * Called with the typed text on Enter ('' when cleared). The parent should
+   * clear any selected company in the same update; picking a company calls
+   * `onChange`, which should clear the text the same way.
+   */
+  onTextFilterChange?: (text: string) => void;
 }
 
 /**
  * Single company select used by every company dropdown in the app. Backed by
  * the shared `useCompanySearch` source: it shows the first page of companies
- * without typing and pages through the rest on the server.
+ * without typing and pages through the rest on the server. List filters also
+ * pass `textFilter`/`onTextFilterChange` for partial-name filtering.
  */
 export function CompanySelect({
   label,
@@ -61,6 +74,8 @@ export function CompanySelect({
   noResultsText = 'No companies match your search',
   variant = 'default',
   allowReselect = false,
+  textFilter,
+  onTextFilterChange,
 }: CompanySelectProps) {
   const {
     searchQuery,
@@ -107,6 +122,8 @@ export function CompanySelect({
       showSearchIcon={false}
       variant={variant}
       allowReselect={allowReselect}
+      onSearchSubmit={onTextFilterChange}
+      submittedSearch={textFilter}
       inputClassName={variant === 'table-filter' ? undefined : 'text-xs text-text-primary placeholder:text-text-muted'}
       emptySearchText={emptySearchText}
       noResultsText={noResultsText}

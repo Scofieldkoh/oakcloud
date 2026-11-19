@@ -44,7 +44,7 @@ import {
 import { useSession, useLogout } from '@/hooks/use-auth';
 import { useServicesWorkspaceSettings } from '@/hooks/use-services-workspace-settings';
 import { useUIStore } from '@/stores/ui-store';
-import { useIsMobile } from '@/hooks/use-media-query';
+import { useIsCompactNavigation } from '@/hooks/use-media-query';
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { cn } from '@/lib/utils';
@@ -840,7 +840,8 @@ function MobileDrawer() {
 
 // Main Sidebar component
 export function Sidebar() {
-  const isMobile = useIsMobile();
+  // Phones and tablets get the header + drawer; the fixed sidebar only shows from lg up.
+  const isMobile = useIsCompactNavigation();
 
   return (
     <>
@@ -861,7 +862,7 @@ export { SIDEBAR_WIDTH_COLLAPSED, SIDEBAR_WIDTH_EXPANDED } from '@/lib/constants
 
 export function useSidebarWidth() {
   const { sidebarCollapsed } = useUIStore();
-  const isMobile = useIsMobile();
+  const isMobile = useIsCompactNavigation();
 
   // Use centralized constants for consistency
   return getSidebarWidthFn(sidebarCollapsed, isMobile);

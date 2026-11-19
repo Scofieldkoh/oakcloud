@@ -146,6 +146,8 @@ export interface ProcessingDocumentSearchParams {
   vendorName?: string;
   documentNumber?: string;
   fileName?: string;
+  /** Company name contains this text. */
+  companyName?: string;
   // Category filters
   documentCategory?: DocumentCategory;
   documentSubCategory?: DocumentSubCategory;
@@ -455,6 +457,7 @@ export function processingDocumentsQueryKey(
     params.vendorName,
     params.documentNumber,
     params.fileName,
+    params.companyName,
     // Category filters
     params.documentCategory,
     params.documentSubCategory,

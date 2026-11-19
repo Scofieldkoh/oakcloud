@@ -102,6 +102,9 @@ export async function listEsigningEnvelopes(
     if (includeCompany && query.companyId) {
       where.companyId = query.companyId;
     }
+    if (includeCompany && query.companyName) {
+      where.company = { is: { name: { contains: query.companyName, mode: 'insensitive' } } };
+    }
 
     if (query.documentName) {
       where.documents = {
