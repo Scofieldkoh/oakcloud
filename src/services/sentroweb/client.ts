@@ -128,19 +128,22 @@ interface BoxOptions {
 /**
  * The wanted state of every checkbox of the form, by label. The real form draws Male, Female and the
  * date of birth only after Individual is ticked (an empty form, or one with Entity ticked, has just
- * Individual, Entity and Fuzzy Search), so the gender boxes are listed for an individual search only.
+ * Individual, Entity and Fuzzy Search). The gender boxes are listed for every search: wanted ticked
+ * only on an individual search that has a gender, and wanted unticked otherwise (an entity search
+ * never carries a gender filter). A box that is not wanted and not on the form counts as unticked; one
+ * that is on the form and ticked is cleared, or the search fails before SEARCH.
  */
 function expectedBoxes(searchType: SentrowebSearchTypeValue, options: BoxOptions): Array<[string, boolean]> {
   const { individualLabelText, entityLabelText, fuzzyLabelText, genderLabelTexts } = SENTROWEB_SELECTORS.search;
   const wantIndividual = searchType === 'INDIVIDUAL';
   const [maleLabel, femaleLabel] = genderLabelTexts;
-  const boxes: Array<[string, boolean]> = [
+  return [
     [wantIndividual ? individualLabelText : entityLabelText, true],
     [wantIndividual ? entityLabelText : individualLabelText, false],
     [fuzzyLabelText, options.fuzzy],
+    [maleLabel, wantIndividual && options.gender === 'MALE'],
+    [femaleLabel, wantIndividual && options.gender === 'FEMALE'],
   ];
-  if (wantIndividual) boxes.push([maleLabel, options.gender === 'MALE'], [femaleLabel, options.gender === 'FEMALE']);
-  return boxes;
 }
 
 /** A gender box that is not wanted may be absent (the form may not draw it): absent counts as unticked. */
@@ -148,13 +151,30 @@ function isOptionalWhenOff(label: string, wanted: boolean): boolean {
   return !wanted && (SENTROWEB_SELECTORS.search.genderLabelTexts as readonly string[]).includes(label);
 }
 
+/** The only error names the failure log may print (everything else is logged as `Other`). */
+const LOGGABLE_ERROR_NAMES: ReadonlySet<string> = new Set([
+  'Error',
+  'TypeError',
+  'RangeError',
+  'SyntaxError',
+  'ReferenceError',
+  'EvalError',
+  'URIError',
+  'AbortError',
+  'TimeoutError',
+  'ProtocolError',
+  'TargetCloseError',
+  'DOMException',
+]);
+
 /**
- * The kind of an error that is not a SentrowebError, as a fixed word for the failure log. The message is
- * never logged: a browser error can quote a selector or typed text. Only the error's class name (when it
- * is a short plain identifier) and a category derived from the message are kept.
+ * The kind of an error that is not a SentrowebError, as fixed words for the failure log. Neither the
+ * message nor a custom error name is ever logged (both can carry a selector, a name or a value): the
+ * name is printed only when it is on a fixed list, and the category comes from a fixed set.
  */
 export function unexpectedErrorKind(error: unknown): { errorName: string; reason: string } {
-  const name = error instanceof Error && /^[A-Za-z]{1,40}$/.test(error.name) ? error.name : 'NonError';
+  const name =
+    error instanceof Error ? (LOGGABLE_ERROR_NAMES.has(error.name) ? error.name : 'Other') : 'NonError';
   const message = error instanceof Error ? error.message : '';
   const reason = /no element found for selector|failed to find element matching selector/i.test(message)
     ? 'no-element-for-selector'

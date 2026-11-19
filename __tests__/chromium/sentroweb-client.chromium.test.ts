@@ -257,6 +257,30 @@ describe('Sentroweb client against a fake Sentroweb', () => {
         expect(stepFailures(calls)).toMatchObject([{ phase: 'set-birth-date', code: 'LAYOUT_CHANGED', form: { hasDateOfBirthField: false, hasCountryDropdown: true } }]);
       });
 
+      it('an Entity search clears a gender box the form left ticked, and sends no gender filter', async () => {
+        const server = await start({ staleGender: 'ticked' });
+        const session = await open(server);
+        await session.search({ name: CLEAR_ENTITY, searchType: 'ENTITY', gender: 'MALE' });
+        expect(server.searches[0]).toMatchObject({ searchEntity: true, searchIndividual: false, gender: null });
+      });
+
+      it('an Entity search stops before any quota request when a ticked gender box cannot be cleared', async () => {
+        const server = await start({ staleGender: 'stuck' });
+        const session = await open(server, { timeouts: { stepMs: 2_500 } });
+        const error = await failureOf(session.search({ name: CLEAR_ENTITY, searchType: 'ENTITY' }));
+        expect(error.code).toBe('LAYOUT_CHANGED');
+        expect(error.searchSubmitted).toBeFalsy();
+        expect(server.count('checkquota')).toBe(0);
+        expect(server.count('search')).toBe(0);
+      });
+
+      it('an individual search without a gender clears a stale ticked gender box too', async () => {
+        const server = await start({ staleGender: 'ticked' });
+        const session = await open(server);
+        await session.search({ name: CLEAR_INDIVIDUAL, searchType: 'INDIVIDUAL', ...DETAILS });
+        expect(server.searches[0]).toMatchObject({ searchIndividual: true, gender: null, dateOfBirth: '1980-01-01' });
+      });
+
       it('a wanted gender whose boxes are never drawn fails before SEARCH; an unwanted one does not matter', async () => {
         const server = await start({ omitIndividualFields: 'gender' });
         const session = await open(server, { timeouts: { stepMs: 2_500 } });

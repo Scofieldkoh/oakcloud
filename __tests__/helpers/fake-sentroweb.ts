@@ -68,6 +68,11 @@ export interface FakeOptions {
   rewriteDateOfBirth: boolean;
   /** Ticking Individual does not draw the date of birth field (`date`) or the Male and Female boxes (`gender`). */
   omitIndividualFields: 'none' | 'date' | 'gender';
+  /**
+   * The form keeps the Male and Female boxes drawn, Male ticked, whatever the type (a leftover from an
+   * earlier search): `ticked` lets a click clear it, `stuck` ignores clicks on it.
+   */
+  staleGender: 'none' | 'ticked' | 'stuck';
   /** What the search answer echoes as country / birth date instead of what was sent (null: nothing). */
   echoCountry: string | null | undefined;
   echoDateOfBirth: string | null | undefined;
@@ -101,6 +106,7 @@ const DEFAULTS: FakeOptions = {
   countrySelection: 'works',
   rewriteDateOfBirth: false,
   omitIndividualFields: 'none',
+  staleGender: 'none',
   echoCountry: undefined,
   echoDateOfBirth: undefined,
   echoFuzzy: undefined,
@@ -215,6 +221,7 @@ function mainPage(options: FakeOptions): string {
   <div class="required field"><label>Search name</label><div class="ui input"><input placeholder="Search name" type="text" value=""></div></div>
   <div class="field"><label>Country/ Region</label>${countryDropdown(options)}</div>
   <div class="fields">${checkbox('Individual')}${checkbox('Entity')}</div>
+  ${options.staleGender === 'none' ? '' : `<div class="fields" id="stale-gender">${checkbox('Male').replace('ui checkbox', 'ui checked checkbox')}${checkbox('Female')}</div>`}
   <div id="individual-fields"></div>
   <div class="fields">${checkbox('Fuzzy Search')}<button class="ui large disabled button search-button" disabled="" type="submit" tabindex="-1">SEARCH</button></div>
   <div class="fields"><button class="ui large button right-export-button" type="button">EXPORT</button></div>
@@ -227,7 +234,7 @@ function mainPage(options: FakeOptions): string {
   const submit = form.querySelector('button.search-button');
   // Like the real form, Male, Female and Date of birth exist only while Individual is ticked (the
   // recorded empty form has three boxes; ticking Individual adds those fields).
-  const individualHtml = ${JSON.stringify(INDIVIDUAL_FIELDS_HTML(checkbox, options.omitIndividualFields))};
+  const individualHtml = ${JSON.stringify(INDIVIDUAL_FIELDS_HTML(checkbox, options.staleGender === 'none' ? options.omitIndividualFields : 'gender'))};
   const individualFields = document.getElementById('individual-fields');
   const allBoxes = () => Array.from(form.querySelectorAll('.checkbox'));
   const labelOf = (box) => box.querySelector('label').textContent.trim();
@@ -236,8 +243,10 @@ function mainPage(options: FakeOptions): string {
   const dobInput = () => form.querySelector('input[name="birthDate"]');
   const dobValue = () => dobInput()?.value ?? '';
   let armed = false;
+  const staleGender = ${JSON.stringify(options.staleGender)};
   const wire = (b) => b.addEventListener('click', () => {
     const label = labelOf(b);
+    if (staleGender === 'stuck' && label === 'Male') return;
     b.classList.toggle('checked');
     if (b.classList.contains('checked') && label === 'Individual') box('Entity').classList.remove('checked');
     if (b.classList.contains('checked') && label === 'Entity') box('Individual').classList.remove('checked');

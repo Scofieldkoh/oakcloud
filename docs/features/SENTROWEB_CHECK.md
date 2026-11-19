@@ -139,9 +139,10 @@ Entity, plus Fuzzy Search and the gender box), the date of birth, and the name *
 disabled until a name and a type are filled in, so nothing can be submitted before the name. The order
 matters because the real form draws the **Male and Female boxes and the date of birth field only after
 Individual is ticked** (an empty form, or one with Entity ticked, has only Individual, Entity and Fuzzy
-Search). An entity search therefore has no gender boxes and no date field and none is expected; an
-individual search waits for the fields to appear after the tick and fails `LAYOUT_CHANGED` (before
-SEARCH, not submitted) if a wanted one never does. Nothing can submit the form while the country is being chosen, not even an Enter key in the
+Search). An entity search therefore has no date field and no gender is ever sent with it: if the form
+still shows a ticked Male or Female box, the client unticks it, and if it cannot, the search fails
+`LAYOUT_CHANGED` before SEARCH (no quota request). An individual search waits for the fields to appear
+after the tick and fails `LAYOUT_CHANGED` (before SEARCH, not submitted) if a wanted one never does. Nothing can submit the form while the country is being chosen, not even an Enter key in the
 dropdown (Enter is pressed only while SEARCH is disabled). If the page nevertheless asks for a quota
 or starts a search before our click, the attempt is recorded as submitted (cooldown, no retry, one
 credit counted) and the client stops. The client types the country to narrow the list, then takes the option whose text is
@@ -193,7 +194,7 @@ Stored and shown as fixed messages (`src/lib/sentroweb/error-codes.ts`), never r
 | `NO_ENTITIES_SELECTED` | Nothing selected (HTTP 422). |
 | `COOLDOWN` | The cooldown is running (HTTP 409; `details.cooldownUntil`). |
 | `ALREADY_RUNNING` | A run is queued or running for the company (HTTP 409). |
-| `UNEXPECTED_ERROR` | Anything else. Details are in the server log, without page text: the step before CONFIRM that failed, an error class name and a fixed category word (`no-element-for-selector`, `not-clickable`, `timeout`, `page-changed`, `browser-closed`, `other`; never the message), the allow-listed recent calls, and the form structure (class names, whether the date field and the country dropdown exist, name length). |
+| `UNEXPECTED_ERROR` | Anything else. Details are in the server log, without page text: the step before CONFIRM that failed, an error class name (only from a fixed list of standard names, otherwise `Other`) and a fixed category word (`no-element-for-selector`, `not-clickable`, `timeout`, `page-changed`, `browser-closed`, `other`; never the message), the allow-listed recent calls, and the form structure (class names, whether the date field and the country dropdown exist, name length). |
 
 ## How it runs
 

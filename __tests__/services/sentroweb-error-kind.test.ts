@@ -20,14 +20,25 @@ describe('unexpectedErrorKind (what the pre-confirm failure log says about a non
     expect(JSON.stringify(kind)).not.toMatch(/birthDate|1980|Jane/);
   });
 
-  it('keeps only a plain class name, and handles values that are not errors', () => {
+  it('prints an error name only when it is on the fixed list; any custom name is logged as Other', () => {
     class Weird extends Error {
-      constructor() {
+      constructor(name: string) {
         super('x');
-        this.name = 'Bad name with 1980-01-01 spaces';
+        this.name = name;
       }
     }
-    expect(unexpectedErrorKind(new Weird()).errorName).toBe('NonError');
+    for (const name of ['TypeError', 'TimeoutError', 'ProtocolError', 'AbortError']) {
+      expect(unexpectedErrorKind(new Weird(name)).errorName).toBe(name);
+    }
+    // Plain letters, so a shape check would let these through; a fixed list does not.
+    for (const name of ['JaneDoe', 'Zzqx', 'AccountAcme', 'Bad name with 1980-01-01 spaces', '']) {
+      const kind = unexpectedErrorKind(new Weird(name));
+      expect(kind.errorName).toBe('Other');
+      expect(JSON.stringify(kind)).not.toMatch(/Jane|Zzqx|Acme|1980/);
+    }
+  });
+
+  it('handles values that are not errors', () => {
     expect(unexpectedErrorKind('a string')).toEqual({ errorName: 'NonError', reason: 'other' });
     expect(unexpectedErrorKind(null)).toEqual({ errorName: 'NonError', reason: 'other' });
   });
