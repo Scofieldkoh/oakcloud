@@ -939,6 +939,7 @@ model DocumentTemplatePreset {
   name           String                       @db.VarChar(100)
   /// Lower-cased, whitespace-collapsed name: one preset per name per workspace.
   normalizedName String                       @map("normalized_name") @db.VarChar(100)
+  version        Int                          @default(1)
   createdById    String?                      @map("created_by_id")
   updatedById    String?                      @map("updated_by_id")
   createdAt      DateTime                     @default(now()) @map("created_at")

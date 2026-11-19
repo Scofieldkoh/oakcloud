@@ -25,10 +25,14 @@ export interface TemplatePresetsProps {
 const BASE_URL = '/api/document-template-presets';
 const normalizedName = (name: string) => name.trim().replace(/\s+/g, ' ').toLocaleLowerCase('en');
 
+class PresetRequestError extends Error {
+  constructor(message: string, readonly status: number) { super(message); }
+}
+
 async function requestJson<T>(url: string, init?: RequestInit): Promise<T> {
   const response = await fetch(url, { ...init, headers: { 'Content-Type': 'application/json' }, cache: 'no-store' });
   const payload = await response.json();
-  if (!response.ok) throw new Error(payload.error || 'The preset request failed');
+  if (!response.ok) throw new PresetRequestError(payload.error || 'The preset request failed', response.status);
   return payload as T;
 }
 const readPresets = async () => (await requestJson<{ presets: DocumentTemplatePresetDto[] }>(BASE_URL)).presets;
@@ -37,6 +41,7 @@ const readPresets = async () => (await requestJson<{ presets: DocumentTemplatePr
 export function TemplatePresets(props: TemplatePresetsProps) {
   const { selected, disabled = false, maxDocuments = 20 } = props;
   // Selection can change while a request is in flight. Never use a stale cap or lock.
+  const mounted = useRef(false);
   const latest = useRef(props);
   latest.current = props;
   const { success, error: showError } = useToast();
@@ -54,10 +59,11 @@ export function TemplatePresets(props: TemplatePresetsProps) {
 
   useEffect(() => {
     let active = true;
+    mounted.current = true;
     readPresets().then((rows) => {
       if (active) { setPresets(rows); setFailed(false); }
     }).catch(() => { if (active) setFailed(true); }).finally(() => { if (active) setLoading(false); });
-    return () => { active = false; };
+    return () => { active = false; mounted.current = false; };
   }, []);
 
   const load = async (id: string) => {
@@ -66,6 +72,9 @@ export function TemplatePresets(props: TemplatePresetsProps) {
     try {
       // Resolve availability and Word replacements again at the actual load.
       const rows = await readPresets();
+      // Leaving Documents unmounts this picker and its skipped-member notice.
+      // Ignore the whole discarded load, even if the user has since returned.
+      if (!mounted.current) return;
       setPresets(rows);
       setFailed(false);
       const preset = rows.find((row) => row.id === id);
@@ -79,8 +88,8 @@ export function TemplatePresets(props: TemplatePresetsProps) {
       setNotice(message.variant === 'success' ? null : message);
       if (message.variant === 'success') success(message.text);
     } catch (caught) {
-      setNotice({ variant: 'error', text: caught instanceof Error ? caught.message : 'Could not load the preset' });
-    } finally { setBusy(false); }
+      if (mounted.current) setNotice({ variant: 'error', text: caught instanceof Error ? caught.message : 'Could not load the preset' });
+    } finally { if (mounted.current) setBusy(false); }
   };
 
   const save = async () => {
@@ -115,13 +124,21 @@ export function TemplatePresets(props: TemplatePresetsProps) {
     try {
       await requestJson(`${BASE_URL}/${encodeURIComponent(overwrite.preset.id)}`, {
         method: 'PATCH',
-        body: JSON.stringify({ templateIds: overwrite.ids, expectedUpdatedAt: overwrite.preset.updatedAt }),
+        body: JSON.stringify({ templateIds: overwrite.ids, expectedVersion: overwrite.preset.version }),
       });
       success(`Saved preset “${overwrite.preset.name}”`);
       setOverwrite(null);
       setPresets(await readPresets());
     } catch (caught) {
-      showError(caught instanceof Error ? caught.message : 'Could not replace the preset');
+      if (caught instanceof PresetRequestError && caught.status === 409) {
+        // Discard the old approval. Save fetches a fresh version and asks again;
+        // never retry automatically with a version the user hasn't confirmed.
+        setOverwrite(null);
+        setSaveOpen(true);
+        setSaveError('This preset changed. Save again to refresh it and confirm replacement.');
+      } else {
+        showError(caught instanceof Error ? caught.message : 'Could not replace the preset');
+      }
     } finally { setBusy(false); }
   };
 

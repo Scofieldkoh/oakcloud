@@ -20,6 +20,8 @@ export interface DocumentTemplatePresetItemDto {
 
 export interface DocumentTemplatePresetDto {
   id: string;
+  /** Monotonic preset revision required when confirming a replacement. */
+  version: number;
   name: string;
   createdAt: string;
   updatedAt: string;

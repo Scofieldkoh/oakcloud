@@ -75,19 +75,25 @@ Loading refreshes availability and resolves retired A4 references through the
 existing Word replacement resolver. Deleted, inactive, still-A4 and overflow
 members are skipped, with a persistent notice naming every skipped item and its
 reason. The selection never exceeds 20 documents and cannot be changed after any
-document has generated. Skipping does not modify the saved preset.
+document has generated. Skipping does not modify the saved preset. Leaving
+Documents discards an in-flight load, so it cannot append without its notice.
 
 Saving with an existing name (ignoring case and whitespace) asks before replacing
 that preset's templates. A stale replacement fails rather than overwriting a
-newer save. Presets → Manage presets… → the preset's delete button → Delete
-preset asks for confirmation; deleting a preset leaves templates and batches
+newer save. A conflict discards the old confirmation: save again to refresh the
+preset and explicitly reconfirm replacement. Presets → Manage presets… → the
+preset's delete button → Delete preset asks for confirmation; deleting a preset leaves templates and batches
 untouched. No generation or rendering behavior changes.
 
 The API uses the session workspace only. Listing/loading requires document read;
 saving/replacing templates requires document create; renaming through PATCH
 requires document update; deletion requires document delete. Mutations and their
-audit entries are transactional. Presets are hard-deleted with their child items,
-so a deleted name can be reused. Run `npm run test:template-presets:postgres` with
+audit entries are transactional. POST/PATCH return only the preset ID, never
+hydrated template contents. GET includes an integer `version`; PATCH requires
+`expectedVersion` from the original read/confirmation. A workspace-scoped
+conditional update increments the version before replacing members or writing
+the audit, so a stale writer returns 409 without either side effect. Presets are
+hard-deleted with their child items, so a deleted name can be reused. Run `npm run test:template-presets:postgres` with
 `TEST_DATABASE_URL` pointing only to a disposable test database for persistence,
 permission, audit, concurrency and tenant-isolation coverage.
 

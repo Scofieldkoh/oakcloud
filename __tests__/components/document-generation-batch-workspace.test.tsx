@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, within, waitFor } from '@testing-library/react';
+import { act, render, screen, fireEvent, within, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 const navigationMock = vi.hoisted(() => ({
@@ -348,7 +348,7 @@ describe('DocumentGenerationBatchWorkspace', () => {
     });
     const originalFetch = vi.mocked(fetch).getMockImplementation()!;
     vi.mocked(fetch).mockImplementation((input, init) => String(input).includes('/api/document-template-presets')
-      ? Promise.resolve(Response.json({ presets: [{ id: 'agm-pack', name: 'AGM pack', createdAt: '', updatedAt: '', items: members }] }))
+      ? Promise.resolve(Response.json({ presets: [{ id: 'agm-pack', name: 'AGM pack', version: 1, createdAt: '', updatedAt: '', items: members }] }))
       : originalFetch(input, init));
     render(<DocumentGenerationBatchWorkspace {...props({ initialBatch })} />);
     await user.click(screen.getByRole('button', { name: 'Template presets' }));
@@ -368,6 +368,48 @@ describe('DocumentGenerationBatchWorkspace', () => {
     expect(saved.items[0].configuration).toEqual(initialBatch.items[0].configuration);
     expect(saved.items[0].editedContent).toBe('<p>Keep my edits</p>');
     expect(saved.items.map((entry: { templateId: string }) => entry.templateId)).toEqual(['template-a', 'agm-0', 'agm-1', 'agm-2', 'agm-3']);
+  });
+
+  it.each(['stay', 'leave', 'leave-and-return'] as const)('handles a delayed preset load without losing its skipped-member notice (%s)', async (navigation) => {
+    const user = userEvent.setup();
+    const initialBatch = batch([
+      { key: 'item-a', templateId: 'template-a', templateName: 'Engagement Letter', kind: 'STANDARD' },
+    ], { currentStage: 0 });
+    const template = { ...templates[0], id: 'delayed-template', name: 'Delayed letter', engine: 'OAKDOC' as const };
+    const available = { templateId: template.id, resolvedTemplateId: template.id, templateName: template.name, available: true, template };
+    const preset = {
+      id: 'delayed-pack', name: 'Delayed pack', version: 1, createdAt: '', updatedAt: '',
+      items: [available, { templateId: 'inactive', resolvedTemplateId: 'inactive', templateName: 'Inactive notice', available: false, unavailableReason: 'inactive' }, available],
+    };
+    const originalFetch = vi.mocked(fetch).getMockImplementation()!;
+    let requests = 0;
+    let finish!: (response: Response) => void;
+    vi.mocked(fetch).mockImplementation((input, init) => {
+      if (!String(input).includes('/api/document-template-presets')) return originalFetch(input, init);
+      if (++requests === 2) return new Promise<Response>((resolve) => { finish = resolve; });
+      return Promise.resolve(Response.json({ presets: [preset] }));
+    });
+    render(<DocumentGenerationBatchWorkspace {...props({ initialBatch })} />);
+    await user.click(screen.getByRole('button', { name: 'Template presets' }));
+    await user.click(await screen.findByRole('menuitem', { name: /Delayed pack/ }));
+    expect(requests).toBe(2);
+    const stages = () => within(screen.getByRole('list', { name: /generation stages/i }));
+    if (navigation !== 'stay') {
+      await user.click(stages().getByRole('button', { name: /Shared setup/ }));
+      expect(screen.queryByRole('button', { name: 'Template presets' })).not.toBeInTheDocument();
+      if (navigation === 'leave-and-return') await user.click(stages().getByRole('button', { name: /Documents/ }));
+    }
+    await act(async () => { finish(Response.json({ presets: [preset] })); });
+    if (navigation === 'leave') await user.click(stages().getByRole('button', { name: /Documents/ }));
+    const panel = screen.getByRole('region', { name: 'Documents in this batch' });
+    if (navigation === 'stay') {
+      expect(within(panel).getAllByRole('listitem')).toHaveLength(3);
+      expect(screen.getByRole('alert')).toHaveTextContent('Inactive notice (inactive)');
+    } else {
+      expect(within(panel).getAllByRole('listitem')).toHaveLength(1);
+      expect(within(panel).queryByText('Delayed letter')).not.toBeInTheDocument();
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    }
   });
 
   it('saves the draft from the header action', () => {

@@ -18,7 +18,7 @@ interface RouteParams {
 /**
  * PATCH /api/document-template-presets/[id]
  * Rename a preset and/or replace its templates (keeping the order sent).
- * `expectedUpdatedAt` makes a stale save fail with 409.
+ * Required `expectedVersion` makes a stale save fail with 409.
  */
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
   try {
@@ -29,7 +29,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     if (input.name !== undefined) await requirePermission(session, 'document', 'update');
     const tenantId = requireSessionWorkspaceId(session);
     const preset = await updateDocumentTemplatePreset(id, input, { tenantId, userId: session.id });
-    return NextResponse.json(preset);
+    return NextResponse.json({ id: preset.id });
   } catch (error) {
     return createErrorResponse(error);
   }

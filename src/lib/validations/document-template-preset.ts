@@ -28,8 +28,8 @@ export const updateDocumentTemplatePresetSchema = z
   .object({
     name: presetNameSchema.optional(),
     templateIds: presetTemplateIdsSchema.optional(),
-    /** The preset's `updatedAt` when it was read; a newer save makes this one fail. */
-    expectedUpdatedAt: z.string().datetime().optional(),
+    /** The version originally read/confirmed; every successful PATCH advances it. */
+    expectedVersion: z.number().int().positive().max(2147483647),
   })
   .strict()
   .refine((value) => value.name !== undefined || value.templateIds !== undefined, {

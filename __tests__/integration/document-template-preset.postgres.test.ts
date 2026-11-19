@@ -166,7 +166,7 @@ suite('Document template presets (PostgreSQL, route boundary)', () => {
       await expect(service.createDocumentTemplatePreset({ name: 'Invalid', templateIds }, { tenantId, userId })).rejects.toBeDefined();
     }
     const created = await (await post({ name: 'Valid', templateIds: [a.id] })).json();
-    await expect(service.updateDocumentTemplatePreset(created.id, { templateIds: [] }, { tenantId, userId })).rejects.toBeDefined();
+    await expect(service.updateDocumentTemplatePreset(created.id, { templateIds: [], expectedVersion: 1 }, { tenantId, userId })).rejects.toBeDefined();
     expect(await db.documentTemplatePresetItem.count({ where: { presetId: created.id } })).toBe(1);
   });
 
@@ -198,8 +198,8 @@ suite('Document template presets (PostgreSQL, route boundary)', () => {
 
     asTenantB();
     expect(await presets()).toEqual([]);
-    expect((await patch(created.id, { name: 'Hijacked' })).status).toBe(404);
-    expect((await patch(created.id, { templateIds: [template.id, template.id] })).status).toBe(404);
+    expect((await patch(created.id, { expectedVersion: 1, name: 'Hijacked' })).status).toBe(404);
+    expect((await patch(created.id, { expectedVersion: 1, templateIds: [template.id, template.id] })).status).toBe(404);
     expect((await remove(created.id)).status).toBe(404);
 
     const row = await db.documentTemplatePreset.findUnique({ where: { id: created.id }, include: { items: true } });
@@ -227,7 +227,7 @@ suite('Document template presets (PostgreSQL, route boundary)', () => {
 
     // The same rule applies when replacing the items of an existing preset.
     const created = await (await post({ name: 'Keep', templateIds: [good.id] })).json();
-    expect((await patch(created.id, { templateIds: [foreign.id] })).status).toBe(400);
+    expect((await patch(created.id, { expectedVersion: 1, templateIds: [foreign.id] })).status).toBe(400);
     const row = await db.documentTemplatePresetItem.findMany({ where: { presetId: created.id } });
     expect(row.map((item) => item.templateId)).toEqual([good.id]);
   });
@@ -295,16 +295,18 @@ suite('Document template presets (PostgreSQL, route boundary)', () => {
     const created = await (await post({ name: 'Pack', templateIds: [a.id, b.id] })).json();
     await post({ name: 'Other pack', templateIds: [a.id] });
 
-    expect((await patch(created.id, { name: 'other PACK' })).status).toBe(409);
+    expect((await patch(created.id, { expectedVersion: 1, name: 'other PACK' })).status).toBe(409);
 
-    const response = await patch(created.id, { name: 'Pack v2', templateIds: [b.id, a.id, b.id], expectedUpdatedAt: created.updatedAt });
+    const response = await patch(created.id, { expectedVersion: 1, name: 'Pack v2', templateIds: [b.id, a.id, b.id] });
     expect(response.status).toBe(200);
-    const updated = await response.json();
+    expect(await response.json()).toEqual({ id: created.id });
+    const updated = (await presets()).find((preset) => preset.id === created.id)!;
+    expect(updated.version).toBe(2);
     expect(updated.name).toBe('Pack v2');
     expect(updated.items.map((item: Json) => item.templateId)).toEqual([b.id, a.id, b.id]);
 
     // A second save using the first read is a stale write.
-    const stale = await patch(created.id, { templateIds: [a.id], expectedUpdatedAt: created.updatedAt });
+    const stale = await patch(created.id, { expectedVersion: 1, templateIds: [a.id] });
     expect(stale.status).toBe(409);
     const rows = await db.documentTemplatePresetItem.findMany({ where: { presetId: created.id }, orderBy: { displayOrder: 'asc' } });
     expect(rows.map((row) => row.templateId)).toEqual([b.id, a.id, b.id]);
@@ -315,11 +317,18 @@ suite('Document template presets (PostgreSQL, route boundary)', () => {
     const b = await makeTemplate('Concurrent B');
     const created = await (await post({ name: 'Concurrent', templateIds: [a.id] })).json();
     const responses = await Promise.all([
-      patch(created.id, { templateIds: [a.id, a.id], expectedUpdatedAt: created.updatedAt }),
-      patch(created.id, { templateIds: [b.id], expectedUpdatedAt: created.updatedAt }),
+      patch(created.id, { expectedVersion: 1, templateIds: [a.id, a.id] }),
+      patch(created.id, { expectedVersion: 1, templateIds: [b.id] }),
     ]);
     expect(responses.map((response) => response.status).sort()).toEqual([200, 409]);
-    expect(await db.auditLog.count({ where: { entityId: created.id, action: 'DOCUMENT_TEMPLATE_PRESET_UPDATED' } })).toBe(1);
+    const winner = responses.findIndex((response) => response.status === 200);
+    const winningIds = winner === 0 ? [a.id, a.id] : [b.id];
+    const row = await db.documentTemplatePreset.findUniqueOrThrow({ where: { id: created.id }, include: { items: { orderBy: { displayOrder: 'asc' } } } });
+    expect(row.version).toBe(2);
+    expect(row.items.map((item) => item.templateId)).toEqual(winningIds);
+    const audits = await db.auditLog.findMany({ where: { entityId: created.id, action: 'DOCUMENT_TEMPLATE_PRESET_UPDATED' } });
+    expect(audits).toHaveLength(1);
+    expect((audits[0].changes as Json).templateIds).toEqual({ old: [a.id], new: winningIds });
   });
 
   it('deletes a preset and its items; the templates are untouched', async () => {
@@ -340,13 +349,18 @@ suite('Document template presets (PostgreSQL, route boundary)', () => {
     asTenantA(['document:read']);
     expect((await list()).status).toBe(200);
     expect((await post({ name: 'Nope', templateIds: [template.id] })).status).toBe(403);
-    expect((await patch(created.id, { name: 'Nope' })).status).toBe(403);
+    expect((await patch(created.id, { expectedVersion: 1, name: 'Nope' })).status).toBe(403);
     expect((await remove(created.id)).status).toBe(403);
 
     asTenantA(['document:create']);
     expect((await list()).status).toBe(403);
-    expect((await post({ name: 'Created only', templateIds: [template.id] })).status).toBe(201);
-    expect((await patch(created.id, { name: 'Nope' })).status).toBe(403);
+    const createOnly = await post({ name: 'Created only', templateIds: [template.id] });
+    expect(createOnly.status).toBe(201);
+    expect(Object.keys(await createOnly.json())).toEqual(['id']);
+    const replaceOnly = await patch(created.id, { expectedVersion: 1, templateIds: [template.id, template.id] });
+    expect(replaceOnly.status).toBe(200);
+    expect(await replaceOnly.json()).toEqual({ id: created.id });
+    expect((await patch(created.id, { expectedVersion: 1, name: 'Nope' })).status).toBe(403);
     expect((await remove(created.id)).status).toBe(403);
 
     asTenantA();
@@ -364,7 +378,7 @@ suite('Document template presets (PostgreSQL, route boundary)', () => {
     const a = await makeTemplate('Audit A');
     const b = await makeTemplate('Audit B');
     const created = await (await post({ name: 'Audited', templateIds: [a.id] })).json();
-    await patch(created.id, { name: 'Audited v2', templateIds: [a.id, b.id] });
+    await patch(created.id, { expectedVersion: 1, name: 'Audited v2', templateIds: [a.id, b.id] });
     await remove(created.id);
 
     const entries = await db.auditLog.findMany({

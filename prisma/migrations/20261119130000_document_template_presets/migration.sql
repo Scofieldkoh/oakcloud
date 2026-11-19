@@ -54,4 +54,3 @@ ALTER TABLE "document_template_preset_items" ADD CONSTRAINT "document_template_p
 
 -- AddForeignKey
 ALTER TABLE "document_template_preset_items" ADD CONSTRAINT "document_template_preset_items_template_id_fkey" FOREIGN KEY ("template_id") REFERENCES "document_templates"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-

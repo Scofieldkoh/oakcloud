@@ -74,7 +74,7 @@ describe('document template preset routes', () => {
       const responses = await Promise.all([
         listPresets(),
         createPreset(json('POST', { name: 'AGM', templateIds: [templateA] })),
-        updatePreset(json('PATCH', { name: 'AGM 2' }), routeParams()),
+        updatePreset(json('PATCH', { expectedVersion: 1, name: 'AGM 2' }), routeParams()),
         deletePreset(request('http://localhost/api/document-template-presets/x', { method: 'DELETE' }), routeParams()),
       ]);
       expect(responses.map((response) => response.status)).toEqual([401, 401, 401, 401]);
@@ -89,7 +89,7 @@ describe('document template preset routes', () => {
       const responses = await Promise.all([
         listPresets(),
         createPreset(json('POST', { name: 'AGM', templateIds: [templateA] })),
-        updatePreset(json('PATCH', { name: 'AGM 2' }), routeParams()),
+        updatePreset(json('PATCH', { expectedVersion: 1, name: 'AGM 2' }), routeParams()),
         deletePreset(request('http://localhost/api/document-template-presets/x', { method: 'DELETE' }), routeParams()),
       ]);
       expect(responses.map((response) => response.status)).toEqual([403, 403, 403, 403]);
@@ -102,7 +102,7 @@ describe('document template preset routes', () => {
     it('asks for read, create, update and delete on the document resource', async () => {
       await listPresets();
       await createPreset(json('POST', { name: 'AGM', templateIds: [templateA] }));
-      await updatePreset(json('PATCH', { name: 'AGM 2' }), routeParams());
+      await updatePreset(json('PATCH', { expectedVersion: 1, name: 'AGM 2' }), routeParams());
       await deletePreset(request('http://localhost/api/document-template-presets/x', { method: 'DELETE' }), routeParams());
       expect(vi.mocked(requirePermission).mock.calls.map((call) => call.slice(1))).toEqual([
         ['document', 'read'],
@@ -113,11 +113,11 @@ describe('document template preset routes', () => {
     });
 
     it('requires create for replacing items, and update as well if renaming', async () => {
-      await updatePreset(json('PATCH', { templateIds: [templateA] }), routeParams());
+      await updatePreset(json('PATCH', { expectedVersion: 1, templateIds: [templateA] }), routeParams());
       expect(requirePermission).toHaveBeenCalledWith(mockSession, 'document', 'create');
       expect(requirePermission).not.toHaveBeenCalledWith(mockSession, 'document', 'update');
       vi.mocked(requirePermission).mockClear();
-      await updatePreset(json('PATCH', { name: 'New', templateIds: [templateA] }), routeParams());
+      await updatePreset(json('PATCH', { expectedVersion: 1, name: 'New', templateIds: [templateA] }), routeParams());
       expect(requirePermission).toHaveBeenCalledWith(mockSession, 'document', 'create');
       expect(requirePermission).toHaveBeenCalledWith(mockSession, 'document', 'update');
     });
@@ -131,6 +131,24 @@ describe('document template preset routes', () => {
       expect(await response.json()).toEqual({ presets: [{ id: presetId, name: 'AGM', items: [] }] });
       expect(presetService.listDocumentTemplatePresets).toHaveBeenCalledWith({ tenantId: workspaceId, userId: mockSession.id });
     });
+  });
+
+  it.each(['POST', 'PATCH'] as const)('%s returns only mutation metadata even without document:read', async (method) => {
+    vi.mocked(requirePermission).mockImplementation(async (_session, _resource, action) => {
+      if (action === 'read') throw new ForbiddenError('Permission denied');
+    });
+    const hydrated = {
+      id: presetId, version: 1, name: 'AGM',
+      items: [{ template: { content: 'private template contents', contentJson: { secret: true } } }],
+    };
+    vi.mocked(presetService.createDocumentTemplatePreset).mockResolvedValue(hydrated as never);
+    vi.mocked(presetService.updateDocumentTemplatePreset).mockResolvedValue(hydrated as never);
+    const response = method === 'POST'
+      ? await createPreset(json('POST', { name: 'AGM', templateIds: [templateA] }))
+      : await updatePreset(json('PATCH', { expectedVersion: 1, name: 'AGM' }), routeParams());
+    expect(response.status).toBe(method === 'POST' ? 201 : 200);
+    expect(await response.json()).toEqual({ id: presetId });
+    expect(requirePermission).not.toHaveBeenCalledWith(mockSession, 'document', 'read');
   });
 
   describe('POST', () => {
@@ -173,19 +191,24 @@ describe('document template preset routes', () => {
   describe('PATCH', () => {
     it('renames or replaces the items for the session workspace', async () => {
       const response = await updatePreset(
-        json('PATCH', { name: 'AGM v2', templateIds: [templateA], expectedUpdatedAt: '2026-11-19T00:00:00.000Z' }),
+        json('PATCH', { expectedVersion: 1, name: 'AGM v2', templateIds: [templateA] }),
         routeParams(),
       );
       expect(response.status).toBe(200);
       expect(presetService.updateDocumentTemplatePreset).toHaveBeenCalledWith(
         presetId,
-        { name: 'AGM v2', templateIds: [templateA], expectedUpdatedAt: '2026-11-19T00:00:00.000Z' },
+        { name: 'AGM v2', templateIds: [templateA], expectedVersion: 1 },
         { tenantId: workspaceId, userId: mockSession.id },
       );
     });
 
     it.each([
       ['an empty body', {}],
+      ['a missing version', { name: 'AGM' }],
+      ['a timestamp instead of a version', { name: 'AGM', expectedUpdatedAt: '2026-11-19T00:00:00.000Z' }],
+      ['a zero version', { name: 'AGM', expectedVersion: 0 }],
+      ['a fractional version', { name: 'AGM', expectedVersion: 1.5 }],
+      ['a string version', { name: 'AGM', expectedVersion: '1' }],
       ['a client-owned tenantId', { name: 'AGM', tenantId: attackerTenant }],
       ['more than 20 templates', { templateIds: Array.from({ length: 21 }, () => templateA) }],
     ])('rejects %s with 400', async (_label, body) => {
@@ -195,16 +218,16 @@ describe('document template preset routes', () => {
     });
 
     it('rejects an id that is not a uuid with 400', async () => {
-      const response = await updatePreset(json('PATCH', { name: 'AGM' }), routeParams('not-a-uuid'));
+      const response = await updatePreset(json('PATCH', { expectedVersion: 1, name: 'AGM' }), routeParams('not-a-uuid'));
       expect(response.status).toBe(400);
       expect(presetService.updateDocumentTemplatePreset).not.toHaveBeenCalled();
     });
 
     it('returns 404 for a preset that is not in the workspace and 409 for a clash', async () => {
       vi.mocked(presetService.updateDocumentTemplatePreset).mockRejectedValueOnce(new NotFoundError('Template preset not found'));
-      expect((await updatePreset(json('PATCH', { name: 'AGM' }), routeParams())).status).toBe(404);
+      expect((await updatePreset(json('PATCH', { expectedVersion: 1, name: 'AGM' }), routeParams())).status).toBe(404);
       vi.mocked(presetService.updateDocumentTemplatePreset).mockRejectedValueOnce(new ConflictError('changed'));
-      expect((await updatePreset(json('PATCH', { name: 'AGM' }), routeParams())).status).toBe(409);
+      expect((await updatePreset(json('PATCH', { expectedVersion: 1, name: 'AGM' }), routeParams())).status).toBe(409);
     });
   });
 

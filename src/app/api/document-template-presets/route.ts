@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
     const input = createDocumentTemplatePresetSchema.parse(await request.json());
     const tenantId = requireSessionWorkspaceId(session);
     const preset = await createDocumentTemplatePreset(input, { tenantId, userId: session.id });
-    return NextResponse.json(preset, { status: 201 });
+    return NextResponse.json({ id: preset.id }, { status: 201 });
   } catch (error) {
     return createErrorResponse(error);
   }

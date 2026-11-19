@@ -21,8 +21,18 @@ export type DocumentTemplatePresetModel = runtime.Types.Result.DefaultSelection<
 
 export type AggregateDocumentTemplatePreset = {
   _count: DocumentTemplatePresetCountAggregateOutputType | null
+  _avg: DocumentTemplatePresetAvgAggregateOutputType | null
+  _sum: DocumentTemplatePresetSumAggregateOutputType | null
   _min: DocumentTemplatePresetMinAggregateOutputType | null
   _max: DocumentTemplatePresetMaxAggregateOutputType | null
+}
+
+export type DocumentTemplatePresetAvgAggregateOutputType = {
+  version: number | null
+}
+
+export type DocumentTemplatePresetSumAggregateOutputType = {
+  version: number | null
 }
 
 export type DocumentTemplatePresetMinAggregateOutputType = {
@@ -30,6 +40,7 @@ export type DocumentTemplatePresetMinAggregateOutputType = {
   tenantId: string | null
   name: string | null
   normalizedName: string | null
+  version: number | null
   createdById: string | null
   updatedById: string | null
   createdAt: Date | null
@@ -41,6 +52,7 @@ export type DocumentTemplatePresetMaxAggregateOutputType = {
   tenantId: string | null
   name: string | null
   normalizedName: string | null
+  version: number | null
   createdById: string | null
   updatedById: string | null
   createdAt: Date | null
@@ -52,6 +64,7 @@ export type DocumentTemplatePresetCountAggregateOutputType = {
   tenantId: number
   name: number
   normalizedName: number
+  version: number
   createdById: number
   updatedById: number
   createdAt: number
@@ -60,11 +73,20 @@ export type DocumentTemplatePresetCountAggregateOutputType = {
 }
 
 
+export type DocumentTemplatePresetAvgAggregateInputType = {
+  version?: true
+}
+
+export type DocumentTemplatePresetSumAggregateInputType = {
+  version?: true
+}
+
 export type DocumentTemplatePresetMinAggregateInputType = {
   id?: true
   tenantId?: true
   name?: true
   normalizedName?: true
+  version?: true
   createdById?: true
   updatedById?: true
   createdAt?: true
@@ -76,6 +98,7 @@ export type DocumentTemplatePresetMaxAggregateInputType = {
   tenantId?: true
   name?: true
   normalizedName?: true
+  version?: true
   createdById?: true
   updatedById?: true
   createdAt?: true
@@ -87,6 +110,7 @@ export type DocumentTemplatePresetCountAggregateInputType = {
   tenantId?: true
   name?: true
   normalizedName?: true
+  version?: true
   createdById?: true
   updatedById?: true
   createdAt?: true
@@ -132,6 +156,18 @@ export type DocumentTemplatePresetAggregateArgs<ExtArgs extends runtime.Types.Ex
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
    *
+   * Select which fields to average
+  **/
+  _avg?: DocumentTemplatePresetAvgAggregateInputType
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+   *
+   * Select which fields to sum
+  **/
+  _sum?: DocumentTemplatePresetSumAggregateInputType
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+   *
    * Select which fields to find the minimum value
   **/
   _min?: DocumentTemplatePresetMinAggregateInputType
@@ -162,6 +198,8 @@ export type DocumentTemplatePresetGroupByArgs<ExtArgs extends runtime.Types.Exte
   take?: number
   skip?: number
   _count?: DocumentTemplatePresetCountAggregateInputType | true
+  _avg?: DocumentTemplatePresetAvgAggregateInputType
+  _sum?: DocumentTemplatePresetSumAggregateInputType
   _min?: DocumentTemplatePresetMinAggregateInputType
   _max?: DocumentTemplatePresetMaxAggregateInputType
 }
@@ -171,11 +209,14 @@ export type DocumentTemplatePresetGroupByOutputType = {
   tenantId: string
   name: string
   normalizedName: string
+  version: number
   createdById: string | null
   updatedById: string | null
   createdAt: Date
   updatedAt: Date
   _count: DocumentTemplatePresetCountAggregateOutputType | null
+  _avg: DocumentTemplatePresetAvgAggregateOutputType | null
+  _sum: DocumentTemplatePresetSumAggregateOutputType | null
   _min: DocumentTemplatePresetMinAggregateOutputType | null
   _max: DocumentTemplatePresetMaxAggregateOutputType | null
 }
@@ -203,6 +244,7 @@ export type DocumentTemplatePresetWhereInput = {
   tenantId?: Prisma.StringFilter<"DocumentTemplatePreset"> | string
   name?: Prisma.StringFilter<"DocumentTemplatePreset"> | string
   normalizedName?: Prisma.StringFilter<"DocumentTemplatePreset"> | string
+  version?: Prisma.IntFilter<"DocumentTemplatePreset"> | number
   createdById?: Prisma.StringNullableFilter<"DocumentTemplatePreset"> | string | null
   updatedById?: Prisma.StringNullableFilter<"DocumentTemplatePreset"> | string | null
   createdAt?: Prisma.DateTimeFilter<"DocumentTemplatePreset"> | Date | string
@@ -216,6 +258,7 @@ export type DocumentTemplatePresetOrderByWithRelationInput = {
   tenantId?: Prisma.SortOrder
   name?: Prisma.SortOrder
   normalizedName?: Prisma.SortOrder
+  version?: Prisma.SortOrder
   createdById?: Prisma.SortOrderInput | Prisma.SortOrder
   updatedById?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -233,6 +276,7 @@ export type DocumentTemplatePresetWhereUniqueInput = Prisma.AtLeast<{
   tenantId?: Prisma.StringFilter<"DocumentTemplatePreset"> | string
   name?: Prisma.StringFilter<"DocumentTemplatePreset"> | string
   normalizedName?: Prisma.StringFilter<"DocumentTemplatePreset"> | string
+  version?: Prisma.IntFilter<"DocumentTemplatePreset"> | number
   createdById?: Prisma.StringNullableFilter<"DocumentTemplatePreset"> | string | null
   updatedById?: Prisma.StringNullableFilter<"DocumentTemplatePreset"> | string | null
   createdAt?: Prisma.DateTimeFilter<"DocumentTemplatePreset"> | Date | string
@@ -246,13 +290,16 @@ export type DocumentTemplatePresetOrderByWithAggregationInput = {
   tenantId?: Prisma.SortOrder
   name?: Prisma.SortOrder
   normalizedName?: Prisma.SortOrder
+  version?: Prisma.SortOrder
   createdById?: Prisma.SortOrderInput | Prisma.SortOrder
   updatedById?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.DocumentTemplatePresetCountOrderByAggregateInput
+  _avg?: Prisma.DocumentTemplatePresetAvgOrderByAggregateInput
   _max?: Prisma.DocumentTemplatePresetMaxOrderByAggregateInput
   _min?: Prisma.DocumentTemplatePresetMinOrderByAggregateInput
+  _sum?: Prisma.DocumentTemplatePresetSumOrderByAggregateInput
 }
 
 export type DocumentTemplatePresetScalarWhereWithAggregatesInput = {
@@ -263,6 +310,7 @@ export type DocumentTemplatePresetScalarWhereWithAggregatesInput = {
   tenantId?: Prisma.StringWithAggregatesFilter<"DocumentTemplatePreset"> | string
   name?: Prisma.StringWithAggregatesFilter<"DocumentTemplatePreset"> | string
   normalizedName?: Prisma.StringWithAggregatesFilter<"DocumentTemplatePreset"> | string
+  version?: Prisma.IntWithAggregatesFilter<"DocumentTemplatePreset"> | number
   createdById?: Prisma.StringNullableWithAggregatesFilter<"DocumentTemplatePreset"> | string | null
   updatedById?: Prisma.StringNullableWithAggregatesFilter<"DocumentTemplatePreset"> | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"DocumentTemplatePreset"> | Date | string
@@ -273,6 +321,7 @@ export type DocumentTemplatePresetCreateInput = {
   id?: string
   name: string
   normalizedName: string
+  version?: number
   createdById?: string | null
   updatedById?: string | null
   createdAt?: Date | string
@@ -286,6 +335,7 @@ export type DocumentTemplatePresetUncheckedCreateInput = {
   tenantId: string
   name: string
   normalizedName: string
+  version?: number
   createdById?: string | null
   updatedById?: string | null
   createdAt?: Date | string
@@ -297,6 +347,7 @@ export type DocumentTemplatePresetUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   normalizedName?: Prisma.StringFieldUpdateOperationsInput | string
+  version?: Prisma.IntFieldUpdateOperationsInput | number
   createdById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   updatedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -310,6 +361,7 @@ export type DocumentTemplatePresetUncheckedUpdateInput = {
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   normalizedName?: Prisma.StringFieldUpdateOperationsInput | string
+  version?: Prisma.IntFieldUpdateOperationsInput | number
   createdById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   updatedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -322,6 +374,7 @@ export type DocumentTemplatePresetCreateManyInput = {
   tenantId: string
   name: string
   normalizedName: string
+  version?: number
   createdById?: string | null
   updatedById?: string | null
   createdAt?: Date | string
@@ -332,6 +385,7 @@ export type DocumentTemplatePresetUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   normalizedName?: Prisma.StringFieldUpdateOperationsInput | string
+  version?: Prisma.IntFieldUpdateOperationsInput | number
   createdById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   updatedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -343,6 +397,7 @@ export type DocumentTemplatePresetUncheckedUpdateManyInput = {
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   normalizedName?: Prisma.StringFieldUpdateOperationsInput | string
+  version?: Prisma.IntFieldUpdateOperationsInput | number
   createdById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   updatedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -369,10 +424,15 @@ export type DocumentTemplatePresetCountOrderByAggregateInput = {
   tenantId?: Prisma.SortOrder
   name?: Prisma.SortOrder
   normalizedName?: Prisma.SortOrder
+  version?: Prisma.SortOrder
   createdById?: Prisma.SortOrder
   updatedById?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+}
+
+export type DocumentTemplatePresetAvgOrderByAggregateInput = {
+  version?: Prisma.SortOrder
 }
 
 export type DocumentTemplatePresetMaxOrderByAggregateInput = {
@@ -380,6 +440,7 @@ export type DocumentTemplatePresetMaxOrderByAggregateInput = {
   tenantId?: Prisma.SortOrder
   name?: Prisma.SortOrder
   normalizedName?: Prisma.SortOrder
+  version?: Prisma.SortOrder
   createdById?: Prisma.SortOrder
   updatedById?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -391,10 +452,15 @@ export type DocumentTemplatePresetMinOrderByAggregateInput = {
   tenantId?: Prisma.SortOrder
   name?: Prisma.SortOrder
   normalizedName?: Prisma.SortOrder
+  version?: Prisma.SortOrder
   createdById?: Prisma.SortOrder
   updatedById?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+}
+
+export type DocumentTemplatePresetSumOrderByAggregateInput = {
+  version?: Prisma.SortOrder
 }
 
 export type DocumentTemplatePresetScalarRelationFilter = {
@@ -462,6 +528,7 @@ export type DocumentTemplatePresetCreateWithoutTenantInput = {
   id?: string
   name: string
   normalizedName: string
+  version?: number
   createdById?: string | null
   updatedById?: string | null
   createdAt?: Date | string
@@ -473,6 +540,7 @@ export type DocumentTemplatePresetUncheckedCreateWithoutTenantInput = {
   id?: string
   name: string
   normalizedName: string
+  version?: number
   createdById?: string | null
   updatedById?: string | null
   createdAt?: Date | string
@@ -514,6 +582,7 @@ export type DocumentTemplatePresetScalarWhereInput = {
   tenantId?: Prisma.StringFilter<"DocumentTemplatePreset"> | string
   name?: Prisma.StringFilter<"DocumentTemplatePreset"> | string
   normalizedName?: Prisma.StringFilter<"DocumentTemplatePreset"> | string
+  version?: Prisma.IntFilter<"DocumentTemplatePreset"> | number
   createdById?: Prisma.StringNullableFilter<"DocumentTemplatePreset"> | string | null
   updatedById?: Prisma.StringNullableFilter<"DocumentTemplatePreset"> | string | null
   createdAt?: Prisma.DateTimeFilter<"DocumentTemplatePreset"> | Date | string
@@ -524,6 +593,7 @@ export type DocumentTemplatePresetCreateWithoutItemsInput = {
   id?: string
   name: string
   normalizedName: string
+  version?: number
   createdById?: string | null
   updatedById?: string | null
   createdAt?: Date | string
@@ -536,6 +606,7 @@ export type DocumentTemplatePresetUncheckedCreateWithoutItemsInput = {
   tenantId: string
   name: string
   normalizedName: string
+  version?: number
   createdById?: string | null
   updatedById?: string | null
   createdAt?: Date | string
@@ -562,6 +633,7 @@ export type DocumentTemplatePresetUpdateWithoutItemsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   normalizedName?: Prisma.StringFieldUpdateOperationsInput | string
+  version?: Prisma.IntFieldUpdateOperationsInput | number
   createdById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   updatedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -574,6 +646,7 @@ export type DocumentTemplatePresetUncheckedUpdateWithoutItemsInput = {
   tenantId?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   normalizedName?: Prisma.StringFieldUpdateOperationsInput | string
+  version?: Prisma.IntFieldUpdateOperationsInput | number
   createdById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   updatedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -584,6 +657,7 @@ export type DocumentTemplatePresetCreateManyTenantInput = {
   id?: string
   name: string
   normalizedName: string
+  version?: number
   createdById?: string | null
   updatedById?: string | null
   createdAt?: Date | string
@@ -594,6 +668,7 @@ export type DocumentTemplatePresetUpdateWithoutTenantInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   normalizedName?: Prisma.StringFieldUpdateOperationsInput | string
+  version?: Prisma.IntFieldUpdateOperationsInput | number
   createdById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   updatedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -605,6 +680,7 @@ export type DocumentTemplatePresetUncheckedUpdateWithoutTenantInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   normalizedName?: Prisma.StringFieldUpdateOperationsInput | string
+  version?: Prisma.IntFieldUpdateOperationsInput | number
   createdById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   updatedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -616,6 +692,7 @@ export type DocumentTemplatePresetUncheckedUpdateManyWithoutTenantInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   normalizedName?: Prisma.StringFieldUpdateOperationsInput | string
+  version?: Prisma.IntFieldUpdateOperationsInput | number
   createdById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   updatedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -658,6 +735,7 @@ export type DocumentTemplatePresetSelect<ExtArgs extends runtime.Types.Extension
   tenantId?: boolean
   name?: boolean
   normalizedName?: boolean
+  version?: boolean
   createdById?: boolean
   updatedById?: boolean
   createdAt?: boolean
@@ -672,6 +750,7 @@ export type DocumentTemplatePresetSelectCreateManyAndReturn<ExtArgs extends runt
   tenantId?: boolean
   name?: boolean
   normalizedName?: boolean
+  version?: boolean
   createdById?: boolean
   updatedById?: boolean
   createdAt?: boolean
@@ -684,6 +763,7 @@ export type DocumentTemplatePresetSelectUpdateManyAndReturn<ExtArgs extends runt
   tenantId?: boolean
   name?: boolean
   normalizedName?: boolean
+  version?: boolean
   createdById?: boolean
   updatedById?: boolean
   createdAt?: boolean
@@ -696,13 +776,14 @@ export type DocumentTemplatePresetSelectScalar = {
   tenantId?: boolean
   name?: boolean
   normalizedName?: boolean
+  version?: boolean
   createdById?: boolean
   updatedById?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type DocumentTemplatePresetOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "name" | "normalizedName" | "createdById" | "updatedById" | "createdAt" | "updatedAt", ExtArgs["result"]["documentTemplatePreset"]>
+export type DocumentTemplatePresetOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "name" | "normalizedName" | "version" | "createdById" | "updatedById" | "createdAt" | "updatedAt", ExtArgs["result"]["documentTemplatePreset"]>
 export type DocumentTemplatePresetInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   tenant?: boolean | Prisma.WorkspaceDefaultArgs<ExtArgs>
   items?: boolean | Prisma.DocumentTemplatePreset$itemsArgs<ExtArgs>
@@ -729,6 +810,7 @@ export type $DocumentTemplatePresetPayload<ExtArgs extends runtime.Types.Extensi
      * Lower-cased, whitespace-collapsed name: one preset per name per workspace.
      */
     normalizedName: string
+    version: number
     createdById: string | null
     updatedById: string | null
     createdAt: Date
@@ -1162,6 +1244,7 @@ export interface DocumentTemplatePresetFieldRefs {
   readonly tenantId: Prisma.FieldRef<"DocumentTemplatePreset", 'String'>
   readonly name: Prisma.FieldRef<"DocumentTemplatePreset", 'String'>
   readonly normalizedName: Prisma.FieldRef<"DocumentTemplatePreset", 'String'>
+  readonly version: Prisma.FieldRef<"DocumentTemplatePreset", 'Int'>
   readonly createdById: Prisma.FieldRef<"DocumentTemplatePreset", 'String'>
   readonly updatedById: Prisma.FieldRef<"DocumentTemplatePreset", 'String'>
   readonly createdAt: Prisma.FieldRef<"DocumentTemplatePreset", 'DateTime'>

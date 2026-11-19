@@ -102,6 +102,7 @@ async function toDtos(tenantId: string, presets: PresetWithItems[]): Promise<Doc
   return presets.map((preset) => ({
     id: preset.id,
     name: preset.name,
+    version: preset.version,
     createdAt: preset.createdAt.toISOString(),
     updatedAt: preset.updatedAt.toISOString(),
     items: preset.items.map((item) => toItem(item.templateId)),
@@ -119,19 +120,10 @@ export async function listDocumentTemplatePresets(
   return toDtos(params.tenantId, presets);
 }
 
-async function loadOne(tenantId: string, id: string): Promise<DocumentTemplatePresetDto> {
-  const preset = await prisma.documentTemplatePreset.findFirst({
-    where: { id, tenantId },
-    include: presetInclude,
-  });
-  if (!preset) throw new NotFoundError(PRESET_NOT_FOUND);
-  return (await toDtos(tenantId, [preset]))[0];
-}
-
 export async function createDocumentTemplatePreset(
   input: CreateDocumentTemplatePresetInput,
   params: DocumentTemplatePresetParams,
-): Promise<DocumentTemplatePresetDto> {
+): Promise<Pick<DocumentTemplatePresetDto, 'id'>> {
   input = createDocumentTemplatePresetSchema.parse(input);
   const { tenantId, userId } = params;
   const name = input.name.trim();
@@ -171,7 +163,7 @@ export async function createDocumentTemplatePreset(
       }, tx);
       return preset;
     });
-    return await loadOne(tenantId, created.id);
+    return { id: created.id };
   } catch (error) {
     if (isUniqueViolation(error)) throw new ConflictError('A preset with this name already exists');
     throw error;
@@ -182,7 +174,7 @@ export async function updateDocumentTemplatePreset(
   id: string,
   input: UpdateDocumentTemplatePresetInput,
   params: DocumentTemplatePresetParams,
-): Promise<DocumentTemplatePresetDto> {
+): Promise<Pick<DocumentTemplatePresetDto, 'id'>> {
   input = updateDocumentTemplatePresetSchema.parse(input);
   const { tenantId, userId } = params;
 
@@ -210,9 +202,10 @@ export async function updateDocumentTemplatePreset(
         where: {
           id,
           tenantId,
-          ...(input.expectedUpdatedAt ? { updatedAt: new Date(input.expectedUpdatedAt) } : {}),
+          version: input.expectedVersion,
         },
         data: {
+          version: { increment: 1 },
           updatedById: userId,
           ...(name === undefined ? {} : { name, normalizedName }),
         },
@@ -246,7 +239,7 @@ export async function updateDocumentTemplatePreset(
         metadata: { itemCount: input.templateIds?.length ?? current.items.length },
       }, tx);
     });
-    return await loadOne(tenantId, id);
+    return { id };
   } catch (error) {
     if (isUniqueViolation(error)) throw new ConflictError('A preset with this name already exists');
     throw error;

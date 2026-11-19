@@ -794,6 +794,7 @@ export const DocumentTemplatePresetScalarFieldEnum = {
   tenantId: 'tenantId',
   name: 'name',
   normalizedName: 'normalizedName',
+  version: 'version',
   createdById: 'createdById',
   updatedById: 'updatedById',
   createdAt: 'createdAt',

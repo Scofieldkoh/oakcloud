@@ -41,7 +41,7 @@ function presetItem(
 }
 
 function preset(items: DocumentTemplatePresetItemDto[], name = 'AGM pack'): DocumentTemplatePresetDto {
-  return { id: 'preset-1', name, createdAt: '', updatedAt: '', items };
+  return { id: 'preset-1', name, version: 1, createdAt: '', updatedAt: '', items };
 }
 
 // The AGM example uses four ordinary templates; nothing here is tenant specific.

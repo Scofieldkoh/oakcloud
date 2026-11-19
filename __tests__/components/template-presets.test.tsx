@@ -37,7 +37,7 @@ function member(source: DocumentTemplateSummary, overrides: Partial<DocumentTemp
 }
 
 function preset(id: string, name: string, items: DocumentTemplatePresetItemDto[]): DocumentTemplatePresetDto {
-  return { id, name, createdAt: '2026-11-19T00:00:00.000Z', updatedAt: '2026-11-19T01:00:00.000Z', items };
+  return { id, name, version: 1, createdAt: '2026-11-19T00:00:00.000Z', updatedAt: '2026-11-19T01:00:00.000Z', items };
 }
 
 const agm = () => preset('p-agm', 'AGM pack', catalogue.map((entry) => member(entry)));
@@ -62,9 +62,9 @@ function mockApi(initial: DocumentTemplatePresetDto[], failures: Record<string, 
     if (method === 'POST') {
       const created = preset('p-new', String(body?.name), (body?.templateIds as string[]).map((id) => member(catalogue.find((entry) => entry.id === id)!)));
       presets = [...presets, created];
-      return Response.json(created, { status: 201 });
+      return Response.json({ id: created.id }, { status: 201 });
     }
-    if (method === 'PATCH') return Response.json(presets[0]);
+    if (method === 'PATCH') return Response.json({ id: presets[0].id });
     if (method === 'DELETE') {
       const id = url.split('/').pop();
       presets = presets.filter((entry) => entry.id !== id);
@@ -265,8 +265,38 @@ describe('TemplatePresets', () => {
       expect(api.writes()[0]).toMatchObject({
         method: 'PATCH',
         url: '/api/document-template-presets/p-agm',
-        body: { templateIds: ['t-notice'], expectedUpdatedAt: '2026-11-19T01:00:00.000Z' },
+        body: { templateIds: ['t-notice'], expectedVersion: 1 },
       });
+    });
+
+    it('binds replacement to the confirmed version and requires refresh and reconfirmation after a conflict', async () => {
+      const failures = { PATCH: { status: 409, error: 'This preset was changed by someone else.' } };
+      const api = mockApi([agm()], failures);
+      const { user } = setup({ selected: [selectedItem(notice)] });
+      await openMenu(user);
+      await user.click(await screen.findByRole('menuitem', { name: /Save selection as preset/ }));
+      await user.type(within(await screen.findByRole('dialog')).getByLabelText('Preset name'), 'AGM pack');
+      await user.click(screen.getByRole('button', { name: 'Save preset' }));
+      await screen.findByRole('dialog', { name: /Replace preset/ });
+
+      // Another writer changes the preset after our confirmation was prepared.
+      api.setPresets([{ ...agm(), version: 2 }]);
+      await user.click(screen.getByRole('button', { name: 'Replace preset' }));
+      await waitFor(() => expect(api.writes()).toHaveLength(1));
+      expect(api.writes()[0].body).toEqual({ templateIds: ['t-notice'], expectedVersion: 1 });
+      const saveDialog = await screen.findByRole('dialog', { name: 'Save selection as preset' });
+      expect(within(saveDialog).getByRole('alert')).toHaveTextContent(/refresh.*confirm/i);
+      expect(screen.queryByRole('dialog', { name: /Replace preset/ })).not.toBeInTheDocument();
+      expect(api.writes()).toHaveLength(1); // No automatic retry using the new version.
+
+      await user.click(within(saveDialog).getByRole('button', { name: 'Save preset' }));
+      await screen.findByRole('dialog', { name: /Replace preset/ });
+      expect(api.writes()).toHaveLength(1); // Refresh still requires explicit confirmation.
+      delete (failures as Partial<typeof failures>).PATCH;
+      await user.click(screen.getByRole('button', { name: 'Replace preset' }));
+      await waitFor(() => expect(api.writes()).toHaveLength(2));
+      expect(api.writes()[1].body).toEqual({ templateIds: ['t-notice'], expectedVersion: 2 });
+      expect(await screen.findByText('Saved preset “AGM pack”')).toBeInTheDocument();
     });
 
     it('does not overwrite when the confirmation is cancelled', async () => {
