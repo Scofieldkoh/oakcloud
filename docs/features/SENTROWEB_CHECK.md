@@ -90,6 +90,12 @@ confirmation (**Run again anyway**). Only one run per company can be queued or r
   same contact share that transaction's first successful replacement (one replacement/audit), rather
   than treating their own update as an external stale edit. Successful replacements are audited as old
   and new. Clear the proposed DOB to keep the saved one without replacing it.
+  **Companies → Update from BizFile** has its own card, "Date of birth changes", above the officer and
+  shareholder changes. It lists each person whose saved date differs, with an unticked box "replace the
+  saved date of birth (old) with (new)". Ticked, the exact saved date is sent as the agreement. Unticked
+  (the default), the proposed date is left out and the saved one is kept, while the person's other updates
+  still apply. If a saved date changes after a box was ticked, applying is stopped, the tick is cleared
+  and the card shows the new date. The plan review before the final save also lists the person's change.
   Other sources only fill an empty date and report a difference as a conflict.
 - **No backfill, no automatic re-screening.** Past BizFile documents are not re-read, and a changed date
   affects only the next manual Sentroweb check.

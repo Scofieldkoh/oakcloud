@@ -161,12 +161,21 @@ function unresolvedMatchIssues(draft: BizFileReviewDraft, previews: MatchPreview
   return issues;
 }
 
+export interface DateOfBirthReplacement {
+  path: string;
+  section: "officers" | "shareholders";
+  index: number;
+  name: string;
+  saved: string;
+  incoming: string;
+}
+
 /**
- * A saved date of birth the BizFile would replace must be seen and agreed to, for the date the contact
- * has right now: a fresh preview that shows a different saved date than the one agreed asks again.
+ * Each person whose reviewed date of birth would replace a different saved one: certain matches only
+ * (an explicit REUSE of the previewed contact), a real proposed date, and a saved date that differs.
  */
-export function unconfirmedDateOfBirthReplacements(draft: BizFileReviewDraft, previews: MatchPreviews): BizFileReviewIssue[] {
-  const issues: BizFileReviewIssue[] = [];
+export function dateOfBirthReplacements(draft: BizFileReviewDraft, previews: MatchPreviews): DateOfBirthReplacement[] {
+  const found: DateOfBirthReplacement[] = [];
   for (const section of ["officers", "shareholders"] as const) {
     (draft[section] ?? []).forEach((record, index) => {
       const preview = previews[`${section}.${index}`];
@@ -174,15 +183,25 @@ export function unconfirmedDateOfBirthReplacements(draft: BizFileReviewDraft, pr
       const saved = preview?.contact?.dateOfBirth ?? null;
       const resolution = record.contactResolution;
       const certain = resolution?.action === "REUSE" && resolution.contactId === preview?.contactId;
-      if (!certain || !incoming || !saved || saved === incoming || record.dateOfBirthReplaces === saved) return;
-      issues.push({
-        path: `${section}.${index}.dateOfBirth`,
-        message: `Confirm replacing the saved date of birth (${formatDateOnlyDisplay(saved)}) or clear this date`,
-        section,
-      });
+      if (!certain || !incoming || !saved || saved === incoming) return;
+      found.push({ path: `${section}.${index}.dateOfBirth`, section, index, name: record.name, saved, incoming });
     });
   }
-  return issues;
+  return found;
+}
+
+/**
+ * A saved date of birth the BizFile would replace must be seen and agreed to, for the date the contact
+ * has right now: a fresh preview that shows a different saved date than the one agreed asks again.
+ */
+export function unconfirmedDateOfBirthReplacements(draft: BizFileReviewDraft, previews: MatchPreviews): BizFileReviewIssue[] {
+  return dateOfBirthReplacements(draft, previews)
+    .filter(({ section, index, saved }) => draft[section]?.[index]?.dateOfBirthReplaces !== saved)
+    .map(({ path, section, saved }) => ({
+      path,
+      message: `Confirm replacing the saved date of birth (${formatDateOnlyDisplay(saved)}) or clear this date`,
+      section,
+    }));
 }
 
 function clone<T>(value: T): T {
