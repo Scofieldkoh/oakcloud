@@ -15221,6 +15221,7 @@ export const SentrowebCheckResultScalarFieldEnum = {
   requestedCountry: 'requestedCountry',
   requestedDateOfBirth: 'requestedDateOfBirth',
   requestedGender: 'requestedGender',
+  searchEchoVerified: 'searchEchoVerified',
   errorCode: 'errorCode',
   documentId: 'documentId',
   evidencePngKey: 'evidencePngKey',

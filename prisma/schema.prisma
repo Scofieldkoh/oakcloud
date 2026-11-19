@@ -5584,6 +5584,8 @@ model SentrowebCheckResult {
   requestedDateOfBirth String?
   /// MALE or FEMALE from the linked contact (null: none sent). Never OTHER.
   requestedGender   ContactGender?
+  /// Sentroweb's answer echoed exactly the name, type, country, date of birth and fuzzy flag we sent.
+  searchEchoVerified Boolean              @default(false)
   errorCode         String?               @db.VarChar(64)
   documentId        String?
   evidencePngKey    String?

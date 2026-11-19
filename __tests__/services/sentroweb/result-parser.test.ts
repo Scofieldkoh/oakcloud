@@ -545,3 +545,42 @@ describe('parseSentrowebResult: Fuzzy Search echo', () => {
     ).toBe('POSSIBLE_MATCH');
   });
 });
+
+describe('parseSentrowebResult: searchEchoVerified', () => {
+  const sent = { expectedCountry: 'Singapore', expectedDateOfBirth: '1980-01-01', expectedFuzzy: false };
+  const echoing = (change: Record<string, unknown> = {}) => {
+    const c = loadCase('individual-match');
+    Object.assign(c.json[0], { country: 'Singapore', dateOfBirth: '1980-01-01', fuzzyValue: false }, change);
+    return parseSentrowebResult(c.searchType, c.json, c.titles, { expectedName: c.name, ...sent });
+  };
+
+  it('is true for a possible match whose answer echoes the search', () => {
+    expect(echoing()).toMatchObject({ status: 'POSSIBLE_MATCH', searchEchoVerified: true });
+  });
+
+  it.each([
+    [{ country: 'Malaysia' }],
+    [{ dateOfBirth: '1981-01-01' }],
+    [{ fuzzyValue: true }],
+    [{ name: 'Someone Else' }],
+    [{ searchEntity: true, searchIndividual: false }],
+  ])('keeps POSSIBLE_MATCH but is false when the answer differs (%j)', (change) => {
+    expect(echoing(change)).toMatchObject({ status: 'POSSIBLE_MATCH', searchEchoVerified: false });
+  });
+
+  it('is true for CLEAR and false for every ERROR', () => {
+    expect(parse(clearIndividual())).toMatchObject({ status: 'CLEAR', searchEchoVerified: true });
+    const mismatch = clearIndividual();
+    mismatch.json[0].name = 'Another Name';
+    expect(parse(mismatch)).toMatchObject({ status: 'ERROR', searchEchoVerified: false });
+    expect(parseSentrowebResult('INDIVIDUAL', null, [], {})).toMatchObject({ status: 'ERROR', searchEchoVerified: false });
+  });
+
+  it('is false for a possible match found only in the headings of an unreadable response', () => {
+    const c = loadCase('individual-match');
+    expect(parseSentrowebResult(c.searchType, 'not json', c.titles, { expectedName: c.name })).toMatchObject({
+      status: 'POSSIBLE_MATCH',
+      searchEchoVerified: false,
+    });
+  });
+});

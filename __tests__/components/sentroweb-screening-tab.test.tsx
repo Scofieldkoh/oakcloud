@@ -151,6 +151,28 @@ describe('CompanyScreeningTab', () => {
     ).toBeInTheDocument();
   });
 
+  it('keeps a possible match a possible match but does not say its details were sent when the echo differed', async () => {
+    const detail = withResults([
+      result({
+        id: 'r1',
+        name: 'Eve Echo',
+        status: 'POSSIBLE_MATCH',
+        matchCount: 1,
+        categoryCounts: { PEP: 1 },
+        searchDetailsSent: false,
+        searchDetails: { country: 'Singapore', dateOfBirth: true, gender: null },
+      }),
+    ]);
+    setupApi(singleRunApi(detail));
+    renderTab();
+    const table = await screen.findByRole('table');
+    expect(within(table).getAllByText('Possible match').length).toBeGreaterThan(0);
+    expect(
+      within(table).getByText('Requested, not confirmed as sent: name, country (Singapore), date of birth. Not requested: gender'),
+    ).toBeInTheDocument();
+    expect(within(table).queryByText(/^Sent:/)).not.toBeInTheDocument();
+  });
+
   it('marks a fuzzy run', async () => {
     const detail = withResults([result()], { fuzzy: true });
     setupApi(singleRunApi(detail));

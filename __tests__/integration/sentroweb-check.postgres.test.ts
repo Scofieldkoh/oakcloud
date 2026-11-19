@@ -594,6 +594,31 @@ describePostgres('Sentroweb check service (PostgreSQL)', () => {
         expect(await rowOf(runId, 'Pat Plain')).toMatchObject({ status: 'ERROR', errorCode: 'RESULT_MISMATCH' });
       });
 
+      it('a possible match that echoes another country, birth date or search mode stays POSSIBLE_MATCH but its details are not shown as sent', async () => {
+        const companyId = await makeCompany();
+        const contact = await person('Vera Verify', { nationality: 'Singaporean', dateOfBirth: new Date('1980-01-01T00:00:00Z') });
+        await prisma.companyOfficer.create({ data: { companyId, contactId: contact.id, role: 'DIRECTOR', name: 'Vera Verify', isCurrent: true } });
+        const cases: Array<[string, Record<string, unknown>, boolean]> = [
+          ['exact echo', {}, true],
+          ['other country', { country: 'Malaysia' }, false],
+          ['other birth date', { dateOfBirth: '1981-01-01' }, false],
+          ['other search mode', { fuzzyValue: true }, false],
+        ];
+        for (const [label, change, verified] of cases) {
+          const { runId } = await queue(companyId, ['Vera Verify'], { force: true });
+          const client = makeClient();
+          const loaded = loadCase('individual-match');
+          Object.assign(loaded.json[0], { name: 'Vera Verify', country: 'Singapore', dateOfBirth: '1980-01-01', fuzzyValue: false }, change);
+          client.scripts.set('Vera Verify', {
+            outcome: { json: loaded.json, domTitles: loaded.titles, pdf: Buffer.from('%PDF-1.4 x'), png: Buffer.from('89504e470d0a1a0a', 'hex') },
+          });
+          await service.processRun(runId, { client, config: CONFIG });
+          const dto = (await service.getRun(tenantId, companyId, runId)).results?.[0];
+          expect(dto, label).toMatchObject({ status: 'POSSIBLE_MATCH', searchDetailsSent: verified });
+          expect((await rowOf(runId, 'Vera Verify')).searchEchoVerified, label).toBe(verified);
+        }
+      });
+
       it('shows requested details as unconfirmed for a result that never ran or ended in an error', async () => {
         const companyId = await makeCompany();
         const contact = await person('Nia NotRun', { nationality: 'Singaporean', dateOfBirth: new Date('1985-05-05T00:00:00Z') });

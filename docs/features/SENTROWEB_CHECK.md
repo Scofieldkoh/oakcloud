@@ -86,7 +86,9 @@ What is requested is stored on the result (`requestedCountry`, `requestedDateOfB
 `requestedGender`; the date is never returned by the API, only whether one was requested). Under
 each name the confirm dialog says "Will send: name, country (Singapore), date of birth, gender
 (Male)". The Screening tab says "Sent: ..." only for a result that was read back (clear or possible
-match). A result that never ran, failed before SEARCH or ended in an error says "Requested, not
+match) **and** whose answer echoed exactly the name, type, country, date of birth and fuzzy flag we
+sent (`searchEchoVerified`). A possible match is still shown as a possible match when the echo
+differs, but its details read "Requested, not confirmed as sent". A result that never ran, failed before SEARCH or ended in an error says "Requested, not
 confirmed as sent: ...", because nothing proves what reached Sentroweb.
 
 The browser client fills the country and the date of birth **first**, while SEARCH is still

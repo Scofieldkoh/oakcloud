@@ -534,6 +534,7 @@ async function processEntity(context: EntityContext): Promise<SentrowebErrorCode
           matches: parsed.matches as unknown as Prisma.InputJsonValue,
           sentrowebReportId: parsed.sentrowebReportId,
           monitorEnabled: parsed.monitorEnabled,
+          searchEchoVerified: parsed.searchEchoVerified,
           errorCode,
           documentId: filed?.documentId ?? null,
           evidencePngKey,
@@ -780,9 +781,13 @@ function toResultDto(row: SentrowebCheckResult): SentrowebResultDto {
       gender: row.requestedGender === 'MALE' || row.requestedGender === 'FEMALE' ? row.requestedGender : null,
     },
     // These are the details the search was requested with. They count as sent only for a result
-    // that was read back: a search that was never run, failed before SEARCH or ended in an error
-    // proves nothing about what reached Sentroweb.
-    searchDetailsSent: row.searchSubmittedAt !== null && (row.status === 'CLEAR' || row.status === 'POSSIBLE_MATCH'),
+    // that was read back AND whose answer echoed exactly what we sent: a search that was never
+    // run, failed before SEARCH, ended in an error, or got a possible match for a different
+    // country, birth date or search mode proves nothing about what reached Sentroweb.
+    searchDetailsSent:
+      row.searchSubmittedAt !== null &&
+      row.searchEchoVerified &&
+      (row.status === 'CLEAR' || row.status === 'POSSIBLE_MATCH'),
     status: row.status,
     matchCount: row.matchCount,
     categoryCounts: (row.categoryCounts ?? {}) as SentrowebCategoryCounts,

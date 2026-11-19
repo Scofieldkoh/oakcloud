@@ -38,6 +38,12 @@ export interface ParsedSentrowebResult {
   matches: SentrowebMatch[];
   sentrowebReportId: string | null;
   monitorEnabled: boolean | null;
+  /**
+   * The response echoed the search we submitted: the name, the search type, and (when expected)
+   * the country, the date of birth and the fuzzy flag. A possible match can still be reported
+   * when this is false, but what the person asked for is then not confirmed as what was searched.
+   */
+  searchEchoVerified: boolean;
   /** Set when status is ERROR. */
   errorCode?: SentrowebErrorCode;
 }
@@ -132,6 +138,7 @@ function error(
     matches: [],
     sentrowebReportId: null,
     monitorEnabled: null,
+    searchEchoVerified: false,
     ...partial,
     errorCode,
   };
@@ -277,7 +284,8 @@ export function parseSentrowebResult(
 
   matchCount += dom.unknownHits;
 
-  const base = { matchCount, categoryCounts, matches, sentrowebReportId, monitorEnabled };
+  const searchEchoVerified = jsonOk && describesOurSearch;
+  const base = { matchCount, categoryCounts, matches, sentrowebReportId, monitorEnabled, searchEchoVerified };
 
   // Any positive count in either source is a possible match, whatever else is wrong.
   if (matchCount > 0) return { ...base, status: 'POSSIBLE_MATCH' };
