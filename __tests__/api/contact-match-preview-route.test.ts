@@ -42,6 +42,7 @@ describe('POST /api/contacts/match-preview', () => {
     mocks.findMany.mockResolvedValue([{
       id: 'contact-1', fullName: '王小明', identificationType: 'NRIC',
       identificationNumber: 'S1234567A', corporateUen: null,
+      dateOfBirth: new Date('1980-01-01T00:00:00.000Z'),
       companyRelations: [{ company: { id: 'company-1', name: 'Example Pte. Ltd.', uen: '202400001A' } }],
     }]);
   });
@@ -62,7 +63,7 @@ describe('POST /api/contacts/match-preview', () => {
         'officers.0': expect.objectContaining({
           contactId: 'contact-1', reasons: ['EXACT_CANONICAL_NAME'],
           contact: expect.objectContaining({
-            fullName: '王小明', identificationNumber: 'S1234567A',
+            fullName: '王小明', identificationNumber: 'S1234567A', dateOfBirth: '1980-01-01',
             companies: [{ id: 'company-1', name: 'Example Pte. Ltd.', uen: '202400001A' }],
           }),
         }),

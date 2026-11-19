@@ -19,6 +19,7 @@ export { formAiReviewTask } from './form-ai-review.task';
 export { formCountReconciliationTask } from './form-count-reconciliation.task';
 export { formUrlHealthTask } from './form-url-health.task';
 export { processingRevisionBackfillTask } from './processing-revision-backfill.task';
+export { sentrowebCheckTask } from './sentroweb-check.task';
 export { summaryCountRefreshTask } from './summary-count-refresh.task';
 export { serviceAgreementActivationTask } from './service-agreement-activation.task';
 export { serviceScheduleReconciliationTask } from './service-schedule-reconciliation.task';

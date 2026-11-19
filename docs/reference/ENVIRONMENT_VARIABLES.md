@@ -82,6 +82,10 @@ Common configured model IDs in the codebase include:
 | `NODE_ENV` | `development` | Runtime mode |
 | `MAX_FILE_SIZE` | `10485760` | Max upload size in bytes for standard document and public form uploads |
 | `LOG_LEVEL` | `debug` in dev, `info` in prod | Logger verbosity |
+| `TRUSTED_PROXY` | `xff` | Which proxy in front of the app is trusted to report the client address, used by every IP-based rate limit. `xff`: the address is the entry `TRUSTED_PROXY_HOPS` places from the right of `X-Forwarded-For` (never the leftmost entry, which the client controls). `cloudflare`: the address is `CF-Connecting-IP`; use this behind Cloudflare or a Cloudflare tunnel. An invalid value is logged and the defaults are used. When neither variable is set the app behaves as `xff` with one hop and logs a warning once |
+| `TRUSTED_PROXY_HOPS` | `1` | Number of proxies in front of the app that append to `X-Forwarded-For` (1 to 5). Only read in `xff` mode. Fail closed: a request whose `X-Forwarded-For` has fewer entries than this number (it did not pass through every configured proxy), or whose selected entry is not an address, gets the client address `unknown`, and all such requests share one allowance. Set it to the exact number of proxies in front of the app: too low selects an inner proxy address (shared and stricter); too high lets a client pad `X-Forwarded-For` with extra entries so that the selected position is one it wrote, so the address is not trustworthy |
+
+With no proxy in front of the app, no trustworthy client address exists (a client can send any `X-Forwarded-For`). The e-signing limits that must hold regardless do not depend on it: access-code attempts per recipient and the per-recipient limits on a signing session. Rate-limit budgets are kept for their whole window (for example 15 minutes for access-code attempts and 10 minutes for the certificate lookup aggregate); the in-memory store is cleared on restart.
 
 ## Public Forms
 
@@ -204,6 +208,28 @@ Generate a value with:
 openssl rand -hex 32
 ```
 
+## Sentroweb Check
+
+The company **Sentroweb check** drives the Sentroweb web app with a headless browser (see
+[Sentroweb check](../features/SENTROWEB_CHECK.md)). The credentials belong to one shared Sentroweb
+login and are read only from the environment; never commit them, log them or paste them into
+tickets. There is no one-time code. The feature is off unless `SENTROWEB_ENABLED=true` **and** the
+four required settings are present; otherwise the API answers `503 SENTROWEB_NOT_CONFIGURED`.
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `SENTROWEB_ENABLED` | Yes | off | `true` switches the feature on |
+| `SENTROWEB_BASE_URL` | Yes | - | Sentroweb address; only its origin is used. Must be `https` (plain `http` only for `127.0.0.1`/`localhost`, used by the tests) |
+| `SENTROWEB_ACCOUNT_ID` | Yes | - | Company registration number shown on the Sentroweb login page |
+| `SENTROWEB_USERNAME` | Yes | - | Sentroweb login name |
+| `SENTROWEB_PASSWORD` | Yes | - | Sentroweb password |
+| `SENTROWEB_STEP_TIMEOUT_MS` | No | `30000` | Limit for each navigation, click and short wait |
+| `SENTROWEB_RUN_TIMEOUT_MS` | No | `600000` | Limit for a whole run; the lease is this plus 2 minutes |
+| `SENTROWEB_SEARCH_DELAY_MS` | No | `2000` | Pause between two searches |
+
+Chrome must be installed (`CHROME_PATH` or the default locations), as for PDF export. Recovery of
+interrupted runs uses the scheduler (`SCHEDULER_ENABLED`).
+
 ## Task Scheduler
 
 The in-process scheduler is started by the app and can be configured per task.
@@ -216,15 +242,35 @@ The in-process scheduler is started by the app and can be configured per task.
 | `SCHEDULER_CLEANUP_ENABLED` | `true` | Enable cleanup processing |
 | `SCHEDULER_CLEANUP_CRON` | `0 2 * * *` | Cleanup schedule |
 | `SCHEDULER_ESIGNING_PDF_GENERATION_CRON` | `* * * * *` | E-signing completion recovery cadence; signed PDFs are generated on demand and this task inherits the master scheduler switch |
+| `SCHEDULER_ESIGNING_SHAREPOINT_FILING_CRON` | `* * * * *` | Signed-document SharePoint filing cadence; task inherits the master scheduler switch |
+| `SCHEDULER_ESIGNING_PREPARATION_CRON` | `* * * * *` | E-signing preparation queue cadence (lease recovery and durable fallback for task envelopes); task inherits the master scheduler switch |
+| `SCHEDULER_ESIGNING_EXPIRY_CHECK_CRON` | `0 * * * *` | E-signing expiry check cadence (hourly). Envelopes past their deadline become `EXPIRED` and expiry emails go out only while this task runs; it inherits the master scheduler switch |
+| `SCHEDULER_ESIGNING_REMINDERS_CRON` | `0 0 * * *` | E-signing reminder and expiry-warning cadence (daily at 00:00 in the server time zone); task inherits the master scheduler switch |
 | `SCHEDULER_SERVICE_AGREEMENT_ACTIVATION_CRON` | `* * * * *` | Service Agreement activation retry polling cadence; task inherits the master scheduler switch |
+| `SCHEDULER_SERVICE_SCHEDULE_RECONCILIATION_CRON` | `* * * * *` | Service cycle and deadline reconciliation cadence; task inherits the master scheduler switch |
 | `SCHEDULER_FORM_AI_REVIEW_ENABLED` | `true` | Enable queued form AI review processing |
 | `SCHEDULER_FORM_AI_REVIEW_CRON` | `*/2 * * * *` | Form AI review polling interval |
 | `SCHEDULER_FORM_COUNT_RECONCILIATION_ENABLED` | `false` unless set | Enable form submission count reconciliation |
 | `SCHEDULER_FORM_COUNT_RECONCILIATION_CRON` | `0 3 * * 0` | Reconciliation schedule |
 | `SCHEDULER_FORM_URL_HEALTH_ENABLED` | `true` | Enable periodic checks for URL information fields |
 | `SCHEDULER_FORM_URL_HEALTH_CRON` | `0 2 * * *` | URL health check schedule (daily at 02:00 by default) |
+| `SCHEDULER_EXCHANGE_RATE_SYNC_ENABLED` | off unless set | Enable the MAS exchange rate sync |
+| `SCHEDULER_EXCHANGE_RATE_SYNC_CRON` | `0 6 * * *` | Exchange rate sync schedule |
+| `SCHEDULER_EXCHANGE_RATE_MAS_DAILY_ENABLED` | `true` | Include the MAS daily source in the exchange rate sync |
+| `SCHEDULER_EXCHANGE_RATE_MAS_MONTHLY_ENABLED` | `true` | Include the MAS monthly source in the exchange rate sync |
+| `SCHEDULER_PROCESSING_REVISION_BACKFILL_ENABLED` | off unless set | Enable the processing-document revision pointer repair |
+| `SCHEDULER_PROCESSING_REVISION_BACKFILL_CRON` | `15 3 * * *` | Revision pointer repair schedule |
+| `SCHEDULER_SUMMARY_COUNT_REFRESH_ENABLED` | off unless set | Enable the company counter and summary view refresh |
+| `SCHEDULER_SUMMARY_COUNT_REFRESH_CRON` | `30 3 * * *` | Summary refresh schedule |
 
 Form URL health scheduling also obeys the master `SCHEDULER_ENABLED` switch. Each run is bounded to 500 URLs and five concurrent checks; warnings remain visible only on authenticated Forms surfaces.
+
+How the scheduler variables combine:
+
+- Nothing runs unless `SCHEDULER_ENABLED=true`.
+- Master-switch tasks run whenever `SCHEDULER_ENABLED=true` and have no `*_ENABLED` variable of their own: `esigning-pdf-generation`, `esigning-sharepoint-filing`, `esigning-preparation`, `esigning-expiry-check`, `esigning-reminders`, `service-agreement-activation` and `service-schedule-reconciliation`. Only their `SCHEDULER_<TASK>_CRON` can be changed. Before this was fixed, the e-signing expiry, reminder and preparation tasks required `SCHEDULER_ESIGNING_EXPIRY_CHECK_ENABLED`, `SCHEDULER_ESIGNING_REMINDERS_ENABLED` and `SCHEDULER_ESIGNING_PREPARATION_ENABLED`, which were undocumented, so they stayed off on installs that only set the master switch.
+- Every other task (backup, cleanup, ACRA sync, public holiday sync, exchange rate sync, form tasks, revision backfill, summary refresh) also needs its own `SCHEDULER_<TASK_ID>_ENABLED=true`, with the task id upper-cased and `-` replaced by `_`. A task whose `*_ENABLED` variable is unset stays off, whatever "Default" shows above for the recommended value.
+- `SCHEDULER_<TASK_ID>_CRON` overrides any task's schedule.
 
 Backup-related settings:
 

@@ -18,6 +18,7 @@ import type {
   EsigningSigningSessionDto,
   EsigningSigningSessionStatusDto,
 } from '@/types/esigning';
+import { getUnsupportedEsigningPdfTextMessage } from '@/lib/esigning-pdf-text';
 import { EsigningConsentScreen } from '@/components/esigning/signing/esigning-consent-screen';
 import { EsigningFieldInputModal } from '@/components/esigning/signing/esigning-field-input-modal';
 import { EsigningSigningHeader } from '@/components/esigning/signing/esigning-signing-header';
@@ -27,6 +28,7 @@ import { EsigningSignatureProgressHint } from '@/components/esigning/signing/esi
 import { EsigningSignatureModal } from '@/components/esigning/signing/esigning-signature-modal';
 import { EsigningCompletionScreen } from '@/components/esigning/signing/esigning-completion-screen';
 import { EsigningDeclineModal } from '@/components/esigning/signing/esigning-decline-modal';
+import { fitSignatureValuesToLimits } from '@/lib/esigning-signature-raster';
 
 // =============================================================================
 // Types
@@ -135,6 +137,37 @@ function serializeValues(values: Record<string, DraftValue>): Array<{
       value,
       signatureDataUrl,
     }));
+}
+
+function getFieldDisplayName(field: EsigningFieldDefinitionDto): string {
+  const label = field.label?.trim();
+  if (label) return label;
+  const typeNames: Partial<Record<EsigningFieldDefinitionDto['type'], string>> = {
+    NAME: 'Name',
+    COMPANY: 'Company',
+    TITLE: 'Title',
+    TEXT: 'Text',
+  };
+  return typeNames[field.type] ?? 'Text';
+}
+
+/**
+ * Typed values the signed PDF cannot print (for example an emoji). Found here so the signer is told
+ * which field to fix before anything is sent; the server applies the same rule as a backstop.
+ */
+function findUnsupportedDraftText(
+  values: Record<string, DraftValue>,
+  fields: EsigningFieldDefinitionDto[]
+): Array<{ fieldId: string; message: string }> {
+  const problems: Array<{ fieldId: string; message: string }> = [];
+  for (const field of fields) {
+    if (field.type === 'CHECKBOX' || field.type === 'DATE_SIGNED') continue;
+    const value = values[field.id]?.value;
+    if (!value) continue;
+    const message = getUnsupportedEsigningPdfTextMessage(value, `The "${getFieldDisplayName(field)}" field`);
+    if (message) problems.push({ fieldId: field.id, message });
+  }
+  return problems;
 }
 
 function isDraftValueComplete(draftValue: DraftValue | undefined): boolean {
@@ -414,6 +447,18 @@ export function EsigningSignPage() {
       })
       .map(({ field }) => field);
   }, [session?.documents, session?.fields]);
+
+  const unsupportedDraftText = useMemo(
+    () => findUnsupportedDraftText(draftValues, fields),
+    [draftValues, fields]
+  );
+
+  // The debounced autosave effect calls saveProgress with the draft it was scheduled for; it reads the
+  // current fields through a ref so a session reload in between cannot leave it with a stale list.
+  const fieldsRef = useRef(fields);
+  useEffect(() => {
+    fieldsRef.current = fields;
+  }, [fields]);
 
   const requiredFields = useMemo(
     () => fields.filter((f) => f.required),
@@ -1086,7 +1131,13 @@ export function EsigningSignPage() {
       }
     }
 
-    const serializedValues = serializeValues(nextValues);
+    // One rejected value would make the server refuse the whole batch, so hold back text the signed PDF
+    // cannot print, tell the signer which field it is, and keep saving everything else.
+    const unsupportedText = findUnsupportedDraftText(nextValues, fieldsRef.current);
+    const heldBackFieldIds = new Set(unsupportedText.map((problem) => problem.fieldId));
+    const serializedValues = serializeValues(nextValues).filter(
+      (entry) => !heldBackFieldIds.has(entry.fieldDefinitionId)
+    );
     if (serializedValues.length === 0) {
       return;
     }
@@ -1096,13 +1147,15 @@ export function EsigningSignPage() {
     const requestPromise = (async () => {
       setIsSaving(true);
       let attempt = 0;
+      // Scale down any signature image that is over the server's pixel limits (high-density screens).
+      const valuesToSend = await fitSignatureValuesToLimits(serializedValues);
 
       while (attempt < 3) {
         try {
           const response = await fetch('/api/esigning/sign/session/fields', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ values: serializedValues }),
+            body: JSON.stringify({ values: valuesToSend }),
           });
           const result = (await response.json().catch(() => ({}))) as EsigningSigningSessionDto & {
             error?: string;
@@ -1179,13 +1232,20 @@ export function EsigningSignPage() {
   }
 
   async function completeSigning(values: Record<string, DraftValue> = latestDraftValuesRef.current) {
+    const unsupportedText = findUnsupportedDraftText(values, fields);
+    if (unsupportedText.length > 0) {
+      setActiveInputFieldId(unsupportedText[0].fieldId);
+      toast.error(unsupportedText[0].message);
+      return;
+    }
+
     try {
       setIsCompleting(true);
       await flushPendingSaves(values);
       const response = await fetch('/api/esigning/sign/session/complete', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ values: serializeValues(values) }),
+        body: JSON.stringify({ values: await fitSignatureValuesToLimits(serializeValues(values)) }),
       });
       const result = await response.json().catch(() => ({})) as EsigningSigningSessionDto & { error?: string };
       if (!response.ok) {
@@ -1345,7 +1405,7 @@ export function EsigningSignPage() {
             Access code required
           </h1>
           <p className="mt-2 text-center text-sm text-text-secondary">
-            Check your email for a one-time access code and enter it below to continue.
+            Enter the access code the sender gave you to continue.
           </p>
           {accessCodeError ? (
             <Alert variant="error" className="mt-4">
@@ -1357,7 +1417,7 @@ export function EsigningSignPage() {
               label="Access code"
               value={accessCode}
               onChange={(event) => setAccessCode(event.target.value)}
-              placeholder="Enter code from your email"
+              placeholder="Enter access code"
               required
             />
             <Button type="submit" className="w-full">
@@ -1485,7 +1545,19 @@ export function EsigningSignPage() {
           </Alert>
         ) : null}
 
-        {saveError ? (
+        {unsupportedDraftText.length > 0 ? (
+          <Alert variant="warning" className="mb-4 flex items-center justify-between gap-3">
+            <span>{unsupportedDraftText[0].message}</span>
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={() => setActiveInputFieldId(unsupportedDraftText[0].fieldId)}
+            >
+              Edit field
+            </Button>
+          </Alert>
+        ) : saveError ? (
           <Alert variant="warning" className="mb-4 flex items-center justify-between gap-3">
             <span>{saveError}</span>
             <Button

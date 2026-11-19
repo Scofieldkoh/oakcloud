@@ -375,6 +375,7 @@ export type DocumentWhereInput = {
   uploadedBy?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
   processingDocument?: Prisma.XOR<Prisma.ProcessingDocumentNullableScalarRelationFilter, Prisma.ProcessingDocumentWhereInput> | null
   shareCapital?: Prisma.ShareCapitalListRelationFilter
+  sentrowebCheckResults?: Prisma.SentrowebCheckResultListRelationFilter
 }
 
 export type DocumentOrderByWithRelationInput = {
@@ -412,6 +413,7 @@ export type DocumentOrderByWithRelationInput = {
   uploadedBy?: Prisma.UserOrderByWithRelationInput
   processingDocument?: Prisma.ProcessingDocumentOrderByWithRelationInput
   shareCapital?: Prisma.ShareCapitalOrderByRelationAggregateInput
+  sentrowebCheckResults?: Prisma.SentrowebCheckResultOrderByRelationAggregateInput
 }
 
 export type DocumentWhereUniqueInput = Prisma.AtLeast<{
@@ -452,6 +454,7 @@ export type DocumentWhereUniqueInput = Prisma.AtLeast<{
   uploadedBy?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
   processingDocument?: Prisma.XOR<Prisma.ProcessingDocumentNullableScalarRelationFilter, Prisma.ProcessingDocumentWhereInput> | null
   shareCapital?: Prisma.ShareCapitalListRelationFilter
+  sentrowebCheckResults?: Prisma.SentrowebCheckResultListRelationFilter
 }, "id">
 
 export type DocumentOrderByWithAggregationInput = {
@@ -546,6 +549,7 @@ export type DocumentCreateInput = {
   uploadedBy: Prisma.UserCreateNestedOneWithoutUploadedDocumentsInput
   processingDocument?: Prisma.ProcessingDocumentCreateNestedOneWithoutDocumentInput
   shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutDocumentInput
+  sentrowebCheckResults?: Prisma.SentrowebCheckResultCreateNestedManyWithoutDocumentInput
 }
 
 export type DocumentUncheckedCreateInput = {
@@ -580,6 +584,7 @@ export type DocumentUncheckedCreateInput = {
   shareholders?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutDocumentInput
   processingDocument?: Prisma.ProcessingDocumentUncheckedCreateNestedOneWithoutDocumentInput
   shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutDocumentInput
+  sentrowebCheckResults?: Prisma.SentrowebCheckResultUncheckedCreateNestedManyWithoutDocumentInput
 }
 
 export type DocumentUpdateInput = {
@@ -614,6 +619,7 @@ export type DocumentUpdateInput = {
   uploadedBy?: Prisma.UserUpdateOneRequiredWithoutUploadedDocumentsNestedInput
   processingDocument?: Prisma.ProcessingDocumentUpdateOneWithoutDocumentNestedInput
   shareCapital?: Prisma.ShareCapitalUpdateManyWithoutDocumentNestedInput
+  sentrowebCheckResults?: Prisma.SentrowebCheckResultUpdateManyWithoutDocumentNestedInput
 }
 
 export type DocumentUncheckedUpdateInput = {
@@ -648,6 +654,7 @@ export type DocumentUncheckedUpdateInput = {
   shareholders?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutDocumentNestedInput
   processingDocument?: Prisma.ProcessingDocumentUncheckedUpdateOneWithoutDocumentNestedInput
   shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutDocumentNestedInput
+  sentrowebCheckResults?: Prisma.SentrowebCheckResultUncheckedUpdateManyWithoutDocumentNestedInput
 }
 
 export type DocumentCreateManyInput = {
@@ -1085,6 +1092,22 @@ export type DocumentUpdateOneRequiredWithoutProcessingDocumentNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.DocumentUpdateToOneWithWhereWithoutProcessingDocumentInput, Prisma.DocumentUpdateWithoutProcessingDocumentInput>, Prisma.DocumentUncheckedUpdateWithoutProcessingDocumentInput>
 }
 
+export type DocumentCreateNestedOneWithoutSentrowebCheckResultsInput = {
+  create?: Prisma.XOR<Prisma.DocumentCreateWithoutSentrowebCheckResultsInput, Prisma.DocumentUncheckedCreateWithoutSentrowebCheckResultsInput>
+  connectOrCreate?: Prisma.DocumentCreateOrConnectWithoutSentrowebCheckResultsInput
+  connect?: Prisma.DocumentWhereUniqueInput
+}
+
+export type DocumentUpdateOneWithoutSentrowebCheckResultsNestedInput = {
+  create?: Prisma.XOR<Prisma.DocumentCreateWithoutSentrowebCheckResultsInput, Prisma.DocumentUncheckedCreateWithoutSentrowebCheckResultsInput>
+  connectOrCreate?: Prisma.DocumentCreateOrConnectWithoutSentrowebCheckResultsInput
+  upsert?: Prisma.DocumentUpsertWithoutSentrowebCheckResultsInput
+  disconnect?: Prisma.DocumentWhereInput | boolean
+  delete?: Prisma.DocumentWhereInput | boolean
+  connect?: Prisma.DocumentWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.DocumentUpdateToOneWithWhereWithoutSentrowebCheckResultsInput, Prisma.DocumentUpdateWithoutSentrowebCheckResultsInput>, Prisma.DocumentUncheckedUpdateWithoutSentrowebCheckResultsInput>
+}
+
 export type DocumentCreateWithoutTenantInput = {
   id?: string
   documentType: string
@@ -1116,6 +1139,7 @@ export type DocumentCreateWithoutTenantInput = {
   uploadedBy: Prisma.UserCreateNestedOneWithoutUploadedDocumentsInput
   processingDocument?: Prisma.ProcessingDocumentCreateNestedOneWithoutDocumentInput
   shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutDocumentInput
+  sentrowebCheckResults?: Prisma.SentrowebCheckResultCreateNestedManyWithoutDocumentInput
 }
 
 export type DocumentUncheckedCreateWithoutTenantInput = {
@@ -1149,6 +1173,7 @@ export type DocumentUncheckedCreateWithoutTenantInput = {
   shareholders?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutDocumentInput
   processingDocument?: Prisma.ProcessingDocumentUncheckedCreateNestedOneWithoutDocumentInput
   shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutDocumentInput
+  sentrowebCheckResults?: Prisma.SentrowebCheckResultUncheckedCreateNestedManyWithoutDocumentInput
 }
 
 export type DocumentCreateOrConnectWithoutTenantInput = {
@@ -1237,6 +1262,7 @@ export type DocumentCreateWithoutUploadedByInput = {
   tenant: Prisma.WorkspaceCreateNestedOneWithoutDocumentsInput
   processingDocument?: Prisma.ProcessingDocumentCreateNestedOneWithoutDocumentInput
   shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutDocumentInput
+  sentrowebCheckResults?: Prisma.SentrowebCheckResultCreateNestedManyWithoutDocumentInput
 }
 
 export type DocumentUncheckedCreateWithoutUploadedByInput = {
@@ -1270,6 +1296,7 @@ export type DocumentUncheckedCreateWithoutUploadedByInput = {
   shareholders?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutDocumentInput
   processingDocument?: Prisma.ProcessingDocumentUncheckedCreateNestedOneWithoutDocumentInput
   shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutDocumentInput
+  sentrowebCheckResults?: Prisma.SentrowebCheckResultUncheckedCreateNestedManyWithoutDocumentInput
 }
 
 export type DocumentCreateOrConnectWithoutUploadedByInput = {
@@ -1329,6 +1356,7 @@ export type DocumentCreateWithoutCompanyInput = {
   uploadedBy: Prisma.UserCreateNestedOneWithoutUploadedDocumentsInput
   processingDocument?: Prisma.ProcessingDocumentCreateNestedOneWithoutDocumentInput
   shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutDocumentInput
+  sentrowebCheckResults?: Prisma.SentrowebCheckResultCreateNestedManyWithoutDocumentInput
 }
 
 export type DocumentUncheckedCreateWithoutCompanyInput = {
@@ -1362,6 +1390,7 @@ export type DocumentUncheckedCreateWithoutCompanyInput = {
   shareholders?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutDocumentInput
   processingDocument?: Prisma.ProcessingDocumentUncheckedCreateNestedOneWithoutDocumentInput
   shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutDocumentInput
+  sentrowebCheckResults?: Prisma.SentrowebCheckResultUncheckedCreateNestedManyWithoutDocumentInput
 }
 
 export type DocumentCreateOrConnectWithoutCompanyInput = {
@@ -1421,6 +1450,7 @@ export type DocumentCreateWithoutFormerNamesInput = {
   uploadedBy: Prisma.UserCreateNestedOneWithoutUploadedDocumentsInput
   processingDocument?: Prisma.ProcessingDocumentCreateNestedOneWithoutDocumentInput
   shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutDocumentInput
+  sentrowebCheckResults?: Prisma.SentrowebCheckResultCreateNestedManyWithoutDocumentInput
 }
 
 export type DocumentUncheckedCreateWithoutFormerNamesInput = {
@@ -1454,6 +1484,7 @@ export type DocumentUncheckedCreateWithoutFormerNamesInput = {
   shareholders?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutDocumentInput
   processingDocument?: Prisma.ProcessingDocumentUncheckedCreateNestedOneWithoutDocumentInput
   shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutDocumentInput
+  sentrowebCheckResults?: Prisma.SentrowebCheckResultUncheckedCreateNestedManyWithoutDocumentInput
 }
 
 export type DocumentCreateOrConnectWithoutFormerNamesInput = {
@@ -1503,6 +1534,7 @@ export type DocumentUpdateWithoutFormerNamesInput = {
   uploadedBy?: Prisma.UserUpdateOneRequiredWithoutUploadedDocumentsNestedInput
   processingDocument?: Prisma.ProcessingDocumentUpdateOneWithoutDocumentNestedInput
   shareCapital?: Prisma.ShareCapitalUpdateManyWithoutDocumentNestedInput
+  sentrowebCheckResults?: Prisma.SentrowebCheckResultUpdateManyWithoutDocumentNestedInput
 }
 
 export type DocumentUncheckedUpdateWithoutFormerNamesInput = {
@@ -1536,6 +1568,7 @@ export type DocumentUncheckedUpdateWithoutFormerNamesInput = {
   shareholders?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutDocumentNestedInput
   processingDocument?: Prisma.ProcessingDocumentUncheckedUpdateOneWithoutDocumentNestedInput
   shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutDocumentNestedInput
+  sentrowebCheckResults?: Prisma.SentrowebCheckResultUncheckedUpdateManyWithoutDocumentNestedInput
 }
 
 export type DocumentCreateWithoutAddressesInput = {
@@ -1569,6 +1602,7 @@ export type DocumentCreateWithoutAddressesInput = {
   uploadedBy: Prisma.UserCreateNestedOneWithoutUploadedDocumentsInput
   processingDocument?: Prisma.ProcessingDocumentCreateNestedOneWithoutDocumentInput
   shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutDocumentInput
+  sentrowebCheckResults?: Prisma.SentrowebCheckResultCreateNestedManyWithoutDocumentInput
 }
 
 export type DocumentUncheckedCreateWithoutAddressesInput = {
@@ -1602,6 +1636,7 @@ export type DocumentUncheckedCreateWithoutAddressesInput = {
   shareholders?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutDocumentInput
   processingDocument?: Prisma.ProcessingDocumentUncheckedCreateNestedOneWithoutDocumentInput
   shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutDocumentInput
+  sentrowebCheckResults?: Prisma.SentrowebCheckResultUncheckedCreateNestedManyWithoutDocumentInput
 }
 
 export type DocumentCreateOrConnectWithoutAddressesInput = {
@@ -1651,6 +1686,7 @@ export type DocumentUpdateWithoutAddressesInput = {
   uploadedBy?: Prisma.UserUpdateOneRequiredWithoutUploadedDocumentsNestedInput
   processingDocument?: Prisma.ProcessingDocumentUpdateOneWithoutDocumentNestedInput
   shareCapital?: Prisma.ShareCapitalUpdateManyWithoutDocumentNestedInput
+  sentrowebCheckResults?: Prisma.SentrowebCheckResultUpdateManyWithoutDocumentNestedInput
 }
 
 export type DocumentUncheckedUpdateWithoutAddressesInput = {
@@ -1684,6 +1720,7 @@ export type DocumentUncheckedUpdateWithoutAddressesInput = {
   shareholders?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutDocumentNestedInput
   processingDocument?: Prisma.ProcessingDocumentUncheckedUpdateOneWithoutDocumentNestedInput
   shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutDocumentNestedInput
+  sentrowebCheckResults?: Prisma.SentrowebCheckResultUncheckedUpdateManyWithoutDocumentNestedInput
 }
 
 export type DocumentCreateWithoutOfficersInput = {
@@ -1717,6 +1754,7 @@ export type DocumentCreateWithoutOfficersInput = {
   uploadedBy: Prisma.UserCreateNestedOneWithoutUploadedDocumentsInput
   processingDocument?: Prisma.ProcessingDocumentCreateNestedOneWithoutDocumentInput
   shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutDocumentInput
+  sentrowebCheckResults?: Prisma.SentrowebCheckResultCreateNestedManyWithoutDocumentInput
 }
 
 export type DocumentUncheckedCreateWithoutOfficersInput = {
@@ -1750,6 +1788,7 @@ export type DocumentUncheckedCreateWithoutOfficersInput = {
   shareholders?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutDocumentInput
   processingDocument?: Prisma.ProcessingDocumentUncheckedCreateNestedOneWithoutDocumentInput
   shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutDocumentInput
+  sentrowebCheckResults?: Prisma.SentrowebCheckResultUncheckedCreateNestedManyWithoutDocumentInput
 }
 
 export type DocumentCreateOrConnectWithoutOfficersInput = {
@@ -1799,6 +1838,7 @@ export type DocumentUpdateWithoutOfficersInput = {
   uploadedBy?: Prisma.UserUpdateOneRequiredWithoutUploadedDocumentsNestedInput
   processingDocument?: Prisma.ProcessingDocumentUpdateOneWithoutDocumentNestedInput
   shareCapital?: Prisma.ShareCapitalUpdateManyWithoutDocumentNestedInput
+  sentrowebCheckResults?: Prisma.SentrowebCheckResultUpdateManyWithoutDocumentNestedInput
 }
 
 export type DocumentUncheckedUpdateWithoutOfficersInput = {
@@ -1832,6 +1872,7 @@ export type DocumentUncheckedUpdateWithoutOfficersInput = {
   shareholders?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutDocumentNestedInput
   processingDocument?: Prisma.ProcessingDocumentUncheckedUpdateOneWithoutDocumentNestedInput
   shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutDocumentNestedInput
+  sentrowebCheckResults?: Prisma.SentrowebCheckResultUncheckedUpdateManyWithoutDocumentNestedInput
 }
 
 export type DocumentCreateWithoutShareCapitalInput = {
@@ -1865,6 +1906,7 @@ export type DocumentCreateWithoutShareCapitalInput = {
   tenant: Prisma.WorkspaceCreateNestedOneWithoutDocumentsInput
   uploadedBy: Prisma.UserCreateNestedOneWithoutUploadedDocumentsInput
   processingDocument?: Prisma.ProcessingDocumentCreateNestedOneWithoutDocumentInput
+  sentrowebCheckResults?: Prisma.SentrowebCheckResultCreateNestedManyWithoutDocumentInput
 }
 
 export type DocumentUncheckedCreateWithoutShareCapitalInput = {
@@ -1898,6 +1940,7 @@ export type DocumentUncheckedCreateWithoutShareCapitalInput = {
   officers?: Prisma.CompanyOfficerUncheckedCreateNestedManyWithoutDocumentInput
   shareholders?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutDocumentInput
   processingDocument?: Prisma.ProcessingDocumentUncheckedCreateNestedOneWithoutDocumentInput
+  sentrowebCheckResults?: Prisma.SentrowebCheckResultUncheckedCreateNestedManyWithoutDocumentInput
 }
 
 export type DocumentCreateOrConnectWithoutShareCapitalInput = {
@@ -1947,6 +1990,7 @@ export type DocumentUpdateWithoutShareCapitalInput = {
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutDocumentsNestedInput
   uploadedBy?: Prisma.UserUpdateOneRequiredWithoutUploadedDocumentsNestedInput
   processingDocument?: Prisma.ProcessingDocumentUpdateOneWithoutDocumentNestedInput
+  sentrowebCheckResults?: Prisma.SentrowebCheckResultUpdateManyWithoutDocumentNestedInput
 }
 
 export type DocumentUncheckedUpdateWithoutShareCapitalInput = {
@@ -1980,6 +2024,7 @@ export type DocumentUncheckedUpdateWithoutShareCapitalInput = {
   officers?: Prisma.CompanyOfficerUncheckedUpdateManyWithoutDocumentNestedInput
   shareholders?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutDocumentNestedInput
   processingDocument?: Prisma.ProcessingDocumentUncheckedUpdateOneWithoutDocumentNestedInput
+  sentrowebCheckResults?: Prisma.SentrowebCheckResultUncheckedUpdateManyWithoutDocumentNestedInput
 }
 
 export type DocumentCreateWithoutAuditorsInput = {
@@ -2013,6 +2058,7 @@ export type DocumentCreateWithoutAuditorsInput = {
   uploadedBy: Prisma.UserCreateNestedOneWithoutUploadedDocumentsInput
   processingDocument?: Prisma.ProcessingDocumentCreateNestedOneWithoutDocumentInput
   shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutDocumentInput
+  sentrowebCheckResults?: Prisma.SentrowebCheckResultCreateNestedManyWithoutDocumentInput
 }
 
 export type DocumentUncheckedCreateWithoutAuditorsInput = {
@@ -2046,6 +2092,7 @@ export type DocumentUncheckedCreateWithoutAuditorsInput = {
   shareholders?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutDocumentInput
   processingDocument?: Prisma.ProcessingDocumentUncheckedCreateNestedOneWithoutDocumentInput
   shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutDocumentInput
+  sentrowebCheckResults?: Prisma.SentrowebCheckResultUncheckedCreateNestedManyWithoutDocumentInput
 }
 
 export type DocumentCreateOrConnectWithoutAuditorsInput = {
@@ -2095,6 +2142,7 @@ export type DocumentUpdateWithoutAuditorsInput = {
   uploadedBy?: Prisma.UserUpdateOneRequiredWithoutUploadedDocumentsNestedInput
   processingDocument?: Prisma.ProcessingDocumentUpdateOneWithoutDocumentNestedInput
   shareCapital?: Prisma.ShareCapitalUpdateManyWithoutDocumentNestedInput
+  sentrowebCheckResults?: Prisma.SentrowebCheckResultUpdateManyWithoutDocumentNestedInput
 }
 
 export type DocumentUncheckedUpdateWithoutAuditorsInput = {
@@ -2128,6 +2176,7 @@ export type DocumentUncheckedUpdateWithoutAuditorsInput = {
   shareholders?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutDocumentNestedInput
   processingDocument?: Prisma.ProcessingDocumentUncheckedUpdateOneWithoutDocumentNestedInput
   shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutDocumentNestedInput
+  sentrowebCheckResults?: Prisma.SentrowebCheckResultUncheckedUpdateManyWithoutDocumentNestedInput
 }
 
 export type DocumentCreateWithoutShareholdersInput = {
@@ -2161,6 +2210,7 @@ export type DocumentCreateWithoutShareholdersInput = {
   uploadedBy: Prisma.UserCreateNestedOneWithoutUploadedDocumentsInput
   processingDocument?: Prisma.ProcessingDocumentCreateNestedOneWithoutDocumentInput
   shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutDocumentInput
+  sentrowebCheckResults?: Prisma.SentrowebCheckResultCreateNestedManyWithoutDocumentInput
 }
 
 export type DocumentUncheckedCreateWithoutShareholdersInput = {
@@ -2194,6 +2244,7 @@ export type DocumentUncheckedCreateWithoutShareholdersInput = {
   officers?: Prisma.CompanyOfficerUncheckedCreateNestedManyWithoutDocumentInput
   processingDocument?: Prisma.ProcessingDocumentUncheckedCreateNestedOneWithoutDocumentInput
   shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutDocumentInput
+  sentrowebCheckResults?: Prisma.SentrowebCheckResultUncheckedCreateNestedManyWithoutDocumentInput
 }
 
 export type DocumentCreateOrConnectWithoutShareholdersInput = {
@@ -2243,6 +2294,7 @@ export type DocumentUpdateWithoutShareholdersInput = {
   uploadedBy?: Prisma.UserUpdateOneRequiredWithoutUploadedDocumentsNestedInput
   processingDocument?: Prisma.ProcessingDocumentUpdateOneWithoutDocumentNestedInput
   shareCapital?: Prisma.ShareCapitalUpdateManyWithoutDocumentNestedInput
+  sentrowebCheckResults?: Prisma.SentrowebCheckResultUpdateManyWithoutDocumentNestedInput
 }
 
 export type DocumentUncheckedUpdateWithoutShareholdersInput = {
@@ -2276,6 +2328,7 @@ export type DocumentUncheckedUpdateWithoutShareholdersInput = {
   officers?: Prisma.CompanyOfficerUncheckedUpdateManyWithoutDocumentNestedInput
   processingDocument?: Prisma.ProcessingDocumentUncheckedUpdateOneWithoutDocumentNestedInput
   shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutDocumentNestedInput
+  sentrowebCheckResults?: Prisma.SentrowebCheckResultUncheckedUpdateManyWithoutDocumentNestedInput
 }
 
 export type DocumentCreateWithoutChargesInput = {
@@ -2309,6 +2362,7 @@ export type DocumentCreateWithoutChargesInput = {
   uploadedBy: Prisma.UserCreateNestedOneWithoutUploadedDocumentsInput
   processingDocument?: Prisma.ProcessingDocumentCreateNestedOneWithoutDocumentInput
   shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutDocumentInput
+  sentrowebCheckResults?: Prisma.SentrowebCheckResultCreateNestedManyWithoutDocumentInput
 }
 
 export type DocumentUncheckedCreateWithoutChargesInput = {
@@ -2342,6 +2396,7 @@ export type DocumentUncheckedCreateWithoutChargesInput = {
   shareholders?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutDocumentInput
   processingDocument?: Prisma.ProcessingDocumentUncheckedCreateNestedOneWithoutDocumentInput
   shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutDocumentInput
+  sentrowebCheckResults?: Prisma.SentrowebCheckResultUncheckedCreateNestedManyWithoutDocumentInput
 }
 
 export type DocumentCreateOrConnectWithoutChargesInput = {
@@ -2391,6 +2446,7 @@ export type DocumentUpdateWithoutChargesInput = {
   uploadedBy?: Prisma.UserUpdateOneRequiredWithoutUploadedDocumentsNestedInput
   processingDocument?: Prisma.ProcessingDocumentUpdateOneWithoutDocumentNestedInput
   shareCapital?: Prisma.ShareCapitalUpdateManyWithoutDocumentNestedInput
+  sentrowebCheckResults?: Prisma.SentrowebCheckResultUpdateManyWithoutDocumentNestedInput
 }
 
 export type DocumentUncheckedUpdateWithoutChargesInput = {
@@ -2424,6 +2480,7 @@ export type DocumentUncheckedUpdateWithoutChargesInput = {
   shareholders?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutDocumentNestedInput
   processingDocument?: Prisma.ProcessingDocumentUncheckedUpdateOneWithoutDocumentNestedInput
   shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutDocumentNestedInput
+  sentrowebCheckResults?: Prisma.SentrowebCheckResultUncheckedUpdateManyWithoutDocumentNestedInput
 }
 
 export type DocumentCreateWithoutProcessingDocumentInput = {
@@ -2457,6 +2514,7 @@ export type DocumentCreateWithoutProcessingDocumentInput = {
   tenant: Prisma.WorkspaceCreateNestedOneWithoutDocumentsInput
   uploadedBy: Prisma.UserCreateNestedOneWithoutUploadedDocumentsInput
   shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutDocumentInput
+  sentrowebCheckResults?: Prisma.SentrowebCheckResultCreateNestedManyWithoutDocumentInput
 }
 
 export type DocumentUncheckedCreateWithoutProcessingDocumentInput = {
@@ -2490,6 +2548,7 @@ export type DocumentUncheckedCreateWithoutProcessingDocumentInput = {
   officers?: Prisma.CompanyOfficerUncheckedCreateNestedManyWithoutDocumentInput
   shareholders?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutDocumentInput
   shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutDocumentInput
+  sentrowebCheckResults?: Prisma.SentrowebCheckResultUncheckedCreateNestedManyWithoutDocumentInput
 }
 
 export type DocumentCreateOrConnectWithoutProcessingDocumentInput = {
@@ -2539,6 +2598,7 @@ export type DocumentUpdateWithoutProcessingDocumentInput = {
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutDocumentsNestedInput
   uploadedBy?: Prisma.UserUpdateOneRequiredWithoutUploadedDocumentsNestedInput
   shareCapital?: Prisma.ShareCapitalUpdateManyWithoutDocumentNestedInput
+  sentrowebCheckResults?: Prisma.SentrowebCheckResultUpdateManyWithoutDocumentNestedInput
 }
 
 export type DocumentUncheckedUpdateWithoutProcessingDocumentInput = {
@@ -2571,6 +2631,159 @@ export type DocumentUncheckedUpdateWithoutProcessingDocumentInput = {
   formerNames?: Prisma.CompanyFormerNameUncheckedUpdateManyWithoutDocumentNestedInput
   officers?: Prisma.CompanyOfficerUncheckedUpdateManyWithoutDocumentNestedInput
   shareholders?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutDocumentNestedInput
+  shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutDocumentNestedInput
+  sentrowebCheckResults?: Prisma.SentrowebCheckResultUncheckedUpdateManyWithoutDocumentNestedInput
+}
+
+export type DocumentCreateWithoutSentrowebCheckResultsInput = {
+  id?: string
+  documentType: string
+  fileName: string
+  originalFileName: string
+  storageKey: string
+  fileSize: number
+  mimeType: string
+  extractedAt?: Date | string | null
+  extractionStatus?: string | null
+  extractionError?: string | null
+  extractedData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  version?: number
+  sourceRevision?: number
+  isLatest?: boolean
+  previousVersionId?: string | null
+  deletedAt?: Date | string | null
+  deletedReason?: string | null
+  deletedById?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  addresses?: Prisma.CompanyAddressCreateNestedManyWithoutDocumentInput
+  auditors?: Prisma.CompanyAuditorCreateNestedManyWithoutDocumentInput
+  charges?: Prisma.CompanyChargeCreateNestedManyWithoutDocumentInput
+  formerNames?: Prisma.CompanyFormerNameCreateNestedManyWithoutDocumentInput
+  officers?: Prisma.CompanyOfficerCreateNestedManyWithoutDocumentInput
+  shareholders?: Prisma.CompanyShareholderCreateNestedManyWithoutDocumentInput
+  company?: Prisma.CompanyCreateNestedOneWithoutDocumentsInput
+  tenant: Prisma.WorkspaceCreateNestedOneWithoutDocumentsInput
+  uploadedBy: Prisma.UserCreateNestedOneWithoutUploadedDocumentsInput
+  processingDocument?: Prisma.ProcessingDocumentCreateNestedOneWithoutDocumentInput
+  shareCapital?: Prisma.ShareCapitalCreateNestedManyWithoutDocumentInput
+}
+
+export type DocumentUncheckedCreateWithoutSentrowebCheckResultsInput = {
+  id?: string
+  tenantId: string
+  companyId?: string | null
+  uploadedById: string
+  documentType: string
+  fileName: string
+  originalFileName: string
+  storageKey: string
+  fileSize: number
+  mimeType: string
+  extractedAt?: Date | string | null
+  extractionStatus?: string | null
+  extractionError?: string | null
+  extractedData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  version?: number
+  sourceRevision?: number
+  isLatest?: boolean
+  previousVersionId?: string | null
+  deletedAt?: Date | string | null
+  deletedReason?: string | null
+  deletedById?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  addresses?: Prisma.CompanyAddressUncheckedCreateNestedManyWithoutDocumentInput
+  auditors?: Prisma.CompanyAuditorUncheckedCreateNestedManyWithoutDocumentInput
+  charges?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutDocumentInput
+  formerNames?: Prisma.CompanyFormerNameUncheckedCreateNestedManyWithoutDocumentInput
+  officers?: Prisma.CompanyOfficerUncheckedCreateNestedManyWithoutDocumentInput
+  shareholders?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutDocumentInput
+  processingDocument?: Prisma.ProcessingDocumentUncheckedCreateNestedOneWithoutDocumentInput
+  shareCapital?: Prisma.ShareCapitalUncheckedCreateNestedManyWithoutDocumentInput
+}
+
+export type DocumentCreateOrConnectWithoutSentrowebCheckResultsInput = {
+  where: Prisma.DocumentWhereUniqueInput
+  create: Prisma.XOR<Prisma.DocumentCreateWithoutSentrowebCheckResultsInput, Prisma.DocumentUncheckedCreateWithoutSentrowebCheckResultsInput>
+}
+
+export type DocumentUpsertWithoutSentrowebCheckResultsInput = {
+  update: Prisma.XOR<Prisma.DocumentUpdateWithoutSentrowebCheckResultsInput, Prisma.DocumentUncheckedUpdateWithoutSentrowebCheckResultsInput>
+  create: Prisma.XOR<Prisma.DocumentCreateWithoutSentrowebCheckResultsInput, Prisma.DocumentUncheckedCreateWithoutSentrowebCheckResultsInput>
+  where?: Prisma.DocumentWhereInput
+}
+
+export type DocumentUpdateToOneWithWhereWithoutSentrowebCheckResultsInput = {
+  where?: Prisma.DocumentWhereInput
+  data: Prisma.XOR<Prisma.DocumentUpdateWithoutSentrowebCheckResultsInput, Prisma.DocumentUncheckedUpdateWithoutSentrowebCheckResultsInput>
+}
+
+export type DocumentUpdateWithoutSentrowebCheckResultsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  documentType?: Prisma.StringFieldUpdateOperationsInput | string
+  fileName?: Prisma.StringFieldUpdateOperationsInput | string
+  originalFileName?: Prisma.StringFieldUpdateOperationsInput | string
+  storageKey?: Prisma.StringFieldUpdateOperationsInput | string
+  fileSize?: Prisma.IntFieldUpdateOperationsInput | number
+  mimeType?: Prisma.StringFieldUpdateOperationsInput | string
+  extractedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  extractionStatus?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  extractionError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  extractedData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  version?: Prisma.IntFieldUpdateOperationsInput | number
+  sourceRevision?: Prisma.IntFieldUpdateOperationsInput | number
+  isLatest?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  previousVersionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  deletedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  addresses?: Prisma.CompanyAddressUpdateManyWithoutDocumentNestedInput
+  auditors?: Prisma.CompanyAuditorUpdateManyWithoutDocumentNestedInput
+  charges?: Prisma.CompanyChargeUpdateManyWithoutDocumentNestedInput
+  formerNames?: Prisma.CompanyFormerNameUpdateManyWithoutDocumentNestedInput
+  officers?: Prisma.CompanyOfficerUpdateManyWithoutDocumentNestedInput
+  shareholders?: Prisma.CompanyShareholderUpdateManyWithoutDocumentNestedInput
+  company?: Prisma.CompanyUpdateOneWithoutDocumentsNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutDocumentsNestedInput
+  uploadedBy?: Prisma.UserUpdateOneRequiredWithoutUploadedDocumentsNestedInput
+  processingDocument?: Prisma.ProcessingDocumentUpdateOneWithoutDocumentNestedInput
+  shareCapital?: Prisma.ShareCapitalUpdateManyWithoutDocumentNestedInput
+}
+
+export type DocumentUncheckedUpdateWithoutSentrowebCheckResultsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  companyId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  uploadedById?: Prisma.StringFieldUpdateOperationsInput | string
+  documentType?: Prisma.StringFieldUpdateOperationsInput | string
+  fileName?: Prisma.StringFieldUpdateOperationsInput | string
+  originalFileName?: Prisma.StringFieldUpdateOperationsInput | string
+  storageKey?: Prisma.StringFieldUpdateOperationsInput | string
+  fileSize?: Prisma.IntFieldUpdateOperationsInput | number
+  mimeType?: Prisma.StringFieldUpdateOperationsInput | string
+  extractedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  extractionStatus?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  extractionError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  extractedData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  version?: Prisma.IntFieldUpdateOperationsInput | number
+  sourceRevision?: Prisma.IntFieldUpdateOperationsInput | number
+  isLatest?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  previousVersionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deletedReason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  deletedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  addresses?: Prisma.CompanyAddressUncheckedUpdateManyWithoutDocumentNestedInput
+  auditors?: Prisma.CompanyAuditorUncheckedUpdateManyWithoutDocumentNestedInput
+  charges?: Prisma.CompanyChargeUncheckedUpdateManyWithoutDocumentNestedInput
+  formerNames?: Prisma.CompanyFormerNameUncheckedUpdateManyWithoutDocumentNestedInput
+  officers?: Prisma.CompanyOfficerUncheckedUpdateManyWithoutDocumentNestedInput
+  shareholders?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutDocumentNestedInput
+  processingDocument?: Prisma.ProcessingDocumentUncheckedUpdateOneWithoutDocumentNestedInput
   shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutDocumentNestedInput
 }
 
@@ -2630,6 +2843,7 @@ export type DocumentUpdateWithoutTenantInput = {
   uploadedBy?: Prisma.UserUpdateOneRequiredWithoutUploadedDocumentsNestedInput
   processingDocument?: Prisma.ProcessingDocumentUpdateOneWithoutDocumentNestedInput
   shareCapital?: Prisma.ShareCapitalUpdateManyWithoutDocumentNestedInput
+  sentrowebCheckResults?: Prisma.SentrowebCheckResultUpdateManyWithoutDocumentNestedInput
 }
 
 export type DocumentUncheckedUpdateWithoutTenantInput = {
@@ -2663,6 +2877,7 @@ export type DocumentUncheckedUpdateWithoutTenantInput = {
   shareholders?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutDocumentNestedInput
   processingDocument?: Prisma.ProcessingDocumentUncheckedUpdateOneWithoutDocumentNestedInput
   shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutDocumentNestedInput
+  sentrowebCheckResults?: Prisma.SentrowebCheckResultUncheckedUpdateManyWithoutDocumentNestedInput
 }
 
 export type DocumentUncheckedUpdateManyWithoutTenantInput = {
@@ -2746,6 +2961,7 @@ export type DocumentUpdateWithoutUploadedByInput = {
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutDocumentsNestedInput
   processingDocument?: Prisma.ProcessingDocumentUpdateOneWithoutDocumentNestedInput
   shareCapital?: Prisma.ShareCapitalUpdateManyWithoutDocumentNestedInput
+  sentrowebCheckResults?: Prisma.SentrowebCheckResultUpdateManyWithoutDocumentNestedInput
 }
 
 export type DocumentUncheckedUpdateWithoutUploadedByInput = {
@@ -2779,6 +2995,7 @@ export type DocumentUncheckedUpdateWithoutUploadedByInput = {
   shareholders?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutDocumentNestedInput
   processingDocument?: Prisma.ProcessingDocumentUncheckedUpdateOneWithoutDocumentNestedInput
   shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutDocumentNestedInput
+  sentrowebCheckResults?: Prisma.SentrowebCheckResultUncheckedUpdateManyWithoutDocumentNestedInput
 }
 
 export type DocumentUncheckedUpdateManyWithoutUploadedByInput = {
@@ -2862,6 +3079,7 @@ export type DocumentUpdateWithoutCompanyInput = {
   uploadedBy?: Prisma.UserUpdateOneRequiredWithoutUploadedDocumentsNestedInput
   processingDocument?: Prisma.ProcessingDocumentUpdateOneWithoutDocumentNestedInput
   shareCapital?: Prisma.ShareCapitalUpdateManyWithoutDocumentNestedInput
+  sentrowebCheckResults?: Prisma.SentrowebCheckResultUpdateManyWithoutDocumentNestedInput
 }
 
 export type DocumentUncheckedUpdateWithoutCompanyInput = {
@@ -2895,6 +3113,7 @@ export type DocumentUncheckedUpdateWithoutCompanyInput = {
   shareholders?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutDocumentNestedInput
   processingDocument?: Prisma.ProcessingDocumentUncheckedUpdateOneWithoutDocumentNestedInput
   shareCapital?: Prisma.ShareCapitalUncheckedUpdateManyWithoutDocumentNestedInput
+  sentrowebCheckResults?: Prisma.SentrowebCheckResultUncheckedUpdateManyWithoutDocumentNestedInput
 }
 
 export type DocumentUncheckedUpdateManyWithoutCompanyInput = {
@@ -2935,6 +3154,7 @@ export type DocumentCountOutputType = {
   officers: number
   shareholders: number
   shareCapital: number
+  sentrowebCheckResults: number
 }
 
 export type DocumentCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -2945,6 +3165,7 @@ export type DocumentCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensio
   officers?: boolean | DocumentCountOutputTypeCountOfficersArgs
   shareholders?: boolean | DocumentCountOutputTypeCountShareholdersArgs
   shareCapital?: boolean | DocumentCountOutputTypeCountShareCapitalArgs
+  sentrowebCheckResults?: boolean | DocumentCountOutputTypeCountSentrowebCheckResultsArgs
 }
 
 /**
@@ -3006,6 +3227,13 @@ export type DocumentCountOutputTypeCountShareCapitalArgs<ExtArgs extends runtime
   where?: Prisma.ShareCapitalWhereInput
 }
 
+/**
+ * DocumentCountOutputType without action
+ */
+export type DocumentCountOutputTypeCountSentrowebCheckResultsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.SentrowebCheckResultWhereInput
+}
+
 
 export type DocumentSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -3042,6 +3270,7 @@ export type DocumentSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs
   uploadedBy?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   processingDocument?: boolean | Prisma.Document$processingDocumentArgs<ExtArgs>
   shareCapital?: boolean | Prisma.Document$shareCapitalArgs<ExtArgs>
+  sentrowebCheckResults?: boolean | Prisma.Document$sentrowebCheckResultsArgs<ExtArgs>
   _count?: boolean | Prisma.DocumentCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["document"]>
 
@@ -3142,6 +3371,7 @@ export type DocumentInclude<ExtArgs extends runtime.Types.Extensions.InternalArg
   uploadedBy?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   processingDocument?: boolean | Prisma.Document$processingDocumentArgs<ExtArgs>
   shareCapital?: boolean | Prisma.Document$shareCapitalArgs<ExtArgs>
+  sentrowebCheckResults?: boolean | Prisma.Document$sentrowebCheckResultsArgs<ExtArgs>
   _count?: boolean | Prisma.DocumentCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type DocumentIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -3169,6 +3399,7 @@ export type $DocumentPayload<ExtArgs extends runtime.Types.Extensions.InternalAr
     uploadedBy: Prisma.$UserPayload<ExtArgs>
     processingDocument: Prisma.$ProcessingDocumentPayload<ExtArgs> | null
     shareCapital: Prisma.$ShareCapitalPayload<ExtArgs>[]
+    sentrowebCheckResults: Prisma.$SentrowebCheckResultPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -3599,6 +3830,7 @@ export interface Prisma__DocumentClient<T, Null = never, ExtArgs extends runtime
   uploadedBy<T extends Prisma.UserDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserDefaultArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   processingDocument<T extends Prisma.Document$processingDocumentArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Document$processingDocumentArgs<ExtArgs>>): Prisma.Prisma__ProcessingDocumentClient<runtime.Types.Result.GetResult<Prisma.$ProcessingDocumentPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   shareCapital<T extends Prisma.Document$shareCapitalArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Document$shareCapitalArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ShareCapitalPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  sentrowebCheckResults<T extends Prisma.Document$sentrowebCheckResultsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Document$sentrowebCheckResultsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$SentrowebCheckResultPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -4255,6 +4487,30 @@ export type Document$shareCapitalArgs<ExtArgs extends runtime.Types.Extensions.I
   take?: number
   skip?: number
   distinct?: Prisma.ShareCapitalScalarFieldEnum | Prisma.ShareCapitalScalarFieldEnum[]
+}
+
+/**
+ * Document.sentrowebCheckResults
+ */
+export type Document$sentrowebCheckResultsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the SentrowebCheckResult
+   */
+  select?: Prisma.SentrowebCheckResultSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the SentrowebCheckResult
+   */
+  omit?: Prisma.SentrowebCheckResultOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.SentrowebCheckResultInclude<ExtArgs> | null
+  where?: Prisma.SentrowebCheckResultWhereInput
+  orderBy?: Prisma.SentrowebCheckResultOrderByWithRelationInput | Prisma.SentrowebCheckResultOrderByWithRelationInput[]
+  cursor?: Prisma.SentrowebCheckResultWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.SentrowebCheckResultScalarFieldEnum | Prisma.SentrowebCheckResultScalarFieldEnum[]
 }
 
 /**

@@ -1,4 +1,4 @@
-import type { ContactDetailType, IdentificationType } from '@/generated/prisma';
+import type { ContactDetailType, ContactGender, IdentificationType } from '@/generated/prisma';
 
 export type ContactIdentitySource =
   | 'MANUAL'
@@ -67,6 +67,9 @@ export interface ContactIdentityCandidate {
   corporateUen?: string | null;
   nationality?: string | null;
   dateOfBirth?: string | null;
+  /** BizFile only: the saved date the reviewer agreed to replace. Without it a different saved date is kept. */
+  replacesDateOfBirth?: string | null;
+  gender?: ContactGender | null;
   fullAddress?: string | null;
   contactDetails?: ContactIdentityDetail[];
   confidence?: Partial<Record<ContactIdentityConfidenceField, number>>;
@@ -98,6 +101,8 @@ export interface ContactMatchPreview extends ContactMatchResult {
     identificationType: IdentificationType | null;
     identificationNumber: string | null;
     corporateUen: string | null;
+    /** YYYY-MM-DD of the saved date of birth (individuals), shown beside a different one in the review. */
+    dateOfBirth?: string | null;
     companies: Array<{ id: string; name: string; uen: string }>;
   } | null;
 }

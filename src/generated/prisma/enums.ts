@@ -411,6 +411,15 @@ export const ContactType = {
 export type ContactType = (typeof ContactType)[keyof typeof ContactType]
 
 
+export const ContactGender = {
+  MALE: 'MALE',
+  FEMALE: 'FEMALE',
+  OTHER: 'OTHER'
+} as const
+
+export type ContactGender = (typeof ContactGender)[keyof typeof ContactGender]
+
+
 export const IdentificationType = {
   NRIC: 'NRIC',
   FIN: 'FIN',
@@ -1147,6 +1156,17 @@ export const EsigningSigningOrder = {
 export type EsigningSigningOrder = (typeof EsigningSigningOrder)[keyof typeof EsigningSigningOrder]
 
 
+export const EsigningIssuedArtifactKind = {
+  SIGNED_DOCUMENT: 'SIGNED_DOCUMENT',
+  CERTIFICATE: 'CERTIFICATE',
+  DOCUMENT_WITH_CERTIFICATE: 'DOCUMENT_WITH_CERTIFICATE',
+  PACKAGE_DOCUMENTS: 'PACKAGE_DOCUMENTS',
+  PACKAGE_DOCUMENTS_WITH_CERTIFICATE: 'PACKAGE_DOCUMENTS_WITH_CERTIFICATE'
+} as const
+
+export type EsigningIssuedArtifactKind = (typeof EsigningIssuedArtifactKind)[keyof typeof EsigningIssuedArtifactKind]
+
+
 export const EsigningPdfGenerationStatus = {
   PENDING: 'PENDING',
   PROCESSING: 'PROCESSING',
@@ -1690,3 +1710,49 @@ export const BizFileOperationEffectState = {
 } as const
 
 export type BizFileOperationEffectState = (typeof BizFileOperationEffectState)[keyof typeof BizFileOperationEffectState]
+
+
+export const SentrowebCheckRunStatus = {
+  QUEUED: 'QUEUED',
+  RUNNING: 'RUNNING',
+  COMPLETED: 'COMPLETED',
+  FAILED: 'FAILED'
+} as const
+
+export type SentrowebCheckRunStatus = (typeof SentrowebCheckRunStatus)[keyof typeof SentrowebCheckRunStatus]
+
+
+export const SentrowebCheckOverallResult = {
+  CLEAR: 'CLEAR',
+  POSSIBLE_MATCH: 'POSSIBLE_MATCH',
+  INCOMPLETE: 'INCOMPLETE'
+} as const
+
+export type SentrowebCheckOverallResult = (typeof SentrowebCheckOverallResult)[keyof typeof SentrowebCheckOverallResult]
+
+
+export const SentrowebEntityKind = {
+  COMPANY: 'COMPANY',
+  INDIVIDUAL: 'INDIVIDUAL',
+  CORPORATE: 'CORPORATE'
+} as const
+
+export type SentrowebEntityKind = (typeof SentrowebEntityKind)[keyof typeof SentrowebEntityKind]
+
+
+export const SentrowebSearchType = {
+  INDIVIDUAL: 'INDIVIDUAL',
+  ENTITY: 'ENTITY'
+} as const
+
+export type SentrowebSearchType = (typeof SentrowebSearchType)[keyof typeof SentrowebSearchType]
+
+
+export const SentrowebResultStatus = {
+  CLEAR: 'CLEAR',
+  POSSIBLE_MATCH: 'POSSIBLE_MATCH',
+  ERROR: 'ERROR',
+  NOT_RUN: 'NOT_RUN'
+} as const
+
+export type SentrowebResultStatus = (typeof SentrowebResultStatus)[keyof typeof SentrowebResultStatus]

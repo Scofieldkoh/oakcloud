@@ -2,9 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createErrorResponse } from '@/lib/api-helpers';
 import { RATE_LIMIT_CONFIGS, getClientIp } from '@/lib/rate-limit';
-import { enforceEsigningRateLimit, requireEsigningSameOrigin } from '@/lib/esigning-public-route';
+import { enforceEsigningSessionRateLimit, requireEsigningSameOrigin } from '@/lib/esigning-public-route';
 import { saveEsigningFieldValuesSchema } from '@/lib/validations/esigning';
 import { completeEsigningSigningSession } from '@/services/esigning-signing.service';
+import { esigningValidationErrorResponse } from '@/lib/esigning-validation-response';
+import { ESIGNING_PAYLOAD_LIMITS } from '@/lib/esigning-payload-limits';
+import { readLimitedJson } from '@/lib/esigning-request-body';
 
 export async function POST(request: NextRequest) {
   const sameOriginError = requireEsigningSameOrigin(request);
@@ -12,7 +15,7 @@ export async function POST(request: NextRequest) {
     return sameOriginError;
   }
 
-  const rateLimit = enforceEsigningRateLimit(
+  const rateLimit = await enforceEsigningSessionRateLimit(
     request,
     'esigning_sign_complete',
     'session-complete',
@@ -23,7 +26,9 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const body = saveEsigningFieldValuesSchema.parse(await request.json());
+    const body = saveEsigningFieldValuesSchema.parse(
+      await readLimitedJson(request, ESIGNING_PAYLOAD_LIMITS.SIGNING_VALUES_BODY_BYTES)
+    );
     const result = await completeEsigningSigningSession({
       values: body.values,
       ipAddress: getClientIp(request),
@@ -32,7 +37,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(result);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Invalid payload', details: error.errors }, { status: 400 });
+      return esigningValidationErrorResponse(error);
     }
 
     return createErrorResponse(error);

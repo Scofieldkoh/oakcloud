@@ -303,6 +303,7 @@ export type UserWhereInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceListRelationFilter
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceListRelationFilter
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestListRelationFilter
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunListRelationFilter
 }
 
 export type UserOrderByWithRelationInput = {
@@ -362,6 +363,7 @@ export type UserOrderByWithRelationInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceOrderByRelationAggregateInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceOrderByRelationAggregateInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestOrderByRelationAggregateInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunOrderByRelationAggregateInput
 }
 
 export type UserWhereUniqueInput = Prisma.AtLeast<{
@@ -424,6 +426,7 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   waivedBillingOccurrences?: Prisma.BillingOccurrenceListRelationFilter
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceListRelationFilter
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestListRelationFilter
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunListRelationFilter
 }, "id" | "email" | "passwordResetToken">
 
 export type UserOrderByWithAggregationInput = {
@@ -524,6 +527,7 @@ export type UserCreateInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutWaivedByInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutCancelledByInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutRequestedByInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserUncheckedCreateInput = {
@@ -582,6 +586,7 @@ export type UserUncheckedCreateInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutWaivedByInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutCancelledByInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutRequestedByInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserUpdateInput = {
@@ -640,6 +645,7 @@ export type UserUpdateInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutWaivedByNestedInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutCancelledByNestedInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutRequestedByNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserUncheckedUpdateInput = {
@@ -698,6 +704,7 @@ export type UserUncheckedUpdateInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutWaivedByNestedInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutCancelledByNestedInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserCreateManyInput = {
@@ -1487,6 +1494,20 @@ export type UserUpdateOneWithoutInitiatedTaskEsigningPreparationsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutInitiatedTaskEsigningPreparationsInput, Prisma.UserUpdateWithoutInitiatedTaskEsigningPreparationsInput>, Prisma.UserUncheckedUpdateWithoutInitiatedTaskEsigningPreparationsInput>
 }
 
+export type UserCreateNestedOneWithoutSentrowebCheckRunsInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutSentrowebCheckRunsInput, Prisma.UserUncheckedCreateWithoutSentrowebCheckRunsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutSentrowebCheckRunsInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneRequiredWithoutSentrowebCheckRunsNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutSentrowebCheckRunsInput, Prisma.UserUncheckedCreateWithoutSentrowebCheckRunsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutSentrowebCheckRunsInput
+  upsert?: Prisma.UserUpsertWithoutSentrowebCheckRunsInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutSentrowebCheckRunsInput, Prisma.UserUpdateWithoutSentrowebCheckRunsInput>, Prisma.UserUncheckedUpdateWithoutSentrowebCheckRunsInput>
+}
+
 export type UserCreateWithoutTenantInput = {
   id?: string
   email: string
@@ -1542,6 +1563,7 @@ export type UserCreateWithoutTenantInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutWaivedByInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutCancelledByInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutRequestedByInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserUncheckedCreateWithoutTenantInput = {
@@ -1599,6 +1621,7 @@ export type UserUncheckedCreateWithoutTenantInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutWaivedByInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutCancelledByInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutRequestedByInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserCreateOrConnectWithoutTenantInput = {
@@ -1703,6 +1726,7 @@ export type UserCreateWithoutRoleAssignmentsInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutWaivedByInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutCancelledByInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutRequestedByInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserUncheckedCreateWithoutRoleAssignmentsInput = {
@@ -1760,6 +1784,7 @@ export type UserUncheckedCreateWithoutRoleAssignmentsInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutWaivedByInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutCancelledByInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutRequestedByInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserCreateOrConnectWithoutRoleAssignmentsInput = {
@@ -1833,6 +1858,7 @@ export type UserUpdateWithoutRoleAssignmentsInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutWaivedByNestedInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutCancelledByNestedInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutRequestedByNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutRoleAssignmentsInput = {
@@ -1890,6 +1916,7 @@ export type UserUncheckedUpdateWithoutRoleAssignmentsInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutWaivedByNestedInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutCancelledByNestedInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserCreateWithoutPreferencesInput = {
@@ -1947,6 +1974,7 @@ export type UserCreateWithoutPreferencesInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutWaivedByInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutCancelledByInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutRequestedByInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserUncheckedCreateWithoutPreferencesInput = {
@@ -2004,6 +2032,7 @@ export type UserUncheckedCreateWithoutPreferencesInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutWaivedByInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutCancelledByInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutRequestedByInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserCreateOrConnectWithoutPreferencesInput = {
@@ -2077,6 +2106,7 @@ export type UserUpdateWithoutPreferencesInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutWaivedByNestedInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutCancelledByNestedInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutRequestedByNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutPreferencesInput = {
@@ -2134,6 +2164,7 @@ export type UserUncheckedUpdateWithoutPreferencesInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutWaivedByNestedInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutCancelledByNestedInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserCreateWithoutCompanyAssignmentsInput = {
@@ -2191,6 +2222,7 @@ export type UserCreateWithoutCompanyAssignmentsInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutWaivedByInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutCancelledByInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutRequestedByInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserUncheckedCreateWithoutCompanyAssignmentsInput = {
@@ -2248,6 +2280,7 @@ export type UserUncheckedCreateWithoutCompanyAssignmentsInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutWaivedByInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutCancelledByInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutRequestedByInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserCreateOrConnectWithoutCompanyAssignmentsInput = {
@@ -2321,6 +2354,7 @@ export type UserUpdateWithoutCompanyAssignmentsInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutWaivedByNestedInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutCancelledByNestedInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutRequestedByNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutCompanyAssignmentsInput = {
@@ -2378,6 +2412,7 @@ export type UserUncheckedUpdateWithoutCompanyAssignmentsInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutWaivedByNestedInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutCancelledByNestedInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserCreateWithoutVerifiedCompanySharePointFoldersInput = {
@@ -2435,6 +2470,7 @@ export type UserCreateWithoutVerifiedCompanySharePointFoldersInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutWaivedByInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutCancelledByInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutRequestedByInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserUncheckedCreateWithoutVerifiedCompanySharePointFoldersInput = {
@@ -2492,6 +2528,7 @@ export type UserUncheckedCreateWithoutVerifiedCompanySharePointFoldersInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutWaivedByInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutCancelledByInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutRequestedByInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserCreateOrConnectWithoutVerifiedCompanySharePointFoldersInput = {
@@ -2565,6 +2602,7 @@ export type UserUpdateWithoutVerifiedCompanySharePointFoldersInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutWaivedByNestedInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutCancelledByNestedInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutRequestedByNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutVerifiedCompanySharePointFoldersInput = {
@@ -2622,6 +2660,7 @@ export type UserUncheckedUpdateWithoutVerifiedCompanySharePointFoldersInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutWaivedByNestedInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutCancelledByNestedInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserCreateWithoutUploadedDocumentsInput = {
@@ -2679,6 +2718,7 @@ export type UserCreateWithoutUploadedDocumentsInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutWaivedByInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutCancelledByInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutRequestedByInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserUncheckedCreateWithoutUploadedDocumentsInput = {
@@ -2736,6 +2776,7 @@ export type UserUncheckedCreateWithoutUploadedDocumentsInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutWaivedByInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutCancelledByInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutRequestedByInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserCreateOrConnectWithoutUploadedDocumentsInput = {
@@ -2809,6 +2850,7 @@ export type UserUpdateWithoutUploadedDocumentsInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutWaivedByNestedInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutCancelledByNestedInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutRequestedByNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutUploadedDocumentsInput = {
@@ -2866,6 +2908,7 @@ export type UserUncheckedUpdateWithoutUploadedDocumentsInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutWaivedByNestedInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutCancelledByNestedInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserCreateWithoutAuditLogsInput = {
@@ -2923,6 +2966,7 @@ export type UserCreateWithoutAuditLogsInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutWaivedByInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutCancelledByInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutRequestedByInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserUncheckedCreateWithoutAuditLogsInput = {
@@ -2980,6 +3024,7 @@ export type UserUncheckedCreateWithoutAuditLogsInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutWaivedByInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutCancelledByInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutRequestedByInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserCreateOrConnectWithoutAuditLogsInput = {
@@ -3053,6 +3098,7 @@ export type UserUpdateWithoutAuditLogsInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutWaivedByNestedInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutCancelledByNestedInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutRequestedByNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutAuditLogsInput = {
@@ -3110,6 +3156,7 @@ export type UserUncheckedUpdateWithoutAuditLogsInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutWaivedByNestedInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutCancelledByNestedInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserCreateWithoutConnectorUsageLogsInput = {
@@ -3167,6 +3214,7 @@ export type UserCreateWithoutConnectorUsageLogsInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutWaivedByInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutCancelledByInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutRequestedByInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserUncheckedCreateWithoutConnectorUsageLogsInput = {
@@ -3224,6 +3272,7 @@ export type UserUncheckedCreateWithoutConnectorUsageLogsInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutWaivedByInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutCancelledByInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutRequestedByInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserCreateOrConnectWithoutConnectorUsageLogsInput = {
@@ -3297,6 +3346,7 @@ export type UserUpdateWithoutConnectorUsageLogsInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutWaivedByNestedInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutCancelledByNestedInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutRequestedByNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutConnectorUsageLogsInput = {
@@ -3354,6 +3404,7 @@ export type UserUncheckedUpdateWithoutConnectorUsageLogsInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutWaivedByNestedInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutCancelledByNestedInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserCreateWithoutCreatedTemplatesInput = {
@@ -3411,6 +3462,7 @@ export type UserCreateWithoutCreatedTemplatesInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutWaivedByInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutCancelledByInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutRequestedByInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserUncheckedCreateWithoutCreatedTemplatesInput = {
@@ -3468,6 +3520,7 @@ export type UserUncheckedCreateWithoutCreatedTemplatesInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutWaivedByInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutCancelledByInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutRequestedByInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserCreateOrConnectWithoutCreatedTemplatesInput = {
@@ -3541,6 +3594,7 @@ export type UserUpdateWithoutCreatedTemplatesInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutWaivedByNestedInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutCancelledByNestedInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutRequestedByNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutCreatedTemplatesInput = {
@@ -3598,6 +3652,7 @@ export type UserUncheckedUpdateWithoutCreatedTemplatesInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutWaivedByNestedInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutCancelledByNestedInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserCreateWithoutCreatedDocumentsInput = {
@@ -3655,6 +3710,7 @@ export type UserCreateWithoutCreatedDocumentsInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutWaivedByInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutCancelledByInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutRequestedByInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserUncheckedCreateWithoutCreatedDocumentsInput = {
@@ -3712,6 +3768,7 @@ export type UserUncheckedCreateWithoutCreatedDocumentsInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutWaivedByInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutCancelledByInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutRequestedByInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserCreateOrConnectWithoutCreatedDocumentsInput = {
@@ -3774,6 +3831,7 @@ export type UserCreateWithoutFinalizedDocumentsInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutWaivedByInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutCancelledByInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutRequestedByInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserUncheckedCreateWithoutFinalizedDocumentsInput = {
@@ -3831,6 +3889,7 @@ export type UserUncheckedCreateWithoutFinalizedDocumentsInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutWaivedByInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutCancelledByInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutRequestedByInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserCreateOrConnectWithoutFinalizedDocumentsInput = {
@@ -3904,6 +3963,7 @@ export type UserUpdateWithoutCreatedDocumentsInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutWaivedByNestedInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutCancelledByNestedInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutRequestedByNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutCreatedDocumentsInput = {
@@ -3961,6 +4021,7 @@ export type UserUncheckedUpdateWithoutCreatedDocumentsInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutWaivedByNestedInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutCancelledByNestedInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserUpsertWithoutFinalizedDocumentsInput = {
@@ -4029,6 +4090,7 @@ export type UserUpdateWithoutFinalizedDocumentsInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutWaivedByNestedInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutCancelledByNestedInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutRequestedByNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutFinalizedDocumentsInput = {
@@ -4086,6 +4148,7 @@ export type UserUncheckedUpdateWithoutFinalizedDocumentsInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutWaivedByNestedInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutCancelledByNestedInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserCreateWithoutCreatedGenerationBatchesInput = {
@@ -4143,6 +4206,7 @@ export type UserCreateWithoutCreatedGenerationBatchesInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutWaivedByInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutCancelledByInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutRequestedByInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserUncheckedCreateWithoutCreatedGenerationBatchesInput = {
@@ -4200,6 +4264,7 @@ export type UserUncheckedCreateWithoutCreatedGenerationBatchesInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutWaivedByInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutCancelledByInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutRequestedByInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserCreateOrConnectWithoutCreatedGenerationBatchesInput = {
@@ -4273,6 +4338,7 @@ export type UserUpdateWithoutCreatedGenerationBatchesInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutWaivedByNestedInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutCancelledByNestedInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutRequestedByNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutCreatedGenerationBatchesInput = {
@@ -4330,6 +4396,7 @@ export type UserUncheckedUpdateWithoutCreatedGenerationBatchesInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutWaivedByNestedInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutCancelledByNestedInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserCreateWithoutHiddenCommentsInput = {
@@ -4387,6 +4454,7 @@ export type UserCreateWithoutHiddenCommentsInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutWaivedByInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutCancelledByInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutRequestedByInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserUncheckedCreateWithoutHiddenCommentsInput = {
@@ -4444,6 +4512,7 @@ export type UserUncheckedCreateWithoutHiddenCommentsInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutWaivedByInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutCancelledByInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutRequestedByInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserCreateOrConnectWithoutHiddenCommentsInput = {
@@ -4506,6 +4575,7 @@ export type UserCreateWithoutResolvedCommentsInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutWaivedByInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutCancelledByInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutRequestedByInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserUncheckedCreateWithoutResolvedCommentsInput = {
@@ -4563,6 +4633,7 @@ export type UserUncheckedCreateWithoutResolvedCommentsInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutWaivedByInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutCancelledByInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutRequestedByInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserCreateOrConnectWithoutResolvedCommentsInput = {
@@ -4625,6 +4696,7 @@ export type UserCreateWithoutAuthoredCommentsInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutWaivedByInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutCancelledByInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutRequestedByInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserUncheckedCreateWithoutAuthoredCommentsInput = {
@@ -4682,6 +4754,7 @@ export type UserUncheckedCreateWithoutAuthoredCommentsInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutWaivedByInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutCancelledByInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutRequestedByInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserCreateOrConnectWithoutAuthoredCommentsInput = {
@@ -4755,6 +4828,7 @@ export type UserUpdateWithoutHiddenCommentsInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutWaivedByNestedInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutCancelledByNestedInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutRequestedByNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutHiddenCommentsInput = {
@@ -4812,6 +4886,7 @@ export type UserUncheckedUpdateWithoutHiddenCommentsInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutWaivedByNestedInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutCancelledByNestedInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserUpsertWithoutResolvedCommentsInput = {
@@ -4880,6 +4955,7 @@ export type UserUpdateWithoutResolvedCommentsInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutWaivedByNestedInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutCancelledByNestedInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutRequestedByNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutResolvedCommentsInput = {
@@ -4937,6 +5013,7 @@ export type UserUncheckedUpdateWithoutResolvedCommentsInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutWaivedByNestedInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutCancelledByNestedInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserUpsertWithoutAuthoredCommentsInput = {
@@ -5005,6 +5082,7 @@ export type UserUpdateWithoutAuthoredCommentsInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutWaivedByNestedInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutCancelledByNestedInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutRequestedByNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutAuthoredCommentsInput = {
@@ -5062,6 +5140,7 @@ export type UserUncheckedUpdateWithoutAuthoredCommentsInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutWaivedByNestedInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutCancelledByNestedInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserCreateWithoutDocumentDraftsInput = {
@@ -5119,6 +5198,7 @@ export type UserCreateWithoutDocumentDraftsInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutWaivedByInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutCancelledByInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutRequestedByInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserUncheckedCreateWithoutDocumentDraftsInput = {
@@ -5176,6 +5256,7 @@ export type UserUncheckedCreateWithoutDocumentDraftsInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutWaivedByInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutCancelledByInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutRequestedByInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserCreateOrConnectWithoutDocumentDraftsInput = {
@@ -5249,6 +5330,7 @@ export type UserUpdateWithoutDocumentDraftsInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutWaivedByNestedInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutCancelledByNestedInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutRequestedByNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutDocumentDraftsInput = {
@@ -5306,6 +5388,7 @@ export type UserUncheckedUpdateWithoutDocumentDraftsInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutWaivedByNestedInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutCancelledByNestedInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserCreateWithoutCreatedPartialsInput = {
@@ -5363,6 +5446,7 @@ export type UserCreateWithoutCreatedPartialsInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutWaivedByInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutCancelledByInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutRequestedByInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserUncheckedCreateWithoutCreatedPartialsInput = {
@@ -5420,6 +5504,7 @@ export type UserUncheckedCreateWithoutCreatedPartialsInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutWaivedByInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutCancelledByInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutRequestedByInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserCreateOrConnectWithoutCreatedPartialsInput = {
@@ -5493,6 +5578,7 @@ export type UserUpdateWithoutCreatedPartialsInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutWaivedByNestedInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutCancelledByNestedInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutRequestedByNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutCreatedPartialsInput = {
@@ -5550,6 +5636,7 @@ export type UserUncheckedUpdateWithoutCreatedPartialsInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutWaivedByNestedInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutCancelledByNestedInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserCreateWithoutRequestedServiceAgreementActivationsInput = {
@@ -5607,6 +5694,7 @@ export type UserCreateWithoutRequestedServiceAgreementActivationsInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutWaivedByInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutCancelledByInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutRequestedByInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserUncheckedCreateWithoutRequestedServiceAgreementActivationsInput = {
@@ -5664,6 +5752,7 @@ export type UserUncheckedCreateWithoutRequestedServiceAgreementActivationsInput 
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutWaivedByInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutCancelledByInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutRequestedByInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserCreateOrConnectWithoutRequestedServiceAgreementActivationsInput = {
@@ -5737,6 +5826,7 @@ export type UserUpdateWithoutRequestedServiceAgreementActivationsInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutWaivedByNestedInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutCancelledByNestedInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutRequestedByNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutRequestedServiceAgreementActivationsInput = {
@@ -5794,6 +5884,7 @@ export type UserUncheckedUpdateWithoutRequestedServiceAgreementActivationsInput 
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutWaivedByNestedInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutCancelledByNestedInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserCreateWithoutOverriddenBillingOccurrenceDatesInput = {
@@ -5851,6 +5942,7 @@ export type UserCreateWithoutOverriddenBillingOccurrenceDatesInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutWaivedByInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutCancelledByInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutRequestedByInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserUncheckedCreateWithoutOverriddenBillingOccurrenceDatesInput = {
@@ -5908,6 +6000,7 @@ export type UserUncheckedCreateWithoutOverriddenBillingOccurrenceDatesInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutWaivedByInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutCancelledByInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutRequestedByInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserCreateOrConnectWithoutOverriddenBillingOccurrenceDatesInput = {
@@ -5970,6 +6063,7 @@ export type UserCreateWithoutOverriddenBillingOccurrenceValuesInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutWaivedByInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutCancelledByInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutRequestedByInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserUncheckedCreateWithoutOverriddenBillingOccurrenceValuesInput = {
@@ -6027,6 +6121,7 @@ export type UserUncheckedCreateWithoutOverriddenBillingOccurrenceValuesInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutWaivedByInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutCancelledByInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutRequestedByInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserCreateOrConnectWithoutOverriddenBillingOccurrenceValuesInput = {
@@ -6089,6 +6184,7 @@ export type UserCreateWithoutMarkedBilledBillingOccurrencesInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutWaivedByInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutCancelledByInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutRequestedByInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserUncheckedCreateWithoutMarkedBilledBillingOccurrencesInput = {
@@ -6146,6 +6242,7 @@ export type UserUncheckedCreateWithoutMarkedBilledBillingOccurrencesInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutWaivedByInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutCancelledByInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutRequestedByInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserCreateOrConnectWithoutMarkedBilledBillingOccurrencesInput = {
@@ -6208,6 +6305,7 @@ export type UserCreateWithoutWaivedBillingOccurrencesInput = {
   markedBilledBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutMarkedBilledByInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutCancelledByInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutRequestedByInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserUncheckedCreateWithoutWaivedBillingOccurrencesInput = {
@@ -6265,6 +6363,7 @@ export type UserUncheckedCreateWithoutWaivedBillingOccurrencesInput = {
   markedBilledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutMarkedBilledByInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutCancelledByInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutRequestedByInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserCreateOrConnectWithoutWaivedBillingOccurrencesInput = {
@@ -6327,6 +6426,7 @@ export type UserCreateWithoutCancelledBillingOccurrencesInput = {
   markedBilledBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutMarkedBilledByInput
   waivedBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutWaivedByInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutRequestedByInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserUncheckedCreateWithoutCancelledBillingOccurrencesInput = {
@@ -6384,6 +6484,7 @@ export type UserUncheckedCreateWithoutCancelledBillingOccurrencesInput = {
   markedBilledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutMarkedBilledByInput
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutWaivedByInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutRequestedByInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserCreateOrConnectWithoutCancelledBillingOccurrencesInput = {
@@ -6457,6 +6558,7 @@ export type UserUpdateWithoutOverriddenBillingOccurrenceDatesInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutWaivedByNestedInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutCancelledByNestedInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutRequestedByNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutOverriddenBillingOccurrenceDatesInput = {
@@ -6514,6 +6616,7 @@ export type UserUncheckedUpdateWithoutOverriddenBillingOccurrenceDatesInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutWaivedByNestedInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutCancelledByNestedInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserUpsertWithoutOverriddenBillingOccurrenceValuesInput = {
@@ -6582,6 +6685,7 @@ export type UserUpdateWithoutOverriddenBillingOccurrenceValuesInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutWaivedByNestedInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutCancelledByNestedInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutRequestedByNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutOverriddenBillingOccurrenceValuesInput = {
@@ -6639,6 +6743,7 @@ export type UserUncheckedUpdateWithoutOverriddenBillingOccurrenceValuesInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutWaivedByNestedInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutCancelledByNestedInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserUpsertWithoutMarkedBilledBillingOccurrencesInput = {
@@ -6707,6 +6812,7 @@ export type UserUpdateWithoutMarkedBilledBillingOccurrencesInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutWaivedByNestedInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutCancelledByNestedInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutRequestedByNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutMarkedBilledBillingOccurrencesInput = {
@@ -6764,6 +6870,7 @@ export type UserUncheckedUpdateWithoutMarkedBilledBillingOccurrencesInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutWaivedByNestedInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutCancelledByNestedInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserUpsertWithoutWaivedBillingOccurrencesInput = {
@@ -6832,6 +6939,7 @@ export type UserUpdateWithoutWaivedBillingOccurrencesInput = {
   markedBilledBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutMarkedBilledByNestedInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutCancelledByNestedInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutRequestedByNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutWaivedBillingOccurrencesInput = {
@@ -6889,6 +6997,7 @@ export type UserUncheckedUpdateWithoutWaivedBillingOccurrencesInput = {
   markedBilledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutMarkedBilledByNestedInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutCancelledByNestedInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserUpsertWithoutCancelledBillingOccurrencesInput = {
@@ -6957,6 +7066,7 @@ export type UserUpdateWithoutCancelledBillingOccurrencesInput = {
   markedBilledBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutMarkedBilledByNestedInput
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutWaivedByNestedInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutRequestedByNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutCancelledBillingOccurrencesInput = {
@@ -7014,6 +7124,7 @@ export type UserUncheckedUpdateWithoutCancelledBillingOccurrencesInput = {
   markedBilledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutMarkedBilledByNestedInput
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutWaivedByNestedInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserCreateWithoutCreatedDeadlineRulesInput = {
@@ -7071,6 +7182,7 @@ export type UserCreateWithoutCreatedDeadlineRulesInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutWaivedByInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutCancelledByInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutRequestedByInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserUncheckedCreateWithoutCreatedDeadlineRulesInput = {
@@ -7128,6 +7240,7 @@ export type UserUncheckedCreateWithoutCreatedDeadlineRulesInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutWaivedByInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutCancelledByInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutRequestedByInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserCreateOrConnectWithoutCreatedDeadlineRulesInput = {
@@ -7190,6 +7303,7 @@ export type UserCreateWithoutUpdatedDeadlineRulesInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutWaivedByInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutCancelledByInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutRequestedByInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserUncheckedCreateWithoutUpdatedDeadlineRulesInput = {
@@ -7247,6 +7361,7 @@ export type UserUncheckedCreateWithoutUpdatedDeadlineRulesInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutWaivedByInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutCancelledByInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutRequestedByInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserCreateOrConnectWithoutUpdatedDeadlineRulesInput = {
@@ -7309,6 +7424,7 @@ export type UserCreateWithoutArchivedDeadlineRulesInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutWaivedByInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutCancelledByInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutRequestedByInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserUncheckedCreateWithoutArchivedDeadlineRulesInput = {
@@ -7366,6 +7482,7 @@ export type UserUncheckedCreateWithoutArchivedDeadlineRulesInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutWaivedByInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutCancelledByInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutRequestedByInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserCreateOrConnectWithoutArchivedDeadlineRulesInput = {
@@ -7439,6 +7556,7 @@ export type UserUpdateWithoutCreatedDeadlineRulesInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutWaivedByNestedInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutCancelledByNestedInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutRequestedByNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutCreatedDeadlineRulesInput = {
@@ -7496,6 +7614,7 @@ export type UserUncheckedUpdateWithoutCreatedDeadlineRulesInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutWaivedByNestedInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutCancelledByNestedInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserUpsertWithoutUpdatedDeadlineRulesInput = {
@@ -7564,6 +7683,7 @@ export type UserUpdateWithoutUpdatedDeadlineRulesInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutWaivedByNestedInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutCancelledByNestedInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutRequestedByNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutUpdatedDeadlineRulesInput = {
@@ -7621,6 +7741,7 @@ export type UserUncheckedUpdateWithoutUpdatedDeadlineRulesInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutWaivedByNestedInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutCancelledByNestedInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserUpsertWithoutArchivedDeadlineRulesInput = {
@@ -7689,6 +7810,7 @@ export type UserUpdateWithoutArchivedDeadlineRulesInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutWaivedByNestedInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutCancelledByNestedInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutRequestedByNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutArchivedDeadlineRulesInput = {
@@ -7746,6 +7868,7 @@ export type UserUncheckedUpdateWithoutArchivedDeadlineRulesInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutWaivedByNestedInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutCancelledByNestedInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserCreateWithoutPublishedDeadlineRuleVersionsInput = {
@@ -7803,6 +7926,7 @@ export type UserCreateWithoutPublishedDeadlineRuleVersionsInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutWaivedByInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutCancelledByInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutRequestedByInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserUncheckedCreateWithoutPublishedDeadlineRuleVersionsInput = {
@@ -7860,6 +7984,7 @@ export type UserUncheckedCreateWithoutPublishedDeadlineRuleVersionsInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutWaivedByInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutCancelledByInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutRequestedByInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserCreateOrConnectWithoutPublishedDeadlineRuleVersionsInput = {
@@ -7922,6 +8047,7 @@ export type UserCreateWithoutCreatedDeadlineRuleVersionsInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutWaivedByInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutCancelledByInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutRequestedByInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserUncheckedCreateWithoutCreatedDeadlineRuleVersionsInput = {
@@ -7979,6 +8105,7 @@ export type UserUncheckedCreateWithoutCreatedDeadlineRuleVersionsInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutWaivedByInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutCancelledByInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutRequestedByInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserCreateOrConnectWithoutCreatedDeadlineRuleVersionsInput = {
@@ -8052,6 +8179,7 @@ export type UserUpdateWithoutPublishedDeadlineRuleVersionsInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutWaivedByNestedInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutCancelledByNestedInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutRequestedByNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutPublishedDeadlineRuleVersionsInput = {
@@ -8109,6 +8237,7 @@ export type UserUncheckedUpdateWithoutPublishedDeadlineRuleVersionsInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutWaivedByNestedInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutCancelledByNestedInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserUpsertWithoutCreatedDeadlineRuleVersionsInput = {
@@ -8177,6 +8306,7 @@ export type UserUpdateWithoutCreatedDeadlineRuleVersionsInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutWaivedByNestedInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutCancelledByNestedInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutRequestedByNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutCreatedDeadlineRuleVersionsInput = {
@@ -8234,6 +8364,7 @@ export type UserUncheckedUpdateWithoutCreatedDeadlineRuleVersionsInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutWaivedByNestedInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutCancelledByNestedInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserCreateWithoutUpdatedClientServiceDeadlineRulesInput = {
@@ -8291,6 +8422,7 @@ export type UserCreateWithoutUpdatedClientServiceDeadlineRulesInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutWaivedByInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutCancelledByInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutRequestedByInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserUncheckedCreateWithoutUpdatedClientServiceDeadlineRulesInput = {
@@ -8348,6 +8480,7 @@ export type UserUncheckedCreateWithoutUpdatedClientServiceDeadlineRulesInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutWaivedByInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutCancelledByInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutRequestedByInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserCreateOrConnectWithoutUpdatedClientServiceDeadlineRulesInput = {
@@ -8421,6 +8554,7 @@ export type UserUpdateWithoutUpdatedClientServiceDeadlineRulesInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutWaivedByNestedInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutCancelledByNestedInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutRequestedByNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutUpdatedClientServiceDeadlineRulesInput = {
@@ -8478,6 +8612,7 @@ export type UserUncheckedUpdateWithoutUpdatedClientServiceDeadlineRulesInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutWaivedByNestedInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutCancelledByNestedInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserCreateWithoutCreatedServiceCyclesInput = {
@@ -8535,6 +8670,7 @@ export type UserCreateWithoutCreatedServiceCyclesInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutWaivedByInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutCancelledByInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutRequestedByInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserUncheckedCreateWithoutCreatedServiceCyclesInput = {
@@ -8592,6 +8728,7 @@ export type UserUncheckedCreateWithoutCreatedServiceCyclesInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutWaivedByInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutCancelledByInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutRequestedByInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserCreateOrConnectWithoutCreatedServiceCyclesInput = {
@@ -8665,6 +8802,7 @@ export type UserUpdateWithoutCreatedServiceCyclesInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutWaivedByNestedInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutCancelledByNestedInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutRequestedByNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutCreatedServiceCyclesInput = {
@@ -8722,6 +8860,7 @@ export type UserUncheckedUpdateWithoutCreatedServiceCyclesInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutWaivedByNestedInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutCancelledByNestedInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserCreateWithoutOverriddenDeadlineOccurrencesInput = {
@@ -8779,6 +8918,7 @@ export type UserCreateWithoutOverriddenDeadlineOccurrencesInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutWaivedByInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutCancelledByInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutRequestedByInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserUncheckedCreateWithoutOverriddenDeadlineOccurrencesInput = {
@@ -8836,6 +8976,7 @@ export type UserUncheckedCreateWithoutOverriddenDeadlineOccurrencesInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutWaivedByInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutCancelledByInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutRequestedByInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserCreateOrConnectWithoutOverriddenDeadlineOccurrencesInput = {
@@ -8898,6 +9039,7 @@ export type UserCreateWithoutCompletedDeadlineOccurrencesInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutWaivedByInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutCancelledByInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutRequestedByInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserUncheckedCreateWithoutCompletedDeadlineOccurrencesInput = {
@@ -8955,6 +9097,7 @@ export type UserUncheckedCreateWithoutCompletedDeadlineOccurrencesInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutWaivedByInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutCancelledByInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutRequestedByInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserCreateOrConnectWithoutCompletedDeadlineOccurrencesInput = {
@@ -9017,6 +9160,7 @@ export type UserCreateWithoutWaivedDeadlineOccurrencesInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutWaivedByInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutCancelledByInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutRequestedByInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserUncheckedCreateWithoutWaivedDeadlineOccurrencesInput = {
@@ -9074,6 +9218,7 @@ export type UserUncheckedCreateWithoutWaivedDeadlineOccurrencesInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutWaivedByInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutCancelledByInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutRequestedByInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserCreateOrConnectWithoutWaivedDeadlineOccurrencesInput = {
@@ -9136,6 +9281,7 @@ export type UserCreateWithoutCancelledDeadlineOccurrencesInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutWaivedByInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutCancelledByInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutRequestedByInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserUncheckedCreateWithoutCancelledDeadlineOccurrencesInput = {
@@ -9193,6 +9339,7 @@ export type UserUncheckedCreateWithoutCancelledDeadlineOccurrencesInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutWaivedByInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutCancelledByInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutRequestedByInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserCreateOrConnectWithoutCancelledDeadlineOccurrencesInput = {
@@ -9266,6 +9413,7 @@ export type UserUpdateWithoutOverriddenDeadlineOccurrencesInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutWaivedByNestedInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutCancelledByNestedInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutRequestedByNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutOverriddenDeadlineOccurrencesInput = {
@@ -9323,6 +9471,7 @@ export type UserUncheckedUpdateWithoutOverriddenDeadlineOccurrencesInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutWaivedByNestedInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutCancelledByNestedInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserUpsertWithoutCompletedDeadlineOccurrencesInput = {
@@ -9391,6 +9540,7 @@ export type UserUpdateWithoutCompletedDeadlineOccurrencesInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutWaivedByNestedInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutCancelledByNestedInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutRequestedByNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutCompletedDeadlineOccurrencesInput = {
@@ -9448,6 +9598,7 @@ export type UserUncheckedUpdateWithoutCompletedDeadlineOccurrencesInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutWaivedByNestedInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutCancelledByNestedInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserUpsertWithoutWaivedDeadlineOccurrencesInput = {
@@ -9516,6 +9667,7 @@ export type UserUpdateWithoutWaivedDeadlineOccurrencesInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutWaivedByNestedInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutCancelledByNestedInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutRequestedByNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutWaivedDeadlineOccurrencesInput = {
@@ -9573,6 +9725,7 @@ export type UserUncheckedUpdateWithoutWaivedDeadlineOccurrencesInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutWaivedByNestedInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutCancelledByNestedInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserUpsertWithoutCancelledDeadlineOccurrencesInput = {
@@ -9641,6 +9794,7 @@ export type UserUpdateWithoutCancelledDeadlineOccurrencesInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutWaivedByNestedInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutCancelledByNestedInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutRequestedByNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutCancelledDeadlineOccurrencesInput = {
@@ -9698,6 +9852,7 @@ export type UserUncheckedUpdateWithoutCancelledDeadlineOccurrencesInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutWaivedByNestedInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutCancelledByNestedInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserCreateWithoutRequestedScheduleReconciliationsInput = {
@@ -9755,6 +9910,7 @@ export type UserCreateWithoutRequestedScheduleReconciliationsInput = {
   markedBilledBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutMarkedBilledByInput
   waivedBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutWaivedByInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutCancelledByInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserUncheckedCreateWithoutRequestedScheduleReconciliationsInput = {
@@ -9812,6 +9968,7 @@ export type UserUncheckedCreateWithoutRequestedScheduleReconciliationsInput = {
   markedBilledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutMarkedBilledByInput
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutWaivedByInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutCancelledByInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserCreateOrConnectWithoutRequestedScheduleReconciliationsInput = {
@@ -9885,6 +10042,7 @@ export type UserUpdateWithoutRequestedScheduleReconciliationsInput = {
   markedBilledBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutMarkedBilledByNestedInput
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutWaivedByNestedInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutCancelledByNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutRequestedScheduleReconciliationsInput = {
@@ -9942,6 +10100,7 @@ export type UserUncheckedUpdateWithoutRequestedScheduleReconciliationsInput = {
   markedBilledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutMarkedBilledByNestedInput
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutWaivedByNestedInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutCancelledByNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserCreateWithoutAiConversationsInput = {
@@ -9999,6 +10158,7 @@ export type UserCreateWithoutAiConversationsInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutWaivedByInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutCancelledByInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutRequestedByInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserUncheckedCreateWithoutAiConversationsInput = {
@@ -10056,6 +10216,7 @@ export type UserUncheckedCreateWithoutAiConversationsInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutWaivedByInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutCancelledByInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutRequestedByInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserCreateOrConnectWithoutAiConversationsInput = {
@@ -10129,6 +10290,7 @@ export type UserUpdateWithoutAiConversationsInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutWaivedByNestedInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutCancelledByNestedInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutRequestedByNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutAiConversationsInput = {
@@ -10186,6 +10348,7 @@ export type UserUncheckedUpdateWithoutAiConversationsInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutWaivedByNestedInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutCancelledByNestedInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserCreateWithoutCreatedEsigningEnvelopesInput = {
@@ -10243,6 +10406,7 @@ export type UserCreateWithoutCreatedEsigningEnvelopesInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutWaivedByInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutCancelledByInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutRequestedByInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserUncheckedCreateWithoutCreatedEsigningEnvelopesInput = {
@@ -10300,6 +10464,7 @@ export type UserUncheckedCreateWithoutCreatedEsigningEnvelopesInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutWaivedByInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutCancelledByInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutRequestedByInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserCreateOrConnectWithoutCreatedEsigningEnvelopesInput = {
@@ -10373,6 +10538,7 @@ export type UserUpdateWithoutCreatedEsigningEnvelopesInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutWaivedByNestedInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutCancelledByNestedInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutRequestedByNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutCreatedEsigningEnvelopesInput = {
@@ -10430,6 +10596,7 @@ export type UserUncheckedUpdateWithoutCreatedEsigningEnvelopesInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutWaivedByNestedInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutCancelledByNestedInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserCreateWithoutResolvedSharePointFilingsInput = {
@@ -10487,6 +10654,7 @@ export type UserCreateWithoutResolvedSharePointFilingsInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutWaivedByInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutCancelledByInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutRequestedByInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserUncheckedCreateWithoutResolvedSharePointFilingsInput = {
@@ -10544,6 +10712,7 @@ export type UserUncheckedCreateWithoutResolvedSharePointFilingsInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutWaivedByInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutCancelledByInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutRequestedByInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserCreateOrConnectWithoutResolvedSharePointFilingsInput = {
@@ -10617,6 +10786,7 @@ export type UserUpdateWithoutResolvedSharePointFilingsInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutWaivedByNestedInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutCancelledByNestedInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutRequestedByNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutResolvedSharePointFilingsInput = {
@@ -10674,6 +10844,7 @@ export type UserUncheckedUpdateWithoutResolvedSharePointFilingsInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutWaivedByNestedInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutCancelledByNestedInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserCreateWithoutOwnedTasksInput = {
@@ -10731,6 +10902,7 @@ export type UserCreateWithoutOwnedTasksInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutWaivedByInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutCancelledByInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutRequestedByInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserUncheckedCreateWithoutOwnedTasksInput = {
@@ -10788,6 +10960,7 @@ export type UserUncheckedCreateWithoutOwnedTasksInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutWaivedByInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutCancelledByInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutRequestedByInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserCreateOrConnectWithoutOwnedTasksInput = {
@@ -10861,6 +11034,7 @@ export type UserUpdateWithoutOwnedTasksInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutWaivedByNestedInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutCancelledByNestedInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutRequestedByNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutOwnedTasksInput = {
@@ -10918,6 +11092,7 @@ export type UserUncheckedUpdateWithoutOwnedTasksInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutWaivedByNestedInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutCancelledByNestedInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserCreateWithoutAssignedTaskStagesInput = {
@@ -10975,6 +11150,7 @@ export type UserCreateWithoutAssignedTaskStagesInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutWaivedByInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutCancelledByInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutRequestedByInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserUncheckedCreateWithoutAssignedTaskStagesInput = {
@@ -11032,6 +11208,7 @@ export type UserUncheckedCreateWithoutAssignedTaskStagesInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutWaivedByInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutCancelledByInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutRequestedByInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserCreateOrConnectWithoutAssignedTaskStagesInput = {
@@ -11105,6 +11282,7 @@ export type UserUpdateWithoutAssignedTaskStagesInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutWaivedByNestedInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutCancelledByNestedInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutRequestedByNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutAssignedTaskStagesInput = {
@@ -11162,6 +11340,7 @@ export type UserUncheckedUpdateWithoutAssignedTaskStagesInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutWaivedByNestedInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutCancelledByNestedInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserCreateWithoutInitiatedTaskEsigningPreparationsInput = {
@@ -11219,6 +11398,7 @@ export type UserCreateWithoutInitiatedTaskEsigningPreparationsInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutWaivedByInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutCancelledByInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutRequestedByInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserUncheckedCreateWithoutInitiatedTaskEsigningPreparationsInput = {
@@ -11276,6 +11456,7 @@ export type UserUncheckedCreateWithoutInitiatedTaskEsigningPreparationsInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutWaivedByInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutCancelledByInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutRequestedByInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedCreateNestedManyWithoutRequestedByInput
 }
 
 export type UserCreateOrConnectWithoutInitiatedTaskEsigningPreparationsInput = {
@@ -11349,6 +11530,7 @@ export type UserUpdateWithoutInitiatedTaskEsigningPreparationsInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutWaivedByNestedInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutCancelledByNestedInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutRequestedByNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutInitiatedTaskEsigningPreparationsInput = {
@@ -11378,6 +11560,255 @@ export type UserUncheckedUpdateWithoutInitiatedTaskEsigningPreparationsInput = {
   uploadedDocuments?: Prisma.DocumentUncheckedUpdateManyWithoutUploadedByNestedInput
   createdDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
   createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutCreatedByNestedInput
+  finalizedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutFinalizedByNestedInput
+  createdPartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutCreatedByNestedInput
+  companyAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutUserNestedInput
+  preferences?: Prisma.UserPreferenceUncheckedUpdateManyWithoutUserNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedUpdateManyWithoutUserNestedInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedUpdateManyWithoutResolvedByNestedInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUncheckedUpdateManyWithoutVerifiedByNestedInput
+  ownedTasks?: Prisma.TaskUncheckedUpdateManyWithoutOwnerNestedInput
+  assignedTaskStages?: Prisma.TaskStageUncheckedUpdateManyWithoutAssigneeNestedInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedUpdateManyWithoutActivationRequestedByNestedInput
+  createdGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedUpdateManyWithoutCreatedByNestedInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutCreatedByNestedInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUncheckedUpdateManyWithoutArchivedByNestedInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedUpdateManyWithoutCreatedByNestedInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedUpdateManyWithoutPublishedByNestedInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+  createdServiceCycles?: Prisma.ServiceCycleUncheckedUpdateManyWithoutCreatedByNestedInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutDateOverriddenByNestedInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCompletedByNestedInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutWaivedByNestedInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedUpdateManyWithoutCancelledByNestedInput
+  overriddenBillingOccurrenceDates?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutDateOverriddenByNestedInput
+  overriddenBillingOccurrenceValues?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutValueOverriddenByNestedInput
+  markedBilledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutMarkedBilledByNestedInput
+  waivedBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutWaivedByNestedInput
+  cancelledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutCancelledByNestedInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedUpdateManyWithoutRequestedByNestedInput
+}
+
+export type UserCreateWithoutSentrowebCheckRunsInput = {
+  id?: string
+  email: string
+  passwordHash: string
+  firstName: string
+  lastName: string
+  isActive?: boolean
+  lastLoginAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  mustChangePassword?: boolean
+  passwordResetToken?: string | null
+  passwordResetExpires?: Date | string | null
+  passwordChangedAt?: Date | string | null
+  aiConversations?: Prisma.AiConversationCreateNestedManyWithoutUserInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutUserInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogCreateNestedManyWithoutUserInput
+  hiddenComments?: Prisma.DocumentCommentCreateNestedManyWithoutHiddenByInput
+  resolvedComments?: Prisma.DocumentCommentCreateNestedManyWithoutResolvedByInput
+  authoredComments?: Prisma.DocumentCommentCreateNestedManyWithoutUserInput
+  documentDrafts?: Prisma.DocumentDraftCreateNestedManyWithoutUserInput
+  createdTemplates?: Prisma.DocumentTemplateCreateNestedManyWithoutCreatedByInput
+  uploadedDocuments?: Prisma.DocumentCreateNestedManyWithoutUploadedByInput
+  createdDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutCreatedByInput
+  createdEsigningEnvelopes?: Prisma.EsigningEnvelopeCreateNestedManyWithoutCreatedByInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationCreateNestedManyWithoutInitiatedByInput
+  finalizedDocuments?: Prisma.GeneratedDocumentCreateNestedManyWithoutFinalizedByInput
+  createdPartials?: Prisma.TemplatePartialCreateNestedManyWithoutCreatedByInput
+  companyAssignments?: Prisma.UserCompanyAssignmentCreateNestedManyWithoutUserInput
+  preferences?: Prisma.UserPreferenceCreateNestedManyWithoutUserInput
+  roleAssignments?: Prisma.UserRoleAssignmentCreateNestedManyWithoutUserInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingCreateNestedManyWithoutResolvedByInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderCreateNestedManyWithoutVerifiedByInput
+  tenant?: Prisma.WorkspaceCreateNestedOneWithoutUsersInput
+  ownedTasks?: Prisma.TaskCreateNestedManyWithoutOwnerInput
+  assignedTaskStages?: Prisma.TaskStageCreateNestedManyWithoutAssigneeInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementCreateNestedManyWithoutActivationRequestedByInput
+  createdGenerationBatches?: Prisma.DocumentGenerationBatchCreateNestedManyWithoutCreatedByInput
+  createdDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutCreatedByInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutUpdatedByInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleCreateNestedManyWithoutArchivedByInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionCreateNestedManyWithoutCreatedByInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionCreateNestedManyWithoutPublishedByInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleCreateNestedManyWithoutUpdatedByInput
+  createdServiceCycles?: Prisma.ServiceCycleCreateNestedManyWithoutCreatedByInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutDateOverriddenByInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCompletedByInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutWaivedByInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceCreateNestedManyWithoutCancelledByInput
+  overriddenBillingOccurrenceDates?: Prisma.BillingOccurrenceCreateNestedManyWithoutDateOverriddenByInput
+  overriddenBillingOccurrenceValues?: Prisma.BillingOccurrenceCreateNestedManyWithoutValueOverriddenByInput
+  markedBilledBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutMarkedBilledByInput
+  waivedBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutWaivedByInput
+  cancelledBillingOccurrences?: Prisma.BillingOccurrenceCreateNestedManyWithoutCancelledByInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestCreateNestedManyWithoutRequestedByInput
+}
+
+export type UserUncheckedCreateWithoutSentrowebCheckRunsInput = {
+  id?: string
+  email: string
+  passwordHash: string
+  firstName: string
+  lastName: string
+  isActive?: boolean
+  lastLoginAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  mustChangePassword?: boolean
+  passwordResetToken?: string | null
+  passwordResetExpires?: Date | string | null
+  passwordChangedAt?: Date | string | null
+  tenantId?: string | null
+  aiConversations?: Prisma.AiConversationUncheckedCreateNestedManyWithoutUserInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutUserInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedCreateNestedManyWithoutUserInput
+  hiddenComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutHiddenByInput
+  resolvedComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutResolvedByInput
+  authoredComments?: Prisma.DocumentCommentUncheckedCreateNestedManyWithoutUserInput
+  documentDrafts?: Prisma.DocumentDraftUncheckedCreateNestedManyWithoutUserInput
+  createdTemplates?: Prisma.DocumentTemplateUncheckedCreateNestedManyWithoutCreatedByInput
+  uploadedDocuments?: Prisma.DocumentUncheckedCreateNestedManyWithoutUploadedByInput
+  createdDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutCreatedByInput
+  createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedCreateNestedManyWithoutCreatedByInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedCreateNestedManyWithoutInitiatedByInput
+  finalizedDocuments?: Prisma.GeneratedDocumentUncheckedCreateNestedManyWithoutFinalizedByInput
+  createdPartials?: Prisma.TemplatePartialUncheckedCreateNestedManyWithoutCreatedByInput
+  companyAssignments?: Prisma.UserCompanyAssignmentUncheckedCreateNestedManyWithoutUserInput
+  preferences?: Prisma.UserPreferenceUncheckedCreateNestedManyWithoutUserInput
+  roleAssignments?: Prisma.UserRoleAssignmentUncheckedCreateNestedManyWithoutUserInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUncheckedCreateNestedManyWithoutResolvedByInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUncheckedCreateNestedManyWithoutVerifiedByInput
+  ownedTasks?: Prisma.TaskUncheckedCreateNestedManyWithoutOwnerInput
+  assignedTaskStages?: Prisma.TaskStageUncheckedCreateNestedManyWithoutAssigneeInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUncheckedCreateNestedManyWithoutActivationRequestedByInput
+  createdGenerationBatches?: Prisma.DocumentGenerationBatchUncheckedCreateNestedManyWithoutCreatedByInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutCreatedByInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUncheckedCreateNestedManyWithoutArchivedByInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedCreateNestedManyWithoutCreatedByInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUncheckedCreateNestedManyWithoutPublishedByInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+  createdServiceCycles?: Prisma.ServiceCycleUncheckedCreateNestedManyWithoutCreatedByInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutDateOverriddenByInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCompletedByInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutWaivedByInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUncheckedCreateNestedManyWithoutCancelledByInput
+  overriddenBillingOccurrenceDates?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutDateOverriddenByInput
+  overriddenBillingOccurrenceValues?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutValueOverriddenByInput
+  markedBilledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutMarkedBilledByInput
+  waivedBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutWaivedByInput
+  cancelledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedCreateNestedManyWithoutCancelledByInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedCreateNestedManyWithoutRequestedByInput
+}
+
+export type UserCreateOrConnectWithoutSentrowebCheckRunsInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutSentrowebCheckRunsInput, Prisma.UserUncheckedCreateWithoutSentrowebCheckRunsInput>
+}
+
+export type UserUpsertWithoutSentrowebCheckRunsInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutSentrowebCheckRunsInput, Prisma.UserUncheckedUpdateWithoutSentrowebCheckRunsInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutSentrowebCheckRunsInput, Prisma.UserUncheckedCreateWithoutSentrowebCheckRunsInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutSentrowebCheckRunsInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutSentrowebCheckRunsInput, Prisma.UserUncheckedUpdateWithoutSentrowebCheckRunsInput>
+}
+
+export type UserUpdateWithoutSentrowebCheckRunsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  firstName?: Prisma.StringFieldUpdateOperationsInput | string
+  lastName?: Prisma.StringFieldUpdateOperationsInput | string
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  passwordResetToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordResetExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  aiConversations?: Prisma.AiConversationUpdateManyWithoutUserNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutUserNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUpdateManyWithoutUserNestedInput
+  hiddenComments?: Prisma.DocumentCommentUpdateManyWithoutHiddenByNestedInput
+  resolvedComments?: Prisma.DocumentCommentUpdateManyWithoutResolvedByNestedInput
+  authoredComments?: Prisma.DocumentCommentUpdateManyWithoutUserNestedInput
+  documentDrafts?: Prisma.DocumentDraftUpdateManyWithoutUserNestedInput
+  createdTemplates?: Prisma.DocumentTemplateUpdateManyWithoutCreatedByNestedInput
+  uploadedDocuments?: Prisma.DocumentUpdateManyWithoutUploadedByNestedInput
+  createdDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutCreatedByNestedInput
+  createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUpdateManyWithoutCreatedByNestedInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUpdateManyWithoutInitiatedByNestedInput
+  finalizedDocuments?: Prisma.GeneratedDocumentUpdateManyWithoutFinalizedByNestedInput
+  createdPartials?: Prisma.TemplatePartialUpdateManyWithoutCreatedByNestedInput
+  companyAssignments?: Prisma.UserCompanyAssignmentUpdateManyWithoutUserNestedInput
+  preferences?: Prisma.UserPreferenceUpdateManyWithoutUserNestedInput
+  roleAssignments?: Prisma.UserRoleAssignmentUpdateManyWithoutUserNestedInput
+  resolvedSharePointFilings?: Prisma.EsigningSharePointFilingUpdateManyWithoutResolvedByNestedInput
+  verifiedCompanySharePointFolders?: Prisma.CompanySharePointFolderUpdateManyWithoutVerifiedByNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneWithoutUsersNestedInput
+  ownedTasks?: Prisma.TaskUpdateManyWithoutOwnerNestedInput
+  assignedTaskStages?: Prisma.TaskStageUpdateManyWithoutAssigneeNestedInput
+  requestedServiceAgreementActivations?: Prisma.ServiceAgreementUpdateManyWithoutActivationRequestedByNestedInput
+  createdGenerationBatches?: Prisma.DocumentGenerationBatchUpdateManyWithoutCreatedByNestedInput
+  createdDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutCreatedByNestedInput
+  updatedDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutUpdatedByNestedInput
+  archivedDeadlineRules?: Prisma.DeadlineRuleUpdateManyWithoutArchivedByNestedInput
+  createdDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUpdateManyWithoutCreatedByNestedInput
+  publishedDeadlineRuleVersions?: Prisma.DeadlineRuleVersionUpdateManyWithoutPublishedByNestedInput
+  updatedClientServiceDeadlineRules?: Prisma.ClientServiceDeadlineRuleUpdateManyWithoutUpdatedByNestedInput
+  createdServiceCycles?: Prisma.ServiceCycleUpdateManyWithoutCreatedByNestedInput
+  overriddenDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutDateOverriddenByNestedInput
+  completedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCompletedByNestedInput
+  waivedDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutWaivedByNestedInput
+  cancelledDeadlineOccurrences?: Prisma.DeadlineOccurrenceUpdateManyWithoutCancelledByNestedInput
+  overriddenBillingOccurrenceDates?: Prisma.BillingOccurrenceUpdateManyWithoutDateOverriddenByNestedInput
+  overriddenBillingOccurrenceValues?: Prisma.BillingOccurrenceUpdateManyWithoutValueOverriddenByNestedInput
+  markedBilledBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutMarkedBilledByNestedInput
+  waivedBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutWaivedByNestedInput
+  cancelledBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutCancelledByNestedInput
+  requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutRequestedByNestedInput
+}
+
+export type UserUncheckedUpdateWithoutSentrowebCheckRunsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  firstName?: Prisma.StringFieldUpdateOperationsInput | string
+  lastName?: Prisma.StringFieldUpdateOperationsInput | string
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  passwordResetToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordResetExpires?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  tenantId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiConversations?: Prisma.AiConversationUncheckedUpdateManyWithoutUserNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutUserNestedInput
+  connectorUsageLogs?: Prisma.ConnectorUsageLogUncheckedUpdateManyWithoutUserNestedInput
+  hiddenComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutHiddenByNestedInput
+  resolvedComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutResolvedByNestedInput
+  authoredComments?: Prisma.DocumentCommentUncheckedUpdateManyWithoutUserNestedInput
+  documentDrafts?: Prisma.DocumentDraftUncheckedUpdateManyWithoutUserNestedInput
+  createdTemplates?: Prisma.DocumentTemplateUncheckedUpdateManyWithoutCreatedByNestedInput
+  uploadedDocuments?: Prisma.DocumentUncheckedUpdateManyWithoutUploadedByNestedInput
+  createdDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
+  createdEsigningEnvelopes?: Prisma.EsigningEnvelopeUncheckedUpdateManyWithoutCreatedByNestedInput
+  initiatedTaskEsigningPreparations?: Prisma.TaskEsigningPreparationUncheckedUpdateManyWithoutInitiatedByNestedInput
   finalizedDocuments?: Prisma.GeneratedDocumentUncheckedUpdateManyWithoutFinalizedByNestedInput
   createdPartials?: Prisma.TemplatePartialUncheckedUpdateManyWithoutCreatedByNestedInput
   companyAssignments?: Prisma.UserCompanyAssignmentUncheckedUpdateManyWithoutUserNestedInput
@@ -11480,6 +11911,7 @@ export type UserUpdateWithoutTenantInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutWaivedByNestedInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUpdateManyWithoutCancelledByNestedInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUpdateManyWithoutRequestedByNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutTenantInput = {
@@ -11537,6 +11969,7 @@ export type UserUncheckedUpdateWithoutTenantInput = {
   waivedBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutWaivedByNestedInput
   cancelledBillingOccurrences?: Prisma.BillingOccurrenceUncheckedUpdateManyWithoutCancelledByNestedInput
   requestedScheduleReconciliations?: Prisma.ServiceScheduleReconciliationRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+  sentrowebCheckRuns?: Prisma.SentrowebCheckRunUncheckedUpdateManyWithoutRequestedByNestedInput
 }
 
 export type UserUncheckedUpdateManyWithoutTenantInput = {
@@ -11602,6 +12035,7 @@ export type UserCountOutputType = {
   waivedBillingOccurrences: number
   cancelledBillingOccurrences: number
   requestedScheduleReconciliations: number
+  sentrowebCheckRuns: number
 }
 
 export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -11645,6 +12079,7 @@ export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.I
   waivedBillingOccurrences?: boolean | UserCountOutputTypeCountWaivedBillingOccurrencesArgs
   cancelledBillingOccurrences?: boolean | UserCountOutputTypeCountCancelledBillingOccurrencesArgs
   requestedScheduleReconciliations?: boolean | UserCountOutputTypeCountRequestedScheduleReconciliationsArgs
+  sentrowebCheckRuns?: boolean | UserCountOutputTypeCountSentrowebCheckRunsArgs
 }
 
 /**
@@ -11937,6 +12372,13 @@ export type UserCountOutputTypeCountRequestedScheduleReconciliationsArgs<ExtArgs
   where?: Prisma.ServiceScheduleReconciliationRequestWhereInput
 }
 
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountSentrowebCheckRunsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.SentrowebCheckRunWhereInput
+}
+
 
 export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -11995,6 +12437,7 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   waivedBillingOccurrences?: boolean | Prisma.User$waivedBillingOccurrencesArgs<ExtArgs>
   cancelledBillingOccurrences?: boolean | Prisma.User$cancelledBillingOccurrencesArgs<ExtArgs>
   requestedScheduleReconciliations?: boolean | Prisma.User$requestedScheduleReconciliationsArgs<ExtArgs>
+  sentrowebCheckRuns?: boolean | Prisma.User$sentrowebCheckRunsArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["user"]>
 
@@ -12097,6 +12540,7 @@ export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   waivedBillingOccurrences?: boolean | Prisma.User$waivedBillingOccurrencesArgs<ExtArgs>
   cancelledBillingOccurrences?: boolean | Prisma.User$cancelledBillingOccurrencesArgs<ExtArgs>
   requestedScheduleReconciliations?: boolean | Prisma.User$requestedScheduleReconciliationsArgs<ExtArgs>
+  sentrowebCheckRuns?: boolean | Prisma.User$sentrowebCheckRunsArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type UserIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -12150,6 +12594,7 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     waivedBillingOccurrences: Prisma.$BillingOccurrencePayload<ExtArgs>[]
     cancelledBillingOccurrences: Prisma.$BillingOccurrencePayload<ExtArgs>[]
     requestedScheduleReconciliations: Prisma.$ServiceScheduleReconciliationRequestPayload<ExtArgs>[]
+    sentrowebCheckRuns: Prisma.$SentrowebCheckRunPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -12602,6 +13047,7 @@ export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Typ
   waivedBillingOccurrences<T extends Prisma.User$waivedBillingOccurrencesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$waivedBillingOccurrencesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$BillingOccurrencePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   cancelledBillingOccurrences<T extends Prisma.User$cancelledBillingOccurrencesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$cancelledBillingOccurrencesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$BillingOccurrencePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   requestedScheduleReconciliations<T extends Prisma.User$requestedScheduleReconciliationsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$requestedScheduleReconciliationsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ServiceScheduleReconciliationRequestPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  sentrowebCheckRuns<T extends Prisma.User$sentrowebCheckRunsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$sentrowebCheckRunsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$SentrowebCheckRunPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -14023,6 +14469,30 @@ export type User$requestedScheduleReconciliationsArgs<ExtArgs extends runtime.Ty
   take?: number
   skip?: number
   distinct?: Prisma.ServiceScheduleReconciliationRequestScalarFieldEnum | Prisma.ServiceScheduleReconciliationRequestScalarFieldEnum[]
+}
+
+/**
+ * User.sentrowebCheckRuns
+ */
+export type User$sentrowebCheckRunsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the SentrowebCheckRun
+   */
+  select?: Prisma.SentrowebCheckRunSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the SentrowebCheckRun
+   */
+  omit?: Prisma.SentrowebCheckRunOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.SentrowebCheckRunInclude<ExtArgs> | null
+  where?: Prisma.SentrowebCheckRunWhereInput
+  orderBy?: Prisma.SentrowebCheckRunOrderByWithRelationInput | Prisma.SentrowebCheckRunOrderByWithRelationInput[]
+  cursor?: Prisma.SentrowebCheckRunWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.SentrowebCheckRunScalarFieldEnum | Prisma.SentrowebCheckRunScalarFieldEnum[]
 }
 
 /**

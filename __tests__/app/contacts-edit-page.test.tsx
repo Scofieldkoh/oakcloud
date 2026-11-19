@@ -54,8 +54,9 @@ vi.mock('@/components/ui/toast', () => ({
   useToast: () => ({ error: vi.fn() }),
 }));
 
-function makeContact(firstName: string) {
+function makeContact(firstName: string, gender: string | null = null) {
   return {
+    gender,
     id: 'contact-1',
     contactType: 'INDIVIDUAL',
     firstName,
@@ -73,6 +74,19 @@ function makeContact(firstName: string) {
 }
 
 describe('EditContactPage', () => {
+  it('shows the recorded gender in a Gender select with Not recorded, Male, Female and Other', async () => {
+    hookMocks.contact = makeContact('Existing', 'FEMALE');
+    render(<EditContactPage params={Promise.resolve({ id: 'contact-1' })} />);
+    const select = (await screen.findByLabelText('Gender').catch(() => null)) ?? (await screen.findByDisplayValue('Female'));
+    expect(select).toHaveValue('FEMALE');
+    expect(Array.from((select as HTMLSelectElement).options).map((option) => option.text)).toEqual([
+      'Not recorded',
+      'Male',
+      'Female',
+      'Other',
+    ]);
+  });
+
   beforeEach(() => {
     hookMocks.contact = makeContact('Existing');
   });

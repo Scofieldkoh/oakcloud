@@ -49,6 +49,8 @@ model Workspace {
   forms                            Form[]
   generatedDocuments               GeneratedDocument[]
   esigningSharePointFilings        EsigningSharePointFiling[]
+  sentrowebCheckRuns               SentrowebCheckRun[]
+  contactFormLinks                 ContactFormLink[]
   esigningEmailDeliveries          EsigningEmailDelivery[]
   esigningEnvelopes                EsigningEnvelope[]
   taskEsigningPreparations         TaskEsigningPreparation[]
@@ -240,6 +242,7 @@ model User {
   waivedBillingOccurrences             BillingOccurrence[]                    @relation("BillingOccurrenceWaiverActor")
   cancelledBillingOccurrences          BillingOccurrence[]                    @relation("BillingOccurrenceCancellationActor")
   requestedScheduleReconciliations     ServiceScheduleReconciliationRequest[] @relation("ScheduleReconciliationRequester")
+  sentrowebCheckRuns                   SentrowebCheckRun[]
 
   @@index([email])
   @@index([tenantId])
@@ -382,6 +385,7 @@ model Company {
   billingCoverageIssues       BillingCoverageIssue[]
   sharePointFolderMapping     CompanySharePointFolder?
   esigningSharePointFilings   EsigningSharePointFiling[]
+  sentrowebCheckRuns          SentrowebCheckRun[]
 
   @@unique([tenantId, uen])
   @@unique([tenantId, id], map: "companies_tenant_id_id_key")
@@ -486,6 +490,8 @@ model Contact {
   identificationNumber        String?
   nationality                 String?
   dateOfBirth                 DateTime?
+  /// Individuals only; null when not recorded. Sent to Sentroweb searches (MALE / FEMALE only).
+  gender                      ContactGender?
   corporateName               String?
   corporateUen                String?
   fullAddress                 String?
@@ -495,6 +501,7 @@ model Contact {
   deletedAt                   DateTime?
   chargeHoldings              CompanyCharge[]
   companyRelations            CompanyContact[]
+  formLinks                   ContactFormLink[]
   officerPositions            CompanyOfficer[]
   shareholdings               CompanyShareholder[]
   contactDetails              ContactDetail[]
@@ -731,6 +738,7 @@ model Document {
   uploadedBy         User                 @relation(fields: [uploadedById], references: [id])
   processingDocument ProcessingDocument?
   shareCapital       ShareCapital[]
+  sentrowebCheckResults SentrowebCheckResult[]
 
   @@index([tenantId])
   @@index([companyId])
@@ -2290,7 +2298,9 @@ model EsigningEnvelope {
   pdfGenerationStatus       EsigningPdfGenerationStatus?
   pdfGenerationAttempts     Int                               @default(0)
   pdfGenerationClaimedAt    DateTime?
+  pdfGenerationClaimId      String?                           @db.VarChar(36)
   pdfGenerationError        String?
+  currentArtifactVersion    Int?
   autoFilingStatus          EsigningPostCompletionStatus      @default(NOT_REQUIRED)
   autoFilingAttempts        Int                               @default(0)
   autoFilingAvailableAt     DateTime?
@@ -2315,6 +2325,7 @@ model EsigningEnvelope {
   taskStageOutcomes         TaskStageOutcome[]
   taskEsigningPreparations  TaskEsigningPreparation[]
   sharePointFilings         EsigningSharePointFiling[]
+  issuedArtifacts           EsigningIssuedArtifact[]
 
   @@index([tenantId, status, createdAt])
   @@index([createdById, status, createdAt])
@@ -2349,11 +2360,40 @@ model EsigningEnvelopeDocument {
   generatedDocument        GeneratedDocument?                @relation(fields: [generatedDocumentId], references: [id], onDelete: SetNull)
   taskEsigningPreparations TaskEsigningPreparation[]
   sharePointFiling          EsigningSharePointFiling?
+  issuedArtifacts          EsigningIssuedArtifact[]
 
   @@unique([envelopeId, generatedDocumentId])
   @@index([envelopeId, sortOrder])
   @@index([tenantId, envelopeId])
   @@map("esigning_envelope_documents")
+}
+
+/// Immutable record of every PDF issued for a completed envelope (signed document,
+/// certificate, and the document+certificate file that is emailed and filed), with the
+/// BLAKE3 fingerprint recorded at issue time. Rows are only ever inserted. A regeneration
+/// appends a new `version`; earlier rows and files stay as they were so a file issued earlier
+/// can still be recognised. A unique index on (envelopeId, version, kind, COALESCE(documentId, ''))
+/// is created in the migration SQL because Prisma cannot express it.
+model EsigningIssuedArtifact {
+  id              String                     @id @default(uuid())
+  tenantId        String
+  envelopeId      String
+  documentId      String?
+  version         Int
+  kind            EsigningIssuedArtifactKind
+  storagePath     String
+  blake3          String
+  /// NULL for rows backfilled from the legacy signed_hash column, where the size was never recorded.
+  byteSize        Int?
+  rendererVersion Int
+  sourceDigests   Json
+  createdAt       DateTime                   @default(now())
+  envelope        EsigningEnvelope           @relation(fields: [envelopeId], references: [id], onDelete: Cascade)
+  document        EsigningEnvelopeDocument?  @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@index([envelopeId])
+  @@index([blake3])
+  @@map("esigning_issued_artifacts")
 }
 
 model EsigningSharePointFiling {
@@ -3219,6 +3259,7 @@ model Form {
   submissions      FormSubmission[]
   tenant           Workspace        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   uploads          FormUpload[]
+  contactLinks     ContactFormLink[]
 
   @@index([tenantId, status, deletedAt])
   @@index([tenantId, createdAt])
@@ -3326,6 +3367,7 @@ model FormSubmission {
   form                   Form                 @relation(fields: [formId], references: [id], onDelete: Cascade)
   tenant                 Workspace            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   uploads                FormUpload[]
+  contactLinks           ContactFormLink[]
 
   @@index([formId, submittedAt])
   @@index([tenantId, submittedAt])
@@ -3382,6 +3424,50 @@ model FormUpload {
   @@index([submissionId])
   @@index([tenantId, formId])
   @@map("form_uploads")
+}
+
+/// A KYC/CDD form response person (one repeat row, or the whole response) linked to a Contact.
+/// The row is bound by its index AND a fingerprint of its kind, name and ID taken at link time; it is
+/// never re-bound to another row. Unlinking is soft. Partial unique indexes (see the migration)
+/// keep one active link per contact+row and per row.
+model ContactFormLink {
+  id                String                         @id @default(uuid())
+  tenantId          String
+  contactId         String
+  formId            String
+  submissionId      String
+  personRowIndex    Int?
+  personFingerprint String                         @db.VarChar(64)
+  linkedById        String
+  linkedAt          DateTime                       @default(now())
+  unlinkedAt        DateTime?
+  unlinkedById      String?
+  tenant            Workspace                      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  contact           Contact                        @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  form              Form                           @relation(fields: [formId], references: [id], onDelete: Cascade)
+  submission        FormSubmission                 @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  dismissals        ContactFormSuggestionDismissal[]
+
+  @@index([tenantId, contactId, unlinkedAt])
+  @@index([submissionId])
+  @@index([formId])
+  @@map("contact_form_links")
+}
+
+/// A suggested field value the user dismissed for a link; it stays hidden until the form answer changes.
+model ContactFormSuggestionDismissal {
+  id            String          @id @default(uuid())
+  tenantId      String
+  linkId        String
+  field         String          @db.VarChar(40)
+  valueHash     String          @db.VarChar(64)
+  dismissedById String
+  createdAt     DateTime        @default(now())
+  link          ContactFormLink @relation(fields: [linkId], references: [id], onDelete: Cascade)
+
+  @@unique([linkId, field, valueHash])
+  @@index([tenantId])
+  @@map("contact_form_suggestion_dismissals")
 }
 
 model ClientPortalUser {
@@ -4038,6 +4124,12 @@ enum ContactType {
   CORPORATE
 }
 
+enum ContactGender {
+  MALE
+  FEMALE
+  OTHER
+}
+
 enum IdentificationType {
   NRIC
   FIN
@@ -4595,6 +4687,16 @@ enum EsigningSigningOrder {
   PARALLEL
   SEQUENTIAL
   MIXED
+}
+
+enum EsigningIssuedArtifactKind {
+  SIGNED_DOCUMENT
+  CERTIFICATE
+  DOCUMENT_WITH_CERTIFICATE
+  /// Multi-document envelopes only: every signed document in one PDF, as offered by "Download all".
+  PACKAGE_DOCUMENTS
+  /// Multi-document envelopes only: every signed document followed by the certificate, in one PDF.
+  PACKAGE_DOCUMENTS_WITH_CERTIFICATE
 }
 
 enum EsigningPdfGenerationStatus {
@@ -5437,4 +5539,109 @@ enum BizFileOperationEffectState {
   COMPLETE
   FAILED_RETRYABLE
   FAILED_PERMANENT
+}
+
+// ============================================================================
+// Sentroweb screening (browser-automated AML/sanctions check of a company, its
+// directors and its shareholders). See docs/features/SENTROWEB_CHECK.md.
+// ============================================================================
+
+enum SentrowebCheckRunStatus {
+  QUEUED
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+enum SentrowebCheckOverallResult {
+  CLEAR
+  POSSIBLE_MATCH
+  INCOMPLETE
+}
+
+enum SentrowebEntityKind {
+  COMPANY
+  INDIVIDUAL
+  CORPORATE
+}
+
+enum SentrowebSearchType {
+  INDIVIDUAL
+  ENTITY
+}
+
+enum SentrowebResultStatus {
+  CLEAR
+  POSSIBLE_MATCH
+  ERROR
+  NOT_RUN
+}
+
+model SentrowebCheckRun {
+  id             String                       @id @default(uuid())
+  tenantId       String
+  companyId      String
+  requestedById  String
+  status         SentrowebCheckRunStatus      @default(QUEUED)
+  overallResult  SentrowebCheckOverallResult?
+  errorCode      String?                      @db.VarChar(64)
+  entityCount    Int
+  /// Fuzzy Search ticked for every search of this run (chosen per run, off by default).
+  fuzzy          Boolean                      @default(false)
+  creditsUsed    Int                          @default(0)
+  balanceBefore  Int?
+  claimToken     String?                      @db.VarChar(36)
+  leaseExpiresAt DateTime?
+  startedAt      DateTime?
+  finishedAt     DateTime?
+  createdAt      DateTime                     @default(now())
+  tenant         Workspace                    @relation(fields: [tenantId], references: [id])
+  company        Company                      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  requestedBy    User                         @relation(fields: [requestedById], references: [id])
+  results        SentrowebCheckResult[]
+
+  @@index([tenantId, companyId, createdAt(sort: Desc)])
+  @@index([status, leaseExpiresAt])
+  @@map("sentroweb_check_runs")
+}
+
+model SentrowebCheckResult {
+  id                String                @id @default(uuid())
+  runId             String
+  tenantId          String
+  companyId         String
+  position          Int
+  entityKind        SentrowebEntityKind
+  searchType        SentrowebSearchType
+  roles             String[]
+  sourceRefs        Json                  @default("[]")
+  contactId         String?
+  name              String
+  identifierType    String?
+  identifier        String?
+  status            SentrowebResultStatus @default(NOT_RUN)
+  matchCount        Int                   @default(0)
+  categoryCounts    Json                  @default("{}")
+  matches           Json                  @default("[]")
+  sentrowebReportId String?
+  monitorEnabled    Boolean?
+  searchSubmittedAt DateTime?
+  /// Sentroweb country option chosen from the person's stored nationality (null: none sent).
+  requestedCountry  String?
+  /// Date of birth in YYYY-MM-DD from the linked contact (null: none sent).
+  requestedDateOfBirth String?
+  /// MALE or FEMALE from the linked contact (null: none sent). Never OTHER.
+  requestedGender   ContactGender?
+  /// Sentroweb's answer echoed exactly the name, type, country, date of birth and fuzzy flag we sent.
+  searchEchoVerified Boolean              @default(false)
+  errorCode         String?               @db.VarChar(64)
+  documentId        String?
+  evidencePngKey    String?
+  checkedAt         DateTime?
+  run               SentrowebCheckRun     @relation(fields: [runId], references: [id], onDelete: Cascade)
+  document          Document?             @relation(fields: [documentId], references: [id], onDelete: SetNull)
+
+  @@index([runId])
+  @@index([tenantId, companyId])
+  @@map("sentroweb_check_results")
 }

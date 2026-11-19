@@ -331,7 +331,8 @@ export async function applyBizFileChangePlanInTransaction(
     const expected = plan.expectedUpdatedAt ?? plan.baseline.updatedAt;
     if (expected && current.updatedAt) {
       const expectedTime = new Date(expected).getTime();
-      const currentTime = new Date(String(current.updatedAt)).getTime();
+      // A Date keeps its milliseconds; String(date) would drop them and refuse almost every update.
+      const currentTime = current.updatedAt instanceof Date ? current.updatedAt.getTime() : new Date(String(current.updatedAt)).getTime();
       if (!Number.isNaN(expectedTime) && !Number.isNaN(currentTime) && expectedTime !== currentTime) throw new Error('STALE_BIZFILE_PLAN: company changed after preparation');
     }
     const updates = companyScalarData(selectedChanges);

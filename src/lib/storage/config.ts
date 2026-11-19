@@ -142,6 +142,14 @@ export const StorageKeys = {
   },
 
   /**
+   * Screenshot of one Sentroweb check result (evidence next to Sentroweb's own PDF report).
+   * Not filed as a company Document.
+   */
+  sentrowebEvidence(tenantId: string, companyId: string, runId: string, resultId: string): string {
+    return `${tenantId}/companies/${companyId}/sentroweb/${runId}/${resultId}.png`;
+  },
+
+  /**
    * Get prefix for all files belonging to a tenant
    */
   tenantPrefix(tenantId: string): string {
@@ -254,6 +262,64 @@ export const StorageKeys = {
     envelopeId: string
   ): string {
     return `${tenantId}/esigning/${envelopeId}/certificate.pdf`;
+  },
+
+  /**
+   * Issued-artifact keys. Every generation writes under its own `v{n}/` folder, and each generation
+   * attempt under its own `{attemptId}/` folder inside it, so two workers that pick the same version
+   * (an expired lease, a retry) can never write the same object: only the attempt whose rows are
+   * committed is ever read, and an attempt that lost deletes only its own folder. Without an
+   * `attemptId` the key is the deterministic one used for backfilled files (version 1 of envelopes
+   * completed before versioning still lives at the unversioned keys above).
+   */
+  esigningIssuedSignedDocument(
+    tenantId: string,
+    envelopeId: string,
+    version: number,
+    documentId: string,
+    attemptId?: string
+  ): string {
+    return `${StorageKeys.esigningIssuedFolder(tenantId, envelopeId, version, attemptId)}/signed/${documentId}.pdf`;
+  },
+
+  esigningIssuedCertificate(
+    tenantId: string,
+    envelopeId: string,
+    version: number,
+    attemptId?: string
+  ): string {
+    return `${StorageKeys.esigningIssuedFolder(tenantId, envelopeId, version, attemptId)}/certificate.pdf`;
+  },
+
+  esigningIssuedDocumentWithCertificate(
+    tenantId: string,
+    envelopeId: string,
+    version: number,
+    documentId: string,
+    attemptId?: string
+  ): string {
+    return `${StorageKeys.esigningIssuedFolder(tenantId, envelopeId, version, attemptId)}/with-certificate/${documentId}.pdf`;
+  },
+
+  /** The combined PDF of every signed document of a multi-document envelope. */
+  esigningIssuedPackage(
+    tenantId: string,
+    envelopeId: string,
+    version: number,
+    variant: 'documents' | 'documents-with-certificate',
+    attemptId?: string
+  ): string {
+    return `${StorageKeys.esigningIssuedFolder(tenantId, envelopeId, version, attemptId)}/package/${variant}.pdf`;
+  },
+
+  esigningIssuedFolder(
+    tenantId: string,
+    envelopeId: string,
+    version: number,
+    attemptId?: string
+  ): string {
+    const base = `${tenantId}/esigning/${envelopeId}/v${version}`;
+    return attemptId ? `${base}/${attemptId}` : base;
   },
 
   /**

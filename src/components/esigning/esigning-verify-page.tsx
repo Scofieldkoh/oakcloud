@@ -1,5 +1,6 @@
 'use client';
 import { esigningDisplayName } from '@/lib/esigning-branding';
+import { ESIGNING_PAYLOAD_LIMITS, formatByteLimit } from '@/lib/esigning-payload-limits';
 
 import { useEffect, useRef, useState, type DragEvent } from 'react';
 import { useParams } from 'next/navigation';
@@ -166,6 +167,43 @@ interface VerificationMatchResponse {
   matched: boolean;
   fileHash: string;
   document: VerificationResponse['documents'][number] | null;
+  artifact?: {
+    kind:
+      | 'SIGNED_DOCUMENT'
+      | 'CERTIFICATE'
+      | 'DOCUMENT_WITH_CERTIFICATE'
+      | 'PACKAGE_DOCUMENTS'
+      | 'PACKAGE_DOCUMENTS_WITH_CERTIFICATE'
+      | null;
+    version: number | null;
+    issuedAt: string;
+    isCurrent: boolean;
+    source: 'ISSUED_ARTIFACT' | 'SHAREPOINT_FILING_RECORD';
+  } | null;
+}
+
+const VERIFY_UPLOAD_TOO_LARGE_MESSAGE = `This file is larger than ${formatByteLimit(ESIGNING_PAYLOAD_LIMITS.VERIFY_UPLOAD_BYTES)}, the most that can be checked. If it is a package of several documents, check one document at a time.`;
+
+const ARTIFACT_KIND_LABELS = {
+  SIGNED_DOCUMENT: 'signed document',
+  CERTIFICATE: 'certificate of completion',
+  DOCUMENT_WITH_CERTIFICATE: 'signed document with its certificate',
+  PACKAGE_DOCUMENTS: 'combined PDF of all signed documents',
+  PACKAGE_DOCUMENTS_WITH_CERTIFICATE: 'combined PDF of all signed documents with the certificate',
+} as const;
+
+function describeMatchedArtifact(match: VerificationMatchResponse): string {
+  const artifact = match.artifact;
+  const kind = artifact?.kind ? ARTIFACT_KIND_LABELS[artifact.kind] : 'issued file';
+  const subject = match.document ? `the ${kind} of ${match.document.fileName}` : `the ${kind}`;
+  if (!artifact) return `This file matches ${subject}.`;
+  const issued = new Date(artifact.issuedAt).toLocaleDateString(undefined, { dateStyle: 'medium' });
+  if (artifact.source === 'SHAREPOINT_FILING_RECORD') {
+    return `This file matches ${subject} as filed to SharePoint on ${issued}, before issued copies were fingerprinted. It is not the version currently offered for download.`;
+  }
+  return artifact.isCurrent
+    ? `This file matches ${subject}, issued ${issued}.`
+    : `This file matches ${subject}, issued ${issued}. It is an earlier issue (version ${artifact.version}), not the version currently offered for download.`;
 }
 
 interface TimelineEvent {
@@ -275,6 +313,7 @@ export function EsigningVerifyPage() {
   const [data, setData] = useState<VerificationResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [checkError, setCheckError] = useState<string | null>(null);
   const [matchResult, setMatchResult] = useState<VerificationMatchResponse | null>(null);
   const [isChecking, setIsChecking] = useState(false);
 
@@ -311,6 +350,13 @@ export function EsigningVerifyPage() {
   }, [certificateId]);
 
   async function checkFile(file: File) {
+    setCheckError(null);
+    if (file.size > ESIGNING_PAYLOAD_LIMITS.VERIFY_UPLOAD_BYTES) {
+      setMatchResult(null);
+      setCheckError(VERIFY_UPLOAD_TOO_LARGE_MESSAGE);
+      return;
+    }
+
     try {
       setIsChecking(true);
       setMatchResult(null);
@@ -325,8 +371,8 @@ export function EsigningVerifyPage() {
         throw new Error(result.error || 'Failed to verify file hash');
       }
       setMatchResult(result);
-    } catch (checkError) {
-      setError(checkError instanceof Error ? checkError.message : 'Failed to verify file hash');
+    } catch (checkFailure) {
+      setCheckError(checkFailure instanceof Error ? checkFailure.message : 'Failed to verify file hash');
     } finally {
       setIsChecking(false);
     }
@@ -601,7 +647,7 @@ export function EsigningVerifyPage() {
                       </span>
                     </div>
                     <div className="mt-2.5 flex items-start gap-1.5 rounded-lg bg-background-tertiary px-3 py-2">
-                      <span className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider text-text-muted">SHA-256</span>
+                      <span className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider text-text-muted">BLAKE3</span>
                       <code className="flex-1 break-all text-[11px] text-text-secondary">{document.hash}</code>
                       <CopyHashButton hash={document.hash} />
                     </div>
@@ -615,7 +661,14 @@ export function EsigningVerifyPage() {
           <section className="rounded-2xl border border-border-primary bg-background-secondary p-4 shadow-sm sm:rounded-3xl sm:p-6">
             <SectionHeader icon={ShieldCheck} title="Verify a File" />
             <p className="mt-3 text-sm text-text-secondary">
-              Upload a PDF to compare its SHA-256 hash against the documents registered under this certificate.
+              Upload a PDF to compare its BLAKE3 fingerprint with the files issued under this certificate: the signed
+              document, the certificate, and the signed document with its certificate as emailed or filed.
+            </p>
+            <p className="mt-2 text-xs text-text-muted">
+              Only files that OakCloud recorded when it issued them can be recognised. A copy issued before
+              fingerprints were recorded, or a file that has been edited or re-saved, will not match.
+              Files up to {formatByteLimit(ESIGNING_PAYLOAD_LIMITS.VERIFY_UPLOAD_BYTES)} can be checked; for a package of
+              several documents, check one document at a time.
             </p>
             <div className="mt-4">
               <DropZone isChecking={isChecking} onFile={checkFile} />
@@ -630,7 +683,7 @@ export function EsigningVerifyPage() {
                       <span className="text-sm font-semibold">Hash matched</span>
                     </div>
                     <p className="mt-2 text-sm text-emerald-700 dark:text-emerald-400">
-                      This file matches <strong>{matchResult.document?.fileName}</strong>.
+                      {describeMatchedArtifact(matchResult)}
                     </p>
                     <code className="mt-2 block break-all rounded bg-emerald-100 px-2 py-1.5 text-[11px] text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
                       {matchResult.fileHash}
@@ -643,7 +696,7 @@ export function EsigningVerifyPage() {
                       <span className="text-sm font-semibold">Hash mismatch</span>
                     </div>
                     <p className="mt-2 text-sm text-rose-700 dark:text-rose-400">
-                      The uploaded file does not match any document registered under this certificate.
+                      The uploaded file does not match any file recorded as issued under this certificate.
                     </p>
                     <code className="mt-2 block break-all rounded bg-rose-100 px-2 py-1.5 text-[11px] text-rose-600 dark:bg-rose-900/30 dark:text-rose-400">
                       {matchResult.fileHash}
@@ -653,9 +706,9 @@ export function EsigningVerifyPage() {
               </div>
             ) : null}
 
-            {error ? (
+            {checkError ? (
               <Alert variant="error" title="Verification error" className="mt-4">
-                {error}
+                {checkError}
               </Alert>
             ) : null}
           </section>

@@ -1,5 +1,17 @@
 import { z } from 'zod';
 import {
+  ESIGNING_IMAGE_LIMIT_ISSUE_CODE,
+  ESIGNING_PAYLOAD_LIMITS,
+  estimateDataUrlDecodedBytes,
+  formatByteLimit,
+} from '@/lib/esigning-payload-limits';
+import {
+  UNSUPPORTED_PDF_CHARACTERS_ISSUE_CODE,
+  findUnsupportedEsigningPdfCharacters,
+  formatUnsupportedEsigningPdfCharactersMessage,
+  normalizeEsigningPdfText,
+} from '@/lib/esigning-pdf-text';
+import {
   paginationSchema,
   sortOrderSchema,
   uuidString,
@@ -94,9 +106,39 @@ const emptyStringToNull = <T extends z.ZodTypeAny>(schema: T) =>
     return trimmed.length === 0 ? null : trimmed;
   }, schema.nullable());
 
+/**
+ * Text that ends up on the signed PDF. Normalised (NFC, LF) and rejected up front when the bundled
+ * PDF fonts cannot draw a character, so the signer or sender sees the problem when typing instead
+ * of the envelope failing PDF generation after everyone has signed.
+ */
+function refineEsigningPdfText(subject: string) {
+  return (value: string, ctx: z.RefinementCtx) => {
+    const unsupported = findUnsupportedEsigningPdfCharacters(value);
+    if (unsupported.length > 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: formatUnsupportedEsigningPdfCharactersMessage(unsupported, subject),
+        params: { code: UNSUPPORTED_PDF_CHARACTERS_ISSUE_CODE, characters: unsupported },
+      });
+    }
+  };
+}
+
 const dataUrlSchema = z
   .string()
-  .regex(/^data:image\/png;base64,[A-Za-z0-9+/=]+$/, 'Expected a PNG data URL');
+  .regex(/^data:image\/png;base64,[A-Za-z0-9+/]+={0,2}$/, 'Expected a PNG data URL')
+  .superRefine((value, ctx) => {
+    if (
+      value.length > ESIGNING_PAYLOAD_LIMITS.IMAGE_DATA_URL_MAX_LENGTH ||
+      estimateDataUrlDecodedBytes(value) > ESIGNING_PAYLOAD_LIMITS.IMAGE_MAX_BYTES
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: `The signature image is too large. The limit is ${formatByteLimit(ESIGNING_PAYLOAD_LIMITS.IMAGE_MAX_BYTES)}.`,
+        params: { code: ESIGNING_IMAGE_LIMIT_ISSUE_CODE },
+      });
+    }
+  });
 
 const hexColorSchema = z
   .string()
@@ -119,11 +161,21 @@ export function parseEsigningCompletionBccPreference(value: unknown): EsigningCo
   return parsed.success ? parsed.data : { version: 1, emails: [] };
 }
 
+// Recipient names prefill NAME fields and appear on the certificate, so they follow the PDF text rule.
+const esigningRecipientNameSchema = z
+  .string()
+  .trim()
+  .min(1)
+  .max(160)
+  .transform(normalizeEsigningPdfText)
+  .refine((value) => value.trim().length > 0, { message: 'Recipient name is required' })
+  .superRefine(refineEsigningPdfText('The recipient name'));
+
 export const esigningRecipientInputSchema = z
   .object({
     id: z.string().uuid().optional(),
     type: esigningRecipientTypeSchema,
-    name: z.string().trim().min(1).max(160),
+    name: esigningRecipientNameSchema,
     email: optionalRecipientEmailSchema,
     signingOrder: z.number().int().min(1).max(ESIGNING_LIMITS.MAX_RECIPIENTS).optional().nullable(),
     accessMode: esigningRecipientAccessModeSchema.default('MANUAL_LINK'),
@@ -236,7 +288,7 @@ export const saveEsigningFieldDefinitionsSchema = z.object({
 });
 
 export const updateEsigningRecipientSchema = z.object({
-  name: z.string().trim().min(1).max(160).optional(),
+  name: esigningRecipientNameSchema.optional(),
   email: optionalRecipientEmailSchema,
   type: esigningRecipientTypeSchema.optional(),
   signingOrder: z.number().int().min(1).max(ESIGNING_LIMITS.MAX_RECIPIENTS).optional().nullable(),
@@ -333,10 +385,28 @@ export const saveEsigningFieldValuesSchema = z.object({
   values: z.array(
     z.object({
       fieldDefinitionId: z.string().uuid(),
-      value: emptyStringToNull(z.string().max(10_000)).optional(),
+      value: emptyStringToNull(
+        z
+          .string()
+          .max(10_000)
+          .transform(normalizeEsigningPdfText)
+          .superRefine(refineEsigningPdfText('This field'))
+      ).optional(),
       signatureDataUrl: dataUrlSchema.optional().nullable(),
     })
-  ).min(1).max(ESIGNING_LIMITS.MAX_FIELD_COUNT),
+  ).min(1).max(ESIGNING_LIMITS.MAX_FIELD_COUNT).superRefine((values, ctx) => {
+    const totalImageBytes = values.reduce(
+      (sum, entry) => sum + (entry.signatureDataUrl ? estimateDataUrlDecodedBytes(entry.signatureDataUrl) : 0),
+      0
+    );
+    if (totalImageBytes > ESIGNING_PAYLOAD_LIMITS.IMAGES_TOTAL_MAX_BYTES) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: `The signature images are too large together. The limit is ${formatByteLimit(ESIGNING_PAYLOAD_LIMITS.IMAGES_TOTAL_MAX_BYTES)} per save.`,
+        params: { code: ESIGNING_IMAGE_LIMIT_ISSUE_CODE },
+      });
+    }
+  }),
 });
 
 export const recordEsigningConsentSchema = z.object({

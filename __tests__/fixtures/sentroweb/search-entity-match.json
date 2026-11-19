@@ -1,0 +1,455 @@
+[
+  {
+    "amlReportId": "132",
+    "monitorEnabled": true,
+    "name": "Rosneft Oil Company",
+    "country": "",
+    "searchEntity": true,
+    "searchIndividual": false,
+    "fuzzyValue": false,
+    "orderType": "ACURIS",
+    "legacy": false,
+    "fatfCountries": [],
+    "pepPersons": [],
+    "sipPersons": [],
+    "sieEntities": [
+      {
+        "uniqueID": "C49829",
+        "businessName": "Neftyanaya Kompaniya Rosneft PAO",
+        "description": "Rosneft is the leader of Russia's petroleum industry and the world's largest publicly traded petroleum company. Company'",
+        "source": "Regulatory Enforcement List, Current Sanctions, Current SOE",
+        "aliases": [
+          {
+            "aliasID": null,
+            "title": null,
+            "alternateTitle": null,
+            "forename": "",
+            "middleName": "",
+            "surname": "",
+            "businessName": "Rosneft Oil OJSC",
+            "softDelete": null,
+            "id": 12517360
+          },
+          {
+            "aliasID": null,
+            "title": null,
+            "alternateTitle": null,
+            "forename": "",
+            "middleName": "",
+            "surname": "",
+            "businessName": "Публічне акціонерне товариство \"Нафтова компанія \"РОСНАФТА\"",
+            "softDelete": null,
+            "id": 12517361
+          },
+          {
+            "aliasID": null,
+            "title": null,
+            "alternateTitle": null,
+            "forename": "",
+            "middleName": "",
+            "surname": "",
+            "businessName": "OAO Rosneft",
+            "softDelete": null,
+            "id": 12517362
+          },
+          {
+            "aliasID": null,
+            "title": null,
+            "alternateTitle": null,
+            "forename": "",
+            "middleName": "",
+            "surname": "",
+            "businessName": "Публичное Акционерное Общество Нефтяная Компания Роснефть",
+            "softDelete": null,
+            "id": 12517363
+          },
+          {
+            "aliasID": null,
+            "title": null,
+            "alternateTitle": null,
+            "forename": "",
+            "middleName": "",
+            "surname": "",
+            "businessName": "Public Joint-Stock Company Rosneft Oil Company",
+            "softDelete": null,
+            "id": 12517364
+          },
+          {
+            "aliasID": null,
+            "title": null,
+            "alternateTitle": null,
+            "forename": "",
+            "middleName": "",
+            "surname": "",
+            "businessName": "Open Joint Stock Company Rosneft Oil Company",
+            "softDelete": null,
+            "id": 12517365
+          },
+          {
+            "aliasID": null,
+            "title": null,
+            "alternateTitle": null,
+            "forename": "",
+            "middleName": "",
+            "surname": "",
+            "businessName": "OAO ROSNEFT OIL COMPANY",
+            "softDelete": null,
+            "id": 12517366
+          },
+          {
+            "aliasID": null,
+            "title": null,
+            "alternateTitle": null,
+            "forename": "",
+            "middleName": "",
+            "surname": "",
+            "businessName": "ПАО Нефтяная Компания Роснефть",
+            "softDelete": null,
+            "id": 12517367
+          },
+          {
+            "aliasID": null,
+            "title": null,
+            "alternateTitle": null,
+            "forename": "",
+            "middleName": "",
+            "surname": "",
+            "businessName": "OIL COMPANY ROSNEFT",
+            "softDelete": null,
+            "id": 12517368
+          },
+          {
+            "aliasID": null,
+            "title": null,
+            "alternateTitle": null,
+            "forename": "",
+            "middleName": "",
+            "surname": "",
+            "businessName": "Rosneft",
+            "softDelete": null,
+            "id": 12517369
+          },
+          {
+            "aliasID": null,
+            "title": null,
+            "alternateTitle": null,
+            "forename": "",
+            "middleName": "",
+            "surname": "",
+            "businessName": "NK Rosneft",
+            "softDelete": null,
+            "id": 12517370
+          },
+          {
+            "aliasID": null,
+            "title": null,
+            "alternateTitle": null,
+            "forename": "",
+            "middleName": "",
+            "surname": "",
+            "businessName": "Rosneft Oil PJSC",
+            "softDelete": null,
+            "id": 12517371
+          },
+          {
+            "aliasID": null,
+            "title": null,
+            "alternateTitle": null,
+            "forename": "",
+            "middleName": "",
+            "surname": "",
+            "businessName": "Открытое Акционерное Общество Нефтяная Компания Роснефть",
+            "softDelete": null,
+            "id": 12517372
+          },
+          {
+            "aliasID": null,
+            "title": null,
+            "alternateTitle": null,
+            "forename": "",
+            "middleName": "",
+            "surname": "",
+            "businessName": "OPEN JOINT-STOCK COMPANY ROSNEFT OIL COMPANY",
+            "softDelete": null,
+            "id": 12517373
+          },
+          {
+            "aliasID": null,
+            "title": null,
+            "alternateTitle": null,
+            "forename": "",
+            "middleName": "",
+            "surname": "",
+            "businessName": "Роснефть",
+            "softDelete": null,
+            "id": 12517374
+          },
+          {
+            "aliasID": null,
+            "title": null,
+            "alternateTitle": null,
+            "forename": "",
+            "middleName": "",
+            "surname": "",
+            "businessName": "Rosneft OJSC",
+            "softDelete": null,
+            "id": 12517375
+          },
+          {
+            "aliasID": null,
+            "title": null,
+            "alternateTitle": null,
+            "forename": "",
+            "middleName": "",
+            "surname": "",
+            "businessName": "PAO Neftyanaya Kompaniya Rosneft",
+            "softDelete": null,
+            "id": 12517376
+          },
+          {
+            "aliasID": null,
+            "title": null,
+            "alternateTitle": null,
+            "forename": "",
+            "middleName": "",
+            "surname": "",
+            "businessName": "Публичное акционерное общество Нефтяная компания РОСНЕФТЬ",
+            "softDelete": null,
+            "id": 12517377
+          },
+          {
+            "aliasID": null,
+            "title": null,
+            "alternateTitle": null,
+            "forename": "",
+            "middleName": "",
+            "surname": "",
+            "businessName": "Нефтяная Компания Роснефть",
+            "softDelete": null,
+            "id": 12517378
+          },
+          {
+            "aliasID": null,
+            "title": null,
+            "alternateTitle": null,
+            "forename": "",
+            "middleName": "",
+            "surname": "",
+            "businessName": "PJSC Oil and Gas Company Rosneft",
+            "softDelete": null,
+            "id": 12517379
+          },
+          {
+            "aliasID": null,
+            "title": null,
+            "alternateTitle": null,
+            "forename": "",
+            "middleName": "",
+            "surname": "",
+            "businessName": "ПAO «Росне́фть»",
+            "softDelete": null,
+            "id": 12517380
+          },
+          {
+            "aliasID": null,
+            "title": null,
+            "alternateTitle": null,
+            "forename": "",
+            "middleName": "",
+            "surname": "",
+            "businessName": "PJSC Rosneft",
+            "softDelete": null,
+            "id": 12517381
+          },
+          {
+            "aliasID": null,
+            "title": null,
+            "alternateTitle": null,
+            "forename": "",
+            "middleName": "",
+            "surname": "",
+            "businessName": "ОАО Роснефт",
+            "softDelete": null,
+            "id": 12517382
+          },
+          {
+            "aliasID": null,
+            "title": null,
+            "alternateTitle": null,
+            "forename": "",
+            "middleName": "",
+            "surname": "",
+            "businessName": "Публичное акционерное общество \"Нефтегазовая компания\" \"Роснефть\"",
+            "softDelete": null,
+            "id": 12517383
+          },
+          {
+            "aliasID": null,
+            "title": null,
+            "alternateTitle": null,
+            "forename": "",
+            "middleName": "",
+            "surname": "",
+            "businessName": "Rosneft Oil Company PJSC",
+            "softDelete": null,
+            "id": 12517384
+          },
+          {
+            "aliasID": null,
+            "title": null,
+            "alternateTitle": null,
+            "forename": "",
+            "middleName": "",
+            "surname": "",
+            "businessName": "Publichne aktsionerne tovarystvo \"Naftova kompaniia \"ROSNAFTA\"",
+            "softDelete": null,
+            "id": 12517385
+          },
+          {
+            "aliasID": null,
+            "title": null,
+            "alternateTitle": null,
+            "forename": "",
+            "middleName": "",
+            "surname": "",
+            "businessName": "Neftianaia Kompania Rosneft",
+            "softDelete": null,
+            "id": 12517386
+          },
+          {
+            "aliasID": null,
+            "title": null,
+            "alternateTitle": null,
+            "forename": "",
+            "middleName": "",
+            "surname": "",
+            "businessName": "Neftyanaya Kompaniya Rosneft PJSC",
+            "softDelete": null,
+            "id": 12517387
+          },
+          {
+            "aliasID": null,
+            "title": null,
+            "alternateTitle": null,
+            "forename": "",
+            "middleName": "",
+            "surname": "",
+            "businessName": "ROSNEFT OIL COMPANY",
+            "softDelete": null,
+            "id": 12517388
+          },
+          {
+            "aliasID": null,
+            "title": null,
+            "alternateTitle": null,
+            "forename": "",
+            "middleName": "",
+            "surname": "",
+            "businessName": "Публічне акціонерне товариство Нафтова компанія РОСНАФТА",
+            "softDelete": null,
+            "id": 12517389
+          },
+          {
+            "aliasID": null,
+            "title": null,
+            "alternateTitle": null,
+            "forename": "",
+            "middleName": "",
+            "surname": "",
+            "businessName": "Rosneft Oil Company OJSC",
+            "softDelete": null,
+            "id": 12517390
+          },
+          {
+            "aliasID": null,
+            "title": null,
+            "alternateTitle": null,
+            "forename": "",
+            "middleName": "",
+            "surname": "",
+            "businessName": "ПАО НК Роснефть",
+            "softDelete": null,
+            "id": 12517391
+          },
+          {
+            "aliasID": null,
+            "title": null,
+            "alternateTitle": null,
+            "forename": "",
+            "middleName": "",
+            "surname": "",
+            "businessName": "Публичное акционерное общество \"Нефтяная компания \"РОСНЕФТЬ\"",
+            "softDelete": null,
+            "id": 12517392
+          },
+          {
+            "aliasID": null,
+            "title": null,
+            "alternateTitle": null,
+            "forename": "",
+            "middleName": "",
+            "surname": "",
+            "businessName": "OJSC ROSNEFT OIL COMPANY",
+            "softDelete": null,
+            "id": 12517393
+          },
+          {
+            "aliasID": null,
+            "title": null,
+            "alternateTitle": null,
+            "forename": "",
+            "middleName": "",
+            "surname": "",
+            "businessName": "НК Роснефт",
+            "softDelete": null,
+            "id": 12517394
+          },
+          {
+            "aliasID": null,
+            "title": null,
+            "alternateTitle": null,
+            "forename": "",
+            "middleName": "",
+            "surname": "",
+            "businessName": "Publichne aktsionerne tovarystvo Naftova kompaniia ROSNAFTA",
+            "softDelete": null,
+            "id": 12517395
+          },
+          {
+            "aliasID": null,
+            "title": null,
+            "alternateTitle": null,
+            "forename": "",
+            "middleName": "",
+            "surname": "",
+            "businessName": "PJSC ROSNEFT OIL COMPANY",
+            "softDelete": null,
+            "id": 12517396
+          }
+        ],
+        "id": 1004998,
+        "addresses": [
+          {
+            "townCity": "Sample City",
+            "country": "Russia"
+          }
+        ],
+        "telephone": "+00 0000",
+        "website": "example.invalid",
+        "individualAssociations": [],
+        "businessAssociations": [],
+        "articles": [
+          {
+            "originalURL": "https://example.invalid/article"
+          }
+        ],
+        "notes": [
+          {
+            "sourceOfNotes": "x",
+            "notes": "trimmed note"
+          }
+        ]
+      }
+    ]
+  }
+]

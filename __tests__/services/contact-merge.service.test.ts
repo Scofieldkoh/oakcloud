@@ -44,9 +44,9 @@ import { ContactMergeConflictError, mergeContacts } from '@/services/contact-mer
 
 const stamp = new Date('2026-07-14T01:00:00.000Z');
 const contacts = [
-  { id: 'master', tenantId: 'tenant-1', contactType: 'INDIVIDUAL', firstName: 'Alice', lastName: null, fullName: 'Alice', canonicalName: 'alice', alias: null, identificationType: null, identificationNumber: null, nationality: null, dateOfBirth: null, corporateName: null, corporateUen: null, fullAddress: null, isActive: true, deletedAt: null, createdAt: new Date('2020-01-01'), updatedAt: stamp, contactDetails: [] },
-  { id: 'source-1', tenantId: 'tenant-1', contactType: 'INDIVIDUAL', firstName: 'Alice', lastName: null, fullName: 'Alice', canonicalName: 'alice', alias: 'Al', identificationType: null, identificationNumber: null, nationality: 'SG', dateOfBirth: null, corporateName: null, corporateUen: null, fullAddress: null, isActive: true, deletedAt: null, createdAt: new Date('2021-01-01'), updatedAt: stamp, contactDetails: [] },
-  { id: 'source-2', tenantId: 'tenant-1', contactType: 'INDIVIDUAL', firstName: 'Alice', lastName: null, fullName: 'Alice', canonicalName: 'alice', alias: null, identificationType: null, identificationNumber: null, nationality: null, dateOfBirth: null, corporateName: null, corporateUen: null, fullAddress: null, isActive: true, deletedAt: null, createdAt: new Date('2022-01-01'), updatedAt: stamp, contactDetails: [] },
+  { id: 'master', tenantId: 'tenant-1', contactType: 'INDIVIDUAL', firstName: 'Alice', lastName: null, fullName: 'Alice', canonicalName: 'alice', alias: null, identificationType: null, identificationNumber: null, nationality: null, dateOfBirth: null, gender: null, corporateName: null, corporateUen: null, fullAddress: null, isActive: true, deletedAt: null, createdAt: new Date('2020-01-01'), updatedAt: stamp, contactDetails: [] },
+  { id: 'source-1', tenantId: 'tenant-1', contactType: 'INDIVIDUAL', firstName: 'Alice', lastName: null, fullName: 'Alice', canonicalName: 'alice', alias: 'Al', identificationType: null, identificationNumber: null, nationality: 'SG', dateOfBirth: null, gender: null, corporateName: null, corporateUen: null, fullAddress: null, isActive: true, deletedAt: null, createdAt: new Date('2021-01-01'), updatedAt: stamp, contactDetails: [] },
+  { id: 'source-2', tenantId: 'tenant-1', contactType: 'INDIVIDUAL', firstName: 'Alice', lastName: null, fullName: 'Alice', canonicalName: 'alice', alias: null, identificationType: null, identificationNumber: null, nationality: null, dateOfBirth: null, gender: null, corporateName: null, corporateUen: null, fullAddress: null, isActive: true, deletedAt: null, createdAt: new Date('2022-01-01'), updatedAt: stamp, contactDetails: [] },
 ];
 
 function input() {
@@ -264,6 +264,19 @@ describe('contact merge service', () => {
     await expect(mergeContacts(input(), { tenantId: 'tenant-1', userId: 'user-1' })).resolves.toEqual({
       ledgerId: 'winner', survivingContactId: 'master', movedCounts: { notes: 1 }, alreadyCompleted: true,
     });
+  });
+
+  it('carries a source contact gender to a master that has none, and keeps the master gender otherwise', async () => {
+    const withGender = (masterGender: string | null) => contacts.map((contact, index) =>
+      index === 1 ? { ...contact, gender: 'FEMALE' } : index === 0 ? { ...contact, gender: masterGender } : contact);
+    mocks.contactFind.mockResolvedValueOnce(withGender(null));
+    await mergeContacts(input(), { tenantId: 'tenant-1', userId: 'user-1' });
+    expect(mocks.contactUpdate).toHaveBeenCalledWith(expect.objectContaining({ where: { id: 'master' }, data: expect.objectContaining({ gender: 'FEMALE' }) }));
+
+    mocks.contactUpdate.mockClear();
+    mocks.contactFind.mockResolvedValueOnce(withGender('MALE'));
+    await mergeContacts(input(), { tenantId: 'tenant-1', userId: 'user-1' });
+    for (const [args] of mocks.contactUpdate.mock.calls) expect((args as { data: Record<string, unknown> }).data).not.toHaveProperty('gender');
   });
 
   it('neutralizes a source composite identifier before enriching an empty master', async () => {

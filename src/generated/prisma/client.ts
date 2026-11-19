@@ -401,6 +401,16 @@ export type EsigningEnvelope = Prisma.EsigningEnvelopeModel
  */
 export type EsigningEnvelopeDocument = Prisma.EsigningEnvelopeDocumentModel
 /**
+ * Model EsigningIssuedArtifact
+ * Immutable record of every PDF issued for a completed envelope (signed document,
+ * certificate, and the document+certificate file that is emailed and filed), with the
+ * BLAKE3 fingerprint recorded at issue time. Rows are only ever inserted. A regeneration
+ * appends a new `version`; earlier rows and files stay as they were so a file issued earlier
+ * can still be recognised. A unique index on (envelopeId, version, kind, COALESCE(documentId, ''))
+ * is created in the migration SQL because Prisma cannot express it.
+ */
+export type EsigningIssuedArtifact = Prisma.EsigningIssuedArtifactModel
+/**
  * Model EsigningSharePointFiling
  *
  */
@@ -600,6 +610,19 @@ export type FormDraft = Prisma.FormDraftModel
  *
  */
 export type FormUpload = Prisma.FormUploadModel
+/**
+ * Model ContactFormLink
+ * A KYC/CDD form response person (one repeat row, or the whole response) linked to a Contact.
+ * The row is bound by its index AND a fingerprint of its kind, name and ID taken at link time; it is
+ * never re-bound to another row. Unlinking is soft. Partial unique indexes (see the migration)
+ * keep one active link per contact+row and per row.
+ */
+export type ContactFormLink = Prisma.ContactFormLinkModel
+/**
+ * Model ContactFormSuggestionDismissal
+ * A suggested field value the user dismissed for a link; it stays hidden until the form answer changes.
+ */
+export type ContactFormSuggestionDismissal = Prisma.ContactFormSuggestionDismissalModel
 /**
  * Model ClientPortalUser
  *
@@ -804,3 +827,13 @@ export type BizFileOperationEvidence = Prisma.BizFileOperationEvidenceModel
  *
  */
 export type BizFileOperationEffectIntent = Prisma.BizFileOperationEffectIntentModel
+/**
+ * Model SentrowebCheckRun
+ *
+ */
+export type SentrowebCheckRun = Prisma.SentrowebCheckRunModel
+/**
+ * Model SentrowebCheckResult
+ *
+ */
+export type SentrowebCheckResult = Prisma.SentrowebCheckResultModel

@@ -122,6 +122,7 @@ export const ModelName = {
   AiConversation: 'AiConversation',
   EsigningEnvelope: 'EsigningEnvelope',
   EsigningEnvelopeDocument: 'EsigningEnvelopeDocument',
+  EsigningIssuedArtifact: 'EsigningIssuedArtifact',
   EsigningSharePointFiling: 'EsigningSharePointFiling',
   EsigningEnvelopeRecipient: 'EsigningEnvelopeRecipient',
   EsigningDocumentFieldDefinition: 'EsigningDocumentFieldDefinition',
@@ -162,6 +163,8 @@ export const ModelName = {
   FormSubmission: 'FormSubmission',
   FormDraft: 'FormDraft',
   FormUpload: 'FormUpload',
+  ContactFormLink: 'ContactFormLink',
+  ContactFormSuggestionDismissal: 'ContactFormSuggestionDismissal',
   ClientPortalUser: 'ClientPortalUser',
   ClientRequest: 'ClientRequest',
   Communication: 'Communication',
@@ -201,7 +204,9 @@ export const ModelName = {
   BusinessAssistantCapacitySlot: 'BusinessAssistantCapacitySlot',
   BizFileOperationReceipt: 'BizFileOperationReceipt',
   BizFileOperationEvidence: 'BizFileOperationEvidence',
-  BizFileOperationEffectIntent: 'BizFileOperationEffectIntent'
+  BizFileOperationEffectIntent: 'BizFileOperationEffectIntent',
+  SentrowebCheckRun: 'SentrowebCheckRun',
+  SentrowebCheckResult: 'SentrowebCheckResult'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -473,6 +478,7 @@ export const ContactScalarFieldEnum = {
   identificationNumber: 'identificationNumber',
   nationality: 'nationality',
   dateOfBirth: 'dateOfBirth',
+  gender: 'gender',
   corporateName: 'corporateName',
   corporateUen: 'corporateUen',
   fullAddress: 'fullAddress',
@@ -1671,7 +1677,9 @@ export const EsigningEnvelopeScalarFieldEnum = {
   pdfGenerationStatus: 'pdfGenerationStatus',
   pdfGenerationAttempts: 'pdfGenerationAttempts',
   pdfGenerationClaimedAt: 'pdfGenerationClaimedAt',
+  pdfGenerationClaimId: 'pdfGenerationClaimId',
   pdfGenerationError: 'pdfGenerationError',
+  currentArtifactVersion: 'currentArtifactVersion',
   autoFilingStatus: 'autoFilingStatus',
   autoFilingAttempts: 'autoFilingAttempts',
   autoFilingAvailableAt: 'autoFilingAvailableAt',
@@ -1709,6 +1717,24 @@ export const EsigningEnvelopeDocumentScalarFieldEnum = {
 } as const
 
 export type EsigningEnvelopeDocumentScalarFieldEnum = (typeof EsigningEnvelopeDocumentScalarFieldEnum)[keyof typeof EsigningEnvelopeDocumentScalarFieldEnum]
+
+
+export const EsigningIssuedArtifactScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  envelopeId: 'envelopeId',
+  documentId: 'documentId',
+  version: 'version',
+  kind: 'kind',
+  storagePath: 'storagePath',
+  blake3: 'blake3',
+  byteSize: 'byteSize',
+  rendererVersion: 'rendererVersion',
+  sourceDigests: 'sourceDigests',
+  createdAt: 'createdAt'
+} as const
+
+export type EsigningIssuedArtifactScalarFieldEnum = (typeof EsigningIssuedArtifactScalarFieldEnum)[keyof typeof EsigningIssuedArtifactScalarFieldEnum]
 
 
 export const EsigningSharePointFilingScalarFieldEnum = {
@@ -2547,6 +2573,36 @@ export const FormUploadScalarFieldEnum = {
 export type FormUploadScalarFieldEnum = (typeof FormUploadScalarFieldEnum)[keyof typeof FormUploadScalarFieldEnum]
 
 
+export const ContactFormLinkScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  contactId: 'contactId',
+  formId: 'formId',
+  submissionId: 'submissionId',
+  personRowIndex: 'personRowIndex',
+  personFingerprint: 'personFingerprint',
+  linkedById: 'linkedById',
+  linkedAt: 'linkedAt',
+  unlinkedAt: 'unlinkedAt',
+  unlinkedById: 'unlinkedById'
+} as const
+
+export type ContactFormLinkScalarFieldEnum = (typeof ContactFormLinkScalarFieldEnum)[keyof typeof ContactFormLinkScalarFieldEnum]
+
+
+export const ContactFormSuggestionDismissalScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  linkId: 'linkId',
+  field: 'field',
+  valueHash: 'valueHash',
+  dismissedById: 'dismissedById',
+  createdAt: 'createdAt'
+} as const
+
+export type ContactFormSuggestionDismissalScalarFieldEnum = (typeof ContactFormSuggestionDismissalScalarFieldEnum)[keyof typeof ContactFormSuggestionDismissalScalarFieldEnum]
+
+
 export const ClientPortalUserScalarFieldEnum = {
   id: 'id',
   tenantId: 'tenantId',
@@ -3367,6 +3423,62 @@ export const BizFileOperationEffectIntentScalarFieldEnum = {
 } as const
 
 export type BizFileOperationEffectIntentScalarFieldEnum = (typeof BizFileOperationEffectIntentScalarFieldEnum)[keyof typeof BizFileOperationEffectIntentScalarFieldEnum]
+
+
+export const SentrowebCheckRunScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  companyId: 'companyId',
+  requestedById: 'requestedById',
+  status: 'status',
+  overallResult: 'overallResult',
+  errorCode: 'errorCode',
+  entityCount: 'entityCount',
+  fuzzy: 'fuzzy',
+  creditsUsed: 'creditsUsed',
+  balanceBefore: 'balanceBefore',
+  claimToken: 'claimToken',
+  leaseExpiresAt: 'leaseExpiresAt',
+  startedAt: 'startedAt',
+  finishedAt: 'finishedAt',
+  createdAt: 'createdAt'
+} as const
+
+export type SentrowebCheckRunScalarFieldEnum = (typeof SentrowebCheckRunScalarFieldEnum)[keyof typeof SentrowebCheckRunScalarFieldEnum]
+
+
+export const SentrowebCheckResultScalarFieldEnum = {
+  id: 'id',
+  runId: 'runId',
+  tenantId: 'tenantId',
+  companyId: 'companyId',
+  position: 'position',
+  entityKind: 'entityKind',
+  searchType: 'searchType',
+  roles: 'roles',
+  sourceRefs: 'sourceRefs',
+  contactId: 'contactId',
+  name: 'name',
+  identifierType: 'identifierType',
+  identifier: 'identifier',
+  status: 'status',
+  matchCount: 'matchCount',
+  categoryCounts: 'categoryCounts',
+  matches: 'matches',
+  sentrowebReportId: 'sentrowebReportId',
+  monitorEnabled: 'monitorEnabled',
+  searchSubmittedAt: 'searchSubmittedAt',
+  requestedCountry: 'requestedCountry',
+  requestedDateOfBirth: 'requestedDateOfBirth',
+  requestedGender: 'requestedGender',
+  searchEchoVerified: 'searchEchoVerified',
+  errorCode: 'errorCode',
+  documentId: 'documentId',
+  evidencePngKey: 'evidencePngKey',
+  checkedAt: 'checkedAt'
+} as const
+
+export type SentrowebCheckResultScalarFieldEnum = (typeof SentrowebCheckResultScalarFieldEnum)[keyof typeof SentrowebCheckResultScalarFieldEnum]
 
 
 export const SortOrder = {
