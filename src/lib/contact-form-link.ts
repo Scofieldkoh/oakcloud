@@ -33,7 +33,25 @@ export interface FormStructure {
   labels: ReadonlyMap<string, string>;
   /** `row`: a repeat section holds the person fields; `whole`: they are single answers; `none`: no person fields. */
   personMode: 'row' | 'whole' | 'none';
+  /** Explicit answer-key mapping for the supported schema; no label or respondent-name inference. */
+  personFieldKeys: Readonly<Record<string, string>>;
 }
+
+const CDD_PERSON_FIELDS = Object.fromEntries([
+  'person_kind', 'person_name', 'person_id', 'person_roles', 'person_nationality',
+  'person_birth_date', 'person_address', 'person_pep', 'person_pep_details',
+].map((key) => [key, key]));
+
+// Verified Individual Declaration schema. PEP repeat details describe other people/roles, not
+// additional candidates. The declaration signatory is deliberately not an identity fallback.
+const INDIVIDUAL_DECLARATION_FIELDS = [
+  ['person_name', 'full_name', 'SHORT_TEXT'],
+  ['person_id', 'nric_fin_passport_number', 'SHORT_TEXT'],
+  ['person_nationality', 'nationality', 'DROPDOWN'],
+  ['person_birth_date', 'date_of_birth', 'SHORT_TEXT'],
+  ['person_address', 'residential_address', 'LONG_TEXT'],
+  ['person_pep', 'politically_exposed_person_pep_status', 'DROPDOWN'],
+] as const;
 
 const NON_ANSWER_TYPES = new Set(['PAGE_BREAK', 'PARAGRAPH', 'HTML']);
 
@@ -69,8 +87,21 @@ export function analyseFormFields(fields: readonly FormFieldLite[]): FormStructu
     if (section === peopleSection) continue;
     for (const key of section) foreignRepeatKeys.add(key);
   }
-  const personMode = peopleSection ? 'row' : allKeys.has('person_name') ? 'whole' : 'none';
-  return { repeatKeys, foreignRepeatKeys, fileKeys, labels, personMode };
+  let personMode: FormStructure['personMode'] = peopleSection ? 'row' : allKeys.has('person_name') ? 'whole' : 'none';
+  let personFieldKeys: Readonly<Record<string, string>> = CDD_PERSON_FIELDS;
+  if (personMode === 'none') {
+    const singleFields = new Map(ordered.filter((field) => !foreignRepeatKeys.has(field.key)).map((field) => [field.key, field]));
+    const declarationFields = Object.fromEntries(INDIVIDUAL_DECLARATION_FIELDS
+      .filter(([, key, type]) => singleFields.get(key)?.type === type)
+      .map(([canonical, key]) => [canonical, key]));
+    // Require both exact identity field definitions outside any repeat section. Optional answers are
+    // mapped only when their definitions also match; arbitrary generic "name" fields are unsupported.
+    if (declarationFields.person_name && declarationFields.person_id) {
+      personMode = 'whole';
+      personFieldKeys = declarationFields;
+    }
+  }
+  return { repeatKeys, foreignRepeatKeys, fileKeys, labels, personMode, personFieldKeys };
 }
 
 export type Answers = Record<string, unknown>;
@@ -133,7 +164,10 @@ export function readPerson(answersValue: unknown, structure: FormStructure, rowI
     return null;
   }
   const answers = asAnswers(answersValue);
-  const get = (key: string) => rawValue(answers, structure, key, rowIndex);
+  const get = (key: string) => {
+    const sourceKey = structure.personFieldKeys[key];
+    return sourceKey ? rawValue(answers, structure, sourceKey, rowIndex) : undefined;
+  };
   const kindText = answerText(get('person_kind')).toLowerCase();
   if (kindText !== '' && kindText !== 'individual' && kindText !== 'organisation') return null;
   const name = answerText(get('person_name'));

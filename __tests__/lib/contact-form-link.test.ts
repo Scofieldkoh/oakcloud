@@ -9,6 +9,7 @@ import {
   type FormFieldLite,
   type FormPerson,
 } from '@/lib/contact-form-link';
+import { INDIVIDUAL_DECLARATION_FIELDS, INDIVIDUAL_DECLARATION_ANSWERS } from '../helpers/contact-individual-declaration';
 import { computeSuggestions, currentFieldValue, suggestionValueHash, type ContactSnapshot } from '@/lib/contact-form-mapping';
 
 const f = (key: string, type: string, position: number, inputType: string | null = null, label: string | null = null): FormFieldLite => ({
@@ -44,6 +45,50 @@ const individual: ContactSnapshot = {
   corporateName: null,
   corporateUen: null,
 };
+
+describe('Individual Declaration schema', () => {
+  const declaration = analyseFormFields(INDIVIDUAL_DECLARATION_FIELDS);
+
+  it('reads exactly one whole-response individual from the actual answer keys, not the signatory or repeat details', () => {
+    expect(declaration.personMode).toBe('whole');
+    expect(personRowCount(INDIVIDUAL_DECLARATION_ANSWERS, declaration)).toBe(1);
+    const person = readPerson(INDIVIDUAL_DECLARATION_ANSWERS, declaration, null);
+    expect(person).toEqual({
+      rowIndex: null, kind: 'individual', name: 'Dina Tan', idNumber: 'S1234567D',
+      nationality: 'Malaysian', birthDate: '1980-01-01', address: '1 Test Road',
+      roles: [], pep: 'No', pepDetails: '',
+    });
+    expect(readPerson(INDIVIDUAL_DECLARATION_ANSWERS, declaration, 0)).toBeNull();
+    expect(computeSuggestions(individual, person!).map((s) => s.field)).toEqual(['nationality', 'dateOfBirth', 'fullAddress']);
+    expect(personUploadRefs(INDIVIDUAL_DECLARATION_ANSWERS, declaration, null).map((r) => [r.uploadId, r.scope])).toEqual([
+      ['nric-upload', 'response'], ['passport-upload', 'response'], ['address-upload', 'response'],
+    ]);
+  });
+
+  it('requires the explicit identity field definitions and never treats other repeat rows as the single person', () => {
+    for (const fields of [
+      INDIVIDUAL_DECLARATION_FIELDS.filter((field) => field.key !== 'nric_fin_passport_number'),
+      INDIVIDUAL_DECLARATION_FIELDS.map((field) => field.key === 'full_name' ? { ...field, type: 'FILE_UPLOAD' } : field),
+      [f('repeat', 'PAGE_BREAK', 0, 'repeat_start'), ...INDIVIDUAL_DECLARATION_FIELDS.slice(0, 5), f('end', 'PAGE_BREAK', 20, 'repeat_end')],
+      [f('full_name_declaration', 'SHORT_TEXT', 0), f('name', 'SHORT_TEXT', 1)],
+    ]) {
+      const unsupported = analyseFormFields(fields);
+      expect(unsupported.personMode).toBe('none');
+      expect(readPerson(INDIVIDUAL_DECLARATION_ANSWERS, unsupported, null)).toBeNull();
+    }
+    const wrongOptionalType = analyseFormFields(INDIVIDUAL_DECLARATION_FIELDS.map((field) => field.key === 'date_of_birth' ? { ...field, type: 'FILE_UPLOAD' } : field));
+    expect(readPerson(INDIVIDUAL_DECLARATION_ANSWERS, wrongOptionalType, null)?.birthDate).toBe('');
+  });
+
+  it('does not invent identity from declaration names or metadata, and fingerprints the actual person', () => {
+    const original = readPerson(INDIVIDUAL_DECLARATION_ANSWERS, declaration, null)!;
+    expect(original).not.toBeNull();
+    expect(readPerson({ ...INDIVIDUAL_DECLARATION_ANSWERS, full_name: '', nric_fin_passport_number: '', respondentName: 'Metadata only' }, declaration, null)).toBeNull();
+    expect(readPerson({ ...INDIVIDUAL_DECLARATION_ANSWERS, full_name: [], nric_fin_passport_number: {} }, declaration, null)).toBeNull();
+    const changed = readPerson({ ...INDIVIDUAL_DECLARATION_ANSWERS, nric_fin_passport_number: 'S7654321Z' }, declaration, null)!;
+    expect(personFingerprint(changed)).not.toBe(personFingerprint(original));
+  });
+});
 
 describe('form structure and people', () => {
   it('finds the repeat section regardless of field order, and the file fields', () => {

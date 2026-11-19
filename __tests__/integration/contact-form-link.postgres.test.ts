@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { NextRequest } from 'next/server';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { analyseFormFields, personFingerprint, readPerson, type FormFieldLite } from '@/lib/contact-form-link';
+import { INDIVIDUAL_DECLARATION_FIELDS, INDIVIDUAL_DECLARATION_ANSWERS } from '../helpers/contact-individual-declaration';
 import { GET as listLinks, POST as createLink } from '@/app/api/contacts/[id]/form-links/route';
 import { GET as candidates } from '@/app/api/contacts/[id]/form-links/candidates/route';
 import { DELETE as deleteLink } from '@/app/api/contacts/[id]/form-links/[linkId]/route';
@@ -181,6 +182,47 @@ suite('Contact KYC/CDD form links (PostgreSQL, public route boundary)', () => {
   const dismiss = (contactId: string, linkId: string, body: Json) =>
     dismissSuggestion(request(`/api/contacts/${contactId}/form-links/${linkId}/suggestions/dismiss`, 'POST', body), ids(contactId, linkId));
   const suggestionFor = (links: Json[], field: string) => links[0].suggestions.find((s: Json) => s.field === field);
+
+  it('offers and links the Individual Declaration as one person with real mapped suggestions and only that response’s files', async () => {
+    const form = await db.form.create({ data: { tenantId, title: 'Individual Declaration', slug: `individual-${randomUUID()}`, status: 'PUBLISHED', tags: ['kyc'] } });
+    await db.formField.createMany({ data: INDIVIDUAL_DECLARATION_FIELDS.map((field) => ({ ...field, tenantId, formId: form.id, type: field.type as never })) });
+    const submission = await db.formSubmission.create({ data: { tenantId, formId: form.id, respondentName: 'Respondent metadata only', answers: {} } });
+    const otherSubmission = await db.formSubmission.create({ data: { tenantId, formId: form.id, answers: {} } });
+    const own = await db.formUpload.create({ data: { tenantId, formId: form.id, submissionId: submission.id, storageKey: `test/${randomUUID()}`, fileName: 'identity.pdf', mimeType: 'application/pdf', sizeBytes: 10 } });
+    const other = await db.formUpload.create({ data: { tenantId, formId: form.id, submissionId: otherSubmission.id, storageKey: `test/${randomUUID()}`, fileName: 'other.pdf', mimeType: 'application/pdf', sizeBytes: 10 } });
+    const answers = { ...INDIVIDUAL_DECLARATION_ANSWERS, nric: [own.id], passport: [other.id], proof_of_address: [] };
+    await db.formSubmission.update({ where: { id: submission.id }, data: { answers } });
+    const contact = await makeContact();
+    const path = `/api/contacts/${contact.id}/form-links/candidates?formId=${form.id}`;
+    const responseList = await json(await candidates(request(path), ids(contact.id)));
+    expect(responseList.submissions.find((row: Json) => row.id === submission.id)).toMatchObject({ personCount: 1 });
+    const people = await json(await candidates(request(`${path}&submissionId=${submission.id}`), ids(contact.id)));
+    expect(people.persons).toHaveLength(1);
+    expect(people.persons[0]).toMatchObject({ rowIndex: null, kind: 'individual', name: 'Dina Tan', eligible: true });
+    const fingerprint = people.persons[0].fingerprint;
+    expect((await link(contact.id, form.id, submission.id, null, fingerprint)).status).toBe(201);
+    const [entry] = await list(contact.id);
+    expect(entry).toMatchObject({ state: 'ACTIVE', personRowIndex: null, personName: 'Dina Tan' });
+    expect(entry.suggestions.map((suggestion: Json) => suggestion.field).sort()).toEqual(['dateOfBirth', 'fullAddress', 'fullName', 'identificationNumber', 'nationality']);
+    expect(entry.readOnlyAnswers).toContainEqual({ label: 'Politically exposed person (as answered)', value: 'No' });
+    expect(entry.attachments.map((upload: Json) => upload.id)).toEqual([own.id]);
+    expect(entry.attachments[0].url).toBe(`/api/forms/${form.id}/responses/${submission.id}/uploads/${own.id}`);
+    const dob = suggestionFor([entry], 'dateOfBirth');
+    expect((await accept(contact.id, entry.id, { field: dob.field, expectedCurrentValue: dob.current, proposedValue: dob.proposed })).status).toBe(200);
+    expect((await db.contact.findUniqueOrThrow({ where: { id: contact.id } })).dateOfBirth?.toISOString()).toBe('1980-01-01T00:00:00.000Z');
+
+    // Whole-response links retain the exact same stale-picker and saved-identity guards as repeat rows.
+    await db.formSubmission.update({ where: { id: submission.id }, data: { answers: { ...answers, full_name: 'Eli Lim' } } });
+    const nextContact = await makeContact();
+    const stale = await link(nextContact.id, form.id, submission.id, null, fingerprint);
+    expect(stale.status).toBe(409);
+    expect((await json(stale)).details.reason).toBe('ROW_CHANGED');
+    const changed = (await list(contact.id))[0];
+    expect(changed).toMatchObject({ state: 'ROW_CHANGED', suggestions: [], attachments: [], readOnlyAnswers: [] });
+    const refused = await accept(contact.id, entry.id, { field: 'nationality', expectedCurrentValue: 'Singaporean', proposedValue: 'Malaysian' });
+    expect(refused.status).toBe(409);
+    expect((await db.contact.findUniqueOrThrow({ where: { id: contact.id } })).nationality).toBe('Singaporean');
+  });
 
   // --- 1 ---------------------------------------------------------------------------------------
 
