@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createErrorResponse } from '@/lib/api-helpers';
 import { RATE_LIMIT_CONFIGS } from '@/lib/rate-limit';
-import { enforceEsigningRateLimit, requireEsigningSameOrigin } from '@/lib/esigning-public-route';
+import { enforceEsigningSessionRateLimit, requireEsigningSameOrigin } from '@/lib/esigning-public-route';
 import { saveEsigningFieldValuesSchema } from '@/lib/validations/esigning';
 import { saveEsigningSigningFieldValues } from '@/services/esigning-signing.service';
 import { esigningValidationErrorResponse } from '@/lib/esigning-validation-response';
@@ -15,7 +15,7 @@ export async function PUT(request: NextRequest) {
     return sameOriginError;
   }
 
-  const rateLimit = enforceEsigningRateLimit(
+  const rateLimit = await enforceEsigningSessionRateLimit(
     request,
     'esigning_sign_save',
     'session-fields',

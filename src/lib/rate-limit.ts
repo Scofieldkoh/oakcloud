@@ -182,9 +182,23 @@ export const RATE_LIMIT_CONFIGS = {
     lockoutDurationMs: 15 * 60 * 1000,
   } as RateLimitConfig,
 
-  /** Public e-signing autosave */
+  /**
+   * Public e-signing access-code verification, per recipient from any address. Sits on top of
+   * ESIGNING_SIGN_VERIFY (per address and recipient), so changing the source address does not reset it.
+   */
+  ESIGNING_SIGN_VERIFY_RECIPIENT: {
+    maxRequests: 10,
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    lockoutThreshold: 10,
+    lockoutDurationMs: 30 * 60 * 1000,
+  } as RateLimitConfig,
+
+  /**
+   * Public e-signing autosave and consent. Keyed per recipient. The signing page saves at most twice a
+   * second (500 ms debounce), so 120 per minute leaves room for real typing and bursts.
+   */
   ESIGNING_SIGN_SAVE: {
-    maxRequests: 20,
+    maxRequests: 120,
     windowMs: 60 * 1000, // 1 minute
   } as RateLimitConfig,
 
@@ -210,6 +224,15 @@ export const RATE_LIMIT_CONFIGS = {
   ESIGNING_VERIFY: {
     maxRequests: 20,
     windowMs: 60 * 1000, // 1 minute
+  } as RateLimitConfig,
+
+  /**
+   * Public certificate lookups across all certificate IDs, per address: the verify page data, the
+   * bootstrap lookup and the file check share it, so trying many IDs does not get a fresh allowance.
+   */
+  ESIGNING_PUBLIC_LOOKUP_AGGREGATE: {
+    maxRequests: 60,
+    windowMs: 10 * 60 * 1000, // 10 minutes
   } as RateLimitConfig,
 } as const;
 
@@ -378,24 +401,97 @@ export function getRateLimitStatus(key: string, config: RateLimitConfig): RateLi
 // ============================================================================
 
 /**
- * Extract client IP from request headers
- * Handles common proxy headers
+ * Which proxy in front of the app is trusted to tell us the client address.
+ *
+ * - `TRUSTED_PROXY=xff` (default): the address is the entry `TRUSTED_PROXY_HOPS` places from the RIGHT
+ *   of `X-Forwarded-For` (default 1). Each trusted proxy appends the address it received the request
+ *   from, so the right-hand entries are written by our own infrastructure. The left-hand entries are
+ *   whatever the client sent, and are never used.
+ * - `TRUSTED_PROXY=cloudflare`: the address is `CF-Connecting-IP`.
+ *
+ * `X-Real-IP` is not read. With no proxy at all there is no trustworthy address: a client can send any
+ * `X-Forwarded-For`, so limits that must hold regardless (per recipient, per certificate lookup
+ * aggregate) do not rely on it.
+ */
+export type TrustedProxyMode = 'xff' | 'cloudflare';
+
+export interface TrustedProxyConfig {
+  mode: TrustedProxyMode;
+  hops: number;
+}
+
+const DEFAULT_TRUSTED_PROXY_CONFIG: TrustedProxyConfig = { mode: 'xff', hops: 1 };
+const MAX_TRUSTED_PROXY_HOPS = 5;
+/** Longest textual IPv6 address with an IPv4 tail. Anything longer is not an address. */
+const MAX_IP_LENGTH = 45;
+const IP_CHARACTERS = /^[0-9A-Fa-f:.]+$/;
+
+let proxyConfigWarning: 'unset' | 'invalid' | null = null;
+
+export function getTrustedProxyConfig(env: NodeJS.ProcessEnv = process.env): TrustedProxyConfig {
+  const rawMode = env.TRUSTED_PROXY?.trim().toLowerCase();
+  const rawHops = env.TRUSTED_PROXY_HOPS?.trim();
+
+  if (!rawMode && !rawHops) {
+    if (proxyConfigWarning !== 'unset') {
+      proxyConfigWarning = 'unset';
+      log.warn(
+        'TRUSTED_PROXY is not set: using the last X-Forwarded-For entry (one proxy hop). Set TRUSTED_PROXY=cloudflare behind Cloudflare, or TRUSTED_PROXY_HOPS to the number of proxies in front of the app.'
+      );
+    }
+    return DEFAULT_TRUSTED_PROXY_CONFIG;
+  }
+
+  const mode: TrustedProxyMode | null = !rawMode || rawMode === 'xff' ? 'xff' : rawMode === 'cloudflare' ? 'cloudflare' : null;
+  const hops = rawHops === undefined || rawHops === '' ? 1 : /^\d+$/.test(rawHops) ? Number(rawHops) : NaN;
+
+  if (!mode || !Number.isInteger(hops) || hops < 1 || hops > MAX_TRUSTED_PROXY_HOPS) {
+    if (proxyConfigWarning !== 'invalid') {
+      proxyConfigWarning = 'invalid';
+      log.error(
+        `Invalid TRUSTED_PROXY (${rawMode ?? ''}) or TRUSTED_PROXY_HOPS (${rawHops ?? ''}): expected xff or cloudflare, and a number from 1 to ${MAX_TRUSTED_PROXY_HOPS}. Using the defaults.`
+      );
+    }
+    return DEFAULT_TRUSTED_PROXY_CONFIG;
+  }
+
+  return { mode, hops };
+}
+
+function plausibleIp(value: string | null | undefined): string | null {
+  const candidate = value?.trim();
+  if (!candidate || candidate.length > MAX_IP_LENGTH || !IP_CHARACTERS.test(candidate)) {
+    return null;
+  }
+  return candidate;
+}
+
+/**
+ * Extract the client IP from the request headers according to the trusted proxy setting.
+ * Returns `unknown` when no trustworthy address is present.
  */
 export function getClientIp(request: Request): string {
-  // Check common proxy headers
+  const config = getTrustedProxyConfig();
+
+  if (config.mode === 'cloudflare') {
+    return plausibleIp(request.headers.get('cf-connecting-ip')) ?? 'unknown';
+  }
+
   const forwardedFor = request.headers.get('x-forwarded-for');
-  if (forwardedFor) {
-    // Take the first IP in the chain (client IP)
-    return forwardedFor.split(',')[0].trim();
+  if (!forwardedFor) {
+    return 'unknown';
   }
 
-  const realIp = request.headers.get('x-real-ip');
-  if (realIp) {
-    return realIp.trim();
-  }
+  const entries = forwardedFor.split(',').map((entry) => entry.trim());
+  // Fewer entries than hops means a request that did not pass through every expected proxy; take the
+  // nearest entry we have rather than trusting a position that does not exist.
+  const entry = entries[Math.max(entries.length - config.hops, 0)];
+  return plausibleIp(entry) ?? 'unknown';
+}
 
-  // Fallback to a generic identifier
-  return 'unknown';
+/** For tests: forget that a proxy configuration warning was already logged. */
+export function __resetTrustedProxyWarning(): void {
+  proxyConfigWarning = null;
 }
 
 /**

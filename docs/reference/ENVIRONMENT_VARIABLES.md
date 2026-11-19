@@ -82,6 +82,10 @@ Common configured model IDs in the codebase include:
 | `NODE_ENV` | `development` | Runtime mode |
 | `MAX_FILE_SIZE` | `10485760` | Max upload size in bytes for standard document and public form uploads |
 | `LOG_LEVEL` | `debug` in dev, `info` in prod | Logger verbosity |
+| `TRUSTED_PROXY` | `xff` | Which proxy in front of the app is trusted to report the client address, used by every IP-based rate limit. `xff`: the address is the entry `TRUSTED_PROXY_HOPS` places from the right of `X-Forwarded-For` (never the leftmost entry, which the client controls). `cloudflare`: the address is `CF-Connecting-IP`; use this behind Cloudflare or a Cloudflare tunnel. An invalid value is logged and the defaults are used. When neither variable is set the app behaves as `xff` with one hop and logs a warning once |
+| `TRUSTED_PROXY_HOPS` | `1` | Number of proxies in front of the app that append to `X-Forwarded-For` (1 to 5). Only read in `xff` mode |
+
+With no proxy in front of the app, no trustworthy client address exists (a client can send any `X-Forwarded-For`). The e-signing limits that must hold regardless do not depend on it: access-code attempts per recipient and the per-recipient limits on a signing session.
 
 ## Public Forms
 
