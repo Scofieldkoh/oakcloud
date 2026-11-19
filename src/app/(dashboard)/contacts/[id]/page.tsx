@@ -27,6 +27,7 @@ import { ContactDetailsSection } from '@/components/contacts/contact-details-sec
 import { CompanyAccentSection, CompanyAccentButton, CompanyFieldLabel } from '@/components/companies/company-accent-section';
 import { ContactAliasesModal } from '@/components/contacts/contact-aliases-modal';
 import { InternalNotes } from '@/components/notes/internal-notes';
+import { ContactFormLinksSection } from '@/components/contacts/contact-form-links';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import { getSafeListReturnUrl } from '@/lib/list-navigation';
 import type { ContactGender, ContactType, IdentificationType } from '@/generated/prisma';
@@ -643,6 +644,11 @@ export default function ContactDetailPage({
           </CompanyAccentSection>
         </div>
       </div>
+
+      {/* KYC/CDD forms: needs contact:read and document:read (the API refuses the rest) */}
+      {can.readContact && can.readDocument && (
+        <ContactFormLinksSection contactId={id} canEdit={can.updateContact} />
+      )}
 
       {/* Internal Notes - Full Width */}
       <InternalNotes

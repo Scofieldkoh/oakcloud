@@ -1237,6 +1237,26 @@ Create an internal note.
 
 ---
 
+### GET /api/contacts/[id]/form-links
+KYC/CDD form response people linked to a contact, each with `state` (`ACTIVE`, `ROW_CHANGED`, `RESPONSE_DELETED`), the response, PDF and attachment URLs (existing Forms routes), the answers shown only, and per-field `suggestions`. Needs `contact:read` and `document:read` (403 without the latter). See [CONTACT_FORM_LINKS](../features/CONTACT_FORM_LINKS.md).
+
+### GET /api/contacts/[id]/form-links/candidates
+No query: linkable forms (tagged `cdd` or `kyc`). `formId`: the form's responses. `formId` and `submissionId`: the people on the response, each `eligible` or not with a reason.
+
+### POST /api/contacts/[id]/form-links
+Body `{ formId, submissionId, personRowIndex }` (`null` for a form without a repeat section). 201 `{ id }`. 422 for a form that is not tagged `cdd`/`kyc`, a person who is not on the response, or a kind that does not match the contact; 409 `details.reason: ALREADY_LINKED` when the row is linked already. Needs `contact:update` and `document:read`.
+
+### DELETE /api/contacts/[id]/form-links/[linkId]
+Soft unlink; allowed even when the response was deleted.
+
+### POST /api/contacts/[id]/form-links/[linkId]/suggestions/accept
+Body `{ field, expectedCurrentValue, proposedValue }`: one field per request, applied in one transaction after re-checking the link, the row and both values. 409 with `details.reason` `STALE_SUGGESTION`, `ROW_CHANGED` or `RESPONSE_DELETED` writes nothing; 422 when the value cannot be applied.
+
+### POST /api/contacts/[id]/form-links/[linkId]/suggestions/dismiss
+Body `{ field, proposedValue }`: hides that suggestion until the form answer changes.
+
+---
+
 ### POST /api/contacts/bulk
 Bulk operations on contacts.
 

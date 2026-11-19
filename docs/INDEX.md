@@ -56,6 +56,7 @@
 | [Business Assistant BizFile Correction Workflow](./features/business-assistant/CORRECTION_WORKFLOW.md) | Implemented P12 deterministic-field correction UI, shared contract, API semantics, safety gates, and remaining correction work |
 | [Business Assistant Implementation Handover](./plans/2026-09-05-business-assistant-implementation.md) | Current implementation checkpoint, completed correction UI review record, active P12-P16 work, validation evidence, and next-session scope |
 | [Sentroweb Check](./features/SENTROWEB_CHECK.md) | Company, director and shareholder screening on Sentroweb by browser automation: rules, error codes, side effects (credits, monitoring), recovery and where to fix selectors |
+| [KYC/CDD form links on Contacts](./features/CONTACT_FORM_LINKS.md) | Link a person on a KYC/CDD form response to a contact: row binding, per-field suggested updates, files, permissions, audit |
 | [SharePoint Signed-Document Filing](./superpowers/specs/2026-09-01-sharepoint-signed-document-filing-design.md) | Company folder mapping, template-relative routing, durable filing, and orphan recovery |
 | [SharePoint Signed-Document Filing Implementation Plan](./superpowers/plans/2026-09-01-sharepoint-signed-document-filing.md) | Single-phase, test-first implementation tasks and completion gate |
 

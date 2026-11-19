@@ -312,6 +312,7 @@ export type ContactWhereInput = {
   deletedAt?: Prisma.DateTimeNullableFilter<"Contact"> | Date | string | null
   chargeHoldings?: Prisma.CompanyChargeListRelationFilter
   companyRelations?: Prisma.CompanyContactListRelationFilter
+  formLinks?: Prisma.ContactFormLinkListRelationFilter
   officerPositions?: Prisma.CompanyOfficerListRelationFilter
   shareholdings?: Prisma.CompanyShareholderListRelationFilter
   contactDetails?: Prisma.ContactDetailListRelationFilter
@@ -343,6 +344,7 @@ export type ContactOrderByWithRelationInput = {
   deletedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   chargeHoldings?: Prisma.CompanyChargeOrderByRelationAggregateInput
   companyRelations?: Prisma.CompanyContactOrderByRelationAggregateInput
+  formLinks?: Prisma.ContactFormLinkOrderByRelationAggregateInput
   officerPositions?: Prisma.CompanyOfficerOrderByRelationAggregateInput
   shareholdings?: Prisma.CompanyShareholderOrderByRelationAggregateInput
   contactDetails?: Prisma.ContactDetailOrderByRelationAggregateInput
@@ -378,6 +380,7 @@ export type ContactWhereUniqueInput = Prisma.AtLeast<{
   deletedAt?: Prisma.DateTimeNullableFilter<"Contact"> | Date | string | null
   chargeHoldings?: Prisma.CompanyChargeListRelationFilter
   companyRelations?: Prisma.CompanyContactListRelationFilter
+  formLinks?: Prisma.ContactFormLinkListRelationFilter
   officerPositions?: Prisma.CompanyOfficerListRelationFilter
   shareholdings?: Prisma.CompanyShareholderListRelationFilter
   contactDetails?: Prisma.ContactDetailListRelationFilter
@@ -462,6 +465,7 @@ export type ContactCreateInput = {
   deletedAt?: Date | string | null
   chargeHoldings?: Prisma.CompanyChargeCreateNestedManyWithoutChargeHolderInput
   companyRelations?: Prisma.CompanyContactCreateNestedManyWithoutContactInput
+  formLinks?: Prisma.ContactFormLinkCreateNestedManyWithoutContactInput
   officerPositions?: Prisma.CompanyOfficerCreateNestedManyWithoutContactInput
   shareholdings?: Prisma.CompanyShareholderCreateNestedManyWithoutContactInput
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutContactInput
@@ -493,6 +497,7 @@ export type ContactUncheckedCreateInput = {
   deletedAt?: Date | string | null
   chargeHoldings?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutChargeHolderInput
   companyRelations?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutContactInput
+  formLinks?: Prisma.ContactFormLinkUncheckedCreateNestedManyWithoutContactInput
   officerPositions?: Prisma.CompanyOfficerUncheckedCreateNestedManyWithoutContactInput
   shareholdings?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutContactInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutContactInput
@@ -522,6 +527,7 @@ export type ContactUpdateInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   chargeHoldings?: Prisma.CompanyChargeUpdateManyWithoutChargeHolderNestedInput
   companyRelations?: Prisma.CompanyContactUpdateManyWithoutContactNestedInput
+  formLinks?: Prisma.ContactFormLinkUpdateManyWithoutContactNestedInput
   officerPositions?: Prisma.CompanyOfficerUpdateManyWithoutContactNestedInput
   shareholdings?: Prisma.CompanyShareholderUpdateManyWithoutContactNestedInput
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutContactNestedInput
@@ -553,6 +559,7 @@ export type ContactUncheckedUpdateInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   chargeHoldings?: Prisma.CompanyChargeUncheckedUpdateManyWithoutChargeHolderNestedInput
   companyRelations?: Prisma.CompanyContactUncheckedUpdateManyWithoutContactNestedInput
+  formLinks?: Prisma.ContactFormLinkUncheckedUpdateManyWithoutContactNestedInput
   officerPositions?: Prisma.CompanyOfficerUncheckedUpdateManyWithoutContactNestedInput
   shareholdings?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutContactNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutContactNestedInput
@@ -876,6 +883,20 @@ export type ContactUpdateOneWithoutNoteTabsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.ContactUpdateToOneWithWhereWithoutNoteTabsInput, Prisma.ContactUpdateWithoutNoteTabsInput>, Prisma.ContactUncheckedUpdateWithoutNoteTabsInput>
 }
 
+export type ContactCreateNestedOneWithoutFormLinksInput = {
+  create?: Prisma.XOR<Prisma.ContactCreateWithoutFormLinksInput, Prisma.ContactUncheckedCreateWithoutFormLinksInput>
+  connectOrCreate?: Prisma.ContactCreateOrConnectWithoutFormLinksInput
+  connect?: Prisma.ContactWhereUniqueInput
+}
+
+export type ContactUpdateOneRequiredWithoutFormLinksNestedInput = {
+  create?: Prisma.XOR<Prisma.ContactCreateWithoutFormLinksInput, Prisma.ContactUncheckedCreateWithoutFormLinksInput>
+  connectOrCreate?: Prisma.ContactCreateOrConnectWithoutFormLinksInput
+  upsert?: Prisma.ContactUpsertWithoutFormLinksInput
+  connect?: Prisma.ContactWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.ContactUpdateToOneWithWhereWithoutFormLinksInput, Prisma.ContactUpdateWithoutFormLinksInput>, Prisma.ContactUncheckedUpdateWithoutFormLinksInput>
+}
+
 export type ContactCreateWithoutTenantInput = {
   id?: string
   contactType?: $Enums.ContactType
@@ -899,6 +920,7 @@ export type ContactCreateWithoutTenantInput = {
   deletedAt?: Date | string | null
   chargeHoldings?: Prisma.CompanyChargeCreateNestedManyWithoutChargeHolderInput
   companyRelations?: Prisma.CompanyContactCreateNestedManyWithoutContactInput
+  formLinks?: Prisma.ContactFormLinkCreateNestedManyWithoutContactInput
   officerPositions?: Prisma.CompanyOfficerCreateNestedManyWithoutContactInput
   shareholdings?: Prisma.CompanyShareholderCreateNestedManyWithoutContactInput
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutContactInput
@@ -928,6 +950,7 @@ export type ContactUncheckedCreateWithoutTenantInput = {
   deletedAt?: Date | string | null
   chargeHoldings?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutChargeHolderInput
   companyRelations?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutContactInput
+  formLinks?: Prisma.ContactFormLinkUncheckedCreateNestedManyWithoutContactInput
   officerPositions?: Prisma.CompanyOfficerUncheckedCreateNestedManyWithoutContactInput
   shareholdings?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutContactInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutContactInput
@@ -1009,6 +1032,7 @@ export type ContactCreateWithoutCompanyRelationsInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   chargeHoldings?: Prisma.CompanyChargeCreateNestedManyWithoutChargeHolderInput
+  formLinks?: Prisma.ContactFormLinkCreateNestedManyWithoutContactInput
   officerPositions?: Prisma.CompanyOfficerCreateNestedManyWithoutContactInput
   shareholdings?: Prisma.CompanyShareholderCreateNestedManyWithoutContactInput
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutContactInput
@@ -1039,6 +1063,7 @@ export type ContactUncheckedCreateWithoutCompanyRelationsInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   chargeHoldings?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutChargeHolderInput
+  formLinks?: Prisma.ContactFormLinkUncheckedCreateNestedManyWithoutContactInput
   officerPositions?: Prisma.CompanyOfficerUncheckedCreateNestedManyWithoutContactInput
   shareholdings?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutContactInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutContactInput
@@ -1083,6 +1108,7 @@ export type ContactUpdateWithoutCompanyRelationsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   chargeHoldings?: Prisma.CompanyChargeUpdateManyWithoutChargeHolderNestedInput
+  formLinks?: Prisma.ContactFormLinkUpdateManyWithoutContactNestedInput
   officerPositions?: Prisma.CompanyOfficerUpdateManyWithoutContactNestedInput
   shareholdings?: Prisma.CompanyShareholderUpdateManyWithoutContactNestedInput
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutContactNestedInput
@@ -1113,6 +1139,7 @@ export type ContactUncheckedUpdateWithoutCompanyRelationsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   chargeHoldings?: Prisma.CompanyChargeUncheckedUpdateManyWithoutChargeHolderNestedInput
+  formLinks?: Prisma.ContactFormLinkUncheckedUpdateManyWithoutContactNestedInput
   officerPositions?: Prisma.CompanyOfficerUncheckedUpdateManyWithoutContactNestedInput
   shareholdings?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutContactNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutContactNestedInput
@@ -1142,6 +1169,7 @@ export type ContactCreateWithoutContactDetailsInput = {
   deletedAt?: Date | string | null
   chargeHoldings?: Prisma.CompanyChargeCreateNestedManyWithoutChargeHolderInput
   companyRelations?: Prisma.CompanyContactCreateNestedManyWithoutContactInput
+  formLinks?: Prisma.ContactFormLinkCreateNestedManyWithoutContactInput
   officerPositions?: Prisma.CompanyOfficerCreateNestedManyWithoutContactInput
   shareholdings?: Prisma.CompanyShareholderCreateNestedManyWithoutContactInput
   tenant: Prisma.WorkspaceCreateNestedOneWithoutContactsInput
@@ -1172,6 +1200,7 @@ export type ContactUncheckedCreateWithoutContactDetailsInput = {
   deletedAt?: Date | string | null
   chargeHoldings?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutChargeHolderInput
   companyRelations?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutContactInput
+  formLinks?: Prisma.ContactFormLinkUncheckedCreateNestedManyWithoutContactInput
   officerPositions?: Prisma.CompanyOfficerUncheckedCreateNestedManyWithoutContactInput
   shareholdings?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutContactInput
   noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutContactInput
@@ -1216,6 +1245,7 @@ export type ContactUpdateWithoutContactDetailsInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   chargeHoldings?: Prisma.CompanyChargeUpdateManyWithoutChargeHolderNestedInput
   companyRelations?: Prisma.CompanyContactUpdateManyWithoutContactNestedInput
+  formLinks?: Prisma.ContactFormLinkUpdateManyWithoutContactNestedInput
   officerPositions?: Prisma.CompanyOfficerUpdateManyWithoutContactNestedInput
   shareholdings?: Prisma.CompanyShareholderUpdateManyWithoutContactNestedInput
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutContactsNestedInput
@@ -1246,6 +1276,7 @@ export type ContactUncheckedUpdateWithoutContactDetailsInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   chargeHoldings?: Prisma.CompanyChargeUncheckedUpdateManyWithoutChargeHolderNestedInput
   companyRelations?: Prisma.CompanyContactUncheckedUpdateManyWithoutContactNestedInput
+  formLinks?: Prisma.ContactFormLinkUncheckedUpdateManyWithoutContactNestedInput
   officerPositions?: Prisma.CompanyOfficerUncheckedUpdateManyWithoutContactNestedInput
   shareholdings?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutContactNestedInput
   noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutContactNestedInput
@@ -1274,6 +1305,7 @@ export type ContactCreateWithoutOfficerPositionsInput = {
   deletedAt?: Date | string | null
   chargeHoldings?: Prisma.CompanyChargeCreateNestedManyWithoutChargeHolderInput
   companyRelations?: Prisma.CompanyContactCreateNestedManyWithoutContactInput
+  formLinks?: Prisma.ContactFormLinkCreateNestedManyWithoutContactInput
   shareholdings?: Prisma.CompanyShareholderCreateNestedManyWithoutContactInput
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutContactInput
   tenant: Prisma.WorkspaceCreateNestedOneWithoutContactsInput
@@ -1304,6 +1336,7 @@ export type ContactUncheckedCreateWithoutOfficerPositionsInput = {
   deletedAt?: Date | string | null
   chargeHoldings?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutChargeHolderInput
   companyRelations?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutContactInput
+  formLinks?: Prisma.ContactFormLinkUncheckedCreateNestedManyWithoutContactInput
   shareholdings?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutContactInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutContactInput
   noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutContactInput
@@ -1348,6 +1381,7 @@ export type ContactUpdateWithoutOfficerPositionsInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   chargeHoldings?: Prisma.CompanyChargeUpdateManyWithoutChargeHolderNestedInput
   companyRelations?: Prisma.CompanyContactUpdateManyWithoutContactNestedInput
+  formLinks?: Prisma.ContactFormLinkUpdateManyWithoutContactNestedInput
   shareholdings?: Prisma.CompanyShareholderUpdateManyWithoutContactNestedInput
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutContactNestedInput
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutContactsNestedInput
@@ -1378,6 +1412,7 @@ export type ContactUncheckedUpdateWithoutOfficerPositionsInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   chargeHoldings?: Prisma.CompanyChargeUncheckedUpdateManyWithoutChargeHolderNestedInput
   companyRelations?: Prisma.CompanyContactUncheckedUpdateManyWithoutContactNestedInput
+  formLinks?: Prisma.ContactFormLinkUncheckedUpdateManyWithoutContactNestedInput
   shareholdings?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutContactNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutContactNestedInput
   noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutContactNestedInput
@@ -1406,6 +1441,7 @@ export type ContactCreateWithoutShareholdingsInput = {
   deletedAt?: Date | string | null
   chargeHoldings?: Prisma.CompanyChargeCreateNestedManyWithoutChargeHolderInput
   companyRelations?: Prisma.CompanyContactCreateNestedManyWithoutContactInput
+  formLinks?: Prisma.ContactFormLinkCreateNestedManyWithoutContactInput
   officerPositions?: Prisma.CompanyOfficerCreateNestedManyWithoutContactInput
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutContactInput
   tenant: Prisma.WorkspaceCreateNestedOneWithoutContactsInput
@@ -1436,6 +1472,7 @@ export type ContactUncheckedCreateWithoutShareholdingsInput = {
   deletedAt?: Date | string | null
   chargeHoldings?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutChargeHolderInput
   companyRelations?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutContactInput
+  formLinks?: Prisma.ContactFormLinkUncheckedCreateNestedManyWithoutContactInput
   officerPositions?: Prisma.CompanyOfficerUncheckedCreateNestedManyWithoutContactInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutContactInput
   noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutContactInput
@@ -1480,6 +1517,7 @@ export type ContactUpdateWithoutShareholdingsInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   chargeHoldings?: Prisma.CompanyChargeUpdateManyWithoutChargeHolderNestedInput
   companyRelations?: Prisma.CompanyContactUpdateManyWithoutContactNestedInput
+  formLinks?: Prisma.ContactFormLinkUpdateManyWithoutContactNestedInput
   officerPositions?: Prisma.CompanyOfficerUpdateManyWithoutContactNestedInput
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutContactNestedInput
   tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutContactsNestedInput
@@ -1510,6 +1548,7 @@ export type ContactUncheckedUpdateWithoutShareholdingsInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   chargeHoldings?: Prisma.CompanyChargeUncheckedUpdateManyWithoutChargeHolderNestedInput
   companyRelations?: Prisma.CompanyContactUncheckedUpdateManyWithoutContactNestedInput
+  formLinks?: Prisma.ContactFormLinkUncheckedUpdateManyWithoutContactNestedInput
   officerPositions?: Prisma.CompanyOfficerUncheckedUpdateManyWithoutContactNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutContactNestedInput
   noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutContactNestedInput
@@ -1537,6 +1576,7 @@ export type ContactCreateWithoutChargeHoldingsInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   companyRelations?: Prisma.CompanyContactCreateNestedManyWithoutContactInput
+  formLinks?: Prisma.ContactFormLinkCreateNestedManyWithoutContactInput
   officerPositions?: Prisma.CompanyOfficerCreateNestedManyWithoutContactInput
   shareholdings?: Prisma.CompanyShareholderCreateNestedManyWithoutContactInput
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutContactInput
@@ -1567,6 +1607,7 @@ export type ContactUncheckedCreateWithoutChargeHoldingsInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   companyRelations?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutContactInput
+  formLinks?: Prisma.ContactFormLinkUncheckedCreateNestedManyWithoutContactInput
   officerPositions?: Prisma.CompanyOfficerUncheckedCreateNestedManyWithoutContactInput
   shareholdings?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutContactInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutContactInput
@@ -1611,6 +1652,7 @@ export type ContactUpdateWithoutChargeHoldingsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   companyRelations?: Prisma.CompanyContactUpdateManyWithoutContactNestedInput
+  formLinks?: Prisma.ContactFormLinkUpdateManyWithoutContactNestedInput
   officerPositions?: Prisma.CompanyOfficerUpdateManyWithoutContactNestedInput
   shareholdings?: Prisma.CompanyShareholderUpdateManyWithoutContactNestedInput
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutContactNestedInput
@@ -1641,6 +1683,7 @@ export type ContactUncheckedUpdateWithoutChargeHoldingsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   companyRelations?: Prisma.CompanyContactUncheckedUpdateManyWithoutContactNestedInput
+  formLinks?: Prisma.ContactFormLinkUncheckedUpdateManyWithoutContactNestedInput
   officerPositions?: Prisma.CompanyOfficerUncheckedUpdateManyWithoutContactNestedInput
   shareholdings?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutContactNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutContactNestedInput
@@ -1670,6 +1713,7 @@ export type ContactCreateWithoutNoteTabsInput = {
   deletedAt?: Date | string | null
   chargeHoldings?: Prisma.CompanyChargeCreateNestedManyWithoutChargeHolderInput
   companyRelations?: Prisma.CompanyContactCreateNestedManyWithoutContactInput
+  formLinks?: Prisma.ContactFormLinkCreateNestedManyWithoutContactInput
   officerPositions?: Prisma.CompanyOfficerCreateNestedManyWithoutContactInput
   shareholdings?: Prisma.CompanyShareholderCreateNestedManyWithoutContactInput
   contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutContactInput
@@ -1700,6 +1744,7 @@ export type ContactUncheckedCreateWithoutNoteTabsInput = {
   deletedAt?: Date | string | null
   chargeHoldings?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutChargeHolderInput
   companyRelations?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutContactInput
+  formLinks?: Prisma.ContactFormLinkUncheckedCreateNestedManyWithoutContactInput
   officerPositions?: Prisma.CompanyOfficerUncheckedCreateNestedManyWithoutContactInput
   shareholdings?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutContactInput
   contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutContactInput
@@ -1744,6 +1789,7 @@ export type ContactUpdateWithoutNoteTabsInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   chargeHoldings?: Prisma.CompanyChargeUpdateManyWithoutChargeHolderNestedInput
   companyRelations?: Prisma.CompanyContactUpdateManyWithoutContactNestedInput
+  formLinks?: Prisma.ContactFormLinkUpdateManyWithoutContactNestedInput
   officerPositions?: Prisma.CompanyOfficerUpdateManyWithoutContactNestedInput
   shareholdings?: Prisma.CompanyShareholderUpdateManyWithoutContactNestedInput
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutContactNestedInput
@@ -1774,9 +1820,146 @@ export type ContactUncheckedUpdateWithoutNoteTabsInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   chargeHoldings?: Prisma.CompanyChargeUncheckedUpdateManyWithoutChargeHolderNestedInput
   companyRelations?: Prisma.CompanyContactUncheckedUpdateManyWithoutContactNestedInput
+  formLinks?: Prisma.ContactFormLinkUncheckedUpdateManyWithoutContactNestedInput
   officerPositions?: Prisma.CompanyOfficerUncheckedUpdateManyWithoutContactNestedInput
   shareholdings?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutContactNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutContactNestedInput
+}
+
+export type ContactCreateWithoutFormLinksInput = {
+  id?: string
+  contactType?: $Enums.ContactType
+  firstName?: string | null
+  lastName?: string | null
+  fullName: string
+  canonicalName?: string | null
+  alias?: string | null
+  canonicalAlias?: string | null
+  identificationType?: $Enums.IdentificationType | null
+  identificationNumber?: string | null
+  nationality?: string | null
+  dateOfBirth?: Date | string | null
+  gender?: $Enums.ContactGender | null
+  corporateName?: string | null
+  corporateUen?: string | null
+  fullAddress?: string | null
+  isActive?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  chargeHoldings?: Prisma.CompanyChargeCreateNestedManyWithoutChargeHolderInput
+  companyRelations?: Prisma.CompanyContactCreateNestedManyWithoutContactInput
+  officerPositions?: Prisma.CompanyOfficerCreateNestedManyWithoutContactInput
+  shareholdings?: Prisma.CompanyShareholderCreateNestedManyWithoutContactInput
+  contactDetails?: Prisma.ContactDetailCreateNestedManyWithoutContactInput
+  tenant: Prisma.WorkspaceCreateNestedOneWithoutContactsInput
+  noteTabs?: Prisma.NoteTabCreateNestedManyWithoutContactInput
+}
+
+export type ContactUncheckedCreateWithoutFormLinksInput = {
+  id?: string
+  tenantId: string
+  contactType?: $Enums.ContactType
+  firstName?: string | null
+  lastName?: string | null
+  fullName: string
+  canonicalName?: string | null
+  alias?: string | null
+  canonicalAlias?: string | null
+  identificationType?: $Enums.IdentificationType | null
+  identificationNumber?: string | null
+  nationality?: string | null
+  dateOfBirth?: Date | string | null
+  gender?: $Enums.ContactGender | null
+  corporateName?: string | null
+  corporateUen?: string | null
+  fullAddress?: string | null
+  isActive?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  chargeHoldings?: Prisma.CompanyChargeUncheckedCreateNestedManyWithoutChargeHolderInput
+  companyRelations?: Prisma.CompanyContactUncheckedCreateNestedManyWithoutContactInput
+  officerPositions?: Prisma.CompanyOfficerUncheckedCreateNestedManyWithoutContactInput
+  shareholdings?: Prisma.CompanyShareholderUncheckedCreateNestedManyWithoutContactInput
+  contactDetails?: Prisma.ContactDetailUncheckedCreateNestedManyWithoutContactInput
+  noteTabs?: Prisma.NoteTabUncheckedCreateNestedManyWithoutContactInput
+}
+
+export type ContactCreateOrConnectWithoutFormLinksInput = {
+  where: Prisma.ContactWhereUniqueInput
+  create: Prisma.XOR<Prisma.ContactCreateWithoutFormLinksInput, Prisma.ContactUncheckedCreateWithoutFormLinksInput>
+}
+
+export type ContactUpsertWithoutFormLinksInput = {
+  update: Prisma.XOR<Prisma.ContactUpdateWithoutFormLinksInput, Prisma.ContactUncheckedUpdateWithoutFormLinksInput>
+  create: Prisma.XOR<Prisma.ContactCreateWithoutFormLinksInput, Prisma.ContactUncheckedCreateWithoutFormLinksInput>
+  where?: Prisma.ContactWhereInput
+}
+
+export type ContactUpdateToOneWithWhereWithoutFormLinksInput = {
+  where?: Prisma.ContactWhereInput
+  data: Prisma.XOR<Prisma.ContactUpdateWithoutFormLinksInput, Prisma.ContactUncheckedUpdateWithoutFormLinksInput>
+}
+
+export type ContactUpdateWithoutFormLinksInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  contactType?: Prisma.EnumContactTypeFieldUpdateOperationsInput | $Enums.ContactType
+  firstName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lastName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  fullName?: Prisma.StringFieldUpdateOperationsInput | string
+  canonicalName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  alias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  canonicalAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  identificationType?: Prisma.NullableEnumIdentificationTypeFieldUpdateOperationsInput | $Enums.IdentificationType | null
+  identificationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  dateOfBirth?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  gender?: Prisma.NullableEnumContactGenderFieldUpdateOperationsInput | $Enums.ContactGender | null
+  corporateName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  corporateUen?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  fullAddress?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  chargeHoldings?: Prisma.CompanyChargeUpdateManyWithoutChargeHolderNestedInput
+  companyRelations?: Prisma.CompanyContactUpdateManyWithoutContactNestedInput
+  officerPositions?: Prisma.CompanyOfficerUpdateManyWithoutContactNestedInput
+  shareholdings?: Prisma.CompanyShareholderUpdateManyWithoutContactNestedInput
+  contactDetails?: Prisma.ContactDetailUpdateManyWithoutContactNestedInput
+  tenant?: Prisma.WorkspaceUpdateOneRequiredWithoutContactsNestedInput
+  noteTabs?: Prisma.NoteTabUpdateManyWithoutContactNestedInput
+}
+
+export type ContactUncheckedUpdateWithoutFormLinksInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  contactType?: Prisma.EnumContactTypeFieldUpdateOperationsInput | $Enums.ContactType
+  firstName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lastName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  fullName?: Prisma.StringFieldUpdateOperationsInput | string
+  canonicalName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  alias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  canonicalAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  identificationType?: Prisma.NullableEnumIdentificationTypeFieldUpdateOperationsInput | $Enums.IdentificationType | null
+  identificationNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  nationality?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  dateOfBirth?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  gender?: Prisma.NullableEnumContactGenderFieldUpdateOperationsInput | $Enums.ContactGender | null
+  corporateName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  corporateUen?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  fullAddress?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  chargeHoldings?: Prisma.CompanyChargeUncheckedUpdateManyWithoutChargeHolderNestedInput
+  companyRelations?: Prisma.CompanyContactUncheckedUpdateManyWithoutContactNestedInput
+  officerPositions?: Prisma.CompanyOfficerUncheckedUpdateManyWithoutContactNestedInput
+  shareholdings?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutContactNestedInput
+  contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutContactNestedInput
+  noteTabs?: Prisma.NoteTabUncheckedUpdateManyWithoutContactNestedInput
 }
 
 export type ContactCreateManyTenantInput = {
@@ -1825,6 +2008,7 @@ export type ContactUpdateWithoutTenantInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   chargeHoldings?: Prisma.CompanyChargeUpdateManyWithoutChargeHolderNestedInput
   companyRelations?: Prisma.CompanyContactUpdateManyWithoutContactNestedInput
+  formLinks?: Prisma.ContactFormLinkUpdateManyWithoutContactNestedInput
   officerPositions?: Prisma.CompanyOfficerUpdateManyWithoutContactNestedInput
   shareholdings?: Prisma.CompanyShareholderUpdateManyWithoutContactNestedInput
   contactDetails?: Prisma.ContactDetailUpdateManyWithoutContactNestedInput
@@ -1854,6 +2038,7 @@ export type ContactUncheckedUpdateWithoutTenantInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   chargeHoldings?: Prisma.CompanyChargeUncheckedUpdateManyWithoutChargeHolderNestedInput
   companyRelations?: Prisma.CompanyContactUncheckedUpdateManyWithoutContactNestedInput
+  formLinks?: Prisma.ContactFormLinkUncheckedUpdateManyWithoutContactNestedInput
   officerPositions?: Prisma.CompanyOfficerUncheckedUpdateManyWithoutContactNestedInput
   shareholdings?: Prisma.CompanyShareholderUncheckedUpdateManyWithoutContactNestedInput
   contactDetails?: Prisma.ContactDetailUncheckedUpdateManyWithoutContactNestedInput
@@ -1891,6 +2076,7 @@ export type ContactUncheckedUpdateManyWithoutTenantInput = {
 export type ContactCountOutputType = {
   chargeHoldings: number
   companyRelations: number
+  formLinks: number
   officerPositions: number
   shareholdings: number
   contactDetails: number
@@ -1900,6 +2086,7 @@ export type ContactCountOutputType = {
 export type ContactCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   chargeHoldings?: boolean | ContactCountOutputTypeCountChargeHoldingsArgs
   companyRelations?: boolean | ContactCountOutputTypeCountCompanyRelationsArgs
+  formLinks?: boolean | ContactCountOutputTypeCountFormLinksArgs
   officerPositions?: boolean | ContactCountOutputTypeCountOfficerPositionsArgs
   shareholdings?: boolean | ContactCountOutputTypeCountShareholdingsArgs
   contactDetails?: boolean | ContactCountOutputTypeCountContactDetailsArgs
@@ -1928,6 +2115,13 @@ export type ContactCountOutputTypeCountChargeHoldingsArgs<ExtArgs extends runtim
  */
 export type ContactCountOutputTypeCountCompanyRelationsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.CompanyContactWhereInput
+}
+
+/**
+ * ContactCountOutputType without action
+ */
+export type ContactCountOutputTypeCountFormLinksArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.ContactFormLinkWhereInput
 }
 
 /**
@@ -1983,6 +2177,7 @@ export type ContactSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   deletedAt?: boolean
   chargeHoldings?: boolean | Prisma.Contact$chargeHoldingsArgs<ExtArgs>
   companyRelations?: boolean | Prisma.Contact$companyRelationsArgs<ExtArgs>
+  formLinks?: boolean | Prisma.Contact$formLinksArgs<ExtArgs>
   officerPositions?: boolean | Prisma.Contact$officerPositionsArgs<ExtArgs>
   shareholdings?: boolean | Prisma.Contact$shareholdingsArgs<ExtArgs>
   contactDetails?: boolean | Prisma.Contact$contactDetailsArgs<ExtArgs>
@@ -2069,6 +2264,7 @@ export type ContactOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
 export type ContactInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   chargeHoldings?: boolean | Prisma.Contact$chargeHoldingsArgs<ExtArgs>
   companyRelations?: boolean | Prisma.Contact$companyRelationsArgs<ExtArgs>
+  formLinks?: boolean | Prisma.Contact$formLinksArgs<ExtArgs>
   officerPositions?: boolean | Prisma.Contact$officerPositionsArgs<ExtArgs>
   shareholdings?: boolean | Prisma.Contact$shareholdingsArgs<ExtArgs>
   contactDetails?: boolean | Prisma.Contact$contactDetailsArgs<ExtArgs>
@@ -2088,6 +2284,7 @@ export type $ContactPayload<ExtArgs extends runtime.Types.Extensions.InternalArg
   objects: {
     chargeHoldings: Prisma.$CompanyChargePayload<ExtArgs>[]
     companyRelations: Prisma.$CompanyContactPayload<ExtArgs>[]
+    formLinks: Prisma.$ContactFormLinkPayload<ExtArgs>[]
     officerPositions: Prisma.$CompanyOfficerPayload<ExtArgs>[]
     shareholdings: Prisma.$CompanyShareholderPayload<ExtArgs>[]
     contactDetails: Prisma.$ContactDetailPayload<ExtArgs>[]
@@ -2515,6 +2712,7 @@ export interface Prisma__ContactClient<T, Null = never, ExtArgs extends runtime.
   readonly [Symbol.toStringTag]: "PrismaPromise"
   chargeHoldings<T extends Prisma.Contact$chargeHoldingsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Contact$chargeHoldingsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CompanyChargePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   companyRelations<T extends Prisma.Contact$companyRelationsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Contact$companyRelationsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CompanyContactPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  formLinks<T extends Prisma.Contact$formLinksArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Contact$formLinksArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ContactFormLinkPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   officerPositions<T extends Prisma.Contact$officerPositionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Contact$officerPositionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CompanyOfficerPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   shareholdings<T extends Prisma.Contact$shareholdingsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Contact$shareholdingsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CompanyShareholderPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   contactDetails<T extends Prisma.Contact$contactDetailsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Contact$contactDetailsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ContactDetailPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
@@ -3016,6 +3214,30 @@ export type Contact$companyRelationsArgs<ExtArgs extends runtime.Types.Extension
   take?: number
   skip?: number
   distinct?: Prisma.CompanyContactScalarFieldEnum | Prisma.CompanyContactScalarFieldEnum[]
+}
+
+/**
+ * Contact.formLinks
+ */
+export type Contact$formLinksArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the ContactFormLink
+   */
+  select?: Prisma.ContactFormLinkSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the ContactFormLink
+   */
+  omit?: Prisma.ContactFormLinkOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ContactFormLinkInclude<ExtArgs> | null
+  where?: Prisma.ContactFormLinkWhereInput
+  orderBy?: Prisma.ContactFormLinkOrderByWithRelationInput | Prisma.ContactFormLinkOrderByWithRelationInput[]
+  cursor?: Prisma.ContactFormLinkWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.ContactFormLinkScalarFieldEnum | Prisma.ContactFormLinkScalarFieldEnum[]
 }
 
 /**

@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   searchParams: new URLSearchParams(),
   shortcuts: [] as Array<{ key: string; ctrl?: boolean; handler: () => void }>,
   contact: null as Record<string, unknown> | null,
+  permissions: { readContact: false, readDocument: false, updateContact: false } as Record<string, boolean>,
 }));
 
 vi.mock('next/navigation', () => ({
@@ -49,7 +50,7 @@ vi.mock('@/hooks/use-permissions', () => ({
   usePermissions: () => ({
     can: {
       createContact: false,
-      updateContact: false,
+      ...mocks.permissions,
       deleteContact: false,
       updateCompany: false,
       deleteCompany: false,
@@ -73,6 +74,7 @@ vi.mock('@/components/contacts/contact-details-section', () => ({ ContactDetails
 vi.mock('@/components/contacts/company-relationships', () => ({ CompanyRelationships: () => null }));
 vi.mock('@/components/contacts/contact-aliases-modal', () => ({ ContactAliasesModal: () => null }));
 vi.mock('@/components/notes/internal-notes', () => ({ InternalNotes: () => null }));
+vi.mock('@/components/contacts/contact-form-links', () => ({ ContactFormLinksSection: () => <div data-testid="form-links" /> }));
 
 import ContactDetailPage from '@/app/(dashboard)/contacts/[id]/page';
 
@@ -115,6 +117,7 @@ describe('contact detail: date of birth', () => {
   beforeEach(() => {
     cleanup();
     mocks.contact = contact();
+    mocks.permissions = { readContact: false, readDocument: false, updateContact: false };
   });
   afterEach(() => {
     if (ORIGINAL_TZ === undefined) delete process.env.TZ;
@@ -144,5 +147,19 @@ describe('contact detail: date of birth', () => {
     await renderDetail();
     await screen.findAllByText('Acme Pte Ltd');
     expect(screen.queryByText('Date of birth')).not.toBeInTheDocument();
+  });
+
+  it('shows the KYC/CDD forms section only with both contact:read and document:read', async () => {
+    for (const [permissions, shown] of [
+      [{ readContact: true, readDocument: false }, false],
+      [{ readContact: false, readDocument: true }, false],
+      [{ readContact: true, readDocument: true }, true],
+    ] as const) {
+      cleanup();
+      mocks.permissions = { ...permissions, updateContact: false };
+      await renderDetail();
+      await screen.findByText('Date of birth');
+      expect(screen.queryByTestId('form-links') !== null).toBe(shown);
+    }
   });
 });

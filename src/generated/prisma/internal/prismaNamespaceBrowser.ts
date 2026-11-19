@@ -163,6 +163,8 @@ export const ModelName = {
   FormSubmission: 'FormSubmission',
   FormDraft: 'FormDraft',
   FormUpload: 'FormUpload',
+  ContactFormLink: 'ContactFormLink',
+  ContactFormSuggestionDismissal: 'ContactFormSuggestionDismissal',
   ClientPortalUser: 'ClientPortalUser',
   ClientRequest: 'ClientRequest',
   Communication: 'Communication',
@@ -2569,6 +2571,36 @@ export const FormUploadScalarFieldEnum = {
 } as const
 
 export type FormUploadScalarFieldEnum = (typeof FormUploadScalarFieldEnum)[keyof typeof FormUploadScalarFieldEnum]
+
+
+export const ContactFormLinkScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  contactId: 'contactId',
+  formId: 'formId',
+  submissionId: 'submissionId',
+  personRowIndex: 'personRowIndex',
+  personFingerprint: 'personFingerprint',
+  linkedById: 'linkedById',
+  linkedAt: 'linkedAt',
+  unlinkedAt: 'unlinkedAt',
+  unlinkedById: 'unlinkedById'
+} as const
+
+export type ContactFormLinkScalarFieldEnum = (typeof ContactFormLinkScalarFieldEnum)[keyof typeof ContactFormLinkScalarFieldEnum]
+
+
+export const ContactFormSuggestionDismissalScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  linkId: 'linkId',
+  field: 'field',
+  valueHash: 'valueHash',
+  dismissedById: 'dismissedById',
+  createdAt: 'createdAt'
+} as const
+
+export type ContactFormSuggestionDismissalScalarFieldEnum = (typeof ContactFormSuggestionDismissalScalarFieldEnum)[keyof typeof ContactFormSuggestionDismissalScalarFieldEnum]
 
 
 export const ClientPortalUserScalarFieldEnum = {

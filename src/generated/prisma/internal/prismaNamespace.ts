@@ -509,6 +509,8 @@ export const ModelName = {
   FormSubmission: 'FormSubmission',
   FormDraft: 'FormDraft',
   FormUpload: 'FormUpload',
+  ContactFormLink: 'ContactFormLink',
+  ContactFormSuggestionDismissal: 'ContactFormSuggestionDismissal',
   ClientPortalUser: 'ClientPortalUser',
   ClientRequest: 'ClientRequest',
   Communication: 'Communication',
@@ -566,7 +568,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "workspace" | "role" | "permission" | "rolePermission" | "userRoleAssignment" | "user" | "userPreference" | "performanceMeasurement" | "userCompanyAssignment" | "company" | "companySharePointFolder" | "companyFormerName" | "companyAddress" | "contact" | "companyContact" | "contactDetail" | "companyOfficer" | "shareCapital" | "companyAuditor" | "companyShareholder" | "companyCharge" | "document" | "auditLog" | "connector" | "workspaceConnectorAccess" | "connectorUsageLog" | "connectorModelConfig" | "noteTab" | "documentTemplate" | "generatedDocument" | "documentGenerationBatch" | "documentGenerationBatchItem" | "documentSection" | "workspaceLetterhead" | "documentComment" | "documentDraft" | "templatePartial" | "serviceFamily" | "serviceVariant" | "serviceVariantFeeTemplate" | "serviceAgreement" | "serviceAgreementEntity" | "serviceAgreementItem" | "serviceAgreementItemEntity" | "serviceAgreementFeeLine" | "clientService" | "clientServiceFeeLine" | "billingOccurrence" | "billingCoverageIssue" | "deadlineRule" | "deadlineRuleVersion" | "deadlineRuleParameterDefinition" | "deadlineMilestoneTemplate" | "serviceVariantDeadlineRule" | "clientServiceDeadlineRule" | "businessCalendar" | "businessHoliday" | "publicHolidaySourceRecord" | "publicHolidaySyncState" | "serviceCycle" | "deadlineOccurrence" | "companyFinancialPeriod" | "companyMonitoringCoverage" | "clientServiceObligationScope" | "deadlineOccurrenceCoverageLink" | "deadlineResponsibilityChange" | "companyComplianceIssue" | "serviceScheduleReconciliationRequest" | "aiConversation" | "esigningEnvelope" | "esigningEnvelopeDocument" | "esigningIssuedArtifact" | "esigningSharePointFiling" | "esigningEnvelopeRecipient" | "esigningDocumentFieldDefinition" | "esigningDocumentFieldValue" | "esigningEnvelopeEvent" | "esigningEmailDelivery" | "esigningEmailDeliveryAttempt" | "processingDocument" | "documentLink" | "documentTag" | "processingDocumentTag" | "documentPage" | "documentExtraction" | "documentRevision" | "documentRevisionLineItem" | "vendorAlias" | "customerAlias" | "contactDuplicateDecision" | "contactMergeOperation" | "duplicateDecision" | "processingAttempt" | "processingCheckpoint" | "splitPlan" | "documentStateEvent" | "documentDerivedFile" | "idempotencyRecord" | "webhookSubscription" | "exchangeRate" | "bankAccount" | "bankTransaction" | "matchGroup" | "matchGroupItem" | "reconciliationPeriod" | "form" | "formField" | "formOptionPreset" | "formUrlHealth" | "formSubmission" | "formDraft" | "formUpload" | "clientPortalUser" | "clientRequest" | "communication" | "accountingIntegration" | "externalPosting" | "fieldMapping" | "workspaceBackup" | "backupSchedule" | "systemBackup" | "backupSettings" | "chartOfAccount" | "chartOfAccountsMapping" | "taskPipeline" | "taskPipelineVersion" | "taskPipelineStage" | "task" | "taskStage" | "taskStageChecklistItem" | "taskStageOutcome" | "taskEsigningPreparation" | "taskCompanyRecoveryContext" | "acraEntity" | "acraSyncState" | "businessAssistantConversation" | "businessAssistantMessage" | "businessAssistantRun" | "businessAssistantRunItem" | "businessAssistantRunStep" | "businessAssistantProposal" | "businessAssistantApproval" | "businessAssistantReview" | "businessAssistantFeedback" | "businessAssistantMemory" | "businessAssistantLearningChange" | "businessAssistantLearningActiveTarget" | "businessAssistantActionRequest" | "businessAssistantCapacitySlot" | "bizFileOperationReceipt" | "bizFileOperationEvidence" | "bizFileOperationEffectIntent" | "sentrowebCheckRun" | "sentrowebCheckResult"
+    modelProps: "workspace" | "role" | "permission" | "rolePermission" | "userRoleAssignment" | "user" | "userPreference" | "performanceMeasurement" | "userCompanyAssignment" | "company" | "companySharePointFolder" | "companyFormerName" | "companyAddress" | "contact" | "companyContact" | "contactDetail" | "companyOfficer" | "shareCapital" | "companyAuditor" | "companyShareholder" | "companyCharge" | "document" | "auditLog" | "connector" | "workspaceConnectorAccess" | "connectorUsageLog" | "connectorModelConfig" | "noteTab" | "documentTemplate" | "generatedDocument" | "documentGenerationBatch" | "documentGenerationBatchItem" | "documentSection" | "workspaceLetterhead" | "documentComment" | "documentDraft" | "templatePartial" | "serviceFamily" | "serviceVariant" | "serviceVariantFeeTemplate" | "serviceAgreement" | "serviceAgreementEntity" | "serviceAgreementItem" | "serviceAgreementItemEntity" | "serviceAgreementFeeLine" | "clientService" | "clientServiceFeeLine" | "billingOccurrence" | "billingCoverageIssue" | "deadlineRule" | "deadlineRuleVersion" | "deadlineRuleParameterDefinition" | "deadlineMilestoneTemplate" | "serviceVariantDeadlineRule" | "clientServiceDeadlineRule" | "businessCalendar" | "businessHoliday" | "publicHolidaySourceRecord" | "publicHolidaySyncState" | "serviceCycle" | "deadlineOccurrence" | "companyFinancialPeriod" | "companyMonitoringCoverage" | "clientServiceObligationScope" | "deadlineOccurrenceCoverageLink" | "deadlineResponsibilityChange" | "companyComplianceIssue" | "serviceScheduleReconciliationRequest" | "aiConversation" | "esigningEnvelope" | "esigningEnvelopeDocument" | "esigningIssuedArtifact" | "esigningSharePointFiling" | "esigningEnvelopeRecipient" | "esigningDocumentFieldDefinition" | "esigningDocumentFieldValue" | "esigningEnvelopeEvent" | "esigningEmailDelivery" | "esigningEmailDeliveryAttempt" | "processingDocument" | "documentLink" | "documentTag" | "processingDocumentTag" | "documentPage" | "documentExtraction" | "documentRevision" | "documentRevisionLineItem" | "vendorAlias" | "customerAlias" | "contactDuplicateDecision" | "contactMergeOperation" | "duplicateDecision" | "processingAttempt" | "processingCheckpoint" | "splitPlan" | "documentStateEvent" | "documentDerivedFile" | "idempotencyRecord" | "webhookSubscription" | "exchangeRate" | "bankAccount" | "bankTransaction" | "matchGroup" | "matchGroupItem" | "reconciliationPeriod" | "form" | "formField" | "formOptionPreset" | "formUrlHealth" | "formSubmission" | "formDraft" | "formUpload" | "contactFormLink" | "contactFormSuggestionDismissal" | "clientPortalUser" | "clientRequest" | "communication" | "accountingIntegration" | "externalPosting" | "fieldMapping" | "workspaceBackup" | "backupSchedule" | "systemBackup" | "backupSettings" | "chartOfAccount" | "chartOfAccountsMapping" | "taskPipeline" | "taskPipelineVersion" | "taskPipelineStage" | "task" | "taskStage" | "taskStageChecklistItem" | "taskStageOutcome" | "taskEsigningPreparation" | "taskCompanyRecoveryContext" | "acraEntity" | "acraSyncState" | "businessAssistantConversation" | "businessAssistantMessage" | "businessAssistantRun" | "businessAssistantRunItem" | "businessAssistantRunStep" | "businessAssistantProposal" | "businessAssistantApproval" | "businessAssistantReview" | "businessAssistantFeedback" | "businessAssistantMemory" | "businessAssistantLearningChange" | "businessAssistantLearningActiveTarget" | "businessAssistantActionRequest" | "businessAssistantCapacitySlot" | "bizFileOperationReceipt" | "bizFileOperationEvidence" | "bizFileOperationEffectIntent" | "sentrowebCheckRun" | "sentrowebCheckResult"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -8858,6 +8860,154 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    ContactFormLink: {
+      payload: Prisma.$ContactFormLinkPayload<ExtArgs>
+      fields: Prisma.ContactFormLinkFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.ContactFormLinkFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ContactFormLinkPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.ContactFormLinkFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ContactFormLinkPayload>
+        }
+        findFirst: {
+          args: Prisma.ContactFormLinkFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ContactFormLinkPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.ContactFormLinkFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ContactFormLinkPayload>
+        }
+        findMany: {
+          args: Prisma.ContactFormLinkFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ContactFormLinkPayload>[]
+        }
+        create: {
+          args: Prisma.ContactFormLinkCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ContactFormLinkPayload>
+        }
+        createMany: {
+          args: Prisma.ContactFormLinkCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.ContactFormLinkCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ContactFormLinkPayload>[]
+        }
+        delete: {
+          args: Prisma.ContactFormLinkDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ContactFormLinkPayload>
+        }
+        update: {
+          args: Prisma.ContactFormLinkUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ContactFormLinkPayload>
+        }
+        deleteMany: {
+          args: Prisma.ContactFormLinkDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.ContactFormLinkUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.ContactFormLinkUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ContactFormLinkPayload>[]
+        }
+        upsert: {
+          args: Prisma.ContactFormLinkUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ContactFormLinkPayload>
+        }
+        aggregate: {
+          args: Prisma.ContactFormLinkAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateContactFormLink>
+        }
+        groupBy: {
+          args: Prisma.ContactFormLinkGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ContactFormLinkGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.ContactFormLinkCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ContactFormLinkCountAggregateOutputType> | number
+        }
+      }
+    }
+    ContactFormSuggestionDismissal: {
+      payload: Prisma.$ContactFormSuggestionDismissalPayload<ExtArgs>
+      fields: Prisma.ContactFormSuggestionDismissalFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.ContactFormSuggestionDismissalFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ContactFormSuggestionDismissalPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.ContactFormSuggestionDismissalFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ContactFormSuggestionDismissalPayload>
+        }
+        findFirst: {
+          args: Prisma.ContactFormSuggestionDismissalFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ContactFormSuggestionDismissalPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.ContactFormSuggestionDismissalFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ContactFormSuggestionDismissalPayload>
+        }
+        findMany: {
+          args: Prisma.ContactFormSuggestionDismissalFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ContactFormSuggestionDismissalPayload>[]
+        }
+        create: {
+          args: Prisma.ContactFormSuggestionDismissalCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ContactFormSuggestionDismissalPayload>
+        }
+        createMany: {
+          args: Prisma.ContactFormSuggestionDismissalCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.ContactFormSuggestionDismissalCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ContactFormSuggestionDismissalPayload>[]
+        }
+        delete: {
+          args: Prisma.ContactFormSuggestionDismissalDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ContactFormSuggestionDismissalPayload>
+        }
+        update: {
+          args: Prisma.ContactFormSuggestionDismissalUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ContactFormSuggestionDismissalPayload>
+        }
+        deleteMany: {
+          args: Prisma.ContactFormSuggestionDismissalDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.ContactFormSuggestionDismissalUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.ContactFormSuggestionDismissalUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ContactFormSuggestionDismissalPayload>[]
+        }
+        upsert: {
+          args: Prisma.ContactFormSuggestionDismissalUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ContactFormSuggestionDismissalPayload>
+        }
+        aggregate: {
+          args: Prisma.ContactFormSuggestionDismissalAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateContactFormSuggestionDismissal>
+        }
+        groupBy: {
+          args: Prisma.ContactFormSuggestionDismissalGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ContactFormSuggestionDismissalGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.ContactFormSuggestionDismissalCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ContactFormSuggestionDismissalCountAggregateOutputType> | number
+        }
+      }
+    }
     ClientPortalUser: {
       payload: Prisma.$ClientPortalUserPayload<ExtArgs>
       fields: Prisma.ClientPortalUserFieldRefs
@@ -14353,6 +14503,36 @@ export const FormUploadScalarFieldEnum = {
 export type FormUploadScalarFieldEnum = (typeof FormUploadScalarFieldEnum)[keyof typeof FormUploadScalarFieldEnum]
 
 
+export const ContactFormLinkScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  contactId: 'contactId',
+  formId: 'formId',
+  submissionId: 'submissionId',
+  personRowIndex: 'personRowIndex',
+  personFingerprint: 'personFingerprint',
+  linkedById: 'linkedById',
+  linkedAt: 'linkedAt',
+  unlinkedAt: 'unlinkedAt',
+  unlinkedById: 'unlinkedById'
+} as const
+
+export type ContactFormLinkScalarFieldEnum = (typeof ContactFormLinkScalarFieldEnum)[keyof typeof ContactFormLinkScalarFieldEnum]
+
+
+export const ContactFormSuggestionDismissalScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  linkId: 'linkId',
+  field: 'field',
+  valueHash: 'valueHash',
+  dismissedById: 'dismissedById',
+  createdAt: 'createdAt'
+} as const
+
+export type ContactFormSuggestionDismissalScalarFieldEnum = (typeof ContactFormSuggestionDismissalScalarFieldEnum)[keyof typeof ContactFormSuggestionDismissalScalarFieldEnum]
+
+
 export const ClientPortalUserScalarFieldEnum = {
   id: 'id',
   tenantId: 'tenantId',
@@ -17822,6 +18002,8 @@ export type GlobalOmitConfig = {
   formSubmission?: Prisma.FormSubmissionOmit
   formDraft?: Prisma.FormDraftOmit
   formUpload?: Prisma.FormUploadOmit
+  contactFormLink?: Prisma.ContactFormLinkOmit
+  contactFormSuggestionDismissal?: Prisma.ContactFormSuggestionDismissalOmit
   clientPortalUser?: Prisma.ClientPortalUserOmit
   clientRequest?: Prisma.ClientRequestOmit
   communication?: Prisma.CommunicationOmit

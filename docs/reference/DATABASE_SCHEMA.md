@@ -389,6 +389,10 @@ Unified contact management for individuals and corporates. Each contact belongs 
 - `contacts_canonicalName_active_trgm_idx` partial GIN trigram index for active fuzzy candidates
 - Partial expression indexes for active normalized identification numbers and corporate UENs
 
+#### KYC/CDD form links
+
+`contact_form_links` binds one person of a form response (a repeat row index, or null for the whole response) to a contact, with a fingerprint of the person's kind, name and ID taken at link time (`personFingerprint`), who linked it and when, and a soft `unlinkedAt`. Partial unique indexes on active links keep one link per contact and row and one per row. `contact_form_suggestion_dismissals` stores (link, field, hash of the proposed value). See [CONTACT_FORM_LINKS](../features/CONTACT_FORM_LINKS.md).
+
 #### Contact identity and merge controls
 
 `contact_duplicate_decisions` stores the ordered contact pair, both reviewed SHA-256 identity fingerprints, a `REJECTED` or `CREATE_SEPARATE` decision, reason, actor, and timestamps. Its tenant/pair unique key makes the decision upsertable. A rejection or explicit separate-contact override suppresses a suggestion only while both current fingerprints match.

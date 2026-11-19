@@ -14,6 +14,7 @@
     "test:run": "vitest run",
     "test:chromium": "tsx scripts/smoke-chromium.ts",
     "test:chromium:sentroweb": "vitest run --config vitest.chromium.config.ts",
+    "test:contact-form-link:postgres": "vitest run __tests__/integration/contact-form-link.postgres.test.ts --maxWorkers=1",
     "test:sentroweb:postgres": "vitest run __tests__/integration/sentroweb-check.postgres.test.ts __tests__/integration/sentroweb-check-routes.postgres.test.ts __tests__/integration/bizfile-dob-confirm.postgres.test.ts __tests__/integration/bizfile-dob-update.postgres.test.ts --maxWorkers=1",
     "typecheck": "node --max-old-space-size=8192 ./node_modules/typescript/bin/tsc --noEmit",
     "generate:assistant-capabilities": "tsx scripts/generate-business-assistant-registry.mts",

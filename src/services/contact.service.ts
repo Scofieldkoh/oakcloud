@@ -99,11 +99,17 @@ export async function createContact(
   return contact;
 }
 
+/** Extra audit detail for an update that came from somewhere other than the contact form (for example a linked form response). */
+export interface ContactUpdateAudit {
+  summary?: string;
+  metadata?: Record<string, unknown>;
+}
+
 export async function updateContact(
   data: UpdateContactInput,
-  params: TenantAwareParams
+  params: TenantAwareParams & { audit?: ContactUpdateAudit }
 ): Promise<Contact> {
-  const { tenantId, userId, tx } = params;
+  const { tenantId, userId, tx, audit } = params;
   const db = tx ?? prisma;
 
   const existing = await db.contact.findFirst({
@@ -172,8 +178,9 @@ export async function updateContact(
     entityType: 'Contact',
     entityId: contact.id,
     entityName: contact.fullName,
-    summary: `Updated contact "${contact.fullName}"`,
+    summary: audit?.summary ?? `Updated contact "${contact.fullName}"`,
     changeSource: 'MANUAL',
+    ...(audit?.metadata ? { metadata: audit.metadata } : {}),
     ...(dateOfBirthChange ? { changes: { dateOfBirth: dateOfBirthChange } } : {}),
   }, tx as Prisma.TransactionClient | undefined);
 

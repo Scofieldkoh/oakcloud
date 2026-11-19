@@ -50,6 +50,7 @@ model Workspace {
   generatedDocuments               GeneratedDocument[]
   esigningSharePointFilings        EsigningSharePointFiling[]
   sentrowebCheckRuns               SentrowebCheckRun[]
+  contactFormLinks                 ContactFormLink[]
   esigningEmailDeliveries          EsigningEmailDelivery[]
   esigningEnvelopes                EsigningEnvelope[]
   taskEsigningPreparations         TaskEsigningPreparation[]
@@ -500,6 +501,7 @@ model Contact {
   deletedAt                   DateTime?
   chargeHoldings              CompanyCharge[]
   companyRelations            CompanyContact[]
+  formLinks                   ContactFormLink[]
   officerPositions            CompanyOfficer[]
   shareholdings               CompanyShareholder[]
   contactDetails              ContactDetail[]
@@ -3257,6 +3259,7 @@ model Form {
   submissions      FormSubmission[]
   tenant           Workspace        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   uploads          FormUpload[]
+  contactLinks     ContactFormLink[]
 
   @@index([tenantId, status, deletedAt])
   @@index([tenantId, createdAt])
@@ -3364,6 +3367,7 @@ model FormSubmission {
   form                   Form                 @relation(fields: [formId], references: [id], onDelete: Cascade)
   tenant                 Workspace            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   uploads                FormUpload[]
+  contactLinks           ContactFormLink[]
 
   @@index([formId, submittedAt])
   @@index([tenantId, submittedAt])
@@ -3420,6 +3424,50 @@ model FormUpload {
   @@index([submissionId])
   @@index([tenantId, formId])
   @@map("form_uploads")
+}
+
+/// A KYC/CDD form response person (one repeat row, or the whole response) linked to a Contact.
+/// The row is bound by its index AND a fingerprint of its kind, name and ID taken at link time; it is
+/// never re-bound to another row. Unlinking is soft. Partial unique indexes (see the migration)
+/// keep one active link per contact+row and per row.
+model ContactFormLink {
+  id                String                         @id @default(uuid())
+  tenantId          String
+  contactId         String
+  formId            String
+  submissionId      String
+  personRowIndex    Int?
+  personFingerprint String                         @db.VarChar(64)
+  linkedById        String
+  linkedAt          DateTime                       @default(now())
+  unlinkedAt        DateTime?
+  unlinkedById      String?
+  tenant            Workspace                      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  contact           Contact                        @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  form              Form                           @relation(fields: [formId], references: [id], onDelete: Cascade)
+  submission        FormSubmission                 @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  dismissals        ContactFormSuggestionDismissal[]
+
+  @@index([tenantId, contactId, unlinkedAt])
+  @@index([submissionId])
+  @@index([formId])
+  @@map("contact_form_links")
+}
+
+/// A suggested field value the user dismissed for a link; it stays hidden until the form answer changes.
+model ContactFormSuggestionDismissal {
+  id            String          @id @default(uuid())
+  tenantId      String
+  linkId        String
+  field         String          @db.VarChar(40)
+  valueHash     String          @db.VarChar(64)
+  dismissedById String
+  createdAt     DateTime        @default(now())
+  link          ContactFormLink @relation(fields: [linkId], references: [id], onDelete: Cascade)
+
+  @@unique([linkId, field, valueHash])
+  @@index([tenantId])
+  @@map("contact_form_suggestion_dismissals")
 }
 
 model ClientPortalUser {
