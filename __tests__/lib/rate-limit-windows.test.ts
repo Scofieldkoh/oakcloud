@@ -28,6 +28,46 @@ function exhaust(key: string, config: { maxRequests: number; windowMs: number })
   expect(limits.checkRateLimit(key, config as never).allowed).toBe(false);
 }
 
+describe('failure history keeps its established retention (login lockout)', () => {
+  const SECOND = 1000;
+  const login = () => limits.RATE_LIMIT_CONFIGS.LOGIN; // 5 per minute, lockout at 15 failures, 15 minutes
+
+  /** One failed attempt every `gapSeconds`, the way a slow guesser spreads attempts over cleanup ticks. */
+  function failTimes(key: string, count: number, gapSeconds: number) {
+    for (let i = 0; i < count; i += 1) {
+      vi.advanceTimersByTime(gapSeconds * SECOND);
+      limits.checkRateLimit(key, login());
+      limits.recordFailure(key, login());
+    }
+  }
+
+  it('slow failures that cross the five-minute cleanup ticks still reach the configured lockout', () => {
+    const key = limits.getRateLimitKey('login_email', 'someone@example.test');
+    // 15 failures, 100 s apart: every attempt opens a new one-minute window and the cleanup ticks
+    // (every 5 minutes) land between attempts, when the entry is 1 to 2 minutes old.
+    failTimes(key, 15, 100);
+    expect(limits.checkRateLimit(key, login())).toMatchObject({ allowed: false, isLockedOut: true });
+  });
+
+  it('keeps failures at least five minutes, up to the first cleanup tick after that, then forgets them', () => {
+    const key = limits.getRateLimitKey('login_email', 'someone-else@example.test');
+    failTimes(key, 14, 10); // 14 failures within about two and a half minutes
+    // Still remembered 7 minutes later: the cleanup tick at 5 minutes sees an entry younger than 5 minutes.
+    vi.advanceTimersByTime(7 * MINUTE);
+    limits.checkRateLimit(key, login());
+    limits.recordFailure(key, login());
+    expect(limits.checkRateLimit(key, login()).isLockedOut).toBe(true);
+
+    // A separate key left alone for 11 minutes is forgotten: the 15th failure then does not lock out.
+    const other = limits.getRateLimitKey('login_email', 'idle@example.test');
+    failTimes(other, 14, 10);
+    vi.advanceTimersByTime(11 * MINUTE);
+    limits.checkRateLimit(other, login());
+    limits.recordFailure(other, login());
+    expect(limits.checkRateLimit(other, login()).isLockedOut).toBe(false);
+  });
+});
+
 describe('windows longer than the five-minute cleanup keep their full length', () => {
   it('the per-recipient access-code budget (15 minutes) is not reset by cleanup before it ends', () => {
     const config = limits.RATE_LIMIT_CONFIGS.ESIGNING_SIGN_VERIFY_RECIPIENT;

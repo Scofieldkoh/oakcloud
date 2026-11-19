@@ -74,10 +74,11 @@ function startCleanup() {
     let cleaned = 0;
 
     for (const [key, entry] of rateLimitStore.entries()) {
-      // Remove entries whose own window has ended and that are not locked out. Using the cleanup
-      // interval here instead would reset budgets longer than five minutes (access-code and
-      // certificate-lookup limits) before their window is over.
-      const isExpired = now - entry.windowStart >= entry.windowMs;
+      // Remove entries that are older than their own window AND older than the cleanup interval, and
+      // that are not locked out. The interval keeps the established retention of failure history
+      // (login lockout counts failures across windows); the window keeps budgets longer than five
+      // minutes (access-code and certificate-lookup limits) from resetting before they end.
+      const isExpired = now - entry.windowStart > Math.max(entry.windowMs, CLEANUP_INTERVAL_MS);
       const isLockedOut = entry.lockedUntil && entry.lockedUntil > now;
 
       if (isExpired && !isLockedOut) {
