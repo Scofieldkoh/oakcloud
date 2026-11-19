@@ -80,6 +80,23 @@ describe('Individual Declaration schema', () => {
     expect(readPerson(INDIVIDUAL_DECLARATION_ANSWERS, wrongOptionalType, null)?.birthDate).toBe('');
   });
 
+  it('does not coerce numeric declaration answers into identity, including when paired with valid text', () => {
+    const read = (full_name: unknown, nric_fin_passport_number: unknown) => readPerson({
+      ...INDIVIDUAL_DECLARATION_ANSWERS, full_name, nric_fin_passport_number,
+    }, declaration, null);
+    expect(read(123, 456)).toBeNull();
+    expect(read(123, '')).toBeNull();
+    expect(read('', 456)).toBeNull();
+    expect(read(123, '00123456')).toMatchObject({ name: '', idNumber: '00123456' });
+    expect(read('Dina Tan', 456)).toMatchObject({ name: 'Dina Tan', idNumber: '' });
+  });
+
+  it('preserves a valid textual declaration ID including leading zeros', () => {
+    const person = readPerson({ ...INDIVIDUAL_DECLARATION_ANSWERS, nric_fin_passport_number: ' 00123456 ' }, declaration, null)!;
+    expect(person).toMatchObject({ name: 'Dina Tan', idNumber: '00123456' });
+    expect(computeSuggestions(individual, person).find((suggestion) => suggestion.field === 'identificationNumber')?.proposed).toBe('00123456');
+  });
+
   it('does not invent identity from declaration names or metadata, and fingerprints the actual person', () => {
     const original = readPerson(INDIVIDUAL_DECLARATION_ANSWERS, declaration, null)!;
     expect(original).not.toBeNull();
@@ -114,6 +131,7 @@ describe('form structure and people', () => {
     expect(readPerson(answers, structure, -1)).toBeNull();
     expect(readPerson(answers, structure, null)).toBeNull();
     expect(readPerson({ ...answers, person_kind: ['trust', 'individual'] }, structure, 0)).toBeNull();
+    expect(readPerson({ ...answers, person_name: [123, ''], person_id: [456, ''] }, structure, 0)).toMatchObject({ name: '123', idNumber: '456' });
     expect(readPerson({ ...answers, person_name: ['', ''], person_id: ['', ''] }, structure, 0)).toBeNull();
   });
 });

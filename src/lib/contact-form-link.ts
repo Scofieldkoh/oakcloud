@@ -166,7 +166,12 @@ export function readPerson(answersValue: unknown, structure: FormStructure, rowI
   const answers = asAnswers(answersValue);
   const get = (key: string) => {
     const sourceKey = structure.personFieldKeys[key];
-    return sourceKey ? rawValue(answers, structure, sourceKey, rowIndex) : undefined;
+    if (!sourceKey) return undefined;
+    const value = rawValue(answers, structure, sourceKey, rowIndex);
+    // Declaration identity fields are text: coercing a numeric answer loses leading zeros and can
+    // invent a selectable identity. Keep the existing corporate CDD extraction unchanged.
+    if ((sourceKey === 'full_name' || sourceKey === 'nric_fin_passport_number') && typeof value !== 'string') return undefined;
+    return value;
   };
   const kindText = answerText(get('person_kind')).toLowerCase();
   if (kindText !== '' && kindText !== 'individual' && kindText !== 'organisation') return null;
