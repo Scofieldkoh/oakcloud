@@ -98,6 +98,7 @@ const server = http.createServer(async (req, res) => {
               const label = id ? document.querySelector('label[for="' + CSS.escape(id) + '"]') : null;
               return {index,kind:el.matches('input[type="radio"]')?'radio':el.tagName === 'SELECT'?'select':'custom',
                 label:clean(label?.textContent || el.closest('label')?.textContent || el.getAttribute('aria-label') || el.getAttribute('placeholder')),
+                question:clean(el.closest('fieldset')?.querySelector('legend')?.textContent || el.closest('[role="radiogroup"]')?.getAttribute('aria-label') || el.closest('.form-group')?.querySelector('label')?.textContent || el.parentElement?.parentElement?.querySelector('label')?.textContent),
                 checked:el.checked === true,selected:el.tagName === 'SELECT' ? el.selectedIndex : null,
                 options:el.tagName === 'SELECT' ? Array.from(el.options).slice(0,15).map((o,i) => ({index:i,label:clean(o.textContent),empty:!o.value})) : []};
             });
@@ -132,16 +133,25 @@ const server = http.createServer(async (req, res) => {
             if (control.kind === 'radio') {
               if (control.checked) continue;
               const locator = controlLocator(control.index);
+              const radioState = await page.locator('input[type="radio"]').evaluateAll(els => els.map(el => ({name:el.name,id:el.id,checked:el.checked})));
               try {
                 await locator.check({timeout:2000});
                 await page.waitForTimeout(300);
                 tests++;
                 if (page.url() !== startUrl) throw new Error('Navigation detected');
                 const after = await scan();
-                branches.push({trail,depth,control:control.label,choice:control.label,...diff(before,after)});
+                branches.push({trail,depth,control:control.question || control.label,choice:control.label,...diff(before,after)});
                 if (depth + 1 < maxDepth && tests < maxTests) await explore(depth+1,[...trail,control.label]);
               } catch(e) { diagnostics.push('Radio ' + control.label + ': ' + String(e.message).slice(0,90)); }
-              finally { diagnostics.push('Radio selection may remain changed; verify manually'); }
+              finally {
+                const original = radioState.find(item => item.checked && item.name);
+                if (original) {
+                  try { await page.locator('input[type="radio"]').filter({visible:true}).evaluateAll((els, state) => { const el = els.find(x => x.name === state.name && x.id === state.id); if (el) el.click(); }, original); }
+                  catch { diagnostics.push('Could not restore radio group ' + (control.question || control.label)); }
+                } else {
+                  diagnostics.push('Radio group had no prior selection; cannot safely clear selection: ' + (control.question || control.label));
+                }
+              }
             } else if (control.kind === 'select') {
               for (const option of control.options) {
                 if (tests >= maxTests) break;
@@ -160,9 +170,9 @@ const server = http.createServer(async (req, res) => {
             } else {
               try {
                 await controlLocator(control.index).click({timeout:2000});
-                const options = page.getByRole('option');
+                const options = page.locator('[role="option"]:visible, [role="listbox"] li:visible, [role="listbox"] [tabindex]:visible, .ant-select-item-option:visible, .ng-option:visible, .mat-mdc-option:visible, [cmdk-item]:visible, [data-radix-collection-item]:visible');
                 const count = Math.min(await options.count(),12);
-                if (!count) { diagnostics.push('No ARIA options for ' + control.label); await page.keyboard.press('Escape'); continue; }
+                if (!count) { diagnostics.push('No recognized dropdown options for ' + control.label); await page.keyboard.press('Escape'); continue; }
                 const labels = [];
                 for (let i=0;i<count;i++) labels.push((await options.nth(i).innerText()).trim().slice(0,80));
                 await page.keyboard.press('Escape');
@@ -171,7 +181,7 @@ const server = http.createServer(async (req, res) => {
                   if (!choice || forbidden.test(choice)) continue;
                   try {
                     await controlLocator(control.index).click({timeout:2000});
-                    const option = page.getByRole('option',{name:choice,exact:true});
+                    const option = options.filter({hasText:choice});
                     if (await option.count() !== 1) { diagnostics.push('Ambiguous option: ' + choice); await page.keyboard.press('Escape'); continue; }
                     await option.click({timeout:2000});
                     await page.waitForTimeout(300);
