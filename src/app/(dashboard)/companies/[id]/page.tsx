@@ -309,6 +309,7 @@ function CompanyDetailContent({ id }: { id: string }) {
         <div className="flex flex-wrap items-center justify-end gap-2">
           <CompanyActionsMenu
             companyId={id}
+            companyUen={company.uen}
             annualReturn={{
               available: !!annualReturnForm,
               isPreparing: isCreatingAnnualReturn,
