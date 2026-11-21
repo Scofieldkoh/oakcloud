@@ -72,7 +72,10 @@ const server = http.createServer(async (req, res) => {
         const diagnostics = [];
         const branches = [];
         const maxTests = 35;
+        const maxDurationMs = 85000;
+        const startedAt = Date.now();
         const maxDepth = 3;
+        const withinBudget = () => tests < maxTests && Date.now() - startedAt < maxDurationMs;
         let tests = 0;
         const forbidden = /save|submit|confirm|payment|delete|withdraw|remove|cancel|proceed|review|logout|sign|declar|upload|purchase/i;
         const scan = () => page.evaluate(() => {
@@ -120,20 +123,25 @@ const server = http.createServer(async (req, res) => {
           return {appeared:after.filter(f => !a.has(JSON.stringify(f))),disappeared:before.filter(f => !b.has(JSON.stringify(f)))};
         };
         const seen = new Set();
+        const activeGroups = new Set();
         const explore = async (depth,trail) => {
-          if (depth >= maxDepth || tests >= maxTests) return;
+          if (depth >= maxDepth || !withinBudget()) return;
           const controls = await discover();
           for (const control of controls) {
-            if (tests >= maxTests) break;
+            if (!withinBudget()) break;
             if (forbidden.test(control.label)) { diagnostics.push('Skipped restricted control: ' + control.label); continue; }
             const key = trail.join('/') + ':' + control.kind + ':' + control.index;
+            if (page.url() !== startUrl) { diagnostics.push('Stopped after navigation'); return; }
+            const groupKey = control.kind === 'radio' ? await controlLocator(control.index).evaluate(el => el.name || el.closest('fieldset')?.outerHTML.slice(0,80) || el.parentElement?.parentElement?.textContent?.slice(0,80) || el.id) : '';
+            if (groupKey && activeGroups.has(groupKey)) continue;
             if (seen.has(key)) continue;
             seen.add(key);
             const before = await scan();
             if (control.kind === 'radio') {
               if (control.checked) continue;
               const locator = controlLocator(control.index);
-              const radioState = await page.locator('input[type="radio"]').evaluateAll(els => els.map(el => ({name:el.name,id:el.id,checked:el.checked})));
+              const radioState = await locator.evaluate(el => ({name:el.name,id:el.id,checked:el.checked,group:Array.from(document.querySelectorAll('input[type="radio"]')).filter(x => el.name ? x.name === el.name : x.closest('fieldset') === el.closest('fieldset')).map(x => ({id:x.id,checked:x.checked}))}));
+              activeGroups.add(groupKey);
               try {
                 await locator.check({timeout:2000});
                 await page.waitForTimeout(300);
@@ -141,16 +149,23 @@ const server = http.createServer(async (req, res) => {
                 if (page.url() !== startUrl) throw new Error('Navigation detected');
                 const after = await scan();
                 branches.push({trail,depth,control:control.question || control.label,choice:control.label,...diff(before,after)});
-                if (depth + 1 < maxDepth && tests < maxTests) await explore(depth+1,[...trail,control.label]);
+                if (depth + 1 < maxDepth && withinBudget()) await explore(depth+1,[...trail,control.label]);
               } catch(e) { diagnostics.push('Radio ' + control.label + ': ' + String(e.message).slice(0,90)); }
               finally {
-                const original = radioState.find(item => item.checked && item.name);
-                if (original) {
-                  try { await page.locator('input[type="radio"]').filter({visible:true}).evaluateAll((els, state) => { const el = els.find(x => x.name === state.name && x.id === state.id); if (el) el.click(); }, original); }
-                  catch { diagnostics.push('Could not restore radio group ' + (control.question || control.label)); }
-                } else {
-                  diagnostics.push('Radio group had no prior selection; cannot safely clear selection: ' + (control.question || control.label));
-                }
+                try {
+                  const prior = radioState.group.find(x => x.checked);
+                  if (prior) {
+                    const restored = await page.locator('input[type="radio"]').evaluateAll((els, state) => {
+                      const el = els.find(x => x.id === state.id && (state.name ? x.name === state.name : true));
+                      if (!el || !el.getClientRects().length) return false;
+                      el.click(); return el.checked;
+                    }, {id:prior.id,name:radioState.name});
+                    if (!restored) diagnostics.push('Could not restore radio selection: ' + control.label);
+                  } else {
+                    diagnostics.push('Radio initially unselected; original state cannot be restored without resetting form: ' + control.label);
+                  }
+                } catch { diagnostics.push('Radio restoration failed: ' + control.label); }
+                activeGroups.delete(groupKey);
               }
             } else if (control.kind === 'select') {
               for (const option of control.options) {
@@ -163,7 +178,7 @@ const server = http.createServer(async (req, res) => {
                   if (page.url() !== startUrl) throw new Error('Navigation detected');
                   const after = await scan();
                   branches.push({trail,depth,control:control.label,choice:option.label,...diff(before,after)});
-                  if (depth+1 < maxDepth && tests < maxTests) await explore(depth+1,[...trail,option.label]);
+                  if (depth+1 < maxDepth && withinBudget()) await explore(depth+1,[...trail,option.label]);
                 } catch(e) { diagnostics.push('Select ' + control.label + ': ' + String(e.message).slice(0,90)); }
                 finally { try { await controlLocator(control.index).selectOption({index:control.selected},{timeout:1500}); } catch { diagnostics.push('Could not restore ' + control.label); } }
               }
@@ -172,7 +187,7 @@ const server = http.createServer(async (req, res) => {
                 await controlLocator(control.index).click({timeout:2000});
                 const options = page.locator('[role="option"]:visible, [role="listbox"] li:visible, [role="listbox"] [tabindex]:visible, .ant-select-item-option:visible, .ng-option:visible, .mat-mdc-option:visible, [cmdk-item]:visible, [data-radix-collection-item]:visible');
                 const count = Math.min(await options.count(),12);
-                if (!count) { diagnostics.push('No recognized dropdown options for ' + control.label); await page.keyboard.press('Escape'); continue; }
+                if (!count) { diagnostics.push('No recognized dropdown options for ' + control.label + '; inspect popup DOM manually'); await page.keyboard.press('Escape'); continue; }
                 const labels = [];
                 for (let i=0;i<count;i++) labels.push((await options.nth(i).innerText()).trim().slice(0,80));
                 await page.keyboard.press('Escape');
@@ -189,7 +204,167 @@ const server = http.createServer(async (req, res) => {
                     if (page.url() !== startUrl) throw new Error('Navigation detected');
                     const after = await scan();
                     branches.push({trail,depth,control:control.label,choice,...diff(before,after)});
-                    if (depth+1 < maxDepth && tests < maxTests) await explore(depth+1,[...trail,choice]);
+                    if (depth+1 < maxDepth && withinBudget()) await explore(depth+1,[...trail,choice]);
+                  } catch(e) { diagnostics.push('Custom ' + choice + ': ' + String(e.message).slice(0,90)); }
+                }
+                diagnostics.push('Custom dropdown ' + control.label + ' may remain changed; verify manually');
+              } catch(e) { diagnostics.push('Custom ' + control.label + ': ' + String(e.message).slice(0,90)); }
+            }
+          }
+        };
+        await explore(0,[]);
+        res.writeHead(200,{'Content-Type':'application/json','Cache-Control':'no-store'}).end(JSON.stringify({ok:true,research:{schemaVersion:2,capturedAt:new Date().toISOString(),path:new URL(startUrl).pathname,baseline,initial,branches,optionsTested:tests,diagnostics:diagnostics.slice(0,100),limits:{maxTests,maxDepth,maxDurationMs},warning:'Exploration may change selections and trigger server effects. Inspect form and discard test filing. No save or submit action is invoked.'}}));
+      } catch(error) {
+        console.error('Research exploration failed:',error);
+        res.writeHead(422,{'Content-Type':'application/json'}).end(JSON.stringify({ok:false,message:String(error.message).slice(0,180)}));
+      } finally { busy = false; }
+      return;
+    }
+    if (req.method === 'GET' && req.url === '/research-snapshot') {
+      if (!browser || !browser.isConnected() || busy) { res.writeHead(409).end('No active browser or agent busy'); return; }
+      busy = true;
+      try {
+        const pages = browser.contexts().flatMap(context => context.pages()).filter(page => !page.isClosed() && new URL(page.url()).hostname === 'www.bizfile.gov.sg');
+        if (pages.length !== 1) throw new Error('Expected one open Bizfile page; found ' + pages.length);
+        const page = pages[0];
+        const snapshot = await page.evaluate(() => {
+          const clean = value => String(value || '').trim().slice(0, 120);
+          const fields = Array.from(document.querySelectorAll('input,select,textarea,[role="combobox"],[role="checkbox"],[role="radio"]')).slice(0, 300).map(el => {
+            const id = el.getAttribute('id');
+            const label = id ? Array.from(document.querySelectorAll('label')).find(item => item.getAttribute('for') === id) : null;
+            const parentLabel = el.closest('label');
+            return {
+              tag: el.tagName.toLowerCase(),
+              type: clean(el.getAttribute('type')),
+              role: clean(el.getAttribute('role')),
+              label: clean(label?.textContent || parentLabel?.textContent || el.getAttribute('aria-label')),
+              placeholder: clean(el.getAttribute('placeholder')),
+              required: el.hasAttribute('required') || el.getAttribute('aria-required') === 'true',
+              disabled: el.hasAttribute('disabled') || el.getAttribute('aria-disabled') === 'true',
+              visible: !!el.getClientRects().length,
+              options: el.tagName === 'SELECT' ? Array.from(el.options).slice(0, 40).map(option => clean(option.textContent)) : []
+            };
+          });
+          const buttons = Array.from(document.querySelectorAll('button,[role="button"]')).slice(0, 150).map(el => ({
+            label: clean(el.getAttribute('aria-label') || el.textContent),
+            disabled: el.hasAttribute('disabled') || el.getAttribute('aria-disabled') === 'true',
+            visible: !!el.getClientRects().length
+          }));
+          const headings = Array.from(document.querySelectorAll('h1,h2,h3')).slice(0, 40).map(el => clean(el.textContent));
+          return {title:clean(document.title),headings,fields,buttons};
+        });
+        const url = new URL(page.url());
+        const payload = {schemaVersion:1,capturedAt:new Date().toISOString(),host:url.hostname,path:url.pathname,...snapshot};
+        res.writeHead(200, {'Content-Type':'application/json','Cache-Control':'no-store'}).end(JSON.stringify({ok:true,snapshot:payload}));
+      } catch (error) {
+        console.error('Research snapshot failed:', error);
+        res.writeHead(422, {'Content-Type':'application/json'}).end(JSON.stringify({ok:false,message:String(error.message).slice(0,180)}));
+      } finally { busy = false; }
+      return;
+    }
+    if (req.method === 'POST' && req.url === '/poc-fill') {
+      if (!activePage || activePage.isClosed() || busy) { res.writeHead(409).end('No active browser or agent busy'); return; }
+      busy = true;
+      try {
+        if (new URL(activePage.url()).hostname !== 'www.bizfile.gov.sg') throw new Error('Not on Bizfile');
+        const add = activePage.getByText('Add position holder', {exact:true});
+        if (await add.count() !== 1) throw new Error('Add position holder control ambiguous');
+        await add.click();
+        const position = activePage.getByRole('combobox', {name:/position held/i});
+        const labeled = activePage.getByLabel(/position held/i);
+        const placeholder = activePage.getByPlaceholder(/select position/i);
+        const choices = [
+          ['named combobox', position],
+          ['labeled field', labeled],
+          ['placeholder field', placeholder]
+        ];
+        const counts = [];
+        let selected = null;
+        for (const [name, locator] of choices) {
+          const count = await locator.count();
+          counts.push(name + '=' + count);
+          if (!selected && count === 1) selected = locator;
+        }
+        if (!selected) throw new Error('Position field not uniquely identified (' + counts.join(', ') + ')');
+        await selected.click();
+        const director = activePage.getByRole('option', {name:'Director',exact:true});
+        const directorText = activePage.getByText('Director', {exact:true});
+        const optionCount = await director.count();
+        const textCount = await directorText.count();
+        if (optionCount === 1) await director.click();
+        else if (textCount === 1) await directorText.click();
+        else throw new Error('Director option ambiguous (role options=' + optionCount + ', exact text=' + textCount + ')');
+        res.writeHead(200, {'Content-Type':'application/json'}).end(JSON.stringify({ok:true,message:'Director selected. Review manually; nothing saved.'}));
+      } catch(e) {
+        console.error('POC failed:', e);
+        res.writeHead(422, {'Content-Type':'application/json'}).end(JSON.stringify({ok:false,message:'POC stopped. Check agent console.'}));
+      } finally { busy = false; }
+      return;
+    }
+    if (req.method !== 'POST' || req.url !== '/launch-remote') { res.writeHead(405).end(); return; }
+    req.url = '/launch';
+  }
+  if (req.method === 'GET' && req.url === '/') {
+    res.writeHead(200, {'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}).end(html);
+    return;
+  }
+  if (req.method === 'POST' && req.url === '/launch') {
+    if (busy) { res.writeHead(409).end('Browser is already starting.'); return; }
+    busy = true;
+    try {
+      if (browser && browser.isConnected()) {
+        res.writeHead(200, {'Content-Type':'text/plain'}).end('Browser already running. Switch to the Chromium window.');
+      } else {
+        browser = await chromium.launch({headless:false});
+        const page = await browser.newPage();
+        activePage = page;
+        await page.goto(TARGET, {waitUntil:'domcontentloaded',timeout:45000});
+        res.writeHead(200, {'Content-Type':'text/plain'}).end('ACRA Bizfile browser opened. You may return to this window.');
+        browser.on('disconnected', () => { browser = null; activePage = null; });
+      }
+    } catch(e) {
+      console.error(e);
+      res.writeHead(500, {'Content-Type':'text/plain'}).end('Browser launch failed. Check the agent console.');
+    } finally { busy = false; }
+    return;
+  }
+  res.writeHead(404).end('Not found');
+});
+server.listen(PORT, HOST, () => {
+  console.log('OakCloud ACRA Agent running at http://' + HOST + ':' + PORT);
+  console.log('Keep this window open while using the pilot. Press Ctrl+C to stop.');
+});
+process.on('SIGINT', async () => { if (browser) await browser.close(); server.close(); process.exit(0); });
+'@ | ForEach-Object { $_.Replace('__OAKCLOUD_ORIGIN__', $oakCloudOrigin).Replace('__PAIRING_TOKEN__', $pairingToken) } | Set-Content -Encoding UTF8 (Join-Path $installDir 'agent.cjs')
+Push-Location $installDir
+try {
+  npm install --no-audit --no-fund
+  if ($LASTEXITCODE -ne 0) { throw 'npm install failed' }
+  npx playwright install chromium
+  if ($LASTEXITCODE -ne 0) { throw 'Chromium install failed' }
+} finally { Pop-Location }
+$launcher = Join-Path $installDir 'Start-OakCloud-Agent.cmd'
+@'
+@echo off
+cd /d "%LOCALAPPDATA%\OakCloud\ACRA-Agent"
+echo Open http://127.0.0.1:48731/ in your browser after the agent starts.
+node agent.cjs
+pause
+'@ | Set-Content -Encoding ASCII $launcher
+Write-Host "Installed to $installDir"
+Write-Host "Run $launcher to start the pilot."
+
+Write-Host "OakCloud allowed origin: $oakCloudOrigin"
+Write-Host "Pairing token (unchanged on reinstall; keep private): $pairingToken"
+)});
+                    if (await option.count() !== 1) { diagnostics.push('Ambiguous option: ' + choice); await page.keyboard.press('Escape'); continue; }
+                    await option.click({timeout:2000});
+                    await page.waitForTimeout(300);
+                    tests++;
+                    if (page.url() !== startUrl) throw new Error('Navigation detected');
+                    const after = await scan();
+                    branches.push({trail,depth,control:control.label,choice,...diff(before,after)});
+                    if (depth+1 < maxDepth && withinBudget()) await explore(depth+1,[...trail,choice]);
                   } catch(e) { diagnostics.push('Custom ' + choice + ': ' + String(e.message).slice(0,90)); }
                 }
                 diagnostics.push('Custom dropdown ' + control.label + ' may remain changed; verify manually');
