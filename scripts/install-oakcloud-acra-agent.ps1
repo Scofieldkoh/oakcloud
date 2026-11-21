@@ -42,15 +42,57 @@ const server = http.createServer(async (req, res) => {
   if (req.headers.host !== HOST + ':' + PORT || req.headers.origin && req.headers.origin !== 'http://' + HOST + ':' + PORT && req.headers.origin !== ORIGIN) {
     res.writeHead(403).end('Forbidden'); return;
   }
-  if (req.method === 'OPTIONS' && (req.url === '/health' || req.url === '/launch-remote' || req.url === '/poc-fill')) {
+  if (req.method === 'OPTIONS' && (req.url === '/health' || req.url === '/launch-remote' || req.url === '/poc-fill' || req.url === '/research-snapshot')) {
     if (req.headers.origin !== ORIGIN) { res.writeHead(403).end(); return; }
     res.writeHead(204, {'Access-Control-Allow-Origin':ORIGIN,'Access-Control-Allow-Methods':'GET, POST, OPTIONS','Access-Control-Allow-Headers':'Content-Type, X-OakCloud-Agent-Token','Access-Control-Allow-Private-Network':'true','Vary':'Origin'}).end(); return;
   }
-  if (req.url === '/health' || req.url === '/launch-remote' || req.url === '/poc-fill') {
+  if (req.url === '/health' || req.url === '/launch-remote' || req.url === '/poc-fill' || req.url === '/research-snapshot') {
     if (req.headers.origin !== ORIGIN || !tokenMatches(req.headers['x-oakcloud-agent-token'])) { res.writeHead(403).end('Forbidden'); return; }
     res.setHeader('Access-Control-Allow-Origin', ORIGIN);
     res.setHeader('Vary','Origin');
     if (req.method === 'GET' && req.url === '/health') { res.writeHead(200, {'Content-Type':'application/json'}).end(JSON.stringify({ok:true,version:'0.2.0'})); return; }
+    if (req.method === 'GET' && req.url === '/research-snapshot') {
+      if (!browser || !browser.isConnected() || busy) { res.writeHead(409).end('No active browser or agent busy'); return; }
+      busy = true;
+      try {
+        const pages = browser.contexts().flatMap(context => context.pages()).filter(page => !page.isClosed() && new URL(page.url()).hostname === 'www.bizfile.gov.sg');
+        if (pages.length !== 1) throw new Error('Expected one open Bizfile page; found ' + pages.length);
+        const page = pages[0];
+        const snapshot = await page.evaluate(() => {
+          const clean = value => String(value || '').trim().slice(0, 120);
+          const fields = Array.from(document.querySelectorAll('input,select,textarea,[role="combobox"],[role="checkbox"],[role="radio"]')).slice(0, 300).map(el => {
+            const id = el.getAttribute('id');
+            const label = id ? Array.from(document.querySelectorAll('label')).find(item => item.getAttribute('for') === id) : null;
+            const parentLabel = el.closest('label');
+            return {
+              tag: el.tagName.toLowerCase(),
+              type: clean(el.getAttribute('type')),
+              role: clean(el.getAttribute('role')),
+              label: clean(label?.textContent || parentLabel?.textContent || el.getAttribute('aria-label')),
+              placeholder: clean(el.getAttribute('placeholder')),
+              required: el.hasAttribute('required') || el.getAttribute('aria-required') === 'true',
+              disabled: el.hasAttribute('disabled') || el.getAttribute('aria-disabled') === 'true',
+              visible: !!el.getClientRects().length,
+              options: el.tagName === 'SELECT' ? Array.from(el.options).slice(0, 40).map(option => clean(option.textContent)) : []
+            };
+          });
+          const buttons = Array.from(document.querySelectorAll('button,[role="button"]')).slice(0, 150).map(el => ({
+            label: clean(el.getAttribute('aria-label') || el.textContent),
+            disabled: el.hasAttribute('disabled') || el.getAttribute('aria-disabled') === 'true',
+            visible: !!el.getClientRects().length
+          }));
+          const headings = Array.from(document.querySelectorAll('h1,h2,h3')).slice(0, 40).map(el => clean(el.textContent));
+          return {title:clean(document.title),headings,fields,buttons};
+        });
+        const url = new URL(page.url());
+        const payload = {schemaVersion:1,capturedAt:new Date().toISOString(),host:url.hostname,path:url.pathname,...snapshot};
+        res.writeHead(200, {'Content-Type':'application/json','Cache-Control':'no-store'}).end(JSON.stringify({ok:true,snapshot:payload}));
+      } catch (error) {
+        console.error('Research snapshot failed:', error);
+        res.writeHead(422, {'Content-Type':'application/json'}).end(JSON.stringify({ok:false,message:String(error.message).slice(0,180)}));
+      } finally { busy = false; }
+      return;
+    }
     if (req.method === 'POST' && req.url === '/poc-fill') {
       if (!activePage || activePage.isClosed() || busy) { res.writeHead(409).end('No active browser or agent busy'); return; }
       busy = true;
