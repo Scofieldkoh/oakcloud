@@ -75,6 +75,9 @@ export interface DeadlineUrlState {
   dueYear: number;
   obligationCode?: ComplianceMatrixCode;
   overviewStatus: ComplianceOverviewStatus;
+  matrixSortYear?: number;
+  matrixSortCode?: ComplianceMatrixCode;
+  matrixSortOrder: 'asc' | 'desc';
   from: DateOnly | null;
   to: DateOnly | null;
   types: DeadlineFilterType[];
@@ -227,6 +230,9 @@ export function parseDeadlineUrlState(
     dueYear: readYear(params.get('dueYear')) ?? Number(today.slice(0, 4)),
     obligationCode: COMPLIANCE_MATRIX_CODES.find((code) => code === params.get('obligationCode')),
     overviewStatus: complianceOverviewStatusSchema.safeParse(params.get('overviewStatus') ?? 'ALL').data ?? 'ALL',
+    matrixSortYear: readYear(params.get('matrixSortYear')),
+    matrixSortCode: COMPLIANCE_MATRIX_CODES.find((code) => code === params.get('matrixSortCode')),
+    matrixSortOrder: params.get('matrixSortOrder') === 'desc' ? 'desc' : 'asc',
     from: range.from,
     to: range.to,
     types: hasTypes ? requestedTypes : visibleTypes,
@@ -903,6 +909,9 @@ export function DeadlineWorkspace({ canEdit = false, deadlineWritesEnabled = fal
           serviceCode={urlState.obligationCode}
           status={urlState.overviewStatus}
           page={urlState.page}
+          matrixSortYear={urlState.matrixSortYear}
+          matrixSortCode={urlState.matrixSortCode}
+          matrixSortOrder={urlState.matrixSortOrder}
           onChange={(changes) => replaceUrl(changes)}
           onOpenCell={(companyId, code, financialYear) => replaceUrl({
             deadlineView: 'TABLE', financialYear: String(financialYear), obligationCode: code,

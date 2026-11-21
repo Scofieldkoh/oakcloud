@@ -16,6 +16,7 @@ import {
   aggregateMatrixCells,
   buildMonthlyWorkload,
   matrixRowMatchesStatus,
+  sortComplianceMatrixRows,
 } from './overview-model';
 
 type OverviewDb = Pick<typeof prisma, 'company' | 'deadlineOccurrence'>;
@@ -29,6 +30,7 @@ export function emptyComplianceOverview(input: ComplianceOverviewQuery): Complia
     return {
       overview: 'MATRIX',
       financialYear: input.year,
+      years: [input.year, input.year + 1],
       columns: matrixColumns(input),
       rows: [],
       totalCompanies: 0,
@@ -51,6 +53,7 @@ async function listComplianceMatrix(
   db: OverviewDb,
 ): Promise<ComplianceMatrixResult> {
   const columns = matrixColumns(input);
+  const years: [number, number] = [input.year, input.year + 1];
   const companies = await db.company.findMany({
     where: {
       tenantId: scope.tenantId,
@@ -70,7 +73,13 @@ async function listComplianceMatrix(
 
   if (companies.length === 0) return emptyComplianceOverview(input) as ComplianceMatrixResult;
 
-  const search = deadlineSearchSchema.parse({ openOnly: false, financialYear: input.year });
+  // Query both periods together, preserving the existing fiscal-period fallback
+  // to the cycle end date when the canonical end is unavailable.
+  const financialRange = {
+    gte: new Date(Date.UTC(input.year, 0, 1)),
+    lt: new Date(Date.UTC(input.year + 2, 0, 1)),
+  };
+  const search = deadlineSearchSchema.parse({ openOnly: false });
   const where: Prisma.DeadlineOccurrenceWhereInput = {
     AND: [
       deadlineWhereForSearch(search, scope),
@@ -78,6 +87,10 @@ async function listComplianceMatrix(
         ownershipScope: 'COMPANY',
         obligationCode: { in: columns },
         companyId: { in: companies.map((company) => company.id) },
+        OR: [
+          { financialPeriodEnd: financialRange },
+          { financialPeriodEnd: null, cycle: { tenantId: scope.tenantId, periodEnd: financialRange } },
+        ],
       },
     ],
   };
@@ -92,29 +105,45 @@ async function listComplianceMatrix(
       ownershipScope: true,
       filingResponsibility: true,
       filingStatusUnconfirmed: true,
+      financialPeriodEnd: true,
+      cycle: { select: { periodEnd: true } },
     },
   });
 
   const grouped = new Map<string, typeof occurrences>();
   for (const occurrence of occurrences) {
-    const rows = grouped.get(occurrence.companyId) ?? [];
-    rows.push(occurrence);
-    grouped.set(occurrence.companyId, rows);
+    const periodEnd = occurrence.financialPeriodEnd ?? occurrence.cycle?.periodEnd;
+    if (!periodEnd) continue;
+    const financialYear = periodEnd.getUTCFullYear();
+    if (financialYear !== years[0] && financialYear !== years[1]) continue;
+    const groupKey = occurrence.companyId + ':' + financialYear;
+    const group = grouped.get(groupKey) ?? [];
+    group.push(occurrence);
+    grouped.set(groupKey, group);
   }
   const today = currentDateInSingapore();
   const allRows = companies.map((company) => ({
     companyId: company.id,
     companyName: company.name,
     displayLabel: getCompanyDisplayLabel({ name: company.name, displayAlias: company.displayAlias }),
-    cells: aggregateMatrixCells(grouped.get(company.id) ?? [], today),
+    cellsByYear: {
+      [years[0]]: aggregateMatrixCells(grouped.get(company.id + ':' + years[0]) ?? [], today),
+      [years[1]]: aggregateMatrixCells(grouped.get(company.id + ':' + years[1]) ?? [], today),
+    },
   }));
-  const matchingRows = allRows.filter((row) => matrixRowMatchesStatus(row, columns, input.status));
+  const matchingRows = sortComplianceMatrixRows(
+    allRows.filter((row) => matrixRowMatchesStatus(row, years, columns, input.status)),
+    input.matrixSortYear,
+    input.matrixSortCode,
+    input.matrixSortOrder,
+  );
   const PAGE_SIZE = 50;
   const totalCompanies = matchingRows.length;
 
   return {
     overview: 'MATRIX',
     financialYear: input.year,
+    years,
     columns,
     rows: matchingRows.slice((input.page - 1) * PAGE_SIZE, input.page * PAGE_SIZE),
     totalCompanies,

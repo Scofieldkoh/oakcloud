@@ -59,14 +59,14 @@ const STATUS_PRIORITY: Record<MatrixFilingStatus, number> = {
   CANCELLED: 5,
 };
 
-export function aggregateMatrixCells(occurrences: readonly OverviewOccurrence[], today: string): ComplianceMatrixRow['cells'] {
+export function aggregateMatrixCells(occurrences: readonly OverviewOccurrence[], today: string): ComplianceMatrixRow['cellsByYear'][number] {
   const grouped = new Map<ComplianceMatrixCode, OverviewOccurrence[]>();
   for (const item of occurrences) {
     if (!COMPLIANCE_MATRIX_CODES.includes(item.obligationCode as ComplianceMatrixCode)) continue;
     const code = item.obligationCode as ComplianceMatrixCode;
     grouped.set(code, [...(grouped.get(code) ?? []), item]);
   }
-  const cells: ComplianceMatrixRow['cells'] = {};
+  const cells: ComplianceMatrixRow['cellsByYear'][number] = {};
   for (const [code, items] of grouped) {
     // If a rule creates multiple milestones, an outstanding one takes priority.
     const sorted = [...items].sort((a, b) =>
@@ -87,15 +87,42 @@ export function aggregateMatrixCells(occurrences: readonly OverviewOccurrence[],
 
 export function matrixRowMatchesStatus(
   row: ComplianceMatrixRow,
+  years: readonly number[],
   columns: readonly ComplianceMatrixCode[],
   status: ComplianceOverviewStatus,
 ): boolean {
   if (status === 'ALL') return true;
-  return columns.some((code) => {
-    const cell = row.cells[code];
+  return years.some((year) => columns.some((code) => {
+    const cell = row.cellsByYear[year]?.[code];
     if (status === 'NO_RECORD') return !cell;
     if (status === 'OVERDUE') return cell?.overdue === true;
     return cell?.status === status;
+  }));
+}
+
+/**
+ * Sort the entire company list before pagination. Cells without generated records
+ * always appear last, in either direction, so the actionable dates remain visible.
+ */
+export function sortComplianceMatrixRows(
+  rows: readonly ComplianceMatrixRow[],
+  sortYear?: number,
+  sortCode?: ComplianceMatrixCode,
+  order: 'asc' | 'desc' = 'asc',
+): ComplianceMatrixRow[] {
+  const byCompany = (a: ComplianceMatrixRow, b: ComplianceMatrixRow) =>
+    a.companyName.localeCompare(b.companyName, undefined, { sensitivity: 'base' })
+    || a.companyId.localeCompare(b.companyId);
+
+  if (sortYear === undefined || !sortCode) return [...rows].sort(byCompany);
+  const direction = order === 'asc' ? 1 : -1;
+  return [...rows].sort((a, b) => {
+    const left = a.cellsByYear[sortYear]?.[sortCode];
+    const right = b.cellsByYear[sortYear]?.[sortCode];
+    if (!left && right) return 1;
+    if (left && !right) return -1;
+    if (!left || !right) return byCompany(a, b);
+    return direction * left.dueDate.localeCompare(right.dueDate) || byCompany(a, b);
   });
 }
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { AlertTriangle, ChevronLeft, ChevronRight, ListFilter } from 'lucide-react';
+import { AlertTriangle, ArrowDown, ArrowUp, ArrowUpDown, ChevronLeft, ChevronRight, ListFilter } from 'lucide-react';
 import { useComplianceOverview } from '@/hooks/use-deadlines';
 import {
   COMPLIANCE_MATRIX_CODES,
@@ -46,7 +46,7 @@ function badgeClass(status: ComplianceMatrixCell['status'], overdue: boolean): s
   return 'bg-background-tertiary text-text-secondary';
 }
 
-function MatrixCell({ cell, onOpen }: { cell?: ComplianceMatrixCell; onOpen: () => void }) {
+function MatrixCell({ cell, label, onOpen }: { cell?: ComplianceMatrixCell; label: string; onOpen: () => void }) {
   if (!cell) {
     return <span className="text-xs text-text-muted" title="No generated record. Check applicability and engagement scope.">No record</span>;
   }
@@ -54,6 +54,7 @@ function MatrixCell({ cell, onOpen }: { cell?: ComplianceMatrixCell; onOpen: () 
     <button
       type="button"
       onClick={onOpen}
+      aria-label={'Open ' + label + ' deadline due ' + dateLabel(cell.dueDate) + ', ' + (cell.overdue ? 'overdue, ' : '') + STATUS_LABELS[cell.status]}
       title="Open this filing in the Deadline Tracker"
       className="group flex w-full min-w-[130px] flex-col items-start gap-1 rounded-lg p-2 text-left hover:bg-background-tertiary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oak-primary"
     >
@@ -76,7 +77,7 @@ function Metric({ label, value, emphasis }: { label: string; value: number; emph
 }
 
 type View = 'MATRIX' | 'WORKLOAD';
-type Change = Partial<Record<'financialYear' | 'dueYear' | 'companyQuery' | 'obligationCode' | 'overviewStatus' | 'page', string | undefined>>;
+type Change = Partial<Record<'financialYear' | 'dueYear' | 'companyQuery' | 'obligationCode' | 'overviewStatus' | 'page' | 'matrixSortYear' | 'matrixSortCode' | 'matrixSortOrder', string | undefined>>;
 
 export function DeadlineOverview({
   view,
@@ -86,6 +87,9 @@ export function DeadlineOverview({
   serviceCode,
   status,
   page,
+  matrixSortYear,
+  matrixSortCode,
+  matrixSortOrder,
   onChange,
   onOpenCell,
   onOpenMonth,
@@ -97,12 +101,18 @@ export function DeadlineOverview({
   serviceCode?: ComplianceMatrixCode;
   status: ComplianceOverviewStatus;
   page: number;
+  matrixSortYear?: number;
+  matrixSortCode?: ComplianceMatrixCode;
+  matrixSortOrder: 'asc' | 'desc';
   onChange: (changes: Change) => void;
   onOpenCell: (companyId: string, serviceCode: ComplianceMatrixCode, financialYear: number) => void;
   onOpenMonth: (month: string) => void;
 }) {
   const nowYear = new Date().getFullYear();
-  const matrixYear = financialYear ?? nowYear - 1;
+  const matrixYear = Math.max(2000, Math.min(financialYear ?? nowYear - 1, 2099));
+  const sortInDisplayedYears = matrixSortCode && (matrixSortYear === matrixYear || matrixSortYear === matrixYear + 1);
+  const activeMatrixSortYear = sortInDisplayedYears ? matrixSortYear : undefined;
+  const activeMatrixSortCode = sortInDisplayedYears ? matrixSortCode : undefined;
   const effectiveStatus = view === 'WORKLOAD' && status === 'NO_RECORD' ? 'ALL' : status;
   const [searchDraft, setSearchDraft] = useState(companyQuery);
 
@@ -121,6 +131,9 @@ export function DeadlineOverview({
     serviceCode,
     status: effectiveStatus,
     page: view === 'MATRIX' ? page : 1,
+    matrixSortYear: view === 'MATRIX' ? activeMatrixSortYear : undefined,
+    matrixSortCode: view === 'MATRIX' ? activeMatrixSortCode : undefined,
+    matrixSortOrder: view === 'MATRIX' ? matrixSortOrder : 'asc',
   });
 
   const matrixResult = query.data?.overview === 'MATRIX' ? query.data : null;
@@ -139,16 +152,20 @@ export function DeadlineOverview({
         </div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <label className="flex flex-col gap-1.5 text-xs text-text-secondary">
-            {view === 'MATRIX' ? 'Financial year / YA' : 'Due calendar year'}
+            {view === 'MATRIX' ? 'Starting financial year / YA' : 'Due calendar year'}
             <select
-              aria-label={view === 'MATRIX' ? 'Financial year / YA' : 'Due calendar year'}
+              aria-label={view === 'MATRIX' ? 'Starting financial year / YA' : 'Due calendar year'}
               className="min-h-10 rounded-lg border border-border-primary bg-background-primary px-3 text-sm text-text-primary"
               value={view === 'MATRIX' ? matrixYear : dueYear}
               onChange={(event) => onChange(view === 'MATRIX'
-                ? { financialYear: event.target.value, page: '1' }
+                ? { financialYear: event.target.value, matrixSortYear: undefined, matrixSortCode: undefined, matrixSortOrder: undefined, page: '1' }
                 : { dueYear: event.target.value, page: '1' })}
             >
-              {years.map((year) => <option key={year} value={year}>{view === 'MATRIX' ? 'FY ' + year + ' / YA ' + (year + 1) : year}</option>)}
+              {years.filter((year) => view !== 'MATRIX' || year < 2100).map((year) => (
+                <option key={year} value={year}>
+                  {view === 'MATRIX' ? 'FY ' + year + '–' + (year + 1) + ' / YA ' + (year + 1) + '–' + (year + 2) : year}
+                </option>
+              ))}
             </select>
           </label>
           <label className="flex flex-col gap-1.5 text-xs text-text-secondary">
@@ -213,17 +230,69 @@ export function DeadlineOverview({
         <div className="space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
-              <h2 className="text-base font-semibold text-text-primary">FY {matrixResult.financialYear} / YA {matrixResult.financialYear + 1}</h2>
+              <h2 className="text-base font-semibold text-text-primary">FY {matrixResult.years[0]} / YA {matrixResult.years[0] + 1} and FY {matrixResult.years[1]} / YA {matrixResult.years[1] + 1}</h2>
               <p className="mt-0.5 text-xs text-text-secondary">{matrixResult.totalCompanies} companies match these filters</p>
             </div>
             {query.isFetching ? <span className="text-xs text-text-muted">Refreshing…</span> : null}
           </div>
+          <p className="text-xs text-text-secondary">
+            Select any ECI, Form C, AGM or AR heading to sort by due date. Missing records appear last in either direction.
+          </p>
           <div className="overflow-x-auto rounded-xl border border-border-primary bg-background-secondary">
-            <table className="w-full min-w-[650px] border-collapse text-left">
+            <table className="w-full min-w-[1140px] border-collapse text-left">
+              <caption className="sr-only">Two consecutive financial years of company compliance filings</caption>
               <thead className="border-b border-border-primary bg-background-tertiary text-xs font-semibold text-text-secondary">
+                <tr className="border-b border-border-primary">
+                  <th
+                    scope="col"
+                    rowSpan={2}
+                    className="sticky left-0 z-20 min-w-[180px] bg-background-tertiary px-4 py-3"
+                  >
+                    Company
+                  </th>
+                  {matrixResult.years.map((year) => (
+                    <th
+                      key={year}
+                      scope="colgroup"
+                      colSpan={matrixResult.columns.length}
+                      className="border-l border-border-primary px-3 py-3 text-center font-semibold text-text-primary"
+                    >
+                      FY {year} / YA {year + 1}
+                    </th>
+                  ))}
+                </tr>
                 <tr>
-                  <th scope="col" className="sticky left-0 z-10 min-w-[180px] bg-background-tertiary px-4 py-3">Company</th>
-                  {matrixResult.columns.map((code) => <th scope="col" key={code} className="min-w-[150px] px-3 py-3">{COMPLIANCE_MATRIX_LABELS[code]}</th>)}
+                  {matrixResult.years.flatMap((year) => matrixResult.columns.map((code, index) => {
+                    const isSorted = activeMatrixSortYear === year && activeMatrixSortCode === code;
+                    const nextOrder = isSorted && matrixSortOrder === 'asc' ? 'desc' : 'asc';
+                    const filingLabel = COMPLIANCE_MATRIX_LABELS[code];
+                    return (
+                      <th
+                        scope="col"
+                        key={year + '-' + code}
+                        aria-sort={isSorted ? (matrixSortOrder === 'asc' ? 'ascending' : 'descending') : 'none'}
+                        className={'min-w-[135px] px-2 py-1.5 ' + (index === 0 ? 'border-l border-border-primary' : '')}
+                      >
+                        <button
+                          type="button"
+                          title={'Sort FY ' + year + ' ' + filingLabel + ' by due date; records without a date stay last'}
+                          aria-label={'Sort FY ' + year + ' ' + filingLabel + ' by due date ' + (nextOrder === 'asc' ? 'ascending' : 'descending')}
+                          onClick={() => onChange({
+                            matrixSortYear: String(year),
+                            matrixSortCode: code,
+                            matrixSortOrder: nextOrder,
+                            page: '1',
+                          })}
+                          className="inline-flex min-h-9 w-full items-center justify-between gap-2 rounded-md px-2 text-left text-xs font-semibold text-text-secondary hover:bg-background-secondary hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oak-primary"
+                        >
+                          <span>{filingLabel}</span>
+                          {isSorted
+                            ? matrixSortOrder === 'asc' ? <ArrowUp className="h-3.5 w-3.5 shrink-0" aria-hidden="true"/> : <ArrowDown className="h-3.5 w-3.5 shrink-0" aria-hidden="true"/>
+                            : <ArrowUpDown className="h-3.5 w-3.5 shrink-0 opacity-50" aria-hidden="true"/>}
+                        </button>
+                      </th>
+                    );
+                  }))}
                 </tr>
               </thead>
               <tbody className="divide-y divide-border-primary">
@@ -232,14 +301,18 @@ export function DeadlineOverview({
                     <th scope="row" className="sticky left-0 z-10 bg-background-secondary px-4 py-3 text-sm font-medium text-text-primary">
                       {row.displayLabel}
                     </th>
-                    {matrixResult.columns.map((code) => (
-                      <td key={code} className="px-2 py-1.5 align-middle">
+                    {matrixResult.years.flatMap((year) => matrixResult.columns.map((code, index) => (
+                      <td
+                        key={year + '-' + code}
+                        className={'px-2 py-1.5 align-middle ' + (index === 0 ? 'border-l border-border-primary' : '')}
+                      >
                         <MatrixCell
-                          cell={row.cells[code]}
-                          onOpen={() => onOpenCell(row.companyId, code, matrixResult!.financialYear)}
+                          cell={row.cellsByYear[year]?.[code]}
+                          label={'FY ' + year + ' ' + COMPLIANCE_MATRIX_LABELS[code]}
+                          onOpen={() => onOpenCell(row.companyId, code, year)}
                         />
                       </td>
-                    ))}
+                    )))}
                   </tr>
                 ))}
               </tbody>
