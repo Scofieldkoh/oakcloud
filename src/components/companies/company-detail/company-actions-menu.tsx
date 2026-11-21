@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ExternalLink, Send, Upload, ClipboardCopy, MonitorPlay } from 'lucide-react';
 import { Modal } from '@/components/ui/modal';
@@ -38,12 +38,31 @@ export function CompanyActionsMenu({
   const [acraDialogOpen, setAcraDialogOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [agentToken, setAgentToken] = useState('');
+  const [rememberPairing, setRememberPairing] = useState(false);
   const [agentStatus, setAgentStatus] = useState('Not checked');
   const [agentBusy, setAgentBusy] = useState(false);
   const [researchSnapshot, setResearchSnapshot] = useState<Record<string, unknown> | null>(null);
   const [filingType, setFilingType] = useState<'officers' | 'address' | 'shares'>('officers');
   const [reviewAcknowledged, setReviewAcknowledged] = useState(false);
   const agentUrl = 'http://127.0.0.1:48731';
+  const pairingStorageKey = 'oakcloud:acra-agent-pairing:v1';
+  useEffect(() => {
+    try {
+      const stored = window.localStorage.getItem(pairingStorageKey);
+      if (stored) {
+        setAgentToken(stored);
+        setRememberPairing(true);
+      }
+    } catch { /* Browser storage may be disabled. */ }
+  }, []);
+  function updatePairing(token: string, remember: boolean) {
+    setAgentToken(token);
+    setRememberPairing(remember);
+    try {
+      if (remember && token.trim()) window.localStorage.setItem(pairingStorageKey, token.trim());
+      else window.localStorage.removeItem(pairingStorageKey);
+    } catch { setAgentStatus('Browser storage unavailable. Pairing will last only until this page closes.'); }
+  }
   async function callAgent(path: '/health' | '/launch-remote' | '/poc-fill' | '/research-snapshot' | '/research-explore') {
     if (!agentToken.trim()) { setAgentStatus('Enter the pairing token from the installer.'); return; }
     setAgentBusy(true);
@@ -123,7 +142,8 @@ export function CompanyActionsMenu({
         </div>
         <label className="block space-y-1"><span>Filing transaction (preparation only)</span><select value={filingType} onChange={(event) => { setFilingType(event.target.value as 'officers' | 'address' | 'shares'); setReviewAcknowledged(false); }} className="w-full rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-text-primary"><option value="officers">Change of company officers — pilot</option><option value="address">Registered address — manual only</option><option value="shares">Share particulars — manual only</option></select></label>
         {filingType === 'officers' ? <div className="rounded-lg border border-border-primary p-3 space-y-2"><p className="font-medium text-text-primary">Officer-change filing checklist</p><p>Confirm the company UEN, officer identity, appointment or cessation type, effective date, supporting approvals and required consents against the signed documents before entering Bizfile.</p><p>This pilot opens Bizfile only. It does not select a transaction, read officer details, or fill fields.</p></div> : <p>Selected transaction is not automated. Continue manually in Bizfile.</p>}
-        <label className="block space-y-1"><span>Local agent pairing token</span><input type="password" autoComplete="off" value={agentToken} onChange={(event) => setAgentToken(event.target.value)} placeholder="Paste token from installer" className="w-full rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-text-primary" /></label>
+        <label className="block space-y-1"><span>Local agent pairing token</span><input type="password" autoComplete="off" value={agentToken} onChange={(event) => updatePairing(event.target.value, rememberPairing)} placeholder="Paste token from installer" className="w-full rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-text-primary" /></label>
+        <label className="flex items-start gap-2"><input type="checkbox" checked={rememberPairing} onChange={(event) => updatePairing(agentToken, event.target.checked)} /><span>Remember pairing on this browser (stored locally; use only on a trusted PC). Uncheck to forget it.</span></label>
         <p role="status">{agentStatus}</p>
         <label className="flex items-start gap-2"><input type="checkbox" checked={reviewAcknowledged} onChange={(event) => setReviewAcknowledged(event.target.checked)} /><span>I understand this is an attended pilot. I will verify the selected company and filing information and manually control any declaration, payment and submission.</span></label>
         <div className="flex flex-wrap gap-2"><button type="button" disabled={agentBusy} className="btn-secondary btn-sm" onClick={() => void callAgent('/health')}>Check local agent</button><button type="button" disabled={agentBusy || !reviewAcknowledged} className="btn-primary btn-sm" onClick={() => void callAgent('/launch-remote')}>Launch Bizfile on this PC</button><button type="button" disabled={agentBusy || !reviewAcknowledged} className="btn-secondary btn-sm" onClick={() => void callAgent('/research-snapshot')}>Capture research snapshot</button><button type="button" disabled={agentBusy || !reviewAcknowledged} className="btn-secondary btn-sm" onClick={() => void callAgent('/research-explore')}>Auto-explore safe dropdowns</button>{filingType === 'officers' ? <button type="button" disabled={agentBusy || !reviewAcknowledged} className="btn-secondary btn-sm" onClick={() => void callAgent('/poc-fill')}>POC: Add Director (no save)</button> : null}</div>

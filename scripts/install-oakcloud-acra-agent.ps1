@@ -4,14 +4,24 @@ param([Parameter(Mandatory=$true)][string]$OakCloudUrl)
 $ErrorActionPreference = 'Stop'
 $oakCloudOrigin = ([Uri]$OakCloudUrl).GetLeftPart([System.UriPartial]::Authority)
 if (-not $oakCloudOrigin.StartsWith('https://')) { throw 'OakCloudUrl must use HTTPS.' }
-$tokenBytes = New-Object byte[] 32
-$rng = [System.Security.Cryptography.RandomNumberGenerator]::Create()
-try { $rng.GetBytes($tokenBytes) } finally { $rng.Dispose() }
-$pairingToken = ([BitConverter]::ToString($tokenBytes) -replace '-', '').ToLowerInvariant()
-$nodeVersion = (& node --version)
-if ($LASTEXITCODE -ne 0 -or $nodeVersion -notmatch '^v24[.]') { throw 'Node.js 24 is required.' }
 $installDir = Join-Path $env:LOCALAPPDATA 'OakCloud\ACRA-Agent'
 New-Item -ItemType Directory -Force -Path $installDir | Out-Null
+$agentPath = Join-Path $installDir 'agent.cjs'
+$pairingToken = $null
+if (Test-Path $agentPath) {
+  $existingAgent = Get-Content -Raw -Path $agentPath
+  if ($existingAgent -match "const TOKEN = '([a-f0-9]{64})';") {
+    $pairingToken = $Matches[1]
+  }
+}
+if (-not $pairingToken) {
+  $tokenBytes = New-Object byte[] 32
+  $rng = [System.Security.Cryptography.RandomNumberGenerator]::Create()
+  try { $rng.GetBytes($tokenBytes) } finally { $rng.Dispose() }
+  $pairingToken = ([BitConverter]::ToString($tokenBytes) -replace '-', '').ToLowerInvariant()
+}
+$nodeVersion = (& node --version)
+if ($LASTEXITCODE -ne 0 -or $nodeVersion -notmatch '^v24[.]') { throw 'Node.js 24 is required.' }
 @'
 {
   "name": "oakcloud-acra-local-agent",
@@ -227,4 +237,4 @@ Write-Host "Installed to $installDir"
 Write-Host "Run $launcher to start the pilot."
 
 Write-Host "OakCloud allowed origin: $oakCloudOrigin"
-Write-Host "Pairing token (keep private, enter in OakCloud): $pairingToken"
+Write-Host "Pairing token (unchanged on reinstall; keep private): $pairingToken"
