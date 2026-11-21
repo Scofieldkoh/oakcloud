@@ -1,6 +1,13 @@
 # OakCloud ACRA Local Agent - attended browser pilot installer
 # Run on the staff Windows PC with Node.js 24 installed.
+param([Parameter(Mandatory=$true)][string]$OakCloudUrl)
 $ErrorActionPreference = 'Stop'
+$oakCloudOrigin = ([Uri]$OakCloudUrl).GetLeftPart([System.UriPartial]::Authority)
+if (-not $oakCloudOrigin.StartsWith('https://')) { throw 'OakCloudUrl must use HTTPS.' }
+$tokenBytes = New-Object byte[] 32
+$rng = [System.Security.Cryptography.RandomNumberGenerator]::Create()
+try { $rng.GetBytes($tokenBytes) } finally { $rng.Dispose() }
+$pairingToken = ([BitConverter]::ToString($tokenBytes) -replace '-', '').ToLowerInvariant()
 $nodeVersion = (& node --version)
 if ($LASTEXITCODE -ne 0 -or $nodeVersion -notmatch '^v24[.]') { throw 'Node.js 24 is required.' }
 $installDir = Join-Path $env:LOCALAPPDATA 'OakCloud\ACRA-Agent'
@@ -19,6 +26,10 @@ New-Item -ItemType Directory -Force -Path $installDir | Out-Null
 @'
 'use strict';
 const http = require('node:http');
+const { timingSafeEqual } = require('node:crypto');
+const ORIGIN = '__OAKCLOUD_ORIGIN__';
+const TOKEN = '__PAIRING_TOKEN__';
+const tokenMatches = (provided) => typeof provided === 'string' && provided.length === TOKEN.length && timingSafeEqual(Buffer.from(provided), Buffer.from(TOKEN));
 const { chromium } = require('playwright');
 const HOST = '127.0.0.1';
 const PORT = 48731;
@@ -29,6 +40,18 @@ const html = `<!doctype html><html><head><meta charset="utf-8"><title>OakCloud A
 const server = http.createServer(async (req, res) => {
   if (req.headers.host !== HOST + ':' + PORT || req.headers.origin && req.headers.origin !== 'http://' + HOST + ':' + PORT) {
     res.writeHead(403).end('Forbidden'); return;
+  }
+  if (req.method === 'OPTIONS' && (req.url === '/health' || req.url === '/launch-remote')) {
+    if (req.headers.origin !== ORIGIN) { res.writeHead(403).end(); return; }
+    res.writeHead(204, {'Access-Control-Allow-Origin':ORIGIN,'Access-Control-Allow-Methods':'GET, POST, OPTIONS','Access-Control-Allow-Headers':'Content-Type, X-OakCloud-Agent-Token','Access-Control-Allow-Private-Network':'true','Vary':'Origin'}).end(); return;
+  }
+  if (req.url === '/health' || req.url === '/launch-remote') {
+    if (req.headers.origin !== ORIGIN || !tokenMatches(req.headers['x-oakcloud-agent-token'])) { res.writeHead(403).end('Forbidden'); return; }
+    res.setHeader('Access-Control-Allow-Origin', ORIGIN);
+    res.setHeader('Vary','Origin');
+    if (req.method === 'GET' && req.url === '/health') { res.writeHead(200, {'Content-Type':'application/json'}).end(JSON.stringify({ok:true,version:'0.2.0'})); return; }
+    if (req.method !== 'POST' || req.url !== '/launch-remote') { res.writeHead(405).end(); return; }
+    req.url = '/launch';
   }
   if (req.method === 'GET' && req.url === '/') {
     res.writeHead(200, {'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}).end(html);
@@ -60,7 +83,7 @@ server.listen(PORT, HOST, () => {
   console.log('Keep this window open while using the pilot. Press Ctrl+C to stop.');
 });
 process.on('SIGINT', async () => { if (browser) await browser.close(); server.close(); process.exit(0); });
-'@ | Set-Content -Encoding UTF8 (Join-Path $installDir 'agent.cjs')
+'@ | ForEach-Object { $_.Replace('__OAKCLOUD_ORIGIN__', $oakCloudOrigin).Replace('__PAIRING_TOKEN__', $pairingToken) } | Set-Content -Encoding UTF8 (Join-Path $installDir 'agent.cjs')
 Push-Location $installDir
 try {
   npm install --no-audit --no-fund
@@ -78,3 +101,6 @@ pause
 '@ | Set-Content -Encoding ASCII $launcher
 Write-Host "Installed to $installDir"
 Write-Host "Run $launcher to start the pilot."
+
+Write-Host "OakCloud allowed origin: $oakCloudOrigin"
+Write-Host "Pairing token (keep private, enter in OakCloud): $pairingToken"

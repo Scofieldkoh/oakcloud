@@ -37,6 +37,26 @@ export function CompanyActionsMenu({
   const router = useRouter();
   const [acraDialogOpen, setAcraDialogOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [agentToken, setAgentToken] = useState('');
+  const [agentStatus, setAgentStatus] = useState('Not checked');
+  const [agentBusy, setAgentBusy] = useState(false);
+  const agentUrl = 'http://127.0.0.1:48731';
+  async function callAgent(path: '/health' | '/launch-remote') {
+    if (!agentToken.trim()) { setAgentStatus('Enter the pairing token from the installer.'); return; }
+    setAgentBusy(true);
+    try {
+      const response = await fetch(`${agentUrl}${path}`, {
+        method: path === '/health' ? 'GET' : 'POST',
+        headers: { 'X-OakCloud-Agent-Token': agentToken.trim() },
+        cache: 'no-store',
+        signal: AbortSignal.timeout(12000),
+      });
+      if (!response.ok) throw new Error(`Agent returned HTTP ${response.status}`);
+      setAgentStatus(path === '/health' ? 'Agent connected on this PC.' : 'Browser launch requested on this PC.');
+    } catch (error) {
+      setAgentStatus(`Could not reach agent: ${error instanceof Error ? error.message : 'Unknown error'}. Check the agent is running and its allowed OakCloud URL matches this site.`);
+    } finally { setAgentBusy(false); }
+  }
 
   return (
     <>
@@ -75,7 +95,7 @@ export function CompanyActionsMenu({
         <DropdownItem
           icon={<MonitorPlay className="h-4 w-4" />}
           onClick={() => setAcraDialogOpen(true)}
-          description="Local browser filing pilot (not yet connected)"
+          description="Connect to the local Windows browser agent"
         >
           ACRA filing assistant
         </DropdownItem>
@@ -86,11 +106,14 @@ export function CompanyActionsMenu({
     </ActionsMenu>
     <Modal isOpen={acraDialogOpen} onClose={() => setAcraDialogOpen(false)} title="ACRA filing assistant" size="lg">
       <div className="space-y-4 p-5 text-sm text-text-secondary">
-        <p><strong className="text-text-primary">Local agent pilot — not connected.</strong> This is the entry point for attended ACRA filing. Browser automation requires the local Windows agent to be installed and running on the staff computer.</p>
+        <p><strong className="text-text-primary">Local browser agent pilot.</strong> This is the entry point for attended ACRA filing. The Windows agent must be running on this computer and paired with this OakCloud origin.</p>
         <div className="rounded-lg border border-border-primary p-3 space-y-1">
           <p className="font-medium text-text-primary">Company UEN: {companyUen}</p>
           <p>Staff must log in to Bizfile using their own Singpass/Corppass account and review any filing before submission.</p>
         </div>
+        <label className="block space-y-1"><span>Local agent pairing token</span><input type="password" autoComplete="off" value={agentToken} onChange={(event) => setAgentToken(event.target.value)} placeholder="Paste token from installer" className="w-full rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-text-primary" /></label>
+        <p role="status">{agentStatus}</p>
+        <div className="flex flex-wrap gap-2"><button type="button" disabled={agentBusy} className="btn-secondary btn-sm" onClick={() => void callAgent('/health')}>Check local agent</button><button type="button" disabled={agentBusy} className="btn-primary btn-sm" onClick={() => void callAgent('/launch-remote')}>Launch Bizfile on this PC</button></div>
         <p>The current pilot does not populate forms, submit filings, or update company records. Do not treat opening Bizfile as a completed filing.</p>
         <div className="flex flex-wrap gap-2">
           <button type="button" className="btn-secondary btn-sm inline-flex items-center gap-2" onClick={() => { void navigator.clipboard.writeText(companyUen).then(() => setCopied(true)).catch(() => setCopied(false)); }}>
