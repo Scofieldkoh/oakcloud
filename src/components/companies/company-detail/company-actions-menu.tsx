@@ -43,7 +43,7 @@ export function CompanyActionsMenu({
   const [filingType, setFilingType] = useState<'officers' | 'address' | 'shares'>('officers');
   const [reviewAcknowledged, setReviewAcknowledged] = useState(false);
   const agentUrl = 'http://127.0.0.1:48731';
-  async function callAgent(path: '/health' | '/launch-remote') {
+  async function callAgent(path: '/health' | '/launch-remote' | '/poc-fill') {
     if (!agentToken.trim()) { setAgentStatus('Enter the pairing token from the installer.'); return; }
     setAgentBusy(true);
     try {
@@ -54,7 +54,7 @@ export function CompanyActionsMenu({
         signal: AbortSignal.timeout(12000),
       });
       if (!response.ok) throw new Error(`Agent returned HTTP ${response.status}`);
-      setAgentStatus(path === '/health' ? 'Agent connected on this PC.' : 'Browser launch requested on this PC.');
+      setAgentStatus(path === '/health' ? 'Agent connected on this PC.' : path === '/poc-fill' ? 'POC attempted. Check the Chromium window and verify the Director selection.' : 'Browser launch requested on this PC.');
     } catch (error) {
       setAgentStatus(`Could not reach agent: ${error instanceof Error ? error.message : 'Unknown error'}. Check the agent is running and its allowed OakCloud URL matches this site.`);
     } finally { setAgentBusy(false); }
@@ -118,7 +118,7 @@ export function CompanyActionsMenu({
         <label className="block space-y-1"><span>Local agent pairing token</span><input type="password" autoComplete="off" value={agentToken} onChange={(event) => setAgentToken(event.target.value)} placeholder="Paste token from installer" className="w-full rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-text-primary" /></label>
         <p role="status">{agentStatus}</p>
         <label className="flex items-start gap-2"><input type="checkbox" checked={reviewAcknowledged} onChange={(event) => setReviewAcknowledged(event.target.checked)} /><span>I understand this is an attended pilot. I will verify the selected company and filing information and manually control any declaration, payment and submission.</span></label>
-        <div className="flex flex-wrap gap-2"><button type="button" disabled={agentBusy} className="btn-secondary btn-sm" onClick={() => void callAgent('/health')}>Check local agent</button><button type="button" disabled={agentBusy || !reviewAcknowledged} className="btn-primary btn-sm" onClick={() => void callAgent('/launch-remote')}>Launch Bizfile on this PC</button></div>
+        <div className="flex flex-wrap gap-2"><button type="button" disabled={agentBusy} className="btn-secondary btn-sm" onClick={() => void callAgent('/health')}>Check local agent</button><button type="button" disabled={agentBusy || !reviewAcknowledged} className="btn-primary btn-sm" onClick={() => void callAgent('/launch-remote')}>Launch Bizfile on this PC</button>{filingType === 'officers' ? <button type="button" disabled={agentBusy || !reviewAcknowledged} className="btn-secondary btn-sm" onClick={() => void callAgent('/poc-fill')}>POC: Add Director (no save)</button> : null}</div>
         <p>The current pilot does not populate forms, submit filings, or update company records. Do not treat opening Bizfile as a completed filing.</p>
         <div className="flex flex-wrap gap-2">
           <button type="button" className="btn-secondary btn-sm inline-flex items-center gap-2" onClick={() => { void navigator.clipboard.writeText(companyUen).then(() => setCopied(true)).catch(() => setCopied(false)); }}>

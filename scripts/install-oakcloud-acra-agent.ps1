@@ -35,22 +35,44 @@ const HOST = '127.0.0.1';
 const PORT = 48731;
 const TARGET = 'https://www.bizfile.gov.sg/';
 let browser = null;
+let activePage = null;
 let busy = false;
 const html = `<!doctype html><html><head><meta charset="utf-8"><title>OakCloud ACRA Local Agent</title><style>body{font:16px system-ui;max-width:640px;margin:60px auto;line-height:1.6;color:#222}button{padding:12px 20px;background:#165d43;color:white;border:0;border-radius:8px;cursor:pointer}small{color:#666}</style></head><body><h1>OakCloud ACRA Local Agent</h1><p>Attended browser pilot. Launches a separate visible Chromium browser for ACRA Bizfile.</p><form method="POST" action="/launch"><button type="submit">Open ACRA Bizfile</button></form><p><small>Sign in manually. This pilot does not populate forms, submit filings, store passwords, or connect to the OakCloud server.</small></p></body></html>`;
 const server = http.createServer(async (req, res) => {
   if (req.headers.host !== HOST + ':' + PORT || req.headers.origin && req.headers.origin !== 'http://' + HOST + ':' + PORT && req.headers.origin !== ORIGIN) {
     res.writeHead(403).end('Forbidden'); return;
   }
-  if (req.method === 'OPTIONS' && (req.url === '/health' || req.url === '/launch-remote')) {
+  if (req.method === 'OPTIONS' && (req.url === '/health' || req.url === '/launch-remote' || req.url === '/poc-fill')) {
     if (req.headers.origin !== ORIGIN) { res.writeHead(403).end(); return; }
     res.writeHead(204, {'Access-Control-Allow-Origin':ORIGIN,'Access-Control-Allow-Methods':'GET, POST, OPTIONS','Access-Control-Allow-Headers':'Content-Type, X-OakCloud-Agent-Token','Access-Control-Allow-Private-Network':'true','Vary':'Origin'}).end(); return;
   }
-  if (req.url === '/health' || req.url === '/launch-remote') {
+  if (req.url === '/health' || req.url === '/launch-remote' || req.url === '/poc-fill') {
     if (req.headers.origin !== ORIGIN || !tokenMatches(req.headers['x-oakcloud-agent-token'])) { res.writeHead(403).end('Forbidden'); return; }
     res.setHeader('Access-Control-Allow-Origin', ORIGIN);
     res.setHeader('Vary','Origin');
     if (req.method === 'GET' && req.url === '/health') { res.writeHead(200, {'Content-Type':'application/json'}).end(JSON.stringify({ok:true,version:'0.2.0'})); return; }
     if (req.method !== 'POST' || req.url !== '/launch-remote') { res.writeHead(405).end(); return; }
+    if (req.method === 'POST' && req.url === '/poc-fill') {
+      if (!activePage || activePage.isClosed() || busy) { res.writeHead(409).end('No active browser or agent busy'); return; }
+      busy = true;
+      try {
+        if (new URL(activePage.url()).hostname !== 'www.bizfile.gov.sg') throw new Error('Not on Bizfile');
+        const add = activePage.getByText('Add position holder', {exact:true});
+        if (await add.count() !== 1) throw new Error('Add position holder control ambiguous');
+        await add.click();
+        const position = activePage.getByText('Select position', {exact:true});
+        if (await position.count() !== 1) throw new Error('Position control ambiguous');
+        await position.click();
+        const director = activePage.getByText('Director', {exact:true});
+        if (await director.count() !== 1) throw new Error('Director option ambiguous');
+        await director.click();
+        res.writeHead(200, {'Content-Type':'application/json'}).end(JSON.stringify({ok:true,message:'Director selected. Review manually; nothing saved.'}));
+      } catch(e) {
+        console.error('POC failed:', e);
+        res.writeHead(422, {'Content-Type':'application/json'}).end(JSON.stringify({ok:false,message:'POC stopped. Check agent console.'}));
+      } finally { busy = false; }
+      return;
+    }
     req.url = '/launch';
   }
   if (req.method === 'GET' && req.url === '/') {
@@ -66,9 +88,10 @@ const server = http.createServer(async (req, res) => {
       } else {
         browser = await chromium.launch({headless:false});
         const page = await browser.newPage();
+        activePage = page;
         await page.goto(TARGET, {waitUntil:'domcontentloaded',timeout:45000});
         res.writeHead(200, {'Content-Type':'text/plain'}).end('ACRA Bizfile browser opened. You may return to this window.');
-        browser.on('disconnected', () => { browser = null; });
+        browser.on('disconnected', () => { browser = null; activePage = null; });
       }
     } catch(e) {
       console.error(e);
