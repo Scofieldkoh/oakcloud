@@ -49,7 +49,7 @@ export function CompanyActionsMenu({
     setAgentBusy(true);
     try {
       const response = await fetch(`${agentUrl}${path}`, {
-        method: path === '/health' ? 'GET' : 'POST',
+        method: path === '/health' || path === '/research-snapshot' ? 'GET' : 'POST',
         headers: { 'X-OakCloud-Agent-Token': agentToken.trim() },
         cache: 'no-store',
         signal: AbortSignal.timeout(12000),
