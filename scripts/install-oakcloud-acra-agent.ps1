@@ -38,7 +38,7 @@ let browser = null;
 let busy = false;
 const html = `<!doctype html><html><head><meta charset="utf-8"><title>OakCloud ACRA Local Agent</title><style>body{font:16px system-ui;max-width:640px;margin:60px auto;line-height:1.6;color:#222}button{padding:12px 20px;background:#165d43;color:white;border:0;border-radius:8px;cursor:pointer}small{color:#666}</style></head><body><h1>OakCloud ACRA Local Agent</h1><p>Attended browser pilot. Launches a separate visible Chromium browser for ACRA Bizfile.</p><form method="POST" action="/launch"><button type="submit">Open ACRA Bizfile</button></form><p><small>Sign in manually. This pilot does not populate forms, submit filings, store passwords, or connect to the OakCloud server.</small></p></body></html>`;
 const server = http.createServer(async (req, res) => {
-  if (req.headers.host !== HOST + ':' + PORT || req.headers.origin && req.headers.origin !== 'http://' + HOST + ':' + PORT) {
+  if (req.headers.host !== HOST + ':' + PORT || req.headers.origin && req.headers.origin !== 'http://' + HOST + ':' + PORT && req.headers.origin !== ORIGIN) {
     res.writeHead(403).end('Forbidden'); return;
   }
   if (req.method === 'OPTIONS' && (req.url === '/health' || req.url === '/launch-remote')) {
