@@ -40,6 +40,8 @@ export function CompanyActionsMenu({
   const [agentToken, setAgentToken] = useState('');
   const [agentStatus, setAgentStatus] = useState('Not checked');
   const [agentBusy, setAgentBusy] = useState(false);
+  const [filingType, setFilingType] = useState<'officers' | 'address' | 'shares'>('officers');
+  const [reviewAcknowledged, setReviewAcknowledged] = useState(false);
   const agentUrl = 'http://127.0.0.1:48731';
   async function callAgent(path: '/health' | '/launch-remote') {
     if (!agentToken.trim()) { setAgentStatus('Enter the pairing token from the installer.'); return; }
@@ -111,9 +113,12 @@ export function CompanyActionsMenu({
           <p className="font-medium text-text-primary">Company UEN: {companyUen}</p>
           <p>Staff must log in to Bizfile using their own Singpass/Corppass account and review any filing before submission.</p>
         </div>
+        <label className="block space-y-1"><span>Filing transaction (preparation only)</span><select value={filingType} onChange={(event) => { setFilingType(event.target.value as 'officers' | 'address' | 'shares'); setReviewAcknowledged(false); }} className="w-full rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-text-primary"><option value="officers">Change of company officers — pilot</option><option value="address">Registered address — manual only</option><option value="shares">Share particulars — manual only</option></select></label>
+        {filingType === 'officers' ? <div className="rounded-lg border border-border-primary p-3 space-y-2"><p className="font-medium text-text-primary">Officer-change filing checklist</p><p>Confirm the company UEN, officer identity, appointment or cessation type, effective date, supporting approvals and required consents against the signed documents before entering Bizfile.</p><p>This pilot opens Bizfile only. It does not select a transaction, read officer details, or fill fields.</p></div> : <p>Selected transaction is not automated. Continue manually in Bizfile.</p>}
         <label className="block space-y-1"><span>Local agent pairing token</span><input type="password" autoComplete="off" value={agentToken} onChange={(event) => setAgentToken(event.target.value)} placeholder="Paste token from installer" className="w-full rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-text-primary" /></label>
         <p role="status">{agentStatus}</p>
-        <div className="flex flex-wrap gap-2"><button type="button" disabled={agentBusy} className="btn-secondary btn-sm" onClick={() => void callAgent('/health')}>Check local agent</button><button type="button" disabled={agentBusy} className="btn-primary btn-sm" onClick={() => void callAgent('/launch-remote')}>Launch Bizfile on this PC</button></div>
+        <label className="flex items-start gap-2"><input type="checkbox" checked={reviewAcknowledged} onChange={(event) => setReviewAcknowledged(event.target.checked)} /><span>I understand this is an attended pilot. I will verify the selected company and filing information and manually control any declaration, payment and submission.</span></label>
+        <div className="flex flex-wrap gap-2"><button type="button" disabled={agentBusy} className="btn-secondary btn-sm" onClick={() => void callAgent('/health')}>Check local agent</button><button type="button" disabled={agentBusy || !reviewAcknowledged} className="btn-primary btn-sm" onClick={() => void callAgent('/launch-remote')}>Launch Bizfile on this PC</button></div>
         <p>The current pilot does not populate forms, submit filings, or update company records. Do not treat opening Bizfile as a completed filing.</p>
         <div className="flex flex-wrap gap-2">
           <button type="button" className="btn-secondary btn-sm inline-flex items-center gap-2" onClick={() => { void navigator.clipboard.writeText(companyUen).then(() => setCopied(true)).catch(() => setCopied(false)); }}>
