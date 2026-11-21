@@ -2,7 +2,7 @@
 # Run on the staff Windows PC with Node.js 24 installed.
 $ErrorActionPreference = 'Stop'
 $nodeVersion = (& node --version)
-if ($LASTEXITCODE -ne 0 -or $nodeVersion -notmatch '^v24\\.') { throw 'Node.js 24 is required.' }
+if ($LASTEXITCODE -ne 0 -or $nodeVersion -notmatch '^v24[.]') { throw 'Node.js 24 is required.' }
 $installDir = Join-Path $env:LOCALAPPDATA 'OakCloud\ACRA-Agent'
 New-Item -ItemType Directory -Force -Path $installDir | Out-Null
 @'
