@@ -33,6 +33,8 @@ const deadlineQueryTextSchema = z.string().trim().max(200).default('');
  */
 export const deadlineSearchSchema = z.object({
   from: dateOnlySchema.optional(),
+  financialYear: z.number().int().min(2000).max(2100).optional(),
+  obligationCode: z.enum(['SG_ECI', 'SG_FORM_C', 'SG_AGM_DUE', 'SG_ANNUAL_RETURN']).optional(),
   to: dateOnlySchema.optional(),
   mode: deadlineModeSchema.default('TABLE'),
   types: z.array(deadlineTypeSchema).max(3).default([]),
@@ -123,7 +125,7 @@ export const resetDateOverrideSchema = resetDeadlineDateOverrideSchema;
 export type ResetDeadlineDateOverrideInput = z.infer<typeof resetDeadlineDateOverrideSchema>;
 
 const allowedQueryKeys = new Set([
-  'from', 'to', 'mode', 'types', 'familyIds', 'companyIds', 'statuses', 'timing', 'timingBucket',
+  'from', 'to', 'financialYear', 'obligationCode', 'mode', 'types', 'familyIds', 'companyIds', 'statuses', 'timing', 'timingBucket',
   'openOnly', 'origin', 'companyQuery', 'serviceQuery', 'milestoneQuery', 'page', 'limit', 'sortBy', 'sortOrder',
 ]);
 
@@ -171,6 +173,7 @@ export function parseDeadlineSearchParams(input: Request | URL | URLSearchParams
         break;
       case 'page':
       case 'limit':
+      case 'financialYear':
         raw[key] = strictPositiveInteger(value, key);
         break;
       default:

@@ -130,7 +130,7 @@ export function parseBillingTablePreference(value: unknown): BillingTablePrefere
 
 export const deadlineViewPreferenceSchema = z.object({
   version: z.literal(1),
-  defaultView: z.enum(['TABLE', 'CALENDAR']),
+  defaultView: z.enum(['TABLE', 'CALENDAR', 'MATRIX', 'WORKLOAD']),
   monthCount: z.union([z.literal(1), z.literal(2), z.literal(3)]).nullable(),
   visibleTypes: z.array(z.enum(['STATUTORY', 'CLIENT', 'INTERNAL'])).max(3),
   familyIds: z.array(UUID).max(50),

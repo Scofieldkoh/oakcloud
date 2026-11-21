@@ -13,6 +13,11 @@ import type {
 } from '@/lib/validations/deadline';
 import { deadlineSearchSchema } from '@/lib/validations/deadline';
 import type { DeadlineListResult, DeadlineOccurrenceDto } from '@/services/deadline';
+import {
+  complianceOverviewParams,
+  type ComplianceOverviewInput,
+  type ComplianceOverviewResult,
+} from '@/lib/validations/deadline-overview';
 import type { PostpaidQuantityPrompt } from '@/services/billing/postpaid';
 import type { WorkspaceHolidaysDto } from '@/services/business-calendar';
 
@@ -81,6 +86,8 @@ export function normalizeDeadlineSearch(input: DeadlineSearchInput = {}): Deadli
   return deadlineSearchSchema.parse({
     from: input.from,
     to: input.to,
+    financialYear: input.financialYear,
+    obligationCode: input.obligationCode,
     mode: input.mode ?? 'TABLE',
     types: uniqueOrdered(input.types, typeOrder),
     familyIds: uniqueStrings(input.familyIds),
@@ -115,6 +122,8 @@ export function deadlineSearchParams(search: DeadlineSearchInput = {}): string {
   const params = new URLSearchParams();
   if (normalized.from) params.set('from', normalized.from);
   if (normalized.to) params.set('to', normalized.to);
+  if (normalized.financialYear) params.set('financialYear', String(normalized.financialYear));
+  if (normalized.obligationCode) params.set('obligationCode', normalized.obligationCode);
   params.set('mode', normalized.mode);
   if (normalized.types.length > 0) params.set('types', normalized.types.join(','));
   params.set('familyIds', normalized.familyIds.join(','));
@@ -144,6 +153,16 @@ async function requestJson<T>(url: string, init?: RequestInit): Promise<T> {
   return body as T;
 }
 
+export function useComplianceOverview(input: ComplianceOverviewInput, options: { enabled?: boolean } = {}) {
+  const params = complianceOverviewParams(input);
+  return useQuery<ComplianceOverviewResult>({
+    queryKey: ['deadline-overview', params],
+    queryFn: ({ signal }) => requestJson<ComplianceOverviewResult>('/api/deadlines?' + params, { signal }),
+    enabled: options.enabled ?? true,
+    placeholderData: keepPreviousData,
+  });
+}
+
 export function useDeadlines(search: DeadlineSearchInput = {}) {
   const normalized = normalizeDeadlineSearch(search);
   return useQuery<DeadlineListResult>({
@@ -168,6 +187,7 @@ function useInvalidateDeadlineQueries() {
   return async (id: string) => {
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: deadlineKeys.all }),
+      queryClient.invalidateQueries({ queryKey: ['deadline-overview'] }),
       queryClient.invalidateQueries({ queryKey: ['service-roster'] }),
       queryClient.invalidateQueries({ queryKey: deadlineKeys.detail(id) }),
       // A company filing status can raise or cancel a postpaid bill.

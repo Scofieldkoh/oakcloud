@@ -9,6 +9,7 @@ import { DatePicker, type DatePickerValue } from '@/components/ui/date-picker';
 import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
 import { TableSelectFilter, TableTextFilter } from '@/components/ui/data-table';
 import type { DeadlineTimingBucket } from '@/lib/validations/deadline';
+import { COMPLIANCE_MATRIX_CODES, COMPLIANCE_MATRIX_LABELS, type ComplianceMatrixCode } from '@/lib/validations/deadline-overview';
 import { DEADLINE_TIMING_BUCKET_LABELS } from './deadline-event';
 
 export type DeadlineFilterType = 'STATUTORY' | 'CLIENT' | 'INTERNAL';
@@ -19,6 +20,10 @@ type DeadlineSelectableStatus = Exclude<DeadlineFilterStatus, 'OPEN'>;
 interface DeadlineFiltersProps {
   families: ServiceFamilyFilter[];
   companyQuery: string;
+  financialYear?: number;
+  obligationCode?: ComplianceMatrixCode;
+  onFinancialYearChange: (year?: number) => void;
+  onObligationCodeChange: (code?: ComplianceMatrixCode) => void;
   serviceQuery: string;
   milestoneQuery: string;
   selectedTypes: readonly DeadlineFilterType[];
@@ -311,6 +316,10 @@ export function DeadlineInlineFilters({
 export function DeadlineFilters({
   families,
   companyQuery,
+  financialYear,
+  obligationCode,
+  onFinancialYearChange,
+  onObligationCodeChange,
   serviceQuery,
   milestoneQuery,
   selectedTypes,
@@ -336,6 +345,26 @@ export function DeadlineFilters({
   return (
     <ServiceFilterToolbar label="Deadline filters" onAdjustColumns={onAdjustColumns} hiddenColumnCount={hiddenColumnCount} className={className}>
       <CompanySearchInput value={companyQuery} onChange={onCompanyQueryChange} />
+      <select
+        aria-label="Financial year / YA filter"
+        value={financialYear ?? ''}
+        onChange={(event) => onFinancialYearChange(event.target.value ? Number(event.target.value) : undefined)}
+        className={quickFilterClass(Boolean(financialYear)) + ' max-w-[170px] text-xs'}
+      >
+        <option value="">All FY/YA</option>
+        {Array.from(new Set([financialYear, ...Array.from({ length: 9 }, (_, i) => new Date().getFullYear() + 2 - i)])).filter((year): year is number => year != null && year >= 2000 && year <= 2100).sort((a, b) => b - a).map((year) => (
+          <option key={year} value={year}>FY {year} / YA {year + 1}</option>
+        ))}
+      </select>
+      <select
+        aria-label="Statutory filing type filter"
+        value={obligationCode ?? ''}
+        onChange={(event) => onObligationCodeChange(COMPLIANCE_MATRIX_CODES.find((code) => code === event.target.value))}
+        className={quickFilterClass(Boolean(obligationCode)) + ' max-w-[145px] text-xs'}
+      >
+        <option value="">All filings</option>
+        {COMPLIANCE_MATRIX_CODES.map((code) => <option value={code} key={code}>{COMPLIANCE_MATRIX_LABELS[code]}</option>)}
+      </select>
       <button type="button" aria-pressed={openOnly && selectedStatuses.length === 0} onClick={onToggleOpenOnly} className={quickFilterClass(openOnly && selectedStatuses.length === 0)}>Status: Open</button>
       {families.length > 0 ? <FamilyFilterChips families={families} selectedIds={selectedFamilyIds} onToggle={onToggleFamily} /> : null}
       <TextFilterButton label="Service" value={serviceQuery} onChange={onServiceQueryChange} title="Filter service" description="Search by the service assigned to a deadline." placeholder="Search services" />

@@ -493,6 +493,7 @@ export function deadlineWhereForSearch(
     } : {}),
     ...(companyIds === undefined ? {} : { companyId: { in: companyIds } }),
     ...(input.types.length > 0 ? { deadlineType: { in: input.types } } : {}),
+    ...(input.obligationCode ? { obligationCode: input.obligationCode } : {}),
     ...(input.milestoneQuery ? { milestoneKey: { contains: normalizeMilestoneQuery(input.milestoneQuery), mode: 'insensitive' } } : {}),
     // Company-owned obligations match a service or family filter through the
     // service shown for them (see serviceForRecord).
@@ -516,6 +517,21 @@ export function deadlineWhereForSearch(
     ruleVersion: { tenantId: scope.tenantId },
     ...(input.origin ? { origin: input.origin } : {}),
   };
+
+  if (input.financialYear) {
+    const periodFrom = new Date(Date.UTC(input.financialYear, 0, 1));
+    const periodTo = new Date(Date.UTC(input.financialYear + 1, 0, 1));
+    const yearRange = { gte: periodFrom, lt: periodTo };
+    where.AND = [{
+      OR: [
+        { ownershipScope: 'COMPANY', OR: [
+          { financialPeriodEnd: yearRange },
+          { financialPeriodEnd: null, cycle: { tenantId: scope.tenantId, periodEnd: yearRange } },
+        ] },
+        { ownershipScope: 'SERVICE', cycle: { tenantId: scope.tenantId, periodEnd: yearRange } },
+      ],
+    }];
+  }
 
   const status = openStatusWhere(input);
 

@@ -50,6 +50,13 @@ import {
   type DeadlineTableColumnId,
 } from './deadline-table';
 import { DeadlineCalendar } from './deadline-calendar';
+import { DeadlineOverview } from './deadline-overview';
+import {
+  COMPLIANCE_MATRIX_CODES,
+  complianceOverviewStatusSchema,
+  type ComplianceMatrixCode,
+  type ComplianceOverviewStatus,
+} from '@/lib/validations/deadline-overview';
 import { DeadlineBulkActions } from './deadline-bulk-actions';
 import { ServiceColumnModal } from '@/components/services/shared/service-column-modal';
 import { BillingQuantityDialog, type BillingQuantityPromptItem } from '@/components/services/shared/billing-quantity-fields';
@@ -63,7 +70,11 @@ const DEADLINE_COLUMN_LABELS: Record<DeadlineTableColumnId, string> = { dueDate:
 type DeadlinePageSize = (typeof PAGE_SIZE_VALUES)[number];
 
 export interface DeadlineUrlState {
-  view: 'TABLE' | 'CALENDAR';
+  view: 'TABLE' | 'CALENDAR' | 'MATRIX' | 'WORKLOAD';
+  financialYear?: number;
+  dueYear: number;
+  obligationCode?: ComplianceMatrixCode;
+  overviewStatus: ComplianceOverviewStatus;
   from: DateOnly | null;
   to: DateOnly | null;
   types: DeadlineFilterType[];
@@ -86,6 +97,12 @@ interface DeadlineWorkspaceProps {
   canEdit?: boolean;
   deadlineWritesEnabled?: boolean;
   workspaceId?: string;
+}
+
+function readYear(value: string | null): number | undefined {
+  if (!value || !/^\d{4}$/.test(value)) return undefined;
+  const year = Number(value);
+  return year >= 2000 && year <= 2100 ? year : undefined;
 }
 
 function readDate(value: string | null): DateOnly | null {
@@ -185,7 +202,10 @@ export function parseDeadlineUrlState(
 ): DeadlineUrlState {
   const params = new URLSearchParams(searchKey);
   const hasView = params.has('deadlineView');
-  const view = params.get('deadlineView') === 'CALENDAR' || (!hasView && preference.defaultView === 'CALENDAR') ? 'CALENDAR' : 'TABLE';
+  const requestedView = params.get('deadlineView');
+  const view = requestedView === 'TABLE' || requestedView === 'CALENDAR' || requestedView === 'MATRIX' || requestedView === 'WORKLOAD'
+    ? requestedView
+    : hasView ? 'TABLE' : preference.defaultView;
   const monthCount = effectiveCalendarMonthCount(preference, isLargeDesktop);
   const candidateFrom = readDate(params.get('from'));
   const candidateTo = readDate(params.get('to'));
@@ -203,6 +223,10 @@ export function parseDeadlineUrlState(
   const fallbackPageSize = PAGE_SIZE_VALUES.includes(preference.pageSize as (typeof PAGE_SIZE_VALUES)[number]) ? preference.pageSize : 20;
   return {
     view,
+    financialYear: readYear(params.get('financialYear')),
+    dueYear: readYear(params.get('dueYear')) ?? Number(today.slice(0, 4)),
+    obligationCode: COMPLIANCE_MATRIX_CODES.find((code) => code === params.get('obligationCode')),
+    overviewStatus: complianceOverviewStatusSchema.safeParse(params.get('overviewStatus') ?? 'ALL').data ?? 'ALL',
     from: range.from,
     to: range.to,
     types: hasTypes ? requestedTypes : visibleTypes,
@@ -262,7 +286,7 @@ export function DeadlineViewToggle() {
     router.replace(nextKey ? `${pathname}?${nextKey}` : pathname, { scroll: false });
   }, [effectiveSearchKey, pathname, router]);
 
-  const switchView = useCallback((view: 'TABLE' | 'CALENDAR') => {
+  const switchView = useCallback((view: DeadlineUrlState['view']) => {
     const range = view === 'CALENDAR'
       ? monthRange(dateFromMonth(urlState.from ?? currentDateInSingapore()), calendarMonthCount)
       : { from: urlState.from, to: urlState.to };
@@ -274,6 +298,8 @@ export function DeadlineViewToggle() {
     <div role="group" aria-label="Deadline view" className="inline-flex min-h-11 items-center rounded-xl border border-border-primary bg-background-secondary p-1 sm:min-h-8">
       <button type="button" aria-pressed={urlState.view === 'TABLE'} onClick={() => switchView('TABLE')} className={urlState.view === 'TABLE' ? 'min-h-11 rounded-lg bg-oak-primary px-3 text-xs font-medium text-white sm:min-h-8' : 'min-h-11 rounded-lg px-3 text-xs font-medium text-text-secondary hover:text-text-primary sm:min-h-8'}>Table view</button>
       <button type="button" aria-pressed={urlState.view === 'CALENDAR'} onClick={() => switchView('CALENDAR')} className={urlState.view === 'CALENDAR' ? 'min-h-11 rounded-lg bg-oak-primary px-3 text-xs font-medium text-white sm:min-h-8' : 'min-h-11 rounded-lg px-3 text-xs font-medium text-text-secondary hover:text-text-primary sm:min-h-8'}>Calendar view</button>
+      <button type="button" aria-pressed={urlState.view === 'MATRIX'} onClick={() => switchView('MATRIX')} className={urlState.view === 'MATRIX' ? 'min-h-11 rounded-lg bg-oak-primary px-3 text-xs font-medium text-white sm:min-h-8' : 'min-h-11 rounded-lg px-3 text-xs font-medium text-text-secondary hover:text-text-primary sm:min-h-8'}>Matrix</button>
+      <button type="button" aria-pressed={urlState.view === 'WORKLOAD'} onClick={() => switchView('WORKLOAD')} className={urlState.view === 'WORKLOAD' ? 'min-h-11 rounded-lg bg-oak-primary px-3 text-xs font-medium text-white sm:min-h-8' : 'min-h-11 rounded-lg px-3 text-xs text-text-secondary hover:text-text-primary sm:min-h-8'}>Workload</button>
     </div>
   );
 }
@@ -396,7 +422,9 @@ export function DeadlineWorkspace({ canEdit = false, deadlineWritesEnabled = fal
   const query: DeadlineSearchInput = {
     from: urlState.from ?? undefined,
     to: urlState.to ?? undefined,
-    mode: urlState.view,
+    financialYear: urlState.financialYear,
+    obligationCode: urlState.obligationCode,
+    mode: urlState.view === 'CALENDAR' ? 'CALENDAR' : 'TABLE',
     types: urlState.types,
     familyIds: urlState.families,
     companyIds: urlState.companies,
@@ -626,6 +654,8 @@ export function DeadlineWorkspace({ canEdit = false, deadlineWritesEnabled = fal
     for (const family of families.filter((item) => urlState.families.includes(item.id))) activeBadges.push({ key: `family-${family.id}`, label: `Family: ${family.name}`, onRemove: () => updateFamily(family.id) });
   }
   if (urlState.companyQuery) activeBadges.push({ key: 'companyQuery', label: `Company: ${urlState.companyQuery}`, onRemove: () => updateTextFilter('companyQuery', '') });
+  if (urlState.financialYear) activeBadges.push({ key: 'financialYear', label: `FY ${urlState.financialYear} / YA ${urlState.financialYear + 1}`, onRemove: () => replaceUrl({ financialYear: undefined, page: '1' }) });
+  if (urlState.obligationCode) activeBadges.push({ key: 'obligationCode', label: `Filing: ${urlState.obligationCode.replace('SG_', '')}`, onRemove: () => replaceUrl({ obligationCode: undefined, page: '1' }) });
   if (urlState.serviceQuery) activeBadges.push({ key: 'serviceQuery', label: `Service: ${urlState.serviceQuery}`, onRemove: () => updateTextFilter('serviceQuery', '') });
   if (urlState.milestoneQuery) activeBadges.push({ key: 'milestoneQuery', label: `Milestone: ${urlState.milestoneQuery}`, onRemove: () => updateTextFilter('milestoneQuery', '') });
   if (urlState.timingBucket) activeBadges.push({ key: 'timingBucket', label: `Timing: ${DEADLINE_TIMING_BUCKET_LABELS[urlState.timingBucket]}`, onRemove: () => replaceUrl({ timingBucket: undefined, page: '1' }) });
@@ -643,6 +673,8 @@ export function DeadlineWorkspace({ canEdit = false, deadlineWritesEnabled = fal
       types: undefined,
       families: undefined,
       statuses: undefined,
+      financialYear: undefined,
+      obligationCode: undefined,
       openOnly: 'false',
       companyQuery: undefined,
       serviceQuery: undefined,
@@ -673,8 +705,12 @@ export function DeadlineWorkspace({ canEdit = false, deadlineWritesEnabled = fal
 
   return (
     <section aria-label="Deadline workspace" className="space-y-4">
-      <DeadlineFilters
+      {(urlState.view === 'TABLE' || urlState.view === 'CALENDAR') ? <DeadlineFilters
         families={families}
+        financialYear={urlState.financialYear}
+        obligationCode={urlState.obligationCode}
+        onFinancialYearChange={(year) => replaceUrl({ financialYear: year ? String(year) : undefined, from: undefined, to: undefined, dateFilter: 'none', page: '1' })}
+        onObligationCodeChange={(code) => replaceUrl({ obligationCode: code, page: '1' })}
         selectedFamilyIds={urlState.families}
         companyQuery={urlState.companyQuery}
         serviceQuery={urlState.serviceQuery}
@@ -696,7 +732,7 @@ export function DeadlineWorkspace({ canEdit = false, deadlineWritesEnabled = fal
         onDateRangeChange={(from, to) => replaceUrl({ from: from || undefined, to: to || undefined, dateFilter: from && to ? undefined : 'none', page: '1' })}
         onAdjustColumns={urlState.view === 'TABLE' ? () => setColumnsOpen(true) : undefined}
         hiddenColumnCount={DEADLINE_TABLE_COLUMNS.filter((column) => column !== 'actions' && !columnVisibility[column]).length}
-      />
+      /> : null}
       {familyFacets.error ? (
         <Alert variant="error" title="Family filters unavailable">
           <div className="flex flex-wrap items-center gap-2">
@@ -706,14 +742,14 @@ export function DeadlineWorkspace({ canEdit = false, deadlineWritesEnabled = fal
         </Alert>
       ) : null}
 
-      {activeBadges.length > 0 ? (
+      {(urlState.view === 'TABLE' || urlState.view === 'CALENDAR') && activeBadges.length > 0 ? (
         <div aria-label="Active deadline filters" className="flex flex-wrap items-center gap-2">
           {activeBadges.map((badge) => <button key={badge.key} type="button" onClick={badge.onRemove} className="inline-flex min-h-11 items-center rounded-full bg-oak-primary/10 px-3 text-xs text-oak-light hover:bg-oak-primary/20 sm:min-h-8" aria-label={`Remove ${badge.label}`}>{badge.label}<span aria-hidden="true" className="ml-1">×</span></button>)}
           <button type="button" onClick={clearAllFilters} className="ml-2 text-sm font-medium text-oak-primary transition-colors hover:text-oak-primary/80">Clear all</button>
         </div>
       ) : null}
 
-      {(deadlines.data?.awarenessItems?.length ?? 0) > 0 ? (
+      {(urlState.view === 'TABLE' || urlState.view === 'CALENDAR') && (deadlines.data?.awarenessItems?.length ?? 0) > 0 ? (
         <Alert variant="warning" title="Compliance attention">
           <div className="space-y-2">
             {deadlines.data!.awarenessItems.map((item) => (
@@ -731,7 +767,7 @@ export function DeadlineWorkspace({ canEdit = false, deadlineWritesEnabled = fal
         </Alert>
       ) : null}
 
-      {deadlines.error ? (
+      {(urlState.view === 'TABLE' || urlState.view === 'CALENDAR') && deadlines.error ? (
         <Alert variant="error" title="Unable to load deadlines">
           <div className="flex flex-wrap items-center gap-2">
             <span>{deadlines.error instanceof Error ? deadlines.error.message : 'Please retry the deadline query.'}</span>
@@ -739,7 +775,7 @@ export function DeadlineWorkspace({ canEdit = false, deadlineWritesEnabled = fal
           </div>
         </Alert>
       ) : null}
-      {deadlines.isLoading && !deadlines.data ? <div role="status" className="rounded-xl border border-border-primary bg-background-secondary p-8 text-center text-sm text-text-secondary">Loading deadlines…</div> : null}
+      {(urlState.view === 'TABLE' || urlState.view === 'CALENDAR') && deadlines.isLoading && !deadlines.data ? <div role="status" className="rounded-xl border border-border-primary bg-background-secondary p-8 text-center text-sm text-text-secondary">Loading deadlines…</div> : null}
       {(updateDeadline.isPending || resetDeadline.isPending) ? <div role="status" className="rounded-xl border border-border-primary bg-background-secondary p-3 text-sm text-text-secondary">Saving deadline changes…</div> : null}
       {updateDeadline.error || resetDeadline.error ? <Alert variant="error">Unable to save deadline changes. Please retry.</Alert> : null}
       {moveEngagementStart.error ? <Alert variant="error">Unable to move the engagement start. Please change it on the service.</Alert> : null}
@@ -842,7 +878,7 @@ export function DeadlineWorkspace({ canEdit = false, deadlineWritesEnabled = fal
           ) : null}
           {canWrite ? <DeadlineBulkActions selected={selectedDeadlines} onClearSelection={clearDeadlineSelection} onUpdate={bulkUpdate} /> : null}
         </>
-      ) : showCalendarSurface ? (
+      ) : urlState.view === 'CALENDAR' && showCalendarSurface ? (
         <DeadlineCalendar
           items={undefined}
           focusMonth={dateFromMonth(urlState.from ?? currentDateInSingapore())}
@@ -857,6 +893,30 @@ export function DeadlineWorkspace({ canEdit = false, deadlineWritesEnabled = fal
           onShowHolidaysChange={handleShowHolidaysChange}
           onUpdate={markUpdate}
           onResetOverride={resetOverride}
+        />
+      ) : urlState.view === 'MATRIX' || urlState.view === 'WORKLOAD' ? (
+        <DeadlineOverview
+          view={urlState.view}
+          financialYear={urlState.financialYear}
+          dueYear={urlState.dueYear}
+          companyQuery={urlState.companyQuery}
+          serviceCode={urlState.obligationCode}
+          status={urlState.overviewStatus}
+          page={urlState.page}
+          onChange={(changes) => replaceUrl(changes)}
+          onOpenCell={(companyId, code, financialYear) => replaceUrl({
+            deadlineView: 'TABLE', financialYear: String(financialYear), obligationCode: code,
+            companies: companyId, from: undefined, to: undefined, dateFilter: 'none',
+            openOnly: 'false', statuses: undefined, serviceQuery: undefined,
+            milestoneQuery: undefined, families: undefined, types: undefined,
+            timingBucket: undefined, origin: undefined, page: '1',
+          })}
+          onOpenMonth={(month) => {
+            const from = (month + '-01') as DateOnly;
+            const to = addCalendarDays(addMonthsClamped(from, 1), -1);
+            replaceUrl({ deadlineView: 'TABLE', from, to, dateFilter: undefined,
+              openOnly: 'false', statuses: undefined, page: '1' });
+          }}
         />
       ) : null}
     </section>

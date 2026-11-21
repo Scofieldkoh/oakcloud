@@ -12,6 +12,8 @@ import {
 } from '@/lib/validations/deadline';
 import { requireServicesWorkspaceEnabled } from '@/services/schedule-reconciliation';
 import { listDeadlines } from '@/services/deadline';
+import { parseComplianceOverviewParams } from '@/lib/validations/deadline-overview';
+import { emptyComplianceOverview, getComplianceOverview } from '@/services/deadline/overview';
 
 function safeErrorResponse(error: unknown): NextResponse {
   if (error instanceof z.ZodError) {
@@ -33,16 +35,18 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     const tenantId = requireSessionWorkspaceId(session);
     await requireServicesWorkspaceEnabled(tenantId);
 
-    const search = parseDeadlineSearchParams(request);
+    const overview = request.nextUrl.searchParams.has('overview')
+      ? parseComplianceOverviewParams(request.nextUrl.searchParams)
+      : null;
+    const search = overview ? null : parseDeadlineSearchParams(request);
     const scope = getCompanyReadScope(session);
     if ('empty' in scope || scope.options.companyIds?.length === 0) {
-      return jsonWithServerTiming(emptyDeadlineResult(search), startedAt);
+      return jsonWithServerTiming(overview ? emptyComplianceOverview(overview) : emptyDeadlineResult(search!), startedAt);
     }
 
-    return jsonWithServerTiming(await listDeadlines(search, {
-      tenantId,
-      companyIds: scope.options.companyIds,
-    }), startedAt);
+    const readScope = { tenantId, companyIds: scope.options.companyIds };
+    if (overview) return jsonWithServerTiming(await getComplianceOverview(overview, readScope), startedAt);
+    return jsonWithServerTiming(await listDeadlines(search!, readScope), startedAt);
   } catch (error) {
     return withServerTiming(safeErrorResponse(error), startedAt);
   }
