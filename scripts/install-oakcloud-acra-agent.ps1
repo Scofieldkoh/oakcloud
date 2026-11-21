@@ -51,7 +51,6 @@ const server = http.createServer(async (req, res) => {
     res.setHeader('Access-Control-Allow-Origin', ORIGIN);
     res.setHeader('Vary','Origin');
     if (req.method === 'GET' && req.url === '/health') { res.writeHead(200, {'Content-Type':'application/json'}).end(JSON.stringify({ok:true,version:'0.2.0'})); return; }
-    if (req.method !== 'POST' || req.url !== '/launch-remote') { res.writeHead(405).end(); return; }
     if (req.method === 'POST' && req.url === '/poc-fill') {
       if (!activePage || activePage.isClosed() || busy) { res.writeHead(409).end('No active browser or agent busy'); return; }
       busy = true;
@@ -73,6 +72,7 @@ const server = http.createServer(async (req, res) => {
       } finally { busy = false; }
       return;
     }
+    if (req.method !== 'POST' || req.url !== '/launch-remote') { res.writeHead(405).end(); return; }
     req.url = '/launch';
   }
   if (req.method === 'GET' && req.url === '/') {
