@@ -42,15 +42,56 @@ const server = http.createServer(async (req, res) => {
   if (req.headers.host !== HOST + ':' + PORT || req.headers.origin && req.headers.origin !== 'http://' + HOST + ':' + PORT && req.headers.origin !== ORIGIN) {
     res.writeHead(403).end('Forbidden'); return;
   }
-  if (req.method === 'OPTIONS' && (req.url === '/health' || req.url === '/launch-remote' || req.url === '/poc-fill' || req.url === '/research-snapshot')) {
+  if (req.method === 'OPTIONS' && (req.url === '/health' || req.url === '/launch-remote' || req.url === '/poc-fill' || req.url === '/research-snapshot' || req.url === '/research-explore')) {
     if (req.headers.origin !== ORIGIN) { res.writeHead(403).end(); return; }
     res.writeHead(204, {'Access-Control-Allow-Origin':ORIGIN,'Access-Control-Allow-Methods':'GET, POST, OPTIONS','Access-Control-Allow-Headers':'Content-Type, X-OakCloud-Agent-Token','Access-Control-Allow-Private-Network':'true','Vary':'Origin'}).end(); return;
   }
-  if (req.url === '/health' || req.url === '/launch-remote' || req.url === '/poc-fill' || req.url === '/research-snapshot') {
+  if (req.url === '/health' || req.url === '/launch-remote' || req.url === '/poc-fill' || req.url === '/research-snapshot' || req.url === '/research-explore') {
     if (req.headers.origin !== ORIGIN || !tokenMatches(req.headers['x-oakcloud-agent-token'])) { res.writeHead(403).end('Forbidden'); return; }
     res.setHeader('Access-Control-Allow-Origin', ORIGIN);
     res.setHeader('Vary','Origin');
     if (req.method === 'GET' && req.url === '/health') { res.writeHead(200, {'Content-Type':'application/json'}).end(JSON.stringify({ok:true,version:'0.2.0'})); return; }
+    if (req.method === 'POST' && req.url === '/research-explore') {
+      if (!browser || !browser.isConnected() || busy) { res.writeHead(409).end('No active browser or agent busy'); return; }
+      busy = true;
+      try {
+        const pages = browser.contexts().flatMap(context => context.pages()).filter(page => !page.isClosed() && new URL(page.url()).hostname === 'www.bizfile.gov.sg');
+        if (pages.length !== 1) throw new Error('Expected exactly one Bizfile page');
+        const page = pages[0];
+        const startUrl = page.url();
+        const scan = () => page.evaluate(() => Array.from(document.querySelectorAll('input,select,textarea,[role="combobox"],[role="radio"],[role="checkbox"]')).filter(el => !!el.getClientRects().length).slice(0,200).map(el => {
+          const id = el.getAttribute('id');
+          const label = id ? document.querySelector('label[for="' + CSS.escape(id) + '"]') : null;
+          return {tag:el.tagName.toLowerCase(),role:el.getAttribute('role'),type:el.getAttribute('type'),label:String(label?.textContent || el.closest('label')?.textContent || el.getAttribute('aria-label') || '').trim().slice(0,90),placeholder:el.getAttribute('placeholder'),required:el.hasAttribute('required') || el.getAttribute('aria-required') === 'true'};
+        }));
+        const baseline = await scan();
+        const controls = await page.locator('select').evaluateAll(els => els.map((el,index) => ({index,visible:!!el.getClientRects().length,disabled:el.disabled,selected:el.selectedIndex,options:Array.from(el.options).map((o,i) => ({index:i,label:String(o.textContent || '').trim().slice(0,70),value:o.value}))})));
+        const results = [];
+        let tested = 0;
+        for (const control of controls.slice(0,15)) {
+          if (!control.visible || control.disabled || control.options.length > 15) continue;
+          const locator = page.locator('select').nth(control.index);
+          for (const option of control.options.slice(0,10)) {
+            if (tested >= 40) break;
+            if (option.index === control.selected || !option.value || /save|submit|confirm|payment|delete|withdraw|remove|cancel|proceed|review|logout|sign|declar/i.test(option.label)) continue;
+            if (page.url() !== startUrl) throw new Error('Page navigation detected; exploration stopped');
+            await locator.selectOption({index:option.index},{timeout:2000});
+            await page.waitForTimeout(300);
+            const after = await scan();
+            const beforeSet = new Set(baseline.map(item => JSON.stringify(item)));
+            const afterSet = new Set(after.map(item => JSON.stringify(item)));
+            results.push({controlIndex:control.index,option:option.label,appeared:after.filter(item => !beforeSet.has(JSON.stringify(item))),disappeared:baseline.filter(item => !afterSet.has(JSON.stringify(item)))});
+            tested++;
+            await locator.selectOption({index:control.selected},{timeout:2000});
+          }
+        }
+        res.writeHead(200,{'Content-Type':'application/json','Cache-Control':'no-store'}).end(JSON.stringify({ok:true,research:{schemaVersion:1,capturedAt:new Date().toISOString(),path:new URL(startUrl).pathname,baseline,results,controlsFound:controls.length,optionsTested:tested,limitations:'Native select controls only; custom dropdowns and nested branches not yet supported.'}}));
+      } catch (error) {
+        console.error('Research exploration failed:',error);
+        res.writeHead(422,{'Content-Type':'application/json'}).end(JSON.stringify({ok:false,message:String(error.message).slice(0,180)}));
+      } finally { busy = false; }
+      return;
+    }
     if (req.method === 'GET' && req.url === '/research-snapshot') {
       if (!browser || !browser.isConnected() || busy) { res.writeHead(409).end('No active browser or agent busy'); return; }
       busy = true;

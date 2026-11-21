@@ -44,7 +44,7 @@ export function CompanyActionsMenu({
   const [filingType, setFilingType] = useState<'officers' | 'address' | 'shares'>('officers');
   const [reviewAcknowledged, setReviewAcknowledged] = useState(false);
   const agentUrl = 'http://127.0.0.1:48731';
-  async function callAgent(path: '/health' | '/launch-remote' | '/poc-fill' | '/research-snapshot') {
+  async function callAgent(path: '/health' | '/launch-remote' | '/poc-fill' | '/research-snapshot' | '/research-explore') {
     if (!agentToken.trim()) { setAgentStatus('Enter the pairing token from the installer.'); return; }
     setAgentBusy(true);
     try {
@@ -52,14 +52,14 @@ export function CompanyActionsMenu({
         method: path === '/health' || path === '/research-snapshot' ? 'GET' : 'POST',
         headers: { 'X-OakCloud-Agent-Token': agentToken.trim() },
         cache: 'no-store',
-        signal: AbortSignal.timeout(12000),
+        signal: AbortSignal.timeout(path === '/research-explore' ? 90000 : 12000),
       });
       if (!response.ok) throw new Error(`Agent returned HTTP ${response.status}`);
-      if (path === '/research-snapshot') {
-        const result = await response.json() as {snapshot?: Record<string, unknown>};
-        if (!result.snapshot) throw new Error('Snapshot missing from agent response');
-        setResearchSnapshot(result.snapshot);
-        setAgentStatus('Research snapshot captured locally in this browser. Review before exporting.');
+      if (path === '/research-snapshot' || path === '/research-explore') {
+        const result = await response.json() as {snapshot?: Record<string, unknown>; research?: Record<string, unknown>};
+        if (!result.snapshot && !result.research) throw new Error('Research data missing from agent response');
+        setResearchSnapshot(result.snapshot ?? result.research ?? null);
+        setAgentStatus('Research data captured locally in this browser. Review before exporting.');
         return;
       }
       setAgentStatus(path === '/health' ? 'Agent connected on this PC.' : path === '/poc-fill' ? 'POC attempted. Check the Chromium window and verify the Director selection.' : 'Browser launch requested on this PC.');
@@ -126,7 +126,8 @@ export function CompanyActionsMenu({
         <label className="block space-y-1"><span>Local agent pairing token</span><input type="password" autoComplete="off" value={agentToken} onChange={(event) => setAgentToken(event.target.value)} placeholder="Paste token from installer" className="w-full rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-text-primary" /></label>
         <p role="status">{agentStatus}</p>
         <label className="flex items-start gap-2"><input type="checkbox" checked={reviewAcknowledged} onChange={(event) => setReviewAcknowledged(event.target.checked)} /><span>I understand this is an attended pilot. I will verify the selected company and filing information and manually control any declaration, payment and submission.</span></label>
-        <div className="flex flex-wrap gap-2"><button type="button" disabled={agentBusy} className="btn-secondary btn-sm" onClick={() => void callAgent('/health')}>Check local agent</button><button type="button" disabled={agentBusy || !reviewAcknowledged} className="btn-primary btn-sm" onClick={() => void callAgent('/launch-remote')}>Launch Bizfile on this PC</button><button type="button" disabled={agentBusy || !reviewAcknowledged} className="btn-secondary btn-sm" onClick={() => void callAgent('/research-snapshot')}>Capture research snapshot</button>{filingType === 'officers' ? <button type="button" disabled={agentBusy || !reviewAcknowledged} className="btn-secondary btn-sm" onClick={() => void callAgent('/poc-fill')}>POC: Add Director (no save)</button> : null}</div>
+        <div className="flex flex-wrap gap-2"><button type="button" disabled={agentBusy} className="btn-secondary btn-sm" onClick={() => void callAgent('/health')}>Check local agent</button><button type="button" disabled={agentBusy || !reviewAcknowledged} className="btn-primary btn-sm" onClick={() => void callAgent('/launch-remote')}>Launch Bizfile on this PC</button><button type="button" disabled={agentBusy || !reviewAcknowledged} className="btn-secondary btn-sm" onClick={() => void callAgent('/research-snapshot')}>Capture research snapshot</button><button type="button" disabled={agentBusy || !reviewAcknowledged} className="btn-secondary btn-sm" onClick={() => void callAgent('/research-explore')}>Auto-explore safe dropdowns</button>{filingType === 'officers' ? <button type="button" disabled={agentBusy || !reviewAcknowledged} className="btn-secondary btn-sm" onClick={() => void callAgent('/poc-fill')}>POC: Add Director (no save)</button> : null}</div>
+        <p>Auto-explore tests up to 40 options in native dropdowns on the current page and attempts to restore selections. Use only in a test filing: changing a dropdown can trigger server-side effects. Custom dropdowns and nested branches are not yet supported.</p>
         {researchSnapshot ? <div className="space-y-2 rounded-lg border border-border-primary p-3">
           <p className="font-medium text-text-primary">Research snapshot — review before exporting</p>
           <p>Captures field labels, field types, headings and buttons; excludes entered field values, cookies and URL query parameters. Labels may still contain sensitive information, so inspect the export.</p>
