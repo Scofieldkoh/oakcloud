@@ -59,12 +59,30 @@ const server = http.createServer(async (req, res) => {
         const add = activePage.getByText('Add position holder', {exact:true});
         if (await add.count() !== 1) throw new Error('Add position holder control ambiguous');
         await add.click();
-        const position = activePage.getByText('Select position', {exact:true});
-        if (await position.count() !== 1) throw new Error('Position control ambiguous');
-        await position.click();
-        const director = activePage.getByText('Director', {exact:true});
-        if (await director.count() !== 1) throw new Error('Director option ambiguous');
-        await director.click();
+        const position = activePage.getByRole('combobox', {name:/position held/i});
+        const labeled = activePage.getByLabel(/position held/i);
+        const placeholder = activePage.getByPlaceholder(/select position/i);
+        const choices = [
+          ['named combobox', position],
+          ['labeled field', labeled],
+          ['placeholder field', placeholder]
+        ];
+        const counts = [];
+        let selected = null;
+        for (const [name, locator] of choices) {
+          const count = await locator.count();
+          counts.push(name + '=' + count);
+          if (!selected && count === 1) selected = locator;
+        }
+        if (!selected) throw new Error('Position field not uniquely identified (' + counts.join(', ') + ')');
+        await selected.click();
+        const director = activePage.getByRole('option', {name:'Director',exact:true});
+        const directorText = activePage.getByText('Director', {exact:true});
+        const optionCount = await director.count();
+        const textCount = await directorText.count();
+        if (optionCount === 1) await director.click();
+        else if (textCount === 1) await directorText.click();
+        else throw new Error('Director option ambiguous (role options=' + optionCount + ', exact text=' + textCount + ')');
         res.writeHead(200, {'Content-Type':'application/json'}).end(JSON.stringify({ok:true,message:'Director selected. Review manually; nothing saved.'}));
       } catch(e) {
         console.error('POC failed:', e);
