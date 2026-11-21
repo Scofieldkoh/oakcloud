@@ -65,38 +65,131 @@ const server = http.createServer(async (req, res) => {
       if (!browser || !browser.isConnected() || busy) { res.writeHead(409).end('No active browser or agent busy'); return; }
       busy = true;
       try {
-        const pages = browser.contexts().flatMap(context => context.pages()).filter(page => !page.isClosed() && new URL(page.url()).hostname === 'www.bizfile.gov.sg');
+        const pages = browser.contexts().flatMap(context => context.pages()).filter(p => !p.isClosed() && new URL(p.url()).hostname === 'www.bizfile.gov.sg');
         if (pages.length !== 1) throw new Error('Expected exactly one Bizfile page');
         const page = pages[0];
         const startUrl = page.url();
-        const scan = () => page.evaluate(() => Array.from(document.querySelectorAll('input,select,textarea,[role="combobox"],[role="radio"],[role="checkbox"]')).filter(el => !!el.getClientRects().length).slice(0,200).map(el => {
-          const id = el.getAttribute('id');
-          const label = id ? document.querySelector('label[for="' + CSS.escape(id) + '"]') : null;
-          return {tag:el.tagName.toLowerCase(),role:el.getAttribute('role'),type:el.getAttribute('type'),label:String(label?.textContent || el.closest('label')?.textContent || el.getAttribute('aria-label') || '').trim().slice(0,90),placeholder:el.getAttribute('placeholder'),required:el.hasAttribute('required') || el.getAttribute('aria-required') === 'true'};
-        }));
+        const diagnostics = [];
+        const branches = [];
+        const maxTests = 35;
+        const maxDepth = 3;
+        let tests = 0;
+        const forbidden = /save|submit|confirm|payment|delete|withdraw|remove|cancel|proceed|review|logout|sign|declar|upload|purchase/i;
+        const scan = () => page.evaluate(() => {
+          const clean = v => String(v || '').trim().slice(0,90);
+          return Array.from(document.querySelectorAll('input,select,textarea,[role="combobox"],[role="radio"],[role="checkbox"]'))
+            .filter(el => !!el.getClientRects().length && getComputedStyle(el).visibility !== 'hidden')
+            .slice(0,200).map(el => {
+              const id = el.getAttribute('id');
+              const label = id ? document.querySelector('label[for="' + CSS.escape(id) + '"]') : null;
+              return {tag:el.tagName.toLowerCase(),type:clean(el.getAttribute('type')),role:clean(el.getAttribute('role')),
+                label:clean(label?.textContent || el.closest('label')?.textContent || el.getAttribute('aria-label')),
+                placeholder:clean(el.getAttribute('placeholder')),required:el.hasAttribute('required') || el.getAttribute('aria-required') === 'true',
+                disabled:el.hasAttribute('disabled') || el.getAttribute('aria-disabled') === 'true'};
+            });
+        });
+        const discover = () => page.evaluate(() => {
+          const visible = el => !!el.getClientRects().length && getComputedStyle(el).visibility !== 'hidden';
+          const clean = v => String(v || '').trim().slice(0,90);
+          return Array.from(document.querySelectorAll('input[type="radio"],select,[role="combobox"],input[placeholder*="Select"],input[placeholder*="select"]'))
+            .filter(el => visible(el) && !el.disabled && el.getAttribute('aria-disabled') !== 'true')
+            .slice(0,40).map((el,index) => {
+              const id = el.getAttribute('id');
+              const label = id ? document.querySelector('label[for="' + CSS.escape(id) + '"]') : null;
+              return {index,kind:el.matches('input[type="radio"]')?'radio':el.tagName === 'SELECT'?'select':'custom',
+                label:clean(label?.textContent || el.closest('label')?.textContent || el.getAttribute('aria-label') || el.getAttribute('placeholder')),
+                checked:el.checked === true,selected:el.tagName === 'SELECT' ? el.selectedIndex : null,
+                options:el.tagName === 'SELECT' ? Array.from(el.options).slice(0,15).map((o,i) => ({index:i,label:clean(o.textContent),empty:!o.value})) : []};
+            });
+        });
+        const controlLocator = index => page.locator('input[type="radio"],select,[role="combobox"],input[placeholder*="Select"],input[placeholder*="select"]').filter({visible:true}).nth(index);
         const baseline = await scan();
-        const controls = await page.locator('select').evaluateAll(els => els.map((el,index) => ({index,visible:!!el.getClientRects().length,disabled:el.disabled,selected:el.selectedIndex,options:Array.from(el.options).map((o,i) => ({index:i,label:String(o.textContent || '').trim().slice(0,70),value:o.value}))})));
-        const results = [];
-        let tested = 0;
-        for (const control of controls.slice(0,15)) {
-          if (!control.visible || control.disabled || control.options.length > 15) continue;
-          const locator = page.locator('select').nth(control.index);
-          for (const option of control.options.slice(0,10)) {
-            if (tested >= 40) break;
-            if (option.index === control.selected || !option.value || /save|submit|confirm|payment|delete|withdraw|remove|cancel|proceed|review|logout|sign|declar/i.test(option.label)) continue;
-            if (page.url() !== startUrl) throw new Error('Page navigation detected; exploration stopped');
-            await locator.selectOption({index:option.index},{timeout:2000});
-            await page.waitForTimeout(300);
-            const after = await scan();
-            const beforeSet = new Set(baseline.map(item => JSON.stringify(item)));
-            const afterSet = new Set(after.map(item => JSON.stringify(item)));
-            results.push({controlIndex:control.index,option:option.label,appeared:after.filter(item => !beforeSet.has(JSON.stringify(item))),disappeared:baseline.filter(item => !afterSet.has(JSON.stringify(item)))});
-            tested++;
-            await locator.selectOption({index:control.selected},{timeout:2000});
+        if (!baseline.length) {
+          const add = page.getByText('Add position holder',{exact:true});
+          if (await add.count() === 1 && await add.isVisible()) {
+            await add.click({timeout:3000});
+            diagnostics.push('Opened Add position holder form');
+            await page.waitForTimeout(350);
           }
         }
-        res.writeHead(200,{'Content-Type':'application/json','Cache-Control':'no-store'}).end(JSON.stringify({ok:true,research:{schemaVersion:1,capturedAt:new Date().toISOString(),path:new URL(startUrl).pathname,baseline,results,controlsFound:controls.length,optionsTested:tested,limitations:'Native select controls only; custom dropdowns and nested branches not yet supported.'}}));
-      } catch (error) {
+        const initial = await scan();
+        const signature = fields => fields.map(f => JSON.stringify(f)).sort();
+        const diff = (before,after) => {
+          const a = new Set(signature(before)), b = new Set(signature(after));
+          return {appeared:after.filter(f => !a.has(JSON.stringify(f))),disappeared:before.filter(f => !b.has(JSON.stringify(f)))};
+        };
+        const seen = new Set();
+        const explore = async (depth,trail) => {
+          if (depth >= maxDepth || tests >= maxTests) return;
+          const controls = await discover();
+          for (const control of controls) {
+            if (tests >= maxTests) break;
+            if (forbidden.test(control.label)) { diagnostics.push('Skipped restricted control: ' + control.label); continue; }
+            const key = trail.join('/') + ':' + control.kind + ':' + control.index;
+            if (seen.has(key)) continue;
+            seen.add(key);
+            const before = await scan();
+            if (control.kind === 'radio') {
+              if (control.checked) continue;
+              const locator = controlLocator(control.index);
+              try {
+                await locator.check({timeout:2000});
+                await page.waitForTimeout(300);
+                tests++;
+                if (page.url() !== startUrl) throw new Error('Navigation detected');
+                const after = await scan();
+                branches.push({trail,depth,control:control.label,choice:control.label,...diff(before,after)});
+                if (depth + 1 < maxDepth && tests < maxTests) await explore(depth+1,[...trail,control.label]);
+              } catch(e) { diagnostics.push('Radio ' + control.label + ': ' + String(e.message).slice(0,90)); }
+              finally { diagnostics.push('Radio selection may remain changed; verify manually'); }
+            } else if (control.kind === 'select') {
+              for (const option of control.options) {
+                if (tests >= maxTests) break;
+                if (option.empty || option.index === control.selected || forbidden.test(option.label)) continue;
+                try {
+                  await controlLocator(control.index).selectOption({index:option.index},{timeout:2000});
+                  await page.waitForTimeout(300);
+                  tests++;
+                  if (page.url() !== startUrl) throw new Error('Navigation detected');
+                  const after = await scan();
+                  branches.push({trail,depth,control:control.label,choice:option.label,...diff(before,after)});
+                  if (depth+1 < maxDepth && tests < maxTests) await explore(depth+1,[...trail,option.label]);
+                } catch(e) { diagnostics.push('Select ' + control.label + ': ' + String(e.message).slice(0,90)); }
+                finally { try { await controlLocator(control.index).selectOption({index:control.selected},{timeout:1500}); } catch { diagnostics.push('Could not restore ' + control.label); } }
+              }
+            } else {
+              try {
+                await controlLocator(control.index).click({timeout:2000});
+                const options = page.getByRole('option');
+                const count = Math.min(await options.count(),12);
+                if (!count) { diagnostics.push('No ARIA options for ' + control.label); await page.keyboard.press('Escape'); continue; }
+                const labels = [];
+                for (let i=0;i<count;i++) labels.push((await options.nth(i).innerText()).trim().slice(0,80));
+                await page.keyboard.press('Escape');
+                for (const choice of labels) {
+                  if (tests >= maxTests) break;
+                  if (!choice || forbidden.test(choice)) continue;
+                  try {
+                    await controlLocator(control.index).click({timeout:2000});
+                    const option = page.getByRole('option',{name:choice,exact:true});
+                    if (await option.count() !== 1) { diagnostics.push('Ambiguous option: ' + choice); await page.keyboard.press('Escape'); continue; }
+                    await option.click({timeout:2000});
+                    await page.waitForTimeout(300);
+                    tests++;
+                    if (page.url() !== startUrl) throw new Error('Navigation detected');
+                    const after = await scan();
+                    branches.push({trail,depth,control:control.label,choice,...diff(before,after)});
+                    if (depth+1 < maxDepth && tests < maxTests) await explore(depth+1,[...trail,choice]);
+                  } catch(e) { diagnostics.push('Custom ' + choice + ': ' + String(e.message).slice(0,90)); }
+                }
+                diagnostics.push('Custom dropdown ' + control.label + ' may remain changed; verify manually');
+              } catch(e) { diagnostics.push('Custom ' + control.label + ': ' + String(e.message).slice(0,90)); }
+            }
+          }
+        };
+        await explore(0,[]);
+        res.writeHead(200,{'Content-Type':'application/json','Cache-Control':'no-store'}).end(JSON.stringify({ok:true,research:{schemaVersion:2,capturedAt:new Date().toISOString(),path:new URL(startUrl).pathname,baseline,initial,branches,optionsTested:tests,diagnostics:diagnostics.slice(0,100),limits:{maxTests,maxDepth},warning:'Exploration may change selections and trigger server effects. Inspect form and discard test filing. No save or submit action is invoked.'}}));
+      } catch(error) {
         console.error('Research exploration failed:',error);
         res.writeHead(422,{'Content-Type':'application/json'}).end(JSON.stringify({ok:false,message:String(error.message).slice(0,180)}));
       } finally { busy = false; }
