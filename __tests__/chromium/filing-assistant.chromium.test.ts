@@ -3,7 +3,7 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import type { Page } from 'playwright';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { fixtureHtml, launchWithExtension, type ExtensionSession } from '../helpers/filing-assistant-extension';
 
 /**
@@ -127,6 +127,17 @@ describe('OakCloud Filing Assistant', () => {
     panel = await session.openPanel();
     await tab('Details');
     for (const [key, value] of Object.entries(DETAILS)) await panel.locator('#detail-' + key).fill(value);
+  });
+
+  // A test that fails mid-run leaves the run paused; stop it so the next test starts clean.
+  afterEach(async () => {
+    const stop = panel.locator('#fill-stop');
+    if (await stop.isEnabled().catch(() => false)) {
+      console.info('A run was still active. Status:', await fillStatus(), '\nDecision:', await panel.locator('#fill-decision').innerText().catch(() => ''), '\nSteps:', await panel.locator('#fill-steps').innerText().catch(() => ''));
+      await tab('Fill');
+      await stop.click();
+      await expect.poll(fillStatus, { timeout: 30_000 }).toMatch(/Stopped|Finished/);
+    }
   });
 
   afterAll(async () => {
