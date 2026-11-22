@@ -26,7 +26,7 @@ A Chrome/Edge extension that fills Bizfile transactions from approved filing det
 | P3 | **Every write is verified.** After each fill the value is read back from the page and from React's own state. A value only on screen is a failure. | The POC showed screen and form state can disagree |
 | P4 | **Fail closed.** A field that matches zero or several elements is not filled; the run pauses and says why. | A wrong field is worse than an empty one |
 | P5 | **Corrections are tiered.** A verified correction found without AI (another locator, method or date format) is applied automatically and recorded. An AI proposal needs staff approval before it changes the screen map. | Self-correcting, but AI never silently changes behaviour |
-| P6 | **Positive list of clickable buttons.** Only buttons that add or reveal parts of the form (Add …, Expand …, Show …) can be clicked, and only if the screen map names them. A fixed refusal list (submit, save, review, confirm, declare, pay, withdraw, delete, back, next, …) overrides everything, including AI. | The assistant cannot submit, even if a screen map or AI says so |
+| P6 | **Positive list of clickable buttons.** Only buttons that add or reveal parts of the form (Add …, Expand …, Show …) and Bizfile's **Retrieve information** can be clicked, and only if the screen map names them. Retrieve information looks up an NRIC holder's particulars from government records and saves nothing; it is clicked only where staff clicked it when the screen was learned. A fixed refusal list (submit, save, review, confirm, declare, pay, withdraw, delete, back, next, …) overrides everything, including AI. | The assistant cannot submit, even if a screen map or AI says so |
 | P7 | **Staff stay in control.** Any trusted click or keypress on the Bizfile page during a run pauses the run. Step-by-step mode is available. | "Human can intercept at any time" |
 
 ## 3. How it works
@@ -94,6 +94,14 @@ If a dropdown still cannot be filled, **Diagnose → Inspect a dropdown** record
 
 It never records field values. The JSON export is what a maintainer needs to support that dropdown.
 
+**Options when exploring.** Exploring reads a dropdown's options from the menu that appeared, one element per option (grouped by list item, option, row or button). A container holding every option is never read as one option. Exploring never types into a field.
+
+**Labels.** Bizfile gives each radio two labels, one visible and one for screen readers; the same text is used once ("Corporate", not "Corporate Corporate"). A radio option also matches when exactly one option's label contains the wanted text.
+
+**Particulars Bizfile fills in.** For NRIC holders, Bizfile retrieves the name and other particulars and locks those fields. A step whose field is locked is **checked, not filled**:
+- it passes when the page shows the filing-details value;
+- otherwise the run pauses with both values ("Bizfile filled this in as …, but the filing details say …"), so staff resolve the difference before submitting.
+
 ### 3.3 Running and self-correction
 
 For each step the content script:
@@ -135,7 +143,7 @@ The extension never holds AI keys and never calls OakCloud with its own credenti
    - **Start watching.** Fill the screen yourself, including clicking Add position holder and opening dropdowns as you normally would, then press **Finish**.
    - **Ask AI to map this screen.** Maps only the fields showing now.
 
-   Re-learning part of a screen replaces only those steps and keeps the rest.
+   Re-learning part of a screen replaces only those steps and keeps the rest. A newly learned step goes right after the step learned before it (so Retrieve information stays after the ID number). **Export what was found** saves the exploration (structure only, capitalised names masked), to send to whoever maintains the assistant.
 5. **Fill tab.** Open the Bizfile screen and press **Start filling**.
    - Clicking or typing on Bizfile pauses the run. **Pause** and **Stop** are always available.
    - **Pause after every step** gives step-by-step control.
@@ -179,7 +187,10 @@ The extension never holds AI keys and never calls OakCloud with its own credenti
   - refusing a tampered map's "Review and confirm" step;
   - the footer buttons never being clicked;
   - exploring a screen with conditional sections: what each option shows, AI mapping with conditions, and filling only what applies;
-  - learning an SGDS-style dropdown opened from its chevron (menu kept and hidden by style, button options), and finding the option by typing when there is no chevron.
+  - learning an SGDS-style dropdown opened from its chevron (menu kept and hidden by style, button options), and finding the option by typing when there is no chevron;
+  - radios with two labels each, and plain dropdowns whose menus nest rows inside a scroll area (options read one by one, nothing typed while exploring);
+  - Identification type branches (Passport shows Nationality);
+  - learning Retrieve information, then checking the locked name it fills, both when it matches and when it does not.
 
   The Diagnose suite also checks that the dropdown inspector reports the opening handler and the menu without capturing values.
 - The stand-in reproduces Bizfile patterns, not Bizfile. Run the Learn and Fill flow once on live Bizfile with a test company before relying on it.

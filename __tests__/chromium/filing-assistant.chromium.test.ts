@@ -23,7 +23,9 @@ const DETAILS = {
   email: 'tan@example.com',
   addressType: 'Local',
   postalCode: '123456',
+  idType: 'NRIC (Citizen)',
 };
+const POSITIONS = ['Director', 'Secretary', 'Chief Executive Officer', 'Auditor'];
 const PERSONAL = /S1234567D|Tan Ah Kow|TAN AH KOW|tan@example\.com|KOH ZHI YONG/i;
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -52,6 +54,8 @@ function fakeAi(body: Json): Json {
     addressType: (field) => field.label === 'Address type',
     postalCode: (field) => /postal code/i.test(field.label),
     foreignAddress1: (field) => /foreign address/i.test(field.label),
+    idType: (field) => /identification type/i.test(field.label),
+    nationality: (field) => /nationality/i.test(field.label),
   };
   const steps = Object.entries(rules)
     .map(([key, rule]) => {
@@ -210,7 +214,7 @@ describe('OakCloud Filing Assistant', () => {
     await page.getByRole('radio', { name: 'Individual' }).check();
     await tab('Learn');
     await panel.getByRole('button', { name: 'Ask AI to map this screen' }).click();
-    await expect.poll(() => panel.locator('#learn-status').textContent()).toContain('The AI proposed 7 steps');
+    await expect.poll(() => panel.locator('#learn-status').textContent()).toContain('The AI proposed 8 steps');
     const request = aiRequests.find((item) => item.task === 'map-screen');
     expect(request.targets.map((target: Json) => target.key)).toContain('idNumber');
     expect(JSON.stringify(request)).not.toMatch(PERSONAL);
@@ -231,6 +235,8 @@ describe('OakCloud Filing Assistant', () => {
     expect(found).toMatch(/Category = "Corporate" shows UEN, Entity name/);
     expect(found).toMatch(/Address type = "Local" shows Postal code/);
     expect(found).toMatch(/Address type = "Foreign" shows Foreign address line 1/);
+    expect(found).toMatch(/Select identification type = "Passport" shows Nationality/);
+    expect(found).not.toMatch(/Individual Individual|Corporate Corporate/);
 
     const proposal = (await panel.locator('#learn-proposal').textContent()) ?? '';
     expect(proposal).toContain('Identification number → "Identification number" (text) — only when Category is "Individual"');
@@ -241,9 +247,13 @@ describe('OakCloud Filing Assistant', () => {
 
     const request = aiRequests.filter((item) => item.task === 'map-screen').at(-1);
     expect(request.snapshot.fields.some((field: Json) => field.shownWhen)).toBe(true);
-    expect(request.snapshot.fields.find((field: Json) => field.label === 'Select position').options).toEqual(['Director', 'Secretary', 'Chief Executive Officer', 'Auditor']);
+    // Options are read one by one from a nested menu, never the menu's whole text as one option.
+    expect(request.snapshot.fields.find((field: Json) => field.label === 'Select position').options).toEqual(POSITIONS);
+    expect(request.snapshot.fields.find((field: Json) => field.label === 'Category').options).toEqual(['Individual', 'Corporate']);
     expect(JSON.stringify(request)).not.toMatch(PERSONAL);
-    expect((await formState()).clicks).toEqual({ back: 0, save: 0, review: 0 });
+    const explored = await formState();
+    expect(['', ...POSITIONS]).toContain(explored.card.position); // nothing typed into the dropdown
+    expect(explored.clicks).toEqual({ back: 0, save: 0, review: 0 });
 
     await panel.getByRole('button', { name: 'Save to screen map' }).click();
     await expect.poll(() => panel.locator('#learn-status').textContent()).toContain('Saved as screen map version');
@@ -286,6 +296,46 @@ describe('OakCloud Filing Assistant', () => {
       expect(state.card.position).toBe('Director');
       expect(state.clicks).toEqual({ back: 0, save: 0, review: 0 });
     }
+  }, 180_000);
+
+  it('presses Retrieve information where staff did, and checks the particulars Bizfile fills in', async () => {
+    await openScreen();
+    await page.getByRole('button', { name: '+ Add position holder' }).click();
+    await page.getByRole('radio', { name: 'Individual' }).check();
+    await tab('Learn');
+    await panel.getByRole('button', { name: 'Start watching' }).click();
+    await expect.poll(() => panel.locator('#learn-status').textContent()).toContain('Watching');
+    await page.getByPlaceholder('Select identification type').click();
+    await page.getByText('NRIC (Citizen)', { exact: true }).click();
+    await page.locator('#appoint-position-holder-card-1-individual-id-number').fill('S1234567D');
+    await page.getByRole('button', { name: 'Retrieve information' }).click();
+    await panel.getByRole('button', { name: 'Finish' }).click();
+    await expect.poll(() => panel.locator('#learn-status').textContent()).toContain('Learned 3 steps.');
+    const proposal = (await panel.locator('#learn-proposal').textContent()) ?? '';
+    expect(proposal).toContain('Click "Retrieve information" once, at this point');
+    expect(proposal).toContain('Identification type → "Select identification type" (combobox)');
+    await panel.getByRole('button', { name: 'Save to screen map' }).click();
+    await expect.poll(() => panel.locator('#learn-status').textContent()).toContain('Saved as screen map version');
+    const order = (await mapInfo()).steps.map((step: Json) => step.key || step.label);
+    expect(order.indexOf('Retrieve information')).toBe(order.indexOf('idNumber') + 1);
+
+    await openScreen();
+    expect(await fillUntilDone()).toMatch(/Finished: \d+ filled/);
+    expect((await formState()).card).toMatchObject({ idType: 'NRIC (Citizen)', retrieved: true, name: 'TAN AH KOW' });
+    expect(await panel.locator('#fill-steps').textContent()).toContain('Filled in by Bizfile, and it matches the filing details.');
+
+    // When the retrieved particulars differ from OakCloud's details, staff are told before submitting.
+    await tab('Details');
+    await panel.locator('#detail-name').fill('Lim Mei Ling');
+    await openScreen();
+    await startFilling();
+    const decision = panel.locator('#fill-decision');
+    await decision.waitFor({ state: 'visible', timeout: 30_000 });
+    expect(await decision.textContent()).toContain('Bizfile filled this in as "TAN AH KOW", but the filing details say "Lim Mei Ling"');
+    await decision.getByRole('button', { name: 'Skip this step' }).click();
+    await expect.poll(fillStatus, { timeout: 60_000 }).toMatch(/Finished: \d+ filled/);
+    await tab('Details');
+    await panel.locator('#detail-name').fill(DETAILS.name);
   }, 180_000);
 
   it('switches the date format itself when Bizfile rejects the learned one', async () => {

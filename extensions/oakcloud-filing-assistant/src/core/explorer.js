@@ -62,18 +62,40 @@
     if (doc.activeElement && doc.activeElement !== doc.body) doc.activeElement.blur();
   }
 
-  /** Opens a dropdown, reads its option texts and closes it again. */
+  /**
+   * The option texts in a menu: each text-bearing element, grouped by its list item or option, so a
+   * container holding every option is never read as one option.
+   */
+  function itemTexts(popup) {
+    const groups = new Map(); // item element -> the elements holding its text
+    const walker = popup.ownerDocument.createTreeWalker(popup, 4 /* NodeFilter.SHOW_TEXT */);
+    for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+      if (!node.nodeValue || !node.nodeValue.trim() || !node.parentElement) continue;
+      const parent = node.parentElement;
+      const found = parent.closest('li,[role=option],[role=menuitem],button,a,.dropdown-item,[class*=item i],[class*=option i],[class*=row i]');
+      const item = found && popup.contains(found) && found !== popup ? found : parent;
+      if (!groups.has(item)) groups.set(item, new Set());
+      groups.get(item).add(parent);
+    }
+    // An "item" gathering text from many elements is really a list container: use its parts.
+    const items = [];
+    groups.forEach((parents, item) => (parents.size > 3 ? items.push(...parents) : items.push(item)));
+    return Array.from(new Set(items))
+      .filter((item) => D.isVisible(item))
+      .map((item) => D.labelText(item))
+      .filter((text) => text && text.length <= 80);
+  }
+
+  /** Opens a dropdown, reads its option texts and closes it again. Never types. */
   async function dropdownOptions(doc, el) {
     const popupsBefore = new Set(D.deepQueryAll(doc, D.POPUP_SELECTOR).filter((node) => D.isVisible(node)));
     const texts = () => {
-      const known = D.visibleOptions(el, null).map((option) => D.labelText(option));
+      const known = D.visibleOptions(el, null).map((option) => D.labelText(option)).filter(Boolean);
       if (known.length) return known;
-      const popups = D.deepQueryAll(doc, D.POPUP_SELECTOR).filter((node) => D.isVisible(node) && !popupsBefore.has(node) && !node.contains(el));
-      return popups.flatMap((popup) =>
-        Array.from(popup.querySelectorAll('li,button,a,[role=option],div,span'))
-          .filter((node) => D.isVisible(node) && !Array.from(node.children).some((child) => D.labelText(child) === D.labelText(node)))
-          .map((node) => D.labelText(node)),
-      );
+      // The menu that appeared: the outermost newly visible popup that is not the field's own box.
+      const appeared = D.deepQueryAll(doc, D.POPUP_SELECTOR).filter((node) => D.isVisible(node) && !popupsBefore.has(node) && !node.contains(el));
+      const outermost = appeared.filter((node) => !appeared.some((other) => other !== node && other.contains(node)));
+      return outermost.flatMap(itemTexts);
     };
     let found = [];
     let usedOpener = null;
@@ -93,7 +115,7 @@
     }
     closeMenu(el);
     await D.settle(doc, 200, 1000);
-    return Array.from(new Set(found.filter((text) => text && text.length <= 120 && !D.FORBIDDEN_NAME.test(text) && !PLACEHOLDER.test(text))));
+    return Array.from(new Set(found.filter((text) => !D.FORBIDDEN_NAME.test(text) && !PLACEHOLDER.test(text))));
   }
 
   async function optionsOf(doc, entry) {
@@ -116,7 +138,8 @@
       if (!radio) throw new Error('No option ' + option + '.');
       radio.click();
     } else {
-      await D.applyStrategy(found.el, locator.kind, locator.kind === 'native-select' ? 'set-value-events' : 'pointer', option, option, null);
+      // Exploring never types into a field, so a dropdown that only opens by typing is left as it is.
+      await D.applyStrategy(found.el, locator.kind, locator.kind === 'native-select' ? 'set-value-events' : 'pointer', option, option, { noTyping: true });
     }
     await D.settle(doc, 300, 3000);
   }

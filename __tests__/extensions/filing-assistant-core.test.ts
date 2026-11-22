@@ -59,9 +59,18 @@ describe('OakDom additions', () => {
     const withdraw = document.createElement('button');
     withdraw.textContent = 'Withdraw';
     expect(D.actionBlockReason(withdraw)).toMatch(/never clicks/);
+    const retrieve = document.createElement('button');
+    retrieve.textContent = 'Retrieve information';
+    expect(D.actionBlockReason(retrieve)).toBeNull();
     const other = document.createElement('button');
-    other.textContent = 'Retrieve address';
+    other.textContent = 'Calculate fees';
     expect(D.actionBlockReason(other)).toMatch(/left to staff/);
+  });
+
+  it('reads a radio with two labels (visible and screen-reader only) as one name', () => {
+    document.body.innerHTML = `<fieldset><legend>Category</legend>
+      <div><input type="radio" id="r1" /><label for="r1">Corporate</label><label for="r1" class="sr-only">Corporate</label></div></fieldset>`;
+    expect(g.OakDom.labelInfo(byId('r1')).name).toBe('Corporate');
   });
 });
 
@@ -168,7 +177,7 @@ describe('OakPlaybook', () => {
 });
 
 describe('OakPlaybook.mergeSteps', () => {
-  it('replaces re-learned steps in place, keeps the rest and puts new reveal buttons first', () => {
+  it('replaces re-learned steps in place, keeps the rest and puts new steps after the step learned before them', () => {
     const B = g.OakPlaybook;
     const existing = [
       { id: 'a-add', type: 'action', label: 'Add position holder' },
@@ -176,12 +185,13 @@ describe('OakPlaybook.mergeSteps', () => {
       { id: 's-position', type: 'fill', key: 'position', method: 'pointer' },
     ];
     const merged = B.mergeSteps(existing, [
-      { type: 'fill', key: 'position', method: 'keyboard' },
-      { type: 'fill', key: 'email', method: 'set-value-events' },
       { type: 'action', label: 'Expand all' },
+      { type: 'fill', key: 'category', method: 'pointer' },
+      { type: 'action', label: 'Retrieve information', always: true },
+      { type: 'fill', key: 'email', method: 'set-value-events' },
     ]);
-    expect(merged.map((step: { id?: string; key?: string; label?: string }) => step.key || step.label)).toEqual(['Expand all', 'Add position holder', 'category', 'position', 'email']);
-    expect(merged[3]).toMatchObject({ id: 's-position', method: 'keyboard' });
+    expect(merged.map((step: { id?: string; key?: string; label?: string }) => step.key || step.label)).toEqual(['Expand all', 'Add position holder', 'category', 'Retrieve information', 'email', 'position']);
+    expect(merged[2]).toMatchObject({ id: 's-category', method: 'pointer' });
   });
 });
 

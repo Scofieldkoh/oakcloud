@@ -83,7 +83,10 @@
       .filter((item) => item.length >= 3)
       .sort((a, b) => b.length - a.length)
       .map((item) => new RegExp(item.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'));
-    const scrub = (text) => secrets.reduce((result, pattern) => result.replace(pattern, '[detail]'), text);
+    // Bizfile shows existing officers' and companies' names in capitals; mask anything like one too.
+    const likelyName = /\b[A-Z][A-Z'.-]+(?:\s+[A-Z][A-Z'.-]+)+\b/g;
+    const maskNames = (text) => text.replace(likelyName, (match) => (/^(NRIC|FIN|UEN|SSIC|ACRA|CPF|IRAS)\b/.test(match) ? match : '[name]'));
+    const scrub = (text) => maskNames(secrets.reduce((result, pattern) => result.replace(pattern, '[detail]'), text));
     const walk = (item) => {
       if (typeof item === 'string') return scrub(item);
       if (Array.isArray(item)) return item.map(walk);

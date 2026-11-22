@@ -29,7 +29,7 @@
   }
 
   function describeStep(step, derived) {
-    if (step.type === 'action') return 'Click "' + step.label + '" when its fields are missing';
+    if (step.type === 'action') return 'Click "' + step.label + '"' + (step.always ? ' once, at this point' : ' when its fields are missing');
     const choice = step.kind === 'radio' || step.kind === 'checkbox';
     const where = (choice && step.locator.group) || step.locator.label || step.locator.group || step.locator.candidates[0].value;
     return P.stepLabel(step) + ' → "' + where + '" (' + step.kind + (step.format ? ', ' + step.format : '') + ')' + describeConditions(derived);
@@ -148,7 +148,7 @@
   function linkActions(steps) {
     return steps.filter((step, index) => {
       if (step.type !== 'action') return true;
-      if (step.when && step.when.missing) return true;
+      if (step.always || (step.when && step.when.missing)) return true;
       const next = step.revealsKey ? steps.find((item) => item.key === step.revealsKey) : steps.slice(index + 1).find((item) => item.type === 'fill');
       if (!next) return false;
       step.when = { missing: next.locator };
@@ -293,8 +293,20 @@
         result.stats.stoppedBecause ? h('p', { className: 'muted small' }, result.stats.stoppedBecause) : null,
         result.model.actions.length ? h('p', { className: 'small' }, 'Reveal buttons: ' + result.model.actions.map((action) => '"' + action.label + '"').join(', ') + '.') : null,
         rows.length ? h('ol', { className: 'plain' }, rows) : h('p', { className: 'muted small' }, 'No option showed or hid other fields.'),
+        h('button', { type: 'button', className: 'small quiet', id: 'learn-explore-export', onclick: () => exportExploration(result) }, 'Export what was found'),
       ),
     );
+  }
+
+  /** The exploration as JSON: structure only (labels, types, options, conditions), never values. */
+  function exportExploration(result) {
+    const payload = { tool: 'oakcloud-filing-assistant-exploration', exportedAt: new Date().toISOString(), browser: navigator.userAgent, model: result.model, branches: result.branches, stats: result.stats };
+    const url = URL.createObjectURL(new Blob([JSON.stringify(P.ai.redactDetails(payload), null, 2)], { type: 'application/json' }));
+    const anchor = h('a', { href: url, download: 'bizfile-exploration.json' });
+    document.body.append(anchor);
+    anchor.click();
+    anchor.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
   /** Words too common in labels to count as a full match on their own. */

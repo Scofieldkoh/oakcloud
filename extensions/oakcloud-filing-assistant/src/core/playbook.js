@@ -65,21 +65,25 @@
   }
 
   /**
-   * Merges newly learned steps into a screen's existing ones: a step for the same key (or the same
-   * button) is replaced where it stands, new reveal buttons go first, other new steps go last, and
-   * everything not re-learned is kept. Re-learning one field therefore never loses the others.
+   * Merges newly learned steps into a screen's existing ones. A step for the same key (or the same
+   * button) is replaced where it stands; a new step goes straight after the learned step before it
+   * (or first, when it was learned first); everything not re-learned is kept. Re-learning one field
+   * therefore never loses or reorders the others.
    */
   function mergeSteps(existing, learned) {
-    const learnedByKey = new Map(learned.map((step) => [stepKey(step), step]));
-    const used = new Set();
-    const merged = (existing || []).map((step) => {
-      const replacement = learnedByKey.get(stepKey(step));
-      if (!replacement) return step;
-      used.add(stepKey(step));
-      return { ...replacement, id: step.id };
-    });
-    const fresh = learned.filter((step) => !used.has(stepKey(step)));
-    return [...fresh.filter((step) => step.type === 'action'), ...merged, ...fresh.filter((step) => step.type !== 'action')];
+    const result = (existing || []).slice();
+    let anchor = -1;
+    for (const step of learned) {
+      const at = result.findIndex((item) => stepKey(item) === stepKey(step));
+      if (at >= 0) {
+        result[at] = { ...step, id: result[at].id };
+        anchor = at;
+      } else {
+        result.splice(anchor + 1, 0, step);
+        anchor += 1;
+      }
+    }
+    return result;
   }
 
   /** Replaces (or adds) the screen learned for a path. */

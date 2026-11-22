@@ -34,7 +34,13 @@ type Card = {
   addressType: string;
   postalCode: string;
   foreignAddress1: string;
+  idType: string;
+  nationality: string;
+  retrieved: boolean;
 };
+
+const SR_ONLY = { position: 'absolute' as const, width: 1, height: 1, overflow: 'hidden', clip: 'rect(0 0 0 0)' };
+const ID_TYPES = ['NRIC (Citizen)', 'NRIC (PR)', 'FIN', 'Passport'];
 
 function Doubled({ text }: { text: string }) {
   return (
@@ -45,25 +51,31 @@ function Doubled({ text }: { text: string }) {
   );
 }
 
-function PositionSelect({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+/**
+ * A plain custom select whose menu nests rows inside a scroll area, with no option roles or
+ * well-known classes: the container holding every option must not be read as one option.
+ */
+function PlainSelect({ placeholder, options, value, onChange }: { placeholder: string; options: string[]; value: string; onChange: (value: string) => void }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className="position-field">
-      <input placeholder="Select position" readOnly value={value} onClick={() => setOpen((current) => !current)} />
+    <div className="select-field">
+      <input placeholder={placeholder} readOnly value={value} onClick={() => setOpen((current) => !current)} />
       {open ? (
-        <div className="dropdown-menu">
-          {POSITIONS.map((position) => (
-            <div
-              key={position}
-              className="dropdown-item"
-              onClick={() => {
-                onChange(position);
-                setOpen(false);
-              }}
-            >
-              {position}
-            </div>
-          ))}
+        <div className="select-menu">
+          <div className="select-menu__scroll">
+            {options.map((option) => (
+              <div
+                key={option}
+                className="select-menu__row"
+                onClick={() => {
+                  onChange(option);
+                  setOpen(false);
+                }}
+              >
+                <span>{option}</span>
+              </div>
+            ))}
+          </div>
         </div>
       ) : null}
     </div>
@@ -128,10 +140,16 @@ function Radios({ legend, options, value, onChange }: { legend: string; options:
     <fieldset>
       <legend>{legend}</legend>
       {options.map((option, index) => (
-        <label key={option} htmlFor={ids[index]}>
+        // Two labels per radio, as on Bizfile: a visible one and one for screen readers.
+        <div key={option} className="radio-card">
           <input type="radio" id={ids[index]} checked={value === option} onChange={() => onChange(option)} />
-          <Doubled text={option} />
-        </label>
+          <label htmlFor={ids[index]}>
+            <Doubled text={option} />
+          </label>
+          <label htmlFor={ids[index]} style={SR_ONLY}>
+            {option}
+          </label>
+        </div>
       ))}
     </fieldset>
   );
@@ -165,11 +183,11 @@ function DateField({ id, label, value, onChange }: { id: string; label: string; 
   );
 }
 
-function TextField({ id, label, name, value, onChange }: { id: string; label: string; name: string; value: string; onChange: (value: string) => void }) {
+function TextField({ id, label, name, value, onChange, readOnly }: { id: string; label: string; name: string; value: string; onChange: (value: string) => void; readOnly?: boolean }) {
   return (
     <div className="field">
       <div className="label">{label}</div>
-      <input id={id} name={name} type="text" value={value} onChange={(event) => onChange(event.target.value)} />
+      <input id={id} name={name} type="text" value={value} readOnly={readOnly} onChange={(event) => onChange(event.target.value)} />
     </div>
   );
 }
@@ -187,13 +205,31 @@ function AppointCard({ card, update }: { card: Card; update: (patch: Partial<Car
       {variant === 'sgds' || variant === 'typing' ? (
         <SgdsPositionSelect value={card.position} onChange={(position) => update({ position })} chevron={variant === 'sgds'} />
       ) : (
-        <PositionSelect value={card.position} onChange={(position) => update({ position })} />
+        <PlainSelect placeholder="Select position" options={POSITIONS} value={card.position} onChange={(position) => update({ position })} />
       )}
       <DateField id={dateId} label={dateLabel} value={card.appointmentDate} onChange={(appointmentDate) => update({ appointmentDate })} />
       {card.category === 'Individual' ? (
         <>
+          <div className="field">
+            <div className="label">Identification type</div>
+            <PlainSelect placeholder="Select identification type" options={ID_TYPES} value={card.idType} onChange={(idType) => update({ idType })} />
+          </div>
           <TextField id={idNumberId} label="Identification number" name="text-input" value={card.idNumber} onChange={(idNumber) => update({ idNumber })} />
-          <TextField id="appoint-position-holder-card-1-individual-name" label="Name (As per NRIC/Identification document)" name="text-input" value={card.name} onChange={(name) => update({ name })} />
+          {/* Like Bizfile: for NRIC holders, particulars are retrieved from government records and locked. */}
+          <button type="button" disabled={!card.idType.startsWith('NRIC') || !card.idNumber} onClick={() => update({ name: 'TAN AH KOW', retrieved: true })}>
+            Retrieve information
+          </button>
+          {card.idType === 'Passport' ? (
+            <TextField id="appoint-position-holder-card-1-individual-nationality" label="Nationality" name="text-input" value={card.nationality} onChange={(nationality) => update({ nationality })} />
+          ) : null}
+          <TextField
+            id="appoint-position-holder-card-1-individual-name"
+            label="Name (As per NRIC/Identification document)"
+            name="text-input"
+            value={card.name}
+            readOnly={card.retrieved}
+            onChange={(name) => update({ name })}
+          />
           <TextField id="appoint-position-holder-card-1-individual-email" label="Email address" name="email-text-input" value={card.email} onChange={(email) => update({ email })} />
         </>
       ) : null}
@@ -226,7 +262,25 @@ function Screen() {
       <button
         type="button"
         onClick={() =>
-          setCard((current) => current ?? { category: '', position: '', appointmentDate: '', idNumber: '', name: '', email: '', uen: '', entityName: '', addressType: '', postalCode: '', foreignAddress1: '' })
+          setCard(
+            (current) =>
+              current ?? {
+                category: '',
+                position: '',
+                appointmentDate: '',
+                idNumber: '',
+                name: '',
+                email: '',
+                uen: '',
+                entityName: '',
+                addressType: '',
+                postalCode: '',
+                foreignAddress1: '',
+                idType: '',
+                nationality: '',
+                retrieved: false,
+              },
+          )
         }
       >
         + Add position holder

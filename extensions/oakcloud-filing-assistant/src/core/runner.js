@@ -30,9 +30,17 @@
   /** The option in a radio or checkbox group whose label is the wanted text. */
   function pickChoice(group, wanted) {
     const target = D.normalise(wanted);
-    const exact = group.filter((el) => D.normalise(D.labelInfo(el).name) === target);
-    if (exact.length === 1) return exact[0];
-    return null;
+    const labels = group.map((el) => ({ el, label: D.normalise(D.labelInfo(el).name) }));
+    const exact = labels.filter((item) => item.label === target);
+    if (exact.length === 1) return exact[0].el;
+    // Labels with extra words ("Individual (person)") still match when exactly one option fits.
+    const loose = labels.filter((item) => item.label && (item.label.includes(target) || target.includes(item.label)));
+    return loose.length === 1 ? loose[0].el : null;
+  }
+
+  /** Bizfile fills some fields itself (for example particulars retrieved for an NRIC) and locks them. */
+  function lockedByPage(el) {
+    return el.readOnly === true || el.disabled === true || el.getAttribute('aria-readonly') === 'true' || el.getAttribute('aria-disabled') === 'true';
   }
 
   async function attempt(doc, el, kind, method, text, optionText, expected, readSignals, hint) {
@@ -78,7 +86,8 @@
     const blocked = D.actionBlockReason(found.el);
     if (blocked) return { status: 'blocked', message: blocked };
     D.pointerClick(found.el);
-    await D.settle(doc, 400, 5000);
+    // Retrieve buttons call government records; give them longer to fill the page.
+    await D.settle(doc, /^retrieve\b/i.test(step.label) ? 1200 : 400, /^retrieve\b/i.test(step.label) ? 15000 : 5000);
     if (step.when && step.when.missing && !L.resolve(doc, step.when.missing).el) {
       return { status: 'failed', reason: 'not-revealed', needsAi: true, message: 'Clicked "' + step.label + '" but the expected fields did not appear.' };
     }
@@ -130,6 +139,23 @@
         };
       }
     }
+    // A text or date field the page has filled and locked is checked, not overwritten.
+    if ((kind === 'text' || kind === 'date') && lockedByPage(el)) {
+      const expectedText = F.applyFormat(raw, step.format);
+      const shown = D.readState(el);
+      if (D.shownValueMatches(kind, shown, expectedText)) {
+        return { status: 'done', message: 'Filled in by Bizfile, and it matches the filing details.', verdict: 'kept', corrections };
+      }
+      return {
+        status: 'failed',
+        reason: 'prefilled-mismatch',
+        corrections,
+        message: shown.value
+          ? 'Bizfile filled this in as "' + shown.value + '", but the filing details say "' + expectedText + '". Check which is right before submitting.'
+          : 'This field is locked and empty. Bizfile may fill it after another step (such as Retrieve information).',
+      };
+    }
+
     const blocked = D.blockReason(el);
     if (blocked) return { status: 'blocked', message: blocked, corrections };
 

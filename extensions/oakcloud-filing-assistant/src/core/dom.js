@@ -38,8 +38,11 @@
   /** Names that suggest a declaration, filing, payment or step change. The probe never touches these. */
   const FORBIDDEN_NAME = /\b(submit\w*|declar\w*|pay(ment)?\w*|confirm\w*|lodg\w*|proceed\w*|next|save\w*|delete\w*|remove\w*|withdraw\w*|cancel\w*|sign\s*out|log\s*out|logout|agree\w*|acknowledg\w*|undertak\w*|certif\w*|consent\w*|attest\w*)\b/i;
 
-  /** The only buttons the assistant may click: ones that add or reveal parts of the form. */
-  const SAFE_ACTION = /^\+?\s*(add|expand|show)\b/i;
+  /**
+   * The only buttons the assistant may click: ones that add or reveal parts of the form, and
+   * Bizfile's "Retrieve information", which looks up an NRIC holder's particulars and saves nothing.
+   */
+  const SAFE_ACTION = /^\+?\s*(add|expand|show|retrieve)\b/i;
 
   /** Buttons never clicked, whatever a screen map or an AI proposal says. Checked before SAFE_ACTION. */
   const FORBIDDEN_ACTION = /\b(submit\w*|save\w*|review\w*|confirm\w*|declar\w*|pay\w*|lodg\w*|withdraw\w*|delete\w*|remove\w*|back|next|proceed\w*|continue\w*|cancel\w*|sign\w*|log\s*(in|out)|logout|edit\w*|upload\w*|discard\w*|close\w*|clear\w*|reset\w*)\b/i;
@@ -122,17 +125,17 @@
   function labelInfo(el) {
     const labelledby = el.getAttribute('aria-labelledby');
     if (labelledby) {
-      const text = labelledby
-        .split(/\s+/)
-        .map((id) => labelText(lookupById(el, id)))
-        .filter(Boolean)
-        .join(' ');
+      const text = dedupeRepeat(
+        Array.from(new Set(labelledby.split(/\s+/).map((id) => labelText(lookupById(el, id))).filter(Boolean))).join(' '),
+      );
       if (text) return { name: clean(text), source: 'aria-labelledby' };
     }
     const aria = clean(el.getAttribute('aria-label'));
     if (aria) return { name: aria, source: 'aria-label' };
     if (el.labels && el.labels.length) {
-      const text = Array.from(el.labels).map(labelText).filter(Boolean).join(' ');
+      // Bizfile gives radios two labels (visible and screen-reader only): use each distinct text once.
+      const texts = Array.from(new Set(Array.from(el.labels).map(labelText).filter(Boolean)));
+      const text = dedupeRepeat(texts.join(' '));
       if (text) return { name: clean(text), source: 'label' };
     }
     const wrapping = el.closest('label');
@@ -693,7 +696,7 @@
       option = await findOption(el, wanted, visibleBefore, hint, 1200);
       if (option) break;
     }
-    if (!option && isEditable(el)) {
+    if (!option && isEditable(el) && !(hint && hint.noTyping)) {
       // Some dropdowns (SGDS Combobox among them) open and filter as you type.
       try {
         await textMethods['insert-text-command'](el, optionText);
@@ -701,6 +704,11 @@
         option = await findOption(el, wanted, visibleBefore, hint, 1500);
       } catch {
         // The field refused typing; report the openers tried.
+      }
+      if (!option && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA')) {
+        // Do not leave the typed text behind in the field.
+        valueSetter(el)('');
+        fire(el, inputEvent(el, 'deleteContentBackward', null));
       }
     }
     if (!option) {
@@ -882,6 +890,7 @@
     isVisible,
     applyStrategy,
     verdict,
+    shownValueMatches,
     textOf,
     labelText,
     normalise,

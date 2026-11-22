@@ -191,8 +191,14 @@
           continue;
         }
         if (!event.el.isConnected) continue;
-        pendingAction = { type: 'action', label: event.label, locator: L.buildActionLocator(event.el) };
-        steps.push(pendingAction);
+        const action = { type: 'action', label: event.label, locator: L.buildActionLocator(event.el) };
+        if (/^retrieve\b/i.test(event.label)) {
+          // A lookup, not a reveal: done once, where staff did it (after the ID number).
+          action.always = true;
+        } else {
+          pendingAction = action;
+        }
+        steps.push(action);
         continue;
       }
       const seen = observe(event);
@@ -221,7 +227,7 @@
       }
       steps.push(step);
     }
-    return { steps: steps.filter((step) => step.type === 'fill' || step.when), unmapped, ignored };
+    return { steps: steps.filter((step) => step.type === 'fill' || step.when || step.always), unmapped, ignored };
   }
 
   root.OakRecorder = { DEFAULT_METHOD, start, buildSteps, matchKeys };
