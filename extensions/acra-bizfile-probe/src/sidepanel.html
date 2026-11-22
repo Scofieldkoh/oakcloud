@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Bizfile Input Probe</title>
+    <link rel="stylesheet" href="sidepanel.css" />
+  </head>
+  <body>
+    <header>
+      <h1>Bizfile input probe <span class="tag">POC</span></h1>
+      <p class="warning">
+        Use a test transaction with dummy data. The probe never clicks buttons, submits, declares or pays.
+        Leave the transaction unsubmitted and discard it afterwards.
+      </p>
+      <p id="target" class="muted" role="status">Looking for a Bizfile tab…</p>
+    </header>
+
+    <section aria-labelledby="scan-heading">
+      <h2 id="scan-heading">1. Scan the page</h2>
+      <p class="muted">Records how this Bizfile screen is built: frameworks, frames, how fields are labelled. No field values are read.</p>
+      <button type="button" id="scan">Scan page</button>
+      <div id="scan-result"></div>
+    </section>
+
+    <section aria-labelledby="test-heading">
+      <h2 id="test-heading">2. Test a field</h2>
+      <p class="muted">Pick one field, choose a fill method and run it. Use a different value or option for each method on the same field.</p>
+      <button type="button" id="pick">Pick a field in Bizfile</button>
+      <p id="pick-status" class="muted" role="status"></p>
+      <form id="field-card" hidden>
+        <dl id="field-facts"></dl>
+        <p id="field-blocked" class="blocked" hidden></p>
+        <div id="test-controls">
+          <label>Control type
+            <select id="kind"></select>
+          </label>
+          <label id="value-row">Value to enter
+            <input id="value" autocomplete="off" />
+          </label>
+          <label id="option-row">Option to choose (exact text)
+            <input id="option" autocomplete="off" />
+          </label>
+          <label>Fill method
+            <select id="strategy"></select>
+          </label>
+          <p id="strategy-help" class="muted"></p>
+          <button type="submit" id="run">Run test</button>
+        </div>
+      </form>
+    </section>
+
+    <section aria-labelledby="results-heading">
+      <h2 id="results-heading">3. Results <span id="result-count" class="muted"></span></h2>
+      <p class="muted">
+        After a test, move to the next Bizfile step and back (or open the review page), press Recheck,
+        then record what Bizfile did.
+      </p>
+      <div class="row">
+        <button type="button" id="export">Export JSON</button>
+        <button type="button" id="clear" class="quiet">Clear results</button>
+      </div>
+      <ol id="results"></ol>
+    </section>
+
+    <script src="probe-core.js"></script>
+    <script src="sidepanel.js"></script>
+  </body>
+</html>

@@ -1,0 +1,316 @@
+/*
+ * OakCloud Bizfile input probe: content script (isolated world), loaded in every Bizfile frame.
+ * Depends on probe-core.js, which the manifest loads first.
+ */
+(function () {
+  'use strict';
+  if (globalThis.OakProbeContent) return;
+  const P = globalThis.OakProbe;
+
+  const handles = new Map();
+  let nextHandle = 1;
+
+  // ---- Framework signals from page-signals.js ---------------------------------------------
+
+  function readJsonAttribute(el, attribute) {
+    const raw = el.getAttribute(attribute);
+    el.removeAttribute(attribute);
+    if (!raw) return null;
+    try {
+      return JSON.parse(raw);
+    } catch {
+      return null;
+    }
+  }
+
+  function readSignals(el) {
+    if (!el || !el.isConnected) return null;
+    el.dispatchEvent(new CustomEvent('oak-probe:signals', { bubbles: false, composed: true }));
+    return readJsonAttribute(el, 'data-oak-probe-signals');
+  }
+
+  function readPageInfo() {
+    document.dispatchEvent(new CustomEvent('oak-probe:page-info'));
+    return readJsonAttribute(document.documentElement, 'data-oak-probe-page-info');
+  }
+
+  // ---- Field handles -------------------------------------------------------------------------
+
+  function register(el) {
+    const handleId = 'f' + nextHandle++;
+    handles.set(handleId, { ref: new WeakRef(el), descriptor: P.describe(el) });
+    return handleId;
+  }
+
+  /** Finds the field again: the same element if it is still on the page, else by its description. */
+  function locate(handleId, descriptor) {
+    const entry = handles.get(handleId);
+    const el = entry && entry.ref.deref();
+    if (el && el.isConnected) return { el, relocated: false };
+    const found = P.relocate(document, descriptor || (entry && entry.descriptor) || {});
+    if (found && handleId) handles.set(handleId, { ref: new WeakRef(found), descriptor: P.describe(found) });
+    return { el: found, relocated: Boolean(found) };
+  }
+
+  function summary(handleId, el) {
+    const kind = P.detectKind(el);
+    return {
+      handleId,
+      kind,
+      descriptor: P.describe(el),
+      blockReason: P.blockReason(el),
+      state: P.readState(el),
+      signals: readSignals(el),
+    };
+  }
+
+  // ---- Pick mode -----------------------------------------------------------------------------
+
+  let picking = false;
+  let overlay = null;
+
+  function send(message) {
+    try {
+      chrome.runtime.sendMessage(message).catch(() => {});
+    } catch {
+      // The side panel is closed or the extension was reloaded; nothing to tell.
+    }
+  }
+
+  function ensureOverlay() {
+    if (overlay) return overlay;
+    overlay = document.createElement('div');
+    overlay.setAttribute('data-oak-probe-overlay', '');
+    overlay.style.cssText =
+      'position:fixed;z-index:2147483647;pointer-events:none;border:2px solid #165d43;background:rgba(22,93,67,.08);border-radius:4px;display:none;';
+    const tag = document.createElement('div');
+    tag.style.cssText =
+      'position:absolute;left:-2px;top:-22px;background:#165d43;color:#fff;font:12px/18px system-ui,sans-serif;padding:0 6px;border-radius:3px;white-space:nowrap;max-width:360px;overflow:hidden;text-overflow:ellipsis;';
+    overlay.appendChild(tag);
+    document.documentElement.appendChild(overlay);
+    return overlay;
+  }
+
+  function highlight(el, message) {
+    const box = ensureOverlay();
+    if (!el) {
+      box.style.display = 'none';
+      return;
+    }
+    const rect = el.getBoundingClientRect();
+    Object.assign(box.style, {
+      display: 'block',
+      left: rect.left - 3 + 'px',
+      top: rect.top - 3 + 'px',
+      width: rect.width + 6 + 'px',
+      height: rect.height + 6 + 'px',
+    });
+    box.firstChild.textContent = message;
+  }
+
+  function targetOf(event) {
+    const first = event.composedPath()[0];
+    return first && first.nodeType === 1 ? first : event.target;
+  }
+
+  function describeForHover(field) {
+    if (!field) return 'Not a form field';
+    const blocked = P.blockReason(field);
+    const name = P.labelInfo(field).name || '(no label)';
+    return (blocked ? 'Blocked: ' : P.detectKind(field) + ': ') + name;
+  }
+
+  function onPointerMove(event) {
+    if (!picking) return;
+    const field = P.resolveField(targetOf(event));
+    highlight(field || targetOf(event), describeForHover(field));
+  }
+
+  function onBlocked(event) {
+    if (!picking) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    if (event.type !== 'click') return;
+    const field = P.resolveField(targetOf(event));
+    if (!field) {
+      send({ type: 'oak-probe:pick-miss', message: 'That is not a form field. Click the field itself.' });
+      return;
+    }
+    stopPick();
+    send({ type: 'oak-probe:picked', field: summary(register(field), field) });
+  }
+
+  function onKey(event) {
+    if (!picking || event.key !== 'Escape') return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    stopPick();
+    send({ type: 'oak-probe:pick-cancelled' });
+  }
+
+  const BLOCKED_EVENTS = ['pointerdown', 'pointerup', 'mousedown', 'mouseup', 'click', 'dblclick', 'auxclick', 'contextmenu', 'touchstart', 'touchend'];
+
+  function startPick() {
+    if (picking) return true;
+    picking = true;
+    window.addEventListener('pointermove', onPointerMove, true);
+    BLOCKED_EVENTS.forEach((type) => window.addEventListener(type, onBlocked, true));
+    window.addEventListener('keydown', onKey, true);
+    return true;
+  }
+
+  function stopPick() {
+    picking = false;
+    window.removeEventListener('pointermove', onPointerMove, true);
+    BLOCKED_EVENTS.forEach((type) => window.removeEventListener(type, onBlocked, true));
+    window.removeEventListener('keydown', onKey, true);
+    highlight(null);
+    return true;
+  }
+
+  // ---- Fill test and recheck -----------------------------------------------------------------
+
+  function blurActive() {
+    const active = document.activeElement;
+    if (active && active !== document.body && typeof active.blur === 'function') active.blur();
+  }
+
+  async function runFill({ handleId, descriptor, kind, strategy, value, optionText }) {
+    const { el, relocated } = locate(handleId, descriptor);
+    if (!el) return { ok: false, error: 'The field is no longer on this page.' };
+    const blocked = P.blockReason(el);
+    if (blocked) return { ok: false, error: blocked };
+    const expected = kind === 'combobox' || kind === 'typeahead' || kind === 'native-select' ? optionText || value : value;
+    const before = P.readState(el);
+    let note = '';
+    let error = '';
+    try {
+      note = await P.applyStrategy(el, kind, strategy, value, optionText);
+    } catch (caught) {
+      error = String((caught && caught.message) || caught).slice(0, 300);
+    }
+    await P.sleep(250);
+    const afterSet = P.readState(el);
+    blurActive();
+    await P.sleep(600);
+    const afterBlur = P.readState(el);
+    await P.sleep(1200);
+    const settledEl = el.isConnected ? el : P.relocate(document, P.describe(el)) || el;
+    const settled = P.readState(settledEl);
+    const signals = readSignals(settledEl);
+    return {
+      ok: true,
+      result: {
+        relocated,
+        note,
+        error,
+        before,
+        afterSet,
+        afterBlur,
+        settled,
+        signals,
+        expected,
+        verdict: error ? 'not-applied' : P.verdict(kind, expected, before, settled, signals),
+      },
+    };
+  }
+
+  function recheck({ handleId, descriptor }) {
+    const { el, relocated } = locate(handleId, descriptor);
+    if (!el) return { ok: true, found: false };
+    return { ok: true, found: true, relocated, state: P.readState(el), signals: readSignals(el) };
+  }
+
+  // ---- Page scan -----------------------------------------------------------------------------
+
+  const LIBRARY_PREFIXES = {
+    'Angular Material': /^mat-|^mdc-/,
+    'ng-select': /^ng-select|^ng-option/,
+    PrimeNG: /^p-(dropdown|calendar|inputtext|autocomplete|radiobutton|checkbox)/,
+    'Ant Design': /^ant-/,
+    'Material UI': /^Mui/,
+    'react-select': /react-select|^select__/,
+    'SG Design System': /^sgds/,
+    Bootstrap: /^(form-control|form-select|form-check|btn)$/,
+    Vuetify: /^v-(input|select|text-field)/,
+    'Element UI': /^el-(input|select)/,
+  };
+
+  function libraryHints() {
+    const counts = {};
+    const all = document.querySelectorAll('[class]');
+    for (let index = 0; index < all.length && index < 8000; index++) {
+      const classes = String(all[index].className && all[index].className.baseVal !== undefined ? all[index].className.baseVal : all[index].className).split(/\s+/);
+      for (const [library, pattern] of Object.entries(LIBRARY_PREFIXES)) {
+        if (classes.some((name) => pattern.test(name))) counts[library] = (counts[library] || 0) + 1;
+      }
+    }
+    return counts;
+  }
+
+  function tally(items, key) {
+    return items.reduce((counts, item) => {
+      counts[item[key]] = (counts[item[key]] || 0) + 1;
+      return counts;
+    }, {});
+  }
+
+  function scan() {
+    const fields = P.deepQueryAll(document, P.FIELD_SELECTOR)
+      .filter((el) => P.isVisible(el))
+      .slice(0, 250)
+      .map((el) => ({ kind: P.detectKind(el), ...P.describe(el), blocked: Boolean(P.blockReason(el)) }));
+    return {
+      url: location.origin + location.pathname,
+      title: P.clean(document.title),
+      topFrame: window === window.top,
+      page: readPageInfo(),
+      headings: Array.from(document.querySelectorAll('h1,h2,h3,legend'))
+        .filter((el) => P.isVisible(el))
+        .slice(0, 25)
+        .map((el) => P.clean(el.textContent, 100)),
+      fieldCount: fields.length,
+      kinds: tally(fields, 'kind'),
+      labelSources: tally(fields, 'labelSource'),
+      shadowRootCount: P.deepQueryAll(document, '*').filter((el) => el.shadowRoot).length,
+      iframes: Array.from(document.querySelectorAll('iframe')).map((frame) => {
+        try {
+          const url = new URL(frame.src || 'about:blank', location.href);
+          return { src: url.origin + url.pathname, sameOrigin: url.origin === location.origin };
+        } catch {
+          return { src: 'unparseable', sameOrigin: false };
+        }
+      }),
+      libraries: libraryHints(),
+      fields,
+    };
+  }
+
+  // ---- Messaging -----------------------------------------------------------------------------
+
+  chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+    if (!message || typeof message.type !== 'string' || !message.type.startsWith('oak-probe:')) return false;
+    const reply = (promise) => {
+      Promise.resolve()
+        .then(promise)
+        .then(sendResponse, (error) => sendResponse({ ok: false, error: String((error && error.message) || error) }));
+      return true;
+    };
+    if (message.type === 'oak-probe:run') return reply(() => runFill(message));
+    if (message.type === 'oak-probe:recheck') return reply(() => recheck(message));
+    if (message.type === 'oak-probe:highlight') {
+      return reply(() => {
+        const { el } = locate(message.handleId, message.descriptor);
+        if (el) {
+          el.scrollIntoView({ block: 'center' });
+          highlight(el, P.labelInfo(el).name || 'Field');
+          setTimeout(() => highlight(null), 2000);
+        }
+        return { ok: true, found: Boolean(el) };
+      });
+    }
+    return false;
+  });
+
+  globalThis.OakProbeContent = { scan, startPick, stopPick, ping: () => true };
+})();
