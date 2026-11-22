@@ -14,7 +14,16 @@ import { fixtureHtml, launchWithExtension, type ExtensionSession } from '../help
 
 const SCREEN = 'https://www.bizfile.gov.sg/registry/update-personnel/appoint-withdraw-position-holder-form';
 const OAKCLOUD = 'https://oakcloud.test';
-const DETAILS = { category: 'Individual', position: 'Director', appointmentDate: '2026-02-01', idNumber: 'S1234567D', name: 'Tan Ah Kow', email: 'tan@example.com' };
+const DETAILS = {
+  category: 'Individual',
+  position: 'Director',
+  appointmentDate: '2026-02-01',
+  idNumber: 'S1234567D',
+  name: 'Tan Ah Kow',
+  email: 'tan@example.com',
+  addressType: 'Local',
+  postalCode: '123456',
+};
 const PERSONAL = /S1234567D|Tan Ah Kow|TAN AH KOW|tan@example\.com|KOH ZHI YONG/i;
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -40,6 +49,9 @@ function fakeAi(body: Json): Json {
     idNumber: (field) => /identification number/i.test(field.label),
     name: (field) => /^name/i.test(field.label),
     email: (field) => /email/i.test(field.label),
+    addressType: (field) => field.label === 'Address type',
+    postalCode: (field) => /postal code/i.test(field.label),
+    foreignAddress1: (field) => /foreign address/i.test(field.label),
   };
   const steps = Object.entries(rules)
     .map(([key, rule]) => {
@@ -144,10 +156,9 @@ describe('OakCloud Filing Assistant', () => {
   it('fills the screen from what it learned, verifies each field and leaves submission to staff', async () => {
     await openScreen();
     expect(await fillUntilDone()).toContain('Finished: 7 filled, 0 skipped');
-    expect(await formState()).toEqual({
-      card: { category: 'Individual', position: 'Director', appointmentDate: '01 Feb 2026', idNumber: 'S1234567D', name: 'TAN AH KOW', email: 'tan@example.com' },
-      clicks: { back: 0, save: 0, review: 0 },
-    });
+    const state = await formState();
+    expect(state.card).toMatchObject({ category: 'Individual', position: 'Director', appointmentDate: '01 Feb 2026', idNumber: 'S1234567D', name: 'TAN AH KOW', email: 'tan@example.com' });
+    expect(state.clicks).toEqual({ back: 0, save: 0, review: 0 });
     expect((await mapInfo()).version).toBe(1);
   });
 
@@ -196,9 +207,10 @@ describe('OakCloud Filing Assistant', () => {
     const versionBefore = (await mapInfo()).version;
     await openScreen();
     await page.getByRole('button', { name: '+ Add position holder' }).click();
+    await page.getByRole('radio', { name: 'Individual' }).check();
     await tab('Learn');
     await panel.getByRole('button', { name: 'Ask AI to map this screen' }).click();
-    await expect.poll(() => panel.locator('#learn-status').textContent()).toContain('The AI proposed 6 steps');
+    await expect.poll(() => panel.locator('#learn-status').textContent()).toContain('The AI proposed 7 steps');
     const request = aiRequests.find((item) => item.task === 'map-screen');
     expect(request.targets.map((target: Json) => target.key)).toContain('idNumber');
     expect(JSON.stringify(request)).not.toMatch(PERSONAL);
@@ -207,10 +219,79 @@ describe('OakCloud Filing Assistant', () => {
     expect((await mapInfo()).version).toBe(versionBefore);
   });
 
+  it('explores the whole screen, finds what each option shows, and fills only what applies', async () => {
+    const versionBefore = (await mapInfo()).version;
+    await openScreen();
+    await tab('Learn');
+    await panel.getByRole('button', { name: 'Explore this screen' }).click();
+    await expect.poll(() => panel.locator('#learn-status').textContent(), { timeout: 150_000 }).toMatch(/The AI mapped \d+ of \d+ fields/);
+
+    const found = (await panel.locator('#learn-explore-result').textContent()) ?? '';
+    expect(found).toContain('Reveal buttons: "+ Add position holder"');
+    expect(found).toMatch(/Category = "Corporate" shows UEN, Entity name/);
+    expect(found).toMatch(/Address type = "Local" shows Postal code/);
+    expect(found).toMatch(/Address type = "Foreign" shows Foreign address line 1/);
+
+    const proposal = (await panel.locator('#learn-proposal').textContent()) ?? '';
+    expect(proposal).toContain('Identification number → "Identification number" (text) — only when Category is "Individual"');
+    expect(proposal).toContain('Postal code → "Postal code" (text) — only when Address type is "Local"');
+    expect(proposal).toContain('Foreign address line 1 → "Foreign address line 1" (text) — only when Address type is "Foreign"');
+    expect(proposal).toContain('Fields found that the AI did not map');
+    expect(proposal).toContain('"UEN" (text)');
+
+    const request = aiRequests.filter((item) => item.task === 'map-screen').at(-1);
+    expect(request.snapshot.fields.some((field: Json) => field.shownWhen)).toBe(true);
+    expect(request.snapshot.fields.find((field: Json) => field.label === 'Select position').options).toEqual(['Director', 'Secretary', 'Chief Executive Officer', 'Auditor']);
+    expect(JSON.stringify(request)).not.toMatch(PERSONAL);
+    expect((await formState()).clicks).toEqual({ back: 0, save: 0, review: 0 });
+
+    await panel.getByRole('button', { name: 'Save to screen map' }).click();
+    await expect.poll(() => panel.locator('#learn-status').textContent()).toContain('Saved as screen map version');
+    const info = await mapInfo();
+    expect(info.version).toBe(versionBefore + 1);
+    expect(info.steps.find((step: Json) => step.key === 'postalCode').conditions).toEqual([{ key: 'addressType', equalsAny: ['Local'], label: 'Address type' }]);
+
+    await openScreen();
+    expect(await fillUntilDone()).toMatch(/Finished: \d+ filled/);
+    const state = await formState();
+    expect(state.card).toMatchObject({ category: 'Individual', idNumber: 'S1234567D', addressType: 'Local', postalCode: '123456', foreignAddress1: '' });
+    expect(await panel.locator('#fill-steps').textContent()).toContain('Not needed for these details: only shown when Address type is "Foreign"');
+    expect(state.clicks).toEqual({ back: 0, save: 0, review: 0 });
+  }, 240_000);
+
+  it('learns how an SGDS-style dropdown opens, and finds the option by typing when there is no chevron', async () => {
+    await openScreen('sgds');
+    await page.getByRole('button', { name: '+ Add position holder' }).click();
+    await tab('Learn');
+    await panel.getByRole('button', { name: 'Start watching' }).click();
+    await expect.poll(() => panel.locator('#learn-status').textContent()).toContain('Watching');
+    await page.locator('.chevron').click();
+    await page.getByRole('button', { name: 'Director', exact: true }).click();
+    await panel.getByRole('button', { name: 'Finish' }).click();
+    await expect.poll(() => panel.locator('#learn-status').textContent()).toContain('Learned 1 step.');
+    expect(await panel.locator('#learn-proposal').textContent()).toContain('Position held → "Select position" (combobox)');
+    await panel.getByRole('button', { name: 'Save to screen map' }).click();
+    await expect.poll(() => panel.locator('#learn-status').textContent()).toContain('Saved as screen map version');
+
+    const info = await mapInfo();
+    const position = info.steps.find((step: Json) => step.key === 'position');
+    expect(position.dropdown.opener).toEqual({ relation: 'wrapper-descendant', signature: { tag: 'span', role: '', classes: ['form-control-icon', 'chevron'] } });
+    expect(position.dropdown.option.classes).toContain('dropdown-item');
+    expect(info.steps.some((step: Json) => step.type === 'action')).toBe(true); // re-learning one field kept the rest
+
+    for (const variant of ['sgds', 'typing']) {
+      await openScreen(variant);
+      expect(await fillUntilDone()).toMatch(/Finished: \d+ filled/);
+      const state = await formState();
+      expect(state.card.position).toBe('Director');
+      expect(state.clicks).toEqual({ back: 0, save: 0, review: 0 });
+    }
+  }, 180_000);
+
   it('switches the date format itself when Bizfile rejects the learned one', async () => {
     const versionBefore = (await mapInfo()).version;
     await openScreen('slashdates');
-    expect(await fillUntilDone()).toContain('Finished: 7 filled');
+    expect(await fillUntilDone()).toMatch(/Finished: \d+ filled/);
     expect((await formState()).card.appointmentDate).toBe('01/02/2026');
     expect(await panel.locator('#fill-steps').textContent()).toContain('accepted "DD/MM/YYYY"');
     const info = await mapInfo();
@@ -229,7 +310,7 @@ describe('OakCloud Filing Assistant', () => {
     await new Promise((resolve) => setTimeout(resolve, 1500));
     expect(await panel.locator('#fill-steps li[data-status="done"]').count()).toBeLessThanOrEqual(doneWhilePaused + 1);
     await panel.getByRole('button', { name: 'Resume' }).click();
-    await expect.poll(fillStatus, { timeout: 60_000 }).toContain('Finished: 7 filled');
+    await expect.poll(fillStatus, { timeout: 60_000 }).toMatch(/Finished: \d+ filled/);
   });
 
   it('refuses to click a submission button even when a screen map tells it to', async () => {

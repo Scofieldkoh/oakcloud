@@ -5,7 +5,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Api = any;
 const g = globalThis as unknown as Record<string, Api>;
-const CORE = ['dom', 'formats', 'schemas', 'locator', 'snapshot', 'playbook', 'recorder', 'runner'];
+const CORE = ['dom', 'formats', 'schemas', 'locator', 'snapshot', 'playbook', 'recorder', 'runner', 'explorer'];
 const byId = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
 
 const originalRects = Element.prototype.getClientRects;
@@ -164,6 +164,36 @@ describe('OakPlaybook', () => {
     expect(B.validate(next)).toEqual([]);
     expect(() => B.change(next, () => {}, { source: 'robot', summary: '' })).toThrow(/Unknown change source/);
     expect(B.validate({ ...next, screens: [{ path: '/form', steps: [{ type: 'fill', kind: 'text', locator: { candidates: [] } }] }] })).toHaveLength(2);
+  });
+});
+
+describe('OakPlaybook.mergeSteps', () => {
+  it('replaces re-learned steps in place, keeps the rest and puts new reveal buttons first', () => {
+    const B = g.OakPlaybook;
+    const existing = [
+      { id: 'a-add', type: 'action', label: 'Add position holder' },
+      { id: 's-category', type: 'fill', key: 'category', method: 'click' },
+      { id: 's-position', type: 'fill', key: 'position', method: 'pointer' },
+    ];
+    const merged = B.mergeSteps(existing, [
+      { type: 'fill', key: 'position', method: 'keyboard' },
+      { type: 'fill', key: 'email', method: 'set-value-events' },
+      { type: 'action', label: 'Expand all' },
+    ]);
+    expect(merged.map((step: { id?: string; key?: string; label?: string }) => step.key || step.label)).toEqual(['Expand all', 'Add position holder', 'category', 'position', 'email']);
+    expect(merged[3]).toMatchObject({ id: 's-position', method: 'keyboard' });
+  });
+});
+
+describe('OakRunner.conditionsHold', () => {
+  const step = { conditions: [{ key: 'addressType', equalsAny: ['Local', 'SG'], label: 'Address type' }] };
+  it('lets a conditional step run only for matching filing details', () => {
+    const R = g.OakRunner;
+    expect(R.conditionsHold(step, { addressType: 'local' })).toBeNull();
+    expect(R.conditionsHold(step, { addressType: 'SG' })).toBeNull();
+    expect(R.conditionsHold(step, { addressType: 'Foreign' })).toMatch(/only shown when Address type is "Local"/);
+    expect(R.conditionsHold(step, {})).toMatch(/that detail is empty/);
+    expect(R.conditionsHold({}, {})).toBeNull();
   });
 });
 

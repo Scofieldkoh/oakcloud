@@ -222,6 +222,116 @@
     return { ok: true, found: true, relocated, state: P.readState(el), signals: readSignals(el) };
   }
 
+  // ---- Dropdown inspector --------------------------------------------------------------------
+  //
+  // Records how a dropdown works while staff open it and choose an option as usual: the field's
+  // markup, the React handlers on it and its wrappers, what appears or changes on the page and the
+  // order of events. Field values are never read; captured texts are short and capitalised names
+  // are masked.
+
+  const LIKELY_NAME = /\b[A-Z][A-Z'.-]+(?:\s+[A-Z][A-Z'.-]+)+\b/g;
+  const WATCHED_ATTRIBUTES = ['class', 'aria-expanded', 'aria-hidden', 'hidden', 'style', 'aria-activedescendant', 'aria-selected'];
+  const INSPECT_EVENTS = ['pointerdown', 'mousedown', 'mouseup', 'click', 'focusin', 'focusout', 'keydown', 'input', 'change'];
+  let inspector = null;
+
+  function signatureText(node) {
+    if (!node || node.nodeType !== 1) return '';
+    const classes = Array.from(node.classList).slice(0, 4).join('.');
+    const role = node.getAttribute('role');
+    return node.tagName.toLowerCase() + (classes ? '.' + classes : '') + (role ? '[role=' + role + ']' : '');
+  }
+
+  function ancestry(node, levels = 6) {
+    const chain = [];
+    for (let current = node; current && current.nodeType === 1 && chain.length < levels; current = current.parentElement) chain.push(signatureText(current));
+    return chain;
+  }
+
+  function shortText(node) {
+    const text = P.clean(node.textContent, 60);
+    return text && text.length <= 40 ? text.replace(LIKELY_NAME, '[name]') : '';
+  }
+
+  function attributesOf(el) {
+    const kept = {};
+    for (const attribute of Array.from(el.attributes)) {
+      if (attribute.name === 'value' || attribute.name === 'style') continue;
+      if (/^(aria-|role$|type$|readonly$|placeholder$|autocomplete$|tabindex$|data-bs-|data-toggle)/.test(attribute.name)) kept[attribute.name] = P.clean(attribute.value, 80);
+    }
+    return kept;
+  }
+
+  function readHandlers(el) {
+    el.dispatchEvent(new CustomEvent('oak-probe:handlers', { bubbles: false, composed: true }));
+    return readJsonAttribute(el, 'data-oak-probe-handlers');
+  }
+
+  function startInspect() {
+    if (inspector) inspector.stop();
+    const started = Date.now();
+    const events = [];
+    const changes = [];
+    let field = null;
+    let fieldInfo = null;
+    let option = null;
+    const onEvent = (event) => {
+      if (!event.isTrusted) return;
+      const target = targetOf(event);
+      if (events.length < 100) events.push({ ms: Date.now() - started, type: event.type, target: signatureText(target), ...(event.type === 'keydown' ? { key: event.key } : {}) });
+      if (!field && ['pointerdown', 'mousedown', 'focusin'].includes(event.type)) {
+        const resolved = P.resolveField(target);
+        const candidate = resolved && resolved.matches(P.FIELD_SELECTOR) ? resolved : P.dropdownFieldFor(target);
+        if (candidate) {
+          field = candidate;
+          const toggle = P.toggleOf(candidate);
+          fieldInfo = {
+            kind: P.detectKind(candidate),
+            describe: P.describe(candidate),
+            attributes: attributesOf(candidate),
+            ancestry: ancestry(candidate),
+            openedBy: target === candidate || candidate.contains(target) ? 'the field' : signatureText(target),
+            toggleNearby: toggle ? signatureText(toggle) : null,
+            reactHandlers: readHandlers(candidate),
+          };
+        }
+      }
+      if (field && event.type === 'click' && target !== field && !field.contains(target)) {
+        option = { text: shortText(target), ancestry: ancestry(target, 8), reactHandlers: readHandlers(target) };
+      }
+    };
+    const observer = new MutationObserver((records) => {
+      for (const record of records) {
+        if (changes.length >= 200) break;
+        if (record.target.closest && record.target.closest('[data-oak-probe-overlay]')) continue;
+        if (record.type === 'childList') {
+          record.addedNodes.forEach((node) => {
+            if (node.nodeType !== 1 || changes.length >= 200) return;
+            const texts = Array.from(new Set([node, ...node.querySelectorAll('*')].map(shortText).filter(Boolean))).slice(0, 20);
+            changes.push({ ms: Date.now() - started, added: signatureText(node), into: signatureText(record.target), elements: node.querySelectorAll('*').length + 1, texts });
+          });
+        } else if (record.type === 'attributes' && WATCHED_ATTRIBUTES.includes(record.attributeName)) {
+          changes.push({ ms: Date.now() - started, changed: signatureText(record.target), attribute: record.attributeName, value: P.clean(record.target.getAttribute(record.attributeName), 80) });
+        }
+      }
+    });
+    observer.observe(document.body || document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: WATCHED_ATTRIBUTES });
+    INSPECT_EVENTS.forEach((type) => window.addEventListener(type, onEvent, true));
+    inspector = {
+      stop() {
+        observer.disconnect();
+        INSPECT_EVENTS.forEach((type) => window.removeEventListener(type, onEvent, true));
+        inspector = null;
+        return { path: location.pathname, recordedMs: Date.now() - started, field: fieldInfo, option, events, changes };
+      },
+    };
+    return { ok: true };
+  }
+
+  function stopInspect() {
+    if (!inspector) return { ok: false, error: 'Not inspecting.' };
+    return { ok: true, report: inspector.stop() };
+  }
+
   // ---- Page scan -----------------------------------------------------------------------------
 
   const LIBRARY_PREFIXES = {
@@ -310,6 +420,10 @@
     const locators = {};
     for (const ref of refs) {
       const el = registry.get(ref);
+      if (el && Array.isArray(el.candidates)) {
+        locators[ref] = el; // an exploration stores locators, built when each field was seen
+        continue;
+      }
       if (!el || !el.isConnected) continue;
       locators[ref] = ref.startsWith('a') ? globalThis.OakLocator.buildActionLocator(el) : globalThis.OakLocator.buildLocator(el);
     }
@@ -317,8 +431,16 @@
   }
 
   /** Staff clicking or typing on the page during a run pauses it. The assistant's own events are not trusted, so they never count. */
+  let exploring = false;
+  let exploreAbort = false;
+
   function onUserActivity(event) {
-    if (!watchingRun || !event.isTrusted) return;
+    if (!event.isTrusted) return;
+    if (exploring) {
+      exploreAbort = true;
+      return;
+    }
+    if (!watchingRun) return;
     const now = Date.now();
     if (now - lastActivityAt < 1000) return;
     lastActivityAt = now;
@@ -372,6 +494,28 @@
       return { ok: true, result };
     },
     'oak-filing:highlight-locator': (message) => highlightLocator(message.locator),
+    'oak-filing:explore': async (message) => {
+      if (exploring) return { ok: false, error: 'Already exploring.' };
+      exploring = true;
+      exploreAbort = false;
+      try {
+        const result = await globalThis.OakExplorer.explore(document, {
+          ...(message.limits || {}),
+          shouldStop: () => exploreAbort,
+          onProgress: (text) => send({ type: 'oak-filing:explore-progress', text }),
+        });
+        const snapshotId = 's' + nextSnapshot++;
+        snapshots.set(snapshotId, new Map(Object.entries(result.locators)));
+        while (snapshots.size > 5) snapshots.delete(snapshots.keys().next().value);
+        return { ok: true, snapshotId, model: result.model, branches: result.branches, stats: result.stats };
+      } finally {
+        exploring = false;
+      }
+    },
+    'oak-filing:explore-stop': () => {
+      exploreAbort = true;
+      return { ok: true };
+    },
   };
 
   // ---- Messaging -----------------------------------------------------------------------------
@@ -386,6 +530,8 @@
     };
     if (filingHandlers[message.type]) return reply(() => filingHandlers[message.type](message));
     if (message.type === 'oak-probe:run') return reply(() => runFill(message));
+    if (message.type === 'oak-probe:inspect-start') return reply(() => startInspect());
+    if (message.type === 'oak-probe:inspect-stop') return reply(() => stopInspect());
     if (message.type === 'oak-probe:recheck') return reply(() => recheck(message));
     if (message.type === 'oak-probe:highlight') {
       return reply(() => {

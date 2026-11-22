@@ -102,7 +102,9 @@
         h('div', { id: 'fill-ai-proposal' }),
       );
       box.hidden = false;
-      if (step.type === 'fill' && result.needsAi && P.ai.configured() && P.state.settings.autoAskAi) askAi(step, result);
+      // AI helps find fields; when the field was found but would not fill, asking it first is pointless.
+      const findingProblem = ['not-found', 'ambiguous', 'option-missing', 'not-revealed', 'validation-error'].includes(result.reason);
+      if (step.type === 'fill' && result.needsAi && findingProblem && P.ai.configured() && P.state.settings.autoAskAi) askAi(step, result);
     });
   }
 
@@ -124,6 +126,15 @@
       const locator = locators[proposal.ref];
       if (!locator) {
         area.replaceChildren(h('p', null, 'The AI pointed at a field that is no longer on the page. Try again.'));
+        return;
+      }
+      const sameField = locator.candidates.some((candidate) => step.locator.candidates.some((old) => old.by === candidate.by && old.value === candidate.value));
+      const sameFormat = (proposal.format === undefined ? step.format : proposal.format) === step.format;
+      if (sameField && proposal.kind === step.kind && sameFormat) {
+        area.replaceChildren(
+          h('p', null, h('strong', null, 'The AI agrees this is the right field'), ', so there is nothing to change in the screen map. The problem is filling it, not finding it.'),
+          h('p', { className: 'muted small' }, 'Fill it yourself on Bizfile and press Skip. To fix it for next time, re-learn this screen by watching, or use Diagnose → Inspect a dropdown and send the export to your administrator.'),
+        );
         return;
       }
       // The old ways of finding the field stay as fallbacks in case Bizfile changes back.
@@ -258,6 +269,10 @@
       const end = await P.send({ type: 'oak-filing:run-end' });
       const screen = B.findScreen(P.currentMap(), run.path);
       drift = globalThis.OakSnapshot.compare(screen && screen.fingerprint, end.fingerprint);
+      // An explored map knows fields from every option; only fields it never saw count as changes.
+      if (drift && screen.fingerprint && screen.fingerprint.explored) {
+        drift = { ...drift, removed: [], changed: drift.pathChanged || drift.added.length > 0 };
+      }
     } catch {
       // The page may have gone; the run log still records the steps.
     }

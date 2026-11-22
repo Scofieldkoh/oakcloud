@@ -454,9 +454,96 @@
     return clean(text, 200).toLowerCase();
   }
 
-  /** Visible options that may belong to the open dropdown, newest library patterns included. */
-  function visibleOptions(el) {
-    const doc = el.ownerDocument;
+  // ---- Dropdowns ------------------------------------------------------------------------------
+  //
+  // Dropdowns differ widely: options may carry role=option, be Bootstrap/SGDS ".dropdown-item"
+  // buttons, or be plain list items; menus may be added on opening or always present and shown by
+  // a class; they may open on the field, on a chevron beside it, or when typing. The functions
+  // below try each, and use what was learned from staff (a "hint") first.
+
+  const OPTION_SELECTOR =
+    '[role=option],[role=menuitem],[role=menuitemradio],.dropdown-item,.ng-option,.mat-mdc-option,.mat-option,.ant-select-item-option,.p-dropdown-item,.p-autocomplete-item,.select__option,[class*=react-select][class*=option],[cmdk-item],[data-radix-collection-item]';
+  /** Open menus only. Deliberately not "[class*=dropdown]", which also matches a dropdown's own wrapper. */
+  const POPUP_SELECTOR = '[role=listbox],[role=menu],.dropdown-menu,[class*=menu i],[class*=listbox i],[class*=popover i],[class*=options i],ul';
+  const WRAPPER_SELECTOR = '.dropdown,.combobox,[class*=select i],[class*=dropdown i],[class*=combobox i],[class*=autocomplete i]';
+  const TOGGLE_SELECTOR = '.dropdown-toggle,[aria-haspopup],[class*=indicator i],[class*=chevron i],[class*=caret i],[class*=arrow i],[class*=toggle i],[class*=icon i],svg';
+
+  /** A class name that looks hand-written rather than generated (css-1x2y, sc-abc, jss12...). */
+  function stableClass(name) {
+    return /^[a-z][a-z-]{1,38}$/i.test(name) && !/^(css|sc|jss|emotion|svelte|ng-tns|is|has)-/i.test(name);
+  }
+
+  function cssEscape(value) {
+    return String(value).replace(/[^a-zA-Z0-9_-]/g, (char) => '\\' + char);
+  }
+
+  /** tag + role + stable classes, e.g. "button.dropdown-item" or "li[role=option]". */
+  function signature(node) {
+    if (!node || node.nodeType !== 1) return null;
+    const classes = Array.from(node.classList).filter(stableClass).slice(0, 3);
+    return { tag: node.tagName.toLowerCase(), role: node.getAttribute('role') || '', classes };
+  }
+
+  function signatureSelector(sig) {
+    if (!sig) return '';
+    return sig.tag + (sig.role ? '[role="' + sig.role + '"]' : '') + sig.classes.map((name) => '.' + cssEscape(name)).join('');
+  }
+
+  /** The wrapper of a dropdown field: its nearest container holding no other field. */
+  function dropdownWrapper(el) {
+    let wrapper = el.closest(WRAPPER_SELECTOR) || el.parentElement;
+    if (wrapper && wrapper.querySelectorAll(FIELD_SELECTOR).length > 1) wrapper = el.parentElement;
+    return wrapper && wrapper.querySelectorAll(FIELD_SELECTOR).length <= 1 ? wrapper : null;
+  }
+
+  function isClearControl(node) {
+    const text = [node.getAttribute('aria-label'), node.getAttribute('title'), String(node.className && node.className.baseVal !== undefined ? node.className.baseVal : node.className)].join(' ');
+    return /clear|remove|close|reset|delete/i.test(text);
+  }
+
+  /** A chevron or toggle next to the field that opens it, when there is one. */
+  function toggleOf(el) {
+    const wrapper = dropdownWrapper(el);
+    if (!wrapper) return null;
+    return (
+      Array.from(wrapper.querySelectorAll(TOGGLE_SELECTOR)).find(
+        (node) => node !== el && !el.contains(node) && isVisible(node) && !isClearControl(node) && !FORBIDDEN_NAME.test(textOf(node)),
+      ) || null
+    );
+  }
+
+  /** The opener staff clicked when the dropdown was learned: the field itself or something in its wrapper. */
+  function learnedOpener(el, hint) {
+    if (!hint || !hint.opener) return null;
+    if (hint.opener.relation === 'self') return el;
+    const wrapper = dropdownWrapper(el);
+    const selector = signatureSelector(hint.opener.signature);
+    if (!wrapper || !selector) return null;
+    return Array.from(wrapper.querySelectorAll(selector)).find((node) => isVisible(node) && !isClearControl(node)) || null;
+  }
+
+  /** Describes what staff clicked to open a dropdown, relative to its field. */
+  function describeOpener(field, target) {
+    if (target === field || field.contains(target)) return { relation: 'self' };
+    const toggle = target.closest(TOGGLE_SELECTOR) || target;
+    return { relation: 'wrapper-descendant', signature: signature(toggle.tagName.toLowerCase() === 'path' ? toggle.closest('svg') : toggle) };
+  }
+
+  /** Describes the option element staff chose, and its menu, so the same kind can be found again. */
+  function describeOption(option) {
+    const container = option.parentElement && option.parentElement.closest(POPUP_SELECTOR);
+    return { option: signature(option), container: signature(container) };
+  }
+
+  /** The field a click belongs to when it lands on a dropdown's chevron rather than the field. */
+  function dropdownFieldFor(target) {
+    const wrapper = target.closest(WRAPPER_SELECTOR);
+    if (!wrapper) return null;
+    const fields = wrapper.querySelectorAll(FIELD_SELECTOR);
+    return fields.length === 1 ? fields[0] : null;
+  }
+
+  function popupScopes(el) {
     const scopes = [];
     ['aria-controls', 'aria-owns'].forEach((attribute) => {
       (el.getAttribute(attribute) || '')
@@ -467,104 +554,180 @@
           if (listbox) scopes.push(listbox);
         });
     });
-    const selector =
-      '[role=option],.ng-option,.mat-mdc-option,.mat-option,.ant-select-item-option,.p-dropdown-item,.p-autocomplete-item,.select__option,[class*=react-select][class*=option],[cmdk-item],[data-radix-collection-item]';
+    return scopes;
+  }
+
+  /** Visible option-like elements: known option patterns, plus the pattern learned from staff. */
+  function visibleOptions(el, hint) {
+    const doc = el.ownerDocument;
+    const scopes = popupScopes(el);
     const pools = scopes.length ? scopes : [doc];
-    const found = [];
-    pools.forEach((scope) => scope.querySelectorAll(selector).forEach((option) => found.push(option)));
-    return found.filter((option) => isVisible(option) && option !== el && !el.contains(option));
-  }
-
-  async function waitForOption(el, optionText, addedNodes, timeoutMs) {
-    const wanted = normalise(optionText);
-    const deadline = Date.now() + timeoutMs;
-    let seen = [];
-    while (Date.now() < deadline) {
-      seen = visibleOptions(el);
-      if (!seen.length) {
-        // Fallback for dropdowns without option roles: elements added since opening with the exact text.
-        seen = addedNodes()
-          .filter((node) => node.nodeType === 1 && isVisible(node))
-          .flatMap((node) => [node, ...node.querySelectorAll('*')])
-          .filter((node) => isVisible(node) && node.children.length === 0 && textOf(node));
+    const found = new Set();
+    pools.forEach((scope) => scope.querySelectorAll(OPTION_SELECTOR).forEach((option) => found.add(option)));
+    if (hint && hint.option) {
+      const selector = [signatureSelector(hint.container), signatureSelector(hint.option)].filter(Boolean).join(' ');
+      if (selector) {
+        try {
+          doc.querySelectorAll(selector).forEach((option) => found.add(option));
+        } catch {
+          // A learned class that is not a valid selector any more; the generic patterns still apply.
+        }
       }
-      const matches = seen.filter((option) => normalise(labelText(option)) === wanted);
-      if (matches.length === 1) return { option: matches[0], seen };
-      if (matches.length > 1) throw new Error('More than one option is exactly "' + optionText + '".');
+    }
+    return Array.from(found).filter((option) => option !== el && !el.contains(option) && isVisible(option));
+  }
+
+  /**
+   * The deepest visible elements whose text is exactly the wanted option, outside the field. Walks
+   * text nodes (cheap) and climbs a few levels, so options split across tags ("<b>Dir</b>ector") count.
+   */
+  function exactTextElements(doc, el, wanted) {
+    if (!wanted || !doc.body) return [];
+    const probe = wanted.slice(0, 3);
+    const walker = doc.createTreeWalker(doc.body, 4 /* NodeFilter.SHOW_TEXT */);
+    const found = new Set();
+    for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+      if (!node.nodeValue || !node.nodeValue.toLowerCase().includes(probe)) continue;
+      let current = node.parentElement;
+      for (let depth = 0; current && depth < 5; depth++, current = current.parentElement) {
+        if (current === el || el.contains(current)) break;
+        const text = current.textContent || '';
+        if (text.length > 240) break;
+        if (normalise(dedupeRepeat(clean(text, 240))) === wanted) {
+          found.add(current);
+          break;
+        }
+      }
+    }
+    return Array.from(found).filter((node) => !node.closest('[data-oak-probe-overlay]') && isVisible(node));
+  }
+
+  /** Looks for the wanted option for up to timeoutMs. Returns it, or null. Throws when ambiguous. */
+  async function findOption(el, wanted, visibleBefore, hint, timeoutMs) {
+    const doc = el.ownerDocument;
+    const deadline = Date.now() + timeoutMs;
+    do {
+      const known = visibleOptions(el, hint).filter((option) => normalise(labelText(option)) === wanted);
+      if (known.length === 1) return known[0];
+      if (known.length > 1) throw new Error('More than one option matches exactly.');
+      // Anything with the exact text that became visible since opening (menus shown by a class change too).
+      const appeared = exactTextElements(doc, el, wanted).filter((node) => !visibleBefore.has(node));
+      const inPopup = appeared.filter((node) => node.closest(POPUP_SELECTOR));
+      if (appeared.length === 1) return appeared[0];
+      if (inPopup.length === 1) return inPopup[0];
+      if (inPopup.length > 1) throw new Error('More than one option matches exactly.');
       await sleep(100);
+    } while (Date.now() < deadline);
+    return null;
+  }
+
+  /** Why an option element must not be clicked, or null. Options may be buttons, but never submit or navigate. */
+  function optionBlockReason(option) {
+    if (FORBIDDEN_NAME.test(textOf(option))) return 'The option text looks like a filing or step control.';
+    const action = option.closest(ACTION_SELECTOR);
+    if (!action) return null;
+    if (action.matches('input[type=submit],button[type=submit]') && !action.closest('[role=listbox],[role=menu],.dropdown-menu')) return 'The matching element is a submit button.';
+    if (action.matches('a[href]') && !/^(#|javascript:)/i.test(action.getAttribute('href') || '#')) return 'The matching element is a link to another page.';
+    if (!action.matches('[role=option],[role=menuitem],[role=menuitemradio],.dropdown-item') && !action.closest(POPUP_SELECTOR)) {
+      return 'The matching element is a button outside any list, so it is not clicked.';
     }
-    const listed = Array.from(new Set(seen.map((option) => labelText(option)).filter(Boolean))).slice(0, 15);
-    throw new Error(
-      listed.length
-        ? 'No option is exactly "' + optionText + '". Options seen: ' + listed.join('; ')
-        : 'No dropdown options appeared after opening the field.',
-    );
+    return null;
   }
 
-  function watchAdditions(doc) {
-    const added = [];
-    const observer = new (doc.defaultView.MutationObserver)((records) => {
-      records.forEach((record) => record.addedNodes.forEach((node) => added.push(node)));
-    });
-    observer.observe(doc.body || doc.documentElement, { childList: true, subtree: true });
-    return { added: () => added, stop: () => observer.disconnect() };
+  function listOptionsSeen(el, hint) {
+    return Array.from(new Set(visibleOptions(el, hint).map((option) => labelText(option)).filter(Boolean))).slice(0, 15);
   }
 
-  function assertOptionAllowed(option) {
-    if (option.closest(ACTION_SELECTOR) && !option.matches('[role=option]')) {
-      throw new Error('The matching option is a button or link, so the probe will not click it.');
-    }
-    if (FORBIDDEN_NAME.test(textOf(option))) throw new Error('The option text looks like a filing or step control.');
-  }
-
-  async function chooseByKeyboard(el, optionText) {
+  async function chooseByKeyboard(el, optionText, hint) {
     const wanted = normalise(optionText);
+    const doc = el.ownerDocument;
     for (let step = 0; step < 60; step++) {
-      pressKey(el, 'ArrowDown');
-      await sleep(40);
+      // Keys go to whatever has focus: some menus move focus onto the items themselves.
+      const target = doc.activeElement && doc.activeElement !== doc.body ? doc.activeElement : el;
+      pressKey(target, 'ArrowDown');
+      await sleep(60);
       const activeId = el.getAttribute('aria-activedescendant');
-      const active = activeId ? lookupById(el, activeId) : null;
-      const highlighted = active || visibleOptions(el).find((option) => /active|focused|highlight/i.test(String(option.className)) || option.getAttribute('aria-selected') === 'true');
+      const focused = doc.activeElement !== el && doc.activeElement !== doc.body ? doc.activeElement : null;
+      const highlighted =
+        (activeId && lookupById(el, activeId)) ||
+        (focused && !el.contains(focused) ? focused : null) ||
+        visibleOptions(el, hint).find((option) => /active|focused|highlight/i.test(String(option.className)) || option.getAttribute('aria-selected') === 'true');
       if (highlighted && normalise(labelText(highlighted)) === wanted) {
-        pressKey(el, 'Enter');
-        return 'Moved with the arrow keys to the option and pressed Enter.';
+        if (highlighted === focused) {
+          const blocked = optionBlockReason(highlighted);
+          if (blocked) throw new Error(blocked);
+          pointerClick(highlighted);
+        } else {
+          pressKey(el, 'Enter');
+        }
+        return 'Moved with the arrow keys to the option and chose it.';
       }
     }
     throw new Error('Arrow keys did not reach an option exactly "' + optionText + '".');
   }
 
-  async function openAndChoose(el, openMethod, optionText) {
-    const watcher = watchAdditions(el.ownerDocument);
-    try {
-      if (openMethod === 'keyboard') {
-        el.focus();
-        return await chooseByKeyboard(el, optionText);
-      }
-      if (openMethod === 'pointer') pointerClick(el);
-      else el.click();
-      const { option } = await waitForOption(el, optionText, watcher.added, 2000);
-      assertOptionAllowed(option);
-      if (openMethod === 'pointer') pointerClick(option);
-      else option.click();
-      return 'Opened the dropdown and chose the option by ' + (openMethod === 'pointer' ? 'full mouse events.' : 'element click().');
-    } finally {
-      watcher.stop();
+  async function openAndChoose(el, method, optionText, hint) {
+    if (method === 'keyboard') {
+      el.focus();
+      return chooseByKeyboard(el, optionText, hint);
     }
+    const doc = el.ownerDocument;
+    const wanted = normalise(optionText);
+    const activate = method === 'pointer' ? pointerClick : (node) => node.click();
+    // The list may already be open (a click toggles some menus shut, so do not click first).
+    const alreadyShown = visibleOptions(el, hint).filter((option) => normalise(labelText(option)) === wanted);
+    if (alreadyShown.length === 1 && !optionBlockReason(alreadyShown[0])) {
+      activate(alreadyShown[0]);
+      return 'Chose "' + optionText + '" from the list already open.';
+    }
+    const visibleBefore = new Set(exactTextElements(doc, el, wanted));
+    const openers = [];
+    [learnedOpener(el, hint), el, toggleOf(el)].forEach((node) => {
+      if (node && !openers.includes(node)) openers.push(node);
+    });
+    const tried = [];
+    let option = null;
+    for (const opener of openers) {
+      activate(opener);
+      tried.push(opener === el ? 'the field' : 'its ' + (signatureSelector(signature(opener)) || 'toggle'));
+      option = await findOption(el, wanted, visibleBefore, hint, 1200);
+      if (option) break;
+    }
+    if (!option && isEditable(el)) {
+      // Some dropdowns (SGDS Combobox among them) open and filter as you type.
+      try {
+        await textMethods['insert-text-command'](el, optionText);
+        tried.push('typing');
+        option = await findOption(el, wanted, visibleBefore, hint, 1500);
+      } catch {
+        // The field refused typing; report the openers tried.
+      }
+    }
+    if (!option) {
+      const seen = listOptionsSeen(el, hint);
+      throw new Error('No option "' + optionText + '" appeared after clicking ' + tried.join(', then ') + '.' + (seen.length ? ' Options seen: ' + seen.join('; ') : ''));
+    }
+    const blocked = optionBlockReason(option);
+    if (blocked) throw new Error(blocked);
+    activate(option);
+    return 'Opened the dropdown (' + tried[tried.length - 1] + ') and chose "' + optionText + '".';
   }
 
-  async function typeAndChoose(el, strategy, value, optionText) {
+  async function typeAndChoose(el, strategy, value, optionText, hint) {
     const [typeMethod, chooseMethod] = strategy.split('+');
-    const watcher = watchAdditions(el.ownerDocument);
-    try {
-      const typed = await textMethods[typeMethod](el, value);
-      if (chooseMethod === 'keyboard') return typed + ' ' + (await chooseByKeyboard(el, optionText));
-      const { option } = await waitForOption(el, optionText, watcher.added, 3000);
-      assertOptionAllowed(option);
-      pointerClick(option);
-      return typed + ' Chose the suggestion by full mouse events.';
-    } finally {
-      watcher.stop();
+    const wanted = normalise(optionText);
+    const visibleBefore = new Set(exactTextElements(el.ownerDocument, el, wanted));
+    const typed = await textMethods[typeMethod](el, value);
+    if (chooseMethod === 'keyboard') return typed + ' ' + (await chooseByKeyboard(el, optionText, hint));
+    const option = await findOption(el, wanted, visibleBefore, hint, 3000);
+    if (!option) {
+      const seen = listOptionsSeen(el, hint);
+      throw new Error('No suggestion "' + optionText + '" appeared after typing.' + (seen.length ? ' Suggestions seen: ' + seen.join('; ') : ''));
     }
+    const blocked = optionBlockReason(option);
+    if (blocked) throw new Error(blocked);
+    pointerClick(option);
+    return typed + ' Chose the suggestion by full mouse events.';
   }
 
   async function toggle(el, strategy) {
@@ -599,12 +762,12 @@
   }
 
   /** Runs one fill method. Value is the text to type; optionText is the option to choose, when relevant. */
-  async function applyStrategy(el, kind, strategy, value, optionText) {
+  async function applyStrategy(el, kind, strategy, value, optionText, hint) {
     if (!STRATEGIES[kind] || !STRATEGIES[kind].includes(strategy)) throw new Error('Unknown method ' + strategy + ' for ' + kind + '.');
     if (kind === 'text' || kind === 'date') return textMethods[strategy](el, value);
     if (kind === 'native-select') return chooseNativeOption(el, optionText || value);
-    if (kind === 'combobox') return openAndChoose(el, strategy, optionText || value);
-    if (kind === 'typeahead') return typeAndChoose(el, strategy, value, optionText || value);
+    if (kind === 'combobox') return openAndChoose(el, strategy, optionText || value, hint);
+    if (kind === 'typeahead') return typeAndChoose(el, strategy, value, optionText || value, hint);
     return toggle(el, strategy);
   }
 
@@ -727,5 +890,13 @@
     actionLabel,
     actionBlockReason,
     settle,
+    isEditable,
+    describeOpener,
+    describeOption,
+    dropdownFieldFor,
+    toggleOf,
+    visibleOptions,
+    exactTextElements,
+    POPUP_SELECTOR,
   };
 })(globalThis);

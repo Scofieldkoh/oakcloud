@@ -35,11 +35,11 @@
     return null;
   }
 
-  async function attempt(doc, el, kind, method, text, optionText, expected, readSignals) {
+  async function attempt(doc, el, kind, method, text, optionText, expected, readSignals, hint) {
     const before = D.readState(el);
     let error = '';
     try {
-      await D.applyStrategy(el, kind, method, text, optionText);
+      await D.applyStrategy(el, kind, method, text, optionText, hint);
     } catch (caught) {
       error = String((caught && caught.message) || caught).slice(0, 300);
     }
@@ -50,6 +50,21 @@
     const signals = readSignals ? readSignals(el) : null;
     const verdict = error ? 'not-applied' : D.verdict(kind, expected, before, settled, signals);
     return { method, verdict, error, errorText: settled.errorText || '', shown: settled.checked !== undefined ? String(settled.checked) : settled.value };
+  }
+
+  /**
+   * Whether a step applies to these filing details. Steps learned by exploring carry conditions such
+   * as "only when category is Corporate"; a step whose condition fails is skipped, not failed.
+   */
+  function conditionsHold(step, payload) {
+    for (const condition of step.conditions || []) {
+      const value = payload[condition.key];
+      const wanted = condition.equalsAny || [];
+      const label = condition.label || condition.key;
+      if (value == null || value === '') return 'Not needed: only shown when ' + label + ' is "' + wanted[0] + '", and that detail is empty.';
+      if (!wanted.some((option) => F.normaliseText(option) === F.normaliseText(value))) return 'Not needed for these details: only shown when ' + label + ' is "' + wanted[0] + '".';
+    }
+    return null;
   }
 
   async function runAction(doc, step) {
@@ -124,7 +139,8 @@
     const optionText = DROPDOWN.has(kind) ? shownValue : '';
     const typed = kind === 'typeahead' ? shownValue : text;
 
-    const first = await attempt(doc, el, kind, step.method, typed, optionText, expected, readSignals);
+    const hint = step.dropdown || null;
+    const first = await attempt(doc, el, kind, step.method, typed, optionText, expected, readSignals, hint);
     const tried = [first];
     if (OK_VERDICTS.has(first.verdict)) {
       return { status: 'done', message: first.verdict === 'inconclusive' ? 'Already filled.' : 'Filled and verified.', method: step.method, format: step.format || null, verdict: first.verdict, corrections };
@@ -134,7 +150,7 @@
     if (isDate && first.verdict === 'error-shown') {
       for (const format of F.DATE_FORMATS) {
         if (format === step.format) continue;
-        const next = await attempt(doc, el, kind, step.method, F.applyFormat(raw, format), '', F.applyFormat(raw, format), readSignals);
+        const next = await attempt(doc, el, kind, step.method, F.applyFormat(raw, format), '', F.applyFormat(raw, format), readSignals, hint);
         tried.push({ ...next, format });
         if (OK_VERDICTS.has(next.verdict)) {
           corrections.push({ type: 'format', summary: 'Bizfile rejected "' + (step.format || 'the learned format') + '" and accepted "' + format + '".', patch: { format } });
@@ -143,15 +159,22 @@
       }
     }
 
-    // 2. Not kept: try the other fill methods for this control type.
+    // 2. Not kept: try the other fill methods for this control type. A dropdown that accepts typing
+    //    may also work as a type-ahead search.
     if (first.verdict !== 'error-shown') {
-      for (const method of D.STRATEGIES[kind] || []) {
-        if (method === step.method) continue;
-        const next = await attempt(doc, el, kind, method, typed, optionText, expected, readSignals);
+      const alternatives = (D.STRATEGIES[kind] || []).filter((method) => method !== step.method).map((method) => ({ kind, method }));
+      if (kind === 'combobox' && D.isEditable(el)) D.STRATEGIES.typeahead.forEach((method) => alternatives.push({ kind: 'typeahead', method }));
+      for (const alternative of alternatives) {
+        const next = await attempt(doc, el, alternative.kind, alternative.method, alternative.kind === 'typeahead' ? shownValue : typed, optionText, expected, readSignals, hint);
         tried.push(next);
         if (OK_VERDICTS.has(next.verdict)) {
-          corrections.push({ type: 'method', summary: '"' + step.method + '" did not stick; "' + method + '" did.', patch: { method } });
-          return { status: 'done', message: 'Filled after switching to ' + method + '.', method, format: step.format || null, verdict: next.verdict, corrections };
+          const kindChanged = alternative.kind !== kind;
+          corrections.push({
+            type: 'method',
+            summary: '"' + step.method + '" did not stick; ' + (kindChanged ? 'treating it as a type-ahead search with "' + alternative.method + '"' : '"' + alternative.method + '"') + ' did.',
+            patch: kindChanged ? { method: alternative.method, kind: alternative.kind } : { method: alternative.method },
+          });
+          return { status: 'done', message: 'Filled after switching to ' + alternative.method + '.', method: alternative.method, format: step.format || null, verdict: next.verdict, corrections };
         }
       }
     }
@@ -172,10 +195,15 @@
   }
 
   async function runStep(doc, step, payload, readSignals) {
-    if (step.type === 'action') return runAction(doc, step);
-    if (step.type === 'fill') return runFill(doc, step, payload, readSignals);
-    return { status: 'failed', message: 'Unknown step type.' };
+    const notNeeded = conditionsHold(step, payload);
+    if (notNeeded) return { status: 'skipped', message: notNeeded };
+    const result = step.type === 'action' ? await runAction(doc, step) : step.type === 'fill' ? await runFill(doc, step, payload, readSignals) : { status: 'failed', message: 'Unknown step type.' };
+    // A field seen while exploring under a condition the filing details cannot express is optional.
+    if (step.optional && result.status === 'failed' && result.reason === 'not-found') {
+      return { status: 'skipped', message: 'Not on the screen for these details (an optional field found while exploring).' };
+    }
+    return result;
   }
 
-  root.OakRunner = { runStep };
+  root.OakRunner = { runStep, conditionsHold };
 })(globalThis);

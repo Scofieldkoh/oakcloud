@@ -54,8 +54,15 @@
         <button type="button" id="learn-watch-finish">Finish</button>
         <button type="button" id="learn-watch-cancel" class="quiet">Cancel</button>
       </div>
-      <h3>With AI</h3>
-      <p class="muted">Maps the fields showing now. Needs OakCloud (Settings). Only the screen's structure is sent, never filing values.</p>
+      <h3>By exploring the whole screen</h3>
+      <p class="muted">The assistant clicks Add buttons and tries every option of each radio, list and dropdown to find every field and which option shows it, then OakCloud's AI maps them (or you do). It changes selections but never saves or submits: use a test filing, and don't touch the page while it explores.</p>
+      <div class="row">
+        <button type="button" id="learn-explore">Explore this screen</button>
+        <button type="button" id="learn-explore-stop" class="quiet">Stop exploring</button>
+      </div>
+      <div id="learn-explore-result"></div>
+      <h3>With AI, fields showing now</h3>
+      <p class="muted">Maps only the fields showing now. Needs OakCloud (Settings). Only the screen's structure is sent, never filing values.</p>
       <button type="button" id="learn-ai">Ask AI to map this screen</button>
       <p id="learn-status" role="status"></p>
       <div id="learn-proposal"></div>
@@ -82,6 +89,16 @@
       <p class="muted">Frameworks, frames and how fields are labelled. No field values are read.</p>
       <button type="button" id="scan">Scan page</button>
       <div id="scan-result"></div>
+
+      <h3>Inspect a dropdown</h3>
+      <p class="muted">Press Start, open the dropdown on Bizfile and choose an option as you normally would, then press Stop. It records how the dropdown works (markup, handlers, what appears), never field values, so a dropdown the assistant cannot fill can be fixed.</p>
+      <div class="row">
+        <button type="button" id="inspect-start">Start inspecting</button>
+        <button type="button" id="inspect-stop" class="quiet">Stop</button>
+        <button type="button" id="inspect-export" class="quiet">Export</button>
+      </div>
+      <p id="inspect-status" class="muted" role="status"></p>
+      <pre id="inspect-result" hidden></pre>
 
       <h3>Test a field</h3>
       <p class="muted">Pick one field, choose a fill method and run it. Use a different value or option for each method on the same field.</p>

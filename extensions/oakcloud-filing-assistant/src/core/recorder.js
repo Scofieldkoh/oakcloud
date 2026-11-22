@@ -31,6 +31,7 @@
     let order = 0;
     let lastField = null;
     let lastFieldAt = 0;
+    let lastFieldClick = null;
 
     const fieldOf = (target) => {
       const field = D.resolveField(target);
@@ -70,6 +71,36 @@
         if (!event.isTrusted) return;
         const target = targetOf(event);
         const field = fieldOf(target);
+        const recent = lastField && Date.now() - lastFieldAt < OPTION_WINDOW_MS;
+
+        // Choosing from an open list soon after using a field. Buttons count only with clear option
+        // evidence, so that "Add position holder" is never mistaken for an option.
+        if (!field && recent) {
+          const strong = target.closest('[role=option],[role=menuitem],[role=menuitemradio],.dropdown-item');
+          const listItem = target.closest('[role=listbox] *,[role=menu] *,.dropdown-menu *');
+          const button = target.closest(D.ACTION_SELECTOR);
+          const option = strong || (!button || listItem ? target.closest('li') || (target.closest(D.POPUP_SELECTOR) ? target : null) : null);
+          const text = option ? D.labelText(option) : '';
+          if (option && text && text.length <= 120 && !D.FORBIDDEN_NAME.test(text) && !D.SAFE_ACTION.test(text)) {
+            const observation = touch(lastField);
+            observation.optionText = text;
+            observation.optionShape = D.describeOption(option);
+            if (!observation.opener && lastFieldClick && lastFieldClick.field === lastField) observation.opener = D.describeOpener(lastField, lastFieldClick.target);
+            return;
+          }
+        }
+
+        // A click on a dropdown's chevron rather than the field: remember it as the way to open it.
+        if (!field) {
+          const companion = D.dropdownFieldFor(target);
+          if (companion && !target.closest(D.POPUP_SELECTOR + ',[role=option]')) {
+            lastField = companion;
+            lastFieldAt = Date.now();
+            lastFieldClick = { field: companion, target };
+            return;
+          }
+        }
+
         const button = target.closest(D.ACTION_SELECTOR);
         if (button && !field) {
           actions.push({ el: button, label: D.actionLabel(button), order: order++, blocked: D.actionBlockReason(button) });
@@ -79,13 +110,7 @@
           if (D.detectKind(field) === 'radio' || D.detectKind(field) === 'checkbox') touch(field);
           lastField = field;
           lastFieldAt = Date.now();
-          return;
-        }
-        // A click outside any field soon after using one is most likely choosing a dropdown option.
-        if (lastField && Date.now() - lastFieldAt < OPTION_WINDOW_MS) {
-          const option = target.closest('[role=option],li,[class*=option i]') || target;
-          const text = D.labelText(option);
-          if (text && text.length <= 120) touch(lastField).optionText = text;
+          lastFieldClick = { field, target };
         }
       },
     };
@@ -113,7 +138,9 @@
     }
     const state = D.readState(el);
     if (observation.optionText && kind !== 'native-select') {
-      return { kind: observation.typed ? 'typeahead' : 'combobox', observed: observation.optionText };
+      // How this dropdown opened and what its options look like, so the runner can do the same.
+      const dropdown = observation.optionShape ? { ...observation.optionShape, opener: observation.opener || { relation: 'self' } } : null;
+      return { kind: observation.typed ? 'typeahead' : 'combobox', observed: observation.optionText, dropdown };
     }
     return { kind, observed: state.value || state.display || '' };
   }
@@ -186,6 +213,7 @@
       usedKeys.add(match.key);
       const step = { type: 'fill', key: match.key, kind: seen.kind, method: DEFAULT_METHOD[seen.kind], format: match.format, locator };
       if (match.valueMap) step.valueMap = match.valueMap;
+      if (seen.dropdown) step.dropdown = seen.dropdown;
       // A reveal button clicked just before this field is needed only when the field is missing.
       if (pendingAction) {
         pendingAction.when = { missing: locator };

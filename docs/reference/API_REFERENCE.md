@@ -2570,6 +2570,7 @@ Used by the OakCloud Filing Assistant browser extension ([design](../plans/2026-
 - `actions` entries have `ref` (`a1`…), label, section and `allowed`.
 - `targets` are filing-details keys, labels, types and suggested options, never values.
 - Unknown properties are dropped, and text that looks like a capitalised person or company name is masked before the prompt is built.
+- A model made by exploring may give fields `shownWhen: [{ ref, option }]` (the field appears only when that field has that option) and actions `reveals: [ref…]`. It may hold up to 300 fields.
 
 The service also checks the reply:
 - references not in the snapshot are discarded;

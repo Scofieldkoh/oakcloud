@@ -80,6 +80,28 @@
     true,
   );
 
+  /** For the dropdown inspector: which React event handlers the element and its ancestors have. */
+  document.addEventListener(
+    'oak-probe:handlers',
+    (event) => {
+      const el = event.composedPath()[0];
+      if (!(el instanceof Element)) return;
+      const levels = [];
+      let node = el;
+      for (let depth = 0; node && depth < 7; depth++, node = node.parentElement) {
+        const propsKey = keyWithPrefix(node, '__reactProps$');
+        const props = propsKey ? node[propsKey] : null;
+        const handlers = props ? Object.keys(props).filter((name) => /^on[A-Z]/.test(name) && typeof props[name] === 'function') : [];
+        if (handlers.length) {
+          const classes = Array.from(node.classList).slice(0, 4).join('.');
+          levels.push({ depth, element: node.tagName.toLowerCase() + (classes ? '.' + classes : ''), handlers });
+        }
+      }
+      el.setAttribute('data-oak-probe-handlers', JSON.stringify(levels));
+    },
+    true,
+  );
+
   function detectReact() {
     const candidates = [document.getElementById('root'), document.getElementById('app'), document.body, ...Array.from(document.body ? document.body.children : [])];
     return candidates.some((node) => node && (keyWithPrefix(node, '__reactContainer$') || node._reactRootContainer || keyWithPrefix(node, '__reactFiber$')));

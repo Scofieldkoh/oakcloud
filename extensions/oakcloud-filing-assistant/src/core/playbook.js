@@ -13,6 +13,7 @@
   /** Who may change a map, and how: corrections without AI apply themselves; AI needs approval. */
   const SOURCES = {
     demonstration: 'Learned by watching staff',
+    exploration: 'Learned by exploring, mapped by staff',
     'ai-approved': 'AI proposal approved by staff',
     'auto-correction': 'Verified automatic correction',
     staff: 'Edited by staff',
@@ -57,6 +58,28 @@
       used.add(id);
       return { ...step, id };
     });
+  }
+
+  function stepKey(step) {
+    return step.type === 'action' ? 'action:' + String(step.label || '').toLowerCase() : 'fill:' + step.key;
+  }
+
+  /**
+   * Merges newly learned steps into a screen's existing ones: a step for the same key (or the same
+   * button) is replaced where it stands, new reveal buttons go first, other new steps go last, and
+   * everything not re-learned is kept. Re-learning one field therefore never loses the others.
+   */
+  function mergeSteps(existing, learned) {
+    const learnedByKey = new Map(learned.map((step) => [stepKey(step), step]));
+    const used = new Set();
+    const merged = (existing || []).map((step) => {
+      const replacement = learnedByKey.get(stepKey(step));
+      if (!replacement) return step;
+      used.add(stepKey(step));
+      return { ...replacement, id: step.id };
+    });
+    const fresh = learned.filter((step) => !used.has(stepKey(step)));
+    return [...fresh.filter((step) => step.type === 'action'), ...merged, ...fresh.filter((step) => step.type !== 'action')];
   }
 
   /** Replaces (or adds) the screen learned for a path. */
@@ -125,5 +148,5 @@
     return errors;
   }
 
-  root.OakPlaybook = { SCHEMA_VERSION, SOURCES, create, change, findScreen, putScreen, updateStep, removeStep, validate, withIds };
+  root.OakPlaybook = { SCHEMA_VERSION, SOURCES, create, change, findScreen, putScreen, updateStep, removeStep, validate, withIds, mergeSteps };
 })(globalThis);

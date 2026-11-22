@@ -5,18 +5,36 @@
  * regenerated on every render, a "Select position" input without a dropdown role, labels given only
  * as nearby text, a shared name="text-input", dates validated as DD MMM YYYY, and footer buttons.
  *
- * ?variant= simulates Bizfile changing the screen:
+ * Sections depend on choices, as on Bizfile: Individual shows the person's fields, Corporate the
+ * entity's; Local and Foreign address types show different address fields.
+ *
+ * ?variant= simulates Bizfile changing the screen, or other dropdown builds:
  *   renamed     the ID number field's id changes (label unchanged)
  *   relabelled  the appointment date's id and label both change
  *   slashdates  dates must be DD/MM/YYYY
+ *   sgds        Position held is an SGDS-style dropdown: opened from its chevron only, the menu stays
+ *               in the page once shown and is hidden by style, options are buttons
+ *   typing      as sgds but with no chevron: the list opens and filters only as you type
  */
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 
 const variant = new URLSearchParams(window.location.search).get('variant') ?? 'base';
 const POSITIONS = ['Director', 'Secretary', 'Chief Executive Officer', 'Auditor'];
 
-type Card = { category: string; position: string; appointmentDate: string; idNumber: string; name: string; email: string };
+type Card = {
+  category: string;
+  position: string;
+  appointmentDate: string;
+  idNumber: string;
+  name: string;
+  email: string;
+  uen: string;
+  entityName: string;
+  addressType: string;
+  postalCode: string;
+  foreignAddress1: string;
+};
 
 function Doubled({ text }: { text: string }) {
   return (
@@ -49,6 +67,73 @@ function PositionSelect({ value, onChange }: { value: string; onChange: (value: 
         </div>
       ) : null}
     </div>
+  );
+}
+
+/** Like the SGDS Combobox: typing opens and filters the list; the menu is kept once rendered. */
+function SgdsPositionSelect({ value, onChange, chevron }: { value: string; onChange: (value: string) => void; chevron: boolean }) {
+  const [open, setOpen] = useState(false);
+  const [rendered, setRendered] = useState(false);
+  const [query, setQuery] = useState(value);
+  useEffect(() => setQuery(value), [value]);
+  const show = (next: boolean) => {
+    setOpen(next);
+    if (next) setRendered(true);
+  };
+  const filter = query !== value ? query.toLowerCase() : '';
+  const items = POSITIONS.filter((position) => position.toLowerCase().startsWith(filter));
+  return (
+    <div className="dropdown combobox">
+      <input
+        className="form-control dropdown-toggle"
+        placeholder="Select position"
+        value={query}
+        onChange={(event) => {
+          setQuery(event.target.value);
+          show(true);
+        }}
+      />
+      {chevron ? (
+        <span className="form-control-icon chevron" onClick={() => show(!open)}>
+          ▾
+        </span>
+      ) : null}
+      {rendered ? (
+        <ul className="dropdown-menu" style={{ display: open ? 'block' : 'none' }}>
+          {items.map((position) => (
+            <li key={position}>
+              <button
+                type="button"
+                className="dropdown-item"
+                onClick={() => {
+                  onChange(position);
+                  setQuery(position);
+                  show(false);
+                }}
+              >
+                {position}
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </div>
+  );
+}
+
+function Radios({ legend, options, value, onChange }: { legend: string; options: string[]; value: string; onChange: (value: string) => void }) {
+  // Like Bizfile, the radio ids are random and change whenever the group renders afresh.
+  const ids = useMemo(() => options.map(() => crypto.randomUUID()), [options]);
+  return (
+    <fieldset>
+      <legend>{legend}</legend>
+      {options.map((option, index) => (
+        <label key={option} htmlFor={ids[index]}>
+          <input type="radio" id={ids[index]} checked={value === option} onChange={() => onChange(option)} />
+          <Doubled text={option} />
+        </label>
+      ))}
+    </fieldset>
   );
 }
 
@@ -89,30 +174,42 @@ function TextField({ id, label, name, value, onChange }: { id: string; label: st
   );
 }
 
+const CATEGORIES = ['Individual', 'Corporate'];
+const ADDRESS_TYPES = ['Local', 'Foreign'];
+
 function AppointCard({ card, update }: { card: Card; update: (patch: Partial<Card>) => void }) {
-  // Like Bizfile, the radio ids are random and change whenever the card renders afresh.
-  const ids = useMemo(() => ({ individual: crypto.randomUUID(), corporate: crypto.randomUUID() }), []);
   const dateId = variant === 'relabelled' ? 'appointment-date-input' : 'appoint-position-holder-card-1-position-held-1-date-of-appointment';
   const dateLabel = variant === 'relabelled' ? 'Appointment date' : 'Date of appointment';
   const idNumberId = variant === 'renamed' ? 'appoint-position-holder-card-1-person-id-no' : 'appoint-position-holder-card-1-individual-id-number';
   return (
     <div className="card">
-      <fieldset>
-        <legend>Category</legend>
-        <label htmlFor={ids.individual}>
-          <input type="radio" id={ids.individual} checked={card.category === 'Individual'} onChange={() => update({ category: 'Individual' })} />
-          <Doubled text="Individual" />
-        </label>
-        <label htmlFor={ids.corporate}>
-          <input type="radio" id={ids.corporate} checked={card.category === 'Corporate'} onChange={() => update({ category: 'Corporate' })} />
-          <Doubled text="Corporate" />
-        </label>
-      </fieldset>
-      <PositionSelect value={card.position} onChange={(position) => update({ position })} />
+      <Radios legend="Category" options={CATEGORIES} value={card.category} onChange={(category) => update({ category })} />
+      {variant === 'sgds' || variant === 'typing' ? (
+        <SgdsPositionSelect value={card.position} onChange={(position) => update({ position })} chevron={variant === 'sgds'} />
+      ) : (
+        <PositionSelect value={card.position} onChange={(position) => update({ position })} />
+      )}
       <DateField id={dateId} label={dateLabel} value={card.appointmentDate} onChange={(appointmentDate) => update({ appointmentDate })} />
-      <TextField id={idNumberId} label="Identification number" name="text-input" value={card.idNumber} onChange={(idNumber) => update({ idNumber })} />
-      <TextField id="appoint-position-holder-card-1-individual-name" label="Name (As per NRIC/Identification document)" name="text-input" value={card.name} onChange={(name) => update({ name })} />
-      <TextField id="appoint-position-holder-card-1-individual-email" label="Email address" name="email-text-input" value={card.email} onChange={(email) => update({ email })} />
+      {card.category === 'Individual' ? (
+        <>
+          <TextField id={idNumberId} label="Identification number" name="text-input" value={card.idNumber} onChange={(idNumber) => update({ idNumber })} />
+          <TextField id="appoint-position-holder-card-1-individual-name" label="Name (As per NRIC/Identification document)" name="text-input" value={card.name} onChange={(name) => update({ name })} />
+          <TextField id="appoint-position-holder-card-1-individual-email" label="Email address" name="email-text-input" value={card.email} onChange={(email) => update({ email })} />
+        </>
+      ) : null}
+      {card.category === 'Corporate' ? (
+        <>
+          <TextField id="appoint-position-holder-card-1-corporate-uen" label="UEN" name="text-input" value={card.uen} onChange={(uen) => update({ uen })} />
+          <TextField id="appoint-position-holder-card-1-corporate-name" label="Entity name" name="text-input" value={card.entityName} onChange={(entityName) => update({ entityName })} />
+        </>
+      ) : null}
+      {card.category ? <Radios legend="Address type" options={ADDRESS_TYPES} value={card.addressType} onChange={(addressType) => update({ addressType })} /> : null}
+      {card.addressType === 'Local' ? (
+        <TextField id="appoint-position-holder-card-1-postal-code" label="Postal code" name="text-input" value={card.postalCode} onChange={(postalCode) => update({ postalCode })} />
+      ) : null}
+      {card.addressType === 'Foreign' ? (
+        <TextField id="input-foreign-address-line-1" label="Foreign address line 1" name="input-foreign-address-line-1" value={card.foreignAddress1} onChange={(foreignAddress1) => update({ foreignAddress1 })} />
+      ) : null}
     </div>
   );
 }
@@ -126,7 +223,12 @@ function Screen() {
       <h1>Appoint/Withdraw position holders</h1>
       <h2>Appoint position holder</h2>
       {card ? <AppointCard card={card} update={(patch) => setCard((current) => ({ ...(current as Card), ...patch }))} /> : null}
-      <button type="button" onClick={() => setCard((current) => current ?? { category: '', position: '', appointmentDate: '', idNumber: '', name: '', email: '' })}>
+      <button
+        type="button"
+        onClick={() =>
+          setCard((current) => current ?? { category: '', position: '', appointmentDate: '', idNumber: '', name: '', email: '', uen: '', entityName: '', addressType: '', postalCode: '', foreignAddress1: '' })
+        }
+      >
         + Add position holder
       </button>
       <h2>Withdraw position holder</h2>

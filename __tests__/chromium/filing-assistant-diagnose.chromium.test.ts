@@ -135,4 +135,18 @@ describe('Filing Assistant: Diagnose tab', () => {
     await result.getByRole('button', { name: 'Recheck' }).click();
     await expect.poll(() => result.textContent()).toMatch(/RecheckLost on/);
   });
+  it('inspects a dropdown: which handler opens it and what appears, without reading field values', async () => {
+    await panel.getByRole('button', { name: 'Start inspecting' }).click();
+    await expect.poll(() => panel.locator('#inspect-status').textContent()).toContain('Recording');
+    await page.getByRole('combobox', { name: 'Position held' }).click();
+    await page.getByRole('option', { name: 'Auditor' }).click();
+    await panel.locator('#inspect-stop').click();
+    await expect.poll(() => panel.locator('#inspect-status').textContent()).toContain('Recorded "Position held"');
+    const report = JSON.parse((await panel.locator('#inspect-result').textContent()) ?? '{}');
+    expect(report.field.kind).toBe('combobox');
+    expect(report.field.reactHandlers[0].handlers).toEqual(expect.arrayContaining(['onMouseDown', 'onKeyDown']));
+    expect(report.changes.some((change: { added?: string; texts?: string[] }) => change.added === 'ul[role=listbox]' && change.texts?.includes('Auditor'))).toBe(true);
+    expect(report.option.text).toBe('Auditor');
+    expect(JSON.stringify(report)).not.toContain('S7654321A');
+  });
 });

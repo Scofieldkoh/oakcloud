@@ -526,6 +526,64 @@
     if (change.url || change.status === 'complete') refreshTarget();
   });
 
+  // ---- Dropdown inspector -------------------------------------------------------------------
+
+  let inspectReport = null;
+
+  function inspectButtons(recording) {
+    $('inspect-start').disabled = recording;
+    $('inspect-stop').disabled = !recording;
+    $('inspect-export').disabled = !inspectReport;
+  }
+
+  async function startInspect() {
+    if (!(await refreshTarget())) return;
+    try {
+      await chrome.tabs.sendMessage(target.tabId, { type: 'oak-probe:inspect-start' }, { frameId: 0 });
+    } catch {
+      $('inspect-status').textContent = NOT_LOADED;
+      return;
+    }
+    inspectButtons(true);
+    $('inspect-status').textContent = 'Recording. Open the dropdown on Bizfile, choose an option, then press Stop.';
+  }
+
+  async function stopInspect() {
+    let response = null;
+    try {
+      response = await chrome.tabs.sendMessage(target.tabId, { type: 'oak-probe:inspect-stop' }, { frameId: 0 });
+    } catch {
+      // Reported below.
+    }
+    if (!response || !response.ok) {
+      $('inspect-status').textContent = (response && response.error) || 'The Bizfile tab did not answer. Reload it and try again.';
+      inspectButtons(false);
+      return;
+    }
+    inspectReport = response.report;
+    inspectButtons(false);
+    $('inspect-status').textContent = inspectReport.field
+      ? 'Recorded "' + (inspectReport.field.describe.label || 'the field') + '": ' + inspectReport.events.length + ' events and ' + inspectReport.changes.length + ' page changes. Export it for whoever maintains the assistant.'
+      : 'No field was used while recording. Start again and click the dropdown.';
+    $('inspect-result').hidden = false;
+    $('inspect-result').textContent = JSON.stringify(inspectReport, null, 2);
+  }
+
+  function exportInspect() {
+    if (!inspectReport) return;
+    const url = URL.createObjectURL(new Blob([JSON.stringify({ tool: 'oakcloud-filing-assistant-inspector', exportedAt: new Date().toISOString(), browser: navigator.userAgent, report: inspectReport }, null, 2)], { type: 'application/json' }));
+    const anchor = h('a', { href: url, download: 'bizfile-dropdown-inspection.json' });
+    document.body.append(anchor);
+    anchor.click();
+    anchor.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  $('inspect-start').addEventListener('click', startInspect);
+  $('inspect-stop').addEventListener('click', stopInspect);
+  $('inspect-export').addEventListener('click', exportInspect);
+  inspectButtons(false);
+
   $('scan').addEventListener('click', scanPage);
   $('pick').addEventListener('click', togglePick);
   $('kind').addEventListener('change', updateKindControls);

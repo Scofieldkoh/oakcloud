@@ -29,6 +29,7 @@
         "src/core/snapshot.js",
         "src/core/recorder.js",
         "src/core/runner.js",
+        "src/core/explorer.js",
         "src/content.js"
       ],
       "run_at": "document_idle",

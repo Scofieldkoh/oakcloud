@@ -52,14 +52,18 @@ const snapshotFieldSchema = z.object({
   required: z.boolean().optional(),
   hasValue: z.boolean().optional(),
   options: z.array(text(120)).max(60).optional(),
+  /** From exploring: the field appears only when each listed field has the listed option. */
+  shownWhen: z.array(z.object({ ref: fieldRef, option: text(120) })).max(6).optional(),
 });
 
 const snapshotSchema = z.object({
   path: z.string().max(300).regex(/^\//),
   title: text(200).optional(),
   headings: z.array(text(200)).max(40),
-  fields: z.array(snapshotFieldSchema).max(200),
-  actions: z.array(z.object({ ref: actionRef, label: text(120), section: text(200).optional(), allowed: z.boolean() })).max(60),
+  fields: z.array(snapshotFieldSchema).max(300),
+  actions: z
+    .array(z.object({ ref: actionRef, label: text(120), section: text(200).optional(), allowed: z.boolean(), reveals: z.array(fieldRef).max(200).optional() }))
+    .max(60),
 });
 
 const targetSchema = z.object({
@@ -141,6 +145,9 @@ const SYSTEM_PROMPT = [
   '- For dates give "format": the one the placeholder or label suggests; Bizfile normally uses "DD MMM YYYY".',
   '- For choices whose screen options are listed, give "valueMap" from a filing-details option to the exact screen option text when the two differ.',
   '- Only propose buttons with allowed=true, and only when they reveal fields needed for keys not yet on the screen.',
+  '- A snapshot made by exploring lists fields from every option of the screen. "shownWhen" says a field appears only when',
+  '  another field (by ref) has a given option; map those fields too, and map the controlling field (for example a',
+  '  Category or Address type radio) to its filing-details key so the conditions can be checked.',
   '- Leave a key unmapped rather than guess. "confidence" is between 0 and 1. Keep "reason" to one short sentence.',
   'Reply with JSON only.',
 ].join('\n');
