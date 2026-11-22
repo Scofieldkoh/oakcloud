@@ -49,6 +49,9 @@
     }
     if (!response) throw new Error('OakCloud did not answer.');
     if (response.status === 401) throw new Error('Sign in to OakCloud, then try again.');
+    if (response.status === 404) {
+      throw new Error('This OakCloud (' + P.state.settings.oakcloudOrigin + ') does not have the Filing Assistant endpoints yet. Deploy an OakCloud version that includes them. Learning by watching and filling still work without OakCloud.');
+    }
     if (response.status === 403) throw new Error((response.data && (response.data.message || response.data.error)) || 'OakCloud refused: you may not have permission.');
     if (!response.ok) throw new Error((response.data && (response.data.message || response.data.error)) || response.error || 'OakCloud returned ' + response.status + '.');
     return response.data;
