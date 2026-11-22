@@ -70,6 +70,7 @@ The Forms module does not yet have a single stable spec file under `docs/feature
 | [Form Submission PDF Redesign](./plans/2026-03-09-form-submission-pdf-redesign.md) | HTML-to-PDF export for form responses |
 | [Resume Draft UI Implementation](./plans/2026-03-09-resume-draft-ui-implementation.md) | Public draft resume and email flow |
 | [Forms Implementation Review](./plans/2026-03-10-forms-implementation-review.md) | Security, performance, and logic review |
+| [OakCloud Filing Assistant](./plans/2026-11-22-acra-filing-assistant.md) | Self-learning Bizfile filing extension: screen maps, learning by watching, verified filling, self-correction, AI repair through OakCloud, never submits |
 | [ACRA Bizfile Extension POC](./plans/2026-11-22-acra-bizfile-extension-poc.md) | Why guided filing moves to a browser extension, the input probe POC, its tests and the live-run protocol |
 | [Singapore Company Incorporation Intake Form](./plans/2026-09-29-acra-incorporation-intake-form.md) | Guided template, advisory name check, review step, template lock, staff KYC checklist and readiness |
 | [Forms API: option presets](./reference/API_REFERENCE.md#get-apiformspresets) | Managed CSV dropdown lists, protected built-ins, limits, and live form linkage |

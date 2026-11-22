@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Filing Assistant</title>
+    <link rel="stylesheet" href="sidepanel.css" />
+  </head>
+  <body>
+    <header>
+      <h1>OakCloud Filing Assistant</h1>
+      <p class="warning">Fills Bizfile from the filing details and checks every field. It never submits: you review and submit in Bizfile.</p>
+      <p id="target" class="muted" role="status">Looking for a Bizfile tab…</p>
+      <nav role="tablist" aria-label="Assistant sections">
+        <button type="button" role="tab" data-tab="details" aria-controls="tab-details">Details</button>
+        <button type="button" role="tab" data-tab="fill" aria-controls="tab-fill">Fill</button>
+        <button type="button" role="tab" data-tab="learn" aria-controls="tab-learn">Learn</button>
+        <button type="button" role="tab" data-tab="maps" aria-controls="tab-maps">Screen maps</button>
+        <button type="button" role="tab" data-tab="diagnose" aria-controls="tab-diagnose">Diagnose</button>
+        <button type="button" role="tab" data-tab="settings" aria-controls="tab-settings">Settings</button>
+      </nav>
+    </header>
+
+    <section id="tab-details" role="tabpanel" aria-labelledby="details-heading" hidden>
+      <h2 id="details-heading">Filing details</h2>
+      <p class="muted"><span id="details-title"></span>. Kept in this browser only until it closes, and never sent to AI.</p>
+      <form id="details-form" autocomplete="off"></form>
+      <div class="row"><button type="button" id="details-clear" class="quiet">Clear details</button></div>
+      <p id="details-status" class="muted" role="status"></p>
+    </section>
+
+    <section id="tab-fill" role="tabpanel" aria-labelledby="fill-heading" hidden>
+      <h2 id="fill-heading">Fill this screen</h2>
+      <p id="fill-map-status" class="muted"></p>
+      <label class="check"><input type="checkbox" id="fill-step-mode" /> Pause after every step</label>
+      <div class="row">
+        <button type="button" id="fill-start">Start filling</button>
+        <button type="button" id="fill-pause" class="quiet">Pause</button>
+        <button type="button" id="fill-stop" class="quiet">Stop</button>
+      </div>
+      <p id="fill-status" role="status"></p>
+      <div id="fill-decision" class="decision" hidden></div>
+      <ol id="fill-steps" class="steps"></ol>
+      <div id="fill-summary"></div>
+    </section>
+
+    <section id="tab-learn" role="tabpanel" aria-labelledby="learn-heading" hidden>
+      <h2 id="learn-heading">Learn this screen</h2>
+      <p class="muted">Enter the filing details first. Learning saves a new screen-map version only after you approve it.</p>
+      <h3>By watching you</h3>
+      <p class="muted">Start, fill the Bizfile screen yourself as usual, then Finish. The assistant matches what you entered to the filing details.</p>
+      <div class="row">
+        <button type="button" id="learn-watch-start">Start watching</button>
+        <button type="button" id="learn-watch-finish">Finish</button>
+        <button type="button" id="learn-watch-cancel" class="quiet">Cancel</button>
+      </div>
+      <h3>With AI</h3>
+      <p class="muted">Maps the fields showing now. Needs OakCloud (Settings). Only the screen's structure is sent, never filing values.</p>
+      <button type="button" id="learn-ai">Ask AI to map this screen</button>
+      <p id="learn-status" role="status"></p>
+      <div id="learn-proposal"></div>
+    </section>
+
+    <section id="tab-maps" role="tabpanel" aria-labelledby="maps-heading" hidden>
+      <h2 id="maps-heading">Screen maps</h2>
+      <div id="maps-content"></div>
+      <div class="row">
+        <button type="button" id="maps-export" class="quiet">Export map</button>
+        <label class="file-button">Import map<input type="file" id="maps-import" accept="application/json,.json" /></label>
+        <button type="button" id="maps-delete" class="quiet">Delete map</button>
+      </div>
+      <p id="maps-status" role="status"></p>
+      <h3>Recent runs</h3>
+      <ol id="maps-runs" class="plain"></ol>
+      <button type="button" id="maps-export-runs" class="quiet small">Export run log</button>
+    </section>
+
+    <section id="tab-diagnose" role="tabpanel" aria-labelledby="diagnose-heading" hidden>
+      <h2 id="diagnose-heading">Diagnose</h2>
+      <p class="muted">The input probe: inspect a screen and test fill methods on single fields. Use a test transaction with dummy data.</p>
+      <h3>Scan the page</h3>
+      <p class="muted">Frameworks, frames and how fields are labelled. No field values are read.</p>
+      <button type="button" id="scan">Scan page</button>
+      <div id="scan-result"></div>
+
+      <h3>Test a field</h3>
+      <p class="muted">Pick one field, choose a fill method and run it. Use a different value or option for each method on the same field.</p>
+      <button type="button" id="pick">Pick a field in Bizfile</button>
+      <p id="pick-status" class="muted" role="status"></p>
+      <form id="field-card" hidden>
+        <dl id="field-facts"></dl>
+        <p id="field-blocked" class="blocked" hidden></p>
+        <div id="test-controls">
+          <label>Control type
+            <select id="kind"></select>
+          </label>
+          <label id="value-row">Value to enter
+            <input id="value" autocomplete="off" />
+          </label>
+          <label id="option-row">Option to choose (exact text)
+            <input id="option" autocomplete="off" />
+          </label>
+          <label>Fill method
+            <select id="strategy"></select>
+          </label>
+          <p id="strategy-help" class="muted"></p>
+          <button type="submit" id="run">Run test</button>
+        </div>
+      </form>
+
+      <h3>Results <span id="result-count" class="muted"></span></h3>
+      <p class="muted">After a test, move to the next Bizfile step and back (or open the review page), press Recheck, then record what Bizfile did.</p>
+      <div class="row">
+        <button type="button" id="export">Export JSON</button>
+        <button type="button" id="clear" class="quiet">Clear results</button>
+      </div>
+      <ol id="results"></ol>
+    </section>
+
+    <section id="tab-settings" role="tabpanel" aria-labelledby="settings-heading" hidden>
+      <h2 id="settings-heading">Settings</h2>
+      <h3>OakCloud (for AI)</h3>
+      <p class="muted">AI requests go through your signed-in OakCloud tab, using OakCloud's AI connector and your permissions. The extension stores no passwords or keys.</p>
+      <label for="settings-origin">OakCloud address
+        <input id="settings-origin" type="url" placeholder="https://oakcloud.example.com" autocomplete="off" />
+      </label>
+      <div class="row">
+        <button type="button" id="settings-connect">Connect</button>
+        <button type="button" id="settings-check" class="quiet">Check</button>
+      </div>
+      <p id="settings-status" role="status"></p>
+      <h3>Self-correction</h3>
+      <label class="check"><input type="checkbox" id="settings-auto-correct" /> Save verified corrections automatically (another way to find a field, fill method or date format). Each is recorded in the map's history.</label>
+      <label class="check"><input type="checkbox" id="settings-auto-ai" /> Ask AI automatically when a step fails. Its proposal still needs your approval.</label>
+    </section>
+
+    <script src="../core/dom.js"></script>
+    <script src="../core/formats.js"></script>
+    <script src="../core/schemas.js"></script>
+    <script src="../core/locator.js"></script>
+    <script src="../core/snapshot.js"></script>
+    <script src="../core/recorder.js"></script>
+    <script src="../core/playbook.js"></script>
+    <script src="common.js"></script>
+    <script src="ai.js"></script>
+    <script src="details.js"></script>
+    <script src="learn.js"></script>
+    <script src="fill.js"></script>
+    <script src="maps.js"></script>
+    <script src="settings.js"></script>
+    <script src="diagnose.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>

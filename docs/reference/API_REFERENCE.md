@@ -48,6 +48,7 @@ Most endpoints require authentication via JWT token stored in an `auth-token` ht
 18. [User Preferences](#user-preference-endpoints)
 19. [Document Tags](#document-tags-endpoints)
 20. [Business Assistant](#business-assistant-endpoints)
+21. [Filing Assistant](#filing-assistant-endpoints)
 
 ---
 
@@ -2549,3 +2550,30 @@ The existing upload UI uses `POST /api/documents/:documentId/prepare-import` bef
 Preparation signatures use `BUSINESS_ASSISTANT_PREPARATION_SECRET` (at least 32 characters), falling back to the configured `JWT_SECRET` with a separate signing purpose. Replicas must share the key. Rotating it invalidates outstanding preparations; users must prepare those proposals again.
 
 The unused legacy `/api/companies/:id/documents/:documentId/extract` route and deprecated text extractor have been removed. Current `/api/documents/:documentId/extract` vision extraction remains available. See the implementation checkpoint for canonical transaction, migration, and independent-review validation still outstanding.
+
+## Filing Assistant Endpoints
+
+Used by the OakCloud Filing Assistant browser extension ([design](../plans/2026-11-22-acra-filing-assistant.md)). The extension calls them through a bridge content script in the user's signed-in OakCloud tab, so they are ordinary same-origin session requests: no extension origin needs adding to `ALLOWED_ORIGINS`, and the extension holds no OakCloud credentials. Responses are not cached.
+
+| Method | Path | Permission | Purpose / response |
+|---|---|---|---|
+| GET | `/api/filing-assistant/status` | `company:read` | Connection check: `{ ok, user, aiAvailable }` |
+| POST | `/api/filing-assistant/ai-proposals` | `company:update` | AI proposal for a Bizfile screen: `{ proposal }` |
+
+`ai-proposals` request bodies:
+
+- `{ task: "map-screen", transaction, snapshot, targets }`. The proposal is `{ steps, unmappedKeys, notes }`. Each step is either `{ type: "fill", key, ref, kind, format, valueMap?, confidence, reason }` or `{ type: "action", ref, revealsKey, confidence, reason }`.
+- `{ task: "repair-step", transaction, snapshot, target, step }`, where `step` carries the key, control type, learned label, section, method, format and the failure (`not-found`, `ambiguous`, `not-kept`, `validation-error`, `option-missing`, `not-revealed`). The proposal is `{ ref | null, kind, format, valueMap?, confidence, reason }`.
+
+`snapshot` holds structure only: `path`, `headings`, `fields` and `actions`.
+- `fields` entries have `ref` (`f1`…), kind, label, section, placeholder, options and `hasValue`.
+- `actions` entries have `ref` (`a1`…), label, section and `allowed`.
+- `targets` are filing-details keys, labels, types and suggested options, never values.
+- Unknown properties are dropped, and text that looks like a capitalised person or company name is masked before the prompt is built.
+
+The service also checks the reply:
+- references not in the snapshot are discarded;
+- buttons with `allowed: false` are discarded;
+- duplicate keys and fields are discarded.
+
+The request body is limited to 300 KB. The service returns `503` when the workspace has no AI provider and `502` when the AI reply cannot be used. Calls use `callAIWithConnector` with the operation `filing_assistant_map_screen` or `filing_assistant_repair_step`.

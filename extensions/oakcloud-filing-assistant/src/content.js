@@ -1,11 +1,12 @@
 /*
- * OakCloud Bizfile input probe: content script (isolated world), loaded in every Bizfile frame.
- * Depends on probe-core.js, which the manifest loads first.
+ * OakCloud Filing Assistant: content script (isolated world), loaded in every Bizfile frame after
+ * the core modules. Handles the side panel's requests: snapshots, learning by watching, running
+ * steps, pausing when staff use the page, and the diagnose (probe) tools.
  */
 (function () {
   'use strict';
   if (globalThis.OakProbeContent) return;
-  const P = globalThis.OakProbe;
+  const P = globalThis.OakDom;
 
   const handles = new Map();
   let nextHandle = 1;
@@ -286,16 +287,104 @@
     };
   }
 
+  // ---- Filing assistant: snapshots, learning, running ------------------------------------------
+
+  const snapshots = new Map();
+  let nextSnapshot = 1;
+  let recorder = null;
+  let watchingRun = false;
+  let lastActivityAt = 0;
+
+  function takeSnapshot() {
+    const { snapshot, registry } = globalThis.OakSnapshot.take(document);
+    const snapshotId = 's' + nextSnapshot++;
+    snapshots.set(snapshotId, registry);
+    while (snapshots.size > 5) snapshots.delete(snapshots.keys().next().value);
+    return { snapshotId, snapshot };
+  }
+
+  /** Builds locators for references an AI proposal used, from the elements seen in that snapshot. */
+  function locatorsForRefs({ snapshotId, refs }) {
+    const registry = snapshots.get(snapshotId);
+    if (!registry) return { ok: false, error: 'That snapshot is too old. Ask again.' };
+    const locators = {};
+    for (const ref of refs) {
+      const el = registry.get(ref);
+      if (!el || !el.isConnected) continue;
+      locators[ref] = ref.startsWith('a') ? globalThis.OakLocator.buildActionLocator(el) : globalThis.OakLocator.buildLocator(el);
+    }
+    return { ok: true, locators };
+  }
+
+  /** Staff clicking or typing on the page during a run pauses it. The assistant's own events are not trusted, so they never count. */
+  function onUserActivity(event) {
+    if (!watchingRun || !event.isTrusted) return;
+    const now = Date.now();
+    if (now - lastActivityAt < 1000) return;
+    lastActivityAt = now;
+    send({ type: 'oak-filing:user-activity', event: event.type });
+  }
+  ['pointerdown', 'keydown'].forEach((type) => window.addEventListener(type, onUserActivity, true));
+
+  function highlightLocator(locator) {
+    const found = globalThis.OakLocator.resolve(document, locator);
+    if (found.el) {
+      found.el.scrollIntoView({ block: 'center' });
+      highlight(found.el, locator.label || locator.group || 'Field');
+      setTimeout(() => highlight(null), 2000);
+    }
+    return { ok: true, found: Boolean(found.el), tried: found.tried };
+  }
+
+  const filingHandlers = {
+    'oak-filing:page-info': () => ({ ok: true, path: location.pathname, title: document.title, topFrame: window === window.top }),
+    'oak-filing:snapshot': () => ({ ok: true, ...takeSnapshot() }),
+    'oak-filing:locators-for-refs': (message) => locatorsForRefs(message),
+    'oak-filing:record-start': () => {
+      if (recorder) recorder.stop();
+      recorder = globalThis.OakRecorder.start(document);
+      return { ok: true };
+    },
+    'oak-filing:record-status': () => ({ ok: true, recording: Boolean(recorder), counts: recorder ? recorder.counts() : null }),
+    'oak-filing:record-stop': (message) => {
+      if (!recorder) return { ok: false, error: 'Not recording.' };
+      const recording = recorder.stop();
+      recorder = null;
+      const built = globalThis.OakRecorder.buildSteps(recording, message.transaction, message.payload || {});
+      return { ok: true, ...built, fingerprint: takeSnapshot().snapshot.fingerprint, path: location.pathname };
+    },
+    'oak-filing:record-cancel': () => {
+      if (recorder) recorder.stop();
+      recorder = null;
+      return { ok: true };
+    },
+    'oak-filing:run-begin': () => {
+      watchingRun = true;
+      return { ok: true };
+    },
+    'oak-filing:run-end': () => {
+      watchingRun = false;
+      return { ok: true, fingerprint: takeSnapshot().snapshot.fingerprint };
+    },
+    'oak-filing:run-step': async (message) => {
+      // Staff activity is only watched between steps; the step's own work must not pause itself.
+      const result = await globalThis.OakRunner.runStep(document, message.step, message.payload || {}, readSignals);
+      return { ok: true, result };
+    },
+    'oak-filing:highlight-locator': (message) => highlightLocator(message.locator),
+  };
+
   // ---- Messaging -----------------------------------------------------------------------------
 
   chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-    if (!message || typeof message.type !== 'string' || !message.type.startsWith('oak-probe:')) return false;
+    if (!message || typeof message.type !== 'string' || !/^oak-(probe|filing):/.test(message.type)) return false;
     const reply = (promise) => {
       Promise.resolve()
         .then(promise)
         .then(sendResponse, (error) => sendResponse({ ok: false, error: String((error && error.message) || error) }));
       return true;
     };
+    if (filingHandlers[message.type]) return reply(() => filingHandlers[message.type](message));
     if (message.type === 'oak-probe:run') return reply(() => runFill(message));
     if (message.type === 'oak-probe:recheck') return reply(() => recheck(message));
     if (message.type === 'oak-probe:highlight') {

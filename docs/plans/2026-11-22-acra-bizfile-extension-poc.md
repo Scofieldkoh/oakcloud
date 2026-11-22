@@ -1,6 +1,6 @@
 # ACRA Bizfile guided filing: browser extension proof of concept
 
-Written 2026-11-22. Status: **POC built, not yet run against live Bizfile.** Nothing here files anything.
+Written 2026-11-22. Status: **POC run once on live Bizfile (2026-11-22); the result is in section 5.** The follow-up design is the [Filing Assistant](./2026-11-22-acra-filing-assistant.md). Nothing here files anything.
 
 ## 1. Why an extension
 
@@ -25,15 +25,15 @@ The extension's one open risk is technical. Input an extension creates is marked
 
 ## 2. What was built
 
-`extensions/acra-bizfile-probe/` is a Manifest V3 extension, loaded unpacked, with no build step.
+The probe was first built as its own extension. Since 2026-11-22 it is the **Diagnose** tab of the [Filing Assistant](./2026-11-22-acra-filing-assistant.md), in `extensions/oakcloud-filing-assistant/`. Paths below are the current ones. It is a Manifest V3 extension, loaded unpacked, with no build step.
 
 | File | Role |
 |------|------|
 | `manifest.json` | Runs only on `https://*.bizfile.gov.sg/*`. Permissions: `sidePanel`, `scripting`, `storage`. |
-| `src/probe-core.js` | DOM logic: label and label-source detection, control-type detection, safety rules, fill methods, verdicts. Shared by the content script, the side panel and the unit tests. |
+| `src/core/dom.js` | DOM logic: label and label-source detection, control-type detection, safety rules, fill methods, verdicts. Shared by the content script, the side panel and the unit tests. |
 | `src/content.js` | Isolated-world content script in every Bizfile frame: pick mode with an overlay, running a test, rechecking a field, scanning the page. |
 | `src/page-signals.js` | Main-world script that reads what React or Vue actually holds for a field, and which frameworks the page uses. It only reads. |
-| `src/sidepanel.*` | The side panel: scan, pick, run, results, recheck, the staff member's own verdict, and JSON export. |
+| `src/panel/diagnose.js` | The Diagnose tab: scan, pick, run, results, recheck, the staff member's own verdict, and JSON export. |
 
 What the probe does **not** do:
 
@@ -71,13 +71,13 @@ The automatic verdict is only the first check. The deciding one is manual:
 
 ## 3. Verification so far
 
-- `npx vitest run __tests__/extensions/acra-bizfile-probe-core.test.ts` (jsdom unit tests) covers:
+- `npx vitest run __tests__/extensions/filing-assistant-dom.test.ts` (jsdom unit tests) covers:
   - label sources and control-type detection;
   - the safety rules;
   - the fill methods;
   - verdicts;
   - finding a field again after it re-renders.
-- `npm run test:chromium:bizfile-probe` loads the real extension into Chromium. It runs against a React stand-in form (`__tests__/fixtures/acra-bizfile-probe/fixture-app.tsx`) served at a routed `www.bizfile.gov.sg` address. It confirms that:
+- `npm run test:chromium:filing-assistant` (`__tests__/chromium/filing-assistant-diagnose.chromium.test.ts`) loads the real extension into Chromium. It runs against a React stand-in form (`__tests__/fixtures/filing-assistant/probe-fixture-app.tsx`) served at a routed `www.bizfile.gov.sg` address. It confirms that:
   - a field that ignores non-genuine input is reported **Lost** with `set-value-events` and **Kept** with `insert-text-command`;
   - a dropdown that opens on mouse-down **fails** with `click` and is **Kept** with `pointer` and `keyboard`;
   - the masked date, radio and type-ahead fields are kept;
@@ -97,7 +97,7 @@ Prerequisites:
 
 **Do not submit the transaction.** Discard the draft afterwards.
 
-1. Open `chrome://extensions` (or `edge://extensions`), turn on Developer mode, choose **Load unpacked**, and select `extensions/acra-bizfile-probe`.
+1. Open `chrome://extensions` (or `edge://extensions`), turn on Developer mode, choose **Load unpacked**, and select `extensions/oakcloud-filing-assistant`. The probe is on its **Diagnose** tab.
 2. Sign in to Bizfile as usual and open the officer-change transaction: appoint a director.
 3. Click the probe's toolbar icon to open the side panel. If Bizfile was already open, reload the tab.
 4. **Scan page** on each screen of the transaction. This records frameworks, frames, shadow DOM, component libraries and how fields are labelled.
@@ -120,19 +120,33 @@ Prerequisites:
 
 ## 5. Results
 
-To be filled in after the live run.
+The probe was run on 2026-11-22 against live Bizfile, on Appoint/Withdraw position holders (`/registry/update-personnel/appoint-withdraw-position-holder-form`), with a test company and dummy data.
 
-| Control | Best method | Kept after step change? | Notes |
-|---------|-------------|-------------------------|-------|
-| Name | | | |
-| ID number | | | |
-| Date of appointment | | | |
-| Position held | | | |
-| Radio question | | | |
-| Nationality | | | |
-| Postal code lookup | | | |
+### Page facts
 
-Page facts from the scan: frameworks, component library, frames, shadow DOM, label sources.
+| Fact | Finding |
+|------|---------|
+| Framework | React, SG Design System. No iframes; fields are not in shadow DOM (the page has 2 shadow roots elsewhere). |
+| Fields on arrival | None. The appointment card appears only after clicking **Add position holder**, which the probe correctly does not list or click (it is a button). |
+| Field ids | Stable and structured: `appoint-position-holder-card-1-individual-id-number`, `appoint-position-holder-card-1-position-held-1-date-of-appointment`. They are the best locator. |
+| Field names | Not unique: `text-input` is shared by several fields. |
+| Labels | `label[for]` for 6 fields, nearby text only for 4 (ID number, name, email, mobile), placeholder only for 3 (including Position held). |
+| Radio ids | Random UUIDs (Category, Address type). They cannot be stored; use the question and option labels. |
+| Duplicate ids | The two foreign-address inputs share `input-foreign-address-line-1`. |
+| Position held | `<input placeholder="Select position">` with no dropdown role. The probe classified it as text; it now treats inputs with a "Select…" placeholder as dropdowns. |
+
+### Fill results
+
+| Control | Best method | Kept after recheck? | Notes |
+|---------|-------------|---------------------|-------|
+| ID number | `set-value-events` | Yes. React state held the value; confirmed by hand. | Staff report all three text methods kept the value |
+| Date of appointment, date of birth | any text method | Yes (reported by staff) | Must be entered as `DD MMM YYYY`, for example `01 Feb 2026` |
+| Position held | not yet tested | | Test as a custom dropdown |
+| Category / Address type radios | not yet tested | | |
+| Postal code lookup | not yet tested | | |
+| Review page | not yet tested | | Fill everything, open Review and confirm, check values, discard |
+
+**Conclusion so far:** text and date fields accept input created by an extension, using the simplest method, and React's own state agrees. Building the extension is justified. The dropdown, radios, lookups and the review page remain to be confirmed. The Filing Assistant's runner verifies each of them anyway, and falls back to other methods automatically.
 
 ## 6. Decision after the run
 

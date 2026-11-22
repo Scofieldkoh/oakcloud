@@ -91,3 +91,34 @@ details { margin-top: 6px; }
 pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 11px; max-height: 260px; overflow: auto; background: var(--bg); padding: 6px; border-radius: 6px; }
 .manual { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
 .manual button[aria-pressed='true'] { border-color: var(--accent); background: var(--accent); color: var(--accent-text); }
+
+/* ---- Filing assistant ---------------------------------------------------------------------- */
+
+h3 { font-size: 13px; margin: 14px 0 4px; }
+h4 { font-size: 13px; margin: 10px 0 4px; }
+.small { font-size: 12px; }
+.bad, [data-tone='bad'] { color: var(--bad); }
+[data-tone='good'] { color: var(--good); }
+[data-tone='warn'] { color: var(--warn); }
+
+nav[role='tablist'] { display: flex; flex-wrap: wrap; gap: 4px; margin: 8px 0 0; }
+nav[role='tablist'] button { background: transparent; color: var(--text); border-color: var(--border); padding: 4px 10px; font-size: 12px; }
+nav[role='tablist'] button[aria-selected='true'] { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
+
+label.check { display: flex; gap: 8px; align-items: flex-start; font-weight: 400; }
+label.check input { width: auto; margin-top: 3px; }
+ol.plain { list-style: none; padding: 0; margin: 6px 0; display: grid; gap: 6px; }
+ol.plain li { border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+
+.steps { list-style: none; padding: 0; margin: 10px 0; display: grid; gap: 4px; }
+.steps li { display: grid; grid-template-columns: 20px 1fr; gap: 0 6px; padding: 4px 6px; border-radius: 6px; background: var(--surface); }
+.steps li p { grid-column: 2; margin: 0; }
+.steps .step-status { font-weight: 700; text-align: center; }
+.steps li[data-status='done'] .step-status { color: var(--good); }
+.steps li[data-status='failed'] .step-status, .steps li[data-status='blocked'] .step-status { color: var(--bad); }
+.steps li[data-status='running'] { outline: 2px solid var(--accent); }
+.correction { color: var(--warn); }
+
+.decision, .notice { border: 1px solid var(--warn); border-radius: 8px; padding: 8px; margin: 8px 0; background: var(--surface); }
+.file-button { display: inline-block; margin: 0; padding: 6px 12px; border: 1px solid var(--border); border-radius: 6px; font-weight: 400; cursor: pointer; }
+.file-button input { display: none; }

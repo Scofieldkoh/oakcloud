@@ -1,7 +1,7 @@
 /*
- * OakCloud Bizfile input probe: DOM logic shared by the content script and the tests.
+ * OakCloud Filing Assistant: DOM logic (labels, control types, safety rules, fill methods, verdicts).
  *
- * A classic script (content scripts cannot be modules). It defines globalThis.OakProbe.
+ * A classic script (content scripts cannot be modules). It defines globalThis.OakDom. Shared by the content script, the side panel and the tests.
  * Nothing here talks to the network or operates buttons or links.
  */
 (function (root) {
@@ -38,6 +38,12 @@
   /** Names that suggest a declaration, filing, payment or step change. The probe never touches these. */
   const FORBIDDEN_NAME = /\b(submit\w*|declar\w*|pay(ment)?\w*|confirm\w*|lodg\w*|proceed\w*|next|save\w*|delete\w*|remove\w*|withdraw\w*|cancel\w*|sign\s*out|log\s*out|logout|agree\w*|acknowledg\w*|undertak\w*|certif\w*|consent\w*|attest\w*)\b/i;
 
+  /** The only buttons the assistant may click: ones that add or reveal parts of the form. */
+  const SAFE_ACTION = /^\+?\s*(add|expand|show)\b/i;
+
+  /** Buttons never clicked, whatever a screen map or an AI proposal says. Checked before SAFE_ACTION. */
+  const FORBIDDEN_ACTION = /\b(submit\w*|save\w*|review\w*|confirm\w*|declar\w*|pay\w*|lodg\w*|withdraw\w*|delete\w*|remove\w*|back|next|proceed\w*|continue\w*|cancel\w*|sign\w*|log\s*(in|out)|logout|edit\w*|upload\w*|discard\w*|close\w*|clear\w*|reset\w*)\b/i;
+
   const STRATEGIES = {
     text: ['set-value-events', 'insert-text-command', 'key-by-key'],
     date: ['set-value-events', 'insert-text-command', 'key-by-key'],
@@ -65,6 +71,26 @@
     return node ? clean(node.textContent, 200) : '';
   }
 
+  /**
+   * Bizfile (SG Design System) renders some labels twice, once visually hidden, so the text reads
+   * "Individual Individual". Collapse an exact repetition back to one copy.
+   */
+  function dedupeRepeat(text) {
+    // Adjacent copies with no space between them: "IndividualIndividual".
+    if (text.length >= 8 && text.length % 2 === 0 && text.slice(0, text.length / 2) === text.slice(text.length / 2)) return text.slice(0, text.length / 2);
+    const words = text.split(' ');
+    if (words.length % 2 === 0 && words.length > 0) {
+      const half = words.length / 2;
+      const first = words.slice(0, half).join(' ');
+      if (first === words.slice(half).join(' ')) return first;
+    }
+    return text;
+  }
+
+  function labelText(node) {
+    return node ? dedupeRepeat(textOf(node)) : '';
+  }
+
   function viewOf(el) {
     return el.ownerDocument.defaultView;
   }
@@ -80,7 +106,7 @@
     for (let depth = 0; depth < 4 && node && node.parentElement; depth++) {
       let sibling = node.previousElementSibling;
       while (sibling) {
-        const text = textOf(sibling);
+        const text = labelText(sibling);
         if (text && text.length <= 100 && !sibling.matches(FIELD_SELECTOR)) return text;
         sibling = sibling.previousElementSibling;
       }
@@ -98,7 +124,7 @@
     if (labelledby) {
       const text = labelledby
         .split(/\s+/)
-        .map((id) => textOf(lookupById(el, id)))
+        .map((id) => labelText(lookupById(el, id)))
         .filter(Boolean)
         .join(' ');
       if (text) return { name: clean(text), source: 'aria-labelledby' };
@@ -106,11 +132,11 @@
     const aria = clean(el.getAttribute('aria-label'));
     if (aria) return { name: aria, source: 'aria-label' };
     if (el.labels && el.labels.length) {
-      const text = Array.from(el.labels).map(textOf).filter(Boolean).join(' ');
+      const text = Array.from(el.labels).map(labelText).filter(Boolean).join(' ');
       if (text) return { name: clean(text), source: 'label' };
     }
     const wrapping = el.closest('label');
-    if (wrapping && textOf(wrapping)) return { name: clean(textOf(wrapping)), source: 'label' };
+    if (wrapping && labelText(wrapping)) return { name: clean(labelText(wrapping)), source: 'label' };
     const title = clean(el.getAttribute('title'));
     if (title) return { name: title, source: 'title' };
     const placeholder = clean(el.getAttribute('placeholder'));
@@ -125,7 +151,7 @@
     const group = el.closest('[role=radiogroup],[role=group],fieldset');
     if (!group) return '';
     const legend = group.matches('fieldset') ? group.querySelector(':scope > legend') : null;
-    if (legend) return textOf(legend);
+    if (legend) return labelText(legend);
     return labelInfo(group).name;
   }
 
@@ -161,6 +187,8 @@
     if (tag === 'input' && el.getAttribute('aria-autocomplete') && el.getAttribute('aria-autocomplete') !== 'none') {
       return 'typeahead';
     }
+    // Bizfile's Position held is a plain input whose only hint is a "Select position" placeholder.
+    if (tag === 'input' && /^select\b/i.test((el.getAttribute('placeholder') || '').trim())) return 'combobox';
     if (type === 'date' || looksLikeDate(el)) return 'date';
     if (tag === 'textarea' || tag === 'input' || role === 'textbox' || role === 'searchbox' || el.isContentEditable) {
       return 'text';
@@ -460,12 +488,12 @@
           .flatMap((node) => [node, ...node.querySelectorAll('*')])
           .filter((node) => isVisible(node) && node.children.length === 0 && textOf(node));
       }
-      const matches = seen.filter((option) => normalise(option.textContent) === wanted);
+      const matches = seen.filter((option) => normalise(labelText(option)) === wanted);
       if (matches.length === 1) return { option: matches[0], seen };
       if (matches.length > 1) throw new Error('More than one option is exactly "' + optionText + '".');
       await sleep(100);
     }
-    const listed = Array.from(new Set(seen.map((option) => textOf(option)).filter(Boolean))).slice(0, 15);
+    const listed = Array.from(new Set(seen.map((option) => labelText(option)).filter(Boolean))).slice(0, 15);
     throw new Error(
       listed.length
         ? 'No option is exactly "' + optionText + '". Options seen: ' + listed.join('; ')
@@ -497,7 +525,7 @@
       const activeId = el.getAttribute('aria-activedescendant');
       const active = activeId ? lookupById(el, activeId) : null;
       const highlighted = active || visibleOptions(el).find((option) => /active|focused|highlight/i.test(String(option.className)) || option.getAttribute('aria-selected') === 'true');
-      if (highlighted && normalise(highlighted.textContent) === wanted) {
+      if (highlighted && normalise(labelText(highlighted)) === wanted) {
         pressKey(el, 'Enter');
         return 'Moved with the arrow keys to the option and pressed Enter.';
       }
@@ -580,6 +608,43 @@
     return toggle(el, strategy);
   }
 
+  // ---- Buttons and page settling -------------------------------------------------------------
+
+  function actionLabel(el) {
+    return clean(el.getAttribute('aria-label') || labelText(el), 120);
+  }
+
+  /** Why the assistant must not click a button, or null when it is an allowed add/reveal button. */
+  function actionBlockReason(el) {
+    if (!el || el.nodeType !== 1 || !el.matches(ACTION_SELECTOR)) return 'Not a button.';
+    if (el.disabled || el.getAttribute('aria-disabled') === 'true') return 'The button is disabled.';
+    const label = actionLabel(el);
+    if (!label) return 'The button has no name.';
+    if (FORBIDDEN_ACTION.test(label) || FORBIDDEN_NAME.test(label)) return '"' + label + '" is a button the assistant never clicks.';
+    if (!SAFE_ACTION.test(label)) return '"' + label + '" is not an add or reveal button, so it is left to staff.';
+    return null;
+  }
+
+  /** Resolves once the page has made no DOM changes for quietMs, or after maxMs at most. */
+  function settle(doc, quietMs = 300, maxMs = 4000) {
+    return new Promise((resolve) => {
+      const started = Date.now();
+      let last = Date.now();
+      const observer = new (doc.defaultView.MutationObserver)(() => {
+        last = Date.now();
+      });
+      observer.observe(doc.body || doc.documentElement, { childList: true, subtree: true, attributes: true, characterData: true });
+      const timer = setInterval(() => {
+        const now = Date.now();
+        if (now - last >= quietMs || now - started >= maxMs) {
+          clearInterval(timer);
+          observer.disconnect();
+          resolve(now - started);
+        }
+      }, 50);
+    });
+  }
+
   // ---- Verdicts ------------------------------------------------------------------------------
 
   function digits(text) {
@@ -632,9 +697,12 @@
     return 'kept';
   }
 
-  root.OakProbe = {
+  root.OakDom = {
     FIELD_SELECTOR,
+    ACTION_SELECTOR,
     FORBIDDEN_NAME,
+    FORBIDDEN_ACTION,
+    SAFE_ACTION,
     STRATEGIES,
     KINDS,
     sleep,
@@ -651,5 +719,13 @@
     isVisible,
     applyStrategy,
     verdict,
+    textOf,
+    labelText,
+    normalise,
+    lookupById,
+    pointerClick,
+    actionLabel,
+    actionBlockReason,
+    settle,
   };
 })(globalThis);

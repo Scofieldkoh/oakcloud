@@ -2,8 +2,8 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
-/** The shape of globalThis.OakProbe that these tests use. */
-interface OakProbeApi {
+/** The shape of globalThis.OakDom that these tests use. */
+interface OakDomApi {
   STRATEGIES: Record<string, string[]>;
   labelInfo(el: Element): { name: string; source: string };
   groupName(el: Element): string;
@@ -23,11 +23,11 @@ interface OakProbeApi {
   ): string;
 }
 
-const probe = (): OakProbeApi => (globalThis as unknown as { OakProbe: OakProbeApi }).OakProbe;
+const probe = (): OakDomApi => (globalThis as unknown as { OakDom: OakDomApi }).OakDom;
 const byId = <T extends Element = HTMLElement>(id: string) => document.getElementById(id) as unknown as T;
 
 beforeAll(() => {
-  const source = readFileSync(path.resolve(__dirname, '../../extensions/acra-bizfile-probe/src/probe-core.js'), 'utf8');
+  const source = readFileSync(path.resolve(__dirname, '../../extensions/oakcloud-filing-assistant/src/core/dom.js'), 'utf8');
   (0, eval)(source);
 });
 

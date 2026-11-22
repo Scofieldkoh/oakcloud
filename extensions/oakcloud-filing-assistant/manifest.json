@@ -1,0 +1,39 @@
+{
+  "manifest_version": 3,
+  "name": "OakCloud Filing Assistant",
+  "version": "0.3.0",
+  "description": "Learns Bizfile screens and fills filings from approved details, verifying every field. Staff review and submit; it never submits.",
+  "minimum_chrome_version": "116",
+  "permissions": ["sidePanel", "scripting", "storage"],
+  "host_permissions": ["https://*.bizfile.gov.sg/*"],
+  "optional_host_permissions": ["https://*/*", "http://localhost/*", "http://127.0.0.1/*"],
+  "background": { "service_worker": "src/background.js" },
+  "action": { "default_title": "Open the OakCloud Filing Assistant" },
+  "side_panel": { "default_path": "src/panel/sidepanel.html" },
+  "content_scripts": [
+    {
+      "matches": ["https://*.bizfile.gov.sg/*"],
+      "js": ["src/page-signals.js"],
+      "world": "MAIN",
+      "run_at": "document_start",
+      "all_frames": true,
+      "match_about_blank": true
+    },
+    {
+      "matches": ["https://*.bizfile.gov.sg/*"],
+      "js": [
+        "src/core/dom.js",
+        "src/core/formats.js",
+        "src/core/schemas.js",
+        "src/core/locator.js",
+        "src/core/snapshot.js",
+        "src/core/recorder.js",
+        "src/core/runner.js",
+        "src/content.js"
+      ],
+      "run_at": "document_idle",
+      "all_frames": true,
+      "match_about_blank": true
+    }
+  ]
+}

@@ -1,8 +1,8 @@
-/* OakCloud Bizfile input probe: side panel. Talks only to the Bizfile tab's content scripts. */
+/* Side panel: the Diagnose tab (the input probe). Talks only to the Bizfile tab's content scripts. */
 'use strict';
 
 (function () {
-  const { STRATEGIES, KINDS, verdict, clean } = globalThis.OakProbe;
+  const { STRATEGIES, KINDS, verdict, clean } = globalThis.OakDom;
   const BIZFILE_URL = /^https:\/\/([a-z0-9-]+\.)*bizfile\.gov\.sg\//i;
   const $ = (id) => document.getElementById(id);
 

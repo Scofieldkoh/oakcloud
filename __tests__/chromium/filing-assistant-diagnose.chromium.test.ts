@@ -1,40 +1,19 @@
 // @vitest-environment node
-import { mkdtempSync, rmSync } from 'node:fs';
-import os from 'node:os';
-import path from 'node:path';
-import { build } from 'esbuild';
-import { chromium, type BrowserContext, type Locator, type Page } from 'playwright';
+import type { Locator, Page } from 'playwright';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { fixtureHtml, launchWithExtension, type ExtensionSession } from '../helpers/filing-assistant-extension';
 
 /**
- * Loads the Bizfile input probe extension into Chromium and runs it against a React stand-in for a
- * Bizfile form, served at a routed bizfile.gov.sg address so the extension's real host rules apply.
- * No request leaves this machine. Run with `npm run test:chromium:bizfile-probe`; set
- * BROWSER_TEST_CHROMIUM when Playwright's pinned browser is not installed.
+ * The Filing Assistant's Diagnose tab (the input probe) against a React stand-in for a Bizfile form,
+ * served at a routed bizfile.gov.sg address so the extension's real host rules apply. No request
+ * leaves this machine. Run with `npm run test:chromium:filing-assistant`.
  */
 
-const EXTENSION_PATH = path.resolve(__dirname, '../../extensions/acra-bizfile-probe');
-const FIXTURE_ENTRY = path.resolve(__dirname, '../fixtures/acra-bizfile-probe/fixture-app.tsx');
 const FIXTURE_URL = 'https://www.bizfile.gov.sg/probe-fixture/officers';
 
-let context: BrowserContext;
+let session: ExtensionSession;
 let page: Page;
 let panel: Page;
-let profileDir: string;
-
-async function fixtureHtml(): Promise<string> {
-  const bundle = await build({
-    entryPoints: [FIXTURE_ENTRY],
-    bundle: true,
-    write: false,
-    format: 'iife',
-    jsx: 'automatic',
-    minify: true,
-    define: { 'process.env.NODE_ENV': '"production"' },
-  });
-  const script = bundle.outputFiles[0].text.replace(/<\/script/gi, '<\\/script');
-  return `<!doctype html><html><head><meta charset="utf-8"><title>Officer change (probe fixture)</title></head><body><div id="root"></div><script>${script}</script></body></html>`;
-}
 
 async function formState(): Promise<Record<string, unknown>> {
   return JSON.parse((await page.locator('#state').textContent()) ?? '{}');
@@ -59,29 +38,20 @@ async function run(options: { strategy: string; value?: string; option?: string 
   return results.first().getAttribute('data-verdict');
 }
 
-describe('Bizfile input probe extension', () => {
+describe('Filing Assistant: Diagnose tab', () => {
   beforeAll(async () => {
-    const html = await fixtureHtml();
-    profileDir = mkdtempSync(path.join(os.tmpdir(), 'bizfile-probe-'));
-    context = await chromium.launchPersistentContext(profileDir, {
-      headless: true,
-      executablePath: process.env.BROWSER_TEST_CHROMIUM || undefined,
-      args: [`--disable-extensions-except=${EXTENSION_PATH}`, `--load-extension=${EXTENSION_PATH}`],
-    });
-    await context.route('https://www.bizfile.gov.sg/**', (route) => route.fulfill({ contentType: 'text/html', body: html }));
-    const worker = context.serviceWorkers()[0] ?? (await context.waitForEvent('serviceworker'));
-    const extensionId = new URL(worker.url()).host;
-    page = await context.newPage();
+    const html = await fixtureHtml('probe-fixture-app.tsx', 'Officer change (probe fixture)');
+    session = await launchWithExtension();
+    await session.context.route('https://www.bizfile.gov.sg/**', (route) => route.fulfill({ contentType: 'text/html', body: html }));
+    page = await session.context.newPage();
     await page.goto(FIXTURE_URL);
     await page.locator('#state').waitFor();
-    panel = await context.newPage();
-    await panel.goto(`chrome-extension://${extensionId}/src/sidepanel.html`);
-    await panel.waitForFunction(() => document.getElementById('target')?.textContent?.includes('www.bizfile.gov.sg/probe-fixture/officers'));
+    panel = await session.openPanel();
+    await panel.getByRole('tab', { name: 'Diagnose' }).click();
   });
 
   afterAll(async () => {
-    await context?.close();
-    if (profileDir) rmSync(profileDir, { recursive: true, force: true });
+    await session?.close();
   });
 
   it('scans the page without reading values and detects React', async () => {
