@@ -56,8 +56,10 @@
       </div>
       <h3>By exploring the whole screen</h3>
       <p class="muted">The assistant clicks Add buttons and tries every option of each radio, list and dropdown to find every field and which option shows it, then OakCloud's AI maps them (or you do). It changes selections but never saves or submits: use a test filing, and don't touch the page while it explores.</p>
+      <p class="muted"><strong>With test data</strong> it also types obviously fake values into empty fields (TEST names, an example.com email, the office phone and postal code from Settings, today's date) to find fields that appear only after typing and the date format Bizfile accepts, then clears them. It never types NRIC or FIN numbers and never presses Retrieve information, since a made-up number may belong to a real person: run Retrieve on a real filing yourself, then explore from there. Delete the draft afterwards.</p>
       <div class="row">
         <button type="button" id="learn-explore">Explore this screen</button>
+        <button type="button" id="learn-explore-test">Explore with test data</button>
         <button type="button" id="learn-explore-stop" class="quiet">Stop exploring</button>
       </div>
       <div id="learn-explore-result"></div>
@@ -146,6 +148,14 @@
         <button type="button" id="settings-check" class="quiet">Check</button>
       </div>
       <p id="settings-status" role="status"></p>
+      <h3>Test data for exploring</h3>
+      <p class="muted">Used by "Explore with test data". Use the firm's own office details, never a client's.</p>
+      <label for="settings-test-phone">Office phone number
+        <input id="settings-test-phone" type="tel" autocomplete="off" placeholder="61234567" />
+      </label>
+      <label for="settings-test-postal">Office postal code
+        <input id="settings-test-postal" type="text" inputmode="numeric" autocomplete="off" placeholder="6 digits" />
+      </label>
       <h3>Self-correction</h3>
       <label class="check"><input type="checkbox" id="settings-auto-correct" /> Save verified corrections automatically (another way to find a field, fill method or date format). Each is recorded in the map's history.</label>
       <label class="check"><input type="checkbox" id="settings-auto-ai" /> Ask AI automatically when a step fails. Its proposal still needs your approval.</label>

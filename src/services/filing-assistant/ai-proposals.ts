@@ -25,8 +25,13 @@ export const STEP_FAILURES = ['not-found', 'ambiguous', 'not-kept', 'validation-
 /** Bizfile shows person and company names in capitals; anything that looks like one is masked before the AI sees it. */
 const LIKELY_NAME = /\b[A-Z][A-Z'.-]+(?:\s+[A-Z][A-Z'.-]+)+\b/g;
 
+/** Identifiers and date formats ("DD MMM YYYY") are capitalised too, and are not names. */
+function notAName(match: string): boolean {
+  return /^(NRIC|FIN|UEN|SSIC|ACRA|CPF|IRAS)\b/.test(match) || /^(D{1,2}|M{2,4}|Y{2,4})(\s+(D{1,2}|M{2,4}|Y{2,4}))+$/.test(match);
+}
+
 export function redactLikelyNames(text: string): string {
-  return text.replace(LIKELY_NAME, (match) => (/^(NRIC|FIN|UEN|SSIC|ACRA|CPF|IRAS)\b/.test(match) ? match : '[name]'));
+  return text.replace(LIKELY_NAME, (match) => (notAName(match) ? match : '[name]'));
 }
 
 const text = (max: number) =>
@@ -52,7 +57,10 @@ const snapshotFieldSchema = z.object({
   required: z.boolean().optional(),
   hasValue: z.boolean().optional(),
   options: z.array(text(120)).max(60).optional(),
-  /** From exploring: the field appears only when each listed field has the listed option. */
+  /** From exploring with test data: the date format the page accepted, and any validation message. */
+  format: z.enum(VALUE_FORMATS).optional(),
+  hint: text(200).optional(),
+  /** From exploring: the field appears only when each listed field has the listed option ("(when filled)": has any value). */
   shownWhen: z.array(z.object({ ref: fieldRef, option: text(120) })).max(6).optional(),
 });
 
@@ -147,7 +155,8 @@ const SYSTEM_PROMPT = [
   '- Only propose buttons with allowed=true, and only when they reveal fields needed for keys not yet on the screen.',
   '- A snapshot made by exploring lists fields from every option of the screen. "shownWhen" says a field appears only when',
   '  another field (by ref) has a given option; map those fields too, and map the controlling field (for example a',
-  '  Category or Address type radio) to its filing-details key so the conditions can be checked.',
+  '  Category or Address type radio) to its filing-details key so the conditions can be checked. "(when filled)"',
+  '  means the field appears once the other field has any value. "hint" is a validation message seen for that field.',
   '- Leave a key unmapped rather than guess. "confidence" is between 0 and 1. Keep "reason" to one short sentence.',
   'Reply with JSON only.',
 ].join('\n');

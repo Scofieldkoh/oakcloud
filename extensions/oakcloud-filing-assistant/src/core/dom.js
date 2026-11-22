@@ -174,7 +174,10 @@
     const hints = [el.getAttribute('placeholder'), el.getAttribute('name'), el.id, el.className && String(el.className)]
       .filter(Boolean)
       .join(' ');
-    return /\b(dd|mm)[/.-](mm|dd)[/.-]yy(yy)?\b|date|datepicker|calendar/i.test(hints);
+    if (/\b(dd|d)[\s/.-]+(mm|mmm|mmmm)[\s/.-]+yy(yy)?\b|(^|[^a-z])date([^a-z]|$)|datepicker|calendar|\bdob\b/i.test(hints)) return true;
+    // Labels such as "Date of birth" or "Date of appointment".
+    const label = el.labels && el.labels.length ? textOf(el.labels[0]) : '';
+    return /^date\b|\bdate of\b/i.test(label);
   }
 
   function detectKind(el) {

@@ -56,6 +56,8 @@ function fakeAi(body: Json): Json {
     foreignAddress1: (field) => /foreign address/i.test(field.label),
     idType: (field) => /identification type/i.test(field.label),
     nationality: (field) => /nationality/i.test(field.label),
+    block: (field) => /block/i.test(field.label),
+    street: (field) => /street/i.test(field.label),
   };
   const steps = Object.entries(rules)
     .map(([key, rule]) => {
@@ -268,6 +270,34 @@ describe('OakCloud Filing Assistant', () => {
     expect(await panel.locator('#fill-steps').textContent()).toContain('Not needed for these details: only shown when Address type is "Foreign"');
     expect(state.clicks).toEqual({ back: 0, save: 0, review: 0 });
   }, 240_000);
+
+  it('explores with test data: finds fields that appear after typing, never types an NRIC or presses Retrieve, and clears what it typed', async () => {
+    await tab('Settings');
+    await panel.locator('#settings-test-postal').fill('049145');
+    await panel.locator('#settings-test-postal').press('Tab');
+    await openScreen();
+    await tab('Learn');
+    panel.once('dialog', (dialog) => dialog.accept());
+    await panel.getByRole('button', { name: 'Explore with test data' }).click();
+    await expect.poll(() => panel.locator('#learn-status').textContent(), { timeout: 300_000 }).toMatch(/The AI mapped \d+ of \d+ fields/);
+
+    const found = (await panel.locator('#learn-explore-result').textContent()) ?? '';
+    expect(found).toMatch(/"Postal code" filled in shows Block \/ house number, Street name/);
+
+    const request = aiRequests.filter((item) => item.task === 'map-screen').at(-1);
+    const field = (label: string) => request.snapshot.fields.find((item: Json) => item.label === label);
+    expect(field('Nationality').options).toEqual(expect.arrayContaining(['American', 'British', 'Chinese', 'Malaysian', 'Singapore Citizen']));
+    expect(field('Date of appointment').format).toBe('DD MMM YYYY');
+    expect(field('Block / house number').shownWhen).toEqual(expect.arrayContaining([{ ref: field('Postal code').ref, option: '(when filled)' }]));
+    expect(JSON.stringify(request)).not.toMatch(PERSONAL);
+    expect(await panel.locator('#learn-proposal').textContent()).toContain('Postal code is filled in');
+
+    // Nothing typed is left behind; no NRIC or FIN number was ever typed; Retrieve was never pressed.
+    const state = await formState();
+    expect(state.card).toMatchObject({ nricTyped: false, retrieved: false, postalCode: '', email: '', name: '', appointmentDate: '' });
+    expect(state.clicks).toEqual({ back: 0, save: 0, review: 0 });
+    await panel.getByRole('button', { name: 'Discard' }).click();
+  }, 340_000);
 
   it('learns how an SGDS-style dropdown opens, and finds the option by typing when there is no chevron', async () => {
     await openScreen('sgds');

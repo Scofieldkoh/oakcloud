@@ -204,6 +204,33 @@ describe('OakRunner.conditionsHold', () => {
     expect(R.conditionsHold(step, { addressType: 'Foreign' })).toMatch(/only shown when Address type is "Local"/);
     expect(R.conditionsHold(step, {})).toMatch(/that detail is empty/);
     expect(R.conditionsHold({}, {})).toBeNull();
+    const filled = { conditions: [{ key: 'postalCode', filled: true, label: 'Postal code' }] };
+    expect(R.conditionsHold(filled, { postalCode: '049145' })).toBeNull();
+    expect(R.conditionsHold(filled, {})).toMatch(/once Postal code is filled in/);
+  });
+});
+
+describe('OakExplorer.testValueFor', () => {
+  it('types obviously fake values, and an ID number only when Passport is chosen', () => {
+    const E = g.OakExplorer;
+    const L = g.OakLocator;
+    document.body.innerHTML = `
+      <div><input id="idtype" placeholder="Select identification type" readonly value="NRIC (Citizen)" /></div>
+      <div><div class="label">Identification number</div><input id="idno" /></div>
+      <div><div class="label">Name (As per NRIC/Identification document)</div><input id="name" /></div>
+      <div><div class="label">Email address</div><input id="email" /></div>
+      <div><div class="label">Mobile number</div><input id="mobile" /></div>
+      <div><div class="label">Postal code</div><input id="postal" /></div>
+      <div><label for="dob">Date of birth</label><input id="dob" placeholder="DD MMM YYYY" /></div>`;
+    const valueOf = (id: string, values = {}) => E.testValueFor(document, byId(id), L.buildLocator(byId(id)), values);
+    expect(valueOf('idno')).toBeNull();
+    expect(valueOf('name')).toEqual({ text: 'TEST FILING ASSISTANT' });
+    expect(valueOf('email')).toEqual({ text: 'filing-assistant-test@example.com' });
+    expect(valueOf('mobile', { phone: '62223333' })).toEqual({ text: '62223333' });
+    expect(valueOf('postal', { postalCode: '049145' })).toEqual({ text: '049145' });
+    expect(valueOf('dob')).toEqual({ date: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/) });
+    byId<HTMLInputElement>('idtype').value = 'Passport';
+    expect(valueOf('idno')).toEqual({ text: 'TESTP1234567' });
   });
 });
 

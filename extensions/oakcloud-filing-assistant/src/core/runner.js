@@ -67,8 +67,12 @@
   function conditionsHold(step, payload) {
     for (const condition of step.conditions || []) {
       const value = payload[condition.key];
-      const wanted = condition.equalsAny || [];
       const label = condition.label || condition.key;
+      if (condition.filled) {
+        if (value == null || value === '') return 'Not needed: only shown once ' + label + ' is filled in, and that detail is empty.';
+        continue;
+      }
+      const wanted = condition.equalsAny || [];
       if (value == null || value === '') return 'Not needed: only shown when ' + label + ' is "' + wanted[0] + '", and that detail is empty.';
       if (!wanted.some((option) => F.normaliseText(option) === F.normaliseText(value))) return 'Not needed for these details: only shown when ' + label + ' is "' + wanted[0] + '".';
     }

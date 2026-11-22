@@ -21,9 +21,11 @@
     return [h('option', { value: '' }, 'Ignore this field'), ...fields.map((field) => h('option', { value: field.key, selected: field.key === selected }, field.label))];
   }
 
+  const FILLED = '(when filled)';
+
   function describeConditions(derived) {
     if (!derived) return '';
-    const parts = derived.conditions.map((condition) => condition.label + ' is "' + condition.equalsAny[0] + '"');
+    const parts = derived.conditions.map((condition) => (condition.filled ? condition.label + ' is filled in' : condition.label + ' is "' + condition.equalsAny[0] + '"'));
     if (derived.optional) parts.push('an option not in the filing details');
     return parts.length ? ' — only when ' + parts.join(' and ') : '';
   }
@@ -62,6 +64,11 @@
       const key = mapping.keys[condition.ref];
       if (!key) {
         optional = true;
+        continue;
+      }
+      if (condition.option === FILLED) {
+        const filledField = globalThis.OakSchemas.field(P.state.transaction, key);
+        conditions.push({ key, filled: true, label: filledField ? filledField.label : key });
         continue;
       }
       const equivalents = Object.entries(mapping.valueMaps[condition.ref] || {})
@@ -167,7 +174,7 @@
     const chosen = proposal.items.filter((item) => item.include).map((item) => withConditions(item.step, item.ref));
     proposal.unmapped
       .filter((item) => item.key)
-      .forEach((item) => chosen.push(withConditions({ type: 'fill', key: item.key, kind: item.kind, method: DEFAULT_METHOD[item.kind], format: null, locator: item.locator }, item.ref)));
+      .forEach((item) => chosen.push(withConditions({ type: 'fill', key: item.key, kind: item.kind, method: DEFAULT_METHOD[item.kind], format: item.format || null, locator: item.locator }, item.ref)));
     const steps = linkActions(chosen.map((step) => JSON.parse(JSON.stringify(step))));
     if (!steps.length) {
       P.say('learn-status', 'Nothing to save.', 'bad');
@@ -263,6 +270,7 @@
   function exploreButtons(active) {
     exploring = active;
     P.$('learn-explore').disabled = active;
+    P.$('learn-explore-test').disabled = active;
     P.$('learn-explore-stop').disabled = !active;
   }
 
@@ -278,7 +286,7 @@
         h(
           'li',
           { className: 'small' },
-          h('strong', null, labelOf(branch.control) + ' = "' + branch.option + '"'),
+          h('strong', null, branch.option === FILLED ? '"' + labelOf(branch.control) + '" filled in' : labelOf(branch.control) + ' = "' + branch.option + '"'),
           branch.error ? ': could not choose it (' + branch.error + ')' : '',
           branch.shown.length ? ' shows ' + branch.shown.map(labelOf).join(', ') + '.' : '',
           branch.hidden.length ? ' Hides ' + branch.hidden.map(labelOf).join(', ') + '.' : '',
@@ -350,15 +358,19 @@
       .map(({ ref, firstMapped }) => ({ ref, revealsKey: keyOf(firstMapped) }));
   }
 
-  async function explore() {
+  async function explore(testData) {
     if (exploring) return;
     exploreButtons(true);
     P.$('learn-explore-result').replaceChildren();
-    P.say('learn-status', 'Exploring… The assistant is trying every option on the Bizfile screen. Do not use the page; clicking it stops exploring.');
+    P.say(
+      'learn-status',
+      'Exploring' + (testData ? ' with test data' : '') + '… The assistant is trying every option' + (testData ? ' and typing test values' : '') + ' on the Bizfile screen. Do not use the page; clicking it stops exploring.',
+    );
     let result;
     try {
       await P.refreshTarget();
-      result = await P.send({ type: 'oak-filing:explore' });
+      const settings = P.state.settings;
+      result = await P.send({ type: 'oak-filing:explore', testData, testValues: { phone: settings.testPhone || '', postalCode: settings.testPostalCode || '' } });
     } catch (error) {
       P.say('learn-status', error.message, 'bad');
       exploreButtons(false);
@@ -398,7 +410,16 @@
           include: step.confidence >= 0.6,
           ref: step.ref,
           note: Math.round(step.confidence * 100) + '% sure: ' + step.reason,
-          step: { type: 'fill', key: step.key, kind: step.kind, method: DEFAULT_METHOD[step.kind], format: step.format || null, ...(step.valueMap ? { valueMap: step.valueMap } : {}), locator: locators[step.ref] },
+          step: {
+            type: 'fill',
+            key: step.key,
+            kind: step.kind,
+            method: DEFAULT_METHOD[step.kind],
+            // A date format the page accepted while exploring beats the AI's guess.
+            format: (result.model.fields.find((field) => field.ref === step.ref) || {}).format || step.format || null,
+            ...(step.valueMap ? { valueMap: step.valueMap } : {}),
+            locator: locators[step.ref],
+          },
         })),
     ];
     const usedKeys = new Set(fillSteps.map((step) => step.key));
@@ -407,7 +428,7 @@
       .map((field) => {
         const key = suggestKey(field, usedKeys);
         if (key) usedKeys.add(key);
-        return { ref: field.ref, label: field.label || field.placeholder || '(no label)', kind: field.kind, locator: locators[field.ref], key };
+        return { ref: field.ref, label: field.label || field.placeholder || '(no label)', kind: field.kind, locator: locators[field.ref], key, format: field.format || null };
       });
 
     proposal = {
@@ -484,7 +505,10 @@
     P.$('learn-watch-finish').addEventListener('click', finishWatching);
     P.$('learn-watch-cancel').addEventListener('click', cancelWatching);
     P.$('learn-ai').addEventListener('click', askAi);
-    P.$('learn-explore').addEventListener('click', explore);
+    P.$('learn-explore').addEventListener('click', () => explore(false));
+    P.$('learn-explore-test').addEventListener('click', () => {
+      if (window.confirm('Explore with test data types fake values (TEST names, an example.com email, your office phone and postal code) into this Bizfile draft, then clears them. It never types NRIC or FIN numbers and never presses Retrieve information. Use a test filing and delete the draft afterwards. Continue?')) explore(true);
+    });
     P.$('learn-explore-stop').addEventListener('click', stopExploring);
     P.$('learn-explore-stop').disabled = true;
   });

@@ -501,6 +501,8 @@
       try {
         const result = await globalThis.OakExplorer.explore(document, {
           ...(message.limits || {}),
+          testData: Boolean(message.testData),
+          testValues: message.testValues || {},
           shouldStop: () => exploreAbort,
           onProgress: (text) => send({ type: 'oak-filing:explore-progress', text }),
         });

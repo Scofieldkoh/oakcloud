@@ -85,7 +85,9 @@
       .map((item) => new RegExp(item.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'));
     // Bizfile shows existing officers' and companies' names in capitals; mask anything like one too.
     const likelyName = /\b[A-Z][A-Z'.-]+(?:\s+[A-Z][A-Z'.-]+)+\b/g;
-    const maskNames = (text) => text.replace(likelyName, (match) => (/^(NRIC|FIN|UEN|SSIC|ACRA|CPF|IRAS)\b/.test(match) ? match : '[name]'));
+    // Identifiers and date formats ("DD MMM YYYY") are capitalised too, and are not names.
+    const notAName = (match) => /^(NRIC|FIN|UEN|SSIC|ACRA|CPF|IRAS)\b/.test(match) || /^(D{1,2}|M{2,4}|Y{2,4})(\s+(D{1,2}|M{2,4}|Y{2,4}))+$/.test(match);
+    const maskNames = (text) => text.replace(likelyName, (match) => (notAName(match) ? match : '[name]'));
     const scrub = (text) => maskNames(secrets.reduce((result, pattern) => result.replace(pattern, '[detail]'), text));
     const walk = (item) => {
       if (typeof item === 'string') return scrub(item);

@@ -8,6 +8,8 @@
     P.$('settings-origin').value = settings.oakcloudOrigin || '';
     P.$('settings-auto-ai').checked = settings.autoAskAi;
     P.$('settings-auto-correct').checked = settings.autoCorrect;
+    P.$('settings-test-phone').value = settings.testPhone || '';
+    P.$('settings-test-postal').value = settings.testPostalCode || '';
     P.say('settings-status', settings.oakcloudOrigin ? 'OakCloud: ' + settings.oakcloudOrigin + '. Press Check to test the connection.' : 'Not connected. Learning by watching and filling work without OakCloud; AI does not.');
   }
 
@@ -36,5 +38,7 @@
     P.$('settings-check').addEventListener('click', check);
     P.$('settings-auto-ai').addEventListener('change', (event) => P.saveSettings({ autoAskAi: event.target.checked }));
     P.$('settings-auto-correct').addEventListener('change', (event) => P.saveSettings({ autoCorrect: event.target.checked }));
+    P.$('settings-test-phone').addEventListener('change', (event) => P.saveSettings({ testPhone: event.target.value.trim() }));
+    P.$('settings-test-postal').addEventListener('change', (event) => P.saveSettings({ testPostalCode: event.target.value.trim() }));
   });
 })();

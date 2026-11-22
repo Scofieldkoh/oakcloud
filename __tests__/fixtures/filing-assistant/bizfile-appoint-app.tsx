@@ -37,7 +37,56 @@ type Card = {
   idType: string;
   nationality: string;
   retrieved: boolean;
+  block: string;
+  street: string;
+  /** Test instrumentation: set when anything types an ID number while NRIC or FIN is chosen (or nothing is). */
+  nricTyped: boolean;
 };
+
+const NATIONALITIES = ['American', 'British', 'Chinese', 'Malaysian', 'Singapore Citizen', 'Singapore Permanent Resident'];
+
+/** A search-as-you-type field: suggestions appear only after typing. */
+function NationalitySearch({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+  const [query, setQuery] = useState(value);
+  const [open, setOpen] = useState(false);
+  const matches = query ? NATIONALITIES.filter((item) => item.toLowerCase().startsWith(query.toLowerCase())) : [];
+  return (
+    <div className="field autocomplete">
+      <label htmlFor="appoint-position-holder-card-1-individual-nationality">Nationality</label>
+      <input
+        id="appoint-position-holder-card-1-individual-nationality"
+        role="combobox"
+        aria-autocomplete="list"
+        aria-expanded={open}
+        aria-controls="nationality-suggestions"
+        value={query}
+        onChange={(event) => {
+          setQuery(event.target.value);
+          setOpen(true);
+          if (!event.target.value) onChange('');
+        }}
+      />
+      {open && matches.length ? (
+        <ul role="listbox" id="nationality-suggestions">
+          {matches.map((item) => (
+            <li
+              key={item}
+              role="option"
+              aria-selected={false}
+              onClick={() => {
+                setQuery(item);
+                onChange(item);
+                setOpen(false);
+              }}
+            >
+              {item}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </div>
+  );
+}
 
 const SR_ONLY = { position: 'absolute' as const, width: 1, height: 1, overflow: 'hidden', clip: 'rect(0 0 0 0)' };
 const ID_TYPES = ['NRIC (Citizen)', 'NRIC (PR)', 'FIN', 'Passport'];
@@ -214,14 +263,18 @@ function AppointCard({ card, update }: { card: Card; update: (patch: Partial<Car
             <div className="label">Identification type</div>
             <PlainSelect placeholder="Select identification type" options={ID_TYPES} value={card.idType} onChange={(idType) => update({ idType })} />
           </div>
-          <TextField id={idNumberId} label="Identification number" name="text-input" value={card.idNumber} onChange={(idNumber) => update({ idNumber })} />
+          <TextField
+            id={idNumberId}
+            label="Identification number"
+            name="text-input"
+            value={card.idNumber}
+            onChange={(idNumber) => update({ idNumber, ...(idNumber && card.idType !== 'Passport' ? { nricTyped: true } : {}) })}
+          />
           {/* Like Bizfile: for NRIC holders, particulars are retrieved from government records and locked. */}
           <button type="button" disabled={!card.idType.startsWith('NRIC') || !card.idNumber} onClick={() => update({ name: 'TAN AH KOW', retrieved: true })}>
             Retrieve information
           </button>
-          {card.idType === 'Passport' ? (
-            <TextField id="appoint-position-holder-card-1-individual-nationality" label="Nationality" name="text-input" value={card.nationality} onChange={(nationality) => update({ nationality })} />
-          ) : null}
+          {card.idType === 'Passport' ? <NationalitySearch value={card.nationality} onChange={(nationality) => update({ nationality })} /> : null}
           <TextField
             id="appoint-position-holder-card-1-individual-name"
             label="Name (As per NRIC/Identification document)"
@@ -241,7 +294,16 @@ function AppointCard({ card, update }: { card: Card; update: (patch: Partial<Car
       ) : null}
       {card.category ? <Radios legend="Address type" options={ADDRESS_TYPES} value={card.addressType} onChange={(addressType) => update({ addressType })} /> : null}
       {card.addressType === 'Local' ? (
-        <TextField id="appoint-position-holder-card-1-postal-code" label="Postal code" name="text-input" value={card.postalCode} onChange={(postalCode) => update({ postalCode })} />
+        <>
+          <TextField id="appoint-position-holder-card-1-postal-code" label="Postal code" name="text-input" value={card.postalCode} onChange={(postalCode) => update({ postalCode })} />
+          {/* Like an address lookup: the rest of the address appears once a postal code is typed. */}
+          {card.postalCode.length === 6 ? (
+            <>
+              <TextField id="appoint-position-holder-card-1-block" label="Block / house number" name="text-input" value={card.block} onChange={(block) => update({ block })} />
+              <TextField id="appoint-position-holder-card-1-street" label="Street name" name="text-input" value={card.street} onChange={(street) => update({ street })} />
+            </>
+          ) : null}
+        </>
       ) : null}
       {card.addressType === 'Foreign' ? (
         <TextField id="input-foreign-address-line-1" label="Foreign address line 1" name="input-foreign-address-line-1" value={card.foreignAddress1} onChange={(foreignAddress1) => update({ foreignAddress1 })} />
@@ -279,6 +341,9 @@ function Screen() {
                 idType: '',
                 nationality: '',
                 retrieved: false,
+                block: '',
+                street: '',
+                nricTyped: false,
               },
           )
         }

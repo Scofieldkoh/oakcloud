@@ -4,18 +4,33 @@
  * dropdown, and records which fields each option shows or hides, to a bounded depth. The result is
  * a value-free screen model: every field seen, with the conditions under which it appears.
  *
- * Safety: it only clicks add/reveal buttons and options; it never types into fields, never saves or
- * submits, skips anything named like a declaration, stops when staff touch the page or the page
- * navigates, and puts the original choices back at the end. It changes selections on an unsaved
- * draft, so staff should explore a test filing.
+ * With test data, it also types obviously fake values into empty fields (an example.com email, the
+ * office's phone and postal code, "TEST" names, today's date) to find fields that appear only after
+ * typing, samples search-as-you-type lists, learns which date format the page accepts, and clears
+ * what it typed afterwards.
+ *
+ * Safety: it only clicks add/reveal buttons and options; it never saves or submits, never presses
+ * Retrieve information, never types an NRIC or FIN number (an ID number only when Passport is
+ * chosen, since any well-formed NRIC or FIN may belong to a real person), skips anything named like
+ * a declaration, stops when staff touch the page or the page navigates, and puts original choices
+ * back. It changes an unsaved draft, so staff explore a test filing and delete the draft after.
  * Defines globalThis.OakExplorer; needs OakDom and OakLocator.
  */
 (function (root) {
   'use strict';
   const D = root.OakDom;
   const L = root.OakLocator;
+  const F = root.OakFormats;
 
-  const DEFAULTS = { maxDepth: 3, maxTests: 60, maxMs: 120000, maxOptions: 12 };
+  const DEFAULTS = { maxDepth: 3, maxTests: 60, maxMs: 120000, maxOptions: 12, testData: false, testValues: {} };
+  const TEST_DATA_LIMITS = { maxTests: 160, maxMs: 300000 };
+
+  /** The condition recorded for a field that appears once another field has been typed into. */
+  const FILLED = '(when filled)';
+  const TYPED_KINDS = new Set(['text', 'date', 'typeahead']);
+  /** ID-number fields ("Identification number", "NRIC/FIN no."), not fields that merely mention one. */
+  const SENSITIVE_ID = /(identification|nric|fin|passport|\bid)\s*(\/\s*fin\s*)?(no\b|no\.|number)|^(nric|fin)$/i;
+  const TYPEAHEAD_LETTERS = ['a', 'c', 'm', 's', 'b'];
   const CHOICE = new Set(['radio', 'native-select', 'combobox']);
   const PLACEHOLDER = /^(select|choose|please select|--|-)\b/i;
 
@@ -86,17 +101,20 @@
       .filter((text) => text && text.length <= 80);
   }
 
+  /** The option texts in whatever menu appeared for a field since popupsBefore was taken. */
+  function menuTexts(doc, el, popupsBefore) {
+    const known = D.visibleOptions(el, null).map((option) => D.labelText(option)).filter(Boolean);
+    if (known.length) return known;
+    // The menu that appeared: the outermost newly visible popup that is not the field's own box.
+    const appeared = D.deepQueryAll(doc, D.POPUP_SELECTOR).filter((node) => D.isVisible(node) && !popupsBefore.has(node) && !node.contains(el));
+    const outermost = appeared.filter((node) => !appeared.some((other) => other !== node && other.contains(node)));
+    return outermost.flatMap(itemTexts);
+  }
+
   /** Opens a dropdown, reads its option texts and closes it again. Never types. */
   async function dropdownOptions(doc, el) {
     const popupsBefore = new Set(D.deepQueryAll(doc, D.POPUP_SELECTOR).filter((node) => D.isVisible(node)));
-    const texts = () => {
-      const known = D.visibleOptions(el, null).map((option) => D.labelText(option)).filter(Boolean);
-      if (known.length) return known;
-      // The menu that appeared: the outermost newly visible popup that is not the field's own box.
-      const appeared = D.deepQueryAll(doc, D.POPUP_SELECTOR).filter((node) => D.isVisible(node) && !popupsBefore.has(node) && !node.contains(el));
-      const outermost = appeared.filter((node) => !appeared.some((other) => other !== node && other.contains(node)));
-      return outermost.flatMap(itemTexts);
-    };
+    const texts = () => menuTexts(doc, el, popupsBefore);
     let found = [];
     let usedOpener = null;
     for (const opener of [el, D.toggleOf(el)].filter(Boolean)) {
@@ -144,12 +162,103 @@
     await D.settle(doc, 300, 3000);
   }
 
+  // ---- Test data ------------------------------------------------------------------------------
+
+  function fieldText(el, locator) {
+    return [locator.label, locator.group, el.getAttribute('placeholder'), el.getAttribute('name'), el.id].filter(Boolean).join(' ');
+  }
+
+  /** Whether the page currently shows Passport as the identification type. */
+  function passportChosen(doc) {
+    return D.deepQueryAll(doc, D.FIELD_SELECTOR).some((el) => {
+      const question = (D.labelInfo(el).name || '') + ' ' + (el.getAttribute('placeholder') || '') + ' ' + D.groupName(el);
+      if (!/identification type|id type|document type/i.test(question)) return false;
+      const state = D.readState(el);
+      return state.checked === true ? /passport/i.test(D.labelInfo(el).name) : /passport/i.test((state.value || '') + ' ' + (state.display || ''));
+    });
+  }
+
+  function todayIso() {
+    const now = new Date();
+    return now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+  }
+
+  /**
+   * The obviously fake value to type into a field, or null when it must not be typed into.
+   * ID numbers are typed only when Passport is chosen: a made-up NRIC or FIN may be a real person's.
+   */
+  function testValueFor(doc, el, locator, values) {
+    if (locator.kind === 'date') return { date: todayIso() };
+    const text = fieldText(el, locator);
+    if (SENSITIVE_ID.test(locator.label || '') || SENSITIVE_ID.test(el.getAttribute('placeholder') || '')) {
+      return passportChosen(doc) ? { text: 'TESTP1234567' } : null;
+    }
+    if (/e-?mail/i.test(text)) return { text: 'filing-assistant-test@example.com' };
+    if (/mobile|phone|telephone|contact (no|number)/i.test(text)) return { text: values.phone || '60000000' };
+    if (/postal/i.test(text)) return { text: values.postalCode || '000000' };
+    if (/\buen\b|registration (no|number)/i.test(text)) return { text: 'TEST00001A' };
+    if (/name/i.test(text)) return { text: 'TEST FILING ASSISTANT' };
+    if (el.getAttribute('type') === 'number' || el.getAttribute('inputmode') === 'numeric') return { text: '1' };
+    return { text: 'TEST' };
+  }
+
+  async function clearField(doc, locator) {
+    const found = L.resolve(doc, locator);
+    if (!found.el || D.readState(found.el).value === '') return;
+    try {
+      await D.applyStrategy(found.el, locator.kind === 'date' ? 'date' : 'text', 'set-value-events', '', '', null);
+    } catch {
+      // Clearing is best effort; the draft is deleted afterwards.
+    }
+    closeMenu(found.el);
+    await D.settle(doc, 250, 2000);
+  }
+
+  /** Types a value, leaves the field and reports any validation message. */
+  async function typeAndLeave(doc, el, kind, value) {
+    await D.applyStrategy(el, kind === 'date' ? 'date' : 'text', 'set-value-events', value, '', null);
+    await D.settle(doc, 200, 2000);
+    if (doc.activeElement && doc.activeElement !== doc.body) doc.activeElement.blur();
+    await D.settle(doc, 300, 3000);
+    return D.readState(el).errorText || '';
+  }
+
+  /** Fills a date with today's date, trying each format until the page accepts one. */
+  async function typeDate(doc, el, iso) {
+    let message = '';
+    for (const format of F.DATE_FORMATS) {
+      message = await typeAndLeave(doc, el, 'date', F.formatDate(iso, format));
+      if (!message) return { format, message: '' };
+    }
+    return { format: null, message };
+  }
+
+  /** Types a few single letters into a search field and collects the suggestions each brings. */
+  async function sampleSuggestions(doc, el, locator) {
+    const seen = new Set();
+    for (const letter of TYPEAHEAD_LETTERS) {
+      const found = L.resolve(doc, locator);
+      if (!found.el) break;
+      const popupsBefore = new Set(D.deepQueryAll(doc, D.POPUP_SELECTOR).filter((node) => D.isVisible(node)));
+      try {
+        await D.applyStrategy(found.el, 'text', 'insert-text-command', letter, '', null);
+      } catch {
+        break;
+      }
+      await D.settle(doc, 300, 2500);
+      menuTexts(doc, found.el, popupsBefore).forEach((text) => seen.add(text));
+      await clearField(doc, locator);
+      if (seen.size >= 40) break;
+    }
+    return Array.from(seen).filter((text) => !D.FORBIDDEN_NAME.test(text)).slice(0, 40);
+  }
+
   /**
    * Explores the screen. Returns { model, locators, stats } where model is value-free (sent to AI),
    * locators maps model references to locators, and stats says how far it got and why it stopped.
    */
   async function explore(doc, options = {}) {
-    const settings = { ...DEFAULTS, ...options };
+    const settings = { ...DEFAULTS, ...(options.testData ? TEST_DATA_LIMITS : {}), ...options };
     const started = Date.now();
     const startUrl = doc.location ? doc.location.href : '';
     const catalog = new Map(); // identity -> entry
@@ -179,7 +288,7 @@
           record.shownWhen = record.shownWhen.filter((condition) => conditions.some((other) => sameCondition(condition, other)));
           continue;
         }
-        catalog.set(id, { ref: 'f' + (catalog.size + 1), id, locator: entry.locator, shownWhen: conditions.slice(), options: null });
+        catalog.set(id, { ref: 'f' + (catalog.size + 1), id, locator: entry.locator, shownWhen: conditions.slice(), options: null, format: null, hint: '' });
       }
     };
 
@@ -190,7 +299,8 @@
     for (const button of D.deepQueryAll(doc, D.ACTION_SELECTOR)) {
       if (stop()) break;
       const label = D.actionLabel(button);
-      if (!D.isVisible(button) || D.actionBlockReason(button) || clicked.has(label)) continue;
+      // Retrieve information looks up real records: never pressed while exploring.
+      if (!D.isVisible(button) || D.actionBlockReason(button) || clicked.has(label) || /^retrieve\b/i.test(label)) continue;
       clicked.add(label);
       progress('Clicking "' + label + '"…');
       D.pointerClick(button);
@@ -245,7 +355,57 @@
           }
         }
       }
+      if (settings.testData) await typeIntoFields(onlyIds, conditions, depth);
     }
+
+    /** With test data: types into each empty field, records what appears, then clears it again. */
+    async function typeIntoFields(onlyIds, conditions, depth) {
+      const present = currentFields(doc);
+      const typable = Array.from(present.entries()).filter(([id, entry]) => (!onlyIds || onlyIds.includes(id)) && TYPED_KINDS.has(entry.locator.kind) && !conditions.some((condition) => condition.id === id));
+      for (const [id, entry] of typable) {
+        if (stop()) return;
+        const found = L.resolve(doc, entry.locator);
+        const el = found.el;
+        if (!el || D.blockReason(el) || el.readOnly || el.disabled || D.readState(el).value) continue;
+        const value = testValueFor(doc, el, entry.locator, settings.testValues || {});
+        const label = entry.locator.label || entry.locator.candidates[0].value;
+        const record = catalog.get(id);
+        if (!value) {
+          if (record) record.hint = 'Not typed into while exploring: it takes an NRIC or FIN number.';
+          continue;
+        }
+        if (entry.locator.kind === 'typeahead') {
+          progress('Typing letters into "' + label + '" to see its suggestions…');
+          const suggestions = await sampleSuggestions(doc, el, entry.locator);
+          tests++;
+          if (record && suggestions.length) record.options = suggestions;
+          continue;
+        }
+        progress('Typing test data into "' + label + '"…');
+        const before = currentFields(doc);
+        let typed;
+        try {
+          typed = value.date ? await typeDate(doc, el, value.date) : { format: null, message: await typeAndLeave(doc, el, entry.locator.kind, value.text) };
+        } catch (error) {
+          branches.push({ control: id, option: FILLED, error: String(error.message || error).slice(0, 160) });
+          continue;
+        }
+        tests++;
+        if (record) {
+          if (typed.format) record.format = typed.format;
+          if (typed.message) record.hint = D.clean(typed.message, 200);
+        }
+        const after = currentFields(doc);
+        const shown = Array.from(after.keys()).filter((key) => !before.has(key));
+        const hidden = Array.from(before.keys()).filter((key) => !after.has(key));
+        const branchConditions = [...conditions, { id, option: FILLED }];
+        remember(after, branchConditions);
+        branches.push({ control: id, option: FILLED, shown, hidden });
+        if (shown.length && depth + 1 < settings.maxDepth) await visit(shown, branchConditions, depth + 1);
+        await clearField(doc, entry.locator);
+      }
+    }
+
     await visit(null, [], 0);
 
     // 3. A field present from the start but hidden by some options appears only with the original choice.
@@ -274,6 +434,8 @@
         section: loc.section,
         placeholder: (loc.candidates.find((candidate) => candidate.by === 'placeholder') || {}).value || '',
         ...(record.options && record.options.length ? { options: record.options } : {}),
+        ...(record.format ? { format: record.format } : {}),
+        ...(record.hint ? { hint: record.hint } : {}),
         ...(record.shownWhen.length ? { shownWhen: record.shownWhen.map((condition) => ({ ref: refOf(condition.id), option: condition.option })).filter((condition) => condition.ref) } : {}),
       };
     });
@@ -299,5 +461,5 @@
     return { model, locators, branches: branchSummary, stats: { tests, ms: Date.now() - started, stoppedBecause } };
   }
 
-  root.OakExplorer = { explore, DEFAULTS };
+  root.OakExplorer = { explore, DEFAULTS, FILLED, testValueFor };
 })(globalThis);

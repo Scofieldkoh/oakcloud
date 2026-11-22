@@ -70,6 +70,7 @@ describe('redactLikelyNames', () => {
   it('keeps common identifiers in capitals', () => {
     expect(redactLikelyNames('NRIC (Citizen)')).toBe('NRIC (Citizen)');
     expect(redactLikelyNames('TAN WEI JIE, Director')).toBe('[name], Director');
+    expect(redactLikelyNames('Enter as DD MMM YYYY')).toBe('Enter as DD MMM YYYY');
   });
 });
 

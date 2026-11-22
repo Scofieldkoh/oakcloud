@@ -94,6 +94,21 @@ If a dropdown still cannot be filled, **Diagnose → Inspect a dropdown** record
 
 It never records field values. The JSON export is what a maintainer needs to support that dropdown.
 
+**Exploring with test data.** *Explore with test data* also types obviously fake values into each empty field:
+- `TEST FILING ASSISTANT` for names;
+- `filing-assistant-test@example.com` for email;
+- the firm's office phone and postal code (Settings);
+- `TEST` elsewhere;
+- today's date.
+
+It then records the fields that appear, as a *when filled* condition ("only when Postal code is filled in"). For dates it tries each format until the page accepts one; that format becomes the step's format. It also records validation messages. For search-as-you-type fields it types a few single letters and keeps the suggestions as the field's options. It clears every value it typed.
+
+Two rules never change:
+- **It never types an NRIC or FIN number.** An ID-number field is typed into (`TESTP1234567`) only while Passport is chosen.
+- **It never presses Retrieve information.** Any well-formed NRIC or FIN may belong to a real person, and a lookup would fetch that person's particulars.
+
+To map what appears after Retrieve, staff run a real appointment to that point and then explore from there; exploring always starts from the screen as it is. Test data goes into the Bizfile draft, so staff explore a test filing and delete the draft afterwards. The budget with test data is 160 tries and 5 minutes.
+
 **Options when exploring.** Exploring reads a dropdown's options from the menu that appeared, one element per option (grouped by list item, option, row or button). A container holding every option is never read as one option. Exploring never types into a field.
 
 **Labels.** Bizfile gives each radio two labels, one visible and one for screen readers; the same text is used once ("Corporate", not "Corporate Corporate"). A radio option also matches when exactly one option's label contains the wanted text.
@@ -190,7 +205,8 @@ The extension never holds AI keys and never calls OakCloud with its own credenti
   - learning an SGDS-style dropdown opened from its chevron (menu kept and hidden by style, button options), and finding the option by typing when there is no chevron;
   - radios with two labels each, and plain dropdowns whose menus nest rows inside a scroll area (options read one by one, nothing typed while exploring);
   - Identification type branches (Passport shows Nationality);
-  - learning Retrieve information, then checking the locked name it fills, both when it matches and when it does not.
+  - learning Retrieve information, then checking the locked name it fills, both when it matches and when it does not;
+  - exploring with test data. A typed postal code reveals the address fields ("when filled"), Nationality suggestions are sampled, and the accepted date format is learned. No ID number is ever typed while NRIC or FIN (or nothing) is chosen, Retrieve is never pressed, and every typed value is cleared.
 
   The Diagnose suite also checks that the dropdown inspector reports the opening handler and the menu without capturing values.
 - The stand-in reproduces Bizfile patterns, not Bizfile. Run the Learn and Fill flow once on live Bizfile with a test company before relying on it.
