@@ -283,6 +283,9 @@ function AppointCard({ card, update }: { card: Card; update: (patch: Partial<Car
             readOnly={card.retrieved}
             onChange={(name) => update({ name })}
           />
+          {card.retrieved ? (
+            <TextField id="appoint-position-holder-card-1-individual-dob" label="Date of birth" name="text-input" value="01 Jan 1980" readOnly onChange={() => {}} />
+          ) : null}
           <TextField id="appoint-position-holder-card-1-individual-email" label="Email address" name="email-text-input" value={card.email} onChange={(email) => update({ email })} />
         </>
       ) : null}

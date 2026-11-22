@@ -80,6 +80,7 @@
     const secrets = globalThis.OakSchemas.get(P.state.transaction)
       .fields.filter((field) => personal.has(field.type))
       .map((field) => String(details[field.key] || '').trim())
+      .concat(Array.from(P.state.sensitive))
       .filter((item) => item.length >= 3)
       .sort((a, b) => b.length - a.length)
       .map((item) => new RegExp(item.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'));

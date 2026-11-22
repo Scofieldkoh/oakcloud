@@ -24,6 +24,13 @@
       maps: {},
       details: {},
       runs: [],
+      /** Numbers staff typed for exploring (NRIC/FIN). Memory only, never stored; used to mask them. */
+      sensitive: new Set(),
+    },
+
+    rememberSensitive(value) {
+      const text = String(value || '').trim();
+      if (text) Panel.state.sensitive.add(text);
     },
 
     $(id) {

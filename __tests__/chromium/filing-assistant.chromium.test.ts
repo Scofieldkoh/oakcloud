@@ -58,6 +58,7 @@ function fakeAi(body: Json): Json {
     nationality: (field) => /nationality/i.test(field.label),
     block: (field) => /block/i.test(field.label),
     street: (field) => /street/i.test(field.label),
+    dateOfBirth: (field) => /date of birth/i.test(field.label),
   };
   const steps = Object.entries(rules)
     .map(([key, rule]) => {
@@ -90,7 +91,12 @@ async function startFilling(): Promise<void> {
 
 async function fillUntilDone(): Promise<string> {
   await startFilling();
-  await expect.poll(fillStatus, { timeout: 60_000 }).toMatch(/Finished|Stopped/);
+  try {
+    await expect.poll(fillStatus, { timeout: 60_000 }).toMatch(/Finished|Stopped/);
+  } catch (error) {
+    console.info('Fill steps when it stopped:', await panel.locator('#fill-steps').innerText(), '\nDecision:', await panel.locator('#fill-decision').innerText().catch(() => ''));
+    throw error;
+  }
   return (await fillStatus()) ?? '';
 }
 
@@ -279,6 +285,11 @@ describe('OakCloud Filing Assistant', () => {
     await tab('Learn');
     panel.once('dialog', (dialog) => dialog.accept());
     await panel.getByRole('button', { name: 'Explore with test data' }).click();
+    // It pauses at the ID number and asks for a real NRIC or FIN; this time staff skip it.
+    const ask = panel.locator('#learn-explore-ask');
+    await ask.waitFor({ state: 'visible', timeout: 200_000 });
+    expect(await ask.textContent()).toContain('"Identification number" needs a real NRIC or FIN number');
+    await ask.getByRole('button', { name: 'Skip this field' }).click();
     await expect.poll(() => panel.locator('#learn-status').textContent(), { timeout: 300_000 }).toMatch(/The AI mapped \d+ of \d+ fields/);
 
     const found = (await panel.locator('#learn-explore-result').textContent()) ?? '';
@@ -295,6 +306,50 @@ describe('OakCloud Filing Assistant', () => {
     // Nothing typed is left behind; no NRIC or FIN number was ever typed; Retrieve was never pressed.
     const state = await formState();
     expect(state.card).toMatchObject({ nricTyped: false, retrieved: false, postalCode: '', email: '', name: '', appointmentDate: '' });
+    expect(state.clicks).toEqual({ back: 0, save: 0, review: 0 });
+    await panel.getByRole('button', { name: 'Discard' }).click();
+  }, 340_000);
+
+  it('asks staff for a real NRIC to explore past it, presses Retrieve only when allowed, and keeps the number from AI and storage', async () => {
+    await openScreen();
+    await tab('Learn');
+    panel.once('dialog', (dialog) => dialog.accept());
+    await panel.getByRole('button', { name: 'Explore with test data' }).click();
+    const ask = panel.locator('#learn-explore-ask');
+    await ask.waitFor({ state: 'visible', timeout: 200_000 });
+    expect(await ask.locator('#learn-ask-type option').allTextContents()).toEqual(['NRIC (Citizen)', 'NRIC (PR)', 'FIN']);
+    await ask.locator('#learn-ask-type').selectOption('NRIC (Citizen)');
+    // A number that is not in the filing details, so any trace of it could only come from the prompt.
+    await ask.locator('#learn-ask-value').fill('S7654321A');
+    await ask.locator('#learn-ask-retrieve').check();
+    await ask.getByRole('button', { name: 'Continue' }).click();
+    await expect.poll(() => panel.locator('#learn-status').textContent(), { timeout: 300_000 }).toMatch(/The AI mapped \d+ of \d+ fields/);
+
+    expect(await panel.locator('#learn-explore-result').textContent()).toMatch(/"Identification number" filled in shows Date of birth/);
+    const request = aiRequests.filter((item) => item.task === 'map-screen').at(-1);
+    expect(JSON.stringify(request)).not.toMatch(PERSONAL);
+    expect(JSON.stringify(aiRequests)).not.toContain('S7654321A');
+    const field = (label: string) => request.snapshot.fields.find((item: Json) => item.label === label);
+    expect(field('Date of birth').shownWhen).toEqual(
+      expect.arrayContaining([
+        { ref: field('Select identification type').ref, option: 'NRIC (Citizen)' },
+        { ref: field('Identification number').ref, option: '(when filled)' },
+      ]),
+    );
+    expect(request.snapshot.actions).toEqual(expect.arrayContaining([expect.objectContaining({ label: 'Retrieve information', lookup: true, after: field('Identification number').ref })]));
+    const proposal = (await panel.locator('#learn-proposal').textContent()) ?? '';
+    expect(proposal).toContain('Click "Retrieve information" once, at this point');
+    expect(proposal).toContain('Identification number is filled in');
+
+    // The number went into the Bizfile field only: not into storage or anything exported.
+    const stored = await panel.evaluate(async () => {
+      const storage = (globalThis as Json).chrome.storage;
+      return JSON.stringify([await storage.local.get(null), await storage.session.get(null)]);
+    });
+    expect(stored).not.toContain('S7654321A');
+    expect(await panel.locator('#learn-explore-result').textContent()).not.toContain('S7654321A');
+    const state = await formState();
+    expect(state.card).toMatchObject({ retrieved: true, idNumber: '' });
     expect(state.clicks).toEqual({ back: 0, save: 0, review: 0 });
     await panel.getByRole('button', { name: 'Discard' }).click();
   }, 340_000);

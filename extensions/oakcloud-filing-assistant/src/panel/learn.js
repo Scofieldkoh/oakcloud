@@ -350,6 +350,7 @@
   /** Reveal buttons that brought fields which ended up mapped become action steps. */
   function revealSteps(result, mappedRefs, keyOf) {
     return result.model.actions
+      .filter((action) => !action.lookup)
       .map((action) => {
         const firstMapped = (action.reveals || []).find((ref) => mappedRefs.has(ref));
         return firstMapped ? { ref: action.ref, firstMapped } : null;
@@ -374,9 +375,11 @@
     } catch (error) {
       P.say('learn-status', error.message, 'bad');
       exploreButtons(false);
+      hideAsk();
       return;
     }
     exploreButtons(false);
+    hideAsk();
     renderExploration(result);
     if (!result.model.fields.length) {
       P.say('learn-status', 'No fields found on this screen.', 'bad');
@@ -397,7 +400,7 @@
     const mappedRefs = new Set(fillSteps.map((step) => step.ref));
     const keyOf = (ref) => (fillSteps.find((step) => step.ref === ref) || {}).key;
     const reveals = revealSteps(result, mappedRefs, keyOf);
-    const refs = [...reveals.map((item) => item.ref), ...result.model.fields.map((field) => field.ref)];
+    const refs = [...reveals.map((item) => item.ref), ...result.model.actions.filter((action) => action.lookup).map((action) => action.ref), ...result.model.fields.map((field) => field.ref)];
     const { locators } = await P.send({ type: 'oak-filing:locators-for-refs', snapshotId: result.snapshotId, refs });
     const order = (ref) => Number(String(ref).slice(1));
 
@@ -423,6 +426,14 @@
         })),
     ];
     const usedKeys = new Set(fillSteps.map((step) => step.key));
+    // Retrieve information pressed while exploring: a one-off step straight after the ID number.
+    result.model.actions
+      .filter((action) => action.lookup && action.after && locators[action.ref])
+      .forEach((action) => {
+        const at = items.findIndex((item) => item.ref === action.after);
+        if (at < 0) return;
+        items.splice(at + 1, 0, { include: true, ref: null, note: 'Pressed while exploring, with the number you gave.', step: { type: 'action', label: action.label, locator: locators[action.ref], always: true } });
+      });
     const unmapped = result.model.fields
       .filter((field) => !mappedRefs.has(field.ref) && locators[field.ref])
       .map((field) => {
@@ -449,11 +460,74 @@
   }
 
   async function stopExploring() {
+    hideAsk();
     await P.send({ type: 'oak-filing:explore-stop' }).catch(() => {});
   }
 
+  // ---- Asking staff for an NRIC or FIN while exploring ----------------------------------------
+
+  function hideAsk() {
+    const box = P.$('learn-explore-ask');
+    box.hidden = true;
+    box.replaceChildren();
+  }
+
+  /**
+   * Exploring reached an ID-number field. A made-up NRIC or FIN may be a real person's, so staff
+   * give a number they may use. It goes only into the Bizfile field: it is not saved, exported or
+   * sent to OakCloud or its AI, and it is masked wherever else it might appear.
+   */
+  function renderAsk(question) {
+    const box = P.$('learn-explore-ask');
+    const answer = async (reply) => {
+      const value = reply.value ? reply.value : '';
+      if (value) P.rememberSensitive(value);
+      hideAsk();
+      P.say('learn-status', reply.stop ? 'Stopping…' : reply.skip ? 'Skipped. Exploring continues…' : 'Exploring continues with the number you gave…');
+      await P.send({ type: 'oak-filing:explore-answer', askId: question.askId, answer: reply }).catch((error) => P.say('learn-status', error.message, 'bad'));
+    };
+    const typeSelect = question.idTypes && question.idTypes.length ? h('select', { id: 'learn-ask-type' }, question.idTypes.map((option) => h('option', { value: option }, option))) : null;
+    const input = h('input', { id: 'learn-ask-value', type: 'text', autocomplete: 'off', spellcheck: 'false', placeholder: 'NRIC or FIN number' });
+    const retrieve = question.retrieve ? h('input', { type: 'checkbox', id: 'learn-ask-retrieve' }) : null;
+    box.replaceChildren(
+      h('p', null, h('strong', null, 'Exploring paused: "' + question.field + '" needs a real NRIC or FIN number.')),
+      h('p', { className: 'muted small' }, 'A made-up number may belong to a real person, so enter one you are allowed to use (for example the appointee’s). It is typed into Bizfile only: never saved, exported or sent to OakCloud or its AI.'),
+      typeSelect ? h('label', { for: 'learn-ask-type' }, 'Identification type', typeSelect) : null,
+      h('label', { for: 'learn-ask-value' }, 'Number', input),
+      retrieve ? h('label', { className: 'check' }, retrieve, 'Also press "Retrieve information" to see what Bizfile fills in (looks up this person’s particulars)') : null,
+      h(
+        'div',
+        { className: 'row' },
+        h(
+          'button',
+          {
+            type: 'button',
+            id: 'learn-ask-continue',
+            onclick: () => {
+              const value = input.value.trim();
+              if (!value) {
+                input.focus();
+                return;
+              }
+              input.value = '';
+              answer({ value, idType: typeSelect ? typeSelect.value : null, retrieve: Boolean(retrieve && retrieve.checked) });
+            },
+          },
+          'Continue',
+        ),
+        h('button', { type: 'button', className: 'quiet', onclick: () => answer({ skip: true }) }, 'Skip this field'),
+        h('button', { type: 'button', className: 'quiet', onclick: () => answer({ stop: true }) }, 'Stop exploring'),
+      ),
+    );
+    box.hidden = false;
+    P.say('learn-status', 'Waiting for you (see below).');
+    input.focus();
+  }
+
   chrome.runtime.onMessage.addListener((message) => {
-    if (message && message.type === 'oak-filing:explore-progress' && exploring) P.say('learn-status', 'Exploring… ' + message.text);
+    if (!message || !exploring) return;
+    if (message.type === 'oak-filing:explore-progress') P.say('learn-status', 'Exploring… ' + message.text);
+    if (message.type === 'oak-filing:explore-ask') renderAsk(message);
   });
 
   // ---- Learning with AI ---------------------------------------------------------------------

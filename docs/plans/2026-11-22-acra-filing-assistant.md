@@ -107,7 +107,20 @@ Two rules never change:
 - **It never types an NRIC or FIN number.** An ID-number field is typed into (`TESTP1234567`) only while Passport is chosen.
 - **It never presses Retrieve information.** Any well-formed NRIC or FIN may belong to a real person, and a lookup would fetch that person's particulars.
 
-To map what appears after Retrieve, staff run a real appointment to that point and then explore from there; exploring always starts from the screen as it is. Test data goes into the Bizfile draft, so staff explore a test filing and delete the draft afterwards. The budget with test data is 160 tries and 5 minutes.
+**NRIC and FIN numbers come from staff.** When test-data exploring reaches an ID-number field, it pauses once and asks in the side panel. Staff choose the identification type (from the screen's non-Passport options), enter a real number they may use (for example the appointee's), and tick whether to also press Retrieve information (unticked by default). They can also skip the field or stop exploring.
+
+The explorer then:
+1. chooses that type and types the number;
+2. presses Retrieve only if allowed;
+3. explores what appears. Fields revealed this way get the conditions *ID type = that option* and *ID number filled in*, and keep them even though Retrieve cannot be undone. Retrieve becomes a one-off step straight after the ID number.
+4. clears the number and restores the ID type.
+
+**Where the number goes.** It travels only from the side panel to the content script and into the Bizfile field.
+- It is never written to browser storage, never part of the screen model or the exploration export, and never sent to OakCloud or its AI.
+- The panel keeps it in memory for the session only, to mask it as `[detail]` if Bizfile echoes it anywhere that is sent or exported.
+- Time spent waiting for staff does not count against the 5-minute budget, and the question gives up after 15 minutes.
+
+Without an answer, the path behind Retrieve can still be mapped: run a real appointment to that point and explore from there. Exploring always starts from the screen as it is. Test data goes into the Bizfile draft, so staff explore a test filing and delete the draft afterwards. The budget with test data is 160 tries and 5 minutes.
 
 **Options when exploring.** Exploring reads a dropdown's options from the menu that appeared, one element per option (grouped by list item, option, row or button). A container holding every option is never read as one option. Exploring never types into a field.
 
@@ -206,7 +219,8 @@ The extension never holds AI keys and never calls OakCloud with its own credenti
   - radios with two labels each, and plain dropdowns whose menus nest rows inside a scroll area (options read one by one, nothing typed while exploring);
   - Identification type branches (Passport shows Nationality);
   - learning Retrieve information, then checking the locked name it fills, both when it matches and when it does not;
-  - exploring with test data. A typed postal code reveals the address fields ("when filled"), Nationality suggestions are sampled, and the accepted date format is learned. No ID number is ever typed while NRIC or FIN (or nothing) is chosen, Retrieve is never pressed, and every typed value is cleared.
+  - exploring with test data. A typed postal code reveals the address fields ("when filled"), Nationality suggestions are sampled, and the accepted date format is learned. Asked for an NRIC, staff skip it: no ID number is typed while NRIC or FIN (or nothing) is chosen, Retrieve is never pressed, and every typed value is cleared;
+  - asked for an NRIC, staff give one and allow Retrieve. The locked Date of birth it reveals is mapped with its conditions, and Retrieve becomes a step after the ID number. The number appears in no AI request, no browser storage and no exploration result.
 
   The Diagnose suite also checks that the dropdown inspector reports the opening handler and the menu without capturing values.
 - The stand-in reproduces Bizfile patterns, not Bizfile. Run the Learn and Fill flow once on live Bizfile with a test company before relying on it.

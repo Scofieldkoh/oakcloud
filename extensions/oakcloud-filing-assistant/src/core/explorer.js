@@ -14,6 +14,10 @@
  * chosen, since any well-formed NRIC or FIN may belong to a real person), skips anything named like
  * a declaration, stops when staff touch the page or the page navigates, and puts original choices
  * back. It changes an unsaved draft, so staff explore a test filing and delete the draft after.
+ *
+ * To explore past an NRIC or FIN field, it pauses once and asks staff (through askForValue) for a
+ * real number they may use, its ID type, and whether to press Retrieve information. The number is
+ * typed into the page and cleared afterwards; it is not kept, and it never enters the screen model.
  * Defines globalThis.OakExplorer; needs OakDom and OakLocator.
  */
 (function (root) {
@@ -187,10 +191,18 @@
    * The obviously fake value to type into a field, or null when it must not be typed into.
    * ID numbers are typed only when Passport is chosen: a made-up NRIC or FIN may be a real person's.
    */
+  function isSensitiveField(el, locator) {
+    return SENSITIVE_ID.test(locator.label || '') || SENSITIVE_ID.test(el.getAttribute('placeholder') || '');
+  }
+
+  function retrieveButton(doc) {
+    return D.deepQueryAll(doc, D.ACTION_SELECTOR).find((button) => D.isVisible(button) && /^retrieve\b/i.test(D.actionLabel(button))) || null;
+  }
+
   function testValueFor(doc, el, locator, values) {
     if (locator.kind === 'date') return { date: todayIso() };
     const text = fieldText(el, locator);
-    if (SENSITIVE_ID.test(locator.label || '') || SENSITIVE_ID.test(el.getAttribute('placeholder') || '')) {
+    if (isSensitiveField(el, locator)) {
       return passportChosen(doc) ? { text: 'TESTP1234567' } : null;
     }
     if (/e-?mail/i.test(text)) return { text: 'filing-assistant-test@example.com' };
@@ -267,6 +279,8 @@
     const originals = new Map(); // control identity -> the option chosen before exploring
     let tests = 0;
     let stoppedBecause = null;
+    let waitedMs = 0; // time spent waiting for staff to answer does not count against the budget
+    let sensitiveAsked = false;
     const progress = settings.onProgress || (() => {});
 
     const stop = () => {
@@ -274,7 +288,7 @@
       if (settings.shouldStop && settings.shouldStop()) stoppedBecause = 'You used the page, so exploring stopped.';
       else if (doc.location && doc.location.href !== startUrl) stoppedBecause = 'The page changed, so exploring stopped.';
       else if (tests >= settings.maxTests) stoppedBecause = 'Reached the limit of ' + settings.maxTests + ' tries.';
-      else if (Date.now() - started > settings.maxMs) stoppedBecause = 'Reached the time limit.';
+      else if (Date.now() - started - waitedMs > settings.maxMs) stoppedBecause = 'Reached the time limit.';
       return Boolean(stoppedBecause);
     };
 
@@ -285,7 +299,9 @@
       for (const [id, entry] of fields) {
         const record = catalog.get(id);
         if (record) {
-          record.shownWhen = record.shownWhen.filter((condition) => conditions.some((other) => sameCondition(condition, other)));
+          // Fields a lookup revealed stay on screen afterwards (a Retrieve cannot be undone), so later
+          // sightings say nothing about when they appear: keep their conditions as recorded.
+          if (!record.pinned) record.shownWhen = record.shownWhen.filter((condition) => conditions.some((other) => sameCondition(condition, other)));
           continue;
         }
         catalog.set(id, { ref: 'f' + (catalog.size + 1), id, locator: entry.locator, shownWhen: conditions.slice(), options: null, format: null, hint: '' });
@@ -364,9 +380,14 @@
       const typable = Array.from(present.entries()).filter(([id, entry]) => (!onlyIds || onlyIds.includes(id)) && TYPED_KINDS.has(entry.locator.kind) && !conditions.some((condition) => condition.id === id));
       for (const [id, entry] of typable) {
         if (stop()) return;
-        const found = L.resolve(doc, entry.locator);
-        const el = found.el;
+        let el = L.resolve(doc, entry.locator).el;
         if (!el || D.blockReason(el) || el.readOnly || el.disabled || D.readState(el).value) continue;
+        if (isSensitiveField(el, entry.locator)) {
+          await exploreWithStaffNumber(id, entry, conditions, depth, present);
+          if (stop()) return;
+          el = L.resolve(doc, entry.locator).el;
+          if (!el || D.readState(el).value) continue;
+        }
         const value = testValueFor(doc, el, entry.locator, settings.testValues || {});
         const label = entry.locator.label || entry.locator.candidates[0].value;
         const record = catalog.get(id);
@@ -406,6 +427,73 @@
       }
     }
 
+    /**
+     * Asks staff, once per exploration, for a real NRIC or FIN they may use, so the path behind the
+     * ID number (and Retrieve information, if they allow it) can be explored too.
+     */
+    async function exploreWithStaffNumber(idId, idEntry, conditions, depth, present) {
+      if (sensitiveAsked || !settings.askForValue) return;
+      sensitiveAsked = true;
+      const label = idEntry.locator.label || 'Identification number';
+      const typeEntry = Array.from(present.entries()).find(
+        ([, entry]) => CHOICE.has(entry.locator.kind) && /identification type|id type|document type/i.test([entry.locator.label, entry.locator.group, (entry.locator.candidates.find((candidate) => candidate.by === 'placeholder') || {}).value].join(' ')),
+      );
+      const idTypes = typeEntry ? (await optionsOf(doc, typeEntry[1])).filter((option) => !/passport/i.test(option)) : [];
+      progress('Waiting for you: "' + label + '" needs a real NRIC or FIN number.');
+      const askedAt = Date.now();
+      const answer = await settings.askForValue({ field: label, idTypes, retrieve: Boolean(retrieveButton(doc)) });
+      waitedMs += Date.now() - askedAt;
+      if (!answer || answer.stop) {
+        stoppedBecause = stoppedBecause || 'You stopped exploring.';
+        return;
+      }
+      if (answer.skip || !answer.value) return;
+
+      const originalType = typeEntry ? currentChoice(doc, typeEntry[1].locator.kind, typeEntry[1].locator) : null;
+      const before = currentFields(doc);
+      const pathConditions = conditions.slice();
+      try {
+        if (typeEntry && answer.idType) {
+          await choose(doc, typeEntry[1].locator, answer.idType);
+          pathConditions.push({ id: typeEntry[0], option: answer.idType });
+        }
+        const el = L.resolve(doc, idEntry.locator).el;
+        if (!el) return;
+        progress('Typing the number you gave into "' + label + '"…');
+        await typeAndLeave(doc, el, 'text', answer.value);
+        tests++;
+        let lookup = null;
+        const button = answer.retrieve ? retrieveButton(doc) : null;
+        if (button && !button.disabled && button.getAttribute('aria-disabled') !== 'true') {
+          progress('Pressing "' + D.actionLabel(button) + '" as you asked…');
+          lookup = { label: D.actionLabel(button), locator: L.buildActionLocator(button) };
+          D.pointerClick(button);
+          await D.settle(doc, 1200, 15000);
+          tests++;
+        }
+        const after = currentFields(doc);
+        const shown = Array.from(after.keys()).filter((key) => !before.has(key));
+        const hidden = Array.from(before.keys()).filter((key) => !after.has(key));
+        const branchConditions = [...pathConditions, { id: idId, option: FILLED }];
+        remember(after, branchConditions);
+        if (lookup) shown.forEach((key) => catalog.get(key) && (catalog.get(key).pinned = true));
+        branches.push({ control: idId, option: FILLED, shown, hidden, staffValue: true });
+        if (lookup) actions.push({ ...lookup, reveals: shown, after: idId, lookup: true });
+        if (shown.length && depth + 1 < settings.maxDepth) await visit(shown, branchConditions, depth + 1);
+      } catch (error) {
+        branches.push({ control: idId, option: FILLED, error: String(error.message || error).slice(0, 160) });
+      } finally {
+        await clearField(doc, idEntry.locator);
+        if (typeEntry && originalType && !stoppedBecause) {
+          try {
+            await choose(doc, typeEntry[1].locator, originalType);
+          } catch {
+            // Restoring is best effort; the draft is deleted afterwards.
+          }
+        }
+      }
+    }
+
     await visit(null, [], 0);
 
     // 3. A field present from the start but hidden by some options appears only with the original choice.
@@ -442,7 +530,14 @@
     const actionsModel = actions.map((action, index) => {
       const ref = 'a' + (index + 1);
       locators[ref] = action.locator;
-      return { ref, label: action.label, section: action.locator.section, allowed: true, reveals: action.reveals.map(refOf).filter(Boolean) };
+      return {
+        ref,
+        label: action.label,
+        section: action.locator.section,
+        allowed: true,
+        reveals: action.reveals.map(refOf).filter(Boolean),
+        ...(action.lookup ? { lookup: true, after: refOf(action.after) } : {}),
+      };
     });
     const model = {
       path: doc.location ? doc.location.pathname : '',
@@ -458,7 +553,7 @@
       hidden: (branch.hidden || []).map(refOf).filter(Boolean),
       ...(branch.error ? { error: branch.error } : {}),
     }));
-    return { model, locators, branches: branchSummary, stats: { tests, ms: Date.now() - started, stoppedBecause } };
+    return { model, locators, branches: branchSummary, stats: { tests, ms: Date.now() - started - waitedMs, stoppedBecause } };
   }
 
   root.OakExplorer = { explore, DEFAULTS, FILLED, testValueFor };

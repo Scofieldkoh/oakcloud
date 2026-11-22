@@ -70,7 +70,18 @@ const snapshotSchema = z.object({
   headings: z.array(text(200)).max(40),
   fields: z.array(snapshotFieldSchema).max(300),
   actions: z
-    .array(z.object({ ref: actionRef, label: text(120), section: text(200).optional(), allowed: z.boolean(), reveals: z.array(fieldRef).max(200).optional() }))
+    .array(
+      z.object({
+        ref: actionRef,
+        label: text(120),
+        section: text(200).optional(),
+        allowed: z.boolean(),
+        reveals: z.array(fieldRef).max(200).optional(),
+        /** A lookup such as Retrieve information, pressed after the field "after" was filled. */
+        lookup: z.boolean().optional(),
+        after: fieldRef.optional(),
+      }),
+    )
     .max(60),
 });
 

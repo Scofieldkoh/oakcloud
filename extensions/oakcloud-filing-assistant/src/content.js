@@ -433,11 +433,31 @@
   /** Staff clicking or typing on the page during a run pauses it. The assistant's own events are not trusted, so they never count. */
   let exploring = false;
   let exploreAbort = false;
+  let pendingAsk = null;
+
+  /**
+   * Asks the side panel for a value staff must give (a real NRIC or FIN) and waits for the answer.
+   * The value only ever travels panel → this script → the page field; nothing here keeps it.
+   */
+  function askPanel(question) {
+    return new Promise((resolve) => {
+      const askId = 'ask-' + Date.now();
+      const finish = (answer) => {
+        clearTimeout(timer);
+        pendingAsk = null;
+        resolve(answer);
+      };
+      const timer = setTimeout(() => finish({ skip: true }), 15 * 60 * 1000);
+      pendingAsk = { askId, finish };
+      send({ type: 'oak-filing:explore-ask', askId, ...question });
+    });
+  }
 
   function onUserActivity(event) {
     if (!event.isTrusted) return;
     if (exploring) {
       exploreAbort = true;
+      if (pendingAsk) pendingAsk.finish({ stop: true });
       return;
     }
     if (!watchingRun) return;
@@ -503,6 +523,7 @@
           ...(message.limits || {}),
           testData: Boolean(message.testData),
           testValues: message.testValues || {},
+          askForValue: message.testData ? askPanel : null,
           shouldStop: () => exploreAbort,
           onProgress: (text) => send({ type: 'oak-filing:explore-progress', text }),
         });
@@ -516,6 +537,12 @@
     },
     'oak-filing:explore-stop': () => {
       exploreAbort = true;
+      if (pendingAsk) pendingAsk.finish({ stop: true });
+      return { ok: true };
+    },
+    'oak-filing:explore-answer': (message) => {
+      if (!pendingAsk || pendingAsk.askId !== message.askId) return { ok: false, error: 'Exploring is no longer waiting for that answer.' };
+      pendingAsk.finish(message.answer || { skip: true });
       return { ok: true };
     },
   };
