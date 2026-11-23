@@ -133,6 +133,12 @@ export function mapCsvRow(row: Record<string, string>): MappedAcraRow | null {
   if (!isAllowedEntityType(entityType)) return null;
   if (isDeadEntityStatus(entityStatus)) return null;
 
+  // Fail the import if ACRA changes its header instead of silently saving
+  // blank dates for every company in the snapshot.
+  if (!Object.hasOwn(row, 'registration_incorporation_date')) {
+    throw new Error('ACRA CSV is missing required registration_incorporation_date column');
+  }
+
   const block = trimmed(row.block, MAX_CODE_LENGTH);
   const streetName = trimmed(row.street_name, MAX_ADDRESS_PART_LENGTH);
   const levelNo = trimmed(row.level_no, MAX_CODE_LENGTH);
@@ -150,7 +156,7 @@ export function mapCsvRow(row: Record<string, string>): MappedAcraRow | null {
       MAX_CONSTITUTION_LENGTH
     ),
     registrationIncorporateDate: normalizeCsvDate(
-      trimmed(row.registration_incorporate_date, MAX_DATE_LENGTH)
+      trimmed(row.registration_incorporation_date, MAX_DATE_LENGTH)
     ),
     block,
     streetName,

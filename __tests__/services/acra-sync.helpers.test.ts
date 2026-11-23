@@ -15,7 +15,7 @@ function csvRow(overrides: Record<string, string> = {}): Record<string, string> 
     entity_status_description: 'Live Company',
     entity_type_description: 'Local Company',
     company_type_description: 'EXEMPT PRIVATE COMPANY LIMITED BY SHARES',
-    registration_incorporate_date: '04/05/2019',
+    registration_incorporation_date: '04/05/2019',
     block: '123',
     street_name: 'MAIN STREET',
     level_no: '05',
@@ -62,6 +62,29 @@ describe('mapCsvRow', () => {
       formerEntityName1: 'OLD ACME PTE. LTD.',
       uenOfAuditFirm1: 'T08LL0001A',
     });
+  });
+
+  it('reads the official ACRA incorporation date header in ISO format', () => {
+    const result = mapCsvRow(csvRow({
+      registration_incorporation_date: '2026-11-16',
+      registration_incorporate_date: '1900-01-01',
+    }));
+
+    expect(result?.registrationIncorporateDate).toBe('2026-11-16');
+  });
+
+  it('rejects a missing incorporation date header instead of storing blank dates', () => {
+    const row = csvRow({ registration_incorporate_date: '2019-05-04' });
+    delete row.registration_incorporation_date;
+
+    expect(() => mapCsvRow(row)).toThrow(
+      'ACRA CSV is missing required registration_incorporation_date column'
+    );
+  });
+
+  it('allows an empty incorporation date when the official column exists', () => {
+    const result = mapCsvRow(csvRow({ registration_incorporation_date: '' }));
+    expect(result?.registrationIncorporateDate).toBe('');
   });
 
   it('derives the address from the address parts', () => {

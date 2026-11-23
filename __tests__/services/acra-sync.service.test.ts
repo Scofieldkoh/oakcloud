@@ -75,11 +75,11 @@ const OLD_DATE = '2026-07-12T02:03:04+08:00';
 const NEW_DATE = '2026-08-14T14:07:42+08:00';
 
 const CSV_FIXTURE = [
-  'uen,entity_name,entity_status_description,entity_type_description,issuance_agency_id',
-  '201904999E,ACME HOLDINGS PTE. LTD.,Live Company,Local Company,UEN',
-  '202000001A,BETA ENTERPRISES,Struck Off,Local Company,UEN',
-  '202000002B,GAMMA PTE. LTD.,Live Company,Business,UEN',
-  '202000003C,DELTA CONSULTING PTE. LTD.,Live Company,Foreign Company,UEN',
+  'uen,entity_name,entity_status_description,entity_type_description,issuance_agency_id,registration_incorporation_date',
+  '201904999E,ACME HOLDINGS PTE. LTD.,Live Company,Local Company,UEN,2019-05-04',
+  '202000001A,BETA ENTERPRISES,Struck Off,Local Company,UEN,2020-01-01',
+  '202000002B,GAMMA PTE. LTD.,Live Company,Business,UEN,2020-01-02',
+  '202000003C,DELTA CONSULTING PTE. LTD.,Live Company,Foreign Company,UEN,2020-01-03',
 ].join('\n');
 
 function jsonResponse(body: unknown, status = 200): Response {
@@ -194,6 +194,8 @@ describe('acra-sync.service', () => {
       // The filtered rows are bound as unnest arrays
       const values = lastUpsertValues();
       expect(values).toContain('201904999E');
+      expect(values).toContain('2019-05-04');
+      expect(values).toContain('2020-01-03');
       expect(values).toContain('202000003C');
       expect(values).not.toContain('202000001A');
       expect(values).not.toContain('202000002B');
