@@ -315,8 +315,9 @@ const server = http.createServer(async (req, res) => {
       if (browser && browser.isConnected()) {
         res.writeHead(200, {'Content-Type':'text/plain'}).end('Browser already running. Switch to the Chromium window.');
       } else {
-        browser = await chromium.launch({headless:false});
-        const page = await browser.newPage();
+        browser = await chromium.launch({headless:false, args:['--start-maximized']});
+        // viewport:null lets the page follow the window size instead of Playwright's fixed 1280x720.
+        const page = await (await browser.newContext({viewport:null})).newPage();
         activePage = page;
         await page.goto(TARGET, {waitUntil:'domcontentloaded',timeout:45000});
         res.writeHead(200, {'Content-Type':'text/plain'}).end('ACRA Bizfile browser opened. You may return to this window.');
