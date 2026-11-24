@@ -301,7 +301,7 @@ function DocumentActions({
         </Link>
       )}
 
-      {canEdit && status === 'DRAFT' && onRename && (
+      {canEdit && onRename && (
         <button
           type="button"
           onClick={(event) => { event.stopPropagation(); onRename(documentId); }}
@@ -555,7 +555,7 @@ export function DocumentTable({
                         <Pencil className="w-4 h-4" aria-hidden="true" />
                       </Link>
                     )}
-                    {!isGenerationSession && canEdit && doc.status === 'DRAFT' && onRename && (
+                    {!isGenerationSession && canEdit && onRename && (
                       <button
                         type="button"
                         onClick={(event) => { event.stopPropagation(); onRename(doc.id); }}

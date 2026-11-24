@@ -130,6 +130,29 @@ describe('Document generator service', () => {
     vi.mocked(resolveDocumentPartySelections).mockResolvedValue({});
   });
 
+  it.each(['DRAFT', 'FINALIZED', 'ARCHIVED'])('renames a %s document without altering contents or status', async (status) => {
+    const params = { tenantId: 'workspace-1', userId: 'user-1' };
+    vi.mocked(prisma.generatedDocument.findFirst).mockResolvedValue({
+      id: 'doc-1', tenantId: params.tenantId, title: 'Old title', status,
+    } as never);
+    await updateGeneratedDocument({ id: 'doc-1', title: 'New title', expectedRevision: 0 }, params);
+    expect(prisma.generatedDocument.findFirst).toHaveBeenCalledWith({
+      where: { id: 'doc-1', tenantId: params.tenantId, deletedAt: null },
+    });
+    expect(prisma.generatedDocument.update).toHaveBeenCalledWith({
+      where: { id: 'doc-1' }, data: { title: 'New title' },
+    });
+  });
+
+  it.each(['FINALIZED', 'ARCHIVED'])('still rejects content or metadata updates to a %s document', async (status) => {
+    const params = { tenantId: 'workspace-1', userId: 'user-1' };
+    vi.mocked(prisma.generatedDocument.findFirst).mockResolvedValue({ id: 'doc-1', status } as never);
+    for (const extra of [{ content: 'Changed' }, { contentJson: null }, { metadata: {} }, { useLetterhead: false }]) {
+      await expect(updateGeneratedDocument({ id: 'doc-1', title: 'New title', ...extra }, params)).rejects.toThrow();
+    }
+    expect(prisma.generatedDocument.update).not.toHaveBeenCalled();
+  });
+
   it('loads live linked envelope summaries with document details', async () => {
     vi.mocked(prisma.generatedDocument.findFirst).mockResolvedValue(null);
 

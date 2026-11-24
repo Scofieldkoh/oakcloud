@@ -624,12 +624,18 @@ export async function updateGeneratedDocument(
     where: { id: data.id, tenantId, deletedAt: null },
   });
   if (!existing) throw new NotFoundError('Document not found');
-  if (existing.status === 'FINALIZED' || existing.status === 'ARCHIVED') {
+  // Title-only updates are administrative metadata changes, not content edits.
+  const isRenameOnly = data.title !== undefined
+    && data.content === undefined
+    && data.contentJson === undefined
+    && data.useLetterhead === undefined
+    && data.metadata === undefined;
+  if (!isRenameOnly && (existing.status === 'FINALIZED' || existing.status === 'ARCHIVED')) {
     throw generatedDocumentStateConflict();
   }
 
-  const engine = readGeneratedDocumentEngineState(existing.metadata);
   if (data.content !== undefined || data.contentJson !== undefined) {
+    const engine = readGeneratedDocumentEngineState(existing.metadata);
     if (engine === 'A4') rejectRetiredA4Operation('document-edit');
     throw new ValidationError('OakDoc document content is saved from the Word editor, not as HTML');
   }
@@ -667,7 +673,7 @@ export async function updateGeneratedDocument(
       id: data.id,
       tenantId,
       expectedRevision: data.expectedRevision,
-      allowedStatuses: ['DRAFT'],
+      allowedStatuses: isRenameOnly ? ['DRAFT', 'FINALIZED', 'ARCHIVED'] : ['DRAFT'],
     });
     const updated = await tx.generatedDocument.update({ where: { id: data.id }, data: updateData });
     return withRevision(updated, claim.revision);
