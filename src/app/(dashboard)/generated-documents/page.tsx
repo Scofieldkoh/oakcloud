@@ -16,6 +16,8 @@ import {
   FileText,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
+import { FormInput } from '@/components/ui/form-input';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { DocumentDeleteDialog } from '@/components/documents/document-delete-dialog';
 import { useToast } from '@/components/ui/toast';
@@ -178,6 +180,10 @@ export default function GeneratedDocumentsPage() {
   const [total, setTotal] = useState(() => initialListSnapshot?.total ?? 0);
   const [isLoading, setIsLoading] = useState(() => initialListSnapshot === undefined);
   const [error, setError] = useState<string | null>(null);
+  const [renameTarget, setRenameTarget] = useState<GeneratedDocument | null>(null);
+  const [renameTitle, setRenameTitle] = useState('');
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [renameError, setRenameError] = useState('');
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [documentToDelete, setDocumentToDelete] = useState<string | null>(null);
   const [draftToDiscard, setDraftToDiscard] = useState<string | null>(null);
@@ -332,6 +338,32 @@ export default function GeneratedDocumentsPage() {
         : { ...previous, updatedFrom: today, updatedTo: today, page: 1 };
     });
   }, [today, setListParams]);
+
+  const handleRename = async () => {
+    if (!renameTarget || isRenaming || !canUpdate) return;
+    const title = renameTitle.trim();
+    if (!title || title.length > 300 || title === renameTarget.title) return;
+    setIsRenaming(true);
+    setRenameError('');
+    try {
+      const response = await fetch(`/api/generated-documents/${encodeURIComponent(renameTarget.id)}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, expectedRevision: renameTarget.revision }),
+      });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || 'Failed to rename document');
+      }
+      setRenameTarget(null);
+      success('Document renamed');
+      void fetchDocuments();
+    } catch (err) {
+      setRenameError(err instanceof Error ? err.message : 'Failed to rename document');
+    } finally {
+      setIsRenaming(false);
+    }
+  };
 
   // Handle delete
   const handleDelete = async (reason: string) => {
@@ -737,6 +769,13 @@ export default function GeneratedDocumentsPage() {
           }}
           onExport={handleExport}
           onDiscardDraft={setDraftToDiscard}
+          onRename={(id) => {
+            const target = documents.find((doc) => doc.id === id);
+            if (!target) return;
+            setRenameTitle(target.title);
+            setRenameError('');
+            setRenameTarget(target);
+          }}
           isLoading={isLoading}
           canEdit={canUpdate}
           canDelete={canDelete}
@@ -781,6 +820,34 @@ export default function GeneratedDocumentsPage() {
           />
         </div>
       )}
+
+      <Modal
+        isOpen={renameTarget !== null}
+        onClose={() => { if (!isRenaming) setRenameTarget(null); }}
+        title="Rename document"
+        size="sm"
+        closeOnEscape={!isRenaming}
+        closeOnOverlayClick={!isRenaming}
+        showCloseButton={!isRenaming}
+      >
+        <form onSubmit={(event) => { event.preventDefault(); void handleRename(); }}>
+          <ModalBody>
+            <FormInput
+              label="Document title"
+              value={renameTitle}
+              onChange={(event) => { setRenameTitle(event.target.value); setRenameError(''); }}
+              maxLength={300}
+              required
+              disabled={isRenaming}
+              error={renameError || undefined}
+            />
+          </ModalBody>
+          <ModalFooter>
+            <Button type="button" variant="secondary" disabled={isRenaming} onClick={() => setRenameTarget(null)}>Cancel</Button>
+            <Button type="submit" isLoading={isRenaming} disabled={!renameTitle.trim() || renameTitle.trim() === renameTarget?.title}>Save name</Button>
+          </ModalFooter>
+        </form>
+      </Modal>
 
       {/* Delete confirmation dialog */}
       <DocumentDeleteDialog

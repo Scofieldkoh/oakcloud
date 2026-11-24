@@ -13,6 +13,7 @@ import {
   FileText,
   Eye,
   Pencil,
+  TextCursorInput,
   Trash2,
   Download,
   Clock,
@@ -71,6 +72,7 @@ export interface GeneratedDocumentFilters {
 export interface GeneratedDocument {
   id: string;
   title: string;
+  revision?: number;
   status: GeneratedDocumentStatus;
   content: string;
   useLetterhead: boolean;
@@ -106,6 +108,7 @@ interface DocumentTableProps {
   onDelete?: (id: string) => void;
   onExport?: (id: string) => void;
   onDiscardDraft?: (id: string) => void;
+  onRename?: (id: string) => void;
   isLoading?: boolean;
   canEdit?: boolean;
   canDelete?: boolean;
@@ -231,6 +234,7 @@ interface DocumentActionsProps {
   onDelete?: (id: string) => void;
   onExport?: (id: string) => void;
   onDiscardDraft?: (id: string) => void;
+  onRename?: (id: string) => void;
   canEdit?: boolean;
   canDelete?: boolean;
   canExport?: boolean;
@@ -244,6 +248,7 @@ function DocumentActions({
   onDelete,
   onExport,
   onDiscardDraft,
+  onRename,
   canEdit,
   canDelete,
   canExport,
@@ -296,6 +301,18 @@ function DocumentActions({
         </Link>
       )}
 
+      {canEdit && status === 'DRAFT' && onRename && (
+        <button
+          type="button"
+          onClick={(event) => { event.stopPropagation(); onRename(documentId); }}
+          className="inline-flex h-8 w-8 items-center justify-center rounded hover:bg-background-elevated text-text-tertiary hover:text-text-primary transition-colors"
+          aria-label={`Rename ${documentTitle}`}
+          title="Rename document"
+        >
+          <TextCursorInput className="w-4 h-4" aria-hidden="true" />
+        </button>
+      )}
+
       {/* Export PDF */}
       {canExport && (
         <button
@@ -332,6 +349,7 @@ export function DocumentTable({
   onDelete,
   onExport,
   onDiscardDraft,
+  onRename,
   isLoading,
   canEdit = true,
   canDelete = true,
@@ -536,6 +554,17 @@ export function DocumentTable({
                       >
                         <Pencil className="w-4 h-4" aria-hidden="true" />
                       </Link>
+                    )}
+                    {!isGenerationSession && canEdit && doc.status === 'DRAFT' && onRename && (
+                      <button
+                        type="button"
+                        onClick={(event) => { event.stopPropagation(); onRename(doc.id); }}
+                        className="p-2 rounded hover:bg-background-elevated text-text-tertiary hover:text-text-primary transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+                        aria-label={`Rename ${doc.title}`}
+                        title="Rename document"
+                      >
+                        <TextCursorInput className="w-4 h-4" aria-hidden="true" />
+                      </button>
                     )}
                     {!isGenerationSession && canExport && (
                       <button
@@ -803,6 +832,7 @@ export function DocumentTable({
                         onDelete={onDelete}
                         onExport={onExport}
                         onDiscardDraft={onDiscardDraft}
+                        onRename={onRename}
                         canEdit={canEdit}
                         canDelete={canDelete}
                         canExport={canExport}
