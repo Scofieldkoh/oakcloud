@@ -1,5 +1,5 @@
 import { addIsoDateMonths, getRelativeDateOffsetDays } from '@/lib/forms/relative-date';
-import { getMinSelectedChoicesError } from '@/lib/forms/choice-validation';
+import { getMinSelectedChoicesError, getUnavailableChoiceOptionError } from '@/lib/forms/choice-validation';
 import { sanitizePersonShareholdings } from '@/lib/forms/person-shareholdings';
 import { sanitizeAdditionalPositions } from '@/lib/forms/additional-positions';
 /** Validation and sanitising of public form answers and submission metadata. */
@@ -389,10 +389,23 @@ function validateRequiredSelectedChoiceOptions(field: FormField, value: unknown)
   }
 }
 
+/** A row-based value is one per repeat row; a top-level checkbox answer is itself an array of entries. */
+function validateAvailableChoiceOptions(field: FormField, value: unknown, answers: Record<string, unknown>): void {
+  const rowBased = Array.isArray(value) && (field.type !== 'MULTIPLE_CHOICE' || value.some(Array.isArray));
+  const checks: Array<[unknown, Record<string, unknown>]> = rowBased
+    ? (value as unknown[]).map((rowValue, index) => [rowValue, getRowAnswerContext(answers, index)])
+    : [[value, answers]];
+  for (const [checkedValue, context] of checks) {
+    const error = getUnavailableChoiceOptionError(field, checkedValue, context);
+    if (error) throw new Error(error);
+  }
+}
+
 export function validatePublicAnswerConstraints(fields: FormField[], answers: Record<string, unknown>): void {
   for (const field of fields) {
     const value = answers[field.key];
     validateRequiredSelectedChoiceOptions(field, value);
+    validateAvailableChoiceOptions(field, value, answers);
 
     if (Array.isArray(value)) {
       for (const [index, item] of value.entries()) {

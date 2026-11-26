@@ -42,7 +42,7 @@ const required = (answers: Record<string, unknown>) =>
 
 describe('Annual Return v12 simplified audit exemption requirements', () => {
   it('preserves the remaining eligibility checks and uses template v12', () => {
-    expect(SG_ANNUAL_RETURN_DECLARATION_TEMPLATE_VERSION).toBe(12);
+    expect(SG_ANNUAL_RETURN_DECLARATION_TEMPLATE_VERSION).toBe(13);
     expect(saveFormFieldsSchema.safeParse({ fields }).success).toBe(true);
     expect(byKey('fs_small_company_thresholds').validation).toMatchObject({ minSelectedOptions: 2 });
     expect(byKey('fs_small_group_thresholds').validation).toMatchObject({ minSelectedOptions: 2 });

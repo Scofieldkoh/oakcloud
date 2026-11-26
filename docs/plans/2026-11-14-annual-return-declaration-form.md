@@ -213,7 +213,7 @@ Kept, except:
 
 | Key | Type | Label | Notes |
 |-----|------|-------|-------|
-| `exemption_check_fs_circulation` | Single choice | Have the financial statements been sent to all members within five months after the financial year-end? | Private, statements to prepare. Options: "Yes"; "Not yet, but they will be sent within five months" (**new**); "No". |
+| `exemption_check_fs_circulation` | Single choice | Have the financial statements been sent to all members within five months after the financial year-end? | Private, statements to prepare. Options: "Yes", offered only when the statements are ready; "Not yet, but they will be sent within five months" (**new**), offered only while the five months have not passed and the statements are ready or their estimated completion date is within the five months (template version 13); "No". A note explains when only "No" remains. |
 | `date_fs_circulation` | Date | Date the financial statements were sent | If Yes. |
 | `agm_member_request` | Yes/no | Has any member or the auditor asked for an AGM? | Replaces `agm_member_request` and `agm_member_request_2`. Shown when an exemption route is met. |
 | `agm_exemption_msg` | Info | "The company is exempt from holding an AGM for this financial year." For "Not yet": add "provided the financial statements are sent within five months after the financial year-end". | Route met and no request. |

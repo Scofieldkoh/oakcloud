@@ -191,10 +191,32 @@ export const fieldValidationSchema = z
     }
   });
 
+export const DATE_CONDITION_OPERATORS = ['date_before', 'date_on_or_before', 'date_after', 'date_on_or_after'] as const;
+
+/**
+ * A date rule compares the date in `fieldKey`, moved by `offsetMonths` then
+ * `offsetDays`, with the date in `compareFieldKey`, or with `value` ('today'
+ * or YYYY-MM-DD) when no comparison field is given. A missing date never matches.
+ */
 export const fieldConditionRuleSchema = z.object({
   fieldKey: z.string().min(1).max(FORM_FIELD_KEY_MAX_LENGTH),
-  operator: z.enum(['equals', 'not_equals', 'contains', 'is_empty', 'not_empty', 'is_visible', 'is_not_visible']),
+  operator: z.enum(['equals', 'not_equals', 'contains', 'is_empty', 'not_empty', 'is_visible', 'is_not_visible', ...DATE_CONDITION_OPERATORS]),
   value: z.union([z.string(), z.number(), z.boolean()]).optional().nullable(),
+  compareFieldKey: z.string().min(1).max(FORM_FIELD_KEY_MAX_LENGTH).optional(),
+  offsetMonths: z.number().int().min(-120).max(120).optional(),
+  offsetDays: z.number().int().min(-3650).max(3650).optional(),
+}).superRefine((rule, ctx) => {
+  const isDateRule = (DATE_CONDITION_OPERATORS as readonly string[]).includes(rule.operator);
+  if (!isDateRule) {
+    if (rule.compareFieldKey !== undefined || rule.offsetMonths !== undefined || rule.offsetDays !== undefined) {
+      ctx.addIssue({ code: 'custom', message: 'compareFieldKey and offsets apply only to date operators', path: ['operator'] });
+    }
+    return;
+  }
+  if (rule.compareFieldKey === undefined
+    && !(typeof rule.value === 'string' && /^(?:today|\d{4}-\d{2}-\d{2})$/i.test(rule.value.trim()))) {
+    ctx.addIssue({ code: 'custom', message: 'A date condition needs compareFieldKey, or a value of today or YYYY-MM-DD', path: ['value'] });
+  }
 });
 
 export type FieldConditionInput = z.infer<typeof fieldConditionRuleSchema> | {

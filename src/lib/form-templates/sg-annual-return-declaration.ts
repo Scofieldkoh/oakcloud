@@ -1,8 +1,8 @@
-/** Singapore Annual Return Declaration guided form, version 12: simplified audit exemption confirmations. */
+/** Singapore Annual Return Declaration guided form, version 13: circulation answers limited by the five-month deadline. */
 import type { FieldConditionInput, FormFieldInput } from '@/lib/validations/form-builder';
 
 export const SG_ANNUAL_RETURN_DECLARATION_TEMPLATE_KEY = 'sg_annual_return_declaration';
-export const SG_ANNUAL_RETURN_DECLARATION_TEMPLATE_VERSION = 12;
+export const SG_ANNUAL_RETURN_DECLARATION_TEMPLATE_VERSION = 13;
 export const SG_ANNUAL_RETURN_DECLARATION_TITLE = 'Annual Return Declaration';
 
 export const ANNUAL_RETURN_KEYS = {
@@ -53,6 +53,11 @@ const not = (fieldKey: string, value: string): FieldConditionInput => ({ fieldKe
 const includes = (fieldKey: string, value: string): FieldConditionInput => ({ fieldKey, operator: 'contains', value });
 const all = (...rules: FieldConditionInput[]): FieldConditionInput => ({ logic: 'and', rules });
 const any = (...rules: FieldConditionInput[]): FieldConditionInput => ({ logic: 'or', rules });
+/** The date five months after the financial year-end: the s 203(1)(b) and s 175A(1)(b) deadline for sending financial statements. */
+const circulationDeadline = (
+  operator: 'date_before' | 'date_on_or_after',
+  target: { compareFieldKey: string } | { value: 'today' },
+): FieldConditionInput => ({ fieldKey: ANNUAL_RETURN_KEYS.financialYearEnd, offsetMonths: 5, operator, ...target });
 const options = (values: string[]) => values.map((label) => ({ label, value: label }));
 const yesNo = (key: string, label: string, extra: Partial<Draft> = {}): Draft => ({
   type: 'SINGLE_CHOICE', key, label, isRequired: true, options: options([YES, NO]),
@@ -108,6 +113,12 @@ function drafts(input: AnnualReturnBuildOptions): Draft[] {
   const circulationYes = eq(K.fsExemption, YES);
   const circulationPending = eq(K.fsExemption, PENDING_CIRCULATION);
   const circulationRoute = all(privateType, prepare, any(circulationYes, circulationPending));
+  // The statements cannot be sent before they exist, nor within five months once that period has ended.
+  const circulationPeriodOpen = circulationDeadline('date_on_or_after', { value: 'today' });
+  const circulationPeriodEnded = circulationDeadline('date_before', { value: 'today' });
+  const completionAfterDeadline = all(eq(K.fsReady, NO), circulationDeadline('date_before', { compareFieldKey: 'date_fs_ds' }));
+  const completionWithinDeadline = circulationDeadline('date_on_or_after', { compareFieldKey: 'date_fs_ds' });
+  const circulationAnswerOpen = any({ fieldKey: K.fsExemption, operator: 'is_empty' }, not(K.fsExemption, YES));
   const route = any(all(privateType, exemptDormant), circulationRoute);
   const requiredAgm = any(
     eq(K.companyType, ARD_COMPANY_TYPES.publicShares),
@@ -416,7 +427,18 @@ function drafts(input: AnnualReturnBuildOptions): Draft[] {
     { type: 'DROPDOWN', key: K.fsExemption,
       label: 'Have the financial statements been sent to all members within five months after the financial year-end?',
       isRequired: true, layoutWidth: 100, condition: all(privateType, prepare),
-      options: options([YES, PENDING_CIRCULATION, NO]) },
+      options: [
+        { label: YES, value: YES, condition: eq(K.fsReady, YES) },
+        { label: PENDING_CIRCULATION, value: PENDING_CIRCULATION,
+          condition: all(circulationPeriodOpen, any(eq(K.fsReady, YES), completionWithinDeadline)) },
+        { label: NO, value: NO },
+      ] },
+    info('fs_circulation_late_completion_msg', 'Financial statements ready after five months',
+      'The estimated completion date is more than five months after the financial year-end, so the financial statements cannot be sent to members in time.',
+      all(privateType, prepare, completionAfterDeadline, circulationPeriodOpen, circulationAnswerOpen)),
+    info('fs_circulation_period_ended_msg', 'Five months already passed',
+      'More than five months have passed since the financial year-end, so the financial statements can no longer be sent within that time.',
+      all(privateType, prepare, circulationPeriodEnded, circulationAnswerOpen)),
     date(K.fsCirculation, 'Date the financial statements were sent',
       { condition: all(privateType, prepare, circulationYes), layoutWidth: 33,
         validation: { minDateFieldKey: K.fsDate, minDateOffsetDays: 0,

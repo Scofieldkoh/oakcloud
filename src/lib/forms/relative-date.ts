@@ -38,3 +38,19 @@ export function addIsoDateMonths(value: string, offsetMonths: number): string | 
   const targetDay = Math.min(day, new Date(Date.UTC(targetYear, targetMonth, 0)).getUTCDate());
   return `${String(targetYear).padStart(4, '0')}-${String(targetMonth).padStart(2, '0')}-${String(targetDay).padStart(2, '0')}`;
 }
+
+/** Today's date as YYYY-MM-DD in the runtime's local time zone, as date validation uses. */
+export function getLocalTodayIsoDate(now: Date = new Date()): string {
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+}
+
+/** Move a YYYY-MM-DD date by whole months (clamped to month end), then by days. */
+export function shiftIsoDate(value: string, offsetMonths = 0, offsetDays = 0): string | undefined {
+  const withMonths = addIsoDateMonths(value, offsetMonths);
+  if (!withMonths || !Number.isInteger(offsetDays)) return undefined;
+  if (offsetDays === 0) return withMonths;
+  const [year, month, day] = withMonths.split('-').map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  date.setUTCDate(date.getUTCDate() + offsetDays);
+  return date.toISOString().slice(0, 10);
+}

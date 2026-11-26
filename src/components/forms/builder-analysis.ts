@@ -1,5 +1,5 @@
 import { isSummaryEligibleFieldType, normalizeKey } from '@/lib/form-utils';
-import type { BuilderField, ConditionConfig, FieldConditionConfig } from './builder-utils';
+import { isDateConditionOperator, type BuilderField, type ConditionConfig, type FieldConditionConfig } from './builder-utils';
 
 export type ReadinessItem = {
   message: string;
@@ -21,7 +21,19 @@ const OPERATOR_LABELS: Record<ConditionConfig['operator'], string> = {
   not_empty: 'is not empty',
   is_visible: 'is visible',
   is_not_visible: 'is not visible',
+  date_before: 'is before',
+  date_on_or_before: 'is on or before',
+  date_after: 'is after',
+  date_on_or_after: 'is on or after',
 };
+
+function describeDateOffset(condition: ConditionConfig): string {
+  const parts = [
+    condition.offsetMonths ? `${condition.offsetMonths > 0 ? '+' : '-'} ${Math.abs(condition.offsetMonths)} month${Math.abs(condition.offsetMonths) === 1 ? '' : 's'}` : '',
+    condition.offsetDays ? `${condition.offsetDays > 0 ? '+' : '-'} ${Math.abs(condition.offsetDays)} day${Math.abs(condition.offsetDays) === 1 ? '' : 's'}` : '',
+  ].filter(Boolean);
+  return parts.length > 0 ? ` ${parts.join(' ')}` : '';
+}
 
 function isConditionGroup(condition: FieldConditionConfig | null): condition is Extract<FieldConditionConfig, { rules: FieldConditionConfig[] }> {
   return !!condition && 'rules' in condition;
@@ -46,6 +58,10 @@ export function describeCondition(condition: FieldConditionConfig | null, fields
 
   const fieldName = fieldNameByKey(fields, condition.fieldKey);
   const operatorLabel = OPERATOR_LABELS[condition.operator] || condition.operator;
+  if (isDateConditionOperator(condition.operator)) {
+    const target = condition.compareFieldKey ? fieldNameByKey(fields, condition.compareFieldKey) : String(condition.value ?? '');
+    return `${fieldName}${describeDateOffset(condition)} ${operatorLabel} ${target}`;
+  }
   if (NO_VALUE_OPERATORS.has(condition.operator)) {
     return `${fieldName} ${operatorLabel}`;
   }
@@ -57,7 +73,7 @@ export function collectConditionFieldKeys(condition: FieldConditionConfig | null
   if (isConditionGroup(condition)) {
     return Array.from(new Set(condition.rules.flatMap(collectConditionFieldKeys)));
   }
-  return condition.fieldKey ? [condition.fieldKey] : [];
+  return [condition.fieldKey, condition.compareFieldKey].filter((key): key is string => !!key);
 }
 
 export function getConditionDependents(fields: BuilderField[], fieldKey: string): BuilderField[] {

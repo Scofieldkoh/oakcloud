@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { ChevronDown, Plus, Trash2, X } from 'lucide-react';
 import { FormInput } from '@/components/ui/form-input';
 import { describeCondition } from './builder-analysis';
-import type { BuilderField, ConditionConfig, ConditionGroupConfig, FieldConditionConfig } from './builder-utils';
+import { isDateConditionOperator, type BuilderField, type ConditionConfig, type ConditionGroupConfig, type FieldConditionConfig } from './builder-utils';
 
 const CONDITION_OPERATORS: Array<{ value: ConditionConfig['operator']; label: string }> = [
   { value: 'equals', label: 'Equals' },
@@ -14,6 +14,10 @@ const CONDITION_OPERATORS: Array<{ value: ConditionConfig['operator']; label: st
   { value: 'not_empty', label: 'Is not empty' },
   { value: 'is_visible', label: 'Is visible' },
   { value: 'is_not_visible', label: 'Is not visible' },
+  { value: 'date_before', label: 'Date is before' },
+  { value: 'date_on_or_before', label: 'Date is on or before' },
+  { value: 'date_after', label: 'Date is after' },
+  { value: 'date_on_or_after', label: 'Date is on or after' },
 ];
 
 function isConditionGroup(condition: FieldConditionConfig | null): condition is ConditionGroupConfig {
@@ -241,13 +245,22 @@ export function FieldConditionTab({
                   <label className="mb-1.5 block text-xs font-medium text-text-secondary">Operator</label>
                   <select
                     value={rule.operator}
-                    onChange={(e) => updateRule(groupIndex, ruleIndex, (current) => ({
-                      ...current,
-                      operator: e.target.value as ConditionConfig['operator'],
-                      value: ['is_empty', 'not_empty', 'is_visible', 'is_not_visible'].includes(e.target.value)
-                        ? undefined
-                        : current.value,
-                    }))}
+                    onChange={(e) => updateRule(groupIndex, ruleIndex, (current) => {
+                      const operator = e.target.value as ConditionConfig['operator'];
+                      const next: ConditionConfig = {
+                        ...current,
+                        operator,
+                        value: ['is_empty', 'not_empty', 'is_visible', 'is_not_visible'].includes(operator)
+                          ? undefined
+                          : current.value,
+                      };
+                      if (!isDateConditionOperator(operator)) {
+                        delete next.compareFieldKey;
+                        delete next.offsetMonths;
+                        delete next.offsetDays;
+                      }
+                      return next;
+                    })}
                     className="w-full rounded-lg border border-border-primary bg-background-primary px-3 py-2 text-sm text-text-primary"
                   >
                     {CONDITION_OPERATORS.map((operator) => (
@@ -256,9 +269,10 @@ export function FieldConditionTab({
                   </select>
                 </div>
 
-                {!['is_empty', 'not_empty', 'is_visible', 'is_not_visible'].includes(rule.operator) && (
+                {!['is_empty', 'not_empty', 'is_visible', 'is_not_visible'].includes(rule.operator) && !rule.compareFieldKey && (
                   <FormInput
                     label="Conditional value"
+                    placeholder={isDateConditionOperator(rule.operator) ? 'today or YYYY-MM-DD' : undefined}
                     value={String(rule.value ?? '')}
                     onChange={(e) => updateRule(groupIndex, ruleIndex, (current) => ({
                       ...current,

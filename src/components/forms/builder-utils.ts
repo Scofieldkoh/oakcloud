@@ -159,11 +159,23 @@ type SerializedChoiceOption = {
   condition?: Record<string, unknown>;
 };
 
+export const DATE_CONDITION_OPERATOR_VALUES = ['date_before', 'date_on_or_before', 'date_after', 'date_on_or_after'] as const;
+export type DateConditionOperator = typeof DATE_CONDITION_OPERATOR_VALUES[number];
+
 export type ConditionConfig = {
   fieldKey: string;
-  operator: 'equals' | 'not_equals' | 'contains' | 'is_empty' | 'not_empty' | 'is_visible' | 'is_not_visible';
+  operator: 'equals' | 'not_equals' | 'contains' | 'is_empty' | 'not_empty' | 'is_visible' | 'is_not_visible' | DateConditionOperator;
   value?: string | number | boolean | null;
+  /** Date operators only: compare with this field instead of `value`. */
+  compareFieldKey?: string;
+  /** Date operators only: move the field's date before comparing. */
+  offsetMonths?: number;
+  offsetDays?: number;
 };
+
+export function isDateConditionOperator(operator: string): operator is DateConditionOperator {
+  return (DATE_CONDITION_OPERATOR_VALUES as readonly string[]).includes(operator);
+}
 
 export type ConditionGroupConfig = {
   logic: 'and' | 'or';
@@ -328,16 +340,23 @@ function parseConditionRule(value: unknown): ConditionConfig | null {
       && operator !== 'not_empty'
       && operator !== 'is_visible'
       && operator !== 'is_not_visible'
+      && !(typeof operator === 'string' && isDateConditionOperator(operator))
     )
   ) {
     return null;
   }
 
-  return {
+  const rule: ConditionConfig = {
     fieldKey,
     operator,
     value: value.value as string | number | boolean | null | undefined,
   };
+  if (isDateConditionOperator(operator)) {
+    if (typeof value.compareFieldKey === 'string' && value.compareFieldKey.trim()) rule.compareFieldKey = value.compareFieldKey.trim();
+    if (typeof value.offsetMonths === 'number' && Number.isInteger(value.offsetMonths)) rule.offsetMonths = value.offsetMonths;
+    if (typeof value.offsetDays === 'number' && Number.isInteger(value.offsetDays)) rule.offsetDays = value.offsetDays;
+  }
+  return rule;
 }
 
 export function normalizeConditionConfig(value: unknown): FieldConditionConfig | null {

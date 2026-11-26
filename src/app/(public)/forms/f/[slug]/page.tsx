@@ -157,7 +157,7 @@ import {
 } from './_lib/field-config';
 import { EDITED_VALUE_CLASS, formatOriginalPrefillValue, getPrefillChanges, getPrefillFieldState, undoRemovedPrefillRow } from '@/lib/forms/prefill-changes';
 import { AR_RECORD_SECTIONS } from '@/lib/forms/annual-return-prefill';
-import { getMinSelectedChoicesError } from '@/lib/forms/choice-validation';
+import { filterAvailableChoiceOptions, getMinSelectedChoicesError, getUnavailableChoiceOptionError } from '@/lib/forms/choice-validation';
 import { FieldHint } from './_components/field-hint';
 import { FaqField } from './_components/faq-field';
 
@@ -1122,6 +1122,8 @@ export default function PublicFormPage() {
     }
     const minChoicesError = getMinSelectedChoicesError(field, value);
     if (minChoicesError) return minChoicesError;
+    const unavailableChoiceError = getUnavailableChoiceOptionError(field, value, answersRecord);
+    if (unavailableChoiceError) return unavailableChoiceError;
 
     if (field.type === 'SHORT_TEXT' && field.inputType === 'shareholding_list') {
       return personShareholdingError(value);
@@ -2156,8 +2158,9 @@ export default function PublicFormPage() {
                       const sectionErrorText = fieldErrors[getFieldErrorKey(sectionField.key, rowIndex)];
                       const sectionPendingRequired = isAnnualReturnTemplate && sectionField.isRequired
                         && !hasRequiredValue(sectionField, sectionValue) && !sectionErrorText && !sectionPrefill.edited;
-                      const sectionDropdownOptions = parseChoiceOptions(localizedSectionField.options);
-                      const sectionChoiceOptions = parseChoiceOptions(localizedSectionField.options);
+                      const sectionDropdownOptions = filterAvailableChoiceOptions(
+                        parseChoiceOptions(localizedSectionField.options), rowAnswers, sectionValue);
+                      const sectionChoiceOptions = sectionDropdownOptions;
                       const sectionFieldDomId = `repeat-${toDomSafeId(sectionId)}-${rowIndex}-${toDomSafeId(sectionField.id || sectionField.key)}`;
                       const sectionControlId = `${sectionFieldDomId}-control`;
                       const sectionLabelId = `${sectionFieldDomId}-label`;
@@ -2874,7 +2877,7 @@ export default function PublicFormPage() {
     const choiceChips = isChoiceChipsEnabled(field);
     const choiceOptions = field.key === 'reelection_directors'
       ? parseChoiceOptions(getDirectorReelectionOptions(answers))
-      : parseChoiceOptions(localizedField.options);
+      : filterAvailableChoiceOptions(parseChoiceOptions(localizedField.options), answers, value);
     const choiceDetailErrorValues = (field.type === 'SINGLE_CHOICE' || field.type === 'MULTIPLE_CHOICE')
       ? getChoiceDetailErrorValues(choiceOptions, value)
       : new Set<string>();
@@ -3440,7 +3443,8 @@ export default function PublicFormPage() {
                   ? dynamicIds[index] as string : `new-person:${index}`;
                 return [{ value: stableId, label: name }];
               })
-              : parseChoiceOptions(localizedField.options).map((opt) => ({ value: opt.value, label: opt.label }));
+              : filterAvailableChoiceOptions(parseChoiceOptions(localizedField.options), answers, value)
+                .map((opt) => ({ value: opt.value, label: opt.label }));
             const selectedLabel = typeof value === 'string' && value
               ? dropdownOptions.find((opt) => opt.value === value)?.label ?? null
               : null;

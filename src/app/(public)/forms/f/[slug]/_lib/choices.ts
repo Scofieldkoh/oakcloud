@@ -3,7 +3,6 @@
 import {
   parseObject,
   parseChoiceOptions,
-  evaluateCondition,
   type PublicFormField as PublicField,
 } from '@/lib/form-utils';
 import {
@@ -13,6 +12,7 @@ import {
   getLocalizedNationalityPresetOptions,
 } from '@/lib/constants/form-option-presets';
 import { type ChoiceChipOption } from '@/components/forms/choice-chips';
+import { filterAvailableChoiceOptions } from '@/lib/forms/choice-validation';
 import { interpolateUiLabel } from './labels';
 import { type ChoiceAnswerEntry } from './types';
 
@@ -221,8 +221,7 @@ export function toChoiceChipOptions(
   answers: Record<string, unknown>,
   selected: string[],
 ): ChoiceChipOption[] {
-  return options
-    .filter((option) => !option.condition || selected.includes(option.value) || evaluateCondition(option.condition, answers))
+  return filterAvailableChoiceOptions(options, answers, selected)
     .map((option) => ({ value: option.value, label: getChoiceOptionDisplayLabel(option), locked: option.requiredSelected === true }));
 }
 

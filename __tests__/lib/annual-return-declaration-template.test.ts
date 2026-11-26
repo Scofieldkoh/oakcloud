@@ -62,6 +62,9 @@ describe('Annual Return Declaration guided template', () => {
       if ('fieldKey' in condition && typeof condition.fieldKey === 'string') {
         expect(keys.has(condition.fieldKey)).toBe(true);
       }
+      if ('compareFieldKey' in condition && typeof condition.compareFieldKey === 'string') {
+        expect(keys.has(condition.compareFieldKey)).toBe(true);
+      }
       if ('rules' in condition && Array.isArray(condition.rules)) {
         condition.rules.forEach(check);
       }
@@ -95,7 +98,7 @@ describe('Annual Return Declaration guided template', () => {
   });
 
   it('defines structured person holdings and expandable additional positions in version 12', () => {
-    expect(SG_ANNUAL_RETURN_DECLARATION_TEMPLATE_VERSION).toBe(12);
+    expect(SG_ANNUAL_RETURN_DECLARATION_TEMPLATE_VERSION).toBe(13);
     const field = fields.find((entry) => entry.key === 'person_shareholding');
     expect(field).toMatchObject({
       type: 'SHORT_TEXT', inputType: 'shareholding_list', layoutWidth: 100,

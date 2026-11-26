@@ -1,4 +1,5 @@
 import { normalizeFormBackgroundUrl } from '@/lib/form-background-url';
+import { getLocalTodayIsoDate, shiftIsoDate } from '@/lib/forms/relative-date';
 
 export interface PublicFormField {
   id: string;
@@ -1388,8 +1389,48 @@ export function evaluateCondition(
       return isEmptyValue(actual);
     case 'not_empty':
       return !isEmptyValue(actual);
+    case 'date_before':
+    case 'date_on_or_before':
+    case 'date_after':
+    case 'date_on_or_after':
+      return evaluateDateRule(operator, cond, actual, answers);
     default:
       return true;
+  }
+}
+
+function toIsoDateOperand(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  return /^\d{4}-\d{2}-\d{2}$/.test(trimmed) ? trimmed : null;
+}
+
+/** See fieldConditionRuleSchema: a missing or invalid date on either side never matches. */
+function evaluateDateRule(
+  operator: 'date_before' | 'date_on_or_before' | 'date_after' | 'date_on_or_after',
+  rule: Record<string, unknown>,
+  actual: unknown,
+  answers: Record<string, unknown>
+): boolean {
+  const base = toIsoDateOperand(actual);
+  if (!base) return false;
+  const offsetMonths = typeof rule.offsetMonths === 'number' ? rule.offsetMonths : 0;
+  const offsetDays = typeof rule.offsetDays === 'number' ? rule.offsetDays : 0;
+  const left = shiftIsoDate(base, offsetMonths, offsetDays);
+
+  const compareFieldKey = typeof rule.compareFieldKey === 'string' ? rule.compareFieldKey : '';
+  const right = compareFieldKey
+    ? toIsoDateOperand(answers[compareFieldKey])
+    : (typeof rule.value === 'string' && rule.value.trim().toLowerCase() === 'today'
+      ? getLocalTodayIsoDate()
+      : toIsoDateOperand(rule.value));
+  if (!left || !right) return false;
+
+  switch (operator) {
+    case 'date_before': return left < right;
+    case 'date_on_or_before': return left <= right;
+    case 'date_after': return left > right;
+    case 'date_on_or_after': return left >= right;
   }
 }
 
